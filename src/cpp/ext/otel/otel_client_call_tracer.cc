@@ -447,23 +447,25 @@ OpenTelemetryPluginImpl::ClientCallTracer::ClientCallTracer(
 }
 
 OpenTelemetryPluginImpl::ClientCallTracer::~ClientCallTracer() {
-  if (otel_plugin_->client_.call.retries != nullptr) {
+  if (otel_plugin_->client_.call.retries != nullptr && retries_ > 1) {
     otel_plugin_->client_.call.retries->Record(
         retries_ - 1,
         std::array<std::pair<absl::string_view, absl::string_view>, 3>{
             {{OpenTelemetryMethodKey(), MethodForStats()},
-             {OpenTelemetryTargetKey(), scope_config_->filtered_target()},
-             {OpenTelemetryRetryType(), "retry"}}},
+             {OpenTelemetryTargetKey(), scope_config_->filtered_target()}}},
         opentelemetry::context::Context{});
-    otel_plugin_->client_.call.retries->Record(
+  }
+  if (otel_plugin_->client_.call.transparent_retries != nullptr &&
+      transparent_retries_ != 0) {
+    otel_plugin_->client_.call.transparent_retries->Record(
         transparent_retries_,
         std::array<std::pair<absl::string_view, absl::string_view>, 3>{
             {{OpenTelemetryMethodKey(), MethodForStats()},
-             {OpenTelemetryTargetKey(), scope_config_->filtered_target()},
-             {OpenTelemetryRetryType(), "transparent"}}},
+             {OpenTelemetryTargetKey(), scope_config_->filtered_target()}}},
         opentelemetry::context::Context{});
   }
-  if (otel_plugin_->client_.call.retry_delay != nullptr) {
+  if (otel_plugin_->client_.call.retry_delay != nullptr &&
+      retry_delay_ != absl::ZeroDuration() && retries_ > 1) {
     otel_plugin_->client_.call.retry_delay->Record(
         absl::ToDoubleSeconds(retry_delay_),
         std::array<std::pair<absl::string_view, absl::string_view>, 2>{
@@ -488,7 +490,7 @@ OpenTelemetryPluginImpl::ClientCallTracer::StartNewAttempt(
     grpc_core::MutexLock lock(&mu_);
     if (transparent_retries_ != 0 || retries_ != 0) {
       is_first_attempt = false;
-      if (num_active_attempts_ == 0) {
+      if (num_active_attempts_ == 0 && !is_transparent_retry) {
         retry_delay_ += absl::Now() - time_at_last_attempt_end_;
       }
     }

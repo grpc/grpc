@@ -101,9 +101,12 @@ class OpenTelemetryPluginBuilder {
           "grpc.server.call.rcvd_total_compressed_message_size";
 
   /// Experimental Retry Metrics
-  static constexpr absl::string_view kClientCallRetries =
+  static constexpr absl::string_view kClientCallRetriesInstrumentName =
       "grpc.client.call.retries";
-  static constexpr absl::string_view kClientCallRetryDelay =
+  static constexpr absl::string_view
+      kClientCallTransparentRetriesInstrumentName =
+          "grpc.client.call.transparent_retries";
+  static constexpr absl::string_view kClientCallRetryDelayInstrumentName =
       "grpc.client.call.retry_delay";
 
   OpenTelemetryPluginBuilder();

@@ -59,8 +59,6 @@ absl::string_view OpenTelemetryStatusKey() { return "grpc.status"; }
 
 absl::string_view OpenTelemetryTargetKey() { return "grpc.target"; }
 
-absl::string_view OpenTelemetryRetryType() { return "grpc.retry_type"; }
-
 namespace {
 absl::flat_hash_set<std::string> BaseMetrics() {
   absl::flat_hash_set<std::string> base_metrics{
@@ -504,17 +502,29 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
                       kServerCallRcvdTotalCompressedMessageSizeInstrumentName),
               "Compressed message bytes received per server call", "By");
     }
-    if (metrics.contains(
-            grpc::OpenTelemetryPluginBuilder::kClientCallRetries)) {
+    if (metrics.contains(grpc::OpenTelemetryPluginBuilder::
+                             kClientCallRetriesInstrumentName)) {
       client_.call.retries = meter->CreateUInt64Histogram(
-          std::string(grpc::OpenTelemetryPluginBuilder::kClientCallRetries),
-          "EXPERIMENTAL: Number of retry attempts made during the call",
+          std::string(grpc::OpenTelemetryPluginBuilder::
+                          kClientCallRetriesInstrumentName),
+          "EXPERIMENTAL: Number of retries during the client call. If there "
+          "were no retries, 0 is not reported.",
           "{retry}");
     }
-    if (metrics.contains(
-            grpc::OpenTelemetryPluginBuilder::kClientCallRetryDelay)) {
+    if (metrics.contains(grpc::OpenTelemetryPluginBuilder::
+                             kClientCallTransparentRetriesInstrumentName)) {
+      client_.call.transparent_retries = meter->CreateUInt64Histogram(
+          std::string(grpc::OpenTelemetryPluginBuilder::
+                          kClientCallTransparentRetriesInstrumentName),
+          "EXPERIMENTAL: Number of transparent retries during the client call. "
+          "If there were no transparent retries, 0 is not reported.",
+          "{transparent_retry}");
+    }
+    if (metrics.contains(grpc::OpenTelemetryPluginBuilder::
+                             kClientCallRetryDelayInstrumentName)) {
       client_.call.retry_delay = meter->CreateDoubleHistogram(
-          std::string(grpc::OpenTelemetryPluginBuilder::kClientCallRetryDelay),
+          std::string(grpc::OpenTelemetryPluginBuilder::
+                          kClientCallRetryDelayInstrumentName),
           "EXPERIMENTAL: Total time of delay while there is no active attempt "
           "during the client call",
           "s");

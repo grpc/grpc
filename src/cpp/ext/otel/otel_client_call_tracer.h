@@ -158,7 +158,7 @@ class OpenTelemetryPluginImpl::ClientCallTracer
   OpenTelemetryPluginImpl* otel_plugin_;
   std::shared_ptr<OpenTelemetryPluginImpl::ClientScopeConfig> scope_config_;
   grpc_core::Mutex mu_;
-  // Non-transparent attempts per call (including first attempt)
+  // Non-transparent retry attempts per call (includes initial attempt)
   uint64_t retries_ ABSL_GUARDED_BY(&mu_) = 0;
   // Transparent retries per call
   uint64_t transparent_retries_ ABSL_GUARDED_BY(&mu_) = 0;
