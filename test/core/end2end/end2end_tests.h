@@ -704,10 +704,10 @@ inline auto MaybeAddNullConfig(
     GTEST_SKIP() << "Disabled for initial v3 testing";         \
   }
 
-#define SKIP_IF_PH2_CLIENT()                                        \
-  if (test_config()->feature_mask & FEATURE_MASK_IS_PH2) {          \
-    DCHECK(grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()); \
-    GTEST_SKIP() << "Disabled for initial PH2 testing";             \
+#define SKIP_IF_PH2_CLIENT()                                       \
+  if (test_config()->feature_mask & FEATURE_MASK_IS_PH2) {         \
+    CHECK(grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()); \
+    GTEST_SKIP() << "Disabled for initial PH2 testing";            \
   }
 
 #define SKIP_IF_LOCAL_TCP_CREDS()                                      \
