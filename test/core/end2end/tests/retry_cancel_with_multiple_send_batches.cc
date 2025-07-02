@@ -183,16 +183,16 @@ void RegisterFilter() {
 }
 
 CORE_END2END_TEST(RetryTests, RetryCancelWithMultipleSendBatches) {
-  SKIP_IF_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
-  SKIP_IF_V3();          // Need to convert filter
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
+  SKIP_IF_V3();            // Need to convert filter
   RegisterFilter();
   TestRetryCancelWithMultipleSendBatches(
       *this, std::make_unique<CancelCancellationMode>());
 }
 
 CORE_END2END_TEST(RetryTests, RetryDeadlineWithMultipleSendBatches) {
-  SKIP_IF_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
-  SKIP_IF_V3();          // Need to convert filter
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
+  SKIP_IF_V3();            // Need to convert filter
   RegisterFilter();
   TestRetryCancelWithMultipleSendBatches(
       *this, std::make_unique<DeadlineCancellationMode>());

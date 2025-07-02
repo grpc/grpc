@@ -50,7 +50,7 @@ namespace grpc_core {
 namespace {
 
 CORE_END2END_TEST(Http2Tests, MaxAgeForciblyClose) {
-  SKIP_IF_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   SKIP_IF_MINSTACK();
   InitClient(ChannelArgs());
   InitServer(DefaultServerArgs()
@@ -113,7 +113,7 @@ CORE_END2END_TEST(Http2Tests, MaxAgeForciblyClose) {
 }
 
 CORE_END2END_TEST(Http2Tests, MaxAgeGracefullyClose) {
-  SKIP_IF_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   SKIP_IF_MINSTACK();
   SKIP_IF_FUZZING();
 

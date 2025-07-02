@@ -73,7 +73,7 @@ void TestRequestResponseWithMetadataToBeFiltered(
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, ContentLengthIsFiltered) {
-  SKIP_IF_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   TestRequestResponseWithMetadataToBeFiltered(*this, "content-length", "45");
 }
 

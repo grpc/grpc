@@ -28,7 +28,7 @@ namespace grpc_core {
 namespace {
 
 CORE_END2END_TEST(CoreDeadlineTests, NegativeDeadline) {
-  SKIP_IF_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   auto c =
       NewClientCall("/service/method").Timeout(Duration::Seconds(-1)).Create();
   IncomingStatusOnClient server_status;

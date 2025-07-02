@@ -39,7 +39,7 @@ namespace {
 // restarted.  The second call will fail in that transport instance and
 // will be transparently retried after the server starts up again.
 CORE_END2END_TEST(RetryHttp2Tests, RetryTransparentMaxConcurrentStreams) {
-  SKIP_IF_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   const auto server_args =
       DefaultServerArgs()
           .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1)

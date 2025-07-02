@@ -90,12 +90,12 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, SimpleRequest) {
-  SKIP_IF_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   SimpleRequestBody(*this);
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, SimpleRequest10) {
-  SKIP_IF_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   for (int i = 0; i < 10; i++) {
     SimpleRequestBody(*this);
   }

@@ -29,7 +29,7 @@ namespace grpc_core {
 namespace {
 
 CORE_END2END_TEST(WriteBufferingTests, WriteBufferingAtEnd) {
-  SKIP_IF_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   c.NewBatch(1).SendInitialMetadata({});
   IncomingMetadata server_initial_metadata;
