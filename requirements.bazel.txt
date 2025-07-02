@@ -38,4 +38,5 @@ protobuf
 pyyaml  # for DNS test
 requests
 twisted  # for DNS test
+typing-extensions
 urllib3
