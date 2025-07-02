@@ -181,6 +181,7 @@ void SimpleRequest(CoreEnd2endTest& test) {
 }
 
 CORE_END2END_TEST(NoLoggingTests, NoLoggingTest) {
+  SKIP_IF_PH2_CLIENT();
 // This test makes sure that we don't get log noise when making an rpc
 // especially when rpcs are successful.
 

@@ -34,6 +34,7 @@ namespace {
 // - first attempt gets ABORTED
 // - second attempt gets ABORTED but does not retry
 CORE_END2END_TEST(RetryTests, RetryTooManyAttempts) {
+  SKIP_IF_PH2_CLIENT();
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(

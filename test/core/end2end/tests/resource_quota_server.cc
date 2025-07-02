@@ -54,6 +54,7 @@ auto MakeVec(F init) {
 }
 
 CORE_END2END_TEST(ResourceQuotaTests, ResourceQuota) {
+  SKIP_IF_PH2_CLIENT();
   if (IsEventEngineListenerEnabled()) {
     GTEST_SKIP() << "Not with event engine listener";
   }

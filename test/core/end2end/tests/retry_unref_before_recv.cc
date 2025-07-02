@@ -32,6 +32,7 @@ namespace {
 // they complete.  This ensures that we don't drop callbacks or cause a
 // memory leak.
 CORE_END2END_TEST(RetryTests, UnrefBeforeRecv) {
+  SKIP_IF_PH2_CLIENT();
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(

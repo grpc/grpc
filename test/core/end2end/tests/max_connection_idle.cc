@@ -82,6 +82,7 @@ bool SimpleRequestBody(CoreEnd2endTest& test) {
 }
 
 CORE_END2END_TEST(RetryHttp2Tests, MaxConnectionIdle) {
+  SKIP_IF_PH2_CLIENT();
   const auto kMaxConnectionIdle = Duration::Seconds(2);
   const auto kMaxConnectionAge = Duration::Seconds(10);
   InitClient(

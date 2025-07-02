@@ -118,6 +118,7 @@ class InitWithTempFile {
 };
 
 CORE_END2END_TEST(SecureEnd2endTests, StaticInitAllowAuthorizedRequest) {
+  SKIP_IF_PH2_CLIENT();
   InitWithStaticData(*this,
                      "{"
                      "  \"name\": \"authz\","
@@ -136,6 +137,7 @@ CORE_END2END_TEST(SecureEnd2endTests, StaticInitAllowAuthorizedRequest) {
 }
 
 CORE_END2END_TEST(SecureEnd2endTests, StaticInitDenyUnauthorizedRequest) {
+  SKIP_IF_PH2_CLIENT();
   InitWithStaticData(*this,
                      "{"
                      "  \"name\": \"authz\","
@@ -164,6 +166,7 @@ CORE_END2END_TEST(SecureEnd2endTests, StaticInitDenyUnauthorizedRequest) {
 }
 
 CORE_END2END_TEST(SecureEnd2endTests, StaticInitDenyRequestNoMatchInPolicy) {
+  SKIP_IF_PH2_CLIENT();
   InitWithStaticData(*this,
                      "{"
                      "  \"name\": \"authz\","
@@ -182,6 +185,7 @@ CORE_END2END_TEST(SecureEnd2endTests, StaticInitDenyRequestNoMatchInPolicy) {
 }
 
 CORE_END2END_TEST(SecureEnd2endTests, FileWatcherInitAllowAuthorizedRequest) {
+  SKIP_IF_PH2_CLIENT();
   InitWithTempFile tmp_policy(*this,
                               "{"
                               "  \"name\": \"authz\","
@@ -200,6 +204,7 @@ CORE_END2END_TEST(SecureEnd2endTests, FileWatcherInitAllowAuthorizedRequest) {
 }
 
 CORE_END2END_TEST(SecureEnd2endTests, FileWatcherInitDenyUnauthorizedRequest) {
+  SKIP_IF_PH2_CLIENT();
   InitWithTempFile tmp_policy(*this,
                               "{"
                               "  \"name\": \"authz\","
@@ -247,6 +252,7 @@ CORE_END2END_TEST(SecureEnd2endTests,
 }
 
 CORE_END2END_TEST(SecureEnd2endTests, FileWatcherValidPolicyReload) {
+  SKIP_IF_PH2_CLIENT();
   InitWithTempFile tmp_policy(*this,
                               "{"
                               "  \"name\": \"authz\","
@@ -301,6 +307,7 @@ CORE_END2END_TEST(SecureEnd2endTests, FileWatcherValidPolicyReload) {
 }
 
 CORE_END2END_TEST(SecureEnd2endTests, FileWatcherInvalidPolicySkipReload) {
+  SKIP_IF_PH2_CLIENT();
   InitWithTempFile tmp_policy(*this,
                               "{"
                               "  \"name\": \"authz\","
@@ -333,6 +340,7 @@ CORE_END2END_TEST(SecureEnd2endTests, FileWatcherInvalidPolicySkipReload) {
 }
 
 CORE_END2END_TEST(SecureEnd2endTests, FileWatcherRecoversFromFailure) {
+  SKIP_IF_PH2_CLIENT();
   InitWithTempFile tmp_policy(*this,
                               "{"
                               "  \"name\": \"authz\","

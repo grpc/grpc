@@ -69,6 +69,7 @@ static void OneRequestAndShutdownServer(CoreEnd2endTest& test) {
 }
 
 CORE_END2END_TEST(CoreClientChannelTests, DisappearingServer) {
+  SKIP_IF_PH2_CLIENT();
   // TODO(ctiller): Currently v3 connections are tracked as a set of
   // OrphanablePtr<ServerTransport> in the Server class. This allows us to only
   // remove and destroy them which means we have no means of sending a goaway

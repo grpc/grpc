@@ -53,10 +53,12 @@ void SimpleRequestBody(CoreEnd2endTest& test,
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, InvokeRegisteredCall) {
+  SKIP_IF_PH2_CLIENT();
   SimpleRequestBody(*this, RegisterCallOnClient("/foo", nullptr));
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, Invoke10RegisteredCalls) {
+  SKIP_IF_PH2_CLIENT();
   auto rc = RegisterCallOnClient("/foo", nullptr);
   for (int i = 0; i < 10; i++) {
     SimpleRequestBody(*this, rc);

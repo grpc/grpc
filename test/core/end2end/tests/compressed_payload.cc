@@ -298,6 +298,7 @@ class TestConfigurator {
 };
 
 CORE_END2END_TEST(Http2SingleHopTests, DisabledAlgorithmDecompressInCore) {
+  SKIP_IF_PH2_CLIENT();
   TestConfigurator(*this)
       .ClientDefaultAlgorithm(GRPC_COMPRESS_GZIP)
       .DisableAlgorithmAtServer(GRPC_COMPRESS_GZIP)
@@ -305,6 +306,7 @@ CORE_END2END_TEST(Http2SingleHopTests, DisabledAlgorithmDecompressInCore) {
 }
 
 CORE_END2END_TEST(Http2SingleHopTests, DisabledAlgorithmDecompressInApp) {
+  SKIP_IF_PH2_CLIENT();
   TestConfigurator(*this)
       .ClientDefaultAlgorithm(GRPC_COMPRESS_GZIP)
       .DisableAlgorithmAtServer(GRPC_COMPRESS_GZIP)
@@ -379,10 +381,12 @@ CORE_END2END_TEST(Http2SingleHopTests,
 }
 
 CORE_END2END_TEST(Http2SingleHopTests, RequestWithServerLevelDecompressInCore) {
+  SKIP_IF_PH2_CLIENT();
   TestConfigurator(*this).RequestWithServerLevel(GRPC_COMPRESS_LEVEL_HIGH);
 }
 
 CORE_END2END_TEST(Http2SingleHopTests, RequestWithServerLevelDecompressInApp) {
+  SKIP_IF_PH2_CLIENT();
   TestConfigurator(*this)
       .DecompressInApp()
       .ExpectedAlgorithmFromServer(GRPC_COMPRESS_DEFLATE)

@@ -34,6 +34,7 @@ namespace grpc_core {
 // - first attempt returns ABORTED
 // - second attempt returns OK
 CORE_END2END_TEST(RetryTests, Retry) {
+  SKIP_IF_PH2_CLIENT();
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(

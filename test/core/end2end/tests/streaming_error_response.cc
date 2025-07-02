@@ -35,6 +35,7 @@ namespace {
 // error status. (Server sending a non-OK status is not considered an error
 // status.)
 CORE_END2END_TEST(CoreEnd2endTests, StreamingErrorResponse) {
+  SKIP_IF_PH2_CLIENT();
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   IncomingMetadata server_initial_metadata;
   IncomingMessage response_payload1_recv;
@@ -79,6 +80,7 @@ CORE_END2END_TEST(CoreEnd2endTests, StreamingErrorResponse) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, StreamingErrorResponseRequestStatusEarly) {
+  SKIP_IF_PH2_CLIENT();
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   IncomingMetadata server_initial_metadata;
   IncomingMessage response_payload1_recv;

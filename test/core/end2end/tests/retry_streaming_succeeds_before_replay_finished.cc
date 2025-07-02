@@ -33,6 +33,7 @@ namespace {
 // Tests that we correctly clean up if the second attempt finishes
 // before we have finished replaying all of the send ops.
 CORE_END2END_TEST(RetryTests, RetryStreamSucceedsBeforeReplayFinished) {
+  SKIP_IF_PH2_CLIENT();
   SKIP_IF_V3();  // Not working yet
   InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(

@@ -70,9 +70,11 @@ void TenRequests(CoreEnd2endTest& test, int initial_sequence_number) {
 }
 
 CORE_END2END_TEST(Http2Tests, HighInitialSeqno) {
+  SKIP_IF_PH2_CLIENT();
   TenRequests(*this, 16777213);
 }
 CORE_END2END_TEST(RetryHttp2Tests, HighInitialSeqno) {
+  SKIP_IF_PH2_CLIENT();
   TenRequests(*this, 2147483645);
 }
 

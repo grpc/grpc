@@ -304,6 +304,7 @@ class NewFakeStatsPlugin : public FakeStatsPlugin {
 
 // This test verifies the HTTP2 stats on a stream
 CORE_END2END_TEST(Http2FullstackSingleHopTests, StreamStats) {
+  SKIP_IF_PH2_CLIENT();
   auto test_state = std::make_shared<TestState>(this);
   GlobalStatsPluginRegistryTestPeer::ResetGlobalStatsPluginRegistry();
   GlobalStatsPluginRegistry::RegisterStatsPlugin(

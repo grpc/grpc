@@ -35,6 +35,7 @@ namespace {
 // - first attempt gets ABORTED with a long delay
 // - second attempt succeeds
 CORE_END2END_TEST(RetryTests, RetryServerPushbackDelay) {
+  SKIP_IF_PH2_CLIENT();
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(

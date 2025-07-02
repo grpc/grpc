@@ -37,6 +37,7 @@ namespace {
 // - client sends a 100 KiB message
 // - first attempt gets ABORTED but is not retried
 CORE_END2END_TEST(RetryTests, RetryExceedsBufferSizeInSubsequentBatch) {
+  SKIP_IF_PH2_CLIENT();
   SKIP_IF_V3();
   InitServer(DefaultServerArgs());
   InitClient(

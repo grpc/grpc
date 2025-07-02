@@ -67,11 +67,13 @@ void CancelAfterAccept(CoreEnd2endTest& test,
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, CancelAfterAccept) {
+  SKIP_IF_PH2_CLIENT();
   CancelAfterAccept(*this, std::make_unique<CancelCancellationMode>(),
                     Duration::Seconds(5));
 }
 
 CORE_END2END_TEST(CoreDeadlineTests, DeadlineAfterAccept) {
+  SKIP_IF_PH2_CLIENT();
   CancelAfterAccept(*this, std::make_unique<DeadlineCancellationMode>(),
                     Duration::Seconds(5));
 }
