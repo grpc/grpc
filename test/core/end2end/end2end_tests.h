@@ -704,9 +704,10 @@ inline auto MaybeAddNullConfig(
     GTEST_SKIP() << "Disabled for initial v3 testing";         \
   }
 
-#define SKIP_IF_PH2()                                      \
-  if (test_config()->feature_mask & FEATURE_MASK_IS_PH2) { \
-    GTEST_SKIP() << "Disabled for initial PH2 testing";    \
+#define SKIP_IF_PH2_CLIENT()                                        \
+  if (test_config()->feature_mask & FEATURE_MASK_IS_PH2) {          \
+    DCHECK(grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()); \
+    GTEST_SKIP() << "Disabled for initial PH2 testing";             \
   }
 
 #define SKIP_IF_LOCAL_TCP_CREDS()                                      \
@@ -730,17 +731,17 @@ inline auto MaybeAddNullConfig(
     defined(GRPC_END2END_TEST_NO_GTEST)
 #define CORE_END2END_TEST_P(suite, name)
 #else
-#define CORE_END2END_TEST_P(suite, name)                                     \
-  TEST_P(suite, name) {                                                      \
-    if ((GetParam()->feature_mask & FEATURE_MASK_IS_CALL_V3) &&              \
-        (grpc_core::ConfigVars::Get().PollStrategy() == "poll")) {           \
-      GTEST_SKIP() << "call-v3 not supported with poll poller";              \
-    }                                                                        \
-    bool is_ph2 = GetParam()->feature_mask & FEATURE_MASK_IS_PH2_CLIENT;     \
-    if (is_ph2) {                                                            \
-      GTEST_SKIP() << "Test PH2 only if PH2 experiment is enabled";          \
-    }                                                                        \
-    CoreEnd2endTest_##suite##_##name(GetParam(), nullptr, #suite).RunTest(); \
+#define CORE_END2END_TEST_P(suite, name)                                       \
+  TEST_P(suite, name) {                                                        \
+    if ((GetParam()->feature_mask & FEATURE_MASK_IS_CALL_V3) &&                \
+        (grpc_core::ConfigVars::Get().PollStrategy() == "poll")) {             \
+      GTEST_SKIP() << "call-v3 not supported with poll poller";                \
+    }                                                                          \
+    const bool is_ph2 = GetParam()->feature_mask & FEATURE_MASK_IS_PH2_CLIENT; \
+    if (is_ph2 && !grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()) {   \
+      GTEST_SKIP() << "Test PH2 only if PH2 experiment is enabled";            \
+    }                                                                          \
+    CoreEnd2endTest_##suite##_##name(GetParam(), nullptr, #suite).RunTest();   \
   }
 #endif
 
@@ -769,8 +770,8 @@ inline auto MaybeAddNullConfig(
         !IsEventEngineDnsEnabled()) {                                          \
       GTEST_SKIP() << "fuzzers need event engine";                             \
     }                                                                          \
-    bool is_ph2 = config->feature_mask & FEATURE_MASK_IS_PH2_CLIENT;           \
-    if (is_ph2) {                                                              \
+    const bool is_ph2 = GetParam()->feature_mask & FEATURE_MASK_IS_PH2_CLIENT; \
+    if (is_ph2 && !grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()) {   \
       GTEST_SKIP() << "Test PH2 only if PH2 experiment is enabled";            \
     }                                                                          \
     if (IsEventEngineDnsNonClientChannelEnabled() &&                           \
