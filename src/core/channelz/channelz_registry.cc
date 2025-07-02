@@ -288,7 +288,8 @@ WeakRefCountedPtr<BaseNode> ChannelzRegistry::InternalGet(intptr_t uuid) {
 
 intptr_t ChannelzRegistry::InternalNumberNode(BaseNode* node) {
   // node must be strongly owned still
-  node->AssertStronglyOwned();
+  auto strong_node = node->RefIfNonZero();
+  if (strong_node == nullptr) return 0;
   const size_t node_shard_index = NodeShardIndex(node);
   NodeShard& node_shard = node_shards_[node_shard_index];
   MutexLock index_lock(&index_mu_);

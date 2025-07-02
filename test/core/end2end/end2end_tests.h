@@ -98,6 +98,7 @@
 #define FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS (1 << 15)
 #define FEATURE_MASK_IS_CALL_V3 (1 << 16)
 #define FEATURE_MASK_IS_LOCAL_TCP_CREDS (1 << 17)
+#define FEATURE_MASK_IS_PH2_CLIENT (1 << 18)
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
@@ -703,6 +704,24 @@ inline auto MaybeAddNullConfig(
     GTEST_SKIP() << "Disabled for initial v3 testing";         \
   }
 
+// TODO(tjagtap) : [PH2][P4] : This should not be needed once E2E suite starts
+// working. Fix all tests are remove this macro
+#define SKIP_TEST_PH2_CLIENT()                                     \
+  if (test_config()->feature_mask & FEATURE_MASK_IS_PH2_CLIENT) {  \
+    CHECK(grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()); \
+    GTEST_SKIP() << "Disabled this test for initial PH2 testing";  \
+  }
+
+// PH2 test MUST only be run when PH2 experiment is enabled.
+// Non-PH2 tests MUST only be run when PH2 experiment is disabled
+#define SKIP_E2E_SUITE_FOR_PH2(bits)                              \
+  const bool is_ph2_test = (bits) & FEATURE_MASK_IS_PH2_CLIENT;   \
+  const bool is_ph2_experiment =                                  \
+      grpc_core::IsPromiseBasedHttp2ClientTransportEnabled();     \
+  if (is_ph2_test ^ is_ph2_experiment) {                          \
+    GTEST_SKIP() << "Test PH2 only if PH2 experiment is enabled"; \
+  }
+
 #define SKIP_IF_LOCAL_TCP_CREDS()                                      \
   if (test_config()->feature_mask & FEATURE_MASK_IS_LOCAL_TCP_CREDS) { \
     GTEST_SKIP() << "Disabled for Local TCP Connection";               \
@@ -730,6 +749,7 @@ inline auto MaybeAddNullConfig(
         (grpc_core::ConfigVars::Get().PollStrategy() == "poll")) {           \
       GTEST_SKIP() << "call-v3 not supported with poll poller";              \
     }                                                                        \
+    SKIP_E2E_SUITE_FOR_PH2(GetParam()->feature_mask);                        \
     CoreEnd2endTest_##suite##_##name(GetParam(), nullptr, #suite).RunTest(); \
   }
 #endif
@@ -759,6 +779,7 @@ inline auto MaybeAddNullConfig(
         !IsEventEngineDnsEnabled()) {                                          \
       GTEST_SKIP() << "fuzzers need event engine";                             \
     }                                                                          \
+    SKIP_E2E_SUITE_FOR_PH2(config->feature_mask);                              \
     if (IsEventEngineDnsNonClientChannelEnabled() &&                           \
         !grpc_event_engine::experimental::                                     \
             EventEngineExperimentDisabledForPython()) {                        \

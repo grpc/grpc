@@ -50,22 +50,22 @@ class Json {
   template <typename Sink>
   friend void AbslStringify(Sink& sink, Type type) {
     switch (type) {
-      case Json::Type::kNull:
+      case Type::kNull:
         sink.Append("null");
         break;
-      case Json::Type::kBoolean:
+      case Type::kBoolean:
         sink.Append("boolean");
         break;
-      case Json::Type::kNumber:
+      case Type::kNumber:
         sink.Append("number");
         break;
-      case Json::Type::kString:
+      case Type::kString:
         sink.Append("string");
         break;
-      case Json::Type::kObject:
+      case Type::kObject:
         sink.Append("object");
         break;
-      case Json::Type::kArray:
+      case Type::kArray:
         sink.Append("array");
         break;
     }
@@ -152,9 +152,7 @@ class Json {
   Json& operator=(const Json& other) = default;
 
   // Moveable.
-  Json(Json&& other) noexcept : value_(std::move(other.value_)) {
-    other.value_ = std::monostate();
-  }
+  Json(Json&& other) noexcept : value_(std::move(other.value_)) { other.value_ = std::monostate(); }
   Json& operator=(Json&& other) noexcept {
     value_ = std::move(other.value_);
     other.value_ = std::monostate();
@@ -201,9 +199,7 @@ class Json {
   struct NumberValue {
     std::string value;
 
-    bool operator==(const NumberValue& other) const {
-      return value == other.value;
-    }
+    bool operator==(const NumberValue& other) const { return value == other.value; }
   };
   using Value = std::variant<std::monostate,  // kNull
                              bool,            // kBoolean

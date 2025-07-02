@@ -1,8 +1,6 @@
 [tool.black]
 line-length = 80
 target-version = [
-  "py37",
-  "py38",
   "py39",
   "py310",
   "py311",
@@ -55,11 +53,20 @@ single_line_exclusions = ["typing"]
 force_single_line = true
 force_sort_within_sections = true
 
-# Setup settings for Pytype
+# TODO(xuanwn): include all files in src/python/grpcio/grpc
 [tool.pytype]
+python_version = "3.11"
 
+# Setup settings for Pytype
+# NOTE(lidiz) Adding examples one by one due to pytype aggressive error:
+# ninja: error: build.ninja:178: multiple rules generate helloworld_pb2.pyi [-w dupbuild=err]
 inputs = [
+  "src/python/grpcio/grpc/experimental",
   "src/python/grpcio/grpc",
+  "src/python/grpcio_tests/tests_aio",
+  "src/python/grpcio_observability/grpc_observability",
+  "examples/python/auth",
+  "examples/python/helloworld"
 ]
 exclude = [
   "**/*_pb2.py",
@@ -70,6 +77,10 @@ exclude = [
   "src/python/grpcio/grpc/_simple_stubs.py",
 ]
 
+# NOTE(lidiz)
+# import-error: C extension triggers import-error.
+# module-attr: pytype cannot understand the namespace packages by Google.
+# attribute-error: Data classes in grpc module doesn't specify attributes.
 disable = [
   "import-error",
   "module-attr",

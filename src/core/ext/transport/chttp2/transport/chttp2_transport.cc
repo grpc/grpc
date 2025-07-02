@@ -361,11 +361,11 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
 
   cancel_pings(this, GRPC_ERROR_CREATE("Transport destroyed"));
 
-  event_engine.reset();
-
   if (channelz_socket != nullptr) {
     channelz_socket.reset();
   }
+
+  event_engine.reset();
 
   grpc_slice_buffer_destroy(&qbuf);
 
@@ -473,27 +473,6 @@ static void read_channel_args(grpc_chttp2_transport* t,
     t->max_requests_per_read = 32;
   }
 
-  if (channel_args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
-          .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
-    t->channelz_socket =
-        grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
-            std::string(grpc_endpoint_get_local_address(t->ep.get())),
-            std::string(t->peer_string.as_string_view()),
-            absl::StrCat(t->GetTransportName(), " ",
-                         t->peer_string.as_string_view()),
-            channel_args
-                .GetObjectRef<grpc_core::channelz::SocketNode::Security>());
-    // Checks channelz_socket, so must be initialized after.
-    t->channelz_data_source =
-        std::make_unique<grpc_chttp2_transport::ChannelzDataSource>(t);
-    auto epte = QueryExtension<ChannelzExtension>(
-        grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
-            t->ep.get()));
-    if (epte != nullptr) {
-      epte->SetSocketNode(t->channelz_socket);
-    }
-  }
-
   t->ack_pings = channel_args.GetBool("grpc.http2.ack_pings").value_or(true);
 
   t->allow_tarpit =
@@ -591,7 +570,7 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
         grpc_core::NewClosure([t, sink = std::move(sink)](
                                   grpc_error_handle) mutable {
           Json::Object http2_info;
-          sink.AddAdditionalInfo(
+          sink.AddData(
               "http2",
               grpc_core::channelz::PropertyList()
                   .Set("max_requests_per_read", t->max_requests_per_read)
@@ -661,20 +640,6 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
                     }
                     return "unknown";
                   }()));
-          std::vector<grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode>>
-              children;
-          children.reserve(t->stream_map.size());
-          for (auto [id, stream] : t->stream_map) {
-            if (stream->channelz_call_node == nullptr) {
-              stream->channelz_call_node =
-                  grpc_core::MakeRefCounted<grpc_core::channelz::CallNode>(
-                      absl::StrCat("chttp2 ",
-                                   t->is_client ? "client" : "server",
-                                   " stream ", stream->id));
-            }
-            children.push_back(stream->channelz_call_node);
-          }
-          sink.AddChildObjects(std::move(children));
         }),
         absl::OkStatus());
   });
@@ -828,6 +793,26 @@ grpc_chttp2_transport::grpc_chttp2_transport(
           ? 0
           : CLOSURE_BARRIER_MAY_COVER_WRITE;
 #endif
+
+  if (channel_args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
+          .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
+    channelz_socket =
+        grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
+            std::string(grpc_endpoint_get_local_address(ep.get())),
+            std::string(peer_string.as_string_view()),
+            absl::StrCat(GetTransportName(), " ", peer_string.as_string_view()),
+            channel_args
+                .GetObjectRef<grpc_core::channelz::SocketNode::Security>());
+    // Checks channelz_socket, so must be initialized after.
+    channelz_data_source =
+        std::make_unique<grpc_chttp2_transport::ChannelzDataSource>(this);
+    auto epte = QueryExtension<ChannelzExtension>(
+        grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
+            ep.get()));
+    if (epte != nullptr) {
+      epte->SetSocketNode(channelz_socket);
+    }
+  }
 }
 
 static void destroy_transport_locked(void* tp, grpc_error_handle /*error*/) {
@@ -839,6 +824,7 @@ static void destroy_transport_locked(void* tp, grpc_error_handle /*error*/) {
 }
 
 void grpc_chttp2_transport::Orphan() {
+  channelz_data_source.reset();
   combiner->Run(GRPC_CLOSURE_CREATE(destroy_transport_locked, this, nullptr),
                 absl::OkStatus());
 }

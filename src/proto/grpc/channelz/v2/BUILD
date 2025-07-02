@@ -12,7 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_internal_proto_library","grpc_proto_library", "grpc_package")
+load(
+    "//bazel:grpc_build_system.bzl",
+    "grpc_cc_grpc_library",
+    "grpc_cc_proto_library",
+    "grpc_internal_proto_library",
+    "grpc_proto_library",
+    "grpc_package",
+)
 
 licenses(["notice"])
 
@@ -49,4 +56,45 @@ grpc_proto_library(
     srcs = ["latent_see.proto"],
     has_services = True,
     well_known_protos = False,
+)
+
+grpc_internal_proto_library(
+    name = "promise_proto",
+    srcs = ["promise.proto"],
+    deps = [
+        "property_list_proto",
+    ],
+)
+
+grpc_cc_proto_library(
+    name = "channelz_cc_proto",
+    deps = [":channelz_proto"],
+)
+
+grpc_cc_proto_library(
+    name = "property_list_cc_proto",
+    deps = [":property_list_proto"],
+)
+
+grpc_internal_proto_library(
+    name = "service_proto",
+    srcs = ["service.proto"],
+    has_services = True,
+    deps = [
+        ":channelz_proto",
+        "@com_google_protobuf//:any_proto",
+    ],
+)
+
+grpc_cc_proto_library(
+    name = "service_cc_proto",
+    deps = [":service_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "service_cc_grpc",
+    srcs = [":service_proto"],
+    deps = [
+        ":service_cc_proto",
+    ],
 )

@@ -105,6 +105,9 @@ AdsServiceImpl::Reactor::Reactor(
       MaybeFinish(*ads_service_impl_->forced_ads_failure_);
       return;
     }
+    if (ads_service_impl_->call_creds_cb_ != nullptr) {
+      ads_service_impl_->call_creds_cb_(context->client_metadata());
+    }
   }
   ads_service_impl_->AddClient(context->peer());
   StartRead(&request_);
