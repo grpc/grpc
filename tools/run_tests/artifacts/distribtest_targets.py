@@ -528,8 +528,8 @@ def targets():
             ruby_version="ruby_3_4",
             presubmit=True,
         ),
-        RubyDistribTest("linux-gnu", "x64", "ubuntu2004", presubmit=True),
         RubyDistribTest("linux-gnu", "x64", "ubuntu2204", presubmit=True),
+        RubyDistribTest("linux-gnu", "x64", "ubuntu2404", presubmit=True),
         RubyDistribTest(
             "linux-musl",
             "x64",
