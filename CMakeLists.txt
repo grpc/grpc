@@ -3448,7 +3448,6 @@ add_library(grpc_unsecure
   src/core/ext/upb-gen/xds/data/orca/v3/orca_load_report.upb_minitable.c
   src/core/ext/upb-gen/xds/service/orca/v3/orca.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -4383,6 +4382,7 @@ endif()
 
 
 add_library(upb_reflection_lib
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   third_party/upb/upb/message/copy.c
   third_party/upb/upb/message/merge.c
   third_party/upb/upb/reflection/def_pool.c
@@ -5828,7 +5828,6 @@ add_library(grpc_authorization_provider
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -6548,7 +6547,6 @@ add_executable(activity_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -7328,7 +7326,6 @@ add_executable(all_ok_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -9336,7 +9333,6 @@ add_executable(call_filters_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -9480,7 +9476,6 @@ add_executable(call_state_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -9623,7 +9618,6 @@ add_executable(call_utils_test
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -9956,7 +9950,6 @@ add_executable(cancel_callback_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -11034,7 +11027,6 @@ add_executable(chunked_vector_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -15340,7 +15332,6 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -15798,7 +15789,6 @@ add_executable(filter_fusion_test
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -16214,7 +16204,6 @@ add_executable(flow_control_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -16305,7 +16294,6 @@ add_executable(for_each_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -18728,7 +18716,6 @@ add_executable(header_assembler_test
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -19885,7 +19872,6 @@ add_executable(if_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -20202,7 +20188,6 @@ add_executable(inter_activity_pipe_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -20317,7 +20302,6 @@ add_executable(interceptor_list_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -20653,7 +20637,6 @@ add_executable(join_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -20971,7 +20954,6 @@ add_executable(latch_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -21344,7 +21326,6 @@ add_executable(lock_based_mpsc_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -21461,7 +21442,6 @@ add_executable(loop_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -21569,7 +21549,6 @@ add_executable(map_pipe_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -21658,7 +21637,6 @@ add_executable(match_promise_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -22005,7 +21983,6 @@ add_executable(message_assembler_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -22769,7 +22746,6 @@ add_executable(observable_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -23873,8 +23849,8 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(periodic_update_test
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
@@ -25247,7 +25223,6 @@ add_executable(prioritized_race_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -25351,7 +25326,6 @@ add_executable(promise_factory_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -25414,7 +25388,6 @@ add_executable(promise_map_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -25476,7 +25449,6 @@ add_executable(promise_mutex_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -25548,7 +25520,6 @@ add_executable(promise_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -25609,7 +25580,6 @@ add_executable(property_list_test
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/util/json/json_writer.cc
   src/core/util/time.cc
   test/core/channelz/property_list_test.cc
@@ -26132,12 +26102,12 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(race_test
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   test/core/promise/race_test.cc
 )
 if(WIN32 AND MSVC)
@@ -26532,7 +26502,6 @@ add_executable(request_buffer_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -27460,7 +27429,6 @@ add_executable(seq_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -29710,7 +29678,6 @@ add_executable(switch_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -31783,7 +31750,6 @@ add_executable(try_join_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -31891,7 +31857,6 @@ add_executable(try_seq_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
@@ -32273,7 +32238,6 @@ add_executable(wait_for_callback_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
-  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c

@@ -1263,7 +1263,6 @@ grpc_cc_library(
         "absl/functional:function_ref",
         "@com_google_protobuf//upb/base",
         "@com_google_protobuf//upb/mem",
-        "@com_google_protobuf//upb/reflection",
     ],
     deps = [
         "channelz_upb",
@@ -1680,6 +1679,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "stats",
         "//src/core:arena",
+        "//src/core:blackboard",
         "//src/core:call_arena_allocator",
         "//src/core:channel_args",
         "//src/core:channel_args_endpoint_config",
@@ -1783,6 +1783,7 @@ grpc_cc_library(
         "transport_auth_context",
         "//src/core:activity",
         "//src/core:arena_promise",
+        "//src/core:blackboard",
         "//src/core:cancel_callback",
         "//src/core:channel_args",
         "//src/core:channel_args_preconditioning",
@@ -1801,6 +1802,7 @@ grpc_cc_library(
         "//src/core:iomgr_fwd",
         "//src/core:map",
         "//src/core:metadata_batch",
+        "//src/core:per_cpu",
         "//src/core:pipe",
         "//src/core:poll",
         "//src/core:pollset_set",
@@ -5128,6 +5130,11 @@ grpc_upb_proto_reflection_library(
 )
 
 grpc_upb_proto_library(
+    name = "xds_type_matcher_upb",
+    deps = ["@com_github_cncf_xds//xds/type/matcher/v3:pkg"],
+)
+
+grpc_upb_proto_library(
     name = "xds_orca_upb",
     deps = ["@com_github_cncf_xds//xds/data/orca/v3:pkg"],
 )
@@ -5232,11 +5239,6 @@ WELL_KNOWN_PROTO_TARGETS = [
 ) for target in WELL_KNOWN_PROTO_TARGETS]
 
 grpc_generate_one_off_targets()
-
-grpc_upb_proto_reflection_library(
-    name = "hack_protobuf_descriptor_upbdefs",
-    deps = ["@com_google_protobuf//:descriptor_proto"],
-)
 
 filegroup(
     name = "root_certificates",
