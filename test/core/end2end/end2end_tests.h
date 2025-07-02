@@ -704,22 +704,21 @@ inline auto MaybeAddNullConfig(
     GTEST_SKIP() << "Disabled for initial v3 testing";         \
   }
 
-#define SKIP_IF_PH2_CLIENT()                                       \
+#define SKIP_TEST_PH2_CLIENT()                                     \
   if (test_config()->feature_mask & FEATURE_MASK_IS_PH2_CLIENT) {  \
     CHECK(grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()); \
     GTEST_SKIP() << "Disabled for initial PH2 testing";            \
   }
 
-// PH2 test MUST only be run when PH2 experiment is enabled.             \
-// Non-PH2 tests MUST only be run when PH2 experiment is disabled        \
-#define SKIP_E2E_SUITE_FOR_PH2(bits)                                       \
-    const bool is_ph2_test =                                       \
-        bits & FEATURE_MASK_IS_PH2_CLIENT;     \
-    const bool is_ph2_experiment =                                 \
-        grpc_core::IsPromiseBasedHttp2ClientTransportEnabled();    \
-    if (is_ph2_test ^ is_ph2_experiment) {                         \
-      GTEST_SKIP() << "Test PH2 only if PH2 experiment is enabled";            \
-    }                                                                          \
+// PH2 test MUST only be run when PH2 experiment is enabled.
+// Non-PH2 tests MUST only be run when PH2 experiment is disabled
+#define SKIP_E2E_SUITE_FOR_PH2(bits)                              \
+  const bool is_ph2_test = bits & FEATURE_MASK_IS_PH2_CLIENT;     \
+  const bool is_ph2_experiment =                                  \
+      grpc_core::IsPromiseBasedHttp2ClientTransportEnabled();     \
+  if (is_ph2_test ^ is_ph2_experiment) {                          \
+    GTEST_SKIP() << "Test PH2 only if PH2 experiment is enabled"; \
+  }
 
 #define SKIP_IF_LOCAL_TCP_CREDS()                                      \
   if (test_config()->feature_mask & FEATURE_MASK_IS_LOCAL_TCP_CREDS) { \
