@@ -447,27 +447,30 @@ OpenTelemetryPluginImpl::ClientCallTracer::ClientCallTracer(
 }
 
 OpenTelemetryPluginImpl::ClientCallTracer::~ClientCallTracer() {
+  std::array<std::pair<opentelemetry::nostd::string_view,
+                       opentelemetry::common::AttributeValue>,
+             2>
+      attributes = {
+          std::pair(OpenTelemetryMethodKey(),
+                    opentelemetry::common::AttributeValue(
+                        AbslStringViewToNoStdStringView(MethodForStats()))),
+          std::pair(OpenTelemetryTargetKey(),
+                    opentelemetry::common::AttributeValue(
+                        AbslStringViewToNoStdStringView(
+                            scope_config_->filtered_target())))};
   if (otel_plugin_->client_.call.retries != nullptr && retries_ > 1) {
     otel_plugin_->client_.call.retries->Record(
-        retries_ - 1,
-        {{OpenTelemetryMethodKey(), MethodForStats()},
-         {OpenTelemetryTargetKey(), scope_config_->filtered_target()}},
-        opentelemetry::context::Context{});
+        retries_ - 1, attributes, opentelemetry::context::Context{});
   }
   if (otel_plugin_->client_.call.transparent_retries != nullptr &&
       transparent_retries_ != 0) {
     otel_plugin_->client_.call.transparent_retries->Record(
-        transparent_retries_,
-        {{OpenTelemetryMethodKey(), MethodForStats()},
-         {OpenTelemetryTargetKey(), scope_config_->filtered_target()}},
-        opentelemetry::context::Context{});
+        transparent_retries_, attributes, opentelemetry::context::Context{});
   }
   if (otel_plugin_->client_.call.retry_delay != nullptr &&
       retry_delay_ != absl::ZeroDuration() && retries_ > 1) {
     otel_plugin_->client_.call.retry_delay->Record(
-        absl::ToDoubleSeconds(retry_delay_),
-        {{OpenTelemetryMethodKey(), MethodForStats()},
-         {OpenTelemetryTargetKey(), scope_config_->filtered_target()}},
+        absl::ToDoubleSeconds(retry_delay_), attributes,
         opentelemetry::context::Context{});
   }
   if (span_ != nullptr) {
