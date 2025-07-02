@@ -761,18 +761,18 @@ grpc_cc_test(
 )
 
 grpc_internal_proto_library(
-    name = "inter_activity_mutex_test_proto",
-    srcs = ["inter_activity_mutex_test.proto"],
+    name = "inter_activity_mutex_fuzzer_proto",
+    srcs = ["inter_activity_mutex_fuzzer.proto"],
 )
 
 grpc_cc_proto_library(
-    name = "inter_activity_mutex_test_cc_proto",
-    deps = ["inter_activity_mutex_test_proto"],
+    name = "inter_activity_mutex_fuzzer_cc_proto",
+    deps = ["inter_activity_mutex_fuzzer_proto"],
 )
 
 grpc_fuzz_test(
-    name = "inter_activity_mutex_test",
-    srcs = ["inter_activity_mutex_test.cc"],
+    name = "inter_activity_mutex_fuzzer",
+    srcs = ["inter_activity_mutex_fuzzer.cc"],
     external_deps = [
         "gtest",
         "fuzztest",
@@ -780,7 +780,27 @@ grpc_fuzz_test(
     ],
     tags = ["promise_test"],
     deps = [
-        "inter_activity_mutex_test_cc_proto",
+        "inter_activity_mutex_fuzzer_cc_proto",
+        "poll_matcher",
+        "//:grpc",
+        "//src/core:1999",
+        "//src/core:inter_activity_mutex",
+        "//src/core:notification",
+        "//src/core:resource_quota",
+        "//src/core:seq",
+        "//src/core:time",
+    ],
+)
+
+grpc_cc_test(
+    name = "inter_activity_mutex_test",
+    srcs = ["inter_activity_mutex_test.cc"],
+    external_deps = [
+        "gtest",
+        "gtest_main",
+    ],
+    tags = ["promise_test"],
+    deps = [
         "poll_matcher",
         "//:grpc",
         "//src/core:1999",

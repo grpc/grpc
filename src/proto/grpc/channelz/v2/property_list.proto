@@ -55,6 +55,21 @@ message PropertyGrid {
   repeated Row rows = 2;
 }
 
+// A list of channelz properties.
+// It's expected that each row will have the same number of value
+// entries as there are columns.
+// If there are more values in a row than columns, then the extra values
+// are ignored and a warning should be reported.
+// If there are fewer values in a row than columns, then the missing values
+// are filled with empty values.
+message PropertyTable {
+  message Row {
+    repeated PropertyValue value = 1;
+  }
+  repeated string columns = 1;
+  repeated Row rows = 2;
+}
+
 // One value: for simple/common types we inline them in here.
 // For anything more complicated we use a google.protobuf.Any.
 // Since channelz is used for debugging low level things, we

@@ -22,6 +22,11 @@ extern "C" {
 
 extern _upb_DefPool_Init src_proto_grpc_channelz_v2_channelz_proto_upbdefinit;
 
+UPB_INLINE const upb_MessageDef *grpc_channelz_v2_Data_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &src_proto_grpc_channelz_v2_channelz_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "grpc.channelz.v2.Data");
+}
+
 UPB_INLINE const upb_MessageDef *grpc_channelz_v2_Entity_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &src_proto_grpc_channelz_v2_channelz_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "grpc.channelz.v2.Entity");
