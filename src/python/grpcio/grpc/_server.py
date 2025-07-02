@@ -38,7 +38,6 @@ from typing import (
     Tuple,
     Union,
 )
-from typing_extensions import override
 
 import grpc  # pytype: disable=pyi-error
 from grpc import _common  # pytype: disable=pyi-error
@@ -55,6 +54,7 @@ from grpc._typing import ResponseType
 from grpc._typing import SerializingFunction
 from grpc._typing import ServerCallbackTag
 from grpc._typing import ServerTagCallbackType
+from typing_extensions import override
 
 _LOGGER = logging.getLogger(__name__)
 
