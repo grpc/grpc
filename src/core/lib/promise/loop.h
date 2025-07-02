@@ -194,20 +194,6 @@ class Loop {
     }
   }
 
-  Json ToJson() const {
-    Json::Object obj;
-    if constexpr (kYield) {
-      obj["loop_factory"] =
-          Json::FromString(absl::StrCat("yielding ", TypeName<Factory>()));
-    } else {
-      obj["loop_factory"] = Json::FromString(std::string(TypeName<Factory>()));
-    }
-    if (started_) {
-      obj["promise"] = PromiseAsJson(promise_);
-    }
-    return Json::FromObject(std::move(obj));
-  }
-
   void ToProto(grpc_channelz_v2_Promise* promise_proto,
                upb_Arena* arena) const {
     auto* loop_promise =

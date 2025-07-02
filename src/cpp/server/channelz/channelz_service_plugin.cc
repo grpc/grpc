@@ -46,21 +46,15 @@ class ChannelzServicePlugin : public grpc::ServerBuilderPlugin {
   void ChangeArguments(const std::string& /*name*/, void* /*value*/) override {}
 
   bool has_sync_methods() const override {
-    if (channelz_service_) {
-      return channelz_service_->has_synchronous_methods();
-    }
-    return false;
+    return channelz_service_->has_synchronous_methods();
   }
 
   bool has_async_methods() const override {
-    if (channelz_service_) {
-      return channelz_service_->has_async_methods();
-    }
-    return false;
+    return channelz_service_->has_async_methods();
   }
 
  private:
-  std::shared_ptr<grpc::ChannelzService> channelz_service_;
+  const std::shared_ptr<grpc::ChannelzService> channelz_service_;
 };
 
 static std::unique_ptr<grpc::ServerBuilderPlugin>
