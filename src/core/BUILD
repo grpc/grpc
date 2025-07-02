@@ -10195,9 +10195,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/status",
         "absl/container:flat_hash_map",
-        "@com_google_protobuf//upb/base",
         "@com_google_protobuf//upb/mem",
-        "@com_google_protobuf//upb/reflection",
         "@com_google_protobuf//upb/text",
     ],
     deps = [
