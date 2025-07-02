@@ -115,7 +115,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
     StreamDispatch(const ChannelArgs& args, FrameTransport* frame_transport,
                    MessageChunker message_chunker,
                    RefCountedPtr<UnstartedCallDestination> call_destination);
-    ~StreamDispatch() override { ResetDataSource(); }
+    ~StreamDispatch() override { SourceDestructing(); }
 
     void OnIncomingFrame(IncomingFrame incoming_frame) override;
     void OnFrameTransportClosed(absl::Status status) override;

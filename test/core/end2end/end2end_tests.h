@@ -98,6 +98,7 @@
 #define FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS (1 << 15)
 #define FEATURE_MASK_IS_CALL_V3 (1 << 16)
 #define FEATURE_MASK_IS_LOCAL_TCP_CREDS (1 << 17)
+#define FEATURE_MASK_IS_PH2_CLIENT (1 << 18)
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
@@ -703,6 +704,11 @@ inline auto MaybeAddNullConfig(
     GTEST_SKIP() << "Disabled for initial v3 testing";         \
   }
 
+#define SKIP_IF_PH2()                                      \
+  if (test_config()->feature_mask & FEATURE_MASK_IS_PH2) { \
+    GTEST_SKIP() << "Disabled for initial PH2 testing";    \
+  }
+
 #define SKIP_IF_LOCAL_TCP_CREDS()                                      \
   if (test_config()->feature_mask & FEATURE_MASK_IS_LOCAL_TCP_CREDS) { \
     GTEST_SKIP() << "Disabled for Local TCP Connection";               \
@@ -729,6 +735,10 @@ inline auto MaybeAddNullConfig(
     if ((GetParam()->feature_mask & FEATURE_MASK_IS_CALL_V3) &&              \
         (grpc_core::ConfigVars::Get().PollStrategy() == "poll")) {           \
       GTEST_SKIP() << "call-v3 not supported with poll poller";              \
+    }                                                                        \
+    bool is_ph2 = GetParam()->feature_mask & FEATURE_MASK_IS_PH2_CLIENT;     \
+    if (is_ph2) {                                                            \
+      GTEST_SKIP() << "Test PH2 only if PH2 experiment is enabled";          \
     }                                                                        \
     CoreEnd2endTest_##suite##_##name(GetParam(), nullptr, #suite).RunTest(); \
   }
@@ -758,6 +768,10 @@ inline auto MaybeAddNullConfig(
     if (!IsEventEngineListenerEnabled() || !IsEventEngineClientEnabled() ||    \
         !IsEventEngineDnsEnabled()) {                                          \
       GTEST_SKIP() << "fuzzers need event engine";                             \
+    }                                                                          \
+    bool is_ph2 = config->feature_mask & FEATURE_MASK_IS_PH2_CLIENT;           \
+    if (is_ph2) {                                                              \
+      GTEST_SKIP() << "Test PH2 only if PH2 experiment is enabled";            \
     }                                                                          \
     if (IsEventEngineDnsNonClientChannelEnabled() &&                           \
         !grpc_event_engine::experimental::                                     \

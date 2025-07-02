@@ -99,9 +99,9 @@ class Chttp2PingCallbacks {
              started_new_ping_without_setting_timeout_)
         .Set("inflight",
              [this]() {
-               std::vector<channelz::PropertyList> inflight;
+               channelz::PropertyTable inflight;
                for (const auto& [id, ping] : inflight_) {
-                 inflight.emplace_back().Set("id", id);
+                 inflight.AppendRow(channelz::PropertyList().Set("id", id));
                }
                return inflight;
              }())

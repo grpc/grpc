@@ -30,14 +30,15 @@ namespace grpc_core {
 namespace {
 
 TEST(GetJwtExpirationTime, Valid) {
-  // Set epoch to avoid rounding error.
-  TestOnlySetProcessEpoch({0, 0, GPR_CLOCK_MONOTONIC});
   std::string token = absl::StrCat(
       "foo.", absl::WebSafeBase64Escape("{\"exp\":499996800}"), ".bar");
   auto result = GetJwtExpirationTime(token);
   ASSERT_TRUE(result.ok()) << result.status();
   gpr_timespec expiration = result->as_timespec(GPR_CLOCK_REALTIME);
-  EXPECT_EQ(expiration.tv_sec, 499996800);
+  // The result can be off by 1 second due to rounding differences
+  // related to gpr_timespec clock-type conversion.
+  EXPECT_GE(expiration.tv_sec, 499996799);
+  EXPECT_LE(expiration.tv_sec, 499996800);
 }
 
 TEST(GetJwtExpirationTime, TokenHasWrongNumberOfDots) {

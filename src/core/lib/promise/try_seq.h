@@ -263,7 +263,10 @@ class TrySeq {
     return state_.PollOnce();
   }
 
-  Json ToJson() const { return state_.ToJson("TrySeq"); }
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    state_.ToProto(grpc_channelz_v2_Promise_TRY, promise_proto, arena);
+  }
 
  private:
   SeqState<TrySeqTraits, P, Fs...> state_;

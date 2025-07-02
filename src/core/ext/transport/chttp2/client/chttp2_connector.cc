@@ -47,6 +47,14 @@
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#ifndef GRPC_EXPERIMENTAL_TEMPORARILY_DISABLE_PH2
+// GRPC_EXPERIMENTAL_TEMPORARILY_DISABLE_PH2 is a temporary fix to help
+// some customers who are having severe memory constraints. This macro
+// will not always be available and we strongly recommend anyone to avoid
+// the usage of this MACRO for any other purpose. We expect to delete this
+// MACRO within 8-15 months.
+#include "src/core/ext/transport/chttp2/transport/http2_client_transport.h"
+#endif
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
@@ -56,6 +64,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/surface/channel.h"
@@ -143,24 +152,72 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
     result_->Reset();
     NullThenSchedClosure(DEBUG_LOCATION, &notify_, result.status());
   } else if ((*result)->endpoint != nullptr) {
-    result_->transport = grpc_create_chttp2_transport(
-        (*result)->args, std::move((*result)->endpoint), true);
-    CHECK_NE(result_->transport, nullptr);
-    result_->channel_args = std::move((*result)->args);
-    Ref().release();  // Ref held by OnReceiveSettings()
-    GRPC_CLOSURE_INIT(&on_receive_settings_, OnReceiveSettings, this,
-                      grpc_schedule_on_exec_ctx);
-    grpc_chttp2_transport_start_reading(
-        result_->transport, (*result)->read_buffer.c_slice_buffer(),
-        &on_receive_settings_, args_.interested_parties, nullptr);
-    timer_handle_ = event_engine_->RunAfter(
-        args_.deadline - Timestamp::Now(),
-        [self = RefAsSubclass<Chttp2Connector>()]() mutable {
-          ExecCtx exec_ctx;
-          self->OnTimeout();
-          // Ensure the Chttp2Connector is deleted under an ExecCtx.
-          self.reset();
-        });
+    const bool is_callv1 =
+        !((*result)->args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false));
+    if (is_callv1) {
+      result_->transport = grpc_create_chttp2_transport(
+          (*result)->args, std::move((*result)->endpoint), true);
+      CHECK_NE(result_->transport, nullptr);
+      result_->channel_args = std::move((*result)->args);
+      Ref().release();  // Ref held by OnReceiveSettings()
+      GRPC_CLOSURE_INIT(&on_receive_settings_, OnReceiveSettings, this,
+                        grpc_schedule_on_exec_ctx);
+      grpc_chttp2_transport_start_reading(
+          result_->transport, (*result)->read_buffer.c_slice_buffer(),
+          &on_receive_settings_, args_.interested_parties, nullptr);
+      timer_handle_ = event_engine_->RunAfter(
+          args_.deadline - Timestamp::Now(),
+          [self = RefAsSubclass<Chttp2Connector>()]() mutable {
+            ExecCtx exec_ctx;
+            self->OnTimeout();
+            // Ensure the Chttp2Connector is deleted under an ExecCtx.
+            self.reset();
+          });
+#ifdef GRPC_EXPERIMENTAL_TEMPORARILY_DISABLE_PH2
+      // GRPC_EXPERIMENTAL_TEMPORARILY_DISABLE_PH2 is a temporary fix to help
+      // some customers who are having severe memory constraints. This macro
+      // will not always be available and we strongly recommend anyone to avoid
+      // the usage of this MACRO for any other purpose. We expect to delete this
+      // MACRO within 8-15 months.
+    }
+#else
+    } else {
+      // TODO(tjagtap) : [PH2][P1] : Validate this code block thoroughly once
+      // the ping pong test is in place.
+      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+          event_engine_endpoint = grpc_event_engine::experimental::
+              grpc_take_wrapped_event_engine_endpoint(
+                  (*result)->endpoint.release());
+      if (event_engine_endpoint == nullptr) {
+        LOG(ERROR) << "Failed to take endpoint.";
+        result = GRPC_ERROR_CREATE("Failed to take endpoint.");
+      }
+      // Create the PromiseEndpoint
+      PromiseEndpoint promise_endpoint(std::move(event_engine_endpoint),
+                                       std::move((*result)->read_buffer));
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine_ptr =
+              (*result)
+                  ->args
+                  .GetObjectRef<grpc_event_engine::experimental::EventEngine>();
+      Ref().release();  // Ref held by OnReceiveSettings()
+      GRPC_CLOSURE_INIT(&on_receive_settings_, OnReceiveSettings, this,
+                        grpc_schedule_on_exec_ctx);
+      result_->channel_args = std::move((*result)->args);
+      result_->transport = new http2::Http2ClientTransport(
+          std::move(promise_endpoint), (*result)->args, event_engine_ptr,
+          &on_receive_settings_);
+      DCHECK_NE(result_->transport, nullptr);
+      timer_handle_ = event_engine_->RunAfter(
+          args_.deadline - Timestamp::Now(),
+          [self = RefAsSubclass<Chttp2Connector>()]() mutable {
+            ExecCtx exec_ctx;
+            self->OnTimeout();
+            // Ensure the Chttp2Connector is deleted under an ExecCtx.
+            self.reset();
+          });
+    }
+#endif  // GRPC_EXPERIMENTAL_TEMPORARILY_DISABLE_PH2
   } else {
     // If the handshaking succeeded but there is no endpoint, then the
     // handshaker may have handed off the connection to some external
@@ -226,9 +283,20 @@ void Chttp2Connector::MaybeNotify(grpc_error_handle error) {
 
 absl::StatusOr<grpc_channel*> CreateHttp2Channel(std::string target,
                                                  const ChannelArgs& args) {
+#ifdef GRPC_EXPERIMENTAL_TEMPORARILY_DISABLE_PH2
+  // GRPC_EXPERIMENTAL_TEMPORARILY_DISABLE_PH2 is a temporary fix to help some
+  // customers who are having severe memory constraints. This macro will not
+  // always be available and we strongly recommend anyone to avoid the usage of
+  // this MACRO for any other purpose. We expect to delete this MACRO within
+  // 8-15 months.
+  const bool is_v3 = false;
+#else
+  const bool is_v3 = IsPromiseBasedHttp2ClientTransportEnabled();
+#endif  // GRPC_EXPERIMENTAL_TEMPORARILY_DISABLE_PH2
   auto r = ChannelCreate(
       target,
-      args.SetObject(EndpointTransportClientChannelFactory<Chttp2Connector>()),
+      args.SetObject(EndpointTransportClientChannelFactory<Chttp2Connector>())
+          .Set(GRPC_ARG_USE_V3_STACK, is_v3),
       GRPC_CLIENT_CHANNEL, nullptr);
   if (r.ok()) {
     return r->release()->c_ptr();

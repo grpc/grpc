@@ -11,7 +11,7 @@ gRPC PHP installation instructions for Google Cloud Platform is in
 
 ### Prerequisites
 
-* `php`: version 7.0 or above (PHP 5.x support is deprecated from Sep 2020).
+* `php`: version 7.1 or above (PHP 5.x support is deprecated from Sep 2020).
 * `pecl`
 * `composer`
 * `phpunit` (optional)
