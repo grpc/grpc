@@ -451,10 +451,10 @@ OpenTelemetryPluginImpl::ClientCallTracer::~ClientCallTracer() {
                        opentelemetry::common::AttributeValue>,
              2>
       attributes = {
-          std::pair(OpenTelemetryMethodKey(),
+          std::pair(AbslStringViewToNoStdStringView(OpenTelemetryMethodKey()),
                     opentelemetry::common::AttributeValue(
                         AbslStringViewToNoStdStringView(MethodForStats()))),
-          std::pair(OpenTelemetryTargetKey(),
+          std::pair(AbslStringViewToNoStdStringView(OpenTelemetryTargetKey()),
                     opentelemetry::common::AttributeValue(
                         AbslStringViewToNoStdStringView(
                             scope_config_->filtered_target())))};
