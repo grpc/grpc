@@ -705,7 +705,7 @@ inline auto MaybeAddNullConfig(
   }
 
 #define SKIP_IF_PH2_CLIENT()                                       \
-  if (test_config()->feature_mask & FEATURE_MASK_IS_PH2) {         \
+  if (test_config()->feature_mask & FEATURE_MASK_IS_PH2_CLIENT) {  \
     CHECK(grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()); \
     GTEST_SKIP() << "Disabled for initial PH2 testing";            \
   }
