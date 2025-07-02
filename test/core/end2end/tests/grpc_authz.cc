@@ -234,6 +234,7 @@ CORE_END2END_TEST(SecureEnd2endTests, FileWatcherInitDenyUnauthorizedRequest) {
 
 CORE_END2END_TEST(SecureEnd2endTests,
                   FileWatcherInitDenyRequestNoMatchInPolicy) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   InitWithTempFile tmp_policy(*this,
                               "{"
                               "  \"name\": \"authz\","

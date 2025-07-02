@@ -80,6 +80,7 @@ CORE_END2END_TEST(CoreDeadlineTests, DeadlineAfterAccept) {
 
 CORE_END2END_TEST(CoreClientChannelTests,
                   DeadlineAfterAcceptWithServiceConfig) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,

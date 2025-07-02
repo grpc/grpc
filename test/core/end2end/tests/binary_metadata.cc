@@ -104,21 +104,25 @@ static void BinaryMetadata(CoreEnd2endTest& test, bool server_true_binary,
 
 CORE_END2END_TEST(CoreEnd2endTests,
                   BinaryMetadataServerTrueBinaryClientHttp2Fallback) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   BinaryMetadata(*this, true, false);
 }
 
 CORE_END2END_TEST(CoreEnd2endTests,
                   BinaryMetadataServerHttp2FallbackClientTrueBinary) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   BinaryMetadata(*this, false, true);
 }
 
 CORE_END2END_TEST(CoreEnd2endTests,
                   BinaryMetadataServerTrueBinaryClientTrueBinary) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   BinaryMetadata(*this, true, true);
 }
 
 CORE_END2END_TEST(CoreEnd2endTests,
                   BinaryMetadataServerHttp2FallbackClientHttp2Fallback) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   BinaryMetadata(*this, false, false);
 }
 

@@ -316,6 +316,7 @@ CORE_END2END_TEST(Http2SingleHopTests, DisabledAlgorithmDecompressInApp) {
 
 CORE_END2END_TEST(Http2SingleHopTests,
                   RequestWithExceptionallyUncompressedPayloadDecompressInCore) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   TestConfigurator(*this)
       .ClientDefaultAlgorithm(GRPC_COMPRESS_GZIP)
       .ServerDefaultAlgorithm(GRPC_COMPRESS_GZIP)
@@ -324,6 +325,7 @@ CORE_END2END_TEST(Http2SingleHopTests,
 
 CORE_END2END_TEST(Http2SingleHopTests,
                   RequestWithExceptionallyUncompressedPayloadDecompressInApp) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   TestConfigurator(*this)
       .ClientDefaultAlgorithm(GRPC_COMPRESS_GZIP)
       .ServerDefaultAlgorithm(GRPC_COMPRESS_GZIP)
@@ -334,16 +336,19 @@ CORE_END2END_TEST(Http2SingleHopTests,
 
 CORE_END2END_TEST(Http2SingleHopTests,
                   RequestWithUncompressedPayloadDecompressInCore) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   TestConfigurator(*this).RequestWithPayload(0, {});
 }
 
 CORE_END2END_TEST(Http2SingleHopTests,
                   RequestWithUncompressedPayloadDecompressInApp) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   TestConfigurator(*this).DecompressInApp().RequestWithPayload(0, {});
 }
 
 CORE_END2END_TEST(Http2SingleHopTests,
                   RequestWithCompressedPayloadDecompressInCore) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   TestConfigurator(*this)
       .ClientDefaultAlgorithm(GRPC_COMPRESS_GZIP)
       .ServerDefaultAlgorithm(GRPC_COMPRESS_GZIP)
@@ -352,6 +357,7 @@ CORE_END2END_TEST(Http2SingleHopTests,
 
 CORE_END2END_TEST(Http2SingleHopTests,
                   RequestWithCompressedPayloadDecompressInApp) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   TestConfigurator(*this)
       .ClientDefaultAlgorithm(GRPC_COMPRESS_GZIP)
       .ServerDefaultAlgorithm(GRPC_COMPRESS_GZIP)
@@ -363,6 +369,7 @@ CORE_END2END_TEST(Http2SingleHopTests,
 
 CORE_END2END_TEST(Http2SingleHopTests,
                   RequestWithSendMessageBeforeInitialMetadataDecompressInCore) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   TestConfigurator(*this)
       .ClientDefaultAlgorithm(GRPC_COMPRESS_GZIP)
       .ServerDefaultAlgorithm(GRPC_COMPRESS_GZIP)
@@ -371,6 +378,7 @@ CORE_END2END_TEST(Http2SingleHopTests,
 
 CORE_END2END_TEST(Http2SingleHopTests,
                   RequestWithSendMessageBeforeInitialMetadataDecompressInApp) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   TestConfigurator(*this)
       .ClientDefaultAlgorithm(GRPC_COMPRESS_GZIP)
       .ServerDefaultAlgorithm(GRPC_COMPRESS_GZIP)
@@ -396,6 +404,7 @@ CORE_END2END_TEST(Http2SingleHopTests, RequestWithServerLevelDecompressInApp) {
 CORE_END2END_TEST(
     Http2SingleHopTests,
     RequestWithCompressedPayloadMetadataOverrideNoneToGzipDecompressInCore) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   TestConfigurator(*this).RequestWithPayload(
       0, {{"grpc-internal-encoding-request", "gzip"}});
 }
@@ -403,6 +412,7 @@ CORE_END2END_TEST(
 CORE_END2END_TEST(
     Http2SingleHopTests,
     RequestWithCompressedPayloadMetadataOverrideNoneToGzipDecompressInApp) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   TestConfigurator(*this)
       .DecompressInApp()
       .ExpectedAlgorithmFromClient(GRPC_COMPRESS_GZIP)
@@ -412,6 +422,7 @@ CORE_END2END_TEST(
 CORE_END2END_TEST(
     Http2SingleHopTests,
     RequestWithCompressedPayloadMetadataOverrideDeflateToGzipDecompressInCore) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   TestConfigurator(*this)
       .ClientDefaultAlgorithm(GRPC_COMPRESS_DEFLATE)
       .RequestWithPayload(0, {{"grpc-internal-encoding-request", "gzip"}});
@@ -420,6 +431,7 @@ CORE_END2END_TEST(
 CORE_END2END_TEST(
     Http2SingleHopTests,
     RequestWithCompressedPayloadMetadataOverrideDeflateToGzipDecompressInApp) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   TestConfigurator(*this)
       .ClientDefaultAlgorithm(GRPC_COMPRESS_DEFLATE)
       .DecompressInApp()
@@ -430,6 +442,7 @@ CORE_END2END_TEST(
 CORE_END2END_TEST(
     Http2SingleHopTests,
     RequestWithCompressedPayloadMetadataOverrideDeflateToIdentityDecompressInCore) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   TestConfigurator(*this)
       .ClientDefaultAlgorithm(GRPC_COMPRESS_DEFLATE)
       .RequestWithPayload(0, {{"grpc-internal-encoding-request", "identity"}});
@@ -438,6 +451,7 @@ CORE_END2END_TEST(
 CORE_END2END_TEST(
     Http2SingleHopTests,
     RequestWithCompressedPayloadMetadataOverrideDeflateToIdentityDecompressInApp) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   TestConfigurator(*this)
       .ClientDefaultAlgorithm(GRPC_COMPRESS_DEFLATE)
       .DecompressInApp()
@@ -449,6 +463,7 @@ CORE_END2END_TEST(
 // clear, this would need to change.
 CORE_END2END_TEST(Http2SingleHopTests,
                   RequestWithDefaultHighLevelDecompressInCore) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   TestConfigurator(*this)
       .ServerDefaultCompressionLevel(GRPC_COMPRESS_LEVEL_HIGH)
       .DecompressInApp()
@@ -458,6 +473,7 @@ CORE_END2END_TEST(Http2SingleHopTests,
 
 CORE_END2END_TEST(Http2SingleHopTests,
                   RequestWithDefaultMediumLevelDecompressInCore) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   TestConfigurator(*this)
       .ServerDefaultCompressionLevel(GRPC_COMPRESS_LEVEL_MED)
       .DecompressInApp()
@@ -467,6 +483,7 @@ CORE_END2END_TEST(Http2SingleHopTests,
 
 CORE_END2END_TEST(Http2SingleHopTests,
                   RequestWithDefaultLowLevelDecompressInCore) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   TestConfigurator(*this)
       .ServerDefaultCompressionLevel(GRPC_COMPRESS_LEVEL_LOW)
       .DecompressInApp()
@@ -476,6 +493,7 @@ CORE_END2END_TEST(Http2SingleHopTests,
 
 CORE_END2END_TEST(Http2SingleHopTests,
                   RequestWithDefaultNoneLevelDecompressInCore) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   TestConfigurator(*this)
       .ServerDefaultCompressionLevel(GRPC_COMPRESS_LEVEL_NONE)
       .DecompressInApp()

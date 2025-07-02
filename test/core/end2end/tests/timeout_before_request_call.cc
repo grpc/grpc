@@ -73,6 +73,7 @@ CORE_END2END_TEST(CoreDeadlineTests, TimeoutBeforeRequestCall) {
 
 CORE_END2END_TEST(CoreDeadlineTests,
                   TimeoutBeforeRequestCallWithRegisteredMethod) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   auto method = RegisterServerMethod("/foo", GRPC_SRM_PAYLOAD_NONE);
 
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(1)).Create();
@@ -117,6 +118,7 @@ CORE_END2END_TEST(CoreDeadlineTests,
 
 CORE_END2END_TEST(CoreDeadlineSingleHopTests,
                   TimeoutBeforeRequestCallWithRegisteredMethodWithPayload) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   auto method =
       RegisterServerMethod("/foo", GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER);
 

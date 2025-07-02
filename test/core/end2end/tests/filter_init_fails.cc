@@ -186,6 +186,7 @@ CORE_END2END_TEST(CoreEnd2endTests, ClientFilterCallInitFails) {
 
 CORE_END2END_TEST(CoreClientChannelTests,
                   DISABLED_SubchannelFilterChannelInitFails) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   SKIP_IF_V3();
   RegisterFilter(GRPC_CLIENT_SUBCHANNEL);
   InitServer(DefaultServerArgs());

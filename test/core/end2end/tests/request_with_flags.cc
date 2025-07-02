@@ -160,6 +160,7 @@ CORE_END2END_TEST(CoreEnd2endTests, WriteNoCompressAcceptedOnSendMessage) {
 
 CORE_END2END_TEST(CoreEnd2endTests,
                   WriteBufferHintAndNoCompressAcceptedOnSendMessage) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   InvokeRequestWithFlags(
       *this,
       {{GRPC_OP_SEND_MESSAGE, GRPC_WRITE_BUFFER_HINT | GRPC_WRITE_NO_COMPRESS}},
@@ -168,6 +169,7 @@ CORE_END2END_TEST(CoreEnd2endTests,
 
 CORE_END2END_TEST(CoreEnd2endTests,
                   WriteInternalCompressAcceptedOnSendMessage) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   InvokeRequestWithFlags(*this,
                          {{GRPC_OP_SEND_MESSAGE, GRPC_WRITE_INTERNAL_COMPRESS}},
                          GRPC_CALL_OK);

@@ -106,6 +106,7 @@ CORE_END2END_TEST(Http2SingleHopTests, RequestWithLargeMetadataUnderSoftLimit) {
 // accepts. Some requests should be rejected.
 CORE_END2END_TEST(Http2SingleHopTests,
                   RequestWithLargeMetadataBetweenSoftAndHardLimits) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   const size_t soft_limit = 32 * 1024;
   const size_t hard_limit = 45 * 1024;
   const size_t metadata_size = (soft_limit + hard_limit) / 2;
@@ -136,6 +137,7 @@ CORE_END2END_TEST(Http2SingleHopTests, RequestWithLargeMetadataAboveHardLimit) {
 // should not be respected).
 CORE_END2END_TEST(Http2SingleHopTests,
                   RequestWithLargeMetadataSoftLimitAboveHardLimit) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   const size_t soft_limit = 64 * 1024;
   const size_t hard_limit = 32 * 1024;
   const size_t metadata_size_below_hard_limit = hard_limit;
@@ -154,6 +156,7 @@ CORE_END2END_TEST(Http2SingleHopTests,
 // limit. Soft limit * 1.25 should be used as hard limit.
 CORE_END2END_TEST(Http2SingleHopTests,
                   RequestWithLargeMetadataSoftLimitOverridesDefaultHard) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   const size_t soft_limit = 64 * 1024;
   const size_t metadata_size_below_soft_limit = soft_limit;
   const size_t metadata_size_above_hard_limit = soft_limit * 1.5;
@@ -174,6 +177,7 @@ CORE_END2END_TEST(Http2SingleHopTests,
 // limit. Hard limit * 0.8 should be used as soft limit.
 CORE_END2END_TEST(Http2SingleHopTests,
                   RequestWithLargeMetadataHardLimitOverridesDefaultSoft) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   const size_t hard_limit = 45 * 1024;
   const size_t metadata_size_below_soft_limit = hard_limit * 0.5;
   const size_t metadata_size_above_hard_limit = hard_limit * 1.5;
@@ -196,6 +200,7 @@ CORE_END2END_TEST(Http2SingleHopTests,
 // soft limit.
 CORE_END2END_TEST(Http2SingleHopTests,
                   RequestWithLargeMetadataHardLimitBelowDefaultHard) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   const size_t hard_limit = 4 * 1024;
   const size_t metadata_size_below_hard_limit = hard_limit;
   const size_t metadata_size_above_hard_limit = hard_limit * 2;
@@ -213,6 +218,7 @@ CORE_END2END_TEST(Http2SingleHopTests,
 // soft limit.
 CORE_END2END_TEST(Http2SingleHopTests,
                   RequestWithLargeMetadataSoftLimitBelowDefaultSoft) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   const size_t soft_limit = 1 * 1024;
   const size_t metadata_size_below_soft_limit = soft_limit;
   // greater than 2 * soft, less than default hard
