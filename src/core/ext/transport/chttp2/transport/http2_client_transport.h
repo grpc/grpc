@@ -490,6 +490,35 @@ class Http2ClientTransport final : public ClientTransport {
         }));
   }
 
+  auto AckPing(uint64_t opaque_data) {
+    bool valid_ping_ack_received = true;
+
+    if (!ping_manager_.AckPing(opaque_data)) {
+      GRPC_HTTP2_CLIENT_DLOG << "Unknown ping response received for ping id="
+                             << opaque_data;
+      valid_ping_ack_received = false;
+    }
+
+    return If(
+        // It is possible that the PingRatePolicy may decide to not send a ping
+        // request (in cases like the number of inflight pings is too high).
+        // When this happens, it becomes important to ensure that if a ping ack
+        // is received and there is an outstanding ping request, we should retry
+        // to send it out. If this is not done, then theoratically the ping
+        // request could be delayed (indefinitely) until the next write cycle is
+        // triggered.
+        valid_ping_ack_received && ping_manager_.PingRequested(),
+        [self = RefAsSubclass<Http2ClientTransport>()] {
+          return Map(self->TriggerWriteCycle(), [](const absl::Status status) {
+            return (status.ok())
+                       ? Http2Status::Ok()
+                       : Http2Status::AbslConnectionError(
+                             status.code(), std::string(status.message()));
+          });
+        },
+        [] { return Immediate(Http2Status::Ok()); });
+  }
+
   class PingSystemInterfaceImpl : public PingInterface {
    public:
     static std::unique_ptr<PingInterface> Make(
