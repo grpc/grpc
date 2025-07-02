@@ -393,41 +393,31 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, RetryStatsWithRetries) {
 
   ASSERT_EQ(data.size(), 2);
   // Check for retry stats
-  EXPECT_THAT(
-      data[kRetryMetricName],
-      ::testing::UnorderedElementsAre(::testing::AllOf(
-          AttributesEq(
-              /*label_keys=*/std::array<absl::string_view, 3>{"grpc.method",
-                                                              "grpc.target"},
-              /*label_values=*/
-              std::array<absl::string_view, 3>{kMethodName,
-                                               canonical_server_address_},
-              /*optional_label_keys=*/std::array<absl::string_view, 0>{},
-              /*optional_label_values=*/std::array<absl::string_view, 0>{}),
-          HistogramResultEq(/*sum_matcher=*/::testing::Eq(int64_t(2)),
-                            /*min_matcher=*/::testing::Eq(int64_t(2)),
-                            /*max_matcher=*/::testing::Eq(int64_t(2)),
-                            /*count=*/1))));
+  EXPECT_THAT(data[kRetryMetricName],
+              ::testing::UnorderedElementsAre(::testing::AllOf(
+                  AttributesEq(std::array<absl::string_view, 2>{"grpc.method",
+                                                                "grpc.target"},
+                               std::array<absl::string_view, 2>{
+                                   kMethodName, canonical_server_address_},
+                               std::array<absl::string_view, 0>{},
+                               std::array<absl::string_view, 0>{}),
+                  HistogramResultEq(::testing::Eq(int64_t(2)),
+                                    ::testing::Eq(int64_t(2)),
+                                    ::testing::Eq(int64_t(2)), 1))));
   // Check for retry delay stats.
   EXPECT_THAT(
       data[kRetryDelayMetricName],
       ::testing::ElementsAre(::testing::AllOf(
           AttributesEq(
-              /*label_keys=*/std::array<absl::string_view, 2>{"grpc.method",
-                                                              "grpc.target"},
-              /*label_values=*/
+              std::array<absl::string_view, 2>{"grpc.method", "grpc.target"},
               std::array<absl::string_view, 2>{kMethodName,
                                                canonical_server_address_},
-              /*optional_label_keys=*/std::array<absl::string_view, 0>{},
-              /*optional_label_values=*/std::array<absl::string_view, 0>{}),
+              std::array<absl::string_view, 0>{},
+              std::array<absl::string_view, 0>{}),
           HistogramResultEq(
-              /*sum_matcher=*/IsWithinRange(0.1,
-                                            0.3 * grpc_test_slowdown_factor()),
-              /*min_matcher=*/
               IsWithinRange(0.1, 0.3 * grpc_test_slowdown_factor()),
-              /*max_matcher=*/
               IsWithinRange(0.1, 0.3 * grpc_test_slowdown_factor()),
-              /*count=*/1))));
+              IsWithinRange(0.1, 0.3 * grpc_test_slowdown_factor()), 1))));
   // No transparent retry stats reported
   EXPECT_FALSE(data.contains(kTransparentRetryMetricName));
 }
@@ -473,21 +463,17 @@ TEST_F(OTelMetricsTestForTransparentRetries, RetryStatsWithTransparentRetries) {
   // No retry stats reported
   EXPECT_FALSE(data.contains(kRetryMetricName));
   // Check for transparent retry stats
-  EXPECT_THAT(
-      data[kTransparentRetryMetricName],
-      ::testing::UnorderedElementsAre(::testing::AllOf(
-          AttributesEq(
-              /*label_keys=*/std::array<absl::string_view, 3>{"grpc.method",
-                                                              "grpc.target"},
-              /*label_values=*/
-              std::array<absl::string_view, 3>{kMethodName,
-                                               canonical_server_address_},
-              /*optional_label_keys=*/std::array<absl::string_view, 0>{},
-              /*optional_label_values=*/std::array<absl::string_view, 0>{}),
-          HistogramResultEq(/*sum_matcher=*/::testing::Eq(int64_t(1)),
-                            /*min_matcher=*/::testing::Eq(int64_t(1)),
-                            /*max_matcher=*/::testing::Eq(int64_t(1)),
-                            /*count=*/1))));
+  EXPECT_THAT(data[kTransparentRetryMetricName],
+              ::testing::UnorderedElementsAre(::testing::AllOf(
+                  AttributesEq(std::array<absl::string_view, 2>{"grpc.method",
+                                                                "grpc.target"},
+                               std::array<absl::string_view, 2>{
+                                   kMethodName, canonical_server_address_},
+                               std::array<absl::string_view, 0>{},
+                               std::array<absl::string_view, 0>{}),
+                  HistogramResultEq(::testing::Eq(int64_t(1)),
+                                    ::testing::Eq(int64_t(1)),
+                                    ::testing::Eq(int64_t(1)), 1))));
   // No retry delay reported
   EXPECT_FALSE(data.contains(kRetryDelayMetricName));
 }
