@@ -749,7 +749,7 @@ inline auto MaybeAddNullConfig(
         (grpc_core::ConfigVars::Get().PollStrategy() == "poll")) {           \
       GTEST_SKIP() << "call-v3 not supported with poll poller";              \
     }                                                                        \
-    SKIP_E2E_SUITE_FOR_PH2(config->feature_mask);                            \
+    SKIP_E2E_SUITE_FOR_PH2(GetParam()->feature_mask);                        \
     CoreEnd2endTest_##suite##_##name(GetParam(), nullptr, #suite).RunTest(); \
   }
 #endif
