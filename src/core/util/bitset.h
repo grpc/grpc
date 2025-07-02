@@ -19,6 +19,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <cstddef>
+#include <limits>
 #include <type_traits>
 
 #include "src/core/util/useful.h"
@@ -51,6 +53,21 @@ struct UintSelector<64> {
 template <size_t kBits>
 using Uint = typename UintSelector<kBits>::Type;
 
+constexpr size_t UintBitsForMaximum(uint64_t max) {
+  if (max < std::numeric_limits<Uint<8>>::max()) {
+    return 8;
+  } else if (max < std::numeric_limits<Uint<16>>::max()) {
+    return 16;
+  } else if (max < std::numeric_limits<Uint<32>>::max()) {
+    return 32;
+  } else {
+    return 64;
+  }
+}
+
+template <uint64_t kMax>
+using UintWithMax = Uint<UintBitsForMaximum(kMax)>;
+
 // Given the total number of bits that need to be stored, choose the size of
 // 'unit' for a BitSet... We'll use an array of units to store the total set.
 // For small bit counts we are selective in the type to try and balance byte
@@ -80,30 +97,34 @@ class BitSet {
 
  public:
   // Initialize to all bits false
-  constexpr BitSet() : units_{} {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION constexpr BitSet() : units_{} {}
 
   // Set bit i to true
-  constexpr void set(int i) { units_[unit_for(i)] |= mask_for(i); }
+ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION constexpr void set(int i) {
+   units_[unit_for(i)] |= mask_for(i);
+ }
 
   // Set bit i to is_set
-  constexpr void set(int i, bool is_set) {
-    if (is_set) {
-      set(i);
-    } else {
-      clear(i);
-    }
-  }
+ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION constexpr void set(int i, bool is_set) {
+   if (is_set) {
+     set(i);
+   } else {
+     clear(i);
+   }
+ }
 
   // Set bit i to false
-  constexpr void clear(int i) { units_[unit_for(i)] &= ~mask_for(i); }
-
-  // Return true if bit i is set
-  constexpr bool is_set(int i) const {
-    return (units_[unit_for(i)] & mask_for(i)) != 0;
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION constexpr void clear(int i) {
+    units_[unit_for(i)] &= ~mask_for(i);
   }
 
+  // Return true if bit i is set
+ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION constexpr bool is_set(int i) const {
+   return (units_[unit_for(i)] & mask_for(i)) != 0;
+ }
+
   // Return true if all bits are set
-  bool all() const {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool all() const {
     if (kTotalBits % kUnitBits == 0) {
       // kTotalBits is a multiple of kUnitBits ==> we can just check for all
       // ones in each unit.
@@ -112,9 +133,9 @@ class BitSet {
       }
       return true;
     } else {
-      // kTotalBits is not a multiple of kUnitBits ==> we need special handling
-      // for checking partial filling of the last unit (since not all of its
-      // bits are used!)
+      // kTotalBits is not a multiple of kUnitBits ==> we need special
+      // handling for checking partial filling of the last unit (since not all
+      // of its bits are used!)
       for (size_t i = 0; i < kUnits - 1; i++) {
         if (units_[i] != all_ones()) return false;
       }
@@ -123,7 +144,7 @@ class BitSet {
   }
 
   // Return true if *no* bits are set.
-  bool none() const {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool none() const {
     for (size_t i = 0; i < kUnits; i++) {
       if (units_[i] != 0) return false;
     }
@@ -131,18 +152,19 @@ class BitSet {
   }
 
   // Returns true if any bites are set.
-  bool any() const { return !none(); }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool any() const { return !none(); }
 
   // Return a count of how many bits are set.
-  uint32_t count() const {
-    uint32_t count = 0;
-    for (size_t i = 0; i < kUnits; i++) {
-      count += absl::popcount(units_[i]);
-    }
-    return count;
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION uint32_t count() const {
+  uint32_t count = 0;
+  for (size_t i = 0; i < kUnits; i++) {
+    count += absl::popcount(units_[i]);
   }
+  return count;
+}
 
-  bool operator==(const BitSet& other) const {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool operator==(
+      const BitSet& other) const {
     for (size_t i = 0; i < kUnits; i++) {
       if (units_[i] != other.units_[i]) return false;
     }
@@ -150,10 +172,11 @@ class BitSet {
   }
 
   template <typename Int>
-  typename std::enable_if<std::is_unsigned<Int>::value &&
-                              (sizeof(Int) * 8 >= kTotalBits),
-                          Int>::type
-  ToInt() const {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION
+      typename std::enable_if<std::is_unsigned<Int>::value &&
+                                  (sizeof(Int) * 8 >= kTotalBits),
+                              Int>::type
+      ToInt() const {
     Int result = 0;
     for (size_t i = 0; i < kTotalBits; i++) {
       if (is_set(i)) result |= (Int(1) << i);
@@ -162,7 +185,8 @@ class BitSet {
   }
 
   template <typename Int>
-  static BitSet<kTotalBits, kUnitBits> FromInt(Int value) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static BitSet<kTotalBits, kUnitBits>
+  FromInt(Int value) {
     BitSet<kTotalBits, kUnitBits> result;
     for (size_t i = 0; i < kTotalBits; i++) {
       result.set(i, (value & (Int(1) << i)) != 0);
@@ -170,16 +194,38 @@ class BitSet {
     return result;
   }
 
-  BitSet& Set(int i, bool value) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION BitSet& Set(int i, bool value) {
     set(i, value);
     return *this;
   }
 
-  BitSet& SetAll(bool value) {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION BitSet& SetAll(bool value) {
     for (size_t i = 0; i < kTotalBits; i++) {
       set(i, value);
     }
     return *this;
+  }
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool LowestBitSet(size_t& out) {
+    for (size_t i = 0; i < kUnits; i++) {
+      if (units_[i] != 0) {
+        out = i * kUnitBits + absl::countr_zero(units_[i]);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  template <typename Fn>
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void ForEachBitSet(Fn f) const {
+    for (size_t i = 0; i < kUnits; i++) {
+      uint64_t unit = units_[i];
+      while (unit != 0) {
+        uint64_t t = LowestOneBit(unit);
+        f(i * kUnitBits + absl::countr_zero(t));
+        unit ^= t;
+      }
+    }
   }
 
  private:
