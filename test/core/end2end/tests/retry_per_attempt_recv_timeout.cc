@@ -36,8 +36,8 @@ namespace {
 // - second attempt returns ABORTED
 // - third attempt returns OK
 CORE_END2END_TEST(RetryTests, RetryPerAttemptRecvTimeout) {
-  SKIP_IF_PH2_CLIENT();
-  SKIP_IF_V3();  // Not working yet
+  SKIP_IF_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
+  SKIP_IF_V3();          // Not working yet
   InitServer(DefaultServerArgs());
   InitClient(
       ChannelArgs()

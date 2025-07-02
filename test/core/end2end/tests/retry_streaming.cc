@@ -45,8 +45,8 @@ namespace {
 // C-core API, and therefore we have no way to inject the commit at the
 // right point.
 CORE_END2END_TEST(RetryTests, RetryStreaming) {
-  SKIP_IF_PH2_CLIENT();
-  SKIP_IF_V3();  // Not working yet
+  SKIP_IF_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
+  SKIP_IF_V3();          // Not working yet
   InitServer(DefaultServerArgs());
   InitClient(
       ChannelArgs()

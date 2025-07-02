@@ -34,7 +34,7 @@ namespace {
 // - first attempt gets ABORTED
 // - second attempt gets ABORTED but does not retry
 CORE_END2END_TEST(RetryTests, RetryTooManyAttempts) {
-  SKIP_IF_PH2_CLIENT();
+  SKIP_IF_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(

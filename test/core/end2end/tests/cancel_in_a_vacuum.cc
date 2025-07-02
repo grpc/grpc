@@ -23,12 +23,12 @@
 namespace grpc_core {
 
 CORE_END2END_TEST(CoreEnd2endTests, CancelInAVacuum) {
-  SKIP_IF_PH2_CLIENT();
+  SKIP_IF_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   NewClientCall("/service/method").Create().Cancel();
 }
 
 CORE_END2END_TEST(CoreDeadlineTests, DeadlineInAVacuum) {
-  SKIP_IF_PH2_CLIENT();
+  SKIP_IF_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   NewClientCall("/service/method").Create();
 }
 

@@ -22,7 +22,7 @@ namespace grpc_core {
 namespace {
 
 CORE_END2END_TEST(CoreEnd2endTests, ShutdownFinishesTags) {
-  SKIP_IF_PH2_CLIENT();
+  SKIP_IF_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   // upon shutdown, the server should finish all requested calls indicating
   // no new call
   auto s = RequestCall(101);

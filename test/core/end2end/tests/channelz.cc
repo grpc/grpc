@@ -65,7 +65,7 @@ void RunOneRequest(CoreEnd2endTest& test, bool request_is_success) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, Channelz) {
-  SKIP_IF_PH2_CLIENT();
+  SKIP_IF_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   SKIP_IF_V3();
   InitServer(DefaultServerArgs()
                  .Set(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 0)
@@ -121,7 +121,7 @@ CORE_END2END_TEST(CoreEnd2endTests, Channelz) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, ChannelzWithChannelTrace) {
-  SKIP_IF_PH2_CLIENT();
+  SKIP_IF_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   SKIP_IF_V3();
   InitServer(
       DefaultServerArgs()
@@ -154,7 +154,7 @@ CORE_END2END_TEST(CoreEnd2endTests, ChannelzWithChannelTrace) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, ChannelzDisabled) {
-  SKIP_IF_PH2_CLIENT();
+  SKIP_IF_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   SKIP_IF_V3();
   InitServer(DefaultServerArgs()
                  .Set(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 0)

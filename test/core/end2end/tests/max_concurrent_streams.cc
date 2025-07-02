@@ -57,7 +57,7 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
 }
 
 CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreams) {
-  SKIP_IF_PH2_CLIENT();
+  SKIP_IF_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   SKIP_IF_MINSTACK();
   InitServer(
       DefaultServerArgs()
@@ -155,7 +155,7 @@ CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreams) {
 }
 
 CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreamsTimeoutOnFirst) {
-  SKIP_IF_PH2_CLIENT();
+  SKIP_IF_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   SKIP_IF_MINSTACK();
   InitServer(
       DefaultServerArgs()
@@ -204,7 +204,7 @@ CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreamsTimeoutOnFirst) {
 }
 
 CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreamsTimeoutOnSecond) {
-  SKIP_IF_PH2_CLIENT();
+  SKIP_IF_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   SKIP_IF_MINSTACK();
   InitServer(
       DefaultServerArgs()
@@ -254,7 +254,7 @@ CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreamsTimeoutOnSecond) {
 }
 
 CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreamsRejectOnClient) {
-  SKIP_IF_PH2_CLIENT();
+  SKIP_IF_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   SKIP_IF_MINSTACK();
   InitServer(
       DefaultServerArgs()

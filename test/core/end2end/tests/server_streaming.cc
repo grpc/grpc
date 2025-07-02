@@ -97,17 +97,17 @@ void ServerStreaming(CoreEnd2endTest& test, int num_messages) {
 }
 
 CORE_END2END_TEST(Http2Tests, ServerStreaming) {
-  SKIP_IF_PH2_CLIENT();
+  SKIP_IF_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   ServerStreaming(*this, 1);
 }
 
 CORE_END2END_TEST(Http2Tests, ServerStreamingEmptyStream) {
-  SKIP_IF_PH2_CLIENT();
+  SKIP_IF_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   ServerStreaming(*this, 0);
 }
 
 CORE_END2END_TEST(Http2Tests, ServerStreaming10Messages) {
-  SKIP_IF_PH2_CLIENT();
+  SKIP_IF_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   // TODO(yashykt): Remove this once b/376283636 is fixed.
   ConfigVars::Overrides overrides;
   overrides.default_ssl_roots_file_path = CA_CERT_PATH;
