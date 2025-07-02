@@ -23,6 +23,7 @@
 #include <queue>
 
 #include "src/core/channelz/channelz.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
 #include "src/core/ext/transport/chaotic_good/scheduler.h"
@@ -66,7 +67,7 @@ class SendRate {
   void SetNetworkMetrics(const std::optional<NetworkSend>& network_send,
                          const NetworkMetrics& metrics);
   bool IsRateMeasurementStale() const;
-  void AddData(Json::Object& obj) const;
+  channelz::PropertyList ChannelzProperties() const;
   void PerformRateProbe() { last_rate_measurement_ = Timestamp::Now(); }
 
   struct DeliveryData {
@@ -146,7 +147,7 @@ class OutputBuffers final
     void SetNetworkMetrics(
         const std::optional<SendRate::NetworkSend>& network_send,
         const SendRate::NetworkMetrics& metrics);
-    Json::Object ToJson();
+    channelz::PropertyList ChannelzProperties();
     void Drop() {
       CHECK(!dropped_);
       dropped_ = true;
@@ -460,7 +461,7 @@ class Endpoint final {
     ctx_->reader->Drop();
   }
 
-  void ToJson(absl::AnyInvocable<void(Json::Object)> sink);
+  void AddData(channelz::DataSink sink);
 
  private:
   struct EndpointContext : public RefCounted<EndpointContext> {
@@ -471,7 +472,7 @@ class Endpoint final {
     // TODO(ctiller): Inline members into EndpointContext.
     RefCountedPtr<OutputBuffers> output_buffers;
     RefCountedPtr<InputQueue> input_queues;
-    RefCountedPtr<SecureFrameQueue> secure_frame_queue;
+    SingleSetRefCountedPtr<SecureFrameQueue> secure_frame_queue;
     std::shared_ptr<PromiseEndpoint> endpoint;
     std::shared_ptr<TcpZTraceCollector> ztrace_collector;
     TransportContextPtr transport_ctx;
@@ -503,7 +504,7 @@ class DataEndpoints final : public channelz::DataSource {
                          std::shared_ptr<TcpZTraceCollector> ztrace_collector,
                          bool enable_tracing, std::string scheduler_config,
                          data_endpoints_detail::Clock* clock = DefaultClock());
-  ~DataEndpoints() { ResetDataSource(); }
+  ~DataEndpoints() { SourceDestructing(); }
 
   void AddData(channelz::DataSink sink) override;
 

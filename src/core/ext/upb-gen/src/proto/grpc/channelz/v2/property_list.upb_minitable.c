@@ -109,6 +109,53 @@ const upb_MiniTable grpc__channelz__v2__PropertyGrid__Row_msg_init = {
 };
 
 const upb_MiniTable* grpc__channelz__v2__PropertyGrid__Row_msg_init_ptr = &grpc__channelz__v2__PropertyGrid__Row_msg_init;
+static const upb_MiniTableSubInternal grpc_channelz_v2_PropertyTable__submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &grpc__channelz__v2__PropertyTable__Row_msg_init_ptr},
+};
+
+static const upb_MiniTableField grpc_channelz_v2_PropertyTable__fields[2] = {
+  {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(12, 16), 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+};
+
+const upb_MiniTable grpc__channelz__v2__PropertyTable_msg_init = {
+  &grpc_channelz_v2_PropertyTable__submsgs[0],
+  &grpc_channelz_v2_PropertyTable__fields[0],
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+#ifdef UPB_TRACING_ENABLED
+  "grpc.channelz.v2.PropertyTable",
+#endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000800003f00000a, &upb_prs_1bt},
+    {0x001000003f000012, &upb_prm_1bt_max64b},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+  })
+};
+
+const upb_MiniTable* grpc__channelz__v2__PropertyTable_msg_init_ptr = &grpc__channelz__v2__PropertyTable_msg_init;
+static const upb_MiniTableSubInternal grpc_channelz_v2_PropertyTable_Row__submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &grpc__channelz__v2__PropertyValue_msg_init_ptr},
+};
+
+static const upb_MiniTableField grpc_channelz_v2_PropertyTable_Row__fields[1] = {
+  {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+};
+
+const upb_MiniTable grpc__channelz__v2__PropertyTable__Row_msg_init = {
+  &grpc_channelz_v2_PropertyTable_Row__submsgs[0],
+  &grpc_channelz_v2_PropertyTable_Row__fields[0],
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "grpc.channelz.v2.PropertyTable.Row",
+#endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000800003f00000a, &upb_prm_1bt_max64b},
+  })
+};
+
+const upb_MiniTable* grpc__channelz__v2__PropertyTable__Row_msg_init_ptr = &grpc__channelz__v2__PropertyTable__Row_msg_init;
 static const upb_MiniTableSubInternal grpc_channelz_v2_PropertyValue__submsgs[4] = {
   {.UPB_PRIVATE(submsg) = &google__protobuf__Empty_msg_init_ptr},
   {.UPB_PRIVATE(submsg) = &google__protobuf__Any_msg_init_ptr},
@@ -156,11 +203,13 @@ const upb_MiniTable grpc__channelz__v2__PropertyValue_msg_init = {
 };
 
 const upb_MiniTable* grpc__channelz__v2__PropertyValue_msg_init_ptr = &grpc__channelz__v2__PropertyValue_msg_init;
-static const upb_MiniTable *messages_layout[5] = {
+static const upb_MiniTable *messages_layout[7] = {
   &grpc__channelz__v2__PropertyList_msg_init,
   &grpc__channelz__v2__PropertyList__PropertiesEntry_msg_init,
   &grpc__channelz__v2__PropertyGrid_msg_init,
   &grpc__channelz__v2__PropertyGrid__Row_msg_init,
+  &grpc__channelz__v2__PropertyTable_msg_init,
+  &grpc__channelz__v2__PropertyTable__Row_msg_init,
   &grpc__channelz__v2__PropertyValue_msg_init,
 };
 
@@ -168,7 +217,7 @@ const upb_MiniTableFile src_proto_grpc_channelz_v2_property_list_proto_upb_file_
   messages_layout,
   NULL,
   NULL,
-  5,
+  7,
   0,
   0,
 };
