@@ -770,7 +770,7 @@ inline auto MaybeAddNullConfig(
         !IsEventEngineDnsEnabled()) {                                          \
       GTEST_SKIP() << "fuzzers need event engine";                             \
     }                                                                          \
-    const bool is_ph2 = GetParam()->feature_mask & FEATURE_MASK_IS_PH2_CLIENT; \
+    const bool is_ph2 = config->feature_mask & FEATURE_MASK_IS_PH2_CLIENT;     \
     if (is_ph2 && !grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()) {   \
       GTEST_SKIP() << "Test PH2 only if PH2 experiment is enabled";            \
     }                                                                          \
