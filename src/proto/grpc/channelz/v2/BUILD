@@ -63,3 +63,18 @@ grpc_cc_proto_library(
     name = "property_list_cc_proto",
     deps = [":property_list_proto"],
 )
+
+grpc_internal_proto_library(
+    name = "service_proto",
+    srcs = ["service.proto"],
+    has_services = True,
+    deps = [
+        ":channelz_proto",
+        "@com_google_protobuf//:any_proto",
+    ],
+)
+
+grpc_cc_proto_library(
+    name = "service_cc_proto",
+    deps = [":service_proto"],
+)

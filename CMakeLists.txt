@@ -104,8 +104,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_algorithm_container
   absl_any_invocable
   absl_atomic_hook
-  absl_bad_optional_access
-  absl_bad_variant_access
   absl_base
   absl_base_internal
   absl_bind_front
@@ -167,11 +165,13 @@ set(gRPC_ABSL_USED_TARGETS
   absl_hash_container_defaults
   absl_hash_function_defaults
   absl_hash_policy_traits
+  absl_hashtable_control_bytes
   absl_hashtable_debug_hooks
   absl_hashtablez_sampler
   absl_inlined_vector
   absl_inlined_vector_internal
   absl_int128
+  absl_iterator_traits_internal
   absl_kernel_timeout_internal
   absl_layout
   absl_leak_check
@@ -211,6 +211,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_random_bit_gen_ref
   absl_random_distributions
   absl_random_internal_distribution_caller
+  absl_random_internal_entropy_pool
   absl_random_internal_fast_uniform_bits
   absl_random_internal_fastmath
   absl_random_internal_generate_real
@@ -218,7 +219,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_random_internal_nonsecure_base
   absl_random_internal_pcg_engine
   absl_random_internal_platform
-  absl_random_internal_pool_urbg
   absl_random_internal_randen
   absl_random_internal_randen_engine
   absl_random_internal_randen_hwaes
@@ -234,6 +234,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_random_seed_sequences
   absl_raw_hash_map
   absl_raw_hash_set
+  absl_raw_hash_set_resize_impl
   absl_raw_logging_internal
   absl_sample_recorder
   absl_span
@@ -259,6 +260,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_variant
   absl_vlog_config_internal
   absl_vlog_is_on
+  absl_weakly_mixed_integer
   absl_meta
 )
 
@@ -4382,6 +4384,7 @@ endif()
 
 
 add_library(upb_reflection_lib
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   third_party/upb/upb/message/copy.c
   third_party/upb/upb/message/merge.c
   third_party/upb/upb/reflection/def_pool.c
@@ -9083,6 +9086,7 @@ add_executable(blackboard_test
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -12630,6 +12634,7 @@ add_executable(context_test
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -16889,6 +16894,7 @@ add_executable(frame_test
   src/core/channelz/channelz_registry.cc
   src/core/ext/transport/chttp2/transport/frame.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -19962,6 +19968,7 @@ add_executable(http2_status_test
   src/core/channelz/channelz_registry.cc
   src/core/ext/transport/chttp2/transport/frame.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -22257,6 +22264,7 @@ add_executable(lru_cache_test
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -24800,6 +24808,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(periodic_update_test
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
@@ -25132,6 +25141,7 @@ add_executable(poll_test
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -27289,6 +27299,7 @@ add_executable(query_extensions_test
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -27395,6 +27406,7 @@ add_executable(race_test
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
@@ -30647,6 +30659,7 @@ add_executable(status_flag_test
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -31571,6 +31584,7 @@ add_executable(tdigest_test
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -31756,6 +31770,7 @@ add_executable(test_core_event_engine_posix_timer_heap_test
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -31858,6 +31873,7 @@ add_executable(test_core_event_engine_slice_buffer_test
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -32592,6 +32608,7 @@ add_executable(thread_quota_test
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -33724,6 +33741,7 @@ add_executable(unique_ptr_with_bitset_test
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -34574,6 +34592,7 @@ add_executable(write_size_policy_test
   src/core/channelz/channelz_registry.cc
   src/core/ext/transport/chttp2/transport/write_size_policy.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c

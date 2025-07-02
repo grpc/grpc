@@ -6282,6 +6282,7 @@ grpc_cc_library(
         "xds_route_config",
         "xds_server_grpc",
         "xds_transport_grpc",
+        "xds_type_matcher_upb",
         "xds_type_upb",
         "xds_type_upbdefs",
         "//:channel",
@@ -6411,6 +6412,7 @@ grpc_cc_library(
         "channel_args",
         "channel_args_preconditioning",
         "channel_fwd",
+        "down_cast",
         "grpc_check",
         "grpc_server_config_selector",
         "grpc_server_config_selector_filter",
@@ -10722,6 +10724,11 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "xds_type_upbdefs",
     deps = ["@com_github_cncf_xds//xds/type/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "xds_type_matcher_upb",
+    deps = ["@com_github_cncf_xds//xds/type/matcher/v3:pkg"],
 )
 
 grpc_upb_proto_library(

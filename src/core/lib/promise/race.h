@@ -50,19 +50,6 @@ class Race<Promise, Promises...> {
     return std::move(r.value());
   }
 
-  Json ToJson() const {
-    Json::Object obj;
-    Json::Array array;
-    AddJson(array);
-    obj["race"] = Json::FromArray(std::move(array));
-    return Json::FromObject(std::move(obj));
-  }
-
-  void AddJson(Json::Array& array) const {
-    array.emplace_back(PromiseAsJson(promise_));
-    next_.AddJson(array);
-  }
-
   void ToProto(grpc_channelz_v2_Promise* promise_proto,
                upb_Arena* arena) const {
     auto* race_promise =
@@ -96,12 +83,6 @@ class Race<Promise> {
       : promise_(std::move(promise)) {}
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Result operator()() {
     return promise_();
-  }
-
-  Json ToJson() const { return PromiseAsJson(promise_); }
-
-  void AddJson(Json::Array& array) const {
-    array.emplace_back(PromiseAsJson(promise_));
   }
 
   void ToProto(grpc_channelz_v2_Promise* promise_proto,

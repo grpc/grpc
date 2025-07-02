@@ -432,6 +432,15 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
           [](const ChannelArgs&, const ChannelArgs&) {
             return std::make_unique<SockpairWithMinstackFixture>(ChannelArgs());
           }},
+      CoreTestConfiguration{
+          "Ph2Client",
+          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
+              FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_IS_PH2_CLIENT,
+          nullptr,
+          [](const ChannelArgs& /*client_args*/,
+             const ChannelArgs& /*server_args*/) {
+            return std::make_unique<InsecureFixture>();
+          }},
   };
 }
 

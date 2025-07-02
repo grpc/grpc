@@ -3615,6 +3615,7 @@ libs:
   language: c
   public_headers: []
   headers:
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - third_party/upb/upb/message/copy.h
   - third_party/upb/upb/message/merge.h
   - third_party/upb/upb/reflection/common.h
@@ -3653,6 +3654,7 @@ libs:
   - third_party/upb/upb/reflection/oneof_def.h
   - third_party/upb/upb/reflection/service_def.h
   src:
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - third_party/upb/upb/message/copy.c
   - third_party/upb/upb/message/merge.c
   - third_party/upb/upb/reflection/def_pool.c
@@ -6324,6 +6326,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
@@ -6398,11 +6401,13 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -8952,6 +8957,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
@@ -9024,11 +9030,13 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -12593,6 +12601,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
@@ -12665,12 +12674,14 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/ext/transport/chttp2/transport/frame.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -14281,6 +14292,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
@@ -14354,12 +14366,14 @@ targets:
   - src/core/util/work_serializer.h
   - test/core/transport/chttp2/http2_common_test_inputs.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/ext/transport/chttp2/transport/frame.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -16146,6 +16160,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
@@ -16218,11 +16233,13 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -17693,6 +17710,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/lib/debug/trace.h
@@ -17722,8 +17740,10 @@ targets:
   - src/core/util/status_helper.h
   - src/core/util/time.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
@@ -17846,6 +17866,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
@@ -17918,11 +17939,13 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -19511,6 +19534,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
@@ -19588,11 +19612,13 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -19670,6 +19696,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/empty.upb.h
@@ -19749,11 +19776,13 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
@@ -21113,6 +21142,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
@@ -21186,11 +21216,13 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -21644,6 +21676,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
@@ -21716,11 +21749,13 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -21815,6 +21850,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
@@ -21889,11 +21925,13 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -21967,6 +22005,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
@@ -22043,11 +22082,13 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -22298,6 +22339,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
@@ -22370,11 +22412,13 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -23048,6 +23092,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
@@ -23120,11 +23165,13 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
@@ -23585,6 +23632,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/write_size_policy.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
@@ -23656,12 +23704,14 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
+  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/ext/transport/chttp2/transport/write_size_policy.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c

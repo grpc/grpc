@@ -129,7 +129,8 @@ grpc_channel_filter FailFirstCallFilter::kFilterVtable = {
 // - second attempt returns ABORTED but does not retry, because only 2
 //   attempts are allowed
 CORE_END2END_TEST(RetryTests, RetrySendOpFails) {
-  SKIP_IF_V3();  // Need to convert filter
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
+  SKIP_IF_V3();            // Need to convert filter
   CoreConfiguration::RegisterEphemeralBuilder(
       [](CoreConfiguration::Builder* builder) {
         builder->channel_init()
