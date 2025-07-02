@@ -71,6 +71,7 @@
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
+#include "src/core/util/match.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
 
@@ -118,6 +119,7 @@ struct tsi_ssl_client_handshaker_factory {
   size_t alpn_protocol_list_length;
   grpc_core::RefCountedPtr<tsi::SslSessionLRUCache> session_cache;
   grpc_core::RefCountedPtr<TlsSessionKeyLogger> key_logger;
+  std::shared_ptr<RootCertInfo> root_cert_info;
 };
 
 struct tsi_ssl_server_handshaker_factory {
@@ -131,6 +133,7 @@ struct tsi_ssl_server_handshaker_factory {
   unsigned char* alpn_protocol_list;
   size_t alpn_protocol_list_length;
   grpc_core::RefCountedPtr<TlsSessionKeyLogger> key_logger;
+  std::shared_ptr<RootCertInfo> root_cert_info;
 };
 
 struct tsi_ssl_handshaker {
@@ -2157,6 +2160,7 @@ static void tsi_ssl_client_handshaker_factory_destroy(
   if (self->alpn_protocol_list != nullptr) gpr_free(self->alpn_protocol_list);
   self->session_cache.reset();
   self->key_logger.reset();
+  self->root_cert_info.reset();
   gpr_free(self);
 }
 
@@ -2207,6 +2211,7 @@ static void tsi_ssl_server_handshaker_factory_destroy(
   }
   if (self->alpn_protocol_list != nullptr) gpr_free(self->alpn_protocol_list);
   self->key_logger.reset();
+  self->root_cert_info.reset();
   gpr_free(self);
 }
 
@@ -2350,6 +2355,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   if (factory == nullptr) return TSI_INVALID_ARGUMENT;
   *factory = nullptr;
   if (options->pem_root_certs == nullptr && options->root_store == nullptr &&
+      options->root_cert_info == nullptr &&
       !options->skip_server_certificate_verification) {
     return TSI_INVALID_ARGUMENT;
   }
@@ -2386,6 +2392,9 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
                             server_handshaker_factory_new_session_callback);
     SSL_CTX_set_session_cache_mode(ssl_context, SSL_SESS_CACHE_CLIENT);
   }
+  if (options->root_cert_info != nullptr) {
+    impl->root_cert_info = options->root_cert_info;
+  }
 
 #if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
   if (options->key_logger != nullptr) {
@@ -2415,12 +2424,26 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
       SSL_CTX_set_cert_store(ssl_context, options->root_store->store);
     }
 #endif
+    const bool custom_roots_configured = options->root_cert_info != nullptr ||
+                                         options->pem_root_certs != nullptr;
     if (OPENSSL_VERSION_NUMBER < 0x10100000 ||
-        (options->root_store == nullptr &&
-         options->pem_root_certs != nullptr)) {
-      result = ssl_ctx_load_verification_certs(
-          ssl_context, options->pem_root_certs, strlen(options->pem_root_certs),
-          nullptr);
+        (options->root_store == nullptr && custom_roots_configured)) {
+      if (options->root_cert_info != nullptr) {
+        Match(
+            *options->root_cert_info,
+            [&](const std::string& pem_root_certs) {
+              result = ssl_ctx_load_verification_certs(
+                  ssl_context, pem_root_certs.c_str(),
+                  strlen(pem_root_certs.c_str()), nullptr);
+            },
+            [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
+              // TODO(gtcooke94)
+            });
+      } else if (options->pem_root_certs != nullptr) {
+        result = ssl_ctx_load_verification_certs(
+            ssl_context, options->pem_root_certs,
+            strlen(options->pem_root_certs), nullptr);
+      }
       X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context);
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
       X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
@@ -2558,6 +2581,9 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
     return TSI_OUT_OF_RESOURCES;
   }
   impl->ssl_context_count = options->num_key_cert_pairs;
+  if (options->root_cert_info != nullptr) {
+    impl->root_cert_info = options->root_cert_info;
+  }
 
   if (options->num_alpn_protocols > 0) {
     result = BuildAlpnProtocolNameList(
@@ -2623,18 +2649,44 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
         }
       }
 
-      if (options->pem_client_root_certs != nullptr) {
-        STACK_OF(X509_NAME)* root_names = nullptr;
-        result = ssl_ctx_load_verification_certs(
-            impl->ssl_contexts[i], options->pem_client_root_certs,
-            strlen(options->pem_client_root_certs),
-            options->send_client_ca_list ? &root_names : nullptr);
-        if (result != TSI_OK) {
-          LOG(ERROR) << "Invalid verification certs.";
-          break;
-        }
-        if (options->send_client_ca_list) {
-          SSL_CTX_set_client_CA_list(impl->ssl_contexts[i], root_names);
+      const bool custom_roots_configured =
+          options->pem_client_root_certs != nullptr ||
+          options->root_cert_info != nullptr;
+      if (custom_roots_configured) {
+        if (options->root_cert_info != nullptr) {
+          Match(
+              *options->root_cert_info,
+              [&](const std::string& pem_root_certs) {
+                STACK_OF(X509_NAME)* root_names = nullptr;
+                result = ssl_ctx_load_verification_certs(
+                    impl->ssl_contexts[i], pem_root_certs.c_str(),
+                    strlen(pem_root_certs.c_str()), nullptr);
+                if (result != TSI_OK) {
+                  LOG(ERROR) << "Invalid verification certs.";
+                }
+                if (options->send_client_ca_list) {
+                  SSL_CTX_set_client_CA_list(impl->ssl_contexts[i], root_names);
+                }
+              },
+              [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
+                // TODO(gtcooke904)
+              });
+          if (result != TSI_OK) {
+            break;
+          }
+        } else if (options->pem_client_root_certs != nullptr) {
+          STACK_OF(X509_NAME)* root_names = nullptr;
+          result = ssl_ctx_load_verification_certs(
+              impl->ssl_contexts[i], options->pem_client_root_certs,
+              strlen(options->pem_client_root_certs),
+              options->send_client_ca_list ? &root_names : nullptr);
+          if (result != TSI_OK) {
+            LOG(ERROR) << "Invalid verification certs.";
+            break;
+          }
+          if (options->send_client_ca_list) {
+            SSL_CTX_set_client_CA_list(impl->ssl_contexts[i], root_names);
+          }
         }
       }
       switch (options->client_certificate_request) {
@@ -2768,6 +2820,16 @@ int tsi_ssl_peer_matches_name(const tsi_peer* peer, absl::string_view name) {
   }
 
   return 0;  // Not found.
+}
+
+bool IsRootCertInfoEmpty(const RootCertInfo* root_cert_info) {
+  if (root_cert_info == nullptr) return true;
+  return Match(
+      *root_cert_info,
+      [&](const std::string& pem_root_certs) { return pem_root_certs.empty(); },
+      [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
+        return spiffe_bundle_map.size() == 0;
+      });
 }
 
 // --- Testing support. ---

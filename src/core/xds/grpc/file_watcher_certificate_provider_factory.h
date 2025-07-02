@@ -35,6 +35,8 @@
 
 namespace grpc_core {
 
+bool SpiffeBundleMapEnabled();
+
 class FileWatcherCertificateProviderFactory final
     : public CertificateProviderFactory {
  public:
@@ -52,6 +54,10 @@ class FileWatcherCertificateProviderFactory final
 
     const std::string& root_cert_file() const { return root_cert_file_; }
 
+    const std::string& spiffe_bundle_map_file() const {
+      return spiffe_bundle_map_file_;
+    }
+
     Duration refresh_interval() const { return refresh_interval_; }
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs& args);
@@ -62,6 +68,7 @@ class FileWatcherCertificateProviderFactory final
     std::string identity_cert_file_;
     std::string private_key_file_;
     std::string root_cert_file_;
+    std::string spiffe_bundle_map_file_;
     Duration refresh_interval_ = Duration::Minutes(10);
   };
 
