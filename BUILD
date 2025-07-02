@@ -5241,11 +5241,6 @@ WELL_KNOWN_PROTO_TARGETS = [
 
 grpc_generate_one_off_targets()
 
-grpc_upb_proto_library(
-    name = "hack_protobuf_descriptor_upb_proto",
-    deps = ["@com_google_protobuf//:descriptor_proto"],
-)
-
 grpc_upb_proto_reflection_library(
     name = "hack_protobuf_descriptor_upbdefs",
     deps = ["@com_google_protobuf//:descriptor_proto"],
