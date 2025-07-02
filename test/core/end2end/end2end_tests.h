@@ -741,7 +741,7 @@ inline auto MaybeAddNullConfig(
         GetParam()->feature_mask & FEATURE_MASK_IS_PH2_CLIENT;     \
     const bool is_ph2_experiment =                                 \
         grpc_core::IsPromiseBasedHttp2ClientTransportEnabled();    \
-    if (is_ph2 ^ is_ph2_experiment) {                              \
+    if (is_ph2_test ^ is_ph2_experiment) {                         \
     // PH2 test MUST only be run when PH2 experiment is enabled. \
       // Non-PH2 tests MUST only be run when PH2 experiment is disabled \
       GTEST_SKIP() << "Test PH2 only if PH2 experiment is enabled";            \
@@ -779,7 +779,7 @@ inline auto MaybeAddNullConfig(
         GetParam()->feature_mask & FEATURE_MASK_IS_PH2_CLIENT;                 \
     const bool is_ph2_experiment =                                             \
         grpc_core::IsPromiseBasedHttp2ClientTransportEnabled();                \
-    if (is_ph2 ^ is_ph2_experiment) {                                          \
+    if (is_ph2_test ^ is_ph2_experiment) {                                     \
     // PH2 test MUST only be run when PH2 experiment is enabled. \
       // Non-PH2 tests MUST only be run when PH2 experiment is disabled \
       GTEST_SKIP() << "Test PH2 only if PH2 experiment is enabled";            \
