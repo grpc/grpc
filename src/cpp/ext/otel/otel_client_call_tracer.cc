@@ -450,27 +450,24 @@ OpenTelemetryPluginImpl::ClientCallTracer::~ClientCallTracer() {
   if (otel_plugin_->client_.call.retries != nullptr && retries_ > 1) {
     otel_plugin_->client_.call.retries->Record(
         retries_ - 1,
-        std::array<std::pair<absl::string_view, absl::string_view>, 2>{
-            {{OpenTelemetryMethodKey(), MethodForStats()},
-             {OpenTelemetryTargetKey(), scope_config_->filtered_target()}}},
+        {{OpenTelemetryMethodKey(), MethodForStats()},
+         {OpenTelemetryTargetKey(), scope_config_->filtered_target()}},
         opentelemetry::context::Context{});
   }
   if (otel_plugin_->client_.call.transparent_retries != nullptr &&
       transparent_retries_ != 0) {
     otel_plugin_->client_.call.transparent_retries->Record(
         transparent_retries_,
-        std::array<std::pair<absl::string_view, absl::string_view>, 2>{
-            {{OpenTelemetryMethodKey(), MethodForStats()},
-             {OpenTelemetryTargetKey(), scope_config_->filtered_target()}}},
+        {{OpenTelemetryMethodKey(), MethodForStats()},
+         {OpenTelemetryTargetKey(), scope_config_->filtered_target()}},
         opentelemetry::context::Context{});
   }
   if (otel_plugin_->client_.call.retry_delay != nullptr &&
       retry_delay_ != absl::ZeroDuration() && retries_ > 1) {
     otel_plugin_->client_.call.retry_delay->Record(
         absl::ToDoubleSeconds(retry_delay_),
-        std::array<std::pair<absl::string_view, absl::string_view>, 2>{
-            {{OpenTelemetryMethodKey(), MethodForStats()},
-             {OpenTelemetryTargetKey(), scope_config_->filtered_target()}}},
+        {{OpenTelemetryMethodKey(), MethodForStats()},
+         {OpenTelemetryTargetKey(), scope_config_->filtered_target()}},
         opentelemetry::context::Context{});
   }
   if (span_ != nullptr) {
