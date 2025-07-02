@@ -715,7 +715,7 @@ inline auto MaybeAddNullConfig(
 // PH2 test MUST only be run when PH2 experiment is enabled.
 // Non-PH2 tests MUST only be run when PH2 experiment is disabled
 #define SKIP_E2E_SUITE_FOR_PH2(bits)                              \
-  const bool is_ph2_test = bits & FEATURE_MASK_IS_PH2_CLIENT;     \
+  const bool is_ph2_test = (bits) & FEATURE_MASK_IS_PH2_CLIENT;   \
   const bool is_ph2_experiment =                                  \
       grpc_core::IsPromiseBasedHttp2ClientTransportEnabled();     \
   if (is_ph2_test ^ is_ph2_experiment) {                          \
