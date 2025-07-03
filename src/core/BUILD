@@ -3541,6 +3541,7 @@ grpc_cc_library(
     deps = [
         "avl",
         "channel_stack_type",
+        "channelz_property_list",
         "dual_ref_counted",
         "ref_counted",
         "ref_counted_string",
