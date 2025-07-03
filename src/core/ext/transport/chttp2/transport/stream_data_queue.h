@@ -93,7 +93,9 @@ class SimpleQueue {
     lock.Release();
 
     // TODO(akshitpatel) : [PH2][P2] : Investigate a mechanism to only wake up
-    // if the sender will be able to send more data.
+    // if the sender will be able to send more data. There is a high chance that
+    // this queue is revamped soon and so not spending time on optimization
+    // right now.
     waker.Wakeup();
     GRPC_STREAM_DATA_QUEUE_DEBUG
         << "Dequeue successful. Data tokens released: " << entry.tokens
