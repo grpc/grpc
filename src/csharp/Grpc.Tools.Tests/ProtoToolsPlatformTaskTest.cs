@@ -68,6 +68,16 @@ namespace Grpc.Tools.Tests
         }
 
         [Test]
+        public void CpuIss390x()
+        {
+            if (RuntimeInformation.OSArchitecture == Architecture.S390x)
+            {
+                _cpuMatched++;
+                Assert.AreEqual("s390x", _task.Cpu);
+            }
+        }
+
+        [Test]
         public void CpuIsArm64()
         {
             if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
