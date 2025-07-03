@@ -28,7 +28,6 @@ GRPC_LLVM_WARNING_FLAGS = [
     # Ignore unknown warning flags
     "-Wno-unknown-warning-option",
     # A list of enabled flags coming from internal build system
-    "-Wc++20-extensions",
     "-Wctad-maybe-unsupported",
     "-Wdeprecated-increment-bool",
     "-Wfloat-overflow-conversion",
