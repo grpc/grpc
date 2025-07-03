@@ -19,6 +19,9 @@
 #ifndef GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_SPIFFE_UTILS_H
 #define GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_SPIFFE_UTILS_H
 
+#include <openssl/stack.h>
+#include <openssl/x509.h>
+
 #include <string>
 
 #include "absl/status/statusor.h"
@@ -27,6 +30,10 @@
 #include "src/core/util/json/json_object_loader.h"
 
 namespace grpc_core {
+
+// Adds the leading and trailing lines expected for a PEM formatted certificate around the raw
+// base64 certificate data stored in a SPIFFE bundle map.
+std::string SpiffeBundleRootToPem(absl::string_view spiffe_bundle_root);
 
 // A representation of a SPIFFE ID per the spec:
 // https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE-ID.md#the-spiffe-identity-and-verifiable-identity-document
@@ -79,14 +86,32 @@ class SpiffeBundle final {
     return kLoader;
   }
 
+  // Needed to handle the root stack
+  SpiffeBundle() = default;
+  ~SpiffeBundle();
+  SpiffeBundle(const SpiffeBundle& other);
+  SpiffeBundle& operator=(const SpiffeBundle& other);
+
   void JsonPostLoad(const Json& json, const JsonArgs&,
                     ValidationErrors* errors);
 
   // Returns a vector of the roots in this SPIFFE Bundle.
   absl::Span<const std::string> GetRoots();
 
+  STACK_OF(X509) * GetRootStack() { return *root_stack_; }
+
+  bool operator==(const SpiffeBundle& other) const {
+    return roots_ == other.roots_;
+  }
+
+  bool operator!=(const SpiffeBundle& other) const {
+    return roots_ != other.roots_;
+  }
+
  private:
   std::vector<std::string> roots_;
+  std::unique_ptr<STACK_OF(X509)*> root_stack_;
+  absl::Status CreateX509Stack();
 };
 
 // A map of SPIFFE bundles keyed to trust domains. This functions as a map of a
@@ -98,15 +123,13 @@ class SpiffeBundle final {
 class SpiffeBundleMap final {
  public:
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
-    static const auto* kLoader =
-        JsonObjectLoader<SpiffeBundleMap>()
-            .Field("trust_domains", &SpiffeBundleMap::bundles_)
-            .Finish();
+    static const auto* kLoader = JsonObjectLoader<SpiffeBundleMap>()
+                                     .Field("trust_domains", &SpiffeBundleMap::bundles_)
+                                     .Finish();
     return kLoader;
   }
 
-  void JsonPostLoad(const Json& json, const JsonArgs&,
-                    ValidationErrors* errors);
+  void JsonPostLoad(const Json& json, const JsonArgs&, ValidationErrors* errors);
 
   // Loads a SPIFFE Bundle Map from a json file representation. Returns a bad
   // status if there is a problem while loading the file and parsing the JSON. A
@@ -116,17 +139,20 @@ class SpiffeBundleMap final {
   static absl::StatusOr<SpiffeBundleMap> FromFile(absl::string_view file_path);
 
   // Returns the roots for a given trust domain in the SPIFFE Bundle Map.
-  absl::StatusOr<absl::Span<const std::string>> GetRoots(
-      absl::string_view trust_domain);
+  absl::StatusOr<absl::Span<const std::string>> GetRoots(absl::string_view trust_domain);
 
-  size_t size() { return bundles_.size(); }
+  absl::StatusOr<STACK_OF(X509) *> GetRootStack(absl::string_view trust_domain);
+
+  size_t size() const { return bundles_.size(); }
+
+  bool operator==(const SpiffeBundleMap& other) const { return bundles_ == other.bundles_; }
+
+  bool operator!=(const SpiffeBundleMap& other) const { return bundles_ != other.bundles_; }
 
  private:
   struct StringCmp {
     using is_transparent = void;
-    bool operator()(absl::string_view a, absl::string_view b) const {
-      return a < b;
-    }
+    bool operator()(absl::string_view a, absl::string_view b) const { return a < b; }
   };
 
   std::map<std::string, SpiffeBundle, StringCmp> bundles_;

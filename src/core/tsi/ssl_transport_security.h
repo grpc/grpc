@@ -27,6 +27,7 @@
 #include <memory>
 
 #include "absl/strings/string_view.h"
+#include "src/core/credentials/transport/tls/spiffe_utils.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl_transport_security_utils.h"
 #include "src/core/tsi/transport_security_interface.h"
@@ -49,6 +50,8 @@
 #define TSI_X509_IP_PEER_PROPERTY "x509_ip"
 #define TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY \
   "x509_verified_root_cert_subject"
+
+using RootCertInfo = std::variant<std::string, grpc_core::SpiffeBundleMap>;
 
 // --- tsi_ssl_root_certs_store object ---
 
@@ -190,6 +193,13 @@ struct tsi_ssl_client_handshaker_options {
   // options as a shared_ptr.
   std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider;
 
+  // TODO(gtcooke94) Remove pem_root_certs and replace with root_cert_info
+  // root_cert_info is either the string containing the PEM encoding of the
+  // client root certificates or a SPIFFE bundle map.
+  std::shared_ptr<RootCertInfo> root_cert_info;
+
+  // TODO(gtcooke94) this ctor is not needed
+  // https://github.com/grpc/grpc/pull/39708/files#r2143735662
   tsi_ssl_client_handshaker_options()
       : pem_key_cert_pair(nullptr),
         pem_root_certs(nullptr),
@@ -360,6 +370,14 @@ struct tsi_ssl_server_handshaker_options {
   // will be unusable.
   bool send_client_ca_list;
 
+  // TODO(gtcooke94) - remove pem_client_root_certs and replace with root_cert_info
+  // root_cert_info is either the string containing the PEM encoding of the
+  // server root certificates or a SPIFFE bundle map. This parameter may be NULL
+  // if the server does not want the client to be authenticated with SSL.
+  std::shared_ptr<RootCertInfo> root_cert_info;
+
+  // TODO(gtcooke94) this ctor is not needed
+  // https://github.com/grpc/grpc/pull/39708/files#r2143735662
   tsi_ssl_server_handshaker_options()
       : pem_key_cert_pairs(nullptr),
         num_key_cert_pairs(0),
@@ -440,5 +458,7 @@ tsi_result tsi_ssl_extract_x509_subject_names_from_pem_cert(
 // Exposed for testing only.
 tsi_result tsi_ssl_get_cert_chain_contents(STACK_OF(X509) * peer_chain,
                                            tsi_peer_property* property);
+
+bool IsRootCertInfoEmpty(const RootCertInfo* root_cert_info);
 
 #endif  // GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
