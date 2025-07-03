@@ -261,6 +261,7 @@ class RubyArtifact:
         self.name = "ruby_native_gem_%s_%s" % (platform, gem_platform)
         self.platform = platform
         self.gem_platform = gem_platform
+        platform_label = self.platform
         self.labels = ["artifact", "ruby", platform, gem_platform]
         if presubmit:
             self.labels.append("presubmit")
@@ -479,9 +480,12 @@ def targets():
             PythonArtifact("windows", "x64", "Python313", presubmit=True),
             RubyArtifact("linux", "x86-mingw32", presubmit=True),
             RubyArtifact("linux", "x64-mingw-ucrt", presubmit=True),
-            RubyArtifact("linux", "x86_64-linux", presubmit=True),
-            RubyArtifact("linux", "x86-linux"),
-            RubyArtifact("linux", "aarch64-linux", presubmit=True),
+            RubyArtifact("linux", "x86_64-linux-gnu", presubmit=True),
+            RubyArtifact("linux", "x86_64-linux-musl", presubmit=True),
+            RubyArtifact("linux", "x86-linux-gnu", presubmit=True),
+            RubyArtifact("linux", "x86-linux-musl", presubmit=True),
+            RubyArtifact("linux", "aarch64-linux-gnu", presubmit=True),
+            RubyArtifact("linux", "aarch64-linux-musl", presubmit=True),
             RubyArtifact("linux", "x86_64-darwin", presubmit=True),
             RubyArtifact("linux", "arm64-darwin", presubmit=True),
             PHPArtifact("linux", "x64", presubmit=True),
