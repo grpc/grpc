@@ -49,11 +49,14 @@ RUN apt update && apt install -y build-essential zlib1g-dev libncurses5-dev libg
 
 ADD install_python_for_wheel_crosscompilation.sh /scripts/install_python_for_wheel_crosscompilation.sh
 
-RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.8.8" "3.8.8" /opt/python/cp38-cp38
-RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.9.2" "3.9.2" /opt/python/cp39-cp39
-RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.10.0" "3.10.0rc1" /opt/python/cp310-cp310
-RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.11.0" "3.11.0rc1" /opt/python/cp311-cp311
-RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.12.0" "3.12.0rc2" /opt/python/cp312-cp312
+# These are synced to the versions in our grpc_artifact_python_ images based pypa/{many,musl}linux.
+# grep grpc_artifact_python_ tools/bazelify_tests/dockerimage_current_versions.bzl | grep -oP '(?<=docker://)[^"]+(?=")'
+# IMG=one_of_the_images_from_the_command_above
+# docker run --rm $IMG bash -c 'ls -l /opt/python/cp3{9,1}*' | sed -E 's#^[^/]+##'
+RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.9.20" "3.9.20" /opt/python/cp39-cp39
+RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.10.15" "3.10.15" /opt/python/cp310-cp310
+RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.11.10" "3.11.10" /opt/python/cp311-cp311
+RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.12.6" "3.12.6" /opt/python/cp312-cp312
 RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.13.0" "3.13.0rc2" /opt/python/cp313-cp313
 
 ENV AUDITWHEEL_ARCH armv7l
