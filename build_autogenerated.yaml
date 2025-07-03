@@ -8710,6 +8710,7 @@ targets:
   - test/core/end2end/fixtures/proxy.h
   - test/core/end2end/fixtures/secure_fixture.h
   - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/http2_allow_list.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
@@ -8836,6 +8837,7 @@ targets:
   - test/core/end2end/fixtures/proxy.h
   - test/core/end2end/fixtures/secure_fixture.h
   - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/http2_allow_list.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
@@ -9050,6 +9052,7 @@ targets:
   - test/core/end2end/fixtures/proxy.h
   - test/core/end2end/fixtures/secure_fixture.h
   - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/http2_allow_list.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
@@ -9172,6 +9175,7 @@ targets:
   - test/core/end2end/fixtures/proxy.h
   - test/core/end2end/fixtures/secure_fixture.h
   - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/http2_allow_list.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
@@ -9294,6 +9298,7 @@ targets:
   - test/core/end2end/fixtures/proxy.h
   - test/core/end2end/fixtures/secure_fixture.h
   - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/http2_allow_list.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
@@ -9504,6 +9509,7 @@ targets:
   - test/core/end2end/fixtures/proxy.h
   - test/core/end2end/fixtures/secure_fixture.h
   - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/http2_allow_list.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
@@ -9714,6 +9720,7 @@ targets:
   - test/core/end2end/fixtures/proxy.h
   - test/core/end2end/fixtures/secure_fixture.h
   - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/http2_allow_list.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
@@ -9836,6 +9843,7 @@ targets:
   - test/core/end2end/fixtures/proxy.h
   - test/core/end2end/fixtures/secure_fixture.h
   - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/http2_allow_list.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
@@ -10046,6 +10054,7 @@ targets:
   - test/core/end2end/fixtures/proxy.h
   - test/core/end2end/fixtures/secure_fixture.h
   - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/http2_allow_list.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
@@ -10168,6 +10177,7 @@ targets:
   - test/core/end2end/fixtures/proxy.h
   - test/core/end2end/fixtures/secure_fixture.h
   - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/http2_allow_list.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
@@ -12399,6 +12409,7 @@ targets:
   - test/core/end2end/fixtures/proxy.h
   - test/core/end2end/fixtures/secure_fixture.h
   - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/http2_allow_list.h
   - test/core/end2end/tests/cancel_test_helpers.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h

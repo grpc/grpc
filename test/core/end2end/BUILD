@@ -158,6 +158,7 @@ grpc_cc_library(
             "fixtures/local_util.h",
             "fixtures/secure_fixture.h",
             "fixtures/sockpair_fixture.h",
+            "http2_allow_list.h",
             "tests/cancel_test_helpers.h",
         ],
         defines =
