@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_library")
 
 package(default_visibility = ["//visibility:public"])
@@ -66,7 +65,6 @@ py_library(
         ":common",
         ":compression",
         ":interceptor",
-        requirement("typing_extensions"),
     ],
 )
 
