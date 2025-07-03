@@ -41,6 +41,25 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "property_list_test",
+    srcs = ["property_list_test.cc"],
+    external_deps = [
+        "gtest",
+        "gtest_main",
+        "@com_google_protobuf//upb/mem",
+        "absl/container:flat_hash_map",
+        "absl/log",
+        "absl/log:check",
+        "absl/strings",
+    ],
+    deps = [
+        "//:channelz_property_list_upb",
+        "//src/core:channelz_property_list",
+        "//src/core:json_writer",
+    ],
+)
+
+grpc_cc_test(
     name = "channelz_test",
     srcs = ["channelz_test.cc"],
     external_deps = [
@@ -103,6 +122,19 @@ grpc_cc_test(
 grpc_fuzz_test(
     name = "channel_trace_fuzzer",
     srcs = ["channel_trace_fuzzer.cc"],
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    deps = [
+        "//:channelz",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "channelz_fuzzer",
+    srcs = ["channelz_fuzzer.cc"],
     external_deps = [
         "absl/log:check",
         "fuzztest",

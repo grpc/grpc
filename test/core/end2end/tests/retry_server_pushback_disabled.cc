@@ -35,8 +35,9 @@ namespace {
 // - first attempt gets ABORTED
 // - second attempt gets ABORTED but server push back disables retrying
 CORE_END2END_TEST(RetryTests, RetryServerPushbackDisabled) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       "{\n"

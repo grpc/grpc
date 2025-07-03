@@ -380,7 +380,7 @@ static VALUE grpc_rb_prefork(VALUE self) {
     rb_raise(rb_eRuntimeError,
              "GRPC.prefork and fork need to be called from the same thread "
              "that GRPC was initialized on (GRPC lazy-initializes when when "
-             "the first GRPC object is created");
+             "the first GRPC object is created)");
   }
   if (g_grpc_rb_num_fork_unsafe_threads > 0) {
     rb_raise(
@@ -447,9 +447,15 @@ void grpc_rb_fork_unsafe_begin() { g_grpc_rb_num_fork_unsafe_threads++; }
 void grpc_rb_fork_unsafe_end() { g_grpc_rb_num_fork_unsafe_threads--; }
 
 // APIs to mark fork-unsafe sections from ruby code
-static VALUE grpc_rb_fork_unsafe_begin_api() { grpc_rb_fork_unsafe_begin(); }
+static VALUE grpc_rb_fork_unsafe_begin_api() {
+  grpc_rb_fork_unsafe_begin();
+  return Qnil;
+}
 
-static VALUE grpc_rb_fork_unsafe_end_api() { grpc_rb_fork_unsafe_end(); }
+static VALUE grpc_rb_fork_unsafe_end_api() {
+  grpc_rb_fork_unsafe_end();
+  return Qnil;
+}
 
 // One-time initialization
 void Init_grpc_c() {

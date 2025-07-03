@@ -61,7 +61,7 @@ void SimpleRequest(CoreEnd2endTest& test) {
 }
 
 void TenRequests(CoreEnd2endTest& test, int initial_sequence_number) {
-  test.InitServer(ChannelArgs());
+  test.InitServer(CoreEnd2endTest::DefaultServerArgs());
   test.InitClient(ChannelArgs().Set(GRPC_ARG_HTTP2_INITIAL_SEQUENCE_NUMBER,
                                     initial_sequence_number));
   for (int i = 0; i < 10; i++) {
@@ -70,9 +70,11 @@ void TenRequests(CoreEnd2endTest& test, int initial_sequence_number) {
 }
 
 CORE_END2END_TEST(Http2Tests, HighInitialSeqno) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   TenRequests(*this, 16777213);
 }
 CORE_END2END_TEST(RetryHttp2Tests, HighInitialSeqno) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   TenRequests(*this, 2147483645);
 }
 

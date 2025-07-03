@@ -578,7 +578,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       return test_->stats_plugin_group_;
     }
 
-    void AddTraceEvent(TraceSeverity, absl::string_view) override {}
+    void AddTraceEvent(absl::string_view) override {}
 
     LoadBalancingPolicyTest* test_;
 

@@ -73,7 +73,7 @@ void TestDenyUnauthorizedRequest(CoreEnd2endTest& test) {
 
 void InitWithPolicy(CoreEnd2endTest& test,
                     grpc_authorization_policy_provider* provider) {
-  test.InitServer(ChannelArgs().Set(
+  test.InitServer(CoreEnd2endTest::DefaultServerArgs().Set(
       GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER,
       ChannelArgs::Pointer(provider,
                            grpc_authorization_policy_provider_arg_vtable())));
@@ -118,6 +118,7 @@ class InitWithTempFile {
 };
 
 CORE_END2END_TEST(SecureEnd2endTests, StaticInitAllowAuthorizedRequest) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   InitWithStaticData(*this,
                      "{"
                      "  \"name\": \"authz\","
@@ -136,6 +137,7 @@ CORE_END2END_TEST(SecureEnd2endTests, StaticInitAllowAuthorizedRequest) {
 }
 
 CORE_END2END_TEST(SecureEnd2endTests, StaticInitDenyUnauthorizedRequest) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   InitWithStaticData(*this,
                      "{"
                      "  \"name\": \"authz\","
@@ -164,6 +166,7 @@ CORE_END2END_TEST(SecureEnd2endTests, StaticInitDenyUnauthorizedRequest) {
 }
 
 CORE_END2END_TEST(SecureEnd2endTests, StaticInitDenyRequestNoMatchInPolicy) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   InitWithStaticData(*this,
                      "{"
                      "  \"name\": \"authz\","
@@ -182,6 +185,7 @@ CORE_END2END_TEST(SecureEnd2endTests, StaticInitDenyRequestNoMatchInPolicy) {
 }
 
 CORE_END2END_TEST(SecureEnd2endTests, FileWatcherInitAllowAuthorizedRequest) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   InitWithTempFile tmp_policy(*this,
                               "{"
                               "  \"name\": \"authz\","
@@ -200,6 +204,7 @@ CORE_END2END_TEST(SecureEnd2endTests, FileWatcherInitAllowAuthorizedRequest) {
 }
 
 CORE_END2END_TEST(SecureEnd2endTests, FileWatcherInitDenyUnauthorizedRequest) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   InitWithTempFile tmp_policy(*this,
                               "{"
                               "  \"name\": \"authz\","
@@ -247,6 +252,7 @@ CORE_END2END_TEST(SecureEnd2endTests,
 }
 
 CORE_END2END_TEST(SecureEnd2endTests, FileWatcherValidPolicyReload) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   InitWithTempFile tmp_policy(*this,
                               "{"
                               "  \"name\": \"authz\","
@@ -301,6 +307,7 @@ CORE_END2END_TEST(SecureEnd2endTests, FileWatcherValidPolicyReload) {
 }
 
 CORE_END2END_TEST(SecureEnd2endTests, FileWatcherInvalidPolicySkipReload) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   InitWithTempFile tmp_policy(*this,
                               "{"
                               "  \"name\": \"authz\","
@@ -333,6 +340,7 @@ CORE_END2END_TEST(SecureEnd2endTests, FileWatcherInvalidPolicySkipReload) {
 }
 
 CORE_END2END_TEST(SecureEnd2endTests, FileWatcherRecoversFromFailure) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   InitWithTempFile tmp_policy(*this,
                               "{"
                               "  \"name\": \"authz\","

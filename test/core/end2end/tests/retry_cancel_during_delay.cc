@@ -34,7 +34,7 @@ namespace {
 void TestRetryCancelDuringDelay(
     CoreEnd2endTest& test,
     std::unique_ptr<CancellationMode> cancellation_mode) {
-  test.InitServer(ChannelArgs());
+  test.InitServer(CoreEnd2endTest::DefaultServerArgs());
   test.InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       absl::StrFormat(
@@ -102,12 +102,14 @@ void TestRetryCancelDuringDelay(
 }
 
 CORE_END2END_TEST(RetryTests, CancelDuringDelay) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   TestRetryCancelDuringDelay(*this, std::make_unique<CancelCancellationMode>());
 }
 
 CORE_END2END_TEST(RetryTests, DeadlineDuringDelay) {
-  SKIP_IF_V3();  // Not working yet
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
+  SKIP_IF_V3();            // Not working yet
   TestRetryCancelDuringDelay(*this,
                              std::make_unique<DeadlineCancellationMode>());
 }

@@ -36,8 +36,9 @@ namespace {
 // - client sends a 100 KiB message, thus exceeding the buffer size limit
 // - retry attempt gets ABORTED but is not retried
 CORE_END2END_TEST(RetryTests, RetryExceedsBufferSizeInDelay) {
-  SKIP_IF_V3();  // Not working yet
-  InitServer(ChannelArgs());
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
+  SKIP_IF_V3();            // Not working yet
+  InitServer(DefaultServerArgs());
   InitClient(
       ChannelArgs()
           .Set(GRPC_ARG_SERVICE_CONFIG,

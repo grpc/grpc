@@ -35,8 +35,9 @@ namespace {
 // - first attempt receives a message and therefore does not retry even
 //   though the final status is ABORTED
 CORE_END2END_TEST(RetryTests, RetryRecvMessage) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       "{\n"

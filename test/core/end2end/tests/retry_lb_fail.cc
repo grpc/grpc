@@ -39,14 +39,15 @@ std::atomic<int> g_num_lb_picks;
 // - on first attempt, LB policy fails with ABORTED before application
 //   starts recv_trailing_metadata op
 CORE_END2END_TEST(RetryTests, RetryLbFail) {
-  SKIP_IF_V3();  // Not working yet
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
+  SKIP_IF_V3();            // Not working yet
   CoreConfiguration::RegisterEphemeralBuilder(
       [](CoreConfiguration::Builder* builder) {
         RegisterFailLoadBalancingPolicy(
             builder, absl::UnavailableError("LB pick failed"), &g_num_lb_picks);
       });
   g_num_lb_picks.store(0, std::memory_order_relaxed);
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(
       ChannelArgs()
           .Set(GRPC_ARG_ENABLE_RETRIES, true)

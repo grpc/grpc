@@ -36,7 +36,12 @@ class LargeMetadataTest {
   LargeMetadataTest(CoreEnd2endTest& test, const ChannelArgs& args)
       : test_(test) {
     test_.InitClient(args);
-    test_.InitServer(args);
+    // TODO(b/424667351) : Remove ping timeout channel arg after fixing.
+    // This is a workaround for the flakiness that arises when a server is
+    // trying to gracefully shutdown, and waiting for a ping response from the
+    // client. In the failure cases, the client sockets are already shutdown
+    // with the notification not reaching the server socket.
+    test_.InitServer(args.Set(GRPC_ARG_PING_TIMEOUT_MS, 5000));
   }
 
   int PerformRequests(size_t metadata_size, int count) {
@@ -86,6 +91,7 @@ class LargeMetadataTest {
 // Server responds with metadata under soft limit of what client accepts. No
 // requests should be rejected.
 CORE_END2END_TEST(Http2SingleHopTests, RequestWithLargeMetadataUnderSoftLimit) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   const size_t soft_limit = 32 * 1024;
   const size_t hard_limit = 45 * 1024;
   const size_t metadata_size = soft_limit;
@@ -114,6 +120,7 @@ CORE_END2END_TEST(Http2SingleHopTests,
 // Server responds with metadata above hard limit of what the client accepts.
 // All requests should be rejected.
 CORE_END2END_TEST(Http2SingleHopTests, RequestWithLargeMetadataAboveHardLimit) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   const size_t soft_limit = 32 * 1024;
   const size_t hard_limit = 45 * 1024;
   const size_t metadata_size = hard_limit * 3 / 2;

@@ -48,10 +48,7 @@ namespace {
 // Tests cancellation with multiple send op batches.
 void TestRetryCancelWithMultipleSendBatches(
     CoreEnd2endTest& test, std::unique_ptr<CancellationMode> mode) {
-  // This is a workaround for the flakiness that if the server ever enters
-  // GracefulShutdown for whatever reason while the client has already been
-  // shutdown, the test would not timeout and fail.
-  test.InitServer(ChannelArgs().Set(GRPC_ARG_PING_TIMEOUT_MS, 5000));
+  test.InitServer(CoreEnd2endTest::DefaultServerArgs());
   test.InitClient(
       ChannelArgs()
           .Set(
@@ -186,14 +183,16 @@ void RegisterFilter() {
 }
 
 CORE_END2END_TEST(RetryTests, RetryCancelWithMultipleSendBatches) {
-  SKIP_IF_V3();  // Need to convert filter
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
+  SKIP_IF_V3();            // Need to convert filter
   RegisterFilter();
   TestRetryCancelWithMultipleSendBatches(
       *this, std::make_unique<CancelCancellationMode>());
 }
 
 CORE_END2END_TEST(RetryTests, RetryDeadlineWithMultipleSendBatches) {
-  SKIP_IF_V3();  // Need to convert filter
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
+  SKIP_IF_V3();            // Need to convert filter
   RegisterFilter();
   TestRetryCancelWithMultipleSendBatches(
       *this, std::make_unique<DeadlineCancellationMode>());

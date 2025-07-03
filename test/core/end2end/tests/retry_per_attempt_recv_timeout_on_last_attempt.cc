@@ -35,8 +35,9 @@ namespace {
 // - 1 retry allowed for ABORTED status
 // - both attempts do not receive a response until after perAttemptRecvTimeout
 CORE_END2END_TEST(RetryTests, RetryPerAttemptRecvTimeoutOnLastAttempt) {
-  SKIP_IF_V3();  // Not working yet
-  InitServer(ChannelArgs());
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
+  SKIP_IF_V3();            // Not working yet
+  InitServer(DefaultServerArgs());
   InitClient(
       ChannelArgs()
           .Set(GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING, true)

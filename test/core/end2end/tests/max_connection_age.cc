@@ -50,9 +50,10 @@ namespace grpc_core {
 namespace {
 
 CORE_END2END_TEST(Http2Tests, MaxAgeForciblyClose) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   SKIP_IF_MINSTACK();
   InitClient(ChannelArgs());
-  InitServer(ChannelArgs()
+  InitServer(DefaultServerArgs()
                  .Set(GRPC_ARG_MAX_CONNECTION_AGE_MS, MAX_CONNECTION_AGE_MS)
                  .Set(GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS,
                       MAX_CONNECTION_AGE_GRACE_MS)
@@ -112,11 +113,12 @@ CORE_END2END_TEST(Http2Tests, MaxAgeForciblyClose) {
 }
 
 CORE_END2END_TEST(Http2Tests, MaxAgeGracefullyClose) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   SKIP_IF_MINSTACK();
   SKIP_IF_FUZZING();
 
   InitClient(ChannelArgs());
-  InitServer(ChannelArgs()
+  InitServer(DefaultServerArgs()
                  .Set(GRPC_ARG_MAX_CONNECTION_AGE_MS, MAX_CONNECTION_AGE_MS)
                  .Set(GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS, INT_MAX)
                  .Set(GRPC_ARG_MAX_CONNECTION_IDLE_MS, MAX_CONNECTION_IDLE_MS));

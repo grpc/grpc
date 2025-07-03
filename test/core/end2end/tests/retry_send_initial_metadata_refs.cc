@@ -37,8 +37,9 @@ namespace {
 // - first attempt returns ABORTED
 // - second attempt returns OK
 CORE_END2END_TEST(RetryTests, RetrySendInitialMetadataRefs) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       "{\n"

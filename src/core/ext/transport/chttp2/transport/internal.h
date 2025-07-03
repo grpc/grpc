@@ -57,6 +57,7 @@
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
+#include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -237,8 +238,10 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
    public:
     explicit ChannelzDataSource(grpc_chttp2_transport* transport)
         : grpc_core::channelz::DataSource(transport->channelz_socket),
-          transport_(transport) {}
-    ~ChannelzDataSource() { ResetDataSource(); }
+          transport_(transport) {
+      SourceConstructed();
+    }
+    ~ChannelzDataSource() { SourceDestructing(); }
 
     void AddData(grpc_core::channelz::DataSink sink) override;
     std::unique_ptr<grpc_core::channelz::ZTrace> GetZTrace(
@@ -585,7 +588,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   grpc_core::Timestamp last_window_update_time =
       grpc_core::Timestamp::InfPast();
 
-  std::unique_ptr<grpc_core::Http2StatsCollector> http2_stats;
+  std::shared_ptr<grpc_core::Http2StatsCollector> http2_stats;
   grpc_core::Http2ZTraceCollector http2_ztrace_collector;
 
   GPR_NO_UNIQUE_ADDRESS grpc_core::latent_see::Flow write_flow;
@@ -832,10 +835,6 @@ void grpc_chttp2_settings_timeout(
 
 #define GRPC_HEADER_SIZE_IN_BYTES 5
 #define MAX_SIZE_T (~(size_t)0)
-
-#define GRPC_CHTTP2_CLIENT_CONNECT_STRING "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
-#define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \
-  (sizeof(GRPC_CHTTP2_CLIENT_CONNECT_STRING) - 1)
 
 #define GRPC_CHTTP2_IF_TRACING(severity) \
   LOG_IF(severity, GRPC_TRACE_FLAG_ENABLED(http))

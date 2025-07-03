@@ -59,6 +59,7 @@
 #include "absl/time/time.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/metadata_info.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
@@ -246,7 +247,6 @@ using WriteEvent =
     ::grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent;
 
 grpc_core::WriteTimestampsCallback g_write_timestamps_callback = nullptr;
-grpc_core::CopyContextFn g_get_copied_context_fn = nullptr;
 }  // namespace
 
 namespace grpc_core {
@@ -295,15 +295,9 @@ void GrpcHttp2SetWriteTimestampsCallback(WriteTimestampsCallback fn) {
   g_write_timestamps_callback = fn;
 }
 
-void GrpcHttp2SetCopyContextFn(CopyContextFn fn) {
-  g_get_copied_context_fn = fn;
-}
-
 WriteTimestampsCallback GrpcHttp2GetWriteTimestampsCallback() {
   return g_write_timestamps_callback;
 }
-
-CopyContextFn GrpcHttp2GetCopyContextFn() { return g_get_copied_context_fn; }
 
 // For each entry in the passed ContextList, it executes the function set using
 // GrpcHttp2SetWriteTimestampsCallback method with each context in the list
@@ -367,20 +361,15 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
 
   cancel_pings(this, GRPC_ERROR_CREATE("Transport destroyed"));
 
-  event_engine.reset();
-
   if (channelz_socket != nullptr) {
     channelz_socket.reset();
   }
 
+  event_engine.reset();
+
   grpc_slice_buffer_destroy(&qbuf);
 
-  grpc_error_handle error = GRPC_ERROR_CREATE("Transport destroyed");
-  // ContextList::Execute follows semantics of a callback function and does not
-  // take a ref on error
-  if (context_list != nullptr) {
-    grpc_core::ForEachContextListEntryExecute(context_list, nullptr, error);
-  }
+  delete context_list;
   context_list = nullptr;
 
   grpc_slice_buffer_destroy(&read_buffer);
@@ -484,27 +473,6 @@ static void read_channel_args(grpc_chttp2_transport* t,
     t->max_requests_per_read = 32;
   }
 
-  if (channel_args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
-          .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
-    t->channelz_socket =
-        grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
-            std::string(grpc_endpoint_get_local_address(t->ep.get())),
-            std::string(t->peer_string.as_string_view()),
-            absl::StrCat(t->GetTransportName(), " ",
-                         t->peer_string.as_string_view()),
-            channel_args
-                .GetObjectRef<grpc_core::channelz::SocketNode::Security>());
-    // Checks channelz_socket, so must be initialized after.
-    t->channelz_data_source =
-        std::make_unique<grpc_chttp2_transport::ChannelzDataSource>(t);
-    auto epte = QueryExtension<ChannelzExtension>(
-        grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
-            t->ep.get()));
-    if (epte != nullptr) {
-      epte->SetSocketNode(t->channelz_socket);
-    }
-  }
-
   t->ack_pings = channel_args.GetBool("grpc.http2.ack_pings").value_or(true);
 
   t->allow_tarpit =
@@ -602,72 +570,76 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
         grpc_core::NewClosure([t, sink = std::move(sink)](
                                   grpc_error_handle) mutable {
           Json::Object http2_info;
-          http2_info["flowControl"] =
-              Json::FromObject(t->flow_control.stats().ToJsonObject());
-          Json::Object misc;
-          misc["maxRequestsPerRead"] =
-              Json::FromNumber(static_cast<int64_t>(t->max_requests_per_read));
-          misc["nextStreamId"] = Json::FromNumber(t->next_stream_id);
-          misc["lastNewStreamId"] = Json::FromNumber(t->last_new_stream_id);
-          misc["numIncomingStreamsBeforeSettingsAck"] =
-              Json::FromNumber(t->num_incoming_streams_before_settings_ack);
-          misc["pingAckCount"] =
-              Json::FromNumber(static_cast<int64_t>(t->ping_ack_count));
-          misc["allowTarpit"] = Json::FromBool(t->allow_tarpit);
-          if (t->allow_tarpit) {
-            misc["minTarpitDurationMs"] =
-                Json::FromNumber(t->min_tarpit_duration_ms);
-            misc["maxTarpitDurationMs"] =
-                Json::FromNumber(t->max_tarpit_duration_ms);
-          }
-          misc["keepaliveTime"] =
-              Json::FromString(t->keepalive_time.ToJsonString());
-          misc["nextAdjustedKeepaliveTimestamp"] =
-              Json::FromString((t->next_adjusted_keepalive_timestamp -
-                                grpc_core::Timestamp::Now())
-                                   .ToJsonString());
-          misc["numMessagesInNextWrite"] =
-              Json::FromNumber(t->num_messages_in_next_write);
-          misc["numPendingInducedFrames"] =
-              Json::FromNumber(t->num_pending_induced_frames);
-          misc["writeBufferSize"] = Json::FromNumber(t->write_buffer_size);
-          misc["readingPausedOnPendingInducedFrames"] =
-              Json::FromBool(t->reading_paused_on_pending_induced_frames);
-          misc["enablePreferredRxCryptoFrameAdvertisement"] =
-              Json::FromBool(t->enable_preferred_rx_crypto_frame_advertisement);
-          misc["keepalivePermitWithoutCalls"] =
-              Json::FromBool(t->keepalive_permit_without_calls);
-          misc["bdpPingBlocked"] = Json::FromBool(t->bdp_ping_blocked);
-          misc["bdpPingStarted"] = Json::FromBool(t->bdp_ping_started);
-          misc["ackPings"] = Json::FromBool(t->ack_pings);
-          misc["keepaliveIncomingDataWanted"] =
-              Json::FromBool(t->keepalive_incoming_data_wanted);
-          misc["maxConcurrentStreamsOverloadProtection"] =
-              Json::FromBool(t->max_concurrent_streams_overload_protection);
-          misc["maxConcurrentStreamsRejectOnClient"] =
-              Json::FromBool(t->max_concurrent_streams_reject_on_client);
-          misc["pingOnRstStreamPercent"] =
-              Json::FromNumber(t->ping_on_rst_stream_percent);
-          misc["lastWindowUpdateAge"] = Json::FromString(
-              (grpc_core::Timestamp::Now() - t->last_window_update_time)
-                  .ToJsonString());
-          http2_info["misc"] = Json::FromObject(std::move(misc));
-          http2_info["settings"] = Json::FromObject(t->settings.ToJsonObject());
-          sink.AddAdditionalInfo("http2", std::move(http2_info));
-          std::vector<grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode>>
-              children;
-          children.reserve(t->stream_map.size());
-          for (auto [id, stream] : t->stream_map) {
-            if (stream->channelz_call_node == nullptr) {
-              stream->channelz_call_node =
-                  grpc_core::MakeRefCounted<grpc_core::channelz::CallNode>(
-                      absl::StrCat("chttp2 ",
-                                   t->is_client ? "client" : "server",
-                                   " stream ", stream->id));
-            }
-            children.push_back(stream->channelz_call_node);
-          }
-          sink.AddChildObjects(std::move(children));
+          sink.AddData(
+              "http2",
+              grpc_core::channelz::PropertyList()
+                  .Set("max_requests_per_read", t->max_requests_per_read)
+                  .Set("next_stream_id", t->next_stream_id)
+                  .Set("last_new_stream_id", t->last_new_stream_id)
+                  .Set("num_incoming_streams_before_settings_ack",
+                       t->num_incoming_streams_before_settings_ack)
+                  .Set("ping_ack_count", t->ping_ack_count)
+                  .Set("allow_tarpit", t->allow_tarpit)
+                  .Set("min_tarpit_duration_ms", t->min_tarpit_duration_ms)
+                  .Set("max_tarpit_duration_ms", t->max_tarpit_duration_ms)
+                  .Set("keepalive_time", t->keepalive_time)
+                  .Set("next_adjusted_keepalive_timestamp",
+                       t->next_adjusted_keepalive_timestamp)
+                  .Set("num_messages_in_next_write",
+                       t->num_messages_in_next_write)
+                  .Set("num_pending_induced_frames",
+                       t->num_pending_induced_frames)
+                  .Set("write_buffer_size", t->write_buffer_size)
+                  .Set("reading_paused_on_pending_induced_frames",
+                       t->reading_paused_on_pending_induced_frames)
+                  .Set("enable_preferred_rx_crypto_frame_advertisement",
+                       t->enable_preferred_rx_crypto_frame_advertisement)
+                  .Set("keepalive_permit_without_calls",
+                       t->keepalive_permit_without_calls)
+                  .Set("bdp_ping_blocked", t->bdp_ping_blocked)
+                  .Set("bdp_ping_started", t->bdp_ping_started)
+                  .Set("ack_pings", t->ack_pings)
+                  .Set("keepalive_incoming_data_wanted",
+                       t->keepalive_incoming_data_wanted)
+                  .Set("max_concurrent_streams_overload_protection",
+                       t->max_concurrent_streams_overload_protection)
+                  .Set("max_concurrent_streams_reject_on_client",
+                       t->max_concurrent_streams_reject_on_client)
+                  .Set("ping_on_rst_stream_percent",
+                       t->ping_on_rst_stream_percent)
+                  .Set("last_window_update", t->last_window_update_time)
+                  .Set("settings", t->settings.ChannelzProperties())
+                  .Set("flow_control",
+                       t->flow_control.stats().ChannelzProperties())
+                  .Set("ping_rate_policy",
+                       t->ping_rate_policy.ChannelzProperties())
+                  .Set("ping_callbacks", t->ping_callbacks.ChannelzProperties())
+                  .Set("goaway_error", t->goaway_error)
+                  .Set("sent_goaway_state",
+                       [t]() {
+                         switch (t->sent_goaway_state) {
+                           case GRPC_CHTTP2_NO_GOAWAY_SEND:
+                             return "none";
+                           case GRPC_CHTTP2_GRACEFUL_GOAWAY:
+                             return "graceful";
+                           case GRPC_CHTTP2_FINAL_GOAWAY_SEND_SCHEDULED:
+                             return "final_scheduled";
+                           case GRPC_CHTTP2_FINAL_GOAWAY_SENT:
+                             return "final_sent";
+                         }
+                         return "unknown";
+                       }())
+                  .Set("write_state", [t]() {
+                    switch (t->write_state) {
+                      case GRPC_CHTTP2_WRITE_STATE_IDLE:
+                        return "idle";
+                      case GRPC_CHTTP2_WRITE_STATE_WRITING:
+                        return "writing";
+                      case GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE:
+                        return "writing_with_more";
+                    }
+                    return "unknown";
+                  }()));
         }),
         absl::OkStatus());
   });
@@ -812,6 +784,7 @@ grpc_chttp2_transport::grpc_chttp2_transport(
 
   grpc_auth_context* auth_context = channel_args.GetObject<grpc_auth_context>();
   http2_stats = grpc_core::CreateHttp2StatsCollector(auth_context);
+  hpack_parser.hpack_table()->SetHttp2StatsCollector(http2_stats);
 
 #ifdef GRPC_POSIX_SOCKET_TCP
   closure_barrier_may_cover_write =
@@ -820,6 +793,26 @@ grpc_chttp2_transport::grpc_chttp2_transport(
           ? 0
           : CLOSURE_BARRIER_MAY_COVER_WRITE;
 #endif
+
+  if (channel_args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
+          .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
+    channelz_socket =
+        grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
+            std::string(grpc_endpoint_get_local_address(ep.get())),
+            std::string(peer_string.as_string_view()),
+            absl::StrCat(GetTransportName(), " ", peer_string.as_string_view()),
+            channel_args
+                .GetObjectRef<grpc_core::channelz::SocketNode::Security>());
+    // Checks channelz_socket, so must be initialized after.
+    channelz_data_source =
+        std::make_unique<grpc_chttp2_transport::ChannelzDataSource>(this);
+    auto epte = QueryExtension<ChannelzExtension>(
+        grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
+            ep.get()));
+    if (epte != nullptr) {
+      epte->SetSocketNode(channelz_socket);
+    }
+  }
 }
 
 static void destroy_transport_locked(void* tp, grpc_error_handle /*error*/) {
@@ -831,6 +824,7 @@ static void destroy_transport_locked(void* tp, grpc_error_handle /*error*/) {
 }
 
 void grpc_chttp2_transport::Orphan() {
+  channelz_data_source.reset();
   combiner->Run(GRPC_CLOSURE_CREATE(destroy_transport_locked, this, nullptr),
                 absl::OkStatus());
 }
@@ -1192,7 +1186,6 @@ static void write_action(
   // Choose max_frame_size as the preferred rx crypto frame size indicated by
   // the peer.
   grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args;
-  std::vector<size_t> write_metrics;
   int max_frame_size =
       t->settings.peer().preferred_receive_crypto_message_size();
   // Note: max frame size is 0 if the remote peer does not support adjusting the
@@ -1209,9 +1202,9 @@ static void write_action(
     if (ee_ep != nullptr) {
       auto telemetry_info = ee_ep->GetTelemetryInfo();
       if (telemetry_info != nullptr) {
-        write_metrics = telemetry_info->AllWriteMetrics();
+        auto metrics_set = telemetry_info->GetFullMetricsSet();
         args.set_metrics_sink(WriteEventSink(
-            write_metrics,
+            std::move(metrics_set),
             {WriteEvent::kSendMsg, WriteEvent::kScheduled, WriteEvent::kSent,
              WriteEvent::kAcked},
             [tcp_call_tracers = std::move(tcp_call_tracers),

@@ -82,6 +82,7 @@ bool SimpleRequestBody(CoreEnd2endTest& test) {
 }
 
 CORE_END2END_TEST(RetryHttp2Tests, MaxConnectionIdle) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   const auto kMaxConnectionIdle = Duration::Seconds(2);
   const auto kMaxConnectionAge = Duration::Seconds(10);
   InitClient(
@@ -95,7 +96,7 @@ CORE_END2END_TEST(RetryHttp2Tests, MaxConnectionIdle) {
           // Avoid transparent retries for this test.
           .Set(GRPC_ARG_ENABLE_RETRIES, false));
   InitServer(
-      ChannelArgs()
+      DefaultServerArgs()
           .Set(GRPC_ARG_MAX_CONNECTION_IDLE_MS, kMaxConnectionIdle.millis())
           .Set(GRPC_ARG_MAX_CONNECTION_AGE_MS, kMaxConnectionAge.millis()));
   // check that we're still in idle, and start connecting

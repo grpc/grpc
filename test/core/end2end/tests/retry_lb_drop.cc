@@ -101,7 +101,8 @@ void RegisterDropPolicy(CoreConfiguration::Builder* builder) {
 // - 1 retry allowed for UNAVAILABLE status
 // - first attempt returns UNAVAILABLE due to LB drop but does not retry
 CORE_END2END_TEST(RetryTests, RetryLbDrop) {
-  SKIP_IF_V3();  // Not working yet
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
+  SKIP_IF_V3();            // Not working yet
   CoreConfiguration::RegisterEphemeralBuilder(
       [](CoreConfiguration::Builder* builder) {
         RegisterTestPickArgsLoadBalancingPolicy(
@@ -115,7 +116,7 @@ CORE_END2END_TEST(RetryTests, RetryLbDrop) {
   CoreConfiguration::RegisterEphemeralBuilder(RegisterDropPolicy);
   std::vector<PickArgsSeen> pick_args_seen;
   g_pick_args_vector = &pick_args_seen;
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       "{\n"

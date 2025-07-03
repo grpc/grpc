@@ -12,40 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-syntax = "proto3";
+#ifndef GRPC_TEST_CORE_TEST_UTIL_POSTMORTEM_EMIT_H
+#define GRPC_TEST_CORE_TEST_UTIL_POSTMORTEM_EMIT_H
 
-package inter_activity_mutex_test;
+namespace grpc_core {
 
-message Op {
-  message Poll {
-    uint32 id = 1;
-  }
+// Emit useful post mortem analysis from whatever in-process data we have.
+void PostMortemEmit();
 
-  message Drop {
-    uint32 id = 1;
-  }
+// Does all the work of PostMortemEmit, but doesn't emit anything.
+// This is useful for verifying that PostMortemEmit *would* succeed...
+// which means especially that channelz is working.
+void SilentPostMortemEmit();
 
-  message Acquire {
-    uint32 id = 1;
-  }
+}  // namespace grpc_core
 
-  message AcquireWhen {
-    uint32 id = 1;
-    uint32 when = 2;
-  }
-
-  message DropLock {}
-
-  message SetLock {
-    uint32 value = 1;
-  }
-
-  oneof type {
-    Poll poll = 1;
-    Drop drop = 2;
-    Acquire acquire = 3;
-    AcquireWhen acquire_when = 4;
-    DropLock drop_lock = 5;
-    SetLock set_lock = 6;
-  }
-}
+#endif  // GRPC_TEST_CORE_TEST_UTIL_POSTMORTEM_EMIT_H

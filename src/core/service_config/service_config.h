@@ -72,7 +72,7 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   /// lifetime of the returned object is tied to the lifetime of the
   /// ServiceConfig object.
   virtual ServiceConfigParser::ParsedConfig* GetGlobalParsedConfig(
-      size_t index) = 0;
+      size_t index) const = 0;
 
   /// Retrieves the vector of parsed configs for the method identified
   /// by \a path.  The lifetime of the returned vector and contained objects

@@ -94,10 +94,11 @@ void RegisterFilter(grpc_channel_stack_type type) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, DISABLED_ServerFilterChannelInitFails) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   SKIP_IF_V3();
   RegisterFilter(GRPC_SERVER_CHANNEL);
   InitClient(ChannelArgs());
-  InitServer(ChannelArgs().Set("channel_init_fails", true));
+  InitServer(DefaultServerArgs().Set("channel_init_fails", true));
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;
@@ -119,6 +120,7 @@ CORE_END2END_TEST(CoreEnd2endTests, DISABLED_ServerFilterChannelInitFails) {
 };
 
 CORE_END2END_TEST(CoreEnd2endTests, ServerFilterCallInitFails) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   SKIP_IF_FUZZING();
   SKIP_IF_V3();
 
@@ -140,10 +142,11 @@ CORE_END2END_TEST(CoreEnd2endTests, ServerFilterCallInitFails) {
 };
 
 CORE_END2END_TEST(CoreEnd2endTests, DISABLED_ClientFilterChannelInitFails) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   SKIP_IF_V3();
   RegisterFilter(GRPC_CLIENT_CHANNEL);
   RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL);
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set("channel_init_fails", true));
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   IncomingStatusOnClient server_status;
@@ -160,6 +163,7 @@ CORE_END2END_TEST(CoreEnd2endTests, DISABLED_ClientFilterChannelInitFails) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, ClientFilterCallInitFails) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   SKIP_IF_V3();
   SKIP_IF_FUZZING();
   RegisterFilter(GRPC_CLIENT_CHANNEL);
@@ -184,7 +188,7 @@ CORE_END2END_TEST(CoreClientChannelTests,
                   DISABLED_SubchannelFilterChannelInitFails) {
   SKIP_IF_V3();
   RegisterFilter(GRPC_CLIENT_SUBCHANNEL);
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set("channel_init_fails", true));
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   IncomingStatusOnClient server_status;
@@ -218,6 +222,7 @@ CORE_END2END_TEST(CoreClientChannelTests,
 }
 
 CORE_END2END_TEST(CoreClientChannelTests, SubchannelFilterCallInitFails) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   SKIP_IF_V3();
   RegisterFilter(GRPC_CLIENT_SUBCHANNEL);
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();

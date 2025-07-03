@@ -29,6 +29,7 @@ namespace grpc_core {
 namespace {
 
 CORE_END2END_TEST(RetryHttp2Tests, ConnectivityWatch) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   InitClient(ChannelArgs()
                  .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
                  .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)
@@ -60,7 +61,7 @@ CORE_END2END_TEST(RetryHttp2Tests, ConnectivityWatch) {
   state = CheckConnectivityState(false);
   EXPECT_EQ(state, GRPC_CHANNEL_TRANSIENT_FAILURE);
   // now let's bring up a server to connect to
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   // when the channel gets connected, it will report READY
   WatchConnectivityState(state, Duration::Seconds(10), 4);
   Expect(4, true);

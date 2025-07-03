@@ -34,7 +34,7 @@ namespace {
 // Tests retry cancellation.
 void TestRetryCancellation(CoreEnd2endTest& test,
                            std::unique_ptr<CancellationMode> mode) {
-  test.InitServer(ChannelArgs());
+  test.InitServer(CoreEnd2endTest::DefaultServerArgs());
   test.InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       "{\n"
@@ -94,11 +94,13 @@ void TestRetryCancellation(CoreEnd2endTest& test,
 }
 
 CORE_END2END_TEST(RetryTests, RetryCancellation) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   TestRetryCancellation(*this, std::make_unique<CancelCancellationMode>());
 }
 
 CORE_END2END_TEST(RetryTests, RetryDeadline) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   TestRetryCancellation(*this, std::make_unique<DeadlineCancellationMode>());
 }

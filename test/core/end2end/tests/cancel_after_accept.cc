@@ -67,18 +67,20 @@ void CancelAfterAccept(CoreEnd2endTest& test,
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, CancelAfterAccept) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   CancelAfterAccept(*this, std::make_unique<CancelCancellationMode>(),
                     Duration::Seconds(5));
 }
 
 CORE_END2END_TEST(CoreDeadlineTests, DeadlineAfterAccept) {
+  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   CancelAfterAccept(*this, std::make_unique<DeadlineCancellationMode>(),
                     Duration::Seconds(5));
 }
 
 CORE_END2END_TEST(CoreClientChannelTests,
                   DeadlineAfterAcceptWithServiceConfig) {
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       absl::StrCat(
