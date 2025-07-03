@@ -407,6 +407,18 @@ MATCHER_P7(GaugeDataIsIncrementalForSpecificMetricAndLabelSet, metric_name,
   return result;
 }
 
+MATCHER_P2(IsWithinRange, lo, hi,
+           absl::StrCat(negation ? "isn't" : "is", " between ",
+                        ::testing::PrintToString(lo), " and ",
+                        ::testing::PrintToString(hi))) {
+  return (lo) <= arg && arg <= (hi);
+}
+
+template <typename T>
+struct Extract<const IsWithinRangeMatcherP2<T, T>> {
+  using Type = T;
+};
+
 }  // namespace testing
 }  // namespace grpc
 

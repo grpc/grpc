@@ -502,6 +502,33 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
                       kServerCallRcvdTotalCompressedMessageSizeInstrumentName),
               "Compressed message bytes received per server call", "By");
     }
+    if (metrics.contains(grpc::OpenTelemetryPluginBuilder::
+                             kClientCallRetriesInstrumentName)) {
+      client_.call.retries = meter->CreateUInt64Histogram(
+          std::string(grpc::OpenTelemetryPluginBuilder::
+                          kClientCallRetriesInstrumentName),
+          "EXPERIMENTAL: Number of retries during the client call. If there "
+          "were no retries, 0 is not reported.",
+          "{retry}");
+    }
+    if (metrics.contains(grpc::OpenTelemetryPluginBuilder::
+                             kClientCallTransparentRetriesInstrumentName)) {
+      client_.call.transparent_retries = meter->CreateUInt64Histogram(
+          std::string(grpc::OpenTelemetryPluginBuilder::
+                          kClientCallTransparentRetriesInstrumentName),
+          "EXPERIMENTAL: Number of transparent retries during the client call. "
+          "If there were no transparent retries, 0 is not reported.",
+          "{transparent_retry}");
+    }
+    if (metrics.contains(grpc::OpenTelemetryPluginBuilder::
+                             kClientCallRetryDelayInstrumentName)) {
+      client_.call.retry_delay = meter->CreateDoubleHistogram(
+          std::string(grpc::OpenTelemetryPluginBuilder::
+                          kClientCallRetryDelayInstrumentName),
+          "EXPERIMENTAL: Total time of delay while there is no active attempt "
+          "during the client call",
+          "s");
+    }
     // Store optional label keys for per call metrics
     CHECK(static_cast<size_t>(grpc_core::ClientCallTracer::CallAttemptTracer::
                                   OptionalLabelKey::kSize) <=
