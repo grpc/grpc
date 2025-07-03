@@ -49,6 +49,10 @@ RUN apt update && apt install -y build-essential zlib1g-dev libncurses5-dev libg
 
 ADD install_python_for_wheel_crosscompilation.sh /scripts/install_python_for_wheel_crosscompilation.sh
 
+# These are synced to the versions in our grpc_artifact_python_ images based pypa/{many,musl}linux.
+# grep grpc_artifact_python_ tools/bazelify_tests/dockerimage_current_versions.bzl | grep -oP '(?<=docker://)[^"]+(?=")'
+# IMG=one_of_the_images_from_the_command_above
+# docker run --rm $IMG bash -c 'ls -l /opt/python/cp3{9,1}*' | sed -E 's#^[^/]+##'
 RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.9.20" "3.9.20" /opt/python/cp39-cp39
 RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.10.15" "3.10.15" /opt/python/cp310-cp310
 RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.11.10" "3.11.10" /opt/python/cp311-cp311
