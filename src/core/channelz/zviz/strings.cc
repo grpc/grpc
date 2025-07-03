@@ -1,4 +1,4 @@
-// Copyright 2025 gRPC authors.
+// Copyright 2025 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,40 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-syntax = "proto3";
+#include "src/core/channelz/zviz/strings.h"
 
-package inter_activity_mutex_test;
+#include "absl/strings/str_cat.h"
 
-message Op {
-  message Poll {
-    uint32 id = 1;
-  }
+namespace grpc_zviz {
 
-  message Drop {
-    uint32 id = 1;
-  }
-
-  message Acquire {
-    uint32 id = 1;
-  }
-
-  message AcquireWhen {
-    uint32 id = 1;
-    uint32 when = 2;
-  }
-
-  message DropLock {}
-
-  message SetLock {
-    uint32 value = 1;
-  }
-
-  oneof type {
-    Poll poll = 1;
-    Drop drop = 2;
-    Acquire acquire = 3;
-    AcquireWhen acquire_when = 4;
-    DropLock drop_lock = 5;
-    SetLock set_lock = 6;
-  }
+std::string DisplayKind(absl::string_view kind) {
+  if (kind.empty()) return "Entity";
+  if (kind == "channel") return "Channel";
+  if (kind == "subchannel") return "Subchannel";
+  if (kind == "socket") return "Socket";
+  return absl::StrCat("Entity kind '", kind, "'");
 }
+
+}  // namespace grpc_zviz

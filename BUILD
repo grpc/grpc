@@ -263,6 +263,7 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
     "include/grpc/compression.h",
+    "include/grpc/create_channel_from_endpoint.h",
     "include/grpc/fork.h",
     "include/grpc/grpc.h",
     "include/grpc/grpc_posix.h",
@@ -622,6 +623,7 @@ GRPC_XDS_TARGETS = [
 
     # Not xDS-specific but currently only used by xDS.
     "//src/core:channel_creds_registry_init",
+    "//src/core:call_creds_registry_init",
 ]
 
 grpc_cc_library(
@@ -1251,6 +1253,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/cleanup",
         "absl/container:btree",
         "absl/log",
         "absl/log:check",
@@ -1677,6 +1680,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "stats",
         "//src/core:arena",
+        "//src/core:blackboard",
         "//src/core:call_arena_allocator",
         "//src/core:channel_args",
         "//src/core:channel_args_endpoint_config",
@@ -1723,11 +1727,18 @@ grpc_cc_library(
         "grpc_security_base",
         "legacy_channel",
         "stats",
+        "//:grpc_resolver_fake",
         "//src/core:channel_args",
+        "//src/core:channel_args_endpoint_config",
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_stack_type",
         "//src/core:direct_channel",
+        "//src/core:endpoint_channel_arg_wrapper",
         "//src/core:endpoint_transport",
+        "//src/core:event_engine_common",
+        "//src/core:event_engine_extensions",
+        "//src/core:event_engine_query_extensions",
+        "//src/core:event_engine_tcp_socket_utils",
         "//src/core:experiments",
         "//src/core:stats_data",
     ],
@@ -1780,6 +1791,7 @@ grpc_cc_library(
         "transport_auth_context",
         "//src/core:activity",
         "//src/core:arena_promise",
+        "//src/core:blackboard",
         "//src/core:cancel_callback",
         "//src/core:channel_args",
         "//src/core:channel_args_preconditioning",
@@ -1798,6 +1810,7 @@ grpc_cc_library(
         "//src/core:iomgr_fwd",
         "//src/core:map",
         "//src/core:metadata_batch",
+        "//src/core:per_cpu",
         "//src/core:pipe",
         "//src/core:poll",
         "//src/core:pollset_set",
@@ -2708,11 +2721,13 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["//bazel:channelz"],
     deps = [
+        "channelz",
         "gpr",
         "grpc",
         "grpc++",
         "grpc++_config_proto",
         "//src/proto/grpc/channelz:channelz_proto",
+        "//src/proto/grpc/channelz/v2:service_cc_grpc",
     ],
     alwayslink = 1,
 )
@@ -2814,8 +2829,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/base:endian",
         "absl/log:check",
+        "absl/numeric:bits",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3081,6 +3096,7 @@ grpc_cc_library(
         "debug_location",
         "gpr",
         "grpc_resolver",
+        "//src/core:call_creds_registry",
         "//src/core:certificate_provider_registry",
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_creds_registry",
@@ -4807,6 +4823,7 @@ grpc_cc_library(
         "//src/core:status_helper",
         "//src/core:tcp_tracer",
         "//src/core:time",
+        "//src/core:transport_common",
         "//src/core:transport_framing_endpoint_extension",
         "//src/core:useful",
         "//src/core:write_size_policy",
@@ -5120,6 +5137,11 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "xds_type_upbdefs",
     deps = ["@com_github_cncf_xds//xds/type/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "xds_type_matcher_upb",
+    deps = ["@com_github_cncf_xds//xds/type/matcher/v3:pkg"],
 )
 
 grpc_upb_proto_library(
