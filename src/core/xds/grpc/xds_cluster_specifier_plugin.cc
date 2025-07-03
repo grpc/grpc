@@ -24,9 +24,9 @@
 #include <utility>
 #include <variant>
 
-#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upb.h"
@@ -89,7 +89,7 @@ Json XdsRouteLookupClusterSpecifierPlugin::GenerateLoadBalancingPolicyConfig(
   upb_JsonEncode(plugin_config, msg_type, symtab, 0,
                  reinterpret_cast<char*>(buf), json_size + 1, status.ptr());
   auto json = JsonParse(reinterpret_cast<char*>(buf));
-  CHECK(json.ok());
+  GRPC_CHECK(json.ok());
   return Json::FromArray({Json::FromObject(
       {{"rls_experimental",
         Json::FromObject({

@@ -28,7 +28,6 @@
 #include <tuple>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -36,6 +35,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {
@@ -332,7 +332,7 @@ void StreamFlowControl::SentUpdate(uint32_t announce) {
   TransportFlowControl::IncomingUpdateContext tfc_upd(tfc_);
   pending_size_ = std::nullopt;
   tfc_upd.UpdateAnnouncedWindowDelta(&announced_window_delta_, announce);
-  CHECK_EQ(DesiredAnnounceSize(), 0u);
+  GRPC_CHECK_EQ(DesiredAnnounceSize(), 0u);
   std::ignore = tfc_upd.MakeAction();
 }
 
@@ -382,7 +382,7 @@ FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
 
 void StreamFlowControl::IncomingUpdateContext::SetPendingSize(
     int64_t pending_size) {
-  CHECK_GE(pending_size, 0);
+  GRPC_CHECK_GE(pending_size, 0);
   sfc_->pending_size_ = pending_size;
 }
 

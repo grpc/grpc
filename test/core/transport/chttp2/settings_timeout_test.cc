@@ -34,7 +34,6 @@
 #include <thread>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -57,6 +56,7 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/resource_quota/api.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/time.h"
 #include "test/core/test_util/port.h"
@@ -100,10 +100,10 @@ class ServerThread {
     grpc_completion_queue* shutdown_cq =
         grpc_completion_queue_create_for_pluck(nullptr);
     grpc_server_shutdown_and_notify(server_, shutdown_cq, nullptr);
-    CHECK(grpc_completion_queue_pluck(shutdown_cq, nullptr,
-                                      grpc_timeout_seconds_to_deadline(1),
-                                      nullptr)
-              .type == GRPC_OP_COMPLETE);
+    GRPC_CHECK(grpc_completion_queue_pluck(shutdown_cq, nullptr,
+                                           grpc_timeout_seconds_to_deadline(1),
+                                           nullptr)
+                   .type == GRPC_OP_COMPLETE);
     grpc_completion_queue_destroy(shutdown_cq);
     grpc_server_destroy(server_);
     grpc_completion_queue_destroy(cq_);

@@ -30,11 +30,11 @@
 #include <vector>
 
 #include "absl/flags/flag.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/util/test_config.h"
@@ -109,7 +109,7 @@ class ExampleGenerator
     }
     // Make sure we don't succeed without doing anything, which caused
     // us to be blind to our fuzzers not running for 9 months.
-    CHECK(!examples_.empty());
+    GRPC_CHECK(!examples_.empty());
     // Get a consistent ordering of examples so problems don't just show up on
     // CI
     std::sort(examples_.begin(), examples_.end());

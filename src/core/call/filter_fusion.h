@@ -23,7 +23,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
@@ -34,6 +33,7 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/transport/call_final_info.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/type_list.h"
 
@@ -913,12 +913,12 @@ struct FilterWrapper<Filter> {
 
   absl::Status status() const { return filter_.status(); }
   bool StartTransportOp(grpc_transport_op* op) {
-    CHECK(filter_.ok());
+    GRPC_CHECK(filter_.ok());
     return (*filter_)->StartTransportOp(op);
   }
 
   bool GetChannelInfo(const grpc_channel_info* info) {
-    CHECK(filter_.ok());
+    GRPC_CHECK(filter_.ok());
     return (*filter_)->GetChannelInfo(info);
   }
 
@@ -940,13 +940,13 @@ struct FilterWrapper<Filter0, Filters...> : public FilterWrapper<Filters...> {
   }
 
   bool StartTransportOp(grpc_transport_op* op) {
-    CHECK(filter0_.ok());
+    GRPC_CHECK(filter0_.ok());
     return (*filter0_)->StartTransportOp(op) ||
            FilterWrapper<Filters...>::StartTransportOp(op);
   }
 
   bool GetChannelInfo(const grpc_channel_info* info) {
-    CHECK(filter0_.ok());
+    GRPC_CHECK(filter0_.ok());
     return (*filter0_)->GetChannelInfo(info) ||
            FilterWrapper<Filters...>::GetChannelInfo(info);
   }

@@ -18,8 +18,8 @@
 
 #include "test/cpp/end2end/interceptors_util.h"
 
-#include "absl/log/check.h"
 #include "absl/memory/memory.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc {

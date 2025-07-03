@@ -28,7 +28,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log_windows.h>
 
-#include "absl/log/check.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/iomgr/event_engine_shims/tcp_client.h"
@@ -42,6 +41,7 @@
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 
 using ::grpc_event_engine::experimental::EndpointConfig;
 
@@ -82,7 +82,7 @@ static void on_alarm(void* acp, grpc_error_handle /* error */) {
 static void on_connect(void* acp, grpc_error_handle error) {
   async_connect* ac = (async_connect*)acp;
   grpc_endpoint** ep = ac->endpoint;
-  CHECK(*ep == NULL);
+  GRPC_CHECK(*ep == NULL);
   grpc_closure* on_done = ac->on_done;
 
   gpr_mu_lock(&ac->mu);
@@ -101,7 +101,7 @@ static void on_connect(void* acp, grpc_error_handle error) {
       BOOL wsa_success =
           WSAGetOverlappedResult(socket->socket, &socket->write_info.overlapped,
                                  &transferred_bytes, FALSE, &flags);
-      CHECK_EQ(transferred_bytes, 0);
+      GRPC_CHECK_EQ(transferred_bytes, 0);
       if (!wsa_success) {
         error = GRPC_WSA_ERROR(WSAGetLastError(), "ConnectEx");
         closesocket(socket->socket);
@@ -242,7 +242,7 @@ static int64_t tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
   return 0;
 
 failure:
-  CHECK(!error.ok());
+  GRPC_CHECK(!error.ok());
   grpc_error_handle final_error =
       GRPC_ERROR_CREATE_REFERENCING("Failed to connect", &error, 1);
   if (socket != NULL) {

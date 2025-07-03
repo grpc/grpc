@@ -25,7 +25,6 @@
 #include <cstring>
 #include <memory>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
@@ -35,6 +34,7 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/strerror.h"
 
 namespace grpc_event_engine {
@@ -137,7 +137,7 @@ std::string ReadBytes(int sockfd, int& saved_errno, int num_expected_bytes) {
                               num_expected_bytes - read_data.length());
     if (saved_errno == EAGAIN &&
         read_data.length() < static_cast<size_t>(num_expected_bytes)) {
-      CHECK_OK(BlockUntilReadable(sockfd));
+      GRPC_CHECK_OK(BlockUntilReadable(sockfd));
     } else if (saved_errno != 0 && num_expected_bytes > 0) {
       read_data.clear();
       break;
@@ -176,10 +176,10 @@ int WriteBytes(int sockfd, int& saved_errno, std::string write_bytes) {
     saved_errno = 0;
     ret = TryWriteBytes(sockfd, saved_errno, write_bytes);
     if (saved_errno == EAGAIN && ret < static_cast<int>(write_bytes.length())) {
-      CHECK_GE(ret, 0);
-      CHECK_OK(BlockUntilWritable(sockfd));
+      GRPC_CHECK_GE(ret, 0);
+      GRPC_CHECK_OK(BlockUntilWritable(sockfd));
     } else if (saved_errno != 0) {
-      CHECK_LT(ret, 0);
+      GRPC_CHECK_LT(ret, 0);
       return ret;
     }
     write_bytes = write_bytes.substr(ret, std::string::npos);
@@ -234,7 +234,7 @@ PosixOracleEndpoint::~PosixOracleEndpoint() {
 bool PosixOracleEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                                SliceBuffer* buffer, ReadArgs args) {
   grpc_core::MutexLock lock(&mu_);
-  CHECK_NE(buffer, nullptr);
+  GRPC_CHECK_NE(buffer, nullptr);
   int read_hint_bytes = std::max(1, static_cast<int>(args.read_hint_bytes()));
   read_ops_channel_ =
       ReadOperation(read_hint_bytes, buffer, std::move(on_read));
@@ -246,7 +246,7 @@ bool PosixOracleEndpoint::Write(
     absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
     WriteArgs /*args*/) {
   grpc_core::MutexLock lock(&mu_);
-  CHECK_NE(data, nullptr);
+  GRPC_CHECK_NE(data, nullptr);
   write_ops_channel_ = WriteOperation(data, std::move(on_writable));
   write_op_signal_->Notify();
   return false;
@@ -327,7 +327,7 @@ PosixOracleListener::PosixOracleListener(
 
 absl::Status PosixOracleListener::Start() {
   grpc_core::MutexLock lock(&mu_);
-  CHECK(!listener_fds_.empty());
+  GRPC_CHECK(!listener_fds_.empty());
   if (std::exchange(is_started_, true)) {
     return absl::InternalError("Cannot start listener more than once ...");
   }
@@ -351,14 +351,14 @@ PosixOracleListener::~PosixOracleListener() {
     shutdown(listener_fds_[i], SHUT_RDWR);
   }
   // Send a STOP message over the pipe.
-  CHECK(write(pipefd_[1], kStopMessage, strlen(kStopMessage)) != -1);
+  GRPC_CHECK(write(pipefd_[1], kStopMessage, strlen(kStopMessage)) != -1);
   serve_.Join();
   on_shutdown_(absl::OkStatus());
 }
 
 void PosixOracleListener::HandleIncomingConnections() {
   LOG(INFO) << "Starting accept thread ...";
-  CHECK(!listener_fds_.empty());
+  GRPC_CHECK(!listener_fds_.empty());
   int nfds = listener_fds_.size();
   // Add one extra file descriptor to poll the pipe fd.
   ++nfds;

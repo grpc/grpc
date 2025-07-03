@@ -22,13 +22,13 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
 #include "src/core/call/call_destination.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/service_config/service_config_call_data.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/down_cast.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/unique_type_name.h"
 
 //
@@ -64,7 +64,7 @@ class ClientChannelServiceConfigCallData final : public ServiceConfigCallData {
       : ServiceConfigCallData(arena) {}
 
   void SetOnCommit(absl::AnyInvocable<void()> on_commit) {
-    CHECK(on_commit_ == nullptr);
+    GRPC_CHECK(on_commit_ == nullptr);
     on_commit_ = std::move(on_commit);
   }
 

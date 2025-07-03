@@ -1,4 +1,4 @@
-// Copyright 2025 gRPC authors.
+// Copyright 2025 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,19 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TEST_CORE_TEST_UTIL_POSTMORTEM_EMIT_H
-#define GRPC_TEST_CORE_TEST_UTIL_POSTMORTEM_EMIT_H
+#ifdef GRPC_POSTMORTEM_CHECKS
+#include "src/core/util/postmortem_emit.h"
 
-namespace grpc_core {
-
-// Emit useful post mortem analysis from whatever in-process data we have.
-void PostMortemEmit();
-
-// Does all the work of PostMortemEmit, but doesn't emit anything.
-// This is useful for verifying that PostMortemEmit *would* succeed...
-// which means especially that channelz is working.
-void SilentPostMortemEmit();
-
-}  // namespace grpc_core
-
-#endif  // GRPC_TEST_CORE_TEST_UTIL_POSTMORTEM_EMIT_H
+bool PostMortemEmitAndReturnTrue() {
+  grpc_core::PostMortemEmit();
+  return true;
+}
+#endif
