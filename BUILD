@@ -2713,11 +2713,13 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["//bazel:channelz"],
     deps = [
+        "channelz",
         "gpr",
         "grpc",
         "grpc++",
         "grpc++_config_proto",
         "//src/proto/grpc/channelz:channelz_proto",
+        "//src/proto/grpc/channelz/v2:service_cc_grpc",
     ],
     alwayslink = 1,
 )

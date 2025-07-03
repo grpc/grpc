@@ -5213,6 +5213,8 @@ libs:
   - src/cpp/server/channelz/channelz_service.h
   src:
   - src/proto/grpc/channelz/channelz.proto
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/service.proto
   - src/cpp/server/channelz/channelz_service.cc
   - src/cpp/server/channelz/channelz_service_plugin.cc
   deps:
@@ -7828,6 +7830,29 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
+- name: channelz_v2_service_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/cpp/end2end/test_service_impl.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/cpp/end2end/channelz_v2_service_test.cc
+  - test/cpp/end2end/test_service_impl.cc
+  deps:
+  - gtest
+  - grpcpp_channelz
+  - grpc++_test_util
 - name: check_gcp_environment_linux_test
   gtest: true
   build: test
