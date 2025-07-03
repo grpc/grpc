@@ -127,7 +127,7 @@ ClientCall::ClientCall(grpc_call*, uint32_t, grpc_completion_queue* cq,
 grpc_call_error ClientCall::StartBatch(const grpc_op* ops, size_t nops,
                                        void* notify_tag,
                                        bool is_notify_tag_closure) {
-  GRPC_LATENT_SEE_PARENT_SCOPE("ClientCall::StartBatch");
+  GRPC_LATENT_SEE_SCOPE("ClientCall::StartBatch");
   if (nops == 0) {
     EndOpImmediately(cq_, notify_tag, is_notify_tag_closure);
     return GRPC_CALL_OK;
@@ -183,7 +183,7 @@ void ClientCall::CancelWithError(grpc_error_handle error) {
 
 template <typename Batch>
 void ClientCall::ScheduleCommittedBatch(Batch batch) {
-  GRPC_LATENT_SEE_INNER_SCOPE("ClientCall::ScheduleCommittedBatch");
+  GRPC_LATENT_SEE_SCOPE("ClientCall::ScheduleCommittedBatch");
   auto cur_state = call_state_.load(std::memory_order_acquire);
   while (true) {
     switch (cur_state) {
@@ -226,7 +226,7 @@ void ClientCall::ScheduleCommittedBatch(Batch batch) {
 
 Party::WakeupHold ClientCall::StartCall(
     const grpc_op& send_initial_metadata_op) {
-  GRPC_LATENT_SEE_INNER_SCOPE("ClientCall::StartCall");
+  GRPC_LATENT_SEE_SCOPE("ClientCall::StartCall");
   auto cur_state = call_state_.load(std::memory_order_acquire);
   CToMetadata(send_initial_metadata_op.data.send_initial_metadata.metadata,
               send_initial_metadata_op.data.send_initial_metadata.count,
@@ -279,7 +279,7 @@ bool ClientCall::StartCallMaybeUpdateState(uintptr_t& cur_state,
 
 void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
                              bool is_notify_tag_closure) {
-  GRPC_LATENT_SEE_INNER_SCOPE("ClientCall::CommitBatch");
+  GRPC_LATENT_SEE_SCOPE("ClientCall::CommitBatch");
   if (nops == 1 && ops[0].op == GRPC_OP_SEND_INITIAL_METADATA) {
     StartCall(ops[0]);
     EndOpImmediately(cq_, notify_tag, is_notify_tag_closure);

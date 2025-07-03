@@ -152,9 +152,7 @@ class Json {
   Json& operator=(const Json& other) = default;
 
   // Moveable.
-  Json(Json&& other) noexcept : value_(std::move(other.value_)) {
-    other.value_ = std::monostate();
-  }
+  Json(Json&& other) noexcept : value_(std::move(other.value_)) { other.value_ = std::monostate(); }
   Json& operator=(Json&& other) noexcept {
     value_ = std::move(other.value_);
     other.value_ = std::monostate();
@@ -201,9 +199,7 @@ class Json {
   struct NumberValue {
     std::string value;
 
-    bool operator==(const NumberValue& other) const {
-      return value == other.value;
-    }
+    bool operator==(const NumberValue& other) const { return value == other.value; }
   };
   using Value = std::variant<std::monostate,  // kNull
                              bool,            // kBoolean

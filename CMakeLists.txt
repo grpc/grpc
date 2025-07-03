@@ -708,6 +708,9 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/channelz/v2/channelz.proto src/proto/grpc/channelz/v2/channelz.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
+  src/proto/grpc/channelz/v2/latent_see.proto src/proto/grpc/channelz/v2/latent_see.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/channelz/v2/service.proto src/proto/grpc/channelz/v2/service.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
@@ -1582,6 +1585,8 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx jwt_verifier_test)
   add_dependencies(buildtests_cxx lame_client_test)
   add_dependencies(buildtests_cxx latch_test)
+  add_dependencies(buildtests_cxx latent_see_service_test)
+  add_dependencies(buildtests_cxx latent_see_test)
   add_dependencies(buildtests_cxx layout_test)
   add_dependencies(buildtests_cxx lb_get_cpu_stats_test)
   add_dependencies(buildtests_cxx lb_load_data_store_test)
@@ -6571,12 +6576,15 @@ add_executable(activity_test
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/wait_set.cc
+  src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/time.cc
   test/core/promise/activity_test.cc
 )
@@ -9382,11 +9390,12 @@ add_executable(call_filters_test
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
+  src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
   src/core/util/ref_counted_string.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   test/core/call/call_filters_test.cc
@@ -9500,11 +9509,14 @@ add_executable(call_state_test
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
   src/core/lib/promise/activity.cc
+  src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/time.cc
   test/core/call/call_state_test.cc
 )
@@ -9991,10 +10003,11 @@ add_executable(cancel_callback_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   test/core/promise/cancel_callback_test.cc
@@ -11146,10 +11159,11 @@ add_executable(chunked_vector_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   test/core/util/chunked_vector_test.cc
@@ -15456,10 +15470,11 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   test/core/promise/exec_ctx_wakeup_scheduler_test.cc
@@ -16334,10 +16349,11 @@ add_executable(flow_control_test
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/transport/bdp_estimator.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   test/core/transport/chttp2/flow_control_test.cc
@@ -16423,10 +16439,11 @@ add_executable(for_each_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   test/core/promise/for_each_test.cc
@@ -20300,11 +20317,14 @@ add_executable(inter_activity_pipe_test
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
   src/core/lib/promise/activity.cc
+  src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/time.cc
   test/core/promise/inter_activity_pipe_test.cc
 )
@@ -20431,10 +20451,11 @@ add_executable(interceptor_list_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   test/core/promise/interceptor_list_test.cc
@@ -21066,11 +21087,14 @@ add_executable(latch_test
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
   src/core/lib/promise/activity.cc
+  src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/time.cc
   test/core/promise/latch_test.cc
 )
@@ -21111,6 +21135,108 @@ target_link_libraries(latch_test
   absl::function_ref
   absl::hash
   absl::type_traits
+  absl::statusor
+  absl::span
+  gpr
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(latent_see_service_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.h
+  src/cpp/latent_see/latent_see_client.cc
+  src/cpp/latent_see/latent_see_service.cc
+  test/cpp/end2end/latent_see_service_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(latent_see_service_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(latent_see_service_test PUBLIC cxx_std_17)
+target_include_directories(latent_see_service_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(latent_see_service_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc++_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(latent_see_test
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
+  src/core/util/backoff.cc
+  src/core/util/json/json_reader.cc
+  src/core/util/latent_see.cc
+  src/core/util/shared_bit_gen.cc
+  src/core/util/time.cc
+  test/core/util/latent_see_test.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(latent_see_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(latent_see_test PUBLIC cxx_std_17)
+target_include_directories(latent_see_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(latent_see_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  absl::flat_hash_map
+  absl::function_ref
   absl::statusor
   absl::span
   gpr
@@ -21438,12 +21564,15 @@ add_executable(lock_based_mpsc_test
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/wait_set.cc
+  src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/time.cc
   test/core/promise/lock_based_mpsc_test.cc
 )
@@ -21554,11 +21683,14 @@ add_executable(loop_test
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
   src/core/lib/promise/activity.cc
+  src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/time.cc
   test/core/promise/loop_test.cc
 )
@@ -21678,10 +21810,11 @@ add_executable(map_pipe_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   test/core/promise/map_pipe_test.cc
@@ -22113,10 +22246,11 @@ add_executable(message_assembler_test
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   test/core/transport/chttp2/message_assembler_test.cc
@@ -22858,11 +22992,14 @@ add_executable(observable_test
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
   src/core/lib/promise/activity.cc
+  src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/time.cc
   test/core/promise/observable_test.cc
 )
@@ -23970,9 +24107,10 @@ add_executable(periodic_update_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/util/backoff.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   test/core/resource_quota/periodic_update_test.cc
@@ -25561,11 +25699,14 @@ add_executable(promise_mutex_test
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
   src/core/lib/promise/activity.cc
+  src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/time.cc
   test/core/promise/promise_mutex_test.cc
 )
@@ -25949,6 +26090,10 @@ add_executable(qps_json_driver
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.pb.h
@@ -25999,6 +26144,8 @@ add_executable(qps_json_driver
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   src/core/util/seq_bit_set.cc
+  src/cpp/latent_see/latent_see_client.cc
+  src/cpp/latent_see/latent_see_service.cc
   test/cpp/qps/benchmark_config.cc
   test/cpp/qps/client_async.cc
   test/cpp/qps/client_callback.cc
@@ -26055,6 +26202,10 @@ add_executable(qps_worker
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.pb.h
@@ -26101,6 +26252,7 @@ add_executable(qps_worker
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   src/core/util/seq_bit_set.cc
+  src/cpp/latent_see/latent_see_service.cc
   test/cpp/qps/client_async.cc
   test/cpp/qps/client_callback.cc
   test/cpp/qps/client_sync.cc
@@ -26648,6 +26800,7 @@ add_executable(request_buffer_test
   src/core/telemetry/histogram_view.cc
   src/core/telemetry/stats.cc
   src/core/telemetry/stats_data.cc
+  src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/grpc_if_nametoindex_posix.cc
@@ -32350,11 +32503,14 @@ add_executable(wait_for_callback_test
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
   src/core/lib/promise/activity.cc
+  src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/time.cc
   test/core/promise/wait_for_callback_test.cc
 )
