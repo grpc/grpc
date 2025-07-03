@@ -16,6 +16,7 @@ ignore = [
     "FIX002", # Checks for "TODO" comments.
     "FIX004", # Checks for "HACK" comments.
 
+    # TODO(asheshvidyut): this should be removed after type hints PR are merged.
     "ANN401", # Checks that function arguments are annotated with a more specific type than Any.
 
     "S105", # Checks for potential uses of hardcoded passwords in strings.

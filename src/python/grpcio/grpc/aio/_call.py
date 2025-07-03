@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Invocation-side implementation of gRPC Asyncio Python."""
+# TODO(asheshvidyut): remove these when we move CI tests to python >= 3.9
 from __future__ import annotations
 
 import asyncio
@@ -20,7 +21,16 @@ from functools import partial
 import inspect
 import logging
 import traceback
-from typing import Any, AsyncIterator, Generator, Generic, Optional, Union
+from typing import (
+    Any,
+    AsyncIterator,
+    Generator,
+    Generic,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+)
 
 import grpc
 from grpc import _common
@@ -60,6 +70,17 @@ _NON_OK_CALL_REPRESENTATION = (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+AioRpcErrorReduceReturnType = Tuple[
+    Type["AioRpcError"],  # Type object of the class AioRpcError
+    Tuple[
+        grpc.StatusCode,  # self._code
+        Optional[Metadata],  # self._initial_metadata
+        Optional[Metadata],  # self._trailing_metadata
+        Optional[str],  # self._details
+        Optional[str],  # self._debug_error_string
+    ],
+]
 
 
 class AioRpcError(grpc.RpcError):
@@ -162,16 +183,7 @@ class AioRpcError(grpc.RpcError):
     def __str__(self) -> str:
         return self._repr()
 
-    def __reduce__(self) -> tuple[
-        type[AioRpcError],  # Type object of the class AioRpcError
-        tuple[
-            grpc.StatusCode,  # self._code
-            Metadata,  # self._initial_metadata
-            Metadata,  # self._trailing_metadata
-            Optional[str],  # self._details
-            Optional[str],  # self._debug_error_string
-        ],
-    ]:
+    def __reduce__(self) -> AioRpcErrorReduceReturnType:
         return (
             type(self),
             (

@@ -23,7 +23,6 @@ from grpc import _common
 from grpc import _compression
 from grpc import _grpcio_metadata
 from grpc._cython import cygrpc
-from typing_extensions import Self
 
 from . import _base_call
 from . import _base_channel
@@ -384,7 +383,7 @@ class Channel(_base_channel.Channel):
             self._loop,
         )
 
-    async def __aenter__(self) -> Self:
+    async def __aenter__(self) -> 'Channel':
         return self
 
     async def __aexit__(

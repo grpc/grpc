@@ -28,7 +28,13 @@ source $VIRTUALENV/bin/activate
 
 pip install ruff==0.12.1
 
+# Check if --fix flag is provided
+RUFF_COMMAND="ruff check"
+if [[ "$1" == "--fix" ]]; then
+    RUFF_COMMAND="ruff check --fix"
+fi
+
 EXIT=0
-ruff check --config ruff.toml "${DIRS[@]}" || EXIT=1
+$RUFF_COMMAND --config ruff.toml "${DIRS[@]}" || EXIT=1
 
 exit $EXIT

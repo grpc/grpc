@@ -17,7 +17,6 @@ import abc
 from typing import Generic, Optional
 
 import grpc
-from typing_extensions import Self
 
 from . import _base_call
 from ._typing import DeserializingFunction
@@ -193,7 +192,7 @@ class Channel(abc.ABC):
     """
 
     @abc.abstractmethod
-    async def __aenter__(self) -> Self:
+    async def __aenter__(self) -> 'Channel':
         """Starts an asynchronous context manager.
 
         Returns:

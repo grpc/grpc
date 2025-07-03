@@ -37,6 +37,5 @@ opentelemetry-sdk
 protobuf
 pyyaml  # for DNS test
 requests
-typing-extensions
 twisted  # for DNS test
 urllib3
