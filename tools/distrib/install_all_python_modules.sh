@@ -29,6 +29,7 @@ function maybe_run_command () {
 }
 
 python3 -m pip install --upgrade "cython==3.1.1";
+python3 -m pip install --upgrade "typing-extensions>=4.0.0";
 python3 setup.py install;
 
 # Build and install grpcio_tools

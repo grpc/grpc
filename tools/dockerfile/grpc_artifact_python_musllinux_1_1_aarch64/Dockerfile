@@ -46,12 +46,12 @@ RUN apk add openssl openssl-dev zstd zstd-dev hiredis-dev
 # For some reason, this specific build segfaults on ccache unless cython is intalled.
 #===================================
 # Install Python build requirements
-RUN /opt/python/cp38-cp38/bin/pip install --upgrade 'cython==3.1.1' && \
-  /opt/python/cp39-cp39/bin/pip install --upgrade 'cython==3.1.1' && \
-  /opt/python/cp310-cp310/bin/pip install --upgrade 'cython==3.1.1' && \
-  /opt/python/cp311-cp311/bin/pip install --upgrade 'cython==3.1.1' && \
-  /opt/python/cp312-cp312/bin/pip install --upgrade 'cython==3.1.1' && \
-  /opt/python/cp313-cp313/bin/pip install --upgrade 'cython==3.1.1'
+RUN /opt/python/cp38-cp38/bin/pip install --upgrade 'cython==3.1.1' 'typing-extensions>=4.0.0' && \
+  /opt/python/cp39-cp39/bin/pip install --upgrade 'cython==3.1.1' 'typing-extensions>=4.0.0' && \
+  /opt/python/cp310-cp310/bin/pip install --upgrade 'cython==3.1.1' 'typing-extensions>=4.0.0' && \
+  /opt/python/cp311-cp311/bin/pip install --upgrade 'cython==3.1.1' 'typing-extensions>=4.0.0' && \
+  /opt/python/cp312-cp312/bin/pip install --upgrade 'cython==3.1.1' 'typing-extensions>=4.0.0' && \
+  /opt/python/cp313-cp313/bin/pip install --upgrade 'cython==3.1.1' 'typing-extensions>=4.0.0'
 
 
 #=================

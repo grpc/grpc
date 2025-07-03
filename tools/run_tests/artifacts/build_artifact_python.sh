@@ -40,6 +40,7 @@ then
   # so we are trying to perform as few download-and-install operations
   # as possible.
   "${PYTHON}" -m pip install --upgrade 'cython==3.1.1'
+  "${PYTHON}" -m pip install --upgrade 'typing-extensions>=4.0.0'
 fi
 
 # Allow build_ext to build C/C++ files in parallel
