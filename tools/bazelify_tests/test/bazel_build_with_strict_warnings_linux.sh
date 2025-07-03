@@ -19,4 +19,4 @@ set -ex
 # is completely C++17.
 # (it leverages some C++20 extensions at the time of writing).
 # See b/391433873.
-tools/bazel build --define=use_strict_warning=true --build_tag_filters=-grpc-fuzztest -- "$@"
+tools/bazel build --define=use_strict_warning=true -- "$@"
