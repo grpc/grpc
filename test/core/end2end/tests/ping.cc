@@ -29,7 +29,6 @@ namespace grpc_core {
 namespace {
 
 CORE_END2END_TEST(RetryHttp2Tests, Ping) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   const int kPingCount = 5;
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   InitClient(ChannelArgs()
