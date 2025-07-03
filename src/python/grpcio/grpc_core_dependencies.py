@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio/grpc_core_dependencies.py.template`!!!
+# AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio/grpc_core_dependencies.py.inja`!!!
 
 CORE_SOURCE_FILES = [
     'src/core/call/call_arena_allocator.cc',
@@ -1652,4 +1652,4 @@ ASM_SOURCE_FILES = {
         'third_party/boringssl-with-bazel/src/gen/test_support/trampoline-x86-win.asm',
         'third_party/boringssl-with-bazel/src/gen/test_support/trampoline-x86_64-win.asm',
     ],
-}
+} 
