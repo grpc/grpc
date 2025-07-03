@@ -888,6 +888,7 @@ libs:
   - src/core/lib/debug/trace_impl.h
   - src/core/lib/event_engine/ares_resolver.h
   - src/core/lib/event_engine/cf_engine/cf_engine.h
+  - src/core/lib/event_engine/cf_engine/cfsocket_listener.h
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.h
   - src/core/lib/event_engine/cf_engine/cftype_unique_ref.h
   - src/core/lib/event_engine/cf_engine/dns_service_resolver.h
@@ -1829,6 +1830,7 @@ libs:
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/event_engine/ares_resolver.cc
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
+  - src/core/lib/event_engine/cf_engine/cfsocket_listener.cc
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
   - src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
@@ -2556,6 +2558,7 @@ libs:
   - src/core/lib/debug/trace_impl.h
   - src/core/lib/event_engine/ares_resolver.h
   - src/core/lib/event_engine/cf_engine/cf_engine.h
+  - src/core/lib/event_engine/cf_engine/cfsocket_listener.h
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.h
   - src/core/lib/event_engine/cf_engine/cftype_unique_ref.h
   - src/core/lib/event_engine/cf_engine/dns_service_resolver.h
@@ -3067,6 +3070,7 @@ libs:
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/event_engine/ares_resolver.cc
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
+  - src/core/lib/event_engine/cf_engine/cfsocket_listener.cc
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
   - src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
@@ -4606,6 +4610,7 @@ libs:
   - src/core/lib/debug/trace_impl.h
   - src/core/lib/event_engine/ares_resolver.h
   - src/core/lib/event_engine/cf_engine/cf_engine.h
+  - src/core/lib/event_engine/cf_engine/cfsocket_listener.h
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.h
   - src/core/lib/event_engine/cf_engine/cftype_unique_ref.h
   - src/core/lib/event_engine/cf_engine/dns_service_resolver.h
@@ -4968,6 +4973,7 @@ libs:
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/event_engine/ares_resolver.cc
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
+  - src/core/lib/event_engine/cf_engine/cfsocket_listener.cc
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
   - src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
@@ -6712,6 +6718,7 @@ targets:
   - src/core/lib/debug/trace_impl.h
   - src/core/lib/event_engine/ares_resolver.h
   - src/core/lib/event_engine/cf_engine/cf_engine.h
+  - src/core/lib/event_engine/cf_engine/cfsocket_listener.h
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.h
   - src/core/lib/event_engine/cf_engine/cftype_unique_ref.h
   - src/core/lib/event_engine/cf_engine/dns_service_resolver.h
@@ -7037,6 +7044,7 @@ targets:
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/event_engine/ares_resolver.cc
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
+  - src/core/lib/event_engine/cf_engine/cfsocket_listener.cc
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
   - src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
@@ -7743,6 +7751,7 @@ targets:
   - test/core/event_engine/test_suite/event_engine_test_framework.h
   - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h
   - test/core/event_engine/test_suite/tests/client_test.h
+  - test/core/event_engine/test_suite/tests/server_test.h
   - test/core/event_engine/test_suite/tests/timer_test.h
   src:
   - test/core/event_engine/event_engine_test_utils.cc
@@ -7750,6 +7759,7 @@ targets:
   - test/core/event_engine/test_suite/event_engine_test_framework.cc
   - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
   - test/core/event_engine/test_suite/tests/client_test.cc
+  - test/core/event_engine/test_suite/tests/server_test.cc
   - test/core/event_engine/test_suite/tests/timer_test.cc
   deps:
   - gtest
@@ -11288,6 +11298,7 @@ targets:
   - src/core/lib/debug/trace_impl.h
   - src/core/lib/event_engine/ares_resolver.h
   - src/core/lib/event_engine/cf_engine/cf_engine.h
+  - src/core/lib/event_engine/cf_engine/cfsocket_listener.h
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.h
   - src/core/lib/event_engine/cf_engine/cftype_unique_ref.h
   - src/core/lib/event_engine/cf_engine/dns_service_resolver.h
@@ -11613,6 +11624,7 @@ targets:
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/event_engine/ares_resolver.cc
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
+  - src/core/lib/event_engine/cf_engine/cfsocket_listener.cc
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
   - src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
@@ -13090,6 +13102,7 @@ targets:
   - src/core/lib/debug/trace_impl.h
   - src/core/lib/event_engine/ares_resolver.h
   - src/core/lib/event_engine/cf_engine/cf_engine.h
+  - src/core/lib/event_engine/cf_engine/cfsocket_listener.h
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.h
   - src/core/lib/event_engine/cf_engine/cftype_unique_ref.h
   - src/core/lib/event_engine/cf_engine/dns_service_resolver.h
@@ -13431,6 +13444,7 @@ targets:
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/event_engine/ares_resolver.cc
   - src/core/lib/event_engine/cf_engine/cf_engine.cc
+  - src/core/lib/event_engine/cf_engine/cfsocket_listener.cc
   - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
   - src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
