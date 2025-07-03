@@ -92,7 +92,7 @@ class SimpleQueue {
     auto waker = std::move(waker_);
     lock.Release();
 
-    // TODO(akshitpatel) : [PH2][P0] : Investigate a mechanism to only wake up
+    // TODO(akshitpatel) : [PH2][P2] : Investigate a mechanism to only wake up
     // if the sender will be able to send more data.
     waker.Wakeup();
     GRPC_STREAM_DATA_QUEUE_DEBUG
@@ -140,7 +140,6 @@ class SimpleQueue {
   std::queue<Entry> queue_ ABSL_GUARDED_BY(mu_);
   uint32_t max_tokens_;
   uint32_t tokens_consumed_ = 0;
-  // TODO(akshitpatel) : [PH2][P0] : Can we get away with IntraActivity waker?
   Waker waker_;
 };
 
