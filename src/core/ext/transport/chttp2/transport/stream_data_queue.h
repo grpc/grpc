@@ -29,7 +29,7 @@
 namespace grpc_core {
 namespace http2 {
 
-#define STREAM_DATA_QUEUE_DEBUG VLOG(2)
+#define GRPC_STREAM_DATA_QUEUE_DEBUG VLOG(2)
 
 template <typename T>
 class SimpleQueue {
@@ -49,11 +49,12 @@ class SimpleQueue {
     return
         [this, data = std::move(data), tokens]() mutable -> Poll<StatusFlag> {
           MutexLock lock(&mu_);
-          STREAM_DATA_QUEUE_DEBUG << "Enqueueing data. Data tokens: " << tokens;
+          GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueueing data. Data tokens: "
+                                       << tokens;
           if (!queue_.empty() &&
               tokens_consumed_ >
                   ((max_tokens_ >= tokens) ? max_tokens_ - tokens : 0)) {
-            STREAM_DATA_QUEUE_DEBUG
+            GRPC_STREAM_DATA_QUEUE_DEBUG
                 << "Token threshold reached. Data tokens: " << tokens
                 << " Tokens consumed: " << tokens_consumed_
                 << " Max tokens: " << max_tokens_;
@@ -63,7 +64,7 @@ class SimpleQueue {
 
           tokens_consumed_ += tokens;
           queue_.emplace(Entry{std::move(data), tokens});
-          STREAM_DATA_QUEUE_DEBUG
+          GRPC_STREAM_DATA_QUEUE_DEBUG
               << "Enqueue successful. Data tokens: " << tokens
               << " Current tokens consumed: " << tokens_consumed_;
           return Success{};
@@ -76,7 +77,7 @@ class SimpleQueue {
     ReleasableMutexLock lock(&mu_);
     if (queue_.empty() ||
         (queue_.front().tokens > max_tokens && !allow_partial_dequeue)) {
-      STREAM_DATA_QUEUE_DEBUG
+      GRPC_STREAM_DATA_QUEUE_DEBUG
           << "Dequeueing data. Queue size: " << queue_.size()
           << " Max tokens: " << max_tokens << " Front tokens: "
           << (!queue_.empty() ? std::to_string(queue_.front().tokens)
@@ -94,7 +95,7 @@ class SimpleQueue {
     // TODO(akshitpatel) : [PH2][P0] : Investigate a mechanism to only wake up
     // if the sender will be able to send more data.
     waker.Wakeup();
-    STREAM_DATA_QUEUE_DEBUG
+    GRPC_STREAM_DATA_QUEUE_DEBUG
         << "Dequeue successful. Data tokens released: " << entry.tokens
         << " Current tokens consumed: " << tokens_consumed_;
     return std::move(entry.data);
