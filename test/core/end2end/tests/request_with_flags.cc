@@ -117,43 +117,36 @@ void InvokeRequestWithFlags(CoreEnd2endTest& test,
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, BadFlagsOnSendInitialMetadata) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   InvokeRequestWithFlags(*this, {{GRPC_OP_SEND_INITIAL_METADATA, 0xdeadbeef}},
                          GRPC_CALL_ERROR_INVALID_FLAGS);
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, BadFlagsOnSendMessage) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   InvokeRequestWithFlags(*this, {{GRPC_OP_SEND_MESSAGE, 0xdeadbeef}},
                          GRPC_CALL_ERROR_INVALID_FLAGS);
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, BadFlagsOnSendCloseFromClient) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   InvokeRequestWithFlags(*this, {{GRPC_OP_SEND_CLOSE_FROM_CLIENT, 0xdeadbeef}},
                          GRPC_CALL_ERROR_INVALID_FLAGS);
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, BadFlagsOnRecvInitialMetadata) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   InvokeRequestWithFlags(*this, {{GRPC_OP_RECV_INITIAL_METADATA, 0xdeadbeef}},
                          GRPC_CALL_ERROR_INVALID_FLAGS);
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, BadFlagsOnRecvStatusOnClient) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   InvokeRequestWithFlags(*this, {{GRPC_OP_RECV_STATUS_ON_CLIENT, 0xdeadbeef}},
                          GRPC_CALL_ERROR_INVALID_FLAGS);
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, WriteBufferIntAcceptedOnSendMessage) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   InvokeRequestWithFlags(
       *this, {{GRPC_OP_SEND_MESSAGE, GRPC_WRITE_BUFFER_HINT}}, GRPC_CALL_OK);
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, WriteNoCompressAcceptedOnSendMessage) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   InvokeRequestWithFlags(
       *this, {{GRPC_OP_SEND_MESSAGE, GRPC_WRITE_NO_COMPRESS}}, GRPC_CALL_OK);
 }

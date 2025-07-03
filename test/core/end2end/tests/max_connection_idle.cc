@@ -82,7 +82,6 @@ bool SimpleRequestBody(CoreEnd2endTest& test) {
 }
 
 CORE_END2END_TEST(RetryHttp2Tests, MaxConnectionIdle) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   const auto kMaxConnectionIdle = Duration::Seconds(2);
   const auto kMaxConnectionAge = Duration::Seconds(10);
   InitClient(

@@ -35,7 +35,6 @@ namespace {
 // - first attempt gets ABORTED with a long delay
 // - second attempt succeeds
 CORE_END2END_TEST(RetryTests, RetryServerPushbackDelay) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(

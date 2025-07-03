@@ -37,7 +37,6 @@ namespace {
 // Client sends a request, then waits for the keepalive watchdog timeouts before
 // returning status.
 CORE_END2END_TEST(Http2SingleHopTests, KeepaliveTimeout) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   // Disable ping ack to trigger the keepalive timeout
   InitServer(DefaultServerArgs().Set("grpc.http2.ack_pings", false));
   InitClient(ChannelArgs()
@@ -64,7 +63,6 @@ CORE_END2END_TEST(Http2SingleHopTests, KeepaliveTimeout) {
 // 200ms. In the success case, each ping ack should reset the keepalive timer so
 // that the keepalive ping is never sent.
 CORE_END2END_TEST(Http2SingleHopTests, ReadDelaysKeepalive) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
 #ifdef GRPC_POSIX_SOCKET
   // It is hard to get the timing right for the polling engine poll.
   if (ConfigVars::Get().PollStrategy() == "poll") {
