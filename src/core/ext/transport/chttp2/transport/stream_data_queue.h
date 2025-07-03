@@ -32,43 +32,35 @@ namespace http2 {
 #define GRPC_STREAM_DATA_QUEUE_DEBUG VLOG(2)
 
 template <typename T>
-class SimpleQueue {
+class Center : public RefCounted<Center<T>> {
  public:
-  explicit SimpleQueue(uint32_t max_tokens) : max_tokens_(max_tokens) {}
-  ~SimpleQueue() = default;
-
-  SimpleQueue(SimpleQueue&&) = default;
-  SimpleQueue& operator=(SimpleQueue&&) = default;
-  SimpleQueue(const SimpleQueue&) = delete;
-  SimpleQueue& operator=(const SimpleQueue&) = delete;
+  explicit Center(const uint32_t max_tokens) : max_tokens_(max_tokens) {}
 
   // Returns a promise that resolves when the data is enqueued.
   // It is expected that calls to this function are not done in parallel. At
   // most one call to this function should be pending at a time.
-  auto Enqueue(T data, uint32_t tokens) {
-    return
-        [this, data = std::move(data), tokens]() mutable -> Poll<StatusFlag> {
-          MutexLock lock(&mu_);
-          GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueueing data. Data tokens: "
-                                       << tokens;
-          if (!queue_.empty() &&
-              tokens_consumed_ >
-                  ((max_tokens_ >= tokens) ? max_tokens_ - tokens : 0)) {
-            GRPC_STREAM_DATA_QUEUE_DEBUG
-                << "Token threshold reached. Data tokens: " << tokens
-                << " Tokens consumed: " << tokens_consumed_
-                << " Max tokens: " << max_tokens_;
-            waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-            return Pending{};
-          }
+  Poll<StatusFlag> Enqueue(T data, uint32_t tokens) {
+    // TODO(akshitpatel) : [PH2][P0] : Add a check to ensure that this function
+    // is not called in parallel.
+    MutexLock lock(&mu_);
+    GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueueing data. Data tokens: " << tokens;
+    if (!queue_.empty() &&
+        tokens_consumed_ >
+            ((max_tokens_ >= tokens) ? max_tokens_ - tokens : 0)) {
+      GRPC_STREAM_DATA_QUEUE_DEBUG
+          << "Token threshold reached. Data tokens: " << tokens
+          << " Tokens consumed: " << tokens_consumed_
+          << " Max tokens: " << max_tokens_;
+      waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+      return Pending{};
+    }
 
-          tokens_consumed_ += tokens;
-          queue_.emplace(Entry{std::move(data), tokens});
-          GRPC_STREAM_DATA_QUEUE_DEBUG
-              << "Enqueue successful. Data tokens: " << tokens
-              << " Current tokens consumed: " << tokens_consumed_;
-          return Success{};
-        };
+    tokens_consumed_ += tokens;
+    queue_.emplace(Entry{std::move(data), tokens});
+    GRPC_STREAM_DATA_QUEUE_DEBUG
+        << "Enqueue successful. Data tokens: " << tokens
+        << " Current tokens consumed: " << tokens_consumed_;
+    return Success{};
   }
 
   // Sync function to dequeue the next entry. Returns nullopt if the queue is
@@ -103,28 +95,12 @@ class SimpleQueue {
     return std::move(entry.data);
   }
 
-  std::optional<T> Dequeue() {
-    ReleasableMutexLock lock(&mu_);
-    if (queue_.empty()) {
-      return std::nullopt;
-    }
-
-    auto entry = std::move(queue_.front());
-    queue_.pop();
-    tokens_consumed_ -= entry.tokens;
-    auto waker = std::move(waker_);
-    lock.Release();
-
-    waker.Wakeup();
-    return std::move(entry.data);
-  }
-
-  bool TestOnlyIsEmpty() {
+  bool IsEmpty() {
     MutexLock lock(&mu_);
     return queue_.empty();
   }
 
-  std::optional<uint32_t> TestOnlyPeekTokens() {
+  std::optional<uint32_t> PeekTokens() {
     MutexLock lock(&mu_);
     if (queue_.empty()) {
       return std::nullopt;
@@ -140,9 +116,41 @@ class SimpleQueue {
   };
   Mutex mu_;
   std::queue<Entry> queue_ ABSL_GUARDED_BY(mu_);
-  uint32_t max_tokens_;
+  uint32_t max_tokens_ ABSL_GUARDED_BY(mu_);
   uint32_t tokens_consumed_ = 0;
   Waker waker_;
+};
+
+template <typename T>
+class SimpleQueue {
+ public:
+  explicit SimpleQueue(uint32_t max_tokens)
+      : center_(MakeRefCounted<Center<T>>(max_tokens)) {}
+
+  SimpleQueue(SimpleQueue&& rhs) = default;
+  SimpleQueue& operator=(SimpleQueue&& rhs) = default;
+  SimpleQueue(const SimpleQueue&) = delete;
+  SimpleQueue& operator=(const SimpleQueue&) = delete;
+
+  auto Enqueue(T data, uint32_t tokens) {
+    return [center = center_, tokens, data = std::move(data)] {
+      return center->Enqueue(std::move(data), tokens);
+    };
+  }
+
+  std::optional<T> Dequeue(uint32_t max_tokens, bool allow_partial_dequeue) {
+    return center_->Dequeue(max_tokens, allow_partial_dequeue);
+  }
+
+  std::optional<T> ImmediateDequeue() {
+    return center_->Dequeue(std::numeric_limits<uint32_t>::max(), true);
+  }
+
+  bool TestOnlyIsEmpty() { return center_->IsEmpty(); }
+  uint32_t TestOnlyPeekTokens() { return center_->PeekTokens(); }
+
+ private:
+  RefCountedPtr<Center<T>> center_;
 };
 
 class StreamDataQueue {
@@ -155,8 +163,6 @@ class StreamDataQueue {
   StreamDataQueue& operator=(const StreamDataQueue&) = delete;
 
  private:
-  // TODO(akshitpatel) : [PH2][P2] Keep this either in the transport or here.
-  // Not both places.
   GrpcMessageDisassembler disassembler;
   SimpleQueue<MessageHandle> msg_queue_;
 };
