@@ -200,8 +200,10 @@ HttpRequest::HttpRequest(
   GRPC_CLOSURE_INIT(&continue_done_write_after_schedule_on_exec_ctx_,
                     ContinueDoneWriteAfterScheduleOnExecCtx, this,
                     grpc_schedule_on_exec_ctx);
-  CHECK(pollent);
-  grpc_polling_entity_add_to_pollset_set(pollent, pollset_set_);
+  if (!grpc_event_engine::experimental::UsePollsetAlternative()) {
+    CHECK(pollent);
+    grpc_polling_entity_add_to_pollset_set(pollent, pollset_set_);
+  }
 }
 
 HttpRequest::~HttpRequest() {

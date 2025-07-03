@@ -138,4 +138,26 @@ XdsHttpGcpAuthnFilter::GenerateServiceConfig(
                                 JsonDump(hcm_filter_config.config)};
 }
 
+void XdsHttpGcpAuthnFilter::UpdateBlackboard(
+    const FilterConfig& hcm_filter_config, const Blackboard* old_blackboard,
+    Blackboard* new_blackboard) const {
+  ValidationErrors errors;
+  auto config = LoadFromJson<GcpAuthenticationParsedConfig::Config>(
+      hcm_filter_config.config, JsonArgs(), &errors);
+  CHECK(errors.ok()) << errors.message("filter config validation failed");
+  RefCountedPtr<GcpAuthenticationFilter::CallCredentialsCache> cache;
+  if (old_blackboard != nullptr) {
+    cache = old_blackboard->Get<GcpAuthenticationFilter::CallCredentialsCache>(
+        config.filter_instance_name);
+  }
+  if (cache != nullptr) {
+    cache->SetMaxSize(config.cache_size);
+  } else {
+    cache = MakeRefCounted<GcpAuthenticationFilter::CallCredentialsCache>(
+        config.cache_size);
+  }
+  CHECK_NE(new_blackboard, nullptr);
+  new_blackboard->Set(config.filter_instance_name, std::move(cache));
+}
+
 }  // namespace grpc_core

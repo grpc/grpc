@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "absl/cleanup/cleanup.h"
@@ -207,7 +208,7 @@ channelz::PropertyList OutputBuffers::Reader::ChannelzProperties() {
 }
 
 void OutputBuffers::AddData(channelz::DataSink sink) {
-  sink.AddAdditionalInfo(
+  sink.AddData(
       "output_buffers",
       channelz::PropertyList()
           .Set("num_readers", num_readers_.load(std::memory_order_relaxed))
@@ -507,11 +508,11 @@ void InputQueue::Cancel(Completion* completion) {
 
 void InputQueue::AddData(channelz::DataSink sink) {
   MutexLock lock(&mu_);
-  sink.AddAdditionalInfo(
-      "input_queue", channelz::PropertyList()
-                         .Set("read_requested", absl::StrCat(read_requested_))
-                         .Set("read_completed", absl::StrCat(read_completed_))
-                         .Set("closed_error", closed_error_));
+  sink.AddData("input_queue",
+               channelz::PropertyList()
+                   .Set("read_requested", absl::StrCat(read_requested_))
+                   .Set("read_completed", absl::StrCat(read_completed_))
+                   .Set("closed_error", closed_error_));
 }
 
 void InputQueue::SetClosed(absl::Status status) {
@@ -865,14 +866,19 @@ void Endpoint::ReceiveSecurityFrame(PromiseEndpoint& endpoint,
 }
 
 void Endpoint::AddData(channelz::DataSink sink) {
-  sink.AddAdditionalInfo(
+  sink.AddData(
       absl::StrCat("endpoint", ctx_->id),
       channelz::PropertyList()
           .Set("now", ctx_->clock->Now())
           .Set("encode_alignment", ctx_->encode_alignment)
           .Set("decode_alignment", ctx_->decode_alignment)
           .Set("secure_frame_bytes_queued",
-               ctx_->secure_frame_queue->InstantaneousQueuedBytes())
+               [this]() -> std::optional<uint64_t> {
+                 if (ctx_->secure_frame_queue.Get() == nullptr) {
+                   return std::nullopt;
+                 }
+                 return ctx_->secure_frame_queue->InstantaneousQueuedBytes();
+               }())
           .Set("enable_tracing", ctx_->enable_tracing)
           .Merge(ctx_->reader->ChannelzProperties()));
   party_->ExportToChannelz(absl::StrCat("endpoint_party", ctx_->id), sink);
@@ -942,8 +948,8 @@ Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
                       ep_ctx->transport_ctx->stats_plugin_group));
                 }
               }
-              ep_ctx->secure_frame_queue =
-                  MakeRefCounted<SecureFrameQueue>(ep_ctx->encode_alignment);
+              ep_ctx->secure_frame_queue.Set(
+                  MakeRefCounted<SecureFrameQueue>(ep_ctx->encode_alignment));
               auto* transport_framing_endpoint_extension =
                   GetTransportFramingEndpointExtension(*endpoint);
               if (transport_framing_endpoint_extension != nullptr) {
@@ -995,6 +1001,7 @@ DataEndpoints::DataEndpoints(
         input_queues_, std::move(endpoints_vec[i]), enable_tracing, ctx,
         ztrace_collector));
   }
+  SourceConstructed();
 }
 
 void DataEndpoints::AddData(channelz::DataSink sink) {

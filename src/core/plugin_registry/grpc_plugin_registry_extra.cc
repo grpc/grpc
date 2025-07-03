@@ -28,6 +28,7 @@ extern void GcpAuthenticationFilterRegister(
 extern void RegisterXdsChannelStackModifier(
     CoreConfiguration::Builder* builder);
 extern void RegisterChannelDefaultCreds(CoreConfiguration::Builder* builder);
+extern void RegisterDefaultCallCreds(CoreConfiguration::Builder* builder);
 extern void RegisterXdsResolver(CoreConfiguration::Builder* builder);
 extern void RegisterCloud2ProdResolver(CoreConfiguration::Builder* builder);
 extern void RegisterXdsClusterManagerLbPolicy(
@@ -52,6 +53,7 @@ void RegisterExtraFilters(CoreConfiguration::Builder* builder) {
   GcpAuthenticationFilterRegister(builder);
   RegisterXdsChannelStackModifier(builder);
   RegisterChannelDefaultCreds(builder);
+  RegisterDefaultCallCreds(builder);
   RegisterXdsResolver(builder);
   RegisterCloud2ProdResolver(builder);
   RegisterXdsClusterManagerLbPolicy(builder);
