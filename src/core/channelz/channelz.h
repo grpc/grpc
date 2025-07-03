@@ -627,11 +627,6 @@ class SocketNode final : public BaseNode {
     static int ChannelArgsCompare(const Security* a, const Security* b) {
       return QsortCompare(a, b);
     }
-
-    grpc_arg MakeChannelArg() const;
-
-    static RefCountedPtr<Security> GetFromChannelArgs(
-        const grpc_channel_args* args);
   };
 
   SocketNode(std::string local, std::string remote, std::string name,

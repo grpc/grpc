@@ -650,40 +650,6 @@ Json SocketNode::Security::RenderJson() {
   return Json::FromObject(std::move(data));
 }
 
-namespace {
-
-void* SecurityArgCopy(void* p) {
-  SocketNode::Security* xds_certificate_provider =
-      static_cast<SocketNode::Security*>(p);
-  return xds_certificate_provider->Ref().release();
-}
-
-void SecurityArgDestroy(void* p) {
-  SocketNode::Security* xds_certificate_provider =
-      static_cast<SocketNode::Security*>(p);
-  xds_certificate_provider->Unref();
-}
-
-int SecurityArgCmp(void* p, void* q) { return QsortCompare(p, q); }
-
-const grpc_arg_pointer_vtable kChannelArgVtable = {
-    SecurityArgCopy, SecurityArgDestroy, SecurityArgCmp};
-
-}  // namespace
-
-grpc_arg SocketNode::Security::MakeChannelArg() const {
-  return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_CHANNELZ_SECURITY),
-      const_cast<SocketNode::Security*>(this), &kChannelArgVtable);
-}
-
-RefCountedPtr<SocketNode::Security> SocketNode::Security::GetFromChannelArgs(
-    const grpc_channel_args* args) {
-  Security* security = grpc_channel_args_find_pointer<Security>(
-      args, GRPC_ARG_CHANNELZ_SECURITY);
-  return security != nullptr ? security->Ref() : nullptr;
-}
-
 //
 // SocketNode
 //
