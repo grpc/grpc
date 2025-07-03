@@ -21,6 +21,11 @@ mkdir install
 cd ..
 set "INSTALL_PATH=%~dp0\cmake\install"
 
+If EXIST "generate_artifacts.sh" (
+  ECHO Calling generate_artifacts.sh...
+  bash -c ./generate_artifacts.sh || goto :error
+)
+
 If "%GRPC_BUILD_ACTIVATE_VS_TOOLS%" == "2019" (
   @rem set cl.exe build environment to build with VS2019 tooling
   @rem this is required for Ninja build to work

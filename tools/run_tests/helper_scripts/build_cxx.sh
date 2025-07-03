@@ -20,6 +20,11 @@ cd "$(dirname "$0")/../../.."
 mkdir -p cmake/install
 INSTALL_PATH="$(pwd)/cmake/install"
 
+if [ -f "./generate_artifacts.sh" ]; then
+  echo "Calling generate_artifacts.sh..."
+  bash -c ./generate_artifacts.sh
+fi
+
 # Install abseil-cpp since opentelemetry CMake uses find_package to find it.
 cd third_party/abseil-cpp
 mkdir build
