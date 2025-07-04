@@ -15,6 +15,7 @@
 
 import collections
 import threading
+from typing import Any, Callable, Dict, Iterator, Optional
 
 import grpc
 from grpc import _common
@@ -26,6 +27,7 @@ from grpc.framework.foundation import abandonment
 from grpc.framework.foundation import logging_pool
 from grpc.framework.foundation import stream
 from grpc.framework.interfaces.face import face
+from grpc.framework.interfaces.face import utilities as face_utilities
 
 # pylint: disable=too-many-return-statements
 
@@ -84,8 +86,8 @@ class _FaceServicerContext(face.ServicerContext):
         self._servicer_context.set_details(details)
 
 
-def _adapt_unary_request_inline(unary_request_inline):
-    def adaptation(request, servicer_context):
+def _adapt_unary_request_inline(unary_request_inline: Callable) -> Callable:
+    def adaptation(request: Any, servicer_context: Any) -> Any:
         return unary_request_inline(
             request, _FaceServicerContext(servicer_context)
         )
@@ -93,8 +95,8 @@ def _adapt_unary_request_inline(unary_request_inline):
     return adaptation
 
 
-def _adapt_stream_request_inline(stream_request_inline):
-    def adaptation(request_iterator, servicer_context):
+def _adapt_stream_request_inline(stream_request_inline: Callable) -> Callable:
+    def adaptation(request_iterator: Iterator[Any], servicer_context: Any) -> Iterator[Any]:
         return stream_request_inline(
             request_iterator, _FaceServicerContext(servicer_context)
         )
@@ -174,8 +176,8 @@ def _run_request_pipe_thread(
     request_pipe_thread.start()
 
 
-def _adapt_unary_unary_event(unary_unary_event):
-    def adaptation(request, servicer_context):
+def _adapt_unary_unary_event(unary_unary_event: Callable) -> Callable:
+    def adaptation(request: Any, servicer_context: Any) -> Any:
         callback = _Callback()
         if not servicer_context.add_callback(callback.cancel):
             raise abandonment.Abandoned()
@@ -189,8 +191,8 @@ def _adapt_unary_unary_event(unary_unary_event):
     return adaptation
 
 
-def _adapt_unary_stream_event(unary_stream_event):
-    def adaptation(request, servicer_context):
+def _adapt_unary_stream_event(unary_stream_event: Callable) -> Callable:
+    def adaptation(request: Any, servicer_context: Any) -> Iterator[Any]:
         callback = _Callback()
         if not servicer_context.add_callback(callback.cancel):
             raise abandonment.Abandoned()
@@ -207,8 +209,8 @@ def _adapt_unary_stream_event(unary_stream_event):
     return adaptation
 
 
-def _adapt_stream_unary_event(stream_unary_event):
-    def adaptation(request_iterator, servicer_context):
+def _adapt_stream_unary_event(stream_unary_event: Callable) -> Callable:
+    def adaptation(request_iterator: Iterator[Any], servicer_context: Any) -> Any:
         callback = _Callback()
         if not servicer_context.add_callback(callback.cancel):
             raise abandonment.Abandoned()
@@ -224,8 +226,8 @@ def _adapt_stream_unary_event(stream_unary_event):
     return adaptation
 
 
-def _adapt_stream_stream_event(stream_stream_event):
-    def adaptation(request_iterator, servicer_context):
+def _adapt_stream_stream_event(stream_stream_event: Callable) -> Callable:
+    def adaptation(request_iterator: Iterator[Any], servicer_context: Any) -> Iterator[Any]:
         callback = _Callback()
         if not servicer_context.add_callback(callback.cancel):
             raise abandonment.Abandoned()
@@ -368,13 +370,13 @@ def _simple_method_handler(
     raise ValueError()
 
 
-def _flatten_method_pair_map(method_pair_map):
-    method_pair_map = method_pair_map or {}
-    flat_map = {}
-    for method_pair in method_pair_map:
-        method = _common.fully_qualified_method(method_pair[0], method_pair[1])
-        flat_map[method] = method_pair_map[method_pair]
-    return flat_map
+def _flatten_method_pair_map(method_pair_map: Dict[str, Any]) -> Dict[str, Any]:
+    flattened_map = {}
+    for service_name, method_pairs in method_pair_map.items():
+        for method_name, method_implementation in method_pairs.items():
+            fully_qualified_method_name = "/".join((service_name, method_name))
+            flattened_map[fully_qualified_method_name] = method_implementation
+    return flattened_map
 
 
 class _GenericRpcHandler(grpc.GenericRpcHandler):

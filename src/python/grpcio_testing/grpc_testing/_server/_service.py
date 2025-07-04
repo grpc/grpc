@@ -13,16 +13,17 @@
 # limitations under the License.
 
 import copy
+from typing import Any, Callable, Iterator
 
 import grpc
 
 
 class _RequestIterator(object):
-    def __init__(self, rpc, handler):
+    def __init__(self, rpc: Any, handler: Any) -> None:
         self._rpc = rpc
         self._handler = handler
 
-    def _next(self):
+    def _next(self) -> Any:
         read = self._handler.take_request()
         if read.requests_closed:
             raise StopIteration()
@@ -33,17 +34,17 @@ class _RequestIterator(object):
         else:
             return read.request
 
-    def __iter__(self):
+    def __iter__(self) -> "_RequestIterator":
         return self
 
-    def __next__(self):
+    def __next__(self) -> Any:
         return self._next()
 
-    def next(self):
+    def next(self) -> Any:
         return self._next()
 
 
-def _unary_response(argument, implementation, rpc, servicer_context):
+def _unary_response(argument: Any, implementation: Callable, rpc: Any, servicer_context: Any) -> None:
     try:
         response = implementation(argument, servicer_context)
     except Exception as exception:  # pylint: disable=broad-except
@@ -52,7 +53,7 @@ def _unary_response(argument, implementation, rpc, servicer_context):
         rpc.unary_response_complete(response)
 
 
-def _stream_response(argument, implementation, rpc, servicer_context):
+def _stream_response(argument: Any, implementation: Callable, rpc: Any, servicer_context: Any) -> None:
     try:
         response_iterator = implementation(argument, servicer_context)
     except Exception as exception:  # pylint: disable=broad-except
@@ -71,21 +72,21 @@ def _stream_response(argument, implementation, rpc, servicer_context):
                 rpc.stream_response(response)
 
 
-def unary_unary(implementation, rpc, request, servicer_context):
+def unary_unary(implementation: Callable, rpc: Any, request: Any, servicer_context: Any) -> None:
     _unary_response(request, implementation, rpc, servicer_context)
 
 
-def unary_stream(implementation, rpc, request, servicer_context):
+def unary_stream(implementation: Callable, rpc: Any, request: Any, servicer_context: Any) -> None:
     _stream_response(request, implementation, rpc, servicer_context)
 
 
-def stream_unary(implementation, rpc, handler, servicer_context):
+def stream_unary(implementation: Callable, rpc: Any, handler: Any, servicer_context: Any) -> None:
     _unary_response(
         _RequestIterator(rpc, handler), implementation, rpc, servicer_context
     )
 
 
-def stream_stream(implementation, rpc, handler, servicer_context):
+def stream_stream(implementation: Callable, rpc: Any, handler: Any, servicer_context: Any) -> None:
     _stream_response(
         _RequestIterator(rpc, handler), implementation, rpc, servicer_context
     )

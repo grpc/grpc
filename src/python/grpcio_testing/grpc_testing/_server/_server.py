@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import threading
+from typing import Any, Callable, Dict
 
 import grpc_testing
 from grpc_testing import _common
@@ -23,33 +24,33 @@ from grpc_testing._server import _service
 from grpc_testing._server import _servicer_context
 
 
-def _implementation(descriptors_to_servicers, method_descriptor):
+def _implementation(descriptors_to_servicers: Dict, method_descriptor: Any) -> Callable:
     servicer = descriptors_to_servicers[method_descriptor.containing_service]
     return getattr(servicer, method_descriptor.name)
 
 
-def _unary_unary_service(request):
+def _unary_unary_service(request: Any) -> Callable:
     def service(implementation, rpc, servicer_context):
         _service.unary_unary(implementation, rpc, request, servicer_context)
 
     return service
 
 
-def _unary_stream_service(request):
+def _unary_stream_service(request: Any) -> Callable:
     def service(implementation, rpc, servicer_context):
         _service.unary_stream(implementation, rpc, request, servicer_context)
 
     return service
 
 
-def _stream_unary_service(handler):
+def _stream_unary_service(handler: Any) -> Callable:
     def service(implementation, rpc, servicer_context):
         _service.stream_unary(implementation, rpc, handler, servicer_context)
 
     return service
 
 
-def _stream_stream_service(handler):
+def _stream_stream_service(handler: Any) -> Callable:
     def service(implementation, rpc, servicer_context):
         _service.stream_stream(implementation, rpc, handler, servicer_context)
 
@@ -57,18 +58,18 @@ def _stream_stream_service(handler):
 
 
 class _Serverish(_common.Serverish):
-    def __init__(self, descriptors_to_servicers, time):
+    def __init__(self, descriptors_to_servicers: Dict, time: Any):
         self._descriptors_to_servicers = descriptors_to_servicers
         self._time = time
 
     def _invoke(
         self,
-        service_behavior,
-        method_descriptor,
-        handler,
-        invocation_metadata,
-        deadline,
-    ):
+        service_behavior: Callable,
+        method_descriptor: Any,
+        handler: Any,
+        invocation_metadata: Any,
+        deadline: Any,
+    ) -> None:
         implementation = _implementation(
             self._descriptors_to_servicers, method_descriptor
         )
@@ -88,8 +89,8 @@ class _Serverish(_common.Serverish):
             service_thread.start()
 
     def invoke_unary_unary(
-        self, method_descriptor, handler, invocation_metadata, request, deadline
-    ):
+        self, method_descriptor: Any, handler: Any, invocation_metadata: Any, request: Any, deadline: Any
+    ) -> None:
         self._invoke(
             _unary_unary_service(request),
             method_descriptor,
@@ -99,8 +100,8 @@ class _Serverish(_common.Serverish):
         )
 
     def invoke_unary_stream(
-        self, method_descriptor, handler, invocation_metadata, request, deadline
-    ):
+        self, method_descriptor: Any, handler: Any, invocation_metadata: Any, request: Any, deadline: Any
+    ) -> None:
         self._invoke(
             _unary_stream_service(request),
             method_descriptor,
@@ -110,8 +111,8 @@ class _Serverish(_common.Serverish):
         )
 
     def invoke_stream_unary(
-        self, method_descriptor, handler, invocation_metadata, deadline
-    ):
+        self, method_descriptor: Any, handler: Any, invocation_metadata: Any, deadline: Any
+    ) -> None:
         self._invoke(
             _stream_unary_service(handler),
             method_descriptor,
@@ -121,8 +122,8 @@ class _Serverish(_common.Serverish):
         )
 
     def invoke_stream_stream(
-        self, method_descriptor, handler, invocation_metadata, deadline
-    ):
+        self, method_descriptor: Any, handler: Any, invocation_metadata: Any, deadline: Any
+    ) -> None:
         self._invoke(
             _stream_stream_service(handler),
             method_descriptor,
@@ -132,7 +133,7 @@ class _Serverish(_common.Serverish):
         )
 
 
-def _deadline_and_handler(requests_closed, time, timeout):
+def _deadline_and_handler(requests_closed: bool, time: Any, timeout: Any) -> tuple:
     if timeout is None:
         return None, _handler.handler_without_deadline(requests_closed)
     else:
@@ -144,13 +145,13 @@ def _deadline_and_handler(requests_closed, time, timeout):
 
 
 class _Server(grpc_testing.Server):
-    def __init__(self, serverish, time):
+    def __init__(self, serverish: _Serverish, time: Any):
         self._serverish = serverish
         self._time = time
 
     def invoke_unary_unary(
-        self, method_descriptor, invocation_metadata, request, timeout
-    ):
+        self, method_descriptor: Any, invocation_metadata: Any, request: Any, timeout: Any
+    ) -> Any:
         deadline, handler = _deadline_and_handler(True, self._time, timeout)
         self._serverish.invoke_unary_unary(
             method_descriptor, handler, invocation_metadata, request, deadline
@@ -158,8 +159,8 @@ class _Server(grpc_testing.Server):
         return _server_rpc.UnaryUnaryServerRpc(handler)
 
     def invoke_unary_stream(
-        self, method_descriptor, invocation_metadata, request, timeout
-    ):
+        self, method_descriptor: Any, invocation_metadata: Any, request: Any, timeout: Any
+    ) -> Any:
         deadline, handler = _deadline_and_handler(True, self._time, timeout)
         self._serverish.invoke_unary_stream(
             method_descriptor, handler, invocation_metadata, request, deadline
@@ -167,8 +168,8 @@ class _Server(grpc_testing.Server):
         return _server_rpc.UnaryStreamServerRpc(handler)
 
     def invoke_stream_unary(
-        self, method_descriptor, invocation_metadata, timeout
-    ):
+        self, method_descriptor: Any, invocation_metadata: Any, timeout: Any
+    ) -> Any:
         deadline, handler = _deadline_and_handler(False, self._time, timeout)
         self._serverish.invoke_stream_unary(
             method_descriptor, handler, invocation_metadata, deadline
@@ -176,8 +177,8 @@ class _Server(grpc_testing.Server):
         return _server_rpc.StreamUnaryServerRpc(handler)
 
     def invoke_stream_stream(
-        self, method_descriptor, invocation_metadata, timeout
-    ):
+        self, method_descriptor: Any, invocation_metadata: Any, timeout: Any
+    ) -> Any:
         deadline, handler = _deadline_and_handler(False, self._time, timeout)
         self._serverish.invoke_stream_stream(
             method_descriptor, handler, invocation_metadata, deadline
@@ -185,5 +186,5 @@ class _Server(grpc_testing.Server):
         return _server_rpc.StreamStreamServerRpc(handler)
 
 
-def server_from_descriptor_to_servicers(descriptors_to_servicers, time):
+def server_from_descriptor_to_servicers(descriptors_to_servicers: Dict, time: Any) -> _Server:
     return _Server(_Serverish(descriptors_to_servicers, time), time)

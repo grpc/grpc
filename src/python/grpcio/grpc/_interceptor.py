@@ -678,10 +678,10 @@ class _Channel(grpc.Channel):
 
     def subscribe(
         self, callback: Callable, try_to_connect: Optional[bool] = False
-    ):
+    ) -> None:
         self._channel.subscribe(callback, try_to_connect=try_to_connect)
 
-    def unsubscribe(self, callback: Callable):
+    def unsubscribe(self, callback: Callable) -> None:
         self._channel.unsubscribe(callback)
 
     # pylint: disable=arguments-differ
@@ -768,17 +768,17 @@ class _Channel(grpc.Channel):
         else:
             return thunk(method)
 
-    def _close(self):
+    def _close(self) -> None:
         self._channel.close()
 
-    def __enter__(self):
+    def __enter__(self) -> "_Channel":
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
         self._close()
         return False
 
-    def close(self):
+    def close(self) -> None:
         self._channel.close()
 
 

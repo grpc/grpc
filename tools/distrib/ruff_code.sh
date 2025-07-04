@@ -1,5 +1,5 @@
-#! /bin/bash -ex
-# Copyright 2025 The gRPC Authors
+#!/bin/bash
+# Copyright 2023 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,9 +13,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-VIRTUALENV=.venv_check_pytype_updated
+set -ex
+
+# change to root directory
+cd "$(dirname "$0")/../.."
+
+DIRS=(
+    'src/python/grpcio/grpc/aio'
+)
+
+VIRTUALENV=.venv_ruff
 python3.11 -m virtualenv $VIRTUALENV
 source $VIRTUALENV/bin/activate
 
-pip install pytype==2024.10.11
-pytype --output=~/.cache/pytype --config=grpc-style-config.toml
+pip install ruff==0.12.1
+
+# Check if --fix flag is provided
+RUFF_COMMAND="ruff check"
+if [[ "$1" == "--fix" ]]; then
+    RUFF_COMMAND="ruff check --fix"
+fi
+
+EXIT=0
+$RUFF_COMMAND --config ruff.toml "${DIRS[@]}" || EXIT=1
+
+exit $EXIT

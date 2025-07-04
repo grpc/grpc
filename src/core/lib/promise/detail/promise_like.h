@@ -24,7 +24,6 @@
 #include "src/core/channelz/property_list.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/util/function_signature.h"
-#include "src/core/util/json/json.h"
 #include "src/core/util/upb_utils.h"
 #include "src/proto/grpc/channelz/v2/promise.upb.h"
 #include "src/proto/grpc/channelz/v2/promise.upbdefs.h"
@@ -55,12 +54,6 @@
 namespace grpc_core {
 
 namespace promise_detail {
-template <typename Promise, typename = void>
-constexpr bool kHasToJsonMethod = false;
-
-template <typename Promise>
-constexpr bool kHasToJsonMethod<
-    Promise, std::void_t<decltype(std::declval<Promise>().ToJson())>> = true;
 
 template <typename Promise, typename = void>
 constexpr bool kHasToProtoMethod = false;
@@ -80,17 +73,6 @@ constexpr bool kHasChannelzPropertiesMethod<
     std::void_t<decltype(std::declval<Promise>().ChannelzProperties())>> = true;
 
 }  // namespace promise_detail
-
-template <typename Promise>
-Json PromiseAsJson(const Promise& promise) {
-  if constexpr (promise_detail::kHasToJsonMethod<Promise>) {
-    return promise.ToJson();
-  } else if constexpr (promise_detail::kHasChannelzPropertiesMethod<Promise>) {
-    return Json::FromObject(promise.ChannelzProperties().TakeJsonObject());
-  } else {
-    return Json::FromString(std::string(TypeName<Promise>()));
-  }
-}
 
 template <typename Promise>
 void PromiseAsProto(const Promise& promise,
@@ -233,7 +215,6 @@ class PromiseLike<
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION WrappedResult operator()() {
     return WrapInPoll(f_());
   }
-  Json ToJson() const { return PromiseAsJson(f_); }
   void ToProto(grpc_channelz_v2_Promise* promise_proto,
                upb_Arena* arena) const {
     PromiseAsProto(f_, promise_proto, arena);
@@ -259,7 +240,6 @@ class PromiseLike<
     f_();
     return Empty{};
   }
-  Json ToJson() const { return PromiseAsJson(f_); }
   void ToProto(grpc_channelz_v2_Promise* promise_proto,
                upb_Arena* arena) const {
     PromiseAsProto(f_, promise_proto, arena);

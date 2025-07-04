@@ -33,5 +33,7 @@ bazel_rbe/bazel_wrapper \
   --output_user_root=/tmpfs/bazel \
   test \
   $BAZEL_FLAGS \
+  --generate_json_trace_profile \
+  --profile=bazel_rbe/profile.json \
   "$@" \
   -- ${BAZEL_TESTS:-//test/...}

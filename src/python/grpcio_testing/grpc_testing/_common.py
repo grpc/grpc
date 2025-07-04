@@ -15,9 +15,10 @@
 
 import abc
 import collections
+from typing import Any, Dict, Iterable, Optional, Tuple
 
 
-def _fuss(tuplified_metadata):
+def _fuss(tuplified_metadata: Tuple) -> Tuple:
     return tuplified_metadata + (
         (
             "grpc.metadata_added_by_runtime",
@@ -29,14 +30,14 @@ def _fuss(tuplified_metadata):
 FUSSED_EMPTY_METADATA = _fuss(())
 
 
-def fuss_with_metadata(metadata):
+def fuss_with_metadata(metadata: Optional[Iterable[Tuple[str, str]]]) -> Tuple:
     if metadata is None:
         return FUSSED_EMPTY_METADATA
     else:
         return _fuss(tuple(metadata))
 
 
-def rpc_names(service_descriptors):
+def rpc_names(service_descriptors: Iterable) -> Dict[str, Any]:
     rpc_names_to_descriptors = {}
     for service_descriptor in service_descriptors:
         for method_descriptor in service_descriptor.methods_by_name.values():

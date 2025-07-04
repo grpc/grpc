@@ -18,7 +18,7 @@ from grpc_observability import _measures
 from grpc_observability._cyobservability import MetricsName
 from opencensus.stats import aggregation
 from opencensus.stats import view as view_module
-from opencensus.tags.tag_key import TagKey
+from opencensus.tags import TagKey
 
 METRICS_NAME_TO_MEASURE = {
     MetricsName.CLIENT_STARTED_RPCS: _measures.CLIENT_STARTED_RPCS_MEASURE,
@@ -38,19 +38,19 @@ METRICS_NAME_TO_MEASURE = {
 # These measure definitions should be kept in sync across opencensus
 # implementations--see
 # https://github.com/census-instrumentation/opencensus-java/blob/master/contrib/grpc_metrics/src/main/java/io/opencensus/contrib/grpc/metrics/RpcMeasureConstants.java.
-def client_method_tag_key():
+def client_method_tag_key() -> TagKey:
     return TagKey("grpc_client_method")
 
 
-def client_status_tag_key():
+def client_status_tag_key() -> TagKey:
     return TagKey("grpc_client_status")
 
 
-def server_method_tag_key():
+def server_method_tag_key() -> TagKey:
     return TagKey("grpc_server_method")
 
 
-def server_status_tag_key():
+def server_status_tag_key() -> TagKey:
     return TagKey("server_status_tag_key")
 
 

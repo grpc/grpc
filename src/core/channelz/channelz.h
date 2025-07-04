@@ -130,7 +130,7 @@ class BaseNode : public DualRefCounted<BaseNode> {
       case EntityType::kTopLevelChannel:
         return "channel";
       case EntityType::kInternalChannel:
-        return "channel";
+        return "internal_channel";
       case EntityType::kSubchannel:
         return "subchannel";
       case EntityType::kServer:
@@ -142,6 +142,17 @@ class BaseNode : public DualRefCounted<BaseNode> {
       case EntityType::kCall:
         return "call";
     }
+  }
+
+  static std::optional<EntityType> KindToEntityType(absl::string_view kind) {
+    if (kind == "channel") return EntityType::kTopLevelChannel;
+    if (kind == "internal_channel") return EntityType::kInternalChannel;
+    if (kind == "subchannel") return EntityType::kSubchannel;
+    if (kind == "server") return EntityType::kServer;
+    if (kind == "listen_socket") return EntityType::kListenSocket;
+    if (kind == "socket") return EntityType::kSocket;
+    if (kind == "call") return EntityType::kCall;
+    return std::nullopt;
   }
 
  protected:
@@ -616,11 +627,6 @@ class SocketNode final : public BaseNode {
     static int ChannelArgsCompare(const Security* a, const Security* b) {
       return QsortCompare(a, b);
     }
-
-    grpc_arg MakeChannelArg() const;
-
-    static RefCountedPtr<Security> GetFromChannelArgs(
-        const grpc_channel_args* args);
   };
 
   SocketNode(std::string local, std::string remote, std::string name,
