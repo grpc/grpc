@@ -179,15 +179,17 @@ class ConfigQuery {
             break;
           }
         }
-        for (auto it = experiments_to_config_map_.begin();
-             it != experiments_to_config_map_.end(); ++it) {
-          if (grpc_core::IsExperimentEnabled(it->first) &&
-              !it->second.contains(config.name)) {
-            LOG(ERROR) << "tjagtap BYPASS {Config name : " << config.name
-                       << ", allowed : " << allowed
-                       << ", experiment :" << it->first << "}";
-            allowed = false;
-            break;
+        if (allowed) {
+          for (auto it = experiments_to_config_map_.begin();
+               it != experiments_to_config_map_.end(); ++it) {
+            if (grpc_core::IsExperimentEnabled(it->first) &&
+                !it->second.contains(config.name)) {
+              LOG(ERROR) << "tjagtap BYPASS {Config name : " << config.name
+                         << ", allowed : " << allowed
+                         << ", experiment :" << it->first << "}";
+              allowed = false;
+              break;
+            }
           }
         }
         LOG(ERROR) << "tjagtap {Config name : " << config.name << ", allowed "

@@ -142,6 +142,8 @@ struct CoreTestConfiguration {
   // include_test_suites.
   // If you want to include a specific test, then add the name to
   // include_specific_tests. Otherwise leave include_specific_tests empty.
+  // If you want to exclude a specific test, then add the name to
+  // exclude_specific_tests. Otherwise leave exclude_specific_tests empty.
   //
   // Example include_test_suites = "SuiteName1|SuiteName3|SuiteName5"
   // Example exclude_specific_tests = "SuiteName1.Test4|SuiteName3.Test8"
