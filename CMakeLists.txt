@@ -104,8 +104,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_algorithm_container
   absl_any_invocable
   absl_atomic_hook
-  absl_bad_optional_access
-  absl_bad_variant_access
   absl_base
   absl_base_internal
   absl_bind_front
@@ -167,11 +165,13 @@ set(gRPC_ABSL_USED_TARGETS
   absl_hash_container_defaults
   absl_hash_function_defaults
   absl_hash_policy_traits
+  absl_hashtable_control_bytes
   absl_hashtable_debug_hooks
   absl_hashtablez_sampler
   absl_inlined_vector
   absl_inlined_vector_internal
   absl_int128
+  absl_iterator_traits_internal
   absl_kernel_timeout_internal
   absl_layout
   absl_leak_check
@@ -211,6 +211,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_random_bit_gen_ref
   absl_random_distributions
   absl_random_internal_distribution_caller
+  absl_random_internal_entropy_pool
   absl_random_internal_fast_uniform_bits
   absl_random_internal_fastmath
   absl_random_internal_generate_real
@@ -218,7 +219,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_random_internal_nonsecure_base
   absl_random_internal_pcg_engine
   absl_random_internal_platform
-  absl_random_internal_pool_urbg
   absl_random_internal_randen
   absl_random_internal_randen_engine
   absl_random_internal_randen_hwaes
@@ -234,6 +234,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_random_seed_sequences
   absl_raw_hash_map
   absl_raw_hash_set
+  absl_raw_hash_set_resize_impl
   absl_raw_logging_internal
   absl_sample_recorder
   absl_span
@@ -259,6 +260,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_variant
   absl_vlog_config_internal
   absl_vlog_is_on
+  absl_weakly_mixed_integer
   absl_meta
 )
 
@@ -704,6 +706,9 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/channelz/v2/channelz.proto src/proto/grpc/channelz/v2/channelz.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
+  src/proto/grpc/channelz/v2/service.proto src/proto/grpc/channelz/v2/service.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/health/v1/health.proto src/proto/grpc/health/v1/health.proto
@@ -1366,6 +1371,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx channelz_registry_test)
   add_dependencies(buildtests_cxx channelz_service_test)
   add_dependencies(buildtests_cxx channelz_test)
+  add_dependencies(buildtests_cxx channelz_v2_service_test)
   add_dependencies(buildtests_cxx check_gcp_environment_linux_test)
   add_dependencies(buildtests_cxx check_gcp_environment_windows_test)
   add_dependencies(buildtests_cxx chttp2_server_listener_test)
@@ -2689,6 +2695,7 @@ add_library(grpc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/event_engine/default_event_engine.cc
   src/core/lib/event_engine/default_event_engine_factory.cc
+  src/core/lib/event_engine/endpoint_channel_arg_wrapper.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
@@ -3102,6 +3109,7 @@ foreach(_hdr
   include/grpc/byte_buffer_reader.h
   include/grpc/census.h
   include/grpc/compression.h
+  include/grpc/create_channel_from_endpoint.h
   include/grpc/credentials.h
   include/grpc/event_engine/endpoint_config.h
   include/grpc/event_engine/event_engine.h
@@ -3488,6 +3496,7 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/event_engine/default_event_engine.cc
   src/core/lib/event_engine/default_event_engine_factory.cc
+  src/core/lib/event_engine/endpoint_channel_arg_wrapper.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
@@ -3818,6 +3827,7 @@ foreach(_hdr
   include/grpc/byte_buffer_reader.h
   include/grpc/census.h
   include/grpc/compression.h
+  include/grpc/create_channel_from_endpoint.h
   include/grpc/credentials.h
   include/grpc/event_engine/endpoint_config.h
   include/grpc/event_engine/event_engine.h
@@ -4383,6 +4393,7 @@ endif()
 
 
 add_library(upb_reflection_lib
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   third_party/upb/upb/message/copy.c
   third_party/upb/upb/message/merge.c
   third_party/upb/upb/reflection/def_pool.c
@@ -6131,6 +6142,7 @@ foreach(_hdr
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
   include/grpc/compression.h
+  include/grpc/create_channel_from_endpoint.h
   include/grpc/credentials.h
   include/grpc/event_engine/endpoint_config.h
   include/grpc/event_engine/event_engine.h
@@ -6269,6 +6281,14 @@ add_library(grpcpp_channelz ${_gRPC_STATIC_WIN32}
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/service.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/service.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/service.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/service.grpc.pb.h
   src/cpp/server/channelz/channelz_service.cc
   src/cpp/server/channelz/channelz_service_plugin.cc
 )
@@ -8987,6 +9007,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(blackboard_test
+  src/core/channelz/property_list.cc
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/filter/blackboard.cc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/channel/channel_args.cc
@@ -9030,6 +9057,7 @@ target_include_directories(blackboard_test
 target_link_libraries(blackboard_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  upb_textformat_lib
   absl::config
   absl::flat_hash_map
   absl::function_ref
@@ -10869,6 +10897,84 @@ target_link_libraries(channelz_test
   gtest
   grpc++
   grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(channelz_v2_service_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
+  test/core/event_engine/event_engine_test_utils.cc
+  test/cpp/end2end/channelz_v2_service_test.cc
+  test/cpp/end2end/test_service_impl.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(channelz_v2_service_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(channelz_v2_service_test PUBLIC cxx_std_17)
+target_include_directories(channelz_v2_service_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(channelz_v2_service_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpcpp_channelz
+  grpc++_test_util
 )
 
 
@@ -13171,6 +13277,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/test_util/fail_first_call_filter.cc
     test/core/test_util/fake_stats_plugin.cc
     test/core/test_util/fuzz_config_vars.cc
+    test/core/test_util/passthrough_endpoint.cc
     test/core/test_util/test_call_creds.cc
     test/core/test_util/test_lb_policies.cc
     third_party/googletest/googlemock/src/gmock_main.cc
@@ -13362,6 +13469,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/test_util/fail_first_call_filter.cc
     test/core/test_util/fake_stats_plugin.cc
     test/core/test_util/fuzz_config_vars.cc
+    test/core/test_util/passthrough_endpoint.cc
     test/core/test_util/test_call_creds.cc
     test/core/test_util/test_lb_policies.cc
     third_party/googletest/googlemock/src/gmock_main.cc
@@ -13464,6 +13572,7 @@ add_executable(end2end_http2_no_logging_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/passthrough_endpoint.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
@@ -13565,6 +13674,7 @@ add_executable(end2end_http2_security_no_logging_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/passthrough_endpoint.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
@@ -13754,6 +13864,7 @@ add_executable(end2end_http2_security_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/passthrough_endpoint.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
@@ -13943,6 +14054,7 @@ add_executable(end2end_http2_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/passthrough_endpoint.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
@@ -14044,6 +14156,7 @@ add_executable(end2end_inproc_no_logging_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/passthrough_endpoint.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
@@ -14233,6 +14346,7 @@ add_executable(end2end_inproc_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/passthrough_endpoint.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
@@ -14334,6 +14448,7 @@ add_executable(end2end_posix_no_logging_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/passthrough_endpoint.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
@@ -14523,6 +14638,7 @@ add_executable(end2end_posix_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/passthrough_endpoint.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
@@ -14691,6 +14807,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(endpoint_config_test
+  src/core/channelz/property_list.cc
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/lib/channel/channel_args.cc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/surface/channel_stack_type.cc
@@ -14729,7 +14852,9 @@ target_include_directories(endpoint_config_test
 target_link_libraries(endpoint_config_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  upb_textformat_lib
   absl::config
+  absl::flat_hash_map
   absl::hash
   absl::type_traits
   absl::statusor
@@ -23727,6 +23852,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(periodic_update_test
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
@@ -25971,6 +26097,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(race_test
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c

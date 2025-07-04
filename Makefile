@@ -194,7 +194,7 @@ CXX_ubsan = clang++
 LD_ubsan = clang++
 LDXX_ubsan = clang++
 CPPFLAGS_ubsan = -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument -Wvarargs
-LDFLAGS_ubsan = -stdlib=libc++ -fsanitize=undefined,unsigned-integer-overflow
+LDFLAGS_ubsan = -stdlib=libc++ -fsanitize=undefined
 DEFINES_ubsan = NDEBUG GRPC_UBSAN
 
 
@@ -1190,6 +1190,7 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/channel_args_endpoint_config.cc \
     src/core/lib/event_engine/default_event_engine.cc \
     src/core/lib/event_engine/default_event_engine_factory.cc \
+    src/core/lib/event_engine/endpoint_channel_arg_wrapper.cc \
     src/core/lib/event_engine/event_engine.cc \
     src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc \
     src/core/lib/event_engine/posix_engine/ev_poll_posix.cc \
@@ -1620,13 +1621,12 @@ LIBGRPC_SRC = \
     third_party/abseil-cpp/absl/log/internal/proto.cc \
     third_party/abseil-cpp/absl/log/internal/structured_proto.cc \
     third_party/abseil-cpp/absl/log/internal/vlog_config.cc \
-    third_party/abseil-cpp/absl/log/log_entry.cc \
     third_party/abseil-cpp/absl/log/log_sink.cc \
     third_party/abseil-cpp/absl/numeric/int128.cc \
     third_party/abseil-cpp/absl/profiling/internal/exponential_biased.cc \
     third_party/abseil-cpp/absl/random/discrete_distribution.cc \
     third_party/abseil-cpp/absl/random/gaussian_distribution.cc \
-    third_party/abseil-cpp/absl/random/internal/pool_urbg.cc \
+    third_party/abseil-cpp/absl/random/internal/entropy_pool.cc \
     third_party/abseil-cpp/absl/random/internal/randen.cc \
     third_party/abseil-cpp/absl/random/internal/randen_detect.cc \
     third_party/abseil-cpp/absl/random/internal/randen_hwaes.cc \
@@ -1643,7 +1643,6 @@ LIBGRPC_SRC = \
     third_party/abseil-cpp/absl/strings/charconv.cc \
     third_party/abseil-cpp/absl/strings/cord.cc \
     third_party/abseil-cpp/absl/strings/cord_analysis.cc \
-    third_party/abseil-cpp/absl/strings/cord_buffer.cc \
     third_party/abseil-cpp/absl/strings/escaping.cc \
     third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc \
     third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc \
@@ -1704,8 +1703,6 @@ LIBGRPC_SRC = \
     third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_posix.cc \
     third_party/abseil-cpp/absl/time/internal/cctz/src/zone_info_source.cc \
     third_party/abseil-cpp/absl/time/time.cc \
-    third_party/abseil-cpp/absl/types/bad_optional_access.cc \
-    third_party/abseil-cpp/absl/types/bad_variant_access.cc \
     third_party/address_sorting/address_sorting.c \
     third_party/address_sorting/address_sorting_posix.c \
     third_party/address_sorting/address_sorting_windows.c \
@@ -1791,6 +1788,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/byte_buffer_reader.h \
     include/grpc/census.h \
     include/grpc/compression.h \
+    include/grpc/create_channel_from_endpoint.h \
     include/grpc/credentials.h \
     include/grpc/event_engine/endpoint_config.h \
     include/grpc/event_engine/event_engine.h \

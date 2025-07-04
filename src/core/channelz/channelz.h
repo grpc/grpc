@@ -82,6 +82,8 @@ namespace channelz {
 class SocketNode;
 class ListenSocketNode;
 class DataSource;
+class DataSink;
+class PropertyList;
 class ZTrace;
 
 namespace testing {
@@ -130,7 +132,7 @@ class BaseNode : public DualRefCounted<BaseNode> {
       case EntityType::kTopLevelChannel:
         return "channel";
       case EntityType::kInternalChannel:
-        return "channel";
+        return "internal_channel";
       case EntityType::kSubchannel:
         return "subchannel";
       case EntityType::kServer:
@@ -142,6 +144,17 @@ class BaseNode : public DualRefCounted<BaseNode> {
       case EntityType::kCall:
         return "call";
     }
+  }
+
+  static std::optional<EntityType> KindToEntityType(absl::string_view kind) {
+    if (kind == "channel") return EntityType::kTopLevelChannel;
+    if (kind == "internal_channel") return EntityType::kInternalChannel;
+    if (kind == "subchannel") return EntityType::kSubchannel;
+    if (kind == "server") return EntityType::kServer;
+    if (kind == "listen_socket") return EntityType::kListenSocket;
+    if (kind == "socket") return EntityType::kSocket;
+    if (kind == "call") return EntityType::kCall;
+    return std::nullopt;
   }
 
  protected:
@@ -205,13 +218,18 @@ class BaseNode : public DualRefCounted<BaseNode> {
   }
   ChannelTrace& mutable_trace() { return trace_; }
 
-  virtual void SerializeEntity(grpc_channelz_v2_Entity* entity,
-                               upb_Arena* arena);
+  void SerializeEntity(grpc_channelz_v2_Entity* entity, upb_Arena* arena);
 
-  virtual std::string SerializeEntityToString();
+  std::string SerializeEntityToString();
 
  protected:
   void PopulateJsonFromDataSources(Json::Object& json);
+  // V2: Add any node-specific data to the sink.
+  // This is information that used to be provided by overloaded RenderJson
+  // methods.
+  // Over time the hope is that we can eliminate this method and move all
+  // functionality into data sources.
+  virtual void AddNodeSpecificData(DataSink sink);
 
  private:
   // to allow the ChannelzRegistry to set uuid_ under its lock.
@@ -380,6 +398,7 @@ struct CallCounts {
   }
 
   void PopulateJson(Json::Object& json) const;
+  PropertyList ToPropertyList() const;
 };
 
 // This class is a helper class for channelz entities that deal with Channels,
@@ -479,6 +498,7 @@ class ChannelNode final : public BaseNode {
 
  private:
   void PopulateChildRefs(Json::Object* json);
+  void AddNodeSpecificData(DataSink sink) override;
 
   std::string target_;
   CallCountingHelper call_counter_;
@@ -530,6 +550,8 @@ class SubchannelNode final : public BaseNode {
   const ChannelArgs& channel_args() const { return channel_args_; }
 
  private:
+  void AddNodeSpecificData(DataSink sink) override;
+
   // Allows the channel trace test to access trace_.
   friend class testing::SubchannelNodePeer;
 
@@ -577,6 +599,8 @@ class ServerNode final : public BaseNode {
   const ChannelArgs& channel_args() const { return channel_args_; }
 
  private:
+  void AddNodeSpecificData(DataSink sink) override;
+
   PerCpuCallCountingHelper call_counter_;
   // TODO(ctiller): keeping channel args here can create odd circular references
   // that are hard to reason about. Consider moving this to a DataSource.
@@ -601,6 +625,7 @@ class SocketNode final : public BaseNode {
       std::string remote_certificate;
 
       Json RenderJson();
+      PropertyList ToPropertyList() const;
     };
     enum class ModelType { kUnset = 0, kTls = 1, kOther = 2 };
     ModelType type = ModelType::kUnset;
@@ -608,6 +633,7 @@ class SocketNode final : public BaseNode {
     std::optional<Json> other;
 
     Json RenderJson();
+    PropertyList ToPropertyList() const;
 
     static absl::string_view ChannelArgName() {
       return GRPC_ARG_CHANNELZ_SECURITY;
@@ -616,11 +642,6 @@ class SocketNode final : public BaseNode {
     static int ChannelArgsCompare(const Security* a, const Security* b) {
       return QsortCompare(a, b);
     }
-
-    grpc_arg MakeChannelArg() const;
-
-    static RefCountedPtr<Security> GetFromChannelArgs(
-        const grpc_channel_args* args);
   };
 
   SocketNode(std::string local, std::string remote, std::string name,
@@ -689,6 +710,7 @@ class SocketNode final : public BaseNode {
       gpr_cycle_counter cycle_counter) const {
     return gpr_format_timespec(gpr_cycle_counter_to_time(cycle_counter));
   }
+  void AddNodeSpecificData(DataSink sink) override;
 
   std::atomic<int64_t> streams_started_{0};
   std::atomic<int64_t> streams_succeeded_{0};
@@ -714,6 +736,8 @@ class ListenSocketNode final : public BaseNode {
   Json RenderJson() override;
 
  private:
+  void AddNodeSpecificData(DataSink sink) override;
+
   std::string local_addr_;
 };
 

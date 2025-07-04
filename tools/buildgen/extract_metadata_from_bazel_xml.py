@@ -630,7 +630,7 @@ def _expand_upb_proto_library_rules(bazel_rules):
             # deps is not properly fetched from bazel query for upb_c_proto_library target
             # so add the upb dependency manually
             bazel_rule["deps"] = [
-                "@com_google_protobuf//upb:descriptor_upb_proto",
+                "@com_google_protobuf//upb/reflection:descriptor_upb_proto",
                 "@com_google_protobuf//upb:generated_code_support",
             ]
             # populate the upb_c_proto_library rule with pre-generated upb headers
@@ -704,7 +704,7 @@ def _patch_descriptor_upb_proto_library(bazel_rules):
     # The upb's descriptor_upb_proto library doesn't reference the generated descriptor.proto
     # sources explicitly, so we add them manually.
     bazel_rule = bazel_rules.get(
-        "@com_google_protobuf//upb:descriptor_upb_proto", None
+        "@com_google_protobuf//upb/reflection:descriptor_upb_proto", None
     )
     if bazel_rule:
         bazel_rule["srcs"].append(
