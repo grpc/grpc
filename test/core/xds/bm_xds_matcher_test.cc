@@ -19,9 +19,9 @@
 #include <vector>
 
 #include "absl/strings/str_cat.h"
-#include "src/core/util/down_cast.h"
 #include "absl/strings/string_view.h"
 #include "benchmark/benchmark.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/matchers.h"
 #include "src/core/xds/grpc/xds_matcher.h"
 
@@ -56,8 +56,7 @@ class TestPathInput : public XdsMatcher::InputValue<absl::string_view> {
 
   std::optional<absl::string_view> GetValue(
       const XdsMatcher::MatchContext& context) const override {
-    const auto* test_context =
-        DownCast<const TestMatchContext*>(&context);
+    const auto* test_context = DownCast<const TestMatchContext*>(&context);
     return test_context->path();
   }
 };

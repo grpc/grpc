@@ -53,7 +53,7 @@ std::unique_ptr<XdsMatcher::InputValue<absl::string_view>> ParseStringInput(
   const auto& registry =
       DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
           .matcher_string_input_registry();
-  return registry.ParseAndCreateInput(context,extension.value(), errors);
+  return registry.ParseAndCreateInput(context, extension.value(), errors);
 }
 
 // Function to parse "xds_core_v3_TypedExtensionConfig"  to generate
@@ -68,7 +68,8 @@ std::unique_ptr<XdsMatcher::Action> ParseAction(
   if (!extension.has_value()) {
     return nullptr;
   }
-  return action_registry.ParseAndCreateAction(context, extension.value(), errors);
+  return action_registry.ParseAndCreateAction(context, extension.value(),
+                                              errors);
 }
 
 // Parse and generate input matcher with type string_view
@@ -78,8 +79,7 @@ ParseStringMatcher(const XdsResourceType::DecodeContext& context,
                    const xds_type_matcher_v3_StringMatcher* string_matcher_upb,
                    ValidationErrors* errors) {
   auto string_matcher = StringMatcherParse(context, string_matcher_upb, errors);
-  return std::make_unique<XdsMatcherList::StringInputMatcher>(
-      string_matcher);
+  return std::make_unique<XdsMatcherList::StringInputMatcher>(string_matcher);
 }
 
 // Parse OnMatch components of the matcher
@@ -117,9 +117,9 @@ absl::flat_hash_map<std::string, XdsMatcher::OnMatch> ParseMatchMap(
     const UniqueTypeName& context_name, ValidationErrors* errors) {
   absl::flat_hash_map<std::string, XdsMatcher::OnMatch> result;
   if (xds_type_matcher_v3_Matcher_MatcherTree_MatchMap_map_size(match_map) ==
-      0 ) {
-        errors->AddError("map is empty");
-        return result;
+      0) {
+    errors->AddError("map is empty");
+    return result;
   }
   auto iter = kUpb_Map_Begin;
   upb_StringView upb_key;
@@ -167,8 +167,8 @@ std::unique_ptr<XdsMatcherList::Predicate> ParseSinglePredicate(
             single_predicate),
         errors);
   }
-  return XdsMatcherList::CreateSinglePredicate(
-      std::move(input_string_value), std::move(input_string_matcher));
+  return XdsMatcherList::CreateSinglePredicate(std::move(input_string_value),
+                                               std::move(input_string_matcher));
 }
 
 std::vector<std::unique_ptr<XdsMatcherList::Predicate>> ParsePredicateList(
@@ -284,7 +284,7 @@ std::vector<XdsMatcherList::FieldMatcher> ParseFieldMatcherList(
   return field_matcher_list;
 }
 
-} // namespace
+}  // namespace
 
 // Parse Matcher Proto
 // This the top level function expected to be called for the matcher.proto
@@ -338,8 +338,7 @@ std::unique_ptr<XdsMatcher> ParseXdsMatcher(
       return std::make_unique<XdsMatcherPrefixMap>(
           std::move(input), std::move(map), std::move(on_no_match));
     } else {
-      errors->AddError(
-          "no known match tree type specified");
+      errors->AddError("no known match tree type specified");
     }
   } else {
     errors->AddError(

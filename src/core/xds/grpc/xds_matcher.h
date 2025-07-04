@@ -28,9 +28,9 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
+#include "src/core/util/match.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/trie_lookup.h"
-#include "src/core/util/match.h"
 #include "src/core/util/unique_type_name.h"
 
 namespace grpc_core {
@@ -249,7 +249,8 @@ class XdsMatcherList::SinglePredicate : public XdsMatcherList::Predicate {
   bool Equal(const Predicate& other) const override {
     const auto* o = dynamic_cast<const SinglePredicate<T>*>(&other);
     if (o == nullptr) return false;
-    return input_->Equal(*o->input_) && input_matcher_->Equal(*o->input_matcher_);
+    return input_->Equal(*o->input_) &&
+           input_matcher_->Equal(*o->input_matcher_);
   }
 
   std::string ToString() const override {
@@ -378,8 +379,7 @@ class XdsMatcherPrefixMap : public XdsMatcher {
   bool FindMatches(const MatchContext& context, Result& result) const override;
 
  private:
-  void PopulateTrie(
-      absl::flat_hash_map<std::string, XdsMatcher::OnMatch> map);
+  void PopulateTrie(absl::flat_hash_map<std::string, XdsMatcher::OnMatch> map);
 
   TrieLookupTree<XdsMatcher::OnMatch> root_;
   absl::flat_hash_map<std::string, XdsMatcher::OnMatch> map_;

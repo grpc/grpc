@@ -31,10 +31,10 @@ std::optional<absl::string_view> MetadataInput::GetValue(
                                                                   &buffer_);
 }
 
-std::unique_ptr<XdsMatcher::InputValue<absl::string_view>> MetadataInputFactory::ParseAndCreateInput(
+std::unique_ptr<XdsMatcher::InputValue<absl::string_view>>
+MetadataInputFactory::ParseAndCreateInput(
     const XdsResourceType::DecodeContext& context,
-    absl::string_view serialized_value,
-    ValidationErrors* errors) const {
+    absl::string_view serialized_value, ValidationErrors* errors) const {
   auto http_header_input =
       envoy_type_matcher_v3_HttpRequestHeaderMatchInput_parse(
           serialized_value.data(), serialized_value.size(), context.arena);

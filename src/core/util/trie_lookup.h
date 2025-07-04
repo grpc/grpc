@@ -84,7 +84,7 @@ class TrieLookupTree {
     return matched_value;
   }
 
-  // Return all prefix matches 
+  // Return all prefix matches
   std::vector<const Value*> GetAllPrefixMatches(absl::string_view key) const {
     std::vector<const Value*> values;
     const auto* node = root_.get();

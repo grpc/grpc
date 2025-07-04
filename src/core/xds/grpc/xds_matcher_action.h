@@ -29,13 +29,14 @@ class ActionFactory {
   virtual ~ActionFactory() = default;
   virtual absl::string_view type() const = 0;
   virtual std::unique_ptr<XdsMatcher::Action> ParseAndCreateAction(
-      const XdsResourceType::DecodeContext& context, absl::string_view serialized_value,
-      ValidationErrors* errors) const = 0;
+      const XdsResourceType::DecodeContext& context,
+      absl::string_view serialized_value, ValidationErrors* errors) const = 0;
 };
 
 class XdsMatcherActionRegistry {
  private:
-  using FactoryMap = std::map<absl::string_view, std::unique_ptr<ActionFactory>>;
+  using FactoryMap =
+      std::map<absl::string_view, std::unique_ptr<ActionFactory>>;
 
  public:
   void AddActionFactory(std::unique_ptr<ActionFactory> factory);
@@ -44,7 +45,8 @@ class XdsMatcherActionRegistry {
       ValidationErrors* errors) const {
     const auto it = factories_.find(action.type);
     if (it == factories_.cend()) return nullptr;
-    const absl::string_view* serialized_value = std::get_if<absl::string_view>(&action.value);
+    const absl::string_view* serialized_value =
+        std::get_if<absl::string_view>(&action.value);
     return it->second->ParseAndCreateAction(context, *serialized_value, errors);
   }
 

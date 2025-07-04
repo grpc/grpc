@@ -84,7 +84,8 @@ class StringActionFactory : public ActionFactory {
       errors->AddError("could not parse google.protobuf.StringValue");
       return nullptr;
     }
-    auto string_value = UpbStringToStdString(google_protobuf_StringValue_value(string_proto));
+    auto string_value =
+        UpbStringToStdString(google_protobuf_StringValue_value(string_proto));
     return std::make_unique<StringAction>(std::move(string_value));
   }
 };
@@ -171,8 +172,8 @@ class MatcherTest : public ::testing::Test {
     action_registry.AddActionFactory(std::make_unique<StringActionFactory>());
     auto matcher = ParseXdsMatcher(decode_context_, m_upb, action_registry,
                                    context_name, &errors);
-    absl::Status status =
-        errors.status(absl::StatusCode::kInvalidArgument, "Matcher parsing failed");
+    absl::Status status = errors.status(absl::StatusCode::kInvalidArgument,
+                                        "Matcher parsing failed");
     EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
     EXPECT_EQ(status.message(),
               absl::StrCat("Matcher parsing failed: [", expected_error, "]"))
@@ -608,10 +609,9 @@ TEST_F(MatcherTest, CustomMatchUnsupported) {
 TEST_F(MatcherTest, NoMatcherType) {
   const char* text_proto = R"pb(
   )pb";
-  ParseMatcherProtoAndExpectError(
-      text_proto,
-      "field:matcher error:no matcher_list or "
-      "matcher_tree specified.");
+  ParseMatcherProtoAndExpectError(text_proto,
+                                  "field:matcher error:no matcher_list or "
+                                  "matcher_tree specified.");
 }
 
 TEST_F(MatcherTest, MatcherTreeNoMatchType) {
@@ -626,10 +626,9 @@ TEST_F(MatcherTest, MatcherTreeNoMatchType) {
       }
     }
   )pb";
-  ParseMatcherProtoAndExpectError(
-      text_proto,
-      "field:matcher.matcher_tree error:no "
-      "known match tree type specified");
+  ParseMatcherProtoAndExpectError(text_proto,
+                                  "field:matcher.matcher_tree error:no "
+                                  "known match tree type specified");
 }
 
 }  // namespace

@@ -30,7 +30,6 @@ namespace grpc_core {
 template <typename T>
 class InputFactory;
 
-
 template <typename T>
 class InputFactory final {
  public:
@@ -47,10 +46,10 @@ class InputFactory<absl::string_view> {
  public:
   virtual ~InputFactory() = default;
   virtual absl::string_view type() const = 0;
-  virtual std::unique_ptr<XdsMatcher::InputValue<absl::string_view>> ParseAndCreateInput(
-      const XdsResourceType::DecodeContext& context,
-      absl::string_view serialized_value,
-      ValidationErrors* errors) const = 0;
+  virtual std::unique_ptr<XdsMatcher::InputValue<absl::string_view>>
+  ParseAndCreateInput(const XdsResourceType::DecodeContext& context,
+                      absl::string_view serialized_value,
+                      ValidationErrors* errors) const = 0;
 };
 
 template <typename T = absl::string_view>
@@ -58,6 +57,7 @@ class XdsMatcherInputRegistry {
  private:
   using FactoryMap =
       std::map<absl::string_view, std::unique_ptr<InputFactory<T>>>;
+
  public:
   XdsMatcherInputRegistry();
   std::unique_ptr<XdsMatcher::InputValue<T>> ParseAndCreateInput(
@@ -69,6 +69,7 @@ class XdsMatcherInputRegistry {
         std::get_if<absl::string_view>(&input.value);
     return it->second->ParseAndCreateInput(context, *serliased_value, errors);
   }
+
  private:
   FactoryMap factories_;
 };
@@ -81,8 +82,8 @@ class MetadataInput : public XdsMatcher::InputValue<absl::string_view> {
   };
   std::optional<absl::string_view> GetValue(
       const XdsMatcher::MatchContext& context) const override;
-  bool Equal(const XdsMatcher::InputValue<absl::string_view>& other)
-      const override {
+  bool Equal(
+      const XdsMatcher::InputValue<absl::string_view>& other) const override {
     const auto* o = dynamic_cast<const MetadataInput*>(&other);
     return o != nullptr && key_ == o->key_;
   }
@@ -101,10 +102,10 @@ class MetadataInputFactory : public InputFactory<absl::string_view> {
   static absl::string_view Type() {
     return "envoy.type.matcher.v3.HttpRequestHeaderMatchInput";
   }
-  std::unique_ptr<XdsMatcher::InputValue<absl::string_view>> ParseAndCreateInput(
-      const XdsResourceType::DecodeContext& context,
-      absl::string_view serialized_value,
-      ValidationErrors* errors) const override;
+  std::unique_ptr<XdsMatcher::InputValue<absl::string_view>>
+  ParseAndCreateInput(const XdsResourceType::DecodeContext& context,
+                      absl::string_view serialized_value,
+                      ValidationErrors* errors) const override;
 };
 
 }  // namespace grpc_core

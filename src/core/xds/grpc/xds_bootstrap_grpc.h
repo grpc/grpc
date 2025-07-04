@@ -150,8 +150,8 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
   const XdsAuditLoggerRegistry& audit_logger_registry() const {
     return audit_logger_registry_;
   }
-  const XdsMatcherInputRegistry<absl::string_view>& matcher_string_input_registry()
-      const {
+  const XdsMatcherInputRegistry<absl::string_view>&
+  matcher_string_input_registry() const {
     return matcher_string_input_registry_;
   }
 

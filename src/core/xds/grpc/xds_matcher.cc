@@ -20,9 +20,9 @@
 #include <string>
 #include <vector>
 
-#include "src/core/util/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
+#include "src/core/util/match.h"
 
 namespace grpc_core {
 
@@ -91,7 +91,8 @@ bool XdsMatcherList::Equal(const XdsMatcher& other) const {
   if (o == nullptr) return false;
   if (matchers_.size() != o->matchers_.size()) return false;
   for (size_t i = 0; i < matchers_.size(); ++i) {
-    if (!matchers_[i].predicate->Equal(*o->matchers_[i].predicate)) return false;
+    if (!matchers_[i].predicate->Equal(*o->matchers_[i].predicate))
+      return false;
     if (!matchers_[i].on_match.Equal(o->matchers_[i].on_match)) return false;
   }
   if (on_no_match_.has_value() != o->on_no_match_.has_value()) return false;
@@ -280,7 +281,7 @@ bool XdsMatcherPrefixMap::FindMatches(const MatchContext& context,
     for (auto it = value.rbegin(); it != value.rend(); ++it) {
       // if keep_matching is set FindMatches will return false but Action would
       // be added to result. In this case loop would continue.
-      if ((*it)->FindMatches(context, result)) return true;      
+      if ((*it)->FindMatches(context, result)) return true;
     }
   }
   if (on_no_match_.has_value()) {

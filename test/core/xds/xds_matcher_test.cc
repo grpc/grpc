@@ -55,12 +55,11 @@ class TestPathInput : public XdsMatcher::InputValue<absl::string_view> {
 
   std::optional<absl::string_view> GetValue(
       const XdsMatcher::MatchContext& context) override {
-    const auto* test_context =
-        DownCast<const TestMatchContext*>(&context);
+    const auto* test_context = DownCast<const TestMatchContext*>(&context);
     return test_context->path();
   }
-  bool Equal(const XdsMatcher::InputValue<absl::string_view>& other)
-      const override {
+  bool Equal(
+      const XdsMatcher::InputValue<absl::string_view>& other) const override {
     return dynamic_cast<const TestPathInput*>(&other) != nullptr;
   }
   std::string ToString() const override { return "TestPathInput"; }
@@ -311,12 +310,10 @@ TEST(XdsMatcherPrefixMapTest, PrefixMatchWithKeepMatching) {
   TestMatchContext context("/foo/bar/baz");
   XdsMatcher::Result result;
   absl::flat_hash_map<std::string, XdsMatcher::OnMatch> map;
-  map.emplace("/foo",
-              XdsMatcher::OnMatch(
-                  std::make_unique<TestAction>("first"), false));
-  map.emplace("/foo/bar",
-              XdsMatcher::OnMatch(std::make_unique<TestAction>("second"),
-                                  false));
+  map.emplace("/foo", XdsMatcher::OnMatch(std::make_unique<TestAction>("first"),
+                                          false));
+  map.emplace("/foo/bar", XdsMatcher::OnMatch(
+                              std::make_unique<TestAction>("second"), false));
   map.emplace("/foo/bar/baz",
               XdsMatcher::OnMatch(std::make_unique<TestAction>("third"), true));
   XdsMatcherPrefixMap matcher(std::make_unique<TestPathInput>(), std::move(map),
