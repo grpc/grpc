@@ -3,4 +3,4 @@ cryptography==3.4.6
 PyJWT==2.0.1
 pyOpenSSL==20.0.1
 PyYAML==6.0.2
-requests==2.32.2
+requests==2.32.4

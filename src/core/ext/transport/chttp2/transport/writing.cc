@@ -341,9 +341,19 @@ class WriteContext {
   }
 
   grpc_chttp2_stream* NextStream() {
-    if (t_->outbuf.c_slice_buffer()->length > target_write_size_) {
-      result_.partial = true;
-      return nullptr;
+    if (grpc_core::IsChttp2BoundWriteSizeEnabled()) {
+      if (t_->outbuf.c_slice_buffer()->length >= target_write_size_) {
+        result_.partial = true;
+        return nullptr;
+      }
+    } else {
+      // TODO(ctiller): this is likely buggy now, but everything seems to be
+      // working, so I'm keeping the above fix just for the experiment until
+      // we've had time to soak it fully.
+      if (t_->outbuf.c_slice_buffer()->length > target_write_size_) {
+        result_.partial = true;
+        return nullptr;
+      }
     }
 
     grpc_chttp2_stream* s;
@@ -723,7 +733,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
           // Old way of collecting TCP traces
           t->context_list->emplace_back(
               copy_context_fn(s->arena), outbuf_relative_start_pos,
-              num_stream_bytes, s->byte_counter, s->write_counter - 1, nullptr);
+              num_stream_bytes, s->byte_counter, s->write_counter - 1);
         } else if (s->call_tracer != nullptr &&
                    grpc_event_engine::experimental::
                        grpc_is_event_engine_endpoint(t->ep.get())) {

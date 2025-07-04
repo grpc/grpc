@@ -76,6 +76,8 @@ class GrpcMessageAssembler {
   ValueOrHttp2Status<MessageHandle> ExtractMessage() {
     const size_t current_len = message_buffer_.Length();
     if (current_len < kGrpcHeaderSizeInBytes) {
+      // TODO(tjagtap) : [PH2][P3] : Write a test for this failure.
+      LOG(ERROR) << "Incomplete gRPC message received";
       return ReturnNullOrError();
     }
     GrpcMessageHeader header = ExtractGrpcHeader(message_buffer_);
@@ -100,7 +102,7 @@ class GrpcMessageAssembler {
           header.length, *(grpc_message->payload()));
       uint32_t& flag = grpc_message->mutable_flags();
       flag = header.flags;
-      return grpc_message;
+      return std::move(grpc_message);
     }
     return ReturnNullOrError();
   }

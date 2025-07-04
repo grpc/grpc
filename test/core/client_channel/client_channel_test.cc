@@ -319,7 +319,9 @@ class TestConfigSelector : public ConfigSelector {
     return kFactory.Create();
   }
 
-  void AddFilters(InterceptionChainBuilder& builder) override {
+  void AddFilters(InterceptionChainBuilder& builder,
+                  const Blackboard* /*old_blackboard*/,
+                  Blackboard* /*new_blackboard*/) override {
     builder.Add<TestFilter>();
   }
 

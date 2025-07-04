@@ -46,6 +46,7 @@
 #include "src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.h"
 #include "src/core/credentials/call/iam/iam_credentials.h"
 #include "src/core/credentials/call/jwt/jwt_credentials.h"
+#include "src/core/credentials/call/jwt_token_file/jwt_token_file_call_credentials.h"
 #include "src/core/credentials/call/oauth2/oauth2_credentials.h"
 #include "src/core/credentials/transport/composite/composite_channel_credentials.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
@@ -468,8 +469,7 @@ class RequestMetadataState : public RefCounted<RequestMetadataState> {
                   &get_request_metadata_args_)),
               [this](std::tuple<absl::StatusOr<ClientMetadataHandle>, bool>
                          metadata_and_delayed) {
-                auto& metadata = std::get<0>(metadata_and_delayed);
-                const bool delayed = std::get<1>(metadata_and_delayed);
+                auto& [metadata, delayed] = metadata_and_delayed;
                 if (expect_delay_.has_value()) {
                   EXPECT_EQ(delayed, *expect_delay_);
                 }
@@ -1531,7 +1531,7 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsAuthKey) {
       null_well_known_creds_path_getter);
   gpr_free(json_key);
   creds = reinterpret_cast<grpc_composite_channel_credentials*>(
-      grpc_google_default_credentials_create(nullptr));
+      grpc_google_default_credentials_create(nullptr, nullptr));
   auto* default_creds =
       reinterpret_cast<const grpc_google_default_channel_credentials*>(
           creds->inner_creds());
@@ -1558,7 +1558,7 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsRefreshToken) {
   grpc_override_well_known_credentials_path_getter(
       null_well_known_creds_path_getter);
   creds = reinterpret_cast<grpc_composite_channel_credentials*>(
-      grpc_google_default_credentials_create(nullptr));
+      grpc_google_default_credentials_create(nullptr, nullptr));
   auto* default_creds =
       reinterpret_cast<const grpc_google_default_channel_credentials*>(
           creds->inner_creds());
@@ -1585,7 +1585,7 @@ TEST_F(CredentialsTest,
   grpc_override_well_known_credentials_path_getter(
       null_well_known_creds_path_getter);
   creds = reinterpret_cast<grpc_composite_channel_credentials*>(
-      grpc_google_default_credentials_create(nullptr));
+      grpc_google_default_credentials_create(nullptr, nullptr));
   auto* default_creds =
       reinterpret_cast<const grpc_google_default_channel_credentials*>(
           creds->inner_creds());
@@ -1609,7 +1609,7 @@ TEST_F(CredentialsTest,
   grpc_override_well_known_credentials_path_getter(
       null_well_known_creds_path_getter);
   creds = reinterpret_cast<grpc_composite_channel_credentials*>(
-      grpc_google_default_credentials_create(nullptr));
+      grpc_google_default_credentials_create(nullptr, nullptr));
   auto* default_creds =
       reinterpret_cast<const grpc_google_default_channel_credentials*>(
           creds->inner_creds());
@@ -1655,7 +1655,7 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsGce) {
   // Simulate a successful detection of GCE.
   grpc_composite_channel_credentials* creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
-          grpc_google_default_credentials_create(nullptr));
+          grpc_google_default_credentials_create(nullptr, nullptr));
 
   // Verify that the default creds actually embeds a GCE creds.
   CHECK(creds != nullptr);
@@ -1693,7 +1693,7 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsNonGce) {
       httpcli_post_should_not_be_called, httpcli_put_should_not_be_called);
   grpc_composite_channel_credentials* creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
-          grpc_google_default_credentials_create(nullptr));
+          grpc_google_default_credentials_create(nullptr, nullptr));
   // Verify that the default creds actually embeds a GCE creds.
   CHECK(creds != nullptr);
   CHECK_NE(creds->call_creds(), nullptr);
@@ -1734,10 +1734,10 @@ TEST_F(CredentialsTest, TestNoGoogleDefaultCreds) {
       default_creds_gce_detection_httpcli_get_failure_override,
       httpcli_post_should_not_be_called, httpcli_put_should_not_be_called);
   // Simulate a successful detection of GCE.
-  CHECK_EQ(grpc_google_default_credentials_create(nullptr), nullptr);
+  CHECK_EQ(grpc_google_default_credentials_create(nullptr, nullptr), nullptr);
   // Try a second one. GCE detection should occur again.
   g_test_gce_tenancy_checker_called = false;
-  CHECK_EQ(grpc_google_default_credentials_create(nullptr), nullptr);
+  CHECK_EQ(grpc_google_default_credentials_create(nullptr, nullptr), nullptr);
   CHECK_EQ(g_test_gce_tenancy_checker_called, true);
   // Cleanup.
   grpc_override_well_known_credentials_path_getter(nullptr);
@@ -1760,7 +1760,7 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsCallCredsSpecified) {
       httpcli_post_should_not_be_called, httpcli_put_should_not_be_called);
   grpc_composite_channel_credentials* channel_creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
-          grpc_google_default_credentials_create(call_creds));
+          grpc_google_default_credentials_create(call_creds, nullptr));
   CHECK_EQ(g_test_gce_tenancy_checker_called, false);
   CHECK_NE(channel_creds, nullptr);
   CHECK_NE(channel_creds->call_creds(), nullptr);
@@ -1812,7 +1812,8 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsNotDefault) {
       httpcli_post_should_not_be_called, httpcli_put_should_not_be_called);
   grpc_composite_channel_credentials* channel_creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
-          grpc_google_default_credentials_create(call_creds.release()));
+          grpc_google_default_credentials_create(call_creds.release(),
+                                                 nullptr));
   CHECK_EQ(g_test_gce_tenancy_checker_called, false);
   CHECK_NE(channel_creds, nullptr);
   CHECK_NE(channel_creds->call_creds(), nullptr);
@@ -4304,6 +4305,14 @@ TEST_F(CredentialsTest, TestHttpRequestSSLCredentialsSingleton) {
   EXPECT_EQ(creds_1, creds_2);
 }
 
+// Constructs a synthetic JWT token that's just valid enough for the
+// call creds to extract the expiration date.
+std::string MakeJwtTokenWithExpiration(Timestamp expiration) {
+  gpr_timespec ts = expiration.as_timespec(GPR_CLOCK_REALTIME);
+  std::string json = absl::StrCat("{\"exp\":", ts.tv_sec, "}");
+  return absl::StrCat("foo.", absl::WebSafeBase64Escape(json), ".bar");
+}
+
 class GcpServiceAccountIdentityCredentialsTest : public ::testing::Test {
  protected:
   void SetUp() override {
@@ -4347,14 +4356,6 @@ class GcpServiceAccountIdentityCredentialsTest : public ::testing::Test {
     return 1;
   }
 
-  // Constructs a synthetic JWT token that's just valid enough for the
-  // call creds to extract the expiration date.
-  static std::string MakeToken(Timestamp expiration) {
-    gpr_timespec ts = expiration.as_timespec(GPR_CLOCK_REALTIME);
-    std::string json = absl::StrCat("{\"exp\":", ts.tv_sec, "}");
-    return absl::StrCat("foo.", absl::WebSafeBase64Escape(json), ".bar");
-  }
-
   static int g_http_status;
   static absl::string_view g_audience;
   static const char* g_token;
@@ -4368,7 +4369,8 @@ absl::Status* GcpServiceAccountIdentityCredentialsTest::g_on_http_request_error;
 
 TEST_F(GcpServiceAccountIdentityCredentialsTest, Basic) {
   g_audience = "CV-6";
-  auto token = MakeToken(Timestamp::Now() + Duration::Hours(1));
+  auto token =
+      MakeJwtTokenWithExpiration(Timestamp::Now() + Duration::Hours(1));
   g_token = token.c_str();
   ExecCtx exec_ctx;
   auto creds =
@@ -4488,6 +4490,72 @@ TEST_F(GcpServiceAccountIdentityCredentialsTest, TokenInvalidExpiration) {
   state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
+}
+
+//
+// JwtTokenFileCallCredentials tests
+//
+
+class JwtTokenFileCallCredentialsTest : public ::testing::Test {
+ protected:
+  void SetUp() override {
+    event_engine_ = std::make_shared<FuzzingEventEngine>(
+        FuzzingEventEngine::Options(), fuzzing_event_engine::Actions());
+    grpc_timer_manager_set_start_threaded(false);
+    grpc_init();
+  }
+
+  void TearDown() override {
+    event_engine_->FuzzingDone();
+    event_engine_->TickUntilIdle();
+    event_engine_->UnsetGlobalHooks();
+    WaitForSingleOwner(std::move(event_engine_));
+    grpc_shutdown_blocking();
+  }
+
+  std::shared_ptr<FuzzingEventEngine> event_engine_;
+};
+
+TEST_F(JwtTokenFileCallCredentialsTest, Basic) {
+  auto token =
+      MakeJwtTokenWithExpiration(Timestamp::Now() + Duration::Hours(1));
+  char* path = write_tmp_jwt_file(token.c_str());
+  auto creds = MakeRefCounted<JwtTokenFileCallCredentials>(path, event_engine_);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  ExecCtx exec_ctx;
+  auto state = RequestMetadataState::NewInstance(absl::OkStatus(), token);
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  event_engine_->TickUntilIdle();
+  ExecCtx::Get()->Flush();
+  gpr_free(path);
+}
+
+TEST_F(JwtTokenFileCallCredentialsTest, FileDoesNotExist) {
+  auto creds = MakeRefCounted<JwtTokenFileCallCredentials>("/does/not/exist",
+                                                           event_engine_);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  ExecCtx exec_ctx;
+  auto state = RequestMetadataState::NewInstance(
+      absl::UnavailableError("Failed to load file: /does/not/exist due to "
+                             "error(fdopen): No such file or directory"),
+      "");
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+}
+
+TEST_F(JwtTokenFileCallCredentialsTest, InvalidToken) {
+  char* path = write_tmp_jwt_file("invalid_token");
+  auto creds = MakeRefCounted<JwtTokenFileCallCredentials>(path, event_engine_);
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  ExecCtx exec_ctx;
+  auto state = RequestMetadataState::NewInstance(
+      absl::UnauthenticatedError("error parsing JWT token"), "");
+  state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+  gpr_free(path);
 }
 
 }  // namespace

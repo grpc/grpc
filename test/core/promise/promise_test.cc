@@ -19,7 +19,11 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/upb_utils.h"
+#include "src/proto/grpc/channelz/v2/promise.upb.h"
+#include "src/proto/grpc/channelz/v2/property_list.upb.h"
 
 namespace grpc_core {
 
@@ -40,18 +44,40 @@ TEST(PromiseTest, NowOrNever) {
   EXPECT_EQ(NowOrNever(Immediate(42)), std::optional<int>(42));
 }
 
-TEST(PromiseTest, CanConvertToJson) {
+TEST(PromiseTest, CanConvertToProto) {
   auto x = []() { return 42; };
-  EXPECT_FALSE(promise_detail::kHasToJsonMethod<decltype(x)>);
+  EXPECT_FALSE(promise_detail::kHasToProtoMethod<decltype(x)>);
+  upb_Arena* arena = upb_Arena_New();
+  grpc_channelz_v2_Promise* promise_proto = grpc_channelz_v2_Promise_new(arena);
+  PromiseAsProto(x, promise_proto, arena);
+  EXPECT_EQ(grpc_channelz_v2_Promise_promise_case(promise_proto),
+            grpc_channelz_v2_Promise_promise_unknown_promise);
+  upb_Arena_Free(arena);
 }
 
-TEST(PromiseTest, CanCustomizeJsonConversion) {
+TEST(PromiseTest, CanCustomizeProtoConversion) {
   class FooPromise {
    public:
-    Json ToJson() const { return Json::FromObject(Json::Object()); }
+    channelz::PropertyList ChannelzProperties() const {
+      return channelz::PropertyList().Set("foo", "bar");
+    }
   };
-  EXPECT_TRUE(promise_detail::kHasToJsonMethod<FooPromise>);
-  EXPECT_EQ(JsonDump(PromiseAsJson(FooPromise())), "{}");
+  EXPECT_FALSE(promise_detail::kHasToProtoMethod<FooPromise>);
+  EXPECT_TRUE(promise_detail::kHasChannelzPropertiesMethod<FooPromise>);
+  upb_Arena* arena = upb_Arena_New();
+  grpc_channelz_v2_Promise* promise_proto = grpc_channelz_v2_Promise_new(arena);
+  PromiseAsProto(FooPromise(), promise_proto, arena);
+  ASSERT_EQ(grpc_channelz_v2_Promise_promise_case(promise_proto),
+            grpc_channelz_v2_Promise_promise_custom_promise);
+  auto* custom_promise = grpc_channelz_v2_Promise_custom_promise(promise_proto);
+  auto* properties = grpc_channelz_v2_Promise_Custom_properties(custom_promise);
+  EXPECT_EQ(grpc_channelz_v2_PropertyList_properties_size(properties), 1);
+  grpc_channelz_v2_PropertyValue* val;
+  ASSERT_TRUE(grpc_channelz_v2_PropertyList_properties_get(
+      properties, StdStringToUpbString("foo"), &val));
+  EXPECT_EQ(UpbStringToAbsl(grpc_channelz_v2_PropertyValue_string_value(val)),
+            "bar");
+  upb_Arena_Free(arena);
 }
 
 }  // namespace grpc_core

@@ -36,7 +36,7 @@ namespace {
 // - 1 retry allowed for ABORTED status
 // - first attempt returns ABORTED but does not retry
 CORE_END2END_TEST(RetryTests, RetryDisabled) {
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(
       ChannelArgs()
           .Set(GRPC_ARG_ENABLE_RETRIES, false)

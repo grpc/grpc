@@ -33,7 +33,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -134,15 +134,18 @@ class EnvironmentAutoDetectHelper
         project_id_(std::move(project_id)),
         on_done_(std::move(on_done)),
         event_engine_(std::move(event_engine)) {
-    grpc_core::ExecCtx exec_ctx;
-    // TODO(yashykt): The pollset stuff should go away once the HTTP library is
-    // ported over to use EventEngine.
-    pollset_ = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
-    grpc_pollset_init(pollset_, &mu_poll_);
-    pollent_ = grpc_polling_entity_create_from_pollset(pollset_);
-    // TODO(yashykt): Note that using EventEngine::Run is not fork-safe. If we
-    // want to make this fork-safe, we might need some re-work here.
-    event_engine_->Run([this] { PollLoop(); });
+    // The pollset_alternative experiment does not need pollsets
+    if (!grpc_event_engine::experimental::UsePollsetAlternative()) {
+      grpc_core::ExecCtx exec_ctx;
+      // TODO(yashykt): The pollset stuff should go away once the HTTP library
+      // is ported over to use EventEngine.
+      pollset_ = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
+      grpc_pollset_init(pollset_, &mu_poll_);
+      pollent_ = grpc_polling_entity_create_from_pollset(pollset_);
+      // TODO(yashykt): Note that using EventEngine::Run is not fork-safe. If we
+      // want to make this fork-safe, we might need some re-work here.
+      event_engine_->Run([this] { PollLoop(); });
+    }
     AutoDetect();
   }
 
@@ -282,9 +285,11 @@ class EnvironmentAutoDetectHelper
               }
             }
             if (resource.has_value()) {
-              gpr_mu_lock(mu_poll_);
-              notify_poller_ = true;
-              gpr_mu_unlock(mu_poll_);
+              if (!grpc_event_engine::experimental::UsePollsetAlternative()) {
+                gpr_mu_lock(mu_poll_);
+                notify_poller_ = true;
+                gpr_mu_unlock(mu_poll_);
+              }
               auto on_done = std::move(on_done_);
               Unref();
               on_done(std::move(resource).value());

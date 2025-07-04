@@ -79,15 +79,11 @@ Chttp2PingRatePolicy::RequestSendPing(Duration next_allowed_ping_interval,
   // Throttle pings to 1 minute if we haven't sent any data recently
   if (max_pings_without_data_sent_ != 0 &&
       pings_before_data_sending_required_ == 0) {
-    if (IsMaxPingsWoDataThrottleEnabled()) {
-      const Timestamp next_allowed_ping =
-          last_ping_sent_time_ + kThrottleIntervalWithoutDataSent;
-      if (next_allowed_ping > now) {
-        return TooSoon{kThrottleIntervalWithoutDataSent, last_ping_sent_time_,
-                       next_allowed_ping - now};
-      }
-    } else {
-      return TooManyRecentPings{};
+    const Timestamp next_allowed_ping =
+        last_ping_sent_time_ + kThrottleIntervalWithoutDataSent;
+    if (next_allowed_ping > now) {
+      return TooSoon{kThrottleIntervalWithoutDataSent, last_ping_sent_time_,
+                     next_allowed_ping - now};
     }
   }
 

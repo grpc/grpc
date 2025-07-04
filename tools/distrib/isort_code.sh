@@ -38,4 +38,4 @@ python3 -m virtualenv $VIRTUALENV
 source $VIRTUALENV/bin/activate
 
 python3 -m pip install isort==5.9.2
-python3 -m isort $ACTION --settings-path=black.toml --dont-follow-links "${DIRS[@]}"
+python3 -m isort $ACTION --settings-path=grpc-style-config.toml --dont-follow-links "${DIRS[@]}"

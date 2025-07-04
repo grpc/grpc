@@ -52,9 +52,16 @@ BAZEL_REFERENCE_LINK = [
 ]
 
 ABSL_INCLUDE = (os.path.join("third_party", "abseil-cpp"),)
+UPB_GEN_INCLUDE = (os.path.join("grpc_root", "src", "core", "ext", "upb-gen"),)
+UPB_DEFS_GEN_INCLUDE = (
+    os.path.join("grpc_root", "src", "core", "ext", "upbdefs-gen"),
+)
+PROTOBUF_INCLUDE = (os.path.join("third_party", "protobuf"),)
 
 # will be added to include path when building grpcio_observability
-EXTENSION_INCLUDE_DIRECTORIES = ABSL_INCLUDE
+EXTENSION_INCLUDE_DIRECTORIES = (
+    ABSL_INCLUDE + UPB_GEN_INCLUDE + UPB_DEFS_GEN_INCLUDE + PROTOBUF_INCLUDE
+)
 
 CC_INCLUDES = list(EXTENSION_INCLUDE_DIRECTORIES)
 
@@ -66,6 +73,7 @@ GRPCIO_OBSERVABILITY_ROOT_PREFIX = "src/python/grpcio_observability/"
 COPY_FILES_SOURCE_TARGET_PAIRS = [
     ("include", "grpc_root/include"),
     ("third_party/abseil-cpp/absl", "third_party/abseil-cpp/absl"),
+    ("third_party/protobuf/upb", "third_party/protobuf/upb"),
     ("src/core", "grpc_root/src/core"),
 ]
 

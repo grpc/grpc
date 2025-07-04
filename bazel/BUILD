@@ -170,6 +170,11 @@ package_group(
 )
 
 package_group(
+    name = "xds_client_grpc",
+    packages = [],
+)
+
+package_group(
     name = "grpc_python_observability",
     packages = [],
 )
