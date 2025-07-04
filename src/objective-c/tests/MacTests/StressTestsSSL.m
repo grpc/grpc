@@ -19,6 +19,7 @@
 #import <GRPCClient/GRPCCall+Tests.h>
 #import <GRPCClient/internal_testing/GRPCCall+InternalTests.h>
 
+#import "../Common/TestUtils.h"
 #include "StressTests.h"
 
 static NSString *const kHostAddress = @"10.0.0.1";
@@ -68,4 +69,11 @@ static int32_t kLocalInteropServerOverhead = 10;
                                          ofType:@"pem"];
   [GRPCCall useTestCertsPath:certsPath testName:@"foo.test.google.fr" forHost:[[self class] host]];
 }
+
++ (void)setUp {
+  [super setUp];
+
+  GRPCInteropStartSSLServer();
+}
+
 @end

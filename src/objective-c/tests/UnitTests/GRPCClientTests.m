@@ -104,6 +104,8 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
 
 + (void)setUp {
   NSLog(@"GRPCClientTests Started");
+
+  GRPCInteropStartPlainTextServer();
 }
 
 - (void)setUp {

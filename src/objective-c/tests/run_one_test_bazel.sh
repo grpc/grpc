@@ -25,13 +25,6 @@ cd $(dirname $0)
 
 BAZEL=../../../tools/bazel
 
-INTEROP=../../../bazel-bin/test/cpp/interop/interop_server
-
-[ -f $INTEROP ] || {
-    $BAZEL build //test/cpp/interop:interop_server
-}
-[ -f $INTEROP ] || exit 1
-
 [ -z "$(ps aux |egrep 'port_server\.py.*-p\s32766')" ] && {
     echo >&2 "Can't find the port server. Start port server with tools/run_tests/start_port_server.py."
     exit 1
@@ -40,12 +33,8 @@ INTEROP=../../../bazel-bin/test/cpp/interop/interop_server
 PLAIN_PORT=$(curl localhost:32766/get)
 TLS_PORT=$(curl localhost:32766/get)
 
-$INTEROP --port=$PLAIN_PORT --max_send_message_size=8388608 &
-$INTEROP --port=$TLS_PORT --max_send_message_size=8388608 --use_tls &
-
-trap 'kill -9 `jobs -p` ; echo "EXIT TIME:  $(date)"' EXIT
-
 time $BAZEL test --ios_multi_cpus=x86_64,sim_arm64 \
+    --cache_test_results=no --config=dbg --test_output=all \
     --test_env HOST_PORT_LOCALSSL=localhost:$TLS_PORT \
     --test_env HOST_PORT_LOCAL=localhost:$PLAIN_PORT \
     --test_env=GRPC_VERBOSITY=debug --test_env=GRPC_TRACE=event_engine*,api \

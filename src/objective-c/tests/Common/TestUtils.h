@@ -76,4 +76,10 @@ FOUNDATION_EXPORT BOOL GRPCTestRunWithFlakeRepeats(XCTestCase *testCase,
  */
 FOUNDATION_EXPORT void GRPCResetCallConnections(void);
 
+/**
+ * Create interop servers.
+ */
+FOUNDATION_EXPORT void GRPCInteropStartPlainTextServer(void);
+FOUNDATION_EXPORT void GRPCInteropStartSSLServer(void);
+
 NS_ASSUME_NONNULL_END

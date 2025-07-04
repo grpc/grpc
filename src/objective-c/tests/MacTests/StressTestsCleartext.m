@@ -20,6 +20,7 @@
 #import <GRPCClient/GRPCCall+Tests.h>
 #import <GRPCClient/internal_testing/GRPCCall+InternalTests.h>
 
+#import "../Common/TestUtils.h"
 #import "StressTests.h"
 
 static NSString *const kHostAddress = @"10.0.0.1";
@@ -59,6 +60,12 @@ static int32_t kLocalInteropServerOverhead = 10;
 
   // Register test server as non-SSL.
   [GRPCCall useInsecureConnectionsForHost:[[self class] host]];
+}
+
++ (void)setUp {
+  [super setUp];
+
+  GRPCInteropStartPlainTextServer();
 }
 
 + (GRPCTransportType)transportType {
