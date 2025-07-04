@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Any, Tuple
+
 import grpc_testing
 
 
@@ -93,7 +95,7 @@ class _StreamStream(grpc_testing.StreamStreamChannelRpc):
         self._rpc_state.terminate(trailing_metadata, code, details)
 
 
-def unary_unary(channel_state, method_descriptor):
+def unary_unary(channel_state: Any, method_descriptor: Any) -> Tuple[Any, Any, _UnaryUnary]:
     rpc_state = channel_state.take_rpc_state(method_descriptor)
     (
         invocation_metadata,
@@ -102,7 +104,7 @@ def unary_unary(channel_state, method_descriptor):
     return invocation_metadata, request, _UnaryUnary(rpc_state)
 
 
-def unary_stream(channel_state, method_descriptor):
+def unary_stream(channel_state: Any, method_descriptor: Any) -> Tuple[Any, Any, _UnaryStream]:
     rpc_state = channel_state.take_rpc_state(method_descriptor)
     (
         invocation_metadata,
@@ -111,11 +113,11 @@ def unary_stream(channel_state, method_descriptor):
     return invocation_metadata, request, _UnaryStream(rpc_state)
 
 
-def stream_unary(channel_state, method_descriptor):
+def stream_unary(channel_state: Any, method_descriptor: Any) -> Tuple[Any, _StreamUnary]:
     rpc_state = channel_state.take_rpc_state(method_descriptor)
     return rpc_state.take_invocation_metadata(), _StreamUnary(rpc_state)
 
 
-def stream_stream(channel_state, method_descriptor):
+def stream_stream(channel_state: Any, method_descriptor: Any) -> Tuple[Any, _StreamStream]:
     rpc_state = channel_state.take_rpc_state(method_descriptor)
     return rpc_state.take_invocation_metadata(), _StreamStream(rpc_state)

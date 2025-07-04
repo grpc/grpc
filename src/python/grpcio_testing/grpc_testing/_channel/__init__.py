@@ -12,13 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Any
+
 from grpc_testing._channel import _channel
 from grpc_testing._channel import _channel_state
 
 
 # descriptors is reserved for later use.
 # pylint: disable=unused-argument
-def testing_channel(descriptors, time):
+def testing_channel(descriptors: Any, time: Any) -> _channel.TestingChannel:
     return _channel.TestingChannel(time, _channel_state.State())
 
 
