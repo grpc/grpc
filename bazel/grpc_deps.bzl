@@ -94,12 +94,16 @@ def grpc_deps():
         # bazel run @com_google_fuzztest//bazel:setup_configs > tools/fuzztest.bazelrc
         http_archive(
             name = "com_google_fuzztest",
-            sha256 = "cdf8d8cd3cdc77280a7c59b310edf234e489a96b6e727cb271e7dfbeb9bcca8d",
-            strip_prefix = "fuzztest-4ecaeb5084a061a862af8f86789ee184cd3d3f18",
+            sha256 = "7107a5553bfb1472caa67d56748728992e1b32476fd021b1fc55d81113980cc9",
+            strip_prefix = "fuzztest-d5857a5309f2a5c4cb5de533133a8af6e370ca54",
             urls = [
-                # 2023-05-16
-                "https://github.com/google/fuzztest/archive/4ecaeb5084a061a862af8f86789ee184cd3d3f18.tar.gz",
+                # 2025-07-02
+                "https://github.com/google/fuzztest/archive/d5857a5309f2a5c4cb5de533133a8af6e370ca54.tar.gz",
             ],
+            repo_mapping = {
+                "@googletest": "@com_google_googletest",
+                "@abseil-cpp": "@com_google_absl",
+            },
         )
 
     if "rules_cc" not in native.existing_rules():
