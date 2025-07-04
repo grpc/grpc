@@ -76,13 +76,13 @@ include "_cygrpc/aio/call.pyx.pxi"
 include "_cygrpc/aio/channel.pyx.pxi"
 include "_cygrpc/aio/server.pyx.pxi"
 
-disable_absl_init_log = os.getenv("DISABLE_ABSL_INIT_LOG")
+_disable_absl_init_log = os.getenv("DISABLE_ABSL_INIT_LOG")
 
 #
 # initialize gRPC
 #
 cdef _initialize():
-  if not disable_absl_init_log:
+  if not _disable_absl_init_log:
     InitializeLog()
   grpc_set_ssl_roots_override_callback(
           <grpc_ssl_roots_override_callback>ssl_roots_override_callback)
