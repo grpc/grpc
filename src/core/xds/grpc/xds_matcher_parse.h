@@ -31,7 +31,7 @@ std::unique_ptr<XdsMatcher> ParseXdsMatcher(
     const XdsResourceType::DecodeContext& context,
     const xds_type_matcher_v3_Matcher* matcher,
     const XdsMatcherActionRegistry& action_registry,
-    const UniqueTypeName& context_name, ValidationErrors* errors);
+    const UniqueTypeName& matcher_context, ValidationErrors* errors);
 
 }  // namespace grpc_core
 

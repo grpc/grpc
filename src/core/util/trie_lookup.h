@@ -30,7 +30,6 @@ template <typename Value>
 class TrieLookupTree {
  public:
   TrieLookupTree() : root_(std::make_unique<TrieNode>()) {}
-
   // Takes value by r-value reference to consume it.
   bool AddNode(absl::string_view key, Value value,
                bool allow_overwrite = true) {
@@ -48,8 +47,7 @@ class TrieLookupTree {
     node->value = std::move(value);
     return true;
   }
-
-  // Const-overload for lookups. Returns a const pointer to the value.
+  // Returns a const pointer to the value.
   const Value* Lookup(absl::string_view key) const {
     const auto* node = root_.get();
     for (auto c : key) {
@@ -64,7 +62,7 @@ class TrieLookupTree {
     }
     return nullptr;
   }
-
+  // Return longest matching prefix
   const Value* LookupLongestPrefix(absl::string_view key) const {
     const auto* node = root_.get();
     const Value* matched_value = nullptr;
@@ -83,7 +81,6 @@ class TrieLookupTree {
     }
     return matched_value;
   }
-
   // Return all prefix matches
   std::vector<const Value*> GetAllPrefixMatches(absl::string_view key) const {
     std::vector<const Value*> values;

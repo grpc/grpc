@@ -36,14 +36,15 @@ namespace {
 std::unique_ptr<XdsMatcherList::Predicate> ParsePredicate(
     const XdsResourceType::DecodeContext& context,
     const xds_type_matcher_v3_Matcher_MatcherList_Predicate* predicate,
-    ValidationErrors* errors);
+    const UniqueTypeName& matcher_context, ValidationErrors* errors);
 
 // Function to parse "xds_core_v3_TypedExtensionConfig" to generate
 // XdsMatcher::Input<T>
 // The parsing is for input which return absl::string_view
 std::unique_ptr<XdsMatcher::InputValue<absl::string_view>> ParseStringInput(
     const XdsResourceType::DecodeContext& context,
-    const xds_core_v3_TypedExtensionConfig* input, ValidationErrors* errors) {
+    const xds_core_v3_TypedExtensionConfig* input,
+    const UniqueTypeName& matcher_context, ValidationErrors* errors) {
   const google_protobuf_Any* any =
       xds_core_v3_TypedExtensionConfig_typed_config(input);
   auto extension = ExtractXdsExtension(context, any, errors);
@@ -53,7 +54,16 @@ std::unique_ptr<XdsMatcher::InputValue<absl::string_view>> ParseStringInput(
   const auto& registry =
       DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
           .matcher_string_input_registry();
-  return registry.ParseAndCreateInput(context, extension.value(), errors);
+
+  auto result =
+      registry.ParseAndCreateInput(context, extension.value(), errors);
+  if (result != nullptr && result->context_type() != matcher_context) {
+    errors->AddError(absl::StrCat("input type ", extension->type,
+                                  " does not support context ",
+                                  matcher_context.name()));
+    return nullptr;
+  }
+  return result;
 }
 
 // Function to parse "xds_core_v3_TypedExtensionConfig"  to generate
@@ -87,7 +97,7 @@ std::optional<XdsMatcher::OnMatch> ParseOnMatch(
     const XdsResourceType::DecodeContext& context,
     const xds_type_matcher_v3_Matcher_OnMatch* on_match,
     const XdsMatcherActionRegistry& action_registry,
-    const UniqueTypeName& context_name, ValidationErrors* errors) {
+    const UniqueTypeName& matcher_context, ValidationErrors* errors) {
   // Parse keep matching once we move to latest xds protos
   bool keep_matching = false;
   // Action is a variant which can have Action or a Nested Matcher
@@ -101,7 +111,7 @@ std::optional<XdsMatcher::OnMatch> ParseOnMatch(
     ValidationErrors::ScopedField field(errors, ".matcher");
     auto nested_matcher = ParseXdsMatcher(
         context, xds_type_matcher_v3_Matcher_OnMatch_matcher(on_match),
-        action_registry, context_name, errors);
+        action_registry, matcher_context, errors);
     return XdsMatcher::OnMatch(std::move(nested_matcher), keep_matching);
   } else {
     errors->AddError("Unknown field in OnMatch");
@@ -114,7 +124,7 @@ absl::flat_hash_map<std::string, XdsMatcher::OnMatch> ParseMatchMap(
     const XdsResourceType::DecodeContext& context,
     const xds_type_matcher_v3_Matcher_MatcherTree_MatchMap* match_map,
     const XdsMatcherActionRegistry& action_registry,
-    const UniqueTypeName& context_name, ValidationErrors* errors) {
+    const UniqueTypeName& matcher_context, ValidationErrors* errors) {
   absl::flat_hash_map<std::string, XdsMatcher::OnMatch> result;
   if (xds_type_matcher_v3_Matcher_MatcherTree_MatchMap_map_size(match_map) ==
       0) {
@@ -128,7 +138,7 @@ absl::flat_hash_map<std::string, XdsMatcher::OnMatch> ParseMatchMap(
       match_map, &upb_key, &value, &iter)) {
     ValidationErrors::ScopedField field(errors, ".on_match");
     auto on_match =
-        ParseOnMatch(context, value, action_registry, context_name, errors);
+        ParseOnMatch(context, value, action_registry, matcher_context, errors);
     if (on_match.has_value()) {
       result.emplace(UpbStringToStdString(upb_key), std::move(*on_match));
     }
@@ -141,7 +151,7 @@ std::unique_ptr<XdsMatcherList::Predicate> ParseSinglePredicate(
     const XdsResourceType::DecodeContext& context,
     const xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate*
         single_predicate,
-    ValidationErrors* errors) {
+    const UniqueTypeName& matcher_context, ValidationErrors* errors) {
   // Supporting value match now, need to add custom match
   if (!xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate_has_value_match(
           single_predicate)) {
@@ -165,7 +175,7 @@ std::unique_ptr<XdsMatcherList::Predicate> ParseSinglePredicate(
         context,
         xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate_input(
             single_predicate),
-        errors);
+        matcher_context, errors);
   }
   return XdsMatcherList::CreateSinglePredicate(std::move(input_string_value),
                                                std::move(input_string_matcher));
@@ -175,7 +185,7 @@ std::vector<std::unique_ptr<XdsMatcherList::Predicate>> ParsePredicateList(
     const XdsResourceType::DecodeContext& context,
     const xds_type_matcher_v3_Matcher_MatcherList_Predicate_PredicateList*
         predicate_list,
-    ValidationErrors* errors) {
+    const UniqueTypeName& matcher_context, ValidationErrors* errors) {
   std::vector<std::unique_ptr<XdsMatcherList::Predicate>> predicates;
   size_t predicate_list_size;
   auto list =
@@ -188,7 +198,7 @@ std::vector<std::unique_ptr<XdsMatcherList::Predicate>> ParsePredicateList(
   ValidationErrors::ScopedField field(errors, ".predicate_list");
   for (size_t i = 0; i < predicate_list_size; ++i) {
     ValidationErrors::ScopedField field(errors, absl::StrCat("[", i, "]"));
-    auto predicate = ParsePredicate(context, list[i], errors);
+    auto predicate = ParsePredicate(context, list[i], matcher_context, errors);
     if (predicate) predicates.push_back(std::move(predicate));
   }
   return predicates;
@@ -198,7 +208,7 @@ std::vector<std::unique_ptr<XdsMatcherList::Predicate>> ParsePredicateList(
 std::unique_ptr<XdsMatcherList::Predicate> ParsePredicate(
     const XdsResourceType::DecodeContext& context,
     const xds_type_matcher_v3_Matcher_MatcherList_Predicate* predicate,
-    ValidationErrors* errors) {
+    const UniqueTypeName& matcher_context, ValidationErrors* errors) {
   if (xds_type_matcher_v3_Matcher_MatcherList_Predicate_has_single_predicate(
           predicate)) {
     ValidationErrors::ScopedField field(errors, ".single_predicate");
@@ -206,14 +216,14 @@ std::unique_ptr<XdsMatcherList::Predicate> ParsePredicate(
         context,
         xds_type_matcher_v3_Matcher_MatcherList_Predicate_single_predicate(
             predicate),
-        errors);
+        matcher_context, errors);
   } else if (xds_type_matcher_v3_Matcher_MatcherList_Predicate_has_or_matcher(
                  predicate)) {
     ValidationErrors::ScopedField field(errors, ".or_matcher");
     auto predicate_list = ParsePredicateList(
         context,
         xds_type_matcher_v3_Matcher_MatcherList_Predicate_or_matcher(predicate),
-        errors);
+        matcher_context, errors);
     return std::make_unique<XdsMatcherList::OrPredicate>(
         std::move(predicate_list));
   } else if (xds_type_matcher_v3_Matcher_MatcherList_Predicate_has_and_matcher(
@@ -223,7 +233,7 @@ std::unique_ptr<XdsMatcherList::Predicate> ParsePredicate(
         context,
         xds_type_matcher_v3_Matcher_MatcherList_Predicate_and_matcher(
             predicate),
-        errors);
+        matcher_context, errors);
     return std::make_unique<XdsMatcherList::AndPredicate>(
         std::move(predicate_list));
   } else if (xds_type_matcher_v3_Matcher_MatcherList_Predicate_has_not_matcher(
@@ -233,7 +243,7 @@ std::unique_ptr<XdsMatcherList::Predicate> ParsePredicate(
         context,
         xds_type_matcher_v3_Matcher_MatcherList_Predicate_not_matcher(
             predicate),
-        errors);
+        matcher_context, errors);
     return std::make_unique<XdsMatcherList::NotPredicate>(
         std::move(not_predicate));
   }
@@ -246,7 +256,7 @@ std::vector<XdsMatcherList::FieldMatcher> ParseFieldMatcherList(
     const XdsResourceType::DecodeContext& context,
     const xds_type_matcher_v3_Matcher_MatcherList* matcher_list,
     const XdsMatcherActionRegistry& action_registry,
-    const UniqueTypeName& context_name, ValidationErrors* errors) {
+    const UniqueTypeName& matcher_context, ValidationErrors* errors) {
   std::vector<XdsMatcherList::FieldMatcher> field_matcher_list;
   size_t matcher_list_size;
   auto field_matchers = xds_type_matcher_v3_Matcher_MatcherList_matchers(
@@ -265,7 +275,7 @@ std::vector<XdsMatcherList::FieldMatcher> ParseFieldMatcherList(
           context,
           xds_type_matcher_v3_Matcher_MatcherList_FieldMatcher_on_match(
               field_matchers[i]),
-          action_registry, context_name, errors);
+          action_registry, matcher_context, errors);
     }
     std::unique_ptr<XdsMatcherList::Predicate> predicate;
     {
@@ -274,7 +284,7 @@ std::vector<XdsMatcherList::FieldMatcher> ParseFieldMatcherList(
           context,
           xds_type_matcher_v3_Matcher_MatcherList_FieldMatcher_predicate(
               field_matchers[i]),
-          errors);
+          matcher_context, errors);
     }
     if (on_match.has_value()) {
       field_matcher_list.emplace_back(std::move(predicate),
@@ -292,20 +302,20 @@ std::unique_ptr<XdsMatcher> ParseXdsMatcher(
     const XdsResourceType::DecodeContext& context,
     const xds_type_matcher_v3_Matcher* matcher,
     const XdsMatcherActionRegistry& action_registry,
-    const UniqueTypeName& context_name, ValidationErrors* errors) {
+    const UniqueTypeName& matcher_context, ValidationErrors* errors) {
   ValidationErrors::ScopedField field(errors, ".matcher");
   std::optional<XdsMatcher::OnMatch> on_no_match;
   if (xds_type_matcher_v3_Matcher_has_on_no_match(matcher)) {
     ValidationErrors::ScopedField field(errors, ".on_no_match");
     on_no_match =
         ParseOnMatch(context, xds_type_matcher_v3_Matcher_on_no_match(matcher),
-                     action_registry, context_name, errors);
+                     action_registry, matcher_context, errors);
   }
   if (xds_type_matcher_v3_Matcher_has_matcher_list(matcher)) {
     ValidationErrors::ScopedField field(errors, ".matcher_list");
     auto matcher_list = xds_type_matcher_v3_Matcher_matcher_list(matcher);
     auto field_matcher_list = ParseFieldMatcherList(
-        context, matcher_list, action_registry, context_name, errors);
+        context, matcher_list, action_registry, matcher_context, errors);
     return std::make_unique<XdsMatcherList>(std::move(field_matcher_list),
                                             std::move(on_no_match));
   } else if (xds_type_matcher_v3_Matcher_has_matcher_tree(matcher)) {
@@ -316,7 +326,7 @@ std::unique_ptr<XdsMatcher> ParseXdsMatcher(
       ValidationErrors::ScopedField field(errors, ".input");
       input = ParseStringInput(
           context, xds_type_matcher_v3_Matcher_MatcherTree_input(matcher_tree),
-          errors);
+          matcher_context, errors);
     }
     if (xds_type_matcher_v3_Matcher_MatcherTree_has_exact_match_map(
             matcher_tree)) {
@@ -324,7 +334,7 @@ std::unique_ptr<XdsMatcher> ParseXdsMatcher(
       auto map = ParseMatchMap(
           context,
           xds_type_matcher_v3_Matcher_MatcherTree_exact_match_map(matcher_tree),
-          action_registry, context_name, errors);
+          action_registry, matcher_context, errors);
       return std::make_unique<XdsMatcherExactMap>(
           std::move(input), std::move(map), std::move(on_no_match));
     } else if (xds_type_matcher_v3_Matcher_MatcherTree_has_prefix_match_map(
@@ -334,7 +344,7 @@ std::unique_ptr<XdsMatcher> ParseXdsMatcher(
           context,
           xds_type_matcher_v3_Matcher_MatcherTree_prefix_match_map(
               matcher_tree),
-          action_registry, context_name, errors);
+          action_registry, matcher_context, errors);
       return std::make_unique<XdsMatcherPrefixMap>(
           std::move(input), std::move(map), std::move(on_no_match));
     } else {

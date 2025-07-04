@@ -54,7 +54,7 @@ class TestPathInput : public XdsMatcher::InputValue<absl::string_view> {
   }
 
   std::optional<absl::string_view> GetValue(
-      const XdsMatcher::MatchContext& context) override {
+      const XdsMatcher::MatchContext& context) const override {
     const auto* test_context = DownCast<const TestMatchContext*>(&context);
     return test_context->path();
   }
