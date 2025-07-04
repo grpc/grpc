@@ -23,7 +23,7 @@ namespace grpc_core {
 class RpcMatchContext : public XdsMatcher::MatchContext {
  public:
   explicit RpcMatchContext(grpc_metadata_batch* initial_metadata)
-      : initial_metadata(initial_metadata) {}
+      : initial_metadata_(initial_metadata) {}
 
   static UniqueTypeName Type() {
     return GRPC_UNIQUE_TYPE_NAME_HERE("rpc_context");
@@ -37,9 +37,8 @@ class RpcMatchContext : public XdsMatcher::MatchContext {
   std::optional<absl::string_view> GetHeaderValue(
       absl::string_view header_name, std::string* concatenated_value) const;
 
-  // FIXME: add other methods here
  private:
-  grpc_metadata_batch* initial_metadata;
+  grpc_metadata_batch* initial_metadata_;
 };
 
 }  // namespace grpc_core

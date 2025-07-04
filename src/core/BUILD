@@ -84,9 +84,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "trie_lookup",
-    srcs = [
-        "util/trie_lookup.cc",
-    ],
     hdrs = [
         "util/trie_lookup.h",
     ],
@@ -6187,8 +6184,6 @@ grpc_cc_library(
         "envoy_extensions_filters_http_stateful_session_upbdefs",
         "envoy_extensions_filters_network_http_connection_manager_upb",
         "envoy_extensions_filters_network_http_connection_manager_upbdefs",
-        "envoy_extensions_http_rate_limit_quota_upb",
-        "envoy_extensions_http_rate_limit_quota_upbdefs",
         "envoy_extensions_http_stateful_session_cookie_upb",
         "envoy_extensions_http_stateful_session_cookie_upbdefs",
         "envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_upb",
@@ -10604,16 +10599,6 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_http_stateful_session_cookie_upbdefs",
     deps = ["@envoy_api//envoy/extensions/http/stateful_session/cookie/v3:pkg"],
-)
-
-grpc_upb_proto_library(
-    name = "envoy_extensions_http_rate_limit_quota_upb",
-    deps = ["@envoy_api//envoy/extensions/filters/http/rate_limit_quota/v3:pkg"],
-)
-
-grpc_upb_proto_reflection_library(
-    name = "envoy_extensions_http_rate_limit_quota_upbdefs",
-    deps = ["@envoy_api//envoy/extensions/filters/http/rate_limit_quota/v3:pkg"],
 )
 
 grpc_upb_proto_library(

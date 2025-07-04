@@ -640,9 +640,6 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb_minitable.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/rate_limit_quota/v3/rate_limit_quota.upb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/rate_limit_quota/v3/rate_limit_quota.upb_minitable.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/rate_limit_quota/v3/rate_limit_quota.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/rbac/v3/rbac.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/rbac/v3/rbac.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/envoy/extensions/filters/http/rbac/v3/rbac.upb_minitable.h" role="src" />
@@ -1084,8 +1081,6 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rate_limit_quota/v3/rate_limit_quota.upbdefs.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rate_limit_quota/v3/rate_limit_quota.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/envoy/extensions/filters/http/router/v3/router.upbdefs.c" role="src" />
@@ -2037,7 +2032,6 @@
     <file baseinstalldir="/" name="src/core/util/time_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/time_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/tmpfile.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/trie_lookup.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/trie_lookup.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/type_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/unique_ptr_with_bitset.h" role="src" />

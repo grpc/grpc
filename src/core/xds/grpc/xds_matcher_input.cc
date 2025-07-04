@@ -20,38 +20,32 @@
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_matcher.h"
 #include "src/core/xds/grpc/xds_matcher_context.h"
-// #include "src/core/xds/grpc/xds_matcher_input.h"
 #include "xds/core/v3/extension.upb.h"
 #include "xds/type/matcher/v3/http_inputs.upb.h"
 
 namespace grpc_core {
 std::optional<absl::string_view> MetadataInput::GetValue(
     const XdsMatcher::MatchContext& context) const {
-  assert(context.type() == RpcMatchContext::Type());
-  std::string buffer;
+  CHECK_EQ(context.type(), RpcMatchContext::Type());
   return DownCast<const RpcMatchContext&>(context).GetHeaderValue(key_,
-                                                                  &buffer);
+                                                                  &buffer_);
 }
 
-RefCountedPtr<InputConfig> MetadataInputFactory::ParseConfig(
-    const XdsResourceType::DecodeContext& context, XdsExtension& input,
-    ValidationErrors*) const {
-  absl::string_view* serialized_http_header_input =
-      std::get_if<absl::string_view>(&input.value);
-  // Parse HttpRequestHeaderMatchInput
+std::unique_ptr<XdsMatcher::InputValue<absl::string_view>> MetadataInputFactory::ParseAndCreateInput(
+    const XdsResourceType::DecodeContext& context,
+    absl::string_view serialized_value,
+    ValidationErrors* errors) const {
   auto http_header_input =
       envoy_type_matcher_v3_HttpRequestHeaderMatchInput_parse(
-          serialized_http_header_input->data(),
-          serialized_http_header_input->size(), context.arena);
+          serialized_value.data(), serialized_value.size(), context.arena);
   // extract header name (Key for metadata match)
   auto x = envoy_type_matcher_v3_HttpRequestHeaderMatchInput_header_name(
       http_header_input);
   auto header_name = UpbStringToStdString(x);
-  return MakeRefCounted<MetadataInputConfig>(type(), header_name);
+  return std::make_unique<MetadataInput>(header_name);
 }
-
 template <>
-InputRegistry<absl::string_view>::InputRegistry() {
+XdsMatcherInputRegistry<absl::string_view>::XdsMatcherInputRegistry() {
   // Add factories
   factories_.emplace(MetadataInputFactory::Type(),
                      std::make_unique<MetadataInputFactory>());

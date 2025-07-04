@@ -19,6 +19,7 @@
 
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_matcher.h"
+#include "src/core/xds/grpc/xds_matcher_action.h"
 #include "xds/type/matcher/v3/matcher.upb.h"
 
 namespace grpc_core {
@@ -26,9 +27,11 @@ namespace grpc_core {
 // Parses the xDS Matcher proto into an `XdsMatcher` object.
 // This is the top-level function expected to be called for parsing the
 // matcher.proto.
-std::unique_ptr<XdsMatcher> ParseMatcher(
+std::unique_ptr<XdsMatcher> ParseXdsMatcher(
     const XdsResourceType::DecodeContext& context,
-    const xds_type_matcher_v3_Matcher* matcher, ValidationErrors* errors);
+    const xds_type_matcher_v3_Matcher* matcher,
+    const XdsMatcherActionRegistry& action_registry,
+    const UniqueTypeName& context_name, ValidationErrors* errors);
 
 }  // namespace grpc_core
 

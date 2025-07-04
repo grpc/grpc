@@ -1012,9 +1012,6 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/envoy-api/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.proto envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
-  third_party/envoy-api/envoy/extensions/filters/http/rate_limit_quota/v3/rate_limit_quota.proto envoy/extensions/filters/http/rate_limit_quota/v3/rate_limit_quota.proto
-)
-protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto envoy/extensions/filters/http/rbac/v3/rbac.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
@@ -2405,7 +2402,6 @@ add_library(grpc
   src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3/fault.upb_minitable.c
   src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.c
   src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb_minitable.c
-  src/core/ext/upb-gen/envoy/extensions/filters/http/rate_limit_quota/v3/rate_limit_quota.upb_minitable.c
   src/core/ext/upb-gen/envoy/extensions/filters/http/rbac/v3/rbac.upb_minitable.c
   src/core/ext/upb-gen/envoy/extensions/filters/http/router/v3/router.upb_minitable.c
   src/core/ext/upb-gen/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upb_minitable.c
@@ -2576,7 +2572,6 @@ add_library(grpc
   src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.c
-  src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rate_limit_quota/v3/rate_limit_quota.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/extensions/filters/http/router/v3/router.upbdefs.c
   src/core/ext/upbdefs-gen/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upbdefs.c
@@ -2996,7 +2991,6 @@ add_library(grpc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/time_averaged_stats.cc
-  src/core/util/trie_lookup.cc
   src/core/util/uri.cc
   src/core/util/uuid_v4.cc
   src/core/util/validation_errors.cc
@@ -31877,7 +31871,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(trie_lookup_test
-  src/core/util/trie_lookup.cc
   test/core/util/trie_lookup_test.cc
 )
 target_compile_features(trie_lookup_test PUBLIC cxx_std_17)
@@ -41657,10 +41650,6 @@ add_executable(xds_matcher_e2e_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/scoped_route.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/scoped_route.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/scoped_route.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/http/rate_limit_quota/v3/rate_limit_quota.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/http/rate_limit_quota/v3/rate_limit_quota.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/http/rate_limit_quota/v3/rate_limit_quota.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/http/rate_limit_quota/v3/rate_limit_quota.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/address.pb.h

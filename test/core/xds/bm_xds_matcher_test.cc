@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "absl/strings/str_cat.h"
+#include "src/core/util/down_cast.h"
 #include "absl/strings/string_view.h"
 #include "benchmark/benchmark.h"
 #include "src/core/util/matchers.h"
@@ -55,7 +56,8 @@ class TestPathInput : public XdsMatcher::InputValue<absl::string_view> {
 
   std::optional<absl::string_view> GetValue(
       const XdsMatcher::MatchContext& context) const override {
-    const auto* test_context = static_cast<const TestMatchContext*>(&context);
+    const auto* test_context =
+        DownCast<const TestMatchContext*>(&context);
     return test_context->path();
   }
 };
@@ -86,10 +88,9 @@ void BM_XdsMatcherList(benchmark::State& state, TestMatchContext context) {
                 StringMatcher::Create(StringMatcher::Type::kExact,
                                       absl::StrCat("/rule/", i))
                     .value())),
-        std::make_unique<XdsMatcher::OnMatch>(
-            std::make_unique<TestAction>("match"), false));
+        XdsMatcher::OnMatch(std::make_unique<TestAction>("match"), false));
   }
-  XdsMatcherList matcher_list(std::move(matchers), nullptr);
+  XdsMatcherList matcher_list(std::move(matchers), std::nullopt);
 
   for (auto _ : state) {
     XdsMatcher::Result result;
@@ -136,13 +137,14 @@ void BM_XdsMatcherExactMap(benchmark::State& state) {
   const int map_size = state.range(0);
   // Argument 1: The scenario type (0 for Match, 1 for No-Match).
   const int scenario_type = state.range(1);
-  absl::flat_hash_map<std::string, std::unique_ptr<XdsMatcher::OnMatch>> map;
+  absl::flat_hash_map<std::string, XdsMatcher::OnMatch> map;
   for (int i = 0; i < map_size; ++i) {
-    map[absl::StrCat("/exact/", i)] = std::make_unique<XdsMatcher::OnMatch>(
-        std::make_unique<TestAction>("match"), false);
+    map.emplace(
+        absl::StrCat("/exact/", i),
+        XdsMatcher::OnMatch(std::make_unique<TestAction>("match"), false));
   }
   XdsMatcherExactMap matcher(std::make_unique<TestPathInput>(), std::move(map),
-                             nullptr);
+                             std::nullopt);
   // Use state.range(1) to select the context for the benchmark run.
   std::unique_ptr<TestMatchContext> context;
   if (scenario_type == 0) {
@@ -177,14 +179,14 @@ void BM_XdsMatcherPrefixMap(benchmark::State& state) {
   const int map_size = state.range(0);
   // Argument 1: The scenario type (0 for Match, 1 for No-Match).
   const int scenario_type = state.range(1);
-  absl::flat_hash_map<std::string, std::unique_ptr<XdsMatcher::OnMatch>> map;
+  absl::flat_hash_map<std::string, XdsMatcher::OnMatch> map;
   for (int i = 0; i < map_size; ++i) {
-    map[absl::StrCat("/prefix/", i, "/")] =
-        std::make_unique<XdsMatcher::OnMatch>(
-            std::make_unique<TestAction>("match"), false);
+    map.emplace(
+        absl::StrCat("/prefix/", i, "/"),
+        XdsMatcher::OnMatch(std::make_unique<TestAction>("match"), false));
   }
   XdsMatcherPrefixMap matcher(std::make_unique<TestPathInput>(), std::move(map),
-                              nullptr);
+                              std::nullopt);
   std::unique_ptr<TestMatchContext> context;
   if (scenario_type == 0) {
     state.SetLabel("Match");  // Set a descriptive label for the output

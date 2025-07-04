@@ -489,8 +489,6 @@ libs:
   - src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.h
   - src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb.h
   - src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb_minitable.h
-  - src/core/ext/upb-gen/envoy/extensions/filters/http/rate_limit_quota/v3/rate_limit_quota.upb.h
-  - src/core/ext/upb-gen/envoy/extensions/filters/http/rate_limit_quota/v3/rate_limit_quota.upb_minitable.h
   - src/core/ext/upb-gen/envoy/extensions/filters/http/rbac/v3/rbac.upb.h
   - src/core/ext/upb-gen/envoy/extensions/filters/http/rbac/v3/rbac.upb_minitable.h
   - src/core/ext/upb-gen/envoy/extensions/filters/http/router/v3/router.upb.h
@@ -762,7 +760,6 @@ libs:
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3/fault.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.h
-  - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rate_limit_quota/v3/rate_limit_quota.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/router/v3/router.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upbdefs.h
@@ -1532,7 +1529,6 @@ libs:
   - src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3/fault.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb_minitable.c
-  - src/core/ext/upb-gen/envoy/extensions/filters/http/rate_limit_quota/v3/rate_limit_quota.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/filters/http/rbac/v3/rbac.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/filters/http/router/v3/router.upb_minitable.c
   - src/core/ext/upb-gen/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upb_minitable.c
@@ -1703,7 +1699,6 @@ libs:
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.c
-  - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rate_limit_quota/v3/rate_limit_quota.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/router/v3/router.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upbdefs.c
@@ -2123,7 +2118,6 @@ libs:
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/time_averaged_stats.cc
-  - src/core/util/trie_lookup.cc
   - src/core/util/uri.cc
   - src/core/util/uuid_v4.cc
   - src/core/util/validation_errors.cc
@@ -18885,7 +18879,6 @@ targets:
   headers:
   - src/core/util/trie_lookup.h
   src:
-  - src/core/util/trie_lookup.cc
   - test/core/util/trie_lookup_test.cc
   deps:
   - gtest
@@ -21829,7 +21822,6 @@ targets:
   - third_party/envoy-api/envoy/config/route/v3/route.proto
   - third_party/envoy-api/envoy/config/route/v3/route_components.proto
   - third_party/envoy-api/envoy/config/route/v3/scoped_route.proto
-  - third_party/envoy-api/envoy/extensions/filters/http/rate_limit_quota/v3/rate_limit_quota.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto

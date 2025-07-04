@@ -23,7 +23,7 @@ std::optional<absl::string_view> RpcMatchContext::GetHeaderValue(
   } else if (header_name == "content-type") {
     return "application/grpc";
   }
-  return initial_metadata->GetStringValue(header_name, concatenated_value);
+  return initial_metadata_->GetStringValue(header_name, concatenated_value);
 }
 
 }  // namespace grpc_core

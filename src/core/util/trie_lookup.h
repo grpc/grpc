@@ -19,6 +19,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <utility>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/types/optional.h"
@@ -26,58 +27,86 @@
 namespace grpc_core {
 
 template <typename Value>
-struct TrieNode {
-  absl::flat_hash_map<uint8_t, std::unique_ptr<TrieNode>> child_;
-  std::shared_ptr<Value> value;
-};
-
-template <typename Value>
 class TrieLookupTree {
-  std::unique_ptr<TrieNode<Value>> root_;
-
  public:
-  TrieLookupTree() : root_(std::make_unique<TrieNode<Value>>()) {}
-  bool addNode(absl::string_view key, std::shared_ptr<Value> value,
+  TrieLookupTree() : root_(std::make_unique<TrieNode>()) {}
+
+  // Takes value by r-value reference to consume it.
+  bool AddNode(absl::string_view key, Value value,
                bool allow_overwrite = true) {
-    auto node = root_.get();
+    auto* node = root_.get();
     for (auto c : key) {
-      auto it = node->child_.find(c);
-      if (it == node->child_.end()) {
-        node->child_[c] = std::make_unique<TrieNode<Value>>();
+      auto& child = node->child[c];
+      if (child == nullptr) {
+        child = std::make_unique<TrieNode>();
       }
-      node = node->child_[c].get();
+      node = child.get();
     }
-    if (node->value != nullptr && !allow_overwrite) {
+    if (node->value.has_value() && !allow_overwrite) {
       return false;
     }
-    node->value = value;
+    node->value = std::move(value);
     return true;
   }
 
-  std::shared_ptr<Value> lookup(absl::string_view key) const {
+  // Const-overload for lookups. Returns a const pointer to the value.
+  const Value* Lookup(absl::string_view key) const {
     const auto* node = root_.get();
     for (auto c : key) {
-      auto it = node->child_.find(c);
-      if (it == node->child_.end()) return nullptr;
+      auto it = node->child.find(c);
+      if (it == node->child.end()) {
+        return nullptr;
+      }
       node = it->second.get();
     }
-    return node->value;
+    if (node->value.has_value()) {
+      return &node->value.value();
+    }
+    return nullptr;
   }
 
-  // Return Longest matching prefix value
-  std::shared_ptr<Value> lookupLongestPrefix(absl::string_view key) const {
+  const Value* LookupLongestPrefix(absl::string_view key) const {
     const auto* node = root_.get();
-    std::shared_ptr<Value> matched_value = nullptr;
+    const Value* matched_value = nullptr;
+    if (node->value.has_value()) {
+      matched_value = &node->value.value();
+    }
     for (auto c : key) {
-      auto it = node->child_.find(c);
-      if (it == node->child_.end()) return matched_value;
+      auto it = node->child.find(c);
+      if (it == node->child.end()) {
+        return matched_value;
+      }
       node = it->second.get();
-      if (node->value != nullptr) {
-        matched_value = node->value;
+      if (node->value.has_value()) {
+        matched_value = &node->value.value();
       }
     }
     return matched_value;
   }
+
+  // Return all prefix matches 
+  std::vector<const Value*> GetAllPrefixMatches(absl::string_view key) const {
+    std::vector<const Value*> values;
+    const auto* node = root_.get();
+    for (auto c : key) {
+      auto it = node->child.find(c);
+      if (it == node->child.end()) {
+        return values;
+      }
+      node = it->second.get();
+      if (node->value.has_value()) {
+        values.push_back(&node->value.value());
+      }
+    }
+    return values;
+  }
+
+ private:
+  struct TrieNode {
+    absl::flat_hash_map<uint8_t, std::unique_ptr<TrieNode>> child;
+    std::optional<Value> value;
+  };
+  std::unique_ptr<TrieNode> root_;
 };
 
 }  // namespace grpc_core

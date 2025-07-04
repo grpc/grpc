@@ -894,7 +894,6 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/envoy/extensions/filters/common/fault/v3/fault.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/filters/http/fault/v3/fault.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb_minitable.c \
-    src/core/ext/upb-gen/envoy/extensions/filters/http/rate_limit_quota/v3/rate_limit_quota.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/filters/http/rbac/v3/rbac.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/filters/http/router/v3/router.upb_minitable.c \
     src/core/ext/upb-gen/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upb_minitable.c \
@@ -1065,7 +1064,6 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.c \
-    src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rate_limit_quota/v3/rate_limit_quota.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/filters/http/rbac/v3/rbac.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/filters/http/router/v3/router.upbdefs.c \
     src/core/ext/upbdefs-gen/envoy/extensions/filters/http/stateful_session/v3/stateful_session.upbdefs.c \
@@ -1513,7 +1511,6 @@ LIBGRPC_SRC = \
     src/core/util/time_averaged_stats.cc \
     src/core/util/time_precise.cc \
     src/core/util/time_util.cc \
-    src/core/util/trie_lookup.cc \
     src/core/util/uri.cc \
     src/core/util/uuid_v4.cc \
     src/core/util/validation_errors.cc \

@@ -150,11 +150,9 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
   const XdsAuditLoggerRegistry& audit_logger_registry() const {
     return audit_logger_registry_;
   }
-  const InputRegistry<absl::string_view>& xds_matcher_input_registry() const {
-    return xds_matcher_input_registry_;
-  }
-  const ActionRegistry& xds_matcher_action_registry() const {
-    return xds_matcher_action_registry_;
+  const XdsMatcherInputRegistry<absl::string_view>& matcher_string_input_registry()
+      const {
+    return matcher_string_input_registry_;
   }
 
   // Exposed for testing purposes only.
@@ -173,8 +171,7 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
   XdsClusterSpecifierPluginRegistry cluster_specifier_plugin_registry_;
   XdsLbPolicyRegistry lb_policy_registry_;
   XdsAuditLoggerRegistry audit_logger_registry_;
-  InputRegistry<absl::string_view> xds_matcher_input_registry_;
-  ActionRegistry xds_matcher_action_registry_;
+  XdsMatcherInputRegistry<absl::string_view> matcher_string_input_registry_;
 };
 
 }  // namespace grpc_core
