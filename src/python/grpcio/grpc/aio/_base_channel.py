@@ -192,7 +192,7 @@ class Channel(abc.ABC):
     """
 
     @abc.abstractmethod
-    async def __aenter__(self) -> 'Channel':
+    async def __aenter__(self) -> "Channel":
         """Starts an asynchronous context manager.
 
         Returns:
