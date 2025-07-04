@@ -206,6 +206,8 @@ void BaseNode::SerializeEntity(grpc_channelz_v2_Entity* entity,
       data_source->AddData(make_data_sink());
     }
   }
+  make_data_sink().AddData("v1_compatibility",
+                           PropertyList().Set("name", name()));
   bool completed =
       done->WaitForNotificationWithTimeout(absl::Milliseconds(100));
   sink_impl->Finalize(!completed, entity, arena);
