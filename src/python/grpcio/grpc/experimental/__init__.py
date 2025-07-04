@@ -20,6 +20,7 @@ import copy
 import functools
 import sys
 import warnings
+from typing import Any, Callable, Optional
 
 import grpc
 from grpc._cython import cygrpc as _cygrpc
@@ -50,7 +51,7 @@ _insecure_channel_credentials = grpc.ChannelCredentials(
 )
 
 
-def insecure_channel_credentials():
+def insecure_channel_credentials() -> grpc.ChannelCredentials:
     """Creates a ChannelCredentials for use with an insecure channel.
 
     THIS IS AN EXPERIMENTAL API.
@@ -62,7 +63,7 @@ class ExperimentalApiWarning(Warning):
     """A warning that an API is experimental."""
 
 
-def _warn_experimental(api_name, stack_offset):
+def _warn_experimental(api_name: str, stack_offset: int) -> None:
     if api_name not in _EXPERIMENTAL_APIS_USED:
         _EXPERIMENTAL_APIS_USED.add(api_name)
         msg = (
@@ -74,16 +75,16 @@ def _warn_experimental(api_name, stack_offset):
         warnings.warn(msg, ExperimentalApiWarning, stacklevel=2 + stack_offset)
 
 
-def experimental_api(f):
+def experimental_api(f: Callable) -> Callable:
     @functools.wraps(f)
-    def _wrapper(*args, **kwargs):
+    def _wrapper(*args: Any, **kwargs: Any) -> Any:
         _warn_experimental(f.__name__, 1)
         return f(*args, **kwargs)
 
     return _wrapper
 
 
-def wrap_server_method_handler(wrapper, handler):
+def wrap_server_method_handler(wrapper: Callable, handler: Optional[Any]) -> Optional[Any]:
     """Wraps the server method handler function.
 
     The server implementation requires all server handlers being wrapped as

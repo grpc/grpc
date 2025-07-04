@@ -14,6 +14,7 @@
 """Utilities for use with the base interface of RPC Framework."""
 
 import collections
+from typing import Any, Optional
 
 from grpc.framework.interfaces.base import base
 
@@ -53,7 +54,7 @@ _NONE_SUBSCRIPTION = _Subscription(
 )
 
 
-def completion(terminal_metadata, code, message):
+def completion(terminal_metadata: Any, code: Any, message: str) -> _Completion:
     """Creates a base.Completion aggregating the given operation values.
 
     Args:
@@ -67,7 +68,7 @@ def completion(terminal_metadata, code, message):
     return _Completion(terminal_metadata, code, message)
 
 
-def full_subscription(operator, protocol_receiver):
+def full_subscription(operator: base.Operator, protocol_receiver: base.ProtocolReceiver) -> _Subscription:
     """Creates a "full" base.Subscription for the given base.Operator.
 
     Args:

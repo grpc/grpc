@@ -15,7 +15,7 @@
 
 import asyncio
 import collections
-from typing import MutableMapping
+from typing import MutableMapping, Optional
 
 import grpc
 from grpc_health.v1 import health_pb2 as _health_pb2
@@ -37,8 +37,8 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
         self._gracefully_shutting_down = False
 
     async def Check(
-        self, request: _health_pb2.HealthCheckRequest, context
-    ) -> None:
+        self, request: _health_pb2.HealthCheckRequest, context: grpc.aio.ServicerContext
+    ) -> Optional[_health_pb2.HealthCheckResponse]:
         status = self._server_status.get(request.service)
 
         if status is None:
@@ -47,10 +47,10 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
             return _health_pb2.HealthCheckResponse(status=status)
 
     async def Watch(
-        self, request: _health_pb2.HealthCheckRequest, context
+        self, request: _health_pb2.HealthCheckRequest, context: grpc.aio.ServicerContext
     ) -> None:
         condition = self._server_watchers[request.service]
-        last_status = None
+        last_status: Optional[_health_pb2.HealthCheckResponse.ServingStatus] = None
         try:
             async with condition:
                 while True:

@@ -14,6 +14,7 @@
 
 import abc
 import threading
+from typing import Any, Callable, List, Optional, Tuple
 
 import grpc
 from grpc_testing import _common
@@ -205,11 +206,11 @@ class _Handler(Handler):
             self._expiration_future = expiration_future
 
 
-def handler_without_deadline(requests_closed):
+def handler_without_deadline(requests_closed: bool) -> _Handler:
     return _Handler(requests_closed)
 
 
-def handler_with_deadline(requests_closed, time, deadline):
+def handler_with_deadline(requests_closed: bool, time: Any, deadline: float) -> _Handler:
     handler = _Handler(requests_closed)
     expiration_future = time.call_at(handler.expire, deadline)
     handler.set_expiration_future(expiration_future)

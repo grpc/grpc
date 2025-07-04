@@ -15,6 +15,7 @@
 
 # threading is referenced from specification in this module.
 import threading  # pylint: disable=unused-import
+from typing import Any, Callable, Dict, Optional, Union
 
 # interfaces, cardinality, and face are referenced from specification in this
 # module.
@@ -34,9 +35,9 @@ ssl_channel_credentials = grpc.ssl_channel_credentials
 CallCredentials = grpc.CallCredentials
 
 
-def metadata_call_credentials(metadata_plugin, name=None):
-    def plugin(context, callback):
-        def wrapped_callback(beta_metadata, error):
+def metadata_call_credentials(metadata_plugin: Callable, name: Optional[str] = None) -> grpc.CallCredentials:
+    def plugin(context: Any, callback: Callable) -> None:
+        def wrapped_callback(beta_metadata: Any, error: Any) -> None:
             callback(_metadata.unbeta(beta_metadata), error)
 
         metadata_plugin(context, wrapped_callback)
@@ -44,7 +45,7 @@ def metadata_call_credentials(metadata_plugin, name=None):
     return grpc.metadata_call_credentials(plugin, name=name)
 
 
-def google_call_credentials(credentials):
+def google_call_credentials(credentials: Any) -> grpc.CallCredentials:
     """Construct CallCredentials from GoogleCredentials.
 
     Args:
@@ -69,10 +70,10 @@ class Channel(object):
     unsupported.
     """
 
-    def __init__(self, channel):
+    def __init__(self, channel: grpc.Channel) -> None:
         self._channel = channel
 
-    def subscribe(self, callback, try_to_connect=None):
+    def subscribe(self, callback: Callable, try_to_connect: Optional[bool] = None) -> None:
         """Subscribes to this Channel's connectivity.
 
         Args:
@@ -87,7 +88,7 @@ class Channel(object):
         """
         self._channel.subscribe(callback, try_to_connect=try_to_connect)
 
-    def unsubscribe(self, callback):
+    def unsubscribe(self, callback: Callable) -> None:
         """Unsubscribes a callback from this Channel's connectivity.
 
         Args:
@@ -97,7 +98,7 @@ class Channel(object):
         self._channel.unsubscribe(callback)
 
 
-def insecure_channel(host, port):
+def insecure_channel(host: str, port: Optional[int]) -> Channel:
     """Creates an insecure Channel to a remote host.
 
     Args:
@@ -114,7 +115,7 @@ def insecure_channel(host, port):
     return Channel(channel)
 
 
-def secure_channel(host, port, channel_credentials):
+def secure_channel(host: str, port: Optional[int], channel_credentials: grpc.ChannelCredentials) -> Channel:
     """Creates a secure Channel to a remote host.
 
     Args:
@@ -142,13 +143,13 @@ class StubOptions(object):
 
     def __init__(
         self,
-        host,
-        request_serializers,
-        response_deserializers,
-        metadata_transformer,
-        thread_pool,
-        thread_pool_size,
-    ):
+        host: Optional[str],
+        request_serializers: Optional[Dict],
+        response_deserializers: Optional[Dict],
+        metadata_transformer: Optional[Callable],
+        thread_pool: Optional[Any],
+        thread_pool_size: Optional[int],
+    ) -> None:
         self.host = host
         self.request_serializers = request_serializers
         self.response_deserializers = response_deserializers
@@ -161,13 +162,13 @@ _EMPTY_STUB_OPTIONS = StubOptions(None, None, None, None, None, None)
 
 
 def stub_options(
-    host=None,
-    request_serializers=None,
-    response_deserializers=None,
-    metadata_transformer=None,
-    thread_pool=None,
-    thread_pool_size=None,
-):
+    host: Optional[str] = None,
+    request_serializers: Optional[Dict] = None,
+    response_deserializers: Optional[Dict] = None,
+    metadata_transformer: Optional[Callable] = None,
+    thread_pool: Optional[Any] = None,
+    thread_pool_size: Optional[int] = None,
+) -> StubOptions:
     """Creates a StubOptions value to be passed at stub creation.
 
     All parameters are optional and should always be passed by keyword.
@@ -198,7 +199,7 @@ def stub_options(
     )
 
 
-def generic_stub(channel, options=None):
+def generic_stub(channel: Channel, options: Optional[StubOptions] = None) -> face.GenericStub:
     """Creates a face.GenericStub on which RPCs can be made.
 
     Args:
@@ -218,7 +219,7 @@ def generic_stub(channel, options=None):
     )
 
 
-def dynamic_stub(channel, service, cardinalities, options=None):
+def dynamic_stub(channel: Channel, service: str, cardinalities: Dict[str, cardinality.Cardinality], options: Optional[StubOptions] = None) -> face.DynamicStub:
     """Creates a face.DynamicStub with which RPCs can be invoked.
 
     Args:
@@ -233,14 +234,15 @@ def dynamic_stub(channel, service, cardinalities, options=None):
       A face.DynamicStub with which RPCs can be invoked.
     """
     effective_options = _EMPTY_STUB_OPTIONS if options is None else options
-    return _client_adaptations.dynamic_stub(
+    backing_generic_stub = _client_adaptations.generic_stub(
         channel._channel,  # pylint: disable=protected-access
-        service,
-        cardinalities,
         effective_options.host,
         effective_options.metadata_transformer,
         effective_options.request_serializers,
         effective_options.response_deserializers,
+    )
+    return _client_adaptations.dynamic_stub(
+        backing_generic_stub, service, cardinalities
     )
 
 

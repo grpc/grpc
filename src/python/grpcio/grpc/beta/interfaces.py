@@ -14,6 +14,7 @@
 """Constants and interfaces of the Beta API of gRPC Python."""
 
 import abc
+from typing import Any, Optional
 
 import grpc
 
@@ -32,13 +33,13 @@ class GRPCCallOptions(object):
     other functions.
     """
 
-    def __init__(self, disable_compression, subcall_of, credentials):
+    def __init__(self, disable_compression: bool, subcall_of: Any, credentials: Optional[Any]) -> None:
         self.disable_compression = disable_compression
         self.subcall_of = subcall_of
         self.credentials = credentials
 
 
-def grpc_call_options(disable_compression=False, credentials=None):
+def grpc_call_options(disable_compression: bool = False, credentials: Optional[Any] = None) -> GRPCCallOptions:
     """Creates a GRPCCallOptions value to be passed at RPC invocation.
 
     All parameters are optional and should always be passed by keyword.

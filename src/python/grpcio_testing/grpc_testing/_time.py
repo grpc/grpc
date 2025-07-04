@@ -13,10 +13,12 @@
 # limitations under the License.
 """Test times."""
 
+import abc
 import collections
 import logging
 import threading
 import time as _time
+from typing import Any, Callable, List, Optional
 
 import grpc
 import grpc_testing
@@ -25,7 +27,7 @@ logging.basicConfig()
 _LOGGER = logging.getLogger(__name__)
 
 
-def _call(behaviors):
+def _call(behaviors: List[Callable[[], None]]) -> None:
     for behavior in behaviors:
         try:
             behavior()
@@ -33,7 +35,7 @@ def _call(behaviors):
             _LOGGER.exception('Exception calling behavior "%r"!', behavior)
 
 
-def _call_in_thread(behaviors):
+def _call_in_thread(behaviors: List[Callable[[], None]]) -> None:
     calling = threading.Thread(target=_call, args=(behaviors,))
     calling.start()
     # NOTE(nathaniel): Because this function is called from "strict" Time
@@ -60,7 +62,7 @@ class _Delta(
     pass
 
 
-def _process(state, now):
+def _process(state: _State, now: float) -> _Delta:
     mature_behaviors = []
     earliest_mature_time = None
     while state.times_to_behaviors:

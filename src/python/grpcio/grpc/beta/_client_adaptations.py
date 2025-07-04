@@ -20,6 +20,7 @@ from grpc.beta import interfaces
 from grpc.framework.common import cardinality
 from grpc.framework.foundation import future
 from grpc.framework.interfaces.face import face
+from typing import Any, Callable, Optional, Tuple, Union
 
 # pylint: disable=too-many-arguments,too-many-locals,unused-argument
 
@@ -43,7 +44,7 @@ _STATUS_CODE_TO_ABORTION_KIND_AND_ABORTION_ERROR_CLASS = {
 }
 
 
-def _effective_metadata(metadata, metadata_transformer):
+def _effective_metadata(metadata: Optional[Tuple[Tuple[str, str], ...]], metadata_transformer: Optional[Callable]) -> Tuple[Tuple[str, str], ...]:
     non_none_metadata = () if metadata is None else metadata
     if metadata_transformer is None:
         return non_none_metadata
@@ -51,11 +52,11 @@ def _effective_metadata(metadata, metadata_transformer):
         return metadata_transformer(non_none_metadata)
 
 
-def _credentials(grpc_call_options):
+def _credentials(grpc_call_options: Optional[Any]) -> Optional[Any]:
     return None if grpc_call_options is None else grpc_call_options.credentials
 
 
-def _abortion(rpc_error_call):
+def _abortion(rpc_error_call: grpc.Call) -> face.Abortion:
     code = rpc_error_call.code()
     pair = _STATUS_CODE_TO_ABORTION_KIND_AND_ABORTION_ERROR_CLASS.get(code)
     error_kind = face.Abortion.Kind.LOCAL_FAILURE if pair is None else pair[0]
@@ -68,7 +69,7 @@ def _abortion(rpc_error_call):
     )
 
 
-def _abortion_error(rpc_error_call):
+def _abortion_error(rpc_error_call: grpc.Call) -> face.AbortionError:
     code = rpc_error_call.code()
     pair = _STATUS_CODE_TO_ABORTION_KIND_AND_ABORTION_ERROR_CLASS.get(code)
     exception_class = face.AbortionError if pair is None else pair[1]

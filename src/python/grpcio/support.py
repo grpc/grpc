@@ -17,6 +17,7 @@ import os.path
 import shutil
 import sys
 import tempfile
+from typing import Any, Optional
 
 try:
     from setuptools.errors import CompileError
@@ -57,7 +58,7 @@ C_CHECKS = {
 }
 
 
-def _compile(compiler, source_string):
+def _compile(compiler: Any, source_string: str) -> Optional[CompileError]:
     tempdir = tempfile.mkdtemp()
     cpath = os.path.join(tempdir, "a.c")
     with open(cpath, "w") as cfile:
@@ -70,7 +71,7 @@ def _compile(compiler, source_string):
         shutil.rmtree(tempdir)
 
 
-def _expect_compile(compiler, source_string, error_message):
+def _expect_compile(compiler: Any, source_string: str, error_message: str) -> None:
     if _compile(compiler, source_string) is not None:
         sys.stderr.write(error_message)
         raise commands.CommandError(
@@ -80,7 +81,7 @@ def _expect_compile(compiler, source_string, error_message):
         )
 
 
-def diagnose_compile_error(build_ext, error):
+def diagnose_compile_error(build_ext: Any, error: CompileError) -> None:
     """Attempt to diagnose an error during compilation."""
     for c_check, message in C_CHECKS.items():
         _expect_compile(build_ext.compiler, c_check, message)
@@ -105,7 +106,7 @@ def diagnose_compile_error(build_ext, error):
             )
 
 
-def diagnose_attribute_error(build_ext, error):
+def diagnose_attribute_error(build_ext: Any, error: AttributeError) -> None:
     if any("_needs_stub" in arg for arg in error.args):
         raise commands.CommandError(
             "We expect a missing `_needs_stub` attribute from older versions of"
@@ -119,7 +120,7 @@ _ERROR_DIAGNOSES = {
 }
 
 
-def diagnose_build_ext_error(build_ext, error, formatted):
+def diagnose_build_ext_error(build_ext: Any, error: Exception, formatted: str) -> None:
     diagnostic = _ERROR_DIAGNOSES.get(type(error))
     if diagnostic is None:
         raise commands.CommandError(

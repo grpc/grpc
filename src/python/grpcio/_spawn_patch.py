@@ -24,13 +24,14 @@ import os.path
 import shutil
 import sys
 import tempfile
+from typing import Any, List
 
 MAX_COMMAND_LENGTH = 8191
 
 _classic_spawn = ccompiler.CCompiler.spawn
 
 
-def _commandfile_spawn(self, command, **kwargs):
+def _commandfile_spawn(self: Any, command: List[str], **kwargs: Any) -> None:
     if os.name == "nt":
         if any(arg.startswith("/Tc") for arg in command):
             # Remove /std:c++17 option if this is a MSVC C complation
@@ -66,7 +67,7 @@ def _commandfile_spawn(self, command, **kwargs):
         _classic_spawn(self, command, **kwargs)
 
 
-def monkeypatch_spawn():
+def monkeypatch_spawn() -> None:
     """Monkeypatching is dumb, but it's either that or we become maintainers of
     something much, much bigger."""
     ccompiler.CCompiler.spawn = _commandfile_spawn

@@ -18,12 +18,15 @@ import contextlib
 import enum
 import logging
 import sys
+import types
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
+
+from typing import Any, Optional
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -52,7 +55,7 @@ class Future(abc.ABC):
     """
 
     @abc.abstractmethod
-    def cancel(self):
+    def cancel(self) -> bool:
         """Attempts to cancel the computation.
 
         This method does not block.
@@ -71,7 +74,7 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def cancelled(self):
+    def cancelled(self) -> bool:
         """Describes whether the computation was cancelled.
 
         This method does not block.
@@ -89,7 +92,7 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def running(self):
+    def running(self) -> bool:
         """Describes whether the computation is taking place.
 
         This method does not block.
@@ -103,7 +106,7 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def done(self):
+    def done(self) -> bool:
         """Describes whether the computation has taken place.
 
         This method does not block.
@@ -118,7 +121,7 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def result(self, timeout=None):
+    def result(self, timeout: Optional[float] =None) -> Any:
         """Returns the result of the computation or raises its exception.
 
         This method may return immediately or may block.
@@ -141,7 +144,7 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def exception(self, timeout=None):
+    def exception(self, timeout: Optional[float] =None) -> Optional[Exception]:
         """Return the exception raised by the computation.
 
         This method may return immediately or may block.
@@ -163,7 +166,7 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def traceback(self, timeout=None):
+    def traceback(self, timeout: Optional[float] =None) -> Optional[types.TracebackType]:
         """Access the traceback of the exception raised by the computation.
 
         This method may return immediately or may block.

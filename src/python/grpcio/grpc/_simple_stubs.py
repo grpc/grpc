@@ -109,14 +109,14 @@ class ChannelCache:
         self._eviction_thread.start()
 
     @staticmethod
-    def get():
+    def get() -> "ChannelCache":
         with ChannelCache._lock:
             if ChannelCache._singleton is None:
                 ChannelCache._singleton = ChannelCache()
         ChannelCache._eviction_ready.wait()
         return ChannelCache._singleton
 
-    def _evict_locked(self, key: CacheKey):
+    def _evict_locked(self, key: CacheKey) -> None:
         channel, _ = self._mapping.pop(key)
         _LOGGER.debug(
             "Evicting channel %s with configuration %s.", channel, key
@@ -125,7 +125,7 @@ class ChannelCache:
         del channel
 
     @staticmethod
-    def _perform_evictions():
+    def _perform_evictions() -> None:
         while True:
             with ChannelCache._lock:
                 ChannelCache._eviction_ready.set()

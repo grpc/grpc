@@ -14,6 +14,7 @@
 """API metadata conversion utilities."""
 
 import collections
+from typing import Any, Optional, Tuple, Union
 
 _Metadatum = collections.namedtuple(
     "_Metadatum",
@@ -24,13 +25,13 @@ _Metadatum = collections.namedtuple(
 )
 
 
-def _beta_metadatum(key, value):
+def _beta_metadatum(key: Union[str, bytes], value: Union[str, bytes]) -> _Metadatum:
     beta_key = key if isinstance(key, (bytes,)) else key.encode("ascii")
     beta_value = value if isinstance(value, (bytes,)) else value.encode("ascii")
     return _Metadatum(beta_key, beta_value)
 
 
-def _metadatum(beta_key, beta_value):
+def _metadatum(beta_key: Union[str, bytes], beta_value: Union[str, bytes]) -> _Metadatum:
     key = beta_key if isinstance(beta_key, (str,)) else beta_key.decode("utf8")
     if isinstance(beta_value, (str,)) or key[-4:] == "-bin":
         value = beta_value
@@ -39,14 +40,14 @@ def _metadatum(beta_key, beta_value):
     return _Metadatum(key, value)
 
 
-def beta(metadata):
+def beta(metadata: Optional[Tuple[Tuple[str, str], ...]]) -> Tuple[_Metadatum, ...]:
     if metadata is None:
         return ()
     else:
         return tuple(_beta_metadatum(key, value) for key, value in metadata)
 
 
-def unbeta(beta_metadata):
+def unbeta(beta_metadata: Optional[Tuple[_Metadatum, ...]]) -> Tuple[Tuple[str, str], ...]:
     if beta_metadata is None:
         return ()
     else:

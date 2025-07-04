@@ -1,4 +1,5 @@
-# Copyright 2017 gRPC authors.
+#!/bin/bash
+# Copyright 2023 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,12 +13,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Any, Dict
+set -ex
 
-from grpc_testing._server import _server
+# change to root directory
+cd "$(dirname "$0")/../.."
 
+DIRS=(
+    'src/python/grpcio/grpc/aio'
+)
 
-def server_from_dictionary(descriptors_to_servicers: Dict[str, Any], time: Any) -> Any:
-    return _server.server_from_descriptor_to_servicers(
-        descriptors_to_servicers, time
-    )
+VIRTUALENV=.venv_ruff
+python3.11 -m virtualenv $VIRTUALENV
+source $VIRTUALENV/bin/activate
+
+pip install ruff==0.12.1
+
+# Check if --fix flag is provided
+RUFF_COMMAND="ruff check"
+if [[ "$1" == "--fix" ]]; then
+    RUFF_COMMAND="ruff check --fix"
+fi
+
+EXIT=0
+$RUFF_COMMAND --config ruff.toml "${DIRS[@]}" || EXIT=1
+
+exit $EXIT

@@ -14,6 +14,7 @@
 """Utilities for RPC Framework's Face interface."""
 
 import collections
+from typing import Any, Callable, Iterator
 
 # stream is referenced from specification in this module.
 from grpc.framework.common import cardinality
@@ -43,7 +44,7 @@ class _MethodImplementation(
     pass
 
 
-def unary_unary_inline(behavior):
+def unary_unary_inline(behavior: Callable[[Any, face.ServicerContext], Any]) -> _MethodImplementation:
     """Creates an face.MethodImplementation for the given behavior.
 
     Args:
@@ -68,7 +69,7 @@ def unary_unary_inline(behavior):
     )
 
 
-def unary_stream_inline(behavior):
+def unary_stream_inline(behavior: Callable[[Any, face.ServicerContext], Iterator[Any]]) -> _MethodImplementation:
     """Creates an face.MethodImplementation for the given behavior.
 
     Args:
@@ -93,7 +94,7 @@ def unary_stream_inline(behavior):
     )
 
 
-def stream_unary_inline(behavior):
+def stream_unary_inline(behavior: Callable[[Iterator[Any], face.ServicerContext], Any]) -> _MethodImplementation:
     """Creates an face.MethodImplementation for the given behavior.
 
     Args:
@@ -118,7 +119,7 @@ def stream_unary_inline(behavior):
     )
 
 
-def stream_stream_inline(behavior):
+def stream_stream_inline(behavior: Callable[[Iterator[Any], face.ServicerContext], Iterator[Any]]) -> _MethodImplementation:
     """Creates an face.MethodImplementation for the given behavior.
 
     Args:
@@ -143,7 +144,7 @@ def stream_stream_inline(behavior):
     )
 
 
-def unary_unary_event(behavior):
+def unary_unary_event(behavior: Callable[[Any, Callable[[Any], None], face.ServicerContext], None]) -> _MethodImplementation:
     """Creates an face.MethodImplementation for the given behavior.
 
     Args:
@@ -168,7 +169,7 @@ def unary_unary_event(behavior):
     )
 
 
-def unary_stream_event(behavior):
+def unary_stream_event(behavior: Callable[[Any, Any, face.ServicerContext], None]) -> _MethodImplementation:
     """Creates an face.MethodImplementation for the given behavior.
 
     Args:
@@ -193,7 +194,7 @@ def unary_stream_event(behavior):
     )
 
 
-def stream_unary_event(behavior):
+def stream_unary_event(behavior: Callable[[Callable[[Any], None], face.ServicerContext], Any]) -> _MethodImplementation:
     """Creates an face.MethodImplementation for the given behavior.
 
     Args:
@@ -219,7 +220,7 @@ def stream_unary_event(behavior):
     )
 
 
-def stream_stream_event(behavior):
+def stream_stream_event(behavior: Callable[[Any, face.ServicerContext], Any]) -> _MethodImplementation:
     """Creates an face.MethodImplementation for the given behavior.
 
     Args:
