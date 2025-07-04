@@ -63,9 +63,7 @@ class TestPathInput : public XdsMatcher::InputValue<absl::string_view> {
       const XdsMatcher::InputValue<absl::string_view>& other) const override {
     return dynamic_cast<const TestPathInput*>(&other) != nullptr;
   }
-  std::string ToString() const override {
-    return "TestPathInput";
-  }
+  std::string ToString() const override { return "TestPathInput"; }
 };
 
 // A concrete implementation of Action for testing.
@@ -87,7 +85,8 @@ class TestAction : public XdsMatcher::Action {
 // XdsMatcherList Benchmarks
 // =================================================================
 
-void BM_XdsMatcherList(benchmark::State& state, const TestMatchContext& context) {
+void BM_XdsMatcherList(benchmark::State& state,
+                       const TestMatchContext& context) {
   const int num_rules = state.range(0);
   std::vector<XdsMatcherList::FieldMatcher> matchers;
   for (int i = 0; i < num_rules; ++i) {
