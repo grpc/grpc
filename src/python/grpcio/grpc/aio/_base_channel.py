@@ -192,7 +192,7 @@ class Channel(abc.ABC):
     """
 
     @abc.abstractmethod
-    async def __aenter__(self) -> "aio.Channel":
+    async def __aenter__(self) -> grpc.aio.Channel:
         """Starts an asynchronous context manager.
 
         Returns:
