@@ -59,6 +59,13 @@ class TestPathInput : public XdsMatcher::InputValue<absl::string_view> {
     const auto* test_context = DownCast<const TestMatchContext*>(&context);
     return test_context->path();
   }
+  bool Equal(
+      const XdsMatcher::InputValue<absl::string_view>& other) const override {
+    return dynamic_cast<const TestPathInput*>(&other) != nullptr;
+  }
+  std::string ToString() const override {
+    return "TestPathInput";
+  }
 };
 
 // A concrete implementation of Action for testing.
@@ -67,6 +74,10 @@ class TestAction : public XdsMatcher::Action {
   explicit TestAction(absl::string_view name) : name_(name) {}
   absl::string_view type_url() const override { return "test.TestAction"; }
   absl::string_view name() const { return name_; }
+  bool Equal(const XdsMatcher::Action& other) const override {
+    if (other.type_url() != type_url()) return false;
+    return name_ == static_cast<const TestAction&>(other).name_;
+  }
 
  private:
   std::string name_;
@@ -76,7 +87,7 @@ class TestAction : public XdsMatcher::Action {
 // XdsMatcherList Benchmarks
 // =================================================================
 
-void BM_XdsMatcherList(benchmark::State& state, TestMatchContext context) {
+void BM_XdsMatcherList(benchmark::State& state, const TestMatchContext& context) {
   const int num_rules = state.range(0);
   std::vector<XdsMatcherList::FieldMatcher> matchers;
   for (int i = 0; i < num_rules; ++i) {
@@ -111,7 +122,8 @@ BENCHMARK(BM_XdsMatcherList_FirstMatch)
 void BM_XdsMatcherList_LastMatch(benchmark::State& state) {
   // Scenario: Match the last rule (worst case).
   const int num_rules = state.range(0);
-  TestMatchContext last_match_context(absl::StrCat("/rule/", num_rules - 1));
+  const std::string path = absl::StrCat("/rule/", num_rules - 1);
+  TestMatchContext last_match_context(path);
   BM_XdsMatcherList(state, last_match_context);
 }
 BENCHMARK(BM_XdsMatcherList_LastMatch)
@@ -145,19 +157,19 @@ void BM_XdsMatcherExactMap(benchmark::State& state) {
   XdsMatcherExactMap matcher(std::make_unique<TestPathInput>(), std::move(map),
                              std::nullopt);
   // Use state.range(1) to select the context for the benchmark run.
-  std::unique_ptr<TestMatchContext> context;
+  std::string path;
   if (scenario_type == 0) {
     state.SetLabel("Match");  // Label for a successful lookup (hit)
-    context = std::make_unique<TestMatchContext>(
-        absl::StrCat("/exact/", map_size / 2));
+    path = absl::StrCat("/exact/", map_size / 2);
   } else {
     state.SetLabel("NoMatch");  // Label for a failed lookup (miss)
-    context = std::make_unique<TestMatchContext>("/no_match");
+    path = "/no_match";
   }
+  TestMatchContext context(path);
   // The core benchmark loop runs with the selected context.
   for (auto _ : state) {
     XdsMatcher::Result result;
-    bool found = matcher.FindMatches(*context, result);
+    bool found = matcher.FindMatches(context, result);
     benchmark::DoNotOptimize(found);
   }
   state.SetItemsProcessed(state.iterations());
@@ -186,18 +198,18 @@ void BM_XdsMatcherPrefixMap(benchmark::State& state) {
   }
   XdsMatcherPrefixMap matcher(std::make_unique<TestPathInput>(), std::move(map),
                               std::nullopt);
-  std::unique_ptr<TestMatchContext> context;
+  std::string path;
   if (scenario_type == 0) {
     state.SetLabel("Match");  // Set a descriptive label for the output
-    context = std::make_unique<TestMatchContext>(
-        absl::StrCat("/prefix/", map_size / 2, "/subpath/resource"));
+    path = absl::StrCat("/prefix/", map_size / 2, "/subpath/resource");
   } else {
     state.SetLabel("NoMatch");  // Set a descriptive label for the output
-    context = std::make_unique<TestMatchContext>("/nonexistent/path");
+    path = "/nonexistent/path";
   }
+  TestMatchContext context(path);
   for (auto _ : state) {
     XdsMatcher::Result result;
-    bool found = matcher.FindMatches(*context, result);
+    bool found = matcher.FindMatches(context, result);
     benchmark::DoNotOptimize(found);
   }
   state.SetItemsProcessed(state.iterations());
