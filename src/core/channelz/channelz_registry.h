@@ -95,9 +95,6 @@ class ChannelzRegistry final {
             start_socket_id);
   }
 
-  static std::string GetTopChannelsJson(intptr_t start_channel_id);
-  static std::string GetServersJson(intptr_t start_server_id);
-
   // Returns the allocated JSON string that represents the proto
   // GetServersResponse as per channelz.proto.
   static auto GetServers(intptr_t start_server_id) {
@@ -286,10 +283,6 @@ class ChannelzRegistry final {
   absl::btree_map<intptr_t, BaseNode*> index_ ABSL_GUARDED_BY(index_mu_);
   size_t max_orphaned_per_shard_;
 };
-
-// `additionalInfo` section is not yet in the protobuf format, so we
-// provide a utility to strip it for compatibility.
-std::string StripAdditionalInfoFromJson(absl::string_view json);
 
 }  // namespace channelz
 }  // namespace grpc_core

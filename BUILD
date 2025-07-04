@@ -689,6 +689,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
+        "//src/core:channelz_v2tov1_legacy_api",
         "//src/core:client_channel_backup_poller",
         "//src/core:default_event_engine",
         "//src/core:endpoint_info_handshaker",

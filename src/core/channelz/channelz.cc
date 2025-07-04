@@ -444,7 +444,7 @@ void ChannelNode::AddNodeSpecificData(DataSink sink) {
                               .Set("target", target_)
                               .Set("connectivity_state", connectivity_state()));
   sink.AddData("call_counts", call_counter_.GetCallCounts().ToPropertyList());
-  sink.AddData("channel_args", channel_args_.ToPropertyList());
+  sink.AddData("channel_args", channel_args().ToPropertyList());
 }
 
 void ChannelNode::PopulateChildRefs(Json::Object* json) {
@@ -541,7 +541,7 @@ void SubchannelNode::AddNodeSpecificData(DataSink sink) {
                               .Set("target", target_)
                               .Set("connectivity_state", connectivity_state()));
   sink.AddData("call_counts", call_counter_.GetCallCounts().ToPropertyList());
-  sink.AddData("channel_args", channel_args_.ToPropertyList());
+  sink.AddData("channel_args", channel_args().ToPropertyList());
 }
 
 //
@@ -613,7 +613,7 @@ Json ServerNode::RenderJson() {
 
 void ServerNode::AddNodeSpecificData(DataSink sink) {
   sink.AddData("call_counts", call_counter_.GetCallCounts().ToPropertyList());
-  sink.AddData("channel_args", channel_args_.ToPropertyList());
+  sink.AddData("channel_args", channel_args().ToPropertyList());
 }
 
 std::map<intptr_t, WeakRefCountedPtr<ListenSocketNode>>
