@@ -136,6 +136,10 @@ class ConfigQuery {
     } else {
       exclude_features_ |= FEATURE_MASK_DO_NOT_GTEST;
     }
+    experiments_to_config_map_.insert(
+        {grpc_core::ExperimentIds::
+             kExperimentIdPromiseBasedHttp2ClientTransport,
+         {GRPC_HTTP2_PH2_TEST_SUITE}});
   }
   ConfigQuery(const ConfigQuery&) = delete;
   ConfigQuery& operator=(const ConfigQuery&) = delete;
@@ -175,6 +179,16 @@ class ConfigQuery {
             break;
           }
         }
+        for (auto it = experiments_to_config_map_.begin();
+             it != experiments_to_config_map_.end(); ++it) {
+          if (grpc_core::IsExperimentEnabled(it->first)) {
+            if (!it->second.contains(config.name)) {
+              allowed = false;
+              break;
+            }
+          }
+        }
+
         for (const std::regex& re : excluded_names_) {
           if (std::regex_match(config.name, re)) {
             allowed = false;
@@ -194,6 +208,8 @@ class ConfigQuery {
   uint32_t exclude_features_ = 0;
   std::vector<std::regex> allowed_names_;
   std::vector<std::regex> excluded_names_;
+  absl::flat_hash_map<ExperimentIds, absl::flat_hash_set<absl::string_view>>
+      experiments_to_config_map_;
 };
 
 CORE_END2END_TEST_SUITE(CoreEnd2endTests, ConfigQuery(fuzzing).Run());

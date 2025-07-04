@@ -370,9 +370,7 @@ void CqVerifier::Verify(Duration timeout, SourceLocation location) {
       grpc_timeout_milliseconds_to_deadline(timeout.millis());
   while (!expectations_.empty()) {
     must_log = std::exchange(added_expectations_, false) || must_log;
-    if (log_verifications_ && must_log) {
-      LOG(ERROR) << "Verify " << ToShortString() << " for " << timeout;
-    }
+    // DO NOT SUBMIT THIS DIFF
     must_log = false;
     grpc_event ev = Step(deadline);
     if (ev.type == GRPC_QUEUE_TIMEOUT) break;
