@@ -73,6 +73,11 @@ grpc_objc_testing_library(
         "HOST_PORT_LOCAL=localhost:5050",
         "HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com",
     ],
+    deps = [
+        "//:grpc++",
+        "//:grpcpp_gcp_observability",
+        "//test/cpp/interop:interop_server_lib",
+    ],
 )
 
 objc_library(

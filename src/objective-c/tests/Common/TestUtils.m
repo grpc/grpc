@@ -21,6 +21,16 @@
 #import <GRPCClient/GRPCCall+ChannelArg.h>
 #import <GRPCClient/GRPCCall+Tests.h>
 
+#include "absl/flags/declare.h"
+#include "absl/flags/flag.h"
+#include "test/core/test_util/test_config.h"
+#include "test/cpp/interop/server_helper.h"
+#include "test/cpp/util/test_config.h"
+
+ABSL_DECLARE_FLAG(bool, use_tls);
+ABSL_DECLARE_FLAG(int32_t, port);
+ABSL_DECLARE_FLAG(int32_t, max_send_message_size);
+
 // Utility macro to stringize preprocessor defines
 #define NSStringize_helper(x) #x
 #define NSStringize(x) @NSStringize_helper(x)
@@ -134,4 +144,28 @@ BOOL GRPCTestRunWithFlakeRepeats(XCTestCase *testCase, GRPCTestRunBlock testBloc
   }
 
   return NO;
+}
+
+gpr_atm grpc::testing::interop::g_got_sigint;
+
+void GRPCInteropStartServer(int32_t port, bool use_tls, int32_t max_send_message_size = 8388608) {
+  absl::SetFlag(&FLAGS_port, port);
+  absl::SetFlag(&FLAGS_max_send_message_size, max_send_message_size);
+  absl::SetFlag(&FLAGS_use_tls, use_tls);
+
+  dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    grpc::testing::interop::RunServer(grpc::testing::CreateInteropServerCredentials());
+  });
+}
+
+void GRPCInteropStartPlainTextServer(void) {
+  NSString *address = GRPCGetLocalInteropTestServerAddressPlainText();
+  int32_t port = [address componentsSeparatedByString:@":"].lastObject.intValue;
+  GRPCInteropStartServer(port, false /* use_tls */);
+}
+
+void GRPCInteropStartSSLServer(void) {
+  NSString *address = GRPCGetLocalInteropTestServerAddressSSL();
+  int32_t port = [address componentsSeparatedByString:@":"].lastObject.intValue;
+  GRPCInteropStartServer(port, true /* use_tls */);
 }

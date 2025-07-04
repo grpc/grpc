@@ -54,18 +54,17 @@ grpc_cc_library(
 GRPCXX_TESTUTIL_SRCS = [
     "byte_buffer_proto_helper.cc",
     "string_ref_helper.cc",
-    "subprocess.cc",
 ]
 
 GRPCXX_TESTUTIL_HDRS = [
     "byte_buffer_proto_helper.h",
     "credentials.h",
     "string_ref_helper.h",
-    "subprocess.h",
 ]
 
+# tvos does not support exec or fork
 grpc_cc_library(
-    name = "test_util",
+    name = "test_util_without_subprocess",
     srcs = GRPCXX_TESTUTIL_SRCS + [
         "create_test_channel.cc",
         "test_credentials_provider.cc",
@@ -82,10 +81,19 @@ grpc_cc_library(
     ],
     deps = [
         "//:grpc++",
-        "//:subprocess",
         "//test/core/end2end:ssl_test_data",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "test_util",
+    srcs = ["subprocess.cc"],
+    hdrs = ["subprocess.h"],
+    deps = [
+        ":test_util_without_subprocess",
+        "//:subprocess",
     ],
 )
 
@@ -110,8 +118,8 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "test_util_unsecure",
-    srcs = GRPCXX_TESTUTIL_SRCS,
-    hdrs = GRPCXX_TESTUTIL_HDRS,
+    srcs = GRPCXX_TESTUTIL_SRCS + ["subprocess.cc"],
+    hdrs = GRPCXX_TESTUTIL_HDRS + ["subprocess.h"],
     external_deps = [
         "protobuf",
     ],

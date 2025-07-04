@@ -61,6 +61,12 @@ static int32_t kLocalInteropServerOverhead = 10;
   [GRPCCall useInsecureConnectionsForHost:GRPCGetLocalInteropTestServerAddressPlainText()];
 }
 
++ (void)setUp {
+  [super setUp];
+
+  GRPCInteropStartPlainTextServer();
+}
+
 + (GRPCTransportID)transport {
   return GRPCDefaultTransportImplList.core_insecure;
 }
