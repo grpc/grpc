@@ -14,7 +14,7 @@
 """Server-side implementation of gRPC Asyncio Python."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Optional, Sequence, Union
 
 import grpc
 from grpc import _common
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 def _augment_channel_arguments(
     base_options: ChannelArgumentType,
     compression: Optional[grpc.Compression],
-) -> tuple:
+) -> tuple[tuple[str, Union[str, bytes, int]], ...]:
     compression_option = _compression.create_channel_option(compression)
     return tuple(base_options) + compression_option
 
