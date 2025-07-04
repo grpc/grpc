@@ -27,6 +27,8 @@ import sysconfig
 import traceback
 from typing import Any, List
 
+from setuptools import Extension
+
 from setuptools.command import build_ext
 from setuptools.command import build_py
 import support
@@ -141,7 +143,7 @@ class BuildPy(build_py.build_py):
         build_py.build_py.run(self)
 
 
-def _poison_extensions(extensions: List, message: str) -> None:
+def _poison_extensions(extensions: List[Extension], message: str) -> None:
     """Includes a file that will always fail to compile in all extensions."""
     poison_filename = os.path.join(PYTHON_STEM, "poison.c")
     with open(poison_filename, "w") as poison:
@@ -150,7 +152,7 @@ def _poison_extensions(extensions: List, message: str) -> None:
         extension.sources = [poison_filename]
 
 
-def check_and_update_cythonization(extensions: List) -> bool:
+def check_and_update_cythonization(extensions: List[Extension]) -> bool:
     """Replace .pyx files with their generated counterparts and return whether or
     not cythonization still needs to occur."""
     for extension in extensions:
@@ -182,7 +184,7 @@ def check_and_update_cythonization(extensions: List) -> bool:
     return True
 
 
-def try_cythonize(extensions: List, linetracing: bool = False, mandatory: bool = True) -> List:
+def try_cythonize(extensions: List[Extension], linetracing: bool = False, mandatory: bool = True) -> List[Extension]:
     """Attempt to cythonize the extensions.
 
     Args:
@@ -251,37 +253,41 @@ class BuildExt(build_ext.build_ext):
     def build_extensions(self) -> None:
         # This is to let UnixCompiler get either C or C++ compiler options depending on the source.
         # Note that this doesn't work for MSVCCompiler and will be handled by _spawn_patch.py.
-        def new_compile(obj: str, src: str, ext: str, cc_args: List[str], extra_postargs: List[str], pp_opts: List[str]) -> None:
-            if ext in (".cpp", ".cc"):
-                # C++ source
-                self.compiler.compile(
-                    [obj], extra_postargs=extra_postargs, depends=[src]
-                )
-            else:
-                # C source
-                self.compiler.compile(
-                    [obj], extra_postargs=extra_postargs, depends=[src]
-                )
+        old_compile = self.compiler._compile
+        def new_compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
+          if src.endswith(".c"):
+            extra_postargs = [
+              arg for arg in extra_postargs if arg != "-std=c++17"
+            ]
+          elif src.endswith((".cc", ".cpp")):
+            extra_postargs = [
+              arg for arg in extra_postargs if arg != "-std=c11"
+            ]
+          return old_compile(obj, src, ext, cc_args, extra_postargs, pp_opts)
 
         self.compiler.compile = new_compile
 
-        # Let's add some compiler-specific options.
-        if self.compiler.compiler_type == "unix":
-            for extension in self.extensions:
-                extension.extra_compile_args += self.C_OPTIONS["unix"]
-        elif self.compiler.compiler_type == "msvc":
-            for extension in self.extensions:
-                extension.extra_compile_args += self.C_OPTIONS["msvc"]
-
-        # Let's add some linker-specific options.
-        if self.compiler.compiler_type == "unix":
-            for extension in self.extensions:
-                extension.extra_link_args += self.LINK_OPTIONS.get("unix", ())
-        elif self.compiler.compiler_type == "msvc":
-            for extension in self.extensions:
-                extension.extra_link_args += self.LINK_OPTIONS.get("msvc", ())
-
-        build_ext.build_ext.build_extensions(self)
+        compiler = self.compiler.compiler_type
+        if compiler in BuildExt.C_OPTIONS:
+          for extension in self.extensions:
+            extension.extra_compile_args += list(
+              BuildExt.C_OPTIONS[compiler]
+            )
+        if compiler in BuildExt.LINK_OPTIONS:
+          for extension in self.extensions:
+            extension.extra_link_args += list(
+              BuildExt.LINK_OPTIONS[compiler]
+            )
+        if not check_and_update_cythonization(self.extensions):
+          self.extensions = try_cythonize(self.extensions)
+        try:
+          build_ext.build_ext.build_extensions(self)
+        except Exception as error:
+          formatted_exception = traceback.format_exc()
+          support.diagnose_build_ext_error(self, error, formatted_exception)
+          raise CommandError(
+            "Failed `build_ext` step:\n{}".format(formatted_exception)
+          )
 
 
 class Gather(setuptools.Command):
@@ -289,18 +295,20 @@ class Gather(setuptools.Command):
 
     description = "gather dependencies for grpcio"
     user_options = [
-        ("output", "o", "output file"),
+      ("test", "t", "flag indicating to gather test dependencies"),
+      ("install", "i", "flag indicating to gather install dependencies"),
     ]
 
     def initialize_options(self) -> None:
-        self.output = None
+      self.test = False
+      self.install = False
 
     def finalize_options(self) -> None:
-        # distutils requires this override.
-        pass
+      # distutils requires this override.
+      pass
 
     def run(self) -> None:
-        pass
+      pass
 
 
 class Clean(setuptools.Command):
@@ -319,21 +327,28 @@ class Clean(setuptools.Command):
         "src/python/grpcio/grpcio.egg-info/",
     )
     _CURRENT_DIRECTORY = os.path.normpath(
-        os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..")
+        os.path.join(os.path.dirname(os.path.realpath(__file__)), "../../..")
     )
 
     def initialize_options(self) -> None:
-        self.all = None
+        self.all = False
 
     def finalize_options(self) -> None:
         pass
 
     def run(self) -> None:
-        for file_pattern in self._FILE_PATTERNS:
-            for file_path in glob.glob(
-                os.path.join(self._CURRENT_DIRECTORY, file_pattern)
-            ):
-                if os.path.isdir(file_path):
-                    shutil.rmtree(file_path)
-                else:
-                    os.remove(file_path)
+      for path_spec in self._FILE_PATTERNS:
+        this_glob = os.path.normpath(
+          os.path.join(Clean._CURRENT_DIRECTORY, path_spec)
+        )
+        abs_paths = glob.glob(this_glob)
+        for path in abs_paths:
+          if not str(path).startswith(Clean._CURRENT_DIRECTORY):
+            raise ValueError(
+              "Cowardly refusing to delete {}.".format(path)
+            )
+          print("Removing {}".format(os.path.relpath(path)))
+          if os.path.isfile(path):
+            os.remove(str(path))
+          else:
+            shutil.rmtree(str(path))
