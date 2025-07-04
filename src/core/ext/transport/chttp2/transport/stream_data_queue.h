@@ -64,7 +64,11 @@ class Center : public RefCounted<Center<T>> {
   }
 
   // Sync function to dequeue the next entry. Returns nullopt if the queue is
-  // empty.
+  // empty or if the front of the queue has more tokens than max_tokens.
+  // When allow_partial_dequeue parameter is set to true, it allows an item to
+  // be dequeued even if its tokens cost is greater than max_tokens. It does not
+  // cause the item itself to be partially dequeued; the entire item is always
+  // returned.
   std::optional<T> Dequeue(uint32_t max_tokens, bool allow_partial_dequeue) {
     ReleasableMutexLock lock(&mu_);
     if (queue_.empty() ||
@@ -117,8 +121,8 @@ class Center : public RefCounted<Center<T>> {
   Mutex mu_;
   std::queue<Entry> queue_ ABSL_GUARDED_BY(mu_);
   uint32_t max_tokens_ ABSL_GUARDED_BY(mu_);
-  uint32_t tokens_consumed_ = 0;
-  Waker waker_;
+  uint32_t tokens_consumed_ ABSL_GUARDED_BY(mu_) = 0;
+  Waker waker_ ABSL_GUARDED_BY(mu_);
 };
 
 template <typename T>
