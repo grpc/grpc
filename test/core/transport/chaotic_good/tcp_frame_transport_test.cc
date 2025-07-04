@@ -84,14 +84,14 @@ class PartyExposer final : public channelz::DataSource {
  public:
   PartyExposer(absl::string_view name, RefCountedPtr<channelz::BaseNode> node,
                RefCountedPtr<Party> party)
-      : DataSource(std::move(node)), party_(std::move(party)) {}
+      : DataSource(std::move(node)), party_(std::move(party)) {
+    SourceConstructed();
+  }
 
-  ~PartyExposer() { ResetDataSource(); }
+  ~PartyExposer() { SourceDestructing(); }
 
   void AddData(channelz::DataSink sink) override {
-    party_->ToJson([sink, name = name_](Json::Object obj) mutable {
-      sink.AddAdditionalInfo(name, std::move(obj));
-    });
+    party_->ExportToChannelz(std::string(name_), sink);
   }
 
  private:

@@ -51,6 +51,7 @@
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/config_selector.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/filter/blackboard.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -274,12 +275,16 @@ class XdsResolver final : public Resolver {
 
     absl::Status GetCallConfig(GetCallConfigArgs args) override;
 
-    void AddFilters(InterceptionChainBuilder& builder) override;
+    void AddFilters(InterceptionChainBuilder& builder,
+                    const Blackboard* old_blackboard,
+                    Blackboard* new_blackboard) override;
 
-    std::vector<const grpc_channel_filter*> GetFilters() override;
+    std::vector<const grpc_channel_filter*> GetFilters(
+        const Blackboard* old_blackboard, Blackboard* new_blackboard) override;
 
    private:
     RefCountedPtr<XdsResolver> resolver_;
+    std::shared_ptr<const XdsListenerResource> listener_;
     RefCountedPtr<RouteConfigData> route_config_data_;
     std::vector<const XdsHttpFilterImpl*> filters_;
   };
@@ -517,7 +522,7 @@ absl::Status XdsResolver::RouteConfigData::AddRouteEntry(
     XdsResolver* resolver, const XdsRouteConfigResource::Route& route,
     const Duration& default_max_stream_duration) {
   GRPC_TRACE_LOG(xds_resolver, INFO)
-      << "[xds_resolver " << resolver << "] XdsConfigSelector " << this
+      << "[xds_resolver " << resolver << "] RouteConfigData " << this
       << ": route: " << route.ToString();
   routes_.emplace_back(route);
   auto* route_entry = &routes_.back();
@@ -606,18 +611,19 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     RefCountedPtr<XdsResolver> resolver,
     RefCountedPtr<RouteConfigData> route_config_data)
     : resolver_(std::move(resolver)),
+      listener_(resolver_->current_config_->listener),
       route_config_data_(std::move(route_config_data)) {
   GRPC_TRACE_LOG(xds_resolver, INFO) << "[xds_resolver " << resolver_.get()
                                      << "] creating XdsConfigSelector " << this;
   // Populate filter list.
   const auto& http_filter_registry =
-      static_cast<const GrpcXdsBootstrap&>(resolver_->xds_client_->bootstrap())
+      DownCast<const GrpcXdsBootstrap&>(resolver_->xds_client_->bootstrap())
           .http_filter_registry();
-  const auto& hcm = std::get<XdsListenerResource::HttpConnectionManager>(
-      resolver_->current_config_->listener->listener);
+  const auto& hcm =
+      std::get<XdsListenerResource::HttpConnectionManager>(listener_->listener);
   for (const auto& http_filter : hcm.http_filters) {
     // Find filter.  This is guaranteed to succeed, because it's checked
-    // at config validation time in the XdsApi code.
+    // at config validation time.
     const XdsHttpFilterImpl* filter_impl =
         http_filter_registry.GetFilterForType(
             http_filter.config.config_proto_type_name);
@@ -771,20 +777,34 @@ absl::Status XdsResolver::XdsConfigSelector::GetCallConfig(
 }
 
 void XdsResolver::XdsConfigSelector::AddFilters(
-    InterceptionChainBuilder& builder) {
-  for (const XdsHttpFilterImpl* filter : filters_) {
+    InterceptionChainBuilder& builder, const Blackboard* old_blackboard,
+    Blackboard* new_blackboard) {
+  const auto& hcm =
+      std::get<XdsListenerResource::HttpConnectionManager>(listener_->listener);
+  CHECK_EQ(filters_.size(), hcm.http_filters.size());
+  for (size_t i = 0; i < filters_.size(); ++i) {
+    auto* filter = filters_[i];
     filter->AddFilter(builder);
+    filter->UpdateBlackboard(hcm.http_filters[i].config, old_blackboard,
+                             new_blackboard);
   }
   builder.Add<ClusterSelectionFilter>();
 }
 
 std::vector<const grpc_channel_filter*>
-XdsResolver::XdsConfigSelector::GetFilters() {
+XdsResolver::XdsConfigSelector::GetFilters(const Blackboard* old_blackboard,
+                                           Blackboard* new_blackboard) {
+  const auto& hcm =
+      std::get<XdsListenerResource::HttpConnectionManager>(listener_->listener);
+  CHECK_EQ(filters_.size(), hcm.http_filters.size());
   std::vector<const grpc_channel_filter*> filters;
-  for (const XdsHttpFilterImpl* filter : filters_) {
+  for (size_t i = 0; i < filters_.size(); ++i) {
+    auto* filter = filters_[i];
     if (filter->channel_filter() != nullptr) {
       filters.push_back(filter->channel_filter());
     }
+    filter->UpdateBlackboard(hcm.http_filters[i].config, old_blackboard,
+                             new_blackboard);
   }
   filters.push_back(&ClusterSelectionFilter::kFilter);
   return filters;

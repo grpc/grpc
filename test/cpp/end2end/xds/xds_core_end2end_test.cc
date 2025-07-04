@@ -26,6 +26,7 @@
 #include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
+#include "src/core/util/tmpfile.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/scoped_env_var.h"
@@ -159,7 +160,7 @@ TEST_P(XdsClientTest, XdsStreamErrorPropagation) {
 }
 
 //
-// XdsServerTlsTest: xDS server using TlsCreds
+// XdsServerTlsTest: xDS server using TlsCreds and JWT call creds
 //
 
 class XdsServerTlsTest : public XdsEnd2endTest {
@@ -168,13 +169,60 @@ class XdsServerTlsTest : public XdsEnd2endTest {
       : XdsEnd2endTest(/*balancer_credentials=*/CreateTlsServerCredentials()) {}
 
   void SetUp() override {
-    InitClient(MakeBootstrapBuilder().SetXdsChannelCredentials(
-                   "tls", absl::StrCat("{\"ca_certificate_file\": \"",
-                                       kCaCertPath, "\"}")),
+    token_ = MakeJwtToken();
+    // Write JWT token file.
+    char* path;
+    FILE* tmp = gpr_tmpfile("jwt_token", &path);
+    CHECK_NE(path, nullptr);
+    CHECK_NE(tmp, nullptr);
+    CHECK_EQ(fwrite(token_.data(), 1, token_.size(), tmp), token_.size());
+    fclose(tmp);
+    // Initialize client with bootstrap setting up the desired channel
+    // and call creds.
+    InitClient(MakeBootstrapBuilder()
+                   .SetXdsChannelCredentials(
+                       "tls", absl::StrCat("{\"ca_certificate_file\": \"",
+                                           kCaCertPath, "\"}"))
+                   .SetXdsCallCredentials(
+                       "jwt_token_file",
+                       absl::StrCat("{\"jwt_token_file\": \"", path, "\"}")),
                /*lb_expected_authority=*/"",
                /*xds_resource_does_not_exist_timeout_ms=*/0,
                /*balancer_authority_override=*/"foo.test.google.fr");
+    gpr_free(path);
+    // Add a callback to save the JWT token seen on the xDS server.
+    balancer_->ads_service()->SetCallCredsCallback(
+        [&](const AdsServiceImpl::ClientMetadataType& md) {
+          auto it = md.find("authorization");
+          ASSERT_TRUE(it != md.end());
+          absl::string_view value(it->second.data(), it->second.size());
+          grpc_core::MutexLock lock(&mu_);
+          seen_token_ = std::string(absl::StripPrefix(value, "Bearer "));
+        });
   }
+
+  // Constructs a synthetic JWT token that's just valid enough for the
+  // call creds to extract the expiration date.
+  static std::string MakeJwtToken() {
+    grpc_core::Timestamp expiration =
+        grpc_core::Timestamp::Now() + grpc_core::Duration::Hours(1);
+    gpr_timespec ts = expiration.as_timespec(GPR_CLOCK_REALTIME);
+    std::string json = absl::StrCat("{\"exp\":", ts.tv_sec, "}");
+    return absl::StrCat("foo.", absl::WebSafeBase64Escape(json), ".bar");
+  }
+
+  std::string GetSeenToken() {
+    grpc_core::MutexLock lock(&mu_);
+    return seen_token_;
+  }
+
+  grpc_core::testing::ScopedExperimentalEnvVar env_var_{
+      "GRPC_EXPERIMENTAL_XDS_BOOTSTRAP_CALL_CREDS"};
+
+  std::string token_;
+
+  grpc_core::Mutex mu_;
+  std::string seen_token_ ABSL_GUARDED_BY(&mu_);
 };
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerTlsTest,
@@ -185,6 +233,8 @@ TEST_P(XdsServerTlsTest, Basic) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   CheckRpcSendOk(DEBUG_LOCATION);
+  // Check the token seen by the xDS server.
+  EXPECT_EQ(token_, GetSeenToken());
 }
 
 //

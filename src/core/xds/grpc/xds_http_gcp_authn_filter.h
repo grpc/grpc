@@ -52,6 +52,9 @@ class XdsHttpGcpAuthnFilter final : public XdsHttpFilterImpl {
       const FilterConfig* filter_config_override) const override;
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const FilterConfig& hcm_filter_config) const override;
+  void UpdateBlackboard(const FilterConfig& hcm_filter_config,
+                        const Blackboard* old_blackboard,
+                        Blackboard* new_blackboard) const override;
   bool IsSupportedOnClients() const override { return true; }
   bool IsSupportedOnServers() const override { return false; }
 };

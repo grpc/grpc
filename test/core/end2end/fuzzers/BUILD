@@ -49,6 +49,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc",
         "//test/core/event_engine/fuzzing_event_engine",
+        "//test/core/test_util:postmortem_emit",
     ],
 )
 

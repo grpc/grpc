@@ -33,7 +33,7 @@ using SendPingArgs = ::grpc_core::http2::PingInterface::SendPingArgs;
 using Callback = absl::AnyInvocable<void()>;
 using grpc_event_engine::experimental::EventEngine;
 
-#define PING_LOG                                           \
+#define GRPC_HTTP2_PING_LOG                                \
   LOG_IF(INFO, (GRPC_TRACE_FLAG_ENABLED(http) ||           \
                 GRPC_TRACE_FLAG_ENABLED(bdp_estimator) ||  \
                 GRPC_TRACE_FLAG_ENABLED(http_keepalive) || \
@@ -90,22 +90,24 @@ bool PingManager::NeedToPing(Duration next_allowed_ping_interval) {
                                         ping_callbacks_.CountPingInflight()),
       [this](Chttp2PingRatePolicy::SendGranted) {
         // TODO(akshitpatel) : [PH2][P1] : Update some keepalive flags.
-        PING_LOG << "CLIENT" << "[" << "PH2"
-                 << "]: Ping sent" << ping_rate_policy_.GetDebugString();
+        GRPC_HTTP2_PING_LOG << "CLIENT" << "[" << "PH2"
+                            << "]: Ping sent"
+                            << ping_rate_policy_.GetDebugString();
         return true;
       },
       [this](Chttp2PingRatePolicy::TooManyRecentPings) {
-        PING_LOG << "CLIENT" << "[" << "PH2"
-                 << "]: Ping delayed too many recent pings: "
-                 << ping_rate_policy_.GetDebugString();
+        GRPC_HTTP2_PING_LOG << "CLIENT" << "[" << "PH2"
+                            << "]: Ping delayed too many recent pings: "
+                            << ping_rate_policy_.GetDebugString();
         return false;
       },
       [this](Chttp2PingRatePolicy::TooSoon too_soon) mutable {
-        PING_LOG << "]: Ping delayed not enough time elapsed since last "
-                    "ping. Last ping:"
-                 << too_soon.last_ping
-                 << ", minimum wait:" << too_soon.next_allowed_ping_interval
-                 << ", need to wait:" << too_soon.wait;
+        GRPC_HTTP2_PING_LOG
+            << "]: Ping delayed not enough time elapsed since last "
+               "ping. Last ping:"
+            << too_soon.last_ping
+            << ", minimum wait:" << too_soon.next_allowed_ping_interval
+            << ", need to wait:" << too_soon.wait;
         TriggerDelayedPing(too_soon.wait);
         return false;
       });
