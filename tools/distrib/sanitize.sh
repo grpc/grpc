@@ -27,6 +27,7 @@ tools/run_tests/sanity/check_include_style.py --fix || true
 tools/distrib/check_namespace_qualification.py --fix
 tools/distrib/black_code.sh
 tools/distrib/isort_code.sh
+tools/distrib/ruff_code.sh --fix
 tools/distrib/check_redundant_namespace_qualifiers.py || true
 tools/codegen/core/gen_grpc_tls_credentials_options.py
 tools/distrib/gen_experiments_and_format.sh
