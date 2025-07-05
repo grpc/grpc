@@ -73,6 +73,11 @@ grpc_objc_testing_library(
         "HOST_PORT_LOCAL=localhost:5050",
         "HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com",
     ],
+    deps = [
+        "//:grpc++",
+        "//:grpcpp_gcp_observability",
+        "//test/cpp/interop:interop_server_lib",
+    ],
 )
 
 objc_library(
@@ -245,6 +250,16 @@ grpc_objc_testing_library(
 )
 
 grpc_objc_testing_library(
+    name = "EventEngineServerTests-lib",
+    srcs = ["EventEngineTests/CFEventEngineServerTests.mm"],
+    deps = [
+        "//src/core:cf_event_engine",
+        "//test/core/event_engine/test_suite/posix:oracle_event_engine_posix",
+        "//test/core/event_engine/test_suite/tests:server",
+    ],
+)
+
+grpc_objc_testing_library(
     name = "EventEngineUnitTests-lib",
     srcs = ["EventEngineTests/CFEventEngineUnitTests.mm"],
     deps = [
@@ -258,6 +273,11 @@ grpc_objc_testing_library(
 grpc_objc_ios_unit_test(
     name = "EventEngineClientTests",
     deps = [":EventEngineClientTests-lib"],
+)
+
+grpc_objc_ios_unit_test(
+    name = "EventEngineServerTests",
+    deps = [":EventEngineServerTests-lib"],
 )
 
 grpc_objc_ios_unit_test(

@@ -33,7 +33,7 @@ grpc_cc_library(
         "absl/flags:flag",
     ],
     deps = [
-        "//test/cpp/util:test_util",
+        "//test/cpp/util:test_util_without_subprocess",
     ],
 )
 

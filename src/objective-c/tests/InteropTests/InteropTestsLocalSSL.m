@@ -74,6 +74,12 @@ static int32_t kLocalInteropServerOverhead = 10;
                      forHost:GRPCGetLocalInteropTestServerAddressSSL()];
 }
 
++ (void)setUp {
+  [super setUp];
+
+  GRPCInteropStartSSLServer();
+}
+
 - (void)testExceptions {
   // Try to set userAgentPrefix for host that is nil. This should cause
   // an exception.
