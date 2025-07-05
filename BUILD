@@ -5221,6 +5221,16 @@ grpc_upb_proto_reflection_library(
 )
 
 grpc_upb_proto_library(
+    name = "channelz_v1_upb",
+    deps = ["//src/proto/grpc/channelz:channelz_proto_only"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "channelz_v1_upbdefs",
+    deps = ["//src/proto/grpc/channelz:channelz_proto_only"],
+)
+
+grpc_upb_proto_library(
     name = "promise_upb",
     deps = ["//src/proto/grpc/channelz/v2:promise_proto"],
 )
