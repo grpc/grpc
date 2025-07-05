@@ -27,9 +27,19 @@ UPB_INLINE const upb_MessageDef *envoy_config_core_v3_ProxyProtocolPassThroughTL
   return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.ProxyProtocolPassThroughTLVs");
 }
 
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_TlvEntry_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_proxy_protocol_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.TlvEntry");
+}
+
 UPB_INLINE const upb_MessageDef *envoy_config_core_v3_ProxyProtocolConfig_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_proxy_protocol_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.ProxyProtocolConfig");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_config_core_v3_PerHostConfig_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_config_core_v3_proxy_protocol_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.config.core.v3.PerHostConfig");
 }
 
 
