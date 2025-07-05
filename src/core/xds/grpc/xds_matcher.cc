@@ -87,12 +87,13 @@ bool XdsMatcher::OnMatch::FindMatches(const MatchContext& context,
 //
 
 bool XdsMatcherList::Equal(const XdsMatcher& other) const {
-  const auto* o = dynamic_cast<const XdsMatcherList*>(&other);
+  const auto* o = DownCast<const XdsMatcherList*>(&other);
   if (o == nullptr) return false;
   if (matchers_.size() != o->matchers_.size()) return false;
   for (size_t i = 0; i < matchers_.size(); ++i) {
-    if (!matchers_[i].predicate->Equal(*o->matchers_[i].predicate))
+    if (!matchers_[i].predicate->Equal(*o->matchers_[i].predicate)) {
       return false;
+    }
     if (!matchers_[i].on_match.Equal(o->matchers_[i].on_match)) return false;
   }
   if (on_no_match_.has_value() != o->on_no_match_.has_value()) return false;
@@ -127,7 +128,7 @@ bool XdsMatcherList::FindMatches(const MatchContext& context,
 }
 
 bool XdsMatcherList::AndPredicate::Equal(const Predicate& other) const {
-  const auto* o = dynamic_cast<const AndPredicate*>(&other);
+  const auto* o = DownCast<const AndPredicate*>(&other);
   if (o == nullptr) return false;
   if (predicates_.size() != o->predicates_.size()) return false;
   for (size_t i = 0; i < predicates_.size(); ++i) {
@@ -153,7 +154,7 @@ bool XdsMatcherList::AndPredicate::Match(
 }
 
 bool XdsMatcherList::OrPredicate::Equal(const Predicate& other) const {
-  const auto* o = dynamic_cast<const OrPredicate*>(&other);
+  const auto* o = DownCast<const OrPredicate*>(&other);
   if (o == nullptr) return false;
   if (predicates_.size() != o->predicates_.size()) return false;
   for (size_t i = 0; i < predicates_.size(); ++i) {
@@ -183,7 +184,7 @@ bool XdsMatcherList::OrPredicate::Match(
 //
 
 bool XdsMatcherExactMap::Equal(const XdsMatcher& other) const {
-  const auto* o = dynamic_cast<const XdsMatcherExactMap*>(&other);
+  const auto* o = DownCast<const XdsMatcherExactMap*>(&other);
   if (o == nullptr) return false;
   if (!input_->Equal(*o->input_)) return false;
   if (map_.size() != o->map_.size()) return false;
@@ -233,7 +234,7 @@ bool XdsMatcherExactMap::FindMatches(const MatchContext& context,
 //
 
 bool XdsMatcherPrefixMap::Equal(const XdsMatcher& other) const {
-  const auto* o = dynamic_cast<const XdsMatcherPrefixMap*>(&other);
+  const auto* o = DownCast<const XdsMatcherPrefixMap*>(&other);
   if (o == nullptr) return false;
   if (!input_->Equal(*o->input_)) return false;
   if (map_.size() != o->map_.size()) return false;

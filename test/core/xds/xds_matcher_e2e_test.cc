@@ -16,34 +16,26 @@
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/wrappers.pb.h>
 
-#include "gmock/gmock.h"
+#include "google/protobuf/wrappers.upb.h"
 #include "gtest/gtest.h"
-#include "src/core/xds/grpc/xds_matcher.h"
-
-// For XdsClient and DecodeContext setup
-#include "src/core/util/json/json.h"
-#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
-#include "src/core/xds/xds_client/xds_client.h"
-#include "src/core/xds/xds_client/xds_resource_type.h"
-// End XdsClient setup includes
-
 #include "src/core/util/down_cast.h"
 #include "src/core/util/match.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"  // For ValidationErrors
+#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_matcher.h"
 #include "src/core/xds/grpc/xds_matcher_action.h"
 #include "src/core/xds/grpc/xds_matcher_context.h"
 #include "src/core/xds/grpc/xds_matcher_parse.h"
+#include "src/core/xds/xds_client/xds_client.h"
+#include "src/core/xds/xds_client/xds_resource_type.h"
 #include "test/core/test_util/test_config.h"
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"  // For upb_DefPool
 #include "xds/type/matcher/v3/matcher.pb.h"
 #include "xds/type/matcher/v3/matcher.upb.h"
-// Include for google.protobuf.StringValue
-#include "google/protobuf/wrappers.upb.h"
 
 namespace grpc_core {
 namespace testing {

@@ -28,6 +28,7 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
+#include "src/core/util/down_cast.h"
 #include "src/core/util/match.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/trie_lookup.h"
@@ -247,7 +248,7 @@ class XdsMatcherList::SinglePredicate : public XdsMatcherList::Predicate {
   }
 
   bool Equal(const Predicate& other) const override {
-    const auto* o = dynamic_cast<const SinglePredicate<T>*>(&other);
+    const auto* o = DownCast<const SinglePredicate<T>*>(&other);
     if (o == nullptr) return false;
     return input_->Equal(*o->input_) &&
            input_matcher_->Equal(*o->input_matcher_);
@@ -275,7 +276,7 @@ class XdsMatcherList::StringInputMatcher
   }
 
   bool Equal(const InputMatcher<absl::string_view>& other) const override {
-    const auto* o = dynamic_cast<const StringInputMatcher*>(&other);
+    const auto* o = DownCast<const StringInputMatcher*>(&other);
     if (o == nullptr) return false;
     return matcher_ == o->matcher_;
   }

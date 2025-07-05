@@ -60,7 +60,7 @@ class TestPathInput : public XdsMatcher::InputValue<absl::string_view> {
   }
   bool Equal(
       const XdsMatcher::InputValue<absl::string_view>& other) const override {
-    return dynamic_cast<const TestPathInput*>(&other) != nullptr;
+    return DownCast<const TestPathInput*>(&other) != nullptr;
   }
   std::string ToString() const override { return "TestPathInput"; }
 };
@@ -361,14 +361,12 @@ TEST(XdsMatcherMatcherListKeepMatchingTest, KeepMatchingFalseStopMatching) {
       .WillOnce(::testing::Return(true));
   matchers.emplace_back(
       std::move(predicate1),
-      XdsMatcher::OnMatch(std::make_unique<TestAction>("Action1"),
-                          /*keep_matching=*/false));
+      XdsMatcher::OnMatch(std::make_unique<TestAction>("Action1"), false));
   // Matcher 2: Would also match, but should never be evaluated.
   auto predicate2 = std::make_unique<MockPredicate>();
   matchers.emplace_back(
       std::move(predicate2),
-      XdsMatcher::OnMatch(std::make_unique<TestAction>("Action2"),
-                          /*keep_matching=*/false));
+      XdsMatcher::OnMatch(std::make_unique<TestAction>("Action2"), false));
   XdsMatcherList matcher_list(std::move(matchers), std::nullopt);
   TestMatchContext context("/qux");
   XdsMatcher::Result result;
@@ -391,24 +389,21 @@ TEST(XdsMatcherMatcherListKeepMatchingTest, KeepMatchingTrueContinueMatching) {
       .WillOnce(::testing::Return(true));
   matchers.emplace_back(
       std::move(predicate1),
-      XdsMatcher::OnMatch(std::make_unique<TestAction>("Action1"),
-                          /*keep_matching=*/true));
+      XdsMatcher::OnMatch(std::make_unique<TestAction>("Action1"), true));
   // Matcher 2: Would not match.
   auto predicate2 = std::make_unique<MockPredicate>();
   EXPECT_CALL(*predicate2, Match(::testing::_))
       .WillOnce(::testing::Return(false));
   matchers.emplace_back(
       std::move(predicate2),
-      XdsMatcher::OnMatch(std::make_unique<TestAction>("Action2"),
-                          /*keep_matching=*/false));
+      XdsMatcher::OnMatch(std::make_unique<TestAction>("Action2"), false));
   // Matcher 3: Would also match Terminal match, with keep matching as false
   auto predicate3 = std::make_unique<MockPredicate>();
   EXPECT_CALL(*predicate3, Match(::testing::_))
       .WillOnce(::testing::Return(true));
   matchers.emplace_back(
       std::move(predicate3),
-      XdsMatcher::OnMatch(std::make_unique<TestAction>("Action3"),
-                          /*keep_matching=*/false));
+      XdsMatcher::OnMatch(std::make_unique<TestAction>("Action3"), false));
   XdsMatcherList matcher_list(std::move(matchers), std::nullopt);
   TestMatchContext context("/qux");
   XdsMatcher::Result result;
