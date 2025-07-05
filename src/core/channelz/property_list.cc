@@ -119,15 +119,13 @@ grpc_channelz_v2_PropertyValue* ToUpbProto(const PropertyValue& value,
 void PropertyList::SetInternal(absl::string_view key,
                                std::optional<PropertyValue> value) {
   if (value.has_value()) {
-    property_list_.insert_or_assign(key, *std::move(value));
-  } else {
-    property_list_.erase(std::string(key));
+    property_list_.emplace_back(std::string(key), *std::move(value));
   }
 }
 
 PropertyList& PropertyList::Merge(PropertyList other) {
   for (auto& [key, value] : other.property_list_) {
-    SetInternal(key, value);
+    SetInternal(key, std::move(value));
   }
   return *this;
 }
@@ -135,16 +133,24 @@ PropertyList& PropertyList::Merge(PropertyList other) {
 Json::Object PropertyList::TakeJsonObject() {
   Json::Object json;
   for (auto& [key, value] : property_list_) {
-    json.emplace(key, ToJson(value));
+    json.emplace(std::string(key), ToJson(value));
   }
   return json;
 }
 
 void PropertyList::FillUpbProto(grpc_channelz_v2_PropertyList* proto,
                                 upb_Arena* arena) {
+  auto* elements = grpc_channelz_v2_PropertyList_resize_properties(
+      proto, property_list_.size(), arena);
+  size_t i = 0;
   for (auto& [key, value] : property_list_) {
-    grpc_channelz_v2_PropertyList_properties_set(
-        proto, StdStringToUpbString(key), ToUpbProto(value, arena), arena);
+    auto* element = grpc_channelz_v2_PropertyList_Element_new(arena);
+    grpc_channelz_v2_PropertyList_Element_set_key(
+        element, CopyStdStringToUpbString(key, arena));
+    grpc_channelz_v2_PropertyList_Element_set_value(element,
+                                                    ToUpbProto(value, arena));
+    elements[i] = element;
+    i++;
   }
 }
 
@@ -244,28 +250,18 @@ void PropertyGrid::SetInternal(absl::string_view column, absl::string_view row,
 PropertyGrid& PropertyGrid::SetColumn(absl::string_view column,
                                       PropertyList values) {
   int c = GetIndex(columns_, column);
-  std::vector<std::string> keys;
-  for (const auto& [key, value] : values.property_list_) {
-    keys.push_back(key);
-  }
-  std::sort(keys.begin(), keys.end());
-  for (const auto& key : keys) {
-    grid_.emplace(std::pair(c, GetIndex(rows_, key)),
-                  std::move(values.property_list_.at(key)));
+  for (auto& [key, value] : values.property_list_) {
+    grid_.emplace(std::pair(c, GetIndex(rows_, std::move(key))),
+                  std::move(value));
   }
   return *this;
 }
 
 PropertyGrid& PropertyGrid::SetRow(absl::string_view row, PropertyList values) {
   int r = GetIndex(rows_, row);
-  std::vector<std::string> keys;
-  for (const auto& [key, value] : values.property_list_) {
-    keys.push_back(key);
-  }
-  std::sort(keys.begin(), keys.end());
-  for (const auto& key : keys) {
-    grid_.emplace(std::pair(GetIndex(columns_, key), r),
-                  std::move(values.property_list_.at(key)));
+  for (auto& [key, value] : values.property_list_) {
+    grid_.emplace(std::pair(GetIndex(columns_, std::move(key)), r),
+                  std::move(value));
   }
   return *this;
 }
