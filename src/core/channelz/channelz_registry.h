@@ -106,6 +106,11 @@ class ChannelzRegistry final {
             start_server_id);
   }
 
+  static std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool> GetChildren(
+      const BaseNode* parent, intptr_t start_node, size_t max_results) {
+    return Default()->InternalGetChildren(parent, start_node, max_results);
+  }
+
   static std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool>
   GetChildrenOfType(intptr_t start_node, const BaseNode* parent,
                     BaseNode::EntityType type, size_t max_results) {
@@ -214,6 +219,15 @@ class ChannelzRegistry final {
       intptr_t start_node,
       absl::FunctionRef<bool(const BaseNode*)> discriminator,
       size_t max_results);
+
+  std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool>
+  InternalGetChildren(const BaseNode* parent, intptr_t start_node,
+                      size_t max_results) {
+    return QueryNodes(
+        start_node,
+        [parent](const BaseNode* n) { return n->HasParent(parent); },
+        max_results);
+  }
 
   std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool>
   InternalGetChildrenOfType(intptr_t start_node, const BaseNode* parent,
