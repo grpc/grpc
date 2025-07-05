@@ -6290,6 +6290,34 @@ add_library(grpcpp_channelz ${_gRPC_STATIC_WIN32}
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/service.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/service.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/service.grpc.pb.h
+  src/core/channelz/v2tov1/convert.cc
+  src/core/channelz/v2tov1/property_list.cc
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/api.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/compiler/plugin.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/field_mask.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/source_context.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/type.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/api.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/compiler/plugin.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/field_mask.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/source_context.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/struct.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/type.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.c
   src/cpp/server/channelz/channelz_service.cc
   src/cpp/server/channelz/channelz_service_plugin.cc
 )

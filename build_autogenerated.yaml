@@ -5217,11 +5217,80 @@ libs:
   public_headers:
   - include/grpcpp/ext/channelz_service_plugin.h
   headers:
+  - src/core/channelz/v2tov1/convert.h
+  - src/core/channelz/v2tov1/property_list.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/api.upb.h
+  - src/core/ext/upb-gen/google/protobuf/api.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/compiler/plugin.upb.h
+  - src/core/ext/upb-gen/google/protobuf/compiler/plugin.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/field_mask.upb.h
+  - src/core/ext/upb-gen/google/protobuf/field_mask.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/source_context.upb.h
+  - src/core/ext/upb-gen/google/protobuf/source_context.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/struct.upb.h
+  - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/type.upb.h
+  - src/core/ext/upb-gen/google/protobuf/type.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/wrappers.upb.h
+  - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.h
+  - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/api.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/compiler/plugin.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/field_mask.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/source_context.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/struct.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/type.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.h
   - src/cpp/server/channelz/channelz_service.h
   src:
   - src/proto/grpc/channelz/channelz.proto
   - src/proto/grpc/channelz/v2/channelz.proto
   - src/proto/grpc/channelz/v2/service.proto
+  - src/core/channelz/v2tov1/convert.cc
+  - src/core/channelz/v2tov1/property_list.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/api.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/compiler/plugin.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/field_mask.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/source_context.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/type.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.c
+  - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/api.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/compiler/plugin.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/field_mask.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/source_context.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/struct.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/type.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.c
   - src/cpp/server/channelz/channelz_service.cc
   - src/cpp/server/channelz/channelz_service_plugin.cc
   deps:
