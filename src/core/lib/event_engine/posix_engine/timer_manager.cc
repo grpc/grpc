@@ -155,8 +155,9 @@ void TimerManager::SuspendOrShutdown(bool shutdown) {
     cv_wait_.Signal();
   }
   main_loop_exit_signal_->WaitForNotification();
-  GRPC_TRACE_VLOG(timer, 2) << "TimerManager::" << this
-                              << (shutdown ? " shutdown complete" : " suspend complete");
+  GRPC_TRACE_VLOG(timer, 2)
+      << "TimerManager::" << this
+      << (shutdown ? " shutdown complete" : " suspend complete");
 }
 
 }  // namespace grpc_event_engine::experimental
