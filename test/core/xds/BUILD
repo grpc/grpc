@@ -298,7 +298,7 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
         "@com_github_cncf_xds//xds/type/matcher/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/common/matcher/v3:pkg_cc_proto",
-        "@envoy_api//envoy/type/matcher/v3:pkg",
+        "@envoy_api//envoy/type/matcher/v3:pkg_cc_proto",
     ],
 )
 
