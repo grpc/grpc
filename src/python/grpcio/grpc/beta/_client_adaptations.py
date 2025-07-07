@@ -25,7 +25,6 @@ from typing import (
     Tuple,
     Type,
     Union,
-    Protocol,
 )
 
 import grpc
@@ -35,24 +34,12 @@ from grpc.beta import interfaces
 from grpc.framework.common import cardinality
 from grpc.framework.foundation import future
 from grpc.framework.interfaces.face import face
+from ._typing import _Metadata
 
-class _DoneCallback(Protocol):
+_DoneCallback = Any
+_Receiver = Any
 
-    def __call__(self, rendezvous: "_Rendezvous") -> None:
-        ...
-
-
-class _Receiver(Protocol):
-
-    def __call__(
-        self,
-        response: _Response,
-        call: face.Call,
-        abortion_callback: _AbortionCallback,
-    ) -> None:
-        ...
-
-
+# pylint: disable=too-many-arguments,too-many-locals,unused-argument
 _STATUS_CODE_TO_ABORTION_KIND_AND_ABORTION_ERROR_CLASS: Dict[
     grpc.StatusCode, Tuple[face.Abortion.Kind, Type[face.AbortionError]]
 ] = {
