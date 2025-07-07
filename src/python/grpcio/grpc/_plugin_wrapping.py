@@ -81,7 +81,7 @@ class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
 class _Plugin(object):
     _metadata_plugin: grpc.AuthMetadataPlugin
 
-    def __init__(self, metadata_plugin: grpc.AuthMetadataPlugin):
+    def __init__(self, metadata_plugin: grpc.AuthMetadataPlugin) -> None:
         self._metadata_plugin = metadata_plugin
         self._stored_ctx = None
 
