@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Functions that obviate explicit stubs and explicit channels."""
+from __future__ import annotations
 
 import collections
 import datetime
@@ -109,7 +110,7 @@ class ChannelCache:
         self._eviction_thread.start()
 
     @staticmethod
-    def get() -> "ChannelCache":
+    def get() -> ChannelCache:
         with ChannelCache._lock:
             if ChannelCache._singleton is None:
                 ChannelCache._singleton = ChannelCache()
