@@ -25,41 +25,39 @@ Enabling parallel build helps a lot.
 """
 
 import os
-from typing import Any, List, Optional, Tuple
 
 try:
-    BUILD_EXT_COMPILER_JOBS: int = int(
+    BUILD_EXT_COMPILER_JOBS = int(
         os.environ["GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS"]
     )
 except KeyError:
     import multiprocessing
 
-    BUILD_EXT_COMPILER_JOBS: int = multiprocessing.cpu_count()
+    BUILD_EXT_COMPILER_JOBS = multiprocessing.cpu_count()
 except ValueError:
-    BUILD_EXT_COMPILER_JOBS: int = 1
+    BUILD_EXT_COMPILER_JOBS = 1
 
-OptionalListStr = Optional[List[str]]
 
 # monkey-patch for parallel compilation
 def _parallel_compile(
-    self: Any,
-    sources: List[str],
-    output_dir: Optional[str] = None,
-    macros: Optional[List[Tuple[str, Optional[str]]]] = None,
-    include_dirs: OptionalListStr = None,
-    debug: int = 0,
-    extra_preargs: OptionalListStr = None,
-    extra_postargs: OptionalListStr = None,
-    depends: OptionalListStr = None,
-) -> List[str]:
+    self,
+    sources,
+    output_dir=None,
+    macros=None,
+    include_dirs=None,
+    debug=0,
+    extra_preargs=None,
+    extra_postargs=None,
+    depends=None,
+):
     # setup the same way as distutils.ccompiler.CCompiler
     # https://github.com/python/cpython/blob/31368a4f0e531c19affe2a1becd25fc316bc7501/Lib/distutils/ccompiler.py#L564
     macros, objects, extra_postargs, pp_opts, build = self._setup_compile(
         str(output_dir), macros, include_dirs, sources, depends, extra_postargs
     )
-    cc_args: List[str] = self._get_cc_args(pp_opts, debug, extra_preargs)
+    cc_args = self._get_cc_args(pp_opts, debug, extra_preargs)
 
-    def _compile_single_file(obj: str) -> None:
+    def _compile_single_file(obj):
         try:
             src, ext = build[obj]
         except KeyError:
@@ -75,7 +73,7 @@ def _parallel_compile(
     return objects
 
 
-def monkeypatch_compile_maybe() -> None:
+def monkeypatch_compile_maybe():
     """
     Monkeypatching is dumb, but the build speed gain is worth it.
     After python 3.12, we won't find distutils if SETUPTOOLS_USE_DISTUTILS=stdlib.
