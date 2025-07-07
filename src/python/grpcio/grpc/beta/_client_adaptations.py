@@ -1052,7 +1052,7 @@ class _GenericStub(face.GenericStub):
             response_deserializer,
         )
 
-    def __enter__(self) -> "_GenericStub":
+    def __enter__(self) -> _GenericStub:
         return self
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
@@ -1089,7 +1089,7 @@ class _DynamicStub(face.DynamicStub):
                 '_DynamicStub object has no attribute "%s"!' % attr
             )
 
-    def __enter__(self) -> "_DynamicStub":
+    def __enter__(self) -> _DynamicStub:
         return self
 
     def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
