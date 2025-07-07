@@ -183,8 +183,8 @@ class Appender {
   static void Disable();
 
   Sink* sink_;
-  static inline thread_local std::unique_ptr<Bin> bin_;
-  static inline std::atomic<Sink*> active_sink_;
+  static thread_local std::unique_ptr<Bin> bin_;
+  static std::atomic<Sink*> active_sink_;
 };
 
 inline void Flush() {

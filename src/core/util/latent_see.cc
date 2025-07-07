@@ -27,6 +27,10 @@
 #include "src/core/util/sync.h"
 
 namespace grpc_core::latent_see {
+
+thread_local std::unique_ptr<Bin> Appender::bin_;
+std::atomic<Sink*> Appender::active_sink_;
+
 std::string JsonOutput::MicrosString(int64_t nanos) {
   CHECK_GE(nanos, 0);
   const auto micros = nanos / 1000;
