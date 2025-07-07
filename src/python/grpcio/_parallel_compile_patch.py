@@ -80,7 +80,7 @@ def monkeypatch_compile_maybe() -> None:
     Monkeypatching is dumb, but the build speed gain is worth it.
     After python 3.12, we won't find distutils if SETUPTOOLS_USE_DISTUTILS=stdlib.
     """
-    use_distutils: str = os.environ.get("SETUPTOOLS_USE_DISTUTILS", "")
+    use_distutils = os.environ.get("SETUPTOOLS_USE_DISTUTILS", "")
     if BUILD_EXT_COMPILER_JOBS > 1 and use_distutils != "stdlib":
         import distutils.ccompiler  # pylint: disable=wrong-import-position
 
