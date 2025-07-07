@@ -73,11 +73,19 @@ class TimerManager final {
     TimerManager* const timer_manager_;
   };
 
+  enum class State {
+    kRunning,   // processing timers
+    kShutdown,  // Shutdown
+    kSuspended  // Temporarily suspended, e.g. on fork
+  };
+
   void RestartPostFork();
   void MainLoop();
   void RunSomeTimers(std::vector<experimental::EventEngine::Closure*> timers);
   bool WaitUntil(grpc_core::Timestamp next);
   void Kick();
+
+  void SuspendOrShutdown(bool shutdown);
 
   grpc_core::Mutex mu_;
   // Condvar associated with the main thread waiting to wakeup and work.
@@ -88,7 +96,7 @@ class TimerManager final {
   grpc_core::CondVar cv_wait_;
   Host host_;
   // are we shutting down?
-  bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
+  State state_ ABSL_GUARDED_BY(mu_) = {State::kRunning};
   // are we shutting down?
   bool kicked_ ABSL_GUARDED_BY(mu_) = false;
   // number of timer wakeups
