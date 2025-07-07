@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.74.0-dev'
+  version = '1.75.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -281,6 +281,7 @@ Pod::Spec.new do |s|
                       'src/core/call/call_state.h',
                       'src/core/call/client_call.h',
                       'src/core/call/custom_metadata.h',
+                      'src/core/call/filter_fusion.h',
                       'src/core/call/interception_chain.h',
                       'src/core/call/message.h',
                       'src/core/call/metadata.h',
@@ -974,6 +975,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/common_closures.h',
                       'src/core/lib/event_engine/default_event_engine.h',
                       'src/core/lib/event_engine/default_event_engine_factory.h',
+                      'src/core/lib/event_engine/endpoint_channel_arg_wrapper.h',
                       'src/core/lib/event_engine/event_engine_context.h',
                       'src/core/lib/event_engine/extensions/blocking_dns.h',
                       'src/core/lib/event_engine/extensions/can_track_errors.h',
@@ -1235,6 +1237,7 @@ Pod::Spec.new do |s|
                       'src/core/server/xds_channel_stack_modifier.h',
                       'src/core/service_config/service_config.h',
                       'src/core/service_config/service_config_call_data.h',
+                      'src/core/service_config/service_config_channel_arg_filter.h',
                       'src/core/service_config/service_config_impl.h',
                       'src/core/service_config/service_config_parser.h',
                       'src/core/telemetry/call_tracer.h',
@@ -1628,6 +1631,7 @@ Pod::Spec.new do |s|
                               'src/core/call/call_state.h',
                               'src/core/call/client_call.h',
                               'src/core/call/custom_metadata.h',
+                              'src/core/call/filter_fusion.h',
                               'src/core/call/interception_chain.h',
                               'src/core/call/message.h',
                               'src/core/call/metadata.h',
@@ -2321,6 +2325,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/common_closures.h',
                               'src/core/lib/event_engine/default_event_engine.h',
                               'src/core/lib/event_engine/default_event_engine_factory.h',
+                              'src/core/lib/event_engine/endpoint_channel_arg_wrapper.h',
                               'src/core/lib/event_engine/event_engine_context.h',
                               'src/core/lib/event_engine/extensions/blocking_dns.h',
                               'src/core/lib/event_engine/extensions/can_track_errors.h',
@@ -2582,6 +2587,7 @@ Pod::Spec.new do |s|
                               'src/core/server/xds_channel_stack_modifier.h',
                               'src/core/service_config/service_config.h',
                               'src/core/service_config/service_config_call_data.h',
+                              'src/core/service_config/service_config_channel_arg_filter.h',
                               'src/core/service_config/service_config_impl.h',
                               'src/core/service_config/service_config_parser.h',
                               'src/core/telemetry/call_tracer.h',

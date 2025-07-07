@@ -704,14 +704,6 @@ inline auto MaybeAddNullConfig(
     GTEST_SKIP() << "Disabled for initial v3 testing";         \
   }
 
-// TODO(tjagtap) : [PH2][P4] : This should not be needed once E2E suite starts
-// working. Fix all tests are remove this macro
-#define SKIP_TEST_PH2_CLIENT()                                     \
-  if (test_config()->feature_mask & FEATURE_MASK_IS_PH2_CLIENT) {  \
-    CHECK(grpc_core::IsPromiseBasedHttp2ClientTransportEnabled()); \
-    GTEST_SKIP() << "Disabled this test for initial PH2 testing";  \
-  }
-
 // PH2 test MUST only be run when PH2 experiment is enabled.
 // Non-PH2 tests MUST only be run when PH2 experiment is disabled
 #define SKIP_E2E_SUITE_FOR_PH2(bits)                              \

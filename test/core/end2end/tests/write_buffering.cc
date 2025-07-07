@@ -28,7 +28,6 @@
 namespace grpc_core {
 // Client sends a request with payload, server reads then returns status.
 CORE_END2END_TEST(WriteBufferingTests, WriteBufferingWorks) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   c.NewBatch(1).SendInitialMetadata({});
   IncomingMetadata server_initial_metadata;

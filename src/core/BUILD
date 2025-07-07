@@ -3541,6 +3541,7 @@ grpc_cc_library(
     deps = [
         "avl",
         "channel_stack_type",
+        "channelz_property_list",
         "dual_ref_counted",
         "ref_counted",
         "ref_counted_string",
@@ -3617,6 +3618,49 @@ grpc_cc_library(
         "match",
     ],
 )
+
+grpc_cc_library(
+    name = "fused_filters",
+    srcs = [
+        "filter/fused_filters.cc",
+    ],
+    deps = [
+        "experiments",
+        "filter_fusion",
+        "grpc_authorization_base",
+        "grpc_client_authority_filter",
+        "grpc_lb_policy_grpclb",
+        "grpc_message_size_filter",
+        "server_call_tracer_filter",
+        "service_config_channel_arg_filter",
+        "//:config",
+        "//:gpr",
+        "//:grpc_http_filters",
+        "//:grpc_public_hdrs",
+        "//:grpc_security_base",
+    ],
+)
+
+# grpc_cc_library(
+#     name = "grpc_auth_filters",
+#     srcs = [
+#         "filter/auth/client_auth_filter.cc",
+#         "filter/auth/server_auth_filter.cc",
+#     ],
+#     hdrs = ["filter/auth/auth_filters.h"],
+#     deps = [
+#         "experiments",
+#         "filter_fusion",
+#         "grpc_client_authority_filter",
+#         "grpc_lb_policy_grpclb",
+#         "grpc_message_size_filter",
+#         "//:config",
+#         "//:gpr",
+#         "//:grpc_http_filters",
+#         "//:grpc_public_hdrs",
+#         "//:grpc_security_base",
+#     ],
+# )
 
 grpc_cc_library(
     name = "subchannel_connector",
@@ -3830,6 +3874,7 @@ grpc_cc_library(
     srcs = [
         "service_config/service_config_channel_arg_filter.cc",
     ],
+    hdrs = ["service_config/service_config_channel_arg_filter.h"],
     external_deps = [
         "absl/log",
         "absl/status",
@@ -8295,6 +8340,7 @@ grpc_cc_library(
         "channel_args_preconditioning",
         "channel_stack_type",
         "closure",
+        "endpoint_channel_arg_wrapper",
         "endpoint_transport_client_channel_factory",
         "error",
         "error_utils",
@@ -9746,11 +9792,13 @@ grpc_cc_library(
         "call_filters",
         "call_final_info",
         "channel_args",
+        "gpr_manual_constructor",
         "metadata",
         "status_helper",
         "type_list",
         "//:grpc_base",
         "//:grpc_public_hdrs",
+        "//:promise",
     ],
 )
 

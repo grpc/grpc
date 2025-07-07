@@ -66,12 +66,10 @@ void CancelAfterClientDone(
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, CancelAfterClientDone) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   CancelAfterClientDone(*this, std::make_unique<CancelCancellationMode>());
 }
 
 CORE_END2END_TEST(CoreDeadlineTests, DeadlineAfterClientDone) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   CancelAfterClientDone(*this, std::make_unique<DeadlineCancellationMode>());
 }
 

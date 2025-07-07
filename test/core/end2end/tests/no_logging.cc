@@ -181,7 +181,6 @@ void SimpleRequest(CoreEnd2endTest& test) {
 }
 
 CORE_END2END_TEST(NoLoggingTests, NoLoggingTest) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
 // This test makes sure that we don't get log noise when making an rpc
 // especially when rpcs are successful.
 

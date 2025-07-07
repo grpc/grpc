@@ -146,6 +146,7 @@ libs:
   - include/grpc/byte_buffer_reader.h
   - include/grpc/census.h
   - include/grpc/compression.h
+  - include/grpc/create_channel_from_endpoint.h
   - include/grpc/credentials.h
   - include/grpc/event_engine/endpoint_config.h
   - include/grpc/event_engine/event_engine.h
@@ -194,6 +195,7 @@ libs:
   - src/core/call/call_state.h
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
+  - src/core/call/filter_fusion.h
   - src/core/call/interception_chain.h
   - src/core/call/message.h
   - src/core/call/metadata.h
@@ -885,6 +887,7 @@ libs:
   - src/core/lib/event_engine/common_closures.h
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
+  - src/core/lib/event_engine/endpoint_channel_arg_wrapper.h
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/event_engine/extensions/blocking_dns.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
@@ -1145,6 +1148,7 @@ libs:
   - src/core/server/xds_channel_stack_modifier.h
   - src/core/service_config/service_config.h
   - src/core/service_config/service_config_call_data.h
+  - src/core/service_config/service_config_channel_arg_filter.h
   - src/core/service_config/service_config_impl.h
   - src/core/service_config/service_config_parser.h
   - src/core/telemetry/call_tracer.h
@@ -1781,6 +1785,7 @@ libs:
   - src/core/filter/auth/client_auth_filter.cc
   - src/core/filter/auth/server_auth_filter.cc
   - src/core/filter/blackboard.cc
+  - src/core/filter/fused_filters.cc
   - src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   - src/core/handshaker/handshaker.cc
   - src/core/handshaker/handshaker_registry.cc
@@ -1789,6 +1794,7 @@ libs:
   - src/core/handshaker/http_connect/xds_http_proxy_mapper.cc
   - src/core/handshaker/proxy_mapper_registry.cc
   - src/core/handshaker/security/legacy_secure_endpoint.cc
+  - src/core/handshaker/security/pipelined_secure_endpoint.cc
   - src/core/handshaker/security/secure_endpoint.cc
   - src/core/handshaker/security/security_handshaker.cc
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc
@@ -1813,6 +1819,7 @@ libs:
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
+  - src/core/lib/event_engine/endpoint_channel_arg_wrapper.cc
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
@@ -2283,6 +2290,7 @@ libs:
   - include/grpc/byte_buffer_reader.h
   - include/grpc/census.h
   - include/grpc/compression.h
+  - include/grpc/create_channel_from_endpoint.h
   - include/grpc/credentials.h
   - include/grpc/event_engine/endpoint_config.h
   - include/grpc/event_engine/event_engine.h
@@ -2331,6 +2339,7 @@ libs:
   - src/core/call/call_state.h
   - src/core/call/client_call.h
   - src/core/call/custom_metadata.h
+  - src/core/call/filter_fusion.h
   - src/core/call/interception_chain.h
   - src/core/call/message.h
   - src/core/call/metadata.h
@@ -2538,6 +2547,7 @@ libs:
   - src/core/lib/event_engine/common_closures.h
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
+  - src/core/lib/event_engine/endpoint_channel_arg_wrapper.h
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/event_engine/extensions/blocking_dns.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
@@ -2785,6 +2795,7 @@ libs:
   - src/core/server/server_interface.h
   - src/core/service_config/service_config.h
   - src/core/service_config/service_config_call_data.h
+  - src/core/service_config/service_config_channel_arg_filter.h
   - src/core/service_config/service_config_impl.h
   - src/core/service_config/service_config_parser.h
   - src/core/telemetry/call_tracer.h
@@ -3011,6 +3022,7 @@ libs:
   - src/core/filter/auth/client_auth_filter.cc
   - src/core/filter/auth/server_auth_filter.cc
   - src/core/filter/blackboard.cc
+  - src/core/filter/fused_filters.cc
   - src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   - src/core/handshaker/handshaker.cc
   - src/core/handshaker/handshaker_registry.cc
@@ -3018,6 +3030,7 @@ libs:
   - src/core/handshaker/http_connect/http_proxy_mapper.cc
   - src/core/handshaker/proxy_mapper_registry.cc
   - src/core/handshaker/security/legacy_secure_endpoint.cc
+  - src/core/handshaker/security/pipelined_secure_endpoint.cc
   - src/core/handshaker/security/secure_endpoint.cc
   - src/core/handshaker/security/security_handshaker.cc
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc
@@ -3042,6 +3055,7 @@ libs:
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
+  - src/core/lib/event_engine/endpoint_channel_arg_wrapper.cc
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
@@ -4433,6 +4447,7 @@ libs:
   - include/grpc/byte_buffer.h
   - include/grpc/byte_buffer_reader.h
   - include/grpc/compression.h
+  - include/grpc/create_channel_from_endpoint.h
   - include/grpc/credentials.h
   - include/grpc/event_engine/endpoint_config.h
   - include/grpc/event_engine/event_engine.h
@@ -4913,6 +4928,7 @@ libs:
   - src/core/handshaker/handshaker_registry.cc
   - src/core/handshaker/proxy_mapper_registry.cc
   - src/core/handshaker/security/legacy_secure_endpoint.cc
+  - src/core/handshaker/security/pipelined_secure_endpoint.cc
   - src/core/handshaker/security/secure_endpoint.cc
   - src/core/handshaker/security/security_handshaker.cc
   - src/core/lib/address_utils/parse_address.cc
@@ -5213,6 +5229,8 @@ libs:
   - src/cpp/server/channelz/channelz_service.h
   src:
   - src/proto/grpc/channelz/channelz.proto
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/service.proto
   - src/cpp/server/channelz/channelz_service.cc
   - src/cpp/server/channelz/channelz_service_plugin.cc
   deps:
@@ -6121,6 +6139,19 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/filter/blackboard.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/channel/channel_args.h
@@ -6136,14 +6167,26 @@ targets:
   - src/core/util/avl.h
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
+  - src/core/util/json/json.h
+  - src/core/util/match.h
   - src/core/util/orphanable.h
+  - src/core/util/overload.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ref_counted_string.h
   - src/core/util/time.h
   - src/core/util/unique_type_name.h
+  - src/core/util/upb_utils.h
   - src/core/util/uri.h
+  - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/filter/blackboard.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/channel/channel_args.cc
@@ -6157,6 +6200,7 @@ targets:
   - test/core/filters/blackboard_test.cc
   deps:
   - gtest
+  - upb_textformat_lib
   - absl/base:config
   - absl/container:flat_hash_map
   - absl/functional:function_ref
@@ -7828,6 +7872,29 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
+- name: channelz_v2_service_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/cpp/end2end/test_service_impl.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/cpp/end2end/channelz_v2_service_test.cc
+  - test/cpp/end2end/test_service_impl.cc
+  deps:
+  - gtest
+  - grpcpp_channelz
+  - grpc++_test_util
 - name: check_gcp_environment_linux_test
   gtest: true
   build: test
@@ -8684,6 +8751,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -8728,6 +8796,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -8808,6 +8877,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -8940,6 +9010,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -9020,6 +9091,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -9064,6 +9136,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -9140,6 +9213,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -9184,6 +9258,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -9260,6 +9335,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -9392,6 +9468,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -9468,6 +9545,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -9600,6 +9678,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -9676,6 +9755,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -9720,6 +9800,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -9796,6 +9877,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -9928,6 +10010,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -10004,6 +10087,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -10048,6 +10132,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -10124,6 +10209,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -10256,6 +10342,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -10307,6 +10394,19 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/surface/channel_stack_type.h
@@ -10314,12 +10414,24 @@ targets:
   - src/core/util/avl.h
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
+  - src/core/util/json/json.h
+  - src/core/util/match.h
   - src/core/util/orphanable.h
+  - src/core/util/overload.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ref_counted_string.h
   - src/core/util/time.h
+  - src/core/util/upb_utils.h
+  - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/surface/channel_stack_type.cc
@@ -10328,7 +10440,9 @@ targets:
   - test/core/event_engine/endpoint_config_test.cc
   deps:
   - gtest
+  - upb_textformat_lib
   - absl/base:config
+  - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor

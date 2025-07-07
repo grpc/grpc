@@ -32,8 +32,7 @@ namespace {
 // then a subsequent recv op is started.  This ensures that we do not
 // incorrectly attempt to replay the send op.
 CORE_END2END_TEST(RetryTests, RetrySendRecvBatch) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
-  SKIP_IF_V3();            // Not working yet
+  SKIP_IF_V3();  // Not working yet
   InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,

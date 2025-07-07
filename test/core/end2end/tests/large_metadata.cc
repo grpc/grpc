@@ -91,7 +91,6 @@ class LargeMetadataTest {
 // Server responds with metadata under soft limit of what client accepts. No
 // requests should be rejected.
 CORE_END2END_TEST(Http2SingleHopTests, RequestWithLargeMetadataUnderSoftLimit) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   const size_t soft_limit = 32 * 1024;
   const size_t hard_limit = 45 * 1024;
   const size_t metadata_size = soft_limit;
@@ -120,7 +119,6 @@ CORE_END2END_TEST(Http2SingleHopTests,
 // Server responds with metadata above hard limit of what the client accepts.
 // All requests should be rejected.
 CORE_END2END_TEST(Http2SingleHopTests, RequestWithLargeMetadataAboveHardLimit) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   const size_t soft_limit = 32 * 1024;
   const size_t hard_limit = 45 * 1024;
   const size_t metadata_size = hard_limit * 3 / 2;

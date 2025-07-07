@@ -1,8 +1,43 @@
 dl.field-list > dt {
     word-break: keep-all !important;
 }
+.document {
+  width: 90% !important;
+  margin: 0 auto;
+  display: flex;
+}
 .sphinxsidebar {
     overflow-y: scroll;
     top: 0;
     bottom: 0;
+    width: 35% !important;
+    flex-shrink: 0 !important;
+    min-width: 340px !important;
+    position: unset !important;
+}
+.bodywrapper {
+  margin: auto !important;
+}
+.body {
+  max-width: 100% !important;
+  min-width: 800px !important;
+}
+.footer {
+  margin: 20px 50px 30px auto !important;
+}
+
+@media (max-width: 875px) {
+  .document {
+    flex-direction: column;
+  }
+  .sphinxsidebar {
+    width: 100% !important;
+    background: white !important;
+  }
+  .sphinxsidebar a {
+    color: #444 !important;
+  }
+  .sphinxsidebar h3, .sphinxsidebar h4, .sphinxsidebar p, .sphinxsidebar h3 a {
+    color: #444 !important;
+  }
 }

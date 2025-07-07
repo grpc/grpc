@@ -30,12 +30,14 @@ EXPERIMENT_ENABLES = {
     "event_engine_for_all_other_endpoints": "event_engine_client,event_engine_dns,event_engine_dns_non_client_channel,event_engine_for_all_other_endpoints,event_engine_listener",
     "event_engine_secure_endpoint": "event_engine_secure_endpoint",
     "free_large_allocator": "free_large_allocator",
+    "fuse_filters": "fuse_filters",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
     "max_inflight_pings_strict_limit": "max_inflight_pings_strict_limit",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
     "pick_first_ignore_empty_updates": "pick_first_ignore_empty_updates",
+    "pipelined_read_secure_endpoint": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,pipelined_read_secure_endpoint",
     "pollset_alternative": "event_engine_client,event_engine_listener,pollset_alternative",
     "prioritize_finished_requests": "prioritize_finished_requests",
     "promise_based_http2_client_transport": "promise_based_http2_client_transport",
@@ -62,6 +64,7 @@ EXPERIMENT_POLLERS = [
     "event_engine_listener",
     "event_engine_for_all_other_endpoints",
     "event_engine_secure_endpoint",
+    "pipelined_read_secure_endpoint",
 ]
 
 EXPERIMENTS = {
@@ -74,6 +77,7 @@ EXPERIMENTS = {
                 "error_flatten",
                 "event_engine_fork",
                 "local_connector_secure",
+                "pipelined_read_secure_endpoint",
                 "pollset_alternative",
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
@@ -97,12 +101,18 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
+            "minimal_stack_test": [
+                "fuse_filters",
+            ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
             ],
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
+            ],
+            "secure_endpoint_test": [
+                "pipelined_read_secure_endpoint",
             ],
             "xds_end2end_test": [
                 "error_flatten",
@@ -144,6 +154,7 @@ EXPERIMENTS = {
                 "error_flatten",
                 "event_engine_fork",
                 "local_connector_secure",
+                "pipelined_read_secure_endpoint",
                 "pollset_alternative",
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
@@ -167,12 +178,18 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
+            "minimal_stack_test": [
+                "fuse_filters",
+            ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
             ],
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
+            ],
+            "secure_endpoint_test": [
+                "pipelined_read_secure_endpoint",
             ],
             "xds_end2end_test": [
                 "error_flatten",
@@ -214,6 +231,7 @@ EXPERIMENTS = {
                 "error_flatten",
                 "event_engine_fork",
                 "local_connector_secure",
+                "pipelined_read_secure_endpoint",
                 "pollset_alternative",
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
@@ -237,12 +255,18 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
+            "minimal_stack_test": [
+                "fuse_filters",
+            ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
             ],
             "resource_quota_test": [
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
+            ],
+            "secure_endpoint_test": [
+                "pipelined_read_secure_endpoint",
             ],
             "xds_end2end_test": [
                 "error_flatten",
