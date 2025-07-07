@@ -25,7 +25,7 @@ Enabling parallel build helps a lot.
 """
 
 import os
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple
 
 try:
     BUILD_EXT_COMPILER_JOBS: int = int(
