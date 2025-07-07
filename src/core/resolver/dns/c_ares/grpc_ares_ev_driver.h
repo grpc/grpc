@@ -31,6 +31,8 @@
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/util/sync.h"
 
+#if GRPC_ARES == 1
+
 namespace grpc_core {
 
 // A wrapped fd that integrates with the grpc iomgr of the current platform.
@@ -84,5 +86,7 @@ class GrpcPolledFdFactory {
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(Mutex* mu);
 
 }  // namespace grpc_core
+
+#endif  // GRPC_ARES
 
 #endif  // GRPC_SRC_CORE_RESOLVER_DNS_C_ARES_GRPC_ARES_EV_DRIVER_H
