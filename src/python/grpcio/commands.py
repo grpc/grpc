@@ -265,7 +265,7 @@ class BuildExt(build_ext.build_ext):
             ]
           return old_compile(obj, src, ext, cc_args, extra_postargs, pp_opts)
 
-        self.compiler.compile = new_compile
+        self.compiler._compile = new_compile
 
         compiler = self.compiler.compiler_type
         if compiler in BuildExt.C_OPTIONS:
