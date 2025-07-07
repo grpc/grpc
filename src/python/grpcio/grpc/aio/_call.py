@@ -388,7 +388,7 @@ class _StreamResponseMixin(Call):
             self._message_aiter = self._fetch_stream_responses()
         return self._message_aiter
 
-    async def _read(self) -> ResponseType:
+    async def _read(self) -> Union[EOFType, ResponseType]:
         # Wait for the request being sent
         await self._preparation
 
@@ -595,7 +595,7 @@ class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall):
         self._invocation_task = loop.create_task(self._invoke())
         self._init_unary_response_mixin(self._invocation_task)
 
-    async def _invoke(self) -> ResponseType:
+    async def _invoke(self) -> Union[EOFType, ResponseType]:
         serialized_request = _common.serialize(
             self._request,
             self._request_serializer,
@@ -724,7 +724,7 @@ class StreamUnaryCall(
         self._init_stream_request_mixin(request_iterator)
         self._init_unary_response_mixin(loop.create_task(self._conduct_rpc()))
 
-    async def _conduct_rpc(self) -> ResponseType:
+    async def _conduct_rpc(self) -> Union[EOFType, ResponseType]:
         try:
             serialized_response = await self._cython_call.stream_unary(
                 self._metadata,
