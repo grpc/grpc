@@ -45,7 +45,7 @@ grpc_internal_proto_library(
         "@com_google_protobuf//:empty_proto",
         "@com_google_protobuf//:timestamp_proto",
         "@com_google_protobuf//:wrappers_proto",
-    ]
+    ],
 )
 
 filegroup(
