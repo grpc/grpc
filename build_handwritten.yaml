@@ -163,6 +163,18 @@ php_config_m4:
   - boringssl
   - re2
   - z
+  - upb_base_lib
+  - upb_hash_lib
+  - upb_mem_lib
+  - upb_lex_lib
+  - upb_message_lib
+  - upb_json_lib
+  - upb_mini_descriptor_lib
+  - upb_mini_table_lib
+  - upb_reflection_lib
+  - upb_textformat_lib
+  - upb_wire_lib
+  - utf8_range_lib
   headers:
   - src/php/ext/grpc/byte_buffer.h
   - src/php/ext/grpc/call.h
@@ -187,6 +199,25 @@ php_config_m4:
   - src/php/ext/grpc/server.c
   - src/php/ext/grpc/server_credentials.c
   - src/php/ext/grpc/timeval.c
+php_config_w32:
+  deps:
+  - grpc
+  - address_sorting
+  - boringssl
+  - re2
+  - z
+  - upb_base_lib
+  - upb_hash_lib
+  - upb_mem_lib
+  - upb_lex_lib
+  - upb_message_lib
+  - upb_json_lib
+  - upb_mini_descriptor_lib
+  - upb_mini_table_lib
+  - upb_reflection_lib
+  - upb_textformat_lib
+  - upb_wire_lib
+  - utf8_range_lib
 python_dependencies:
   deps:
   - grpc

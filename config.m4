@@ -1390,6 +1390,60 @@ if test "$PHP_GRPC" != "no"; then
     third_party/re2/re2/unicode_groups.cc \
     third_party/re2/util/rune.cc \
     third_party/re2/util/strutil.cc \
+    third_party/upb/upb/base/status.c \
+    third_party/upb/upb/hash/common.c \
+    third_party/upb/upb/json/decode.c \
+    third_party/upb/upb/json/encode.c \
+    third_party/upb/upb/lex/atoi.c \
+    third_party/upb/upb/lex/round_trip.c \
+    third_party/upb/upb/lex/strtod.c \
+    third_party/upb/upb/lex/unicode.c \
+    third_party/upb/upb/mem/alloc.c \
+    third_party/upb/upb/mem/arena.c \
+    third_party/upb/upb/message/accessors.c \
+    third_party/upb/upb/message/array.c \
+    third_party/upb/upb/message/compat.c \
+    third_party/upb/upb/message/copy.c \
+    third_party/upb/upb/message/internal/extension.c \
+    third_party/upb/upb/message/internal/iterator.c \
+    third_party/upb/upb/message/internal/message.c \
+    third_party/upb/upb/message/map.c \
+    third_party/upb/upb/message/map_sorter.c \
+    third_party/upb/upb/message/merge.c \
+    third_party/upb/upb/message/message.c \
+    third_party/upb/upb/mini_descriptor/build_enum.c \
+    third_party/upb/upb/mini_descriptor/decode.c \
+    third_party/upb/upb/mini_descriptor/internal/base92.c \
+    third_party/upb/upb/mini_descriptor/internal/encode.c \
+    third_party/upb/upb/mini_descriptor/link.c \
+    third_party/upb/upb/mini_table/extension_registry.c \
+    third_party/upb/upb/mini_table/internal/message.c \
+    third_party/upb/upb/mini_table/message.c \
+    third_party/upb/upb/reflection/def_pool.c \
+    third_party/upb/upb/reflection/def_type.c \
+    third_party/upb/upb/reflection/desc_state.c \
+    third_party/upb/upb/reflection/enum_def.c \
+    third_party/upb/upb/reflection/enum_reserved_range.c \
+    third_party/upb/upb/reflection/enum_value_def.c \
+    third_party/upb/upb/reflection/extension_range.c \
+    third_party/upb/upb/reflection/field_def.c \
+    third_party/upb/upb/reflection/file_def.c \
+    third_party/upb/upb/reflection/internal/def_builder.c \
+    third_party/upb/upb/reflection/internal/strdup2.c \
+    third_party/upb/upb/reflection/message.c \
+    third_party/upb/upb/reflection/message_def.c \
+    third_party/upb/upb/reflection/message_reserved_range.c \
+    third_party/upb/upb/reflection/method_def.c \
+    third_party/upb/upb/reflection/oneof_def.c \
+    third_party/upb/upb/reflection/service_def.c \
+    third_party/upb/upb/text/encode.c \
+    third_party/upb/upb/text/internal/encode.c \
+    third_party/upb/upb/wire/decode.c \
+    third_party/upb/upb/wire/encode.c \
+    third_party/upb/upb/wire/eps_copy_input_stream.c \
+    third_party/upb/upb/wire/internal/decode_fast.c \
+    third_party/upb/upb/wire/reader.c \
+    third_party/utf8_range/utf8_range.c \
     , $ext_shared, , -fvisibility=hidden \
     -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN \
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
@@ -1693,4 +1747,22 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/ssl)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/re2)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/util)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/base)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/hash)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/json)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/lex)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mem)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/message)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/message/internal)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mini_descriptor)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mini_descriptor/internal)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mini_table)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/mini_table/internal)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/reflection)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/reflection/internal)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/text)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/text/internal)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/wire)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb/wire/internal)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/utf8_range)
 fi
