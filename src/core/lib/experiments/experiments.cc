@@ -99,6 +99,13 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
+const char* const description_pipelined_read_secure_endpoint =
+    "Enable pipelined reads for EventEngine secure endpoints";
+const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
+const uint8_t required_experiments_pipelined_read_secure_endpoint[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
 const char* const description_pollset_alternative =
     "Code outside iomgr that relies directly on pollsets will use non-pollset "
     "alternatives when enabled.";
@@ -232,6 +239,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
      true},
+    {"pipelined_read_secure_endpoint",
+     description_pipelined_read_secure_endpoint,
+     additional_constraints_pipelined_read_secure_endpoint,
+     required_experiments_pipelined_read_secure_endpoint, 3, false, false},
     {"pollset_alternative", description_pollset_alternative,
      additional_constraints_pollset_alternative,
      required_experiments_pollset_alternative, 2, false, false},
@@ -369,6 +380,13 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
+const char* const description_pipelined_read_secure_endpoint =
+    "Enable pipelined reads for EventEngine secure endpoints";
+const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
+const uint8_t required_experiments_pipelined_read_secure_endpoint[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
 const char* const description_pollset_alternative =
     "Code outside iomgr that relies directly on pollsets will use non-pollset "
     "alternatives when enabled.";
@@ -502,6 +520,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
      true},
+    {"pipelined_read_secure_endpoint",
+     description_pipelined_read_secure_endpoint,
+     additional_constraints_pipelined_read_secure_endpoint,
+     required_experiments_pipelined_read_secure_endpoint, 3, false, false},
     {"pollset_alternative", description_pollset_alternative,
      additional_constraints_pollset_alternative,
      required_experiments_pollset_alternative, 2, false, false},
@@ -639,6 +661,13 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
+const char* const description_pipelined_read_secure_endpoint =
+    "Enable pipelined reads for EventEngine secure endpoints";
+const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
+const uint8_t required_experiments_pipelined_read_secure_endpoint[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
 const char* const description_pollset_alternative =
     "Code outside iomgr that relies directly on pollsets will use non-pollset "
     "alternatives when enabled.";
@@ -772,6 +801,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
      true},
+    {"pipelined_read_secure_endpoint",
+     description_pipelined_read_secure_endpoint,
+     additional_constraints_pipelined_read_secure_endpoint,
+     required_experiments_pipelined_read_secure_endpoint, 3, false, false},
     {"pollset_alternative", description_pollset_alternative,
      additional_constraints_pollset_alternative,
      required_experiments_pollset_alternative, 2, false, false},

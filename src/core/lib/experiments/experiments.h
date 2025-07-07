@@ -88,6 +88,7 @@ inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
+inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
 inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
@@ -138,6 +139,7 @@ inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
+inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
 inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
@@ -188,6 +190,7 @@ inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() { return false; }
+inline bool IsPipelinedReadSecureEndpointEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
 inline bool IsPrioritizeFinishedRequestsEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
@@ -229,6 +232,7 @@ enum ExperimentIds {
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
   kExperimentIdPickFirstIgnoreEmptyUpdates,
+  kExperimentIdPipelinedReadSecureEndpoint,
   kExperimentIdPollsetAlternative,
   kExperimentIdPrioritizeFinishedRequests,
   kExperimentIdPromiseBasedHttp2ClientTransport,
@@ -326,6 +330,10 @@ inline bool IsMultipingEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_PICK_FIRST_IGNORE_EMPTY_UPDATES
 inline bool IsPickFirstIgnoreEmptyUpdatesEnabled() {
   return IsExperimentEnabled<kExperimentIdPickFirstIgnoreEmptyUpdates>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_PIPELINED_READ_SECURE_ENDPOINT
+inline bool IsPipelinedReadSecureEndpointEnabled() {
+  return IsExperimentEnabled<kExperimentIdPipelinedReadSecureEndpoint>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_POLLSET_ALTERNATIVE
 inline bool IsPollsetAlternativeEnabled() {
