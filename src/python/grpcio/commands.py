@@ -28,7 +28,6 @@ import traceback
 from typing import List
 
 from setuptools import Extension
-
 from setuptools.command import build_ext
 from setuptools.command import build_py
 import support
@@ -46,7 +45,9 @@ class CommandError(Exception):
 
 # TODO(atash): Remove this once PyPI has better Linux bdist support. See
 # https://bitbucket.org/pypa/pypi/issues/120/binary-wheels-for-linux-are-not-supported
-def _get_grpc_custom_bdist(decorated_basename: str, target_bdist_basename: str) -> str:
+def _get_grpc_custom_bdist(
+    decorated_basename: str, target_bdist_basename: str
+) -> str:
     """Returns a string path to a bdist file for Linux to install.
 
     If we can retrieve a pre-compiled bdist from online, uses it. Else, emits a
@@ -184,7 +185,11 @@ def check_and_update_cythonization(extensions: List[Extension]) -> bool:
     return True
 
 
-def try_cythonize(extensions: List[Extension], linetracing: bool = False, mandatory: bool = True) -> List[Extension]:
+def try_cythonize(
+    extensions: List[Extension],
+    linetracing: bool = False,
+    mandatory: bool = True,
+) -> List[Extension]:
     """Attempt to cythonize the extensions.
 
     Args:
@@ -254,40 +259,41 @@ class BuildExt(build_ext.build_ext):
         # This is to let UnixCompiler get either C or C++ compiler options depending on the source.
         # Note that this doesn't work for MSVCCompiler and will be handled by _spawn_patch.py.
         old_compile = self.compiler._compile
+
         def new_compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
-          if src.endswith(".c"):
-            extra_postargs = [
-              arg for arg in extra_postargs if arg != "-std=c++17"
-            ]
-          elif src.endswith((".cc", ".cpp")):
-            extra_postargs = [
-              arg for arg in extra_postargs if arg != "-std=c11"
-            ]
-          return old_compile(obj, src, ext, cc_args, extra_postargs, pp_opts)
+            if src.endswith(".c"):
+                extra_postargs = [
+                    arg for arg in extra_postargs if arg != "-std=c++17"
+                ]
+            elif src.endswith((".cc", ".cpp")):
+                extra_postargs = [
+                    arg for arg in extra_postargs if arg != "-std=c11"
+                ]
+            return old_compile(obj, src, ext, cc_args, extra_postargs, pp_opts)
 
         self.compiler._compile = new_compile
 
         compiler = self.compiler.compiler_type
         if compiler in BuildExt.C_OPTIONS:
-          for extension in self.extensions:
-            extension.extra_compile_args += list(
-              BuildExt.C_OPTIONS[compiler]
-            )
+            for extension in self.extensions:
+                extension.extra_compile_args += list(
+                    BuildExt.C_OPTIONS[compiler]
+                )
         if compiler in BuildExt.LINK_OPTIONS:
-          for extension in self.extensions:
-            extension.extra_link_args += list(
-              BuildExt.LINK_OPTIONS[compiler]
-            )
+            for extension in self.extensions:
+                extension.extra_link_args += list(
+                    BuildExt.LINK_OPTIONS[compiler]
+                )
         if not check_and_update_cythonization(self.extensions):
-          self.extensions = try_cythonize(self.extensions)
+            self.extensions = try_cythonize(self.extensions)
         try:
-          build_ext.build_ext.build_extensions(self)
+            build_ext.build_ext.build_extensions(self)
         except Exception as error:
-          formatted_exception = traceback.format_exc()
-          support.diagnose_build_ext_error(self, error, formatted_exception)
-          raise CommandError(
-            "Failed `build_ext` step:\n{}".format(formatted_exception)
-          )
+            formatted_exception = traceback.format_exc()
+            support.diagnose_build_ext_error(self, error, formatted_exception)
+            raise CommandError(
+                "Failed `build_ext` step:\n{}".format(formatted_exception)
+            )
 
 
 class Gather(setuptools.Command):
@@ -295,20 +301,20 @@ class Gather(setuptools.Command):
 
     description = "gather dependencies for grpcio"
     user_options = [
-      ("test", "t", "flag indicating to gather test dependencies"),
-      ("install", "i", "flag indicating to gather install dependencies"),
+        ("test", "t", "flag indicating to gather test dependencies"),
+        ("install", "i", "flag indicating to gather install dependencies"),
     ]
 
     def initialize_options(self) -> None:
-      self.test = False
-      self.install = False
+        self.test = False
+        self.install = False
 
     def finalize_options(self) -> None:
-      # distutils requires this override.
-      pass
+        # distutils requires this override.
+        pass
 
     def run(self) -> None:
-      pass
+        pass
 
 
 class Clean(setuptools.Command):
@@ -337,18 +343,18 @@ class Clean(setuptools.Command):
         pass
 
     def run(self) -> None:
-      for path_spec in self._FILE_PATTERNS:
-        this_glob = os.path.normpath(
-          os.path.join(Clean._CURRENT_DIRECTORY, path_spec)
-        )
-        abs_paths = glob.glob(this_glob)
-        for path in abs_paths:
-          if not str(path).startswith(Clean._CURRENT_DIRECTORY):
-            raise ValueError(
-              "Cowardly refusing to delete {}.".format(path)
+        for path_spec in self._FILE_PATTERNS:
+            this_glob = os.path.normpath(
+                os.path.join(Clean._CURRENT_DIRECTORY, path_spec)
             )
-          print("Removing {}".format(os.path.relpath(path)))
-          if os.path.isfile(path):
-            os.remove(str(path))
-          else:
-            shutil.rmtree(str(path))
+            abs_paths = glob.glob(this_glob)
+            for path in abs_paths:
+                if not str(path).startswith(Clean._CURRENT_DIRECTORY):
+                    raise ValueError(
+                        "Cowardly refusing to delete {}.".format(path)
+                    )
+                print("Removing {}".format(os.path.relpath(path)))
+                if os.path.isfile(path):
+                    os.remove(str(path))
+                else:
+                    shutil.rmtree(str(path))

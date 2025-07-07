@@ -96,7 +96,9 @@ class _Plugin(object):
             # Support versions predating contextvars.
             pass
 
-    def __call__(self, service_url: str, method_name: str, callback: Callable) -> None:
+    def __call__(
+        self, service_url: str, method_name: str, callback: Callable
+    ) -> None:
         context = _AuthMetadataContext(
             _common.decode(service_url), _common.decode(method_name)
         )
