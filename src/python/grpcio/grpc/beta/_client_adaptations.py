@@ -18,10 +18,7 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Iterable,
-    Iterator,
     Optional,
-    Sequence,
     Tuple,
     Type,
     Union,
@@ -53,6 +50,7 @@ class _Receiver(Protocol):
         ...
 
 
+# pylint: disable=too-many-arguments,too-many-locals,unused-argument
 _STATUS_CODE_TO_ABORTION_KIND_AND_ABORTION_ERROR_CLASS: Dict[
     grpc.StatusCode, Tuple[face.Abortion.Kind, Type[face.AbortionError]]
 ] = {
