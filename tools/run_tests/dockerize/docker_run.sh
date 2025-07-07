@@ -34,6 +34,8 @@ fi
 
 cd /var/local/git/grpc
 
+apt-get update && apt-get install -y curl
+
 if [ -f "generate_artifacts.sh" ]; then
   ./generate_artifacts.sh
 fi
