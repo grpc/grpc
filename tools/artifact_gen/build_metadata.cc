@@ -21,8 +21,7 @@ nlohmann::json GetBuildExtraMetadata() {
     }
   }
   
-  nlohmann::json metadata;
-  file >> metadata;
+  nlohmann::json metadata = nlohmann::json::parse(file, nullptr, true, true);
   return metadata;
 }
 

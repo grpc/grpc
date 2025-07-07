@@ -167,6 +167,8 @@
         "_TYPE": "target",
         "_RENAME": "grpc_ruby_plugin"
     },
+    // TODO(jtattermusch): consider adding grpc++_core_stats
+    // test support libraries
     "test/core/test_util:grpc_test_util": {
         "language": "c",
         "build": "private",
@@ -177,6 +179,7 @@
         "build": "private",
         "_RENAME": "grpc_test_util_unsecure"
     },
+    // TODO(jtattermusch): consider adding grpc++_test_util_unsecure - it doesn't seem to be used by bazel build (don't forget to set secure: true)
     "test/cpp/util:test_config": {
         "language": "c++",
         "build": "private",
@@ -187,6 +190,7 @@
         "build": "private",
         "_RENAME": "grpc++_test_util"
     },
+    // benchmark support libraries
     "test/cpp/microbenchmarks:helpers": {
         "language": "c++",
         "build": "test",
@@ -207,6 +211,21 @@
         "_TYPE": "target",
         "_RENAME": "interop_server"
     },
+    // TODO(stanleycheung): re-enable this after cmake support for otel is added
+    // "test/cpp/interop:xds_interop_client": {
+    //     "language": "c++",
+    //     "build": "test",
+    //     "run": true,
+    //     "_TYPE": "target",
+    //     "_RENAME": "xds_interop_client",
+    // },
+    // "test/cpp/interop:xds_interop_server": {
+    //     "language": "c++",
+    //     "build": "test",
+    //     "run": true,
+    //     "_TYPE": "target",
+    //     "_RENAME": "xds_interop_server",
+    // },
     "test/cpp/interop:http2_client": {
         "language": "c++",
         "build": "test",
@@ -235,4 +254,16 @@
         "_TYPE": "target",
         "_RENAME": "grpc_cli"
     }
+    // TODO(jtattermusch): create_jwt and verify_jwt breaks distribtests because it depends on grpc_test_utils and thus requires tests to be built
+    // For now it's ok to disable them as these binaries aren't very useful anyway.
+    // 'test/core/security:create_jwt': { 'language': 'c', 'build': 'tool', '_TYPE': 'target', '_RENAME': 'grpc_create_jwt' },
+    // 'test/core/security:verify_jwt': { 'language': 'c', 'build': 'tool', '_TYPE': 'target', '_RENAME': 'grpc_verify_jwt' },
+    // TODO(jtattermusch): add remaining tools such as grpc_print_google_default_creds_token (they are not used by bazel build)
+    // TODO(jtattermusch): these fuzzers had no build.yaml equivalent
+    // test/core/compression:message_compress_fuzzer
+    // test/core/compression:message_decompress_fuzzer
+    // test/core/compression:stream_compression_fuzzer
+    // test/core/compression:stream_decompression_fuzzer
+    // test/core/slice:b64_decode_fuzzer
+    // test/core/slice:b64_encode_fuzzer
 }
