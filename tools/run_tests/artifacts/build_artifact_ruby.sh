@@ -21,6 +21,10 @@ SYSTEM=$(uname | cut -f 1 -d_)
 
 cd "$(dirname "$0")/../../.."
 
+if [ -f ./generate_artifacts.sh ]; then
+  ./generate_artifacts.sh
+fi
+
 if [ "$SYSTEM" == "MSYS" ] ; then
   SYSTEM=MINGW32
 fi
