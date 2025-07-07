@@ -108,11 +108,10 @@ class AioRpcError(grpc.RpcError):
 
         Args:
           code: The status code with which the RPC has been finalized.
-          details: Optional details explaining the reason of the error.
           initial_metadata: Optional initial metadata that could be sent by the
             Server.
           trailing_metadata: Optional metadata that could be sent by the Server.
-          details: Optional string
+          details: Optional details explaining the reason of the error.
           debug_error_string: Optional string
 
         """
@@ -665,7 +664,7 @@ class UnaryStreamCall(_StreamResponseMixin, Call, _base_call.UnaryStreamCall):
         )
         self._init_stream_response_mixin(self._send_unary_request_task)
 
-    async def _send_unary_request(self) -> ResponseType:
+    async def _send_unary_request(self) -> None:
         serialized_request = _common.serialize(
             self._request,
             self._request_serializer,
