@@ -227,7 +227,7 @@ class ChannelCache:
 @experimental_api
 # pylint: disable=too-many-locals
 def unary_unary(
-    request: RequestType,
+    request: RequestType, # type: ignore
     target: str,
     method: str,
     request_serializer: Optional[Callable[[Any], bytes]] = None,
@@ -319,7 +319,7 @@ def unary_unary(
 @experimental_api
 # pylint: disable=too-many-locals
 def unary_stream(
-    request: RequestType,
+    request: RequestType, # type: ignore
     target: str,
     method: str,
     request_serializer: Optional[Callable[[Any], bytes]] = None,
@@ -410,7 +410,7 @@ def unary_stream(
 @experimental_api
 # pylint: disable=too-many-locals
 def stream_unary(
-    request_iterator: Iterator[RequestType],
+    request_iterator: Iterator[RequestType], #type: ignore
     target: str,
     method: str,
     request_serializer: Optional[Callable[[Any], bytes]] = None,
@@ -501,7 +501,7 @@ def stream_unary(
 @experimental_api
 # pylint: disable=too-many-locals
 def stream_stream(
-    request_iterator: Iterator[RequestType],
+    request_iterator: Iterator[RequestType], # type: ignore
     target: str,
     method: str,
     request_serializer: Optional[Callable[[Any], bytes]] = None,
