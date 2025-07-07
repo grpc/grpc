@@ -217,8 +217,9 @@ void RegisterResolver(
 #else  // GRPC_ENABLE_FORK_SUPPORT && GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 
 void RegisterEventEngineForFork(
-    std::shared_ptr<PosixEventEngine> /* posix_engine */,
-    const std::shared_ptr<ThreadPool>& /* executor */) {}
+    const std::shared_ptr<PosixEventEngine>& /* posix_engine */,
+    const std::shared_ptr<ThreadPool>& /* executor */,
+    const std::shared_ptr<TimerManager>& /* timer_manager */) {}
 
 #endif  // GRPC_ENABLE_FORK_SUPPORT && GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 
