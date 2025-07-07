@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.74.0-dev'
+  version = '1.75.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -121,6 +121,7 @@ Pod::Spec.new do |s|
                       'include/grpc/byte_buffer_reader.h',
                       'include/grpc/census.h',
                       'include/grpc/compression.h',
+                      'include/grpc/create_channel_from_endpoint.h',
                       'include/grpc/credentials.h',
                       'include/grpc/event_engine/endpoint_config.h',
                       'include/grpc/event_engine/event_engine.h',
@@ -1462,6 +1463,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/default_event_engine.h',
                       'src/core/lib/event_engine/default_event_engine_factory.cc',
                       'src/core/lib/event_engine/default_event_engine_factory.h',
+                      'src/core/lib/event_engine/endpoint_channel_arg_wrapper.cc',
+                      'src/core/lib/event_engine/endpoint_channel_arg_wrapper.h',
                       'src/core/lib/event_engine/event_engine.cc',
                       'src/core/lib/event_engine/event_engine_context.h',
                       'src/core/lib/event_engine/extensions/blocking_dns.h',
@@ -3208,6 +3211,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/common_closures.h',
                               'src/core/lib/event_engine/default_event_engine.h',
                               'src/core/lib/event_engine/default_event_engine_factory.h',
+                              'src/core/lib/event_engine/endpoint_channel_arg_wrapper.h',
                               'src/core/lib/event_engine/event_engine_context.h',
                               'src/core/lib/event_engine/extensions/blocking_dns.h',
                               'src/core/lib/event_engine/extensions/can_track_errors.h',

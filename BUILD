@@ -215,11 +215,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gee"  # @unused
+g_stands_for = "gemini"  # @unused
 
-core_version = "48.0.0"  # @unused
+core_version = "49.0.0"  # @unused
 
-version = "1.74.0-dev"  # @unused
+version = "1.75.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -263,6 +263,7 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
     "include/grpc/compression.h",
+    "include/grpc/create_channel_from_endpoint.h",
     "include/grpc/fork.h",
     "include/grpc/grpc.h",
     "include/grpc/grpc_posix.h",
@@ -1277,6 +1278,7 @@ grpc_cc_library(
         "sockaddr_utils",
         "uri",
         "//src/core:channel_args",
+        "//src/core:channelz_property_list",
         "//src/core:connectivity_state",
         "//src/core:dual_ref_counted",
         "//src/core:json",
@@ -1726,11 +1728,18 @@ grpc_cc_library(
         "grpc_security_base",
         "legacy_channel",
         "stats",
+        "//:grpc_resolver_fake",
         "//src/core:channel_args",
+        "//src/core:channel_args_endpoint_config",
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_stack_type",
         "//src/core:direct_channel",
+        "//src/core:endpoint_channel_arg_wrapper",
         "//src/core:endpoint_transport",
+        "//src/core:event_engine_common",
+        "//src/core:event_engine_extensions",
+        "//src/core:event_engine_query_extensions",
+        "//src/core:event_engine_tcp_socket_utils",
         "//src/core:experiments",
         "//src/core:stats_data",
     ],

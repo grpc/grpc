@@ -37,7 +37,6 @@ namespace {
 // - client sends a 100 KiB message
 // - first attempt gets ABORTED but is not retried
 CORE_END2END_TEST(RetryTests, RetryExceedsBufferSizeInSubsequentBatch) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   SKIP_IF_V3();
   InitServer(DefaultServerArgs());
   InitClient(

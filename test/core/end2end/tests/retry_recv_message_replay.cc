@@ -128,8 +128,7 @@ grpc_channel_filter FailFirstSendOpFilter::kFilterVtable = {
 // the surface.  This resulted in ASAN failures caused by not unreffing
 // a grpc_error.
 CORE_END2END_TEST(RetryTests, RetryRecvMessageReplay) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
-  SKIP_IF_V3();            // Need to convert filter
+  SKIP_IF_V3();  // Need to convert filter
   CoreConfiguration::RegisterEphemeralBuilder(
       [](CoreConfiguration::Builder* builder) {
         builder->channel_init()

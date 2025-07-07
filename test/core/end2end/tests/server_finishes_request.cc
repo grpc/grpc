@@ -28,7 +28,6 @@ namespace grpc_core {
 namespace {
 
 CORE_END2END_TEST(CoreEnd2endTests, ServerFinishesRequest) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
 
   IncomingStatusOnClient server_status;

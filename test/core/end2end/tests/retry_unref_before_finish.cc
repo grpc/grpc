@@ -29,7 +29,6 @@ namespace {
 // Tests that we can unref a call whose status is cached but not yet
 // requested by the application.  This should not cause a memory leak.
 CORE_END2END_TEST(RetryTests, RetryUnrefBeforeFinish) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(

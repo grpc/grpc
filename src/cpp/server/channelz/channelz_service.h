@@ -72,6 +72,8 @@ class ChannelzV2Service final : public channelz::v2::Channelz::Service {
   Status QueryTrace(
       ServerContext*, const channelz::v2::QueryTraceRequest* request,
       ServerWriter<channelz::v2::QueryTraceResponse>* writer) override {
+    (void)request;
+    (void)writer;
     return Status(StatusCode::UNIMPLEMENTED, "Not implemented");
   }
 };

@@ -94,7 +94,6 @@ void RegisterFilter(grpc_channel_stack_type type) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, DISABLED_ServerFilterChannelInitFails) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   SKIP_IF_V3();
   RegisterFilter(GRPC_SERVER_CHANNEL);
   InitClient(ChannelArgs());
@@ -120,7 +119,6 @@ CORE_END2END_TEST(CoreEnd2endTests, DISABLED_ServerFilterChannelInitFails) {
 };
 
 CORE_END2END_TEST(CoreEnd2endTests, ServerFilterCallInitFails) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   SKIP_IF_FUZZING();
   SKIP_IF_V3();
 
@@ -142,7 +140,6 @@ CORE_END2END_TEST(CoreEnd2endTests, ServerFilterCallInitFails) {
 };
 
 CORE_END2END_TEST(CoreEnd2endTests, DISABLED_ClientFilterChannelInitFails) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   SKIP_IF_V3();
   RegisterFilter(GRPC_CLIENT_CHANNEL);
   RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL);
@@ -163,7 +160,6 @@ CORE_END2END_TEST(CoreEnd2endTests, DISABLED_ClientFilterChannelInitFails) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, ClientFilterCallInitFails) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   SKIP_IF_V3();
   SKIP_IF_FUZZING();
   RegisterFilter(GRPC_CLIENT_CHANNEL);
@@ -222,7 +218,6 @@ CORE_END2END_TEST(CoreClientChannelTests,
 }
 
 CORE_END2END_TEST(CoreClientChannelTests, SubchannelFilterCallInitFails) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   SKIP_IF_V3();
   RegisterFilter(GRPC_CLIENT_SUBCHANNEL);
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();

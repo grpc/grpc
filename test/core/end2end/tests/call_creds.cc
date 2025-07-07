@@ -263,7 +263,6 @@ CORE_END2END_TEST(PerCallCredsOnInsecureTests,
 }
 
 CORE_END2END_TEST(PerCallCredsTests, RequestResponseWithPayloadAndCallCreds) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   if (IsLocalConnectorSecureEnabled()) {
     SKIP_IF_LOCAL_TCP_CREDS();
   }
@@ -314,7 +313,6 @@ CORE_END2END_TEST(PerCallCredsOnInsecureTests,
 }
 
 CORE_END2END_TEST(PerCallCredsOnInsecureTests, FailToSendCallCreds) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   grpc_call_credentials* creds;
   creds = grpc_google_iam_credentials_create(iam_token, iam_selector, nullptr);
