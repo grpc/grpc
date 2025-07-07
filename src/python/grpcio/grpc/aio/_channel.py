@@ -383,7 +383,7 @@ class Channel(_base_channel.Channel):
             self._loop,
         )
 
-    async def __aenter__(self) -> "Channel":
+    async def __aenter__(self) -> grpc.aio.Channel:
         return self
 
     async def __aexit__(

@@ -134,7 +134,7 @@ class ClientCallDetails(
     wait_for_ready: Optional[bool]
 
 
-class ClientInterceptor(metaclass=ABCMeta): # noqa: B024
+class ClientInterceptor(metaclass=ABCMeta):  # noqa: B024
     """Base class used for all Aio Client Interceptor classes"""
 
 
