@@ -12,7 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Translates gRPC's client-side API into gRPC's client-side Beta API."""
-import types
+
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    Iterator,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+    Protocol,
+)
 
 import grpc
 from grpc import _common
@@ -21,11 +34,38 @@ from grpc.beta import interfaces
 from grpc.framework.common import cardinality
 from grpc.framework.foundation import future
 from grpc.framework.interfaces.face import face
-from typing import Any, Callable, Optional, Tuple, Union
 
-# pylint: disable=too-many-arguments,too-many-locals,unused-argument
+_Metadatum = Tuple[str, Any]
+_Metadata = Sequence[_Metadatum]
+_Request = Any
+_Response = Any
+_RequestIterator = Iterable[_Request]
+_ResponseIterator = Iterator[_Response]
+_Serializer = Callable[[Any], bytes]
+_Deserializer  = Callable[[bytes], Any]
+_AbortionCallback = Callable[[face.Abortion], None]
 
-_STATUS_CODE_TO_ABORTION_KIND_AND_ABORTION_ERROR_CLASS = {
+
+class _DoneCallback(Protocol):
+
+    def __call__(self, rendezvous: "_Rendezvous") -> None:
+        ...
+
+
+class _Receiver(Protocol):
+
+    def __call__(
+        self,
+        response: _Response,
+        call: face.Call,
+        abortion_callback: _AbortionCallback,
+    ) -> None:
+        ...
+
+
+_STATUS_CODE_TO_ABORTION_KIND_AND_ABORTION_ERROR_CLASS: Dict[
+    grpc.StatusCode, Tuple[face.Abortion.Kind, Type[face.AbortionError]]
+] = {
     grpc.StatusCode.CANCELLED: (
         face.Abortion.Kind.CANCELLED,
         face.CancellationError,
@@ -44,16 +84,21 @@ _STATUS_CODE_TO_ABORTION_KIND_AND_ABORTION_ERROR_CLASS = {
     ),
 }
 
-def _effective_metadata(metadata: Optional[Tuple[Tuple[str, str], ...]],
-                        metadata_transformer: Optional[Callable]) -> Tuple[Tuple[str, str], ...]:
-    non_none_metadata = () if metadata is None else metadata
+
+def _effective_metadata(
+    metadata: Optional[_Metadata],
+    metadata_transformer: Optional[Callable[[_Metadata], _Metadata]],
+) -> _Metadata:
+    non_none_metadata: _Metadata = () if metadata is None else metadata
     if metadata_transformer is None:
         return non_none_metadata
     else:
         return metadata_transformer(non_none_metadata)
 
 
-def _credentials(grpc_call_options: Optional[Any]) -> Optional[Any]:
+def _credentials(
+    grpc_call_options: Optional[grpc.CallCredentials],
+) -> Optional[grpc.CallCredentials]:
     return None if grpc_call_options is None else grpc_call_options.credentials
 
 
@@ -70,7 +115,7 @@ def _abortion(rpc_error_call: grpc.Call) -> face.Abortion:
     )
 
 
-def _abortion_error(rpc_error_call: grpc.Call) -> face.AbortionError:
+def _abortion_error(rpc_error_call: grpc.RpcError) -> face.AbortionError:
     code = rpc_error_call.code()
     pair = _STATUS_CODE_TO_ABORTION_KIND_AND_ABORTION_ERROR_CLASS.get(code)
     exception_class = face.AbortionError if pair is None else pair[1]
@@ -83,12 +128,22 @@ def _abortion_error(rpc_error_call: grpc.Call) -> face.AbortionError:
 
 
 class _InvocationProtocolContext(interfaces.GRPCInvocationContext):
-    def disable_next_request_compression(self):
+
+    def disable_next_request_compression(self) -> None:
         pass  # TODO(https://github.com/grpc/grpc/issues/4078): design, implement.
 
 
 class _Rendezvous(future.Future, face.Call):
-    def __init__(self, response_future, response_iterator, call) -> None:
+    _future: grpc.Future
+    _iterator: Optional[grpc.Call]
+    _call: grpc.Call
+
+    def __init__(
+        self,
+        response_future: grpc.Future,
+        response_iterator: Optional[grpc.Call],
+        call: grpc.Call,
+    ) -> None:
         self._future = response_future
         self._iterator = response_iterator
         self._call = call
@@ -105,17 +160,17 @@ class _Rendezvous(future.Future, face.Call):
     def done(self) -> bool:
         return self._future.done()
 
-    def result(self, timeout=None) -> Any:
+    def result(self, timeout: Optional[float] = None) -> Any:
         try:
             return self._future.result(timeout=timeout)
         except grpc.RpcError as rpc_error_call:
-            raise _abortion_error(rpc_error_call)
+            raise _abortion_error(rpc_error_call) from rpc_error_call
         except grpc.FutureTimeoutError:
             raise future.TimeoutError()
         except grpc.FutureCancelledError:
             raise future.CancelledError()
 
-    def exception(self, timeout=None) -> Optional[Exception]:
+    def exception(self, timeout: Optional[float] = None) -> Optional[Exception]:
         try:
             rpc_error_call = self._future.exception(timeout=timeout)
             if rpc_error_call is None:
@@ -127,7 +182,7 @@ class _Rendezvous(future.Future, face.Call):
         except grpc.FutureCancelledError:
             raise future.CancelledError()
 
-    def traceback(self, timeout=None) -> Optional[types.TracebackType]:
+    def traceback(self, timeout: Optional[float] = None) -> Optional[Any]:
         try:
             return self._future.traceback(timeout=timeout)
         except grpc.FutureTimeoutError:
@@ -135,22 +190,24 @@ class _Rendezvous(future.Future, face.Call):
         except grpc.FutureCancelledError:
             raise future.CancelledError()
 
-    def add_done_callback(self, fn) -> None:
+    def add_done_callback(self, fn: _DoneCallback) -> None:
         self._future.add_done_callback(lambda ignored_callback: fn(self))
 
-    def __iter__(self):
+    def __iter__(self) -> "_Rendezvous":
         return self
 
-    def _next(self) -> Any:
+    def _next(self) -> _Response:
         try:
+            # TODO(https://github.com/grpc/grpc/issues/9624): Consume
+            # self._iterator once and for all.
             return next(self._iterator)
         except grpc.RpcError as rpc_error_call:
-            raise _abortion_error(rpc_error_call)
+            raise _abortion_error(rpc_error_call) from rpc_error_call
 
-    def __next__(self) -> Any:
+    def __next__(self) -> _Response:
         return self._next()
 
-    def next(self) -> Any:
+    def next(self) -> _Response:
         return self._next()
 
     def is_active(self) -> bool:
@@ -159,21 +216,25 @@ class _Rendezvous(future.Future, face.Call):
     def time_remaining(self) -> Optional[float]:
         return self._call.time_remaining()
 
-    def add_abortion_callback(self, abortion_callback) -> None:
-        def done_callback():
+    def add_abortion_callback(
+        self, abortion_callback: _AbortionCallback
+    ) -> None:
+
+        def done_callback() -> None:
             if self.code() is not grpc.StatusCode.OK:
                 abortion_callback(_abortion(self._call))
 
         registered = self._call.add_callback(done_callback)
-        return None if registered else done_callback()
+        if not registered:
+            done_callback()
 
-    def protocol_context(self) :
+    def protocol_context(self) -> _InvocationProtocolContext:
         return _InvocationProtocolContext()
 
-    def initial_metadata(self):
+    def initial_metadata(self) -> _Metadata:
         return _metadata.beta(self._call.initial_metadata())
 
-    def terminal_metadata(self):
+    def terminal_metadata(self) -> _Metadata:
         return _metadata.beta(self._call.terminal_metadata())
 
     def code(self) -> grpc.StatusCode:
@@ -184,18 +245,18 @@ class _Rendezvous(future.Future, face.Call):
 
 
 def _blocking_unary_unary(
-    channel,
-    group,
-    method,
-    timeout,
-    with_call,
-    protocol_options,
-    metadata,
-    metadata_transformer,
-    request,
-    request_serializer,
-    response_deserializer,
-):
+    channel: grpc.Channel,
+    group: str,
+    method: str,
+    timeout: float,
+    with_call: bool,
+    protocol_options: Optional[Any],
+    metadata: Optional[_Metadata],
+    metadata_transformer: Optional[Callable[[_Metadata], _Metadata]],
+    request: _Request,
+    request_serializer: _Serializer,
+    response_deserializer: _Deserializer,
+) -> Union[_Response, Tuple[_Response, _Rendezvous]]:
     try:
         multi_callable = channel.unary_unary(
             _common.fully_qualified_method(group, method),
@@ -219,21 +280,21 @@ def _blocking_unary_unary(
                 credentials=_credentials(protocol_options),
             )
     except grpc.RpcError as rpc_error_call:
-        raise _abortion_error(rpc_error_call)
+        raise _abortion_error(rpc_error_call) from rpc_error_call
 
 
 def _future_unary_unary(
-    channel,
-    group,
-    method,
-    timeout,
-    protocol_options,
-    metadata,
-    metadata_transformer,
-    request,
-    request_serializer,
-    response_deserializer,
-):
+    channel: grpc.Channel,
+    group: str,
+    method: str,
+    timeout: float,
+    protocol_options: Optional[Any],
+    metadata: Optional[_Metadata],
+    metadata_transformer: Optional[Callable[[_Metadata], _Metadata]],
+    request: _Request,
+    request_serializer: _Serializer,
+    response_deserializer: _Deserializer,
+) -> _Rendezvous:
     multi_callable = channel.unary_unary(
         _common.fully_qualified_method(group, method),
         request_serializer=request_serializer,
@@ -250,17 +311,17 @@ def _future_unary_unary(
 
 
 def _unary_stream(
-    channel,
-    group,
-    method,
-    timeout,
-    protocol_options,
-    metadata,
-    metadata_transformer,
-    request,
-    request_serializer,
-    response_deserializer,
-):
+    channel: grpc.Channel,
+    group: str,
+    method: str,
+    timeout: float,
+    protocol_options: Optional[Any],
+    metadata: Optional[_Metadata],
+    metadata_transformer: Optional[Callable[[_Metadata], _Metadata]],
+    request: _Request,
+    request_serializer: _Serializer,
+    response_deserializer: _Deserializer,
+) -> _Rendezvous:
     multi_callable = channel.unary_stream(
         _common.fully_qualified_method(group, method),
         request_serializer=request_serializer,
@@ -277,18 +338,18 @@ def _unary_stream(
 
 
 def _blocking_stream_unary(
-    channel,
-    group,
-    method,
-    timeout,
-    with_call,
-    protocol_options,
-    metadata,
-    metadata_transformer,
-    request_iterator,
-    request_serializer,
-    response_deserializer,
-):
+    channel: grpc.Channel,
+    group: str,
+    method: str,
+    timeout: float,
+    with_call: bool,
+    protocol_options: Optional[Any],
+    metadata: Optional[_Metadata],
+    metadata_transformer: Optional[Callable[[_Metadata], _Metadata]],
+    request_iterator: _RequestIterator,
+    request_serializer: _Serializer,
+    response_deserializer: _Deserializer,
+) -> Union[_Response, Tuple[_Response, _Rendezvous]]:
     try:
         multi_callable = channel.stream_unary(
             _common.fully_qualified_method(group, method),
@@ -312,21 +373,21 @@ def _blocking_stream_unary(
                 credentials=_credentials(protocol_options),
             )
     except grpc.RpcError as rpc_error_call:
-        raise _abortion_error(rpc_error_call)
+        raise _abortion_error(rpc_error_call) from rpc_error_call
 
 
 def _future_stream_unary(
-    channel,
-    group,
-    method,
-    timeout,
-    protocol_options,
-    metadata,
-    metadata_transformer,
-    request_iterator,
-    request_serializer,
-    response_deserializer,
-):
+    channel: grpc.Channel,
+    group: str,
+    method: str,
+    timeout: float,
+    protocol_options: Optional[Any],
+    metadata: Optional[_Metadata],
+    metadata_transformer: Optional[Callable[[_Metadata], _Metadata]],
+    request_iterator: _RequestIterator,
+    request_serializer: _Serializer,
+    response_deserializer: _Deserializer,
+) -> _Rendezvous:
     multi_callable = channel.stream_unary(
         _common.fully_qualified_method(group, method),
         request_serializer=request_serializer,
@@ -343,17 +404,17 @@ def _future_stream_unary(
 
 
 def _stream_stream(
-    channel,
-    group,
-    method,
-    timeout,
-    protocol_options,
-    metadata,
-    metadata_transformer,
-    request_iterator,
-    request_serializer,
-    response_deserializer,
-):
+    channel: grpc.Channel,
+    group: str,
+    method: str,
+    timeout: float,
+    protocol_options: Optional[Any],
+    metadata: Optional[_Metadata],
+    metadata_transformer: Optional[Callable[[_Metadata], _Metadata]],
+    request_iterator: _RequestIterator,
+    request_serializer: _Serializer,
+    response_deserializer: _Deserializer,
+) -> _Rendezvous:
     multi_callable = channel.stream_stream(
         _common.fully_qualified_method(group, method),
         request_serializer=request_serializer,
@@ -370,15 +431,22 @@ def _stream_stream(
 
 
 class _UnaryUnaryMultiCallable(face.UnaryUnaryMultiCallable):
+    _channel: grpc.Channel
+    _group: str
+    _method: str
+    _metadata_transformer: Optional[Callable[[_Metadata], _Metadata]]
+    _request_serializer: _Serializer
+    _response_deserializer: _Deserializer
+
     def __init__(
         self,
-        channel,
-        group,
-        method,
-        metadata_transformer,
-        request_serializer,
-        response_deserializer,
-    ):
+        channel: grpc.Channel,
+        group: str,
+        method: str,
+        metadata_transformer: Optional[Callable[[_Metadata], _Metadata]],
+        request_serializer: _Serializer,
+        response_deserializer: _Deserializer,
+    ) -> None:
         self._channel = channel
         self._group = group
         self._method = method
@@ -388,12 +456,12 @@ class _UnaryUnaryMultiCallable(face.UnaryUnaryMultiCallable):
 
     def __call__(
         self,
-        request,
-        timeout,
-        metadata=None,
-        with_call=False,
-        protocol_options=None,
-    ):
+        request: _Request,
+        timeout: float,
+        metadata: Optional[_Metadata] = None,
+        with_call: bool = False,
+        protocol_options: Optional[Any] = None,
+    ) -> Union[_Response, Tuple[_Response, face.Call]]:
         return _blocking_unary_unary(
             self._channel,
             self._group,
@@ -408,7 +476,13 @@ class _UnaryUnaryMultiCallable(face.UnaryUnaryMultiCallable):
             self._response_deserializer,
         )
 
-    def future(self, request, timeout, metadata=None, protocol_options=None):
+    def future(
+        self,
+        request: _Request,
+        timeout: float,
+        metadata: Optional[_Metadata] = None,
+        protocol_options: Optional[Any] = None,
+    ) -> face.Call:
         return _future_unary_unary(
             self._channel,
             self._group,
@@ -424,26 +498,33 @@ class _UnaryUnaryMultiCallable(face.UnaryUnaryMultiCallable):
 
     def event(
         self,
-        request,
-        receiver,
-        abortion_callback,
-        timeout,
-        metadata=None,
-        protocol_options=None,
-    ):
+        request: _Request,
+        receiver: _Receiver,
+        abortion_callback: _AbortionCallback,
+        timeout: float,
+        metadata: Optional[_Metadata] = None,
+        protocol_options: Optional[Any] = None,
+    ) -> None:
         raise NotImplementedError()
 
 
 class _UnaryStreamMultiCallable(face.UnaryStreamMultiCallable):
+    _channel: grpc.Channel
+    _group: str
+    _method: str
+    _metadata_transformer: Optional[Callable[[_Metadata], _Metadata]]
+    _request_serializer: _Serializer
+    _response_deserializer: _Deserializer
+
     def __init__(
         self,
-        channel,
-        group,
-        method,
-        metadata_transformer,
-        request_serializer,
-        response_deserializer,
-    ):
+        channel: grpc.Channel,
+        group: str,
+        method: str,
+        metadata_transformer: Optional[Callable[[_Metadata], _Metadata]],
+        request_serializer: _Serializer,
+        response_deserializer: _Deserializer,
+    ) -> None:
         self._channel = channel
         self._group = group
         self._method = method
@@ -451,7 +532,13 @@ class _UnaryStreamMultiCallable(face.UnaryStreamMultiCallable):
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
 
-    def __call__(self, request, timeout, metadata=None, protocol_options=None):
+    def __call__(
+        self,
+        request: _Request,
+        timeout: float,
+        metadata: Optional[_Metadata] = None,
+        protocol_options: Optional[Any] = None,
+    ) -> face.Call:
         return _unary_stream(
             self._channel,
             self._group,
@@ -467,26 +554,33 @@ class _UnaryStreamMultiCallable(face.UnaryStreamMultiCallable):
 
     def event(
         self,
-        request,
-        receiver,
-        abortion_callback,
-        timeout,
-        metadata=None,
-        protocol_options=None,
-    ):
+        request: _Request,
+        receiver: _Receiver,
+        abortion_callback: _AbortionCallback,
+        timeout: float,
+        metadata: Optional[_Metadata] = None,
+        protocol_options: Optional[Any] = None,
+    ) -> None:
         raise NotImplementedError()
 
 
 class _StreamUnaryMultiCallable(face.StreamUnaryMultiCallable):
+    _channel: grpc.Channel
+    _group: str
+    _method: str
+    _metadata_transformer: Optional[Callable[[_Metadata], _Metadata]]
+    _request_serializer: _Serializer
+    _response_deserializer: _Deserializer
+
     def __init__(
         self,
-        channel,
-        group,
-        method,
-        metadata_transformer,
-        request_serializer,
-        response_deserializer,
-    ):
+        channel: grpc.Channel,
+        group: str,
+        method: str,
+        metadata_transformer: Optional[Callable[[_Metadata], _Metadata]],
+        request_serializer: _Serializer,
+        response_deserializer: _Deserializer,
+    ) -> None:
         self._channel = channel
         self._group = group
         self._method = method
@@ -496,12 +590,12 @@ class _StreamUnaryMultiCallable(face.StreamUnaryMultiCallable):
 
     def __call__(
         self,
-        request_iterator,
-        timeout,
-        metadata=None,
-        with_call=False,
-        protocol_options=None,
-    ):
+        request_iterator: _RequestIterator,
+        timeout: float,
+        metadata: Optional[_Metadata] = None,
+        with_call: bool = False,
+        protocol_options: Optional[Any] = None,
+    ) -> Union[_Response, Tuple[_Response, face.Call]]:
         return _blocking_stream_unary(
             self._channel,
             self._group,
@@ -517,8 +611,12 @@ class _StreamUnaryMultiCallable(face.StreamUnaryMultiCallable):
         )
 
     def future(
-        self, request_iterator, timeout, metadata=None, protocol_options=None
-    ):
+        self,
+        request_iterator: _RequestIterator,
+        timeout: float,
+        metadata: Optional[_Metadata] = None,
+        protocol_options: Optional[Any] = None,
+    ) -> face.Call:
         return _future_stream_unary(
             self._channel,
             self._group,
@@ -534,25 +632,32 @@ class _StreamUnaryMultiCallable(face.StreamUnaryMultiCallable):
 
     def event(
         self,
-        receiver,
-        abortion_callback,
-        timeout,
-        metadata=None,
-        protocol_options=None,
-    ):
+        receiver: _Receiver,
+        abortion_callback: _AbortionCallback,
+        timeout: float,
+        metadata: Optional[_Metadata] = None,
+        protocol_options: Optional[Any] = None,
+    ) -> face.RequestIterator:
         raise NotImplementedError()
 
 
 class _StreamStreamMultiCallable(face.StreamStreamMultiCallable):
+    _channel: grpc.Channel
+    _group: str
+    _method: str
+    _metadata_transformer: Optional[Callable[[_Metadata], _Metadata]]
+    _request_serializer: _Serializer
+    _response_deserializer: _Deserializer
+
     def __init__(
         self,
-        channel,
-        group,
-        method,
-        metadata_transformer,
-        request_serializer,
-        response_deserializer,
-    ):
+        channel: grpc.Channel,
+        group: str,
+        method: str,
+        metadata_transformer: Optional[Callable[[_Metadata], _Metadata]],
+        request_serializer: _Serializer,
+        response_deserializer: _Deserializer,
+    ) -> None:
         self._channel = channel
         self._group = group
         self._method = method
@@ -561,8 +666,12 @@ class _StreamStreamMultiCallable(face.StreamStreamMultiCallable):
         self._response_deserializer = response_deserializer
 
     def __call__(
-        self, request_iterator, timeout, metadata=None, protocol_options=None
-    ):
+        self,
+        request_iterator: _RequestIterator,
+        timeout: float,
+        metadata: Optional[_Metadata] = None,
+        protocol_options: Optional[Any] = None,
+    ) -> face.Call:
         return _stream_stream(
             self._channel,
             self._group,
@@ -578,23 +687,32 @@ class _StreamStreamMultiCallable(face.StreamStreamMultiCallable):
 
     def event(
         self,
-        receiver,
-        abortion_callback,
-        timeout,
-        metadata=None,
-        protocol_options=None,
-    ):
+        receiver: _Receiver,
+        abortion_callback: _AbortionCallback,
+        timeout: float,
+        metadata: Optional[_Metadata] = None,
+        protocol_options: Optional[Any] = None,
+    ) -> face.RequestIterator:
         raise NotImplementedError()
 
 
 class _GenericStub(face.GenericStub):
+    _channel: grpc.Channel
+    _metadata_transformer: Optional[Callable[[_Metadata], _Metadata]]
+    _request_serializers: Dict[Tuple[str, str], _Serializer]
+    _response_deserializers: Dict[Tuple[str, str], _Deserializer]
+
     def __init__(
         self,
-        channel,
-        metadata_transformer,
-        request_serializers,
-        response_deserializers,
-    ):
+        channel: grpc.Channel,
+        metadata_transformer: Optional[Callable[[_Metadata], _Metadata]],
+        request_serializers: Optional[
+            Dict[Tuple[str, str], _Serializer]
+        ],
+        response_deserializers: Optional[
+            Dict[Tuple[str, str], _Deserializer]
+        ],
+    ) -> None:
         self._channel = channel
         self._metadata_transformer = metadata_transformer
         self._request_serializers = request_serializers or {}
@@ -602,14 +720,14 @@ class _GenericStub(face.GenericStub):
 
     def blocking_unary_unary(
         self,
-        group,
-        method,
-        request,
-        timeout,
-        metadata=None,
-        with_call=None,
-        protocol_options=None,
-    ):
+        group: str,
+        method: str,
+        request: _Request,
+        timeout: float,
+        metadata: Optional[_Metadata] = None,
+        with_call: Optional[bool] = None,
+        protocol_options: Optional[Any] = None,
+    ) -> Union[_Response, Tuple[_Response, face.Call]]:
         request_serializer = self._request_serializers.get(
             (
                 group,
@@ -638,13 +756,13 @@ class _GenericStub(face.GenericStub):
 
     def future_unary_unary(
         self,
-        group,
-        method,
-        request,
-        timeout,
-        metadata=None,
-        protocol_options=None,
-    ):
+        group: str,
+        method: str,
+        request: _Request,
+        timeout: float,
+        metadata: Optional[_Metadata] = None,
+        protocol_options: Optional[Any] = None,
+    ) -> face.Call:
         request_serializer = self._request_serializers.get(
             (
                 group,
@@ -672,13 +790,13 @@ class _GenericStub(face.GenericStub):
 
     def inline_unary_stream(
         self,
-        group,
-        method,
-        request,
-        timeout,
-        metadata=None,
-        protocol_options=None,
-    ):
+        group: str,
+        method: str,
+        request: _Request,
+        timeout: float,
+        metadata: Optional[_Metadata] = None,
+        protocol_options: Optional[Any] = None,
+    ) -> face.Call:
         request_serializer = self._request_serializers.get(
             (
                 group,
@@ -706,14 +824,14 @@ class _GenericStub(face.GenericStub):
 
     def blocking_stream_unary(
         self,
-        group,
-        method,
-        request_iterator,
-        timeout,
-        metadata=None,
-        with_call=None,
-        protocol_options=None,
-    ):
+        group: str,
+        method: str,
+        request_iterator: _RequestIterator,
+        timeout: float,
+        metadata: Optional[_Metadata] = None,
+        with_call: Optional[bool] = None,
+        protocol_options: Optional[Any] = None,
+    ) -> Union[_Response, Tuple[_Response, face.Call]]:
         request_serializer = self._request_serializers.get(
             (
                 group,
@@ -742,13 +860,13 @@ class _GenericStub(face.GenericStub):
 
     def future_stream_unary(
         self,
-        group,
-        method,
-        request_iterator,
-        timeout,
-        metadata=None,
-        protocol_options=None,
-    ):
+        group: str,
+        method: str,
+        request_iterator: _RequestIterator,
+        timeout: float,
+        metadata: Optional[_Metadata] = None,
+        protocol_options: Optional[Any] = None,
+    ) -> face.Call:
         request_serializer = self._request_serializers.get(
             (
                 group,
@@ -776,13 +894,13 @@ class _GenericStub(face.GenericStub):
 
     def inline_stream_stream(
         self,
-        group,
-        method,
-        request_iterator,
-        timeout,
-        metadata=None,
-        protocol_options=None,
-    ):
+        group: str,
+        method: str,
+        request_iterator: _RequestIterator,
+        timeout: float,
+        metadata: Optional[_Metadata] = None,
+        protocol_options: Optional[Any] = None,
+    ) -> face.Call:
         request_serializer = self._request_serializers.get(
             (
                 group,
@@ -810,55 +928,57 @@ class _GenericStub(face.GenericStub):
 
     def event_unary_unary(
         self,
-        group,
-        method,
-        request,
-        receiver,
-        abortion_callback,
-        timeout,
-        metadata=None,
-        protocol_options=None,
-    ):
+        group: str,
+        method: str,
+        request: _Request,
+        receiver: _Receiver,
+        abortion_callback: _AbortionCallback,
+        timeout: float,
+        metadata: Optional[_Metadata] = None,
+        protocol_options: Optional[Any] = None,
+    ) -> None:
         raise NotImplementedError()
 
     def event_unary_stream(
         self,
-        group,
-        method,
-        request,
-        receiver,
-        abortion_callback,
-        timeout,
-        metadata=None,
-        protocol_options=None,
-    ):
+        group: str,
+        method: str,
+        request: _Request,
+        receiver: _Receiver,
+        abortion_callback: _AbortionCallback,
+        timeout: float,
+        metadata: Optional[_Metadata] = None,
+        protocol_options: Optional[Any] = None,
+    ) -> None:
         raise NotImplementedError()
 
     def event_stream_unary(
         self,
-        group,
-        method,
-        receiver,
-        abortion_callback,
-        timeout,
-        metadata=None,
-        protocol_options=None,
-    ):
+        group: str,
+        method: str,
+        receiver: _Receiver,
+        abortion_callback: _AbortionCallback,
+        timeout: float,
+        metadata: Optional[_Metadata] = None,
+        protocol_options: Optional[Any] = None,
+    ) -> face.RequestIterator:
         raise NotImplementedError()
 
     def event_stream_stream(
         self,
-        group,
-        method,
-        receiver,
-        abortion_callback,
-        timeout,
-        metadata=None,
-        protocol_options=None,
-    ):
+        group: str,
+        method: str,
+        receiver: _Receiver,
+        abortion_callback: _AbortionCallback,
+        timeout: float,
+        metadata: Optional[_Metadata] = None,
+        protocol_options: Optional[Any] = None,
+    ) -> face.RequestIterator:
         raise NotImplementedError()
 
-    def unary_unary(self, group, method):
+    def unary_unary(
+        self, group: str, method: str
+    ) -> face.UnaryUnaryMultiCallable:
         request_serializer = self._request_serializers.get(
             (
                 group,
@@ -880,7 +1000,9 @@ class _GenericStub(face.GenericStub):
             response_deserializer,
         )
 
-    def unary_stream(self, group, method):
+    def unary_stream(
+        self, group: str, method: str
+    ) -> face.UnaryStreamMultiCallable:
         request_serializer = self._request_serializers.get(
             (
                 group,
@@ -902,7 +1024,9 @@ class _GenericStub(face.GenericStub):
             response_deserializer,
         )
 
-    def stream_unary(self, group, method):
+    def stream_unary(
+        self, group: str, method: str
+    ) -> face.StreamUnaryMultiCallable:
         request_serializer = self._request_serializers.get(
             (
                 group,
@@ -924,7 +1048,9 @@ class _GenericStub(face.GenericStub):
             response_deserializer,
         )
 
-    def stream_stream(self, group, method):
+    def stream_stream(
+        self, group: str, method: str
+    ) -> face.StreamStreamMultiCallable:
         request_serializer = self._request_serializers.get(
             (
                 group,
@@ -946,20 +1072,29 @@ class _GenericStub(face.GenericStub):
             response_deserializer,
         )
 
-    def __enter__(self):
+    def __enter__(self) -> "_GenericStub":
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
         return False
 
 
 class _DynamicStub(face.DynamicStub):
-    def __init__(self, backing_generic_stub, group, cardinalities):
+    _generic_stub: _GenericStub
+    _group: str
+    _cardinalities: Dict[str, cardinality.Cardinality]
+
+    def __init__(
+        self,
+        backing_generic_stub: _GenericStub,
+        group: str,
+        cardinalities: Dict[str, cardinality.Cardinality],
+    ) -> None:
         self._generic_stub = backing_generic_stub
         self._group = group
         self._cardinalities = cardinalities
 
-    def __getattr__(self, attr):
+    def __getattr__(self, attr: str) -> face.MultiCallable:
         method_cardinality = self._cardinalities.get(attr)
         if method_cardinality is cardinality.Cardinality.UNARY_UNARY:
             return self._generic_stub.unary_unary(self._group, attr)
@@ -974,20 +1109,22 @@ class _DynamicStub(face.DynamicStub):
                 '_DynamicStub object has no attribute "%s"!' % attr
             )
 
-    def __enter__(self):
+    def __enter__(self) -> "_DynamicStub":
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> bool:
         return False
 
 
 def generic_stub(
-    channel,
-    host,
-    metadata_transformer,
-    request_serializers,
-    response_deserializers,
-):
+    channel: grpc.Channel,
+    host: str,
+    metadata_transformer: Optional[Callable[[_Metadata], _Metadata]],
+    request_serializers: Optional[Dict[Tuple[str, str], _Serializer]],
+    response_deserializers: Optional[
+        Dict[Tuple[str, str], _Deserializer]
+    ],
+) -> _GenericStub:
     return _GenericStub(
         channel,
         metadata_transformer,
@@ -997,14 +1134,16 @@ def generic_stub(
 
 
 def dynamic_stub(
-    channel,
-    service,
-    cardinalities,
-    host,
-    metadata_transformer,
-    request_serializers,
-    response_deserializers,
-):
+    channel: grpc.Channel,
+    service: str,
+    cardinalities: Dict[str, cardinality.Cardinality],
+    host: str,
+    metadata_transformer: Optional[Callable[[_Metadata], _Metadata]],
+    request_serializers: Optional[Dict[Tuple[str, str], _Serializer]],
+    response_deserializers: Optional[
+        Dict[Tuple[str, str], _Deserializer]
+    ],
+) -> _DynamicStub:
     return _DynamicStub(
         _GenericStub(
             channel,
