@@ -799,12 +799,12 @@ void AddMetadataForWrappedLanguages(nlohmann::json& config) {
   AddAbseilMetadata(config);
   AddCaresMetadata(config);
   ExpandTransitiveDeps(config);
-  AddPhpConfig(config);
   ExpandVersion(config);
   AddSupportedBazelVersions(config);
   ExpandSupportedPythonVersions(config);
   ProcessSwiftPackageFiles(config);
   ProcessSwiftBoringSSLPackageFiles(config);
+  AddPhpConfig(config);
   
   // Add package.xml-specific file collection
   auto package_xml_srcs = MakePhpPackageXmlSrcs(config);
