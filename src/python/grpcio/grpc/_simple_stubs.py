@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Functions that obviate explicit stubs and explicit channels."""
+from __future__ import annotations
 
 import collections
 import datetime
@@ -101,7 +102,7 @@ class ChannelCache:
     _mapping: Dict[CacheKey, Tuple[grpc.Channel, datetime.datetime]]
     _eviction_thread: threading.Thread
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._mapping = collections.OrderedDict()
         self._eviction_thread = threading.Thread(
             target=ChannelCache._perform_evictions, daemon=True
@@ -109,14 +110,14 @@ class ChannelCache:
         self._eviction_thread.start()
 
     @staticmethod
-    def get():
+    def get() -> ChannelCache:
         with ChannelCache._lock:
             if ChannelCache._singleton is None:
                 ChannelCache._singleton = ChannelCache()
         ChannelCache._eviction_ready.wait()
         return ChannelCache._singleton
 
-    def _evict_locked(self, key: CacheKey):
+    def _evict_locked(self, key: CacheKey) -> None:
         channel, _ = self._mapping.pop(key)
         _LOGGER.debug(
             "Evicting channel %s with configuration %s.", channel, key
@@ -125,7 +126,7 @@ class ChannelCache:
         del channel
 
     @staticmethod
-    def _perform_evictions():
+    def _perform_evictions() -> None:
         while True:
             with ChannelCache._lock:
                 ChannelCache._eviction_ready.set()

@@ -23,7 +23,7 @@ def _sign_request(
     callback: grpc.AuthMetadataPluginCallback,
     token: Optional[str],
     error: Optional[Exception],
-):
+) -> None:
     metadata = (("authorization", "Bearer {}".format(token)),)
     callback(metadata, error)
 
@@ -48,7 +48,7 @@ class GoogleCallCredentials(grpc.AuthMetadataPlugin):
         self,
         context: grpc.AuthMetadataContext,
         callback: grpc.AuthMetadataPluginCallback,
-    ):
+    ) -> None:
         try:
             if self._is_jwt:
                 access_token = self._credentials.get_access_token(
@@ -69,12 +69,12 @@ class AccessTokenAuthMetadataPlugin(grpc.AuthMetadataPlugin):
 
     _access_token: str
 
-    def __init__(self, access_token: str):
+    def __init__(self, access_token: str) -> None:
         self._access_token = access_token
 
     def __call__(
         self,
         context: grpc.AuthMetadataContext,
         callback: grpc.AuthMetadataPluginCallback,
-    ):
+    ) -> None:
         _sign_request(callback, self._access_token, None)
