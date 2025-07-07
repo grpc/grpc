@@ -25,7 +25,7 @@ import subprocess
 import sys
 import sysconfig
 import traceback
-from typing import Any, List
+from typing import List
 
 from setuptools import Extension
 
