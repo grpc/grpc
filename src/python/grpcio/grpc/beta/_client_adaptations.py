@@ -36,17 +36,6 @@ from grpc.framework.common import cardinality
 from grpc.framework.foundation import future
 from grpc.framework.interfaces.face import face
 
-_Metadatum = Tuple[str, Any]
-_Metadata = Sequence[_Metadatum]
-_Request = Any
-_Response = Any
-_RequestIterator = Iterable[_Request]
-_ResponseIterator = Iterator[_Response]
-_Serializer = Callable[[Any], bytes]
-_Deserializer  = Callable[[bytes], Any]
-_AbortionCallback = Callable[[face.Abortion], None]
-
-
 class _DoneCallback(Protocol):
 
     def __call__(self, rendezvous: "_Rendezvous") -> None:
