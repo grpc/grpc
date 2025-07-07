@@ -32,6 +32,12 @@ from grpc.framework.common import cardinality
 from grpc.framework.foundation import future
 from grpc.framework.interfaces.face import face
 from ._typing import _Metadata
+from ._typing import _Response
+from ._typing import _Request
+from ._typing import _Serializer
+from ._typing import _Deserializer
+from ._typing import _RequestIterator
+from ._typing import _AbortionCallback
 
 _DoneCallback = Any
 _Receiver = Any
