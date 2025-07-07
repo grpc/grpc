@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Translates gRPC's client-side API into gRPC's client-side Beta API."""
+from __future__ import annotations
 
 from typing import (
     Any,
@@ -193,7 +194,7 @@ class _Rendezvous(future.Future, face.Call):
     def add_done_callback(self, fn: _DoneCallback) -> None:
         self._future.add_done_callback(lambda ignored_callback: fn(self))
 
-    def __iter__(self) -> "_Rendezvous":
+    def __iter__(self) -> _Rendezvous:
         return self
 
     def _next(self) -> _Response:
