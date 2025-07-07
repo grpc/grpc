@@ -9790,11 +9790,13 @@ grpc_cc_library(
         "call_filters",
         "call_final_info",
         "channel_args",
+        "gpr_manual_constructor",
         "metadata",
         "status_helper",
         "type_list",
         "//:grpc_base",
         "//:grpc_public_hdrs",
+        "//:promise",
     ],
 )
 
