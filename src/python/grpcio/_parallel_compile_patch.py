@@ -38,7 +38,7 @@ except KeyError:
 except ValueError:
     BUILD_EXT_COMPILER_JOBS: int = 1
 
-OptionalStrList = Optional[List[str]]
+OptionalListStr = Optional[List[str]]
 
 # monkey-patch for parallel compilation
 def _parallel_compile(
@@ -46,11 +46,11 @@ def _parallel_compile(
     sources: List[str],
     output_dir: Optional[str] = None,
     macros: Optional[List[Tuple[str, Optional[str]]]] = None,
-    include_dirs: OptionalStrList = None,
+    include_dirs: OptionalListStr = None,
     debug: int = 0,
-    extra_preargs: OptionalStrList = None,
-    extra_postargs: OptionalStrList = None,
-    depends: OptionalStrList = None,
+    extra_preargs: OptionalListStr = None,
+    extra_postargs: OptionalListStr = None,
+    depends: OptionalListStr = None,
 ) -> List[str]:
     # setup the same way as distutils.ccompiler.CCompiler
     # https://github.com/python/cpython/blob/31368a4f0e531c19affe2a1becd25fc316bc7501/Lib/distutils/ccompiler.py#L564
