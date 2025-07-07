@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Abstract base classes for Channel objects and Multicallable objects."""
+from __future__ import annotations
 
 import abc
 from typing import TYPE_CHECKING, Generic, Optional
@@ -192,7 +193,7 @@ class Channel(abc.ABC):
     """
 
     @abc.abstractmethod
-    async def __aenter__(self) -> "Channel":
+    async def __aenter__(self) -> Channel:
         """Starts an asynchronous context manager.
 
         Returns:

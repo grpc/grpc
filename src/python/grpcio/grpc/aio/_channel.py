@@ -591,7 +591,7 @@ def insecure_channel(
     options: Optional[ChannelArgumentType] = None,
     compression: Optional[grpc.Compression] = None,
     interceptors: Optional[Sequence[ClientInterceptor]] = None,
-) -> grpc.aio.Channel:
+) -> Channel:
     """Creates an insecure asynchronous Channel to a server.
 
     Args:
@@ -622,7 +622,7 @@ def secure_channel(
     options: Optional[ChannelArgumentType] = None,
     compression: Optional[grpc.Compression] = None,
     interceptors: Optional[Sequence[ClientInterceptor]] = None,
-) -> grpc.aio.Channel:
+) -> Channel:
     """Creates a secure asynchronous Channel to a server.
 
     Args:
