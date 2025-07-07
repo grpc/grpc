@@ -102,7 +102,7 @@ class ChannelCache:
     _mapping: Dict[CacheKey, Tuple[grpc.Channel, datetime.datetime]]
     _eviction_thread: threading.Thread
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._mapping = collections.OrderedDict()
         self._eviction_thread = threading.Thread(
             target=ChannelCache._perform_evictions, daemon=True
