@@ -5222,12 +5222,12 @@ grpc_upb_proto_reflection_library(
 
 grpc_upb_proto_library(
     name = "channelz_v1_upb",
-    deps = ["//src/proto/grpc/channelz:channelz_proto_only"],
+    deps = ["//src/proto/grpc/channelz:channelz_proto_internal"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "channelz_v1_upbdefs",
-    deps = ["//src/proto/grpc/channelz:channelz_proto_only"],
+    deps = ["//src/proto/grpc/channelz:channelz_proto_internal"],
 )
 
 grpc_upb_proto_library(
