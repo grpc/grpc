@@ -15,17 +15,19 @@
 from __future__ import annotations
 
 import abc
-from typing import Generic, Optional
+from typing import TYPE_CHECKING, Generic, Optional
 
-import grpc
-
-from . import _base_call
 from ._typing import DeserializingFunction
 from ._typing import MetadataType
 from ._typing import RequestIterableType
 from ._typing import RequestType
 from ._typing import ResponseType
 from ._typing import SerializingFunction
+
+if TYPE_CHECKING:
+    import grpc
+
+    from . import _base_call
 
 
 class UnaryUnaryMultiCallable(Generic[RequestType, ResponseType], abc.ABC):
