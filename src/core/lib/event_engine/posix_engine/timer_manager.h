@@ -95,13 +95,9 @@ class TimerManager final {
   // thread.
   grpc_core::CondVar cv_wait_;
   Host host_;
-  // are we shutting down?
-  State state_ ABSL_GUARDED_BY(mu_) = {State::kRunning};
-  // are we shutting down?
+  State state_ ABSL_GUARDED_BY(mu_) = State::kRunning;
   bool kicked_ ABSL_GUARDED_BY(mu_) = false;
-  // number of timer wakeups
   uint64_t wakeups_ ABSL_GUARDED_BY(mu_) = false;
-  // actual timer implementation
   std::unique_ptr<TimerList> timer_list_;
   std::shared_ptr<grpc_event_engine::experimental::ThreadPool> thread_pool_;
   std::optional<grpc_core::Notification> main_loop_exit_signal_;
