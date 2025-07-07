@@ -26,7 +26,9 @@ from ._typing import SerializingFunction
 
 if TYPE_CHECKING:
     import grpc
+
     from . import _base_call
+
 
 class UnaryUnaryMultiCallable(Generic[RequestType, ResponseType], abc.ABC):
     """Enables asynchronous invocation of a unary-call RPC."""
