@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Translates gRPC's client-side API into gRPC's client-side Beta API."""
+import types
 
 import grpc
 from grpc import _common
@@ -43,8 +44,8 @@ _STATUS_CODE_TO_ABORTION_KIND_AND_ABORTION_ERROR_CLASS = {
     ),
 }
 
-
-def _effective_metadata(metadata: Optional[Tuple[Tuple[str, str], ...]], metadata_transformer: Optional[Callable]) -> Tuple[Tuple[str, str], ...]:
+def _effective_metadata(metadata: Optional[Tuple[Tuple[str, str], ...]],
+                        metadata_transformer: Optional[Callable]) -> Tuple[Tuple[str, str], ...]:
     non_none_metadata = () if metadata is None else metadata
     if metadata_transformer is None:
         return non_none_metadata
@@ -87,24 +88,24 @@ class _InvocationProtocolContext(interfaces.GRPCInvocationContext):
 
 
 class _Rendezvous(future.Future, face.Call):
-    def __init__(self, response_future, response_iterator, call):
+    def __init__(self, response_future, response_iterator, call) -> None:
         self._future = response_future
         self._iterator = response_iterator
         self._call = call
 
-    def cancel(self):
+    def cancel(self) -> bool:
         return self._call.cancel()
 
-    def cancelled(self):
+    def cancelled(self) -> bool:
         return self._future.cancelled()
 
-    def running(self):
+    def running(self) -> bool:
         return self._future.running()
 
-    def done(self):
+    def done(self) -> bool:
         return self._future.done()
 
-    def result(self, timeout=None):
+    def result(self, timeout=None) -> Any:
         try:
             return self._future.result(timeout=timeout)
         except grpc.RpcError as rpc_error_call:
@@ -114,7 +115,7 @@ class _Rendezvous(future.Future, face.Call):
         except grpc.FutureCancelledError:
             raise future.CancelledError()
 
-    def exception(self, timeout=None):
+    def exception(self, timeout=None) -> Optional[Exception]:
         try:
             rpc_error_call = self._future.exception(timeout=timeout)
             if rpc_error_call is None:
@@ -126,7 +127,7 @@ class _Rendezvous(future.Future, face.Call):
         except grpc.FutureCancelledError:
             raise future.CancelledError()
 
-    def traceback(self, timeout=None):
+    def traceback(self, timeout=None) -> Optional[types.TracebackType]:
         try:
             return self._future.traceback(timeout=timeout)
         except grpc.FutureTimeoutError:
@@ -134,31 +135,31 @@ class _Rendezvous(future.Future, face.Call):
         except grpc.FutureCancelledError:
             raise future.CancelledError()
 
-    def add_done_callback(self, fn):
+    def add_done_callback(self, fn) -> None:
         self._future.add_done_callback(lambda ignored_callback: fn(self))
 
     def __iter__(self):
         return self
 
-    def _next(self):
+    def _next(self) -> Any:
         try:
             return next(self._iterator)
         except grpc.RpcError as rpc_error_call:
             raise _abortion_error(rpc_error_call)
 
-    def __next__(self):
+    def __next__(self) -> Any:
         return self._next()
 
-    def next(self):
+    def next(self) -> Any:
         return self._next()
 
-    def is_active(self):
+    def is_active(self) -> bool:
         return self._call.is_active()
 
-    def time_remaining(self):
+    def time_remaining(self) -> Optional[float]:
         return self._call.time_remaining()
 
-    def add_abortion_callback(self, abortion_callback):
+    def add_abortion_callback(self, abortion_callback) -> None:
         def done_callback():
             if self.code() is not grpc.StatusCode.OK:
                 abortion_callback(_abortion(self._call))
@@ -166,7 +167,7 @@ class _Rendezvous(future.Future, face.Call):
         registered = self._call.add_callback(done_callback)
         return None if registered else done_callback()
 
-    def protocol_context(self):
+    def protocol_context(self) :
         return _InvocationProtocolContext()
 
     def initial_metadata(self):
@@ -175,10 +176,10 @@ class _Rendezvous(future.Future, face.Call):
     def terminal_metadata(self):
         return _metadata.beta(self._call.terminal_metadata())
 
-    def code(self):
+    def code(self) -> grpc.StatusCode:
         return self._call.code()
 
-    def details(self):
+    def details(self) -> Optional[str]:
         return self._call.details()
 
 
