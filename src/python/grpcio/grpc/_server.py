@@ -1068,10 +1068,6 @@ def _handle_with_method_handler(
 def _capture_main_context():
     """Capture the context from the main thread."""
     _handle_call._main_context = contextvars.copy_context()
-    print(
-        f"DEBUG: Captured main context from thread {threading.current_thread().ident}"
-    )
-
 
 def _handle_call(
     rpc_event: cygrpc.BaseEvent,
