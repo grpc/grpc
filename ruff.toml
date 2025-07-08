@@ -12,6 +12,8 @@ ignore = [
     # imports upon detecting type annotations that can be written more succinctly under PEP 563.
     "E501", # Checks for lines that exceed the specified maximum character length.
 
+    "TC001", # Checks for first-party imports that are only used for type annotations, but aren't defined in a type-checking block.
+
     "TD003", # TD003 Missing issue link for this TODO
     "TD004", # Checks that a "TODO" tag is followed by a colon.
     "FIX002", # Checks for "TODO" comments.
@@ -23,6 +25,8 @@ ignore = [
     "S105", # Checks for potential uses of hardcoded passwords in strings.
 
     "BLE001", # Checks for except clauses that catch all exceptions. This includes bare except, except BaseException and except Exception.
+
+    "RUF022", # Checks for __all__ definitions that are not ordered according to an "isort-style" sort.
 
     "PLR0913", # Checks for function definitions that include too many arguments.
     "PERF203", # Checks for uses of except handling via try-except within for and while loops.
