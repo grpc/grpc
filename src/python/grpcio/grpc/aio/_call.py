@@ -127,7 +127,6 @@ class AioRpcError(grpc.RpcError):
 
         Returns:
           The `grpc.StatusCode` status code.
-
         """
         return self._code
 
@@ -136,7 +135,6 @@ class AioRpcError(grpc.RpcError):
 
         Returns:
           The description of the error.
-
         """
         return self._details
 
@@ -145,7 +143,6 @@ class AioRpcError(grpc.RpcError):
 
         Returns:
           The initial metadata received.
-
         """
         return self._initial_metadata
 
@@ -154,7 +151,6 @@ class AioRpcError(grpc.RpcError):
 
         Returns:
           The trailing metadata received.
-
         """
         return self._trailing_metadata
 
@@ -163,7 +159,6 @@ class AioRpcError(grpc.RpcError):
 
         Returns:
           The debug error string received.
-
         """
         return self._debug_error_string
 

@@ -44,7 +44,6 @@ class RpcContext(metaclass=ABCMeta):
 
         Returns:
           A bool indicates whether the RPC is cancelled or not.
-
         """
 
     @abstractmethod
@@ -55,7 +54,6 @@ class RpcContext(metaclass=ABCMeta):
 
         Returns:
           A bool indicates if the RPC is done.
-
         """
 
     @abstractmethod
@@ -66,7 +64,6 @@ class RpcContext(metaclass=ABCMeta):
           A nonnegative float indicating the length of allowed time in seconds
           remaining for the RPC to complete before it is considered to have
           timed out, or None if no deadline was specified for the RPC.
-
         """
 
     @abstractmethod
@@ -77,7 +74,6 @@ class RpcContext(metaclass=ABCMeta):
 
         Returns:
           A bool indicates if the cancellation is performed or not.
-
         """
 
     @abstractmethod
@@ -87,7 +83,6 @@ class RpcContext(metaclass=ABCMeta):
         Args:
           callback: A callable object will be called with the call object as
           its only argument.
-
         """
 
 
@@ -100,7 +95,6 @@ class Call(RpcContext, metaclass=ABCMeta):
 
         Returns:
           The initial :term:`metadata`.
-
         """
 
     @abstractmethod
@@ -109,7 +103,6 @@ class Call(RpcContext, metaclass=ABCMeta):
 
         Returns:
           The trailing :term:`metadata`.
-
         """
 
     @abstractmethod
@@ -118,7 +111,6 @@ class Call(RpcContext, metaclass=ABCMeta):
 
         Returns:
           The StatusCode value for the RPC.
-
         """
 
     @abstractmethod
@@ -157,7 +149,6 @@ class UnaryUnaryCall(
 
         Returns:
           The response message of the RPC.
-
         """
 
 
@@ -174,7 +165,6 @@ class UnaryStreamCall(
 
         Returns:
           An async iterator object that yields messages.
-
         """
 
     @abstractmethod
@@ -208,7 +198,6 @@ class StreamUnaryCall(
 
         Raises:
           An RpcError exception if the write failed.
-
         """
 
     @abstractmethod
@@ -225,7 +214,6 @@ class StreamUnaryCall(
 
         Returns:
           The response message of the stream.
-
         """
 
 
@@ -242,7 +230,6 @@ class StreamStreamCall(
 
         Returns:
           An async iterator object that yields messages.
-
         """
 
     @abstractmethod
@@ -258,7 +245,6 @@ class StreamStreamCall(
         Returns:
           A response message, or an `grpc.aio.EOF` to indicate the end of the
           stream.
-
         """
 
     @abstractmethod
@@ -270,7 +256,6 @@ class StreamStreamCall(
 
         Raises:
           An RpcError exception if the write failed.
-
         """
 
     @abstractmethod

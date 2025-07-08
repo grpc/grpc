@@ -20,7 +20,6 @@ import asyncio
 import collections
 import functools
 from typing import (
-    TYPE_CHECKING,
     Any,
     AsyncIterable,
     AsyncIterator,
@@ -46,17 +45,15 @@ from ._call import _API_STYLE_ERROR
 from ._call import _RPC_ALREADY_FINISHED_DETAILS
 from ._call import _RPC_HALF_CLOSED_DETAILS
 from ._utils import _timeout_to_deadline
-
-if TYPE_CHECKING:
-    from ._metadata import Metadata
-    from ._typing import DeserializingFunction
-    from ._typing import DoneCallbackType
-    from ._typing import EOFType
-    from ._typing import RequestIterableType
-    from ._typing import RequestType
-    from ._typing import ResponseIterableType
-    from ._typing import ResponseType
-    from ._typing import SerializingFunction
+from ._metadata import Metadata
+from ._typing import DeserializingFunction
+from ._typing import DoneCallbackType
+from ._typing import EOFType
+from ._typing import RequestIterableType
+from ._typing import RequestType
+from ._typing import ResponseIterableType
+from ._typing import ResponseType
+from ._typing import SerializingFunction
 
 _LOCAL_CANCELLATION_DETAILS = "Locally cancelled by application!"
 
@@ -172,7 +169,6 @@ class UnaryUnaryClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
         Raises:
           AioRpcError: Indicating that the RPC terminated with non-OK status.
           asyncio.CancelledError: Indicating that the RPC was canceled.
-
         """
 
 
@@ -214,7 +210,6 @@ class UnaryStreamClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
         Raises:
           AioRpcError: Indicating that the RPC terminated with non-OK status.
           asyncio.CancelledError: Indicating that the RPC was canceled.
-
         """
 
 
@@ -258,7 +253,6 @@ class StreamUnaryClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
         Raises:
           AioRpcError: Indicating that the RPC terminated with non-OK status.
           asyncio.CancelledError: Indicating that the RPC was canceled.
-
         """
 
 
@@ -306,7 +300,6 @@ class StreamStreamClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
         Raises:
           AioRpcError: Indicating that the RPC terminated with non-OK status.
           asyncio.CancelledError: Indicating that the RPC was canceled.
-
         """
 
 

@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Common types for gRPC Async API"""
+
 from typing import (
     Any,
     AsyncIterable,
