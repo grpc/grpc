@@ -9950,6 +9950,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "auth_context_comparator_registry",
+    hdrs = [
+        "transport/auth_context_comparator_registry.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/strings",
+    ],
+    visibility = ["//transport_auth_context:__subpackages__"],
+    deps = [
+        "channel_args",
+        "//:grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
     name = "endpoint_transport_client_channel_factory",
     srcs = [
         "transport/endpoint_transport_client_channel_factory.cc",
