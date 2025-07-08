@@ -6,7 +6,7 @@ target-version = "py39"
 
 [lint]
 ignore = [
-    "F", # "F" is the code for the formatter
+    "F401", # Disable unsed imports in Ruff
     "FA100", # Checks for missing from __future__ import annotations
     # imports upon detecting type annotations that can be written more succinctly under PEP 563.
 
@@ -57,5 +57,7 @@ pyupgrade.keep-runtime-typing = true
 # This is a good way to stay up-to-date with new rules in ruff.
 select = ["ALL"]
 
-# Allow unused variables that match these patterns.
-dummy-variable-rgx = "^(_+|ignored_)"
+[format]
+# Exclude all files from the formatter using a glob pattern.
+# This is the most straightforward way to disable it.
+exclude = ["*"]
