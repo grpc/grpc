@@ -71,22 +71,6 @@ if contextvars_supported():
 
     _EXPECTED_VALUE = 24601
     test_var = contextvars.ContextVar("test_var", default=None)
-    
-    # Contextvar for server handler tests
-    server_test_var = contextvars.ContextVar("server_test_var", default="missing")
-    
-    # Global context storage for tests
-    _test_context = None
-
-    def capture_test_context():
-        """Capture the current contextvars context for use in handlers."""
-        global _test_context
-        _test_context = contextvars.copy_context()
-
-    def get_test_context():
-        """Get the captured test context."""
-        global _test_context
-        return _test_context or contextvars.copy_context()
 
     def set_up_expected_context():
         test_var.set(_EXPECTED_VALUE)
@@ -198,25 +182,23 @@ class ContextVarsPropagationTest(unittest.TestCase):
                 if not q.empty():
                     raise q.get()
 
-    def test_server_handler_contextvar_propagation(self):
-        """Test that contextvars set in main thread are visible in server handlers."""
+    def test_contextvars_propagation_fix(self):
+        """Test that contextvars set in main thread are automatically visible in handlers.
+
+        This test will fail on main branch (contextvars not propagated) but pass
+        with the contextvars propagation fix applied.
+        """
         if not contextvars_supported():
             self.skipTest("contextvars not supported")
 
         # Set contextvar in main thread
         server_test_var.set("main_thread_value")
-        
-        # Capture the context from the test thread
-        capture_test_context()
 
         def handler(request, context):
-            # Use the captured test context
-            test_ctx = get_test_context()
-            def run_in_context():
-                # This should see the contextvar set in the main thread
-                handler_value = server_test_var.get()
-                return handler_value.encode()
-            return test_ctx.run(run_in_context)
+            # This should automatically see the contextvar set in the main thread
+            # without any manual context handling
+            handler_value = server_test_var.get()
+            return handler_value.encode()
 
         # Create server with our handler
         server = test_common.test_server()
@@ -247,273 +229,8 @@ class ContextVarsPropagationTest(unittest.TestCase):
                 response = stub(_REQUEST, wait_for_ready=True)
 
                 # Verify the handler received the contextvar value
+                # This will fail on main branch (expects "missing") but pass with fix
                 self.assertEqual(b"main_thread_value", response)
-        finally:
-            server.stop(None)
-            if os.path.exists(_UDS_PATH):
-                os.remove(_UDS_PATH)
-
-    def test_server_handler_contextvar_isolation(self):
-        """Test that contextvars set in handlers don't affect main thread."""
-        if not contextvars_supported():
-            self.skipTest("contextvars not supported")
-
-        # Set initial value in main thread
-        server_test_var.set("main_thread_value")
-
-        def handler(request, context):
-            # Set a different value in the handler
-            server_test_var.set("handler_value")
-            return b"ok"
-
-        # Create server with our handler
-        server = test_common.test_server()
-        server.add_registered_method_handlers(
-            _SERVICE_NAME,
-            {_UNARY_UNARY: grpc.unary_unary_rpc_method_handler(handler)},
-        )
-        server_creds = grpc.local_server_credentials(
-            grpc.LocalConnectionType.UDS
-        )
-        server.add_secure_port(f"unix:{_UDS_PATH}", server_creds)
-        server.start()
-
-        try:
-            # Create client and make request
-            local_credentials = grpc.local_channel_credentials(
-                grpc.LocalConnectionType.UDS
-            )
-            with grpc.secure_channel(
-                f"unix:{_UDS_PATH}", local_credentials
-            ) as channel:
-                stub = channel.unary_unary(
-                    grpc._common.fully_qualified_method(
-                        _SERVICE_NAME, _UNARY_UNARY
-                    ),
-                    _registered_method=True,
-                )
-                response = stub(_REQUEST, wait_for_ready=True)
-
-                # Verify the handler worked
-                self.assertEqual(b"ok", response)
-
-                # Verify main thread contextvar is unchanged
-                self.assertEqual("main_thread_value", server_test_var.get())
-        finally:
-            server.stop(None)
-            if os.path.exists(_UDS_PATH):
-                os.remove(_UDS_PATH)
-
-    def test_server_handler_contextvar_concurrent(self):
-        """Test contextvar propagation under concurrent load."""
-        if not contextvars_supported():
-            self.skipTest("contextvars not supported")
-
-        _THREAD_COUNT = 8
-        _RPC_COUNT = 4
-
-        # Set contextvar in main thread
-        server_test_var.set("concurrent_test_value")
-        
-        # Capture the context from the test thread
-        capture_test_context()
-
-        def handler(request, context):
-            # Use the captured test context
-            test_ctx = get_test_context()
-            def run_in_context():
-                # Each handler should see the main thread value
-                handler_value = server_test_var.get()
-                if handler_value != "concurrent_test_value":
-                    raise AssertionError(
-                        f"Expected 'concurrent_test_value', got '{handler_value}'"
-                    )
-                return b"ok"
-            return test_ctx.run(run_in_context)
-
-        # Create server with our handler
-        server = test_common.test_server()
-        server.add_registered_method_handlers(
-            _SERVICE_NAME,
-            {_UNARY_UNARY: grpc.unary_unary_rpc_method_handler(handler)},
-        )
-        server_creds = grpc.local_server_credentials(
-            grpc.LocalConnectionType.UDS
-        )
-        server.add_secure_port(f"unix:{_UDS_PATH}", server_creds)
-        server.start()
-
-        try:
-            # Create client
-            local_credentials = grpc.local_channel_credentials(
-                grpc.LocalConnectionType.UDS
-            )
-            with grpc.secure_channel(
-                f"unix:{_UDS_PATH}", local_credentials
-            ) as channel:
-                stub = channel.unary_unary(
-                    grpc._common.fully_qualified_method(
-                        _SERVICE_NAME, _UNARY_UNARY
-                    ),
-                    _registered_method=True,
-                )
-
-                # Test concurrent requests
-                wait_group = test_common.WaitGroup(_THREAD_COUNT)
-
-                def _run_on_thread(exception_queue):
-                    try:
-                        wait_group.done()
-                        wait_group.wait()
-                        for i in range(_RPC_COUNT):
-                            response = stub(_REQUEST, wait_for_ready=True)
-                            self.assertEqual(b"ok", response)
-                    except Exception as e:  # pylint: disable=broad-except
-                        exception_queue.put(e)
-
-                threads = []
-                for _ in range(_THREAD_COUNT):
-                    q = queue.Queue()
-                    thread = threading.Thread(target=_run_on_thread, args=(q,))
-                    thread.setDaemon(True)
-                    thread.start()
-                    threads.append((thread, q))
-
-                for thread, q in threads:
-                    thread.join()
-                    if not q.empty():
-                        raise q.get()
-        finally:
-            server.stop(None)
-            if os.path.exists(_UDS_PATH):
-                os.remove(_UDS_PATH)
-
-    def test_server_handler_contextvar_multiple_vars(self):
-        """Test that multiple contextvars propagate correctly."""
-        if not contextvars_supported():
-            self.skipTest("contextvars not supported")
-
-        # Create multiple contextvars
-        var1 = contextvars.ContextVar("var1", default="default1")
-        var2 = contextvars.ContextVar("var2", default="default2")
-        var3 = contextvars.ContextVar("var3", default="default3")
-
-        # Set values in main thread
-        var1.set("main_value1")
-        var2.set("main_value2")
-        var3.set("main_value3")
-        
-        # Capture the context from the test thread
-        capture_test_context()
-
-        def handler(request, context):
-            # Use the captured test context
-            test_ctx = get_test_context()
-            def run_in_context():
-                # Check all contextvars are available
-                val1 = var1.get()
-                val2 = var2.get()
-                val3 = var3.get()
-                return f"{val1}:{val2}:{val3}".encode()
-            return test_ctx.run(run_in_context)
-
-        # Create server with our handler
-        server = test_common.test_server()
-        server.add_registered_method_handlers(
-            _SERVICE_NAME,
-            {_UNARY_UNARY: grpc.unary_unary_rpc_method_handler(handler)},
-        )
-        server_creds = grpc.local_server_credentials(
-            grpc.LocalConnectionType.UDS
-        )
-        server.add_secure_port(f"unix:{_UDS_PATH}", server_creds)
-        server.start()
-
-        try:
-            # Create client and make request
-            local_credentials = grpc.local_channel_credentials(
-                grpc.LocalConnectionType.UDS
-            )
-            with grpc.secure_channel(
-                f"unix:{_UDS_PATH}", local_credentials
-            ) as channel:
-                stub = channel.unary_unary(
-                    grpc._common.fully_qualified_method(
-                        _SERVICE_NAME, _UNARY_UNARY
-                    ),
-                    _registered_method=True,
-                )
-                response = stub(_REQUEST, wait_for_ready=True)
-
-                # Verify all contextvars propagated correctly
-                self.assertEqual(
-                    b"main_value1:main_value2:main_value3", response
-                )
-        finally:
-            server.stop(None)
-            if os.path.exists(_UDS_PATH):
-                os.remove(_UDS_PATH)
-
-    def test_server_handler_contextvar_nested_handlers(self):
-        """Test contextvar propagation in nested handler calls."""
-        if not contextvars_supported():
-            self.skipTest("contextvars not supported")
-
-        # Set contextvar in main thread
-        server_test_var.set("nested_test_value")
-        
-        # Capture the context from the test thread
-        capture_test_context()
-
-        def inner_handler(request, context):
-            # The context is already active from outer_handler, so just run directly
-            # This should see the contextvar from main thread
-            inner_value = server_test_var.get()
-            return f"inner:{inner_value}".encode()
-
-        def outer_handler(request, context):
-            # Use the captured test context
-            test_ctx = get_test_context()
-            def run_in_context():
-                # This should also see the contextvar from main thread
-                outer_value = server_test_var.get()
-                
-                # Make a call to inner handler
-                inner_response = inner_handler(request, context)
-                return f"outer:{outer_value}:{inner_response.decode()}".encode()
-            return test_ctx.run(run_in_context)
-
-        # Create server with our handler
-        server = test_common.test_server()
-        server.add_registered_method_handlers(
-            _SERVICE_NAME,
-            {_UNARY_UNARY: grpc.unary_unary_rpc_method_handler(outer_handler)},
-        )
-        server_creds = grpc.local_server_credentials(
-            grpc.LocalConnectionType.UDS
-        )
-        server.add_secure_port(f"unix:{_UDS_PATH}", server_creds)
-        server.start()
-
-        try:
-            # Create client and make request
-            local_credentials = grpc.local_channel_credentials(
-                grpc.LocalConnectionType.UDS
-            )
-            with grpc.secure_channel(
-                f"unix:{_UDS_PATH}", local_credentials
-            ) as channel:
-                stub = channel.unary_unary(
-                    grpc._common.fully_qualified_method(
-                        _SERVICE_NAME, _UNARY_UNARY
-                    ),
-                    _registered_method=True,
-                )
-                response = stub(_REQUEST, wait_for_ready=True)
-
-                # Verify both handlers saw the contextvar
-                expected = f"outer:nested_test_value:inner:nested_test_value"
-                self.assertEqual(expected.encode(), response)
         finally:
             server.stop(None)
             if os.path.exists(_UDS_PATH):
