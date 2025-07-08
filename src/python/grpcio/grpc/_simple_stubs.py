@@ -30,6 +30,7 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
+    List,
 )
 
 import grpc
@@ -76,7 +77,7 @@ else:
 
 def _create_channel(
     target: str,
-    options: Sequence[Tuple[str, str]],
+    options: Optional[List[Tuple[str, Any]]],
     channel_credentials: Optional[grpc.ChannelCredentials],
     compression: Optional[grpc.Compression],
 ) -> grpc.Channel:
@@ -156,7 +157,7 @@ class ChannelCache:
     def get_channel(
         self,
         target: str,
-        options: Sequence[Tuple[str, str]],
+        options: Optional[List[Tuple[str, Any]]],
         channel_credentials: Optional[grpc.ChannelCredentials],
         insecure: bool,
         compression: Optional[grpc.Compression],

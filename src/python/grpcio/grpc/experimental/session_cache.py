@@ -16,7 +16,7 @@
 from grpc._cython import cygrpc as _cygrpc
 
 
-def ssl_session_cache_lru(capacity):
+def ssl_session_cache_lru(capacity: int) -> "SSLSessionCache":
     """Creates an SSLSessionCache with LRU replacement policy
 
     Args:

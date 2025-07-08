@@ -39,14 +39,14 @@ def _metadatum(beta_key, beta_value):
     return _Metadatum(key, value)
 
 
-def beta(metadata):
+def beta(metadata: Any) -> Any:
     if metadata is None:
         return ()
     else:
         return tuple(_beta_metadatum(key, value) for key, value in metadata)
 
 
-def unbeta(beta_metadata):
+def unbeta(beta_metadata: Any) -> Any:
     if beta_metadata is None:
         return ()
     else:

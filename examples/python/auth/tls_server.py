@@ -41,12 +41,12 @@ def serve():
 
     # Loading credentials
     server_credentials = grpc.ssl_server_credentials(
-        (
+        [ 
             (
                 _credentials.SERVER_CERTIFICATE_KEY,
                 _credentials.SERVER_CERTIFICATE,
             ),
-        )
+        ] 
     )
 
     # Pass down credentials

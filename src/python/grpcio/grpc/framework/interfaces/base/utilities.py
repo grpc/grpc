@@ -53,7 +53,7 @@ _NONE_SUBSCRIPTION = _Subscription(
 )
 
 
-def completion(terminal_metadata, code, message):
+def completion(terminal_metadata: Any, code: Any, message: Any) -> Any:
     """Creates a base.Completion aggregating the given operation values.
 
     Args:
@@ -67,7 +67,7 @@ def completion(terminal_metadata, code, message):
     return _Completion(terminal_metadata, code, message)
 
 
-def full_subscription(operator, protocol_receiver):
+def full_subscription(operator: Any, protocol_receiver: Any) -> Any:
     """Creates a "full" base.Subscription for the given base.Operator.
 
     Args:

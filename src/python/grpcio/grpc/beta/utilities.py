@@ -133,7 +133,7 @@ class _ChannelReadyFuture(future.Future):
                 self._channel.unsubscribe(self._update)
 
 
-def channel_ready_future(channel):
+def channel_ready_future(channel: Any) -> Any:
     """Creates a future.Future tracking when an implementations.Channel is ready.
 
     Cancelling the returned future.Future does not tell the given

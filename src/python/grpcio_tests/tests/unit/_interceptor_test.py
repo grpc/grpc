@@ -482,13 +482,13 @@ class InterceptorTest(unittest.TestCase):
         self._server = grpc.server(
             self._server_pool,
             options=(("grpc.so_reuseport", 0),),
-            interceptors=(
+            interceptors=[
                 _LoggingInterceptor("s1", self._record),
                 conditional_interceptor,
                 conditional_interceptor_check_handler_call_details,
                 _ContextVarSettingInterceptor("context-var-value"),
                 _LoggingInterceptor("s2", self._record),
-            ),
+            ],
         )
         port = self._server.add_insecure_port("[::]:0")
         self._server.add_registered_method_handlers(

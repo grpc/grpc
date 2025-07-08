@@ -19,14 +19,13 @@ import enum
 import logging
 import sys
 import types
+from typing import Any, Optional, Dict, List, Tuple, Callable, Union
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
-
-from typing import Any, Optional
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -1723,7 +1722,9 @@ def ssl_channel_credentials(
     )
 
 
-def xds_channel_credentials(fallback_credentials=None):
+def xds_channel_credentials(
+    fallback_credentials: Optional[ChannelCredentials] = None
+) -> ChannelCredentials:
     """Creates a ChannelCredentials for use with xDS. This is an EXPERIMENTAL
       API.
 
@@ -1862,7 +1863,7 @@ def ssl_server_credentials(
         )
 
 
-def xds_server_credentials(fallback_credentials):
+def xds_server_credentials(fallback_credentials: ServerCredentials) -> ServerCredentials:
     """Creates a ServerCredentials for use with xDS. This is an EXPERIMENTAL
       API.
 
@@ -1875,7 +1876,7 @@ def xds_server_credentials(fallback_credentials):
     )
 
 
-def insecure_server_credentials():
+def insecure_server_credentials() -> ServerCredentials:
     """Creates a credentials object directing the server to use no credentials.
       This is an EXPERIMENTAL API.
 
@@ -2027,7 +2028,9 @@ def local_server_credentials(local_connect_type=LocalConnectionType.LOCAL_TCP):
     )
 
 
-def alts_channel_credentials(service_accounts=None):
+def alts_channel_credentials(
+    service_accounts: Optional[List[str]] = None
+) -> ChannelCredentials:
     """Creates a ChannelCredentials for use with an ALTS-enabled Channel.
 
     This is an EXPERIMENTAL API.
@@ -2049,7 +2052,7 @@ def alts_channel_credentials(service_accounts=None):
     )
 
 
-def alts_server_credentials():
+def alts_server_credentials() -> ServerCredentials:
     """Creates a ServerCredentials for use with an ALTS-enabled connection.
 
     This is an EXPERIMENTAL API.
@@ -2230,7 +2233,11 @@ def server(
 
 
 @contextlib.contextmanager
-def _create_servicer_context(rpc_event, state, request_deserializer):
+def _create_servicer_context(
+    rpc_event: Any, 
+    state: Any, 
+    request_deserializer: Optional[Callable[[bytes], Any]]
+):
     from grpc import _server  # pylint: disable=cyclic-import
 
     context = _server._Context(rpc_event, state, request_deserializer)

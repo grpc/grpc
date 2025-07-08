@@ -44,7 +44,7 @@ def metadata_call_credentials(metadata_plugin, name=None):
     return grpc.metadata_call_credentials(plugin, name=name)
 
 
-def google_call_credentials(credentials):
+def google_call_credentials(credentials: Any) -> Any:
     """Construct CallCredentials from GoogleCredentials.
 
     Args:
@@ -161,13 +161,13 @@ _EMPTY_STUB_OPTIONS = StubOptions(None, None, None, None, None, None)
 
 
 def stub_options(
-    host=None,
-    request_serializers=None,
-    response_deserializers=None,
-    metadata_transformer=None,
-    thread_pool=None,
-    thread_pool_size=None,
-):
+    host: Any = None,
+    request_serializers: Any = None,
+    response_deserializers: Any = None,
+    metadata_transformer: Any = None,
+    thread_pool: Any = None,
+    thread_pool_size: Any = None,
+) -> StubOptions:
     """Creates a StubOptions value to be passed at stub creation.
 
     All parameters are optional and should always be passed by keyword.
@@ -198,7 +198,7 @@ def stub_options(
     )
 
 
-def generic_stub(channel, options=None):
+def generic_stub(channel: Any, options: Any = None) -> Any:
     """Creates a face.GenericStub on which RPCs can be made.
 
     Args:
@@ -218,7 +218,7 @@ def generic_stub(channel, options=None):
     )
 
 
-def dynamic_stub(channel, service, cardinalities, options=None):
+def dynamic_stub(channel: Any, service: Any, cardinalities: Any, options: Any = None) -> Any:
     """Creates a face.DynamicStub with which RPCs can be invoked.
 
     Args:
@@ -279,14 +279,14 @@ _EMPTY_SERVER_OPTIONS = ServerOptions(None, None, None, None, None, None, None)
 
 
 def server_options(
-    multi_method_implementation=None,
-    request_deserializers=None,
-    response_serializers=None,
-    thread_pool=None,
-    thread_pool_size=None,
-    default_timeout=None,
-    maximum_timeout=None,
-):
+    multi_method_implementation: Any = None,
+    request_deserializers: Any = None,
+    response_serializers: Any = None,
+    thread_pool: Any = None,
+    thread_pool_size: Any = None,
+    default_timeout: Any = None,
+    maximum_timeout: Any = None,
+) -> ServerOptions:
     """Creates a ServerOptions value to be passed at server creation.
 
     All parameters are optional and should always be passed by keyword.
@@ -322,7 +322,7 @@ def server_options(
     )
 
 
-def server(service_implementations, options=None):
+def server(service_implementations: Any, options: Any = None) -> Any:
     """Creates an interfaces.Server with which RPCs can be serviced.
 
     Args:

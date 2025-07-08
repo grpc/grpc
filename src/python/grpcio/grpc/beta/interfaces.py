@@ -38,7 +38,7 @@ class GRPCCallOptions(object):
         self.credentials = credentials
 
 
-def grpc_call_options(disable_compression=False, credentials=None):
+def grpc_call_options(disable_compression: bool = False, credentials: Any = None) -> GRPCCallOptions:
     """Creates a GRPCCallOptions value to be passed at RPC invocation.
 
     All parameters are optional and should always be passed by keyword.

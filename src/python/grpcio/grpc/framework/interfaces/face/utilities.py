@@ -43,7 +43,7 @@ class _MethodImplementation(
     pass
 
 
-def unary_unary_inline(behavior):
+def unary_unary_inline(behavior: Any) -> Any:
     """Creates an face.MethodImplementation for the given behavior.
 
     Args:
@@ -68,7 +68,7 @@ def unary_unary_inline(behavior):
     )
 
 
-def unary_stream_inline(behavior):
+def unary_stream_inline(behavior: Any) -> Any:
     """Creates an face.MethodImplementation for the given behavior.
 
     Args:
@@ -93,7 +93,7 @@ def unary_stream_inline(behavior):
     )
 
 
-def stream_unary_inline(behavior):
+def stream_unary_inline(behavior: Any) -> Any:
     """Creates an face.MethodImplementation for the given behavior.
 
     Args:
@@ -118,7 +118,7 @@ def stream_unary_inline(behavior):
     )
 
 
-def stream_stream_inline(behavior):
+def stream_stream_inline(behavior: Any) -> Any:
     """Creates an face.MethodImplementation for the given behavior.
 
     Args:
@@ -143,7 +143,7 @@ def stream_stream_inline(behavior):
     )
 
 
-def unary_unary_event(behavior):
+def unary_unary_event(behavior: Any) -> Any:
     """Creates an face.MethodImplementation for the given behavior.
 
     Args:
@@ -168,7 +168,7 @@ def unary_unary_event(behavior):
     )
 
 
-def unary_stream_event(behavior):
+def unary_stream_event(behavior: Any) -> Any:
     """Creates an face.MethodImplementation for the given behavior.
 
     Args:
@@ -193,7 +193,7 @@ def unary_stream_event(behavior):
     )
 
 
-def stream_unary_event(behavior):
+def stream_unary_event(behavior: Any) -> Any:
     """Creates an face.MethodImplementation for the given behavior.
 
     Args:
@@ -219,7 +219,7 @@ def stream_unary_event(behavior):
     )
 
 
-def stream_stream_event(behavior):
+def stream_stream_event(behavior: Any) -> Any:
     """Creates an face.MethodImplementation for the given behavior.
 
     Args:

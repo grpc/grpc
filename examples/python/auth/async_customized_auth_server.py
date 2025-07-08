@@ -67,7 +67,7 @@ class SimpleGreeter(helloworld_pb2_grpc.GreeterServicer):
 
 async def run_server(port: int) -> Tuple[grpc.aio.Server, int]:
     # Bind interceptor to server
-    server = grpc.aio.server(interceptors=(SignatureValidationInterceptor(),))
+    server = grpc.aio.server(interceptors=[SignatureValidationInterceptor()])
     helloworld_pb2_grpc.add_GreeterServicer_to_server(SimpleGreeter(), server)
 
     # Loading credentials

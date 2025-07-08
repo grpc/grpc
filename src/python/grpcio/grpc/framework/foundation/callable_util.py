@@ -61,7 +61,7 @@ def _call_logging_exceptions(behavior, message, *args, **kwargs):
         return _EasyOutcome(Outcome.Kind.RAISED, None, e)
 
 
-def with_exceptions_logged(behavior, message):
+def with_exceptions_logged(behavior: Any, message: str) -> Any:
     """Wraps a callable in a try-except that logs any exceptions it raises.
 
     Args:
@@ -82,7 +82,7 @@ def with_exceptions_logged(behavior, message):
     return wrapped_behavior
 
 
-def call_logging_exceptions(behavior, message, *args, **kwargs):
+def call_logging_exceptions(behavior: Any, message: str, *args: Any, **kwargs: Any) -> Any:
     """Calls a behavior in a try-except that logs any exceptions it raises.
 
     Args:

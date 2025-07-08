@@ -62,7 +62,7 @@ def run_server(port):
     # Bind interceptor to server
     server = grpc.server(
         futures.ThreadPoolExecutor(),
-        interceptors=(SignatureValidationInterceptor(),),
+        interceptors=[SignatureValidationInterceptor()],
     )
     helloworld_pb2_grpc.add_GreeterServicer_to_server(SimpleGreeter(), server)
 

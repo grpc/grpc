@@ -59,7 +59,7 @@ class _LoggingPool(object):
         self._backing_pool.shutdown(wait=wait)
 
 
-def pool(max_workers):
+def pool(max_workers: int) -> Any:
     """Creates a thread pool that logs exceptions raised by the tasks within it.
 
     Args:
