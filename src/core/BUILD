@@ -3647,7 +3647,7 @@ grpc_cc_library(
         ":grpc_no_filter_fusion": ["GRPC_NO_FILTER_FUSION"],
         "//conditions:default": [],
     }),
-    deps = select({
+    select_deps = [{
         ":grpc_no_filter_fusion": [],
         "//conditions:default": [
             "experiments",
@@ -3661,7 +3661,8 @@ grpc_cc_library(
             "//:grpc_http_filters",
             "//:grpc_security_base",
         ],
-    }) + [
+    }],
+    deps = [
         "//:config",
         "//:gpr",
         "//:grpc_public_hdrs",
