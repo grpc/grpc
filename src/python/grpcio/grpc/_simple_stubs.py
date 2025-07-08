@@ -416,7 +416,7 @@ def stream_unary(
     method: str,
     request_serializer: Optional[Callable[[Any], bytes]] = None,
     response_deserializer: Optional[Callable[[bytes], Any]] = None,
-    options: Sequence[Tuple[AnyStr, AnyStr]] = (),
+    options: Sequence[Tuple[str, str]] = (),
     channel_credentials: Optional[grpc.ChannelCredentials] = None,
     insecure: bool = False,
     call_credentials: Optional[grpc.CallCredentials] = None,
