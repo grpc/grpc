@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import sys
-from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Union
+from typing import Any, Iterable, Optional, Sequence, Union
 
 import grpc
 from grpc import _common
@@ -41,15 +41,13 @@ from ._interceptor import UnaryStreamClientInterceptor
 from ._interceptor import UnaryUnaryClientInterceptor
 from ._metadata import Metadata
 from ._utils import _timeout_to_deadline
-
-if TYPE_CHECKING:
-    from ._typing import ChannelArgumentType
-    from ._typing import DeserializingFunction
-    from ._typing import MetadataType
-    from ._typing import RequestIterableType
-    from ._typing import RequestType
-    from ._typing import ResponseType
-    from ._typing import SerializingFunction
+from ._typing import ChannelArgumentType
+from ._typing import DeserializingFunction
+from ._typing import MetadataType
+from ._typing import RequestIterableType
+from ._typing import RequestType
+from ._typing import ResponseType
+from ._typing import SerializingFunction
 
 _USER_AGENT = f"grpc-python-asyncio/{_grpcio_metadata.__version__}"
 
@@ -637,7 +635,6 @@ def secure_channel(
 
     Returns:
       An aio.Channel.
-
     """
     return Channel(
         target,

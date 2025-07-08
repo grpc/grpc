@@ -14,7 +14,7 @@
 """Server-side implementation of gRPC Asyncio Python."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Optional, Sequence, Union
+from typing import Any, Optional, Sequence, Union
 
 import grpc
 from grpc import _common
@@ -24,10 +24,8 @@ from grpc._cython import cygrpc
 from . import _base_server
 from ._interceptor import ServerInterceptor
 
-if TYPE_CHECKING:
-    from concurrent.futures import Executor
-
-    from ._typing import ChannelArgumentType
+from concurrent.futures import Executor
+from ._typing import ChannelArgumentType
 
 
 def _augment_channel_arguments(
@@ -85,7 +83,6 @@ class Server(_base_server.Server):
         Args:
           generic_rpc_handlers: A sequence of GenericRpcHandlers that will be
           used to service RPCs.
-
         """
         self._server.add_generic_rpc_handlers(generic_rpc_handlers)
 
@@ -108,7 +105,6 @@ class Server(_base_server.Server):
 
         Returns:
           An integer port on which the server will accept RPC requests.
-
         """
         return _common.validate_port_binding_result(
             address,
@@ -132,7 +128,6 @@ class Server(_base_server.Server):
 
         Returns:
           An integer port on which the server will accept RPC requests.
-
         """
         return _common.validate_port_binding_result(
             address,
@@ -171,7 +166,6 @@ class Server(_base_server.Server):
 
         Args:
           grace: A duration of time in seconds or None.
-
         """
         await self._server.shutdown(grace)
 
@@ -198,7 +192,6 @@ class Server(_base_server.Server):
 
         Returns:
           A bool indicates if the operation times out.
-
         """
         return await self._server.wait_for_termination(timeout)
 
@@ -246,7 +239,6 @@ def server(
 
     Returns:
       A Server object.
-
     """
     return Server(
         migration_thread_pool,
