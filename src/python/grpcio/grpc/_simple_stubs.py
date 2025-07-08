@@ -157,7 +157,7 @@ class ChannelCache:
     def get_channel(
         self,
         target: str,
-        options: Optional[List[Tuple[str, Any]]],
+        options: Sequence[Tuple[str, str]],
         channel_credentials: Optional[grpc.ChannelCredentials],
         insecure: bool,
         compression: Optional[grpc.Compression],
