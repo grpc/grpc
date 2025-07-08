@@ -93,12 +93,12 @@ struct ForkHandlerPointers {
   PtrType<ThreadPool> executor;
   PtrType<TimerManager> timer_manager;
 
-  ForkHandlerPointers(PtrType<PosixEventEngine> ee,
-                      PtrType<ThreadPool> thread_pool,
-                      PtrType<TimerManager> timers)
-      : event_engine(std::move(ee)),
-        executor(std::move(thread_pool)),
-        timer_manager(std::move(timers)) {}
+  ForkHandlerPointers(PtrType<PosixEventEngine> event_engine,
+                      PtrType<ThreadPool> executor,
+                      PtrType<TimerManager> timer_manager)
+      : event_engine(std::move(event_engine)),
+        executor(std::move(executor)),
+        timer_manager(std::move(timer_manager)) {}
 };
 
 // Fork support - mutex and global list of event engines
