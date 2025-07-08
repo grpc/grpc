@@ -15,7 +15,7 @@
 from __future__ import annotations
 
 import abc
-from typing import TYPE_CHECKING, Generic, Optional
+from typing import Generic, Optional
 
 import grpc
 
