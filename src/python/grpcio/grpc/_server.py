@@ -81,6 +81,15 @@ _EMPTY_FLAGS = 0
 _DEALLOCATED_SERVER_CHECK_PERIOD_S = 1.0
 _INF_TIMEOUT = 1e9
 
+# Global context storage for main thread context
+_main_context = None
+
+
+def _capture_main_context():
+    """Capture the context from the main thread."""
+    global _main_context
+    _main_context = contextvars.copy_context()
+
 
 def _serialized_request(request_event: cygrpc.BaseEvent) -> bytes:
     return request_event.batch_operations[0].message()
@@ -194,6 +203,7 @@ class _RPCState(object):
     aborted: bool
 
     def __init__(self):
+        self.context = contextvars.Context()
         self.condition = threading.Condition()
         self.due = set()
         self.request = None
@@ -1065,10 +1075,6 @@ def _handle_with_method_handler(
                 )
 
 
-def _capture_main_context():
-    """Capture the context from the main thread."""
-    _handle_call._main_context = contextvars.copy_context()
-
 def _handle_call(
     rpc_event: cygrpc.BaseEvent,
     method_with_handler: _Method,
@@ -1091,13 +1097,9 @@ def _handle_call(
         return None, None
     if rpc_event.call_details.method or method_with_handler.name():
         rpc_state = _RPCState()
-        # Capture the context at the time the request is received
-        # Use a global context that was captured from the main thread
-        if hasattr(_handle_call, "_main_context"):
-            rpc_state.context = _handle_call._main_context
-        else:
-            rpc_state.context = contextvars.copy_context()
-        # Context is now properly captured from main thread and will be used in handler threads
+        # Use the captured main context if available
+        if _main_context is not None:
+            rpc_state.context = _main_context
         try:
             method_handler = _find_method_handler(
                 rpc_event,
