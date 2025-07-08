@@ -27,6 +27,7 @@ from ._typing import RequestType
 from ._typing import ResponseType
 from ._typing import SerializingFunction
 
+
 class UnaryUnaryMultiCallable(Generic[RequestType, ResponseType], abc.ABC):
     """Enables asynchronous invocation of a unary-call RPC."""
 
