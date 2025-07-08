@@ -2,12 +2,11 @@
 # For a full list of supported rules, see https://docs.astral.sh/ruff/rules/
 # For a full list of options, see https://docs.astral.sh/ruff/settings/
 
-# Same as Black.
-line-length = 100
 target-version = "py39"
 
 [lint]
 ignore = [
+    "F", # "F" is the code for the formatter
     "FA100", # Checks for missing from __future__ import annotations
     # imports upon detecting type annotations that can be written more succinctly under PEP 563.
 
@@ -60,9 +59,3 @@ select = ["ALL"]
 
 # Allow unused variables that match these patterns.
 dummy-variable-rgx = "^(_+|ignored_)"
-
-[format]
-# Like Black, use double quotes for strings.
-quote-style = "double"
-# Like Black, indent with 4 spaces.
-indent-style = "space"
