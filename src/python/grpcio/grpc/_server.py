@@ -1097,9 +1097,12 @@ def _handle_call(
         return None, None
     if rpc_event.call_details.method or method_with_handler.name():
         rpc_state = _RPCState()
-        # Use the captured main context if available
+        # Use a fresh copy of the captured main context if available
         if _main_context is not None:
-            rpc_state.context = _main_context
+            rpc_state.context = contextvars.copy_context()
+            # Copy all context variables from the main context
+            for var in _main_context:
+                rpc_state.context[var] = _main_context[var]
         try:
             method_handler = _find_method_handler(
                 rpc_event,
