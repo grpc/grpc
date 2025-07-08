@@ -32,6 +32,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <type_traits>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
@@ -50,6 +51,7 @@
 #include "src/core/util/time.h"
 #include "src/core/util/time_precise.h"
 #include "src/core/util/useful.h"
+#include "src/proto/grpc/channelz/v2/channelz.upb.h"
 
 // Channel arg key for channelz node.
 #define GRPC_ARG_CHANNELZ_CHANNEL_NODE \
@@ -80,6 +82,8 @@ namespace channelz {
 class SocketNode;
 class ListenSocketNode;
 class DataSource;
+class DataSink;
+class PropertyList;
 class ZTrace;
 
 namespace testing {
@@ -123,8 +127,42 @@ class BaseNode : public DualRefCounted<BaseNode> {
     return "unknown";
   }
 
+  static absl::string_view EntityTypeToKind(EntityType type) {
+    switch (type) {
+      case EntityType::kTopLevelChannel:
+        return "channel";
+      case EntityType::kInternalChannel:
+        return "internal_channel";
+      case EntityType::kSubchannel:
+        return "subchannel";
+      case EntityType::kServer:
+        return "server";
+      case EntityType::kListenSocket:
+        return "listen_socket";
+      case EntityType::kSocket:
+        return "socket";
+      case EntityType::kCall:
+        return "call";
+    }
+  }
+
+  static std::optional<EntityType> KindToEntityType(absl::string_view kind) {
+    if (kind == "channel") return EntityType::kTopLevelChannel;
+    if (kind == "internal_channel") return EntityType::kInternalChannel;
+    if (kind == "subchannel") return EntityType::kSubchannel;
+    if (kind == "server") return EntityType::kServer;
+    if (kind == "listen_socket") return EntityType::kListenSocket;
+    if (kind == "socket") return EntityType::kSocket;
+    if (kind == "call") return EntityType::kCall;
+    return std::nullopt;
+  }
+
  protected:
   BaseNode(EntityType type, size_t max_trace_memory, std::string name);
+
+  // Leaf derived types should call NodeConstructed() in their constructors
+  // to complete the initialization.
+  void NodeConstructed();
 
  public:
   void Orphaned() override;
@@ -178,9 +216,20 @@ class BaseNode : public DualRefCounted<BaseNode> {
   ChannelTrace::Node NewTraceNode(Args&&... args) {
     return trace_.NewNode(std::forward<Args>(args)...);
   }
+  ChannelTrace& mutable_trace() { return trace_; }
+
+  void SerializeEntity(grpc_channelz_v2_Entity* entity, upb_Arena* arena);
+
+  std::string SerializeEntityToString();
 
  protected:
   void PopulateJsonFromDataSources(Json::Object& json);
+  // V2: Add any node-specific data to the sink.
+  // This is information that used to be provided by overloaded RenderJson
+  // methods.
+  // Over time the hope is that we can eliminate this method and move all
+  // functionality into data sources.
+  virtual void AddNodeSpecificData(DataSink sink);
 
  private:
   // to allow the ChannelzRegistry to set uuid_ under its lock.
@@ -194,6 +243,7 @@ class BaseNode : public DualRefCounted<BaseNode> {
   intptr_t UuidSlow();
 
   const EntityType type_;
+  bool node_constructed_called_ = false;
   uint64_t orphaned_index_ = 0;  // updated by registry
   std::atomic<intptr_t> uuid_;
   std::string name_;
@@ -206,6 +256,19 @@ class BaseNode : public DualRefCounted<BaseNode> {
   ParentSet parents_ ABSL_GUARDED_BY(parent_mu_);
   ChannelTrace trace_;
 };
+
+namespace detail {
+inline ChannelTrace* LogOutputFrom(BaseNode* n) {
+  if (n == nullptr) return nullptr;
+  return LogOutputFrom(n->mutable_trace());
+}
+
+template <typename N>
+inline std::enable_if_t<std::is_base_of_v<BaseNode, N>, ChannelTrace*>
+LogOutputFrom(const RefCountedPtr<N>& n) {
+  return LogOutputFrom(n.get());
+}
+}  // namespace detail
 
 class ZTrace {
  public:
@@ -224,16 +287,22 @@ class ZTrace {
 // the collection is complete (or has timed out).
 class DataSinkImplementation {
  public:
-  void AddAdditionalInfo(absl::string_view name, Json::Object additional_info);
-  void AddChildObjects(std::vector<RefCountedPtr<BaseNode>> child_objects);
+  class Data {
+   public:
+    virtual ~Data() = default;
+    virtual Json::Object ToJson() = 0;
+    virtual void FillProto(google_protobuf_Any* any, upb_Arena* arena) = 0;
+  };
+
+  void AddData(absl::string_view name, std::unique_ptr<Data> data);
   Json::Object Finalize(bool timed_out);
+  void Finalize(bool timed_out, grpc_channelz_v2_Entity* entity,
+                upb_Arena* arena);
 
  private:
-  void MergeChildObjectsIntoAdditionalInfo() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-
   Mutex mu_;
-  std::map<std::string, Json::Object> additional_info_ ABSL_GUARDED_BY(mu_);
-  std::vector<RefCountedPtr<BaseNode>> child_objects_ ABSL_GUARDED_BY(mu_);
+  std::map<std::string, std::unique_ptr<Data>> additional_info_
+      ABSL_GUARDED_BY(mu_);
 };
 
 // Wrapper around absl::AnyInvocable<void()> that is used to notify when the
@@ -256,18 +325,31 @@ class DataSink {
            std::shared_ptr<DataSinkCompletionNotification> notification)
       : impl_(impl), notification_(std::move(notification)) {}
 
-  void AddAdditionalInfo(absl::string_view name, Json::Object additional_info) {
-    auto impl = impl_.lock();
-    if (impl == nullptr) return;
-    impl->AddAdditionalInfo(name, std::move(additional_info));
-  }
-  void AddChildObjects(std::vector<RefCountedPtr<BaseNode>> children) {
-    auto impl = impl_.lock();
-    if (impl == nullptr) return;
-    impl->AddChildObjects(std::move(children));
+  template <typename T>
+  std::void_t<decltype(std::declval<T>().TakeJsonObject())> AddData(
+      absl::string_view name, T value) {
+    class DataImpl final : public DataSinkImplementation::Data {
+     public:
+      explicit DataImpl(T value) : value_(std::move(value)) {}
+      Json::Object ToJson() override { return value_.TakeJsonObject(); }
+      void FillProto(google_protobuf_Any* any, upb_Arena* arena) override {
+        value_.FillAny(any, arena);
+      }
+
+     private:
+      T value_;
+    };
+    AddData(name, std::make_unique<DataImpl>(std::move(value)));
   }
 
  private:
+  void AddData(absl::string_view name,
+               std::unique_ptr<DataSinkImplementation::Data> data) {
+    auto impl = impl_.lock();
+    if (impl == nullptr) return;
+    impl->AddData(name, std::move(data));
+  }
+
   std::weak_ptr<DataSinkImplementation> impl_;
   std::shared_ptr<DataSinkCompletionNotification> notification_;
 };
@@ -290,11 +372,15 @@ class DataSource {
   ~DataSource();
   RefCountedPtr<BaseNode> channelz_node() { return node_; }
 
+  // This method must be called in the most derived class's constructor.
+  // It adds this data source to the node's list of data sources.
+  void SourceConstructed();
+
   // This method must be called in the most derived class's destructor.
   // It removes this data source from the node's list of data sources.
   // If it is not called, then the AddData() function pointer may be invalid
   // when the node is queried.
-  void ResetDataSource();
+  void SourceDestructing();
 
  private:
   RefCountedPtr<BaseNode> node_;
@@ -312,6 +398,7 @@ struct CallCounts {
   }
 
   void PopulateJson(Json::Object& json) const;
+  PropertyList ToPropertyList() const;
 };
 
 // This class is a helper class for channelz entities that deal with Channels,
@@ -411,6 +498,7 @@ class ChannelNode final : public BaseNode {
 
  private:
   void PopulateChildRefs(Json::Object* json);
+  void AddNodeSpecificData(DataSink sink) override;
 
   std::string target_;
   CallCountingHelper call_counter_;
@@ -462,6 +550,8 @@ class SubchannelNode final : public BaseNode {
   const ChannelArgs& channel_args() const { return channel_args_; }
 
  private:
+  void AddNodeSpecificData(DataSink sink) override;
+
   // Allows the channel trace test to access trace_.
   friend class testing::SubchannelNodePeer;
 
@@ -509,6 +599,8 @@ class ServerNode final : public BaseNode {
   const ChannelArgs& channel_args() const { return channel_args_; }
 
  private:
+  void AddNodeSpecificData(DataSink sink) override;
+
   PerCpuCallCountingHelper call_counter_;
   // TODO(ctiller): keeping channel args here can create odd circular references
   // that are hard to reason about. Consider moving this to a DataSource.
@@ -533,6 +625,7 @@ class SocketNode final : public BaseNode {
       std::string remote_certificate;
 
       Json RenderJson();
+      PropertyList ToPropertyList() const;
     };
     enum class ModelType { kUnset = 0, kTls = 1, kOther = 2 };
     ModelType type = ModelType::kUnset;
@@ -540,6 +633,7 @@ class SocketNode final : public BaseNode {
     std::optional<Json> other;
 
     Json RenderJson();
+    PropertyList ToPropertyList() const;
 
     static absl::string_view ChannelArgName() {
       return GRPC_ARG_CHANNELZ_SECURITY;
@@ -548,11 +642,6 @@ class SocketNode final : public BaseNode {
     static int ChannelArgsCompare(const Security* a, const Security* b) {
       return QsortCompare(a, b);
     }
-
-    grpc_arg MakeChannelArg() const;
-
-    static RefCountedPtr<Security> GetFromChannelArgs(
-        const grpc_channel_args* args);
   };
 
   SocketNode(std::string local, std::string remote, std::string name,
@@ -621,6 +710,7 @@ class SocketNode final : public BaseNode {
       gpr_cycle_counter cycle_counter) const {
     return gpr_format_timespec(gpr_cycle_counter_to_time(cycle_counter));
   }
+  void AddNodeSpecificData(DataSink sink) override;
 
   std::atomic<int64_t> streams_started_{0};
   std::atomic<int64_t> streams_succeeded_{0};
@@ -646,13 +736,17 @@ class ListenSocketNode final : public BaseNode {
   Json RenderJson() override;
 
  private:
+  void AddNodeSpecificData(DataSink sink) override;
+
   std::string local_addr_;
 };
 
 class CallNode final : public BaseNode {
  public:
   explicit CallNode(std::string name)
-      : BaseNode(EntityType::kCall, 0, std::move(name)) {}
+      : BaseNode(EntityType::kCall, 0, std::move(name)) {
+    NodeConstructed();
+  }
 
   Json RenderJson() override;
 };

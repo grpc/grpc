@@ -12,33 +12,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test/core/test_util/postmortem.h"
+#include "test/core/test_util/postmortem_emit.h"
 
-#include "gtest/gtest.h"
+#include <iostream>
+#include <sstream>
+
 #include "src/core/channelz/channelz_registry.h"
 #include "src/core/telemetry/stats.h"
 
 namespace grpc_core {
 
-PostMortem::~PostMortem() {
-  if (!::testing::Test::HasFailure()) return;
-  Emit();
+namespace {
+
+void RunPostMortem(std::ostream& out) {
+  out << "===========================================================\n";
+  out << "🛑 gRPC Test Postmortem Analysis 🛑\n";
+  out << "===========================================================\n";
+
+  out << "❗ gRPC Statistics:\n"
+      << StatsAsJson(global_stats().Collect().get()) << "\n";
+
+  out << "❗ channelz entities:\n";
+  for (const auto& node : channelz::ChannelzRegistry::GetAllEntities()) {
+    out << "  🔴 [" << node->uuid() << ":"
+        << channelz::BaseNode::EntityTypeString(node->type())
+        << "]: " << node->RenderJsonString() << "\n";
+  }
 }
 
-void PostMortem::Emit() {
-  LOG(INFO) << "===========================================================";
-  LOG(INFO) << "🛑 gRPC Test Postmortem Analysis 🛑";
-  LOG(INFO) << "===========================================================";
+}  // namespace
 
-  LOG(INFO) << "❗ gRPC Statistics:\n"
-            << StatsAsJson(global_stats().Collect().get());
+void PostMortemEmit() { RunPostMortem(std::cerr); }
 
-  LOG(INFO) << "❗ channelz entities:";
-  for (const auto& node : channelz::ChannelzRegistry::GetAllEntities()) {
-    LOG(INFO) << "  🔴 [" << node->uuid() << ":"
-              << channelz::BaseNode::EntityTypeString(node->type())
-              << "]: " << node->RenderJsonString();
-  }
+void SilentPostMortemEmit() {
+  std::ostringstream out;
+  RunPostMortem(out);
 }
 
 }  // namespace grpc_core

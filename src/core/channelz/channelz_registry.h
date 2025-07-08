@@ -89,6 +89,12 @@ class ChannelzRegistry final {
             start_channel_id);
   }
 
+  static auto GetTopSockets(intptr_t start_socket_id) {
+    return Default()
+        ->InternalGetObjects<SocketNode, BaseNode::EntityType::kSocket>(
+            start_socket_id);
+  }
+
   static std::string GetTopChannelsJson(intptr_t start_channel_id);
   static std::string GetServersJson(intptr_t start_server_id);
 
@@ -105,6 +111,16 @@ class ChannelzRegistry final {
                     BaseNode::EntityType type, size_t max_results) {
     return Default()->InternalGetChildrenOfType(start_node, parent, type,
                                                 max_results);
+  }
+
+  static WeakRefCountedPtr<BaseNode> GetNode(intptr_t uuid) {
+    return Default()->InternalGet(uuid);
+  }
+
+  static std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool>
+  GetNodesOfType(intptr_t start_node, BaseNode::EntityType type,
+                 size_t max_results) {
+    return Default()->InternalGetNodesOfType(start_node, type, max_results);
   }
 
   // Test only helper function to dump the JSON representation to std out.
@@ -207,6 +223,14 @@ class ChannelzRegistry final {
         [type, parent](const BaseNode* n) {
           return n->type() == type && n->HasParent(parent);
         },
+        max_results);
+  }
+
+  std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool>
+  InternalGetNodesOfType(intptr_t start_node, BaseNode::EntityType type,
+                         size_t max_results) {
+    return QueryNodes(
+        start_node, [type](const BaseNode* n) { return n->type() == type; },
         max_results);
   }
 

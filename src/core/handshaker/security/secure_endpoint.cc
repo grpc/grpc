@@ -30,16 +30,19 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cstddef>
 #include <memory>
 #include <optional>
 #include <regex>
 #include <utility>
+#include <vector>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -183,6 +186,10 @@ class FrameProtector : public RefCounted<FrameProtector> {
 
   absl::Status Unprotect(absl::Status read_status)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_) {
+    if (shutdown_) {
+      return absl::CancelledError("secure endpoint shutdown");
+    }
+
     GRPC_LATENT_SEE_INNER_SCOPE("unprotect");
     bool keep_looping = false;
     tsi_result result = TSI_OK;
@@ -312,6 +319,8 @@ class FrameProtector : public RefCounted<FrameProtector> {
 
   tsi_result Protect(grpc_slice_buffer* slices, int max_frame_size)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(write_mu_) {
+    if (shutdown_) return TSI_FAILED_PRECONDITION;
+
     GRPC_LATENT_SEE_INNER_SCOPE("protect");
     uint8_t* cur = GRPC_SLICE_START_PTR(write_staging_buffer_);
     uint8_t* end = GRPC_SLICE_END_PTR(write_staging_buffer_);
@@ -414,7 +423,10 @@ class FrameProtector : public RefCounted<FrameProtector> {
     return &output_buffer_;
   }
 
-  void Shutdown() { memory_owner_.Reset(); }
+  void Shutdown() {
+    shutdown_ = true;
+    memory_owner_.Reset();
+  }
 
  private:
   struct tsi_frame_protector* const protector_;
@@ -436,6 +448,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
   std::atomic<bool> has_posted_reclaimer_{false};
   int min_progress_size_ = 1;
   SliceBuffer protector_staging_buffer_;
+  bool shutdown_ = false;
 };
 }  // namespace
 }  // namespace grpc_core
@@ -725,6 +738,20 @@ class SecureEndpoint final : public EventEngine::Endpoint {
         return wrapped_telemetry_info_
                    ? wrapped_telemetry_info_->GetMetricKey(name)
                    : std::nullopt;
+      }
+
+      std::shared_ptr<EventEngine::Endpoint::MetricsSet> GetMetricsSet(
+          absl::Span<const size_t> keys) const override {
+        return wrapped_telemetry_info_
+                   ? wrapped_telemetry_info_->GetMetricsSet(keys)
+                   : nullptr;
+      }
+
+      std::shared_ptr<EventEngine::Endpoint::MetricsSet> GetFullMetricsSet()
+          const override {
+        return wrapped_telemetry_info_
+                   ? wrapped_telemetry_info_->GetFullMetricsSet()
+                   : nullptr;
       }
 
      private:
@@ -1040,12 +1067,18 @@ grpc_core::OrphanablePtr<grpc_endpoint> grpc_secure_endpoint_create(
         event_engine_endpoint = grpc_event_engine::experimental::
             grpc_take_wrapped_event_engine_endpoint(to_wrap.release());
     CHECK(event_engine_endpoint != nullptr);
-    return grpc_core::OrphanablePtr<grpc_endpoint>(
-        grpc_event_engine::experimental::grpc_event_engine_endpoint_create(
-            std::make_unique<grpc_event_engine::experimental::SecureEndpoint>(
-                std::move(event_engine_endpoint), protector,
-                zero_copy_protector, leftover_slices, leftover_nslices,
-                channel_args)));
+    if (grpc_core::IsPipelinedReadSecureEndpointEnabled()) {
+      return grpc_pipelined_secure_endpoint_create(
+          protector, zero_copy_protector, std::move(event_engine_endpoint),
+          leftover_slices, channel_args, leftover_nslices);
+    } else {
+      return grpc_core::OrphanablePtr<grpc_endpoint>(
+          grpc_event_engine::experimental::grpc_event_engine_endpoint_create(
+              std::make_unique<grpc_event_engine::experimental::SecureEndpoint>(
+                  std::move(event_engine_endpoint), protector,
+                  zero_copy_protector, leftover_slices, leftover_nslices,
+                  channel_args)));
+    }
   }
   return grpc_core::MakeOrphanable<secure_endpoint>(
       &vtable, protector, zero_copy_protector, std::move(to_wrap),

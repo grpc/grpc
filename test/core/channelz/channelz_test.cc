@@ -47,6 +47,7 @@
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/notification.h"
+#include "src/core/util/upb_utils.h"
 #include "src/core/util/useful.h"
 #include "src/core/util/wait_for_single_owner.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
@@ -284,6 +285,35 @@ TEST_P(ChannelzChannelTest, BasicChannel) {
   ValidateChannel(channelz_channel, {0, 0, 0});
 }
 
+TEST_P(ChannelzChannelTest, BasicChannelProto) {
+  ExecCtx exec_ctx;
+  ChannelFixture channel(GetParam());
+  ChannelNode* channelz_channel =
+      grpc_channel_get_channelz_node(channel.channel());
+  upb_Arena* arena = upb_Arena_New();
+  grpc_channelz_v2_Entity* entity = grpc_channelz_v2_Entity_new(arena);
+  channelz_channel->SerializeEntity(entity, arena);
+  EXPECT_EQ(grpc_channelz_v2_Entity_id(entity), channelz_channel->uuid());
+  EXPECT_EQ(UpbStringToStdString(grpc_channelz_v2_Entity_kind(entity)),
+            "channel");
+  EXPECT_EQ(grpc_channelz_v2_Entity_orphaned(entity), false);
+  size_t size;
+  const grpc_channelz_v2_TraceEvent* const* trace =
+      grpc_channelz_v2_Entity_trace(entity, &size);
+  if (GetParam() <= 48) {
+    EXPECT_EQ(size, 0);
+  } else if (GetParam() > 1024 || size > 0) {
+    ASSERT_EQ(size, 1);
+    // TODO(ctiller): This should be a test of the trace, not the channel.
+    // Also, emitting "Channel created" every time a channel is created is
+    // probably not the most helpful thing to do.
+    EXPECT_EQ(
+        UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[0])),
+        "Channel created");
+  }
+  upb_Arena_Free(arena);
+}
+
 class TestZTrace final : public ZTrace {
  public:
   void Run(Timestamp deadline, std::map<std::string, std::string> args,
@@ -300,12 +330,13 @@ class TestZTrace final : public ZTrace {
 
 class TestDataSource final : public DataSource {
  public:
-  using DataSource::DataSource;
-  ~TestDataSource() { ResetDataSource(); }
+  explicit TestDataSource(RefCountedPtr<BaseNode> node)
+      : DataSource(std::move(node)) {
+    SourceConstructed();
+  }
+  ~TestDataSource() { SourceDestructing(); }
   void AddData(DataSink sink) override {
-    Json::Object object;
-    object["test"] = Json::FromString("yes");
-    sink.AddAdditionalInfo("testData", std::move(object));
+    sink.AddData("testData", PropertyList().Set("test", "yes"));
   }
   std::unique_ptr<ZTrace> GetZTrace(absl::string_view name) override {
     if (name == "test_ztrace") return std::make_unique<TestZTrace>();
@@ -367,45 +398,6 @@ TEST_P(ChannelzChannelTest, ZTrace) {
       });
   done.WaitForNotification();
   EXPECT_EQ(json_text, "{\"test\":\"yes\"}");
-}
-
-class TestSubObjectDataSource final : public DataSource {
- public:
-  using DataSource::DataSource;
-  ~TestSubObjectDataSource() { ResetDataSource(); }
-  void AddData(DataSink sink) override { sink.AddChildObjects({child_}); }
-
-  int64_t child_id() const { return child_->uuid(); }
-
- private:
-  RefCountedPtr<SocketNode> child_ =
-      MakeRefCounted<SocketNode>("foo", "bar", "baz", nullptr);
-};
-
-TEST_P(ChannelzChannelTest, SubObjectDataSource) {
-  ExecCtx exec_ctx;
-  ChannelFixture channel(GetParam());
-  ChannelNode* channelz_channel =
-      grpc_channel_get_channelz_node(channel.channel());
-  TestSubObjectDataSource data_source(channelz_channel->Ref());
-  auto json = channelz_channel->RenderJson();
-  ASSERT_EQ(json.type(), Json::Type::kObject);
-  const Json::Object& object = json.object();
-  auto it_additional_info = object.find("additionalInfo");
-  ASSERT_NE(it_additional_info, object.end());
-  ASSERT_EQ(it_additional_info->second.type(), Json::Type::kObject);
-  const Json::Object& additional_info = it_additional_info->second.object();
-  auto it_child_objects = additional_info.find("childObjects");
-  ASSERT_NE(it_child_objects, additional_info.end());
-  ASSERT_EQ(it_child_objects->second.type(), Json::Type::kObject);
-  const Json::Object& child_objects = it_child_objects->second.object();
-  auto it = child_objects.find("subSockets");
-  ASSERT_NE(it, child_objects.end());
-  ASSERT_EQ(it->second.type(), Json::Type::kArray);
-  const Json::Array& sub_sockets = it->second.array();
-  ASSERT_EQ(sub_sockets.size(), 1);
-  ASSERT_EQ(sub_sockets[0].type(), Json::Type::kNumber);
-  EXPECT_EQ(sub_sockets[0].string(), std::to_string(data_source.child_id()));
 }
 
 TEST(ChannelzChannelTest, ChannelzDisabled) {

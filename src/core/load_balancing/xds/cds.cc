@@ -397,7 +397,14 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
             cluster_name_, new_cluster_config->cluster->use_http_connect,
             endpoint_config.endpoints,
             child_name_state_.priority_child_numbers);
-        update_args.resolution_note = endpoint_config.resolution_note;
+        std::vector<absl::string_view> resolution_notes;
+        if (!args.resolution_note.empty()) {
+          resolution_notes.emplace_back(args.resolution_note);
+        }
+        if (!endpoint_config.resolution_note.empty()) {
+          resolution_notes.emplace_back(endpoint_config.resolution_note);
+        }
+        update_args.resolution_note = absl::StrJoin(resolution_notes, "; ");
         // Construct child policy config.
         child_policy_config_json = CreateChildPolicyConfigForLeafCluster(
             *new_cluster_config, endpoint_config, aggregate_cluster_resource);
@@ -405,6 +412,8 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
       // Aggregate cluster.
       [&](const XdsConfig::ClusterConfig::AggregateConfig& aggregate_config) {
         child_name_state_.Reset();
+        // Populate resolution_note for child policy.
+        update_args.resolution_note = aggregate_config.resolution_note;
         // Construct child policy config.
         child_policy_config_json =
             CreateChildPolicyConfigForAggregateCluster(aggregate_config);

@@ -223,8 +223,6 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
 
 void NewChttp2ServerListener::ActiveConnection::HandshakingState::
     OnHandshakeDoneLocked(absl::StatusOr<HandshakerArgs*> result) {
-  OrphanablePtr<HandshakingState> handshaking_state_ref;
-  RefCountedPtr<HandshakeManager> handshake_mgr;
   // If the handshaking succeeded but there is no endpoint, then the
   // handshaker may have handed off the connection to some external
   // code, so we can just clean up here without creating a transport.
@@ -235,7 +233,7 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
                                      std::move((*result)->endpoint), false)
             ->Ref();
     grpc_error_handle channel_init_err =
-        connection_->listener_state_->server()->SetupTransport(
+        connection_->listener_state_->SetupTransport(
             transport.get(), accepting_pollset_, (*result)->args);
     if (channel_init_err.ok()) {
       // Use notify_on_receive_settings callback to enforce the
@@ -246,7 +244,7 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
       GRPC_CLOSURE_INIT(&on_receive_settings_, OnReceiveSettings, this,
                         grpc_schedule_on_exec_ctx);
       grpc_closure* on_close = &connection_->on_close_;
-      // Refs helds by OnClose()
+      // Refs held by OnClose()
       connection_->Ref().release();
       grpc_chttp2_transport_start_reading(
           transport.get(), (*result)->read_buffer.c_slice_buffer(),

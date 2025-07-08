@@ -137,7 +137,7 @@ CORE_END2END_TEST(RetryTests, RetryRecvMessageReplay) {
             // Skip on proxy (which explicitly disables retries).
             .IfChannelArg(GRPC_ARG_ENABLE_RETRIES, true);
       });
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       "{\n"

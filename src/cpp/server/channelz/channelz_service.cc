@@ -25,6 +25,9 @@
 #include <memory>
 
 #include "absl/log/log.h"
+#include "src/core/channelz/channelz_registry.h"
+
+using grpc_core::channelz::BaseNode;
 
 // IWYU pragma: no_include "google/protobuf/json/json.h"
 // IWYU pragma: no_include "google/protobuf/util/json_util.h"
@@ -34,6 +37,8 @@
 namespace grpc {
 
 namespace {
+
+constexpr size_t kMaxResults = 100;
 
 grpc::protobuf::util::Status ParseJson(const char* json_str,
                                        grpc::protobuf::Message* message) {
@@ -162,6 +167,48 @@ Status ChannelzService::GetSocket(ServerContext* /*unused*/,
   if (!s.ok()) {
     return Status(StatusCode::INTERNAL, s.ToString());
   }
+  return Status::OK;
+}
+
+Status ChannelzV2Service::QueryEntities(
+    ServerContext* /*unused*/,
+    const channelz::v2::QueryEntitiesRequest* request,
+    channelz::v2::QueryEntitiesResponse* response) {
+  std::optional<BaseNode::EntityType> type =
+      BaseNode::KindToEntityType(request->kind());
+  if (!type.has_value()) {
+    return Status(StatusCode::INVALID_ARGUMENT,
+                  absl::StrCat("Invalid entity kind: ", request->kind()));
+  }
+  grpc_core::WeakRefCountedPtr<BaseNode> parent;
+  if (request->parent() != 0) {
+    parent = grpc_core::channelz::ChannelzRegistry::GetNode(request->parent());
+    if (parent == nullptr) {
+      return Status(StatusCode::NOT_FOUND,
+                    "No object found for parent EntityId");
+    }
+  }
+  const auto [nodes, end] =
+      parent != nullptr
+          ? grpc_core::channelz::ChannelzRegistry::GetChildrenOfType(
+                request->start_entity_id(), parent.get(), *type, kMaxResults)
+          : grpc_core::channelz::ChannelzRegistry::GetNodesOfType(
+                request->start_entity_id(), *type, kMaxResults);
+  response->set_end(end);
+  for (const auto& node : nodes) {
+    response->add_entities()->ParseFromString(node->SerializeEntityToString());
+  }
+  return Status::OK;
+}
+
+Status ChannelzV2Service::GetEntity(
+    ServerContext* /*unused*/, const channelz::v2::GetEntityRequest* request,
+    channelz::v2::GetEntityResponse* response) {
+  auto node = grpc_core::channelz::ChannelzRegistry::GetNode(request->id());
+  if (node == nullptr) {
+    return Status(StatusCode::NOT_FOUND, "No object found for that EntityId");
+  }
+  response->mutable_entity()->ParseFromString(node->SerializeEntityToString());
   return Status::OK;
 }
 
