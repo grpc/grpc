@@ -182,6 +182,60 @@ class ContextVarsPropagationTest(unittest.TestCase):
                 if not q.empty():
                     raise q.get()
 
+    def test_contextvars_propagation_fix(self):
+        """Test that contextvars set in main thread are automatically visible in handlers.
+
+        This test will fail on main branch (contextvars not propagated) but pass
+        with the contextvars propagation fix applied.
+        """
+        if not contextvars_supported():
+            self.skipTest("contextvars not supported")
+
+        # Set contextvar in main thread
+        server_test_var.set("main_thread_value")
+
+        def handler(request, context):
+            # This should automatically see the contextvar set in the main thread
+            # without any manual context handling
+            handler_value = server_test_var.get()
+            return handler_value.encode()
+
+        # Create server with our handler
+        server = test_common.test_server()
+        server.add_registered_method_handlers(
+            _SERVICE_NAME,
+            {_UNARY_UNARY: grpc.unary_unary_rpc_method_handler(handler)},
+        )
+        server_creds = grpc.local_server_credentials(
+            grpc.LocalConnectionType.UDS
+        )
+        server.add_secure_port(f"unix:{_UDS_PATH}", server_creds)
+        server.start()
+
+        try:
+            # Create client and make request
+            local_credentials = grpc.local_channel_credentials(
+                grpc.LocalConnectionType.UDS
+            )
+            with grpc.secure_channel(
+                f"unix:{_UDS_PATH}", local_credentials
+            ) as channel:
+                stub = channel.unary_unary(
+                    grpc._common.fully_qualified_method(
+                        _SERVICE_NAME, _UNARY_UNARY
+                    ),
+                    _registered_method=True,
+                )
+                response = stub(_REQUEST, wait_for_ready=True)
+
+                # Verify the handler received the contextvar value
+                # This will fail on main branch (expects "missing") but pass with fix
+                self.assertEqual(b"main_thread_value", response)
+        finally:
+            server.stop(None)
+            if os.path.exists(_UDS_PATH):
+                os.remove(_UDS_PATH)
+
 
 if __name__ == "__main__":
     logging.basicConfig()

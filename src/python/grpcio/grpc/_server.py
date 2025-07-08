@@ -1068,7 +1068,10 @@ def _handle_with_method_handler(
 def _capture_main_context():
     """Capture the context from the main thread."""
     _handle_call._main_context = contextvars.copy_context()
-    print(f"DEBUG: Captured main context from thread {threading.current_thread().ident}")
+    print(
+        f"DEBUG: Captured main context from thread {threading.current_thread().ident}"
+    )
+
 
 def _handle_call(
     rpc_event: cygrpc.BaseEvent,
@@ -1094,7 +1097,7 @@ def _handle_call(
         rpc_state = _RPCState()
         # Capture the context at the time the request is received
         # Use a global context that was captured from the main thread
-        if hasattr(_handle_call, '_main_context'):
+        if hasattr(_handle_call, "_main_context"):
             rpc_state.context = _handle_call._main_context
         else:
             rpc_state.context = contextvars.copy_context()
@@ -1388,10 +1391,10 @@ def _start(state: _ServerState) -> None:
     with state.lock:
         if state.stage is not _ServerStage.STOPPED:
             raise ValueError("Cannot start already-started server!")
-        
+
         # Capture the main context when the server starts
         _capture_main_context()
-        
+
         state.server.start()
         state.stage = _ServerStage.STARTED
         # Request a call for each registered method so we can handle any of them.
