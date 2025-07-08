@@ -6,6 +6,7 @@ target-version = "py39"
 
 [lint]
 ignore = [
+    "D413", # Checks for missing blank lines after the last section of a multiline docstring.
     "F401", # Disable unsed imports in Ruff
     "FA100", # Checks for missing from __future__ import annotations
     # imports upon detecting type annotations that can be written more succinctly under PEP 563.
