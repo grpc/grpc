@@ -19,8 +19,10 @@
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/call/filter_fusion.h"
 #include "src/core/config/core_configuration.h"
+
+#ifndef GRPC_NO_FILTER_FUSION
+#include "src/core/call/filter_fusion.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/ext/filters/http/client_authority_filter.h"
 #include "src/core/ext/filters/http/message_compress/compression_filter.h"
@@ -141,3 +143,10 @@ void RegisterFusedFilters(CoreConfiguration::Builder* builder) {
 }
 
 }  // namespace grpc_core
+
+#else  // GRPC_NO_FILTER_FUSION
+
+namespace grpc_core {
+void RegisterFusedFilters(CoreConfiguration::Builder* /*builder*/) {}
+}  // namespace grpc_core
+#endif
