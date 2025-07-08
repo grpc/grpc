@@ -85,6 +85,26 @@ _INF_TIMEOUT = 1e9
 _main_context = None
 
 
+def merge_contexts(context1: contextvars.Context, context2: contextvars.Context) -> contextvars.Context:
+    """
+    Merges two contexts into a new one.
+
+    Values from context2 will overwrite values from context1 in case of a conflict.
+    """
+    # Create a new, empty context to serve as the merged result
+    merged_context = contextvars.Context()
+
+    # Create a dictionary from all variables in both contexts
+    # The value from the second context will overwrite the first if keys conflict
+    final_vars = {**context1, **context2}
+
+    # Populate the new context with the final combined variables
+    for var, value in final_vars.items():
+        merged_context[var] = value
+
+    return merged_context
+
+
 def _capture_main_context():
     """Capture the context from the main thread."""
     global _main_context
@@ -1099,10 +1119,9 @@ def _handle_call(
         rpc_state = _RPCState()
         # Use a fresh copy of the captured main context if available
         if _main_context is not None:
-            rpc_state.context = contextvars.copy_context()
-            # Copy all context variables from the main context
-            for var in _main_context:
-                rpc_state.context[var] = _main_context[var]
+            # Merge the current context with the main context
+            current_context = contextvars.copy_context()
+            rpc_state.context = merge_contexts(current_context, _main_context)
         try:
             method_handler = _find_method_handler(
                 rpc_event,
