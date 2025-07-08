@@ -26,6 +26,8 @@ ignore = [
 
     "BLE001", # Checks for except clauses that catch all exceptions. This includes bare except, except BaseException and except Exception.
 
+    "TC003", # Checks for standard library imports that are only used for type annotations, but aren't defined in a type-checking block.
+
     "RUF022", # Checks for __all__ definitions that are not ordered according to an "isort-style" sort.
 
     "PLR0913", # Checks for function definitions that include too many arguments.
