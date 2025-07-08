@@ -194,7 +194,7 @@ class _RPCState(object):
     aborted: bool
 
     def __init__(self):
-        self.context = contextvars.Context()
+        self.context = contextvars.copy_context()
         self.condition = threading.Condition()
         self.due = set()
         self.request = None
