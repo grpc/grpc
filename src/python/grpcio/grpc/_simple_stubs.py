@@ -77,7 +77,7 @@ else:
 
 def _create_channel(
     target: str,
-    options: Optional[List[Tuple[str, Any]]],
+    options: Sequence[Tuple[str, Any]],
     channel_credentials: Optional[grpc.ChannelCredentials],
     compression: Optional[grpc.Compression],
 ) -> grpc.Channel:
