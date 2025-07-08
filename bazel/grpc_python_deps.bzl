@@ -37,9 +37,9 @@ def grpc_python_deps():
     http_archive(
         name = "typing_extensions",
         build_file = "@com_github_grpc_grpc//third_party:typing_extensions.BUILD",
-        sha256 = "e600cad01cac3216bfbb433b43a8ad413f517f408613ee37aea6e1b1a291a50a",
-        strip_prefix = "typing_extensions-4.14.1",
-        url = "https://github.com/python/typing_extensions/archive/4.14.1.tar.gz",
+        sha256 = "39f1d1e0a85f92bdbfa9f0315c6fbf662ba1a4d9e38b561cef97bfa3b242356a",
+        strip_prefix = "typing_extensions-4.13.2",
+        url = "https://github.com/python/typing_extensions/archive/4.13.2.tar.gz",
     )
 
     if "cython" not in native.existing_rules():

@@ -16,7 +16,7 @@
 # Instructions for generation follow:
 # Use the oldest supported version of Python
 #
-#   $ docker run -it --rm -v $(pwd):/grpc python:3.9 /bin/bash
+#   $ docker run -it --rm -v $(pwd):/grpc python:3.8 /bin/bash
 #   # cd grpc
 #   # pip install pip-tools
 #   # pip-compile --allow-unsafe requirements.bazel.txt -o requirements.bazel.lock
@@ -26,7 +26,7 @@
 # When installing a new package, sometimes it's desirable to avoid unnecessary
 # package upgrades. In such case, consider the following flow instead.
 #
-#   $ python3.9 -m venv --upgrade-deps .venv-bazel
+#   $ python3.8 -m venv .venv-bazel
 #   $ source .venv-bazel/bin/activate
 #   $ pip install pip-tools
 #   $ pip install -r requirements.bazel.lock
@@ -47,6 +47,6 @@ opentelemetry-sdk
 protobuf
 pyyaml  # for DNS test
 requests
-typing-extensions~=4.14
+typing-extensions~=4.13
 twisted  # for DNS test
 urllib3
