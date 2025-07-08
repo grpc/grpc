@@ -48,6 +48,7 @@
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
+#include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/slice/slice.h"
@@ -97,6 +98,7 @@
 #define FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS (1 << 15)
 #define FEATURE_MASK_IS_CALL_V3 (1 << 16)
 #define FEATURE_MASK_IS_LOCAL_TCP_CREDS (1 << 17)
+#define FEATURE_MASK_IS_PH2_CLIENT (1 << 18)
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
@@ -458,6 +460,16 @@ class CoreEnd2endTest {
     client_ = f.MakeClient(args, cq_);
     CHECK_NE(client_, nullptr);
   }
+
+  static ChannelArgs DefaultServerArgs() {
+    // TODO(b/424667351) : Remove ping timeout channel arg after fixing.
+    // This is a workaround for the flakiness that arises when a server is
+    // trying to gracefully shutdown, and waiting for a ping response from the
+    // client. In the failure cases, the client sockets are already shutdown
+    // with the notification not reaching the server socket.
+    return ChannelArgs().Set(GRPC_ARG_PING_TIMEOUT_MS, 5000);
+  }
+
   // Initialize the server.
   // If called, then InitClient must be called to create a client (otherwise one
   // will be provided).
@@ -692,6 +704,16 @@ inline auto MaybeAddNullConfig(
     GTEST_SKIP() << "Disabled for initial v3 testing";         \
   }
 
+// PH2 test MUST only be run when PH2 experiment is enabled.
+// Non-PH2 tests MUST only be run when PH2 experiment is disabled
+#define SKIP_E2E_SUITE_FOR_PH2(bits)                              \
+  const bool is_ph2_test = (bits) & FEATURE_MASK_IS_PH2_CLIENT;   \
+  const bool is_ph2_experiment =                                  \
+      grpc_core::IsPromiseBasedHttp2ClientTransportEnabled();     \
+  if (is_ph2_test ^ is_ph2_experiment) {                          \
+    GTEST_SKIP() << "Test PH2 only if PH2 experiment is enabled"; \
+  }
+
 #define SKIP_IF_LOCAL_TCP_CREDS()                                      \
   if (test_config()->feature_mask & FEATURE_MASK_IS_LOCAL_TCP_CREDS) { \
     GTEST_SKIP() << "Disabled for Local TCP Connection";               \
@@ -719,6 +741,7 @@ inline auto MaybeAddNullConfig(
         (grpc_core::ConfigVars::Get().PollStrategy() == "poll")) {           \
       GTEST_SKIP() << "call-v3 not supported with poll poller";              \
     }                                                                        \
+    SKIP_E2E_SUITE_FOR_PH2(GetParam()->feature_mask);                        \
     CoreEnd2endTest_##suite##_##name(GetParam(), nullptr, #suite).RunTest(); \
   }
 #endif
@@ -748,6 +771,7 @@ inline auto MaybeAddNullConfig(
         !IsEventEngineDnsEnabled()) {                                          \
       GTEST_SKIP() << "fuzzers need event engine";                             \
     }                                                                          \
+    SKIP_E2E_SUITE_FOR_PH2(config->feature_mask);                              \
     if (IsEventEngineDnsNonClientChannelEnabled() &&                           \
         !grpc_event_engine::experimental::                                     \
             EventEngineExperimentDisabledForPython()) {                        \

@@ -24,7 +24,9 @@ namespace grpc_core::chaotic_good {
 inline uint32_t DataConnectionPadding(uint32_t payload_length,
                                       uint32_t alignment) {
   if (payload_length % alignment == 0) return 0;
-  return alignment - (payload_length % alignment);
+  uint32_t padding = alignment - (payload_length % alignment);
+  DCHECK_GT(padding, 0u);
+  return padding;
 }
 
 struct TcpFrameHeader {

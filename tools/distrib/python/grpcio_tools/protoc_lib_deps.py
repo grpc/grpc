@@ -66,7 +66,6 @@ CC_FILES=[
     'third_party/abseil-cpp/absl/log/internal/proto.cc',
     'third_party/abseil-cpp/absl/log/internal/structured_proto.cc',
     'third_party/abseil-cpp/absl/log/internal/vlog_config.cc',
-    'third_party/abseil-cpp/absl/log/log_entry.cc',
     'third_party/abseil-cpp/absl/log/log_sink.cc',
     'third_party/abseil-cpp/absl/numeric/int128.cc',
     'third_party/abseil-cpp/absl/profiling/internal/exponential_biased.cc',
@@ -78,7 +77,6 @@ CC_FILES=[
     'third_party/abseil-cpp/absl/strings/charconv.cc',
     'third_party/abseil-cpp/absl/strings/cord.cc',
     'third_party/abseil-cpp/absl/strings/cord_analysis.cc',
-    'third_party/abseil-cpp/absl/strings/cord_buffer.cc',
     'third_party/abseil-cpp/absl/strings/escaping.cc',
     'third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc',
     'third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc',
@@ -139,8 +137,6 @@ CC_FILES=[
     'third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_posix.cc',
     'third_party/abseil-cpp/absl/time/internal/cctz/src/zone_info_source.cc',
     'third_party/abseil-cpp/absl/time/time.cc',
-    'third_party/abseil-cpp/absl/types/bad_optional_access.cc',
-    'third_party/abseil-cpp/absl/types/bad_variant_access.cc',
     'third_party/protobuf/src/google/protobuf/any.cc',
     'third_party/protobuf/src/google/protobuf/any_lite.cc',
     'third_party/protobuf/src/google/protobuf/arena.cc',
@@ -297,6 +293,7 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/generated_message_util.cc',
     'third_party/protobuf/src/google/protobuf/implicit_weak_message.cc',
     'third_party/protobuf/src/google/protobuf/inlined_string_field.cc',
+    'third_party/protobuf/src/google/protobuf/internal_feature_helper.cc',
     'third_party/protobuf/src/google/protobuf/io/coded_stream.cc',
     'third_party/protobuf/src/google/protobuf/io/gzip_stream.cc',
     'third_party/protobuf/src/google/protobuf/io/io_win32.cc',
@@ -411,4 +408,4 @@ CC_INCLUDES=[
 ]
 PROTO_INCLUDE='third_party/protobuf/src'
 
-PROTOBUF_SUBMODULE_VERSION="3d4adad5c4c4e6a6f9f038769b8c90716065b0e4"
+PROTOBUF_SUBMODULE_VERSION="74211c0dfc2777318ab53c2cd2c317a2ef9012de"

@@ -100,6 +100,10 @@ absl::StatusOr<ConnectPromiseEndpointResult> ResultFromHandshake(
       endpoint = grpc_event_engine::experimental::
           grpc_take_wrapped_event_engine_endpoint(
               (*result)->endpoint.release());
+  if (endpoint == nullptr) {
+    LOG(ERROR) << "Failed to take endpoint.";
+    return absl::InternalError("Failed to take endpoint.");
+  }
   auto* chaotic_good_ext = grpc_event_engine::experimental::QueryExtension<
       grpc_event_engine::experimental::ChaoticGoodExtension>(endpoint.get());
   if (chaotic_good_ext != nullptr) {

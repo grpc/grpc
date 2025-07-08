@@ -18,12 +18,14 @@
 
 namespace grpc_core {
 
-TEST(MemoryUsageTest, Int) { EXPECT_EQ(MemoryUsage(42), sizeof(int)); }
+TEST(MemoryUsageTest, Int) { EXPECT_EQ(MemoryUsageOf(42), sizeof(int)); }
 
-TEST(MemoryUsageTest, Double) { EXPECT_EQ(MemoryUsage(42.0), sizeof(double)); }
+TEST(MemoryUsageTest, Double) {
+  EXPECT_EQ(MemoryUsageOf(42.0), sizeof(double));
+}
 
 TEST(MemoryUsageTest, String) {
-  EXPECT_GE(MemoryUsage(std::string("hello")),
+  EXPECT_GE(MemoryUsageOf(std::string("hello")),
             sizeof(std::string) + strlen("hello"));
 }
 
@@ -33,7 +35,7 @@ TEST(MemoryUsageTest, StructOfInt) {
     int b;
     int c;
   };
-  EXPECT_GE(MemoryUsage(Foo()), sizeof(Foo));
+  EXPECT_GE(MemoryUsageOf(Foo()), sizeof(Foo));
 }
 
 TEST(MemoryUsageTest, StructOfString) {
@@ -42,7 +44,7 @@ TEST(MemoryUsageTest, StructOfString) {
     std::string b;
     std::string c;
   };
-  EXPECT_GE(MemoryUsage(Foo{"a", "b", "c"}), 3 * sizeof(std::string) + 3);
+  EXPECT_GE(MemoryUsageOf(Foo{"a", "b", "c"}), 3 * sizeof(std::string) + 3);
 }
 
 TEST(MemoryUsageTest, VeryAlignedStruct) {
@@ -50,18 +52,18 @@ TEST(MemoryUsageTest, VeryAlignedStruct) {
     alignas(128) char a;
     alignas(128) char b;
   };
-  EXPECT_EQ(MemoryUsage(Foo{1, 2}), sizeof(Foo));
+  EXPECT_EQ(MemoryUsageOf(Foo{1, 2}), sizeof(Foo));
 }
 
 TEST(MemoryUsageTest, OptionalInt) {
-  EXPECT_EQ(MemoryUsage(std::optional<int>()), sizeof(std::optional<int>));
-  EXPECT_EQ(MemoryUsage(std::optional<int>(42)), sizeof(std::optional<int>));
+  EXPECT_EQ(MemoryUsageOf(std::optional<int>()), sizeof(std::optional<int>));
+  EXPECT_EQ(MemoryUsageOf(std::optional<int>(42)), sizeof(std::optional<int>));
 }
 
 TEST(MemoryUsageTest, OptionalString) {
-  EXPECT_EQ(MemoryUsage(std::optional<std::string>()),
+  EXPECT_EQ(MemoryUsageOf(std::optional<std::string>()),
             sizeof(std::optional<std::string>));
-  EXPECT_GE(MemoryUsage(std::optional<std::string>("hello")),
+  EXPECT_GE(MemoryUsageOf(std::optional<std::string>("hello")),
             sizeof(std::optional<std::string>) + strlen("hello"));
 }
 
@@ -76,14 +78,14 @@ TEST(MemoryUsageTest, Regression1) {
     double c;
     std::optional<double> d;
   };
-  EXPECT_EQ(MemoryUsage(Foo()), sizeof(Foo));
+  EXPECT_EQ(MemoryUsageOf(Foo()), sizeof(Foo));
 }
 
 TEST(MemoryUsageTest, EscapeHatch) {
   struct Foo {
     size_t MemoryUsage() const { return 12345; }
   };
-  EXPECT_EQ(MemoryUsage(Foo()), 12345);
+  EXPECT_EQ(MemoryUsageOf(Foo()), 12345);
 }
 
 }  // namespace grpc_core

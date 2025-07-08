@@ -58,7 +58,6 @@ grpc_ssl_credentials::grpc_ssl_credentials(
       root_store_ = grpc_core::DefaultSslRootStore::GetRootStore();
     }
   } else {
-    config_.pem_root_certs = config_.pem_root_certs;
     root_store_ = nullptr;
   }
 
