@@ -14,6 +14,7 @@
 """Server-side implementation of gRPC Asyncio Python."""
 from __future__ import annotations
 
+from concurrent.futures import Executor
 from typing import Any, Optional, Sequence, Union
 
 import grpc
@@ -23,8 +24,6 @@ from grpc._cython import cygrpc
 
 from . import _base_server
 from ._interceptor import ServerInterceptor
-
-from concurrent.futures import Executor
 from ._typing import ChannelArgumentType
 
 

@@ -40,7 +40,6 @@ from ._interceptor import StreamUnaryClientInterceptor
 from ._interceptor import UnaryStreamClientInterceptor
 from ._interceptor import UnaryUnaryClientInterceptor
 from ._metadata import Metadata
-from ._utils import _timeout_to_deadline
 from ._typing import ChannelArgumentType
 from ._typing import DeserializingFunction
 from ._typing import MetadataType
@@ -48,6 +47,7 @@ from ._typing import RequestIterableType
 from ._typing import RequestType
 from ._typing import ResponseType
 from ._typing import SerializingFunction
+from ._utils import _timeout_to_deadline
 
 _USER_AGENT = f"grpc-python-asyncio/{_grpcio_metadata.__version__}"
 

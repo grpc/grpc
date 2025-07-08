@@ -44,7 +44,6 @@ from ._call import UnaryUnaryCall
 from ._call import _API_STYLE_ERROR
 from ._call import _RPC_ALREADY_FINISHED_DETAILS
 from ._call import _RPC_HALF_CLOSED_DETAILS
-from ._utils import _timeout_to_deadline
 from ._metadata import Metadata
 from ._typing import DeserializingFunction
 from ._typing import DoneCallbackType
@@ -54,6 +53,7 @@ from ._typing import RequestType
 from ._typing import ResponseIterableType
 from ._typing import ResponseType
 from ._typing import SerializingFunction
+from ._utils import _timeout_to_deadline
 
 _LOCAL_CANCELLATION_DETAILS = "Locally cancelled by application!"
 

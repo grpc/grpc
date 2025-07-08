@@ -14,12 +14,12 @@
 """Abstract base classes for Channel objects and Multicallable objects."""
 from __future__ import annotations
 
-import grpc
-
-from . import _base_call
 import abc
 from typing import TYPE_CHECKING, Generic, Optional
 
+import grpc
+
+from . import _base_call
 from ._typing import DeserializingFunction
 from ._typing import MetadataType
 from ._typing import RequestIterableType
