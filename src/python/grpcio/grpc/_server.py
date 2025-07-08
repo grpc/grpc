@@ -85,24 +85,24 @@ _INF_TIMEOUT = 1e9
 _main_context = None
 
 
-def merge_contexts(context1: contextvars.Context, context2: contextvars.Context) -> contextvars.Context:
+def merge_contexts(context1: contextvars.Context, context2: Mapping[contextvars.ContextVar, object]) -> contextvars.Context:
     """
-    Merges two contexts into a new one.
+    Merges two contexts into a new one by running the creation process
+    within the first context.
 
     Values from context2 will overwrite values from context1 in case of a conflict.
     """
-    # Create a new, empty context to serve as the merged result
-    merged_context = contextvars.Context()
+    def _build_merged_context():
+        # Apply all variables from the second context.
+        # This will set them in the current context, which is a copy of context1.
+        for var, value in context2.items():
+            var.set(value)
+        # Capture the new, combined state into a new Context object and return it.
+        return contextvars.copy_context()
 
-    # Create a dictionary from all variables in both contexts
-    # The value from the second context will overwrite the first if keys conflict
-    final_vars = {**context1, **context2}
-
-    # Populate the new context with the final combined variables
-    for var, value in final_vars.items():
-        merged_context[var] = value
-
-    return merged_context
+    # Run the builder function within the scope of the first context.
+    # The return value will be the newly created and merged context.
+    return context1.run(_build_merged_context)
 
 
 def _capture_main_context():
