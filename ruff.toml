@@ -10,6 +10,7 @@ ignore = [
     "F401", # Disable unsed imports in Ruff
     "FA100", # Checks for missing from __future__ import annotations
     # imports upon detecting type annotations that can be written more succinctly under PEP 563.
+    "E501", # Checks for lines that exceed the specified maximum character length.
 
     "TD003", # TD003 Missing issue link for this TODO
     "TD004", # Checks that a "TODO" tag is followed by a colon.
