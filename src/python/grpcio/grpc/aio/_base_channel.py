@@ -203,7 +203,7 @@ class Channel(abc.ABC):
         exc_type,
         exc_val,
         exc_tb,
-    ) -> None:
+    ):
         """Finishes the asynchronous context manager by closing the channel.
 
         Still active RPCs will be cancelled.

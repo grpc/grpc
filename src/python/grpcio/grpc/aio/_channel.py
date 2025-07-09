@@ -389,7 +389,7 @@ class Channel(_base_channel.Channel):
         exc_type,
         exc_val,
         exc_tb,
-    ) -> None:
+    ):
         await self._close(None)
 
     async def _close(  # pylint: disable=too-many-branches  # noqa: C901, PLR0912
