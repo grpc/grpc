@@ -6,6 +6,8 @@ target-version = "py39"
 
 [lint]
 ignore = [
+    "COM812", # Checks for the absence of trailing commas.
+
     "D413", # Checks for missing blank lines after the last section of a multiline docstring.
     "F401", # Disable unsed imports in Ruff
     "FA100", # Checks for missing from __future__ import annotations
@@ -37,6 +39,8 @@ ignore = [
 
     "PLR0913", # Checks for function definitions that include too many arguments.
     "PERF203", # Checks for uses of except handling via try-except within for and while loops.
+
+    "SIM102", # Checks for nested if statements that can be collapsed into a single if statement.
 
     "SLF001", # Checks for accesses on "private" class members.
 
