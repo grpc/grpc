@@ -145,7 +145,7 @@ class Server(abc.ABC):
         self,
         service_name,
         method_handlers,
-    ) -> None:
+    ):
         """Registers GenericRpcHandlers with this Server.
 
         This method is only safe to call before the server is started.
