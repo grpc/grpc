@@ -23,7 +23,7 @@ DIRS=(
 )
 
 VIRTUALENV=.venv_ruff
-python3.11 -m virutalenv $VIRTUALENV
+python3.11 -m virtualenv $VIRTUALENV
 source $VIRTUALENV/bin/activate
 
 pip install ruff==0.12.1
