@@ -45,6 +45,7 @@ namespace grpc_core {
   "|CoreEnd2endTests.BinaryMetadataServerHttp2FallbackClientTrueBinary"    \
   "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientHttp2Fallback"    \
   "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientTrueBinary"       \
+  "|CoreEnd2endTests.CancelWithStatus3"                                    \
   "|CoreEnd2endTests.MaxMessageLengthOnClientOnResponseViaChannelArg"      \
   "|CoreEnd2endTests."                                                     \
   "MaxMessageLengthOnClientOnResponseViaServiceConfigWithIntegerJsonValue" \
