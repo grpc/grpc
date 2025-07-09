@@ -58,7 +58,7 @@ RUN curl -sSL -o cmake-linux.sh https://github.com/Kitware/CMake/releases/downlo
     && rm cmake-linux.sh
 
 #=================
-# Install ccache (use slighly older release of ccache that works older compilers and cmake)
+# Install ccache (use slightly older release of ccache that works older compilers and cmake)
 
 # Install ccache from source since ccache 3.x packaged with most linux distributions
 # does not support Redis backend for caching.
