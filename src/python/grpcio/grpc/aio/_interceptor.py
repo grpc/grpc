@@ -1127,7 +1127,7 @@ class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall):
     def done(self) -> bool:
         return True
 
-    def add_done_callback(self, unused_callback) -> None:  # noqa: ANN001
+    def add_done_callback(self, unused_callback) -> None: 
         raise NotImplementedError
 
     def time_remaining(self) -> Optional[float]:
@@ -1180,7 +1180,7 @@ class _StreamCallResponseIterator:
     def done(self) -> bool:
         return self._call.done()
 
-    def add_done_callback(self, callback) -> None:  # noqa: ANN001
+    def add_done_callback(self, callback) -> None: 
         self._call.add_done_callback(callback)
 
     def time_remaining(self) -> Optional[float]:

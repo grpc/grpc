@@ -21,6 +21,7 @@ ignore = [
 
     # TODO(asheshvidyut): this should be removed after type hints PR are merged.
     "ANN401", # Checks that function arguments are annotated with a more specific type than Any.
+    "ANN001", # Checks that function arguments have type annotations
 
     "S105", # Checks for potential uses of hardcoded passwords in strings.
 
