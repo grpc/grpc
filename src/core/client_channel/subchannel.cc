@@ -418,9 +418,19 @@ class Subchannel::ConnectedSubchannelStateWatcher final
             << ": Connected subchannel " << c->connected_subchannel_.get()
             << " reports " << ConnectivityStateName(new_state) << ": "
             << status;
+        RefCountedPtr<ConnectedSubchannel> connected_subchannel =
+            std::move(c->connected_subchannel_);
+        if (connected_subchannel == nullptr) return;
         c->connected_subchannel_.reset();
         if (c->channelz_node() != nullptr) {
-          c->channelz_node()->SetChildSocket(nullptr);
+          if (auto* legacy_connected_subchannel =
+                  DownCast<LegacyConnectedSubchannel*>(
+                      connected_subchannel.get())) {
+            if (legacy_connected_subchannel->channelz_node() != nullptr) {
+              legacy_connected_subchannel->channelz_node()->RemoveParent(
+                  c->channelz_node());
+            }
+          }
         }
         // If the subchannel was created from an endpoint, then we report
         // TRANSIENT_FAILURE here instead of IDLE. The subchannel will never
@@ -880,7 +890,9 @@ bool Subchannel::PublishTransportLocked() {
       << "subchannel " << this << " " << key_.ToString()
       << ": new connected subchannel at " << connected_subchannel_.get();
   if (channelz_node_ != nullptr) {
-    channelz_node_->SetChildSocket(std::move(socket_node));
+    if (socket_node != nullptr) {
+      socket_node->AddParent(channelz_node_.get());
+    }
   }
   // Start watching connected subchannel.
   connected_subchannel_->StartWatch(
