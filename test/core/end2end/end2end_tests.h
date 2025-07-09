@@ -740,7 +740,6 @@ inline bool IsTestEnabledInConfig(absl::string_view include_suite,
                                    suite, test)                                \
   if (!IsTestEnabledInConfig(include_suite, include_test, exclude_test, suite, \
                              test)) {                                          \
-    LOG(ERROR) << "tjagtap Bypassed 1 " << suite << "." << test;               \
     GTEST_SKIP();                                                              \
   }
 
