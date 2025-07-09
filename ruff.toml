@@ -6,63 +6,199 @@ target-version = "py39"
 
 [lint]
 ignore = [
-    "COM812", # Checks for the absence of trailing commas.
-
-    "D413", # Checks for missing blank lines after the last section of a multiline docstring.
-    "F401", # Disable unsed imports in Ruff
-    "FA100", # Checks for missing from __future__ import annotations
-    # imports upon detecting type annotations that can be written more succinctly under PEP 563.
-    "E501", # Checks for lines that exceed the specified maximum character length.
-
-    "TC001", # Checks for first-party imports that are only used for type annotations, but aren't defined in a type-checking block.
-
-    "TD003", # TD003 Missing issue link for this TODO
-    "TD004", # Checks that a "TODO" tag is followed by a colon.
-    "FIX002", # Checks for "TODO" comments.
-    "FIX004", # Checks for "HACK" comments.
-
-    # TODO(asheshvidyut): this should be removed after type hints PR are merged.
-    "ANN401", # Checks that function arguments are annotated with a more specific type than Any.
-    "ANN001", # Checks that function arguments have type annotations
-    "ANN202", # Checks that private functions and methods have return type annotations.
-    "ANN204", # Checks that "special" methods, like __init__, __new__, and __call__, have return type annotations.
-
-    "B904", # Checks for raise statements in exception handlers that lack a from clause.
-
-    "S105", # Checks for potential uses of hardcoded passwords in strings.
-
-    "BLE001", # Checks for except clauses that catch all exceptions. This includes bare except, except BaseException and except Exception.
-
-    "TC003", # Checks for standard library imports that are only used for type annotations, but aren't defined in a type-checking block.
-
-    "RUF022", # Checks for __all__ definitions that are not ordered according to an "isort-style" sort.
-
-    "PLR0913", # Checks for function definitions that include too many arguments.
-    "PERF203", # Checks for uses of except handling via try-except within for and while loops.
-
-    "SIM102", # Checks for nested if statements that can be collapsed into a single if statement.
-
-    "SLF001", # Checks for accesses on "private" class members.
-
-    "I001", # De-duplicates, groups, and sorts imports based on the provided isort settings.
-    # This conflicts with isort
-
-    "TRY400", # Checks for uses of logging.error instead of logging.exception when logging an exception.
-
-    "D401", # Checks for docstring first lines that are not in an imperative mood.
-    "D404", # Checks for docstrings that start with This.
-    "D205", # Checks for docstring summary lines that are not separated from the docstring description by one blank line.
-    "D400", # Checks for docstrings in which the first line does not end in a period.
-    "D415", # Checks for docstrings in which the first line does not end in a punctuation mark, such as a period, 
-    # question mark, or exclamation point.
-
-    "FBT001", # Checks for the use of boolean positional arguments in function definitions, 
-    # as determined by the presence of a type hint containing bool as an evident subtype - e.g. bool, bool | int, typing.Optional[bool], etc.
-
-    "FBT002", # Checks for the use of boolean positional arguments in function definitions, as determined by the presence of a boolean default value.
-
-    "UP006", # Checks for the use of generics that can be replaced with standard library variants based on PEP 585.
-    "UP035", # Checks for uses of deprecated imports based on the minimum supported Python version. (`typing.Tuple` is deprecated, use `tuple` instead)
+    "I001",
+    "RUF022",
+    "UP035",
+    "D413",
+    "D401",
+    "COM812",
+    "RSE102",
+    "F401",
+    "B027",
+    "ANN001",
+    "C408",
+    "ANN202",
+    "UP032",
+    "YTT203",
+    "PLR2004",
+    "UP006",
+    "PLR0913",
+    "E501",
+    "SLF001",
+    "FBT001",
+    "FBT002",
+    "D205",
+    "ANN204",
+    "TRY004",
+    "C901",
+    "PLR0912",
+    "FIX002",
+    "TD003",
+    "S101",
+    "SIM102",
+    "TRY003",
+    "TD004",
+    "RET507",
+    "EM102",
+    "RET505",
+    "D415",
+    "D400",
+    "ARG002",
+    "PYI045",
+    "B904",
+    "PYI024",
+    "B024",
+    "PLW2901",
+    "RET506",
+    "D417",
+    "D202",
+    "PERF203",
+    "E722",
+    "D404",
+    "PLW1641",
+    "ANN206",
+    "UP030",
+    "EM103",
+    "ANN401",
+    "PYI032",
+    "D104",
+    "ANN201",
+    "UP004",
+    "D107",
+    "UP004",
+    "PLC0415",
+    "FBT003",
+    "ANN002",
+    "EM101",
+    "D411",
+    "ISC003",
+    "UP008",
+    "D410",
+    "FIX004",
+    "BLE001",
+    "LOG015",
+    "PLR5501",
+    "RET503",
+    "RUF023",
+    "D212",
+    "S110",
+    "TC001",
+    "E731",
+    "D213",
+    "TRY400",
+    "ERA001",
+    "SIM105",
+    "B007",
+    "PLW0603",
+    "UP037",
+    "TRY300",
+    "UP031",
+    "F811",
+    "S105",
+    "ARG001",
+    "RET504",
+    "SIM118",
+    "ANN205",
+    "ARG001",
+    "PLR0911",
+    "PLR1711",
+    "RET501",
+    "UP036",
+    "PLE0604",
+    "RUF005",
+    "TRY002",
+    "TRY401",
+    "ARG005",
+    "DTZ005",
+    "G003",
+    "D103",
+    "ANN003",
+    "F403",
+    "PYI006",
+    "D105",
+    "N818",
+    "SIM910",
+    "D102",
+    "D106",
+    "SLOT002",
+    "PIE796",
+    "A001",
+    "N802",
+    "E713",
+    "PLC0206",
+    "SIM108",
+    "SIM300",
+    "PYI056",
+    "F821",
+    "PTH123",
+    "PLW1508",
+    "UP015",
+    "SIM114",
+    "PERF401",
+    "D200",
+    "PERF102",
+    "ARG004",
+    "UP010",
+    "FURB188",
+    "D209",
+    "UP010",
+    "UP028",
+    "ICN001",
+    "D209",
+    "A002",
+    "PT015",
+    "B011",
+    "D209",
+    "D207",
+    "F841",
+    "F523",
+    "UP010",
+    "UP018",
+    "SIM115",
+    "PLR0915",
+    "C402",
+    "TRY203",
+    "D101",
+    "D100",
+    "PTH110",
+    "D101",
+    "PT027",
+    "S603",
+    "PLW0120",
+    "PLR1704",
+    "PT027",
+    "PT009",
+    "INP001",
+    "PT017",
+    "RUF013",
+    "F541",
+    "N803",
+    "E402",
+    "SIM103",
+    "N806",
+    "SIM103",
+    "PTH118",
+    "PTH120",
+    "PTH103",
+    "B018",
+    "PTH103",
+    "SIM117",
+    "S311",
+    "S301",
+    "PT028",
+    "DTZ001",
+    "PTH100",
+    "TC003",
+    "T201",
+    "TD005",
+    "PTH107",
+    "D403",
+    "TD005",
+    "C405",
+    "UP024",
+    "PLR1714",
+    "YTT201",
+    "FLY002"
 ]
 
 # This is to suppress
