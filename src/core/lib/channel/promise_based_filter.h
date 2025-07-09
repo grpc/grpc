@@ -196,7 +196,11 @@ struct CallHasAsyncErrorInterceptor<
 template <typename Derived>
 struct CallHasAsyncErrorInterceptor<
     Derived, std::enable_if_t<IsFusedFilter<Derived>::value>> {
-  static constexpr bool value = Derived::FusedFilterHasAsyncErrorInterceptor();
+  // Fused filter types return a promise, which resolves to a
+  // ServerMetadataHandle type. So, we can assume that the promise will resolve
+  // to a ServerMetadataHandle. So we assume that an async error interceptor is
+  // needed.
+  static constexpr bool value = true;
 };
 
 // Given a boolean X export a type:
