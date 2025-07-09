@@ -16,7 +16,7 @@
 set -ex
 
 # NOTE(rbellevi): We ignore generated code.
-IGNORE_PATTERNS=--ignore-patterns='.*pb2\.py,.*pb2_grpc\.py'
+IGNORE_PATTERNS=--ignore-patterns='.*pb2\.py,.*pb2_grpc\.py,src/python/grpcio/grpc/aio/.*'
 
 # change to root directory
 cd "$(dirname "$0")/../.."

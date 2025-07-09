@@ -1,0 +1,76 @@
+# See https://docs.astral.sh/ruff/configuration/
+# For a full list of supported rules, see https://docs.astral.sh/ruff/rules/
+# For a full list of options, see https://docs.astral.sh/ruff/settings/
+
+target-version = "py39"
+
+[lint]
+ignore = [
+    "D413", # Checks for missing blank lines after the last section of a multiline docstring.
+    "F401", # Disable unsed imports in Ruff
+    "FA100", # Checks for missing from __future__ import annotations
+    # imports upon detecting type annotations that can be written more succinctly under PEP 563.
+    "E501", # Checks for lines that exceed the specified maximum character length.
+
+    "TC001", # Checks for first-party imports that are only used for type annotations, but aren't defined in a type-checking block.
+
+    "TD003", # TD003 Missing issue link for this TODO
+    "TD004", # Checks that a "TODO" tag is followed by a colon.
+    "FIX002", # Checks for "TODO" comments.
+    "FIX004", # Checks for "HACK" comments.
+
+    # TODO(asheshvidyut): this should be removed after type hints PR are merged.
+    "ANN401", # Checks that function arguments are annotated with a more specific type than Any.
+    "ANN001", # Checks that function arguments have type annotations
+    "ANN202", # Checks that private functions and methods have return type annotations.
+    "ANN204", # Checks that "special" methods, like __init__, __new__, and __call__, have return type annotations.
+
+    "B904", # Checks for raise statements in exception handlers that lack a from clause.
+
+    "S105", # Checks for potential uses of hardcoded passwords in strings.
+
+    "BLE001", # Checks for except clauses that catch all exceptions. This includes bare except, except BaseException and except Exception.
+
+    "TC003", # Checks for standard library imports that are only used for type annotations, but aren't defined in a type-checking block.
+
+    "RUF022", # Checks for __all__ definitions that are not ordered according to an "isort-style" sort.
+
+    "PLR0913", # Checks for function definitions that include too many arguments.
+    "PERF203", # Checks for uses of except handling via try-except within for and while loops.
+
+    "SLF001", # Checks for accesses on "private" class members.
+
+    "I001", # De-duplicates, groups, and sorts imports based on the provided isort settings.
+    # This conflicts with isort
+
+    "TRY400", # Checks for uses of logging.error instead of logging.exception when logging an exception.
+
+    "D401", # Checks for docstring first lines that are not in an imperative mood.
+    "D404", # Checks for docstrings that start with This.
+    "D205", # Checks for docstring summary lines that are not separated from the docstring description by one blank line.
+    "D400", # Checks for docstrings in which the first line does not end in a period.
+    "D415", # Checks for docstrings in which the first line does not end in a punctuation mark, such as a period, 
+    # question mark, or exclamation point.
+
+    "FBT001", # Checks for the use of boolean positional arguments in function definitions, 
+    # as determined by the presence of a type hint containing bool as an evident subtype - e.g. bool, bool | int, typing.Optional[bool], etc.
+
+    "FBT002", # Checks for the use of boolean positional arguments in function definitions, as determined by the presence of a boolean default value.
+
+    "UP006", # Checks for the use of generics that can be replaced with standard library variants based on PEP 585.
+    "UP035", # Checks for uses of deprecated imports based on the minimum supported Python version. (`typing.Tuple` is deprecated, use `tuple` instead)
+]
+
+# This is to suppress
+# https://docs.astral.sh/ruff/rules/non-pep585-annotation/
+# https://docs.astral.sh/ruff/rules/non-pep604-annotation-union/#non-pep604-annotation-union-up007
+pyupgrade.keep-runtime-typing = true
+
+# Select all rules by default, and then ignore the ones we don't want.
+# This is a good way to stay up-to-date with new rules in ruff.
+select = ["ALL"]
+
+[format]
+# Exclude all files from the formatter using a glob pattern.
+# This is the most straightforward way to disable it.
+exclude = ["*"]

@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Invocation-side implementation of gRPC Asyncio Python."""
+from __future__ import annotations
 
 import asyncio
 import sys
-from typing import Any, Iterable, List, Optional, Sequence
+from typing import Any, Iterable, Optional, Sequence, Union
 
 import grpc
 from grpc import _common
@@ -48,9 +49,9 @@ from ._typing import ResponseType
 from ._typing import SerializingFunction
 from ._utils import _timeout_to_deadline
 
-_USER_AGENT = "grpc-python-asyncio/{}".format(_grpcio_metadata.__version__)
+_USER_AGENT = f"grpc-python-asyncio/{_grpcio_metadata.__version__}"
 
-if sys.version_info[1] < 7:
+if sys.version_info < (3, 7):  # noqa: UP036
 
     def _all_tasks() -> Iterable[asyncio.Task]:
         return asyncio.Task.all_tasks()  # pylint: disable=no-member
@@ -62,10 +63,11 @@ else:
 
 
 def _augment_channel_arguments(
-    base_options: ChannelArgumentType, compression: Optional[grpc.Compression]
-):
+    base_options: ChannelArgumentType,
+    compression: Optional[grpc.Compression],
+) -> tuple[tuple[str, Union[str, bytes, int]], ...]:
     compression_channel_argument = _compression.create_channel_option(
-        compression
+        compression,
     )
     user_agent_channel_argument = (
         (
@@ -92,7 +94,7 @@ class _BaseMultiCallable:
     _request_serializer: SerializingFunction
     _response_deserializer: DeserializingFunction
     _interceptors: Optional[Sequence[ClientInterceptor]]
-    _references: List[Any]
+    _references: list[Any]
     _loop: asyncio.AbstractEventLoop
 
     # pylint: disable=too-many-arguments
@@ -103,7 +105,7 @@ class _BaseMultiCallable:
         request_serializer: SerializingFunction,
         response_deserializer: DeserializingFunction,
         interceptors: Optional[Sequence[ClientInterceptor]],
-        references: List[Any],
+        references: list[Any],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         self._loop = loop
@@ -127,13 +129,14 @@ class _BaseMultiCallable:
             metadata = Metadata.from_tuple(metadata)
         if compression:
             metadata = Metadata(
-                *_compression.augment_metadata(metadata, compression)
+                *_compression.augment_metadata(metadata, compression),
             )
         return metadata
 
 
 class UnaryUnaryMultiCallable(
-    _BaseMultiCallable, _base_channel.UnaryUnaryMultiCallable
+    _BaseMultiCallable,
+    _base_channel.UnaryUnaryMultiCallable,
 ):
     def __call__(
         self,
@@ -178,7 +181,8 @@ class UnaryUnaryMultiCallable(
 
 
 class UnaryStreamMultiCallable(
-    _BaseMultiCallable, _base_channel.UnaryStreamMultiCallable
+    _BaseMultiCallable,
+    _base_channel.UnaryStreamMultiCallable,
 ):
     def __call__(
         self,
@@ -224,7 +228,8 @@ class UnaryStreamMultiCallable(
 
 
 class StreamUnaryMultiCallable(
-    _BaseMultiCallable, _base_channel.StreamUnaryMultiCallable
+    _BaseMultiCallable,
+    _base_channel.StreamUnaryMultiCallable,
 ):
     def __call__(
         self,
@@ -269,7 +274,8 @@ class StreamUnaryMultiCallable(
 
 
 class StreamStreamMultiCallable(
-    _BaseMultiCallable, _base_channel.StreamStreamMultiCallable
+    _BaseMultiCallable,
+    _base_channel.StreamStreamMultiCallable,
 ):
     def __call__(
         self,
@@ -316,10 +322,10 @@ class StreamStreamMultiCallable(
 class Channel(_base_channel.Channel):
     _loop: asyncio.AbstractEventLoop
     _channel: cygrpc.AioChannel
-    _unary_unary_interceptors: List[UnaryUnaryClientInterceptor]
-    _unary_stream_interceptors: List[UnaryStreamClientInterceptor]
-    _stream_unary_interceptors: List[StreamUnaryClientInterceptor]
-    _stream_stream_interceptors: List[StreamStreamClientInterceptor]
+    _unary_unary_interceptors: list[UnaryUnaryClientInterceptor]
+    _unary_stream_interceptors: list[UnaryStreamClientInterceptor]
+    _stream_unary_interceptors: list[StreamUnaryClientInterceptor]
+    _stream_stream_interceptors: list[StreamStreamClientInterceptor]
 
     def __init__(
         self,
@@ -328,7 +334,7 @@ class Channel(_base_channel.Channel):
         credentials: Optional[grpc.ChannelCredentials],
         compression: Optional[grpc.Compression],
         interceptors: Optional[Sequence[ClientInterceptor]],
-    ):
+    ) -> None:
         """Constructor.
 
         Args:
@@ -339,6 +345,7 @@ class Channel(_base_channel.Channel):
             used over the lifetime of the channel.
           interceptors: An optional list of interceptors that would be used for
             intercepting any RPC executed with that channel.
+
         """
         self._unary_unary_interceptors = []
         self._unary_stream_interceptors = []
@@ -356,12 +363,14 @@ class Channel(_base_channel.Channel):
                 elif isinstance(interceptor, StreamStreamClientInterceptor):
                     self._stream_stream_interceptors.append(interceptor)
                 else:
-                    raise ValueError(
-                        "Interceptor {} must be ".format(interceptor)
-                        + "{} or ".format(UnaryUnaryClientInterceptor.__name__)
-                        + "{} or ".format(UnaryStreamClientInterceptor.__name__)
-                        + "{} or ".format(StreamUnaryClientInterceptor.__name__)
-                        + "{}. ".format(StreamStreamClientInterceptor.__name__)
+                    raise ValueError(  # noqa: TRY004
+                        "Interceptor {} must be ".format(  # noqa: UP032
+                            interceptor,
+                        )
+                        + f"{UnaryUnaryClientInterceptor.__name__} or "
+                        + f"{UnaryStreamClientInterceptor.__name__} or "
+                        + f"{StreamUnaryClientInterceptor.__name__} or "
+                        + f"{StreamStreamClientInterceptor.__name__}. ",
                     )
 
         self._loop = cygrpc.get_working_loop()
@@ -375,10 +384,18 @@ class Channel(_base_channel.Channel):
     async def __aenter__(self):
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        exc_type,
+        exc_val,
+        exc_tb,
+    ):
         await self._close(None)
 
-    async def _close(self, grace):  # pylint: disable=too-many-branches
+    async def _close(  # pylint: disable=too-many-branches  # noqa: C901, PLR0912
+        self,
+        grace,
+    ) -> None:
         if self._channel.closed():
             return
 
@@ -409,8 +426,7 @@ class Channel(_base_channel.Channel):
                 # TODO(lidiz) drop this hack after 3.8 deprecation
                 if "frame" in str(attribute_error):
                     continue
-                else:
-                    raise
+                raise
 
             # If the Task is created by a C-extension, the stack will be empty.
             if not stack:
@@ -422,24 +438,24 @@ class Channel(_base_channel.Channel):
             # Explicitly check for a non-null candidate instead of the more pythonic 'if candidate:'
             # because doing 'if candidate:' assumes that the coroutine implements '__bool__' which
             # might not always be the case.
-            if candidate is not None:
-                if isinstance(candidate, _base_call.Call):
-                    if hasattr(candidate, "_channel"):
-                        # For intercepted Call object
-                        if candidate._channel is not self._channel:
-                            continue
-                    elif hasattr(candidate, "_cython_call"):
-                        # For normal Call object
-                        if candidate._cython_call._channel is not self._channel:
-                            continue
-                    else:
-                        # Unidentified Call object
-                        raise cygrpc.InternalError(
-                            f"Unrecognized call object: {candidate}"
-                        )
+            if candidate is not None and isinstance(candidate, _base_call.Call):
+                if hasattr(candidate, "_channel"):
+                    # For intercepted Call object
+                    if candidate._channel is not self._channel:
+                        continue
+                elif hasattr(candidate, "_cython_call"):
+                    # For normal Call object
+                    if candidate._cython_call._channel is not self._channel:
+                        continue
+                else:
+                    # Unidentified Call object
+                    msg = (f"Unrecognized call object: {candidate}",)
+                    raise cygrpc.InternalError(
+                        msg,
+                    )
 
-                    calls.append(candidate)
-                    call_tasks.append(task)
+                calls.append(candidate)
+                call_tasks.append(task)
 
         # If needed, try to wait for them to finish.
         # Call objects are not always awaitables.
@@ -456,13 +472,13 @@ class Channel(_base_channel.Channel):
     async def close(self, grace: Optional[float] = None):
         await self._close(grace)
 
-    def __del__(self):
-        if hasattr(self, "_channel"):
-            if not self._channel.closed():
-                self._channel.close()
+    def __del__(self) -> None:
+        if hasattr(self, "_channel") and not self._channel.closed():
+            self._channel.close()
 
     def get_state(
-        self, try_to_connect: bool = False
+        self,
+        try_to_connect: bool = False,
     ) -> grpc.ChannelConnectivity:
         result = self._channel.check_connectivity_state(try_to_connect)
         return _common.CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY[result]
@@ -471,8 +487,9 @@ class Channel(_base_channel.Channel):
         self,
         last_observed_state: grpc.ChannelConnectivity,
     ) -> None:
-        assert await self._channel.watch_connectivity_state(
-            last_observed_state.value[0], None
+        assert await self._channel.watch_connectivity_state(  # noqa: S101
+            last_observed_state.value[0],
+            None,
         )
 
     async def channel_ready(self) -> None:
