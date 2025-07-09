@@ -4067,8 +4067,12 @@ libs:
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
   deps:
+  - absl/base:dynamic_annotations
+  - absl/base:prefetch
+  - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:internal
   - grpc
   - protobuf
   baselib: true

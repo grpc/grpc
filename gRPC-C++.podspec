@@ -237,13 +237,16 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
     ss.dependency 'abseil/base/core_headers', abseil_version
+    ss.dependency 'abseil/base/dynamic_annotations', abseil_version
     ss.dependency 'abseil/base/log_severity', abseil_version
     ss.dependency 'abseil/base/no_destructor', abseil_version
+    ss.dependency 'abseil/base/prefetch', abseil_version
     ss.dependency 'abseil/cleanup/cleanup', abseil_version
     ss.dependency 'abseil/container/btree', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
+    ss.dependency 'abseil/container/layout', abseil_version
     ss.dependency 'abseil/flags/flag', abseil_version
     ss.dependency 'abseil/flags/marshalling', abseil_version
     ss.dependency 'abseil/functional/any_invocable', abseil_version
@@ -264,6 +267,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/status/status', abseil_version
     ss.dependency 'abseil/status/statusor', abseil_version
     ss.dependency 'abseil/strings/cord', abseil_version
+    ss.dependency 'abseil/strings/internal', abseil_version
     ss.dependency 'abseil/strings/str_format', abseil_version
     ss.dependency 'abseil/strings/string_view', abseil_version
     ss.dependency 'abseil/strings/strings', abseil_version

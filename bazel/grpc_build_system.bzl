@@ -63,6 +63,8 @@ def _get_external_deps(external_deps):
     for dep in external_deps:
         if dep.startswith("@"):
             ret.append(dep)
+        elif dep == "any_cc_proto":
+            ret.append("@com_google_protobuf//:any_cc_proto")
         elif dep == "address_sorting":
             ret.append("//third_party/address_sorting")
         elif dep == "xxhash":
