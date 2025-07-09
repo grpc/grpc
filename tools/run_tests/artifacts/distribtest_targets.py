@@ -558,13 +558,6 @@ def targets():
             ruby_version="ruby_3_4",
             presubmit=True,
         ),
-        RubyDistribTest(
-            "linux-musl",
-            "x86",
-            "alpine",
-            ruby_version="ruby_3_4",
-            presubmit=True,
-        ),
         # PHP8
         PHP8DistribTest("linux", "x64", "debian12", presubmit=True),
         PHP8DistribTest("macos", "x64", presubmit=True),
