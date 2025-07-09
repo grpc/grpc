@@ -200,9 +200,9 @@ class Channel(abc.ABC):
     @abc.abstractmethod
     async def __aexit__(
         self,
-        exc_type, 
-        exc_val, 
-        exc_tb, 
+        exc_type,
+        exc_val,
+        exc_tb,
     ) -> None:
         """Finishes the asynchronous context manager by closing the channel.
 
