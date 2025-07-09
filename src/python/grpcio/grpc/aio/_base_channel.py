@@ -209,7 +209,7 @@ class Channel(abc.ABC):
         """
 
     @abc.abstractmethod
-    async def close(self, grace: Optional[float] = None) -> None:
+    async def close(self, grace: Optional[float] = None):
         """Closes this Channel and releases all resources held by it.
 
         This method immediately stops the channel from executing new RPCs in

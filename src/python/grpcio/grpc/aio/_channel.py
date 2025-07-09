@@ -381,7 +381,7 @@ class Channel(_base_channel.Channel):
             self._loop,
         )
 
-    async def __aenter__(self) -> grpc.aio.Channel:
+    async def __aenter__(self):
         return self
 
     async def __aexit__(
@@ -469,7 +469,7 @@ class Channel(_base_channel.Channel):
         # Destroy the channel
         self._channel.close()
 
-    async def close(self, grace: Optional[float] = None) -> None:
+    async def close(self, grace: Optional[float] = None):
         await self._close(grace)
 
     def __del__(self) -> None:
@@ -589,7 +589,7 @@ def insecure_channel(
     options: Optional[ChannelArgumentType] = None,
     compression: Optional[grpc.Compression] = None,
     interceptors: Optional[Sequence[ClientInterceptor]] = None,
-) -> Channel:
+):
     """Creates an insecure asynchronous Channel to a server.
 
     Args:
@@ -603,7 +603,6 @@ def insecure_channel(
 
     Returns:
       A Channel.
-
     """
     return Channel(
         target,
@@ -620,7 +619,7 @@ def secure_channel(
     options: Optional[ChannelArgumentType] = None,
     compression: Optional[grpc.Compression] = None,
     interceptors: Optional[Sequence[ClientInterceptor]] = None,
-) -> Channel:
+):
     """Creates a secure asynchronous Channel to a server.
 
     Args:

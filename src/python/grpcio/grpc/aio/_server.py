@@ -215,7 +215,7 @@ def server(
     options: Optional[ChannelArgumentType] = None,
     maximum_concurrent_rpcs: Optional[int] = None,
     compression: Optional[grpc.Compression] = None,
-) -> Server:
+):
     """Creates a Server with which RPCs can be serviced.
 
     Args:

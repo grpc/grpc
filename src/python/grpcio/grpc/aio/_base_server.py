@@ -333,7 +333,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
           timed out, or None if no deadline was specified for the RPC.
         """
 
-    def trailing_metadata(self) -> Optional[MetadataType]:
+    def trailing_metadata(self):
         """Access value to be used as trailing metadata upon RPC completion.
 
         This is an EXPERIMENTAL API.
@@ -343,7 +343,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
         raise NotImplementedError
 
-    def code(self) -> Optional[grpc.StatusCode]:
+    def code(self):
         """Accesses the value to be used as status code upon RPC completion.
 
         This is an EXPERIMENTAL API.
@@ -353,7 +353,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
         raise NotImplementedError
 
-    def details(self) -> str:
+    def details(self):
         """Accesses the value to be used as detail string upon RPC completion.
 
         This is an EXPERIMENTAL API.

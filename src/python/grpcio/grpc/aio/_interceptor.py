@@ -121,7 +121,6 @@ class ClientCallDetails(
           the RPC.
         credentials: An optional CallCredentials for the RPC.
         wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
-
     """
 
     method: str
@@ -596,10 +595,8 @@ class _InterceptedStreamRequestMixin:
 
         try:
             call = await self._interceptors_task
-        except asyncio.CancelledError as err:
-            raise asyncio.InvalidStateError(
-                _RPC_ALREADY_FINISHED_DETAILS,
-            ) from err
+        except (asyncio.CancelledError, AioRpcError):
+            raise asyncio.InvalidStateError(_RPC_ALREADY_FINISHED_DETAILS)
 
         if call.done():
             raise asyncio.InvalidStateError(_RPC_ALREADY_FINISHED_DETAILS)
@@ -624,10 +621,8 @@ class _InterceptedStreamRequestMixin:
 
         try:
             call = await self._interceptors_task
-        except asyncio.CancelledError as err:
-            raise asyncio.InvalidStateError(
-                _RPC_ALREADY_FINISHED_DETAILS,
-            ) from err
+        except asyncio.CancelledError:
+            raise asyncio.InvalidStateError(_RPC_ALREADY_FINISHED_DETAILS)
 
         await self._write_to_iterator_queue_interruptible(
             _InterceptedStreamRequestMixin._FINISH_ITERATOR_SENTINEL,
@@ -1201,7 +1196,7 @@ class _StreamCallResponseIterator:
     async def debug_error_string(self) -> Optional[str]:
         return await self._call.debug_error_string()
 
-    def __aiter__(self) -> AsyncIterator[ResponseType]:
+    def __aiter__(self):
         return self._response_iterator.__aiter__()
 
     async def wait_for_connection(self) -> None:
