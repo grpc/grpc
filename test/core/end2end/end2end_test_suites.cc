@@ -215,7 +215,7 @@ class ConfigQuery {
   bool CanConfigRunWithExperiment(const CoreTestConfiguration& config) const {
     for (const auto& [experiment_id, configs] :
          exclude_experiments_except_for_configs_) {
-      if (grpc_core::IsExperimentEnabled(experiment_id) &&
+      if (IsExperimentEnabled(experiment_id) &&
           !configs.contains(config.name)) {
         GRPC_END2END_TEST_SUITE_VLOG
             << "CanConfigRunWithExperiment false {config : " << config.name
