@@ -25,6 +25,8 @@ ignore = [
     "ANN202", # Checks that private functions and methods have return type annotations.
     "ANN204", # Checks that "special" methods, like __init__, __new__, and __call__, have return type annotations.
 
+    "B904", # Checks for raise statements in exception handlers that lack a from clause.
+
     "S105", # Checks for potential uses of hardcoded passwords in strings.
 
     "BLE001", # Checks for except clauses that catch all exceptions. This includes bare except, except BaseException and except Exception.
