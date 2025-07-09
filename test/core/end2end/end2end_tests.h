@@ -149,8 +149,8 @@ struct CoreTestConfiguration {
   // Example include_test_suites = "SuiteName1|SuiteName3|SuiteName5"
   // Example exclude_specific_tests = "SuiteName1.Test4|SuiteName3.Test8"
   absl::string_view include_test_suites = "*";
-  absl::string_view include_specific_tests = "";
-  absl::string_view exclude_specific_tests = "";
+  absl::string_view include_specific_tests;
+  absl::string_view exclude_specific_tests;
 };
 
 const CoreTestConfiguration* CoreTestConfigurationNamed(absl::string_view name);
@@ -727,13 +727,10 @@ inline bool IsTestEnabledInConfig(absl::string_view include_suite,
                                   absl::string_view exclude_test,
                                   absl::string_view suite,
                                   absl::string_view test) {
-  if ((absl::StrContains((include_suite), "*") ||
-       absl::StrContains((include_suite), suite) ||
-       absl::StrContains(include_test, absl::StrCat(suite, ".", test))) &&
-      !absl::StrContains(exclude_test, absl::StrCat(suite, ".", test))) {
-    return true;
-  }
-  return false;
+  return (absl::StrContains((include_suite), "*") ||
+          absl::StrContains((include_suite), suite) ||
+          absl::StrContains(include_test, absl::StrCat(suite, ".", test))) &&
+         !absl::StrContains(exclude_test, absl::StrCat(suite, ".", test));
 }
 
 #define SKIP_IF_DISABLED_IN_CONFIG(include_suite, include_test, exclude_test,  \
