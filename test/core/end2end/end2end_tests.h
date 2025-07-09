@@ -51,6 +51,7 @@
 #include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/shim.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call_test_only.h"
@@ -102,6 +103,8 @@
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
+#define GRPC_HTTP2_PH2_CLIENT_TEST_SUITE "Ph2Client"
+
 namespace grpc_core {
 
 class CoreTestFixture {
@@ -133,6 +136,21 @@ struct CoreTestConfiguration {
   std::function<std::unique_ptr<CoreTestFixture>(
       const ChannelArgs& client_args, const ChannelArgs& server_args)>
       create_fixture;
+
+  // To enable all tests, pass "*" as include_test_suites.
+  // To disable all tests, pass "" as include_test_suites.
+  // To enable sepcific tests pass a `|` separated list to
+  // include_test_suites.
+  // If you want to include a specific test, then add the name to
+  // include_specific_tests. Otherwise leave include_specific_tests empty.
+  // If you want to exclude a specific test, then add the name to
+  // exclude_specific_tests. Otherwise leave exclude_specific_tests empty.
+  //
+  // Example include_test_suites = "SuiteName1|SuiteName3|SuiteName5"
+  // Example exclude_specific_tests = "SuiteName1.Test4|SuiteName3.Test8"
+  absl::string_view include_test_suites = "*";
+  absl::string_view include_specific_tests = "";
+  absl::string_view exclude_specific_tests = "";
 };
 
 const CoreTestConfiguration* CoreTestConfigurationNamed(absl::string_view name);
@@ -704,19 +722,26 @@ inline auto MaybeAddNullConfig(
     GTEST_SKIP() << "Disabled for initial v3 testing";         \
   }
 
-// PH2 test MUST only be run when PH2 experiment is enabled.
-// Non-PH2 tests MUST only be run when PH2 experiment is disabled
-#define SKIP_E2E_SUITE_FOR_PH2(bits)                              \
-  const bool is_ph2_test = (bits) & FEATURE_MASK_IS_PH2_CLIENT;   \
-  const bool is_ph2_experiment =                                  \
-      grpc_core::IsPromiseBasedHttp2ClientTransportEnabled();     \
-  if (is_ph2_test ^ is_ph2_experiment) {                          \
-    GTEST_SKIP() << "Test PH2 only if PH2 experiment is enabled"; \
+inline bool IsTestEnabledInConfig(absl::string_view include_suite,
+                                  absl::string_view include_test,
+                                  absl::string_view exclude_test,
+                                  absl::string_view suite,
+                                  absl::string_view test) {
+  if ((absl::StrContains((include_suite), "*") ||
+       absl::StrContains((include_suite), suite) ||
+       absl::StrContains(include_test, absl::StrCat(suite, ".", test))) &&
+      !absl::StrContains(exclude_test, absl::StrCat(suite, ".", test))) {
+    return true;
   }
+  return false;
+}
 
-#define SKIP_IF_LOCAL_TCP_CREDS()                                      \
-  if (test_config()->feature_mask & FEATURE_MASK_IS_LOCAL_TCP_CREDS) { \
-    GTEST_SKIP() << "Disabled for Local TCP Connection";               \
+#define SKIP_IF_DISABLED_IN_CONFIG(include_suite, include_test, exclude_test,  \
+                                   suite, test)                                \
+  if (!IsTestEnabledInConfig(include_suite, include_test, exclude_test, suite, \
+                             test)) {                                          \
+    LOG(ERROR) << "tjagtap Bypassed 1 " << suite << "." << test;               \
+    GTEST_SKIP();                                                              \
   }
 
 #ifndef GRPC_END2END_TEST_INCLUDE_FUZZER
@@ -741,7 +766,9 @@ inline auto MaybeAddNullConfig(
         (grpc_core::ConfigVars::Get().PollStrategy() == "poll")) {           \
       GTEST_SKIP() << "call-v3 not supported with poll poller";              \
     }                                                                        \
-    SKIP_E2E_SUITE_FOR_PH2(GetParam()->feature_mask);                        \
+    SKIP_IF_DISABLED_IN_CONFIG(                                              \
+        GetParam()->include_test_suites, GetParam()->include_specific_tests, \
+        GetParam()->exclude_specific_tests, #suite, #name);                  \
     CoreEnd2endTest_##suite##_##name(GetParam(), nullptr, #suite).RunTest(); \
   }
 #endif
@@ -771,7 +798,9 @@ inline auto MaybeAddNullConfig(
         !IsEventEngineDnsEnabled()) {                                          \
       GTEST_SKIP() << "fuzzers need event engine";                             \
     }                                                                          \
-    SKIP_E2E_SUITE_FOR_PH2(config->feature_mask);                              \
+    SKIP_IF_DISABLED_IN_CONFIG(config->include_test_suites,                    \
+                               config->include_specific_tests,                 \
+                               config->exclude_specific_tests, #suite, #name); \
     if (IsEventEngineDnsNonClientChannelEnabled() &&                           \
         !grpc_event_engine::experimental::                                     \
             EventEngineExperimentDisabledForPython()) {                        \
