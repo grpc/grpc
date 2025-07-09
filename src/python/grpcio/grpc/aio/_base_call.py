@@ -119,7 +119,6 @@ class Call(RpcContext, metaclass=ABCMeta):
 
         Returns:
           The details string of the RPC.
-
         """
 
     @abstractmethod
