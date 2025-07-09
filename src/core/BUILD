@@ -688,6 +688,7 @@ grpc_cc_library(
     public_hdrs = [
         "lib/promise/poll.h",
     ],
+    visibility = ["//bazel:core_credentials"],
     deps = [
         "construct_destruct",
         "//:gpr_platform",
