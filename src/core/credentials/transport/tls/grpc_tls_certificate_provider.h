@@ -122,7 +122,6 @@ class StaticDataCertificateProvider final
   }
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
-  std::string root_certificate_;
   std::shared_ptr<RootCertInfo> root_cert_info_;
   PemKeyCertPairList pem_key_cert_pairs_;
   // Guards members below.

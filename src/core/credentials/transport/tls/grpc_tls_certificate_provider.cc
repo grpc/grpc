@@ -104,9 +104,8 @@ absl::Status ValidatePemKeyCertPair(absl::string_view cert_chain,
 StaticDataCertificateProvider::StaticDataCertificateProvider(
     std::string root_certificate, PemKeyCertPairList pem_key_cert_pairs)
     : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
-      root_certificate_(std::move(root_certificate)),
+      root_cert_info_(std::make_shared<RootCertInfo>(root_certificate)),
       pem_key_cert_pairs_(std::move(pem_key_cert_pairs)) {
-  root_cert_info_ = std::make_shared<RootCertInfo>(root_certificate_);
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                               bool root_being_watched,
                                               bool identity_being_watched) {
@@ -127,7 +126,6 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
     if (!info.root_being_watched && !info.identity_being_watched) {
       watcher_info_.erase(cert_name);
     }
-    // const bool root_has_update = IsRootCertInfoEmpty(root_cert_info.get());
     const bool root_has_update = root_cert_info != nullptr;
     const bool identity_has_update = pem_key_cert_pairs.has_value();
     if (root_has_update || identity_has_update) {
