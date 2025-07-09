@@ -1206,6 +1206,7 @@ libs:
   - src/core/util/gcp_metadata_query.h
   - src/core/util/gethostname.h
   - src/core/util/glob.h
+  - src/core/util/grpc_check.h
   - src/core/util/grpc_if_nametoindex.h
   - src/core/util/http_client/format_request.h
   - src/core/util/http_client/httpcli.h
@@ -1231,6 +1232,7 @@ libs:
   - src/core/util/overload.h
   - src/core/util/packed_table.h
   - src/core/util/per_cpu.h
+  - src/core/util/postmortem_emit.h
   - src/core/util/random_early_detection.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
@@ -2108,6 +2110,7 @@ libs:
   - src/core/util/matchers.cc
   - src/core/util/per_cpu.cc
   - src/core/util/posix/directory_reader.cc
+  - src/core/util/postmortem_emit.cc
   - src/core/util/random_early_detection.cc
   - src/core/util/ref_counted_string.cc
   - src/core/util/shared_bit_gen.cc
@@ -2826,6 +2829,7 @@ libs:
   - src/core/util/function_signature.h
   - src/core/util/gethostname.h
   - src/core/util/glob.h
+  - src/core/util/grpc_check.h
   - src/core/util/grpc_if_nametoindex.h
   - src/core/util/http_client/format_request.h
   - src/core/util/http_client/httpcli.h
@@ -2847,6 +2851,7 @@ libs:
   - src/core/util/overload.h
   - src/core/util/packed_table.h
   - src/core/util/per_cpu.h
+  - src/core/util/postmortem_emit.h
   - src/core/util/random_early_detection.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
@@ -3296,6 +3301,7 @@ libs:
   - src/core/util/latent_see.cc
   - src/core/util/load_file.cc
   - src/core/util/per_cpu.cc
+  - src/core/util/postmortem_emit.cc
   - src/core/util/random_early_detection.cc
   - src/core/util/ref_counted_string.cc
   - src/core/util/shared_bit_gen.cc
@@ -4825,6 +4831,7 @@ libs:
   - src/core/util/function_signature.h
   - src/core/util/gethostname.h
   - src/core/util/glob.h
+  - src/core/util/grpc_check.h
   - src/core/util/grpc_if_nametoindex.h
   - src/core/util/if_list.h
   - src/core/util/json/json.h
@@ -4842,6 +4849,7 @@ libs:
   - src/core/util/overload.h
   - src/core/util/packed_table.h
   - src/core/util/per_cpu.h
+  - src/core/util/postmortem_emit.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ref_counted_string.h
@@ -5144,6 +5152,7 @@ libs:
   - src/core/util/load_file.cc
   - src/core/util/matchers.cc
   - src/core/util/per_cpu.cc
+  - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
   - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
@@ -6902,6 +6911,7 @@ targets:
   - src/core/util/function_signature.h
   - src/core/util/gethostname.h
   - src/core/util/glob.h
+  - src/core/util/grpc_check.h
   - src/core/util/grpc_if_nametoindex.h
   - src/core/util/if_list.h
   - src/core/util/json/json.h
@@ -6918,6 +6928,7 @@ targets:
   - src/core/util/overload.h
   - src/core/util/packed_table.h
   - src/core/util/per_cpu.h
+  - src/core/util/postmortem_emit.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ref_counted_string.h
@@ -7185,6 +7196,7 @@ targets:
   - src/core/util/latent_see.cc
   - src/core/util/load_file.cc
   - src/core/util/per_cpu.cc
+  - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
   - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
@@ -11140,6 +11152,7 @@ targets:
   - src/core/util/function_signature.h
   - src/core/util/gethostname.h
   - src/core/util/glob.h
+  - src/core/util/grpc_check.h
   - src/core/util/grpc_if_nametoindex.h
   - src/core/util/if_list.h
   - src/core/util/json/json.h
@@ -11156,6 +11169,7 @@ targets:
   - src/core/util/overload.h
   - src/core/util/packed_table.h
   - src/core/util/per_cpu.h
+  - src/core/util/postmortem_emit.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ref_counted_string.h
@@ -11423,6 +11437,7 @@ targets:
   - src/core/util/latent_see.cc
   - src/core/util/load_file.cc
   - src/core/util/per_cpu.cc
+  - src/core/util/postmortem_emit.cc
   - src/core/util/ref_counted_string.cc
   - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
@@ -12907,6 +12922,7 @@ targets:
   - src/core/util/function_signature.h
   - src/core/util/gethostname.h
   - src/core/util/glob.h
+  - src/core/util/grpc_check.h
   - src/core/util/grpc_if_nametoindex.h
   - src/core/util/if_list.h
   - src/core/util/json/json.h
@@ -12923,6 +12939,7 @@ targets:
   - src/core/util/overload.h
   - src/core/util/packed_table.h
   - src/core/util/per_cpu.h
+  - src/core/util/postmortem_emit.h
   - src/core/util/random_early_detection.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
@@ -13205,6 +13222,7 @@ targets:
   - src/core/util/latent_see.cc
   - src/core/util/load_file.cc
   - src/core/util/per_cpu.cc
+  - src/core/util/postmortem_emit.cc
   - src/core/util/random_early_detection.cc
   - src/core/util/ref_counted_string.cc
   - src/core/util/shared_bit_gen.cc
