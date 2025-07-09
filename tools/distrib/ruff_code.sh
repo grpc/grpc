@@ -35,7 +35,7 @@ VIRTUALENV=.venv_ruff
 python3.11 -m virtualenv $VIRTUALENV
 source $VIRTUALENV/bin/activate
 
-pip install ruff==0.12.1
+pip install ruff==0.12.2
 
 # Check if --fix flag is provided
 RUFF_COMMAND="ruff check"
