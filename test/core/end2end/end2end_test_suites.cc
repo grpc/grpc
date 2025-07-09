@@ -139,8 +139,7 @@ class ConfigQuery {
       exclude_features_ |= FEATURE_MASK_DO_NOT_GTEST;
     }
     exclude_experiments_except_for_configs_.insert(
-        {grpc_core::ExperimentIds::
-             kExperimentIdPromiseBasedHttp2ClientTransport,
+        {ExperimentIds::kExperimentIdPromiseBasedHttp2ClientTransport,
          {GRPC_HTTP2_PH2_CLIENT_TEST_SUITE}});
   }
   ConfigQuery(const ConfigQuery&) = delete;
@@ -245,8 +244,7 @@ class ConfigQuery {
   // If there is a new feature with its own experiment that we want to enable
   // only for a few Configs, we can list that here. That will make sure that
   // only the selected E2E test configs are run with the new experiment on.
-  absl::flat_hash_map<grpc_core::ExperimentIds,
-                      absl::flat_hash_set<absl::string_view>>
+  absl::flat_hash_map<ExperimentIds, absl::flat_hash_set<absl::string_view>>
       exclude_experiments_except_for_configs_;
 };
 

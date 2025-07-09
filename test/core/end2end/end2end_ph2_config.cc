@@ -114,9 +114,8 @@ namespace grpc_core {
 
 std::vector<CoreTestConfiguration> End2endTestConfigs() {
   std::vector<CoreTestConfiguration> list_of_configs;
-  if (grpc_core::IsExperimentEnabled(
-          grpc_core::ExperimentIds::
-              kExperimentIdPromiseBasedHttp2ClientTransport)) {
+  if (IsExperimentEnabled(
+          ExperimentIds::kExperimentIdPromiseBasedHttp2ClientTransport)) {
     list_of_configs.push_back(CoreTestConfiguration{
         /*name=*/GRPC_HTTP2_PH2_CLIENT_TEST_SUITE,
         /*feature_mask=*/FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
