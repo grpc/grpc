@@ -743,6 +743,11 @@ inline bool IsTestEnabledInConfig(absl::string_view include_suite,
     GTEST_SKIP();                                                              \
   }
 
+#define SKIP_IF_LOCAL_TCP_CREDS()                                      \
+  if (test_config()->feature_mask & FEATURE_MASK_IS_LOCAL_TCP_CREDS) { \
+    GTEST_SKIP() << "Disabled for Local TCP Connection";               \
+  }
+
 #ifndef GRPC_END2END_TEST_INCLUDE_FUZZER
 #define CORE_END2END_FUZZER(suite, name)
 #else
