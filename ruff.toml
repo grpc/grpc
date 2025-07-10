@@ -68,6 +68,7 @@ ignore = [
     "SLF001",  # Private member accessed: {access}
     "SLOT002", # Subclasses of {namedtuple_kind} should define __slots__
     "TC001",   # Move application import {} into a type-checking block
+    "TC002",   # Move third-party import {} into a type-checking block
     "TC003",   # Move standard library import {} into a type-checking block
     "TD003",   # Missing issue link for this TODO
     "TRY300",  # Consider moving this statement to an else block
