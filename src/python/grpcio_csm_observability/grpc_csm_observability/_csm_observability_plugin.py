@@ -91,7 +91,7 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
         # ResourceAttributes.CLOUD_AVAILABILITY_ZONE are called
         # "zones" on Google Cloud.
         location_value = get_str_value_from_resource("cloud.zone", gcp_resource)
-        if UNKNOWN_VALUE == location_value:
+        if location_value == UNKNOWN_VALUE:
             location_value = get_str_value_from_resource(
                 ResourceAttributes.CLOUD_REGION, gcp_resource
             )
@@ -149,7 +149,7 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
     def deserialize_labels(labels: Dict[str, AnyStr]) -> Dict[str, AnyStr]:
         deserialized_labels = {}
         for key, value in labels.items():
-            if "XEnvoyPeerMetadata" == key:
+            if key == "XEnvoyPeerMetadata":
                 pb_struct = struct_pb2.Struct()
                 pb_struct.ParseFromString(value)
 
