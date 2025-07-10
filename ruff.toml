@@ -59,7 +59,6 @@ ignore = [
     "N806",    # Variable {name} in function should be lowercase
     "N818",    # Exception name {name} should be named with an Error suffix
     "PERF203", # try-except within a loop incurs performance overhead
-    "PERF401", # Use {message_str} to create a transformed list
     "PLC0206", # Extracting value from dictionary without calling .items()
     "PLC0415", # import should be at the top-level of a file
     "PYI006",  # Use < or >= for sys.version_info comparisons
