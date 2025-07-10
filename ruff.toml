@@ -114,8 +114,11 @@ ignore = [
     "PLR2004", # Magic value used in comparison, consider replacing {value} with a constant variable
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     "PLR5501", # Use elif instead of else then if, to reduce indentation
     "PLW0120", # else clause on loop without a break statement; remove the else and dedent its contents
+=======
+>>>>>>> d30bd7c154 (removed suppression for PLW0120)
 =======
 >>>>>>> d30bd7c154 (removed suppression for PLW0120)
     "PLW0603", # Using the global statement to update {name} is discouraged
