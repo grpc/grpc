@@ -69,7 +69,6 @@ ignore = [
     "SLOT002", # Subclasses of {namedtuple_kind} should define __slots__
     "TC001",   # Move application import {} into a type-checking block
     "TD003",   # Missing issue link for this TODO
-    "TD005",   # Missing issue description after TODO
     "TRY002",  # Create your own exception
     "TRY003",  # Avoid specifying long messages outside the exception class
     "TRY004",  # Prefer TypeError exception for invalid type
