@@ -218,8 +218,16 @@ ignore = [
 ]
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 select = ["ALL"]
 =======
+=======
+exclude = [
+    "*_pb2.py",
+    "*_pb2_grpc.py"
+]
+
+>>>>>>> 1128d88a9c (exclude gen code)
 # This is to suppress
 # https://docs.astral.sh/ruff/rules/non-pep585-annotation/
 # https://docs.astral.sh/ruff/rules/non-pep604-annotation-union/#non-pep604-annotation-union-up007
