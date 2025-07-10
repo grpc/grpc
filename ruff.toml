@@ -56,7 +56,6 @@ ignore = [
     "PYI024",  # Use typing.NamedTuple instead of collections.namedtuple
     "PLR0912", # Too many branches ({branches} > {max_branches})
     "PLR0913", # Too many arguments in function definition ({c_args} > {max_args})
-    "PLR1704", # Redefining argument with the local name {name}
     "PLR1711", # Useless return statement at end of function
     "PLR1714", # Consider merging multiple comparisons: {expression}. Use a set if the elements are hashable.
     "PLR2004", # Magic value used in comparison, consider replacing {value} with a constant variable
