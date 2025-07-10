@@ -281,8 +281,8 @@ TEST_F(GrpcTlsCertificateProviderTest, StaticDataCertificateProviderCreation) {
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   EXPECT_THAT(
       watcher_state_1->GetCredentialQueue(),
-      ::testing::ElementsAre(CredentialInfo(
-          RootCertInfo(root_cert_),
+      ::testing::ElementsAre(MatchesCredentialInfo(
+          EqRootCert(root_cert_),
           MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
   CancelWatch(watcher_state_1);
   // Watcher watching only root certs.
@@ -295,10 +295,10 @@ TEST_F(GrpcTlsCertificateProviderTest, StaticDataCertificateProviderCreation) {
   // Watcher watching only identity certs.
   WatcherState* watcher_state_3 =
       MakeWatcher(provider.distributor(), std::nullopt, kCertName);
-  EXPECT_THAT(
-      watcher_state_3->GetCredentialQueue(),
-      ::testing::ElementsAre(MatchesCredentialInfo(
-          "", MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
+  EXPECT_THAT(watcher_state_3->GetCredentialQueue(),
+              ::testing::ElementsAre(MatchesCredentialInfo(
+                  EqRootCert(""), MakeCertKeyPairs(private_key_.c_str(),
+                                            cert_chain_.c_str()))));
   CancelWatch(watcher_state_3);
 }
 
