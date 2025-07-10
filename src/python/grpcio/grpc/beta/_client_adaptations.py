@@ -981,7 +981,7 @@ class _DynamicStub(face.DynamicStub):
 
 def generic_stub(
     channel,
-    host,
+    _host,
     metadata_transformer,
     request_serializers,
     response_deserializers,
@@ -998,7 +998,7 @@ def dynamic_stub(
     channel,
     service,
     cardinalities,
-    host,
+    _host,
     metadata_transformer,
     request_serializers,
     response_deserializers,
