@@ -235,8 +235,7 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
     return;
   }
   if (recv_buffer == nullptr) {
-    VLOG(2)
-        << "failed to receive a response from the alts handshaker service";
+    VLOG(2) << "failed to receive a response from the alts handshaker service";
     handle_response_done(
         client, TSI_INTERNAL_ERROR,
         "failed to receive a response from the alts handshaker service",
