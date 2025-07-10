@@ -58,7 +58,6 @@ ignore = [
     "N803",    # Argument name {name} should be lowercase
     "N806",    # Variable {name} in function should be lowercase
     "N818",    # Exception name {name} should be named with an Error suffix
-    "PERF102", # When using only the {subset} of a dict use the {subset}() method
     "PERF203", # try-except within a loop incurs performance overhead
     "PERF401", # Use {message_str} to create a transformed list
     "PIE796",  # Enum contains duplicate value: {value}
