@@ -121,8 +121,7 @@ def _next(handler):
         return read.response
     if read.code is grpc.StatusCode.OK:
         raise StopIteration()
-    else:
-        raise _RpcErrorCall(handler)
+    raise _RpcErrorCall(handler)
 
 
 class _HandlerExtras(object):
@@ -161,8 +160,7 @@ def _with_extras_unary_response(handler, extras):
                 extras.unary_response = read.response
                 return read.response
             raise _RpcErrorCall(handler)
-        else:
-            return extras.unary_response
+        return extras.unary_response
 
 
 def _exception(unused_handler):
@@ -259,8 +257,7 @@ def blocking_unary_response(handler):
         if code is grpc.StatusCode.OK:
             return read.response
         raise _RpcErrorCall(handler)
-    else:
-        raise _RpcErrorCall(handler)
+    raise _RpcErrorCall(handler)
 
 
 def blocking_unary_response_with_call(handler):
@@ -270,8 +267,7 @@ def blocking_unary_response_with_call(handler):
         if code is grpc.StatusCode.OK:
             return read.response, _Call(handler)
         raise _RpcErrorCall(handler)
-    else:
-        raise _RpcErrorCall(handler)
+    raise _RpcErrorCall(handler)
 
 
 def future_call(handler):
