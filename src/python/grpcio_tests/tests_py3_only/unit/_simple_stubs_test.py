@@ -123,6 +123,7 @@ def _time_invocation(to_time: Callable[[], None]) -> datetime.timedelta:
 
 @contextlib.contextmanager
 def _server(credentials: Optional[grpc.ServerCredentials]):
+    server = None
     try:
         server = test_common.test_server()
         target = "[::]:0"
@@ -134,7 +135,8 @@ def _server(credentials: Optional[grpc.ServerCredentials]):
         server.start()
         yield port
     finally:
-        server.stop(None)
+        if server:
+            server.stop(None)
 
 
 class SimpleStubsTest(unittest.TestCase):

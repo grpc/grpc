@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Functions that obviate explicit stubs and explicit channels."""
+from __future__ import annotations
 
 import collections
 import datetime
@@ -37,8 +38,8 @@ from grpc.experimental import experimental_api
 RequestType = TypeVar("RequestType")
 ResponseType = TypeVar("ResponseType")
 
-OptionsType = Sequence[tuple[str, str]]
-CacheKey = tuple[
+OptionsType = Sequence[Tuple[str, str]]
+CacheKey = Tuple[
     str,
     OptionsType,
     Optional[grpc.ChannelCredentials],

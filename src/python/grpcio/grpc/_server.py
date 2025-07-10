@@ -177,7 +177,7 @@ class _GenericMethod(_Method):
 class _RPCState(object):
     context: contextvars.Context
     condition: threading.Condition
-    due = set[str]
+    due = Set[str]
     request: Any
     client: str
     initial_metadata_allowed: bool

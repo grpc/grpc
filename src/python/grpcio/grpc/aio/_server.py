@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Server-side implementation of gRPC Asyncio Python."""
+from __future__ import annotations
 
 from concurrent.futures import Executor
 from typing import Any, Dict, Optional, Sequence
