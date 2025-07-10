@@ -36,8 +36,8 @@ RequestType = TypeVar("RequestType")
 ResponseType = TypeVar("ResponseType")
 SerializingFunction = Callable[[Any], bytes]
 DeserializingFunction = Callable[[bytes], Any]
-MetadataType = Sequence[tuple[str, Union[str, bytes]]]
-ChannelArgumentType = tuple[str, Any]
+MetadataType = Sequence[Tuple[str, Union[str, bytes]]]
+ChannelArgumentType = Tuple[str, Any]
 DoneCallbackType = Callable[[Any], None]
 NullaryCallbackType = Callable[[], None]
 RequestIterableType = Iterable[Any]
@@ -58,7 +58,7 @@ IntegratedCallFactory = Callable[
     ],
     cygrpc.IntegratedCall,
 ]
-ServerTagCallbackType = tuple[
+ServerTagCallbackType = Tuple[
     Optional["_RPCState"], Sequence[NullaryCallbackType]
 ]
 ServerCallbackTag = Callable[[cygrpc.BaseEvent], ServerTagCallbackType]
