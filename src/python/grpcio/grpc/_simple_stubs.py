@@ -202,22 +202,21 @@ class ChannelCache:
                     datetime.datetime.now() + _EVICTION_PERIOD,
                 )
                 return channel, call_handle
-            else:
-                channel = _create_channel(
-                    target, options, channel_credentials, compression
-                )
-                if _registered_method:
-                    call_handle = channel._get_registered_call_handle(method)
-                self._mapping[key] = (
-                    channel,
-                    datetime.datetime.now() + _EVICTION_PERIOD,
-                )
-                if (
-                    len(self._mapping) == 1
-                    or len(self._mapping) >= _MAXIMUM_CHANNELS
-                ):
-                    self._condition.notify()
-                return channel, call_handle
+            channel = _create_channel(
+                target, options, channel_credentials, compression
+            )
+            if _registered_method:
+                call_handle = channel._get_registered_call_handle(method)
+            self._mapping[key] = (
+                channel,
+                datetime.datetime.now() + _EVICTION_PERIOD,
+            )
+            if (
+                len(self._mapping) == 1
+                or len(self._mapping) >= _MAXIMUM_CHANNELS
+            ):
+                self._condition.notify()
+            return channel, call_handle
 
     def _test_only_channel_count(self) -> int:
         with self._lock:

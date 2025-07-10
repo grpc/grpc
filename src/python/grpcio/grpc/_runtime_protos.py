@@ -66,8 +66,7 @@ def _call_with_lazy_import(
         if _has_runtime_proto_symbols(grpc_tools.protoc):
             fn = getattr(grpc_tools.protoc, "_" + fn_name)
             return fn(protobuf_path)
-        else:
-            raise NotImplementedError(_UNINSTALLED_TEMPLATE.format(fn_name))
+        raise NotImplementedError(_UNINSTALLED_TEMPLATE.format(fn_name))
 
 
 def protos(protobuf_path):  # pylint: disable=unused-argument
