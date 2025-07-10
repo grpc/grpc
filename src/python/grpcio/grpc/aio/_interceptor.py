@@ -21,6 +21,7 @@ import collections
 import functools
 from typing import (
     AsyncIterable,
+    AsyncIterator,
     Awaitable,
     Callable,
     List,
@@ -489,7 +490,7 @@ class _InterceptedStreamResponseMixin:
         async for response in call:
             yield response
 
-    def __aiter__(self) -> AsyncIterable[ResponseType]:
+    def __aiter__(self) -> AsyncIterator[ResponseType]:
         if self._response_aiter is None:
             self._response_aiter = (
                 self._wait_for_interceptor_task_response_iterator()
