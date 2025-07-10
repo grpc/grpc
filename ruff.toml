@@ -29,7 +29,6 @@ ignore = [
     "D107",    # Missing docstring in __init__
     "D200",    # One-line docstring should fit on one line
     "D205",    # 1 blank line required between summary line and description
-    "D209",    # Multi-line docstring closing quotes should be on a separate line
     "D212",    # Multi-line docstring summary should start at the first line
     "D213",    # Multi-line docstring summary should start at the second line
     "D400",    # First line should end with a period
