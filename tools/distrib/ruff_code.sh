@@ -29,6 +29,7 @@ DIRS=(
    src/python/grpcio_csm_observability/grpc_csm_observability
    src/python/grpcio_tests/tests
    src/python/grpcio_tests/tests_gevent
+   examples/python
 )
 
 VIRTUALENV=.venv_ruff
