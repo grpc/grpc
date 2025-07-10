@@ -24,7 +24,7 @@ class Exporter(metaclass=abc.ABCMeta):
     """Abstract base class for census data exporters."""
 
     @abc.abstractmethod
-    def export_stats_data(self, stats_data: List[StatsData]) -> None:
+    def export_stats_data(self, stats_data: list[StatsData]) -> None:
         """Exports a list of StatsData objects to the exporter's destination.
 
         Args:
@@ -33,7 +33,7 @@ class Exporter(metaclass=abc.ABCMeta):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def export_tracing_data(self, tracing_data: List[TracingData]) -> None:
+    def export_tracing_data(self, tracing_data: list[TracingData]) -> None:
         """Exports a list of TracingData objects to the exporter's destination.
 
         Args:
@@ -68,8 +68,8 @@ class StatsData:
     value_int: int = 0
     value_float: float = 0.0
     include_exchange_labels: bool = False
-    labels: Dict[str, Union[str, bytes]] = field(default_factory=dict)
-    identifiers: Set[str] = field(default_factory=set)
+    labels: dict[str, Union[str, bytes]] = field(default_factory=dict)
+    identifiers: set[str] = field(default_factory=set)
     registered_method: bool = False
 
 
@@ -110,7 +110,7 @@ class TracingData:
     should_sample: bool
     child_span_count: int
     span_labels: Mapping[str, Union[str, bytes]] = field(default_factory=dict)
-    span_annotations: List[Tuple[str, str]] = field(default_factory=list)
+    span_annotations: list[tuple[str, str]] = field(default_factory=list)
 
 
 @enum.unique

@@ -69,12 +69,9 @@ ignore = [
     "SLOT002", # Subclasses of {namedtuple_kind} should define __slots__
     "TC001",   # Move application import {} into a type-checking block
     "TD003",   # Missing issue link for this TODO
-    "TRY203",  # Remove exception handler; error is immediately re-raised
     "TRY300",  # Consider moving this statement to an else block
-    "TRY400",  # Use logging.exception instead of logging.error
     "TRY401",  # Redundant exception object included in logging.exception call
     "UP004",   # Class {name} inherits from object
-    "UP006",   # Use {to} instead of {from} for type annotation
     "UP008",   # Use super() instead of super(__class__, self)
     "UP010",   # Unnecessary __future__ import {import} for target Python version
     "UP015",   # Unnecessary mode argument

@@ -30,7 +30,7 @@ class OpenTelemetryLabelInjector:
     An interface that allows you to add additional labels on the calls traced.
     """
 
-    def get_labels_for_exchange(self) -> Dict[str, AnyStr]:
+    def get_labels_for_exchange(self) -> dict[str, AnyStr]:
         """
         Get labels used for metadata exchange.
 
@@ -42,7 +42,7 @@ class OpenTelemetryLabelInjector:
 
     def get_additional_labels(
         self, include_exchange_labels: bool
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         """
         Get additional labels added by this injector.
 
@@ -58,8 +58,8 @@ class OpenTelemetryLabelInjector:
 
     # pylint: disable=no-self-use
     def deserialize_labels(
-        self, labels: Dict[str, AnyStr]
-    ) -> Dict[str, AnyStr]:
+        self, labels: dict[str, AnyStr]
+    ) -> dict[str, AnyStr]:
         """
         Deserialize the labels if required.
 
@@ -95,7 +95,7 @@ class OpenTelemetryPlugin:
     meter_provider: Optional[MeterProvider]
     target_attribute_filter: Callable[[str], bool]
     generic_method_attribute_filter: Callable[[str], bool]
-    _plugins: List[_open_telemetry_observability._OpenTelemetryPlugin]
+    _plugins: list[_open_telemetry_observability._OpenTelemetryPlugin]
 
     def __init__(
         self,
@@ -167,5 +167,5 @@ class OpenTelemetryPlugin:
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         _open_telemetry_observability.end_open_telemetry_observability()
 
-    def _get_enabled_optional_labels(self) -> List[OptionalLabelType]:
+    def _get_enabled_optional_labels(self) -> list[OptionalLabelType]:
         return []

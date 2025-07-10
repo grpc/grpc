@@ -51,10 +51,10 @@ class RpcMethodHandler(
 
 class DictionaryGenericHandler(grpc.ServiceRpcHandler):
     _name: str
-    _method_handlers: Dict[str, grpc.RpcMethodHandler]
+    _method_handlers: dict[str, grpc.RpcMethodHandler]
 
     def __init__(
-        self, service: str, method_handlers: Dict[str, grpc.RpcMethodHandler]
+        self, service: str, method_handlers: dict[str, grpc.RpcMethodHandler]
     ):
         self._name = service
         self._method_handlers = {

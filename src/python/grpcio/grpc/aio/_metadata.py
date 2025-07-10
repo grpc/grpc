@@ -35,7 +35,7 @@ class Metadata(abc.Collection):
 
     __hash__ = None
 
-    def __init__(self, *args: Tuple[MetadataKey, MetadataValue]) -> None:
+    def __init__(self, *args: tuple[MetadataKey, MetadataValue]) -> None:
         self._metadata = OrderedDict()
         for md_key, md_value in args:
             self.add(md_key, md_value)
@@ -87,7 +87,7 @@ class Metadata(abc.Collection):
         """Delete all mappings for <key>."""
         del self._metadata[key]
 
-    def __iter__(self) -> Iterator[Tuple[MetadataKey, MetadataValue]]:
+    def __iter__(self) -> Iterator[tuple[MetadataKey, MetadataValue]]:
         for key, values in self._metadata.items():
             for value in values:
                 yield (key, value)
@@ -109,13 +109,13 @@ class Metadata(abc.Collection):
         except KeyError:
             return default
 
-    def get_all(self, key: MetadataKey) -> List[MetadataValue]:
+    def get_all(self, key: MetadataKey) -> list[MetadataValue]:
         """For compatibility with other Metadata abstraction objects (like in Java),
         this would return all items under the desired <key>.
         """
         return self._metadata.get(key, [])
 
-    def set_all(self, key: MetadataKey, values: List[MetadataValue]) -> None:
+    def set_all(self, key: MetadataKey, values: list[MetadataValue]) -> None:
         self._metadata[key] = values
 
     def __contains__(self, key: MetadataKey) -> bool:

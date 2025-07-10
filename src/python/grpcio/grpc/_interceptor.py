@@ -28,7 +28,7 @@ from ._typing import SerializingFunction
 
 
 class _ServicePipeline(object):
-    interceptors: Tuple[grpc.ServerInterceptor]
+    interceptors: tuple[grpc.ServerInterceptor]
 
     def __init__(self, interceptors: Sequence[grpc.ServerInterceptor]):
         self.interceptors = tuple(interceptors)
@@ -77,7 +77,7 @@ class _ClientCallDetails(
 def _unwrap_client_call_details(
     call_details: grpc.ClientCallDetails,
     default_details: grpc.ClientCallDetails,
-) -> Tuple[
+) -> tuple[
     str, float, MetadataType, grpc.CallCredentials, bool, grpc.Compression
 ]:
     try:
@@ -291,7 +291,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
-    ) -> Tuple[Any, grpc.Call]:
+    ) -> tuple[Any, grpc.Call]:
         client_call_details = _ClientCallDetails(
             self._method,
             timeout,
@@ -338,7 +338,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
-    ) -> Tuple[Any, grpc.Call]:
+    ) -> tuple[Any, grpc.Call]:
         return self._with_call(
             request,
             timeout=timeout,
@@ -493,7 +493,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
-    ) -> Tuple[Any, grpc.Call]:
+    ) -> tuple[Any, grpc.Call]:
         client_call_details = _ClientCallDetails(
             self._method,
             timeout,
@@ -540,7 +540,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
-    ) -> Tuple[Any, grpc.Call]:
+    ) -> tuple[Any, grpc.Call]:
         return self._with_call(
             request_iterator,
             timeout=timeout,

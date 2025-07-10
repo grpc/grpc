@@ -54,8 +54,8 @@ class ProtoReflectionDescriptorDatabase(DescriptorDatabase):
         DescriptorDatabase.__init__(self)
         self._logger = logging.getLogger(__name__)
         self._stub = ServerReflectionStub(channel)
-        self._known_files: Set[str] = set()
-        self._cached_extension_numbers: Dict[str, List[int]] = {}
+        self._known_files: set[str] = set()
+        self._cached_extension_numbers: dict[str, list[int]] = {}
 
     def get_services(self) -> Iterable[str]:
         """
@@ -67,7 +67,7 @@ class ProtoReflectionDescriptorDatabase(DescriptorDatabase):
         request = ServerReflectionRequest(list_services="")
         response = self._do_one_request(request, key="")
         list_services: ListServiceResponse = response.list_services_response
-        services: List[ServiceResponse] = list_services.service
+        services: list[ServiceResponse] = list_services.service
         return [service.name for service in services]
 
     def FindFileByName(self, name: str) -> FileDescriptorProto:
@@ -215,7 +215,7 @@ class ProtoReflectionDescriptorDatabase(DescriptorDatabase):
     def _add_file_from_response(
         self, file_descriptor: FileDescriptorResponse
     ) -> None:
-        protos: List[bytes] = file_descriptor.file_descriptor_proto
+        protos: list[bytes] = file_descriptor.file_descriptor_proto
         for proto in protos:
             desc = FileDescriptorProto()
             desc.ParseFromString(proto)

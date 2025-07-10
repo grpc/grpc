@@ -196,7 +196,7 @@ class Call:
     _loop: asyncio.AbstractEventLoop
     _code: grpc.StatusCode
     _cython_call: cygrpc._AioCall
-    _metadata: Tuple[MetadatumType, ...]
+    _metadata: tuple[MetadatumType, ...]
     _request_serializer: SerializingFunction
     _response_deserializer: DeserializingFunction
 

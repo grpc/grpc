@@ -46,7 +46,7 @@ def _is_grpc_tools_importable() -> bool:
 
 def _call_with_lazy_import(
     fn_name: str, protobuf_path: str
-) -> Union[types.ModuleType, Tuple[types.ModuleType, types.ModuleType]]:
+) -> Union[types.ModuleType, tuple[types.ModuleType, types.ModuleType]]:
     """Calls one of the three functions, lazily importing grpc_tools.
 
     Args:

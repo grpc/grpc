@@ -37,8 +37,8 @@ from grpc.experimental import experimental_api
 RequestType = TypeVar("RequestType")
 ResponseType = TypeVar("ResponseType")
 
-OptionsType = Sequence[Tuple[str, str]]
-CacheKey = Tuple[
+OptionsType = Sequence[tuple[str, str]]
+CacheKey = tuple[
     str,
     OptionsType,
     Optional[grpc.ChannelCredentials],
@@ -75,7 +75,7 @@ else:
 
 def _create_channel(
     target: str,
-    options: Sequence[Tuple[str, str]],
+    options: Sequence[tuple[str, str]],
     channel_credentials: Optional[grpc.ChannelCredentials],
     compression: Optional[grpc.Compression],
 ) -> grpc.Channel:
@@ -101,7 +101,7 @@ class ChannelCache:
     _condition: threading.Condition = threading.Condition(lock=_lock)
     _eviction_ready: threading.Event = threading.Event()
 
-    _mapping: Dict[CacheKey, Tuple[grpc.Channel, datetime.datetime]]
+    _mapping: dict[CacheKey, tuple[grpc.Channel, datetime.datetime]]
     _eviction_thread: threading.Thread
 
     def __init__(self):
@@ -157,13 +157,13 @@ class ChannelCache:
     def get_channel(
         self,
         target: str,
-        options: Sequence[Tuple[str, str]],
+        options: Sequence[tuple[str, str]],
         channel_credentials: Optional[grpc.ChannelCredentials],
         insecure: bool,
         compression: Optional[grpc.Compression],
         method: str,
         _registered_method: bool,
-    ) -> Tuple[grpc.Channel, Optional[int]]:
+    ) -> tuple[grpc.Channel, Optional[int]]:
         """Get a channel from cache or creates a new channel.
 
         This method also takes care of register method for channel,
@@ -232,14 +232,14 @@ def unary_unary(
     method: str,
     request_serializer: Optional[Callable[[Any], bytes]] = None,
     response_deserializer: Optional[Callable[[bytes], Any]] = None,
-    options: Sequence[Tuple[AnyStr, AnyStr]] = (),
+    options: Sequence[tuple[AnyStr, AnyStr]] = (),
     channel_credentials: Optional[grpc.ChannelCredentials] = None,
     insecure: bool = False,
     call_credentials: Optional[grpc.CallCredentials] = None,
     compression: Optional[grpc.Compression] = None,
     wait_for_ready: Optional[bool] = None,
     timeout: Optional[float] = _DEFAULT_TIMEOUT,
-    metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None,
+    metadata: Optional[Sequence[tuple[str, Union[str, bytes]]]] = None,
     _registered_method: Optional[bool] = False,
 ) -> ResponseType:
     """Invokes a unary-unary RPC without an explicitly specified channel.
@@ -324,14 +324,14 @@ def unary_stream(
     method: str,
     request_serializer: Optional[Callable[[Any], bytes]] = None,
     response_deserializer: Optional[Callable[[bytes], Any]] = None,
-    options: Sequence[Tuple[AnyStr, AnyStr]] = (),
+    options: Sequence[tuple[AnyStr, AnyStr]] = (),
     channel_credentials: Optional[grpc.ChannelCredentials] = None,
     insecure: bool = False,
     call_credentials: Optional[grpc.CallCredentials] = None,
     compression: Optional[grpc.Compression] = None,
     wait_for_ready: Optional[bool] = None,
     timeout: Optional[float] = _DEFAULT_TIMEOUT,
-    metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None,
+    metadata: Optional[Sequence[tuple[str, Union[str, bytes]]]] = None,
     _registered_method: Optional[bool] = False,
 ) -> Iterator[ResponseType]:
     """Invokes a unary-stream RPC without an explicitly specified channel.
@@ -415,14 +415,14 @@ def stream_unary(
     method: str,
     request_serializer: Optional[Callable[[Any], bytes]] = None,
     response_deserializer: Optional[Callable[[bytes], Any]] = None,
-    options: Sequence[Tuple[AnyStr, AnyStr]] = (),
+    options: Sequence[tuple[AnyStr, AnyStr]] = (),
     channel_credentials: Optional[grpc.ChannelCredentials] = None,
     insecure: bool = False,
     call_credentials: Optional[grpc.CallCredentials] = None,
     compression: Optional[grpc.Compression] = None,
     wait_for_ready: Optional[bool] = None,
     timeout: Optional[float] = _DEFAULT_TIMEOUT,
-    metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None,
+    metadata: Optional[Sequence[tuple[str, Union[str, bytes]]]] = None,
     _registered_method: Optional[bool] = False,
 ) -> ResponseType:
     """Invokes a stream-unary RPC without an explicitly specified channel.
@@ -506,14 +506,14 @@ def stream_stream(
     method: str,
     request_serializer: Optional[Callable[[Any], bytes]] = None,
     response_deserializer: Optional[Callable[[bytes], Any]] = None,
-    options: Sequence[Tuple[AnyStr, AnyStr]] = (),
+    options: Sequence[tuple[AnyStr, AnyStr]] = (),
     channel_credentials: Optional[grpc.ChannelCredentials] = None,
     insecure: bool = False,
     call_credentials: Optional[grpc.CallCredentials] = None,
     compression: Optional[grpc.Compression] = None,
     wait_for_ready: Optional[bool] = None,
     timeout: Optional[float] = _DEFAULT_TIMEOUT,
-    metadata: Optional[Sequence[Tuple[str, Union[str, bytes]]]] = None,
+    metadata: Optional[Sequence[tuple[str, Union[str, bytes]]]] = None,
     _registered_method: Optional[bool] = False,
 ) -> Iterator[ResponseType]:
     """Invokes a stream-stream RPC without an explicitly specified channel.

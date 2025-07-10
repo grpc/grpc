@@ -65,8 +65,8 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
     metadata exchange labels.
     """
 
-    _exchange_labels: Dict[str, AnyStr]
-    _additional_exchange_labels: Dict[str, str]
+    _exchange_labels: dict[str, AnyStr]
+    _additional_exchange_labels: dict[str, str]
 
     def __init__(self):
         fields = {}
@@ -135,18 +135,18 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
         )
         self._additional_exchange_labels["csm.mesh_id"] = mesh_id
 
-    def get_labels_for_exchange(self) -> Dict[str, AnyStr]:
+    def get_labels_for_exchange(self) -> dict[str, AnyStr]:
         return self._exchange_labels
 
     def get_additional_labels(
         self, include_exchange_labels: bool
-    ) -> Dict[str, str]:
+    ) -> dict[str, str]:
         if include_exchange_labels:
             return self._additional_exchange_labels
         return {}
 
     @staticmethod
-    def deserialize_labels(labels: Dict[str, AnyStr]) -> Dict[str, AnyStr]:
+    def deserialize_labels(labels: dict[str, AnyStr]) -> dict[str, AnyStr]:
         deserialized_labels = {}
         for key, value in labels.items():
             if key == "XEnvoyPeerMetadata":
@@ -268,7 +268,7 @@ class CsmOpenTelemetryPlugin(OpenTelemetryPlugin):
             generic_method_attribute_filter=generic_method_attribute_filter,
         )
 
-    def _get_enabled_optional_labels(self) -> List[OptionalLabelType]:
+    def _get_enabled_optional_labels(self) -> list[OptionalLabelType]:
         return [OptionalLabelType.XDS_SERVICE_LABELS]
 
 

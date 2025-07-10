@@ -665,7 +665,7 @@ class InterceptedUnaryUnaryCall(
         """Run the RPC call wrapped in interceptors"""
 
         async def _run_interceptor(
-            interceptors: List[UnaryUnaryClientInterceptor],
+            interceptors: list[UnaryUnaryClientInterceptor],
             client_call_details: ClientCallDetails,
             request: RequestType,
         ) -> _base_call.UnaryUnaryCall:
@@ -764,7 +764,7 @@ class InterceptedUnaryStreamCall(
         """Run the RPC call wrapped in interceptors"""
 
         async def _run_interceptor(
-            interceptors: List[UnaryStreamClientInterceptor],
+            interceptors: list[UnaryStreamClientInterceptor],
             client_call_details: ClientCallDetails,
             request: RequestType,
         ) -> _base_call.UnaryStreamCall:
@@ -984,7 +984,7 @@ class InterceptedStreamStreamCall(
         """Run the RPC call wrapped in interceptors"""
 
         async def _run_interceptor(
-            interceptors: List[StreamStreamClientInterceptor],
+            interceptors: list[StreamStreamClientInterceptor],
             client_call_details: ClientCallDetails,
             request_iterator: RequestIterableType,
         ) -> _base_call.StreamStreamCall:

@@ -82,7 +82,7 @@ class Server(_base_server.Server):
     def add_registered_method_handlers(
         self,
         service_name: str,
-        method_handlers: Dict[str, grpc.RpcMethodHandler],
+        method_handlers: dict[str, grpc.RpcMethodHandler],
     ) -> None:
         # TODO(xuanwn): Implement this for AsyncIO.
         pass

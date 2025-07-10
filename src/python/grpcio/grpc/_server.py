@@ -155,7 +155,7 @@ class _RegisteredMethod(_Method):
 class _GenericMethod(_Method):
     def __init__(
         self,
-        generic_handlers: List[grpc.GenericRpcHandler],
+        generic_handlers: list[grpc.GenericRpcHandler],
     ):
         self._generic_handlers = generic_handlers
 
@@ -177,7 +177,7 @@ class _GenericMethod(_Method):
 class _RPCState(object):
     context: contextvars.Context
     condition: threading.Condition
-    due = Set[str]
+    due = set[str]
     request: Any
     client: str
     initial_metadata_allowed: bool
@@ -187,8 +187,8 @@ class _RPCState(object):
     code: Optional[grpc.StatusCode]
     details: Optional[bytes]
     statused: bool
-    rpc_errors: List[Exception]
-    callbacks: Optional[List[NullaryCallbackType]]
+    rpc_errors: list[Exception]
+    callbacks: Optional[list[NullaryCallbackType]]
     aborted: bool
 
     def __init__(self):
@@ -587,7 +587,7 @@ def _call_behavior(
     argument: Any,
     request_deserializer: Optional[DeserializingFunction],
     send_response_callback: Optional[Callable[[ResponseType], None]] = None,
-) -> Tuple[Union[ResponseType, Iterator[ResponseType]], bool]:
+) -> tuple[Union[ResponseType, Iterator[ResponseType]], bool]:
     from grpc import _create_servicer_context  # pytype: disable=pyi-error
 
     with _create_servicer_context(
@@ -642,7 +642,7 @@ def _take_response_from_response_iterator(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
     response_iterator: Iterator[ResponseType],
-) -> Tuple[ResponseType, bool]:
+) -> tuple[ResponseType, bool]:
     try:
         return next(response_iterator), True
     except StopIteration:
@@ -1057,7 +1057,7 @@ def _handle_call(
     interceptor_pipeline: Optional[_interceptor._ServicePipeline],
     thread_pool: futures.ThreadPoolExecutor,
     concurrency_exceeded: bool,
-) -> Tuple[Optional[_RPCState], Optional[futures.Future]]:
+) -> tuple[Optional[_RPCState], Optional[futures.Future]]:
     """Handles RPC based on provided handlers.
 
       When receiving a call event from Core, registered method will have its
@@ -1126,17 +1126,17 @@ class _ServerState(object):
     lock: threading.RLock
     completion_queue: cygrpc.CompletionQueue
     server: cygrpc.Server
-    generic_handlers: List[grpc.GenericRpcHandler]
-    registered_method_handlers: Dict[str, grpc.RpcMethodHandler]
+    generic_handlers: list[grpc.GenericRpcHandler]
+    registered_method_handlers: dict[str, grpc.RpcMethodHandler]
     interceptor_pipeline: Optional[_interceptor._ServicePipeline]
     thread_pool: futures.ThreadPoolExecutor
     stage: _ServerStage
     termination_event: threading.Event
-    shutdown_events: List[threading.Event]
+    shutdown_events: list[threading.Event]
     maximum_concurrent_rpcs: Optional[int]
     active_rpc_count: int
-    rpc_states: Set[_RPCState]
-    due: Set[str]
+    rpc_states: set[_RPCState]
+    due: set[str]
     server_deallocated: bool
 
     # pylint: disable=too-many-arguments
@@ -1178,7 +1178,7 @@ def _add_generic_handlers(
 
 
 def _add_registered_method_handlers(
-    state: _ServerState, method_handlers: Dict[str, grpc.RpcMethodHandler]
+    state: _ServerState, method_handlers: dict[str, grpc.RpcMethodHandler]
 ) -> None:
     with state.lock:
         state.registered_method_handlers.update(method_handlers)
@@ -1434,7 +1434,7 @@ class _Server(grpc.Server):
     def add_registered_method_handlers(
         self,
         service_name: str,
-        method_handlers: Dict[str, grpc.RpcMethodHandler],
+        method_handlers: dict[str, grpc.RpcMethodHandler],
     ) -> None:
         # Can't register method once server started.
         with self._state.lock:

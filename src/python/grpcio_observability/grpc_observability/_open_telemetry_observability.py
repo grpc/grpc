@@ -73,9 +73,9 @@ GRPC_STATUS_CODE_TO_STRING = {
 
 class _OpenTelemetryPlugin:
     _plugin: OpenTelemetryPlugin
-    _metric_to_recorder: Dict[MetricsName, Union[Counter, Histogram]]
-    _enabled_client_plugin_options: Optional[List[OpenTelemetryPluginOption]]
-    _enabled_server_plugin_options: Optional[List[OpenTelemetryPluginOption]]
+    _metric_to_recorder: dict[MetricsName, Union[Counter, Histogram]]
+    _enabled_client_plugin_options: Optional[list[OpenTelemetryPluginOption]]
+    _enabled_server_plugin_options: Optional[list[OpenTelemetryPluginOption]]
     identifier: str
 
     def __init__(self, plugin: OpenTelemetryPlugin):
@@ -147,7 +147,7 @@ class _OpenTelemetryPlugin:
         if self._should_record(stats_data):
             self._record_stats_data(stats_data)
 
-    def get_client_exchange_labels(self) -> Dict[str, AnyStr]:
+    def get_client_exchange_labels(self) -> dict[str, AnyStr]:
         """Get labels used for client side Metadata Exchange."""
         labels_for_exchange = {}
         for plugin_option in self._enabled_client_plugin_options:
@@ -159,7 +159,7 @@ class _OpenTelemetryPlugin:
                 )
         return labels_for_exchange
 
-    def get_server_exchange_labels(self) -> Dict[str, str]:
+    def get_server_exchange_labels(self) -> dict[str, str]:
         """Get labels used for server side Metadata Exchange."""
         labels_for_exchange = {}
         for plugin_option in self._enabled_server_plugin_options:
@@ -194,9 +194,9 @@ class _OpenTelemetryPlugin:
 
     @staticmethod
     def _deserialize_labels(
-        labels: Dict[str, AnyStr],
-        enabled_plugin_options: List[OpenTelemetryPluginOption],
-    ) -> Dict[str, AnyStr]:
+        labels: dict[str, AnyStr],
+        enabled_plugin_options: list[OpenTelemetryPluginOption],
+    ) -> dict[str, AnyStr]:
         for plugin_option in enabled_plugin_options:
             if all(
                 [
@@ -214,9 +214,9 @@ class _OpenTelemetryPlugin:
     @staticmethod
     def _maybe_add_labels(
         include_exchange_labels: bool,
-        labels: Dict[str, str],
-        enabled_plugin_options: List[OpenTelemetryPluginOption],
-    ) -> Dict[str, AnyStr]:
+        labels: dict[str, str],
+        enabled_plugin_options: list[OpenTelemetryPluginOption],
+    ) -> dict[str, AnyStr]:
         for plugin_option in enabled_plugin_options:
             if all(
                 [
@@ -234,13 +234,13 @@ class _OpenTelemetryPlugin:
                 )
         return labels
 
-    def get_enabled_optional_labels(self) -> List[OptionalLabelType]:
+    def get_enabled_optional_labels(self) -> list[OptionalLabelType]:
         return self._plugin._get_enabled_optional_labels()
 
     @staticmethod
     def _register_metrics(
-        meter: Meter, metrics: List[_open_telemetry_measures.Metric]
-    ) -> Dict[MetricsName, Union[Counter, Histogram]]:
+        meter: Meter, metrics: list[_open_telemetry_measures.Metric]
+    ) -> dict[MetricsName, Union[Counter, Histogram]]:
         metric_to_recorder_map = {}
         recorder = None
         for metric in metrics:
@@ -272,7 +272,7 @@ class _OpenTelemetryPlugin:
         return metric_to_recorder_map
 
     @staticmethod
-    def decode_labels(labels: Dict[str, AnyStr]) -> Dict[str, str]:
+    def decode_labels(labels: dict[str, AnyStr]) -> dict[str, str]:
         decoded_labels = {}
         for key, value in labels.items():
             if isinstance(value, bytes):
@@ -301,7 +301,7 @@ class _OpenTelemetryExporterDelegator(_observability.Exporter):
         self._plugins = plugins
 
     def export_stats_data(
-        self, stats_data: List[_observability.StatsData]
+        self, stats_data: list[_observability.StatsData]
     ) -> None:
         # Records stats data to MeterProvider.
         for data in stats_data:
@@ -309,7 +309,7 @@ class _OpenTelemetryExporterDelegator(_observability.Exporter):
                 plugin.maybe_record_stats_data(data)
 
     def export_tracing_data(
-        self, tracing_data: List[_observability.TracingData]
+        self, tracing_data: list[_observability.TracingData]
     ) -> None:
         pass
 
@@ -325,8 +325,8 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
     """
 
     _exporter: "grpc_observability.Exporter"
-    _plugins: List[_OpenTelemetryPlugin]
-    _registered_methods: Set[bytes]
+    _plugins: list[_OpenTelemetryPlugin]
+    _registered_methods: set[bytes]
     _client_option_activated: bool
     _server_option_activated: bool
 
@@ -433,13 +433,13 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
     def save_registered_method(self, method_name: bytes) -> None:
         self._registered_methods.add(method_name)
 
-    def _get_client_exchange_labels(self) -> Dict[str, AnyStr]:
+    def _get_client_exchange_labels(self) -> dict[str, AnyStr]:
         client_exchange_labels = {}
         for _plugin in self._plugins:
             client_exchange_labels.update(_plugin.get_client_exchange_labels())
         return client_exchange_labels
 
-    def _get_server_exchange_labels(self) -> Dict[str, AnyStr]:
+    def _get_server_exchange_labels(self) -> dict[str, AnyStr]:
         server_exchange_labels = {}
         for _plugin in self._plugins:
             server_exchange_labels.update(_plugin.get_server_exchange_labels())
@@ -461,7 +461,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         plugin_identifiers = [_plugin.identifier for _plugin in self._plugins]
         return PLUGIN_IDENTIFIER_SEP.join(plugin_identifiers)
 
-    def get_enabled_optional_labels(self) -> List[OptionalLabelType]:
+    def get_enabled_optional_labels(self) -> list[OptionalLabelType]:
         return []
 
 

@@ -114,7 +114,7 @@ class OpenCensusExporter(_observability.Exporter):
             )
 
     def export_stats_data(
-        self, stats_data: List[_observability.StatsData]
+        self, stats_data: list[_observability.StatsData]
     ) -> None:
         if not self.config.stats_enabled:
             return
@@ -139,7 +139,7 @@ class OpenCensusExporter(_observability.Exporter):
             measurement_map.record(tag_map)
 
     def export_tracing_data(
-        self, tracing_data: List[_observability.TracingData]
+        self, tracing_data: list[_observability.TracingData]
     ) -> None:
         if not self.config.tracing_enabled:
             return
@@ -203,8 +203,8 @@ class OpenCensusExporter(_observability.Exporter):
 
 
 def _get_span_annotations(
-    span_annotations: List[Tuple[str, str]],
-) -> List[time_event.Annotation]:
+    span_annotations: list[tuple[str, str]],
+) -> list[time_event.Annotation]:
     annotations = []
 
     for time_stamp, description in span_annotations:
@@ -258,7 +258,7 @@ def _get_span_data(
     span_data: _observability.TracingData,
     span_context: span_context_module.SpanContext,
     labels: Mapping[str, str],
-) -> List[span_data_module.SpanData]:
+) -> list[span_data_module.SpanData]:
     """Extracts a list of SpanData tuples from a span.
 
     Args:

@@ -83,7 +83,7 @@ SERVER_RPC_RECEIVED_BYTES = Metric(
 )
 
 
-def base_metrics() -> List[Metric]:
+def base_metrics() -> list[Metric]:
     return [
         CLIENT_ATTEMPT_STARTED,
         CLIENT_ATTEMPT_DURATION,
