@@ -88,68 +88,6 @@ void AddCApis(nlohmann::json& config) {
   config["c_api_headers"] = c_api_headers;
 }
 
-auto MakePhpConfig(const nlohmann::json& config,
-                   std::initializer_list<std::string> remove_libs) {
-  std::set<std::string> srcs;
-  for (const auto& src : config["php_config_m4"]["src"]) {
-    srcs.insert(src);
-  }
-  std::map<std::string, const nlohmann::json*> lib_maps;
-  for (const auto& lib : config["libs"]) {
-    lib_maps[lib["name"]] = &lib;
-  }
-  std::vector<std::string> php_deps = config["php_config_m4"]["deps"];
-  std::set<std::string> php_full_deps;
-  for (const auto& dep : php_deps) {
-    php_full_deps.insert(dep);
-    auto it = lib_maps.find(dep);
-    if (it != lib_maps.end()) {
-      const nlohmann::json* lib = it->second;
-      std::vector<std::string> transitive_deps = (*lib)["transitive_deps"];
-      php_full_deps.insert(transitive_deps.begin(), transitive_deps.end());
-    }
-  }
-  for (const auto& lib : remove_libs) {
-    php_full_deps.erase(lib);
-  }
-  for (const auto& dep : php_full_deps) {
-    auto it = lib_maps.find(dep);
-    if (it != lib_maps.end()) {
-      const nlohmann::json* lib = it->second;
-      std::vector<std::string> src = (*lib)["src"];
-      srcs.insert(src.begin(), src.end());
-    }
-  }
-  std::set<std::string> dirs;
-  for (const auto& src : srcs) {
-    dirs.insert(src.substr(0, src.rfind('/')));
-  }
-  return std::pair(std::move(srcs), std::move(dirs));
-}
-
-void AddPhpConfig(nlohmann::json& config) {
-  auto [srcs, dirs] = MakePhpConfig(config, {"z", "cares", "@zlib//:zlib"});
-  auto [w32_srcs, w32_dirs] = MakePhpConfig(config, {"cares"});
-
-  config["php_config_m4"]["srcs"] = srcs;
-  config["php_config_m4"]["dirs"] = dirs;
-
-  std::vector<std::string> windows_srcs;
-  for (const auto& src : w32_srcs) {
-    windows_srcs.emplace_back(absl::StrReplaceAll(src, {{"/", "\\\\"}}));
-  }
-  config["php_config_w32"]["srcs"] = windows_srcs;
-  std::set<std::string> windows_dirs;
-  for (const auto& dir : w32_dirs) {
-    std::vector<std::string> frags = absl::StrSplit(dir, '/');
-    for (size_t i = 0; i < frags.size(); ++i) {
-      windows_dirs.insert(
-          absl::StrJoin(frags.begin(), frags.begin() + i + 1, "\\\\"));
-    }
-  }
-  config["php_config_w32"]["dirs"] = windows_dirs;
-}
-
 struct Version {
   int major;
   int minor;
@@ -690,6 +628,51 @@ private:
   std::map<std::string, const nlohmann::json*> lib_maps_;
   std::map<std::string, std::string> bazel_label_to_renamed_;
 };
+
+auto MakePhpConfig(const nlohmann::json& config,
+                   std::initializer_list<std::string> remove_libs) {
+  DependencyResolver resolver(config);
+  std::set<std::string> srcs;
+  for (const auto& src : config["php_config_m4"]["src"]) {
+    srcs.insert(src.get<std::string>());
+  }
+
+  std::vector<std::string> php_deps = config["php_config_m4"]["deps"];
+  auto php_full_deps = resolver.ExpandTransitiveDeps(
+      php_deps, std::set<std::string>(remove_libs));
+
+  auto dep_files = resolver.CollectFiles(php_full_deps, {"src"});
+  srcs.insert(dep_files.begin(), dep_files.end());
+
+  std::set<std::string> dirs;
+  for (const auto& src : srcs) {
+    dirs.insert(src.substr(0, src.rfind('/')));
+  }
+  return std::pair(std::move(srcs), std::move(dirs));
+}
+
+void AddPhpConfig(nlohmann::json& config) {
+  auto [srcs, dirs] = MakePhpConfig(config, {"z", "cares", "@zlib//:zlib"});
+  auto [w32_srcs, w32_dirs] = MakePhpConfig(config, {"cares"});
+
+  config["php_config_m4"]["srcs"] = srcs;
+  config["php_config_m4"]["dirs"] = dirs;
+
+  std::vector<std::string> windows_srcs;
+  for (const auto& src : w32_srcs) {
+    windows_srcs.emplace_back(absl::StrReplaceAll(src, {{"", "\\\\"}}));
+  }
+  config["php_config_w32"]["srcs"] = windows_srcs;
+  std::set<std::string> windows_dirs;
+  for (const auto& dir : w32_dirs) {
+    std::vector<std::string> frags = absl::StrSplit(dir, '/');
+    for (size_t i = 0; i < frags.size(); ++i) {
+      windows_dirs.insert(
+          absl::StrJoin(frags.begin(), frags.begin() + i + 1, "\\\\"));
+    }
+  }
+  config["php_config_w32"]["dirs"] = windows_dirs;
+}
 
 std::set<std::string> MakePhpPackageXmlSrcs(const nlohmann::json& config) {
   DependencyResolver resolver(config);
