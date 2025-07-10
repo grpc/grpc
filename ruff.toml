@@ -113,11 +113,14 @@ ignore = [
     "PLR1714", # Consider merging multiple comparisons: {expression}. Use a set if the elements are hashable.
     "PLR2004", # Magic value used in comparison, consider replacing {value} with a constant variable
 <<<<<<< HEAD
+<<<<<<< HEAD
     "PLR5501", # Use elif instead of else then if, to reduce indentation
     "PLW0120", # else clause on loop without a break statement; remove the else and dedent its contents
 =======
 >>>>>>> d30bd7c154 (removed suppression for PLW0120)
     "PLW0603", # Using the global statement to update {name} is discouraged
+=======
+>>>>>>> 485094f8cb (removed suppression for PLW0603)
     "PLW1508", # Invalid type for environment variable default; expected str or None
     "PLW1641", # Object does not implement __hash__ method
     "PLW2901", # Outer {outer_kind} variable {name} overwritten by inner {inner_kind} target
