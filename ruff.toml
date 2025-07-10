@@ -1,0 +1,22 @@
+# See https://docs.astral.sh/ruff/configuration/
+# For a full list of supported rules, see https://docs.astral.sh/ruff/rules/
+# For a full list of options, see https://docs.astral.sh/ruff/settings/
+
+target-version = "py39"
+
+[lint]
+ignore = []
+
+# This is to suppress
+# https://docs.astral.sh/ruff/rules/non-pep585-annotation/
+# https://docs.astral.sh/ruff/rules/non-pep604-annotation-union/#non-pep604-annotation-union-up007
+pyupgrade.keep-runtime-typing = true
+
+# Select all rules by default, and then ignore the ones we don't want.
+# This is a good way to stay up-to-date with new rules in ruff.
+select = ["ALL"]
+
+[format]
+# Exclude all files from the formatter using a glob pattern.
+# This is the most straightforward way to disable it.
+exclude = ["*"]
