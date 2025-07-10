@@ -103,7 +103,7 @@
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
 
-#define GRPC_HTTP2_PH2_CLIENT_TEST_SUITE "Ph2Client"
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG "Ph2Client"
 
 namespace grpc_core {
 

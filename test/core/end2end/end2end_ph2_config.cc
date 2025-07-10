@@ -126,7 +126,7 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
   if (IsExperimentEnabled(
           ExperimentIds::kExperimentIdPromiseBasedHttp2ClientTransport)) {
     list_of_configs.push_back(CoreTestConfiguration{
-        /*name=*/GRPC_HTTP2_PH2_CLIENT_TEST_SUITE,
+        /*name=*/GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG,
         /*feature_mask=*/FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
             FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_IS_CALL_V3 |
             FEATURE_MASK_IS_PH2_CLIENT | FEATURE_MASK_DO_NOT_FUZZ,

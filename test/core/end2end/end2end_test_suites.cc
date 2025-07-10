@@ -140,7 +140,7 @@ class ConfigQuery {
     }
     exclude_experiments_except_for_configs_.insert(
         {ExperimentIds::kExperimentIdPromiseBasedHttp2ClientTransport,
-         {GRPC_HTTP2_PH2_CLIENT_TEST_SUITE}});
+         {GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG}});
   }
   ConfigQuery(const ConfigQuery&) = delete;
   ConfigQuery& operator=(const ConfigQuery&) = delete;
