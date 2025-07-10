@@ -147,6 +147,7 @@ class ObservabilityPlugin(
 
         Args:
           xds: Whether the server is xds server.
+
         Returns:
           A PyCapsule which stores a ServerCallTracerFactory object. Or None if
         plugin decides not to create ServerCallTracerFactory.
