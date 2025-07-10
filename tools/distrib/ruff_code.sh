@@ -20,6 +20,9 @@ cd "$(dirname "$0")/../.."
 
 DIRS=(
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 9db75ae676 (take all folders that pylint has)
    src/python/grpcio/grpc
    src/python/grpcio_channelz/grpc_channelz
    src/python/grpcio_health_checking/grpc_health
@@ -30,6 +33,7 @@ DIRS=(
    src/python/grpcio_csm_observability/grpc_csm_observability
    src/python/grpcio_tests/tests
    src/python/grpcio_tests/tests_gevent
+<<<<<<< HEAD
    examples/python
 )
 
@@ -50,6 +54,8 @@ pip install ruff==0.12.2
 #    src/python/grpcio_csm_observability/grpc_csm_observability
 #    src/python/grpcio_tests/tests
 #    src/python/grpcio_tests/tests_gevent
+=======
+>>>>>>> 9db75ae676 (take all folders that pylint has)
 )
 
 VIRTUALENV=.venv_ruff
