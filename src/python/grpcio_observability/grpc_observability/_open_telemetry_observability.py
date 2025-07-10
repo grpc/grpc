@@ -80,7 +80,7 @@ class _OpenTelemetryPlugin:
 
     def __init__(self, plugin: OpenTelemetryPlugin):
         self._plugin = plugin
-        self._metric_to_recorder = dict()
+        self._metric_to_recorder = {}
         self.identifier = str(id(self))
         self._enabled_client_plugin_options = None
         self._enabled_server_plugin_options = None

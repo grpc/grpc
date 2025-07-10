@@ -55,7 +55,7 @@ class ProtoReflectionDescriptorDatabase(DescriptorDatabase):
         self._logger = logging.getLogger(__name__)
         self._stub = ServerReflectionStub(channel)
         self._known_files: Set[str] = set()
-        self._cached_extension_numbers: Dict[str, List[int]] = dict()
+        self._cached_extension_numbers: Dict[str, List[int]] = {}
 
     def get_services(self) -> Iterable[str]:
         """
