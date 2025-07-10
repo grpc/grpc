@@ -1251,10 +1251,10 @@ def _process_event_and_continue(
                 should_continue = False
     elif (
         event.tag is _REQUEST_CALL_TAG
-        or event.tag in state.registered_method_handlers.keys()
+        or event.tag in state.registered_method_handlers
     ):
         registered_method_name = None
-        if event.tag in state.registered_method_handlers.keys():
+        if event.tag in state.registered_method_handlers:
             registered_method_name = event.tag
             method_with_handler = _RegisteredMethod(
                 registered_method_name,
@@ -1289,7 +1289,7 @@ def _process_event_and_continue(
             if state.stage is _ServerStage.STARTED:
                 if (
                     registered_method_name
-                    in state.registered_method_handlers.keys()
+                    in state.registered_method_handlers
                 ):
                     _request_registered_call(state, registered_method_name)
                 else:
@@ -1369,7 +1369,7 @@ def _start(state: _ServerState) -> None:
         state.server.start()
         state.stage = _ServerStage.STARTED
         # Request a call for each registered method so we can handle any of them.
-        for method in state.registered_method_handlers.keys():
+        for method in state.registered_method_handlers:
             _request_registered_call(state, method)
         # Also request a call for non-registered method.
         _request_call(state)
@@ -1455,7 +1455,7 @@ class _Server(grpc.Server):
             _common.fully_qualified_method(service_name, method): method_handler
             for method, method_handler in method_handlers.items()
         }
-        for fully_qualified_method in method_to_handlers.keys():
+        for fully_qualified_method in method_to_handlers:
             self._cy_server.register_method(fully_qualified_method)
         _add_registered_method_handlers(self._state, method_to_handlers)
 
