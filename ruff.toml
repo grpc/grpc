@@ -189,6 +189,14 @@ ignore = [
     "YTT201",  # sys.version_info[0] == 3 referenced (python4), use >=
     "YTT203",  # sys.version_info[1] compared to integer (python4), compare sys.version_info to tuple
 ]
+<<<<<<< HEAD
+=======
+
+# This is to suppress
+# https://docs.astral.sh/ruff/rules/non-pep585-annotation/
+# https://docs.astral.sh/ruff/rules/non-pep604-annotation-union/#non-pep604-annotation-union-up007
+pyupgrade.keep-runtime-typing = true
+>>>>>>> 338a07d146 (supress all)
 
 # Select all rules by default, and then ignore the ones we don't want.
 # This is a good way to stay up-to-date with new rules in ruff.
