@@ -64,9 +64,7 @@ else:
 def _augment_channel_arguments(
     base_options: ChannelArgumentType, compression: Optional[grpc.Compression]
 ):
-    compression_channel_argument = _compression.create_channel_option(
-        compression
-    )
+    compression_channel_argument = _compression.create_channel_option(compression)
     user_agent_channel_argument = (
         (
             cygrpc.ChannelArgKey.primary_user_agent_string,
@@ -74,9 +72,7 @@ def _augment_channel_arguments(
         ),
     )
     return (
-        tuple(base_options)
-        + compression_channel_argument
-        + user_agent_channel_argument
+        tuple(base_options) + compression_channel_argument + user_agent_channel_argument
     )
 
 
@@ -128,9 +124,7 @@ class _BaseMultiCallable:
         ):
             metadata = Metadata.from_tuple(tuple(metadata))
         if compression:
-            metadata = Metadata(
-                *_compression.augment_metadata(metadata, compression)
-            )
+            metadata = Metadata(*_compression.augment_metadata(metadata, compression))
         return metadata
 
 
@@ -438,8 +432,8 @@ class Channel(_base_channel.Channel):
                         error_msg = f"Unrecognized call object: {candidate}"
                         raise cygrpc.InternalError(error_msg)
 
-                    calls.append(candidate)
-                    call_tasks.append(task)
+                calls.append(candidate)
+                call_tasks.append(task)
 
         # If needed, try to wait for them to finish.
         # Call objects are not always awaitables.
@@ -457,13 +451,10 @@ class Channel(_base_channel.Channel):
         await self._close(grace)
 
     def __del__(self):
-        if hasattr(self, "_channel"):
-            if not self._channel.closed():
-                self._channel.close()
+        if hasattr(self, "_channel") and not self._channel.closed():
+            self._channel.close()
 
-    def get_state(
-        self, try_to_connect: bool = False
-    ) -> grpc.ChannelConnectivity:
+    def get_state(self, try_to_connect: bool = False) -> grpc.ChannelConnectivity:
         result = self._channel.check_connectivity_state(try_to_connect)
         return _common.CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY[result]
 
