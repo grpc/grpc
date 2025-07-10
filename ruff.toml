@@ -68,10 +68,12 @@ ignore = [
     "SLF001",  # Private member accessed: {access}
     "SLOT002", # Subclasses of {namedtuple_kind} should define __slots__
     "TC001",   # Move application import {} into a type-checking block
+    "TC003",   # Move standard library import {} into a type-checking block
     "TD003",   # Missing issue link for this TODO
     "TRY300",  # Consider moving this statement to an else block
     "TRY401",  # Redundant exception object included in logging.exception call
     "UP004",   # Class {name} inherits from object
+    "UP006",   # Use {to} instead of {from} for type annotation
     "UP008",   # Use super() instead of super(__class__, self)
     "UP030",   # Use implicit references for positional format fields
     "UP031",   # Use format specifiers instead of percent format
