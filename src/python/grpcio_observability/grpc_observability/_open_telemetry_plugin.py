@@ -38,7 +38,7 @@ class OpenTelemetryLabelInjector:
           A dict of labels, with a string as key representing label name, string or bytes
         as value representing label value.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def get_additional_labels(
         self, include_exchange_labels: bool
@@ -54,7 +54,7 @@ class OpenTelemetryLabelInjector:
         Returns:
           A dict of labels.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     # pylint: disable=no-self-use
     def deserialize_labels(

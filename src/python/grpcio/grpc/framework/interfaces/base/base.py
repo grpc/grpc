@@ -100,7 +100,7 @@ class OperationContext(abc.ABC):
           None if the operation is still active or the Outcome value for the
             operation if it has terminated.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def add_termination_callback(self, callback):
@@ -116,7 +116,7 @@ class OperationContext(abc.ABC):
             terminated an Outcome value describing the operation termination and the
             passed callback will not be called as a result of this method call.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def time_remaining(self):
@@ -127,12 +127,12 @@ class OperationContext(abc.ABC):
           remaining for the operation to complete before it is considered to have
           timed out. Zero is returned if the operation has terminated.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def cancel(self):
         """Cancels the operation if the operation has not yet terminated."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def fail(self, exception):
@@ -141,7 +141,7 @@ class OperationContext(abc.ABC):
         Args:
           exception: An exception germane to the operation failure. May be None.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class Operator(abc.ABC):
@@ -167,7 +167,7 @@ class Operator(abc.ABC):
           allowance: A positive integer communicating the number of additional
             payloads allowed to be passed by the remote side of the operation.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class ProtocolReceiver(abc.ABC):
@@ -180,7 +180,7 @@ class ProtocolReceiver(abc.ABC):
         Args:
           protocol_context: The protocol context object for the operation.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class Subscription(abc.ABC):
@@ -234,7 +234,7 @@ class Servicer(abc.ABC):
           abandonment.Abandoned: If the operation has been aborted and there no
             longer is any reason to service the operation.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class End(abc.ABC):
@@ -243,7 +243,7 @@ class End(abc.ABC):
     @abc.abstractmethod
     def start(self):
         """Starts this object's service of operations."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def stop(self, grace):
@@ -267,7 +267,7 @@ class End(abc.ABC):
             much sooner (if for example this End had no operations in progress at
             the time its stop method was called).
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def operate(
@@ -306,7 +306,7 @@ class End(abc.ABC):
             returned pair is an Operator to which operation values not passed in
             this call should later be passed.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def operation_stats(self):
@@ -316,7 +316,7 @@ class End(abc.ABC):
           A dictionary from Outcome.Kind value to an integer identifying the number
             of operations that terminated with that outcome kind.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def add_idle_action(self, action):
@@ -325,4 +325,4 @@ class End(abc.ABC):
         Args:
           action: A callable that accepts no arguments.
         """
-        raise NotImplementedError()
+        raise NotImplementedError

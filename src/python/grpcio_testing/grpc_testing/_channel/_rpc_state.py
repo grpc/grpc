@@ -189,10 +189,10 @@ class State(_common.ChannelRpcHandler):
                     )
 
     def is_active(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def time_remaining(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def add_callback(self, callback):
-        raise NotImplementedError()
+        raise NotImplementedError

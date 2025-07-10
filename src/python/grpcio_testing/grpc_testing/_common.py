@@ -63,39 +63,39 @@ class ChannelRpcRead(
 class ChannelRpcHandler(abc.ABC):
     @abc.abstractmethod
     def initial_metadata(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def add_request(self, request):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def close_requests(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def take_response(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def cancel(self, code, details):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def termination(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def is_active(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def time_remaining(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def add_callback(self, callback):
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class ChannelHandler(abc.ABC):
@@ -108,7 +108,7 @@ class ChannelHandler(abc.ABC):
         requests_closed,
         timeout,
     ):
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class ServerRpcRead(
@@ -131,23 +131,23 @@ TERMINATED = ServerRpcRead(None, False, True)
 class ServerRpcHandler(abc.ABC):
     @abc.abstractmethod
     def send_initial_metadata(self, initial_metadata):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def take_request(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def add_response(self, response):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def send_termination(self, trailing_metadata, code, details):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def add_termination_callback(self, callback):
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class Serverish(abc.ABC):
@@ -155,22 +155,22 @@ class Serverish(abc.ABC):
     def invoke_unary_unary(
         self, method_descriptor, handler, invocation_metadata, request, deadline
     ):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def invoke_unary_stream(
         self, method_descriptor, handler, invocation_metadata, request, deadline
     ):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def invoke_stream_unary(
         self, method_descriptor, handler, invocation_metadata, deadline
     ):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def invoke_stream_stream(
         self, method_descriptor, handler, invocation_metadata, deadline
     ):
-        raise NotImplementedError()
+        raise NotImplementedError

@@ -410,7 +410,7 @@ class InterceptedCall:
             call.add_done_callback(callback)
 
     def time_remaining(self) -> Optional[float]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     async def initial_metadata(self) -> Optional[Metadata]:
         try:
@@ -702,7 +702,7 @@ class InterceptedUnaryUnaryCall(
         )
 
     def time_remaining(self) -> Optional[float]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class InterceptedUnaryStreamCall(
@@ -816,7 +816,7 @@ class InterceptedUnaryStreamCall(
         )
 
     def time_remaining(self) -> Optional[float]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class InterceptedStreamUnaryCall(
@@ -916,7 +916,7 @@ class InterceptedStreamUnaryCall(
         )
 
     def time_remaining(self) -> Optional[float]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class InterceptedStreamStreamCall(
@@ -1035,7 +1035,7 @@ class InterceptedStreamStreamCall(
         )
 
     def time_remaining(self) -> Optional[float]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall):
@@ -1056,10 +1056,10 @@ class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall):
         return True
 
     def add_done_callback(self, unused_callback) -> None:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def time_remaining(self) -> Optional[float]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     async def initial_metadata(self) -> Optional[Metadata]:
         return None
@@ -1144,7 +1144,7 @@ class UnaryStreamCallResponseIterator(
     async def read(self) -> Union[EOFType, ResponseType]:
         # Behind the scenes everything goes through the
         # async iterator. So this path should not be reached.
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class StreamStreamCallResponseIterator(
@@ -1155,19 +1155,19 @@ class StreamStreamCallResponseIterator(
     async def read(self) -> Union[EOFType, ResponseType]:
         # Behind the scenes everything goes through the
         # async iterator. So this path should not be reached.
-        raise NotImplementedError()
+        raise NotImplementedError
 
     async def write(self, request: RequestType) -> None:
         # Behind the scenes everything goes through the
         # async iterator provided by the InterceptedStreamStreamCall.
         # So this path should not be reached.
-        raise NotImplementedError()
+        raise NotImplementedError
 
     async def done_writing(self) -> None:
         # Behind the scenes everything goes through the
         # async iterator provided by the InterceptedStreamStreamCall.
         # So this path should not be reached.
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @property
     def _done_writing_flag(self) -> bool:

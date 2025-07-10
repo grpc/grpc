@@ -24,31 +24,31 @@ _CLIENT_INACTIVE = object()
 class Handler(_common.ServerRpcHandler):
     @abc.abstractmethod
     def initial_metadata(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def add_request(self, request):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def take_response(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def requests_closed(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def cancel(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def unary_response_termination(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def stream_response_termination(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class _Handler(Handler):

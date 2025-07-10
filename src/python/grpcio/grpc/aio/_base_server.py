@@ -331,7 +331,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         Returns:
           The trailing :term:`metadata` for the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def code(self):
         """Accesses the value to be used as status code upon RPC completion.
@@ -341,7 +341,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         Returns:
           The StatusCode value for the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def details(self):
         """Accesses the value to be used as detail string upon RPC completion.
@@ -351,7 +351,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         Returns:
           The details string of the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def add_done_callback(self, callback: DoneCallbackType) -> None:
         """Registers a callback to be called on RPC termination.

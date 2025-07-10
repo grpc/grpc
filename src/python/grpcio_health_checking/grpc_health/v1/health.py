@@ -46,7 +46,7 @@ class _Watcher:
                 self._condition.wait()
             if self._responses:
                 return self._responses.popleft()
-            raise StopIteration()
+            raise StopIteration
 
     def next(self):
         return self._next()

@@ -26,10 +26,10 @@ class TestingChannel(grpc_testing.Channel):
         self._state = state
 
     def subscribe(self, callback, try_to_connect=False):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def unsubscribe(self, callback):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def _get_registered_call_handle(self, method: str) -> int:
         pass

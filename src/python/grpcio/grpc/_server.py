@@ -125,13 +125,13 @@ class _HandlerCallDetails(
 class _Method(abc.ABC):
     @abc.abstractmethod
     def name(self) -> Optional[str]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def handler(
         self, handler_call_details: _HandlerCallDetails
     ) -> Optional[grpc.RpcMethodHandler]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class _RegisteredMethod(_Method):
@@ -453,7 +453,7 @@ class _Context(grpc.ServicerContext):
             self._state.code = code
             self._state.details = _common.encode(details)
             self._state.aborted = True
-            raise Exception()
+            raise Exception
 
     def abort_with_status(self, status: grpc.Status) -> None:
         self._state.trailing_metadata = status.trailing_metadata
@@ -496,7 +496,7 @@ class _RequestIterator(object):
         if self._state.client is _CANCELLED:
             _raise_rpc_error(self._state)
         elif not _is_rpc_state_active(self._state):
-            raise StopIteration()
+            raise StopIteration
         else:
             self._call.start_server_batch(
                 (cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),),
@@ -513,13 +513,13 @@ class _RequestIterator(object):
             self._state.request is None
             and _RECEIVE_MESSAGE_TOKEN not in self._state.due
         ):
-            raise StopIteration()
+            raise StopIteration
         else:
             request = self._state.request
             self._state.request = None
             return request
 
-        raise AssertionError()  # should never run
+        raise AssertionError  # should never run
 
     def _next(self) -> Any:
         with self._state.condition:

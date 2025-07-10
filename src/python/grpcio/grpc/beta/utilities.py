@@ -41,7 +41,7 @@ class _ChannelReadyFuture(future.Future):
         with self._condition:
             while True:
                 if self._cancelled:
-                    raise future.CancelledError()
+                    raise future.CancelledError
                 if self._matured:
                     return
                 if until is None:
@@ -49,7 +49,7 @@ class _ChannelReadyFuture(future.Future):
                 else:
                     remaining = until - time.time()
                     if remaining < 0:
-                        raise future.TimeoutError()
+                        raise future.TimeoutError
                     self._condition.wait(timeout=remaining)
 
     def _update(self, connectivity):

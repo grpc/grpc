@@ -33,12 +33,12 @@ class UnaryUnaryChannelRpc(abc.ABC):
           initial_metadata: The RPC's initial metadata to be "sent" to
             the system under test.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def cancelled(self):
         """Blocks until the system under test has cancelled the RPC."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def terminate(self, response, trailing_metadata, code, details):
@@ -50,7 +50,7 @@ class UnaryUnaryChannelRpc(abc.ABC):
           code: The RPC's status code.
           details: The RPC's status details.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class UnaryStreamChannelRpc(abc.ABC):
@@ -67,7 +67,7 @@ class UnaryStreamChannelRpc(abc.ABC):
           initial_metadata: The RPC's initial metadata to be "sent" to
             the system under test.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def send_response(self, response):
@@ -76,12 +76,12 @@ class UnaryStreamChannelRpc(abc.ABC):
         Args:
           response: A response message to be "sent" to the system under test.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def cancelled(self):
         """Blocks until the system under test has cancelled the RPC."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def terminate(self, trailing_metadata, code, details):
@@ -92,7 +92,7 @@ class UnaryStreamChannelRpc(abc.ABC):
           code: The RPC's status code.
           details: The RPC's status details.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class StreamUnaryChannelRpc(abc.ABC):
@@ -109,7 +109,7 @@ class StreamUnaryChannelRpc(abc.ABC):
           initial_metadata: The RPC's initial metadata to be "sent" to
             the system under test.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def take_request(self):
@@ -124,17 +124,17 @@ class StreamUnaryChannelRpc(abc.ABC):
         Returns:
           A request message added to the RPC by the system under test.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def requests_closed(self):
         """Blocks until the system under test has closed the request stream."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def cancelled(self):
         """Blocks until the system under test has cancelled the RPC."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def terminate(self, response, trailing_metadata, code, details):
@@ -146,7 +146,7 @@ class StreamUnaryChannelRpc(abc.ABC):
           code: The RPC's status code.
           details: The RPC's status details.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class StreamStreamChannelRpc(abc.ABC):
@@ -163,7 +163,7 @@ class StreamStreamChannelRpc(abc.ABC):
           initial_metadata: The RPC's initial metadata to be "sent" to the
             system under test.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def take_request(self):
@@ -178,7 +178,7 @@ class StreamStreamChannelRpc(abc.ABC):
         Returns:
           A request message added to the RPC by the system under test.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def send_response(self, response):
@@ -187,17 +187,17 @@ class StreamStreamChannelRpc(abc.ABC):
         Args:
           response: A response messages to be "sent" to the system under test.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def requests_closed(self):
         """Blocks until the system under test has closed the request stream."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def cancelled(self):
         """Blocks until the system under test has cancelled the RPC."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def terminate(self, trailing_metadata, code, details):
@@ -208,7 +208,7 @@ class StreamStreamChannelRpc(abc.ABC):
           code: The RPC's status code.
           details: The RPC's status details.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class Channel(grpc.Channel, metaclass=abc.ABCMeta):
@@ -231,7 +231,7 @@ class Channel(grpc.Channel, metaclass=abc.ABCMeta):
             the RPC's invocation metadata, its request, and a
             UnaryUnaryChannelRpc with which to "play server" for the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def take_unary_stream(self, method_descriptor):
@@ -250,7 +250,7 @@ class Channel(grpc.Channel, metaclass=abc.ABCMeta):
             the RPC's invocation metadata, its request, and a
             UnaryStreamChannelRpc with which to "play server" for the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def take_stream_unary(self, method_descriptor):
@@ -269,7 +269,7 @@ class Channel(grpc.Channel, metaclass=abc.ABCMeta):
             invocation metadata and a StreamUnaryChannelRpc with which to "play
             server" for the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def take_stream_stream(self, method_descriptor):
@@ -288,7 +288,7 @@ class Channel(grpc.Channel, metaclass=abc.ABCMeta):
             invocation metadata and a StreamStreamChannelRpc with which to
             "play server" for the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class UnaryUnaryServerRpc(abc.ABC):
@@ -309,12 +309,12 @@ class UnaryUnaryServerRpc(abc.ABC):
         Returns:
           The initial metadata for the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def cancel(self):
         """Cancels the RPC."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def termination(self):
@@ -324,7 +324,7 @@ class UnaryUnaryServerRpc(abc.ABC):
           A (response, trailing_metadata, code, details) sequence with the RPC's
             response, trailing metadata, code, and details.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class UnaryStreamServerRpc(abc.ABC):
@@ -345,7 +345,7 @@ class UnaryStreamServerRpc(abc.ABC):
         Returns:
           The initial metadata for the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def take_response(self):
@@ -357,12 +357,12 @@ class UnaryStreamServerRpc(abc.ABC):
         Returns:
           A response message added to the RPC by the system under test.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def cancel(self):
         """Cancels the RPC."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def termination(self):
@@ -372,7 +372,7 @@ class UnaryStreamServerRpc(abc.ABC):
           A (trailing_metadata, code, details) sequence with the RPC's trailing
             metadata, code, and details.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class StreamUnaryServerRpc(abc.ABC):
@@ -393,7 +393,7 @@ class StreamUnaryServerRpc(abc.ABC):
         Returns:
           The initial metadata for the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def send_request(self, request):
@@ -403,17 +403,17 @@ class StreamUnaryServerRpc(abc.ABC):
           request: A request message for the RPC to be "sent" to the system
             under test.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def requests_closed(self):
         """Indicates the end of the RPC's request stream."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def cancel(self):
         """Cancels the RPC."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def termination(self):
@@ -423,7 +423,7 @@ class StreamUnaryServerRpc(abc.ABC):
           A (response, trailing_metadata, code, details) sequence with the RPC's
             response, trailing metadata, code, and details.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class StreamStreamServerRpc(abc.ABC):
@@ -444,7 +444,7 @@ class StreamStreamServerRpc(abc.ABC):
         Returns:
           The initial metadata for the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def send_request(self, request):
@@ -454,12 +454,12 @@ class StreamStreamServerRpc(abc.ABC):
           request: A request message for the RPC to be "sent" to the system
             under test.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def requests_closed(self):
         """Indicates the end of the RPC's request stream."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def take_response(self):
@@ -471,12 +471,12 @@ class StreamStreamServerRpc(abc.ABC):
         Returns:
           A response message added to the RPC by the system under test.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def cancel(self):
         """Cancels the RPC."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def termination(self):
@@ -486,7 +486,7 @@ class StreamStreamServerRpc(abc.ABC):
           A (trailing_metadata, code, details) sequence with the RPC's trailing
             metadata, code, and details.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class Server(abc.ABC):
@@ -509,7 +509,7 @@ class Server(abc.ABC):
         Returns:
           A UnaryUnaryServerRpc with which to "play client" for the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def invoke_unary_stream(
@@ -528,7 +528,7 @@ class Server(abc.ABC):
         Returns:
           A UnaryStreamServerRpc with which to "play client" for the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def invoke_stream_unary(
@@ -546,7 +546,7 @@ class Server(abc.ABC):
         Returns:
           A StreamUnaryServerRpc with which to "play client" for the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def invoke_stream_stream(
@@ -564,7 +564,7 @@ class Server(abc.ABC):
         Returns:
           A StreamStreamServerRpc with which to "play client" for the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class Time(abc.ABC):
@@ -583,7 +583,7 @@ class Time(abc.ABC):
         Returns:
           The current test time (over which this object has authority).
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def call_in(self, behavior, delay):
@@ -597,7 +597,7 @@ class Time(abc.ABC):
           A grpc.Future with which the call of the behavior may be cancelled
             before it is executed.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def call_at(self, behavior, time):
@@ -611,7 +611,7 @@ class Time(abc.ABC):
           A grpc.Future with which the call of the behavior may be cancelled
             before it is executed.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def sleep_for(self, duration):
@@ -620,7 +620,7 @@ class Time(abc.ABC):
         Args:
           duration: A duration of test time in seconds for which to block.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def sleep_until(self, time):
@@ -629,7 +629,7 @@ class Time(abc.ABC):
         Args:
           time: The test time until which to block.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 def strict_real_time():

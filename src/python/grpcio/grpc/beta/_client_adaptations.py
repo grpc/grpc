@@ -108,9 +108,9 @@ class _Rendezvous(future.Future, face.Call):
         except grpc.RpcError as rpc_error_call:
             raise _abortion_error(rpc_error_call)
         except grpc.FutureTimeoutError:
-            raise future.TimeoutError()
+            raise future.TimeoutError
         except grpc.FutureCancelledError:
-            raise future.CancelledError()
+            raise future.CancelledError
 
     def exception(self, timeout=None):
         try:
@@ -119,17 +119,17 @@ class _Rendezvous(future.Future, face.Call):
                 return None
             return _abortion_error(rpc_error_call)
         except grpc.FutureTimeoutError:
-            raise future.TimeoutError()
+            raise future.TimeoutError
         except grpc.FutureCancelledError:
-            raise future.CancelledError()
+            raise future.CancelledError
 
     def traceback(self, timeout=None):
         try:
             return self._future.traceback(timeout=timeout)
         except grpc.FutureTimeoutError:
-            raise future.TimeoutError()
+            raise future.TimeoutError
         except grpc.FutureCancelledError:
-            raise future.CancelledError()
+            raise future.CancelledError
 
     def add_done_callback(self, fn):
         self._future.add_done_callback(lambda _ignored_callback: fn(self))
@@ -425,7 +425,7 @@ class _UnaryUnaryMultiCallable(face.UnaryUnaryMultiCallable):
         metadata=None,
         protocol_options=None,
     ):
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class _UnaryStreamMultiCallable(face.UnaryStreamMultiCallable):
@@ -468,7 +468,7 @@ class _UnaryStreamMultiCallable(face.UnaryStreamMultiCallable):
         metadata=None,
         protocol_options=None,
     ):
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class _StreamUnaryMultiCallable(face.StreamUnaryMultiCallable):
@@ -534,7 +534,7 @@ class _StreamUnaryMultiCallable(face.StreamUnaryMultiCallable):
         metadata=None,
         protocol_options=None,
     ):
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class _StreamStreamMultiCallable(face.StreamStreamMultiCallable):
@@ -578,7 +578,7 @@ class _StreamStreamMultiCallable(face.StreamStreamMultiCallable):
         metadata=None,
         protocol_options=None,
     ):
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class _GenericStub(face.GenericStub):
@@ -813,7 +813,7 @@ class _GenericStub(face.GenericStub):
         metadata=None,
         protocol_options=None,
     ):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def event_unary_stream(
         self,
@@ -826,7 +826,7 @@ class _GenericStub(face.GenericStub):
         metadata=None,
         protocol_options=None,
     ):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def event_stream_unary(
         self,
@@ -838,7 +838,7 @@ class _GenericStub(face.GenericStub):
         metadata=None,
         protocol_options=None,
     ):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def event_stream_stream(
         self,
@@ -850,7 +850,7 @@ class _GenericStub(face.GenericStub):
         metadata=None,
         protocol_options=None,
     ):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def unary_unary(self, group, method):
         request_serializer = self._request_serializers.get(

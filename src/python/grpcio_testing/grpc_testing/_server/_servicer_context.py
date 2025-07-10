@@ -42,19 +42,19 @@ class ServicerContext(grpc.ServicerContext):
         return self._rpc.invocation_metadata()
 
     def peer(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def peer_identities(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def peer_identity_key(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def auth_context(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def set_compression(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def send_initial_metadata(self, initial_metadata):
         initial_metadata_sent = self._rpc.send_initial_metadata(
@@ -67,7 +67,7 @@ class ServicerContext(grpc.ServicerContext):
             )
 
     def disable_next_message_compression(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def set_trailing_metadata(self, trailing_metadata):
         self._rpc.set_trailing_metadata(
@@ -77,10 +77,10 @@ class ServicerContext(grpc.ServicerContext):
     def abort(self, code, details):
         with self._rpc._condition:
             self._rpc._abort(code, details)
-        raise Exception()
+        raise Exception
 
     def abort_with_status(self, status):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def set_code(self, code):
         self._rpc.set_code(code)

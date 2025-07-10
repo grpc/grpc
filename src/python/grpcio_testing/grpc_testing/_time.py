@@ -110,22 +110,22 @@ class _Future(grpc.Future):
             return self._cancelled
 
     def running(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def done(self):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def result(self, timeout=None):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def exception(self, timeout=None):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def traceback(self, timeout=None):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def add_done_callback(self, fn):
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class StrictRealTime(grpc_testing.Time):

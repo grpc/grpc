@@ -135,7 +135,7 @@ class _Callback(stream.Consumer):
         with self._condition:
             while True:
                 if self._cancelled:
-                    raise abandonment.Abandoned()
+                    raise abandonment.Abandoned
                 if self._values:
                     return self._values.pop(0)
                 if self._terminated:
@@ -146,7 +146,7 @@ class _Callback(stream.Consumer):
         with self._condition:
             while True:
                 if self._cancelled:
-                    raise abandonment.Abandoned()
+                    raise abandonment.Abandoned
                 if self._terminated:
                     all_values = tuple(self._values)
                     self._values = None
@@ -177,7 +177,7 @@ def _adapt_unary_unary_event(unary_unary_event):
     def adaptation(request, servicer_context):
         callback = _Callback()
         if not servicer_context.add_callback(callback.cancel):
-            raise abandonment.Abandoned()
+            raise abandonment.Abandoned
         unary_unary_event(
             request,
             callback.consume_and_terminate,
@@ -192,7 +192,7 @@ def _adapt_unary_stream_event(unary_stream_event):
     def adaptation(request, servicer_context):
         callback = _Callback()
         if not servicer_context.add_callback(callback.cancel):
-            raise abandonment.Abandoned()
+            raise abandonment.Abandoned
         unary_stream_event(
             request, callback, _FaceServicerContext(servicer_context)
         )
@@ -210,7 +210,7 @@ def _adapt_stream_unary_event(stream_unary_event):
     def adaptation(request_iterator, servicer_context):
         callback = _Callback()
         if not servicer_context.add_callback(callback.cancel):
-            raise abandonment.Abandoned()
+            raise abandonment.Abandoned
         request_consumer = stream_unary_event(
             callback.consume_and_terminate,
             _FaceServicerContext(servicer_context),
@@ -227,7 +227,7 @@ def _adapt_stream_stream_event(stream_stream_event):
     def adaptation(request_iterator, servicer_context):
         callback = _Callback()
         if not servicer_context.add_callback(callback.cancel):
-            raise abandonment.Abandoned()
+            raise abandonment.Abandoned
         request_consumer = stream_stream_event(
             callback, _FaceServicerContext(servicer_context)
         )
@@ -364,7 +364,7 @@ def _simple_method_handler( # noqa: PLR0911
                 None,
                 _adapt_stream_stream_event(implementation.stream_stream_event),
             )
-    raise ValueError()
+    raise ValueError
 
 
 def _flatten_method_pair_map(method_pair_map):

@@ -30,7 +30,7 @@ class Exporter(metaclass=abc.ABCMeta):
         Args:
           stats_data: A list of StatsData objects to export.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def export_tracing_data(self, tracing_data: List[TracingData]) -> None:
@@ -39,7 +39,7 @@ class Exporter(metaclass=abc.ABCMeta):
         Args:
           tracing_data: A list of TracingData objects to export.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 @dataclass(frozen=True)

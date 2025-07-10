@@ -31,7 +31,7 @@ def _is_active(handler):
 
 
 def _time_remaining(unused_handler):
-    raise NotImplementedError()
+    raise NotImplementedError
 
 
 def _add_callback(handler, callback):
@@ -120,7 +120,7 @@ def _next(handler):
     if read.code is None:
         return read.response
     if read.code is grpc.StatusCode.OK:
-        raise StopIteration()
+        raise StopIteration
     raise _RpcErrorCall(handler)
 
 

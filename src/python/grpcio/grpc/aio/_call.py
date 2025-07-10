@@ -265,7 +265,7 @@ class Call:
 
     async def _raise_for_status(self) -> None:
         if self._cython_call.is_locally_cancelled():
-            raise asyncio.CancelledError()
+            raise asyncio.CancelledError
         code = await self.code()
         if code != grpc.StatusCode.OK:
             raise _create_rpc_error(
@@ -320,7 +320,7 @@ class _UnaryResponseMixin(Call, Generic[ResponseType]):
         # we need to access the private instance variable.
         if response is cygrpc.EOF:
             if self._cython_call.is_locally_cancelled():
-                raise asyncio.CancelledError()
+                raise asyncio.CancelledError
             else:
                 raise _create_rpc_error(
                     self._cython_call._initial_metadata,

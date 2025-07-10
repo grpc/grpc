@@ -68,7 +68,7 @@ class Future(abc.ABC):
             3. computation is scheduled for execution and it is impossible
                 to determine its state without blocking.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def cancelled(self):
@@ -86,7 +86,7 @@ class Future(abc.ABC):
             1. computation was not cancelled.
             2. computation's result is available.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def running(self):
@@ -100,7 +100,7 @@ class Future(abc.ABC):
 
             Returns False if the computation already executed or was cancelled.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def done(self):
@@ -115,7 +115,7 @@ class Future(abc.ABC):
             currently executing.
             This is exactly opposite of the running() method's result.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def result(self, timeout=None):
@@ -138,7 +138,7 @@ class Future(abc.ABC):
           Exception: If the computation raised an exception, this call will
             raise the same exception.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def exception(self, timeout=None):
@@ -160,7 +160,7 @@ class Future(abc.ABC):
             does not terminate within the allotted time.
           FutureCancelledError: If the computation was cancelled.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def traceback(self, timeout=None):
@@ -182,7 +182,7 @@ class Future(abc.ABC):
             does not terminate within the allotted time.
           FutureCancelledError: If the computation was cancelled.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def add_done_callback(self, fn):
@@ -201,7 +201,7 @@ class Future(abc.ABC):
         Args:
           fn: A callable taking this Future object as its single parameter.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 ################################  gRPC Enums  ##################################
@@ -328,7 +328,7 @@ class RpcContext(abc.ABC):
           bool:
           True if RPC is active, False otherwise.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def time_remaining(self):
@@ -339,7 +339,7 @@ class RpcContext(abc.ABC):
           remaining for the RPC to complete before it is considered to have
           timed out, or None if no deadline was specified for the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def cancel(self):
@@ -347,7 +347,7 @@ class RpcContext(abc.ABC):
 
         Idempotent and has no effect if the RPC has already terminated.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def add_callback(self, callback):
@@ -361,7 +361,7 @@ class RpcContext(abc.ABC):
             the callback was not added and will not be called (because the RPC
             already terminated or some other reason).
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 #########################  Invocation-Side Context  ############################
@@ -379,7 +379,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
         Returns:
           The initial :term:`metadata`.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def trailing_metadata(self):
@@ -390,7 +390,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
         Returns:
           The trailing :term:`metadata`.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def code(self):
@@ -401,7 +401,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
         Returns:
           The StatusCode value for the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def details(self):
@@ -412,7 +412,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
         Returns:
           The details string of the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 ##############  Invocation-Side Interceptor Interfaces & Classes  ##############
@@ -464,7 +464,7 @@ class UnaryUnaryClientInterceptor(abc.ABC):
             Should the event terminate with non-OK status, the returned
             Call-Future's exception value will be an RpcError.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class UnaryStreamClientInterceptor(abc.ABC):
@@ -499,7 +499,7 @@ class UnaryStreamClientInterceptor(abc.ABC):
             the RPC with non-OK status. This object *should* also fulfill the
             Future interface, though it may not.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class StreamUnaryClientInterceptor(abc.ABC):
@@ -534,7 +534,7 @@ class StreamUnaryClientInterceptor(abc.ABC):
           Should the event terminate with non-OK status, the returned
           Call-Future's exception value will be an RpcError.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class StreamStreamClientInterceptor(abc.ABC):
@@ -569,7 +569,7 @@ class StreamStreamClientInterceptor(abc.ABC):
           the RPC with non-OK status. This object *should* also fulfill the
           Future interface, though it may not.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 ############  Authentication & Authorization Interfaces & Classes  #############
@@ -624,7 +624,7 @@ class AuthMetadataPluginCallback(abc.ABC):
           metadata: The :term:`metadata` used to construct the CallCredentials.
           error: An Exception to indicate error or None to indicate success.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class AuthMetadataPlugin(abc.ABC):
@@ -641,7 +641,7 @@ class AuthMetadataPlugin(abc.ABC):
           callback: An AuthMetadataPluginCallback to be invoked either
             synchronously or asynchronously.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class ServerCredentials(object):
@@ -708,7 +708,7 @@ class UnaryUnaryMultiCallable(abc.ABC):
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def with_call(
@@ -742,7 +742,7 @@ class UnaryUnaryMultiCallable(abc.ABC):
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def future(
@@ -775,7 +775,7 @@ class UnaryUnaryMultiCallable(abc.ABC):
             Should the event terminate with non-OK status,
             the returned Call-Future's exception value will be an RpcError.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class UnaryStreamMultiCallable(abc.ABC):
@@ -811,7 +811,7 @@ class UnaryStreamMultiCallable(abc.ABC):
             returned Call-iterator may raise RpcError indicating termination of
             the RPC with non-OK status.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class StreamUnaryMultiCallable(abc.ABC):
@@ -850,7 +850,7 @@ class StreamUnaryMultiCallable(abc.ABC):
             raised RpcError will also implement grpc.Call, affording methods
             such as metadata, code, and details.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def with_call(
@@ -885,7 +885,7 @@ class StreamUnaryMultiCallable(abc.ABC):
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def future(
@@ -918,7 +918,7 @@ class StreamUnaryMultiCallable(abc.ABC):
             with non-OK status, the returned Call-Future's exception value will
             be an RpcError.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class StreamStreamMultiCallable(abc.ABC):
@@ -954,7 +954,7 @@ class StreamStreamMultiCallable(abc.ABC):
             returned Call-iterator may raise RpcError indicating termination of
             the RPC with non-OK status.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 #############################  Channel Interface  ##############################
@@ -986,7 +986,7 @@ class Channel(abc.ABC):
             should attempt to connect immediately. If set to False, gRPC
             runtime decides when to connect.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def unsubscribe(self, callback):
@@ -996,7 +996,7 @@ class Channel(abc.ABC):
           callback: A callable previously registered with this Channel from
           having been passed to its "subscribe" method.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def unary_unary(
@@ -1021,7 +1021,7 @@ class Channel(abc.ABC):
         Returns:
           A UnaryUnaryMultiCallable value for the named unary-unary method.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def unary_stream(
@@ -1046,7 +1046,7 @@ class Channel(abc.ABC):
         Returns:
           A UnaryStreamMultiCallable value for the name unary-stream method.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def stream_unary(
@@ -1071,7 +1071,7 @@ class Channel(abc.ABC):
         Returns:
           A StreamUnaryMultiCallable value for the named stream-unary method.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def stream_stream(
@@ -1096,7 +1096,7 @@ class Channel(abc.ABC):
         Returns:
           A StreamStreamMultiCallable value for the named stream-stream method.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def close(self):
@@ -1107,15 +1107,15 @@ class Channel(abc.ABC):
 
         This method is idempotent.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def __enter__(self):
         """Enters the runtime context related to the channel object."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Exits the runtime context related to the channel object."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 ##########################  Service-Side Context  ##############################
@@ -1131,7 +1131,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         Returns:
           The invocation :term:`metadata`.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def peer(self):
@@ -1141,7 +1141,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
           A string identifying the peer that invoked the RPC being serviced.
           The string format is determined by gRPC runtime.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def peer_identities(self):
@@ -1154,7 +1154,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
           An iterable of the identities, or None if the call is not
           authenticated. Each identity is returned as a raw bytes type.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def peer_identity_key(self):
@@ -1167,7 +1167,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
           The auth property (string) that indicates the
           peer identity, or None if the call is not authenticated.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def auth_context(self):
@@ -1176,7 +1176,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         Returns:
           A map of strings to an iterable of bytes for each auth property.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def set_compression(self, compression):
         """Set the compression algorithm to be used for the entire call.
@@ -1185,7 +1185,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
           compression: An element of grpc.compression, e.g.
             grpc.compression.Gzip.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def send_initial_metadata(self, initial_metadata):
@@ -1197,7 +1197,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         Args:
           initial_metadata: The initial :term:`metadata`.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def set_trailing_metadata(self, trailing_metadata):
@@ -1215,7 +1215,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         Args:
           trailing_metadata: The trailing :term:`metadata`.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def trailing_metadata(self):
         """Access value to be used as trailing metadata upon RPC completion.
@@ -1225,7 +1225,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         Returns:
           The trailing :term:`metadata` for the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def abort(self, code, details):
@@ -1244,7 +1244,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
           Exception: An exception is always raised to signal the abortion the
             RPC to the gRPC runtime.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def abort_with_status(self, status):
@@ -1263,7 +1263,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
           Exception: An exception is always raised to signal the abortion the
             RPC to the gRPC runtime.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def set_code(self, code):
@@ -1275,7 +1275,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         Args:
           code: A StatusCode object to be sent to the client.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def set_details(self, details):
@@ -1288,7 +1288,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
           details: A UTF-8-encodable string to be sent to the client upon
             termination of the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def code(self):
         """Accesses the value to be used as status code upon RPC completion.
@@ -1298,7 +1298,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         Returns:
           The StatusCode value for the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def details(self):
         """Accesses the value to be used as detail string upon RPC completion.
@@ -1308,7 +1308,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         Returns:
           The details string of the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def disable_next_message_compression(self):
         """Disables compression for the next response message.
@@ -1316,7 +1316,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
         This method will override any compression configuration set during
         server creation or set on the call.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 #####################  Service-Side Handler Interfaces  ########################
@@ -1381,7 +1381,7 @@ class GenericRpcHandler(abc.ABC):
           An RpcMethodHandler with which the RPC may be serviced if the
           implementation chooses to service this RPC, or None otherwise.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class ServiceRpcHandler(GenericRpcHandler, metaclass=abc.ABCMeta):
@@ -1401,7 +1401,7 @@ class ServiceRpcHandler(GenericRpcHandler, metaclass=abc.ABCMeta):
         Returns:
           The service name.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 ####################  Service-Side Interceptor Interfaces  #####################
@@ -1433,7 +1433,7 @@ class ServerInterceptor(abc.ABC):
           An RpcMethodHandler with which the RPC may be serviced if the
           interceptor chooses to service this RPC, or None otherwise.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 #############################  Server Interface  ###############################
@@ -1452,7 +1452,7 @@ class Server(abc.ABC):
           generic_rpc_handlers: An iterable of GenericRpcHandlers that will be
           used to service RPCs.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def add_registered_method_handlers(self, service_name, method_handlers):
@@ -1482,7 +1482,7 @@ class Server(abc.ABC):
         Returns:
           An integer port on which server will accept RPC requests.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def add_secure_port(self, address, server_credentials):
@@ -1499,7 +1499,7 @@ class Server(abc.ABC):
         Returns:
           An integer port on which server will accept RPC requests.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def start(self):
@@ -1507,7 +1507,7 @@ class Server(abc.ABC):
 
         This method may only be called once. (i.e. it is not idempotent).
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def stop(self, grace):
@@ -1538,7 +1538,7 @@ class Server(abc.ABC):
           stopped, i.e. when running RPCs either complete or are aborted and
           all handlers have terminated.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def wait_for_termination(self, timeout=None):
         """Block current thread until the server stops.
@@ -1561,7 +1561,7 @@ class Server(abc.ABC):
         Returns:
           A bool indicates if the operation times out.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 #################################  Functions    ################################

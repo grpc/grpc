@@ -77,7 +77,7 @@ class IterableConsumer(stream.Consumer):
                 self._condition.wait()
             if self._values:
                 return self._values.pop(0)
-            raise StopIteration()
+            raise StopIteration
 
 
 class ThreadSwitchingConsumer(stream.Consumer):

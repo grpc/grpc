@@ -26,12 +26,12 @@ class Consumer(abc.ABC):
         Args:
           value: Any value accepted by this Consumer.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def terminate(self):
         """Indicates to this Consumer that no more values will be supplied."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def consume_and_terminate(self, value):
@@ -40,4 +40,4 @@ class Consumer(abc.ABC):
         Args:
           value: Any value accepted by this Consumer.
         """
-        raise NotImplementedError()
+        raise NotImplementedError

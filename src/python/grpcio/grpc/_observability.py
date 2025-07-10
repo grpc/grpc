@@ -107,7 +107,7 @@ class ObservabilityPlugin(
         Returns:
           A PyCapsule which stores a ClientCallTracer object.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def save_trace_context(
@@ -128,7 +128,7 @@ class ObservabilityPlugin(
             string. e.g. 113ec879e62583bc
           is_sampled: A bool indicates whether the span is sampled.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def create_server_call_tracer_factory(
@@ -152,7 +152,7 @@ class ObservabilityPlugin(
           A PyCapsule which stores a ServerCallTracerFactory object. Or None if
         plugin decides not to create ServerCallTracerFactory.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def record_rpc_latency(
@@ -171,7 +171,7 @@ class ObservabilityPlugin(
           status_code: An element of grpc.StatusCode in string format representing the
             final status for the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def set_tracing(self, enable: bool) -> None:
         """Enable or disable tracing.
@@ -198,7 +198,7 @@ class ObservabilityPlugin(
         Args:
           method_name: The method name in bytes.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @property
     def tracing_enabled(self) -> bool:
