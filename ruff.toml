@@ -33,7 +33,6 @@ ignore = [
     "D213",    # Multi-line docstring summary should start at the second line
     "D400",    # First line should end with a period
     "D401",    # First line of docstring should be in imperative mood: "{first_line}"
-    "D411",    # Missing blank line before section ("{name}")
     "D413",    # Missing blank line after last section ("{name}")
     "D415",    # First line should end with a period, question mark, or exclamation point
     "D417",    # Missing argument description in the docstring for {definition}: {name}
