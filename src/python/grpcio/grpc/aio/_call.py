@@ -95,10 +95,11 @@ class AioRpcError(grpc.RpcError):
 
         Args:
           code: The status code with which the RPC has been finalized.
-          details: Optional details explaining the reason of the error.
           initial_metadata: Optional initial metadata that could be sent by the
             Server.
           trailing_metadata: Optional metadata that could be sent by the Server.
+          details: Optional details explaining the reason of the error.
+          debug_error_string: Optional string
         """
 
         super().__init__()

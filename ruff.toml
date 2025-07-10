@@ -48,7 +48,6 @@ ignore = [
     "D411",    # Missing blank line before section ("{name}")
     "D413",    # Missing blank line after last section ("{name}")
     "D415",    # First line should end with a period, question mark, or exclamation point
-    "D417",    # Missing argument description in the docstring for {definition}: {name}
     "DTZ001",  # datetime.datetime() called without a tzinfo argument
     "DTZ005",  # datetime.datetime.now() called without a tz argument
     "E402",    # Module level import not at top of cell
