@@ -73,18 +73,12 @@ ignore = [
     "TRY401",  # Redundant exception object included in logging.exception call
     "UP004",   # Class {name} inherits from object
     "UP008",   # Use super() instead of super(__class__, self)
-    "UP010",   # Unnecessary __future__ import {import} for target Python version
-    "UP015",   # Unnecessary mode argument
-    "UP018",   # Unnecessary {literal_type} call (rewrite as a literal)
-    "UP024",   # Replace aliased errors with OSError
-    "UP028",   # Replace yield over for loop with yield from
     "UP030",   # Use implicit references for positional format fields
     "UP031",   # Use format specifiers instead of percent format
     "UP032",   # Use f-string instead of format call
     "UP035",   # Import from {target} instead: {names}
     "UP036",   # Version block is outdated for minimum Python version
     "UP037",   # Remove quotes from type annotation
-    "YTT201",  # sys.version_info[0] == 3 referenced (python4), use >=
     "YTT203",  # sys.version_info[1] compared to integer (python4), compare sys.version_info to tuple
 ]
 
