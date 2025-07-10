@@ -149,7 +149,7 @@ class _RegisteredMethod(_Method):
         return self._name
 
     def handler(
-        self, handler_call_details: _HandlerCallDetails
+        self, _handler_call_details: _HandlerCallDetails
     ) -> Optional[grpc.RpcMethodHandler]:
         return self._registered_handler
 

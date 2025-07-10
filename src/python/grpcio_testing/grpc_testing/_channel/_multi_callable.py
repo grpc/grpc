@@ -24,7 +24,7 @@ class UnaryUnary(grpc.UnaryUnaryMultiCallable):
         self._method_full_rpc_name = method_full_rpc_name
         self._channel_handler = channel_handler
 
-    def __call__(self, request, timeout=None, metadata=None, credentials=None):
+    def __call__(self, request, timeout=None, metadata=None, _credentials=None):
         rpc_handler = self._channel_handler.invoke_rpc(
             self._method_full_rpc_name,
             _common.fuss_with_metadata(metadata),
@@ -34,7 +34,7 @@ class UnaryUnary(grpc.UnaryUnaryMultiCallable):
         )
         return _invocation.blocking_unary_response(rpc_handler)
 
-    def with_call(self, request, timeout=None, metadata=None, credentials=None):
+    def with_call(self, request, timeout=None, metadata=None, _credentials=None):
         rpc_handler = self._channel_handler.invoke_rpc(
             self._method_full_rpc_name,
             _common.fuss_with_metadata(metadata),
@@ -44,7 +44,7 @@ class UnaryUnary(grpc.UnaryUnaryMultiCallable):
         )
         return _invocation.blocking_unary_response_with_call(rpc_handler)
 
-    def future(self, request, timeout=None, metadata=None, credentials=None):
+    def future(self, request, timeout=None, metadata=None, _credentials=None):
         rpc_handler = self._channel_handler.invoke_rpc(
             self._method_full_rpc_name,
             _common.fuss_with_metadata(metadata),
@@ -60,7 +60,7 @@ class UnaryStream(grpc.StreamStreamMultiCallable):
         self._method_full_rpc_name = method_full_rpc_name
         self._channel_handler = channel_handler
 
-    def __call__(self, request, timeout=None, metadata=None, credentials=None):
+    def __call__(self, request, timeout=None, metadata=None, _credentials=None):
         rpc_handler = self._channel_handler.invoke_rpc(
             self._method_full_rpc_name,
             _common.fuss_with_metadata(metadata),
@@ -77,7 +77,7 @@ class StreamUnary(grpc.StreamUnaryMultiCallable):
         self._channel_handler = channel_handler
 
     def __call__(
-        self, request_iterator, timeout=None, metadata=None, credentials=None
+        self, request_iterator, timeout=None, metadata=None, _credentials=None
     ):
         rpc_handler = self._channel_handler.invoke_rpc(
             self._method_full_rpc_name,
@@ -90,7 +90,7 @@ class StreamUnary(grpc.StreamUnaryMultiCallable):
         return _invocation.blocking_unary_response(rpc_handler)
 
     def with_call(
-        self, request_iterator, timeout=None, metadata=None, credentials=None
+        self, request_iterator, timeout=None, metadata=None, _credentials=None
     ):
         rpc_handler = self._channel_handler.invoke_rpc(
             self._method_full_rpc_name,
@@ -103,7 +103,7 @@ class StreamUnary(grpc.StreamUnaryMultiCallable):
         return _invocation.blocking_unary_response_with_call(rpc_handler)
 
     def future(
-        self, request_iterator, timeout=None, metadata=None, credentials=None
+        self, request_iterator, timeout=None, metadata=None, _credentials=None
     ):
         rpc_handler = self._channel_handler.invoke_rpc(
             self._method_full_rpc_name,
@@ -122,7 +122,7 @@ class StreamStream(grpc.StreamStreamMultiCallable):
         self._channel_handler = channel_handler
 
     def __call__(
-        self, request_iterator, timeout=None, metadata=None, credentials=None
+        self, request_iterator, timeout=None, metadata=None, _credentials=None
     ):
         rpc_handler = self._channel_handler.invoke_rpc(
             self._method_full_rpc_name,

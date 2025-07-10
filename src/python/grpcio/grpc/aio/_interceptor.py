@@ -347,7 +347,7 @@ class InterceptedCall:
         self._pending_add_done_callbacks = []
 
     def _wrap_add_done_callback(
-        self, callback: DoneCallbackType, unused_call: _base_call.Call
+        self, callback: DoneCallbackType, _unused_call: _base_call.Call
     ) -> None:
         callback(self)
 

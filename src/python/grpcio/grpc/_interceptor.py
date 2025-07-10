@@ -167,20 +167,20 @@ class _FailureOutcome(
     def done(self) -> bool:
         return True
 
-    def result(self, ignored_timeout: Optional[float] = None):
+    def result(self, _ignored_timeout: Optional[float] = None):
         raise self._exception
 
     def exception(
-        self, ignored_timeout: Optional[float] = None
+        self, _ignored_timeout: Optional[float] = None
     ) -> Optional[Exception]:
         return self._exception
 
     def traceback(
-        self, ignored_timeout: Optional[float] = None
+        self, _ignored_timeout: Optional[float] = None
     ) -> Optional[types.TracebackType]:
         return self._traceback
 
-    def add_callback(self, unused_callback) -> bool:
+    def add_callback(self, _unused_callback) -> bool:
         return False
 
     def add_done_callback(self, fn: DoneCallbackType) -> None:
@@ -237,13 +237,13 @@ class _UnaryOutcome(grpc.Call, grpc.Future):
     def done(self) -> bool:
         return True
 
-    def result(self, ignored_timeout: Optional[float] = None):
+    def result(self, _ignored_timeout: Optional[float] = None):
         return self._response
 
-    def exception(self, ignored_timeout: Optional[float] = None):
+    def exception(self, _ignored_timeout: Optional[float] = None):
         return None
 
-    def traceback(self, ignored_timeout: Optional[float] = None):
+    def traceback(self, _ignored_timeout: Optional[float] = None):
         return None
 
     def add_done_callback(self, fn: DoneCallbackType) -> None:
