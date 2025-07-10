@@ -236,7 +236,7 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
   }
   if (recv_buffer == nullptr) {
     VLOG(2)
-        << "recv_buffer is nullptr in alts_tsi_handshaker_handle_response()";
+        << "failed to receive a response from the alts handshaker service";
     handle_response_done(
         client, TSI_INTERNAL_ERROR,
         "recv_buffer is nullptr in alts_tsi_handshaker_handle_response()",
