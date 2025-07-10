@@ -99,6 +99,21 @@ absl::Status ValidatePemKeyCertPair(absl::string_view cert_chain,
   return absl::OkStatus();
 }
 
+bool HasRootCertInfoChanged(
+    const absl::StatusOr<std::shared_ptr<RootCertInfo>>& old,
+    const absl::StatusOr<std::shared_ptr<RootCertInfo>>& updated) {
+  if (old.status() != updated.status()) return true;  // Status changed.
+  if (!old.ok()) return false;  // Both have same non-OK status.
+  // Both have OK status.
+  if (*old == nullptr) {
+    return *updated != nullptr;
+  } else {
+    if (*updated == nullptr) return true;
+  }
+  // Both have non-null value.
+  return **old != **updated;
+}
+
 }  // namespace
 
 StaticDataCertificateProvider::StaticDataCertificateProvider(
@@ -195,7 +210,8 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       root_cert_path_(std::move(root_cert_path)),
       spiffe_bundle_map_path_(std::move(spiffe_bundle_map_path)),
       refresh_interval_sec_(refresh_interval_sec),
-      distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
+      distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
+      root_cert_info_(nullptr) {
   if (refresh_interval_sec_ < kMinimumFileWatcherRefreshIntervalSeconds) {
     VLOG(2) << "FileWatcherCertificateProvider refresh_interval_sec_ set to "
                "value less than minimum. Overriding configured value to "
@@ -231,12 +247,12 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
                                               bool root_being_watched,
                                               bool identity_being_watched) {
     MutexLock lock(&mu_);
-    std::shared_ptr<RootCertInfo> roots;
+    absl::StatusOr<std::shared_ptr<RootCertInfo>> roots = nullptr;
     std::optional<PemKeyCertPairList> pem_key_cert_pairs;
     FileWatcherCertificateProvider::WatcherInfo& info =
         watcher_info_[cert_name];
     if (!info.root_being_watched && root_being_watched &&
-        root_cert_info_ != nullptr) {
+        root_cert_info_.ok() && *root_cert_info_ != nullptr) {
       roots = root_cert_info_;
     }
     info.root_being_watched = root_being_watched;
@@ -249,12 +265,13 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       watcher_info_.erase(cert_name);
     }
     ExecCtx exec_ctx;
-    if (roots != nullptr || pem_key_cert_pairs.has_value()) {
-      distributor_->SetKeyMaterials(cert_name, roots, pem_key_cert_pairs);
+    if ((roots.ok() && *roots != nullptr) || pem_key_cert_pairs.has_value()) {
+      distributor_->SetKeyMaterials(cert_name, roots.ok() ? *roots : nullptr,
+                                    pem_key_cert_pairs);
     }
     grpc_error_handle root_cert_error;
     grpc_error_handle identity_cert_error;
-    if (root_being_watched && roots == nullptr) {
+    if (root_being_watched && (!roots.ok() || *roots == nullptr)) {
       root_cert_error =
           GRPC_ERROR_CREATE("Unable to get latest root certificates.");
     }
@@ -284,7 +301,10 @@ UniqueTypeName FileWatcherCertificateProvider::type() const {
 
 absl::Status FileWatcherCertificateProvider::ValidateCredentials() const {
   MutexLock lock(&mu_);
-  absl::Status status = ValidateRootCertificates(root_cert_info_.get());
+  if (!root_cert_info_.ok()) {
+    return root_cert_info_.status();
+  }
+  absl::Status status = ValidateRootCertificates(root_cert_info_->get());
   if (!status.ok()) {
     return status;
   }
@@ -295,24 +315,18 @@ absl::Status FileWatcherCertificateProvider::ValidateCredentials() const {
       return status;
     }
   }
-  // Validation of the SPIFFE Bundle happens when it is loaded from JSON, but
-  // the ctor of FileWatcherCertificateProvider doesn't allow for that error to
-  // bubble up. Do that here. If there is no bad status, the default of Ok will
-  // be passed up
-  return spiffe_load_status_;
+  return absl::OkStatus();
 }
 
 void FileWatcherCertificateProvider::ForceUpdate() {
-  std::shared_ptr<RootCertInfo> root_cert_info;
+  absl::StatusOr<std::shared_ptr<RootCertInfo>> root_cert_info = nullptr;
   std::optional<PemKeyCertPairList> pem_key_cert_pairs;
-  absl::Status spiffe_load_status;
   if (!spiffe_bundle_map_path_.empty()) {
     auto map = SpiffeBundleMap::FromFile(spiffe_bundle_map_path_);
     if (map.ok()) {
       root_cert_info = std::make_shared<RootCertInfo>(std::move(*map));
-      spiffe_load_status = absl::OkStatus();
     } else {
-      spiffe_load_status = map.status();
+      root_cert_info = map.status();
     }
   } else if (!root_cert_path_.empty()) {
     std::optional<std::string> root_certificate =
@@ -327,17 +341,8 @@ void FileWatcherCertificateProvider::ForceUpdate() {
         private_key_path_, identity_certificate_path_);
   }
   MutexLock lock(&mu_);
-  spiffe_load_status_ = spiffe_load_status;
-  // If update has no value, but the existing root has a value, then the update
-  // is a delete
-  const bool is_root_update_a_delete =
-      root_cert_info == nullptr && root_cert_info_ != nullptr;
-  // If the update has a value, see if the existing value is nullptr or has a
-  // different value than the update.
-  const bool did_root_change_value =
-      root_cert_info != nullptr &&
-      (root_cert_info_ == nullptr || *root_cert_info != *root_cert_info_);
-  const bool root_changed = is_root_update_a_delete || did_root_change_value;
+  const bool root_changed =
+      HasRootCertInfoChanged(root_cert_info_, root_cert_info);
   if (root_changed) {
     root_cert_info_ = std::move(root_cert_info);
   }
@@ -365,7 +370,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
       std::optional<PemKeyCertPairList> identity_to_report;
       // Set key materials to the distributor if their contents changed.
       if (info.root_being_watched && root_changed) {
-        root_to_report = root_cert_info_;
+        root_to_report = root_cert_info_.ok() ? *root_cert_info_ : nullptr;
       }
       if (info.identity_being_watched && !pem_key_cert_pairs_.empty() &&
           identity_cert_changed) {
@@ -377,7 +382,8 @@ void FileWatcherCertificateProvider::ForceUpdate() {
       }
       // Report errors to the distributor if the contents are empty.
       const bool report_root_error =
-          info.root_being_watched && root_cert_info_ == nullptr;
+          info.root_being_watched &&
+          (!root_cert_info.ok() || *root_cert_info_ == nullptr);
       const bool report_identity_error =
           info.identity_being_watched && pem_key_cert_pairs_.empty();
       if (report_root_error || report_identity_error) {
