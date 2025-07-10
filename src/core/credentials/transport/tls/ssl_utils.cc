@@ -454,7 +454,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   bool has_key_cert_pair = pem_key_cert_pair != nullptr &&
                            pem_key_cert_pair->private_key != nullptr &&
                            pem_key_cert_pair->cert_chain != nullptr;
-  options.pem_root_certs = root_certs;
+  options.root_cert_info = std::make_shared<RootCertInfo>(root_certs);
   options.root_store = root_store;
   options.alpn_protocols =
       grpc_fill_alpn_protocol_strings(&options.num_alpn_protocols);

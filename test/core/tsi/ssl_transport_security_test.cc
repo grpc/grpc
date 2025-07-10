@@ -349,7 +349,8 @@ class SslTransportSecurityTest
       // Create client handshaker factory.
       tsi_ssl_client_handshaker_options client_options;
       if (key_cert_lib->use_pem_root_certs) {
-        client_options.pem_root_certs = key_cert_lib->root_cert;
+        client_options.root_cert_info =
+            std::make_shared<RootCertInfo>(key_cert_lib->root_cert);
       }
       if (ssl_fixture->force_client_auth_) {
         client_options.pem_key_cert_pair =
@@ -410,7 +411,8 @@ class SslTransportSecurityTest
                 ? key_cert_lib->bad_server_num_key_cert_pairs
                 : key_cert_lib->server_num_key_cert_pairs;
       }
-      server_options.pem_client_root_certs = key_cert_lib->root_cert;
+      server_options.root_cert_info =
+          std::make_shared<RootCertInfo>(key_cert_lib->root_cert);
       if (ssl_fixture->force_client_auth_) {
         server_options.client_certificate_request =
             TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY;
@@ -1202,7 +1204,7 @@ TEST(SslTransportSecurityTest, TestClientHandshakerFactoryRefcounting) {
   char* cert_chain = load_file(SSL_TSI_TEST_CREDENTIALS_DIR "client.pem");
 
   tsi_ssl_client_handshaker_options options;
-  options.pem_root_certs = cert_chain;
+  options.root_cert_info = std::make_shared<RootCertInfo>(cert_chain);
   tsi_ssl_client_handshaker_factory* client_handshaker_factory;
   ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
                 &options, &client_handshaker_factory),
@@ -1256,7 +1258,7 @@ TEST(SslTransportSecurityTest, TestServerHandshakerFactoryRefcounting) {
   tsi_ssl_server_handshaker_options options;
   options.pem_key_cert_pairs = &cert_pair;
   options.num_key_cert_pairs = 1;
-  options.pem_client_root_certs = cert_chain;
+  options.root_cert_info = std::make_shared<RootCertInfo>(cert_chain);
 
   ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
                 &options, &server_handshaker_factory),
@@ -1295,7 +1297,7 @@ TEST(SslTransportSecurityTest, TestClientHandshakerFactoryBadParams) {
 
   tsi_ssl_client_handshaker_factory* client_handshaker_factory;
   tsi_ssl_client_handshaker_options options;
-  options.pem_root_certs = cert_chain;
+  options.root_cert_info = std::make_shared<RootCertInfo>(cert_chain);
   ASSERT_EQ(tsi_create_ssl_client_handshaker_factory_with_options(
                 &options, &client_handshaker_factory),
             TSI_INVALID_ARGUMENT);

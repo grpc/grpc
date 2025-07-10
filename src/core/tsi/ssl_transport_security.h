@@ -145,9 +145,6 @@ struct tsi_ssl_client_handshaker_options {
   // key and certificate chain. This parameter can be NULL if the client does
   // not have such a key/cert pair.
   const tsi_ssl_pem_key_cert_pair* pem_key_cert_pair;
-  // pem_roots_cert is the NULL-terminated string containing the PEM encoding of
-  // the client root certificates.
-  const char* pem_root_certs;
   // root_store is a pointer to the ssl_root_certs_store object. If root_store
   // is not nullptr and SSL implementation permits, root_store will be used as
   // root certificates. Otherwise, pem_roots_cert will be used to load server
@@ -201,7 +198,6 @@ struct tsi_ssl_client_handshaker_options {
   // https://github.com/grpc/grpc/pull/39708/files#r2143735662
   tsi_ssl_client_handshaker_options()
       : pem_key_cert_pair(nullptr),
-        pem_root_certs(nullptr),
         root_store(nullptr),
         cipher_suites(nullptr),
         alpn_protocols(nullptr),
@@ -312,13 +308,9 @@ struct tsi_ssl_server_handshaker_options {
   // num_key_cert_pairs is the number of items in the pem_key_cert_pairs
   // array.
   size_t num_key_cert_pairs;
-  // pem_root_certs is the NULL-terminated string containing the PEM encoding
-  // of the server root certificates. This parameter may be NULL if the server
-  // does not want the client to be authenticated with SSL.
-  const char* pem_client_root_certs;
   // client_certificate_request, if set to non-zero will force the client to
   // authenticate with an SSL cert. Note that this option is ignored if
-  // pem_client_root_certs is NULL or pem_client_roots_certs_size is 0.
+  // root_cert_info is NULL 
   tsi_client_certificate_request_type client_certificate_request;
   // cipher_suites contains an optional list of the ciphers that the server
   // supports. The format of this string is described in:
@@ -369,8 +361,6 @@ struct tsi_ssl_server_handshaker_options {
   // will be unusable.
   bool send_client_ca_list;
 
-  const grpc_core::SpiffeBundleMap* spiffe_bundle_map = nullptr;
-
   // root_cert_info is either the string containing the PEM encoding of the
   // server root certificates or a SPIFFE bundle map. This parameter may be NULL
   // if the server does not want the client to be authenticated with SSL.
@@ -381,7 +371,6 @@ struct tsi_ssl_server_handshaker_options {
   tsi_ssl_server_handshaker_options()
       : pem_key_cert_pairs(nullptr),
         num_key_cert_pairs(0),
-        pem_client_root_certs(nullptr),
         client_certificate_request(TSI_DONT_REQUEST_CLIENT_CERTIFICATE),
         cipher_suites(nullptr),
         alpn_protocols(nullptr),
