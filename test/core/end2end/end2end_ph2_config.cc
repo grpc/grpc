@@ -125,6 +125,9 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
   std::vector<CoreTestConfiguration> list_of_configs;
   if (IsExperimentEnabled(
           ExperimentIds::kExperimentIdPromiseBasedHttp2ClientTransport)) {
+    // TODO(tjagtap) : [PH2][P3] : Add configs for
+    // 1. CHTTP2 Client vs PH2 server
+    // 2. and PH2 Client vs PH2 server
     list_of_configs.push_back(CoreTestConfiguration{
         /*name=*/GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG,
         /*feature_mask=*/FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
