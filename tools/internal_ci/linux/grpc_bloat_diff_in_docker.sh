@@ -18,6 +18,11 @@ set -ex
 # Enter the gRPC repo root
 cd $(dirname $0)/../../..
 
+if [ -f "./generate_artifacts.sh" ]; then
+  echo "Calling generate_artifacts.sh..."
+  bash -c ./generate_artifacts.sh
+fi
+
 # some extra pip packages are needed for the check_on_pr.py script to work
 # TODO(jtattermusch): avoid needing to install these pip packages each time
 time python3 -m pip install --user -r tools/internal_ci/helper_scripts/requirements.linux_perf.txt

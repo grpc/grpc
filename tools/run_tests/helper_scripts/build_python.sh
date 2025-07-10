@@ -132,6 +132,11 @@ source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 # Perform build operations #
 ############################
 
+if [ -f "./generate_artifacts.sh" ]; then
+  echo "Calling generate_artifacts.sh..."
+  bash -c ./generate_artifacts.sh
+fi
+
 if [[ "$(inside_venv)" ]]; then
   VENV_PYTHON="$PYTHON"
 else

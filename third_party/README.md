@@ -110,10 +110,6 @@ git commit -m "update submodule boringssl-with-bazel with origin/master-with-baz
 
 Updating the protobuf dependency is now part of the internal release process (see [go/grpc-release](http://go/grpc-release)).
 
-### Updating third_party/envoy-api
-
-Apart from the above steps, please run `tools/codegen/core/gen_upb_api.sh` to regenerate upb files.
-
 ### Updating third_party/upb
 
 Since upb is vendored in the gRPC repo, you cannot use submodule to update it. Please follow the steps below;
@@ -126,7 +122,6 @@ Since upb is vendored in the gRPC repo, you cannot use submodule to update it. P
 2. Update the dependency in `grpc_deps.bzl` to the same commit
 3. Populate the bazel download mirror by running `bazel/update_mirror.sh`
 4. Run `tools/buildgen/generate_projects.sh` to regenerate the generated files
-5. Run `tools/codegen/core/gen_upb_api.sh` to regenerate upb files.
 
 ### Updating third_party/utf8_range
 

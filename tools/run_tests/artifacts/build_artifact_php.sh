@@ -19,6 +19,12 @@ cd "$(dirname "$0")/../../.."
 
 mkdir -p "${ARTIFACTS_OUT}"
 
+# Generate the upb files before packaging
+if [ -f "./generate_artifacts.sh" ]; then
+  echo "Generating upb artifacts..."
+  bash -c ./generate_artifacts.sh
+fi
+
 # Build the PHP extension archive (this just zips all the files up)
 pear package
 
