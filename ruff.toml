@@ -100,7 +100,6 @@ ignore = [
     "RET504",  # Unnecessary assignment to {name} before return statement
     "RET505",  # Unnecessary {branch} after return statement
     "RET506",  # Unnecessary {branch} after raise statement
-    "RET507",  # Unnecessary {branch} after continue statement
     "RSE102",  # Unnecessary parentheses on raised exception
     "RUF005",  # Consider {expression} instead of concatenation
     "RUF013",  # PEP 484 prohibits implicit Optional

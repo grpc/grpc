@@ -144,14 +144,13 @@ class ChannelCache:
                     if eviction_time <= now:
                         ChannelCache._singleton._evict_locked(key)
                         continue
-                    else:
-                        time_to_eviction = (eviction_time - now).total_seconds()
-                        # NOTE: We aim to *eventually* coalesce to a state in
-                        # which no overdue channels are in the cache and the
-                        # length of the cache is longer than _MAXIMUM_CHANNELS.
-                        # We tolerate momentary states in which these two
-                        # criteria are not met.
-                        ChannelCache._condition.wait(timeout=time_to_eviction)
+                    time_to_eviction = (eviction_time - now).total_seconds()
+                    # NOTE: We aim to *eventually* coalesce to a state in
+                    # which no overdue channels are in the cache and the
+                    # length of the cache is longer than _MAXIMUM_CHANNELS.
+                    # We tolerate momentary states in which these two
+                    # criteria are not met.
+                    ChannelCache._condition.wait(timeout=time_to_eviction)
 
     def get_channel(
         self,
