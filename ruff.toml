@@ -67,7 +67,6 @@ ignore = [
     "SIM105",  # Use contextlib.suppress({exception}) instead of try-except-pass
     "SLF001",  # Private member accessed: {access}
     "SLOT002", # Subclasses of {namedtuple_kind} should define __slots__
-    "T201",    # print found
     "TC001",   # Move application import {} into a type-checking block
     "TC003",   # Move standard library import {} into a type-checking block
     "TD003",   # Missing issue link for this TODO
