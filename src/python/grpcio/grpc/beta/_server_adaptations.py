@@ -265,7 +265,7 @@ class _SimpleMethodHandler(
     pass
 
 
-def _simple_method_handler(
+def _simple_method_handler( # noqa: PLR0911
     implementation, request_deserializer, response_serializer
 ):
     if implementation.style is style.Service.INLINE:
