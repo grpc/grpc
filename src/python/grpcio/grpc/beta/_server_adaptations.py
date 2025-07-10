@@ -54,8 +54,9 @@ class _FaceServicerContext(face.ServicerContext):
         return self._servicer_context.time_remaining()
 
     def add_abortion_callback(self, abortion_callback):
+        error_msg = "add_abortion_callback no longer supported server-side!"
         raise NotImplementedError(
-            "add_abortion_callback no longer supported server-side!"
+            error_msg
         )
 
     def cancel(self):

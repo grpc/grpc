@@ -51,7 +51,6 @@ ignore = [
     "DTZ005",  # datetime.datetime.now() called without a tz argument
     "E501",    # Line too long ({width} > {limit})
     "E731",    # Do not assign a lambda expression, use a def
-    "EM101",   # Exception must not use a string literal, assign to variable first
     "ERA001",  # Found commented-out code
     "F401",    # {name} imported but unused; consider using importlib.util.find_spec to test for availability
     "F403",    # from {name} import * used; unable to detect undefined names
