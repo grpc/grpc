@@ -47,7 +47,6 @@ ignore = [
     "FBT003",  # Boolean positional value in function call
     "FIX002",  # Line contains TODO, consider resolving the issue
     "I001",    # Import block is un-sorted or un-formatted
-    "ICN001",  # {name} should be imported as {asname}
     "ISC003",  # Explicitly concatenated string should be implicitly concatenated
     "LOG015",  # {}() call on root logger
     "N802",    # Function name {name} should be lowercase
