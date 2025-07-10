@@ -86,7 +86,6 @@ def _get_gcp_project_id_from_env_var() -> Optional[str]:
     Returns:
         The project ID, or an empty string if the project ID could not be found.
     """
-
     project_id = ""
     project_id = os.getenv("GCP_PROJECT")
     if project_id:
@@ -112,7 +111,6 @@ def _get_gcp_observability_config_contents() -> str:
     Raises:
         ValueError: If no configuration content was found.
     """
-
     contents_str = ""
     # First try get config from GRPC_GCP_OBSERVABILITY_CONFIG_FILE_ENV.
     config_path = os.getenv(GRPC_GCP_OBSERVABILITY_CONFIG_FILE_ENV)
