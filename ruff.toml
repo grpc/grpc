@@ -57,7 +57,6 @@ ignore = [
     "PLR0912", # Too many branches ({branches} > {max_branches})
     "PLR0913", # Too many arguments in function definition ({c_args} > {max_args})
     "PLR2004", # Magic value used in comparison, consider replacing {value} with a constant variable
-    "PLW1641", # Object does not implement __hash__ method
     "PLW2901", # Outer {outer_kind} variable {name} overwritten by inner {inner_kind} target
     "PT009",   # Use a regular assert instead of unittest-style {assertion}
     "PT015",   # Assertion always fails, replace with pytest.fail()
