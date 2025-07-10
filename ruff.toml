@@ -61,7 +61,6 @@ ignore = [
     "RET503",  # Missing explicit return at the end of function able to return non-None value
     "RET504",  # Unnecessary assignment to {name} before return statement
     "RUF005",  # Consider {expression} instead of concatenation
-    "RUF023",  # {}.__slots__ is not sorted
     "S101",    # Use of assert detected
     "S105",    # Possible hardcoded password assigned to: "{}"
     "S110",    # try-except-pass detected, consider logging the exception
