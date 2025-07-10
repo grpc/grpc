@@ -480,7 +480,7 @@ TEST_F(GrpcTlsCertificateDistributorTest,
   EXPECT_THAT(
       watcher_state_2->GetCredentialQueue(),
       ::testing::ElementsAre(MatchesCredentialInfo(
-          EqRootCert(kRootCert2Contents),
+          nullptr,
           MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents))));
   // Push root cert updates to kCertName1.
   distributor_.SetKeyMaterials(kCertName1, GetRootCert2(), std::nullopt);
@@ -500,7 +500,7 @@ TEST_F(GrpcTlsCertificateDistributorTest,
   EXPECT_THAT(
       watcher_state_2->GetCredentialQueue(),
       ::testing::ElementsAre(MatchesCredentialInfo(
-          EqRootCert(kRootCert2Contents),
+          nullptr,
           MakeCertKeyPairs(kIdentityCert2PrivateKey, kIdentityCert2Contents))));
   watcher_state_2->cert_update_queue.clear();
   // Cancel watcher 2.
@@ -532,7 +532,7 @@ TEST_F(GrpcTlsCertificateDistributorTest,
   EXPECT_THAT(
       watcher_state_1->GetCredentialQueue(),
       ::testing::ElementsAre(MatchesCredentialInfo(
-          EqRootCert(kRootCert2Contents),
+          nullptr,
           MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents))));
   // Check the updates are delivered to watcher 2.
   EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
@@ -556,7 +556,7 @@ TEST_F(GrpcTlsCertificateDistributorTest,
   EXPECT_THAT(
       watcher_state_1->GetCredentialQueue(),
       ::testing::ElementsAre(MatchesCredentialInfo(
-          EqRootCert(kRootCert2Contents),
+          nullptr,
           MakeCertKeyPairs(kIdentityCert2PrivateKey, kIdentityCert2Contents))));
   // Cancel watcher 2.
   CancelWatch(watcher_state_2);
@@ -680,11 +680,10 @@ TEST_F(GrpcTlsCertificateDistributorTest, WatchACertInfoWithValidCredentials) {
   // Register watcher 3.
   WatcherState* watcher_state_3 = MakeWatcher(std::nullopt, kIdentityCert2Name);
   // watcher 3 should received the identity credentials right away.
-  EXPECT_THAT(
-      watcher_state_3->GetCredentialQueue(),
-      ::testing::ElementsAre(MatchesCredentialInfo(
-          EqRootCert(kRootCert2Contents),
-          MakeCertKeyPairs(kIdentityCert2PrivateKey, kIdentityCert2Contents))));
+  EXPECT_THAT(watcher_state_3->GetCredentialQueue(),
+              ::testing::ElementsAre(MatchesCredentialInfo(
+                  nullptr, MakeCertKeyPairs(kIdentityCert2PrivateKey,
+                                            kIdentityCert2Contents))));
   CancelWatch(watcher_state_2);
   CancelWatch(watcher_state_3);
 }
