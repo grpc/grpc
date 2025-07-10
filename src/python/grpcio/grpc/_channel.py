@@ -246,7 +246,7 @@ def _event_handler(
             except Exception as e:  # pylint: disable=broad-except
                 # NOTE(rbellevi): We suppress but log errors here so as not to
                 # kill the channel spin thread.
-                logging.error(
+                logging.error( # noqa: LOG015
                     "Exception in callback %s: %s", repr(callback.func), repr(e)
                 )
         return done and state.fork_epoch >= cygrpc.get_fork_epoch()
