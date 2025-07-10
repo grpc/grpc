@@ -326,7 +326,9 @@ void FileWatcherCertificateProvider::ForceUpdate() {
     if (map.ok()) {
       root_cert_info = std::make_shared<RootCertInfo>(std::move(*map));
     } else {
-      root_cert_info = map.status();
+      root_cert_info = absl::InvalidArgumentError(
+          absl::StrFormat("spiffe bundle map file %s failed to load: %s",
+                          spiffe_bundle_map_path_, map.status().ToString()));
     }
   } else if (!root_cert_path_.empty()) {
     std::optional<std::string> root_certificate =

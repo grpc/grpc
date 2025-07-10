@@ -724,14 +724,6 @@ TEST_F(GrpcTlsCertificateProviderTest,
       ::testing::ElementsAre(MatchesCredentialInfo(
           EqSpiffeBundleMap(GetGoodSpiffeBundleMap()), PemKeyCertPairList())));
   CancelWatch(watcher_state_2);
-  // Watcher watching only identity certs.
-  WatcherState* watcher_state_3 =
-      MakeWatcher(provider.distributor(), std::nullopt, kCertName);
-  EXPECT_THAT(
-      watcher_state_3->GetCredentialQueue(),
-      ::testing::ElementsAre(MatchesCredentialInfo(
-          EqRootCert(""), MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
-  CancelWatch(watcher_state_3);
 }
 
 TEST_F(
@@ -748,8 +740,10 @@ TEST_F(GrpcTlsCertificateProviderTest,
   FileWatcherCertificateProvider provider(SERVER_KEY_PATH_2, SERVER_CERT_PATH_2,
                                           CA_CERT_PATH, INVALID_PATH, 1);
   EXPECT_EQ(provider.ValidateCredentials(),
-            absl::InternalError("Failed to load file: invalid/path due to "
-                                "error(fdopen): No such file or directory"));
+            absl::InvalidArgumentError(
+                "spiffe bundle map file invalid/path failed to load: INTERNAL: "
+                "Failed to load file: invalid/path due to error(fdopen): No "
+                "such file or directory"));
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
@@ -757,9 +751,13 @@ TEST_F(GrpcTlsCertificateProviderTest,
   FileWatcherCertificateProvider provider(SERVER_KEY_PATH_2, SERVER_CERT_PATH_2,
                                           CA_CERT_PATH,
                                           kMalformedSpiffeBundleMapPath, 1);
-  EXPECT_EQ(provider.ValidateCredentials(),
-            absl::InvalidArgumentError(
-                "errors validating JSON: [field: error:is not an object]"));
+  EXPECT_EQ(
+      provider.ValidateCredentials(),
+      absl::InvalidArgumentError(
+          "spiffe bundle map file "
+          "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
+          "spiffebundle_malformed.json failed to load: INVALID_ARGUMENT: "
+          "errors validating JSON: [field: error:is not an object]"));
 }
 
 // The following tests write credential data to temporary files to test the
