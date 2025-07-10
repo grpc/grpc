@@ -75,6 +75,7 @@ _GRPC_DEP_NAMES = [
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
+    "zlib",
     "platforms",
     "rules_cc",
     "com_google_absl",
