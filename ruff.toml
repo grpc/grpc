@@ -136,7 +136,6 @@ ignore = [
 =======
 >>>>>>> b7b14d8ef0 (removed suppression for PLW1641)
     "PLW2901", # Outer {outer_kind} variable {name} overwritten by inner {inner_kind} target
-    "PT009",   # Use a regular assert instead of unittest-style {assertion}
     "PT015",   # Assertion always fails, replace with pytest.fail()
     "PT017",   # Found assertion on exception {name} in except block, use pytest.raises() instead
     "PT027",   # Use pytest.raises instead of unittest-style {assertion}
