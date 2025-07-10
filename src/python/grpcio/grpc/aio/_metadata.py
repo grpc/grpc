@@ -33,6 +33,8 @@ class Metadata(abc.Collection):
         * Allows partial mutation on the data without recreating the new object from scratch.
     """
 
+    __hash__ = None
+
     def __init__(self, *args: Tuple[MetadataKey, MetadataValue]) -> None:
         self._metadata = OrderedDict()
         for md_key, md_value in args:

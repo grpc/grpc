@@ -117,6 +117,7 @@ ignore = [
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     "PLR5501", # Use elif instead of else then if, to reduce indentation
     "PLW0120", # else clause on loop without a break statement; remove the else and dedent its contents
 =======
@@ -132,6 +133,8 @@ ignore = [
 =======
 >>>>>>> 338c5bc076 (removed suppression for PLW1508)
     "PLW1641", # Object does not implement __hash__ method
+=======
+>>>>>>> b7b14d8ef0 (removed suppression for PLW1641)
     "PLW2901", # Outer {outer_kind} variable {name} overwritten by inner {inner_kind} target
     "PT009",   # Use a regular assert instead of unittest-style {assertion}
     "PT015",   # Assertion always fails, replace with pytest.fail()
