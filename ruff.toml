@@ -16,7 +16,6 @@ ignore = [
     "ANN205",  # Missing return type annotation for staticmethod {name}
     "ANN206",  # Missing return type annotation for classmethod {name}
     "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed in {name}
-    "B007",    # Loop control variable {name} not used within loop body
     "B011",    # Do not assert False (python -O removes these calls), raise AssertionError()
     "B018",    # Found useless expression. Either assign it to a variable or remove it.
     "B024",    # {name} is an abstract base class, but it has no abstract methods or properties
