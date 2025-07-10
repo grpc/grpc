@@ -83,7 +83,6 @@ ignore = [
     "FIX002",  # Line contains TODO, consider resolving the issue
     "I001",    # Import block is un-sorted or un-formatted
     "ICN001",  # {name} should be imported as {asname}
-    "INP001",  # File {filename} is part of an implicit namespace package. Add an __init__.py.
     "ISC003",  # Explicitly concatenated string should be implicitly concatenated
     "LOG015",  # {}() call on root logger
     "N802",    # Function name {name} should be lowercase
