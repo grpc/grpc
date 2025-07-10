@@ -84,7 +84,6 @@ ignore = [
     "S105",    # Possible hardcoded password assigned to: "{}"
     "S110",    # try-except-pass detected, consider logging the exception
     "SIM105",  # Use contextlib.suppress({exception}) instead of try-except-pass
-    "SIM117",  # Use a single with statement with multiple contexts instead of nested with statements
     "SIM118",  # Use key {operator} dict instead of key {operator} dict.keys()
     "SIM300",  # Yoda condition detected
     "SIM910",  # Use {expected} instead of {actual}
