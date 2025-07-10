@@ -115,6 +115,7 @@ ignore = [
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     "PLR5501", # Use elif instead of else then if, to reduce indentation
     "PLW0120", # else clause on loop without a break statement; remove the else and dedent its contents
 =======
@@ -122,6 +123,8 @@ ignore = [
 =======
 >>>>>>> d30bd7c154 (removed suppression for PLW0120)
     "PLW0603", # Using the global statement to update {name} is discouraged
+=======
+>>>>>>> 485094f8cb (removed suppression for PLW0603)
 =======
 >>>>>>> 485094f8cb (removed suppression for PLW0603)
     "PLW1508", # Invalid type for environment variable default; expected str or None
