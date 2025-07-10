@@ -93,8 +93,6 @@ ignore = [
     "S603",    # subprocess call: check for execution of untrusted input
     "SIM102",  # Use a single if statement instead of nested if statements
     "SIM105",  # Use contextlib.suppress({exception}) instead of try-except-pass
-    "SIM118",  # Use key {operator} dict instead of key {operator} dict.keys()
-    "SIM300",  # Yoda condition detected
     "SIM910",  # Use {expected} instead of {actual}
     "SLF001",  # Private member accessed: {access}
     "SLOT002", # Subclasses of {namedtuple_kind} should define __slots__
