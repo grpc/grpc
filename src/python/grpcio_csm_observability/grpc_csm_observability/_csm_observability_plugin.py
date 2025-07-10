@@ -143,8 +143,7 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
     ) -> Dict[str, str]:
         if include_exchange_labels:
             return self._additional_exchange_labels
-        else:
-            return {}
+        return {}
 
     @staticmethod
     def deserialize_labels(labels: Dict[str, AnyStr]) -> Dict[str, AnyStr]:
@@ -217,9 +216,8 @@ class CsmOpenTelemetryPluginOption(OpenTelemetryPluginOption):
         match = re.search(authority_pattern, target)
         if match:
             return TRAFFIC_DIRECTOR_AUTHORITY in match.group(1)
-        else:
-            # Return True if the authority doesn't exist
-            return True
+        # Return True if the authority doesn't exist
+        return True
 
     @staticmethod
     def is_active_on_server(
@@ -298,7 +296,6 @@ def get_resource_type(gcp_resource: Resource) -> str:
     )
     if gcp_resource_type == "gke_container":
         return TYPE_GKE
-    elif gcp_resource_type == "gce_instance":
+    if gcp_resource_type == "gce_instance":
         return TYPE_GCE
-    else:
-        return gcp_resource_type
+    return gcp_resource_type

@@ -679,22 +679,20 @@ class InterceptedUnaryUnaryCall(
 
                 if isinstance(call_or_response, _base_call.UnaryUnaryCall):
                     return call_or_response
-                else:
-                    return UnaryUnaryCallResponse(call_or_response)
+                return UnaryUnaryCallResponse(call_or_response)
 
-            else:
-                return UnaryUnaryCall(
-                    request,
-                    _timeout_to_deadline(client_call_details.timeout),
-                    client_call_details.metadata,
-                    client_call_details.credentials,
-                    client_call_details.wait_for_ready,
-                    self._channel,
-                    client_call_details.method,
-                    request_serializer,
-                    response_deserializer,
-                    self._loop,
-                )
+            return UnaryUnaryCall(
+                request,
+                _timeout_to_deadline(client_call_details.timeout),
+                client_call_details.metadata,
+                client_call_details.credentials,
+                client_call_details.wait_for_ready,
+                self._channel,
+                client_call_details.method,
+                request_serializer,
+                response_deserializer,
+                self._loop,
+            )
 
         client_call_details = ClientCallDetails(
             method, timeout, metadata, credentials, wait_for_ready
@@ -795,21 +793,20 @@ class InterceptedUnaryStreamCall(
                         )
                     )
                 return self._last_returned_call_from_interceptors
-            else:
-                self._last_returned_call_from_interceptors = UnaryStreamCall(
-                    request,
-                    _timeout_to_deadline(client_call_details.timeout),
-                    client_call_details.metadata,
-                    client_call_details.credentials,
-                    client_call_details.wait_for_ready,
-                    self._channel,
-                    client_call_details.method,
-                    request_serializer,
-                    response_deserializer,
-                    self._loop,
-                )
+            self._last_returned_call_from_interceptors = UnaryStreamCall(
+                request,
+                _timeout_to_deadline(client_call_details.timeout),
+                client_call_details.metadata,
+                client_call_details.credentials,
+                client_call_details.wait_for_ready,
+                self._channel,
+                client_call_details.method,
+                request_serializer,
+                response_deserializer,
+                self._loop,
+            )
 
-                return self._last_returned_call_from_interceptors
+            return self._last_returned_call_from_interceptors
 
         client_call_details = ClientCallDetails(
             method, timeout, metadata, credentials, wait_for_ready
@@ -898,19 +895,18 @@ class InterceptedStreamUnaryCall(
                 return await interceptors[0].intercept_stream_unary(
                     continuation, client_call_details, request_iterator
                 )
-            else:
-                return StreamUnaryCall(
-                    request_iterator,
-                    _timeout_to_deadline(client_call_details.timeout),
-                    client_call_details.metadata,
-                    client_call_details.credentials,
-                    client_call_details.wait_for_ready,
-                    self._channel,
-                    client_call_details.method,
-                    request_serializer,
-                    response_deserializer,
-                    self._loop,
-                )
+            return StreamUnaryCall(
+                request_iterator,
+                _timeout_to_deadline(client_call_details.timeout),
+                client_call_details.metadata,
+                client_call_details.credentials,
+                client_call_details.wait_for_ready,
+                self._channel,
+                client_call_details.method,
+                request_serializer,
+                response_deserializer,
+                self._loop,
+            )
 
         client_call_details = ClientCallDetails(
             method, timeout, metadata, credentials, wait_for_ready
@@ -1017,20 +1013,19 @@ class InterceptedStreamStreamCall(
                         )
                     )
                 return self._last_returned_call_from_interceptors
-            else:
-                self._last_returned_call_from_interceptors = StreamStreamCall(
-                    request_iterator,
-                    _timeout_to_deadline(client_call_details.timeout),
-                    client_call_details.metadata,
-                    client_call_details.credentials,
-                    client_call_details.wait_for_ready,
-                    self._channel,
-                    client_call_details.method,
-                    request_serializer,
-                    response_deserializer,
-                    self._loop,
-                )
-                return self._last_returned_call_from_interceptors
+            self._last_returned_call_from_interceptors = StreamStreamCall(
+                request_iterator,
+                _timeout_to_deadline(client_call_details.timeout),
+                client_call_details.metadata,
+                client_call_details.credentials,
+                client_call_details.wait_for_ready,
+                self._channel,
+                client_call_details.method,
+                request_serializer,
+                response_deserializer,
+                self._loop,
+            )
+            return self._last_returned_call_from_interceptors
 
         client_call_details = ClientCallDetails(
             method, timeout, metadata, credentials, wait_for_ready

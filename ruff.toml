@@ -58,10 +58,8 @@ ignore = [
     "PLR0913", # Too many arguments in function definition ({c_args} > {max_args})
     "PLR2004", # Magic value used in comparison, consider replacing {value} with a constant variable
     "PLW2901", # Outer {outer_kind} variable {name} overwritten by inner {inner_kind} target
-    "RET501",  # Do not explicitly return None in function if it is the only possible return value
     "RET503",  # Missing explicit return at the end of function able to return non-None value
     "RET504",  # Unnecessary assignment to {name} before return statement
-    "RET505",  # Unnecessary {branch} after return statement
     "RET506",  # Unnecessary {branch} after raise statement
     "RET507",  # Unnecessary {branch} after continue statement
     "RSE102",  # Unnecessary parentheses on raised exception

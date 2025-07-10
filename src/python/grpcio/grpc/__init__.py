@@ -1911,11 +1911,10 @@ def ssl_server_certificate_configuration(
                 ],
             )
         )
-    else:
-        error_msg = "At least one private key-certificate chain pair is required!"
-        raise ValueError(
-          error_msg
-        )
+    error_msg = "At least one private key-certificate chain pair is required!"
+    raise ValueError(
+      error_msg
+    )
 
 
 def dynamic_ssl_server_credentials(

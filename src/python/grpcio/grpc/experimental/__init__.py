@@ -106,14 +106,12 @@ def wrap_server_method_handler(wrapper, handler):
             # NOTE(lidiz) _replace is a public API:
             #   https://docs.python.org/dev/library/collections.html
             return handler._replace(unary_unary=wrapper(handler.unary_unary))
-        else:
-            return handler._replace(unary_stream=wrapper(handler.unary_stream))
-    elif not handler.response_streaming:
+        return handler._replace(unary_stream=wrapper(handler.unary_stream))
+    if not handler.response_streaming:
         return handler._replace(stream_unary=wrapper(handler.stream_unary))
-    else:
-        return handler._replace(
-            stream_stream=wrapper(handler.stream_stream)
-        )
+    return handler._replace(
+        stream_stream=wrapper(handler.stream_stream)
+    )
 
 
 __all__ = (
