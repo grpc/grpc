@@ -65,11 +65,14 @@ ignore = [
     "E722",    # Do not use bare except
     "E731",    # Do not assign a lambda expression, use a def
 <<<<<<< HEAD
+<<<<<<< HEAD
     "EM101",   # Exception must not use a string literal, assign to variable first
     "EM102",   # Exception must not use an f-string literal, assign to variable first
 =======
 >>>>>>> 2fffd49b13 (removed suppression for EM102)
     "EM103",   # Exception must not use a .format() string directly, assign to variable first
+=======
+>>>>>>> cbc85cffdd (removed suppression for EM103)
     "ERA001",  # Found commented-out code
     "F401",    # {name} imported but unused; consider using importlib.util.find_spec to test for availability
     "F403",    # from {name} import * used; unable to detect undefined names
