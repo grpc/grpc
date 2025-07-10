@@ -450,11 +450,13 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
       return GRPC_SECURITY_ERROR;
     }
     root_store = grpc_core::DefaultSslRootStore::GetRootStore();
+    options.root_cert_info = std::make_shared<RootCertInfo>(root_certs);
+  } else {
+    options.root_cert_info = std::move(root_cert_info);
   }
   bool has_key_cert_pair = pem_key_cert_pair != nullptr &&
                            pem_key_cert_pair->private_key != nullptr &&
                            pem_key_cert_pair->cert_chain != nullptr;
-  options.root_cert_info = std::make_shared<RootCertInfo>(root_certs);
   options.root_store = root_store;
   options.alpn_protocols =
       grpc_fill_alpn_protocol_strings(&options.num_alpn_protocols);
@@ -470,7 +472,6 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   options.max_tls_version = max_tls_version;
   options.crl_directory = crl_directory;
   options.crl_provider = std::move(crl_provider);
-  options.root_cert_info = std::move(root_cert_info);
   const tsi_result result =
       tsi_create_ssl_client_handshaker_factory_with_options(&options,
                                                             handshaker_factory);

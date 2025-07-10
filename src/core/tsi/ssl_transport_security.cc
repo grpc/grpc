@@ -2335,7 +2335,9 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
     tsi_ssl_client_handshaker_factory** factory) {
   tsi_ssl_client_handshaker_options options;
   options.pem_key_cert_pair = pem_key_cert_pair;
-  options.root_cert_info = std::make_shared<RootCertInfo>(pem_root_certs);
+  if (pem_root_certs != nullptr) {
+    options.root_cert_info = std::make_shared<RootCertInfo>(pem_root_certs);
+  }
   options.cipher_suites = cipher_suites;
   options.alpn_protocols = alpn_protocols;
   options.num_alpn_protocols = num_alpn_protocols;
@@ -2533,7 +2535,9 @@ tsi_result tsi_create_ssl_server_handshaker_factory_ex(
   tsi_ssl_server_handshaker_options options;
   options.pem_key_cert_pairs = pem_key_cert_pairs;
   options.num_key_cert_pairs = num_key_cert_pairs;
-  options.root_cert_info = std::make_shared<RootCertInfo>(pem_client_root_certs);
+  if (pem_client_root_certs != nullptr) {
+    options.root_cert_info = std::make_shared<RootCertInfo>(pem_client_root_certs);
+  }
   options.client_certificate_request = client_certificate_request;
   options.cipher_suites = cipher_suites;
   options.alpn_protocols = alpn_protocols;
