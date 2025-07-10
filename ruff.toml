@@ -36,7 +36,6 @@ ignore = [
     "D413",    # Missing blank line after last section ("{name}")
     "D415",    # First line should end with a period, question mark, or exclamation point
     "DTZ005",  # datetime.datetime.now() called without a tz argument
-    "E402",    # Module level import not at top of cell
     "E501",    # Line too long ({width} > {limit})
     "E713",    # Test for membership should be not in
     "E722",    # Do not use bare except
