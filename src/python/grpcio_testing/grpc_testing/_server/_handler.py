@@ -118,8 +118,9 @@ class _Handler(Handler):
                     if self._code is None:
                         self._condition.wait()
                     else:
+                        error_msg = "No initial metadata despite status code!"
                         raise ValueError(
-                            "No initial metadata despite status code!"
+                            error_msg
                         )
                 else:
                     return self._initial_metadata
@@ -139,7 +140,8 @@ class _Handler(Handler):
                 elif self._code is None:
                     self._condition.wait()
                 else:
-                    raise ValueError("No more responses!")
+                    error_msg = "No more responses!"
+                    raise ValueError(error_msg)
 
     def requests_closed(self):
         with self._condition:
@@ -162,7 +164,8 @@ class _Handler(Handler):
         with self._condition:
             while True:
                 if self._code is _CLIENT_INACTIVE:
-                    raise ValueError("Huh? Cancelled but wanting status?")
+                    error_msg = "Huh? Cancelled but wanting status?"
+                    raise ValueError(error_msg)
                 elif self._code is None:
                     self._condition.wait()
                 else:
@@ -180,7 +183,8 @@ class _Handler(Handler):
         with self._condition:
             while True:
                 if self._code is _CLIENT_INACTIVE:
-                    raise ValueError("Huh? Cancelled but wanting status?")
+                    error_msg = "Huh? Cancelled but wanting status?"
+                    raise ValueError(error_msg)
                 elif self._code is None:
                     self._condition.wait()
                 else:

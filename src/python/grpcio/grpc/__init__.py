@@ -1839,13 +1839,14 @@ def ssl_server_credentials(
       object is an argument to add_secure_port() method during server setup.
     """
     if not private_key_certificate_chain_pairs:
+        error_msg = "At least one private key-certificate chain pair is required!"
         raise ValueError(
-            "At least one private key-certificate chain pair is required!"
+          error_msg
         )
     elif require_client_auth and root_certificates is None:
+        error_msg = "Illegal to require client auth without providing root certificates!"
         raise ValueError(
-            "Illegal to require client auth without providing root"
-            " certificates!"
+          error_msg
         )
     else:
         return ServerCredentials(
@@ -1911,8 +1912,9 @@ def ssl_server_certificate_configuration(
             )
         )
     else:
+        error_msg = "At least one private key-certificate chain pair is required!"
         raise ValueError(
-            "At least one private key-certificate chain pair is required!"
+          error_msg
         )
 
 

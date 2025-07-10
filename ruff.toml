@@ -38,7 +38,6 @@ ignore = [
     "DTZ005",  # datetime.datetime.now() called without a tz argument
     "E501",    # Line too long ({width} > {limit})
     "E731",    # Do not assign a lambda expression, use a def
-    "EM101",   # Exception must not use a string literal, assign to variable first
     "EM102",   # Exception must not use an f-string literal, assign to variable first
     "EM103",   # Exception must not use a .format() string directly, assign to variable first
     "ERA001",  # Found commented-out code
