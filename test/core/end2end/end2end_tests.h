@@ -137,17 +137,31 @@ struct CoreTestConfiguration {
       const ChannelArgs& client_args, const ChannelArgs& server_args)>
       create_fixture;
 
-  // To enable all tests, pass "*" as include_test_suites.
-  // To disable all tests, pass "" as include_test_suites.
-  // To enable sepcific tests pass a `|` separated list to
-  // include_test_suites.
+  // Final Test List = (All tests in include_test_suites)
+  //                   + (Tests in include_specific_tests)
+  //                   - (Tests in exclude_specific_tests)
+  //
+  // include_test_suites
+  // To enable all test suites, pass "*" as include_test_suites.
+  // To avoid adding all suites, pass "" as include_test_suites.
+  // To enable sepcific suites pass a `|` separated list to include_test_suites.
+  //
+  // include_specific_tests
   // If you want to include a specific test, then add the name to
   // include_specific_tests. Otherwise leave include_specific_tests empty.
+  // include_specific_tests should be used when we want to enable less
+  // than half of the tests that are present in the entire test suite.
+  //
+  // exclude_specific_tests
   // If you want to exclude a specific test, then add the name to
   // exclude_specific_tests. Otherwise leave exclude_specific_tests empty.
+  // exclude_specific_tests should be used when we want to include more
+  // than half of the tests that are present in the entire test suite.
   //
   // Example include_test_suites = "SuiteName1|SuiteName3|SuiteName5"
+  // Example include_specific_tests = "SuiteName10.Test4|SuiteName11.Test8"
   // Example exclude_specific_tests = "SuiteName1.Test4|SuiteName3.Test8"
+  //
   absl::string_view include_test_suites = "*";
   absl::string_view include_specific_tests;
   absl::string_view exclude_specific_tests;

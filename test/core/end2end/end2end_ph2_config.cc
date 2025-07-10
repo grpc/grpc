@@ -138,4 +138,5 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
   }
   return list_of_configs;
 }
+
 }  // namespace grpc_core

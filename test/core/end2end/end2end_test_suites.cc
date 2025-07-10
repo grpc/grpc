@@ -139,7 +139,8 @@ class ConfigQuery {
       exclude_features_ |= FEATURE_MASK_DO_NOT_GTEST;
     }
     exclude_experiments_except_for_configs_.insert(
-        {ExperimentIds::kExperimentIdPromiseBasedHttp2ClientTransport,
+        {grpc_core::ExperimentIds::
+             kExperimentIdPromiseBasedHttp2ClientTransport,
          {GRPC_HTTP2_PH2_CLIENT_TEST_SUITE}});
   }
   ConfigQuery(const ConfigQuery&) = delete;
@@ -171,51 +172,34 @@ class ConfigQuery {
   auto Run() const {
     std::vector<const CoreTestConfiguration*> out;
     for (const CoreTestConfiguration& config : Configs()) {
-      if (IsAllowed(config)) {
-        out.push_back(&config);
+      if ((config.feature_mask & enforce_features_) == enforce_features_ &&
+          (config.feature_mask & exclude_features_) == 0) {
+        bool allowed = allowed_names_.empty();
+        for (const std::regex& re : allowed_names_) {
+          if (std::regex_match(config.name, re)) {
+            allowed = true;
+            break;
+          }
+        }
+        for (const std::regex& re : excluded_names_) {
+          if (std::regex_match(config.name, re)) {
+            allowed = false;
+            break;
+          }
+        }
+        if (allowed && CanConfigRunWithExperiment(config)) {
+          out.push_back(&config);
+        }
       }
     }
     return out;
   }
 
  private:
-  bool IsAllowed(const CoreTestConfiguration& config) const {
-    bool allowed = false;
-    if ((config.feature_mask & enforce_features_) == enforce_features_ &&
-        (config.feature_mask & exclude_features_) == 0) {
-      allowed = allowed_names_.empty();
-      for (const std::regex& re : allowed_names_) {
-        if (std::regex_match(config.name, re)) {
-          allowed = true;
-          break;
-        }
-      }
-      allowed = allowed && CanConfigRunWithExperiment(config) &&
-                IsConfigEnabledForTestSuite(config);
-    }
-    GRPC_END2END_TEST_SUITE_VLOG << "IsAllowed " << allowed
-                                 << " {config : " << config.name << " }";
-    return allowed;
-  }
-
-  bool IsConfigEnabledForTestSuite(const CoreTestConfiguration& config) const {
-    for (const std::regex& re : excluded_names_) {
-      if (std::regex_match(config.name, re)) {
-        GRPC_END2END_TEST_SUITE_VLOG
-            << "IsConfigEnabledForTestSuite false {config : " << config.name
-            << " }";
-        return false;
-      }
-    }
-    GRPC_END2END_TEST_SUITE_VLOG
-        << "IsConfigEnabledForTestSuite true {config : " << config.name << " }";
-    return true;
-  }
-
   bool CanConfigRunWithExperiment(const CoreTestConfiguration& config) const {
     for (const auto& [experiment_id, configs] :
          exclude_experiments_except_for_configs_) {
-      if (IsExperimentEnabled(experiment_id) &&
+      if (grpc_core::IsExperimentEnabled(experiment_id) &&
           !configs.contains(config.name)) {
         GRPC_END2END_TEST_SUITE_VLOG
             << "CanConfigRunWithExperiment false {config : " << config.name
@@ -244,7 +228,8 @@ class ConfigQuery {
   // If there is a new feature with its own experiment that we want to enable
   // only for a few Configs, we can list that here. That will make sure that
   // only the selected E2E test configs are run with the new experiment on.
-  absl::flat_hash_map<ExperimentIds, absl::flat_hash_set<absl::string_view>>
+  absl::flat_hash_map<grpc_core::ExperimentIds,
+                      absl::flat_hash_set<absl::string_view>>
       exclude_experiments_except_for_configs_;
 };
 
