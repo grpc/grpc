@@ -46,7 +46,6 @@ ignore = [
     "FBT002",  # Boolean default positional argument in function definition
     "FBT003",  # Boolean positional value in function call
     "FIX002",  # Line contains TODO, consider resolving the issue
-    "FIX004",  # Line contains HACK, consider resolving the issue
     "FLY002",  # Consider {expression} instead of string join
     "FURB188", # Prefer str.removeprefix() over conditionally replacing with slice.
     "G003",    # Logging statement uses +

@@ -37,7 +37,7 @@ class GoogleCallCredentials(grpc.AuthMetadataPlugin):
     # TODO(xuanwn): Give credentials an actual type.
     def __init__(self, credentials: Any):
         self._credentials = credentials
-        # Hack to determine if these are JWT creds and we need to pass
+        # Hack to determine if these are JWT creds and we need to pass # noqa: FIX004
         # additional_claims when getting a token
         self._is_jwt = (
             "additional_claims"
