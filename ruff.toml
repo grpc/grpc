@@ -61,7 +61,6 @@ ignore = [
     "RET503",  # Missing explicit return at the end of function able to return non-None value
     "RET504",  # Unnecessary assignment to {name} before return statement
     "RUF005",  # Consider {expression} instead of concatenation
-    "RUF013",  # PEP 484 prohibits implicit Optional
     "RUF022",  # __all__ is not sorted
     "RUF023",  # {}.__slots__ is not sorted
     "S101",    # Use of assert detected
