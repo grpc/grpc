@@ -615,9 +615,9 @@ class _SingleThreadedRendezvous(
         del timeout
         with self._state.condition:
             if not self._is_complete():
+                error_msg = "_SingleThreadedRendezvous only supports result() when the RPC is complete."
                 raise grpc.experimental.UsageError(
-                    "_SingleThreadedRendezvous only supports result() when the"
-                    " RPC is complete."
+                    error_msg
                 )
             if self._state.code is grpc.StatusCode.OK:
                 return self._state.response
@@ -638,9 +638,9 @@ class _SingleThreadedRendezvous(
         del timeout
         with self._state.condition:
             if not self._is_complete():
+                error_msg = "_SingleThreadedRendezvous only supports exception() when the RPC is complete."
                 raise grpc.experimental.UsageError(
-                    "_SingleThreadedRendezvous only supports exception() when"
-                    " the RPC is complete."
+                    error_msg
                 )
             if self._state.code is grpc.StatusCode.OK:
                 return None
@@ -663,9 +663,9 @@ class _SingleThreadedRendezvous(
         del timeout
         with self._state.condition:
             if not self._is_complete():
+                msg = "_SingleThreadedRendezvous only supports traceback() when the RPC is complete."
                 raise grpc.experimental.UsageError(
-                    "_SingleThreadedRendezvous only supports traceback() when"
-                    " the RPC is complete."
+                    msg
                 )
             if self._state.code is grpc.StatusCode.OK:
                 return None
@@ -698,8 +698,9 @@ class _SingleThreadedRendezvous(
         """See grpc.Call.trailing_metadata"""
         with self._state.condition:
             if self._state.trailing_metadata is None:
+                error_msg = "Cannot get trailing metadata until RPC is completed."
                 raise grpc.experimental.UsageError(
-                    "Cannot get trailing metadata until RPC is completed."
+                    error_msg
                 )
             return self._state.trailing_metadata
 
@@ -707,8 +708,9 @@ class _SingleThreadedRendezvous(
         """See grpc.Call.code"""
         with self._state.condition:
             if self._state.code is None:
+                error_msg = "Cannot get code until RPC is completed."
                 raise grpc.experimental.UsageError(
-                    "Cannot get code until RPC is completed."
+                    error_msg
                 )
             return self._state.code
 
@@ -716,8 +718,9 @@ class _SingleThreadedRendezvous(
         """See grpc.Call.details"""
         with self._state.condition:
             if self._state.details is None:
+                error_msg = "Cannot get details until RPC is completed."
                 raise grpc.experimental.UsageError(
-                    "Cannot get details until RPC is completed."
+                    error_msg
                 )
             return _common.decode(self._state.details)
 
@@ -778,8 +781,9 @@ class _SingleThreadedRendezvous(
     def debug_error_string(self) -> Optional[str]:
         with self._state.condition:
             if self._state.debug_error_string is None:
+                error_msg = "Cannot get debug error string until RPC is completed."
                 raise grpc.experimental.UsageError(
-                    "Cannot get debug error string until RPC is completed."
+                    error_msg
                 )
             return _common.decode(self._state.debug_error_string)
 
