@@ -330,7 +330,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithGoodPaths) {
   FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
-                                          CA_CERT_PATH, 1);
+                                          CA_CERT_PATH,
+                                          /*spiffe_bundle_map_path=*/"", 1);
   // Watcher watching both root and identity certs.
   WatcherState* watcher_state_1 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
@@ -358,14 +359,16 @@ TEST_F(GrpcTlsCertificateProviderTest,
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithGoodPathsAndCredentialValidation) {
   FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
-                                          CA_CERT_PATH, 1);
+                                          CA_CERT_PATH,
+                                          /*spiffe_bundle_map_path=*/"", 1);
   EXPECT_EQ(provider.ValidateCredentials(), absl::OkStatus());
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithMalformedRootCertificate) {
   FileWatcherCertificateProvider provider(SERVER_KEY_PATH_2, SERVER_CERT_PATH_2,
-                                          MALFORMED_CERT_PATH, 1);
+                                          MALFORMED_CERT_PATH,
+                                          /*spiffe_bundle_map_path=*/"", 1);
   EXPECT_EQ(provider.ValidateCredentials(),
             absl::FailedPreconditionError(
                 "Failed to parse root certificates as PEM: Invalid PEM."));
@@ -373,8 +376,9 @@ TEST_F(GrpcTlsCertificateProviderTest,
 
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithMalformedIdentityCertificate) {
-  FileWatcherCertificateProvider provider(
-      SERVER_KEY_PATH_2, MALFORMED_CERT_PATH, CA_CERT_PATH_2, 1);
+  FileWatcherCertificateProvider provider(SERVER_KEY_PATH_2,
+                                          MALFORMED_CERT_PATH, CA_CERT_PATH_2,
+                                          /*spiffe_bundle_map_path=*/"", 1);
   EXPECT_EQ(provider.ValidateCredentials(),
             absl::FailedPreconditionError(
                 "Failed to parse certificate chain as PEM: Invalid PEM."));
@@ -382,8 +386,9 @@ TEST_F(GrpcTlsCertificateProviderTest,
 
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithMalformedIdentityKey) {
-  FileWatcherCertificateProvider provider(
-      MALFORMED_KEY_PATH, SERVER_CERT_PATH_2, CA_CERT_PATH_2, 1);
+  FileWatcherCertificateProvider provider(MALFORMED_KEY_PATH,
+                                          SERVER_CERT_PATH_2, CA_CERT_PATH_2,
+                                          /*spiffe_bundle_map_path=*/"", 1);
   EXPECT_EQ(provider.ValidateCredentials(),
             absl::NotFoundError(
                 "Failed to parse private key as PEM: No private key found."));
@@ -392,7 +397,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithBadPaths) {
   FileWatcherCertificateProvider provider(INVALID_PATH, INVALID_PATH,
-                                          INVALID_PATH, 1);
+                                          INVALID_PATH,
+                                          /*spiffe_bundle_map_path=*/"", 1);
   // Watcher watching both root and identity certs.
   WatcherState* watcher_state_1 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
@@ -425,9 +431,9 @@ TEST_F(GrpcTlsCertificateProviderTest,
   TmpFile tmp_identity_key(private_key_);
   TmpFile tmp_identity_cert(cert_chain_);
   // Create FileWatcherCertificateProvider.
-  FileWatcherCertificateProvider provider(tmp_identity_key.name(),
-                                          tmp_identity_cert.name(),
-                                          tmp_root_cert.name(), 1);
+  FileWatcherCertificateProvider provider(
+      tmp_identity_key.name(), tmp_identity_cert.name(), tmp_root_cert.name(),
+      /*spiffe_bundle_map_path=*/"", 1);
   WatcherState* watcher_state_1 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   // Expect to see the credential data.
@@ -460,9 +466,9 @@ TEST_F(GrpcTlsCertificateProviderTest,
   TmpFile tmp_identity_key(private_key_);
   TmpFile tmp_identity_cert(cert_chain_);
   // Create FileWatcherCertificateProvider.
-  FileWatcherCertificateProvider provider(tmp_identity_key.name(),
-                                          tmp_identity_cert.name(),
-                                          tmp_root_cert.name(), 1);
+  FileWatcherCertificateProvider provider(
+      tmp_identity_key.name(), tmp_identity_cert.name(), tmp_root_cert.name(),
+      /*spiffe_bundle_map_path=*/"", 1);
   WatcherState* watcher_state_1 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   // Expect to see the credential data.
@@ -493,9 +499,9 @@ TEST_F(GrpcTlsCertificateProviderTest,
   TmpFile tmp_identity_key(private_key_);
   TmpFile tmp_identity_cert(cert_chain_);
   // Create FileWatcherCertificateProvider.
-  FileWatcherCertificateProvider provider(tmp_identity_key.name(),
-                                          tmp_identity_cert.name(),
-                                          tmp_root_cert.name(), 1);
+  FileWatcherCertificateProvider provider(
+      tmp_identity_key.name(), tmp_identity_cert.name(), tmp_root_cert.name(),
+      /*spiffe_bundle_map_path=*/"", 1);
   WatcherState* watcher_state_1 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   // Expect to see the credential data.
@@ -527,9 +533,9 @@ TEST_F(GrpcTlsCertificateProviderTest,
   auto tmp_identity_key = std::make_unique<TmpFile>(private_key_);
   auto tmp_identity_cert = std::make_unique<TmpFile>(cert_chain_);
   // Create FileWatcherCertificateProvider.
-  FileWatcherCertificateProvider provider(tmp_identity_key->name(),
-                                          tmp_identity_cert->name(),
-                                          tmp_root_cert->name(), 1);
+  FileWatcherCertificateProvider provider(
+      tmp_identity_key->name(), tmp_identity_cert->name(),
+      tmp_root_cert->name(), /*spiffe_bundle_map_path=*/"", 1);
   WatcherState* watcher_state_1 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   // The initial data is all good, so we expect to have successful credential
@@ -561,9 +567,9 @@ TEST_F(GrpcTlsCertificateProviderTest,
   TmpFile tmp_identity_key(private_key_);
   TmpFile tmp_identity_cert(cert_chain_);
   // Create FileWatcherCertificateProvider.
-  FileWatcherCertificateProvider provider(tmp_identity_key.name(),
-                                          tmp_identity_cert.name(),
-                                          tmp_root_cert->name(), 1);
+  FileWatcherCertificateProvider provider(
+      tmp_identity_key.name(), tmp_identity_cert.name(), tmp_root_cert->name(),
+      /*spiffe_bundle_map_path=*/"", 1);
   WatcherState* watcher_state_1 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   // The initial data is all good, so we expect to have successful credential
@@ -593,9 +599,9 @@ TEST_F(GrpcTlsCertificateProviderTest,
   auto tmp_identity_key = std::make_unique<TmpFile>(private_key_);
   auto tmp_identity_cert = std::make_unique<TmpFile>(cert_chain_);
   // Create FileWatcherCertificateProvider.
-  FileWatcherCertificateProvider provider(tmp_identity_key->name(),
-                                          tmp_identity_cert->name(),
-                                          tmp_root_cert.name(), 1);
+  FileWatcherCertificateProvider provider(
+      tmp_identity_key->name(), tmp_identity_cert->name(), tmp_root_cert.name(),
+      /*spiffe_bundle_map_path=*/"", 1);
   WatcherState* watcher_state_1 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   // The initial data is all good, so we expect to have successful credential
@@ -622,7 +628,8 @@ TEST_F(GrpcTlsCertificateProviderTest,
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderTooShortRefreshIntervalIsOverwritten) {
   FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
-                                          CA_CERT_PATH, 0);
+                                          CA_CERT_PATH,
+                                          /*spiffe_bundle_map_path=*/"", 0);
   ASSERT_THAT(provider.TestOnlyGetRefreshIntervalSecond(), 1);
 }
 

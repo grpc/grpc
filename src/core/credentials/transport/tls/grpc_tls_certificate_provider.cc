@@ -188,13 +188,6 @@ static constexpr int64_t kMinimumFileWatcherRefreshIntervalSeconds = 1;
 
 FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     std::string private_key_path, std::string identity_certificate_path,
-    std::string root_cert_path, int64_t refresh_interval_sec)
-    : FileWatcherCertificateProvider(
-          private_key_path, identity_certificate_path, root_cert_path,
-          /*spiffe_bundle_map_path=*/"", refresh_interval_sec) {}
-
-FileWatcherCertificateProvider::FileWatcherCertificateProvider(
-    std::string private_key_path, std::string identity_certificate_path,
     std::string root_cert_path, std::string spiffe_bundle_map_path,
     int64_t refresh_interval_sec)
     : private_key_path_(std::move(private_key_path)),
@@ -519,7 +512,7 @@ grpc_tls_certificate_provider_file_watcher_create(
   return new grpc_core::FileWatcherCertificateProvider(
       private_key_path == nullptr ? "" : private_key_path,
       identity_certificate_path == nullptr ? "" : identity_certificate_path,
-      root_cert_path == nullptr ? "" : root_cert_path, refresh_interval_sec);
+      root_cert_path == nullptr ? "" : root_cert_path, /*spiffe_bundle_map_path=*/"", refresh_interval_sec);
 }
 
 void grpc_tls_certificate_provider_release(

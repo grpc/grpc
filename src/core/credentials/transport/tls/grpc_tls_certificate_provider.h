@@ -135,13 +135,6 @@ class StaticDataCertificateProvider final
 class FileWatcherCertificateProvider final
     : public grpc_tls_certificate_provider {
  public:
-  // TODO(gtcooke94) - Remove duplicate ctors and change all instances to the
-  // ctor with spiffe_bundle_map_path
-  FileWatcherCertificateProvider(std::string private_key_path,
-                                 std::string identity_certificate_path,
-                                 std::string root_cert_path,
-                                 int64_t refresh_interval_sec);
-
   FileWatcherCertificateProvider(std::string private_key_path,
                                  std::string identity_certificate_path,
                                  std::string root_cert_path,

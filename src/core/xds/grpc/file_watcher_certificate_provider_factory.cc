@@ -154,6 +154,7 @@ FileWatcherCertificateProviderFactory::CreateCertificateProvider(
       file_watcher_config->private_key_file(),
       file_watcher_config->identity_cert_file(),
       file_watcher_config->root_cert_file(),
+      file_watcher_config->spiffe_bundle_map_file(),
       file_watcher_config->refresh_interval().millis() / GPR_MS_PER_SEC);
 }
 
