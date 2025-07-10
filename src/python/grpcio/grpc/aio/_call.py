@@ -99,7 +99,6 @@ class AioRpcError(grpc.RpcError):
             Server.
           trailing_metadata: Optional metadata that could be sent by the Server.
         """
-
         super().__init__()
         self._code = code
         self._details = details

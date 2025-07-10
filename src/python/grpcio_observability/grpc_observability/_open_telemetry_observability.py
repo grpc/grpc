@@ -149,7 +149,6 @@ class _OpenTelemetryPlugin:
 
     def get_client_exchange_labels(self) -> Dict[str, AnyStr]:
         """Get labels used for client side Metadata Exchange."""
-
         labels_for_exchange = {}
         for plugin_option in self._enabled_client_plugin_options:
             if hasattr(plugin_option, "get_label_injector") and hasattr(
