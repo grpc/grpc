@@ -30,24 +30,24 @@ namespace grpc_core {
 // XdsMatcher
 //
 
-bool XdsMatcher::OnMatch::Equal(const OnMatch& other) const {
+bool XdsMatcher::OnMatch::operator==(const OnMatch& other) const {
   if (keep_matching != other.keep_matching) return false;
   if (action.index() != other.action.index()) return false;
   return Match(
       action,
-      [&](const std::shared_ptr<Action>& action) {
+      [&](const std::unique_ptr<Action>& action) {
         const auto& other_action =
-            *std::get_if<std::shared_ptr<Action>>(&other.action);
+            std::get<std::unique_ptr<Action>>(other.action);
         if (action == nullptr) return other_action == nullptr;
         if (other_action == nullptr) return false;
-        return action->Equal(*other_action);
+        return action->Equals(*other_action);
       },
-      [&](const std::shared_ptr<XdsMatcher>& matcher) {
+      [&](const std::unique_ptr<XdsMatcher>& matcher) {
         const auto& other_matcher =
-            *std::get_if<std::shared_ptr<XdsMatcher>>(&other.action);
+            std::get<std::unique_ptr<XdsMatcher>>(other.action);
         if (matcher == nullptr) return other_matcher == nullptr;
         if (other_matcher == nullptr) return false;
-        return matcher->Equal(*other_matcher);
+        return matcher->Equals(*other_matcher);
       });
 }
 
@@ -55,10 +55,10 @@ std::string XdsMatcher::OnMatch::ToString() const {
   std::vector<std::string> parts;
   parts.push_back(Match(
       action,
-      [](const std::shared_ptr<Action>& action) {
-        return absl::StrCat("action_type_url=", action->type_url());
+      [](const std::unique_ptr<Action>& action) {
+        return absl::StrCat("action=", action->ToString());
       },
-      [](const std::shared_ptr<XdsMatcher>& matcher) {
+      [](const std::unique_ptr<XdsMatcher>& matcher) {
         return absl::StrCat("matcher=", matcher->ToString());
       }));
   parts.push_back(
@@ -73,11 +73,11 @@ bool XdsMatcher::OnMatch::FindMatches(const MatchContext& context,
   // method for accessing fields of std::variant<>.
   return Match(
       action,
-      [&](const std::shared_ptr<Action>& action) {
+      [&](const std::unique_ptr<Action>& action) {
         result.push_back(action.get());
         return !keep_matching;
       },
-      [&](const std::shared_ptr<XdsMatcher>& matcher) {
+      [&](const std::unique_ptr<XdsMatcher>& matcher) {
         return matcher->FindMatches(context, result) && !keep_matching;
       });
 }
@@ -86,21 +86,14 @@ bool XdsMatcher::OnMatch::FindMatches(const MatchContext& context,
 // XdsMatcherList
 //
 
-bool XdsMatcherList::Equal(const XdsMatcher& other) const {
-  const auto* o = DownCast<const XdsMatcherList*>(&other);
-  if (o == nullptr) return false;
-  if (matchers_.size() != o->matchers_.size()) return false;
+bool XdsMatcherList::Equals(const XdsMatcher& other) const {
+  if (type() != other.type()) return false;
+  const auto& o = DownCast<const XdsMatcherList&>(other);
+  if (matchers_.size() != o.matchers_.size()) return false;
   for (size_t i = 0; i < matchers_.size(); ++i) {
-    if (!matchers_[i].predicate->Equal(*o->matchers_[i].predicate)) {
-      return false;
-    }
-    if (!matchers_[i].on_match.Equal(o->matchers_[i].on_match)) return false;
+    if (matchers_[i] != o.matchers_[i]) return false;
   }
-  if (on_no_match_.has_value() != o->on_no_match_.has_value()) return false;
-  if (on_no_match_.has_value()) {
-    if (!on_no_match_->Equal(*o->on_no_match_)) return false;
-  }
-  return true;
+  return on_no_match_ == o.on_no_match_;
 }
 
 std::string XdsMatcherList::ToString() const {
@@ -127,12 +120,12 @@ bool XdsMatcherList::FindMatches(const MatchContext& context,
   return false;
 }
 
-bool XdsMatcherList::AndPredicate::Equal(const Predicate& other) const {
-  const auto* o = DownCast<const AndPredicate*>(&other);
-  if (o == nullptr) return false;
-  if (predicates_.size() != o->predicates_.size()) return false;
+bool XdsMatcherList::AndPredicate::Equals(const Predicate& other) const {
+  if (type() != other.type()) return false;
+  const auto& o = DownCast<const AndPredicate&>(other);
+  if (predicates_.size() != o.predicates_.size()) return false;
   for (size_t i = 0; i < predicates_.size(); ++i) {
-    if (!predicates_[i]->Equal(*o->predicates_[i])) return false;
+    if (!predicates_[i]->Equals(*o.predicates_[i])) return false;
   }
   return true;
 }
@@ -153,12 +146,12 @@ bool XdsMatcherList::AndPredicate::Match(
   return true;
 }
 
-bool XdsMatcherList::OrPredicate::Equal(const Predicate& other) const {
-  const auto* o = DownCast<const OrPredicate*>(&other);
-  if (o == nullptr) return false;
-  if (predicates_.size() != o->predicates_.size()) return false;
+bool XdsMatcherList::OrPredicate::Equals(const Predicate& other) const {
+  if (type() != other.type()) return false;
+  const auto& o = DownCast<const OrPredicate&>(other);
+  if (predicates_.size() != o.predicates_.size()) return false;
   for (size_t i = 0; i < predicates_.size(); ++i) {
-    if (!predicates_[i]->Equal(*o->predicates_[i])) return false;
+    if (!predicates_[i]->Equals(*o.predicates_[i])) return false;
   }
   return true;
 }
@@ -183,21 +176,12 @@ bool XdsMatcherList::OrPredicate::Match(
 // XdsMatcherExactMap
 //
 
-bool XdsMatcherExactMap::Equal(const XdsMatcher& other) const {
-  const auto* o = DownCast<const XdsMatcherExactMap*>(&other);
-  if (o == nullptr) return false;
-  if (!input_->Equal(*o->input_)) return false;
-  if (map_.size() != o->map_.size()) return false;
-  for (const auto& pair : map_) {
-    auto it = o->map_.find(pair.first);
-    if (it == o->map_.end()) return false;
-    if (!pair.second.Equal(it->second)) return false;
-  }
-  if (on_no_match_.has_value() != o->on_no_match_.has_value()) return false;
-  if (on_no_match_.has_value()) {
-    if (!on_no_match_->Equal(*o->on_no_match_)) return false;
-  }
-  return true;
+bool XdsMatcherExactMap::Equals(const XdsMatcher& other) const {
+  if (type() != other.type()) return false;
+  const auto& o = DownCast<const XdsMatcherExactMap&>(other);
+  if (!input_->Equals(*o.input_)) return false;
+  if (map_ != o.map_) return false;
+  return on_no_match_ == o.on_no_match_;
 }
 
 std::string XdsMatcherExactMap::ToString() const {
@@ -233,29 +217,30 @@ bool XdsMatcherExactMap::FindMatches(const MatchContext& context,
 // XdsMatcherPrefixMap
 //
 
-bool XdsMatcherPrefixMap::Equal(const XdsMatcher& other) const {
-  const auto* o = DownCast<const XdsMatcherPrefixMap*>(&other);
-  if (o == nullptr) return false;
-  if (!input_->Equal(*o->input_)) return false;
-  if (map_.size() != o->map_.size()) return false;
-  for (const auto& pair : map_) {
-    auto it = o->map_.find(pair.first);
-    if (it == o->map_.end()) return false;
-    if (!pair.second.Equal(it->second)) return false;
+XdsMatcherPrefixMap::XdsMatcherPrefixMap(
+    std::unique_ptr<InputValue<absl::string_view>> input,
+    absl::flat_hash_map<std::string, XdsMatcher::OnMatch> map,
+    std::optional<OnMatch> on_no_match)
+    : input_(std::move(input)), on_no_match_(std::move(on_no_match)) {
+  for (auto& [key, value] : map) {
+    root_.AddNode(key, std::move(value));
   }
-  if (on_no_match_.has_value() != o->on_no_match_.has_value()) return false;
-  if (on_no_match_.has_value()) {
-    if (!on_no_match_->Equal(*o->on_no_match_)) return false;
-  }
-  return true;
+}
+
+bool XdsMatcherPrefixMap::Equals(const XdsMatcher& other) const {
+  if (type() != other.type()) return false;
+  const auto& o = DownCast<const XdsMatcherPrefixMap&>(other);
+  if (!input_->Equals(*o.input_)) return false;
+  if (root_ != o.root_) return false;
+  return on_no_match_ == o.on_no_match_;
 }
 
 std::string XdsMatcherPrefixMap::ToString() const {
   std::vector<std::string> map_parts;
-  for (const auto& pair : map_) {
+  root_.ForEach([&](const absl::string_view key, const OnMatch& value) {
     map_parts.push_back(
-        absl::StrCat("{\"", pair.first, "\": ", pair.second.ToString(), "}"));
-  }
+        absl::StrCat("{\"", key, "\": ", value.ToString(), "}"));
+  });
   std::sort(map_parts.begin(), map_parts.end());
   std::vector<std::string> parts;
   parts.push_back(absl::StrCat("input=", input_->ToString()));
@@ -266,23 +251,21 @@ std::string XdsMatcherPrefixMap::ToString() const {
   return absl::StrCat("XdsMatcherPrefixMap{", absl::StrJoin(parts, ", "), "}");
 }
 
-void XdsMatcherPrefixMap::PopulateTrie(
-    absl::flat_hash_map<std::string, XdsMatcher::OnMatch> map) {
-  for (auto& [key, value] : map) {
-    root_.AddNode(key, std::move(value));
-  }
-}
-
 bool XdsMatcherPrefixMap::FindMatches(const MatchContext& context,
                                       Result& result) const {
   auto input = input_->GetValue(context);
-  auto value = root_.GetAllPrefixMatches(input.value_or(""));
-  if (!value.empty()) {
-    // Reverse iterate the matches from more specific to less.
-    for (auto it = value.rbegin(); it != value.rend(); ++it) {
-      // if keep_matching is set FindMatches will return false but Action would
-      // be added to result. In this case loop would continue.
-      if ((*it)->FindMatches(context, result)) return true;
+  std::vector<const OnMatch*> on_match_results;
+  root_.ForEachPrefixMatch(input.value_or(""), [&](const OnMatch& on_match) {
+    if (!on_match.keep_matching) {
+      // Don't need previous entries if we can use this one.
+      on_match_results.clear();
+    }
+    on_match_results.push_back(&on_match);
+  });
+  for (auto it = on_match_results.rbegin(); it != on_match_results.rend();
+       ++it) {
+    if ((*it)->FindMatches(context, result)) {
+      return true;
     }
   }
   if (on_no_match_.has_value()) {

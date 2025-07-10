@@ -58,7 +58,7 @@ class TrieLookupTree {
       node = it->second.get();
     }
     if (node->value.has_value()) {
-      return &node->value.value();
+      return &*node->value;
     }
     return nullptr;
   }
@@ -67,7 +67,7 @@ class TrieLookupTree {
     const auto* node = root_.get();
     const Value* matched_value = nullptr;
     if (node->value.has_value()) {
-      matched_value = &node->value.value();
+      matched_value = &*node->value;
     }
     for (auto c : key) {
       auto it = node->child.find(c);
@@ -76,26 +76,67 @@ class TrieLookupTree {
       }
       node = it->second.get();
       if (node->value.has_value()) {
-        matched_value = &node->value.value();
+        matched_value = &*node->value;
       }
     }
     return matched_value;
   }
-  // Return all prefix matches
-  std::vector<const Value*> GetAllPrefixMatches(absl::string_view key) const {
-    std::vector<const Value*> values;
+  // Envokes cb for least to most matching prefix
+  void ForEachPrefixMatch(absl::string_view key,
+                          absl::FunctionRef<void(const Value&)> cb) const {
     const auto* node = root_.get();
     for (auto c : key) {
       auto it = node->child.find(c);
       if (it == node->child.end()) {
-        return values;
+        return;
       }
       node = it->second.get();
       if (node->value.has_value()) {
-        values.push_back(&node->value.value());
+        cb(*node->value);
       }
     }
-    return values;
+  }
+  // Envokes cb for every value present in trie
+  // Useful for ToString Method to dump Trie
+  // Format of cb "void(key, value)"
+  void ForEach(
+      absl::FunctionRef<void(absl::string_view, const Value&)> cb) const {
+    if (root_ == nullptr) return;
+    std::string key;
+    ForEachRecursive(root_.get(), key, cb);
+  }
+  // Check for equality
+  bool operator==(const TrieLookupTree& other) const {
+    if (this == &other) return true;
+    if (root_ == nullptr || other.root_ == nullptr) {
+      return root_ == other.root_;
+    }
+    std::vector<std::pair<const TrieNode*, const TrieNode*>> nodes_to_compare;
+    nodes_to_compare.emplace_back(root_.get(), other.root_.get());
+    while (!nodes_to_compare.empty()) {
+      auto [node1, node2] = nodes_to_compare.back();
+      nodes_to_compare.pop_back();
+      if (node1->value.has_value() != node2->value.has_value()) {
+        return false;
+      }
+      if (node1->value.has_value()) {
+        if (!(*node1->value == *node2->value)) return false;
+      }
+      if (node1->child.size() != node2->child.size()) {
+        return false;
+      }
+      for (const auto& [key, child1_ptr] : node1->child) {
+        auto it = node2->child.find(key);
+        if (it == node2->child.end()) {
+          return false;
+        }
+        nodes_to_compare.emplace_back(child1_ptr.get(), it->second.get());
+      }
+    }
+    return true;
+  }
+  bool operator!=(const TrieLookupTree& other) const {
+    return !(*this == other);
   }
 
  private:
@@ -103,6 +144,22 @@ class TrieLookupTree {
     absl::flat_hash_map<uint8_t, std::unique_ptr<TrieNode>> child;
     std::optional<Value> value;
   };
+
+  void ForEachRecursive(
+      const TrieNode* node, std::string& current_key,
+      absl::FunctionRef<void(absl::string_view, const Value&)> cb) const {
+    // check for value and invoke cb
+    if (node->value.has_value()) {
+      cb(current_key, *node->value);
+    }
+    // Recurse on childeren
+    for (const auto& [character, child_node] : node->child) {
+      current_key.push_back(character);
+      ForEachRecursive(child_node.get(), current_key, cb);
+      current_key.pop_back();
+    }
+  }
+
   std::unique_ptr<TrieNode> root_;
 };
 

@@ -132,20 +132,55 @@ TEST_F(TrieLookupTreeTest, GetAllPrefixMatches) {
   trie_.AddNode("a/b", "third");
   trie_.AddNode("a/e", "unrelated");
   // Match "a" should return only "a"
-  auto matches_1 = trie_.GetAllPrefixMatches("a");
+  std::vector<std::string> matches_1;
+  trie_.ForEachPrefixMatch(
+      "a", [&](const std::string& v) { matches_1.push_back(v); });
   EXPECT_EQ(matches_1.size(), 1);
-  EXPECT_EQ(*matches_1[0], "first");
+  EXPECT_EQ(matches_1[0], "first");
   // Match "a/b" should return "first" and "third"
-  auto matches_2 = trie_.GetAllPrefixMatches("a/b");
+  std::vector<std::string> matches_2;
+  trie_.ForEachPrefixMatch(
+      "a/b", [&](const std::string& v) { matches_2.push_back(v); });
   EXPECT_EQ(matches_2.size(), 2);
-  EXPECT_EQ(*matches_2[0], "first");
-  EXPECT_EQ(*matches_2[1], "third");
+  EXPECT_EQ(matches_2[0], "first");
+  EXPECT_EQ(matches_2[1], "third");
   // Match "ab/b/c" should return "first", "third", "second"
-  auto matches_3 = trie_.GetAllPrefixMatches("a/b/c");
+  std::vector<std::string> matches_3;
+  trie_.ForEachPrefixMatch(
+      "a/b/c", [&](const std::string& v) { matches_3.push_back(v); });
   EXPECT_EQ(matches_3.size(), 3);
-  EXPECT_EQ(*matches_3[0], "first");
-  EXPECT_EQ(*matches_3[1], "third");
-  EXPECT_EQ(*matches_3[2], "second");
+  EXPECT_EQ(matches_3[0], "first");
+  EXPECT_EQ(matches_3[1], "third");
+  EXPECT_EQ(matches_3[2], "second");
+}
+
+TEST_F(TrieLookupTreeTest, ForEachTest) {
+  trie_.AddNode("a", "first");
+  trie_.AddNode("a/b/c", "second");
+  trie_.AddNode("a/b", "third");
+  trie_.AddNode("a/e", "unrelated");
+  std::unordered_map<std::string, std::string> map;
+  trie_.ForEach([&](const std::string_view key, const std::string& value) {
+    map[std::string(key)] = value;
+  });
+  ASSERT_EQ(map.size(), 4);
+  ASSERT_EQ(map["a"], "first");
+  ASSERT_EQ(map["a/b/c"], "second");
+  ASSERT_EQ(map["a/b"], "third");
+  ASSERT_EQ(map["a/e"], "unrelated");
+}
+
+TEST_F(TrieLookupTreeTest, EqualsTest) {
+  trie_.AddNode("a", "first");
+  trie_.AddNode("a/b/c", "second");
+  trie_.AddNode("a/b", "third");
+  trie_.AddNode("a/e", "unrelated");
+  TrieLookupTree<std::string> trie_new;
+  trie_new.AddNode("a", "first");
+  trie_new.AddNode("a/b/c", "second");
+  trie_new.AddNode("a/b", "third");
+  trie_new.AddNode("a/e", "unrelated");
+  ASSERT_EQ(trie_, trie_new);
 }
 
 }  // namespace testing

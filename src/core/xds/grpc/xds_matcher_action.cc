@@ -15,6 +15,7 @@
 #include "src/core/xds/grpc/xds_matcher_action.h"
 
 #include <memory>
+#include <variant>
 
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -24,8 +25,27 @@
 namespace grpc_core {
 
 void XdsMatcherActionRegistry::AddActionFactory(
-    std::unique_ptr<ActionFactory> factory) {
+    std::unique_ptr<XdsMatcherActionFactory> factory) {
   factories_.emplace(factory->type(), std::move(factory));
+}
+
+std::unique_ptr<XdsMatcher::Action>
+XdsMatcherActionRegistry::ParseAndCreateAction(
+    const XdsResourceType::DecodeContext& context, const XdsExtension& action,
+    ValidationErrors* errors) const {
+  const auto it = factories_.find(action.type);
+  if (it == factories_.cend()) {
+    errors->AddError("Unsupported Action. Not found in registry");
+    return nullptr;
+  }
+  if (std::holds_alternative<Json>(action.value)) {
+    errors->AddError(
+        "Unsuppored action format (Json fdound instead of string)");
+    return nullptr;
+  }
+  const absl::string_view* serialized_value =
+      std::get_if<absl::string_view>(&action.value);
+  return it->second->ParseAndCreateAction(context, *serialized_value, errors);
 }
 
 }  // namespace grpc_core

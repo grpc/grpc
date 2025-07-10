@@ -15,42 +15,31 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_MATCHER_ACTION_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_MATCHER_ACTION_H
 
-#include "src/core/util/ref_counted.h"
-#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/xds/grpc/xds_common_types.h"
-#include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_matcher.h"
-#include "xds/core/v3/extension.upb.h"
+#include "src/core/xds/xds_client/xds_resource_type.h"
 
 namespace grpc_core {
 
-class ActionFactory {
+class XdsMatcherActionFactory {
  public:
-  virtual ~ActionFactory() = default;
   virtual absl::string_view type() const = 0;
   virtual std::unique_ptr<XdsMatcher::Action> ParseAndCreateAction(
       const XdsResourceType::DecodeContext& context,
       absl::string_view serialized_value, ValidationErrors* errors) const = 0;
+  virtual ~XdsMatcherActionFactory() = default;
 };
 
 class XdsMatcherActionRegistry {
- private:
-  using FactoryMap =
-      std::map<absl::string_view, std::unique_ptr<ActionFactory>>;
-
  public:
-  void AddActionFactory(std::unique_ptr<ActionFactory> factory);
+  void AddActionFactory(std::unique_ptr<XdsMatcherActionFactory> factory);
   std::unique_ptr<XdsMatcher::Action> ParseAndCreateAction(
       const XdsResourceType::DecodeContext& context, const XdsExtension& action,
-      ValidationErrors* errors) const {
-    const auto it = factories_.find(action.type);
-    if (it == factories_.cend()) return nullptr;
-    const absl::string_view* serialized_value =
-        std::get_if<absl::string_view>(&action.value);
-    return it->second->ParseAndCreateAction(context, *serialized_value, errors);
-  }
+      ValidationErrors* errors) const;
 
  private:
+  using FactoryMap =
+      std::map<absl::string_view, std::unique_ptr<XdsMatcherActionFactory>>;
   FactoryMap factories_;
 };
 

@@ -54,15 +54,8 @@ std::unique_ptr<XdsMatcher::InputValue<absl::string_view>> ParseStringInput(
   const auto& registry =
       DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
           .matcher_string_input_registry();
-
-  auto result =
-      registry.ParseAndCreateInput(context, extension.value(), errors);
-  if (result != nullptr && result->context_type() != matcher_context) {
-    errors->AddError(absl::StrCat("input type ", extension->type,
-                                  " does not support context ",
-                                  matcher_context.name()));
-    return nullptr;
-  }
+  auto result = registry.ParseAndCreateInput(context, *extension,
+                                             matcher_context, errors);
   return result;
 }
 
@@ -78,8 +71,7 @@ std::unique_ptr<XdsMatcher::Action> ParseAction(
   if (!extension.has_value()) {
     return nullptr;
   }
-  return action_registry.ParseAndCreateAction(context, extension.value(),
-                                              errors);
+  return action_registry.ParseAndCreateAction(context, *extension, errors);
 }
 
 // Parse and generate input matcher with type string_view
@@ -89,16 +81,18 @@ ParseStringMatcher(const XdsResourceType::DecodeContext& context,
                    const xds_type_matcher_v3_StringMatcher* string_matcher_upb,
                    ValidationErrors* errors) {
   auto string_matcher = StringMatcherParse(context, string_matcher_upb, errors);
-  return std::make_unique<XdsMatcherList::StringInputMatcher>(string_matcher);
+  return std::make_unique<XdsMatcherList::StringInputMatcher>(
+      std::move(string_matcher));
 }
 
 // Parse OnMatch components of the matcher
+// TODO: this should have a max recusrsion depth
 std::optional<XdsMatcher::OnMatch> ParseOnMatch(
     const XdsResourceType::DecodeContext& context,
     const xds_type_matcher_v3_Matcher_OnMatch* on_match,
     const XdsMatcherActionRegistry& action_registry,
     const UniqueTypeName& matcher_context, ValidationErrors* errors) {
-  // Parse keep matching once we move to latest xds protos
+  // TODO: Parse keep matching once we move to latest xds protos
   bool keep_matching = false;
   // Action is a variant which can have Action or a Nested Matcher
   if (xds_type_matcher_v3_Matcher_OnMatch_has_action(on_match)) {
@@ -288,7 +282,7 @@ std::vector<XdsMatcherList::FieldMatcher> ParseFieldMatcherList(
     }
     if (on_match.has_value()) {
       field_matcher_list.emplace_back(std::move(predicate),
-                                      std::move(on_match.value()));
+                                      std::move(*on_match));
     }
   }
   return field_matcher_list;
@@ -303,7 +297,6 @@ std::unique_ptr<XdsMatcher> ParseXdsMatcher(
     const xds_type_matcher_v3_Matcher* matcher,
     const XdsMatcherActionRegistry& action_registry,
     const UniqueTypeName& matcher_context, ValidationErrors* errors) {
-  ValidationErrors::ScopedField field(errors, ".matcher");
   std::optional<XdsMatcher::OnMatch> on_no_match;
   if (xds_type_matcher_v3_Matcher_has_on_no_match(matcher)) {
     ValidationErrors::ScopedField field(errors, ".on_no_match");

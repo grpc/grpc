@@ -14,14 +14,10 @@
 
 #include "src/core/xds/grpc/xds_matcher_input.h"
 
-#include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/type/matcher/v3/http_inputs.upb.h"
 #include "src/core/util/upb_utils.h"
-#include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_matcher.h"
 #include "src/core/xds/grpc/xds_matcher_context.h"
-#include "xds/core/v3/extension.upb.h"
-#include "xds/type/matcher/v3/http_inputs.upb.h"
 
 namespace grpc_core {
 std::optional<absl::string_view> MetadataInput::GetValue(
@@ -34,21 +30,52 @@ std::optional<absl::string_view> MetadataInput::GetValue(
 std::unique_ptr<XdsMatcher::InputValue<absl::string_view>>
 MetadataInputFactory::ParseAndCreateInput(
     const XdsResourceType::DecodeContext& context,
-    absl::string_view serialized_value, ValidationErrors*) const {
+    absl::string_view serialized_value, ValidationErrors* errors) const {
   auto http_header_input =
       envoy_type_matcher_v3_HttpRequestHeaderMatchInput_parse(
           serialized_value.data(), serialized_value.size(), context.arena);
+  if (!http_header_input) {
+    errors->AddError("Failed to parse HttpRequestHeaderMatchInput");
+    return nullptr;
+  }
   // extract header name (Key for metadata match)
-  auto x = envoy_type_matcher_v3_HttpRequestHeaderMatchInput_header_name(
-      http_header_input);
-  auto header_name = UpbStringToStdString(x);
+  auto header_name = UpbStringToStdString(
+      envoy_type_matcher_v3_HttpRequestHeaderMatchInput_header_name(
+          http_header_input));
   return std::make_unique<MetadataInput>(header_name);
 }
+
 template <>
 XdsMatcherInputRegistry<absl::string_view>::XdsMatcherInputRegistry() {
   // Add factories
   factories_.emplace(MetadataInputFactory::Type(),
                      std::make_unique<MetadataInputFactory>());
+}
+
+template <>
+std::unique_ptr<XdsMatcher::InputValue<absl::string_view>>
+XdsMatcherInputRegistry<absl::string_view>::ParseAndCreateInput(
+    const XdsResourceType::DecodeContext& context, const XdsExtension& input,
+    const UniqueTypeName& matcher_context, ValidationErrors* errors) const {
+  if (context_type() != matcher_context) {
+    errors->AddError(
+        absl::StrCat("Unsupported context:", context_type(),
+                     ". Parser supported context:", matcher_context));
+    return nullptr;
+  }
+  const auto it = factories_.find(input.type);
+  if (it == factories_.cend()) {
+    errors->AddError(absl::StrCat("Unsupported Input type:", input.type));
+    return nullptr;
+  }
+  if (std::holds_alternative<Json>(input.value)) {
+    errors->AddError(
+        "Unsuppored action format (Json fdound instead of string)");
+    return nullptr;
+  }
+  const absl::string_view* serliased_value =
+      std::get_if<absl::string_view>(&input.value);
+  return it->second->ParseAndCreateInput(context, *serliased_value, errors);
 }
 
 }  // namespace grpc_core

@@ -22,12 +22,12 @@ namespace grpc_core {
 
 class RpcMatchContext : public XdsMatcher::MatchContext {
  public:
-  explicit RpcMatchContext(grpc_metadata_batch* initial_metadata)
-      : initial_metadata_(initial_metadata) {}
-
   static UniqueTypeName Type() {
     return GRPC_UNIQUE_TYPE_NAME_HERE("rpc_context");
   }
+
+  explicit RpcMatchContext(grpc_metadata_batch* initial_metadata)
+      : initial_metadata_(initial_metadata) {}
 
   UniqueTypeName type() const override { return Type(); }
 

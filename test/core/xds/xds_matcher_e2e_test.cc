@@ -24,6 +24,7 @@
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"  // For ValidationErrors
+#include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_matcher.h"
@@ -50,9 +51,12 @@ class StringAction : public XdsMatcher::Action {
     return "type.googleapis.com/google.protobuf.StringValue";
   }
   const std::string& str() const { return str_; }
-  bool Equal(const XdsMatcher::Action& other) const override {
+  bool Equals(const XdsMatcher::Action& other) const override {
     if (other.type_url() != type_url()) return false;
     return str_ == static_cast<const StringAction&>(other).str_;
+  }
+  std::string ToString() const override {
+    return absl::StrCat("StringAction{str=", str_, "}");
   }
 
  private:
@@ -60,7 +64,7 @@ class StringAction : public XdsMatcher::Action {
 };
 
 // Factory for the StringAction.
-class StringActionFactory : public ActionFactory {
+class StringActionFactory : public XdsMatcherActionFactory {
  public:
   absl::string_view type() const override {
     return "google.protobuf.StringValue";
@@ -142,6 +146,7 @@ class MatcherTest : public ::testing::Test {
     // Create registry and register the test-only factory.
     XdsMatcherActionRegistry action_registry;
     action_registry.AddActionFactory(std::make_unique<StringActionFactory>());
+    ValidationErrors::ScopedField field(&errors, ".matcher");
     auto matcher = ParseXdsMatcher(decode_context_, m_upb, action_registry,
                                    context_name, &errors);
     EXPECT_TRUE(errors.ok()) << errors.status(
@@ -163,6 +168,7 @@ class MatcherTest : public ::testing::Test {
     auto context_name = RpcMatchContext::Type();
     XdsMatcherActionRegistry action_registry;
     action_registry.AddActionFactory(std::make_unique<StringActionFactory>());
+    ValidationErrors::ScopedField field(&errors, ".matcher");
     auto matcher = ParseXdsMatcher(decode_context_, m_upb, action_registry,
                                    context_name, &errors);
     absl::Status status = errors.status(absl::StatusCode::kInvalidArgument,

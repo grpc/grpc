@@ -59,7 +59,7 @@ class TestPathInput : public XdsMatcher::InputValue<absl::string_view> {
     const auto* test_context = DownCast<const TestMatchContext*>(&context);
     return test_context->path();
   }
-  bool Equal(
+  bool Equals(
       const XdsMatcher::InputValue<absl::string_view>& other) const override {
     return dynamic_cast<const TestPathInput*>(&other) != nullptr;
   }
@@ -72,9 +72,12 @@ class TestAction : public XdsMatcher::Action {
   explicit TestAction(absl::string_view name) : name_(name) {}
   absl::string_view type_url() const override { return "test.TestAction"; }
   absl::string_view name() const { return name_; }
-  bool Equal(const XdsMatcher::Action& other) const override {
+  bool Equals(const XdsMatcher::Action& other) const override {
     if (other.type_url() != type_url()) return false;
     return name_ == static_cast<const TestAction&>(other).name_;
+  }
+  std::string ToString() const override {
+    return absl::StrCat("TestAction{name=", name(), "}");
   }
 
  private:

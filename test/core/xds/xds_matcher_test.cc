@@ -49,18 +49,13 @@ class TestMatchContext : public XdsMatcher::MatchContext {
 // A concrete implementation of InputValue for testing.
 class TestPathInput : public XdsMatcher::InputValue<absl::string_view> {
  public:
-  UniqueTypeName context_type() const override {
-    return GRPC_UNIQUE_TYPE_NAME_HERE("TestMatchContext");
-  }
-
   std::optional<absl::string_view> GetValue(
       const XdsMatcher::MatchContext& context) const override {
     const auto* test_context = DownCast<const TestMatchContext*>(&context);
     return test_context->path();
   }
-  bool Equal(
-      const XdsMatcher::InputValue<absl::string_view>& other) const override {
-    return DownCast<const TestPathInput*>(&other) != nullptr;
+  bool Equals(const XdsMatcher::InputValue<absl::string_view>&) const override {
+    return true;
   }
   std::string ToString() const override { return "TestPathInput"; }
 };
@@ -71,9 +66,12 @@ class TestAction : public XdsMatcher::Action {
   explicit TestAction(absl::string_view name) : name_(name) {}
   absl::string_view type_url() const override { return "test.TestAction"; }
   absl::string_view name() const { return name_; }
-  bool Equal(const XdsMatcher::Action& other) const override {
+  bool Equals(const XdsMatcher::Action& other) const override {
     if (other.type_url() != type_url()) return false;
     return name_ == static_cast<const TestAction&>(other).name_;
+  }
+  std::string ToString() const override {
+    return absl::StrCat("TestAction{name=", name(), "}");
   }
 
  private:
@@ -85,7 +83,8 @@ class MockPredicate : public XdsMatcherList::Predicate {
  public:
   MOCK_METHOD(bool, Match, (const XdsMatcher::MatchContext& context),
               (const, override));
-  MOCK_METHOD(bool, Equal, (const XdsMatcherList::Predicate& other),
+  MOCK_METHOD(UniqueTypeName, type, (), (const, override));
+  MOCK_METHOD(bool, Equals, (const XdsMatcherList::Predicate& other),
               (const, override));
   MOCK_METHOD(std::string, ToString, (), (const, override));
 };
