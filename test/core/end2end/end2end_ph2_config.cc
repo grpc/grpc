@@ -34,9 +34,13 @@
 
 namespace grpc_core {
 
-#define GRPC_HTTP2_CORE_CLIENT_CHANNEL_TESTS
+#define GRPC_HTTP2_CORE_CLIENT_CHANNEL_TESTS                    \
+  "CoreClientChannelTests.DeadlineAfterAcceptWithServiceConfig" \
+  "CoreClientChannelTests.DeadlineAfterRoundTripWithServiceConfig"
 
-#define GRPC_HTTP2_CORE_DEADLINE_SINGLE_HOP_TESTS
+#define GRPC_HTTP2_CORE_DEADLINE_SINGLE_HOP_TESTS \
+  "CoreDeadlineSingleHopTests."                   \
+  "TimeoutBeforeRequestCallWithRegisteredMethodWithPayload"
 
 #define GRPC_HTTP2_CORE_DEADLINE_TESTS
 
@@ -66,7 +70,9 @@ namespace grpc_core {
   "StreamingErrorResponseRequestStatusEarlyAndRecvMessageSeparately"       \
   "|CoreEnd2endTests.TrailingMetadata"
 
-#define GRPC_HTTP2_CORE_LARGE_SEND_TESTS
+#define GRPC_HTTP2_CORE_LARGE_SEND_TESTS           \
+  "|CoreLargeSendTests.RequestResponseWithPayload" \
+  "|CoreLargeSendTests.RequestResponseWithPayload10Times"
 
 #define GRPC_HTTP2_HTTP2_FULLSTACK_SINGLE_HOP_TESTS
 
@@ -111,7 +117,9 @@ namespace grpc_core {
   GRPC_HTTP2_SECURE_END2END_TESTS                      \
   GRPC_HTTP2_WRITE_BUFFERING_TESTS
 
-#define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE "CoreEnd2endTests"
+#define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE    \
+  "CoreEnd2endTests|CoreDeadlineTests|CoreLargeSendTests|" \
+  "CoreClientChannelTests|CoreDeadlineSingleHopTests|"
 
 std::vector<CoreTestConfiguration> End2endTestConfigs() {
   std::vector<CoreTestConfiguration> list_of_configs;
