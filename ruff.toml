@@ -12,7 +12,6 @@ exclude = [
 [lint]
 ignore = [
     "A001",    # Variable {name} is shadowing a Python builtin
-    "A002",    # Function argument {name} is shadowing a Python builtin
     "ANN001",  # Missing type annotation for function argument {name}
     "ANN002",  # Missing type annotation for *{name}
     "ANN003",  # Missing type annotation for **{name}
