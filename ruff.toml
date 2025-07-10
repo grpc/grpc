@@ -46,7 +46,6 @@ ignore = [
     "FBT002",  # Boolean default positional argument in function definition
     "FBT003",  # Boolean positional value in function call
     "FIX002",  # Line contains TODO, consider resolving the issue
-    "G003",    # Logging statement uses +
     "I001",    # Import block is un-sorted or un-formatted
     "ICN001",  # {name} should be imported as {asname}
     "INP001",  # File {filename} is part of an implicit namespace package. Add an __init__.py.
