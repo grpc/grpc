@@ -84,7 +84,6 @@ ignore = [
     "I001",    # Import block is un-sorted or un-formatted
     "ISC003",  # Explicitly concatenated string should be implicitly concatenated
     "N802",    # Function name {name} should be lowercase
-    "N803",    # Argument name {name} should be lowercase
     "N806",    # Variable {name} in function should be lowercase
     "N818",    # Exception name {name} should be named with an Error suffix
     "PERF102", # When using only the {subset} of a dict use the {subset}() method
