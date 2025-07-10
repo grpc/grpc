@@ -51,7 +51,6 @@ ignore = [
     "N802",    # Function name {name} should be lowercase
     "N818",    # Exception name {name} should be named with an Error suffix
     "PERF203", # try-except within a loop incurs performance overhead
-    "PLC0206", # Extracting value from dictionary without calling .items()
     "PLC0415", # import should be at the top-level of a file
     "PYI006",  # Use < or >= for sys.version_info comparisons
     "PYI024",  # Use typing.NamedTuple instead of collections.namedtuple
