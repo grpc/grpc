@@ -37,9 +37,6 @@ void Http2Settings::Diff(
   if (header_table_size_ != old.header_table_size_) {
     cb(kHeaderTableSizeWireId, header_table_size_);
   }
-  if (enable_push_ != old.enable_push_) {
-    cb(kEnablePushWireId, enable_push_);
-  }
   if (max_concurrent_streams_ != old.max_concurrent_streams_) {
     cb(kMaxConcurrentStreamsWireId, max_concurrent_streams_);
   }
@@ -96,8 +93,7 @@ Http2ErrorCode Http2Settings::Apply(uint16_t key, uint32_t value) {
       header_table_size_ = value;
       break;
     case kEnablePushWireId:
-      if (value > 1) return Http2ErrorCode::kProtocolError;
-      enable_push_ = value != 0;
+      if (value >= 1) return Http2ErrorCode::kProtocolError;
       break;
     case kMaxConcurrentStreamsWireId:
       max_concurrent_streams_ = value;

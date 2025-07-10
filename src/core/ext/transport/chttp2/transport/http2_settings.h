@@ -58,7 +58,6 @@ class Http2Settings {
   uint32_t preferred_receive_crypto_message_size() const {
     return preferred_receive_crypto_message_size_;
   }
-  bool enable_push() const { return enable_push_; }
   bool allow_true_binary_metadata() const {
     return allow_true_binary_metadata_;
   }
@@ -69,7 +68,6 @@ class Http2Settings {
   void SetInitialWindowSize(uint32_t x) {
     initial_window_size_ = std::min(x, max_initial_window_size());
   }
-  void SetEnablePush(bool x) { enable_push_ = x; }
   void SetMaxHeaderListSize(uint32_t x) {
     max_header_list_size_ = std::min(x, 16777216u);
   }
@@ -142,7 +140,7 @@ class Http2Settings {
         .Set(max_header_list_size_name(), max_header_list_size())
         .Set(preferred_receive_crypto_message_size_name(),
              preferred_receive_crypto_message_size())
-        .Set(enable_push_name(), enable_push())
+        .Set(enable_push_name(), false)
         .Set(allow_true_binary_metadata_name(), allow_true_binary_metadata())
         .Set(allow_security_frame_name(), allow_security_frame());
   }
@@ -154,7 +152,7 @@ class Http2Settings {
   uint32_t max_frame_size_ = 16384u;
   uint32_t max_header_list_size_ = 16777216u;
   uint32_t preferred_receive_crypto_message_size_ = 0u;
-  bool enable_push_ = true;
+  bool enable_push_ = false;
   bool allow_true_binary_metadata_ = false;
   bool allow_security_frame_ = false;
 };
