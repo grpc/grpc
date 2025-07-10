@@ -65,8 +65,6 @@ ignore = [
     "S105",    # Possible hardcoded password assigned to: "{}"
     "S110",    # try-except-pass detected, consider logging the exception
     "SIM105",  # Use contextlib.suppress({exception}) instead of try-except-pass
-    "SIM118",  # Use key {operator} dict instead of key {operator} dict.keys()
-    "SIM300",  # Yoda condition detected
     "SIM910",  # Use {expected} instead of {actual}
     "SLF001",  # Private member accessed: {access}
     "SLOT002", # Subclasses of {namedtuple_kind} should define __slots__
