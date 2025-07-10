@@ -434,8 +434,9 @@ class Channel(_base_channel.Channel):
                             continue
                     else:
                         # Unidentified Call object
+                        error_msg = f"Unrecognized call object: {candidate}"
                         raise cygrpc.InternalError(
-                            f"Unrecognized call object: {candidate}"
+                            error_msg
                         )
 
                     calls.append(candidate)

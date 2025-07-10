@@ -53,9 +53,9 @@ class Server(_base_server.Server):
                 if not isinstance(interceptor, ServerInterceptor)
             ]
             if invalid_interceptors:
+                error_msg = "Interceptor must be ServerInterceptor, the following are invalid: {invalid_interceptors}"
                 raise ValueError(
-                    "Interceptor must be ServerInterceptor, the "
-                    f"following are invalid: {invalid_interceptors}"
+                  error_msg
                 )
         self._server = cygrpc.AioServer(
             self._loop,
