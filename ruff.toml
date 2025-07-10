@@ -35,7 +35,6 @@ ignore = [
     "D401",    # First line of docstring should be in imperative mood: "{first_line}"
     "D413",    # Missing blank line after last section ("{name}")
     "D415",    # First line should end with a period, question mark, or exclamation point
-    "DTZ001",  # datetime.datetime() called without a tzinfo argument
     "DTZ005",  # datetime.datetime.now() called without a tz argument
     "E402",    # Module level import not at top of cell
     "E501",    # Line too long ({width} > {limit})
