@@ -246,7 +246,7 @@ def _event_handler(
             except Exception as e:  # pylint: disable=broad-except
                 # NOTE(rbellevi): We suppress but log errors here so as not to
                 # kill the channel spin thread.
-                logging.exception( # noqa: LOG015
+                logging.exception(  # noqa: LOG015
                     "Exception in callback %s: %s", repr(callback.func), repr(e)
                 )
         return done and state.fork_epoch >= cygrpc.get_fork_epoch()
@@ -438,13 +438,15 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
         raise self
 
     def exception(
-        self, _timeout: Optional[float] = None  # pylint: disable=unused-argument
+        self,
+        _timeout: Optional[float] = None,  # pylint: disable=unused-argument
     ) -> Optional[Exception]:
         """See grpc.Future.exception."""
         return self
 
     def traceback(
-        self, _timeout: Optional[float] = None  # pylint: disable=unused-argument
+        self,
+        _timeout: Optional[float] = None,  # pylint: disable=unused-argument
     ) -> Optional[types.TracebackType]:
         """See grpc.Future.traceback."""
         try:
@@ -611,9 +613,7 @@ class _SingleThreadedRendezvous(
         with self._state.condition:
             if not self._is_complete():
                 error_msg = "_SingleThreadedRendezvous only supports result() when the RPC is complete."
-                raise grpc.experimental.UsageError(
-                    error_msg
-                )
+                raise grpc.experimental.UsageError(error_msg)
             if self._state.code is grpc.StatusCode.OK:
                 return self._state.response
             if self._state.cancelled:
@@ -633,9 +633,7 @@ class _SingleThreadedRendezvous(
         with self._state.condition:
             if not self._is_complete():
                 error_msg = "_SingleThreadedRendezvous only supports exception() when the RPC is complete."
-                raise grpc.experimental.UsageError(
-                    error_msg
-                )
+                raise grpc.experimental.UsageError(error_msg)
             if self._state.code is grpc.StatusCode.OK:
                 return None
             if self._state.cancelled:
@@ -657,9 +655,7 @@ class _SingleThreadedRendezvous(
         with self._state.condition:
             if not self._is_complete():
                 msg = "_SingleThreadedRendezvous only supports traceback() when the RPC is complete."
-                raise grpc.experimental.UsageError(
-                    msg
-                )
+                raise grpc.experimental.UsageError(msg)
             if self._state.code is grpc.StatusCode.OK:
                 return None
             if self._state.cancelled:
@@ -690,10 +686,10 @@ class _SingleThreadedRendezvous(
         """See grpc.Call.trailing_metadata"""
         with self._state.condition:
             if self._state.trailing_metadata is None:
-                error_msg = "Cannot get trailing metadata until RPC is completed."
-                raise grpc.experimental.UsageError(
-                    error_msg
+                error_msg = (
+                    "Cannot get trailing metadata until RPC is completed."
                 )
+                raise grpc.experimental.UsageError(error_msg)
             return self._state.trailing_metadata
 
     def code(self) -> Optional[grpc.StatusCode]:
@@ -701,9 +697,7 @@ class _SingleThreadedRendezvous(
         with self._state.condition:
             if self._state.code is None:
                 error_msg = "Cannot get code until RPC is completed."
-                raise grpc.experimental.UsageError(
-                    error_msg
-                )
+                raise grpc.experimental.UsageError(error_msg)
             return self._state.code
 
     def details(self) -> Optional[str]:
@@ -711,9 +705,7 @@ class _SingleThreadedRendezvous(
         with self._state.condition:
             if self._state.details is None:
                 error_msg = "Cannot get details until RPC is completed."
-                raise grpc.experimental.UsageError(
-                    error_msg
-                )
+                raise grpc.experimental.UsageError(error_msg)
             return _common.decode(self._state.details)
 
     def _consume_next_event(self) -> Optional[cygrpc.BaseEvent]:
@@ -736,9 +728,7 @@ class _SingleThreadedRendezvous(
                     response = self._state.response
                     self._state.response = None
                     return response
-                if (
-                    cygrpc.OperationType.receive_message not in self._state.due
-                ):
+                if cygrpc.OperationType.receive_message not in self._state.due:
                     if self._state.code is grpc.StatusCode.OK:
                         raise StopIteration
                     if self._state.code is not None:
@@ -773,10 +763,10 @@ class _SingleThreadedRendezvous(
     def debug_error_string(self) -> Optional[str]:
         with self._state.condition:
             if self._state.debug_error_string is None:
-                error_msg = "Cannot get debug error string until RPC is completed."
-                raise grpc.experimental.UsageError(
-                    error_msg
+                error_msg = (
+                    "Cannot get debug error string until RPC is completed."
                 )
+                raise grpc.experimental.UsageError(error_msg)
             return _common.decode(self._state.debug_error_string)
 
 
@@ -1376,9 +1366,7 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
                 cygrpc.SendInitialMetadataOperation(
                     augmented_metadata, initial_metadata_flags
                 ),
-                cygrpc.SendMessageOperation(
-                    serialized_request, _EMPTY_FLAGS
-                ),
+                cygrpc.SendMessageOperation(serialized_request, _EMPTY_FLAGS),
                 cygrpc.SendCloseFromClientOperation(_EMPTY_FLAGS),
                 cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),
             ),

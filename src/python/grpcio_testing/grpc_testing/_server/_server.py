@@ -136,9 +136,7 @@ def _deadline_and_handler(requests_closed, time, timeout):
     if timeout is None:
         return None, _handler.handler_without_deadline(requests_closed)
     deadline = time.time() + timeout
-    handler = _handler.handler_with_deadline(
-        requests_closed, time, deadline
-    )
+    handler = _handler.handler_with_deadline(requests_closed, time, deadline)
     return deadline, handler
 
 

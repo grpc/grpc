@@ -55,9 +55,7 @@ class _FaceServicerContext(face.ServicerContext):
 
     def add_abortion_callback(self, abortion_callback):
         error_msg = "add_abortion_callback no longer supported server-side!"
-        raise NotImplementedError(
-            error_msg
-        )
+        raise NotImplementedError(error_msg)
 
     def cancel(self):
         self._servicer_context.cancel()
@@ -263,7 +261,7 @@ class _SimpleMethodHandler(
     pass
 
 
-def _simple_method_handler( # noqa: PLR0911
+def _simple_method_handler(  # noqa: PLR0911
     implementation, request_deserializer, response_serializer
 ):
     if implementation.style is style.Service.INLINE:
@@ -302,9 +300,7 @@ def _simple_method_handler( # noqa: PLR0911
                 ),
                 None,
             )
-        if (
-            implementation.cardinality is cardinality.Cardinality.STREAM_STREAM
-        ):
+        if implementation.cardinality is cardinality.Cardinality.STREAM_STREAM:
             return _SimpleMethodHandler(
                 True,
                 True,
@@ -351,9 +347,7 @@ def _simple_method_handler( # noqa: PLR0911
                 _adapt_stream_unary_event(implementation.stream_unary_event),
                 None,
             )
-        if (
-            implementation.cardinality is cardinality.Cardinality.STREAM_STREAM
-        ):
+        if implementation.cardinality is cardinality.Cardinality.STREAM_STREAM:
             return _SimpleMethodHandler(
                 True,
                 True,

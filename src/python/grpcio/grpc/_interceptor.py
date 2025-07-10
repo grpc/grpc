@@ -802,8 +802,6 @@ def intercept_channel(
             "grpc.UnaryStreamClientInterceptor or "
             "grpc.StreamUnaryClientInterceptor or "
             "grpc.StreamStreamClientInterceptor or "
-            raise TypeError(
-                error_msg
-            )
+            raise TypeError(error_msg)
         channel = _Channel(channel, interceptor)
     return channel

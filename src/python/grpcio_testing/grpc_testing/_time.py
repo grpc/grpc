@@ -93,9 +93,7 @@ class _Future(grpc.Future):
         with self._state.condition:
             if self._cancelled:
                 return True
-            behaviors_at_time = self._state.times_to_behaviors.get(
-                self._time
-            )
+            behaviors_at_time = self._state.times_to_behaviors.get(self._time)
             if behaviors_at_time is None:
                 return False
             behaviors_at_time.remove(self._behavior)

@@ -453,7 +453,7 @@ class _Context(grpc.ServicerContext):
             self._state.code = code
             self._state.details = _common.encode(details)
             self._state.aborted = True
-            raise Exception # noqa: TRY002
+            raise Exception  # noqa: TRY002
 
     def abort_with_status(self, status: grpc.Status) -> None:
         self._state.trailing_metadata = status.trailing_metadata
@@ -551,17 +551,17 @@ def _unary_request(
                 return None
             rpc_event.call.start_server_batch(
                 (cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),),
-                _receive_message(
-                    state, rpc_event.call, request_deserializer
-                ),
+                _receive_message(state, rpc_event.call, request_deserializer),
             )
             state.due.add(_RECEIVE_MESSAGE_TOKEN)
             while True:
                 state.condition.wait()
                 if state.request is None:
                     if state.client is _CLOSED:
-                        details = '"{}" requires exactly one request message.'.format(
-                            rpc_event.call_details.method
+                        details = (
+                            '"{}" requires exactly one request message.'.format(
+                                rpc_event.call_details.method
+                            )
                         )
                         _abort(
                             state,
@@ -1282,10 +1282,7 @@ def _process_event_and_continue(
                     lambda _unused_future: _on_call_completed(state)
                 )
             if state.stage is _ServerStage.STARTED:
-                if (
-                    registered_method_name
-                    in state.registered_method_handlers
-                ):
+                if registered_method_name in state.registered_method_handlers:
                     _request_registered_call(state, registered_method_name)
                 else:
                     _request_call(state)
@@ -1312,7 +1309,10 @@ def _serve(state: _ServerState) -> None:
         event = state.completion_queue.poll(timeout)
         if state.server_deallocated:
             _begin_shutdown_once(state)
-        if event.completion_type != cygrpc.CompletionType.queue_timeout and not _process_event_and_continue(state, event):
+        if (
+            event.completion_type != cygrpc.CompletionType.queue_timeout
+            and not _process_event_and_continue(state, event)
+        ):
             return
         # We want to force the deletion of the previous event
         # ~before~ we poll again; if the event has a reference
@@ -1377,9 +1377,7 @@ def _validate_generic_rpc_handlers(
         service_attribute = getattr(generic_rpc_handler, "service", None)
         if service_attribute is None:
             error_msg = f'"{generic_rpc_handler}" must conform to grpc.GenericRpcHandler type but does not have "service" method!'
-            raise AttributeError(
-                error_msg
-            )
+            raise AttributeError(error_msg)
 
 
 def _augment_options(

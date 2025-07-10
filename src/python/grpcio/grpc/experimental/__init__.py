@@ -109,9 +109,7 @@ def wrap_server_method_handler(wrapper, handler):
         return handler._replace(unary_stream=wrapper(handler.unary_stream))
     if not handler.response_streaming:
         return handler._replace(stream_unary=wrapper(handler.stream_unary))
-    return handler._replace(
-        stream_stream=wrapper(handler.stream_stream)
-    )
+    return handler._replace(stream_stream=wrapper(handler.stream_stream))
 
 
 __all__ = (
@@ -128,4 +126,9 @@ if sys.version_info > (3, 6):
     from grpc._simple_stubs import unary_stream
     from grpc._simple_stubs import unary_unary
 
-    __all__ = __all__ + (unary_unary, unary_stream, stream_unary, stream_stream) # noqa: PLE0604
+    __all__ = __all__ + (
+        unary_unary,
+        unary_stream,
+        stream_unary,
+        stream_stream,
+    )  # noqa: PLE0604

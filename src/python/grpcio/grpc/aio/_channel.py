@@ -356,7 +356,7 @@ class Channel(_base_channel.Channel):
                 elif isinstance(interceptor, StreamStreamClientInterceptor):
                     self._stream_stream_interceptors.append(interceptor)
                 else:
-                    raise ValueError( # noqa: TRY004
+                    raise ValueError(  # noqa: TRY004
                         "Interceptor {} must be ".format(interceptor)
                         + "{} or ".format(UnaryUnaryClientInterceptor.__name__)
                         + "{} or ".format(UnaryStreamClientInterceptor.__name__)
@@ -433,9 +433,7 @@ class Channel(_base_channel.Channel):
                 else:
                     # Unidentified Call object
                     error_msg = f"Unrecognized call object: {candidate}"
-                    raise cygrpc.InternalError(
-                        error_msg
-                    )
+                    raise cygrpc.InternalError(error_msg)
 
                 calls.append(candidate)
                 call_tasks.append(task)

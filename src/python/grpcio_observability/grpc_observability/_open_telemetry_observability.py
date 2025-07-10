@@ -250,7 +250,12 @@ class _OpenTelemetryPlugin:
                     unit=metric.unit,
                     description=metric.description,
                 )
-            elif metric in (_open_telemetry_measures.CLIENT_ATTEMPT_DURATION, _open_telemetry_measures.CLIENT_RPC_DURATION, _open_telemetry_measures.CLIENT_ATTEMPT_SEND_BYTES, _open_telemetry_measures.CLIENT_ATTEMPT_RECEIVED_BYTES):
+            elif metric in (
+                _open_telemetry_measures.CLIENT_ATTEMPT_DURATION,
+                _open_telemetry_measures.CLIENT_RPC_DURATION,
+                _open_telemetry_measures.CLIENT_ATTEMPT_SEND_BYTES,
+                _open_telemetry_measures.CLIENT_ATTEMPT_RECEIVED_BYTES,
+            ):
                 recorder = meter.create_histogram(
                     name=metric.name,
                     unit=metric.unit,
@@ -262,7 +267,11 @@ class _OpenTelemetryPlugin:
                     unit=metric.unit,
                     description=metric.description,
                 )
-            elif metric in (_open_telemetry_measures.SERVER_RPC_DURATION, _open_telemetry_measures.SERVER_RPC_SEND_BYTES, _open_telemetry_measures.SERVER_RPC_RECEIVED_BYTES):
+            elif metric in (
+                _open_telemetry_measures.SERVER_RPC_DURATION,
+                _open_telemetry_measures.SERVER_RPC_SEND_BYTES,
+                _open_telemetry_measures.SERVER_RPC_RECEIVED_BYTES,
+            ):
                 recorder = meter.create_histogram(
                     name=metric.name,
                     unit=metric.unit,
@@ -475,9 +484,7 @@ def _start_open_telemetry_observability(
             _OPEN_TELEMETRY_OBSERVABILITY.observability_init()
         else:
             error_msg = "gPRC Python observability was already initialized!"
-            raise RuntimeError(
-                error_msg
-            )
+            raise RuntimeError(error_msg)
 
 
 def _end_open_telemetry_observability() -> None:
@@ -485,8 +492,6 @@ def _end_open_telemetry_observability() -> None:
     with _observability_lock:
         if not _OPEN_TELEMETRY_OBSERVABILITY:
             error_msg = "Trying to end gPRC Python observability without initialize first!"
-            raise RuntimeError(
-                error_msg
-            )
+            raise RuntimeError(error_msg)
         _OPEN_TELEMETRY_OBSERVABILITY.observability_deinit()
         _OPEN_TELEMETRY_OBSERVABILITY = None
