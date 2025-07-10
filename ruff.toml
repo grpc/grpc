@@ -77,7 +77,6 @@ ignore = [
     "F401",    # {name} imported but unused; consider using importlib.util.find_spec to test for availability
     "F403",    # from {name} import * used; unable to detect undefined names
     "F811",    # Redefinition of unused {name} from {row}
-    "F821",    # Undefined name {name}. {tip}
     "F841",    # Local variable {name} is assigned to but never used
     "FBT001",  # Boolean-typed positional argument in function definition
     "FBT002",  # Boolean default positional argument in function definition
