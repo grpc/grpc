@@ -230,7 +230,7 @@ def _possibly_finish_call(
 
 
 def _send_status_from_server(state: _RPCState, token: str) -> ServerCallbackTag:
-    def send_status_from_server(unused_send_status_from_server_event):
+    def send_status_from_server(_unused_send_status_from_server_event):
         with state.condition:
             return _possibly_finish_call(state, token)
 
@@ -345,7 +345,7 @@ def _receive_message(
 
 
 def _send_initial_metadata(state: _RPCState) -> ServerCallbackTag:
-    def send_initial_metadata(unused_send_initial_metadata_event):
+    def send_initial_metadata(_unused_send_initial_metadata_event):
         with state.condition:
             return _possibly_finish_call(state, _SEND_INITIAL_METADATA_TOKEN)
 
@@ -353,7 +353,7 @@ def _send_initial_metadata(state: _RPCState) -> ServerCallbackTag:
 
 
 def _send_message(state: _RPCState, token: str) -> ServerCallbackTag:
-    def send_message(unused_send_message_event):
+    def send_message(_unused_send_message_event):
         with state.condition:
             state.condition.notify_all()
             return _possibly_finish_call(state, token)

@@ -22,7 +22,6 @@ ignore = [
     "ANN205",  # Missing return type annotation for staticmethod {name}
     "ANN206",  # Missing return type annotation for classmethod {name}
     "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed in {name}
-    "ARG001",  # Unused function argument: {name}
     "ARG002",  # Unused method argument: {name}
     "ARG004",  # Unused static method argument: {name}
     "ARG005",  # Unused lambda argument: {name}
