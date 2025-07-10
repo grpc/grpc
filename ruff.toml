@@ -116,6 +116,7 @@ ignore = [
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     "PLR5501", # Use elif instead of else then if, to reduce indentation
     "PLW0120", # else clause on loop without a break statement; remove the else and dedent its contents
 =======
@@ -128,6 +129,8 @@ ignore = [
 =======
 >>>>>>> 485094f8cb (removed suppression for PLW0603)
     "PLW1508", # Invalid type for environment variable default; expected str or None
+=======
+>>>>>>> 338c5bc076 (removed suppression for PLW1508)
     "PLW1641", # Object does not implement __hash__ method
     "PLW2901", # Outer {outer_kind} variable {name} overwritten by inner {inner_kind} target
     "PT009",   # Use a regular assert instead of unittest-style {assertion}
