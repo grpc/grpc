@@ -409,8 +409,7 @@ class Channel(_base_channel.Channel):
                 # TODO(lidiz) drop this hack after 3.8 deprecation
                 if "frame" in str(attribute_error):
                     continue
-                else:
-                    raise
+                raise
 
             # If the Task is created by a C-extension, the stack will be empty.
             if not stack:
