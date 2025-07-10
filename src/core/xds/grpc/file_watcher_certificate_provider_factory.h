@@ -35,8 +35,6 @@
 
 namespace grpc_core {
 
-bool SpiffeBundleMapEnabled();
-
 class FileWatcherCertificateProviderFactory final
     : public CertificateProviderFactory {
  public:

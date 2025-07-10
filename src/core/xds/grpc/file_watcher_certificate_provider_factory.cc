@@ -39,8 +39,6 @@ namespace {
 
 constexpr absl::string_view kFileWatcherPlugin = "file_watcher";
 
-}  // namespace
-
 bool SpiffeBundleMapEnabled() {
   auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_MTLS_SPIFFE");
   if (!value.has_value()) return false;
@@ -48,6 +46,8 @@ bool SpiffeBundleMapEnabled() {
   bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
   return parse_succeeded && parsed_value;
 }
+
+}  // namespace
 
 //
 // FileWatcherCertificateProviderFactory::Config
@@ -104,11 +104,9 @@ void FileWatcherCertificateProviderFactory::Config::JsonPostLoad(
         "or both unset");
   }
   if (SpiffeBundleMapEnabled()) {
-    bool is_root_configured =
-        (json.object().find("ca_certificate_file") != json.object().end()) ||
-        (json.object().find("spiffe_bundle_map_file") != json.object().end());
-    if ((json.object().find("certificate_file") == json.object().end()) &&
-        !is_root_configured) {
+    if (json.object().find("certificate_file") == json.object().end() &&
+        json.object().find("ca_certificate_file") == json.object().end() &&
+        json.object().find("spiffe_bundle_map_file") == json.object().end()) {
       errors->AddError(
           "at least one of \"certificate_file\" and a root "
           "(\"ca_certificate_file\" or \"spiffe_bundle_map_file\") must "
@@ -120,8 +118,7 @@ void FileWatcherCertificateProviderFactory::Config::JsonPostLoad(
         (json.object().find("ca_certificate_file") == json.object().end())) {
       errors->AddError(
           "at least one of \"certificate_file\" and \"ca_certificate_file\" "
-          "must "
-          "be specified");
+          "must be specified");
     }
   }
 }
