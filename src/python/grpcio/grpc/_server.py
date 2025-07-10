@@ -1027,7 +1027,7 @@ def _reject_rpc(
     )
     rpc_event.call.start_server_batch(
         operations,
-        lambda ignored_event: (
+        lambda _ignored_event: (
             rpc_state,
             (),
         ),
@@ -1297,7 +1297,7 @@ def _process_event_and_continue(
             if rpc_future is not None:
                 state.active_rpc_count += 1
                 rpc_future.add_done_callback(
-                    lambda unused_future: _on_call_completed(state)
+                    lambda _unused_future: _on_call_completed(state)
                 )
             if state.stage is _ServerStage.STARTED:
                 if (
