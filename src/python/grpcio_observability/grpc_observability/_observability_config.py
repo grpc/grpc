@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from dataclasses import field
 import json
 import os
+from pathlib import Path
 from typing import Mapping, Optional
 
 GRPC_GCP_OBSERVABILITY_CONFIG_FILE_ENV = "GRPC_GCP_OBSERVABILITY_CONFIG_FILE"
@@ -118,7 +119,7 @@ def _get_gcp_observability_config_contents() -> str:
     # First try get config from GRPC_GCP_OBSERVABILITY_CONFIG_FILE_ENV.
     config_path = os.getenv(GRPC_GCP_OBSERVABILITY_CONFIG_FILE_ENV)
     if config_path:
-        with open(config_path, "r") as f:
+        with Path(config_path).open("r") as f:
             contents_str = f.read()
 
     # Next, try GRPC_GCP_OBSERVABILITY_CONFIG_ENV env var.
