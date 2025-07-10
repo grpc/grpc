@@ -119,8 +119,6 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
   // CredentialInfo to the cert_update_queue of state_, and check in each test
   // if the status updates are correct.
   struct CredentialInfo {
-    // std::string root_certs;
-    // SpiffeBundleMap spiffe_bundle_map;
     PemKeyCertPairList key_cert_pairs;
     std::shared_ptr<RootCertInfo> root_cert_info;
     CredentialInfo(const RootCertInfo& roots, PemKeyCertPairList key_cert)
