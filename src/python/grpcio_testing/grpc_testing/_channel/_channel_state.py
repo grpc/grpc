@@ -30,7 +30,7 @@ class State(_common.ChannelHandler):
         invocation_metadata,
         requests,
         requests_closed,
-        timeout,
+        _timeout,
     ):
         rpc_state = _rpc_state.State(
             invocation_metadata, requests, requests_closed

@@ -28,7 +28,7 @@ SERVICE_NAME = _reflection_pb2.DESCRIPTOR.services_by_name[
 class ReflectionServicer(BaseReflectionServicer):
     """Servicer handling RPCs for service statuses."""
 
-    def ServerReflectionInfo(self, request_iterator, context):
+    def ServerReflectionInfo(self, request_iterator, _context):
         # pylint: disable=unused-argument
         for request in request_iterator:
             if request.HasField("file_by_filename"):

@@ -37,8 +37,8 @@ class TestingChannel(grpc_testing.Channel):
     def unary_unary(
         self,
         method,
-        request_serializer=None,
-        response_deserializer=None,
+        _request_serializer=None,
+        _response_deserializer=None,
         _registered_method=False,
     ):
         return _multi_callable.UnaryUnary(method, self._state)
@@ -46,8 +46,8 @@ class TestingChannel(grpc_testing.Channel):
     def unary_stream(
         self,
         method,
-        request_serializer=None,
-        response_deserializer=None,
+        _request_serializer=None,
+        _response_deserializer=None,
         _registered_method=False,
     ):
         return _multi_callable.UnaryStream(method, self._state)
@@ -55,8 +55,8 @@ class TestingChannel(grpc_testing.Channel):
     def stream_unary(
         self,
         method,
-        request_serializer=None,
-        response_deserializer=None,
+        _request_serializer=None,
+        _response_deserializer=None,
         _registered_method=False,
     ):
         return _multi_callable.StreamUnary(method, self._state)
@@ -64,8 +64,8 @@ class TestingChannel(grpc_testing.Channel):
     def stream_stream(
         self,
         method,
-        request_serializer=None,
-        response_deserializer=None,
+        _request_serializer=None,
+        _response_deserializer=None,
         _registered_method=False,
     ):
         return _multi_callable.StreamStream(method, self._state)

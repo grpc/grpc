@@ -28,7 +28,7 @@ class ReflectionServicer(BaseReflectionServicer):
         request_iterator: AsyncIterable[
             _reflection_pb2.ServerReflectionRequest
         ],
-        unused_context,
+        _unused_context,
     ) -> AsyncIterable[_reflection_pb2.ServerReflectionResponse]:
         async for request in request_iterator:
             if request.HasField("file_by_filename"):

@@ -74,7 +74,7 @@ class AccessTokenAuthMetadataPlugin(grpc.AuthMetadataPlugin):
 
     def __call__(
         self,
-        context: grpc.AuthMetadataContext,
+        _context: grpc.AuthMetadataContext,
         callback: grpc.AuthMetadataPluginCallback,
     ):
         _sign_request(callback, self._access_token, None)

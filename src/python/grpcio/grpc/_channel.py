@@ -434,19 +434,19 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
         return True
 
     def result(
-        self, timeout: Optional[float] = None
+        self, _timeout: Optional[float] = None
     ) -> Any:  # pylint: disable=unused-argument
         """See grpc.Future.result."""
         raise self
 
     def exception(
-        self, timeout: Optional[float] = None  # pylint: disable=unused-argument
+        self, _timeout: Optional[float] = None  # pylint: disable=unused-argument
     ) -> Optional[Exception]:
         """See grpc.Future.exception."""
         return self
 
     def traceback(
-        self, timeout: Optional[float] = None  # pylint: disable=unused-argument
+        self, _timeout: Optional[float] = None  # pylint: disable=unused-argument
     ) -> Optional[types.TracebackType]:
         """See grpc.Future.traceback."""
         try:
@@ -457,7 +457,7 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
     def add_done_callback(
         self,
         fn: Callable[[grpc.Future], None],
-        timeout: Optional[float] = None,  # pylint: disable=unused-argument
+        _timeout: Optional[float] = None,  # pylint: disable=unused-argument
     ) -> None:
         """See grpc.Future.add_done_callback."""
         fn(self)
