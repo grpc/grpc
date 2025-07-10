@@ -427,19 +427,18 @@ class _Context(grpc.ServicerContext):
         with self._state.condition:
             if self._state.client is _CANCELLED:
                 _raise_rpc_error(self._state)
+            elif self._state.initial_metadata_allowed:
+                operation = _get_initial_metadata_operation(
+                    self._state, initial_metadata
+                )
+                self._rpc_event.call.start_server_batch(
+                    (operation,), _send_initial_metadata(self._state)
+                )
+                self._state.initial_metadata_allowed = False
+                self._state.due.add(_SEND_INITIAL_METADATA_TOKEN)
             else:
-                if self._state.initial_metadata_allowed:
-                    operation = _get_initial_metadata_operation(
-                        self._state, initial_metadata
-                    )
-                    self._rpc_event.call.start_server_batch(
-                        (operation,), _send_initial_metadata(self._state)
-                    )
-                    self._state.initial_metadata_allowed = False
-                    self._state.due.add(_SEND_INITIAL_METADATA_TOKEN)
-                else:
-                    error_msg = "Initial metadata no longer allowed!"
-                    raise ValueError(error_msg)
+                error_msg = "Initial metadata no longer allowed!"
+                raise ValueError(error_msg)
 
     def set_trailing_metadata(self, trailing_metadata: MetadataType) -> None:
         with self._state.condition:
@@ -1056,15 +1055,14 @@ def _handle_with_method_handler(
                 return _handle_stream_unary(
                     rpc_event, state, method_handler, thread_pool
                 )
+        elif method_handler.response_streaming:
+            return _handle_unary_stream(
+                rpc_event, state, method_handler, thread_pool
+            )
         else:
-            if method_handler.response_streaming:
-                return _handle_unary_stream(
-                    rpc_event, state, method_handler, thread_pool
-                )
-            else:
-                return _handle_unary_unary(
-                    rpc_event, state, method_handler, thread_pool
-                )
+            return _handle_unary_unary(
+                rpc_event, state, method_handler, thread_pool
+            )
 
 
 def _handle_call(

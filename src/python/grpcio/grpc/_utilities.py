@@ -97,15 +97,14 @@ class _ChannelReadyFuture(grpc.Future):
                     raise grpc.FutureCancelledError()
                 elif self._matured:
                     return
+                elif until is None:
+                    self._condition.wait()
                 else:
-                    if until is None:
-                        self._condition.wait()
+                    remaining = until - time.time()
+                    if remaining < 0:
+                        raise grpc.FutureTimeoutError()
                     else:
-                        remaining = until - time.time()
-                        if remaining < 0:
-                            raise grpc.FutureTimeoutError()
-                        else:
-                            self._condition.wait(timeout=remaining)
+                        self._condition.wait(timeout=remaining)
 
     def _update(self, connectivity: Optional[grpc.ChannelConnectivity]) -> None:
         with self._condition:
