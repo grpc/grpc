@@ -87,7 +87,8 @@ class TlsChannelCredsFactory : public ChannelCredsFactory<> {
     auto options = MakeRefCounted<grpc_tls_credentials_options>();
     if (!config->certificate_file().empty() ||
         !config->ca_certificate_file().empty()) {
-      // TODO(gtcooke94): Expose this option in the XDS bootstrap config.
+      // TODO(gtcooke94): Expose the spiffe_bundle_map option in the XDS
+      // bootstrap config to use here.
       options->set_certificate_provider(
           MakeRefCounted<FileWatcherCertificateProvider>(
               config->private_key_file(), config->certificate_file(),

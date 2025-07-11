@@ -2158,9 +2158,6 @@ static void tsi_ssl_client_handshaker_factory_destroy(
       reinterpret_cast<tsi_ssl_client_handshaker_factory*>(factory);
   if (self->ssl_context != nullptr) SSL_CTX_free(self->ssl_context);
   if (self->alpn_protocol_list != nullptr) gpr_free(self->alpn_protocol_list);
-  self->session_cache.reset();
-  self->key_logger.reset();
-  self->root_cert_info.reset();
   delete self;
 }
 
@@ -2210,8 +2207,6 @@ static void tsi_ssl_server_handshaker_factory_destroy(
     gpr_free(self->ssl_context_x509_subject_names);
   }
   if (self->alpn_protocol_list != nullptr) gpr_free(self->alpn_protocol_list);
-  self->key_logger.reset();
-  self->root_cert_info.reset();
   delete self;
 }
 
