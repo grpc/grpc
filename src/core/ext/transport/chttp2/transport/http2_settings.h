@@ -35,12 +35,15 @@ namespace grpc_core {
 class Http2Settings {
  public:
   enum : uint16_t {
+    // These values are as defined in RFC9113
+    // https://www.rfc-editor.org/rfc/rfc9113.html#name-defined-settings
     kHeaderTableSizeWireId = 1,
     kEnablePushWireId = 2,
     kMaxConcurrentStreamsWireId = 3,
     kInitialWindowSizeWireId = 4,
     kMaxFrameSizeWireId = 5,
     kMaxHeaderListSizeWireId = 6,
+    // gRPC specific settings
     kGrpcAllowTrueBinaryMetadataWireId = 65027,
     kGrpcPreferredReceiveCryptoFrameSizeWireId = 65028,
     kGrpcAllowSecurityFrameWireId = 65029,

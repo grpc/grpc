@@ -431,7 +431,8 @@ ValueOrHttp2Status<Http2Frame> ParseSettingsFrame(const Http2FrameHeader& hdr,
           Http2ErrorCode::kFrameSizeError,
           absl::StrCat(RFC9113::kSettingsLength0, hdr.ToString()));
     }
-    return ValueOrHttp2Status<Http2Frame>(Http2SettingsFrame{true, {}});
+    return ValueOrHttp2Status<Http2Frame>(
+        Http2SettingsFrame{/*ack=*/true, /*settings=*/{}});
   }
 
   if (GPR_UNLIKELY(payload.Length() % 6 != 0)) {
@@ -440,7 +441,7 @@ ValueOrHttp2Status<Http2Frame> ParseSettingsFrame(const Http2FrameHeader& hdr,
         absl::StrCat(RFC9113::kSettingsLength6x, hdr.ToString()));
   }
 
-  Http2SettingsFrame frame{false, {}};
+  Http2SettingsFrame frame{/*ack=*/false, /*settings=*/{}};
   while (payload.Length() != 0) {
     uint8_t buffer[6];
     payload.MoveFirstNBytesIntoBuffer(6, buffer);
