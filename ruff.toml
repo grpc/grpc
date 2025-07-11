@@ -193,6 +193,7 @@ ignore = [
 =======
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 # This is to suppress
 # https://docs.astral.sh/ruff/rules/non-pep585-annotation/
 # https://docs.astral.sh/ruff/rules/non-pep604-annotation-union/#non-pep604-annotation-union-up007
@@ -205,10 +206,13 @@ exclude = [
 ]
 >>>>>>> 79bf773269 (using exclude)
 
+=======
+>>>>>>> 7c1370f1c0 (fix comments)
 # Select all rules by default, and then ignore the ones we don't want.
 # This is a good way to stay up-to-date with new rules in ruff.
 select = ["ALL"]
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
 [format]
@@ -217,6 +221,8 @@ select = ["ALL"]
 exclude = ["*"]
 
 >>>>>>> 79bf773269 (using exclude)
+=======
+>>>>>>> 7c1370f1c0 (fix comments)
 # This is to suppress
 # https://docs.astral.sh/ruff/rules/non-pep585-annotation/
 # https://docs.astral.sh/ruff/rules/non-pep604-annotation-union/#non-pep604-annotation-union-up007

@@ -10,12 +10,15 @@ exclude = [
     "*_pb2.py",
     "*_pb2_grpc.py"
 ]
+<<<<<<< HEAD
 =======
 target-version = "py39"
 >>>>>>> e31a063cb6 (add examples folder to ruff)
 =======
 extend = "../../ruff.toml"
 >>>>>>> 79bf773269 (using exclude)
+=======
+>>>>>>> 7c1370f1c0 (fix comments)
 
 [lint]
 ignore = [
@@ -221,6 +224,7 @@ ignore = [
     "YTT203",  # sys.version_info[1] compared to integer (python4), compare sys.version_info to tuple
 ]
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -249,3 +253,7 @@ exclude = ["*"]
 >>>>>>> e31a063cb6 (add examples folder to ruff)
 =======
 >>>>>>> 79bf773269 (using exclude)
+=======
+
+select = ["ALL"]
+>>>>>>> 7c1370f1c0 (fix comments)
