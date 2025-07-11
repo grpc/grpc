@@ -50,8 +50,7 @@ python3 --version
 # TODO(https://github.com/grpc/grpc/issues/23394): Update Pylint.
 pip install --upgrade astroid==2.15.8 \
   pylint==2.17.7 \
-  toml==0.10.2 \
-  "isort>=4.3.0,<5.0.0"
+  "isort~=5.11"
 
 EXIT=0
 for dir in "${DIRS[@]}"; do
