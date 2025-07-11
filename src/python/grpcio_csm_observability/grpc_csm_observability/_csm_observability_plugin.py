@@ -259,7 +259,7 @@ class CsmOpenTelemetryPlugin(OpenTelemetryPlugin):
     def __init__(
         self,
         *,
-        plugin_options: Iterable[OpenTelemetryPluginOption] = None,
+        plugin_options: Optional[Iterable[OpenTelemetryPluginOption]] = None,
         meter_provider: Optional[MeterProvider] = None,
         generic_method_attribute_filter: Optional[Callable[[str], bool]] = None,
     ):
