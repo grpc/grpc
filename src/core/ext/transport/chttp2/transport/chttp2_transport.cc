@@ -749,7 +749,6 @@ grpc_chttp2_transport::grpc_chttp2_transport(
 
   // configure http2 the way we like it
   if (is_client) {
-    settings.mutable_local().SetEnablePush(false);
     settings.mutable_local().SetMaxConcurrentStreams(0);
   }
   settings.mutable_local().SetMaxHeaderListSize(DEFAULT_MAX_HEADER_LIST_SIZE);
