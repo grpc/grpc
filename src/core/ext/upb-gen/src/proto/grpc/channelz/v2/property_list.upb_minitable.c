@@ -10,47 +10,51 @@
 #include "upb/generated_code_support.h"
 #include "src/proto/grpc/channelz/v2/property_list.upb_minitable.h"
 #include "google/protobuf/any.upb_minitable.h"
+#include "google/protobuf/duration.upb_minitable.h"
 #include "google/protobuf/empty.upb_minitable.h"
 #include "google/protobuf/timestamp.upb_minitable.h"
-#include "google/protobuf/duration.upb_minitable.h"
 
 // Must be last.
 #include "upb/port/def.inc"
 
 extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
 static const upb_MiniTableSubInternal grpc_channelz_v2_PropertyList__submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &grpc__channelz__v2__PropertyList__PropertiesEntry_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &grpc__channelz__v2__PropertyList__Element_msg_init_ptr},
 };
 
 static const upb_MiniTableField grpc_channelz_v2_PropertyList__fields[1] = {
-  {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Map | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable grpc__channelz__v2__PropertyList_msg_init = {
   &grpc_channelz_v2_PropertyList__submsgs[0],
   &grpc_channelz_v2_PropertyList__fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
   "grpc.channelz.v2.PropertyList",
 #endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000800003f00000a, &upb_prm_1bt_max64b},
+  })
 };
 
 const upb_MiniTable* grpc__channelz__v2__PropertyList_msg_init_ptr = &grpc__channelz__v2__PropertyList_msg_init;
-static const upb_MiniTableSubInternal grpc_channelz_v2_PropertyList_PropertiesEntry__submsgs[1] = {
+static const upb_MiniTableSubInternal grpc_channelz_v2_PropertyList_Element__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &grpc__channelz__v2__PropertyValue_msg_init_ptr},
 };
 
-static const upb_MiniTableField grpc_channelz_v2_PropertyList_PropertiesEntry__fields[2] = {
+static const upb_MiniTableField grpc_channelz_v2_PropertyList_Element__fields[2] = {
   {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {2, 32, 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+  {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
 };
 
-const upb_MiniTable grpc__channelz__v2__PropertyList__PropertiesEntry_msg_init = {
-  &grpc_channelz_v2_PropertyList_PropertiesEntry__submsgs[0],
-  &grpc_channelz_v2_PropertyList_PropertiesEntry__fields[0],
-  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+const upb_MiniTable grpc__channelz__v2__PropertyList__Element_msg_init = {
+  &grpc_channelz_v2_PropertyList_Element__submsgs[0],
+  &grpc_channelz_v2_PropertyList_Element__fields[0],
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
-  "grpc.channelz.v2.PropertyList.PropertiesEntry",
+  "grpc.channelz.v2.PropertyList.Element",
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -58,7 +62,7 @@ const upb_MiniTable grpc__channelz__v2__PropertyList__PropertiesEntry_msg_init =
   })
 };
 
-const upb_MiniTable* grpc__channelz__v2__PropertyList__PropertiesEntry_msg_init_ptr = &grpc__channelz__v2__PropertyList__PropertiesEntry_msg_init;
+const upb_MiniTable* grpc__channelz__v2__PropertyList__Element_msg_init_ptr = &grpc__channelz__v2__PropertyList__Element_msg_init;
 static const upb_MiniTableSubInternal grpc_channelz_v2_PropertyGrid__submsgs[1] = {
   {.UPB_PRIVATE(submsg) = &grpc__channelz__v2__PropertyGrid__Row_msg_init_ptr},
 };
@@ -205,7 +209,7 @@ const upb_MiniTable grpc__channelz__v2__PropertyValue_msg_init = {
 const upb_MiniTable* grpc__channelz__v2__PropertyValue_msg_init_ptr = &grpc__channelz__v2__PropertyValue_msg_init;
 static const upb_MiniTable *messages_layout[7] = {
   &grpc__channelz__v2__PropertyList_msg_init,
-  &grpc__channelz__v2__PropertyList__PropertiesEntry_msg_init,
+  &grpc__channelz__v2__PropertyList__Element_msg_init,
   &grpc__channelz__v2__PropertyGrid_msg_init,
   &grpc__channelz__v2__PropertyGrid__Row_msg_init,
   &grpc__channelz__v2__PropertyTable_msg_init,
