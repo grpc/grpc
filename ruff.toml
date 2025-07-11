@@ -2,7 +2,12 @@
 # For a full list of supported rules, see https://docs.astral.sh/ruff/rules/
 # For a full list of options, see https://docs.astral.sh/ruff/settings/
 
-target-version = "py39"
+extend = "../../ruff.toml"
+
+exclude = [
+    "*_pb2.py",
+    "*_pb2_grpc.py"
+]
 
 [lint]
 ignore = [
@@ -26,6 +31,7 @@ ignore = [
     "B018",    # Found useless expression. Either assign it to a variable or remove it.
     "B024",    # {name} is an abstract base class, but it has no abstract methods or properties
     "B027",    # {name} is an empty method in an abstract base class, but has no abstract decorator
+    "B028",    # No explicit stacklevel keyword argument found
     "B904",    # Within an except* clause, raise exceptions with raise ... from err or raise ... from None to distinguish them from errors in exception handling
     "BLE001",  # Do not catch blind exception: {name}
     "C402",    # Unnecessary generator (rewrite as a dict comprehension)
@@ -61,6 +67,7 @@ ignore = [
     "DTZ005",  # datetime.datetime.now() called without a tz argument
     "E402",    # Module level import not at top of cell
     "E501",    # Line too long ({width} > {limit})
+    "E712",    # Avoid equality comparisons to True; use {cond}: for truth checks
     "E713",    # Test for membership should be not in
     "E722",    # Do not use bare except
     "E731",    # Do not assign a lambda expression, use a def
@@ -96,6 +103,7 @@ ignore = [
     "PERF203", # try-except within a loop incurs performance overhead
     "PERF401", # Use {message_str} to create a transformed list
     "PIE796",  # Enum contains duplicate value: {value}
+    "PIE808",  # Unnecessary start argument in range
     "PLC0206", # Extracting value from dictionary without calling .items()
     "PLC0415", # import should be at the top-level of a file
     "PYI006",  # Use < or >= for sys.version_info comparisons
@@ -104,6 +112,7 @@ ignore = [
     "PYI045",  # __aiter__ methods should return an AsyncIterator, not an AsyncIterable
     "PYI056",  # Calling .{name}() on __all__ may not be supported by all type checkers (use += instead)
     "PLE0604", # Invalid object in __all__, must contain only strings
+    "PLE0605", # Invalid format for __all__, must be tuple or list
     "PLR0911", # Too many return statements ({returns} > {max_returns})
     "PLR0912", # Too many branches ({branches} > {max_branches})
     "PLR0913", # Too many arguments in function definition ({c_args} > {max_args})
@@ -130,6 +139,8 @@ ignore = [
     "PTH118",  # os.{module}.join() should be replaced by Path with / operator
     "PTH120",  # os.path.dirname() should be replaced by Path.parent
     "PTH123",  # open() should be replaced by Path.open()
+    "Q000",    # Single quotes found but double quotes preferred
+    "Q004",    # Unnecessary escape on inner quote character
     "RET501",  # Do not explicitly return None in function if it is the only possible return value
     "RET503",  # Missing explicit return at the end of function able to return non-None value
     "RET504",  # Unnecessary assignment to {name} before return statement
@@ -137,20 +148,27 @@ ignore = [
     "RET506",  # Unnecessary {branch} after raise statement
     "RET507",  # Unnecessary {branch} after continue statement
     "RSE102",  # Unnecessary parentheses on raised exception
+    "RUF002",  # Docstring contains ambiguous {}. Did you mean {}?
+    "RUF003",  # Comment contains ambiguous {}. Did you mean {}?
     "RUF005",  # Consider {expression} instead of concatenation
     "RUF013",  # PEP 484 prohibits implicit Optional
     "RUF022",  # __all__ is not sorted
     "RUF023",  # {}.__slots__ is not sorted
+    "RUF046",  # Value being cast to int is already an integer
     "S101",    # Use of assert detected
+    "S104",    # Possible binding to all interfaces
     "S105",    # Possible hardcoded password assigned to: "{}"
     "S110",    # try-except-pass detected, consider logging the exception
     "S301",    # pickle and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue
     "S311",    # Standard pseudo-random generators are not suitable for cryptographic purposes
     "S603",    # subprocess call: check for execution of untrusted input
+    "S324",    # Probable use of insecure hash functions in {library}: {string}
     "SIM102",  # Use a single if statement instead of nested if statements
     "SIM103",  # Return the condition {condition} directly
     "SIM105",  # Use contextlib.suppress({exception}) instead of try-except-pass
     "SIM108",  # Use ternary operator {contents} instead of if-else-block
+    "SIM110",  # Use {replacement} instead of for loop
+    "SIM113",  # Use enumerate() for index variable {index} in for loop
     "SIM114",  # Combine if branches using logical or operator
     "SIM115",  # Use a context manager for opening files
     "SIM117",  # Use a single with statement with multiple contexts instead of nested with statements
@@ -162,6 +180,7 @@ ignore = [
     "T201",    # print found
     "TC001",   # Move application import {} into a type-checking block
     "TC003",   # Move standard library import {} into a type-checking block
+    "TD002",   # Missing author in TODO; try: # TODO(<author_name>): ... or # TODO @<author_name>: ...
     "TD003",   # Missing issue link for this TODO
     "TD004",   # Missing colon in TODO
     "TD005",   # Missing issue description after TODO
@@ -170,11 +189,14 @@ ignore = [
     "TRY004",  # Prefer TypeError exception for invalid type
     "TRY203",  # Remove exception handler; error is immediately re-raised
     "TRY300",  # Consider moving this statement to an else block
+    "TRY301",  # Abstract raise to an inner function
     "TRY400",  # Use logging.exception instead of logging.error
     "TRY401",  # Redundant exception object included in logging.exception call
     "UP004",   # Class {name} inherits from object
     "UP006",   # Use {to} instead of {from} for type annotation
+    "UP007",   # Use X | Y for type annotations
     "UP008",   # Use super() instead of super(__class__, self)
+    "UP009",   # UTF-8 encoding declaration is unnecessary
     "UP010",   # Unnecessary __future__ import {import} for target Python version
     "UP015",   # Unnecessary mode argument
     "UP018",   # Unnecessary {literal_type} call (rewrite as a literal)
@@ -186,16 +208,9 @@ ignore = [
     "UP035",   # Import from {target} instead: {names}
     "UP036",   # Version block is outdated for minimum Python version
     "UP037",   # Remove quotes from type annotation
+    "UP045",   # Use X | None for type annotations
     "YTT201",  # sys.version_info[0] == 3 referenced (python4), use >=
     "YTT203",  # sys.version_info[1] compared to integer (python4), compare sys.version_info to tuple
 ]
 
-# Select all rules by default, and then ignore the ones we don't want.
-# This is a good way to stay up-to-date with new rules in ruff.
 select = ["ALL"]
-
-# This is to suppress
-# https://docs.astral.sh/ruff/rules/non-pep585-annotation/
-# https://docs.astral.sh/ruff/rules/non-pep604-annotation-union/#non-pep604-annotation-union-up007
-[lint.pyupgrade]
-keep-runtime-typing = true
