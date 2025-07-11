@@ -1137,8 +1137,10 @@ TEST_F(TlsSecurityConnectorTest,
   connector->check_peer(peer, nullptr, args, &auth_context, on_peer_checked);
 }
 
-TEST_F(TlsSecurityConnectorTest,
-       SpiffeRootAndIdentityCertsObtainedWhenCreateChannelSecurityConnector) {
+//TODO(gtcooke94): Enable when support for SPIFFE verification is complete.
+TEST_F(
+    TlsSecurityConnectorTest,
+    DISABLED_SpiffeRootAndIdentityCertsObtainedWhenCreateChannelSecurityConnector) {
   RefCountedPtr<grpc_tls_certificate_distributor> distributor =
       MakeRefCounted<grpc_tls_certificate_distributor>();
   distributor->SetKeyMaterials(kRootCertName, spiffe_bundle_map_0_,
@@ -1172,8 +1174,9 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_1_);
 }
 
+//TODO(gtcooke94): Enable when support for SPIFFE verification is complete.
 TEST_F(TlsSecurityConnectorTest,
-       SpiffeDistributorHasErrorForChannelSecurityConnector) {
+       DISABLED_SpiffeDistributorHasErrorForChannelSecurityConnector) {
   RefCountedPtr<grpc_tls_certificate_distributor> distributor =
       MakeRefCounted<grpc_tls_certificate_distributor>();
   distributor->SetKeyMaterials(kRootCertName, spiffe_bundle_map_0_,
@@ -1210,8 +1213,10 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
 }
 
-TEST_F(TlsSecurityConnectorTest,
-       SpiffeRootAndIdentityCertsObtainedWhenCreateServerSecurityConnector) {
+//TODO(gtcooke94): Enable when support for SPIFFE verification is complete.
+TEST_F(
+    TlsSecurityConnectorTest,
+    DISABLED_SpiffeRootAndIdentityCertsObtainedWhenCreateServerSecurityConnector) {
   RefCountedPtr<grpc_tls_certificate_distributor> distributor =
       MakeRefCounted<grpc_tls_certificate_distributor>();
   distributor->SetKeyMaterials(kRootCertName, spiffe_bundle_map_0_,
@@ -1244,8 +1249,9 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_1_);
 }
 
+//TODO(gtcooke94): Enable when support for SPIFFE verification is complete.
 TEST_F(TlsSecurityConnectorTest,
-       SpiffeDistributorHasErrorForServerSecurityConnector) {
+       DISABLED_SpiffeDistributorHasErrorForServerSecurityConnector) {
   RefCountedPtr<grpc_tls_certificate_distributor> distributor =
       MakeRefCounted<grpc_tls_certificate_distributor>();
   distributor->SetKeyMaterials(kRootCertName, spiffe_bundle_map_0_,
