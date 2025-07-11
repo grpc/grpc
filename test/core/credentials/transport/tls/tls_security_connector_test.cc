@@ -155,14 +155,12 @@ TEST_F(TlsSecurityConnectorTest,
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
-  auto root = tls_connector->RootCertInfoForTesting();
-  EXPECT_EQ(*root, *root_cert_0_);
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
   distributor->SetKeyMaterials(kRootCertName, root_cert_1_, std::nullopt);
   distributor->SetKeyMaterials(kIdentityCertName, nullptr, identity_pairs_1_);
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
-  root = tls_connector->RootCertInfoForTesting();
-  EXPECT_EQ(*root, *root_cert_1_);
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_1_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_1_);
 }
 
@@ -238,10 +236,10 @@ TEST_F(TlsSecurityConnectorTest,
   TlsChannelSecurityConnector* tls_root_connector =
       static_cast<TlsChannelSecurityConnector*>(root_connector.get());
   EXPECT_NE(tls_root_connector->ClientHandshakerFactoryForTesting(), nullptr);
-  EXPECT_EQ(*tls_root_connector->RootCertInfoForTesting(), *root_cert_0_);
+  EXPECT_EQ(tls_root_connector->RootCertInfoForTesting(), root_cert_0_);
   distributor->SetKeyMaterials(kRootCertName, root_cert_1_, std::nullopt);
   EXPECT_NE(tls_root_connector->ClientHandshakerFactoryForTesting(), nullptr);
-  EXPECT_EQ(*tls_root_connector->RootCertInfoForTesting(), *root_cert_1_);
+  EXPECT_EQ(tls_root_connector->RootCertInfoForTesting(), root_cert_1_);
 }
 
 TEST_F(TlsSecurityConnectorTest,
@@ -270,12 +268,12 @@ TEST_F(TlsSecurityConnectorTest,
       static_cast<TlsChannelSecurityConnector*>(connector.get());
   // The client_handshaker_factory_ shouldn't be updated.
   EXPECT_EQ(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
-  EXPECT_EQ(*tls_connector->RootCertInfoForTesting(), *root_cert_0_);
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_0_);
   // After updating the root certs, the client_handshaker_factory_ should be
   // updated.
   distributor->SetKeyMaterials(kIdentityCertName, nullptr, identity_pairs_0_);
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
-  EXPECT_EQ(*tls_connector->RootCertInfoForTesting(), *root_cert_0_);
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
 }
 
@@ -303,7 +301,7 @@ TEST_F(TlsSecurityConnectorTest,
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
-  EXPECT_EQ(*tls_connector->RootCertInfoForTesting(), *root_cert_0_);
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
   // Calling SetErrorForCert on distributor shouldn't invalidate the previous
   // valid credentials.
@@ -312,7 +310,7 @@ TEST_F(TlsSecurityConnectorTest,
   distributor->SetErrorForCert(kIdentityCertName, std::nullopt,
                                GRPC_ERROR_CREATE(kErrorMessage));
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
-  EXPECT_EQ(*tls_connector->RootCertInfoForTesting(), *root_cert_0_);
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
 }
 
@@ -786,12 +784,12 @@ TEST_F(TlsSecurityConnectorTest,
   TlsServerSecurityConnector* tls_connector =
       static_cast<TlsServerSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
-  EXPECT_EQ(*tls_connector->RootCertInfoForTesting(), *root_cert_0_);
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
   distributor->SetKeyMaterials(kRootCertName, root_cert_1_, std::nullopt);
   distributor->SetKeyMaterials(kIdentityCertName, nullptr, identity_pairs_1_);
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
-  EXPECT_EQ(*tls_connector->RootCertInfoForTesting(), *root_cert_1_);
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_1_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_1_);
 }
 
@@ -861,7 +859,7 @@ TEST_F(TlsSecurityConnectorTest,
   // updated.
   distributor->SetKeyMaterials(kRootCertName, root_cert_0_, std::nullopt);
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
-  EXPECT_EQ(*tls_connector->RootCertInfoForTesting(), *root_cert_0_);
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
 }
 
@@ -888,7 +886,7 @@ TEST_F(TlsSecurityConnectorTest,
   TlsServerSecurityConnector* tls_connector =
       static_cast<TlsServerSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
-  EXPECT_EQ(*tls_connector->RootCertInfoForTesting(), *root_cert_0_);
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
   // Calling SetErrorForCert on distributor shouldn't invalidate the previous
   // valid credentials.
@@ -897,7 +895,7 @@ TEST_F(TlsSecurityConnectorTest,
   distributor->SetErrorForCert(kIdentityCertName, std::nullopt,
                                GRPC_ERROR_CREATE(kErrorMessage));
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
-  EXPECT_EQ(*tls_connector->RootCertInfoForTesting(), *root_cert_0_);
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
 }
 
@@ -1164,13 +1162,13 @@ TEST_F(TlsSecurityConnectorTest,
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
-  EXPECT_EQ(*tls_connector->RootCertInfoForTesting(), *spiffe_bundle_map_0_);
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), spiffe_bundle_map_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
   distributor->SetKeyMaterials(kRootCertName, spiffe_bundle_map_1_,
                                std::nullopt);
   distributor->SetKeyMaterials(kIdentityCertName, nullptr, identity_pairs_1_);
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
-  EXPECT_EQ(*tls_connector->RootCertInfoForTesting(), *spiffe_bundle_map_1_);
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), spiffe_bundle_map_1_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_1_);
 }
 
@@ -1199,7 +1197,7 @@ TEST_F(TlsSecurityConnectorTest,
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
-  EXPECT_EQ(*tls_connector->RootCertInfoForTesting(), *spiffe_bundle_map_0_);
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), spiffe_bundle_map_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
   // Calling SetErrorForCert on distributor shouldn't invalidate the previous
   // valid credentials.
@@ -1208,100 +1206,8 @@ TEST_F(TlsSecurityConnectorTest,
   distributor->SetErrorForCert(kIdentityCertName, std::nullopt,
                                GRPC_ERROR_CREATE(kErrorMessage));
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
-  EXPECT_EQ(*tls_connector->RootCertInfoForTesting(), *spiffe_bundle_map_0_);
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), spiffe_bundle_map_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
-}
-
-TEST_F(TlsSecurityConnectorTest,
-       SpiffeCompareChannelSecurityConnectorSucceedsOnSameCredentials) {
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor =
-      MakeRefCounted<grpc_tls_certificate_distributor>();
-  distributor->SetKeyMaterials(kRootCertName, spiffe_bundle_map_0_,
-                               std::nullopt);
-  RefCountedPtr<grpc_tls_certificate_provider> provider =
-      MakeRefCounted<TlsTestCertificateProvider>(distributor);
-  auto options = MakeRefCounted<grpc_tls_credentials_options>();
-  options->set_certificate_provider(provider);
-  options->set_watch_root_cert(true);
-  options->set_root_cert_name(kRootCertName);
-  RefCountedPtr<TlsCredentials> credential =
-      MakeRefCounted<TlsCredentials>(options);
-  ChannelArgs connector_args;
-  ChannelArgs other_connector_args;
-  RefCountedPtr<grpc_channel_security_connector> connector =
-      credential->create_security_connector(nullptr, kTargetName,
-                                            &connector_args);
-  RefCountedPtr<grpc_channel_security_connector> other_connector =
-      credential->create_security_connector(nullptr, kTargetName,
-                                            &other_connector_args);
-  // Comparing the equality of security connectors generated from the same
-  // channel credentials with same settings should succeed.
-  EXPECT_EQ(connector->cmp(other_connector.get()), 0);
-}
-
-TEST_F(
-    TlsSecurityConnectorTest,
-    SpiffeCompareChannelSecurityConnectorFailsOnDifferentChannelCredentials) {
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor =
-      MakeRefCounted<grpc_tls_certificate_distributor>();
-  distributor->SetKeyMaterials(kRootCertName, spiffe_bundle_map_0_,
-                               std::nullopt);
-  RefCountedPtr<grpc_tls_certificate_provider> provider =
-      MakeRefCounted<TlsTestCertificateProvider>(distributor);
-  auto options = MakeRefCounted<grpc_tls_credentials_options>();
-  options->set_certificate_provider(provider);
-  options->set_watch_root_cert(true);
-  options->set_root_cert_name(kRootCertName);
-  RefCountedPtr<TlsCredentials> credential =
-      MakeRefCounted<TlsCredentials>(options);
-  ChannelArgs connector_args;
-  RefCountedPtr<grpc_channel_security_connector> connector =
-      credential->create_security_connector(nullptr, kTargetName,
-                                            &connector_args);
-  auto other_options = MakeRefCounted<grpc_tls_credentials_options>();
-  other_options->set_certificate_provider(provider);
-  other_options->set_watch_root_cert(true);
-  other_options->set_root_cert_name(kRootCertName);
-  other_options->set_watch_identity_pair(true);
-  RefCountedPtr<TlsCredentials> other_credential =
-      MakeRefCounted<TlsCredentials>(other_options);
-  ChannelArgs other_connector_args;
-  RefCountedPtr<grpc_channel_security_connector> other_connector =
-      other_credential->create_security_connector(nullptr, kTargetName,
-                                                  &other_connector_args);
-  // Comparing the equality of security connectors generated from different
-  // channel credentials should fail.
-  EXPECT_NE(connector->cmp(other_connector.get()), 0);
-}
-
-TEST_F(TlsSecurityConnectorTest,
-       SpiffeCompareChannelSecurityConnectorFailsOnDifferentCallCredentials) {
-  RefCountedPtr<grpc_tls_certificate_distributor> distributor =
-      MakeRefCounted<grpc_tls_certificate_distributor>();
-  distributor->SetKeyMaterials(kRootCertName, spiffe_bundle_map_0_,
-                               std::nullopt);
-  RefCountedPtr<grpc_tls_certificate_provider> provider =
-      MakeRefCounted<TlsTestCertificateProvider>(distributor);
-  auto options = MakeRefCounted<grpc_tls_credentials_options>();
-  options->set_certificate_provider(provider);
-  options->set_watch_root_cert(true);
-  options->set_root_cert_name(kRootCertName);
-  RefCountedPtr<TlsCredentials> credential =
-      MakeRefCounted<TlsCredentials>(options);
-  ChannelArgs connector_args;
-  RefCountedPtr<grpc_channel_security_connector> connector =
-      credential->create_security_connector(nullptr, kTargetName,
-                                            &connector_args);
-  grpc_call_credentials* call_creds =
-      grpc_md_only_test_credentials_create("", "");
-  ChannelArgs other_connector_args;
-  RefCountedPtr<grpc_channel_security_connector> other_connector =
-      credential->create_security_connector(
-          RefCountedPtr<grpc_call_credentials>(call_creds), kTargetName,
-          &other_connector_args);
-  // Comparing the equality of security connectors generated with different call
-  // credentials should fail.
-  EXPECT_NE(connector->cmp(other_connector.get()), 0);
 }
 
 TEST_F(TlsSecurityConnectorTest,
@@ -1328,13 +1234,13 @@ TEST_F(TlsSecurityConnectorTest,
   TlsServerSecurityConnector* tls_connector =
       static_cast<TlsServerSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
-  EXPECT_EQ(*tls_connector->RootCertInfoForTesting(), *spiffe_bundle_map_0_);
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), spiffe_bundle_map_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
   distributor->SetKeyMaterials(kRootCertName, spiffe_bundle_map_1_,
                                std::nullopt);
   distributor->SetKeyMaterials(kIdentityCertName, nullptr, identity_pairs_1_);
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
-  EXPECT_EQ(*tls_connector->RootCertInfoForTesting(), *spiffe_bundle_map_1_);
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), spiffe_bundle_map_1_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_1_);
 }
 
@@ -1362,7 +1268,7 @@ TEST_F(TlsSecurityConnectorTest,
   TlsServerSecurityConnector* tls_connector =
       static_cast<TlsServerSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
-  EXPECT_EQ(*tls_connector->RootCertInfoForTesting(), *spiffe_bundle_map_0_);
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), spiffe_bundle_map_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
   // Calling SetErrorForCert on distributor shouldn't invalidate the previous
   // valid credentials.
@@ -1371,7 +1277,7 @@ TEST_F(TlsSecurityConnectorTest,
   distributor->SetErrorForCert(kIdentityCertName, std::nullopt,
                                GRPC_ERROR_CREATE(kErrorMessage));
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
-  EXPECT_EQ(*tls_connector->RootCertInfoForTesting(), *spiffe_bundle_map_0_);
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), spiffe_bundle_map_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
 }
 
