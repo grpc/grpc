@@ -228,6 +228,7 @@ ignore = [
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 select = ["ALL"]
 =======
 =======
@@ -257,3 +258,6 @@ exclude = ["*"]
 
 select = ["ALL"]
 >>>>>>> 7c1370f1c0 (fix comments)
+=======
+select = ["ALL"]
+>>>>>>> 690f93cb1c (add new line)
