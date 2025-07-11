@@ -19,23 +19,24 @@ set -ex
 cd "$(dirname "$0")/../.."
 
 DIRS=(
-    src/python/grpcio/grpc
-#    src/python/grpcio_channelz/grpc_channelz
-#    src/python/grpcio_health_checking/grpc_health
-#    src/python/grpcio_reflection/grpc_reflection
-#    src/python/grpcio_testing/grpc_testing
-#    src/python/grpcio_status/grpc_status
-#    src/python/grpcio_observability/grpc_observability
-#    src/python/grpcio_csm_observability/grpc_csm_observability
-#    src/python/grpcio_tests/tests
-#    src/python/grpcio_tests/tests_gevent
+   src/python/grpcio/grpc
+   src/python/grpcio_channelz/grpc_channelz
+   src/python/grpcio_health_checking/grpc_health
+   src/python/grpcio_reflection/grpc_reflection
+   src/python/grpcio_testing/grpc_testing
+   src/python/grpcio_status/grpc_status
+   src/python/grpcio_observability/grpc_observability
+   src/python/grpcio_csm_observability/grpc_csm_observability
+   src/python/grpcio_tests/tests
+   src/python/grpcio_tests/tests_gevent
+   examples/python
 )
 
 VIRTUALENV=.venv_ruff
 python3.11 -m virtualenv $VIRTUALENV
 source $VIRTUALENV/bin/activate
 
-pip install ruff==0.12.1
+pip install ruff==0.12.2
 
 # Check if --fix flag is provided
 RUFF_COMMAND="ruff check"
