@@ -115,7 +115,7 @@ class OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer<
 //
 template <typename UnrefBehavior>
 OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer<UnrefBehavior>::
-    CallAttemptTracer(const OpenTelemetryPluginImpl::ClientCallTracer* parent,
+    CallAttemptTracer(OpenTelemetryPluginImpl::ClientCallTracer* const parent,
                       uint64_t attempt_num, bool is_transparent_retry)
     : parent_(parent), start_time_(absl::Now()) {
   if (parent_->otel_plugin_->client_.attempt.started != nullptr) {
@@ -310,6 +310,12 @@ void OpenTelemetryPluginImpl::ClientCallTracer::
     parent_->otel_plugin_->client_.attempt.rcvd_total_compressed_message_size
         ->Record(incoming_bytes, labels, opentelemetry::context::Context{});
   }
+  if (parent_->otel_plugin_->client_.call.retry_delay != nullptr) {
+    grpc_core::MutexLock lock(&parent_->mu_);
+    if (--parent_->num_active_attempts_ == 0) {
+      parent_->time_at_last_attempt_end_ = absl::Now();
+    }
+  }
   if (span_ != nullptr) {
     if (status.ok()) {
       span_->SetStatus(opentelemetry::trace::StatusCode::kOk);
@@ -441,6 +447,32 @@ OpenTelemetryPluginImpl::ClientCallTracer::ClientCallTracer(
 }
 
 OpenTelemetryPluginImpl::ClientCallTracer::~ClientCallTracer() {
+  std::array<std::pair<opentelemetry::nostd::string_view,
+                       opentelemetry::common::AttributeValue>,
+             2>
+      attributes = {
+          std::pair(AbslStringViewToNoStdStringView(OpenTelemetryMethodKey()),
+                    opentelemetry::common::AttributeValue(
+                        AbslStringViewToNoStdStringView(MethodForStats()))),
+          std::pair(AbslStringViewToNoStdStringView(OpenTelemetryTargetKey()),
+                    opentelemetry::common::AttributeValue(
+                        AbslStringViewToNoStdStringView(
+                            scope_config_->filtered_target())))};
+  if (otel_plugin_->client_.call.retries != nullptr && retries_ > 1) {
+    otel_plugin_->client_.call.retries->Record(
+        retries_ - 1, attributes, opentelemetry::context::Context{});
+  }
+  if (otel_plugin_->client_.call.transparent_retries != nullptr &&
+      transparent_retries_ != 0) {
+    otel_plugin_->client_.call.transparent_retries->Record(
+        transparent_retries_, attributes, opentelemetry::context::Context{});
+  }
+  if (otel_plugin_->client_.call.retry_delay != nullptr &&
+      retry_delay_ != absl::ZeroDuration() && retries_ > 1) {
+    otel_plugin_->client_.call.retry_delay->Record(
+        absl::ToDoubleSeconds(retry_delay_), attributes,
+        opentelemetry::context::Context{});
+  }
   if (span_ != nullptr) {
     span_->End();
   }
@@ -458,6 +490,10 @@ OpenTelemetryPluginImpl::ClientCallTracer::StartNewAttempt(
     grpc_core::MutexLock lock(&mu_);
     if (transparent_retries_ != 0 || retries_ != 0) {
       is_first_attempt = false;
+      if (otel_plugin_->client_.call.retry_delay != nullptr &&
+          num_active_attempts_ == 0 && !is_transparent_retry) {
+        retry_delay_ += absl::Now() - time_at_last_attempt_end_;
+      }
     }
     if (is_transparent_retry) {
       ++transparent_retries_;
@@ -465,6 +501,7 @@ OpenTelemetryPluginImpl::ClientCallTracer::StartNewAttempt(
       ++retries_;
     }
     attempt_num = retries_ - 1;  // Sequence starts at 0
+    ++num_active_attempts_;
   }
   if (is_first_attempt) {
     return arena_
