@@ -43,7 +43,14 @@ bazel_dep(name = "rules_proto", version = "7.0.2")
 bazel_dep(name = "xds", version = "0.0.0-20240423-555b57e", repo_name = "com_github_cncf_xds")  # mismatched 20231116
 bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
 
-switched_rules = use_extension("@com_google_googleapis//:extensions.bzl", "switched_rules")
+# Not used directly. Necessary so the fuzztest would not pull a version
+# incompatible with new ABSL.
+bazel_dep(name = "riegeli", version = "0.0.0-20240927-cdfb25a")
+
+switched_rules = use_extension(
+    "@com_google_googleapis//:extensions.bzl",
+    "switched_rules",
+)
 switched_rules.use_languages(
     cc = True,
     grpc = True,
@@ -53,14 +60,26 @@ switched_rules.use_languages(
 # Development dependencies
 # ========================
 
-bazel_dep(name = "fuzztest", version = "20241028.0", dev_dependency = True, repo_name = "com_google_fuzztest")  # mistmached 2023-05-16
-bazel_dep(name = "google_benchmark", version = "1.9.0", dev_dependency = True, repo_name = "com_github_google_benchmark")
+bazel_dep(
+    name = "fuzztest",
+    version = "20250214.0",
+    dev_dependency = True,
+    repo_name = "com_google_fuzztest",
+)  # mistmached 2023-05-16
+
+bazel_dep(
+    name = "google_benchmark",
+    version = "1.9.0",
+    dev_dependency = True,
+    repo_name = "com_github_google_benchmark",
+)
+
 bazel_dep(name = "rules_shell", version = "0.4.0", dev_dependency = True)
 
 # Python dependencies
 # ===================
 
-bazel_dep(name = "rules_python", version = "0.37.1")
+bazel_dep(name = "rules_python", version = "1.0.0")
 
 PYTHON_VERSIONS = [
     "3.8",
@@ -95,3 +114,26 @@ pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 use_repo(pip, "grpc_python_dependencies")
 
 bazel_dep(name = "cython", version = "3.0.11-1")
+
+http_archive = use_repo_rule(
+    "@bazel_tools//tools/build_defs/repo:http.bzl",
+    "http_archive",
+)
+
+http_archive(
+    name = "bazel_toolchains",
+    sha256 = "179ec02f809e86abf56356d8898c8bd74069f1bd7c56044050c2cd3d79d0e024",
+    strip_prefix = "bazel-toolchains-4.1.0",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/releases/download/4.1.0/bazel-toolchains-4.1.0.tar.gz",
+        "https://github.com/bazelbuild/bazel-toolchains/releases/download/4.1.0/bazel-toolchains-4.1.0.tar.gz",
+    ],
+)
+
+exec_properties = use_extension("//bazel:extensions.bzl", "exec_properties")
+exec_properties.custom_exec_properties(
+    name = "grpc_custom_exec_properties",
+    constant = "LARGE_MACHINE",
+    rbe_exec_properties_dict = {"os": "ubuntu", "machine_size": "large"},
+)
+use_repo(exec_properties, "grpc_custom_exec_properties")
