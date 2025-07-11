@@ -811,6 +811,42 @@ TEST_F(CredentialsTest, TestComputeEngineCredsSuccess) {
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
+TEST_F(CredentialsTest, TestComputeEngineCredsWithAltsSuccess) {
+  ExecCtx exec_ctx;
+  std::string emd = "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_";
+  const char expected_creds_debug_string[] =
+      "GoogleComputeEngineTokenFetcherAltsCredentials{"
+      "GoogleComputeEngineTokenFetcherCredentials{"
+      "OAuth2TokenFetcherCredentials}}";
+  grpc_call_credentials* creds =
+      grpc_google_compute_engine_alts_credentials_create(nullptr);
+  // Check security level.
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+
+  // First request: http get should be called.
+  auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
+  HttpRequest::SetOverride(compute_engine_httpcli_get_success_override,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+
+  // Second request: the cached token should be served directly.
+  state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
+  HttpRequest::SetOverride(httpcli_get_should_not_be_called,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+
+  CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
+           0);
+  creds->Unref();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
 TEST_F(CredentialsTest, TestComputeEngineCredsFailure) {
   ExecCtx exec_ctx;
   const char expected_creds_debug_string[] =
@@ -821,6 +857,28 @@ TEST_F(CredentialsTest, TestComputeEngineCredsFailure) {
       absl::UnavailableError("error parsing oauth2 token"), {});
   grpc_call_credentials* creds =
       grpc_google_compute_engine_credentials_create(nullptr);
+  HttpRequest::SetOverride(compute_engine_httpcli_get_failure_override,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
+           0);
+  creds->Unref();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
+TEST_F(CredentialsTest, TestComputeEngineCredsWithAltsFailure) {
+  ExecCtx exec_ctx;
+  const char expected_creds_debug_string[] =
+      "GoogleComputeEngineTokenFetcherAltsCredentials{"
+      "GoogleComputeEngineTokenFetcherCredentials{"
+      "OAuth2TokenFetcherCredentials}}";
+  auto state = RequestMetadataState::NewInstance(
+      // TODO(roth): This should return UNAUTHENTICATED.
+      absl::UnavailableError("error parsing oauth2 token"), {});
+  grpc_call_credentials* creds =
+      grpc_google_compute_engine_alts_credentials_create(nullptr);
   HttpRequest::SetOverride(compute_engine_httpcli_get_failure_override,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
@@ -1761,6 +1819,39 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsCallCredsSpecified) {
   grpc_composite_channel_credentials* channel_creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
           grpc_google_default_credentials_create(call_creds, nullptr));
+  CHECK_EQ(g_test_gce_tenancy_checker_called, false);
+  CHECK_NE(channel_creds, nullptr);
+  CHECK_NE(channel_creds->call_creds(), nullptr);
+  HttpRequest::SetOverride(compute_engine_httpcli_get_success_override,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(channel_creds->mutable_call_creds(),
+                                kTestUrlScheme, kTestAuthority, kTestPath);
+  ExecCtx::Get()->Flush();
+  channel_creds->Unref();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
+TEST_F(CredentialsTest, TestGoogleDefaultCredsWithAltsCallCredsSpecified) {
+  auto state = RequestMetadataState::NewInstance(
+      absl::OkStatus(),
+      "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_");
+  ExecCtx exec_ctx;
+  grpc_flush_cached_google_default_credentials();
+  grpc_call_credentials* call_creds_for_tls =
+      grpc_google_compute_engine_credentials_create(nullptr);
+  grpc_call_credentials* call_creds_for_alts =
+      grpc_google_compute_engine_alts_credentials_create(nullptr);
+  set_gce_tenancy_checker_for_testing(test_gce_tenancy_checker);
+  g_test_gce_tenancy_checker_called = false;
+  g_test_is_on_gce = true;
+  HttpRequest::SetOverride(
+      default_creds_metadata_server_detection_httpcli_get_success_override,
+      httpcli_post_should_not_be_called, httpcli_put_should_not_be_called);
+  grpc_composite_channel_credentials* channel_creds =
+      reinterpret_cast<grpc_composite_channel_credentials*>(
+          grpc_google_default_credentials_create(call_creds_for_tls,
+                                                 call_creds_for_alts));
   CHECK_EQ(g_test_gce_tenancy_checker_called, false);
   CHECK_NE(channel_creds, nullptr);
   CHECK_NE(channel_creds->call_creds(), nullptr);
