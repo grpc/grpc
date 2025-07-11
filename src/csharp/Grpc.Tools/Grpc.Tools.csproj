@@ -59,6 +59,7 @@
     <_Asset PackagePath="tools/linux_x64/" Include="$(Assets_ProtoCompiler)linux_x64/protoc" />
     <_Asset PackagePath="tools/linux_arm64/" Include="$(Assets_ProtoCompiler)linux_aarch64/protoc" />
     <_Asset PackagePath="tools/macosx_x64/" Include="$(Assets_ProtoCompiler)macos_x64/protoc" /> 
+    <_Asset PackagePath="tools/linux_s390x/" Include="$(Assets_ProtoCompiler)linux_s390x/protoc" />
 
     <!-- gRPC protocol buffer compiler plugins -->
     <_Asset PackagePath="tools/windows_x86/" Include="$(Assets_GrpcPlugins)protoc_windows_x86/grpc_csharp_plugin.exe" />
@@ -67,6 +68,7 @@
     <_Asset PackagePath="tools/linux_x64/" Include="$(Assets_GrpcPlugins)protoc_linux_x64/grpc_csharp_plugin" />
     <_Asset PackagePath="tools/linux_arm64/" Include="$(Assets_GrpcPlugins)protoc_linux_aarch64/grpc_csharp_plugin" />
     <_Asset PackagePath="tools/macosx_x64/" Include="$(Assets_GrpcPlugins)protoc_macos_x64/grpc_csharp_plugin" />
+    <_Asset PackagePath="tools/linux_s390x/" Include="$(Assets_GrpcPlugins)protoc_linux_s390x/grpc_csharp_plugin" />
 
     <None Include="@(_Asset)" Pack="true" Visible="false" />
   </ItemGroup>
