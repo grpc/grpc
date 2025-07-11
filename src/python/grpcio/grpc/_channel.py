@@ -440,13 +440,15 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
         raise self
 
     def exception(
-        self, _timeout: Optional[float] = None  # pylint: disable=unused-argument
+        self,
+        _timeout: Optional[float] = None,  # pylint: disable=unused-argument
     ) -> Optional[Exception]:
         """See grpc.Future.exception."""
         return self
 
     def traceback(
-        self, _timeout: Optional[float] = None  # pylint: disable=unused-argument
+        self,
+        _timeout: Optional[float] = None,  # pylint: disable=unused-argument
     ) -> Optional[types.TracebackType]:
         """See grpc.Future.traceback."""
         try:

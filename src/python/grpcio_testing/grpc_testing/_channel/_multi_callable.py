@@ -34,7 +34,9 @@ class UnaryUnary(grpc.UnaryUnaryMultiCallable):
         )
         return _invocation.blocking_unary_response(rpc_handler)
 
-    def with_call(self, request, timeout=None, metadata=None, _credentials=None):
+    def with_call(
+        self, request, timeout=None, metadata=None, _credentials=None
+    ):
         rpc_handler = self._channel_handler.invoke_rpc(
             self._method_full_rpc_name,
             _common.fuss_with_metadata(metadata),
