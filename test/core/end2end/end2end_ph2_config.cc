@@ -34,94 +34,43 @@
 
 namespace grpc_core {
 
-#define GRPC_HTTP2_CORE_CLIENT_CHANNEL_TESTS                    \
+#define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST          \
   "CoreClientChannelTests.DeadlineAfterAcceptWithServiceConfig" \
-  "CoreClientChannelTests.DeadlineAfterRoundTripWithServiceConfig"
-
-#define GRPC_HTTP2_CORE_DEADLINE_SINGLE_HOP_TESTS \
-  "CoreDeadlineSingleHopTests."                   \
-  "TimeoutBeforeRequestCallWithRegisteredMethodWithPayload"
-
-#define GRPC_HTTP2_CORE_DEADLINE_TESTS
-
-#define GRPC_HTTP2_CORE_END2END_TEST_LIST                                  \
-  "|CoreEnd2endTests.BinaryMetadataServerHttp2FallbackClientHttp2Fallback" \
-  "|CoreEnd2endTests.BinaryMetadataServerHttp2FallbackClientTrueBinary"    \
-  "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientHttp2Fallback"    \
-  "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientTrueBinary"       \
-  "|CoreEnd2endTests.CancelWithStatus3"                                    \
-  "|CoreEnd2endTests.MaxMessageLengthOnClientOnResponseViaChannelArg"      \
-  "|CoreEnd2endTests."                                                     \
-  "MaxMessageLengthOnClientOnResponseViaServiceConfigWithIntegerJsonValue" \
-  "|CoreEnd2endTests."                                                     \
-  "MaxMessageLengthOnClientOnResponseViaServiceConfigWithStringJsonValue"  \
-  "|CoreEnd2endTests.PingPongStreaming1"                                   \
-  "|CoreEnd2endTests.PingPongStreaming10"                                  \
-  "|CoreEnd2endTests.PingPongStreaming10"                                  \
-  "|CoreEnd2endTests.PingPongStreaming3"                                   \
-  "|CoreEnd2endTests.PingPongStreaming3"                                   \
-  "|CoreEnd2endTests.PingPongStreaming30"                                  \
-  "|CoreEnd2endTests.SimpleMetadata"                                       \
-  "|CoreEnd2endTests.StreamingErrorResponse"                               \
-  "|CoreEnd2endTests.StreamingErrorResponse"                               \
-  "|CoreEnd2endTests.StreamingErrorResponseRequestStatusEarly"             \
-  "|CoreEnd2endTests.StreamingErrorResponseRequestStatusEarly"             \
-  "|CoreEnd2endTests."                                                     \
-  "StreamingErrorResponseRequestStatusEarlyAndRecvMessageSeparately"       \
-  "|CoreEnd2endTests.TrailingMetadata"
-
-#define GRPC_HTTP2_CORE_LARGE_SEND_TESTS           \
-  "|CoreLargeSendTests.RequestResponseWithPayload" \
-  "|CoreLargeSendTests.RequestResponseWithPayload10Times"
-
-#define GRPC_HTTP2_HTTP2_FULLSTACK_SINGLE_HOP_TESTS
-
-#define GRPC_HTTP2_HTTP2_SINGLE_HOP_TESTS
-
-#define GRPC_HTTP2_HTTP2_TESTS
-
-#define GRPC_HTTP2_NO_LOGGING_TESTS
-
-#define GRPC_HTTP2_PER_CALL_CREDS_ON_INSECURE_TESTS
-
-#define GRPC_HTTP2_PER_CALL_CREDS_TESTS
-
-#define GRPC_HTTP2_PROXY_AUTH_TESTS
-
-#define GRPC_HTTP2_RESOURCE_QUOTA_TESTS
-
-#define GRPC_HTTP2_RETRY_HTTP2_TESTS
-
-#define GRPC_HTTP2_RETRY_TESTS
-
-#define GRPC_HTTP2_SECURE_END2END_TESTS
-
-#define GRPC_HTTP2_WRITE_BUFFERING_TESTS
-
-#define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST \
-  GRPC_HTTP2_CORE_CLIENT_CHANNEL_TESTS                 \
-  GRPC_HTTP2_CORE_DEADLINE_SINGLE_HOP_TESTS            \
-  GRPC_HTTP2_CORE_DEADLINE_TESTS                       \
-  GRPC_HTTP2_CORE_END2END_TEST_LIST                    \
-  GRPC_HTTP2_CORE_LARGE_SEND_TESTS                     \
-  GRPC_HTTP2_HTTP2_FULLSTACK_SINGLE_HOP_TESTS          \
-  GRPC_HTTP2_HTTP2_SINGLE_HOP_TESTS                    \
-  GRPC_HTTP2_HTTP2_TESTS                               \
-  GRPC_HTTP2_NO_LOGGING_TESTS                          \
-  GRPC_HTTP2_PER_CALL_CREDS_ON_INSECURE_TESTS          \
-  GRPC_HTTP2_PER_CALL_CREDS_TESTS                      \
-  GRPC_HTTP2_PROXY_AUTH_TESTS                          \
-  GRPC_HTTP2_RESOURCE_QUOTA_TESTS                      \
-  GRPC_HTTP2_RETRY_HTTP2_TESTS                         \
-  GRPC_HTTP2_RETRY_TESTS                               \
-  GRPC_HTTP2_SECURE_END2END_TESTS                      \
-  GRPC_HTTP2_WRITE_BUFFERING_TESTS
-
+  "|CoreClientChannelTests.DeadlineAfterRoundTripWithServiceConfig"
+"|CoreDeadlineSingleHopTests."
+    "TimeoutBeforeRequestCallWithRegisteredMethodWithPayload"
+    "|CoreEnd2endTests.BinaryMetadataServerHttp2FallbackClientHttp2Fallback"
+    "|CoreEnd2endTests.BinaryMetadataServerHttp2FallbackClientTrueBinary"
+    "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientHttp2Fallback"
+    "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientTrueBinary"
+    "|CoreEnd2endTests.CancelWithStatus3"
+    "|CoreEnd2endTests.MaxMessageLengthOnClientOnResponseViaChannelArg"
+    "|CoreEnd2endTests."
+    "MaxMessageLengthOnClientOnResponseViaServiceConfigWithIntegerJsonValue"
+    "|CoreEnd2endTests."
+    "MaxMessageLengthOnClientOnResponseViaServiceConfigWithStringJsonValue"
+    "|CoreEnd2endTests.PingPongStreaming1"
+    "|CoreEnd2endTests.PingPongStreaming10"
+    "|CoreEnd2endTests.PingPongStreaming10"
+    "|CoreEnd2endTests.PingPongStreaming3"
+    "|CoreEnd2endTests.PingPongStreaming3"
+    "|CoreEnd2endTests.PingPongStreaming30"
+    "|CoreEnd2endTests.SimpleMetadata"
+    "|CoreEnd2endTests.StreamingErrorResponse"
+    "|CoreEnd2endTests.StreamingErrorResponse"
+    "|CoreEnd2endTests.StreamingErrorResponseRequestStatusEarly"
+    "|CoreEnd2endTests.StreamingErrorResponseRequestStatusEarly"
+    "|CoreEnd2endTests."
+    "StreamingErrorResponseRequestStatusEarlyAndRecvMessageSeparately"
+    "|CoreEnd2endTests.TrailingMetadata"
+    "|CoreLargeSendTests.RequestResponseWithPayload"
+    "|CoreLargeSendTests.RequestResponseWithPayload10Times"
 #define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE    \
   "CoreEnd2endTests|CoreDeadlineTests|CoreLargeSendTests|" \
   "CoreClientChannelTests|CoreDeadlineSingleHopTests|"
 
-std::vector<CoreTestConfiguration> End2endTestConfigs() {
+    std::vector<CoreTestConfiguration>
+    End2endTestConfigs() {
   std::vector<CoreTestConfiguration> list_of_configs;
   if (IsExperimentEnabled(
           ExperimentIds::kExperimentIdPromiseBasedHttp2ClientTransport)) {
