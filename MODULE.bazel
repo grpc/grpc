@@ -117,6 +117,7 @@ python = use_extension("@rules_python//python/extensions:python.bzl", "python")
     python.toolchain(
         is_default = python_version == PYTHON_VERSIONS[-1],
         python_version = python_version,
+        ignore_root_user_error = True,
     )
     for python_version in PYTHON_VERSIONS
 ]
