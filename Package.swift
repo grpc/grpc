@@ -1330,6 +1330,8 @@ let package = Package(
         "src/core/lib/event_engine/ares_resolver.h",
         "src/core/lib/event_engine/cf_engine/cf_engine.cc",
         "src/core/lib/event_engine/cf_engine/cf_engine.h",
+        "src/core/lib/event_engine/cf_engine/cfsocket_listener.cc",
+        "src/core/lib/event_engine/cf_engine/cfsocket_listener.h",
         "src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc",
         "src/core/lib/event_engine/cf_engine/cfstream_endpoint.h",
         "src/core/lib/event_engine/cf_engine/cftype_unique_ref.h",

@@ -59,6 +59,8 @@ static const NSTimeInterval kInvertedTimeout = 2;
 
 + (void)setUp {
   GRPCPrintInteropTestServerDebugInfo();
+
+  GRPCInteropStartPlainTextServer();
 }
 
 - (void)setUp {
