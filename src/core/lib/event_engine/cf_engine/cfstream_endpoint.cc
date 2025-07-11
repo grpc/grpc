@@ -72,6 +72,14 @@ bool CFStreamEndpointImpl::CancelConnect(absl::Status status) {
   return open_event_.SetShutdown(std::move(status));
 }
 
+void CFStreamEndpointImpl::AcceptSocket(
+    absl::AnyInvocable<void(absl::Status)> on_connect,
+    CFSocketNativeHandle sock) {
+  CFStreamCreatePairWithSocket(nullptr, sock, &cf_read_stream_,
+                               &cf_write_stream_);
+  SetupStreams(std::move(on_connect));
+}
+
 void CFStreamEndpointImpl::Connect(
     absl::AnyInvocable<void(absl::Status)> on_connect,
     EventEngine::ResolvedAddress addr) {
@@ -105,6 +113,11 @@ void CFStreamEndpointImpl::Connect(
   CFStreamCreatePairWithSocketToHost(NULL, host, port, &cf_read_stream_,
                                      &cf_write_stream_);
 
+  SetupStreams(std::move(on_connect));
+}
+
+void CFStreamEndpointImpl::SetupStreams(
+    absl::AnyInvocable<void(absl::Status)> on_connect) {
   CFStreamClientContext cf_context = {0, this, Retain, Release, nullptr};
   CFReadStreamSetClient(
       cf_read_stream_,
@@ -235,6 +248,9 @@ CFStreamEndpointImpl::~CFStreamEndpointImpl() {
   open_event_.DestroyEvent();
   read_event_.DestroyEvent();
   write_event_.DestroyEvent();
+
+  GRPC_TRACE_LOG(event_engine_endpoint, INFO)
+      << "CFStreamEndpointImpl::~CFStreamEndpointImpl: this: " << this;
 }
 
 void CFStreamEndpointImpl::Shutdown() {
@@ -253,6 +269,9 @@ void CFStreamEndpointImpl::Shutdown() {
 
   CFReadStreamClose(cf_read_stream_);
   CFWriteStreamClose(cf_write_stream_);
+
+  cf_read_stream_.reset();
+  cf_write_stream_.reset();
 }
 
 bool CFStreamEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
