@@ -101,9 +101,6 @@ disable=
 
 	# NOTE(sergiitk): From here: just to make it work with pylint==2.17.7
 	#                 Pylint will be replaced with ruff anyway.
-	# TODO(sergiitk): fix!
-	dangerous-default-value,
-
 	# Not enforced by ruff:
 	consider-using-f-string,
 	# TODO(sergiitk): Check; should probably be caught by pytype
