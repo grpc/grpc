@@ -20,6 +20,9 @@
 #include <utility>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 #include "google/protobuf/any.upb.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/string.h"
@@ -27,9 +30,6 @@
 #include "src/core/util/upb_utils.h"
 #include "src/proto/grpc/channelz/v2/channelz.upb.h"
 #include "src/proto/grpc/channelz/v2/property_list.upb.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "upb/mem/arena.h"
 #include "upb/text/encode.h"
 
