@@ -37,13 +37,19 @@ TEST_DIRS=(
     'src/python/grpcio_tests/tests_gevent'
 )
 
-VIRTUALENV=venv_python_code
-python3.7 -m virtualenv $VIRTUALENV
-source $VIRTUALENV/bin/activate
+VIRTUALENV=".venv-pylint"
+
+# When running locally, allow to reuse existing venv.
+if [[ ! -d "${VIRTUALENV}" ]]; then
+  python3.7 -m virtualenv "${VIRTUALENV}"
+fi
+
+source "${VIRTUALENV}/bin/activate"
+python3 --version
 
 # TODO(https://github.com/grpc/grpc/issues/23394): Update Pylint.
-python3 -m pip install --upgrade astroid==2.3.3 \
-  pylint==2.2.2 \
+pip install --upgrade astroid==2.15.8 \
+  pylint==2.17.7 \
   toml==0.10.2 \
   "isort>=4.3.0,<5.0.0"
 
