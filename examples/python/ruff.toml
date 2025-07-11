@@ -4,6 +4,11 @@
 
 extend = "../../ruff.toml"
 
+exclude = [
+    "*_pb2.py",
+    "*_pb2_grpc.py"
+]
+
 [lint]
 ignore = [
     "A001",    # Variable {name} is shadowing a Python builtin
@@ -207,3 +212,5 @@ ignore = [
     "YTT201",  # sys.version_info[0] == 3 referenced (python4), use >=
     "YTT203",  # sys.version_info[1] compared to integer (python4), compare sys.version_info to tuple
 ]
+
+select = ["ALL"]

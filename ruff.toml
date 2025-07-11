@@ -190,19 +190,9 @@ ignore = [
     "YTT203",  # sys.version_info[1] compared to integer (python4), compare sys.version_info to tuple
 ]
 
-exclude = [
-    "*_pb2.py",
-    "*_pb2_grpc.py"
-]
-
 # Select all rules by default, and then ignore the ones we don't want.
 # This is a good way to stay up-to-date with new rules in ruff.
 select = ["ALL"]
-
-[format]
-# Exclude all files from the formatter using a glob pattern.
-# This is the most straightforward way to disable it.
-exclude = ["*"]
 
 # This is to suppress
 # https://docs.astral.sh/ruff/rules/non-pep585-annotation/
