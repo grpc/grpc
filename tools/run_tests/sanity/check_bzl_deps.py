@@ -65,7 +65,7 @@ def get_submodule_map():
         .strip()
         .split("\n")
     )
-    return dict((s.split()[1], s.split()[0].strip('-')) for s in git_submodules)
+    return dict((s.split()[1], s.split()[0].strip("-")) for s in git_submodules)
 
 
 def get_bzlmod_deps():
