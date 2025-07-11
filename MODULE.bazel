@@ -28,7 +28,28 @@ bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "boringssl", version = "0.20241024.0")  # mistmatched 20241211
 bazel_dep(name = "c-ares", version = "1.19.1", repo_name = "com_github_cares_cares")
 bazel_dep(name = "envoy_api", version = "0.0.0-20250128-4de3c74")
-bazel_dep(name = "googleapis", version = "0.0.0-20240819-fe8ba054a", repo_name = "com_google_googleapis")
+bazel_dep(name = "googleapis", version = "0.0.0", repo_name = "com_google_googleapis")
+# This is for google_cloud_cpp. Patch was taken from google_cloud_cpp repository
+archive_override(
+    module_name = "googleapis",
+    integrity = "sha256-WpRQzxrRGHyCorXN/1Pk1YS21FKStfcbUECDrLA619A=",
+    patch_strip = 1,
+    patches = ["//bazel:googleapis.modules.patch"],
+    strip_prefix = "googleapis-280725e991516d4a0f136268faf5aa6d32d21b54",
+    urls = [
+        "https://github.com/googleapis/googleapis/archive/280725e991516d4a0f136268faf5aa6d32d21b54.tar.gz",
+    ],
+)
+bazel_dep(name = "google_cloud_cpp", version = "2.35.0")
+archive_override(
+    module_name = "google_cloud_cpp",
+    sha256 = "81ea28cf9e5bb032d356b0187409f30b1035f8ea5b530675ea248c8a6c0070aa",
+    strip_prefix = "google-cloud-cpp-2.35.0",
+    urls = [
+        "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.35.0.tar.gz",
+        "https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.35.0.tar.gz",
+    ],
+)
 bazel_dep(name = "googletest", version = "1.17.0", repo_name = "com_google_googletest")
 bazel_dep(name = "opencensus-cpp", version = "0.0.0-20230502-50eb5de.bcr.2", repo_name = "io_opencensus_cpp")
 bazel_dep(name = "openssl", version = "3.3.1.bcr.1")
@@ -127,6 +148,16 @@ http_archive(
     urls = [
         "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/releases/download/4.1.0/bazel-toolchains-4.1.0.tar.gz",
         "https://github.com/bazelbuild/bazel-toolchains/releases/download/4.1.0/bazel-toolchains-4.1.0.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "bazel_compdb",
+    sha256 = "79502264d1a3a4b6309d4dae8c822e7349bcfe33e84f3c6d1affb2a40d11a31d",
+    strip_prefix = "bazel-compilation-database-d198303a4319092ab31895c4b98d64174ebe8872",
+    urls = [
+        "https://storage.googleapis.com/grpc-bazel-mirror/github.com/grailbio/bazel-compilation-database/archive/d198303a4319092ab31895c4b98d64174ebe8872.tar.gz",
+        "https://github.com/grailbio/bazel-compilation-database/archive/d198303a4319092ab31895c4b98d64174ebe8872.tar.gz",
     ],
 )
 
