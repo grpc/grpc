@@ -52,6 +52,9 @@ grpc_cc_test(
         "absl/log:check",
         "absl/strings",
     ],
+    tags = [
+        "channelz_test",
+    ],
     deps = [
         "//:channelz_property_list_upb",
         "//src/core:channelz_property_list",
@@ -127,6 +130,9 @@ grpc_fuzz_test(
         "fuzztest",
         "fuzztest_main",
     ],
+    tags = [
+        "channelz_test",
+    ],
     deps = [
         "//:channelz",
     ],
@@ -139,6 +145,9 @@ grpc_fuzz_test(
         "absl/log:check",
         "fuzztest",
         "fuzztest_main",
+    ],
+    tags = [
+        "channelz_test",
     ],
     deps = [
         "//:channelz",

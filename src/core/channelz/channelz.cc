@@ -493,12 +493,6 @@ void SubchannelNode::UpdateConnectivityState(grpc_connectivity_state state) {
   connectivity_state_.store(state, std::memory_order_relaxed);
 }
 
-void SubchannelNode::SetChildSocket(RefCountedPtr<SocketNode> socket) {
-  MutexLock lock(&socket_mu_);
-  child_socket_ =
-      socket == nullptr ? nullptr : socket->WeakRefAsSubclass<SocketNode>();
-}
-
 std::string SubchannelNode::connectivity_state() const {
   grpc_connectivity_state state =
       connectivity_state_.load(std::memory_order_relaxed);
@@ -528,16 +522,13 @@ Json SubchannelNode::RenderJson() {
       {"data", Json::FromObject(std::move(data))},
   };
   // Populate the child socket.
-  WeakRefCountedPtr<SocketNode> child_socket;
-  {
-    MutexLock lock(&socket_mu_);
-    child_socket = child_socket_;
-  }
-  if (child_socket != nullptr && child_socket->uuid() != 0) {
+  auto [children, _] = ChannelzRegistry::GetChildrenOfType(
+      0, this, BaseNode::EntityType::kSocket, 1);
+  if (!children.empty()) {
     object["socketRef"] = Json::FromArray({
         Json::FromObject({
-            {"socketId", Json::FromString(absl::StrCat(child_socket->uuid()))},
-            {"name", Json::FromString(child_socket->name())},
+            {"socketId", Json::FromString(absl::StrCat(children[0]->uuid()))},
+            {"name", Json::FromString(children[0]->name())},
         }),
     });
   }
