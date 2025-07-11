@@ -19,7 +19,7 @@
 #              (date, YYYY/MM/DD)
 # test_tags:   a set of bazel tags, that if a test declares them signals
 #              that that test should be run with this experiment both enabled
-#              and disbled in CI
+#              and disabled in CI
 # allow_in_fuzzing_config: optional boolean (true if not specified)
 #              if false, this experiment will not be included in fuzzers that
 #              explore the config space
