@@ -94,14 +94,14 @@ class TlsChannelSecurityConnector final
     return client_handshaker_factory_;
   };
 
-  std::optional<absl::string_view> RootCertsForTesting() {
-    MutexLock lock(&mu_);
-    return pem_root_certs_;
-  }
-
   std::optional<PemKeyCertPairList> KeyCertPairListForTesting() {
     MutexLock lock(&mu_);
     return pem_key_cert_pair_list_;
+  }
+
+  std::shared_ptr<RootCertInfo> RootCertInfoForTesting() {
+    MutexLock lock(&mu_);
+    return root_cert_info_;
   }
 
  private:
@@ -115,7 +115,7 @@ class TlsChannelSecurityConnector final
         TlsChannelSecurityConnector* security_connector)
         : security_connector_(security_connector) {}
     void OnCertificatesChanged(
-        std::optional<absl::string_view> root_certs,
+        std::shared_ptr<RootCertInfo> root_certs,
         std::optional<PemKeyCertPairList> key_cert_pairs) override;
     void OnError(grpc_error_handle root_cert_error,
                  grpc_error_handle identity_cert_error) override;
@@ -165,9 +165,9 @@ class TlsChannelSecurityConnector final
       ABSL_GUARDED_BY(mu_) = nullptr;
   tsi_ssl_session_cache* ssl_session_cache_ ABSL_GUARDED_BY(mu_) = nullptr;
   RefCountedPtr<TlsSessionKeyLogger> tls_session_key_logger_;
-  std::optional<absl::string_view> pem_root_certs_ ABSL_GUARDED_BY(mu_);
   std::optional<PemKeyCertPairList> pem_key_cert_pair_list_
       ABSL_GUARDED_BY(mu_);
+  std::shared_ptr<RootCertInfo> root_cert_info_ ABSL_GUARDED_BY(mu_);
   std::map<grpc_closure* /*on_peer_checked*/, ChannelPendingVerifierRequest*>
       pending_verifier_requests_ ABSL_GUARDED_BY(verifier_request_map_mu_);
 };
@@ -204,14 +204,14 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
     return server_handshaker_factory_;
   };
 
-  std::optional<absl::string_view> RootCertsForTesting() {
-    MutexLock lock(&mu_);
-    return pem_root_certs_;
-  }
-
   std::optional<PemKeyCertPairList> KeyCertPairListForTesting() {
     MutexLock lock(&mu_);
     return pem_key_cert_pair_list_;
+  }
+
+  std::shared_ptr<RootCertInfo> RootCertInfoForTesting() {
+    MutexLock lock(&mu_);
+    return root_cert_info_;
   }
 
  private:
@@ -225,7 +225,7 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
         TlsServerSecurityConnector* security_connector)
         : security_connector_(security_connector) {}
     void OnCertificatesChanged(
-        std::optional<absl::string_view> root_certs,
+        std::shared_ptr<RootCertInfo> roots,
         std::optional<PemKeyCertPairList> key_cert_pairs) override;
 
     void OnError(grpc_error_handle root_cert_error,
@@ -272,9 +272,9 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
       certificate_watcher_ = nullptr;
   tsi_ssl_server_handshaker_factory* server_handshaker_factory_
       ABSL_GUARDED_BY(mu_) = nullptr;
-  std::optional<absl::string_view> pem_root_certs_ ABSL_GUARDED_BY(mu_);
   std::optional<PemKeyCertPairList> pem_key_cert_pair_list_
       ABSL_GUARDED_BY(mu_);
+  std::shared_ptr<RootCertInfo> root_cert_info_ ABSL_GUARDED_BY(mu_);
   RefCountedPtr<TlsSessionKeyLogger> tls_session_key_logger_;
   std::map<grpc_closure* /*on_peer_checked*/, ServerPendingVerifierRequest*>
       pending_verifier_requests_ ABSL_GUARDED_BY(verifier_request_map_mu_);
