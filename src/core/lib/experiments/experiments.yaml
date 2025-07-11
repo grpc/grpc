@@ -18,7 +18,7 @@
 # expiry:      when is the next time this experiment *must* be updated
 #              (date, YYYY/MM/DD)
 # test_tags:   a set of bazel tags, that if a test declares them signals
-#              that that test should be run with this experiment both enabled
+#              that the test should be run with this experiment both enabled
 #              and disabled in CI
 # allow_in_fuzzing_config: optional boolean (true if not specified)
 #              if false, this experiment will not be included in fuzzers that
