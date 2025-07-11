@@ -32,9 +32,10 @@ DIRS=(
    examples/python
 )
 
-VIRTUALENV=.venv_ruff
+VIRTUALENV=.venv-ruff
 python3.11 -m virtualenv $VIRTUALENV
 source $VIRTUALENV/bin/activate
+python3 --version
 
 pip install ruff==0.12.2
 
@@ -44,7 +45,4 @@ if [[ "$1" == "--fix" ]]; then
     RUFF_COMMAND="ruff check --fix"
 fi
 
-EXIT=0
-$RUFF_COMMAND "${DIRS[@]}" || EXIT=1
-
-exit $EXIT
+exec $RUFF_COMMAND "${DIRS[@]}"
