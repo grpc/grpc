@@ -2431,11 +2431,15 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
           *options->root_cert_info,
           [&](const std::string& pem_root_certs) {
             result = ssl_ctx_load_verification_certs(
-                ssl_context, pem_root_certs.c_str(),
-                strlen(pem_root_certs.c_str()), nullptr);
+                ssl_context, pem_root_certs.c_str(), pem_root_certs.size(),
+                nullptr);
           },
           [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
-            // TODO(gtcooke94)
+            // TODO(gtcooke94) - implement SPIFFE Bundle Map verification. Crash
+            // until this is done.
+            grpc_core::Crash(
+                "spiffe bundle maps were configured but are not fully "
+                "implemented.");
           });
       X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context);
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
@@ -2649,7 +2653,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
               STACK_OF(X509_NAME)* root_names = nullptr;
               result = ssl_ctx_load_verification_certs(
                   impl->ssl_contexts[i], pem_root_certs.c_str(),
-                  strlen(pem_root_certs.c_str()), nullptr);
+                  pem_root_certs.size(), nullptr);
               if (result != TSI_OK) {
                 LOG(ERROR) << "Invalid verification certs.";
               }
@@ -2658,7 +2662,11 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
               }
             },
             [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
-              // TODO(gtcooke904)
+              // TODO(gtcooke94) - implement SPIFFE Bundle Map verification.
+              // Crash until this is done.
+              grpc_core::Crash(
+                  "spiffe bundle maps were configured but are not fully "
+                  "implemented.");
             });
         if (result != TSI_OK) {
           break;

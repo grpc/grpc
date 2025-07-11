@@ -108,9 +108,8 @@ void FileWatcherCertificateProviderFactory::Config::JsonPostLoad(
         json.object().find("ca_certificate_file") == json.object().end() &&
         json.object().find("spiffe_bundle_map_file") == json.object().end()) {
       errors->AddError(
-          "at least one of \"certificate_file\" and a root "
-          "(\"ca_certificate_file\" or \"spiffe_bundle_map_file\") must "
-          "be specified");
+          "at least one of \"certificate_file\", \"ca_certificate_file\", and "
+          "\"spiffe_bundle_map_file\" must be specified");
     }
   } else {
     spiffe_bundle_map_file_ = "";
