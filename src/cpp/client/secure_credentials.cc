@@ -89,6 +89,13 @@ std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials() {
       grpc_google_default_credentials_create(nullptr, nullptr));
 }
 
+std::shared_ptr<ChannelCredentials> GoogleDefaultDualCredentials() {
+  grpc::internal::GrpcLibrary init;  // To call grpc_init().
+  return WrapChannelCredentials(grpc_google_default_credentials_create(
+      grpc_google_compute_engine_credentials_create(nullptr),
+      grpc_google_compute_engine_alts_credentials_create(nullptr)));
+}
+
 std::shared_ptr<CallCredentials> ExternalAccountCredentials(
     const grpc::string& json_string, const std::vector<grpc::string>& scopes) {
   grpc::internal::GrpcLibrary init;  // To call grpc_init().
@@ -265,13 +272,6 @@ std::shared_ptr<CallCredentials> GoogleComputeEngineCredentials() {
   grpc::internal::GrpcLibrary init;  // To call grpc_init().
   return WrapCallCredentials(
       grpc_google_compute_engine_credentials_create(nullptr));
-}
-
-// Builds credentials for use when running in GCE
-std::shared_ptr<CallCredentials> GoogleComputeEngineCredentialsWithALTS() {
-  grpc::internal::GrpcLibrary init;  // To call grpc_init().
-  return WrapCallCredentials(
-      grpc_google_compute_engine_alts_credentials_create(nullptr));
 }
 
 // Builds JWT credentials.
