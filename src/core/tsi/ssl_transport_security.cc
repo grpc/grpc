@@ -2161,7 +2161,7 @@ static void tsi_ssl_client_handshaker_factory_destroy(
   self->session_cache.reset();
   self->key_logger.reset();
   self->root_cert_info.reset();
-  gpr_free(self);
+  delete self;
 }
 
 static int client_handshaker_factory_npn_callback(
@@ -2212,7 +2212,7 @@ static void tsi_ssl_server_handshaker_factory_destroy(
   if (self->alpn_protocol_list != nullptr) gpr_free(self->alpn_protocol_list);
   self->key_logger.reset();
   self->root_cert_info.reset();
-  gpr_free(self);
+  delete self;
 }
 
 static int does_entry_match_name(absl::string_view entry,
@@ -2379,8 +2379,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
       ssl_context, options->min_tls_version, options->max_tls_version);
   if (result != TSI_OK) return result;
 
-  impl = static_cast<tsi_ssl_client_handshaker_factory*>(
-      gpr_zalloc(sizeof(*impl)));
+  impl = new tsi_ssl_client_handshaker_factory();
   tsi_ssl_handshaker_factory_init(&impl->base);
   impl->base.vtable = &client_handshaker_factory_vtable;
   impl->ssl_context = ssl_context;
@@ -2562,8 +2561,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
     return TSI_INVALID_ARGUMENT;
   }
 
-  impl = static_cast<tsi_ssl_server_handshaker_factory*>(
-      gpr_zalloc(sizeof(*impl)));
+  impl = new tsi_ssl_server_handshaker_factory();
   tsi_ssl_handshaker_factory_init(&impl->base);
   impl->base.vtable = &server_handshaker_factory_vtable;
 

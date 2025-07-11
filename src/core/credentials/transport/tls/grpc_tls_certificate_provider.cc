@@ -105,11 +105,8 @@ bool HasRootCertInfoChanged(
   if (old.status() != updated.status()) return true;  // Status changed.
   if (!old.ok()) return false;  // Both have same non-OK status.
   // Both have OK status.
-  if (*old == nullptr) {
-    return *updated != nullptr;
-  } else {
-    if (*updated == nullptr) return true;
-  }
+  if (*old == nullptr) return *updated != nullptr;
+  if (*updated == nullptr) return true;
   // Both have non-null value.
   return **old != **updated;
 }
@@ -210,8 +207,7 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       root_cert_path_(std::move(root_cert_path)),
       spiffe_bundle_map_path_(std::move(spiffe_bundle_map_path)),
       refresh_interval_sec_(refresh_interval_sec),
-      distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
-      root_cert_info_(nullptr) {
+      distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()) {
   if (refresh_interval_sec_ < kMinimumFileWatcherRefreshIntervalSeconds) {
     VLOG(2) << "FileWatcherCertificateProvider refresh_interval_sec_ set to "
                "value less than minimum. Overriding configured value to "
@@ -512,6 +508,7 @@ grpc_tls_certificate_provider* grpc_tls_certificate_provider_static_data_create(
       std::move(root_cert_core), std::move(identity_pairs_core));
 }
 
+// TODO(gtcooke94): Add a parameter to set the spiffe_bundle_map_path
 grpc_tls_certificate_provider*
 grpc_tls_certificate_provider_file_watcher_create(
     const char* private_key_path, const char* identity_certificate_path,
