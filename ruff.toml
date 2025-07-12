@@ -110,7 +110,6 @@ ignore = [
     "TD004",   # Missing colon in TODO
     "TD005",   # Missing issue description after TODO
     "TRY003",  # Avoid specifying long messages outside the exception class
-    "TRY004",  # Prefer TypeError exception for invalid type
     "TRY203",  # Remove exception handler; error is immediately re-raised
     "TRY300",  # Consider moving this statement to an else block
     "TRY400",  # Use logging.exception instead of logging.error
