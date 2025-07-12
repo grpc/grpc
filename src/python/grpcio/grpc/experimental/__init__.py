@@ -131,4 +131,9 @@ if sys.version_info > (3, 6):
     from grpc._simple_stubs import unary_stream
     from grpc._simple_stubs import unary_unary
 
-    __all__ = __all__ + (unary_unary, unary_stream, stream_unary, stream_stream) # noqa: PLE0604
+    __all__ = __all__ + (  # noqa: PLE0604
+        unary_unary,
+        unary_stream,
+        stream_unary,
+        stream_stream,
+    )
