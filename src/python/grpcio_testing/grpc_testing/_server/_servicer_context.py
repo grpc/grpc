@@ -75,11 +75,7 @@ class ServicerContext(grpc.ServicerContext):
     def abort(self, code, details):
         with self._rpc._condition:
             self._rpc._abort(code, details)
-<<<<<<< HEAD
         raise Exception()  # noqa: TRY002
-=======
-        raise Exception() # noqa: TRY002
->>>>>>> 53d243ee18 (removed suppression for TRY002)
 
     def abort_with_status(self, status):
         raise NotImplementedError()
