@@ -18,7 +18,8 @@
 # expiry:      when is the next time this experiment *must* be updated
 #              (date, YYYY/MM/DD)
 # test_tags:   a set of bazel tags, that if a test declares them signals
-#              that that test should be run with this experiment enabled in CI
+#              that the test should be run with this experiment both enabled
+#              and disabled in CI
 # allow_in_fuzzing_config: optional boolean (true if not specified)
 #              if false, this experiment will not be included in fuzzers that
 #              explore the config space
@@ -131,12 +132,6 @@
   expiry: 2025/09/30
   owner: alishananda@google.com
   test_tags: [resource_quota_test]
-- name: fuse_filters
-  description: If set, individual filters are merged into fused filters 
-  expiry: 2025/09/30
-  owner: vigneshbabu@google.com
-  test_tags: ["minimal_stack_test"]
-  allow_in_fuzzing_config: false
 - name: keep_alive_ping_timer_batch
   description:
     Avoid explicitly cancelling the keepalive timer. Instead adjust the callback to re-schedule
@@ -198,7 +193,7 @@
     and also help with interop testing.
   expiry: 2025/10/03
   owner: tjagtap@google.com
-  test_tags: []
+  test_tags: ["core_end2end_test"]
   allow_in_fuzzing_config: true
 - name: promise_based_http2_server_transport
   description:

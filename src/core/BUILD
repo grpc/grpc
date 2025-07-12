@@ -688,6 +688,7 @@ grpc_cc_library(
     public_hdrs = [
         "lib/promise/poll.h",
     ],
+    visibility = ["//bazel:core_credentials"],
     deps = [
         "construct_destruct",
         "//:gpr_platform",
@@ -3620,49 +3621,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "fused_filters",
-    srcs = [
-        "filter/fused_filters.cc",
-    ],
-    deps = [
-        "experiments",
-        "filter_fusion",
-        "grpc_authorization_base",
-        "grpc_client_authority_filter",
-        "grpc_lb_policy_grpclb",
-        "grpc_message_size_filter",
-        "server_call_tracer_filter",
-        "service_config_channel_arg_filter",
-        "//:config",
-        "//:gpr",
-        "//:grpc_http_filters",
-        "//:grpc_public_hdrs",
-        "//:grpc_security_base",
-    ],
-)
-
-# grpc_cc_library(
-#     name = "grpc_auth_filters",
-#     srcs = [
-#         "filter/auth/client_auth_filter.cc",
-#         "filter/auth/server_auth_filter.cc",
-#     ],
-#     hdrs = ["filter/auth/auth_filters.h"],
-#     deps = [
-#         "experiments",
-#         "filter_fusion",
-#         "grpc_client_authority_filter",
-#         "grpc_lb_policy_grpclb",
-#         "grpc_message_size_filter",
-#         "//:config",
-#         "//:gpr",
-#         "//:grpc_http_filters",
-#         "//:grpc_public_hdrs",
-#         "//:grpc_security_base",
-#     ],
-# )
-
-grpc_cc_library(
     name = "subchannel_connector",
     hdrs = [
         "client_channel/connector.h",
@@ -3874,7 +3832,6 @@ grpc_cc_library(
     srcs = [
         "service_config/service_config_channel_arg_filter.cc",
     ],
-    hdrs = ["service_config/service_config_channel_arg_filter.h"],
     external_deps = [
         "absl/log",
         "absl/status",
@@ -9792,13 +9749,11 @@ grpc_cc_library(
         "call_filters",
         "call_final_info",
         "channel_args",
-        "gpr_manual_constructor",
         "metadata",
         "status_helper",
         "type_list",
         "//:grpc_base",
         "//:grpc_public_hdrs",
-        "//:promise",
     ],
 )
 
@@ -9989,6 +9944,22 @@ grpc_cc_library(
         "absl/strings",
     ],
     visibility = ["//bazel:chaotic_good"],
+    deps = [
+        "channel_args",
+        "//:grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "auth_context_comparator_registry",
+    hdrs = [
+        "transport/auth_context_comparator_registry.h",
+    ],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/strings",
+    ],
+    visibility = ["//transport_auth_context:__subpackages__"],
     deps = [
         "channel_args",
         "//:grpc_public_hdrs",
@@ -10482,6 +10453,57 @@ grpc_cc_library(
         "zviz_environment",
         "zviz_html",
         "zviz_layout",
+    ],
+)
+
+grpc_cc_library(
+    name = "channelz_v2tov1_property_list",
+    srcs = ["channelz/v2tov1/property_list.cc"],
+    hdrs = ["channelz/v2tov1/property_list.h"],
+    external_deps = [
+        "absl/strings:string_view",
+        "@com_google_protobuf//upb/mem",
+    ],
+    deps = [
+        ":upb_utils",
+        "//:channelz_property_list_upb",
+        "//:protobuf_any_upb",
+        "//:protobuf_duration_upb",
+        "//:protobuf_timestamp_upb",
+    ],
+)
+
+grpc_cc_library(
+    name = "channelz_v2tov1_convert",
+    srcs = ["channelz/v2tov1/convert.cc"],
+    hdrs = ["channelz/v2tov1/convert.h"],
+    external_deps = [
+        "absl/cleanup",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
+        "@com_google_protobuf//upb/json",
+        "@com_google_protobuf//upb/reflection",
+    ],
+    deps = [
+        "json",
+        "json_writer",
+        ":channelz_v2tov1_property_list",
+        ":protobuf_wrappers_upb",
+        ":upb_utils",
+        "//:channelz_property_list_upb",
+        "//:channelz_upb",
+        "//:channelz_v1_upb",
+        "//:channelz_v1_upbdefs",
+        "//:parse_address",
+        "//:protobuf_any_upb",
+        "//:protobuf_duration_upb",
+        "//:protobuf_timestamp_upb",
+        "//:protobuf_wrappers_upb",
+        "//:sockaddr_utils",
+        "//:uri",
     ],
 )
 
