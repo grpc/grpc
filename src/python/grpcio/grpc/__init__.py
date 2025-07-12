@@ -471,7 +471,9 @@ class UnaryStreamClientInterceptor(abc.ABC):
     """Affords intercepting unary-stream invocations."""
 
     @abc.abstractmethod
-    def intercept_unary_stream(self, continuation, client_call_details, request):
+    def intercept_unary_stream(
+        self, continuation, client_call_details, request
+    ):
         """Intercepts a unary-stream invocation.
 
         Args:
@@ -1714,7 +1716,9 @@ def ssl_channel_credentials(
       A ChannelCredentials for use with an SSL-enabled Channel.
     """
     return ChannelCredentials(
-        _cygrpc.SSLChannelCredentials(root_certificates, private_key, certificate_chain)
+        _cygrpc.SSLChannelCredentials(
+            root_certificates, private_key, certificate_chain
+        )
     )
 
 
@@ -1749,7 +1753,9 @@ def metadata_call_credentials(metadata_plugin, name=None):
     """
     from grpc import _plugin_wrapping  # pylint: disable=cyclic-import
 
-    return _plugin_wrapping.metadata_plugin_call_credentials(metadata_plugin, name)
+    return _plugin_wrapping.metadata_plugin_call_credentials(
+        metadata_plugin, name
+    )
 
 
 def access_token_call_credentials(access_token):
@@ -1834,10 +1840,14 @@ def ssl_server_credentials(
       object is an argument to add_secure_port() method during server setup.
     """
     if not private_key_certificate_chain_pairs:
-        error_msg = (
+        raise ValueError(
             "At least one private key-certificate chain pair is required!"
         )
-        raise ValueError(error_msg)
+    elif require_client_auth and root_certificates is None:
+        raise ValueError(
+            "Illegal to require client auth without providing root"
+            " certificates!"
+        )
     elif require_client_auth and root_certificates is None:
         error_msg = "Illegal to require client auth without providing root certificates!"
         raise ValueError(error_msg)
@@ -2015,7 +2025,9 @@ def local_server_credentials(local_connect_type=LocalConnectionType.LOCAL_TCP):
     Returns:
       A ServerCredentials for use with a local Server
     """
-    return ServerCredentials(_cygrpc.server_credentials_local(local_connect_type.value))
+    return ServerCredentials(
+        _cygrpc.server_credentials_local(local_connect_type.value)
+    )
 
 
 def alts_channel_credentials(service_accounts=None):
@@ -2036,7 +2048,9 @@ def alts_channel_credentials(service_accounts=None):
     Returns:
       A ChannelCredentials for use with an ALTS-enabled Channel
     """
-    return ChannelCredentials(_cygrpc.channel_credentials_alts(service_accounts or []))
+    return ChannelCredentials(
+        _cygrpc.channel_credentials_alts(service_accounts or [])
+    )
 
 
 def alts_server_credentials():
@@ -2066,7 +2080,9 @@ def compute_engine_channel_credentials(call_credentials):
     credential, the connection may suddenly and unexpectedly begin failing RPCs.
     """
     return ChannelCredentials(
-        _cygrpc.channel_credentials_compute_engine(call_credentials._credentials)
+        _cygrpc.channel_credentials_compute_engine(
+            call_credentials._credentials
+        )
     )
 
 

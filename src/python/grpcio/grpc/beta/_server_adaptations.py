@@ -302,9 +302,7 @@ def _simple_method_handler(  # noqa: PLR0911
                 ),
                 None,
             )
-        if (
-            implementation.cardinality is cardinality.Cardinality.STREAM_STREAM
-        ):
+        if implementation.cardinality is cardinality.Cardinality.STREAM_STREAM:
             return _SimpleMethodHandler(
                 True,
                 True,
@@ -351,9 +349,7 @@ def _simple_method_handler(  # noqa: PLR0911
                 _adapt_stream_unary_event(implementation.stream_unary_event),
                 None,
             )
-        if (
-            implementation.cardinality is cardinality.Cardinality.STREAM_STREAM
-        ):
+        if implementation.cardinality is cardinality.Cardinality.STREAM_STREAM:
             return _SimpleMethodHandler(
                 True,
                 True,

@@ -384,9 +384,7 @@ class _StreamResponseMixin(Call):
 
         if raw_response is cygrpc.EOF:
             return cygrpc.EOF
-        return _common.deserialize(
-            raw_response, self._response_deserializer
-        )
+        return _common.deserialize(raw_response, self._response_deserializer)
 
     async def read(self) -> Union[EOFType, ResponseType]:
         if self.done():
