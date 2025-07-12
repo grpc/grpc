@@ -1983,7 +1983,7 @@ def _unsubscribe(
     callback: Callable[[grpc.ChannelConnectivity], None],
 ) -> None:
     with state.lock:
-        for index, (subscribed_callback, unused_connectivity) in enumerate(
+        for index, (subscribed_callback, _unused_connectivity) in enumerate(
             state.callbacks_and_connectivities
         ):
             if callback == subscribed_callback:
