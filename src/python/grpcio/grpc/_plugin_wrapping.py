@@ -59,10 +59,10 @@ class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
         with self._state.lock:
             if self._state.exception is None:
                 if self._state.called:
-                    error_msg = "AuthMetadataPluginCallback invoked more than once!"
-                    raise RuntimeError(
-                        error_msg
+                    error_msg = (
+                        "AuthMetadataPluginCallback invoked more than once!"
                     )
+                    raise RuntimeError(error_msg)
                 else:
                     self._state.called = True
             else:

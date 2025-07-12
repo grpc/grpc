@@ -510,9 +510,7 @@ def _start_open_telemetry_observability(
             _OPEN_TELEMETRY_OBSERVABILITY.observability_init()
         else:
             error_msg = "gPRC Python observability was already initialized!"
-            raise RuntimeError(
-                error_msg
-            )
+            raise RuntimeError(error_msg)
 
 
 def _end_open_telemetry_observability() -> None:
@@ -520,9 +518,7 @@ def _end_open_telemetry_observability() -> None:
     with _observability_lock:
         if not _OPEN_TELEMETRY_OBSERVABILITY:
             error_msg = "Trying to end gPRC Python observability without initialize first!"
-            raise RuntimeError(
-                error_msg
-            )
+            raise RuntimeError(error_msg)
         else:
             _OPEN_TELEMETRY_OBSERVABILITY.observability_deinit()
             _OPEN_TELEMETRY_OBSERVABILITY = None
