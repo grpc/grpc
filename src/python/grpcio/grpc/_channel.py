@@ -1379,9 +1379,7 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
                 cygrpc.SendInitialMetadataOperation(
                     augmented_metadata, initial_metadata_flags
                 ),
-                cygrpc.SendMessageOperation(
-                    serialized_request, _EMPTY_FLAGS
-                ),
+                cygrpc.SendMessageOperation(serialized_request, _EMPTY_FLAGS),
                 cygrpc.SendCloseFromClientOperation(_EMPTY_FLAGS),
                 cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),
             ),
