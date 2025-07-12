@@ -5,6 +5,7 @@
   "version": "1.75.0",
   "require": {
     "php": ">=7.1.0",
+    "ext-grpc": "*",
     "google/protobuf": "^v3.3.0"
   },
   "require-dev": {

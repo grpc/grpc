@@ -19,6 +19,8 @@
 
 namespace Grpc;
 
+use Grpc\Internal\InterceptorChannel;
+
 /**
  * Represents an interceptor that intercept RPC invocations before call starts.
  * There is one proposal related to the argument $deserialize under the review.
@@ -26,6 +28,16 @@ namespace Grpc;
  */
 class Interceptor
 {
+    /**
+     * @param string $method
+     * @param mixed $argument
+     * @param callable $deserialize
+     * @param callable $continuation
+     * @param array $metadata
+     * @param array<string, mixed> $options
+     *
+     * @return UnaryCall
+     */
     public function interceptUnaryUnary(
         $method,
         $argument,
@@ -37,6 +49,15 @@ class Interceptor
         return $continuation($method, $argument, $deserialize, $metadata, $options);
     }
 
+    /**
+     * @param string $method
+     * @param callable $deserialize
+     * @param callable $continuation
+     * @param array $metadata
+     * @param array<string, mixed> $options
+     *
+     * @return ClientStreamingCall
+     */
     public function interceptStreamUnary(
         $method,
         $deserialize,
@@ -47,6 +68,15 @@ class Interceptor
         return $continuation($method, $deserialize, $metadata, $options);
     }
 
+    /**
+     * @param string $method
+     * @param callable $deserialize
+     * @param callable $continuation
+     * @param array $metadata
+     * @param array<string, mixed> $options
+     *
+     * @return ServerStreamingCall
+     */
     public function interceptUnaryStream(
         $method,
         $argument,
@@ -58,6 +88,15 @@ class Interceptor
         return $continuation($method, $argument, $deserialize, $metadata, $options);
     }
 
+    /**
+     * @param string $method
+     * @param callable $deserialize
+     * @param callable $continuation
+     * @param array $metadata
+     * @param array<string, mixed> $options
+     *
+     * @return BidiStreamingCall
+     */
     public function interceptStreamStream(
         $method,
         $deserialize,
