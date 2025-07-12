@@ -1287,10 +1287,7 @@ def _process_event_and_continue(
                     lambda _unused_future: _on_call_completed(state)
                 )
             if state.stage is _ServerStage.STARTED:
-                if (
-                    registered_method_name
-                    in state.registered_method_handlers
-                ):
+                if registered_method_name in state.registered_method_handlers:
                     _request_registered_call(state, registered_method_name)
                 else:
                     _request_call(state)
