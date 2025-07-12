@@ -29,23 +29,25 @@ set PREPARE_BUILD_INSTALL_DEPS_PYTHON=true
 call tools/internal_ci/helper_scripts/prepare_build_windows.bat || exit /b 1
 
 @rem Build all python windows artifacts
-python tools/run_tests/task_runner.py -f artifact windows python %TASK_RUNNER_EXTRA_FILTERS% -j 4 --inner_jobs 3 -x build_artifacts_python/sponge_log.xml || set FAILED=true
+python tools/run_tests/task_runner.py -f artifact windows python %TASK_RUNNER_EXTRA_FILTERS% -j 3 --inner_jobs 2 -x build_artifacts_python/sponge_log.xml || set FAILED=true
 
-@rem the next step expects to find the artifacts from the previous step in the "input_artifacts" folder.
-bash -c "rm -rf input_artifacts; mkdir -p input_artifacts; cp -r artifacts/* input_artifacts/ || true"
+if "%FAILED%" == "" (
+  @rem the next step expects to find the artifacts from the previous step in the "input_artifacts" folder.
+  bash -c "rm -rf input_artifacts; mkdir -p input_artifacts; cp -r artifacts/* input_artifacts/ || true"
 
-@rem Collect the python artifact from subdirectories of input_artifacts/ to artifacts/
-@rem TODO(jtattermusch): when collecting the artifacts that will later be uploaded as kokoro job artifacts,
-@rem potentially skip some file names that would clash with linux-created artifacts.
-bash -c "cp -r input_artifacts/python_*/* artifacts/ || true"
+  @rem Collect the python artifact from subdirectories of input_artifacts/ to artifacts/
+  @rem TODO(jtattermusch): when collecting the artifacts that will later be uploaded as kokoro job artifacts,
+  @rem potentially skip some file names that would clash with linux-created artifacts.
+  bash -c "cp -r input_artifacts/python_*/* artifacts/ || true"
 
-@rem TODO(jtattermusch): Here we would normally run python windows distribtests, but currently no such tests are defined
-@rem in distribtest_targets.py
+  @rem TODO(jtattermusch): Here we would normally run python windows distribtests, but currently no such tests are defined
+  @rem in distribtest_targets.py
 
-@rem This step checks if any of the artifacts exceeds a per-file size limit.
-bash tools/internal_ci/helper_scripts/check_python_artifacts_size.sh
+  @rem This step checks if any of the artifacts exceeds a per-file size limit.
+  bash tools/internal_ci/helper_scripts/check_python_artifacts_size.sh
 
-bash tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
+  bash tools/internal_ci/helper_scripts/store_artifacts_from_moved_src_tree.sh
+)
 
 if not "%FAILED%" == "" (
   exit /b 1
