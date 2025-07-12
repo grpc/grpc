@@ -44,7 +44,7 @@ from ._typing import RequestType
 from ._typing import ResponseType
 from ._typing import SerializingFunction
 
-__all__ = "AioRpcError", "Call", "UnaryUnaryCall", "UnaryStreamCall"
+__all__ = "AioRpcError", "Call", "UnaryStreamCall", "UnaryUnaryCall"
 
 _LOCAL_CANCELLATION_DETAILS = "Locally cancelled by application!"
 _GC_CANCELLATION_DETAILS = "Cancelled upon garbage collection!"

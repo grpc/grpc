@@ -65,7 +65,7 @@ def augment_metadata(
 
 
 __all__ = (
-    "NoCompression",
     "Deflate",
     "Gzip",
+    "NoCompression",
 )
