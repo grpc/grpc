@@ -1,4 +1,5 @@
 <?php
+
 /*
  *
  * Copyright 2015 gRPC authors.
@@ -35,9 +36,11 @@ class CallTest extends \PHPUnit\Framework\TestCase
         $this->channel = new Grpc\Channel('localhost:'.self::$port, [
             'force_new' => true,
         ]);
-        $this->call = new Grpc\Call($this->channel,
-                                    '/foo',
-                                    Grpc\Timeval::infFuture());
+        $this->call = new Grpc\Call(
+            $this->channel,
+            '/foo',
+            Grpc\Timeval::infFuture()
+        );
     }
 
     public function tearDown(): void
@@ -89,14 +92,14 @@ class CallTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue($result->send_metadata);
     }
 
-    public function testAddMultiAndMultiValueMetadata() 
-    {   
-        $batch = [  
-            Grpc\OP_SEND_INITIAL_METADATA => ['key1' => ['value1', 'value2'],   
-                                              'key2' => ['value3', 'value4'],], 
-        ];  
-        $result = $this->call->startBatch($batch);  
-        $this->assertTrue($result->send_metadata);  
+    public function testAddMultiAndMultiValueMetadata()
+    {
+        $batch = [
+            Grpc\OP_SEND_INITIAL_METADATA => ['key1' => ['value1', 'value2'],
+                                              'key2' => ['value3', 'value4'],],
+        ];
+        $result = $this->call->startBatch($batch);
+        $this->assertTrue($result->send_metadata);
     }
 
     public function testGetPeer()

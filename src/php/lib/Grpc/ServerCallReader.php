@@ -1,4 +1,5 @@
 <?php
+
 /*
  *
  * Copyright 2020 gRPC authors.
@@ -42,7 +43,7 @@ class ServerCallReader
         if ($event->message === null) {
             return null;
         }
-        $data = new $this->request_type_;
+        $data = new $this->request_type_();
         $data->mergeFromString($event->message);
         return $data;
     }

@@ -1,4 +1,5 @@
 <?php
+
 /*
  *
  * Copyright 2018 gRPC authors.
@@ -88,4 +89,3 @@ class Interceptor
         return $channel;
     }
 }
-
