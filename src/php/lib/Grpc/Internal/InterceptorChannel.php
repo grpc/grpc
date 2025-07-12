@@ -19,10 +19,13 @@
 
 namespace Grpc\Internal;
 
+use Grpc\Channel;
+use Grpc\Interceptor;
+
 /**
  * This is a PRIVATE API and can change without notice.
  */
-class InterceptorChannel extends \Grpc\Channel
+class InterceptorChannel extends Channel
 {
     private $next = null;
     private $interceptor;
