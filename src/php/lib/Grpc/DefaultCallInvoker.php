@@ -23,22 +23,60 @@ namespace Grpc;
  */
 class DefaultCallInvoker implements CallInvoker
 {
+    /**
+     * @param string $hostname
+     * @param array $opts
+     *
+     * @return Channel
+     */
     public function createChannelFactory($hostname, $opts) {
         return new Channel($hostname, $opts);
     }
 
+    /**
+     * @param Channel $channel
+     * @param string $method
+     * @param callable $deserialize
+     * @param array $options
+     *
+     * @return UnaryCall
+     */
     public function UnaryCall($channel, $method, $deserialize, $options) {
         return new UnaryCall($channel, $method, $deserialize, $options);
     }
 
+    /**
+     * @param Channel $channel
+     * @param string $method
+     * @param callable $deserialize
+     * @param array $options
+     *
+     * @return ClientStreamingCall
+     */
     public function ClientStreamingCall($channel, $method, $deserialize, $options) {
         return new ClientStreamingCall($channel, $method, $deserialize, $options);
     }
 
+    /**
+     * @param Channel $channel
+     * @param string $method
+     * @param callable $deserialize
+     * @param array $options
+     *
+     * @return ServerStreamingCall
+     */
     public function ServerStreamingCall($channel, $method, $deserialize, $options) {
         return new ServerStreamingCall($channel, $method, $deserialize, $options);
     }
 
+    /**
+     * @param Channel $channel
+     * @param string $method
+     * @param callable $deserialize
+     * @param array $options
+     *
+     * @return BidiStreamingCall
+     */
     public function BidiStreamingCall($channel, $method, $deserialize, $options) {
         return new BidiStreamingCall($channel, $method, $deserialize, $options);
     }
