@@ -150,7 +150,7 @@ class ChannelTest(unittest.TestCase):
         threads = []
         for _ in range(_THREAD_COUNT):
             thread = threading.Thread(target=create_secure_channel)
-            thread.setDaemon(True)
+            thread.daemon = True
             thread.start()
             threads.append(thread)
 
@@ -172,7 +172,7 @@ class ChannelTest(unittest.TestCase):
         threads = []
         for _ in range(_THREAD_COUNT):
             thread = threading.Thread(target=create_secure_channel)
-            thread.setDaemon(True)
+            thread.daemon = True
             thread.start()
             threads.append(thread)
 
