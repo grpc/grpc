@@ -18,6 +18,8 @@
  */
 namespace Grpc;
 
+use Grpc\Internal\InterceptorChannel;
+
 /**
  * Default call invoker in the gRPC stub.
  */
@@ -25,19 +27,19 @@ class DefaultCallInvoker implements CallInvoker
 {
     /**
      * @param string $hostname
-     * @param array $opts
+     * @param array<string, mixed> $opts
      *
-     * @return Channel
+     * @return Channel|InterceptorChannel
      */
     public function createChannelFactory($hostname, $opts) {
         return new Channel($hostname, $opts);
     }
 
     /**
-     * @param Channel $channel
+     * @param Channel|InterceptorChannel $channel
      * @param string $method
      * @param callable $deserialize
-     * @param array $options
+     * @param array<string, mixed> $options
      *
      * @return UnaryCall
      */
@@ -46,10 +48,10 @@ class DefaultCallInvoker implements CallInvoker
     }
 
     /**
-     * @param Channel $channel
+     * @param Channel|InterceptorChannel $channel
      * @param string $method
      * @param callable $deserialize
-     * @param array $options
+     * @param array<string, mixed> $options
      *
      * @return ClientStreamingCall
      */
@@ -58,10 +60,10 @@ class DefaultCallInvoker implements CallInvoker
     }
 
     /**
-     * @param Channel $channel
+     * @param Channel|InterceptorChannel $channel
      * @param string $method
      * @param callable $deserialize
-     * @param array $options
+     * @param array<string, mixed> $options
      *
      * @return ServerStreamingCall
      */
@@ -70,10 +72,10 @@ class DefaultCallInvoker implements CallInvoker
     }
 
     /**
-     * @param Channel $channel
+     * @param Channel|InterceptorChannel $channel
      * @param string $method
      * @param callable $deserialize
-     * @param array $options
+     * @param array<string, mixed> $options
      *
      * @return BidiStreamingCall
      */

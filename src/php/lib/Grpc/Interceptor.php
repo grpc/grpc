@@ -34,7 +34,7 @@ class Interceptor
      * @param callable $deserialize
      * @param callable $continuation
      * @param array $metadata
-     * @param array $options
+     * @param array<string, mixed> $options
      *
      * @return UnaryCall
      */
@@ -54,7 +54,7 @@ class Interceptor
      * @param callable $deserialize
      * @param callable $continuation
      * @param array $metadata
-     * @param array $options
+     * @param array<string, mixed> $options
      *
      * @return ClientStreamingCall
      */
@@ -73,7 +73,7 @@ class Interceptor
      * @param callable $deserialize
      * @param callable $continuation
      * @param array $metadata
-     * @param array $options
+     * @param array<string, mixed> $options
      *
      * @return ServerStreamingCall
      */
@@ -93,7 +93,7 @@ class Interceptor
      * @param callable $deserialize
      * @param callable $continuation
      * @param array $metadata
-     * @param array $options
+     * @param array<string, mixed> $options
      *
      * @return BidiStreamingCall
      */
