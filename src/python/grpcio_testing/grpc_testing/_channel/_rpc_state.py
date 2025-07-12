@@ -189,9 +189,7 @@ class State(_common.ChannelRpcHandler):
                     self._condition.wait()
                 else:
                     error_msg = f"Status code unexpectedly {self._code}!"
-                    raise ValueError(
-                        error_msg
-                    )
+                    raise ValueError(error_msg)
 
     def is_active(self):
         raise NotImplementedError()

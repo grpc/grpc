@@ -1396,9 +1396,7 @@ def _validate_generic_rpc_handlers(
         service_attribute = getattr(generic_rpc_handler, "service", None)
         if service_attribute is None:
             error_msg = f'"{generic_rpc_handler}" must conform to grpc.GenericRpcHandler type but does not have "service" method!'
-            raise AttributeError(
-                error_msg
-            )
+            raise AttributeError(error_msg)
 
 
 def _augment_options(
