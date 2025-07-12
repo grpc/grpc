@@ -19,10 +19,6 @@ set -ex
 cd "$(dirname "$0")/../.."
 
 DIRS=(
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 9db75ae676 (take all folders that pylint has)
    src/python/grpcio/grpc
    src/python/grpcio_channelz/grpc_channelz
    src/python/grpcio_health_checking/grpc_health
@@ -33,49 +29,15 @@ DIRS=(
    src/python/grpcio_csm_observability/grpc_csm_observability
    src/python/grpcio_tests/tests
    src/python/grpcio_tests/tests_gevent
-<<<<<<< HEAD
-<<<<<<< HEAD
    examples/python
 )
 
 VIRTUALENV=.venv-ruff
-<<<<<<< HEAD
 python3.11 -m virtualenv $VIRTUALENV
 source $VIRTUALENV/bin/activate
 python3 --version
 
 pip install ruff==0.12.2
-=======
-    src/python/grpcio/grpc
-#    src/python/grpcio_channelz/grpc_channelz
-#    src/python/grpcio_health_checking/grpc_health
-#    src/python/grpcio_reflection/grpc_reflection
-#    src/python/grpcio_testing/grpc_testing
-#    src/python/grpcio_status/grpc_status
-#    src/python/grpcio_observability/grpc_observability
-#    src/python/grpcio_csm_observability/grpc_csm_observability
-#    src/python/grpcio_tests/tests
-#    src/python/grpcio_tests/tests_gevent
-=======
->>>>>>> 9db75ae676 (take all folders that pylint has)
-=======
-   examples/python
->>>>>>> e31a063cb6 (add examples folder to ruff)
-)
-
-VIRTUALENV=.venv_ruff
-=======
->>>>>>> 9bd2b3aa20 (pr comments addressed)
-python3.11 -m virtualenv $VIRTUALENV
-source $VIRTUALENV/bin/activate
-python3 --version
-
-<<<<<<< HEAD
-pip install ruff==0.12.1
->>>>>>> 9eef0bb1c4 (add ruff check bash script)
-=======
-pip install ruff==0.12.2
->>>>>>> 449a18be5b (bump ruff version)
 
 # Check if --fix flag is provided
 RUFF_COMMAND="ruff check"
@@ -83,15 +45,4 @@ if [[ "$1" == "--fix" ]]; then
     RUFF_COMMAND="ruff check --fix"
 fi
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 exec $RUFF_COMMAND "${DIRS[@]}"
-=======
-EXIT=0
-$RUFF_COMMAND "${DIRS[@]}" || EXIT=1
-
-exit $EXIT
->>>>>>> 9eef0bb1c4 (add ruff check bash script)
-=======
-exec $RUFF_COMMAND "${DIRS[@]}"
->>>>>>> 9bd2b3aa20 (pr comments addressed)

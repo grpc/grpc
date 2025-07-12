@@ -17,9 +17,19 @@ ignore = [
     "ANN205",  # Missing return type annotation for staticmethod {name}
     "ANN206",  # Missing return type annotation for classmethod {name}
     "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed in {name}
+    "ARG001",  # Unused function argument: {name}
+    "ARG002",  # Unused method argument: {name}
+    "ARG004",  # Unused static method argument: {name}
+    "ARG005",  # Unused lambda argument: {name}
+    "B007",    # Loop control variable {name} not used within loop body
+    "B011",    # Do not assert False (python -O removes these calls), raise AssertionError()
+    "B018",    # Found useless expression. Either assign it to a variable or remove it.
     "B024",    # {name} is an abstract base class, but it has no abstract methods or properties
+    "B027",    # {name} is an empty method in an abstract base class, but has no abstract decorator
     "B904",    # Within an except* clause, raise exceptions with raise ... from err or raise ... from None to distinguish them from errors in exception handling
     "BLE001",  # Do not catch blind exception: {name}
+    "C402",    # Unnecessary generator (rewrite as a dict comprehension)
+    "C405",    # Unnecessary {kind} literal (rewrite as a set literal)
     "C408",    # Unnecessary {kind}() call (rewrite as a literal)
     "C901",    # {name} is too complex ({complexity} > {max_complexity})
     "COM812",  # Trailing comma missing
@@ -179,40 +189,11 @@ ignore = [
     "YTT201",  # sys.version_info[0] == 3 referenced (python4), use >=
     "YTT203",  # sys.version_info[1] compared to integer (python4), compare sys.version_info to tuple
 ]
-<<<<<<< HEAD
-=======
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-# This is to suppress
-# https://docs.astral.sh/ruff/rules/non-pep585-annotation/
-# https://docs.astral.sh/ruff/rules/non-pep604-annotation-union/#non-pep604-annotation-union-up007
-pyupgrade.keep-runtime-typing = true
->>>>>>> 338a07d146 (supress all)
-=======
-exclude = [
-    "*_pb2.py",
-    "*_pb2_grpc.py"
-]
->>>>>>> 79bf773269 (using exclude)
-
-=======
->>>>>>> 7c1370f1c0 (fix comments)
 # Select all rules by default, and then ignore the ones we don't want.
 # This is a good way to stay up-to-date with new rules in ruff.
 select = ["ALL"]
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-[format]
-# Exclude all files from the formatter using a glob pattern.
-# This is the most straightforward way to disable it.
-exclude = ["*"]
-
->>>>>>> 79bf773269 (using exclude)
-=======
->>>>>>> 7c1370f1c0 (fix comments)
 # This is to suppress
 # https://docs.astral.sh/ruff/rules/non-pep585-annotation/
 # https://docs.astral.sh/ruff/rules/non-pep604-annotation-union/#non-pep604-annotation-union-up007
