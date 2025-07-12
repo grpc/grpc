@@ -111,9 +111,7 @@ def wrap_server_method_handler(wrapper, handler):
     elif not handler.response_streaming:
         return handler._replace(stream_unary=wrapper(handler.stream_unary))
     else:
-        return handler._replace(
-            stream_stream=wrapper(handler.stream_stream)
-        )
+        return handler._replace(stream_stream=wrapper(handler.stream_stream))
 
 
 __all__ = (
