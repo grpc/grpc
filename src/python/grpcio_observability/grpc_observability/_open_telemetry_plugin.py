@@ -100,7 +100,7 @@ class OpenTelemetryPlugin:
     def __init__(
         self,
         *,
-        plugin_options: Iterable[OpenTelemetryPluginOption] = [],
+        plugin_options: Optional[Iterable[OpenTelemetryPluginOption]] = None,
         meter_provider: Optional[MeterProvider] = None,
         target_attribute_filter: Optional[Callable[[str], bool]] = None,
         generic_method_attribute_filter: Optional[Callable[[str], bool]] = None,
@@ -127,7 +127,7 @@ class OpenTelemetryPlugin:
         Return True means the original method name will be used, False means method name will
         be replaced with "other".
         """
-        self.plugin_options = plugin_options
+        self.plugin_options = plugin_options or []
         self.meter_provider = meter_provider
         self.target_attribute_filter = target_attribute_filter or (
             lambda target: True
