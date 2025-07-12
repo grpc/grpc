@@ -72,13 +72,9 @@ ignore = [
     "PLR0911", # Too many return statements ({returns} > {max_returns})
     "PLR0912", # Too many branches ({branches} > {max_branches})
     "PLR0913", # Too many arguments in function definition ({c_args} > {max_args})
-<<<<<<< HEAD
     "PLR0915", # Too many statements ({statements} > {max_statements})
     "PLR1704", # Redefining argument with the local name {name}
     "PLR1711", # Useless return statement at end of function
-    "PLR1714", # Consider merging multiple comparisons: {expression}. Use a set if the elements are hashable.
-=======
->>>>>>> b7a1ef5da2 (removed suppression for PLR1714)
     "PLR2004", # Magic value used in comparison, consider replacing {value} with a constant variable
     "PLW0120", # else clause on loop without a break statement; remove the else and dedent its contents
     "PLW0603", # Using the global statement to update {name} is discouraged
