@@ -2,4 +2,5 @@
 coverage>=4.0
 cython==3.1.1
 protobuf>=6.31.1,<7.0.0
+typing-extensions==4.13.2
 wheel>=0.29
