@@ -243,7 +243,7 @@
     ]
 - name: server_global_callbacks_ownership
   description: If set, server global callbacks ownership is fixed to not be owned by gRPC.
-  expiry: 2025/06/30
+  expiry: 2025/09/30
   owner: yashkt@google.com
   test_tags: []
 - name: shard_global_connection_pool
