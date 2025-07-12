@@ -56,15 +56,9 @@ ignore = [
     "D411",    # Missing blank line before section ("{name}")
     "D413",    # Missing blank line after last section ("{name}")
     "D415",    # First line should end with a period, question mark, or exclamation point
-    "D417",    # Missing argument description in the docstring for {definition}: {name}
-    "DTZ001",  # datetime.datetime() called without a tzinfo argument
     "DTZ005",  # datetime.datetime.now() called without a tz argument
-    "E402",    # Module level import not at top of cell
     "E501",    # Line too long ({width} > {limit})
-    "E713",    # Test for membership should be not in
-    "E722",    # Do not use bare except
     "E731",    # Do not assign a lambda expression, use a def
-    "EM101",   # Exception must not use a string literal, assign to variable first
     "EM102",   # Exception must not use an f-string literal, assign to variable first
     "EM103",   # Exception must not use a .format() string directly, assign to variable first
     "ERA001",  # Found commented-out code
