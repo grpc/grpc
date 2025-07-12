@@ -1,4 +1,5 @@
 <?php
+
 /*
  *
  * Copyright 2015 gRPC authors.
@@ -31,7 +32,7 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
      */
     protected static $client;
 
-    protected static $clientOptions = array(
+    protected static $clientOptions = [
         'grpc.service_config' => '{
             "loadBalancingPolicy": "round_robin",
             "methodConfig": [
@@ -57,7 +58,7 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
             ]
           }',
         'grpc.enable_retries' => 1,
-    );
+    ];
 
     public function testWaitForNotReady()
     {
@@ -102,7 +103,7 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
         $div_arg->setDivisor(4);
         $call = self::$client->Div($div_arg, ['somekey' => ['abc123']]);
         // $this->assertNotNull($call);
-        list($response, $status) = $call->wait();
+        [$response, $status] = $call->wait();
         $this->assertSame(\Grpc\STATUS_OK, $status->code);
     }
 
@@ -112,7 +113,7 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
         $div_arg->setDividend(7);
         $div_arg->setDivisor(4);
         $call = self::$client->Div($div_arg, ['somekey_-1' => ['abc123']]);
-        list($response, $status) = $call->wait();
+        [$response, $status] = $call->wait();
         $this->assertSame(\Grpc\STATUS_OK, $status->code);
     }
 
@@ -122,7 +123,7 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
         $div_arg->setDividend(7);
         $div_arg->setDivisor(4);
         $call = self::$client->Div($div_arg, ['someKEY._-1' => ['abc123']]);
-        list($response, $status) = $call->wait();
+        [$response, $status] = $call->wait();
         $this->assertSame(\Grpc\STATUS_OK, $status->code);
     }
 
@@ -146,7 +147,7 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
         $div_arg->setDividend(7);
         $div_arg->setDivisor(4);
         $call = self::$client->Div($div_arg, [], ['timeout' => 1]);
-        list($response, $status) = $call->wait();
+        [$response, $status] = $call->wait();
         $this->assertSame(\Grpc\STATUS_DEADLINE_EXCEEDED, $status->code);
     }
 
@@ -155,7 +156,7 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
         $div_arg = new Math\DivArgs();
         $call = self::$client->Div($div_arg);
         $call->cancel();
-        list($response, $status) = $call->wait();
+        [$response, $status] = $call->wait();
         $this->assertSame(\Grpc\STATUS_CANCELLED, $status->code);
     }
 
@@ -170,7 +171,7 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
         $div_arg->setDividend(7);
         $div_arg->setDivisor(4);
         $call = self::$client->Div($div_arg, $metadata);
-        list($response, $status) = $call->wait();
+        [$response, $status] = $call->wait();
         $this->assertSame(\Grpc\STATUS_UNAVAILABLE, $status->code);
         $this->assertSame('1', $status->metadata['unavailable-retry-attempts'][0]);
     }
@@ -180,12 +181,12 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
         $div_arg = new Math\DivArgs();
         $div_arg->setDividend(7);
         $div_arg->setDivisor(4);
-        $call = self::$client->Div($div_arg, array(), array(
+        $call = self::$client->Div($div_arg, [], [
             'call_credentials_callback' => function ($context) {
-                return array();
+                return [];
             },
-        ));
-        list($response, $status) = $call->wait();
+        ]);
+        [$response, $status] = $call->wait();
         $this->assertSame(\Grpc\STATUS_OK, $status->code);
     }
 
@@ -195,15 +196,17 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
         $div_arg->setDividend(7);
         $div_arg->setDivisor(4);
         $client = new Math\MathClient(
-            getenv('GRPC_TEST_INSECURE_HOST'), [
-               'credentials' => Grpc\ChannelCredentials::createInsecure(),        
-            ]);
-        $call = $client->Div($div_arg, array(), array(
+            getenv('GRPC_TEST_INSECURE_HOST'),
+            [
+               'credentials' => Grpc\ChannelCredentials::createInsecure(),
+            ]
+        );
+        $call = $client->Div($div_arg, [], [
             'call_credentials_callback' => function ($context) {
-                return array();
+                return [];
             },
-        ));
-        list($response, $status) = $call->wait();
+        ]);
+        [$response, $status] = $call->wait();
         $this->assertSame(\Grpc\STATUS_OK, $status->code);
     }
 
@@ -231,7 +234,7 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
             'credentials' => Grpc\ChannelCredentials::createInsecure(),
             'grpc.primary_user_agent' => 'testUserAgent',
         ]);
-        $this->assertTrue(TRUE); // to avoid no assert warning
+        $this->assertTrue(true); // to avoid no assert warning
     }
 
     public function testWriteFlags()
@@ -239,10 +242,13 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
         $div_arg = new Math\DivArgs();
         $div_arg->setDividend(7);
         $div_arg->setDivisor(4);
-        $call = self::$client->Div($div_arg, [],
-                                   ['flags' => Grpc\WRITE_NO_COMPRESS]);
+        $call = self::$client->Div(
+            $div_arg,
+            [],
+            ['flags' => Grpc\WRITE_NO_COMPRESS]
+        );
         $this->assertTrue(is_string($call->getPeer()));
-        list($response, $status) = $call->wait();
+        [$response, $status] = $call->wait();
         $this->assertSame(1, $response->getQuotient());
         $this->assertSame(3, $response->getRemainder());
         $this->assertSame(\Grpc\STATUS_OK, $status->code);
@@ -252,8 +258,11 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
     {
         $fib_arg = new Math\FibArgs();
         $fib_arg->setLimit(7);
-        $call = self::$client->Fib($fib_arg, [],
-                                   ['flags' => Grpc\WRITE_NO_COMPRESS]);
+        $call = self::$client->Fib(
+            $fib_arg,
+            [],
+            ['flags' => Grpc\WRITE_NO_COMPRESS]
+        );
         $result_array = iterator_to_array($call->responses());
         $status = $call->getStatus();
         $this->assertSame(\Grpc\STATUS_OK, $status->code);
@@ -265,7 +274,7 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
         $num = new Math\Num();
         $num->setNum(1);
         $call->write($num, ['flags' => Grpc\WRITE_NO_COMPRESS]);
-        list($response, $status) = $call->wait();
+        [$response, $status] = $call->wait();
         $this->assertSame(\Grpc\STATUS_OK, $status->code);
     }
 
@@ -289,7 +298,7 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
         $div_arg->setDivisor(4);
         $call = self::$client->Div($div_arg);
         $this->assertTrue(is_string($call->getPeer()));
-        list($response, $status) = $call->wait();
+        [$response, $status] = $call->wait();
         $this->assertSame(1, $response->getQuotient());
         $this->assertSame(3, $response->getRemainder());
         $this->assertSame(\Grpc\STATUS_OK, $status->code);
@@ -303,8 +312,8 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue(is_string($call->getPeer()));
         $result_array = iterator_to_array($call->responses());
         $extract_num = function ($num) {
-                         return $num->getNum();
-                       };
+            return $num->getNum();
+        };
         $values = array_map($extract_num, $result_array);
         $this->assertSame([1, 1, 2, 3, 5, 8, 13], $values);
         $status = $call->getStatus();
@@ -320,7 +329,7 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
             $num->setNum($i);
             $call->write($num);
         }
-        list($response, $status) = $call->wait();
+        [$response, $status] = $call->wait();
         $this->assertSame(21, $response->getNum());
         $this->assertSame(\Grpc\STATUS_OK, $status->code);
     }
@@ -352,22 +361,25 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
         $div_arg->setDivisor(4);
         $call = self::$client->Div($div_arg, [], ['timeout' => 1000000]);
 
-        list($response, $status) = $call->wait();
+        [$response, $status] = $call->wait();
         $this->assertSame(\Grpc\STATUS_OK, $status->code);
-        list($response, $status) = $call->wait();
+        [$response, $status] = $call->wait();
     }
 }
 
 class PhonyInvalidClient extends \Grpc\BaseStub
 {
-    public function InvalidUnaryCall(\Math\DivArgs $argument,
-                                     $metadata = [],
-                                     $options = [])
-    {
-        return $this->_simpleRequest('invalidMethodName',
-                                     $argument,
-                                     function () {},
-                                     $metadata,
-                                     $options);
+    public function InvalidUnaryCall(
+        \Math\DivArgs $argument,
+        $metadata = [],
+        $options = []
+    ) {
+        return $this->_simpleRequest(
+            'invalidMethodName',
+            $argument,
+            function () {},
+            $metadata,
+            $options
+        );
     }
 }

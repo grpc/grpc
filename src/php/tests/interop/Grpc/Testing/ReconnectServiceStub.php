@@ -1,4 +1,5 @@
 <?php
+
 // GENERATED CODE -- DO NOT EDIT!
 
 // Original file comments:
@@ -19,13 +20,14 @@
 // An integration test service that covers all the method signature permutations
 // of unary/streaming requests/responses.
 //
+
 namespace Grpc\Testing;
 
 /**
  * A service used to control reconnect server.
  */
-class ReconnectServiceStub {
-
+class ReconnectServiceStub
+{
     /**
      * @param \Grpc\Testing\ReconnectParams $request client request
      * @param \Grpc\ServerContext $context server request context
@@ -59,7 +61,7 @@ class ReconnectServiceStub {
      *
      * @return array of \Grpc\MethodDescriptor for the service methods
      */
-    public final function getMethodDescriptors(): array
+    final public function getMethodDescriptors(): array
     {
         return [
             '/grpc.testing.ReconnectService/Start' => new \Grpc\MethodDescriptor(

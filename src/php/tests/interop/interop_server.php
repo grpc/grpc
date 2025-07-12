@@ -1,4 +1,5 @@
 <?php
+
 /*
  *
  * Copyright 2020 gRPC authors.
@@ -61,7 +62,7 @@ class TestService extends \Grpc\Testing\TestServiceStub
         \Grpc\Testing\EmptyMessage $request,
         \Grpc\ServerContext $context
     ): ?\Grpc\Testing\EmptyMessage {
-        list($initial_metadata, $trailing_metadata) =
+        [$initial_metadata, $trailing_metadata] =
             $this->maybeEchoMetadata($context);
         $context->setStatus(\Grpc\Status::ok($trailing_metadata));
         $context->setInitialMetadata($initial_metadata);
@@ -72,7 +73,7 @@ class TestService extends \Grpc\Testing\TestServiceStub
         \Grpc\Testing\SimpleRequest $request,
         \Grpc\ServerContext $context
     ): ?\Grpc\Testing\SimpleResponse {
-        list($initial_metadata, $trailing_metadata) =
+        [$initial_metadata, $trailing_metadata] =
             $this->maybeEchoMetadata($context);
         $echo_status = $this->maybeEchoStatusAndMessage(
             $request,
@@ -145,7 +146,7 @@ class TestService extends \Grpc\Testing\TestServiceStub
         \Grpc\ServerCallWriter $writer,
         \Grpc\ServerContext $context
     ): void {
-        list($initial_metadata, $trailing_metadata) =
+        [$initial_metadata, $trailing_metadata] =
             $this->maybeEchoMetadata($context);
         $context->setInitialMetadata($initial_metadata);
         while ($request = $reader->read()) {

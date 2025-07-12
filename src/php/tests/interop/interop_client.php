@@ -1,4 +1,5 @@
 <?php
+
 /*
  *
  * Copyright 2015-2016 gRPC authors.
@@ -58,7 +59,7 @@ function hardAssertIfStatusOk($status)
  */
 function emptyUnary($stub)
 {
-    list($result, $status) =
+    [$result, $status] =
         $stub->EmptyCall(new Grpc\Testing\EmptyMessage())->wait();
     hardAssertIfStatusOk($status);
     hardAssert($result !== null, 'Call completed with a null response');
@@ -81,9 +82,12 @@ function largeUnary($stub)
  * @param $fillUsername boolean whether to fill result with username
  * @param $fillOauthScope boolean whether to fill result with oauth scope
  */
-function performLargeUnary($stub, $fillUsername = false,
-                           $fillOauthScope = false, $callback = false)
-{
+function performLargeUnary(
+    $stub,
+    $fillUsername = false,
+    $fillOauthScope = false,
+    $callback = false
+) {
     $request_len = 271828;
     $response_len = 314159;
 
@@ -102,16 +106,22 @@ function performLargeUnary($stub, $fillUsername = false,
         $options['call_credentials_callback'] = $callback;
     }
 
-    list($result, $status) = $stub->UnaryCall($request, [], $options)->wait();
+    [$result, $status] = $stub->UnaryCall($request, [], $options)->wait();
     hardAssertIfStatusOk($status);
     hardAssert($result !== null, 'Call returned a null response');
     $payload = $result->getPayload();
-    hardAssert($payload->getType() === Grpc\Testing\PayloadType::COMPRESSABLE,
-               'Payload had the wrong type');
-    hardAssert(strlen($payload->getBody()) === $response_len,
-               'Payload had the wrong length');
-    hardAssert($payload->getBody() === str_repeat("\0", $response_len),
-               'Payload had the wrong content');
+    hardAssert(
+        $payload->getType() === Grpc\Testing\PayloadType::COMPRESSABLE,
+        'Payload had the wrong type'
+    );
+    hardAssert(
+        strlen($payload->getBody()) === $response_len,
+        'Payload had the wrong length'
+    );
+    hardAssert(
+        $payload->getBody() === str_repeat("\0", $response_len),
+        'Payload had the wrong content'
+    );
 
     return $result;
 }
@@ -136,7 +146,7 @@ function clientCompressedUnary($stub)
         'response_size' => $response_len,
         'expect_compressed' => $trueBoolValue, // lie
     ]);
-    list($result, $status) = $stub->UnaryCall($request, [], [])->wait();
+    [$result, $status] = $stub->UnaryCall($request, [], [])->wait();
     hardAssert(
         $status->code === GRPC\STATUS_INVALID_ARGUMENT,
         'Received unexpected UnaryCall status code: ' .
@@ -148,7 +158,7 @@ function clientCompressedUnary($stub)
         $metadata = $compression ? [
             'grpc-internal-encoding-request' => ['gzip'],
         ] : [];
-        list($result, $status) = $stub->UnaryCall($request, $metadata, [])->wait();
+        [$result, $status] = $stub->UnaryCall($request, $metadata, [])->wait();
         hardAssertIfStatusOk($status);
         hardAssert($result !== null, 'Call returned a null response');
         $payload = $result->getPayload();
@@ -176,13 +186,21 @@ function serviceAccountCreds($stub, $args)
     }
     $jsonKey = json_decode(
         file_get_contents(getenv(CredentialsLoader::ENV_VAR)),
-        true);
-    $result = performLargeUnary($stub, $fillUsername = true,
-                                $fillOauthScope = true);
-    hardAssert($result->getUsername() === $jsonKey['client_email'],
-               'invalid email returned');
-    hardAssert(strpos($args['oauth_scope'], $result->getOauthScope()) !== false,
-               'invalid oauth scope returned');
+        true
+    );
+    $result = performLargeUnary(
+        $stub,
+        $fillUsername = true,
+        $fillOauthScope = true
+    );
+    hardAssert(
+        $result->getUsername() === $jsonKey['client_email'],
+        'invalid email returned'
+    );
+    hardAssert(
+        strpos($args['oauth_scope'], $result->getOauthScope()) !== false,
+        'invalid oauth scope returned'
+    );
 }
 
 /**
@@ -200,10 +218,15 @@ function computeEngineCreds($stub, $args)
     if (!array_key_exists('default_service_account', $args)) {
         throw new Exception('Missing default_service_account');
     }
-    $result = performLargeUnary($stub, $fillUsername = true,
-                                $fillOauthScope = true);
-    hardAssert($args['default_service_account'] === $result->getUsername(),
-               'invalid email returned');
+    $result = performLargeUnary(
+        $stub,
+        $fillUsername = true,
+        $fillOauthScope = true
+    );
+    hardAssert(
+        $args['default_service_account'] === $result->getUsername(),
+        'invalid email returned'
+    );
 }
 
 /**
@@ -216,11 +239,17 @@ function jwtTokenCreds($stub, $args)
 {
     $jsonKey = json_decode(
         file_get_contents(getenv(CredentialsLoader::ENV_VAR)),
-        true);
-    $result = performLargeUnary($stub, $fillUsername = true,
-                                $fillOauthScope = true);
-    hardAssert($result->getUsername() === $jsonKey['client_email'],
-               'invalid email returned');
+        true
+    );
+    $result = performLargeUnary(
+        $stub,
+        $fillUsername = true,
+        $fillOauthScope = true
+    );
+    hardAssert(
+        $result->getUsername() === $jsonKey['client_email'],
+        'invalid email returned'
+    );
 }
 
 /**
@@ -233,11 +262,17 @@ function oauth2AuthToken($stub, $args)
 {
     $jsonKey = json_decode(
         file_get_contents(getenv(CredentialsLoader::ENV_VAR)),
-        true);
-    $result = performLargeUnary($stub, $fillUsername = true,
-                                $fillOauthScope = true);
-    hardAssert($result->getUsername() === $jsonKey['client_email'],
-               'invalid email returned');
+        true
+    );
+    $result = performLargeUnary(
+        $stub,
+        $fillUsername = true,
+        $fillOauthScope = true
+    );
+    hardAssert(
+        $result->getUsername() === $jsonKey['client_email'],
+        'invalid email returned'
+    );
 }
 
 function updateAuthMetadataCallback($context)
@@ -265,13 +300,19 @@ function perRpcCreds($stub, $args)
 {
     $jsonKey = json_decode(
         file_get_contents(getenv(CredentialsLoader::ENV_VAR)),
-        true);
+        true
+    );
 
-    $result = performLargeUnary($stub, $fillUsername = true,
-                                $fillOauthScope = true,
-                                'updateAuthMetadataCallback');
-    hardAssert($result->getUsername() === $jsonKey['client_email'],
-               'invalid email returned');
+    $result = performLargeUnary(
+        $stub,
+        $fillUsername = true,
+        $fillOauthScope = true,
+        'updateAuthMetadataCallback'
+    );
+    hardAssert(
+        $result->getUsername() === $jsonKey['client_email'],
+        'invalid email returned'
+    );
 }
 
 /**
@@ -291,16 +332,20 @@ function clientStreaming($stub)
             $request->setPayload($payload);
 
             return $request;
-        }, $request_lengths);
+        },
+        $request_lengths
+    );
 
     $call = $stub->StreamingInputCall();
     foreach ($requests as $request) {
         $call->write($request);
     }
-    list($result, $status) = $call->wait();
+    [$result, $status] = $call->wait();
     hardAssertIfStatusOk($status);
-    hardAssert($result->getAggregatedPayloadSize() === 74922,
-               'aggregated_payload_size was incorrect');
+    hardAssert(
+        $result->getAggregatedPayloadSize() === 74922,
+        'aggregated_payload_size was incorrect'
+    );
 }
 
 /**
@@ -328,7 +373,7 @@ function clientCompressedStreaming($stub)
 
     $call = $stub->StreamingInputCall();
     $call->write($request);
-    list($result, $status) = $call->wait();
+    [$result, $status] = $call->wait();
     hardAssert(
         $status->code === GRPC\STATUS_INVALID_ARGUMENT,
         'Received unexpected StreamingInputCall status code: ' .
@@ -356,7 +401,7 @@ function clientCompressedStreaming($stub)
 
     // 4. verify response
 
-    list($result, $status) = $call->wait();
+    [$result, $status] = $call->wait();
 
     hardAssertIfStatusOk($status);
     hardAssert(
@@ -389,9 +434,12 @@ function serverStreaming($stub)
         $payload = $value->getPayload();
         hardAssert(
             $payload->getType() === Grpc\Testing\PayloadType::COMPRESSABLE,
-            'Payload '.$i.' had the wrong type');
-        hardAssert(strlen($payload->getBody()) === $sizes[$i],
-                   'Response '.$i.' had the wrong length');
+            'Payload '.$i.' had the wrong type'
+        );
+        hardAssert(
+            strlen($payload->getBody()) === $sizes[$i],
+            'Response '.$i.' had the wrong length'
+        );
         $i += 1;
     }
     hardAssertIfStatusOk($call->getStatus());
@@ -425,9 +473,12 @@ function pingPong($stub)
         $payload = $response->getPayload();
         hardAssert(
             $payload->getType() === Grpc\Testing\PayloadType::COMPRESSABLE,
-            'Payload '.$i.' had the wrong type');
-        hardAssert(strlen($payload->getBody()) === $response_lengths[$i],
-                   'Payload '.$i.' had the wrong length');
+            'Payload '.$i.' had the wrong type'
+        );
+        hardAssert(
+            strlen($payload->getBody()) === $response_lengths[$i],
+            'Payload '.$i.' had the wrong length'
+        );
     }
     $call->writesDone();
     hardAssert($call->read() === null, 'Server returned too many responses');
@@ -456,9 +507,11 @@ function cancelAfterBegin($stub)
 {
     $call = $stub->StreamingInputCall();
     $call->cancel();
-    list($result, $status) = $call->wait();
-    hardAssert($status->code === Grpc\STATUS_CANCELLED,
-               'Call status was not CANCELLED');
+    [$result, $status] = $call->wait();
+    hardAssert(
+        $status->code === Grpc\STATUS_CANCELLED,
+        'Call status was not CANCELLED'
+    );
 }
 
 /**
@@ -482,8 +535,10 @@ function cancelAfterFirstResponse($stub)
     $response = $call->read();
 
     $call->cancel();
-    hardAssert($call->getStatus()->code === Grpc\STATUS_CANCELLED,
-               'Call status was not CANCELLED');
+    hardAssert(
+        $call->getStatus()->code === Grpc\STATUS_CANCELLED,
+        'Call status was not CANCELLED'
+    );
 }
 
 function timeoutOnSleepingServer($stub)
@@ -501,8 +556,10 @@ function timeoutOnSleepingServer($stub)
     $call->write($request);
     $response = $call->read();
 
-    hardAssert($call->getStatus()->code === Grpc\STATUS_DEADLINE_EXCEEDED,
-               'Call status was not DEADLINE_EXCEEDED');
+    hardAssert(
+        $call->getStatus()->code === Grpc\STATUS_DEADLINE_EXCEEDED,
+        'Call status was not DEADLINE_EXCEEDED'
+    );
 }
 
 function customMetadata($stub)
@@ -529,21 +586,27 @@ function customMetadata($stub)
     $call = $stub->UnaryCall($request, $metadata);
 
     $initial_metadata = $call->getMetadata();
-    hardAssert(array_key_exists($ECHO_INITIAL_KEY, $initial_metadata),
-               'Initial metadata does not contain expected key');
+    hardAssert(
+        array_key_exists($ECHO_INITIAL_KEY, $initial_metadata),
+        'Initial metadata does not contain expected key'
+    );
     hardAssert(
         $initial_metadata[$ECHO_INITIAL_KEY][0] === $ECHO_INITIAL_VALUE,
-        'Incorrect initial metadata value');
+        'Incorrect initial metadata value'
+    );
 
-    list($result, $status) = $call->wait();
+    [$result, $status] = $call->wait();
     hardAssertIfStatusOk($status);
 
     $trailing_metadata = $call->getTrailingMetadata();
-    hardAssert(array_key_exists($ECHO_TRAILING_KEY, $trailing_metadata),
-               'Trailing metadata does not contain expected key');
+    hardAssert(
+        array_key_exists($ECHO_TRAILING_KEY, $trailing_metadata),
+        'Trailing metadata does not contain expected key'
+    );
     hardAssert(
         $trailing_metadata[$ECHO_TRAILING_KEY][0] === $ECHO_TRAILING_VALUE,
-        'Incorrect trailing metadata value');
+        'Incorrect trailing metadata value'
+    );
 
     $streaming_call = $stub->FullDuplexCall($metadata);
 
@@ -559,16 +622,23 @@ function customMetadata($stub)
     hardAssertIfStatusOk($streaming_call->getStatus());
 
     $streaming_initial_metadata = $streaming_call->getMetadata();
-    hardAssert(array_key_exists($ECHO_INITIAL_KEY, $streaming_initial_metadata),
-               'Initial metadata does not contain expected key');
+    hardAssert(
+        array_key_exists($ECHO_INITIAL_KEY, $streaming_initial_metadata),
+        'Initial metadata does not contain expected key'
+    );
     hardAssert(
         $streaming_initial_metadata[$ECHO_INITIAL_KEY][0] === $ECHO_INITIAL_VALUE,
-        'Incorrect initial metadata value');
+        'Incorrect initial metadata value'
+    );
 
     $streaming_trailing_metadata = $streaming_call->getTrailingMetadata();
-    hardAssert(array_key_exists($ECHO_TRAILING_KEY,
-                                $streaming_trailing_metadata),
-               'Trailing metadata does not contain expected key');
+    hardAssert(
+        array_key_exists(
+            $ECHO_TRAILING_KEY,
+            $streaming_trailing_metadata
+        ),
+        'Trailing metadata does not contain expected key'
+    );
     hardAssert($streaming_trailing_metadata[$ECHO_TRAILING_KEY][0] ===
                $ECHO_TRAILING_VALUE, 'Incorrect trailing metadata value');
 }
@@ -583,14 +653,18 @@ function statusCodeAndMessage($stub)
     $request->setResponseStatus($echo_status);
 
     $call = $stub->UnaryCall($request);
-    list($result, $status) = $call->wait();
+    [$result, $status] = $call->wait();
 
-    hardAssert($status->code === 2,
-               'Received unexpected UnaryCall status code: '.
-               $status->code);
-    hardAssert($status->details === 'test status message',
-               'Received unexpected UnaryCall status details: '.
-               $status->details);
+    hardAssert(
+        $status->code === 2,
+        'Received unexpected UnaryCall status code: '.
+               $status->code
+    );
+    hardAssert(
+        $status->details === 'test status message',
+        'Received unexpected UnaryCall status details: '.
+               $status->details
+    );
 
     $streaming_call = $stub->FullDuplexCall();
 
@@ -601,12 +675,16 @@ function statusCodeAndMessage($stub)
     $result = $streaming_call->read();
 
     $status = $streaming_call->getStatus();
-    hardAssert($status->code === 2,
-               'Received unexpected FullDuplexCall status code: '.
-               $status->code);
-    hardAssert($status->details === 'test status message',
-               'Received unexpected FullDuplexCall status details: '.
-               $status->details);
+    hardAssert(
+        $status->code === 2,
+        'Received unexpected FullDuplexCall status code: '.
+               $status->code
+    );
+    hardAssert(
+        $status->details === 'test status message',
+        'Received unexpected FullDuplexCall status details: '.
+               $status->details
+    );
 }
 
 function specialStatusMessage($stub)
@@ -622,7 +700,7 @@ function specialStatusMessage($stub)
     $request->setResponseStatus($echo_status);
 
     $call = $stub->UnaryCall($request);
-    list($result, $status) = $call->wait();
+    [$result, $status] = $call->wait();
 
     hardAssert(
         $status->code === $test_code,
@@ -638,18 +716,22 @@ function specialStatusMessage($stub)
 function unimplementedService($stub)
 {
     $call = $stub->UnimplementedCall(new Grpc\Testing\EmptyMessage());
-    list($result, $status) = $call->wait();
-    hardAssert($status->code === Grpc\STATUS_UNIMPLEMENTED,
-               'Received unexpected status code');
+    [$result, $status] = $call->wait();
+    hardAssert(
+        $status->code === Grpc\STATUS_UNIMPLEMENTED,
+        'Received unexpected status code'
+    );
 }
 
 # NOTE: the stub input to this function is from TestService
 function unimplementedMethod($stub)
 {
     $call = $stub->UnimplementedCall(new Grpc\Testing\EmptyMessage());
-    list($result, $status) = $call->wait();
-    hardAssert($status->code === Grpc\STATUS_UNIMPLEMENTED,
-               'Received unexpected status code');
+    [$result, $status] = $call->wait();
+    hardAssert(
+        $status->code === Grpc\STATUS_UNIMPLEMENTED,
+        'Received unexpected status code'
+    );
 }
 
 function _makeStub($args)
@@ -689,7 +771,8 @@ function _makeStub($args)
     if ($use_tls) {
         if ($use_test_ca) {
             $ssl_credentials = Grpc\ChannelCredentials::createSsl(
-                file_get_contents(dirname(__FILE__).'/../data/ca.pem'));
+                file_get_contents(dirname(__FILE__).'/../data/ca.pem')
+            );
         } else {
             $ssl_credentials = Grpc\ChannelCredentials::createSsl();
         }
@@ -719,14 +802,18 @@ function _makeStub($args)
         );
         $token = $auth_credentials->fetchAuthToken();
         $update_metadata =
-            function ($metadata,
-                      $authUri = null,
-                      ?ClientInterface $client = null) use ($token) {
+            function (
+                $metadata,
+                $authUri = null,
+                ?ClientInterface $client = null
+            ) use ($token) {
                 $metadata_copy = $metadata;
                 $metadata_copy[CredentialsLoader::AUTH_METADATA_KEY] =
-                    [sprintf('%s %s',
-                             $token['token_type'],
-                             $token['access_token'])];
+                    [sprintf(
+                        '%s %s',
+                        $token['token_type'],
+                        $token['access_token']
+                    )];
 
                 return $metadata_copy;
             };
@@ -734,8 +821,10 @@ function _makeStub($args)
     }
 
     if ($test_case === 'unimplemented_service') {
-        $stub = new Grpc\Testing\UnimplementedServiceClient($server_address,
-                                                            $opts);
+        $stub = new Grpc\Testing\UnimplementedServiceClient(
+            $server_address,
+            $opts
+        );
     } else {
         $stub = new Grpc\Testing\TestServiceClient($server_address, $opts);
     }

@@ -1,4 +1,5 @@
 <?php
+
 /*
  *
  * Copyright 2015 gRPC authors.
@@ -23,17 +24,20 @@ class GeneratedCodeWithCallbackTest extends AbstractGeneratedCodeTest
     public function setUp(): void
     {
         self::$client = new Math\MathClient(
-        getenv('GRPC_TEST_HOST'),
-        ['credentials' => Grpc\ChannelCredentials::createSsl(
-            file_get_contents(dirname(__FILE__).'/../data/ca.pem')),
+            getenv('GRPC_TEST_HOST'),
+            ['credentials' => Grpc\ChannelCredentials::createSsl(
+                file_get_contents(dirname(__FILE__).'/../data/ca.pem')
+            ),
          'grpc.ssl_target_name_override' => 'foo.test.google.fr',
-         'update_metadata' => function ($a_hash,
-                                        $client = []) {
-                                $a_copy = $a_hash;
-                                $a_copy['foo'] = ['bar'];
+         'update_metadata' => function (
+             $a_hash,
+             $client = []
+         ) {
+             $a_copy = $a_hash;
+             $a_copy['foo'] = ['bar'];
 
-                                return $a_copy;
-                              },
+             return $a_copy;
+         },
             ] + self::$clientOptions
         );
     }

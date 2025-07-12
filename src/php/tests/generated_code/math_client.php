@@ -1,4 +1,5 @@
 <?php
+
 /*
  *
  * Copyright 2015 gRPC authors.
@@ -44,7 +45,7 @@ $div_arg->setDivisor($divisor);
 $call = $client->Div($div_arg);
 p('Call peer: '.$call->getPeer());
 p("Dividing $dividend by $divisor");
-list($response, $status) = $call->wait();
+[$response, $status] = $call->wait();
 p('quotient = '.$response->getQuotient());
 p('remainder = '.$response->getRemainder());
 p('');
@@ -69,9 +70,12 @@ for ($i = 0; $i <= $limit; ++$i) {
     $num->setNum($i);
     $call->write($num);
 }
-list($response, $status) = $call->wait();
-p(sprintf('The first %d positive integers sum to: %d',
-          $limit, $response->getNum()));
+[$response, $status] = $call->wait();
+p(sprintf(
+    'The first %d positive integers sum to: %d',
+    $limit,
+    $response->getNum()
+));
 p('');
 
 p('Running bidi-streaming test:');
@@ -85,7 +89,10 @@ for ($i = 0; $i < 7; ++$i) {
     $call->write($div_arg);
     p("client writing: $dividend / $divisor");
     $response = $call->read();
-    p(sprintf('server writing: quotient = %d, remainder = %d',
-            $response->getQuotient(), $response->getRemainder()));
+    p(sprintf(
+        'server writing: quotient = %d, remainder = %d',
+        $response->getQuotient(),
+        $response->getRemainder()
+    ));
 }
 $call->writesDone();

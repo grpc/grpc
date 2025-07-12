@@ -1,4 +1,5 @@
 <?php
+
 // GENERATED CODE -- DO NOT EDIT!
 
 // Original file comments:
@@ -19,19 +20,21 @@
 // An integration test service that covers all the method signature permutations
 // of unary/streaming requests/responses.
 //
+
 namespace Grpc\Testing;
 
 /**
  * A service used to obtain stats for verifying LB behavior.
  */
-class LoadBalancerStatsServiceClient extends \Grpc\BaseStub {
-
+class LoadBalancerStatsServiceClient extends \Grpc\BaseStub
+{
     /**
      * @param string $hostname hostname
      * @param array $opts channel options
      * @param \Grpc\Channel $channel (optional) re-use channel object
      */
-    public function __construct($hostname, $opts, $channel = null) {
+    public function __construct($hostname, $opts, $channel = null)
+    {
         parent::__construct($hostname, $opts, $channel);
     }
 
@@ -42,12 +45,18 @@ class LoadBalancerStatsServiceClient extends \Grpc\BaseStub {
      * @param array $options call options
      * @return \Grpc\UnaryCall<\Grpc\Testing\LoadBalancerStatsResponse>
      */
-    public function GetClientStats(\Grpc\Testing\LoadBalancerStatsRequest $argument,
-      $metadata = [], $options = []) {
-        return $this->_simpleRequest('/grpc.testing.LoadBalancerStatsService/GetClientStats',
-        $argument,
-        ['\Grpc\Testing\LoadBalancerStatsResponse', 'decode'],
-        $metadata, $options);
+    public function GetClientStats(
+        \Grpc\Testing\LoadBalancerStatsRequest $argument,
+        $metadata = [],
+        $options = []
+    ) {
+        return $this->_simpleRequest(
+            '/grpc.testing.LoadBalancerStatsService/GetClientStats',
+            $argument,
+            ['\Grpc\Testing\LoadBalancerStatsResponse', 'decode'],
+            $metadata,
+            $options
+        );
     }
 
     /**
@@ -57,12 +66,18 @@ class LoadBalancerStatsServiceClient extends \Grpc\BaseStub {
      * @param array $options call options
      * @return \Grpc\UnaryCall<\Grpc\Testing\LoadBalancerAccumulatedStatsResponse>
      */
-    public function GetClientAccumulatedStats(\Grpc\Testing\LoadBalancerAccumulatedStatsRequest $argument,
-      $metadata = [], $options = []) {
-        return $this->_simpleRequest('/grpc.testing.LoadBalancerStatsService/GetClientAccumulatedStats',
-        $argument,
-        ['\Grpc\Testing\LoadBalancerAccumulatedStatsResponse', 'decode'],
-        $metadata, $options);
+    public function GetClientAccumulatedStats(
+        \Grpc\Testing\LoadBalancerAccumulatedStatsRequest $argument,
+        $metadata = [],
+        $options = []
+    ) {
+        return $this->_simpleRequest(
+            '/grpc.testing.LoadBalancerStatsService/GetClientAccumulatedStats',
+            $argument,
+            ['\Grpc\Testing\LoadBalancerAccumulatedStatsResponse', 'decode'],
+            $metadata,
+            $options
+        );
     }
 
 }

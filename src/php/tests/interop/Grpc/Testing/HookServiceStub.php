@@ -1,4 +1,5 @@
 <?php
+
 // GENERATED CODE -- DO NOT EDIT!
 
 // Original file comments:
@@ -19,13 +20,14 @@
 // An integration test service that covers all the method signature permutations
 // of unary/streaming requests/responses.
 //
+
 namespace Grpc\Testing;
 
 /**
  * Hook service. Used to keep Kubernetes from shutting the pod down.
  */
-class HookServiceStub {
-
+class HookServiceStub
+{
     /**
      * Sends a request that will "hang" until the return status is set by a call
      * to a SetReturnStatus
@@ -77,7 +79,7 @@ class HookServiceStub {
      *
      * @return array of \Grpc\MethodDescriptor for the service methods
      */
-    public final function getMethodDescriptors(): array
+    final public function getMethodDescriptors(): array
     {
         return [
             '/grpc.testing.HookService/Hook' => new \Grpc\MethodDescriptor(

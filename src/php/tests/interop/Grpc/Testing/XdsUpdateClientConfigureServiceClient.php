@@ -1,4 +1,5 @@
 <?php
+
 // GENERATED CODE -- DO NOT EDIT!
 
 // Original file comments:
@@ -19,19 +20,21 @@
 // An integration test service that covers all the method signature permutations
 // of unary/streaming requests/responses.
 //
+
 namespace Grpc\Testing;
 
 /**
  * A service to dynamically update the configuration of an xDS test client.
  */
-class XdsUpdateClientConfigureServiceClient extends \Grpc\BaseStub {
-
+class XdsUpdateClientConfigureServiceClient extends \Grpc\BaseStub
+{
     /**
      * @param string $hostname hostname
      * @param array $opts channel options
      * @param \Grpc\Channel $channel (optional) re-use channel object
      */
-    public function __construct($hostname, $opts, $channel = null) {
+    public function __construct($hostname, $opts, $channel = null)
+    {
         parent::__construct($hostname, $opts, $channel);
     }
 
@@ -42,12 +45,18 @@ class XdsUpdateClientConfigureServiceClient extends \Grpc\BaseStub {
      * @param array $options call options
      * @return \Grpc\UnaryCall<\Grpc\Testing\ClientConfigureResponse>
      */
-    public function Configure(\Grpc\Testing\ClientConfigureRequest $argument,
-      $metadata = [], $options = []) {
-        return $this->_simpleRequest('/grpc.testing.XdsUpdateClientConfigureService/Configure',
-        $argument,
-        ['\Grpc\Testing\ClientConfigureResponse', 'decode'],
-        $metadata, $options);
+    public function Configure(
+        \Grpc\Testing\ClientConfigureRequest $argument,
+        $metadata = [],
+        $options = []
+    ) {
+        return $this->_simpleRequest(
+            '/grpc.testing.XdsUpdateClientConfigureService/Configure',
+            $argument,
+            ['\Grpc\Testing\ClientConfigureResponse', 'decode'],
+            $metadata,
+            $options
+        );
     }
 
 }

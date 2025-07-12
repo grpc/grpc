@@ -1,4 +1,5 @@
 <?php
+
 /*
  *
  * Copyright 2018 gRPC authors.
@@ -47,64 +48,69 @@ class CallInvokerSimpleRequest
 
 class CallInvokerClient extends Grpc\BaseStub
 {
+    /**
+     * @param string $hostname hostname
+     * @param array $opts channel options
+     * @param Channel|InterceptorChannel $channel (optional) re-use channel object
+     */
+    public function __construct($hostname, $opts, $channel = null)
+    {
+        parent::__construct($hostname, $opts, $channel);
+    }
 
-  /**
-   * @param string $hostname hostname
-   * @param array $opts channel options
-   * @param Channel|InterceptorChannel $channel (optional) re-use channel object
-   */
-  public function __construct($hostname, $opts, $channel = null)
-  {
-    parent::__construct($hostname, $opts, $channel);
-  }
-
-  /**
-   * A simple RPC.
-   * @param SimpleRequest $argument input argument
-   * @param array $metadata metadata
-   * @param array $options call options
-   */
-  public function UnaryCall(
-    CallInvokerSimpleRequest $argument,
-    $metadata = [],
-    $options = []
-  ) {
-    return $this->_simpleRequest(
-      '/phony_method',
-      $argument,
-      [],
-      $metadata,
-      $options
-    );
-  }
+    /**
+     * A simple RPC.
+     * @param SimpleRequest $argument input argument
+     * @param array $metadata metadata
+     * @param array $options call options
+     */
+    public function UnaryCall(
+        CallInvokerSimpleRequest $argument,
+        $metadata = [],
+        $options = []
+    ) {
+        return $this->_simpleRequest(
+            '/phony_method',
+            $argument,
+            [],
+            $metadata,
+            $options
+        );
+    }
 }
 
 class CallInvokerUpdateChannel implements \Grpc\CallInvoker
 {
     private $channel;
 
-    public function getChannel() {
+    public function getChannel()
+    {
         return $this->channel;
     }
 
-    public function createChannelFactory($hostname, $opts) {
+    public function createChannelFactory($hostname, $opts)
+    {
         $this->channel = new \Grpc\Channel('localhost:50050', $opts);
         return $this->channel;
     }
 
-    public function UnaryCall($channel, $method, $deserialize, $options) {
+    public function UnaryCall($channel, $method, $deserialize, $options)
+    {
         return new UnaryCall($channel, $method, $deserialize, $options);
     }
 
-    public function ClientStreamingCall($channel, $method, $deserialize, $options) {
+    public function ClientStreamingCall($channel, $method, $deserialize, $options)
+    {
         return new ClientStreamingCall($channel, $method, $deserialize, $options);
     }
 
-    public function ServerStreamingCall($channel, $method, $deserialize, $options) {
+    public function ServerStreamingCall($channel, $method, $deserialize, $options)
+    {
         return new ServerStreamingCall($channel, $method, $deserialize, $options);
     }
 
-    public function BidiStreamingCall($channel, $method, $deserialize, $options) {
+    public function BidiStreamingCall($channel, $method, $deserialize, $options)
+    {
         return new BidiStreamingCall($channel, $method, $deserialize, $options);
     }
 }
@@ -114,27 +120,33 @@ class CallInvokerChangeRequest implements \Grpc\CallInvoker
 {
     private $channel;
 
-    public function getChannel() {
+    public function getChannel()
+    {
         return $this->channel;
     }
-    public function createChannelFactory($hostname, $opts) {
+    public function createChannelFactory($hostname, $opts)
+    {
         $this->channel = new \Grpc\Channel($hostname, $opts);
         return $this->channel;
     }
 
-    public function UnaryCall($channel, $method, $deserialize, $options) {
+    public function UnaryCall($channel, $method, $deserialize, $options)
+    {
         return new CallInvokerChangeRequestCall($channel, $method, $deserialize, $options);
     }
 
-    public function ClientStreamingCall($channel, $method, $deserialize, $options) {
+    public function ClientStreamingCall($channel, $method, $deserialize, $options)
+    {
         return new ClientStreamingCall($channel, $method, $deserialize, $options);
     }
 
-    public function ServerStreamingCall($channel, $method, $deserialize, $options) {
+    public function ServerStreamingCall($channel, $method, $deserialize, $options)
+    {
         return new ServerStreamingCall($channel, $method, $deserialize, $options);
     }
 
-    public function BidiStreamingCall($channel, $method, $deserialize, $options) {
+    public function BidiStreamingCall($channel, $method, $deserialize, $options)
+    {
         return new BidiStreamingCall($channel, $method, $deserialize, $options);
     }
 }
@@ -148,7 +160,8 @@ class CallInvokerChangeRequestCall
         $this->call = new \Grpc\UnaryCall($channel, $method, $deserialize, $options);
     }
 
-    public function start($argument, $metadata, $options) {
+    public function start($argument, $metadata, $options)
+    {
         $argument->setData('intercepted_unary_request');
         $this->call->start($argument, $metadata, $options);
     }
@@ -191,9 +204,11 @@ class CallInvokerTest extends \PHPUnit\Framework\TestCase
     public function testCallInvokerAccessChannel()
     {
         $call_invoker = new CallInvokerUpdateChannel();
-        $stub = new \Grpc\BaseStub('localhost:50051',
-          ['credentials' => \Grpc\ChannelCredentials::createInsecure(),
-            'grpc_call_invoker' => $call_invoker]);
+        $stub = new \Grpc\BaseStub(
+            'localhost:50051',
+            ['credentials' => \Grpc\ChannelCredentials::createInsecure(),
+            'grpc_call_invoker' => $call_invoker]
+        );
         $this->assertEquals($call_invoker->getChannel()->getTarget(), 'dns:///localhost:50050');
         $call_invoker->getChannel()->close();
     }
