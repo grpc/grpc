@@ -5,10 +5,12 @@
   "version": "1.75.0",
   "require": {
     "php": ">=7.1.0",
+    "ext-grpc": "*",
     "google/protobuf": "^v3.3.0"
   },
   "require-dev": {
-    "google/auth": "^v1.3.0"
+    "google/auth": "^v1.3.0",
+    "phpunit/phpunit": "^12.2"
   },
   "autoload": {
     "psr-4": {
@@ -16,5 +18,8 @@
       "": ["tests/interop/",
            "tests/generated_code/"]
     }
+  },
+  "scripts": {
+    "tests:unit": "phpunit -c phpunit.xml"
   }
 }
