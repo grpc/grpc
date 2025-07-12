@@ -82,8 +82,6 @@ ignore = [
     "RET507",  # Unnecessary {branch} after continue statement
     "RSE102",  # Unnecessary parentheses on raised exception
     "RUF005",  # Consider {expression} instead of concatenation
-    "RUF013",  # PEP 484 prohibits implicit Optional
-    "RUF022",  # __all__ is not sorted
     "RUF023",  # {}.__slots__ is not sorted
     "S101",    # Use of assert detected
     "S105",    # Possible hardcoded password assigned to: "{}"
