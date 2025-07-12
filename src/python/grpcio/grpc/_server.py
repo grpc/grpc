@@ -1317,7 +1317,10 @@ def _serve(state: _ServerState) -> None:
         event = state.completion_queue.poll(timeout)
         if state.server_deallocated:
             _begin_shutdown_once(state)
-        if event.completion_type != cygrpc.CompletionType.queue_timeout and not _process_event_and_continue(state, event):
+        if (
+            event.completion_type != cygrpc.CompletionType.queue_timeout
+            and not _process_event_and_continue(state, event)
+        ):
             return
         # We want to force the deletion of the previous event
         # ~before~ we poll again; if the event has a reference
