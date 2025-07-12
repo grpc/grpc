@@ -2038,6 +2038,7 @@ def alts_channel_credentials(service_accounts=None):
         peer identity of the server, handshake will fail. The arg can be empty
         if the client does not have any information about trusted server
         identity.
+
     Returns:
       A ChannelCredentials for use with an ALTS-enabled Channel
     """
