@@ -1,4 +1,5 @@
 <?php
+
 /*
  *
  * Copyright 2021 gRPC authors.
@@ -47,8 +48,10 @@ if ($args['metadata']) {
     $metadata = unserialize($args['metadata']);
 }
 
-$call = $stub->EmptyCall($empty_request,
-                         $metadata,
-                         ['timeout' => $timeout]);
-list($response, $status) = $call->wait();
+$call = $stub->EmptyCall(
+    $empty_request,
+    $metadata,
+    ['timeout' => $timeout]
+);
+[$response, $status] = $call->wait();
 exit($status->code);

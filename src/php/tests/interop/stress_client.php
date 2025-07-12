@@ -1,4 +1,5 @@
 <?php
+
 /*
  *
  * Copyright 2016 gRPC authors.
@@ -66,14 +67,16 @@ function stress_main($args)
 }
 
 // process command line arguments
-$raw_args = getopt('',
-  ['server_addresses::',
+$raw_args = getopt(
+    '',
+    ['server_addresses::',
    'test_cases:',
    'metrics_port::',
    'test_duration_secs::',
    'num_channels_per_server::',
    'num_stubs_per_channel::',
-  ]);
+  ]
+);
 
 $args = [];
 

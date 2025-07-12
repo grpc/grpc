@@ -1,4 +1,5 @@
 <?php
+
 // GENERATED CODE -- DO NOT EDIT!
 
 // Original file comments:
@@ -19,13 +20,14 @@
 // An integration test service that covers all the method signature permutations
 // of unary/streaming requests/responses.
 //
+
 namespace Grpc\Testing;
 
 /**
  * A service to dynamically update the configuration of an xDS test client.
  */
-class XdsUpdateClientConfigureServiceStub {
-
+class XdsUpdateClientConfigureServiceStub
+{
     /**
      * Update the tes client's configuration.
      * @param \Grpc\Testing\ClientConfigureRequest $request client request
@@ -46,7 +48,7 @@ class XdsUpdateClientConfigureServiceStub {
      *
      * @return array of \Grpc\MethodDescriptor for the service methods
      */
-    public final function getMethodDescriptors(): array
+    final public function getMethodDescriptors(): array
     {
         return [
             '/grpc.testing.XdsUpdateClientConfigureService/Configure' => new \Grpc\MethodDescriptor(

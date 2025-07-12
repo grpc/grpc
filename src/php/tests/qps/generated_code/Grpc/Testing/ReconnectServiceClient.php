@@ -1,4 +1,5 @@
 <?php
+
 // GENERATED CODE -- DO NOT EDIT!
 
 // Original file comments:
@@ -19,19 +20,21 @@
 // An integration test service that covers all the method signature permutations
 // of unary/streaming requests/responses.
 //
+
 namespace Grpc\Testing;
 
 /**
  * A service used to control reconnect server.
  */
-class ReconnectServiceClient extends \Grpc\BaseStub {
-
+class ReconnectServiceClient extends \Grpc\BaseStub
+{
     /**
      * @param string $hostname hostname
      * @param array $opts channel options
      * @param \Grpc\Channel $channel (optional) re-use channel object
      */
-    public function __construct($hostname, $opts, $channel = null) {
+    public function __construct($hostname, $opts, $channel = null)
+    {
         parent::__construct($hostname, $opts, $channel);
     }
 
@@ -41,12 +44,18 @@ class ReconnectServiceClient extends \Grpc\BaseStub {
      * @param array $options call options
      * @return \Grpc\Testing\EmptyMessage
      */
-    public function Start(\Grpc\Testing\ReconnectParams $argument,
-      $metadata = [], $options = []) {
-        return $this->_simpleRequest('/grpc.testing.ReconnectService/Start',
-        $argument,
-        ['\Grpc\Testing\EmptyMessage', 'decode'],
-        $metadata, $options);
+    public function Start(
+        \Grpc\Testing\ReconnectParams $argument,
+        $metadata = [],
+        $options = []
+    ) {
+        return $this->_simpleRequest(
+            '/grpc.testing.ReconnectService/Start',
+            $argument,
+            ['\Grpc\Testing\EmptyMessage', 'decode'],
+            $metadata,
+            $options
+        );
     }
 
     /**
@@ -55,12 +64,18 @@ class ReconnectServiceClient extends \Grpc\BaseStub {
      * @param array $options call options
      * @return \Grpc\Testing\ReconnectInfo
      */
-    public function Stop(\Grpc\Testing\EmptyMessage $argument,
-      $metadata = [], $options = []) {
-        return $this->_simpleRequest('/grpc.testing.ReconnectService/Stop',
-        $argument,
-        ['\Grpc\Testing\ReconnectInfo', 'decode'],
-        $metadata, $options);
+    public function Stop(
+        \Grpc\Testing\EmptyMessage $argument,
+        $metadata = [],
+        $options = []
+    ) {
+        return $this->_simpleRequest(
+            '/grpc.testing.ReconnectService/Stop',
+            $argument,
+            ['\Grpc\Testing\ReconnectInfo', 'decode'],
+            $metadata,
+            $options
+        );
     }
 
 }

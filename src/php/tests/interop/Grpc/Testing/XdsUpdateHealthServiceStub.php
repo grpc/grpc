@@ -1,4 +1,5 @@
 <?php
+
 // GENERATED CODE -- DO NOT EDIT!
 
 // Original file comments:
@@ -19,13 +20,14 @@
 // An integration test service that covers all the method signature permutations
 // of unary/streaming requests/responses.
 //
+
 namespace Grpc\Testing;
 
 /**
  * A service to remotely control health status of an xDS test server.
  */
-class XdsUpdateHealthServiceStub {
-
+class XdsUpdateHealthServiceStub
+{
     /**
      * @param \Grpc\Testing\EmptyMessage $request client request
      * @param \Grpc\ServerContext $context server request context
@@ -73,7 +75,7 @@ class XdsUpdateHealthServiceStub {
      *
      * @return array of \Grpc\MethodDescriptor for the service methods
      */
-    public final function getMethodDescriptors(): array
+    final public function getMethodDescriptors(): array
     {
         return [
             '/grpc.testing.XdsUpdateHealthService/SetServing' => new \Grpc\MethodDescriptor(

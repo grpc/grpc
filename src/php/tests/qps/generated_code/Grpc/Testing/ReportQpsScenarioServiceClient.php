@@ -1,4 +1,5 @@
 <?php
+
 // GENERATED CODE -- DO NOT EDIT!
 
 // Original file comments:
@@ -18,18 +19,20 @@
 //
 // An integration test service that covers all the method signature permutations
 // of unary/streaming requests/responses.
+
 namespace Grpc\Testing;
 
 /**
  */
-class ReportQpsScenarioServiceClient extends \Grpc\BaseStub {
-
+class ReportQpsScenarioServiceClient extends \Grpc\BaseStub
+{
     /**
      * @param string $hostname hostname
      * @param array $opts channel options
      * @param \Grpc\Channel $channel (optional) re-use channel object
      */
-    public function __construct($hostname, $opts, $channel = null) {
+    public function __construct($hostname, $opts, $channel = null)
+    {
         parent::__construct($hostname, $opts, $channel);
     }
 
@@ -40,12 +43,18 @@ class ReportQpsScenarioServiceClient extends \Grpc\BaseStub {
      * @param array $options call options
      * @return \Grpc\Testing\PBVoid
      */
-    public function ReportScenario(\Grpc\Testing\ScenarioResult $argument,
-      $metadata = [], $options = []) {
-        return $this->_simpleRequest('/grpc.testing.ReportQpsScenarioService/ReportScenario',
-        $argument,
-        ['\Grpc\Testing\PBVoid', 'decode'],
-        $metadata, $options);
+    public function ReportScenario(
+        \Grpc\Testing\ScenarioResult $argument,
+        $metadata = [],
+        $options = []
+    ) {
+        return $this->_simpleRequest(
+            '/grpc.testing.ReportQpsScenarioService/ReportScenario',
+            $argument,
+            ['\Grpc\Testing\PBVoid', 'decode'],
+            $metadata,
+            $options
+        );
     }
 
 }

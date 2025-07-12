@@ -1,4 +1,5 @@
 <?php
+
 // GENERATED CODE -- DO NOT EDIT!
 
 // Original file comments:
@@ -21,6 +22,7 @@
 // File detached comment 2
 //
 // File leading comment 1
+
 namespace Grpc\Testing;
 
 /**
@@ -30,14 +32,15 @@ namespace Grpc\Testing;
  *
  * ServiceA leading comment 1
  */
-class ServiceAClient extends \Grpc\BaseStub {
-
+class ServiceAClient extends \Grpc\BaseStub
+{
     /**
      * @param string $hostname hostname
      * @param array $opts channel options
      * @param \Grpc\Channel $channel (optional) re-use channel object
      */
-    public function __construct($hostname, $opts, $channel = null) {
+    public function __construct($hostname, $opts, $channel = null)
+    {
         parent::__construct($hostname, $opts, $channel);
     }
 
@@ -48,12 +51,18 @@ class ServiceAClient extends \Grpc\BaseStub {
      * @param array $options call options
      * @return \Grpc\Testing\Response
      */
-    public function MethodA1(\Grpc\Testing\Request $argument,
-      $metadata = [], $options = []) {
-        return $this->_simpleRequest('/grpc.testing.ServiceA/MethodA1',
-        $argument,
-        ['\Grpc\Testing\Response', 'decode'],
-        $metadata, $options);
+    public function MethodA1(
+        \Grpc\Testing\Request $argument,
+        $metadata = [],
+        $options = []
+    ) {
+        return $this->_simpleRequest(
+            '/grpc.testing.ServiceA/MethodA1',
+            $argument,
+            ['\Grpc\Testing\Response', 'decode'],
+            $metadata,
+            $options
+        );
     }
 
     /**
@@ -65,10 +74,14 @@ class ServiceAClient extends \Grpc\BaseStub {
      * @param array $options call options
      * @return \Grpc\Testing\Response
      */
-    public function MethodA2($metadata = [], $options = []) {
-        return $this->_clientStreamRequest('/grpc.testing.ServiceA/MethodA2',
-        ['\Grpc\Testing\Response','decode'],
-        $metadata, $options);
+    public function MethodA2($metadata = [], $options = [])
+    {
+        return $this->_clientStreamRequest(
+            '/grpc.testing.ServiceA/MethodA2',
+            ['\Grpc\Testing\Response','decode'],
+            $metadata,
+            $options
+        );
     }
 
     /**
@@ -78,12 +91,18 @@ class ServiceAClient extends \Grpc\BaseStub {
      * @param array $options call options
      * @return \Grpc\Testing\Response
      */
-    public function MethodA3(\Grpc\Testing\Request $argument,
-      $metadata = [], $options = []) {
-        return $this->_serverStreamRequest('/grpc.testing.ServiceA/MethodA3',
-        $argument,
-        ['\Grpc\Testing\Response', 'decode'],
-        $metadata, $options);
+    public function MethodA3(
+        \Grpc\Testing\Request $argument,
+        $metadata = [],
+        $options = []
+    ) {
+        return $this->_serverStreamRequest(
+            '/grpc.testing.ServiceA/MethodA3',
+            $argument,
+            ['\Grpc\Testing\Response', 'decode'],
+            $metadata,
+            $options
+        );
     }
 
     /**
@@ -92,10 +111,14 @@ class ServiceAClient extends \Grpc\BaseStub {
      * @param array $options call options
      * @return \Grpc\Testing\Response
      */
-    public function MethodA4($metadata = [], $options = []) {
-        return $this->_bidiRequest('/grpc.testing.ServiceA/MethodA4',
-        ['\Grpc\Testing\Response','decode'],
-        $metadata, $options);
+    public function MethodA4($metadata = [], $options = [])
+    {
+        return $this->_bidiRequest(
+            '/grpc.testing.ServiceA/MethodA4',
+            ['\Grpc\Testing\Response','decode'],
+            $metadata,
+            $options
+        );
     }
 
 }

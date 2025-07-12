@@ -1,4 +1,5 @@
 <?php
+
 // GENERATED CODE -- DO NOT EDIT!
 
 // Original file comments:
@@ -16,20 +17,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+
 namespace Grpc\Testing;
 
 /**
  * A service that has zero methods.
  * See https://github.com/grpc/grpc/issues/15574
  */
-class EmptyServiceClient extends \Grpc\BaseStub {
-
+class EmptyServiceClient extends \Grpc\BaseStub
+{
     /**
      * @param string $hostname hostname
      * @param array $opts channel options
      * @param \Grpc\Channel $channel (optional) re-use channel object
      */
-    public function __construct($hostname, $opts, $channel = null) {
+    public function __construct($hostname, $opts, $channel = null)
+    {
         parent::__construct($hostname, $opts, $channel);
     }
 

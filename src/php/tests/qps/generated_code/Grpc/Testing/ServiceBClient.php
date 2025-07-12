@@ -1,4 +1,5 @@
 <?php
+
 // GENERATED CODE -- DO NOT EDIT!
 
 // Original file comments:
@@ -21,19 +22,21 @@
 // File detached comment 2
 //
 // File leading comment 1
+
 namespace Grpc\Testing;
 
 /**
  * ServiceB leading comment 1
  */
-class ServiceBClient extends \Grpc\BaseStub {
-
+class ServiceBClient extends \Grpc\BaseStub
+{
     /**
      * @param string $hostname hostname
      * @param array $opts channel options
      * @param \Grpc\Channel $channel (optional) re-use channel object
      */
-    public function __construct($hostname, $opts, $channel = null) {
+    public function __construct($hostname, $opts, $channel = null)
+    {
         parent::__construct($hostname, $opts, $channel);
     }
 
@@ -44,12 +47,18 @@ class ServiceBClient extends \Grpc\BaseStub {
      * @param array $options call options
      * @return \Grpc\Testing\Response
      */
-    public function MethodB1(\Grpc\Testing\Request $argument,
-      $metadata = [], $options = []) {
-        return $this->_simpleRequest('/grpc.testing.ServiceB/MethodB1',
-        $argument,
-        ['\Grpc\Testing\Response', 'decode'],
-        $metadata, $options);
+    public function MethodB1(
+        \Grpc\Testing\Request $argument,
+        $metadata = [],
+        $options = []
+    ) {
+        return $this->_simpleRequest(
+            '/grpc.testing.ServiceB/MethodB1',
+            $argument,
+            ['\Grpc\Testing\Response', 'decode'],
+            $metadata,
+            $options
+        );
     }
 
 }

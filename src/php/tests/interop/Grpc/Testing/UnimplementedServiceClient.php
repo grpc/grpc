@@ -1,4 +1,5 @@
 <?php
+
 // GENERATED CODE -- DO NOT EDIT!
 
 // Original file comments:
@@ -19,20 +20,22 @@
 // An integration test service that covers all the method signature permutations
 // of unary/streaming requests/responses.
 //
+
 namespace Grpc\Testing;
 
 /**
  * A simple service NOT implemented at servers so clients can test for
  * that case.
  */
-class UnimplementedServiceClient extends \Grpc\BaseStub {
-
+class UnimplementedServiceClient extends \Grpc\BaseStub
+{
     /**
      * @param string $hostname hostname
      * @param array $opts channel options
      * @param \Grpc\Channel $channel (optional) re-use channel object
      */
-    public function __construct($hostname, $opts, $channel = null) {
+    public function __construct($hostname, $opts, $channel = null)
+    {
         parent::__construct($hostname, $opts, $channel);
     }
 
@@ -43,12 +46,18 @@ class UnimplementedServiceClient extends \Grpc\BaseStub {
      * @param array $options call options
      * @return \Grpc\UnaryCall<\Grpc\Testing\EmptyMessage>
      */
-    public function UnimplementedCall(\Grpc\Testing\EmptyMessage $argument,
-      $metadata = [], $options = []) {
-        return $this->_simpleRequest('/grpc.testing.UnimplementedService/UnimplementedCall',
-        $argument,
-        ['\Grpc\Testing\EmptyMessage', 'decode'],
-        $metadata, $options);
+    public function UnimplementedCall(
+        \Grpc\Testing\EmptyMessage $argument,
+        $metadata = [],
+        $options = []
+    ) {
+        return $this->_simpleRequest(
+            '/grpc.testing.UnimplementedService/UnimplementedCall',
+            $argument,
+            ['\Grpc\Testing\EmptyMessage', 'decode'],
+            $metadata,
+            $options
+        );
     }
 
 }

@@ -1,4 +1,5 @@
 <?php
+
 // GENERATED CODE -- DO NOT EDIT!
 
 // Original file comments:
@@ -19,13 +20,14 @@
 // An integration test service that covers all the method signature permutations
 // of unary/streaming requests/responses.
 //
+
 namespace Grpc\Testing;
 
 /**
  * A service used to obtain stats for verifying LB behavior.
  */
-class LoadBalancerStatsServiceStub {
-
+class LoadBalancerStatsServiceStub
+{
     /**
      * Gets the backend distribution for RPCs sent by a test client.
      * @param \Grpc\Testing\LoadBalancerStatsRequest $request client request
@@ -61,7 +63,7 @@ class LoadBalancerStatsServiceStub {
      *
      * @return array of \Grpc\MethodDescriptor for the service methods
      */
-    public final function getMethodDescriptors(): array
+    final public function getMethodDescriptors(): array
     {
         return [
             '/grpc.testing.LoadBalancerStatsService/GetClientStats' => new \Grpc\MethodDescriptor(

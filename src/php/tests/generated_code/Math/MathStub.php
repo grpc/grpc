@@ -1,4 +1,5 @@
 <?php
+
 // GENERATED CODE -- DO NOT EDIT!
 
 // Original file comments:
@@ -16,12 +17,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+
 namespace Math;
 
 /**
  */
-class MathStub {
-
+class MathStub
+{
     /**
      * Div divides DivArgs.dividend by DivArgs.divisor and returns the quotient
      * and remainder.
@@ -96,7 +98,7 @@ class MathStub {
      *
      * @return array of \Grpc\MethodDescriptor for the service methods
      */
-    public final function getMethodDescriptors(): array
+    final public function getMethodDescriptors(): array
     {
         return [
             '/math.Math/Div' => new \Grpc\MethodDescriptor(

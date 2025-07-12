@@ -1,4 +1,5 @@
 <?php
+
 // GENERATED CODE -- DO NOT EDIT!
 
 // Original file comments:
@@ -16,18 +17,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+
 namespace Math;
 
 /**
  */
-class MathClient extends \Grpc\BaseStub {
-
+class MathClient extends \Grpc\BaseStub
+{
     /**
      * @param string $hostname hostname
      * @param array $opts channel options
      * @param \Grpc\Channel $channel (optional) re-use channel object
      */
-    public function __construct($hostname, $opts, $channel = null) {
+    public function __construct($hostname, $opts, $channel = null)
+    {
         parent::__construct($hostname, $opts, $channel);
     }
 
@@ -39,12 +42,18 @@ class MathClient extends \Grpc\BaseStub {
      * @param array $options call options
      * @return \Grpc\UnaryCall<\Math\DivReply>
      */
-    public function Div(\Math\DivArgs $argument,
-      $metadata = [], $options = []) {
-        return $this->_simpleRequest('/math.Math/Div',
-        $argument,
-        ['\Math\DivReply', 'decode'],
-        $metadata, $options);
+    public function Div(
+        \Math\DivArgs $argument,
+        $metadata = [],
+        $options = []
+    ) {
+        return $this->_simpleRequest(
+            '/math.Math/Div',
+            $argument,
+            ['\Math\DivReply', 'decode'],
+            $metadata,
+            $options
+        );
     }
 
     /**
@@ -56,10 +65,14 @@ class MathClient extends \Grpc\BaseStub {
      * @param array $options call options
      * @return \Grpc\BidiStreamingCall
      */
-    public function DivMany($metadata = [], $options = []) {
-        return $this->_bidiRequest('/math.Math/DivMany',
-        ['\Math\DivReply','decode'],
-        $metadata, $options);
+    public function DivMany($metadata = [], $options = [])
+    {
+        return $this->_bidiRequest(
+            '/math.Math/DivMany',
+            ['\Math\DivReply','decode'],
+            $metadata,
+            $options
+        );
     }
 
     /**
@@ -71,12 +84,18 @@ class MathClient extends \Grpc\BaseStub {
      * @param array $options call options
      * @return \Grpc\ServerStreamingCall
      */
-    public function Fib(\Math\FibArgs $argument,
-      $metadata = [], $options = []) {
-        return $this->_serverStreamRequest('/math.Math/Fib',
-        $argument,
-        ['\Math\Num', 'decode'],
-        $metadata, $options);
+    public function Fib(
+        \Math\FibArgs $argument,
+        $metadata = [],
+        $options = []
+    ) {
+        return $this->_serverStreamRequest(
+            '/math.Math/Fib',
+            $argument,
+            ['\Math\Num', 'decode'],
+            $metadata,
+            $options
+        );
     }
 
     /**
@@ -86,10 +105,14 @@ class MathClient extends \Grpc\BaseStub {
      * @param array $options call options
      * @return \Grpc\ClientStreamingCall
      */
-    public function Sum($metadata = [], $options = []) {
-        return $this->_clientStreamRequest('/math.Math/Sum',
-        ['\Math\Num','decode'],
-        $metadata, $options);
+    public function Sum($metadata = [], $options = [])
+    {
+        return $this->_clientStreamRequest(
+            '/math.Math/Sum',
+            ['\Math\Num','decode'],
+            $metadata,
+            $options
+        );
     }
 
 }

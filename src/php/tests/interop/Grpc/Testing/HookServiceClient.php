@@ -1,4 +1,5 @@
 <?php
+
 // GENERATED CODE -- DO NOT EDIT!
 
 // Original file comments:
@@ -19,19 +20,21 @@
 // An integration test service that covers all the method signature permutations
 // of unary/streaming requests/responses.
 //
+
 namespace Grpc\Testing;
 
 /**
  * Hook service. Used to keep Kubernetes from shutting the pod down.
  */
-class HookServiceClient extends \Grpc\BaseStub {
-
+class HookServiceClient extends \Grpc\BaseStub
+{
     /**
      * @param string $hostname hostname
      * @param array $opts channel options
      * @param \Grpc\Channel $channel (optional) re-use channel object
      */
-    public function __construct($hostname, $opts, $channel = null) {
+    public function __construct($hostname, $opts, $channel = null)
+    {
         parent::__construct($hostname, $opts, $channel);
     }
 
@@ -43,12 +46,18 @@ class HookServiceClient extends \Grpc\BaseStub {
      * @param array $options call options
      * @return \Grpc\UnaryCall<\Grpc\Testing\EmptyMessage>
      */
-    public function Hook(\Grpc\Testing\EmptyMessage $argument,
-      $metadata = [], $options = []) {
-        return $this->_simpleRequest('/grpc.testing.HookService/Hook',
-        $argument,
-        ['\Grpc\Testing\EmptyMessage', 'decode'],
-        $metadata, $options);
+    public function Hook(
+        \Grpc\Testing\EmptyMessage $argument,
+        $metadata = [],
+        $options = []
+    ) {
+        return $this->_simpleRequest(
+            '/grpc.testing.HookService/Hook',
+            $argument,
+            ['\Grpc\Testing\EmptyMessage', 'decode'],
+            $metadata,
+            $options
+        );
     }
 
     /**
@@ -58,12 +67,18 @@ class HookServiceClient extends \Grpc\BaseStub {
      * @param array $options call options
      * @return \Grpc\UnaryCall<\Grpc\Testing\EmptyMessage>
      */
-    public function SetReturnStatus(\Grpc\Testing\SetReturnStatusRequest $argument,
-      $metadata = [], $options = []) {
-        return $this->_simpleRequest('/grpc.testing.HookService/SetReturnStatus',
-        $argument,
-        ['\Grpc\Testing\EmptyMessage', 'decode'],
-        $metadata, $options);
+    public function SetReturnStatus(
+        \Grpc\Testing\SetReturnStatusRequest $argument,
+        $metadata = [],
+        $options = []
+    ) {
+        return $this->_simpleRequest(
+            '/grpc.testing.HookService/SetReturnStatus',
+            $argument,
+            ['\Grpc\Testing\EmptyMessage', 'decode'],
+            $metadata,
+            $options
+        );
     }
 
     /**
@@ -73,12 +88,18 @@ class HookServiceClient extends \Grpc\BaseStub {
      * @param array $options call options
      * @return \Grpc\UnaryCall<\Grpc\Testing\EmptyMessage>
      */
-    public function ClearReturnStatus(\Grpc\Testing\EmptyMessage $argument,
-      $metadata = [], $options = []) {
-        return $this->_simpleRequest('/grpc.testing.HookService/ClearReturnStatus',
-        $argument,
-        ['\Grpc\Testing\EmptyMessage', 'decode'],
-        $metadata, $options);
+    public function ClearReturnStatus(
+        \Grpc\Testing\EmptyMessage $argument,
+        $metadata = [],
+        $options = []
+    ) {
+        return $this->_simpleRequest(
+            '/grpc.testing.HookService/ClearReturnStatus',
+            $argument,
+            ['\Grpc\Testing\EmptyMessage', 'decode'],
+            $metadata,
+            $options
+        );
     }
 
 }

@@ -1,4 +1,5 @@
 <?php
+
 // GENERATED CODE -- DO NOT EDIT!
 
 // Original file comments:
@@ -19,14 +20,15 @@
 // An integration test service that covers all the method signature permutations
 // of unary/streaming requests/responses.
 //
+
 namespace Grpc\Testing;
 
 /**
  * A simple service to test the various types of RPCs and experiment with
  * performance with various types of payload.
  */
-class TestServiceStub {
-
+class TestServiceStub
+{
     /**
      * One empty request followed by one empty response.
      * @param \Grpc\Testing\EmptyMessage $request client request
@@ -165,7 +167,7 @@ class TestServiceStub {
      *
      * @return array of \Grpc\MethodDescriptor for the service methods
      */
-    public final function getMethodDescriptors(): array
+    final public function getMethodDescriptors(): array
     {
         return [
             '/grpc.testing.TestService/EmptyCall' => new \Grpc\MethodDescriptor(
