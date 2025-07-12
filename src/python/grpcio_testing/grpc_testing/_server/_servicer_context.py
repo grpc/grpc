@@ -64,9 +64,7 @@ class ServicerContext(grpc.ServicerContext):
         )
         if not initial_metadata_sent:
             error_msg = "ServicerContext.send_initial_metadata called too late!"
-            raise ValueError(
-                error_msg
-            )
+            raise ValueError(error_msg)
 
     def disable_next_message_compression(self):
         raise NotImplementedError()

@@ -119,9 +119,7 @@ class _Handler(Handler):
                         self._condition.wait()
                     else:
                         error_msg = "No initial metadata despite status code!"
-                        raise ValueError(
-                            error_msg
-                        )
+                        raise ValueError(error_msg)
                 else:
                     return self._initial_metadata
 
