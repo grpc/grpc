@@ -63,9 +63,7 @@ class StatsData:
     """
 
     # type disabled reason: forward reference, circular import.
-    name: (
-        "grpc_observability._cyobservability.MetricsName"  # pytype: disable=name-error
-    )
+    name: "grpc_observability._cyobservability.MetricsName"  # pytype: disable=name-error
     measure_double: bool
     value_int: int = 0
     value_float: float = 0.0
