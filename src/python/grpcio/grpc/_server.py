@@ -65,7 +65,9 @@ _RECEIVE_CLOSE_ON_SERVER_TOKEN = "receive_close_on_server"
 _SEND_INITIAL_METADATA_TOKEN = "send_initial_metadata"
 _RECEIVE_MESSAGE_TOKEN = "receive_message"
 _SEND_MESSAGE_TOKEN = "send_message"
-_SEND_INITIAL_METADATA_AND_SEND_MESSAGE_TOKEN = "send_initial_metadata * send_message"
+_SEND_INITIAL_METADATA_AND_SEND_MESSAGE_TOKEN = (
+    "send_initial_metadata * send_message"
+)
 _SEND_STATUS_FROM_SERVER_TOKEN = "send_status_from_server"
 _SEND_INITIAL_METADATA_AND_SEND_STATUS_FROM_SERVER_TOKEN = (
     "send_initial_metadata * send_status_from_server"
@@ -96,7 +98,9 @@ def _completion_code(state: _RPCState) -> cygrpc.StatusCode:
     return _application_code(state.code)
 
 
-def _abortion_code(state: _RPCState, code: cygrpc.StatusCode) -> cygrpc.StatusCode:
+def _abortion_code(
+    state: _RPCState, code: cygrpc.StatusCode
+) -> cygrpc.StatusCode:
     if state.code is None:
         return code
     return _application_code(state.code)
@@ -216,7 +220,9 @@ def _raise_rpc_error(state: _RPCState) -> None:
     raise rpc_error
 
 
-def _possibly_finish_call(state: _RPCState, token: str) -> ServerTagCallbackType:
+def _possibly_finish_call(
+    state: _RPCState, token: str
+) -> ServerTagCallbackType:
     state.due.remove(token)
     if not _is_rpc_state_active(state) and not state.due:
         callbacks = state.callbacks
@@ -285,7 +291,9 @@ def _abort(
                 ),
             )
             token = _SEND_STATUS_FROM_SERVER_TOKEN
-        call.start_server_batch(operations, _send_status_from_server(state, token))
+        call.start_server_batch(
+            operations, _send_status_from_server(state, token)
+        )
         state.statused = True
         state.due.add(token)
 
@@ -317,7 +325,9 @@ def _receive_message(
                 state.condition.notify_all()
                 return _possibly_finish_call(state, _RECEIVE_MESSAGE_TOKEN)
         else:
-            request = _common.deserialize(serialized_request, request_deserializer)
+            request = _common.deserialize(
+                serialized_request, request_deserializer
+            )
             with state.condition:
                 if request is None:
                     _abort(
@@ -403,7 +413,10 @@ class _Context(grpc.ServicerContext):
     def auth_context(self) -> Mapping[str, Sequence[bytes]]:
         auth_context = cygrpc.auth_context(self._rpc_event.call)
         auth_context_dict = {} if auth_context is None else auth_context
-        return {_common.decode(key): value for key, value in auth_context_dict.items()}
+        return {
+            _common.decode(key): value
+            for key, value in auth_context_dict.items()
+        }
 
     def set_compression(self, compression: grpc.Compression) -> None:
         with self._state.condition:
@@ -436,7 +449,9 @@ class _Context(grpc.ServicerContext):
     def abort(self, code: grpc.StatusCode, details: str) -> None:
         # treat OK like other invalid arguments: fail the RPC
         if code == grpc.StatusCode.OK:
-            _LOGGER.error("abort() called with StatusCode.OK; returning UNKNOWN")
+            _LOGGER.error(
+                "abort() called with StatusCode.OK; returning UNKNOWN"
+            )
             code = grpc.StatusCode.UNKNOWN
             details = ""
         with self._state.condition:
@@ -490,7 +505,9 @@ class _RequestIterator(object):
         else:
             self._call.start_server_batch(
                 (cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),),
-                _receive_message(self._state, self._call, self._request_deserializer),
+                _receive_message(
+                    self._state, self._call, self._request_deserializer
+                ),
             )
             self._state.due.add(_RECEIVE_MESSAGE_TOKEN)
 
@@ -578,7 +595,9 @@ def _call_behavior(
 ) -> Tuple[Union[ResponseType, Iterator[ResponseType]], bool]:
     from grpc import _create_servicer_context  # pytype: disable=pyi-error
 
-    with _create_servicer_context(rpc_event, state, request_deserializer) as context:
+    with _create_servicer_context(
+        rpc_event, state, request_deserializer
+    ) as context:
         try:
             response_or_iterator = None
             if send_response_callback is not None:
@@ -599,9 +618,13 @@ def _call_behavior(
                     )
                 elif exception not in state.rpc_errors:
                     try:
-                        details = "Exception calling application: {}".format(exception)
+                        details = "Exception calling application: {}".format(
+                            exception
+                        )
                     except Exception:  # pylint: disable=broad-except
-                        details = "Calling application raised unprintable Exception!"
+                        details = (
+                            "Calling application raised unprintable Exception!"
+                        )
                         _LOGGER.exception(
                             traceback.format_exception(
                                 type(exception),
@@ -736,7 +759,9 @@ def _send_response(
                     ),
                 )
                 token = _SEND_MESSAGE_TOKEN
-            rpc_event.call.start_server_batch(operations, _send_message(state, token))
+            rpc_event.call.start_server_batch(
+                operations, _send_message(state, token)
+            )
             state.due.add(token)
             _reset_per_message_state(state)
             while True:
@@ -1020,7 +1045,9 @@ def _reject_rpc(
     operations = (
         _get_initial_metadata_operation(rpc_state, None),
         cygrpc.ReceiveCloseOnServerOperation(_EMPTY_FLAGS),
-        cygrpc.SendStatusFromServerOperation(None, status, details, _EMPTY_FLAGS),
+        cygrpc.SendStatusFromServerOperation(
+            None, status, details, _EMPTY_FLAGS
+        ),
     )
     rpc_event.call.start_server_batch(
         operations,
@@ -1204,7 +1231,9 @@ def _add_secure_port(
     server_credentials: grpc.ServerCredentials,
 ) -> int:
     with state.lock:
-        return state.server.add_http2_port(address, server_credentials._credentials)
+        return state.server.add_http2_port(
+            address, server_credentials._credentials
+        )
 
 
 def _request_call(state: _ServerState) -> None:
@@ -1242,7 +1271,9 @@ def _on_call_completed(state: _ServerState) -> None:
 
 
 # pylint: disable=too-many-branches
-def _process_event_and_continue(state: _ServerState, event: cygrpc.BaseEvent) -> bool:
+def _process_event_and_continue(
+    state: _ServerState, event: cygrpc.BaseEvent
+) -> bool:
     should_continue = True
     if event.tag is _SHUTDOWN_TAG:
         with state.lock:
@@ -1258,7 +1289,9 @@ def _process_event_and_continue(state: _ServerState, event: cygrpc.BaseEvent) ->
             registered_method_name = event.tag
             method_with_handler = _RegisteredMethod(
                 registered_method_name,
-                state.registered_method_handlers.get(registered_method_name, None),
+                state.registered_method_handlers.get(
+                    registered_method_name, None
+                ),
             )
         else:
             method_with_handler = _GenericMethod(
@@ -1285,7 +1318,10 @@ def _process_event_and_continue(state: _ServerState, event: cygrpc.BaseEvent) ->
                     lambda _unused_future: _on_call_completed(state)
                 )
             if state.stage is _ServerStage.STARTED:
-                if registered_method_name in state.registered_method_handlers.keys():
+                if (
+                    registered_method_name
+                    in state.registered_method_handlers.keys()
+                ):
                     _request_registered_call(state, registered_method_name)
                 else:
                     _request_call(state)
@@ -1462,7 +1498,9 @@ class _Server(grpc.Server):
     ) -> int:
         return _common.validate_port_binding_result(
             address,
-            _add_secure_port(self._state, _common.encode(address), server_credentials),
+            _add_secure_port(
+                self._state, _common.encode(address), server_credentials
+            ),
         )
 
     def start(self) -> None:
