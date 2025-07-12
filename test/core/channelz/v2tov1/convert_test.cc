@@ -26,11 +26,17 @@
 #include "src/core/util/json/json_reader.h"
 #include "src/proto/grpc/channelz/channelz.pb.h"
 #include "src/proto/grpc/channelz/v2/channelz.pb.h"
+#include "src/proto/grpc/channelz/v2/property_list.pb.h"
 
 namespace grpc_core {
 namespace channelz {
 namespace v2tov1 {
 namespace {
+
+int force_dependencies = []() {
+  (void)grpc::channelz::v2::PropertyList::descriptor();
+  return 0;
+}();
 
 using ::testing::Return;
 
