@@ -77,6 +77,7 @@ ignore = [
     "PTH118",  # os.{module}.join() should be replaced by Path with / operator
     "PTH120",  # os.path.dirname() should be replaced by Path.parent
     "PTH123",  # open() should be replaced by Path.open()
+    "RET501",  # Do not explicitly return None in function if it is the only possible return value
     "RET503",  # Missing explicit return at the end of function able to return non-None value
     "RET504",  # Unnecessary assignment to {name} before return statement
     "RET506",  # Unnecessary {branch} after raise statement
