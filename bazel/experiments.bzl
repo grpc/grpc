@@ -30,6 +30,7 @@ EXPERIMENT_ENABLES = {
     "event_engine_for_all_other_endpoints": "event_engine_client,event_engine_dns,event_engine_dns_non_client_channel,event_engine_for_all_other_endpoints,event_engine_listener",
     "event_engine_secure_endpoint": "event_engine_secure_endpoint",
     "free_large_allocator": "free_large_allocator",
+    "fuse_filters": "fuse_filters",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
     "max_inflight_pings_strict_limit": "max_inflight_pings_strict_limit",
@@ -100,6 +101,9 @@ EXPERIMENTS = {
                 "multiping",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "minimal_stack_test": [
+                "fuse_filters",
             ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
@@ -176,6 +180,9 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
+            "minimal_stack_test": [
+                "fuse_filters",
+            ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
             ],
@@ -250,6 +257,9 @@ EXPERIMENTS = {
                 "multiping",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "minimal_stack_test": [
+                "fuse_filters",
             ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
