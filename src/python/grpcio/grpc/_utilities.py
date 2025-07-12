@@ -212,7 +212,7 @@ def first_version_is_lower(version1: str, version2: str) -> bool:
         for i in range(3):
             if int(version1_list[i]) < int(version2_list[i]):
                 return True
-            elif int(version1_list[i]) > int(version2_list[i]):
+            if int(version1_list[i]) > int(version2_list[i]):
                 return False
     except ValueError:
         # Return false in case we can't convert version to int.
