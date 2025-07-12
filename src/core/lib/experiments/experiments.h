@@ -97,7 +97,8 @@ inline bool IsRetryInCallv3Enabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
-inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_GLOBAL_CALLBACKS_OWNERSHIP
+inline bool IsServerGlobalCallbacksOwnershipEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_GLOBAL_CONNECTION_POOL
 inline bool IsShardGlobalConnectionPoolEnabled() { return true; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
@@ -147,7 +148,8 @@ inline bool IsRetryInCallv3Enabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
-inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_GLOBAL_CALLBACKS_OWNERSHIP
+inline bool IsServerGlobalCallbacksOwnershipEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_GLOBAL_CONNECTION_POOL
 inline bool IsShardGlobalConnectionPoolEnabled() { return true; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
@@ -197,7 +199,8 @@ inline bool IsRetryInCallv3Enabled() { return false; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
-inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_GLOBAL_CALLBACKS_OWNERSHIP
+inline bool IsServerGlobalCallbacksOwnershipEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_GLOBAL_CONNECTION_POOL
 inline bool IsShardGlobalConnectionPoolEnabled() { return true; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
