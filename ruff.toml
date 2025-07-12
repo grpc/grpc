@@ -65,6 +65,7 @@ ignore = [
     "PLR0913", # Too many arguments in function definition ({c_args} > {max_args})
     "PLR2004", # Magic value used in comparison, consider replacing {value} with a constant variable
     "PLW2901", # Outer {outer_kind} variable {name} overwritten by inner {inner_kind} target
+    "PT009",   # Use a regular assert instead of unittest-style {assertion}
     "PT015",   # Assertion always fails, replace with pytest.fail()
     "PT017",   # Found assertion on exception {name} in except block, use pytest.raises() instead
     "PT027",   # Use pytest.raises instead of unittest-style {assertion}
@@ -75,7 +76,7 @@ ignore = [
     "PTH110",  # os.path.exists() should be replaced by Path.exists()
     "PTH118",  # os.{module}.join() should be replaced by Path with / operator
     "PTH120",  # os.path.dirname() should be replaced by Path.parent
-    "RET501",  # Do not explicitly return None in function if it is the only possible return value
+    "PTH123",  # open() should be replaced by Path.open()
     "RET503",  # Missing explicit return at the end of function able to return non-None value
     "RET504",  # Unnecessary assignment to {name} before return statement
     "RET506",  # Unnecessary {branch} after raise statement
