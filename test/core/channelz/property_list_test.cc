@@ -22,11 +22,31 @@
 #include "gtest/gtest.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/upb_utils.h"
 #include "src/proto/grpc/channelz/v2/property_list.upb.h"
 #include "upb/mem/arena.hpp"
 
 namespace grpc_core {
 namespace channelz {
+
+namespace {
+// Helper to get a property from a property list.
+const grpc_channelz_v2_PropertyValue* GetProperty(
+    const grpc_channelz_v2_PropertyList* property_list, absl::string_view key) {
+  size_t num_properties;
+  const auto* const* properties =
+      grpc_channelz_v2_PropertyList_properties(property_list, &num_properties);
+  for (size_t i = 0; i < num_properties; ++i) {
+    const auto* element = properties[i];
+    upb_StringView element_key =
+        grpc_channelz_v2_PropertyList_Element_key(element);
+    if (absl::string_view(element_key.data, element_key.size) == key) {
+      return grpc_channelz_v2_PropertyList_Element_value(element);
+    }
+  }
+  return nullptr;
+}
+}  // namespace
 
 TEST(PropertyListTest, EmptyList) {
   PropertyList props;
@@ -37,7 +57,9 @@ TEST(PropertyListTest, EmptyList) {
   auto* upb_proto = grpc_channelz_v2_PropertyList_new(arena.ptr());
   ASSERT_NE(upb_proto, nullptr);
   props.FillUpbProto(upb_proto, arena.ptr());
-  EXPECT_EQ(grpc_channelz_v2_PropertyList_properties_size(upb_proto), 0);
+  size_t size;
+  grpc_channelz_v2_PropertyList_properties(upb_proto, &size);
+  EXPECT_EQ(size, 0);
 }
 
 TEST(PropertyListTest, SetStringView) {
@@ -54,10 +76,11 @@ TEST(PropertyListTest, SetStringView) {
   auto* upb_proto = grpc_channelz_v2_PropertyList_new(arena.ptr());
   ASSERT_NE(upb_proto, nullptr);
   props.FillUpbProto(upb_proto, arena.ptr());
-  EXPECT_EQ(grpc_channelz_v2_PropertyList_properties_size(upb_proto), 1);
-  grpc_channelz_v2_PropertyValue* value;
-  ASSERT_TRUE(grpc_channelz_v2_PropertyList_properties_get(
-      upb_proto, StdStringToUpbString("key1"), &value));
+  size_t size;
+  grpc_channelz_v2_PropertyList_properties(upb_proto, &size);
+  EXPECT_EQ(size, 1);
+  const auto* value = GetProperty(upb_proto, "key1");
+  ASSERT_NE(value, nullptr);
   EXPECT_TRUE(grpc_channelz_v2_PropertyValue_has_string_value(value));
   EXPECT_EQ(
       UpbStringToStdString(grpc_channelz_v2_PropertyValue_string_value(value)),
@@ -78,10 +101,11 @@ TEST(PropertyListTest, SetStdString) {
   auto* upb_proto = grpc_channelz_v2_PropertyList_new(arena.ptr());
   ASSERT_NE(upb_proto, nullptr);
   props.FillUpbProto(upb_proto, arena.ptr());
-  EXPECT_EQ(grpc_channelz_v2_PropertyList_properties_size(upb_proto), 1);
-  grpc_channelz_v2_PropertyValue* value;
-  ASSERT_TRUE(grpc_channelz_v2_PropertyList_properties_get(
-      upb_proto, StdStringToUpbString("key2"), &value));
+  size_t size;
+  grpc_channelz_v2_PropertyList_properties(upb_proto, &size);
+  EXPECT_EQ(size, 1);
+  const auto* value = GetProperty(upb_proto, "key2");
+  ASSERT_NE(value, nullptr);
   EXPECT_TRUE(grpc_channelz_v2_PropertyValue_has_string_value(value));
   EXPECT_EQ(
       UpbStringToStdString(grpc_channelz_v2_PropertyValue_string_value(value)),
@@ -104,16 +128,17 @@ TEST(PropertyListTest, SetArithmetic) {
   auto* upb_proto = grpc_channelz_v2_PropertyList_new(arena.ptr());
   ASSERT_NE(upb_proto, nullptr);
   props.FillUpbProto(upb_proto, arena.ptr());
-  EXPECT_EQ(grpc_channelz_v2_PropertyList_properties_size(upb_proto), 2);
-  grpc_channelz_v2_PropertyValue* value;
-  ASSERT_TRUE(grpc_channelz_v2_PropertyList_properties_get(
-      upb_proto, StdStringToUpbString("int_key"), &value));
-  EXPECT_TRUE(grpc_channelz_v2_PropertyValue_has_int64_value(value));
-  EXPECT_EQ(grpc_channelz_v2_PropertyValue_int64_value(value), 123);
-  ASSERT_TRUE(grpc_channelz_v2_PropertyList_properties_get(
-      upb_proto, StdStringToUpbString("double_key"), &value));
-  EXPECT_TRUE(grpc_channelz_v2_PropertyValue_has_double_value(value));
-  EXPECT_EQ(grpc_channelz_v2_PropertyValue_double_value(value), 45.67);
+  size_t size;
+  grpc_channelz_v2_PropertyList_properties(upb_proto, &size);
+  EXPECT_EQ(size, 2);
+  const auto* int_value = GetProperty(upb_proto, "int_key");
+  ASSERT_NE(int_value, nullptr);
+  EXPECT_TRUE(grpc_channelz_v2_PropertyValue_has_int64_value(int_value));
+  EXPECT_EQ(grpc_channelz_v2_PropertyValue_int64_value(int_value), 123);
+  const auto* double_value = GetProperty(upb_proto, "double_key");
+  ASSERT_NE(double_value, nullptr);
+  EXPECT_TRUE(grpc_channelz_v2_PropertyValue_has_double_value(double_value));
+  EXPECT_EQ(grpc_channelz_v2_PropertyValue_double_value(double_value), 45.67);
 }
 
 TEST(PropertyListTest, SetDuration) {
@@ -130,10 +155,11 @@ TEST(PropertyListTest, SetDuration) {
   auto* upb_proto = grpc_channelz_v2_PropertyList_new(arena.ptr());
   ASSERT_NE(upb_proto, nullptr);
   props.FillUpbProto(upb_proto, arena.ptr());
-  EXPECT_EQ(grpc_channelz_v2_PropertyList_properties_size(upb_proto), 1);
-  grpc_channelz_v2_PropertyValue* value;
-  ASSERT_TRUE(grpc_channelz_v2_PropertyList_properties_get(
-      upb_proto, StdStringToUpbString("duration_key"), &value));
+  size_t size;
+  grpc_channelz_v2_PropertyList_properties(upb_proto, &size);
+  EXPECT_EQ(size, 1);
+  const auto* value = GetProperty(upb_proto, "duration_key");
+  ASSERT_NE(value, nullptr);
   EXPECT_TRUE(grpc_channelz_v2_PropertyValue_has_duration_value(value));
   EXPECT_EQ(google_protobuf_Duration_seconds(
                 grpc_channelz_v2_PropertyValue_duration_value(value)),
@@ -160,10 +186,11 @@ TEST(PropertyListTest, SetTimestamp) {
   auto* upb_proto = grpc_channelz_v2_PropertyList_new(arena.ptr());
   ASSERT_NE(upb_proto, nullptr);
   props.FillUpbProto(upb_proto, arena.ptr());
-  EXPECT_EQ(grpc_channelz_v2_PropertyList_properties_size(upb_proto), 1);
-  grpc_channelz_v2_PropertyValue* value;
-  ASSERT_TRUE(grpc_channelz_v2_PropertyList_properties_get(
-      upb_proto, StdStringToUpbString("timestamp_key"), &value));
+  size_t size;
+  grpc_channelz_v2_PropertyList_properties(upb_proto, &size);
+  EXPECT_EQ(size, 1);
+  const auto* value = GetProperty(upb_proto, "timestamp_key");
+  ASSERT_NE(value, nullptr);
   EXPECT_TRUE(grpc_channelz_v2_PropertyValue_has_timestamp_value(value));
   const auto* timestamp_value =
       grpc_channelz_v2_PropertyValue_timestamp_value(value);
@@ -190,10 +217,11 @@ TEST(PropertyListTest, SetOptionalStdString) {
     auto* upb_proto = grpc_channelz_v2_PropertyList_new(arena.ptr());
     ASSERT_NE(upb_proto, nullptr);
     props.FillUpbProto(upb_proto, arena.ptr());
-    EXPECT_EQ(grpc_channelz_v2_PropertyList_properties_size(upb_proto), 1);
-    grpc_channelz_v2_PropertyValue* value;
-    ASSERT_TRUE(grpc_channelz_v2_PropertyList_properties_get(
-        upb_proto, StdStringToUpbString("optional_key"), &value));
+    size_t size;
+    grpc_channelz_v2_PropertyList_properties(upb_proto, &size);
+    EXPECT_EQ(size, 1);
+    const auto* value = GetProperty(upb_proto, "optional_key");
+    ASSERT_NE(value, nullptr);
     EXPECT_TRUE(grpc_channelz_v2_PropertyValue_has_string_value(value));
     EXPECT_EQ(UpbStringToStdString(
                   grpc_channelz_v2_PropertyValue_string_value(value)),
@@ -210,7 +238,9 @@ TEST(PropertyListTest, SetOptionalStdString) {
     auto* upb_proto = grpc_channelz_v2_PropertyList_new(arena.ptr());
     ASSERT_NE(upb_proto, nullptr);
     props.FillUpbProto(upb_proto, arena.ptr());
-    EXPECT_EQ(grpc_channelz_v2_PropertyList_properties_size(upb_proto), 0);
+    size_t size;
+    grpc_channelz_v2_PropertyList_properties(upb_proto, &size);
+    EXPECT_EQ(size, 0);
   }
 }
 
@@ -231,10 +261,11 @@ TEST(PropertyListTest, SetOptionalStringView) {
     auto* upb_proto = grpc_channelz_v2_PropertyList_new(arena.ptr());
     ASSERT_NE(upb_proto, nullptr);
     props.FillUpbProto(upb_proto, arena.ptr());
-    EXPECT_EQ(grpc_channelz_v2_PropertyList_properties_size(upb_proto), 1);
-    grpc_channelz_v2_PropertyValue* value;
-    ASSERT_TRUE(grpc_channelz_v2_PropertyList_properties_get(
-        upb_proto, StdStringToUpbString("optional_key"), &value));
+    size_t size;
+    grpc_channelz_v2_PropertyList_properties(upb_proto, &size);
+    EXPECT_EQ(size, 1);
+    const auto* value = GetProperty(upb_proto, "optional_key");
+    ASSERT_NE(value, nullptr);
     EXPECT_TRUE(grpc_channelz_v2_PropertyValue_has_string_value(value));
     EXPECT_EQ(UpbStringToStdString(
                   grpc_channelz_v2_PropertyValue_string_value(value)),
@@ -251,7 +282,9 @@ TEST(PropertyListTest, SetOptionalStringView) {
     auto* upb_proto = grpc_channelz_v2_PropertyList_new(arena.ptr());
     ASSERT_NE(upb_proto, nullptr);
     props.FillUpbProto(upb_proto, arena.ptr());
-    EXPECT_EQ(grpc_channelz_v2_PropertyList_properties_size(upb_proto), 0);
+    size_t size;
+    grpc_channelz_v2_PropertyList_properties(upb_proto, &size);
+    EXPECT_EQ(size, 0);
   }
 }
 
@@ -271,10 +304,11 @@ TEST(PropertyListTest, SetOptionalDouble) {
     auto* upb_proto = grpc_channelz_v2_PropertyList_new(arena.ptr());
     ASSERT_NE(upb_proto, nullptr);
     props.FillUpbProto(upb_proto, arena.ptr());
-    EXPECT_EQ(grpc_channelz_v2_PropertyList_properties_size(upb_proto), 1);
-    grpc_channelz_v2_PropertyValue* value;
-    ASSERT_TRUE(grpc_channelz_v2_PropertyList_properties_get(
-        upb_proto, StdStringToUpbString("optional_key"), &value));
+    size_t size;
+    grpc_channelz_v2_PropertyList_properties(upb_proto, &size);
+    EXPECT_EQ(size, 1);
+    const auto* value = GetProperty(upb_proto, "optional_key");
+    ASSERT_NE(value, nullptr);
     EXPECT_TRUE(grpc_channelz_v2_PropertyValue_has_double_value(value));
     EXPECT_EQ(grpc_channelz_v2_PropertyValue_double_value(value), 45.67);
   }
@@ -289,7 +323,9 @@ TEST(PropertyListTest, SetOptionalDouble) {
     auto* upb_proto = grpc_channelz_v2_PropertyList_new(arena.ptr());
     ASSERT_NE(upb_proto, nullptr);
     props.FillUpbProto(upb_proto, arena.ptr());
-    EXPECT_EQ(grpc_channelz_v2_PropertyList_properties_size(upb_proto), 0);
+    size_t size;
+    grpc_channelz_v2_PropertyList_properties(upb_proto, &size);
+    EXPECT_EQ(size, 0);
   }
 }
 
@@ -309,10 +345,11 @@ TEST(PropertyListTest, SetOptionalInt) {
     auto* upb_proto = grpc_channelz_v2_PropertyList_new(arena.ptr());
     ASSERT_NE(upb_proto, nullptr);
     props.FillUpbProto(upb_proto, arena.ptr());
-    EXPECT_EQ(grpc_channelz_v2_PropertyList_properties_size(upb_proto), 1);
-    grpc_channelz_v2_PropertyValue* value;
-    ASSERT_TRUE(grpc_channelz_v2_PropertyList_properties_get(
-        upb_proto, StdStringToUpbString("optional_key"), &value));
+    size_t size;
+    grpc_channelz_v2_PropertyList_properties(upb_proto, &size);
+    EXPECT_EQ(size, 1);
+    const auto* value = GetProperty(upb_proto, "optional_key");
+    ASSERT_NE(value, nullptr);
     EXPECT_TRUE(grpc_channelz_v2_PropertyValue_has_int64_value(value));
     EXPECT_EQ(grpc_channelz_v2_PropertyValue_int64_value(value), 123);
   }
@@ -327,7 +364,9 @@ TEST(PropertyListTest, SetOptionalInt) {
     auto* upb_proto = grpc_channelz_v2_PropertyList_new(arena.ptr());
     ASSERT_NE(upb_proto, nullptr);
     props.FillUpbProto(upb_proto, arena.ptr());
-    EXPECT_EQ(grpc_channelz_v2_PropertyList_properties_size(upb_proto), 0);
+    size_t size;
+    grpc_channelz_v2_PropertyList_properties(upb_proto, &size);
+    EXPECT_EQ(size, 0);
   }
 }
 
@@ -350,10 +389,11 @@ TEST(PropertyListTest, SetOptionalTimestamp) {
     auto* upb_proto = grpc_channelz_v2_PropertyList_new(arena.ptr());
     ASSERT_NE(upb_proto, nullptr);
     props.FillUpbProto(upb_proto, arena.ptr());
-    EXPECT_EQ(grpc_channelz_v2_PropertyList_properties_size(upb_proto), 1);
-    grpc_channelz_v2_PropertyValue* value;
-    ASSERT_TRUE(grpc_channelz_v2_PropertyList_properties_get(
-        upb_proto, StdStringToUpbString("optional_key"), &value));
+    size_t size;
+    grpc_channelz_v2_PropertyList_properties(upb_proto, &size);
+    EXPECT_EQ(size, 1);
+    const auto* value = GetProperty(upb_proto, "optional_key");
+    ASSERT_NE(value, nullptr);
     EXPECT_TRUE(grpc_channelz_v2_PropertyValue_has_timestamp_value(value));
     const auto* timestamp_value =
         grpc_channelz_v2_PropertyValue_timestamp_value(value);
@@ -375,7 +415,9 @@ TEST(PropertyListTest, SetOptionalTimestamp) {
     auto* upb_proto = grpc_channelz_v2_PropertyList_new(arena.ptr());
     ASSERT_NE(upb_proto, nullptr);
     props.FillUpbProto(upb_proto, arena.ptr());
-    EXPECT_EQ(grpc_channelz_v2_PropertyList_properties_size(upb_proto), 0);
+    size_t size;
+    grpc_channelz_v2_PropertyList_properties(upb_proto, &size);
+    EXPECT_EQ(size, 0);
   }
 }
 
@@ -391,31 +433,41 @@ TEST(PropertyListTest, Merge) {
   LOG(INFO) << "json_obj = " << JsonDump(Json::FromObject(json_obj));
   ASSERT_EQ(json_obj.size(), 3);
   EXPECT_EQ(json_obj["key1"].string(), "value1");
-  EXPECT_EQ(json_obj["key2"].string(), "new_value");
+  EXPECT_EQ(json_obj["key2"].string(), "123");
   EXPECT_EQ(json_obj["key3"].type(), Json::Type::kBoolean);
   EXPECT_EQ(json_obj["key3"].boolean(), true);
   upb::Arena arena;
   auto* upb_proto = grpc_channelz_v2_PropertyList_new(arena.ptr());
   ASSERT_NE(upb_proto, nullptr);
   props1.FillUpbProto(upb_proto, arena.ptr());
-  EXPECT_EQ(grpc_channelz_v2_PropertyList_properties_size(upb_proto), 3);
-  grpc_channelz_v2_PropertyValue* value;
-  ASSERT_TRUE(grpc_channelz_v2_PropertyList_properties_get(
-      upb_proto, StdStringToUpbString("key1"), &value));
-  EXPECT_TRUE(grpc_channelz_v2_PropertyValue_has_string_value(value));
+  size_t size;
+  const auto* const* props =
+      grpc_channelz_v2_PropertyList_properties(upb_proto, &size);
+  EXPECT_EQ(size, 4);
   EXPECT_EQ(
-      UpbStringToStdString(grpc_channelz_v2_PropertyValue_string_value(value)),
-      "value1");
-  ASSERT_TRUE(grpc_channelz_v2_PropertyList_properties_get(
-      upb_proto, StdStringToUpbString("key2"), &value));
-  EXPECT_TRUE(grpc_channelz_v2_PropertyValue_has_string_value(value));
+      UpbStringToStdString(grpc_channelz_v2_PropertyList_Element_key(props[0])),
+      "key1");
+  EXPECT_EQ(UpbStringToStdString(grpc_channelz_v2_PropertyValue_string_value(
+                grpc_channelz_v2_PropertyList_Element_value(props[0]))),
+            "value1");
   EXPECT_EQ(
-      UpbStringToStdString(grpc_channelz_v2_PropertyValue_string_value(value)),
-      "new_value");
-  ASSERT_TRUE(grpc_channelz_v2_PropertyList_properties_get(
-      upb_proto, StdStringToUpbString("key3"), &value));
-  EXPECT_TRUE(grpc_channelz_v2_PropertyValue_has_bool_value(value));
-  EXPECT_EQ(grpc_channelz_v2_PropertyValue_bool_value(value), true);
+      UpbStringToStdString(grpc_channelz_v2_PropertyList_Element_key(props[1])),
+      "key2");
+  EXPECT_EQ(grpc_channelz_v2_PropertyValue_int64_value(
+                grpc_channelz_v2_PropertyList_Element_value(props[1])),
+            123);
+  EXPECT_EQ(
+      UpbStringToStdString(grpc_channelz_v2_PropertyList_Element_key(props[2])),
+      "key2");
+  EXPECT_EQ(UpbStringToStdString(grpc_channelz_v2_PropertyValue_string_value(
+                grpc_channelz_v2_PropertyList_Element_value(props[2]))),
+            "new_value");
+  EXPECT_EQ(
+      UpbStringToStdString(grpc_channelz_v2_PropertyList_Element_key(props[3])),
+      "key3");
+  EXPECT_EQ(grpc_channelz_v2_PropertyValue_bool_value(
+                grpc_channelz_v2_PropertyList_Element_value(props[3])),
+            true);
 }
 
 TEST(PropertyListTest, SetAbslStatus) {
@@ -432,10 +484,11 @@ TEST(PropertyListTest, SetAbslStatus) {
   auto* upb_proto = grpc_channelz_v2_PropertyList_new(arena.ptr());
   ASSERT_NE(upb_proto, nullptr);
   props.FillUpbProto(upb_proto, arena.ptr());
-  EXPECT_EQ(grpc_channelz_v2_PropertyList_properties_size(upb_proto), 1);
-  grpc_channelz_v2_PropertyValue* value;
-  ASSERT_TRUE(grpc_channelz_v2_PropertyList_properties_get(
-      upb_proto, StdStringToUpbString("status_key"), &value));
+  size_t size;
+  grpc_channelz_v2_PropertyList_properties(upb_proto, &size);
+  EXPECT_EQ(size, 1);
+  const auto* value = GetProperty(upb_proto, "status_key");
+  ASSERT_NE(value, nullptr);
   EXPECT_TRUE(grpc_channelz_v2_PropertyValue_has_string_value(value));
   EXPECT_EQ(
       UpbStringToStdString(grpc_channelz_v2_PropertyValue_string_value(value)),
@@ -456,36 +509,36 @@ TEST(PropertyListTest, SetUint64) {
   auto* upb_proto = grpc_channelz_v2_PropertyList_new(arena.ptr());
   ASSERT_NE(upb_proto, nullptr);
   props.FillUpbProto(upb_proto, arena.ptr());
-  EXPECT_EQ(grpc_channelz_v2_PropertyList_properties_size(upb_proto), 1);
-  grpc_channelz_v2_PropertyValue* value;
-  ASSERT_TRUE(grpc_channelz_v2_PropertyList_properties_get(
-      upb_proto, StdStringToUpbString("uint64_key"), &value));
+  size_t size;
+  grpc_channelz_v2_PropertyList_properties(upb_proto, &size);
+  EXPECT_EQ(size, 1);
+  const auto* value = GetProperty(upb_proto, "uint64_key");
+  ASSERT_NE(value, nullptr);
   EXPECT_TRUE(grpc_channelz_v2_PropertyValue_has_uint64_value(value));
   EXPECT_EQ(grpc_channelz_v2_PropertyValue_uint64_value(value), 123);
 }
 
-TEST(PropertyListTest, RemoveKey) {
+TEST(PropertyListTest, NulloptIsNoOp) {
   PropertyList props;
   props.Set("key1", "value1");
-  props.Set("key2", 123);
   props.Set("key1", std::optional<std::string>(std::nullopt));
   Json::Object json_obj = props.TakeJsonObject();
   LOG(INFO) << "json_obj = " << JsonDump(Json::FromObject(json_obj));
   ASSERT_EQ(json_obj.size(), 1);
-  EXPECT_EQ(json_obj.count("key1"), 0);
-  EXPECT_EQ(json_obj["key2"].string(), "123");
+  EXPECT_EQ(json_obj["key1"].string(), "value1");
   upb::Arena arena;
   auto* upb_proto = grpc_channelz_v2_PropertyList_new(arena.ptr());
   ASSERT_NE(upb_proto, nullptr);
   props.FillUpbProto(upb_proto, arena.ptr());
-  EXPECT_EQ(grpc_channelz_v2_PropertyList_properties_size(upb_proto), 1);
-  grpc_channelz_v2_PropertyValue* value = nullptr;
-  EXPECT_FALSE(grpc_channelz_v2_PropertyList_properties_get(
-      upb_proto, StdStringToUpbString("key1"), &value));
-  ASSERT_TRUE(grpc_channelz_v2_PropertyList_properties_get(
-      upb_proto, StdStringToUpbString("key2"), &value));
-  EXPECT_TRUE(grpc_channelz_v2_PropertyValue_has_int64_value(value));
-  EXPECT_EQ(grpc_channelz_v2_PropertyValue_int64_value(value), 123);
+  size_t size;
+  grpc_channelz_v2_PropertyList_properties(upb_proto, &size);
+  EXPECT_EQ(size, 1);
+  const auto* value = GetProperty(upb_proto, "key1");
+  ASSERT_NE(value, nullptr);
+  EXPECT_TRUE(grpc_channelz_v2_PropertyValue_has_string_value(value));
+  EXPECT_EQ(
+      UpbStringToStdString(grpc_channelz_v2_PropertyValue_string_value(value)),
+      "value1");
 }
 
 TEST(PropertyListTest, NestedPropertyList) {
@@ -506,10 +559,11 @@ TEST(PropertyListTest, NestedPropertyList) {
   auto* upb_proto = grpc_channelz_v2_PropertyList_new(arena.ptr());
   ASSERT_NE(upb_proto, nullptr);
   props.FillUpbProto(upb_proto, arena.ptr());
-  EXPECT_EQ(grpc_channelz_v2_PropertyList_properties_size(upb_proto), 1);
-  grpc_channelz_v2_PropertyValue* value;
-  ASSERT_TRUE(grpc_channelz_v2_PropertyList_properties_get(
-      upb_proto, StdStringToUpbString("nested_list"), &value));
+  size_t size;
+  grpc_channelz_v2_PropertyList_properties(upb_proto, &size);
+  EXPECT_EQ(size, 1);
+  const auto* value = GetProperty(upb_proto, "nested_list");
+  ASSERT_NE(value, nullptr);
   EXPECT_TRUE(grpc_channelz_v2_PropertyValue_has_any_value(value));
   const auto* any = grpc_channelz_v2_PropertyValue_any_value(value);
   EXPECT_EQ(UpbStringToStdString(google_protobuf_Any_type_url(any)),

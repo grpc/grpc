@@ -27,9 +27,9 @@ UPB_INLINE const upb_MessageDef *grpc_channelz_v2_PropertyList_getmsgdef(upb_Def
   return upb_DefPool_FindMessageByName(s, "grpc.channelz.v2.PropertyList");
 }
 
-UPB_INLINE const upb_MessageDef *grpc_channelz_v2_PropertyList_PropertiesEntry_getmsgdef(upb_DefPool *s) {
+UPB_INLINE const upb_MessageDef *grpc_channelz_v2_PropertyList_Element_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &src_proto_grpc_channelz_v2_property_list_proto_upbdefinit);
-  return upb_DefPool_FindMessageByName(s, "grpc.channelz.v2.PropertyList.PropertiesEntry");
+  return upb_DefPool_FindMessageByName(s, "grpc.channelz.v2.PropertyList.Element");
 }
 
 UPB_INLINE const upb_MessageDef *grpc_channelz_v2_PropertyGrid_getmsgdef(upb_DefPool *s) {
