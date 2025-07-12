@@ -39,7 +39,7 @@ class Outcome(ABC):
         """Identifies the general kind of the outcome of some call."""
 
         RETURNED = object()
-        RAISED = object() # noqa: PIE796 
+        RAISED = object()  # noqa: PIE796
 
 
 class _EasyOutcome(

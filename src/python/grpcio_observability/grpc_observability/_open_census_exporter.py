@@ -216,7 +216,9 @@ def _get_span_annotations(
 
 # pylint: disable=too-many-return-statements
 # pylint: disable=too-many-branches
-def _status_to_span_status(span_status: str) -> Optional[status.Status]: # noqa: PLR0911
+def _status_to_span_status(  # noqa: PLR0911
+    span_status: str,
+) -> Optional[status.Status]:
     if status == "OK":
         return status.Status(code_pb2.OK, message=span_status)
     elif status == "CANCELLED":
