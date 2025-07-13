@@ -21,7 +21,7 @@
 
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
 
-#if defined(GRPC_CFSTREAM)
+#if defined(GRPC_CFSTREAM) && defined(GPR_CPU_IPHONE)
 namespace {
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";

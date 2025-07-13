@@ -18,12 +18,12 @@
 #include <map>
 #include <string>
 
-#include "test/core/test_util/test_config.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "test/core/test_util/test_config.h"
 
 namespace grpc {
 namespace testing {
@@ -223,7 +223,7 @@ namespace grpc_core {
 
 #ifdef GRPC_EXPERIMENTS_ARE_FINAL
 
-#if defined(GRPC_CFSTREAM)
+#if defined(GRPC_CFSTREAM) && defined(GPR_CPU_IPHONE)
 inline bool IsCallTracerTransportFixEnabled() { return false; }
 inline bool IsCallTracerInTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX
@@ -286,7 +286,7 @@ extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
 
-#if defined(GRPC_CFSTREAM)
+#if defined(GRPC_CFSTREAM) && defined(GPR_CPU_IPHONE)
 namespace {
 const char* const description_call_tracer_transport_fix = "Use the correct call tracer in transport";
 const char* const additional_constraints_call_tracer_transport_fix = "{}";
@@ -428,7 +428,7 @@ namespace grpc_core {
 
 #ifdef GRPC_EXPERIMENTS_ARE_FINAL
 
-#if defined(GRPC_CFSTREAM)
+#if defined(GRPC_CFSTREAM) && defined(GPR_CPU_IPHONE)
 inline bool IsCallTracerTransportFixEnabled() { return false; }
 inline bool IsCallTracerInTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX

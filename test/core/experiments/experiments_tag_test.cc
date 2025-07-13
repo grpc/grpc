@@ -55,7 +55,7 @@ TEST(ExperimentsTestTagTest, CheckExperimentValuesTest) {
   if (!is_experiment_enabled_through_flag.ok()) {
     return;
   }
-#ifdef GRPC_CFSTREAM
+#if defined(GRPC_CFSTREAM) && defined(GPR_CPU_IPHONE)
   FAIL() << "test_experiment_1 is broken on ios. so this test should not have "
             "executed on RBE."
 #elif GPR_WINDOWS

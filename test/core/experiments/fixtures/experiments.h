@@ -56,7 +56,7 @@ namespace grpc_core {
 
 #ifdef GRPC_EXPERIMENTS_ARE_FINAL
 
-#if defined(GRPC_CFSTREAM)
+#if defined(GRPC_CFSTREAM) && defined(GPR_CPU_IPHONE)
 inline bool IsTestExperiment1Enabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TEST_EXPERIMENT_2
 inline bool IsTestExperiment2Enabled() { return true; }

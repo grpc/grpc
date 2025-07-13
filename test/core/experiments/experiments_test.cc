@@ -25,7 +25,7 @@
 
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
 
-#if defined(GRPC_CFSTREAM)
+#if defined(GRPC_CFSTREAM) && defined(GPR_CPU_IPHONE)
 bool GetExperimentTestExperiment1ExpectedValue() { return false; }
 
 bool GetExperimentTestExperiment2ExpectedValue() { return true; }

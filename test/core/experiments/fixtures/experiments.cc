@@ -20,7 +20,7 @@
 
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
 
-#if defined(GRPC_CFSTREAM)
+#if defined(GRPC_CFSTREAM) && defined(GPR_CPU_IPHONE)
 namespace {
 const char* const description_test_experiment_1 = "Test Experiment 1";
 const char* const additional_constraints_test_experiment_1 = "{}";
