@@ -63,7 +63,7 @@ bool PostMortemEmitAndReturnTrue();
 #define GRPC_DCHECK_GT(a, b) GRPC_CHECK_GT(a, b)
 #define GRPC_DCHECK_LT(a, b) GRPC_CHECK_LT(a, b)
 #define GRPC_DCHECK_NE(a, b) GRPC_CHECK_NE(a, b)
-#else
+#else  // NDEBUG
 #define GRPC_DCHECK(a) \
   while (false) LOG(INFO)
 #define GRPC_DCHECK_EQ(a, b) \
@@ -80,7 +80,7 @@ bool PostMortemEmitAndReturnTrue();
   while (false) LOG(INFO)
 #endif
 
-#else
+#else  // GRPC_POSTMORTEM_CHECKS
 #include "absl/log/check.h"
 
 #define GRPC_CHECK(a) CHECK(a)
@@ -98,6 +98,6 @@ bool PostMortemEmitAndReturnTrue();
 #define GRPC_DCHECK_GT(a, b) DCHECK_GT(a, b)
 #define GRPC_DCHECK_LT(a, b) DCHECK_LT(a, b)
 #define GRPC_DCHECK_NE(a, b) DCHECK_NE(a, b)
-#endif
+#endif  // GRPC_POSTMORTEM_CHECKS
 
 #endif  // GRPC_SRC_CORE_UTIL_GRPC_CHECK_H
