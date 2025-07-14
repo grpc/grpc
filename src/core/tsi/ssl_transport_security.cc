@@ -2429,7 +2429,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
                 ssl_context, pem_root_certs.c_str(), pem_root_certs.size(),
                 nullptr);
           },
-          [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
+          [&](const grpc_core::SpiffeBundleMap&) {
             // TODO(gtcooke94) - implement SPIFFE Bundle Map verification. Crash
             // until this is done.
             grpc_core::Crash(
@@ -2656,7 +2656,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
                 SSL_CTX_set_client_CA_list(impl->ssl_contexts[i], root_names);
               }
             },
-            [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
+            [&](const grpc_core::SpiffeBundleMap&) {
               // TODO(gtcooke94) - implement SPIFFE Bundle Map verification.
               // Crash until this is done.
               grpc_core::Crash(

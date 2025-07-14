@@ -381,7 +381,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
       // Report errors to the distributor if the contents are empty.
       const bool report_root_error =
           info.root_being_watched &&
-          (!root_cert_info.ok() || *root_cert_info_ == nullptr);
+          (!root_cert_info_.ok() || *root_cert_info_ == nullptr);
       const bool report_identity_error =
           info.identity_being_watched && pem_key_cert_pairs_.empty();
       if (report_root_error || report_identity_error) {
