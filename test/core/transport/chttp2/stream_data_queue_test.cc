@@ -26,6 +26,13 @@
 
 namespace grpc_core {
 
+namespace http2 {
+namespace testing {
+
+using ::testing::MockFunction;
+using ::testing::StrictMock;
+using util::testing::TransportTest;
+
 namespace {
 auto EnqueueAndCheckSuccess(http2::SimpleQueue<int>& queue, int data,
                             int tokens) {
@@ -58,18 +65,9 @@ bool DequeueAndCheck(http2::SimpleQueue<int>& queue, int data,
 }
 }  // namespace
 
-namespace http2 {
-namespace testing {
-
-using ::testing::MockFunction;
-using ::testing::StrictMock;
-using util::testing::TransportTest;
-
 class SimpleQueueTest : public TransportTest {
  protected:
-  SimpleQueueTest() {
-    InitParty();
-  }
+  SimpleQueueTest() { InitParty(); }
 
   Party* GetParty() { return party_.get(); }
 
@@ -267,60 +265,54 @@ TEST_F(SimpleQueueTest, DequeueMaxTokensTest) {
 
   party->Spawn("EnqueueTest",
                TrySeq(EnqueueAndCheckSuccess(queue, /*data=*/1,
-               /*tokens=*/100),
+                                             /*tokens=*/100),
                       EnqueueAndCheckSuccess(queue, /*data=*/2,
-                      /*tokens=*/99)),
+                                             /*tokens=*/99)),
                [&on_enqueue_done, &enqueue_done](auto) {
                  LOG(INFO) << "Reached end of EnqueueTest";
                  on_enqueue_done.Call(absl::OkStatus());
                  enqueue_done.Set();
                });
 
-  party->Spawn("DequeueTest",
-               TrySeq(enqueue_done.Wait(),
-                      [&queue] {
-                        // 2 entries
-                        DequeueAndCheckPending(
-                            queue,
-                            /*allow_oversized_dequeue=*/false,
-                            /*max_tokens=*/10);
-                        DequeueAndCheckPending(
-                            queue,
-                            /*allow_oversized_dequeue=*/false,
-                            /*max_tokens=*/99);
-                        DequeueAndCheckSuccess(
-                            queue, /*data=*/1,
-                            /*allow_oversized_dequeue=*/false,
-                            /*max_tokens=*/100);
+  party->Spawn(
+      "DequeueTest",
+      TrySeq(enqueue_done.Wait(),
+             [&queue] {
+               // 2 entries
+               DequeueAndCheckPending(queue,
+                                      /*allow_oversized_dequeue=*/false,
+                                      /*max_tokens=*/10);
+               DequeueAndCheckPending(queue,
+                                      /*allow_oversized_dequeue=*/false,
+                                      /*max_tokens=*/99);
+               DequeueAndCheckSuccess(queue, /*data=*/1,
+                                      /*allow_oversized_dequeue=*/false,
+                                      /*max_tokens=*/100);
 
-                        // 1 entry
-                        DequeueAndCheckPending(
-                            queue,
-                            /*allow_oversized_dequeue=*/false,
-                            /*max_tokens=*/5);
-                        DequeueAndCheckSuccess(
-                            queue, /*data=*/2,
-                            /*allow_oversized_dequeue=*/false,
-                            /*max_tokens=*/500);
+               // 1 entry
+               DequeueAndCheckPending(queue,
+                                      /*allow_oversized_dequeue=*/false,
+                                      /*max_tokens=*/5);
+               DequeueAndCheckSuccess(queue, /*data=*/2,
+                                      /*allow_oversized_dequeue=*/false,
+                                      /*max_tokens=*/500);
 
-                        // Empty Queue
-                        DequeueAndCheckPending(
-                            queue,
-                            /*allow_oversized_dequeue=*/false,
-                            /*max_tokens=*/10);
-                        DequeueAndCheckPending(
-                            queue,
-                            /*allow_oversized_dequeue=*/false,
-                            /*max_tokens=*/100);
-                        DequeueAndCheckPending(queue,
-                                               /*allow_oversized_dequeue=*/true,
-                                               /*max_tokens=*/10);
-                        return absl::OkStatus();
-                      }),
-               [&on_dequeue_done](auto) {
-                 LOG(INFO) << "Reached end of DequeueTest";
-                 on_dequeue_done.Call(absl::OkStatus());
-               });
+               // Empty Queue
+               DequeueAndCheckPending(queue,
+                                      /*allow_oversized_dequeue=*/false,
+                                      /*max_tokens=*/10);
+               DequeueAndCheckPending(queue,
+                                      /*allow_oversized_dequeue=*/false,
+                                      /*max_tokens=*/100);
+               DequeueAndCheckPending(queue,
+                                      /*allow_oversized_dequeue=*/true,
+                                      /*max_tokens=*/10);
+               return absl::OkStatus();
+             }),
+      [&on_dequeue_done](auto) {
+        LOG(INFO) << "Reached end of DequeueTest";
+        on_dequeue_done.Call(absl::OkStatus());
+      });
 
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
