@@ -19,32 +19,31 @@ import sys
 import os
 import pkgutil
 
-if os.environ.get("TYPEGUARD_ENABLED") == "1":
-    from typeguard import install_import_hook
-    # Add all relevant grpc.aio submodules here
-    install_import_hook('grpc.aio')
-    install_import_hook('grpc.aio._channel')
-    install_import_hook('grpc.aio._server')
-    install_import_hook('grpc.aio._utils')
-    install_import_hook('grpc.aio._interceptor')
-    install_import_hook('grpc.aio._base_channel')
-    install_import_hook('grpc.aio._base_server')
-    install_import_hook('grpc.aio._typing')
-    install_import_hook('grpc.aio._call')
-    install_import_hook('grpc.aio._cython')
-    install_import_hook('grpc.aio._metadata')
-    install_import_hook('grpc.aio._compression')
-    install_import_hook('grpc.aio._credentials')
-    install_import_hook('grpc.aio._ssl_channel_credentials')
-    install_import_hook('grpc.aio._ssl_server_credentials')
-    install_import_hook('grpc.aio._status')
-    install_import_hook('grpc.aio._stream')
-    install_import_hook('grpc.aio._cancel')
-    install_import_hook('grpc.aio._logging')
-    install_import_hook('grpc.aio._ref')
-    install_import_hook('grpc.aio._resource')
-    install_import_hook('grpc.aio._timeout')
-    install_import_hook('grpc.aio._trace')
+from typeguard import install_import_hook
+# Add all relevant grpc.aio submodules here
+install_import_hook('grpc.aio')
+install_import_hook('grpc.aio._channel')
+install_import_hook('grpc.aio._server')
+install_import_hook('grpc.aio._utils')
+install_import_hook('grpc.aio._interceptor')
+install_import_hook('grpc.aio._base_channel')
+install_import_hook('grpc.aio._base_server')
+install_import_hook('grpc.aio._typing')
+install_import_hook('grpc.aio._call')
+install_import_hook('grpc.aio._cython')
+install_import_hook('grpc.aio._metadata')
+install_import_hook('grpc.aio._compression')
+install_import_hook('grpc.aio._credentials')
+install_import_hook('grpc.aio._ssl_channel_credentials')
+install_import_hook('grpc.aio._ssl_server_credentials')
+install_import_hook('grpc.aio._status')
+install_import_hook('grpc.aio._stream')
+install_import_hook('grpc.aio._cancel')
+install_import_hook('grpc.aio._logging')
+install_import_hook('grpc.aio._ref')
+install_import_hook('grpc.aio._resource')
+install_import_hook('grpc.aio._timeout')
+install_import_hook('grpc.aio._trace')
 
 
 class SingleLoader(object):

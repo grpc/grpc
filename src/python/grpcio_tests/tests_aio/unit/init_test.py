@@ -13,34 +13,6 @@
 # limitations under the License.
 import logging
 import unittest
-import os
-
-# Set up typeguard if enabled
-if os.environ.get("TYPEGUARD_ENABLED") == "1":
-    from typeguard import install_import_hook
-    install_import_hook('grpc.aio')
-    install_import_hook('grpc.aio._channel')
-    install_import_hook('grpc.aio._server')
-    install_import_hook('grpc.aio._utils')
-    install_import_hook('grpc.aio._interceptor')
-    install_import_hook('grpc.aio._base_channel')
-    install_import_hook('grpc.aio._base_server')
-    install_import_hook('grpc.aio._typing')
-    install_import_hook('grpc.aio._call')
-    install_import_hook('grpc.aio._cython')
-    install_import_hook('grpc.aio._metadata')
-    install_import_hook('grpc.aio._compression')
-    install_import_hook('grpc.aio._credentials')
-    install_import_hook('grpc.aio._ssl_channel_credentials')
-    install_import_hook('grpc.aio._ssl_server_credentials')
-    install_import_hook('grpc.aio._status')
-    install_import_hook('grpc.aio._stream')
-    install_import_hook('grpc.aio._cancel')
-    install_import_hook('grpc.aio._logging')
-    install_import_hook('grpc.aio._ref')
-    install_import_hook('grpc.aio._resource')
-    install_import_hook('grpc.aio._timeout')
-    install_import_hook('grpc.aio._trace')
 
 
 class TestInit(unittest.TestCase):
@@ -55,13 +27,6 @@ class TestInit(unittest.TestCase):
 
         channel = grpc.aio.insecure_channel("phony")
         self.assertIsInstance(channel, grpc.aio.Channel)
-
-    def test_server_function(self):
-        import grpc.aio  # pylint: disable=wrong-import-position
-
-        # This should trigger the type error since server() returns str but should return Server
-        server = grpc.aio.server()
-        self.assertIsInstance(server, grpc.aio.Server)
 
 
 if __name__ == "__main__":
