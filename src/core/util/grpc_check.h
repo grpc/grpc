@@ -25,36 +25,35 @@ bool PostMortemEmitAndReturnTrue();
 
 #define GRPC_CHECK(a)                           \
   while (!(a) && PostMortemEmitAndReturnTrue()) \
-  LOG(FATAL) << "Failed CHECK(#a). "
+  LOG(FATAL) << "Failed GRPC_CHECK(" #a "). "
 
 #define GRPC_CHECK_EQ(a, b)                              \
   while (!((a) == (b)) && PostMortemEmitAndReturnTrue()) \
-  LOG(FATAL) << "Failed CHECK_EQ(#a, #b). "
+  LOG(FATAL) << "Failed GRPC_CHECK_EQ(" #a ", " #b "). "
 
 #define GRPC_CHECK_NE(a, b)                           \
   while ((a) == (b) && PostMortemEmitAndReturnTrue()) \
-  LOG(FATAL) << "Failed CHECK_NE(#a, #b). "
+  LOG(FATAL) << "Failed GRPC_CHECK_NE(" #a ", " #b "). "
 
 #define GRPC_CHECK_GT(a, b)                           \
   while ((a) <= (b) && PostMortemEmitAndReturnTrue()) \
-  LOG(FATAL) << "Failed CHECK_GT(#a, #b). "
+  LOG(FATAL) << "Failed GRPC_CHECK_GT(" #a ", " #b "). "
 
 #define GRPC_CHECK_LT(a, b)                           \
   while ((a) >= (b) && PostMortemEmitAndReturnTrue()) \
-  LOG(FATAL) << "Failed CHECK_LT(#a,  #b). "
+  LOG(FATAL) << "Failed GRPC_CHECK_LT(" #a ",  " #b "). "
 
 #define GRPC_CHECK_GE(a, b)                          \
   while ((a) < (b) && PostMortemEmitAndReturnTrue()) \
-  LOG(FATAL) << "Failed CHECK_GE(#a, #b). "
+  LOG(FATAL) << "Failed GRPC_CHECK_GE(" #a ", " #b "). "
 
 #define GRPC_CHECK_LE(a, b)                          \
   while ((a) > (b) && PostMortemEmitAndReturnTrue()) \
-  LOG(FATAL) << "Failed CHECK_LE: #a vs #b"
+  LOG(FATAL) << "Failed GRPC_CHECK_LE(" #a " vs " #b ")."
 
 #define GRPC_CHECK_OK(a)                             \
   while (!(a).ok() && PostMortemEmitAndReturnTrue()) \
-  LOG(FATAL) << "Failed "                            \
-                "CHECK_OK(#a). "
+  LOG(FATAL) << "Failed GRPC_CHECK_OK(" #a "). "
 
 #ifndef NDEBUG
 #define GRPC_DCHECK(a) GRPC_CHECK(a)
@@ -65,13 +64,20 @@ bool PostMortemEmitAndReturnTrue();
 #define GRPC_DCHECK_LT(a, b) GRPC_CHECK_LT(a, b)
 #define GRPC_DCHECK_NE(a, b) GRPC_CHECK_NE(a, b)
 #else
-#define GRPC_DCHECK(a) while(false) LOG(INFO)
-#define GRPC_DCHECK_EQ(a, b) while(false) LOG(INFO)
-#define GRPC_DCHECK_GE(a, b) while(false) LOG(INFO)
-#define GRPC_DCHECK_LE(a, b) while(false) LOG(INFO)
-#define GRPC_DCHECK_GT(a, b) while(false) LOG(INFO)
-#define GRPC_DCHECK_LT(a, b) while(false) LOG(INFO)
-#define GRPC_DCHECK_NE(a, b) while(false) LOG(INFO)
+#define GRPC_DCHECK(a) \
+  while (false) LOG(INFO)
+#define GRPC_DCHECK_EQ(a, b) \
+  while (false) LOG(INFO)
+#define GRPC_DCHECK_GE(a, b) \
+  while (false) LOG(INFO)
+#define GRPC_DCHECK_LE(a, b) \
+  while (false) LOG(INFO)
+#define GRPC_DCHECK_GT(a, b) \
+  while (false) LOG(INFO)
+#define GRPC_DCHECK_LT(a, b) \
+  while (false) LOG(INFO)
+#define GRPC_DCHECK_NE(a, b) \
+  while (false) LOG(INFO)
 #endif
 
 #else
