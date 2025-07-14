@@ -26,7 +26,6 @@
 #include "src/core/xds/xds_client/xds_client.h"
 #include "xds/core/v3/extension.upb.h"
 #include "xds/type/matcher/v3/matcher.upb.h"
-#include "xds/type/matcher/v3/regex.upb.h"
 #include "xds/type/matcher/v3/string.upb.h"
 
 namespace grpc_core {

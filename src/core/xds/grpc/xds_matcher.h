@@ -56,15 +56,12 @@ class XdsMatcher {
   class InputValue {
    public:
     using ProducedType = T;
-
-    virtual ~InputValue() = default;
-
+    virtual UniqueTypeName type() const = 0;
     virtual bool Equals(const InputValue<T>& other) const = 0;
-
     // Gets the value to be matched from context.
     virtual std::optional<T> GetValue(const MatchContext& context) const = 0;
-
     virtual std::string ToString() const = 0;
+    virtual ~InputValue() = default;
   };
 
   // An action to be returned if the conditions match.
@@ -73,7 +70,7 @@ class XdsMatcher {
     virtual bool Equals(const Action& other) const = 0;
     virtual std::string ToString() const = 0;
     // The protobuf type of the action.
-    virtual absl::string_view type_url() const = 0;
+    virtual UniqueTypeName type() const = 0;
     virtual ~Action() = default;
   };
 
@@ -135,12 +132,12 @@ class XdsMatcherList : public XdsMatcher {
    public:
     using ConsumedType = T;
 
-    virtual ~InputMatcher() = default;
-
+    virtual UniqueTypeName type() const = 0;
     // Returns true if the matcher matches the input.
     virtual bool Match(const std::optional<T>& input) const = 0;
     virtual bool Equals(const InputMatcher<T>& other) const = 0;
     virtual std::string ToString() const = 0;
+    virtual ~InputMatcher() = default;
   };
 
   class StringInputMatcher;
@@ -234,6 +231,7 @@ class XdsMatcherList::SinglePredicate : public XdsMatcherList::Predicate {
   }
   UniqueTypeName type() const override { return Type(); }
   bool Equals(const Predicate& other) const override {
+    if (type() != other.type()) return false;
     const auto& o = DownCast<const SinglePredicate<T>&>(other);
     return input_->Equals(*o.input_) &&
            input_matcher_->Equals(*o.input_matcher_);
@@ -259,8 +257,12 @@ class XdsMatcherList::StringInputMatcher
   bool Match(const std::optional<absl::string_view>& input) const override {
     return matcher_.Match(input.value_or(""));
   }
-
+  static UniqueTypeName Type() {
+    return GRPC_UNIQUE_TYPE_NAME_HERE("StringInputMatcher");
+  }
+  UniqueTypeName type() const override { return Type(); }
   bool Equals(const InputMatcher<absl::string_view>& other) const override {
+    if (type() != other.type()) return false;
     const auto& o = DownCast<const StringInputMatcher&>(other);
     return matcher_ == o.matcher_;
   }

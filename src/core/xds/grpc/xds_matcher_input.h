@@ -66,8 +66,13 @@ class MetadataInput : public XdsMatcher::InputValue<absl::string_view> {
   explicit MetadataInput(absl::string_view key) : key_(key) {}
   std::optional<absl::string_view> GetValue(
       const XdsMatcher::MatchContext& context) const override;
+  static UniqueTypeName Type() {
+    return GRPC_UNIQUE_TYPE_NAME_HERE("MetadataInput");
+  }
+  UniqueTypeName type() const override { return Type(); }
   bool Equals(
       const XdsMatcher::InputValue<absl::string_view>& other) const override {
+    if (type() != other.type()) return false;
     const auto& o = DownCast<const MetadataInput&>(other);
     return key_ == o.key_;
   }

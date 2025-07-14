@@ -36,11 +36,10 @@ const int kRangeMultiplier = 4;
 class TestMatchContext : public XdsMatcher::MatchContext {
  public:
   explicit TestMatchContext(std::string path) : path_(std::move(path)) {}
-
-  UniqueTypeName type() const override {
+  static UniqueTypeName Type() {
     return GRPC_UNIQUE_TYPE_NAME_HERE("TestMatchContext");
   }
-
+  UniqueTypeName type() const override { return Type(); }
   absl::string_view path() const { return path_; }
 
  private:
@@ -55,6 +54,11 @@ class TestPathInput : public XdsMatcher::InputValue<absl::string_view> {
     const auto& test_context = DownCast<const TestMatchContext&>(context);
     return test_context.path();
   }
+  static UniqueTypeName Type() {
+    return GRPC_UNIQUE_TYPE_NAME_HERE("TestPathInput");
+  }
+  UniqueTypeName type() const override { return Type(); }
+  // Not used
   bool Equals(
       const XdsMatcher::InputValue<absl::string_view>& other) const override {
     return true;
@@ -66,10 +70,13 @@ class TestPathInput : public XdsMatcher::InputValue<absl::string_view> {
 class TestAction : public XdsMatcher::Action {
  public:
   explicit TestAction(absl::string_view name) : name_(name) {}
-  absl::string_view type_url() const override { return "test.TestAction"; }
+  static UniqueTypeName Type() {
+    return GRPC_UNIQUE_TYPE_NAME_HERE("test.testAction");
+  }
+  UniqueTypeName type() const override { return Type(); }
   absl::string_view name() const { return name_; }
   bool Equals(const XdsMatcher::Action& other) const override {
-    if (other.type_url() != type_url()) return false;
+    if (other.type() != type()) return false;
     return name_ == static_cast<const TestAction&>(other).name_;
   }
   std::string ToString() const override {

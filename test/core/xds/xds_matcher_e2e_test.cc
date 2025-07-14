@@ -51,12 +51,14 @@ google::protobuf::StringValue g_force_registration_string_value;
 class StringAction : public XdsMatcher::Action {
  public:
   explicit StringAction(std::string str) : str_(std::move(str)) {}
-  absl::string_view type_url() const override {
-    return "type.googleapis.com/google.protobuf.StringValue";
+  static UniqueTypeName Type() {
+    return GRPC_UNIQUE_TYPE_NAME_HERE(
+        "type.googleapis.com/google.protobuf.StringValue");
   }
+  UniqueTypeName type() const override { return Type(); }
   const std::string& str() const { return str_; }
   bool Equals(const XdsMatcher::Action& other) const override {
-    if (other.type_url() != type_url()) return false;
+    if (other.type() != type()) return false;
     return str_ == static_cast<const StringAction&>(other).str_;
   }
   std::string ToString() const override {
@@ -204,7 +206,7 @@ class MatcherTest : public ::testing::Test {
 
     const char* kExpectedTypeUrl =
         "type.googleapis.com/google.protobuf.StringValue";
-    ASSERT_EQ(result[0]->type_url(), kExpectedTypeUrl);
+    ASSERT_EQ(result[0]->type().name(), kExpectedTypeUrl);
 
     auto* string_action = DownCast<StringAction*>(result[0]);
     ASSERT_NE(string_action, nullptr);

@@ -17,9 +17,6 @@
 #include <memory>
 #include <variant>
 
-#include "src/core/util/ref_counted.h"
-#include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 
 namespace grpc_core {
