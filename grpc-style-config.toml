@@ -91,30 +91,3 @@ jobs = 'auto'
 
 strict_import = true
 keep_going = true
-
-[tool.typeguard]
-# Enable type checking for tests
-enabled = true
-# Check all modules in the aio folder
-packages = [
-  "src/python/grpcio/grpc/aio",
-  "src/python/grpcio_tests/tests_aio",
-]
-# Exclude generated files
-exclude = [
-  "**/*_pb2.py",
-  "**/*_pb2_grpc.py",
-]
-# Enable runtime type checking
-runtime_check = true
-# Enable type checking for test files
-check_test_files = true
-# Configure type checking options
-warn_return_any = true
-warn_unused_ignores = true
-warn_redundant_casts = true
-warn_unused_type_ignores = true
-# Enable debug mode for better error messages
-debug = false
-# Set the minimum Python version for type checking
-python_version = "3.9"
