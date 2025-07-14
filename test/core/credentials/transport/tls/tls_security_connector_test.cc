@@ -1137,7 +1137,7 @@ TEST_F(TlsSecurityConnectorTest,
   connector->check_peer(peer, nullptr, args, &auth_context, on_peer_checked);
 }
 
-//TODO(gtcooke94): Enable when support for SPIFFE verification is complete.
+// TODO(gtcooke94): Enable when support for SPIFFE verification is complete.
 TEST_F(
     TlsSecurityConnectorTest,
     DISABLED_SpiffeRootAndIdentityCertsObtainedWhenCreateChannelSecurityConnector) {
@@ -1174,7 +1174,7 @@ TEST_F(
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_1_);
 }
 
-//TODO(gtcooke94): Enable when support for SPIFFE verification is complete.
+// TODO(gtcooke94): Enable when support for SPIFFE verification is complete.
 TEST_F(TlsSecurityConnectorTest,
        DISABLED_SpiffeDistributorHasErrorForChannelSecurityConnector) {
   RefCountedPtr<grpc_tls_certificate_distributor> distributor =
@@ -1213,7 +1213,7 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
 }
 
-//TODO(gtcooke94): Enable when support for SPIFFE verification is complete.
+// TODO(gtcooke94): Enable when support for SPIFFE verification is complete.
 TEST_F(
     TlsSecurityConnectorTest,
     DISABLED_SpiffeRootAndIdentityCertsObtainedWhenCreateServerSecurityConnector) {
@@ -1249,7 +1249,7 @@ TEST_F(
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_1_);
 }
 
-//TODO(gtcooke94): Enable when support for SPIFFE verification is complete.
+// TODO(gtcooke94): Enable when support for SPIFFE verification is complete.
 TEST_F(TlsSecurityConnectorTest,
        DISABLED_SpiffeDistributorHasErrorForServerSecurityConnector) {
   RefCountedPtr<grpc_tls_certificate_distributor> distributor =

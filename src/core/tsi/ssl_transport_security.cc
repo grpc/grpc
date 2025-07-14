@@ -2534,7 +2534,8 @@ tsi_result tsi_create_ssl_server_handshaker_factory_ex(
   options.pem_key_cert_pairs = pem_key_cert_pairs;
   options.num_key_cert_pairs = num_key_cert_pairs;
   if (pem_client_root_certs != nullptr) {
-    options.root_cert_info = std::make_shared<RootCertInfo>(pem_client_root_certs);
+    options.root_cert_info =
+        std::make_shared<RootCertInfo>(pem_client_root_certs);
   }
   options.client_certificate_request = client_certificate_request;
   options.cipher_suites = cipher_suites;

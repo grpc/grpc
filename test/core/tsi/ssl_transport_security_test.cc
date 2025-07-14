@@ -348,7 +348,8 @@ class SslTransportSecurityTest
       ssl_alpn_lib* alpn_lib = ssl_fixture->alpn_lib_;
       // Create client handshaker factory.
       tsi_ssl_client_handshaker_options client_options;
-      if (key_cert_lib->use_pem_root_certs && key_cert_lib->root_cert != nullptr) {
+      if (key_cert_lib->use_pem_root_certs &&
+          key_cert_lib->root_cert != nullptr) {
         client_options.root_cert_info =
             std::make_shared<RootCertInfo>(key_cert_lib->root_cert);
       }

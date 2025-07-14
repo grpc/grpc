@@ -296,7 +296,7 @@ TEST_F(GrpcTlsCertificateProviderTest, StaticDataCertificateProviderCreation) {
   EXPECT_THAT(watcher_state_3->GetCredentialQueue(),
               ::testing::ElementsAre(MatchesCredentialInfo(
                   EqRootCert(""), MakeCertKeyPairs(private_key_.c_str(),
-                                            cert_chain_.c_str()))));
+                                                   cert_chain_.c_str()))));
   CancelWatch(watcher_state_3);
 }
 

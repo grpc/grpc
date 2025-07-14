@@ -310,7 +310,7 @@ struct tsi_ssl_server_handshaker_options {
   size_t num_key_cert_pairs;
   // client_certificate_request, if set to non-zero will force the client to
   // authenticate with an SSL cert. Note that this option is ignored if
-  // root_cert_info is NULL 
+  // root_cert_info is NULL
   tsi_client_certificate_request_type client_certificate_request;
   // cipher_suites contains an optional list of the ciphers that the server
   // supports. The format of this string is described in:

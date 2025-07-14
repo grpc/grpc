@@ -194,12 +194,15 @@ class FileWatcherCertificateProvider final
   PemKeyCertPairList pem_key_cert_pairs_ ABSL_GUARDED_BY(mu_);
   // The most-recent root data.
   // - If unset, the status will be OK and the value will be nullptr
-  // - If a SPIFFE Bundle Map is configured and fails to read, the status will be not-Ok
-  // - If a string root cert is configured and fails to read, the status will be OK with a nullptr
+  // - If a SPIFFE Bundle Map is configured and fails to read, the status will
+  // be not-Ok
+  // - If a string root cert is configured and fails to read, the status will be
+  // OK with a nullptr
   // - Otherwise, holds either a SpiffeBundleMap or a string root cert
-  // TODO(gtcooke94) - refactor the handling for string root cert files such that their failure is a
-  // non-ok status rather than a nullptr
-  absl::StatusOr<std::shared_ptr<RootCertInfo>> root_cert_info_ ABSL_GUARDED_BY(mu_) = nullptr;
+  // TODO(gtcooke94) - refactor the handling for string root cert files such
+  // that their failure is a non-ok status rather than a nullptr
+  absl::StatusOr<std::shared_ptr<RootCertInfo>> root_cert_info_
+      ABSL_GUARDED_BY(mu_) = nullptr;
   // Stores each cert_name we get from the distributor callback and its watcher
   // information.
   std::map<std::string, WatcherInfo> watcher_info_ ABSL_GUARDED_BY(mu_);
