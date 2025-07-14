@@ -103,6 +103,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   using CallAttributes =
       std::vector<ServiceConfigCallData::CallAttributeInterface*>;
 
+  using RequestConnectionCallback =
+      absl::AnyInvocable<void(absl::string_view)>;
+
   // Channel-level subchannel state for a specific address and channel args.
   // This is analogous to the real subchannel in the ClientChannel code.
   class SubchannelState {
@@ -195,6 +198,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       void RequestConnection() override {
         MutexLock lock(&state_->requested_connection_mu_);
         state_->requested_connection_ = true;
+        if (state_->test_->request_connection_callback_ != nullptr) {
+          state_->test_->request_connection_callback_(state_->address_);
+        }
       }
 
       void AddDataWatcher(
@@ -956,51 +962,6 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     return retval;
   }
 
-  // Waits for the round_robin policy to start using an updated address list.
-  // There can be any number of READY updates where the picker is still using
-  // the old list followed by one READY update where the picker is using the
-  // new list.  Returns a picker if the reported states match expectations.
-  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
-  WaitForRoundRobinListChange(absl::Span<const absl::string_view> old_addresses,
-                              absl::Span<const absl::string_view> new_addresses,
-                              const CallAttributes& call_attributes = {},
-                              size_t num_iterations = 3,
-                              SourceLocation location = SourceLocation()) {
-    LOG(INFO) << "Waiting for expected RR addresses...";
-    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> retval;
-    size_t num_picks =
-        std::max(new_addresses.size(), old_addresses.size()) * num_iterations;
-    WaitForStateUpdate(
-        [&](FakeHelper::StateUpdate update) {
-          EXPECT_EQ(update.state, GRPC_CHANNEL_READY)
-              << location.file() << ":" << location.line();
-          if (update.state != GRPC_CHANNEL_READY) return false;
-          // Get enough picks to round-robin num_iterations times across all
-          // expected addresses.
-          auto picks = GetCompletePicks(update.picker.get(), num_picks,
-                                        call_attributes, nullptr, location);
-          EXPECT_TRUE(picks.has_value())
-              << location.file() << ":" << location.line();
-          if (!picks.has_value()) return false;
-          LOG(INFO) << "PICKS: " << absl::StrJoin(*picks, " ");
-          // If the picks still match the old list, then keep going.
-          if (PicksAreRoundRobin(old_addresses, *picks)) return true;
-          // Otherwise, the picks should match the new list.
-          bool matches = PicksAreRoundRobin(new_addresses, *picks);
-          EXPECT_TRUE(matches)
-              << "Expected: " << absl::StrJoin(new_addresses, ", ")
-              << "\nActual: " << absl::StrJoin(*picks, ", ") << "\nat "
-              << location.file() << ":" << location.line();
-          if (matches) {
-            retval = std::move(update.picker);
-          }
-          return false;  // Stop.
-        },
-        location);
-    LOG(INFO) << "done waiting for expected RR addresses";
-    return retval;
-  }
-
   // Expects a state update for the specified state and status, and then
   // expects the resulting picker to queue picks.
   bool ExpectStateAndQueuingPicker(
@@ -1132,6 +1093,51 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       }
     }
     return results;
+  }
+
+  // Waits for the round_robin policy to start using an updated address list.
+  // There can be any number of READY updates where the picker is still using
+  // the old list followed by one READY update where the picker is using the
+  // new list.  Returns a picker if the reported states match expectations.
+  RefCountedPtr<LoadBalancingPolicy::SubchannelPicker>
+  WaitForRoundRobinListChange(absl::Span<const absl::string_view> old_addresses,
+                              absl::Span<const absl::string_view> new_addresses,
+                              const CallAttributes& call_attributes = {},
+                              size_t num_iterations = 3,
+                              SourceLocation location = SourceLocation()) {
+    LOG(INFO) << "Waiting for expected RR addresses...";
+    RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> retval;
+    size_t num_picks =
+        std::max(new_addresses.size(), old_addresses.size()) * num_iterations;
+    WaitForStateUpdate(
+        [&](FakeHelper::StateUpdate update) {
+          EXPECT_EQ(update.state, GRPC_CHANNEL_READY)
+              << location.file() << ":" << location.line();
+          if (update.state != GRPC_CHANNEL_READY) return false;
+          // Get enough picks to round-robin num_iterations times across all
+          // expected addresses.
+          auto picks = GetCompletePicks(update.picker.get(), num_picks,
+                                        call_attributes, nullptr, location);
+          EXPECT_TRUE(picks.has_value())
+              << location.file() << ":" << location.line();
+          if (!picks.has_value()) return false;
+          LOG(INFO) << "PICKS: " << absl::StrJoin(*picks, " ");
+          // If the picks still match the old list, then keep going.
+          if (PicksAreRoundRobin(old_addresses, *picks)) return true;
+          // Otherwise, the picks should match the new list.
+          bool matches = PicksAreRoundRobin(new_addresses, *picks);
+          EXPECT_TRUE(matches)
+              << "Expected: " << absl::StrJoin(new_addresses, ", ")
+              << "\nActual: " << absl::StrJoin(*picks, ", ") << "\nat "
+              << location.file() << ":" << location.line();
+          if (matches) {
+            retval = std::move(update.picker);
+          }
+          return false;  // Stop.
+        },
+        location);
+    LOG(INFO) << "done waiting for expected RR addresses";
+    return retval;
   }
 
   // Returns true if the list of actual pick result addresses matches the
@@ -1443,6 +1449,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group_;
   std::string target_ = "dns:server.example.com";
   std::string authority_ = "server.example.com";
+  RequestConnectionCallback request_connection_callback_;
 };
 
 }  // namespace testing
