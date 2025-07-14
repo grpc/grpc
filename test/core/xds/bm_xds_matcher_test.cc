@@ -55,7 +55,6 @@ class TestPathInput : public XdsMatcher::InputValue<absl::string_view> {
     const auto& test_context = DownCast<const TestMatchContext&>(context);
     return test_context.path();
   }
-  // Dummy always return true
   bool Equals(
       const XdsMatcher::InputValue<absl::string_view>& other) const override {
     return true;
