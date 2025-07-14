@@ -4400,7 +4400,6 @@ grpc_cc_library(
         "absl/cleanup",
         "absl/log:check",
         "absl/log:log",
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4415,7 +4414,6 @@ grpc_cc_library(
     visibility = ["//bazel:xds_client_core"],
     deps = [
         "backoff",
-        "call_tracer",
         "debug_location",
         "endpoint_addresses",
         "envoy_admin_upb",
@@ -4440,7 +4438,6 @@ grpc_cc_library(
         "ref_counted_ptr",
         "uri",
         "work_serializer",
-        "//src/core:default_event_engine",
         "//src/core:down_cast",
         "//src/core:dual_ref_counted",
         "//src/core:env",
