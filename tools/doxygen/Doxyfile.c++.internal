@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.74.0-dev
+PROJECT_NUMBER         = 1.75.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -2263,6 +2263,7 @@ src/core/handshaker/proxy_mapper.h \
 src/core/handshaker/proxy_mapper_registry.cc \
 src/core/handshaker/proxy_mapper_registry.h \
 src/core/handshaker/security/legacy_secure_endpoint.cc \
+src/core/handshaker/security/pipelined_secure_endpoint.cc \
 src/core/handshaker/security/secure_endpoint.cc \
 src/core/handshaker/security/secure_endpoint.h \
 src/core/handshaker/security/security_handshaker.cc \
@@ -2826,6 +2827,7 @@ src/core/telemetry/tcp_tracer.cc \
 src/core/telemetry/tcp_tracer.h \
 src/core/transport/auth_context.cc \
 src/core/transport/auth_context.h \
+src/core/transport/auth_context_comparator_registry.h \
 src/core/transport/endpoint_transport.h \
 src/core/transport/endpoint_transport_client_channel_factory.cc \
 src/core/transport/endpoint_transport_client_channel_factory.h \

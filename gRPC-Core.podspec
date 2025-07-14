@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.74.0-dev'
+  version = '1.75.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -1412,6 +1412,7 @@ Pod::Spec.new do |s|
                       'src/core/handshaker/proxy_mapper_registry.cc',
                       'src/core/handshaker/proxy_mapper_registry.h',
                       'src/core/handshaker/security/legacy_secure_endpoint.cc',
+                      'src/core/handshaker/security/pipelined_secure_endpoint.cc',
                       'src/core/handshaker/security/secure_endpoint.cc',
                       'src/core/handshaker/security/secure_endpoint.h',
                       'src/core/handshaker/security/security_handshaker.cc',
@@ -1975,6 +1976,7 @@ Pod::Spec.new do |s|
                       'src/core/telemetry/tcp_tracer.h',
                       'src/core/transport/auth_context.cc',
                       'src/core/transport/auth_context.h',
+                      'src/core/transport/auth_context_comparator_registry.h',
                       'src/core/transport/endpoint_transport.h',
                       'src/core/transport/endpoint_transport_client_channel_factory.cc',
                       'src/core/transport/endpoint_transport_client_channel_factory.h',
@@ -3496,6 +3498,7 @@ Pod::Spec.new do |s|
                               'src/core/telemetry/stats_data.h',
                               'src/core/telemetry/tcp_tracer.h',
                               'src/core/transport/auth_context.h',
+                              'src/core/transport/auth_context_comparator_registry.h',
                               'src/core/transport/endpoint_transport.h',
                               'src/core/transport/endpoint_transport_client_channel_factory.h',
                               'src/core/tsi/alts/crypt/gsec.h',
