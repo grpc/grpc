@@ -33,7 +33,6 @@ namespace {
 
 // Send more pings than server allows to trigger server's GOAWAY.
 CORE_END2END_TEST(RetryHttp2Tests, BadPing) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   InitClient(ChannelArgs()
                  .Set(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA, 0)
                  .Set(GRPC_ARG_HTTP2_BDP_PROBE, 0));

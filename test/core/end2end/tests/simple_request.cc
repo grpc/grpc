@@ -89,13 +89,9 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
             expected_calls);
 }
 
-CORE_END2END_TEST(CoreEnd2endTests, SimpleRequest) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
-  SimpleRequestBody(*this);
-}
+CORE_END2END_TEST(CoreEnd2endTests, SimpleRequest) { SimpleRequestBody(*this); }
 
 CORE_END2END_TEST(CoreEnd2endTests, SimpleRequest10) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   for (int i = 0; i < 10; i++) {
     SimpleRequestBody(*this);
   }

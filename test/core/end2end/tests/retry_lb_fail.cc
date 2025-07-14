@@ -39,8 +39,7 @@ std::atomic<int> g_num_lb_picks;
 // - on first attempt, LB policy fails with ABORTED before application
 //   starts recv_trailing_metadata op
 CORE_END2END_TEST(RetryTests, RetryLbFail) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
-  SKIP_IF_V3();            // Not working yet
+  SKIP_IF_V3();  // Not working yet
   CoreConfiguration::RegisterEphemeralBuilder(
       [](CoreConfiguration::Builder* builder) {
         RegisterFailLoadBalancingPolicy(

@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 48.0.0
+PROJECT_NUMBER         = 49.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -816,6 +816,7 @@ include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
 include/grpc/compression.h \
+include/grpc/create_channel_from_endpoint.h \
 include/grpc/credentials.h \
 include/grpc/event_engine/endpoint_config.h \
 include/grpc/event_engine/event_engine.h \
@@ -2066,6 +2067,7 @@ src/core/handshaker/proxy_mapper.h \
 src/core/handshaker/proxy_mapper_registry.cc \
 src/core/handshaker/proxy_mapper_registry.h \
 src/core/handshaker/security/legacy_secure_endpoint.cc \
+src/core/handshaker/security/pipelined_secure_endpoint.cc \
 src/core/handshaker/security/secure_endpoint.cc \
 src/core/handshaker/security/secure_endpoint.h \
 src/core/handshaker/security/security_handshaker.cc \
@@ -2119,6 +2121,8 @@ src/core/lib/event_engine/default_event_engine.cc \
 src/core/lib/event_engine/default_event_engine.h \
 src/core/lib/event_engine/default_event_engine_factory.cc \
 src/core/lib/event_engine/default_event_engine_factory.h \
+src/core/lib/event_engine/endpoint_channel_arg_wrapper.cc \
+src/core/lib/event_engine/endpoint_channel_arg_wrapper.h \
 src/core/lib/event_engine/event_engine.cc \
 src/core/lib/event_engine/event_engine_context.h \
 src/core/lib/event_engine/extensions/blocking_dns.h \
@@ -2635,6 +2639,7 @@ src/core/telemetry/tcp_tracer.cc \
 src/core/telemetry/tcp_tracer.h \
 src/core/transport/auth_context.cc \
 src/core/transport/auth_context.h \
+src/core/transport/auth_context_comparator_registry.h \
 src/core/transport/endpoint_transport.h \
 src/core/transport/endpoint_transport_client_channel_factory.cc \
 src/core/transport/endpoint_transport_client_channel_factory.h \

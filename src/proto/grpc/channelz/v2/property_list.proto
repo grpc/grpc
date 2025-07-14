@@ -30,13 +30,17 @@ syntax = "proto3";
 package grpc.channelz.v2;
 
 import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
-import "google/protobuf/duration.proto";
 
 // Key/value store for generic channelz properties
 message PropertyList {
-  map<string, PropertyValue> properties = 1;
+  message Element {
+    string key = 1;
+    PropertyValue value = 2;
+  }
+  repeated Element properties = 1;
 }
 
 // Two-dimensional grid of channelz properties.

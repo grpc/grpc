@@ -35,7 +35,6 @@ namespace {
 // - first attempt receives initial metadata before trailing metadata,
 //   so no retry is done even though status was ABORTED
 CORE_END2END_TEST(RetryTests, RetryRecvInitialMetadata) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
