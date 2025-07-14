@@ -12,7 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
+import os
 import unittest
+
+# Install typeguard BEFORE any imports
+if os.environ.get("TYPEGUARD_ENABLED") == "1":
+    print("Installing typeguard import hooks...")
+    from typeguard import install_import_hook
+    install_import_hook('grpc.aio')
+    install_import_hook('grpc.aio._channel')
+    print("Typeguard import hooks installed successfully")
 
 
 class TestInit(unittest.TestCase):

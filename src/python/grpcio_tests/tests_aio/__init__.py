@@ -14,11 +14,6 @@
 
 from __future__ import absolute_import
 
-import os
-if os.environ.get("TYPEGUARD_ENABLED") == "1":
-    from typeguard import install_import_hook
-    install_import_hook('grpc.aio')
-
 from tests import _loader
 from tests import _runner
 
