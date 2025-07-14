@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
 
 package(
@@ -82,6 +83,7 @@ _FLAKY_TESTS = [
             "//src/python/grpcio/grpc:grpcio",
             "//src/python/grpcio_tests/tests/unit:resources",
             "//src/python/grpcio_tests/tests/unit/framework/common",
+            requirement("typeguard"),
         ],
     )
     for test_file_name in GRPC_ASYNC_TESTS
