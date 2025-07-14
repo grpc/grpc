@@ -35,11 +35,11 @@ namespace grpc_core {
 
 class Http2SettingsManager {
  public:
-  grpc_core::Http2Settings& mutable_local() { return local_; }
-  const grpc_core::Http2Settings& local() const { return local_; }
-  const grpc_core::Http2Settings& acked() const { return acked_; }
-  grpc_core::Http2Settings& mutable_peer() { return peer_; }
-  const grpc_core::Http2Settings& peer() const { return peer_; }
+  Http2Settings& mutable_local() { return local_; }
+  const Http2Settings& local() const { return local_; }
+  const Http2Settings& acked() const { return acked_; }
+  Http2Settings& mutable_peer() { return peer_; }
+  const Http2Settings& peer() const { return peer_; }
 
   channelz::PropertyGrid ChannelzProperties() const {
     return channelz::PropertyGrid()
