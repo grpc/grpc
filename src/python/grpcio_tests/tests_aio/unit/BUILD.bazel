@@ -17,6 +17,7 @@ load("@rules_python//python:defs.bzl", "py_library", "py_test")
 package(
     default_testonly = 1,
     default_visibility = ["//visibility:public"],
+    test_env = {"TYPEGUARD_ENABLED": "1"},
 )
 
 GRPC_ASYNC_TESTS = glob(["*_test.py"])
