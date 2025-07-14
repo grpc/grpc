@@ -39,46 +39,53 @@ class Center : public RefCounted<Center<T>> {
   // Returns a promise that resolves when the data is enqueued.
   // It is expected that calls to this function are not done in parallel. At
   // most one call to this function should be pending at a time.
-  Poll<StatusFlag> Enqueue(T data, uint32_t tokens) {
-    // TODO(akshitpatel) : [PH2][P0] : Add a check to ensure that this function
-    // is not called in parallel.
-    MutexLock lock(&mu_);
-    GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueueing data. Data tokens: " << tokens;
-    if (!queue_.empty() &&
-        tokens_consumed_ >
-            ((max_tokens_ >= tokens) ? max_tokens_ - tokens : 0)) {
-      GRPC_STREAM_DATA_QUEUE_DEBUG
-          << "Token threshold reached. Data tokens: " << tokens
-          << " Tokens consumed: " << tokens_consumed_
-          << " Max tokens: " << max_tokens_;
-      waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-      return Pending{};
-    }
+  auto Enqueue(T data, uint32_t tokens) {
+    return [self = this->Ref(), tokens,
+            data = std::move(data)]() mutable -> Poll<absl::Status> {
+      MutexLock lock(&self->mu_);
+      GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueueing data. Data tokens: "
+                                   << tokens;
+      // If tokens_consumed_ is 0 or the new tokens will fit within max_tokens_,
+      // then allow the enqueue to go through. Otherwise, return pending. Here,
+      // we are using tokens_consumed over queue_.empty() because there can
+      // be enqueues with tokens = 0.
+      if (self->tokens_consumed_ > 0 &&
+          self->tokens_consumed_ > ((self->max_tokens_ >= tokens)
+                                        ? self->max_tokens_ - tokens
+                                        : 0)) {
+        GRPC_STREAM_DATA_QUEUE_DEBUG
+            << "Token threshold reached. Data tokens: " << tokens
+            << " Tokens consumed: " << self->tokens_consumed_
+            << " Max tokens: " << self->max_tokens_;
+        self->waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+        return Pending{};
+      }
 
-    tokens_consumed_ += tokens;
-    queue_.emplace(Entry{std::move(data), tokens});
-    GRPC_STREAM_DATA_QUEUE_DEBUG
-        << "Enqueue successful. Data tokens: " << tokens
-        << " Current tokens consumed: " << tokens_consumed_;
-    return Success{};
+      self->tokens_consumed_ += tokens;
+      self->queue_.emplace(Entry{std::move(data), tokens});
+      GRPC_STREAM_DATA_QUEUE_DEBUG
+          << "Enqueue successful. Data tokens: " << tokens
+          << " Current tokens consumed: " << self->tokens_consumed_;
+      return absl::OkStatus();
+    };
   }
 
   // Sync function to dequeue the next entry. Returns nullopt if the queue is
   // empty or if the front of the queue has more tokens than max_tokens.
-  // When allow_partial_dequeue parameter is set to true, it allows an item to
-  // be dequeued even if its tokens cost is greater than max_tokens. It does not
+  // When allow_oversized_dequeue parameter is set to true, it allows an item to
+  // be dequeued even if its token cost is greater than max_tokens. It does not
   // cause the item itself to be partially dequeued; the entire item is always
   // returned.
-  std::optional<T> Dequeue(uint32_t max_tokens, bool allow_partial_dequeue) {
+  std::optional<T> Dequeue(uint32_t max_tokens, bool allow_oversized_dequeue) {
     ReleasableMutexLock lock(&mu_);
     if (queue_.empty() ||
-        (queue_.front().tokens > max_tokens && !allow_partial_dequeue)) {
+        (queue_.front().tokens > max_tokens && !allow_oversized_dequeue)) {
       GRPC_STREAM_DATA_QUEUE_DEBUG
           << "Dequeueing data. Queue size: " << queue_.size()
           << " Max tokens: " << max_tokens << " Front tokens: "
           << (!queue_.empty() ? std::to_string(queue_.front().tokens)
                               : std::string("NA"))
-          << " Allow partial dequeue: " << allow_partial_dequeue;
+          << " Allow oversized dequeue: " << allow_oversized_dequeue;
       return std::nullopt;
     }
 
@@ -101,16 +108,7 @@ class Center : public RefCounted<Center<T>> {
 
   bool IsEmpty() {
     MutexLock lock(&mu_);
-    return queue_.empty();
-  }
-
-  std::optional<uint32_t> PeekTokens() {
-    MutexLock lock(&mu_);
-    if (queue_.empty()) {
-      return std::nullopt;
-    }
-
-    return queue_.front().tokens;
+    return (queue_.empty() && tokens_consumed_ == 0);
   }
 
  private:
@@ -137,21 +135,20 @@ class SimpleQueue {
   SimpleQueue& operator=(const SimpleQueue&) = delete;
 
   auto Enqueue(T data, uint32_t tokens) {
-    return [center = center_, tokens, data = std::move(data)] {
-      return center->Enqueue(std::move(data), tokens);
-    };
+    return center_->Enqueue(std::move(data), tokens);
   }
 
-  std::optional<T> Dequeue(uint32_t max_tokens, bool allow_partial_dequeue) {
-    return center_->Dequeue(max_tokens, allow_partial_dequeue);
+  std::optional<T> Dequeue(uint32_t max_tokens, bool allow_oversized_dequeue) {
+    return center_->Dequeue(max_tokens, allow_oversized_dequeue);
   }
 
+  // Dequeues the next entry immediately ignoring the tokens. If the queue is
+  // empty, returns nullopt.
   std::optional<T> ImmediateDequeue() {
     return center_->Dequeue(std::numeric_limits<uint32_t>::max(), true);
   }
 
   bool TestOnlyIsEmpty() { return center_->IsEmpty(); }
-  uint32_t TestOnlyPeekTokens() { return center_->PeekTokens(); }
 
  private:
   RefCountedPtr<Center<T>> center_;
@@ -167,8 +164,6 @@ class StreamDataQueue {
   StreamDataQueue& operator=(const StreamDataQueue&) = delete;
 
  private:
-  GrpcMessageDisassembler disassembler;
-  SimpleQueue<MessageHandle> msg_queue_;
 };
 
 }  // namespace http2
