@@ -28,7 +28,6 @@
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/util/http_client/httpcli.h"
-#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
@@ -138,8 +137,6 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsGcpAuthnEnd2endTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
 TEST_P(XdsGcpAuthnEnd2endTest, Basic) {
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_GCP_AUTHENTICATION_FILTER");
   // Construct auth token.
   g_audience = kAudience;
   std::string token = MakeToken(grpc_core::Timestamp::InfFuture());
@@ -166,8 +163,6 @@ TEST_P(XdsGcpAuthnEnd2endTest, Basic) {
 }
 
 TEST_P(XdsGcpAuthnEnd2endTest, NoOpWhenClusterHasNoAudience) {
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_GCP_AUTHENTICATION_FILTER");
   // Set xDS resources.
   CreateAndStartBackends(1, /*xds_enabled=*/false,
                          CreateTlsServerCredentials());
@@ -188,8 +183,6 @@ TEST_P(XdsGcpAuthnEnd2endTest, NoOpWhenClusterHasNoAudience) {
 }
 
 TEST_P(XdsGcpAuthnEnd2endTest, CacheRetainedAcrossXdsUpdates) {
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_GCP_AUTHENTICATION_FILTER");
   // Construct auth token.
   g_audience = kAudience;
   std::string token = MakeToken(grpc_core::Timestamp::InfFuture());
@@ -243,31 +236,6 @@ TEST_P(XdsGcpAuthnEnd2endTest, CacheRetainedAcrossXdsUpdates) {
   CheckRpcSendOk(DEBUG_LOCATION);
   // Make sure we didn't re-fetch the token.
   EXPECT_EQ(g_num_token_fetches.load(), 1);
-}
-
-TEST_P(XdsGcpAuthnEnd2endTest, FilterIgnoredWhenEnvVarNotSet) {
-  // Construct auth token.
-  g_audience = kAudience;
-  std::string token = MakeToken(grpc_core::Timestamp::InfFuture());
-  g_token = token.c_str();
-  // Set xDS resources.
-  CreateAndStartBackends(1, /*xds_enabled=*/false,
-                         CreateTlsServerCredentials());
-  SetListenerAndRouteConfiguration(
-      balancer_.get(), BuildListenerWithGcpAuthnFilter(/*optional=*/true),
-      default_route_config_);
-  balancer_->ads_service()->SetCdsResource(BuildClusterWithAudience(kAudience));
-  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
-  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Send an RPC and check that it does not have an auth token.
-  std::multimap<std::string, std::string> server_initial_metadata;
-  Status status = SendRpc(RpcOptions().set_echo_metadata_initially(true),
-                          /*response=*/nullptr, &server_initial_metadata);
-  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
-                           << " message=" << status.error_message();
-  EXPECT_THAT(
-      server_initial_metadata,
-      ::testing::Not(::testing::Contains(::testing::Key("authorization"))));
 }
 
 }  // namespace

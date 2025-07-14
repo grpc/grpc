@@ -72,6 +72,7 @@ CC_FILES=[
     'third_party/abseil-cpp/absl/base/internal/sysinfo.cc',
     'third_party/abseil-cpp/absl/base/internal/thread_identity.cc',
     'third_party/abseil-cpp/absl/base/internal/throw_delegate.cc',
+    'third_party/abseil-cpp/absl/base/internal/tracing.cc',
     'third_party/abseil-cpp/absl/base/internal/unscaledcycleclock.cc',
     'third_party/abseil-cpp/absl/base/log_severity.cc',
     'third_party/abseil-cpp/absl/container/internal/hashtablez_sampler.cc',
@@ -93,6 +94,7 @@ CC_FILES=[
     'third_party/abseil-cpp/absl/debugging/internal/examine_stack.cc',
     'third_party/abseil-cpp/absl/debugging/internal/utf8_for_code_point.cc',
     'third_party/abseil-cpp/absl/debugging/internal/vdso_support.cc',
+    'third_party/abseil-cpp/absl/debugging/leak_check.cc',
     'third_party/abseil-cpp/absl/debugging/stacktrace.cc',
     'third_party/abseil-cpp/absl/debugging/symbolize.cc',
     'third_party/abseil-cpp/absl/flags/commandlineflag.cc',
@@ -116,14 +118,14 @@ CC_FILES=[
     'third_party/abseil-cpp/absl/log/internal/log_sink_set.cc',
     'third_party/abseil-cpp/absl/log/internal/nullguard.cc',
     'third_party/abseil-cpp/absl/log/internal/proto.cc',
+    'third_party/abseil-cpp/absl/log/internal/structured_proto.cc',
     'third_party/abseil-cpp/absl/log/internal/vlog_config.cc',
-    'third_party/abseil-cpp/absl/log/log_entry.cc',
     'third_party/abseil-cpp/absl/log/log_sink.cc',
     'third_party/abseil-cpp/absl/numeric/int128.cc',
     'third_party/abseil-cpp/absl/profiling/internal/exponential_biased.cc',
     'third_party/abseil-cpp/absl/random/discrete_distribution.cc',
     'third_party/abseil-cpp/absl/random/gaussian_distribution.cc',
-    'third_party/abseil-cpp/absl/random/internal/pool_urbg.cc',
+    'third_party/abseil-cpp/absl/random/internal/entropy_pool.cc',
     'third_party/abseil-cpp/absl/random/internal/randen.cc',
     'third_party/abseil-cpp/absl/random/internal/randen_detect.cc',
     'third_party/abseil-cpp/absl/random/internal/randen_hwaes.cc',
@@ -140,7 +142,6 @@ CC_FILES=[
     'third_party/abseil-cpp/absl/strings/charconv.cc',
     'third_party/abseil-cpp/absl/strings/cord.cc',
     'third_party/abseil-cpp/absl/strings/cord_analysis.cc',
-    'third_party/abseil-cpp/absl/strings/cord_buffer.cc',
     'third_party/abseil-cpp/absl/strings/escaping.cc',
     'third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc',
     'third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc',
@@ -200,11 +201,12 @@ CC_FILES=[
     'third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_lookup.cc',
     'third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_posix.cc',
     'third_party/abseil-cpp/absl/time/internal/cctz/src/zone_info_source.cc',
-    'third_party/abseil-cpp/absl/time/time.cc',
-    'third_party/abseil-cpp/absl/types/bad_optional_access.cc',
-    'third_party/abseil-cpp/absl/types/bad_variant_access.cc'
+    'third_party/abseil-cpp/absl/time/time.cc'
 ]
 
 CC_INCLUDES=[
- 'third_party/abseil-cpp'
+    'third_party/abseil-cpp',
+    'grpc_root/src/core/ext/upb-gen',
+    'grpc_root/src/core/ext/upbdefs-gen',
+    'third_party/protobuf'
 ]

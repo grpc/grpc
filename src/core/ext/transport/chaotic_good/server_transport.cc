@@ -30,6 +30,7 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
@@ -140,7 +141,7 @@ auto ChaoticGoodServerTransport::StreamDispatch::SendCallInitialMetadataAndBody(
               frame.stream_id = stream_id;
               return TrySeq(
                   outgoing_frames_.Send(
-                      OutgoingFrame{std::move(frame), call_tracer}),
+                      OutgoingFrame{std::move(frame), call_tracer}, 1),
                   SendCallBody(stream_id, call_initiator, call_tracer));
             },
             []() { return StatusFlag(true); });
@@ -171,7 +172,7 @@ auto ChaoticGoodServerTransport::StreamDispatch::CallOutboundLoop(
             frame.body = ServerMetadataProtoFromGrpc(*md);
             frame.stream_id = stream_id;
             return outgoing_frames.Send(
-                OutgoingFrame{std::move(frame), call_tracer});
+                OutgoingFrame{std::move(frame), call_tracer}, 1);
           }));
 }
 
@@ -268,7 +269,8 @@ ChaoticGoodServerTransport::StreamDispatch::StreamDispatch(
     const ChannelArgs& args, FrameTransport* frame_transport,
     MessageChunker message_chunker,
     RefCountedPtr<UnstartedCallDestination> call_destination)
-    : ctx_(frame_transport->ctx()),
+    : channelz::DataSource(frame_transport->ctx()->socket_node),
+      ctx_(frame_transport->ctx()),
       call_arena_allocator_(MakeRefCounted<CallArenaAllocator>(
           args.GetObject<ResourceQuota>()
               ->memory_quota()
@@ -282,9 +284,20 @@ ChaoticGoodServerTransport::StreamDispatch::StreamDispatch(
       ctx_->event_engine.get());
   party_ = Party::Make(std::move(party_arena));
   incoming_frame_spawner_ = party_->MakeSpawnSerializer();
-  MpscReceiver<OutgoingFrame> outgoing_pipe(8);
+  MpscReceiver<OutgoingFrame> outgoing_pipe(256 * 1024 * 1024);
   outgoing_frames_ = outgoing_pipe.MakeSender();
   frame_transport->Start(party_.get(), std::move(outgoing_pipe), Ref());
+  SourceConstructed();
+}
+
+void ChaoticGoodServerTransport::StreamDispatch::AddData(
+    channelz::DataSink sink) {
+  party_->ExportToChannelz("transport_party", sink);
+  MutexLock lock(&mu_);
+  sink.AddData("transport_state",
+               channelz::PropertyList()
+                   .Set("stream_map_size", stream_map_.size())
+                   .Set("last_seen_new_stream_id", last_seen_new_stream_id_));
 }
 
 void ChaoticGoodServerTransport::SetCallDestination(

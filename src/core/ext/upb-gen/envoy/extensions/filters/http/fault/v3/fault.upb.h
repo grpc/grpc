@@ -88,6 +88,10 @@ UPB_INLINE envoy_extensions_filters_http_fault_v3_FaultAbort_error_type_oneofcas
   return (envoy_extensions_filters_http_fault_v3_FaultAbort_error_type_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_extensions_filters_http_fault_v3_FaultAbort_clear_error_type(envoy_extensions_filters_http_fault_v3_FaultAbort* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__extensions__filters__http__fault__v3__FaultAbort_msg_init, &field);
+}
 UPB_INLINE void envoy_extensions_filters_http_fault_v3_FaultAbort_clear_http_status(envoy_extensions_filters_http_fault_v3_FaultAbort* msg) {
   const upb_MiniTableField field = {2, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);

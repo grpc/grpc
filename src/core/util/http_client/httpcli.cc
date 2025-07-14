@@ -40,6 +40,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -175,7 +176,10 @@ HttpRequest::HttpRequest(
       pollent_(pollent),
       pollset_set_(grpc_pollset_set_create()),
       test_only_generate_response_(std::move(test_only_generate_response)),
-      use_event_engine_dns_resolver_(IsEventEngineDnsNonClientChannelEnabled()),
+      use_event_engine_dns_resolver_(
+          IsEventEngineDnsNonClientChannelEnabled() &&
+          !grpc_event_engine::experimental::
+              EventEngineExperimentDisabledForPython()),
       resolver_(!use_event_engine_dns_resolver_ ? GetDNSResolver() : nullptr),
       ee_resolver_(
           use_event_engine_dns_resolver_
@@ -196,8 +200,10 @@ HttpRequest::HttpRequest(
   GRPC_CLOSURE_INIT(&continue_done_write_after_schedule_on_exec_ctx_,
                     ContinueDoneWriteAfterScheduleOnExecCtx, this,
                     grpc_schedule_on_exec_ctx);
-  CHECK(pollent);
-  grpc_polling_entity_add_to_pollset_set(pollent, pollset_set_);
+  if (!grpc_event_engine::experimental::UsePollsetAlternative()) {
+    CHECK(pollent);
+    grpc_polling_entity_add_to_pollset_set(pollent, pollset_set_);
+  }
 }
 
 HttpRequest::~HttpRequest() {
@@ -329,8 +335,9 @@ void HttpRequest::StartWrite() {
   CSliceRef(request_text_);
   grpc_slice_buffer_add(&outgoing_, request_text_);
   Ref().release();  // ref held by pending write
-  grpc_endpoint_write(ep_.get(), &outgoing_, &done_write_, nullptr,
-                      /*max_frame_size=*/INT_MAX);
+  grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args;
+  args.set_max_frame_size(INT_MAX);
+  grpc_endpoint_write(ep_.get(), &outgoing_, &done_write_, std::move(args));
 }
 
 void HttpRequest::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {

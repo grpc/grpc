@@ -27,6 +27,7 @@
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/util/json/json_writer.h"
 #include "src/core/util/latent_see.h"
 #include "src/core/util/sync.h"
 
@@ -154,6 +155,7 @@ Party::Participant::~Participant() {
 // Party::SpawnSerializer
 
 bool Party::SpawnSerializer::PollParticipantPromise() {
+  GRPC_LATENT_SEE_INNER_SCOPE("SpawnSerializer::PollParticipantPromise");
   if (active_ == nullptr) {
     active_ = next_.Pop().value_or(nullptr);
   }
@@ -186,6 +188,50 @@ void Party::SpawnSerializer::Destroy() {
 // Party
 
 Party::~Party() {}
+
+void Party::ToJson(absl::AnyInvocable<void(Json::Object)> f) {
+  Spawn(
+      "get-json",
+      [f = std::move(f), self = Ref()]() mutable {
+        return [f = std::move(f), self]() mutable {
+          f(self->ChannelzPropertiesLocked().TakeJsonObject());
+          return absl::OkStatus();
+        };
+      },
+      [](absl::Status) {});
+}
+
+void Party::ExportToChannelz(std::string name, channelz::DataSink sink) {
+  Spawn(
+      "export-to-channelz",
+      [name = std::move(name), sink = std::move(sink), self = Ref()]() mutable {
+        sink.AddData(std::move(name), self->ChannelzPropertiesLocked());
+        return absl::OkStatus();
+      },
+      [](absl::Status) {});
+}
+
+channelz::PropertyList Party::ChannelzPropertiesLocked() {
+  return channelz::PropertyList()
+      .Set("ref_count", state_.load(std::memory_order_relaxed) >> kRefShift)
+      .Set("allocated_participants",
+           (state_.load(std::memory_order_relaxed) & kAllocatedMask) >>
+               kAllocatedShift)
+      .Set("wakeup_mask", wakeup_mask_ & kWakeupMask)
+      .Set("locked", (state_.load(std::memory_order_relaxed) & kLocked) != 0)
+      .Set("local_wakeup_mask", wakeup_mask_)
+      .Set("currently_polling", currently_polling_)
+      .Set("participants", [this]() {
+        channelz::PropertyTable table;
+        for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
+          if (auto* p = participants_[i].load(std::memory_order_acquire);
+              p != nullptr) {
+            table.AppendRow(p->ChannelzProperties());
+          }
+        }
+        return table;
+      }());
+}
 
 void Party::CancelRemainingParticipants() {
   uint64_t prev_state = state_.load(std::memory_order_relaxed);
@@ -260,6 +306,7 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state) {
       g_run_state = this;
       do {
         GRPC_LATENT_SEE_INNER_SCOPE("run_one_party");
+        CHECK(first.party != nullptr);
         first.party->RunPartyAndUnref(first.prev_state);
         first = std::exchange(next, PartyWakeup{});
       } while (first.party != nullptr);
@@ -290,10 +337,12 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state) {
       // gets held for a really long time.
       auto wakeup =
           std::exchange(g_run_state->next, PartyWakeup{party, prev_state});
-      auto arena = party->arena_.get();
+      auto arena = wakeup.party->arena_.get();
+      CHECK(arena != nullptr);
       auto* event_engine =
           arena->GetContext<grpc_event_engine::experimental::EventEngine>();
       CHECK(event_engine != nullptr) << "; " << GRPC_DUMP_ARGS(party, arena);
+      GRPC_LATENT_SEE_INNER_SCOPE("offload_one_party");
       event_engine->Run([wakeup]() {
         GRPC_LATENT_SEE_PARENT_SCOPE("Party::RunLocked offload");
         ExecCtx exec_ctx;

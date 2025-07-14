@@ -26,9 +26,7 @@ typedef struct grpc_lookup_v1_NameMatcher { upb_Message UPB_PRIVATE(base); } grp
 typedef struct grpc_lookup_v1_GrpcKeyBuilder { upb_Message UPB_PRIVATE(base); } grpc_lookup_v1_GrpcKeyBuilder;
 typedef struct grpc_lookup_v1_GrpcKeyBuilder_Name { upb_Message UPB_PRIVATE(base); } grpc_lookup_v1_GrpcKeyBuilder_Name;
 typedef struct grpc_lookup_v1_GrpcKeyBuilder_ExtraKeys { upb_Message UPB_PRIVATE(base); } grpc_lookup_v1_GrpcKeyBuilder_ExtraKeys;
-typedef struct grpc_lookup_v1_GrpcKeyBuilder_ConstantKeysEntry { upb_Message UPB_PRIVATE(base); } grpc_lookup_v1_GrpcKeyBuilder_ConstantKeysEntry;
 typedef struct grpc_lookup_v1_HttpKeyBuilder { upb_Message UPB_PRIVATE(base); } grpc_lookup_v1_HttpKeyBuilder;
-typedef struct grpc_lookup_v1_HttpKeyBuilder_ConstantKeysEntry { upb_Message UPB_PRIVATE(base); } grpc_lookup_v1_HttpKeyBuilder_ConstantKeysEntry;
 typedef struct grpc_lookup_v1_RouteLookupConfig { upb_Message UPB_PRIVATE(base); } grpc_lookup_v1_RouteLookupConfig;
 typedef struct grpc_lookup_v1_RouteLookupClusterSpecifier { upb_Message UPB_PRIVATE(base); } grpc_lookup_v1_RouteLookupClusterSpecifier;
 struct google_protobuf_Duration;
@@ -582,23 +580,6 @@ UPB_INLINE void grpc_lookup_v1_GrpcKeyBuilder_ExtraKeys_set_method(grpc_lookup_v
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
-/* grpc.lookup.v1.GrpcKeyBuilder.ConstantKeysEntry */
-
-UPB_INLINE upb_StringView grpc_lookup_v1_GrpcKeyBuilder_ConstantKeysEntry_key(const grpc_lookup_v1_GrpcKeyBuilder_ConstantKeysEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_key(msg, &ret, 0);
-  return ret;
-}
-UPB_INLINE upb_StringView grpc_lookup_v1_GrpcKeyBuilder_ConstantKeysEntry_value(const grpc_lookup_v1_GrpcKeyBuilder_ConstantKeysEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_value(msg, &ret, 0);
-  return ret;
-}
-
-UPB_INLINE void grpc_lookup_v1_GrpcKeyBuilder_ConstantKeysEntry_set_value(grpc_lookup_v1_GrpcKeyBuilder_ConstantKeysEntry *msg, upb_StringView value) {
-  _upb_msg_map_set_value(msg, &value, 0);
-}
-
 /* grpc.lookup.v1.HttpKeyBuilder */
 
 UPB_INLINE grpc_lookup_v1_HttpKeyBuilder* grpc_lookup_v1_HttpKeyBuilder_new(upb_Arena* arena) {
@@ -948,23 +929,6 @@ UPB_INLINE bool grpc_lookup_v1_HttpKeyBuilder_constant_keys_delete(grpc_lookup_v
   upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
   return _upb_Map_Delete(map, &key, 0, NULL);
-}
-
-/* grpc.lookup.v1.HttpKeyBuilder.ConstantKeysEntry */
-
-UPB_INLINE upb_StringView grpc_lookup_v1_HttpKeyBuilder_ConstantKeysEntry_key(const grpc_lookup_v1_HttpKeyBuilder_ConstantKeysEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_key(msg, &ret, 0);
-  return ret;
-}
-UPB_INLINE upb_StringView grpc_lookup_v1_HttpKeyBuilder_ConstantKeysEntry_value(const grpc_lookup_v1_HttpKeyBuilder_ConstantKeysEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_value(msg, &ret, 0);
-  return ret;
-}
-
-UPB_INLINE void grpc_lookup_v1_HttpKeyBuilder_ConstantKeysEntry_set_value(grpc_lookup_v1_HttpKeyBuilder_ConstantKeysEntry *msg, upb_StringView value) {
-  _upb_msg_map_set_value(msg, &value, 0);
 }
 
 /* grpc.lookup.v1.RouteLookupConfig */

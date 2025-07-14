@@ -31,9 +31,9 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/promise/lock_based_mpsc.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/match_promise.h"
-#include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
@@ -154,7 +154,7 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
   // Common outbound loop for both client and server (these vary only over the
   // frame type).
   template <typename Frame>
-  auto TransportWriteLoop(MpscReceiver<Frame>& outgoing_frames) {
+  auto TransportWriteLoop(LockBasedMpscReceiver<Frame>& outgoing_frames) {
     return Loop([self = Ref(), &outgoing_frames] {
       return TrySeq(
           // Get next outgoing frame.

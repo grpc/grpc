@@ -60,7 +60,6 @@
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
-#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
@@ -1567,7 +1566,6 @@ TEST_F(TcpListenerTest, DownstreamTlsContextWithCaCertProviderInstance) {
 }
 
 TEST_F(TcpListenerTest, SystemRootCerts) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_SYSTEM_ROOT_CERTS");
   Listener listener;
   listener.set_name("foo");
   HttpConnectionManager hcm;

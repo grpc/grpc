@@ -34,9 +34,11 @@ class ChannelzExtension {
 
   void SetSocketNode(
       grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> socket_node) {
-    data_source_ =
-        std::make_unique<EndpointDataSource>(std::move(socket_node), this);
+    data_source_.emplace(std::move(socket_node), this);
   }
+
+ protected:
+  void ShutdownChannelzExtension() { data_source_.reset(); }
 
  private:
   class EndpointDataSource final : public grpc_core::channelz::DataSource {
@@ -44,9 +46,11 @@ class ChannelzExtension {
     EndpointDataSource(
         grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> socket_node,
         ChannelzExtension* ep)
-        : grpc_core::channelz::DataSource(std::move(socket_node)), ep_(ep) {}
-    ~EndpointDataSource() { ResetDataSource(); }
-    void AddData(grpc_core::channelz::DataSink& sink) override {
+        : grpc_core::channelz::DataSource(std::move(socket_node)), ep_(ep) {
+      SourceConstructed();
+    }
+    ~EndpointDataSource() { SourceDestructing(); }
+    void AddData(grpc_core::channelz::DataSink sink) override {
       ep_->AddJson(sink);
     }
 
@@ -54,7 +58,7 @@ class ChannelzExtension {
     ChannelzExtension* ep_;
   };
 
-  std::unique_ptr<EndpointDataSource> data_source_;
+  std::optional<EndpointDataSource> data_source_;
 };
 
 }  // namespace grpc_event_engine::experimental

@@ -34,6 +34,9 @@
 namespace grpc_core {
 namespace http2 {
 
+// TODO(tjagtap) TODO(akshitpatel): [PH2][P3] : Write micro benchmarks for
+// assembler and disassembler code
+
 constexpr uint32_t kOneGb = (1024u * 1024u * 1024u);
 
 // For the mapping of gRPC Messages to Http2DataFrame, we can have
@@ -48,42 +51,43 @@ class GrpcMessageAssembler {
  public:
   // Input : The input must contain the payload from the Http2DataFrame.
   // This function will move the payload into an internal buffer.
-  absl::Status AppendNewDataFrame(SliceBuffer& payload,
-                                  const bool is_end_stream) {
+  Http2Status AppendNewDataFrame(SliceBuffer& payload,
+                                 const bool is_end_stream) {
     DCHECK(!is_end_stream_)
         << "Calling this function when a previous frame was marked as the last "
            "frame does not make sense.";
     is_end_stream_ = is_end_stream;
     if constexpr (sizeof(size_t) == 4) {
-      if (message_buffer_.Length() >= UINT32_MAX - payload.Length()) {
-        // STREAM_ERROR
-        return absl::Status(
-            absl::StatusCode::kInternal,
+      if (GPR_UNLIKELY(message_buffer_.Length() >=
+                       UINT32_MAX - payload.Length())) {
+        return Http2Status::Http2StreamError(
+            Http2ErrorCode::kInternalError,
             "Stream Error: SliceBuffer overflow for 32 bit platforms.");
       }
     }
     payload.MoveFirstNBytesIntoSliceBuffer(payload.Length(), message_buffer_);
     DCHECK_EQ(payload.Length(), 0u);
-    return absl::OkStatus();
+    return Http2Status::Ok();
   }
 
   // Returns a valid MessageHandle if it has a complete message.
   // Returns a nullptr if it does not have a complete message.
   // Returns an error if an incomplete message is received and the stream ends.
-  absl::StatusOr<MessageHandle> ExtractMessage() {
-    if (message_buffer_.Length() < kGrpcHeaderSizeInBytes) {
+  ValueOrHttp2Status<MessageHandle> ExtractMessage() {
+    const size_t current_len = message_buffer_.Length();
+    if (current_len < kGrpcHeaderSizeInBytes) {
+      // TODO(tjagtap) : [PH2][P3] : Write a test for this.
       return ReturnNullOrError();
     }
     GrpcMessageHeader header = ExtractGrpcHeader(message_buffer_);
     if constexpr (sizeof(size_t) == 4) {
-      if (header.length > kOneGb) {
-        // STREAM_ERROR
-        return absl::Status(
-            absl::StatusCode::kInternal,
+      if (GPR_UNLIKELY(header.length > kOneGb)) {
+        return Http2Status::Http2StreamError(
+            Http2ErrorCode::kInternalError,
             "Stream Error: SliceBuffer overflow for 32 bit platforms.");
       }
     }
-    if (message_buffer_.Length() - kGrpcHeaderSizeInBytes >= header.length) {
+    if (GPR_LIKELY(current_len - kGrpcHeaderSizeInBytes >= header.length)) {
       SliceBuffer discard;
       message_buffer_.MoveFirstNBytesIntoSliceBuffer(kGrpcHeaderSizeInBytes,
                                                      discard);
@@ -97,18 +101,19 @@ class GrpcMessageAssembler {
           header.length, *(grpc_message->payload()));
       uint32_t& flag = grpc_message->mutable_flags();
       flag = header.flags;
-      return grpc_message;
+      return std::move(grpc_message);
     }
     return ReturnNullOrError();
   }
 
  private:
-  absl::StatusOr<MessageHandle> ReturnNullOrError() {
-    // TODO(tjagtap) : [PH2][P1] Replace with Http2StatusOr when that PR lands
-    if (is_end_stream_ && message_buffer_.Length() > 0) {
-      return absl::InternalError("Incomplete gRPC frame received");
+  ValueOrHttp2Status<MessageHandle> ReturnNullOrError() {
+    if (GPR_UNLIKELY(is_end_stream_ && message_buffer_.Length() > 0)) {
+      return Http2Status::Http2StreamError(Http2ErrorCode::kInternalError,
+                                           "Incomplete gRPC frame received");
     }
-    return nullptr;
+    VLOG(2) << "Incomplete gRPC message received. Return nullptr";
+    return ValueOrHttp2Status<MessageHandle>(nullptr);
   }
   bool is_end_stream_ = false;
   SliceBuffer message_buffer_;

@@ -48,26 +48,28 @@ namespace internal {
 class OpenTelemetryPluginImpl::ClientCallTracer
     : public grpc_core::ClientCallTracer {
  public:
+  template <typename UnrefBehavior>
   class CallAttemptTracer
-      : public grpc_core::ClientCallTracer::CallAttemptTracer {
+      : public grpc_core::ClientCallTracer::CallAttemptTracer,
+        public grpc_core::RefCounted<CallAttemptTracer<UnrefBehavior>,
+                                     grpc_core::NonPolymorphicRefCount,
+                                     UnrefBehavior> {
    public:
     CallAttemptTracer(const OpenTelemetryPluginImpl::ClientCallTracer* parent,
-                      uint64_t attempt_num, bool is_transparent_retry,
-                      bool arena_allocated);
+                      uint64_t attempt_num, bool is_transparent_retry);
+
+    ~CallAttemptTracer() override;
 
     std::string TraceId() override {
-      // Not implemented
-      return "";
+      return OTelSpanTraceIdToString(span_.get());
     }
 
     std::string SpanId() override {
-      // Not implemented
-      return "";
+      return OTelSpanSpanIdToString(span_.get());
     }
 
     bool IsSampled() override {
-      // Not implemented
-      return false;
+      return span_ != nullptr && span_->GetContext().IsSampled();
     }
 
     void RecordSendInitialMetadata(
@@ -91,17 +93,19 @@ class OpenTelemetryPluginImpl::ClientCallTracer
         const TransportByteSize& transport_byte_size) override;
     void RecordCancel(grpc_error_handle cancel_error) override;
     void RecordEnd() override;
-    void RecordAnnotation(absl::string_view /*annotation*/) override;
+    void RecordAnnotation(absl::string_view annotation) override;
     void RecordAnnotation(const Annotation& /*annotation*/) override;
+    void RecordAnnotation(absl::string_view annotation, absl::Time time);
     std::shared_ptr<grpc_core::TcpCallTracer> StartNewTcpTrace() override;
     void SetOptionalLabel(OptionalLabelKey key,
                           grpc_core::RefCountedStringValue value) override;
 
    private:
+    class TcpCallTracer;
+
     void PopulateLabelInjectors(grpc_metadata_batch* metadata);
 
     const ClientCallTracer* parent_;
-    const bool arena_allocated_;
     // Start time (for measuring latency).
     absl::Time start_time_;
     std::unique_ptr<LabelsIterable> injected_labels_;
@@ -130,22 +134,18 @@ class OpenTelemetryPluginImpl::ClientCallTracer
   ~ClientCallTracer() override;
 
   std::string TraceId() override {
-    // Not implemented
-    return "";
+    return OTelSpanTraceIdToString(span_.get());
   }
 
-  std::string SpanId() override {
-    // Not implemented
-    return "";
-  }
+  std::string SpanId() override { return OTelSpanSpanIdToString(span_.get()); }
 
   bool IsSampled() override {
-    // Not implemented
-    return false;
+    return span_ != nullptr && span_->GetContext().IsSampled();
   }
 
-  CallAttemptTracer* StartNewAttempt(bool is_transparent_retry) override;
-  void RecordAnnotation(absl::string_view /*annotation*/) override;
+  grpc_core::ClientCallTracer::CallAttemptTracer* StartNewAttempt(
+      bool is_transparent_retry) override;
+  void RecordAnnotation(absl::string_view annotation) override;
   void RecordAnnotation(const Annotation& /*annotation*/) override;
 
  private:

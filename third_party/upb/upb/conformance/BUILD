@@ -5,6 +5,7 @@
 # license that can be found in the LICENSE file or at
 # https://developers.google.com/open-source/licenses/bsd
 
+load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load(
     "//bazel:upb_proto_library.bzl",
     "upb_c_proto_library",
@@ -69,8 +70,8 @@ cc_binary(
         ":test_messages_proto3_upbdefs",
         "//editions:test_messages_proto2_editions_upbdefs",
         "//editions:test_messages_proto3_editions_upbdefs",
-        "//upb:base",
-        "//upb:json",
+        "//upb/base",
+        "//upb/json",
         "//upb:port",
         "//upb:reflection",
         "//upb:text",
@@ -123,8 +124,8 @@ cc_binary(
         ":test_messages_proto3_upbdefs",
         "//editions:test_messages_proto2_editions_upbdefs",
         "//editions:test_messages_proto3_editions_upbdefs",
-        "//upb:base",
-        "//upb:json",
+        "//upb/base",
+        "//upb/json",
         "//upb:port",
         "//upb:reflection",
         "//upb:text",

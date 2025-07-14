@@ -275,6 +275,13 @@ class ValueOrFailure {
     return value_ != other;
   }
 
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool operator==(Failure) const {
+    return !value_.has_value();
+  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool operator!=(Failure) const {
+    return value_.has_value();
+  }
+
  private:
   std::optional<T> value_;
 };

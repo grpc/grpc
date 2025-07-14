@@ -356,9 +356,9 @@ def _create_test_case_class(split_proto, protoc_style):
         attributes["SERVICES_PROTO_FILE_NAME"] = "services.proto"
         attributes["EXPECTED_MESSAGES_PB2"] = "split_messages.sub.messages_pb2"
         attributes["EXPECTED_SERVICES_PB2"] = "split_services.services_pb2"
-        attributes[
-            "EXPECTED_SERVICES_PB2_GRPC"
-        ] = "split_services.services_pb2_grpc"
+        attributes["EXPECTED_SERVICES_PB2_GRPC"] = (
+            "split_services.services_pb2_grpc"
+        )
     else:
         attributes["MESSAGES_PROTO_RELATIVE_DIRECTORY_NAMES"] = ()
         attributes["MESSAGES_PROTO_FILE_NAME"] = "same.proto"

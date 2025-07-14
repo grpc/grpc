@@ -28,45 +28,39 @@ Therefore, gRPC supports several major build systems, which should satisfy most 
   these platforms may go unnoticed, and the community is responsible for all
   maintenance. Unmaintained code for these platforms may be deleted.
 
-| Operating System | Architectures | Versions | Support Level |
-|------------------|---------------|----------|---------------|
-| Linux - Debian, Ubuntu, CentOS | x86, x64      | clang 7+, GCC 7.5+     | Officially Supported |
-| Windows 10+                    | x86, x64      | Visual Studio 2022+    | Officially Supported |
-| MacOS                          | x64, ARM64    | XCode 12+              | Officially Supported |
-| Linux - Others                 | x86, x64      | clang 7+, GCC 7.5+     | Best Effort          |
-| Linux                          | ARM64         |                        | Best Effort          |
-| iOS                            |               |                        | Best Effort          |
-| Android                        |               |                        | Best Effort          |
-| AIX                            |               |                        | Community Supported  |
-| Asylo                          |               |                        | Community Supported  |
-| FreeBSD                        |               |                        | Community Supported  |
-| Fuchsia                        |               |                        | Community Supported  |
-| NaCL                           |               |                        | Community Supported  |
-| NetBSD                         |               |                        | Community Supported  |
-| OpenBSD                        |               |                        | Community Supported  |
-| Solaris                        |               |                        | Community Supported  |
+| Operating System               | Architectures | Support Level        |
+|--------------------------------|---------------|----------------------|
+| Linux - Debian, Ubuntu, CentOS | x86, x64      | Officially Supported |
+| Windows 10+                    | x86, x64      | Officially Supported |
+| MacOS                          | x64, ARM64    | Officially Supported |
+| Linux - Others                 | x86, x64      | Best Effort          |
+| Linux                          | ARM64         | Best Effort          |
+| iOS                            |               | Best Effort          |
+| Android                        |               | Best Effort          |
+| AIX                            |               | Community Supported  |
+| Asylo                          |               | Community Supported  |
+| FreeBSD                        |               | Community Supported  |
+| Fuchsia                        |               | Community Supported  |
+| NaCL                           |               | Community Supported  |
+| NetBSD                         |               | Community Supported  |
+| OpenBSD                        |               | Community Supported  |
+| Solaris                        |               | Community Supported  |
 
 ## Bazel
 
-Bazel is the primary build system used by the core gRPC development team. Bazel
-provides fast builds and it easily handles dependencies that support bazel.
+Bazel is the gRPC core development team's main build system.
+It offers speedy builds and effortlessly manages dependencies that already support Bazel.
 
-To add gRPC as a dependency in bazel:
-1. determine commit SHA for the grpc release you want to use
-2. Use the [http_archive](https://docs.bazel.build/versions/master/repo/http.html#http_archive) bazel rule to include gRPC source
-  ```
-  http_archive(
-      name = "com_github_grpc_grpc",
-      urls = [
-          "https://github.com/grpc/grpc/archive/YOUR_GRPC_COMMIT_SHA.tar.gz",
-      ],
-      strip_prefix = "grpc-YOUR_GRPC_COMMIT_SHA",
-  )
-  load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
-  grpc_deps()
-  load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
-  grpc_extra_deps()
-  ```
+To add gRPC as a Bazel dependency:
+
+1. Find your desired gRPC version on the
+   [Bazel Central Registry](https://registry.bazel.build/modules/grpc).
+2. Then, use [bazel_dep](https://bazel.build/rules/lib/globals/module#bazel_dep)
+   to add the gRPC dependency to your `MODULE.bazel` file.
+
+```
+bazel_dep(name = "grpc", version = "1.72.0")
+```
 
 ## CMake
 

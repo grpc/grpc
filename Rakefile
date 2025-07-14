@@ -30,15 +30,16 @@ Rake::ExtensionTask.new('grpc_c', spec) do |ext|
   ext.cross_compile = true
   ext.cross_platform = [
     'x86-mingw32', 'x64-mingw32', 'x64-mingw-ucrt',
-    'x86_64-linux', 'x86-linux', 'aarch64-linux',
-    'x86_64-darwin', 'arm64-darwin',
+    'x86_64-linux-gnu', 'x86_64-linux-musl', 'x86-linux-gnu',
+    'x86-linux-musl', 'aarch64-linux-gnu', 'aarch64-linux-musl',
+    'x86_64-darwin', 'arm64-darwin'
   ]
   ext.cross_compiling do |spec|
     spec.files = spec.files.select {
       |file| file.start_with?(
         "src/ruby/bin/", "src/ruby/ext/", "src/ruby/lib/", "src/ruby/pb/")
     }
-    spec.files += %w( etc/roots.pem grpc_c.32-msvcrt.ruby grpc_c.64-msvcrt.ruby grpc_c.64-ucrt.ruby )
+    spec.files += %w( etc/roots.pem grpc_c.32-msvcrt.ruby grpc_c.64-ucrt.ruby )
   end
 end
 
@@ -88,7 +89,6 @@ task 'dlls', [:plat] do |t, args|
 
   build_configs = [
     { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64-ucrt.ruby', platform: 'x64-mingw-ucrt' },
-    { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64-msvcrt.ruby', platform: 'x64-mingw32' },
     { cross: 'i686-w64-mingw32', out: 'grpc_c.32-msvcrt.ruby', platform: 'x86-mingw32' }
   ]
   selected_build_configs = []
@@ -143,7 +143,7 @@ task 'gem:native', [:plat] do |t, args|
   verbose = ENV['V'] || '0'
 
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
-  target_ruby_minor_versions = ['3.4', '3.3', '3.2', '3.1', '3.0']
+  target_ruby_minor_versions = ['3.4', '3.3', '3.2', '3.1']
   selected_plat = "#{args[:plat]}"
 
   # use env variable to set artifact build paralellism
@@ -157,7 +157,11 @@ task 'gem:native', [:plat] do |t, args|
   prepare_ccache_cmd += "source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc "
 
   supported_windows_platforms = ['x86-mingw32', 'x64-mingw32', 'x64-mingw-ucrt']
-  supported_unix_platforms = ['x86_64-linux', 'x86-linux', 'aarch64-linux', 'x86_64-darwin', 'arm64-darwin']
+  supported_unix_platforms = [
+    'x86_64-linux-gnu', 'x86_64-linux-musl', 'x86-linux-gnu',
+    'x86-linux-musl', 'aarch64-linux-gnu', 'aarch64-linux-musl',
+    'x86_64-darwin', 'arm64-darwin'
+  ]
   supported_platforms = supported_windows_platforms + supported_unix_platforms
 
   if selected_plat.empty?
@@ -199,7 +203,6 @@ task 'gem:native', [:plat] do |t, args|
   # Truncate grpc_c.*.ruby files because they're for Windows only and we don't want
   # them to take up space in the gems that don't target windows.
   File.truncate('grpc_c.32-msvcrt.ruby', 0)
-  File.truncate('grpc_c.64-msvcrt.ruby', 0)
   File.truncate('grpc_c.64-ucrt.ruby', 0)
 
   `mkdir -p src/ruby/nativedebug/symbols`
@@ -207,7 +210,11 @@ task 'gem:native', [:plat] do |t, args|
   # Currently we hit "objcopy: grpc_c.bundle: file format not recognized"
   # TODO(apolcyn): make debug symbols work on aarch64 linux.
   # Currently we hit "objcopy: Unable to recognise the format of the input file `grpc_c.so'"
-  unix_platforms_without_debug_symbols = ['x86_64-darwin', 'arm64-darwin', 'aarch64-linux']
+  unix_platforms_without_debug_symbols = [
+    'x86_64-linux-musl', 'x86-linux-musl',
+    'aarch64-linux-gnu', 'aarch64-linux-musl', 'x86_64-darwin',
+    'arm64-darwin'
+  ]
 
   unix_platforms.each do |plat|
     if unix_platforms_without_debug_symbols.include?(plat)

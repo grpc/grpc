@@ -1408,6 +1408,10 @@ UPB_INLINE envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat_header_form
   return (envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat_header_format_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat_clear_header_format(envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__config__core__v3__Http1ProtocolOptions__HeaderKeyFormat_msg_init, &field);
+}
 UPB_INLINE void envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat_clear_proper_case_words(envoy_config_core_v3_Http1ProtocolOptions_HeaderKeyFormat* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
@@ -2549,6 +2553,10 @@ UPB_INLINE envoy_config_core_v3_SchemeHeaderTransformation_transformation_oneofc
   const upb_MiniTableField field = {1, 16, -13, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   return (envoy_config_core_v3_SchemeHeaderTransformation_transformation_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void envoy_config_core_v3_SchemeHeaderTransformation_clear_transformation(envoy_config_core_v3_SchemeHeaderTransformation* msg) {
+  const upb_MiniTableField field = {1, 16, -13, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__config__core__v3__SchemeHeaderTransformation_msg_init, &field);
 }
 UPB_INLINE void envoy_config_core_v3_SchemeHeaderTransformation_clear_scheme_to_overwrite(envoy_config_core_v3_SchemeHeaderTransformation* msg) {
   const upb_MiniTableField field = {1, 16, -13, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};

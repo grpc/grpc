@@ -46,7 +46,7 @@ void TimerManager::RunSomeTimers(
 // shutdown)
 bool TimerManager::WaitUntil(grpc_core::Timestamp next) {
   grpc_core::MutexLock lock(&mu_);
-  if (shutdown_) return false;
+  if (state_ != TimerManager::State::kRunning) return false;
   // If kicked_ is true at this point, it means there was a kick from the timer
   // system that the timer-manager threads here missed. We cannot trust 'next'
   // here any longer (since there might be an earlier deadline). So if kicked_
@@ -99,7 +99,7 @@ void TimerManager::TimerInit(Timer* timer, grpc_core::Timestamp deadline,
                              experimental::EventEngine::Closure* closure) {
   if (GRPC_TRACE_FLAG_ENABLED(timer)) {
     grpc_core::MutexLock lock(&mu_);
-    if (shutdown_) {
+    if (state_ != TimerManager::State::kRunning) {
       LOG(ERROR) << "WARNING: TimerManager::" << this
                  << ": scheduling Closure::" << closure
                  << " after TimerManager has been shut down.";
@@ -112,18 +112,7 @@ bool TimerManager::TimerCancel(Timer* timer) {
   return timer_list_->TimerCancel(timer);
 }
 
-void TimerManager::Shutdown() {
-  {
-    grpc_core::MutexLock lock(&mu_);
-    if (shutdown_) return;
-    GRPC_TRACE_VLOG(timer, 2) << "TimerManager::" << this << " shutting down";
-    shutdown_ = true;
-    // Wait on the main loop to exit.
-    cv_wait_.Signal();
-  }
-  main_loop_exit_signal_->WaitForNotification();
-  GRPC_TRACE_VLOG(timer, 2) << "TimerManager::" << this << " shutdown complete";
-}
+void TimerManager::Shutdown() { SuspendOrShutdown(true); }
 
 TimerManager::~TimerManager() { Shutdown(); }
 
@@ -137,16 +126,38 @@ void TimerManager::Kick() {
 
 void TimerManager::RestartPostFork() {
   grpc_core::MutexLock lock(&mu_);
-  CHECK(GPR_LIKELY(shutdown_));
+  CHECK(state_ != TimerManager::State::kRunning);
   GRPC_TRACE_VLOG(timer, 2)
-      << "TimerManager::" << this << " restarting after shutdown";
-  shutdown_ = false;
-  main_loop_exit_signal_.emplace();
-  thread_pool_->Run([this]() { MainLoop(); });
+      << "TimerManager::" << this << " restarting after suspend";
+  if (state_ == TimerManager::State::kSuspended) {
+    state_ = TimerManager::State::kRunning;
+    main_loop_exit_signal_.emplace();
+    thread_pool_->Run([this]() { MainLoop(); });
+  }
 }
 
-void TimerManager::PrepareFork() { Shutdown(); }
-void TimerManager::PostforkParent() { RestartPostFork(); }
-void TimerManager::PostforkChild() { RestartPostFork(); }
+void TimerManager::PrepareFork() { SuspendOrShutdown(false); }
+
+void TimerManager::PostFork() { RestartPostFork(); }
+
+void TimerManager::SuspendOrShutdown(bool shutdown) {
+  {
+    grpc_core::MutexLock lock(&mu_);
+    if (shutdown) {
+      // Pool will become shut down whether it was running or suspended
+      state_ = TimerManager::State::kShutdown;
+    } else if (state_ == TimerManager::State::kRunning) {
+      state_ = TimerManager::State::kSuspended;
+    }
+    GRPC_TRACE_VLOG(timer, 2) << "TimerManager::" << this
+                              << (shutdown ? " shutting down" : " suspending");
+    // Wait on the main loop to exit.
+    cv_wait_.Signal();
+  }
+  main_loop_exit_signal_->WaitForNotification();
+  GRPC_TRACE_VLOG(timer, 2)
+      << "TimerManager::" << this
+      << (shutdown ? " shutdown complete" : " suspend complete");
+}
 
 }  // namespace grpc_event_engine::experimental

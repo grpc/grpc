@@ -69,33 +69,25 @@ CelAuthorizationEngine::CelAuthorizationEngine(
     // Extract array of policies and store their condition fields in either
     // allow_if_matched_ or deny_if_matched_, depending on the policy action.
     upb::Arena temp_arena;
-    // TODO(b/397931390): Clean up the code after gRPC OSS migrates to proto
-    // v30.0.
-    const upb_Map* upb_map =
-        _envoy_config_rbac_v3_RBAC_policies_upb_map(rbac_policy);
-    if (upb_map) {
-      size_t policy_num = kUpb_Map_Begin;
-      upb_MessageValue k, v;
-      while (upb_Map_Next(upb_map, &k, &v, &policy_num)) {
-        upb_StringView policy_name_strview = k.str_val;
-        const envoy_config_rbac_v3_Policy* policy =
-            (envoy_config_rbac_v3_Policy*)v.msg_val;
-        const std::string policy_name(policy_name_strview.data,
-                                      policy_name_strview.size);
-        const google_api_expr_v1alpha1_Expr* condition =
-            envoy_config_rbac_v3_Policy_condition(policy);
-        // Parse condition to make a pointer tied to the lifetime of arena_.
-        size_t serial_len;
-        const char* serialized = google_api_expr_v1alpha1_Expr_serialize(
-            condition, temp_arena.ptr(), &serial_len);
-        const google_api_expr_v1alpha1_Expr* parsed_condition =
-            google_api_expr_v1alpha1_Expr_parse(serialized, serial_len,
-                                                arena_.ptr());
-        if (envoy_config_rbac_v3_RBAC_action(rbac_policy) == kAllow) {
-          allow_if_matched_.insert(std::pair(policy_name, parsed_condition));
-        } else {
-          deny_if_matched_.insert(std::pair(policy_name, parsed_condition));
-        }
+    size_t iter = kUpb_Map_Begin;
+    upb_StringView name;
+    const envoy_config_rbac_v3_Policy* policy;
+    while (envoy_config_rbac_v3_RBAC_policies_next(rbac_policy, &name, &policy,
+                                                   &iter)) {
+      const std::string policy_name(name.data, name.size);
+      const google_api_expr_v1alpha1_Expr* condition =
+          envoy_config_rbac_v3_Policy_condition(policy);
+      // Parse condition to make a pointer tied to the lifetime of arena_.
+      size_t serial_len;
+      const char* serialized = google_api_expr_v1alpha1_Expr_serialize(
+          condition, temp_arena.ptr(), &serial_len);
+      const google_api_expr_v1alpha1_Expr* parsed_condition =
+          google_api_expr_v1alpha1_Expr_parse(serialized, serial_len,
+                                              arena_.ptr());
+      if (envoy_config_rbac_v3_RBAC_action(rbac_policy) == kAllow) {
+        allow_if_matched_.insert(std::pair(policy_name, parsed_condition));
+      } else {
+        deny_if_matched_.insert(std::pair(policy_name, parsed_condition));
       }
     }
   }

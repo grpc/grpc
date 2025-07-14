@@ -26,6 +26,7 @@
 
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "absl/time/time.h"
 
@@ -116,7 +117,12 @@ class TcpCallTracer {
   struct TcpEventMetric {
     absl::string_view key;
     int64_t value;
+
+    std::string ToString();
   };
+
+  std::string TcpEventMetricsToString(
+      const std::vector<TcpEventMetric>& metrics);
 
   virtual ~TcpCallTracer() = default;
 
@@ -125,7 +131,7 @@ class TcpCallTracer {
   virtual void RecordEvent(
       grpc_event_engine::experimental::internal::WriteEvent event,
       absl::Time time, size_t byte_offset,
-      std::vector<TcpEventMetric> metrics) = 0;
+      const std::vector<TcpEventMetric>& metrics) = 0;
 };
 
 class TcpConnectionTracer {

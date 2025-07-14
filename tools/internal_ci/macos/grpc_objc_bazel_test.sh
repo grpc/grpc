@@ -115,6 +115,7 @@ objc_bazel_tests/bazel_wrapper \
   "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
   $BAZEL_FLAGS \
   --cxxopt=-DGRPC_IOS_EVENT_ENGINE_CLIENT=0 \
+  --test_env=GRPC_VERBOSITY=debug --test_env=GRPC_TRACE=event_engine*,api \
   "${OBJC_TEST_ENV_ARGS[@]}" \
   -- \
   "${EXAMPLE_TARGETS[@]}" \

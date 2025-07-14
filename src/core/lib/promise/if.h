@@ -219,6 +219,26 @@ class If<bool, T, F> {
     }
   }
 
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* if_proto =
+        grpc_channelz_v2_Promise_mutable_if_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_If_set_condition(if_proto, condition_);
+    if (condition_) {
+      PromiseAsProto(
+          if_true_,
+          grpc_channelz_v2_Promise_If_mutable_promise(if_proto, arena), arena);
+    } else {
+      PromiseAsProto(
+          if_false_,
+          grpc_channelz_v2_Promise_If_mutable_promise(if_proto, arena), arena);
+    }
+    grpc_channelz_v2_Promise_If_set_true_factory(
+        if_proto, StdStringToUpbString(TypeName<TruePromise>()));
+    grpc_channelz_v2_Promise_If_set_false_factory(
+        if_proto, StdStringToUpbString(TypeName<FalsePromise>()));
+  }
+
  private:
   bool condition_;
   union {

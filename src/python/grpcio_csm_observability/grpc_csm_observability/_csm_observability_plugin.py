@@ -130,9 +130,9 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
         serialized_str = serialized_struct.SerializeToString()
 
         self._exchange_labels = {"XEnvoyPeerMetadata": serialized_str}
-        self._additional_exchange_labels[
-            "csm.workload_canonical_service"
-        ] = canonical_service_value
+        self._additional_exchange_labels["csm.workload_canonical_service"] = (
+            canonical_service_value
+        )
         self._additional_exchange_labels["csm.mesh_id"] = mesh_id
 
     def get_labels_for_exchange(self) -> Dict[str, AnyStr]:
@@ -259,10 +259,11 @@ class CsmOpenTelemetryPlugin(OpenTelemetryPlugin):
     def __init__(
         self,
         *,
-        plugin_options: Iterable[OpenTelemetryPluginOption] = [],
+        plugin_options: Optional[Iterable[OpenTelemetryPluginOption]] = None,
         meter_provider: Optional[MeterProvider] = None,
         generic_method_attribute_filter: Optional[Callable[[str], bool]] = None,
     ):
+        plugin_options = plugin_options or []
         new_options = list(plugin_options) + [CsmOpenTelemetryPluginOption()]
         super().__init__(
             plugin_options=new_options,

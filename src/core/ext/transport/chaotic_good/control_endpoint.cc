@@ -78,8 +78,10 @@ ControlEndpoint::ControlEndpoint(
                       ztrace_collector->Append(
                           WriteBytesToControlChannelTrace{flushing.Length()});
                       return Map(
-                          endpoint->Write(std::move(flushing),
-                                          PromiseEndpoint::WriteArgs{}),
+                          GRPC_LATENT_SEE_PROMISE(
+                              "CtlEndpointWrite",
+                              endpoint->Write(std::move(flushing),
+                                              PromiseEndpoint::WriteArgs{})),
                           [ztrace_collector](absl::Status status) {
                             ztrace_collector->Append([&status]() {
                               return FinishWriteBytesToControlChannelTrace{

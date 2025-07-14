@@ -180,8 +180,7 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
       return *helper_->stats_plugin_group_;
     }
 
-    void AddTraceEvent(TraceSeverity severity,
-                       absl::string_view message) override {
+    void AddTraceEvent(absl::string_view message) override {
       LOG(FATAL) << "unimplemented";
     }
 

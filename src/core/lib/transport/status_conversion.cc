@@ -20,48 +20,21 @@
 
 #include <grpc/support/port_platform.h>
 
+using grpc_core::http2::AbslStatusCodeToErrorCode;
 using grpc_core::http2::Http2ErrorCode;
 
 Http2ErrorCode grpc_status_to_http2_error(grpc_status_code status) {
-  switch (status) {
-    case GRPC_STATUS_OK:
-      return Http2ErrorCode::kNoError;
-    case GRPC_STATUS_CANCELLED:
-      return Http2ErrorCode::kCancel;
-    case GRPC_STATUS_DEADLINE_EXCEEDED:
-      return Http2ErrorCode::kCancel;
-    case GRPC_STATUS_RESOURCE_EXHAUSTED:
-      return Http2ErrorCode::kEnhanceYourCalm;
-    case GRPC_STATUS_PERMISSION_DENIED:
-      return Http2ErrorCode::kInadequateSecurity;
-    case GRPC_STATUS_UNAVAILABLE:
-      return Http2ErrorCode::kRefusedStream;
-    default:
-      return Http2ErrorCode::kInternalError;
-  }
+  return AbslStatusCodeToErrorCode(static_cast<absl::StatusCode>(status));
 }
 
 grpc_status_code grpc_http2_error_to_grpc_status(
     Http2ErrorCode error, grpc_core::Timestamp deadline) {
-  switch (error) {
-    case Http2ErrorCode::kNoError:
-      // should never be received
-      return GRPC_STATUS_INTERNAL;
-    case Http2ErrorCode::kCancel:
-      // http2 cancel translates to STATUS_CANCELLED iff deadline hasn't been
-      // exceeded
-      return grpc_core::Timestamp::Now() > deadline
-                 ? GRPC_STATUS_DEADLINE_EXCEEDED
-                 : GRPC_STATUS_CANCELLED;
-    case Http2ErrorCode::kEnhanceYourCalm:
-      return GRPC_STATUS_RESOURCE_EXHAUSTED;
-    case Http2ErrorCode::kInadequateSecurity:
-      return GRPC_STATUS_PERMISSION_DENIED;
-    case Http2ErrorCode::kRefusedStream:
-      return GRPC_STATUS_UNAVAILABLE;
-    default:
-      return GRPC_STATUS_INTERNAL;
+  if (error == Http2ErrorCode::kNoError) {
+    // should never be received
+    return GRPC_STATUS_INTERNAL;
   }
+  return static_cast<grpc_status_code>(
+      ErrorCodeToAbslStatusCode(error, deadline));
 }
 
 grpc_status_code grpc_http2_status_to_grpc_status(int status) {

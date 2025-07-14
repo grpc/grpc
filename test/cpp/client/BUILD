@@ -39,21 +39,3 @@ grpc_cc_test(
         "//test/cpp/util:tls_test_utils",
     ],
 )
-
-grpc_cc_test(
-    name = "destroy_grpclb_channel_with_active_connect_stress_test",
-    srcs = ["destroy_grpclb_channel_with_active_connect_stress_test.cc"],
-    external_deps = ["gtest"],
-    tags = [
-        "nomsan",  # 4/22/22 - seems to tickle the RBE compiler badly causing timeouts
-    ],
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//:grpc++",
-        "//:grpc_resolver_fake",
-        "//src/core:channel_args",
-        "//test/core/test_util:grpc_test_util",
-        "//test/cpp/util:test_util",
-    ],
-)

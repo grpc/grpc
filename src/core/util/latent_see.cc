@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "src/core/util/ring_buffer.h"
 #include "src/core/util/sync.h"
@@ -136,13 +137,17 @@ std::optional<std::string> Log::TryGenerateJson() {
         absl::StrAppend(
             &json, "{\"name\": \"", event.event.metadata->name,
             "\", \"ph\": \"", phase, "\", \"ts\": ",
-            Nanos(event.event.timestamp - start_time).count() / 1000.0,
+            absl::StrFormat(
+                "%.12g",
+                Nanos(event.event.timestamp - start_time).count() / 1000.0),
             ", \"pid\": 0, \"tid\": ", event.thread_id);
       } else {
         absl::StrAppend(
             &json, "{\"name\": ", event.event.metadata->name, ", \"ph\": \"",
             phase, "\", \"ts\": ",
-            Nanos(event.event.timestamp - start_time).count() / 1000.0,
+            absl::StrFormat(
+                "%.12g",
+                Nanos(event.event.timestamp - start_time).count() / 1000.0),
             ", \"pid\": 0, \"tid\": ", event.thread_id);
       }
 

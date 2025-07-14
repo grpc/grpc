@@ -529,12 +529,15 @@ grpc_cc_test(
     ],
     deps = [
         "//:chttp2_frame",
+        "//:hpack_encoder",
+        "//:hpack_parser",
         "//:ref_counted_ptr",
         "//src/core:header_assembler",
         "//src/core:http2_status",
         "//src/core:message",
         "//src/core:slice",
         "//src/core:slice_buffer",
+        "//test/core/transport/chttp2:http2_common_test_inputs",
     ],
 )
 
@@ -588,7 +591,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    tags = ["no_windows"],
     uses_polling = False,
     deps = [
         "//:gpr",
