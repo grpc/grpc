@@ -1,4 +1,4 @@
-# Copyright 2019 The gRPC Authors.
+# Copyright 2024 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,13 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import logging
-import unittest
-import os
 
-# Set up typeguard if enabled
+from typing import Sequence
+
+import unittest
+import sys
+import os
+import pkgutil
+
 if os.environ.get("TYPEGUARD_ENABLED") == "1":
     from typeguard import install_import_hook
+    # Add all relevant grpc.aio submodules here
     install_import_hook('grpc.aio')
     install_import_hook('grpc.aio._channel')
     install_import_hook('grpc.aio._server')
@@ -43,27 +47,39 @@ if os.environ.get("TYPEGUARD_ENABLED") == "1":
     install_import_hook('grpc.aio._trace')
 
 
-class TestInit(unittest.TestCase):
-    def test_grpc(self):
-        import grpc  # pylint: disable=wrong-import-position
+class SingleLoader(object):
+    def __init__(self, pattern: str):
+        loader = unittest.TestLoader()
+        self.suite = unittest.TestSuite()
+        tests = []
 
-        channel = grpc.aio.insecure_channel("phony")
-        self.assertIsInstance(channel, grpc.aio.Channel)
+        for importer, module_name, is_package in pkgutil.walk_packages([os.path.dirname(os.path.relpath(__file__))]):
+            if pattern in module_name:
+                module = importer.find_module(module_name).load_module(module_name)
+                tests.append(loader.loadTestsFromModule(module))
 
-    def test_grpc_dot_aio(self):
-        import grpc.aio  # pylint: disable=wrong-import-position
+        if len(tests) != 1:
+            raise AssertionError("Expected only 1 test module. Found {}".format(tests))
+        self.suite.addTest(tests[0])
 
-        channel = grpc.aio.insecure_channel("phony")
-        self.assertIsInstance(channel, grpc.aio.Channel)
-
-    def test_server_function(self):
-        import grpc.aio  # pylint: disable=wrong-import-position
-
-        # This should trigger the type error since server() returns str but should return Server
-        server = grpc.aio.server()
-        self.assertIsInstance(server, grpc.aio.Server)
+    def loadTestsFromNames(self, names: Sequence[str], module: str = None) -> unittest.TestSuite:
+        return self.suite
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
-    unittest.main(verbosity=2)
+    if len(sys.argv) != 2:
+        print(f"USAGE: {sys.argv[0]} TARGET_MODULE", file=sys.stderr)
+        sys.exit(1)
+
+    target_module = sys.argv[1]
+
+    test_kwargs = {}
+    test_kwargs["verbosity"] = 3
+
+    loader = SingleLoader(target_module)
+    runner = unittest.TextTestRunner(**test_kwargs)
+
+    result = runner.run(loader.suite)
+
+    if not result.wasSuccessful():
+        sys.exit('Test failure') 

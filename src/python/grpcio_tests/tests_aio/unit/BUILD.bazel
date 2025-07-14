@@ -69,7 +69,6 @@ _FLAKY_TESTS = [
         ],
         flaky = test_file_name in _FLAKY_TESTS,
         imports = ["../../"],
-        main = test_file_name,
         python_version = "PY3",
         env = {"TYPEGUARD_ENABLED": "1"},
         deps = [
