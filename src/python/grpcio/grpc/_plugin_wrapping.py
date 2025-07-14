@@ -66,7 +66,7 @@ class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
                     self._state.called = True
             else:
                 error_msg = (
-                    f"AuthMetadataPluginCallback"
+                    "AuthMetadataPluginCallback"
                     'raised exception "{self._state.exception}"!'
                 )
                 raise RuntimeError(error_msg)

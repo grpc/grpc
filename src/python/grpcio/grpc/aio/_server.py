@@ -54,7 +54,7 @@ class Server(_base_server.Server):
             ]
             if invalid_interceptors:
                 error_msg = (
-                    f"Interceptor must be ServerInterceptor,"
+                    "Interceptor must be ServerInterceptor,"
                     "the following are invalid: {invalid_interceptors}"
                 )
                 raise ValueError(error_msg)
