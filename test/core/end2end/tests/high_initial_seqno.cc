@@ -70,11 +70,9 @@ void TenRequests(CoreEnd2endTest& test, int initial_sequence_number) {
 }
 
 CORE_END2END_TEST(Http2Tests, HighInitialSeqno) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   TenRequests(*this, 16777213);
 }
 CORE_END2END_TEST(RetryHttp2Tests, HighInitialSeqno) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   TenRequests(*this, 2147483645);
 }
 

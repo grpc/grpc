@@ -1067,12 +1067,18 @@ grpc_core::OrphanablePtr<grpc_endpoint> grpc_secure_endpoint_create(
         event_engine_endpoint = grpc_event_engine::experimental::
             grpc_take_wrapped_event_engine_endpoint(to_wrap.release());
     CHECK(event_engine_endpoint != nullptr);
-    return grpc_core::OrphanablePtr<grpc_endpoint>(
-        grpc_event_engine::experimental::grpc_event_engine_endpoint_create(
-            std::make_unique<grpc_event_engine::experimental::SecureEndpoint>(
-                std::move(event_engine_endpoint), protector,
-                zero_copy_protector, leftover_slices, leftover_nslices,
-                channel_args)));
+    if (grpc_core::IsPipelinedReadSecureEndpointEnabled()) {
+      return grpc_pipelined_secure_endpoint_create(
+          protector, zero_copy_protector, std::move(event_engine_endpoint),
+          leftover_slices, channel_args, leftover_nslices);
+    } else {
+      return grpc_core::OrphanablePtr<grpc_endpoint>(
+          grpc_event_engine::experimental::grpc_event_engine_endpoint_create(
+              std::make_unique<grpc_event_engine::experimental::SecureEndpoint>(
+                  std::move(event_engine_endpoint), protector,
+                  zero_copy_protector, leftover_slices, leftover_nslices,
+                  channel_args)));
+    }
   }
   return grpc_core::MakeOrphanable<secure_endpoint>(
       &vtable, protector, zero_copy_protector, std::move(to_wrap),

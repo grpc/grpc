@@ -53,12 +53,10 @@ void SimpleRequestBody(CoreEnd2endTest& test,
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, InvokeRegisteredCall) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   SimpleRequestBody(*this, RegisterCallOnClient("/foo", nullptr));
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, Invoke10RegisteredCalls) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   auto rc = RegisterCallOnClient("/foo", nullptr);
   for (int i = 0; i < 10; i++) {
     SimpleRequestBody(*this, rc);

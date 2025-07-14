@@ -23,7 +23,6 @@
 namespace grpc_core {
 
 CORE_END2END_TEST(CoreEnd2endTests, EmptyBatch) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   auto c = NewClientCall("/service/method").Create();
   c.NewBatch(1);
   Expect(1, true);

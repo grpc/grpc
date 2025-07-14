@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.74.0dev</release>
-  <api>1.74.0dev</api>
+  <release>1.75.0dev</release>
+  <api>1.75.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.74.0 update
+- gRPC Core 1.75.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -33,6 +33,7 @@
     <file baseinstalldir="/" name="include/grpc/byte_buffer_reader.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/census.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/compression.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/create_channel_from_endpoint.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/credentials.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/endpoint_config.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/event_engine.h" role="src" />
@@ -1277,6 +1278,7 @@
     <file baseinstalldir="/" name="src/core/handshaker/proxy_mapper_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/proxy_mapper_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/security/legacy_secure_endpoint.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/handshaker/security/pipelined_secure_endpoint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/security/secure_endpoint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/security/secure_endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/handshaker/security/security_handshaker.cc" role="src" />
@@ -1328,6 +1330,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/default_event_engine.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/default_event_engine_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/default_event_engine_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/endpoint_channel_arg_wrapper.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/endpoint_channel_arg_wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/blocking_dns.h" role="src" />
@@ -1838,6 +1842,7 @@
     <file baseinstalldir="/" name="src/core/telemetry/tcp_tracer.h" role="src" />
     <file baseinstalldir="/" name="src/core/transport/auth_context.cc" role="src" />
     <file baseinstalldir="/" name="src/core/transport/auth_context.h" role="src" />
+    <file baseinstalldir="/" name="src/core/transport/auth_context_comparator_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/transport/endpoint_transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/transport/endpoint_transport_client_channel_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/transport/endpoint_transport_client_channel_factory.h" role="src" />

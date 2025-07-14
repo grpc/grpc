@@ -83,7 +83,6 @@ const grpc_channel_filter TestFilter::kFilter =
     MakePromiseBasedFilter<TestFilter, FilterEndpoint::kServer>();
 
 CORE_END2END_TEST(CoreEnd2endTests, FilterCausesClose) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   CoreConfiguration::RegisterEphemeralBuilder(
       [](CoreConfiguration::Builder* builder) {
         builder->channel_init()->RegisterFilter<TestFilter>(

@@ -58,6 +58,11 @@
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/work_serializer.h"
 
+/** This arg is intended for internal use only, primarily
+ *  for passing endpoint information during subchannel creation or connection.
+ */
+#define GRPC_ARG_SUBCHANNEL_ENDPOINT "grpc.internal.subchannel_endpoint"
+
 namespace grpc_core {
 
 class SubchannelCall;
@@ -328,6 +333,9 @@ class Subchannel final : public DualRefCounted<Subchannel> {
   RefCountedPtr<SubchannelPoolInterface> subchannel_pool_;
   // Subchannel key that identifies this subchannel in the subchannel pool.
   const SubchannelKey key_;
+  // boolean value that identifies this subchannel is created from event engine
+  // endpoint.
+  const bool created_from_endpoint_;
   // Actual address to connect to.  May be different than the address in
   // key_ if overridden by proxy mapper.
   grpc_resolved_address address_for_connect_;

@@ -54,7 +54,6 @@ auto MakeVec(F init) {
 }
 
 CORE_END2END_TEST(ResourceQuotaTests, ResourceQuota) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   if (IsEventEngineListenerEnabled()) {
     GTEST_SKIP() << "Not with event engine listener";
   }
