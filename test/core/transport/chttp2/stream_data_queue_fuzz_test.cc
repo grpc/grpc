@@ -37,21 +37,19 @@ class SimpleQueueFuzzTest : public YodelTest {
   Party* GetParty() { return party_.get(); }
 
   void InitParty() {
-    auto general_party_arena = SimpleArenaAllocator(0)->MakeArena();
-    general_party_arena
-        ->SetContext<grpc_event_engine::experimental::EventEngine>(
-            event_engine().get());
-    party_ = Party::Make(std::move(general_party_arena));
+    auto party_arena = SimpleArenaAllocator(0)->MakeArena();
+    party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine().get());
+    party_ = Party::Make(std::move(party_arena));
   }
 
   Party* GetParty2() { return party2_.get(); }
 
   void InitParty2() {
-    auto general_party_arena = SimpleArenaAllocator(0)->MakeArena();
-    general_party_arena
-        ->SetContext<grpc_event_engine::experimental::EventEngine>(
-            event_engine().get());
-    party2_ = Party::Make(std::move(general_party_arena));
+    auto party_arena = SimpleArenaAllocator(0)->MakeArena();
+    party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine().get());
+    party2_ = Party::Make(std::move(party_arena));
   }
 
   auto EnqueueAndCheckSuccess(SimpleQueue<int>& queue, int data, int tokens) {
@@ -129,10 +127,11 @@ YODEL_TEST(SimpleQueueFuzzTest, EnqueueAndDequeueMultiPartyTest) {
                       DequeueAndCheck(queue, /*data=*/current_dequeue_count,
                                       /*allow_oversized_dequeue=*/false,
                                       /*max_tokens=*/10),
-                      [&current_dequeue_count,
-                       &on_dequeue_done]() -> LoopCtl<absl::Status> {
+                      [&current_dequeue_count, &on_dequeue_done,
+                       &queue]() -> LoopCtl<absl::Status> {
                         if (++current_dequeue_count == dequeue_count) {
                           on_dequeue_done.Call(absl::OkStatus());
+                          EXPECT_TRUE(queue.TestOnlyIsEmpty());
                           return absl::OkStatus();
                         } else {
                           return Continue();

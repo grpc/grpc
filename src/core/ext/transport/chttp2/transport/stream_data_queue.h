@@ -49,41 +49,43 @@ class Center : public RefCounted<Center<T>> {
       // then allow the enqueue to go through. Otherwise, return pending. Here,
       // we are using tokens_consumed over queue_.empty() because there can
       // be enqueues with tokens = 0.
-      if (self->tokens_consumed_ > 0 &&
-          self->tokens_consumed_ > ((self->max_tokens_ >= tokens)
-                                        ? self->max_tokens_ - tokens
-                                        : 0)) {
+      const uint32_t max_tokens_consumed_threshold =
+          self->max_tokens_ >= tokens ? self->max_tokens_ - tokens : 0;
+      if (self->tokens_consumed_ == 0 ||
+          self->tokens_consumed_ <= max_tokens_consumed_threshold) {
+        self->tokens_consumed_ += tokens;
+        self->queue_.emplace(Entry{std::move(data), tokens});
         GRPC_STREAM_DATA_QUEUE_DEBUG
-            << "Token threshold reached. Data tokens: " << tokens
-            << " Tokens consumed: " << self->tokens_consumed_
-            << " Max tokens: " << self->max_tokens_;
-        self->waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-        return Pending{};
+            << "Enqueue successful. Data tokens: " << tokens
+            << " Current tokens consumed: " << self->tokens_consumed_;
+        return absl::OkStatus();
       }
 
-      self->tokens_consumed_ += tokens;
-      self->queue_.emplace(Entry{std::move(data), tokens});
       GRPC_STREAM_DATA_QUEUE_DEBUG
-          << "Enqueue successful. Data tokens: " << tokens
-          << " Current tokens consumed: " << self->tokens_consumed_;
-      return absl::OkStatus();
+          << "Token threshold reached. Data tokens: " << tokens
+          << " Tokens consumed: " << self->tokens_consumed_
+          << " Max tokens: " << self->max_tokens_;
+      self->waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+      return Pending{};
     };
   }
 
   // Sync function to dequeue the next entry. Returns nullopt if the queue is
-  // empty or if the front of the queue has more tokens than max_tokens.
-  // When allow_oversized_dequeue parameter is set to true, it allows an item to
-  // be dequeued even if its token cost is greater than max_tokens. It does not
-  // cause the item itself to be partially dequeued; the entire item is always
+  // empty or if the front of the queue has more tokens than
+  // allowed_dequeue_tokens. When allow_oversized_dequeue parameter is set to
+  // true, it allows an item to be dequeued even if its token cost is greater
+  // than allowed_dequeue_tokens. It does not cause the item itself to be
+  // partially dequeued; either the entire item is returned or nullopt is
   // returned.
-  std::optional<T> Dequeue(const uint32_t max_tokens,
+  std::optional<T> Dequeue(const uint32_t allowed_dequeue_tokens,
                            const bool allow_oversized_dequeue) {
     ReleasableMutexLock lock(&mu_);
-    if (queue_.empty() ||
-        (queue_.front().tokens > max_tokens && !allow_oversized_dequeue)) {
+    if (queue_.empty() || (queue_.front().tokens > allowed_dequeue_tokens &&
+                           !allow_oversized_dequeue)) {
       GRPC_STREAM_DATA_QUEUE_DEBUG
           << "Dequeueing data. Queue size: " << queue_.size()
-          << " Max tokens: " << max_tokens << " Front tokens: "
+          << " Max allowed dequeue tokens: " << allowed_dequeue_tokens
+          << " Front tokens: "
           << (!queue_.empty() ? std::to_string(queue_.front().tokens)
                               : std::string("NA"))
           << " Allow oversized dequeue: " << allow_oversized_dequeue;
@@ -109,7 +111,7 @@ class Center : public RefCounted<Center<T>> {
 
   bool IsEmpty() {
     MutexLock lock(&mu_);
-    return (queue_.empty() && tokens_consumed_ == 0);
+    return queue_.empty();
   }
 
  private:
@@ -150,9 +152,9 @@ class SimpleQueue {
     return center_->Enqueue(std::move(data), tokens);
   }
 
-  std::optional<T> Dequeue(const uint32_t max_tokens,
+  std::optional<T> Dequeue(const uint32_t allowed_dequeue_tokens,
                            const bool allow_oversized_dequeue) {
-    return center_->Dequeue(max_tokens, allow_oversized_dequeue);
+    return center_->Dequeue(allowed_dequeue_tokens, allow_oversized_dequeue);
   }
 
   // Dequeues the next entry immediately ignoring the tokens. If the queue is
@@ -161,7 +163,7 @@ class SimpleQueue {
     return center_->Dequeue(std::numeric_limits<uint32_t>::max(), true);
   }
 
-  bool TestOnlyIsEmpty() { return center_->IsEmpty(); }
+  bool TestOnlyIsEmpty() const { return center_->IsEmpty(); }
 
  private:
   // This is solely added to handle race conditions between the class destructor

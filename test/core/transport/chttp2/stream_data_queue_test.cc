@@ -72,11 +72,10 @@ class SimpleQueueTest : public TransportTest {
   Party* GetParty() { return party_.get(); }
 
   void InitParty() {
-    auto general_party_arena = SimpleArenaAllocator(0)->MakeArena();
-    general_party_arena
-        ->SetContext<grpc_event_engine::experimental::EventEngine>(
-            event_engine().get());
-    party_ = Party::Make(std::move(general_party_arena));
+    auto party_arena = SimpleArenaAllocator(0)->MakeArena();
+    party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine().get());
+    party_ = Party::Make(std::move(party_arena));
   }
 
  private:
@@ -191,6 +190,7 @@ TEST_F(SimpleQueueTest, DequeueTest) {
                                             /*allow_oversized_dequeue=*/false,
                                             /*max_tokens=*/10);
                      on_dequeue_done.Call(absl::OkStatus());
+                     EXPECT_TRUE(queue.TestOnlyIsEmpty());
                      return absl::OkStatus();
                    }),
                [](auto) { LOG(INFO) << "Reached end of DequeueTest"; });
@@ -244,9 +244,10 @@ TEST_F(SimpleQueueTest, DequeuePartialDequeueTest) {
                                       /*max_tokens=*/10);
                return absl::OkStatus();
              }),
-      [&on_dequeue_done](auto) {
+      [&on_dequeue_done, &queue](auto) {
         LOG(INFO) << "Reached end of DequeueTest";
         on_dequeue_done.Call(absl::OkStatus());
+        EXPECT_TRUE(queue.TestOnlyIsEmpty());
       });
 
   event_engine()->TickUntilIdle();
@@ -309,9 +310,10 @@ TEST_F(SimpleQueueTest, DequeueMaxTokensTest) {
                                       /*max_tokens=*/10);
                return absl::OkStatus();
              }),
-      [&on_dequeue_done](auto) {
+      [&on_dequeue_done, &queue](auto) {
         LOG(INFO) << "Reached end of DequeueTest";
         on_dequeue_done.Call(absl::OkStatus());
+        EXPECT_TRUE(queue.TestOnlyIsEmpty());
       });
 
   event_engine()->TickUntilIdle();
@@ -361,11 +363,12 @@ TEST_F(SimpleQueueTest, BigMessageEnqueueDequeueTest) {
             DequeueAndCheck(queue, expected_data[expected_data_index++],
                             /*allow_oversized_dequeue=*/true,
                             /*max_tokens=*/10),
-            [&dequeue_count, &on_dequeue_done,
-             &execution_order]() -> LoopCtl<absl::Status> {
+            [&dequeue_count, &on_dequeue_done, &execution_order,
+             &queue]() -> LoopCtl<absl::Status> {
               if (--dequeue_count == 0) {
                 execution_order.push_back('3');
                 on_dequeue_done.Call(absl::OkStatus());
+                EXPECT_TRUE(queue.TestOnlyIsEmpty());
                 return absl::OkStatus();
               } else {
                 return Continue();
