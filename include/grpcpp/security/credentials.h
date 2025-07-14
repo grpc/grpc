@@ -167,7 +167,8 @@ struct SslCredentialsOptions {
 std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials();
 
 /// Builds wrapped double credentials with reasonable defaults.
-/// The returned credentials have two underlying credentials, one for TLS and one for ALTS.
+/// The returned credentials have two underlying credentials, one for TLS and
+/// one for ALTS.
 ///
 /// \warning Only use these credentials when connecting to a Google endpoint.
 /// Using these credentials to connect to any other service may result in this
