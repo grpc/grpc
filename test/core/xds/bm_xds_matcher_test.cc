@@ -35,7 +35,7 @@ const int kRangeMultiplier = 4;
 // A concrete implementation of MatchContext for testing purposes.
 class TestMatchContext : public XdsMatcher::MatchContext {
  public:
-  explicit TestMatchContext(absl::string_view path) : path_(path) {}
+  explicit TestMatchContext(std::string path) : path_(std::move(path)) {}
 
   UniqueTypeName type() const override {
     return GRPC_UNIQUE_TYPE_NAME_HERE("TestMatchContext");
@@ -44,24 +44,21 @@ class TestMatchContext : public XdsMatcher::MatchContext {
   absl::string_view path() const { return path_; }
 
  private:
-  absl::string_view path_;
+  std::string path_;
 };
 
 // A concrete implementation of InputValue for testing.
 class TestPathInput : public XdsMatcher::InputValue<absl::string_view> {
  public:
-  UniqueTypeName context_type() const override {
-    return GRPC_UNIQUE_TYPE_NAME_HERE("TestMatchContext");
-  }
-
   std::optional<absl::string_view> GetValue(
       const XdsMatcher::MatchContext& context) const override {
-    const auto* test_context = DownCast<const TestMatchContext*>(&context);
-    return test_context->path();
+    const auto& test_context = DownCast<const TestMatchContext&>(context);
+    return test_context.path();
   }
+  // Dummy always return true
   bool Equals(
       const XdsMatcher::InputValue<absl::string_view>& other) const override {
-    return dynamic_cast<const TestPathInput*>(&other) != nullptr;
+    return true;
   }
   std::string ToString() const override { return "TestPathInput"; }
 };
