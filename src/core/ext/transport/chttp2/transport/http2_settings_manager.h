@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_SETTINGS_H
-#define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_SETTINGS_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_SETTINGS_MANAGER_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_SETTINGS_MANAGER_H
 
 #include <grpc/support/port_platform.h>
 #include <stdint.h>
@@ -35,11 +35,11 @@ namespace grpc_core {
 
 class Http2SettingsManager {
  public:
-  Http2Settings& mutable_local() { return local_; }
-  const Http2Settings& local() const { return local_; }
-  const Http2Settings& acked() const { return acked_; }
-  Http2Settings& mutable_peer() { return peer_; }
-  const Http2Settings& peer() const { return peer_; }
+  grpc_core::Http2Settings& mutable_local() { return local_; }
+  const grpc_core::Http2Settings& local() const { return local_; }
+  const grpc_core::Http2Settings& acked() const { return acked_; }
+  grpc_core::Http2Settings& mutable_peer() { return peer_; }
+  const grpc_core::Http2Settings& peer() const { return peer_; }
 
   channelz::PropertyGrid ChannelzProperties() const {
     return channelz::PropertyGrid()
@@ -67,4 +67,4 @@ class Http2SettingsManager {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_SETTINGS_H
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_SETTINGS_MANAGER_H

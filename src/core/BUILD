@@ -7842,6 +7842,7 @@ grpc_cc_library(
         "channelz_property_list",
         "experiments",
         "http2_settings",
+        "http2_settings_manager",
         "memory_quota",
         "time",
         "useful",
