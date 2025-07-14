@@ -234,9 +234,8 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnHostnameResolved(
   auto* self = static_cast<AresRequestWrapper*>(arg);
   std::optional<Result> result;
   if (error.ok()) {
-    GRPC_TRACE_VLOG(cares_resolver, 2)
-        << "(c-ares resover) resolver:" << self
-        << " OnHostnameResolved success";
+    GRPC_TRACE_VLOG(cares_resolver, 2) << "(c-ares resover) resolver:" << self
+                                       << " OnHostnameResolved success";
   } else {
     GRPC_TRACE_VLOG(cares_resolver, 2)
         << "(c-ares resover) resolver:" << self
