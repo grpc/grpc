@@ -16,17 +16,13 @@
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/wrappers.pb.h>
 
-#include "envoy/type/matcher/v3/http_inputs.pb.h"  // IWYU pragma: keep
+#include "envoy/type/matcher/v3/http_inputs.pb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "gtest/gtest.h"
 #include "src/core/util/down_cast.h"
-#include "src/core/util/match.h"
-#include "src/core/util/ref_counted.h"
 #include "src/core/util/upb_utils.h"
-#include "src/core/util/validation_errors.h"  // For ValidationErrors
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
-#include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_matcher.h"
 #include "src/core/xds/grpc/xds_matcher_action.h"
 #include "src/core/xds/grpc/xds_matcher_context.h"
