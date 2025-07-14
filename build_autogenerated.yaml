@@ -7883,7 +7883,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto

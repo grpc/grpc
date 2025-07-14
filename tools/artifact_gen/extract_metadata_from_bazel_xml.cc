@@ -1194,7 +1194,7 @@ class ArtifactGen {
          "dev_cel",
          {
            "third_party/cel-spec",
-           "third_party/cel-spec",    
+           "third_party/cel-spec/",
          },
        }};
 };

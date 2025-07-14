@@ -5157,7 +5157,7 @@ grpc_upb_proto_library(
 
 grpc_upb_proto_library(
     name = "dev_cel_expr_checked_upb",
-    deps = ["@dev_cel//proto/cel/expr:checked_proto"]
+    deps = ["@dev_cel//proto/cel/expr:checked_proto"],
 )
 
 grpc_upb_proto_reflection_library(
@@ -5167,7 +5167,7 @@ grpc_upb_proto_reflection_library(
 
 grpc_upb_proto_library(
     name = "dev_cel_expr_syntax_upb",
-    deps = ["@dev_cel//proto/cel/expr:syntax_proto"]
+    deps = ["@dev_cel//proto/cel/expr:syntax_proto"],
 )
 
 grpc_upb_proto_reflection_library(
