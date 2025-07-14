@@ -44,17 +44,12 @@ namespace grpc_core {
   "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientHttp2Fallback"    \
   "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientTrueBinary"       \
   "|CoreEnd2endTests.CancelWithStatus3"                                    \
+  "|CoreEnd2endTests.CancelWithStatus6"                                    \
   "|CoreEnd2endTests.MaxMessageLengthOnClientOnResponseViaChannelArg"      \
   "|CoreEnd2endTests."                                                     \
   "MaxMessageLengthOnClientOnResponseViaServiceConfigWithIntegerJsonValue" \
   "|CoreEnd2endTests."                                                     \
   "MaxMessageLengthOnClientOnResponseViaServiceConfigWithStringJsonValue"  \
-  "|CoreEnd2endTests.PingPongStreaming1"                                   \
-  "|CoreEnd2endTests.PingPongStreaming10"                                  \
-  "|CoreEnd2endTests.PingPongStreaming10"                                  \
-  "|CoreEnd2endTests.PingPongStreaming3"                                   \
-  "|CoreEnd2endTests.PingPongStreaming3"                                   \
-  "|CoreEnd2endTests.PingPongStreaming30"                                  \
   "|CoreEnd2endTests.SimpleMetadata"                                       \
   "|CoreEnd2endTests.StreamingErrorResponse"                               \
   "|CoreEnd2endTests.StreamingErrorResponse"                               \
