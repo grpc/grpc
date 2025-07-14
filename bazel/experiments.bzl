@@ -17,9 +17,7 @@
 """Dictionary of tags to experiments so we know when to test different experiments."""
 
 EXPERIMENT_ENABLES = {
-    "backoff_cap_initial_at_max": "backoff_cap_initial_at_max",
     "call_tracer_in_transport": "call_tracer_in_transport",
-    "callv3_client_auth_filter": "callv3_client_auth_filter",
     "chaotic_good_framing_layer": "chaotic_good_framing_layer",
     "chttp2_bound_write_size": "chttp2_bound_write_size",
     "error_flatten": "error_flatten",
@@ -35,22 +33,20 @@ EXPERIMENT_ENABLES = {
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
     "max_inflight_pings_strict_limit": "max_inflight_pings_strict_limit",
-    "max_pings_wo_data_throttle": "max_pings_wo_data_throttle",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
+    "pick_first_ignore_empty_updates": "pick_first_ignore_empty_updates",
+    "pipelined_read_secure_endpoint": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,pipelined_read_secure_endpoint",
     "pollset_alternative": "event_engine_client,event_engine_listener,pollset_alternative",
-    "posix_ee_skip_grpc_init": "posix_ee_skip_grpc_init",
+    "prioritize_finished_requests": "prioritize_finished_requests",
     "promise_based_http2_client_transport": "promise_based_http2_client_transport",
     "promise_based_http2_server_transport": "promise_based_http2_server_transport",
     "promise_based_inproc_transport": "promise_based_inproc_transport",
     "retry_in_callv3": "retry_in_callv3",
-    "rq_fast_reject": "rq_fast_reject",
-    "rst_stream_fix": "rst_stream_fix",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "secure_endpoint_offload_large_reads": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,secure_endpoint_offload_large_reads",
     "secure_endpoint_offload_large_writes": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,secure_endpoint_offload_large_writes",
     "server_global_callbacks_ownership": "server_global_callbacks_ownership",
-    "shard_channelz_index": "shard_channelz_index",
     "shard_global_connection_pool": "shard_global_connection_pool",
     "sleep_promise_exec_ctx_removal": "sleep_promise_exec_ctx_removal",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
@@ -67,6 +63,7 @@ EXPERIMENT_POLLERS = [
     "event_engine_listener",
     "event_engine_for_all_other_endpoints",
     "event_engine_secure_endpoint",
+    "pipelined_read_secure_endpoint",
 ]
 
 EXPERIMENTS = {
@@ -75,13 +72,13 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
-                "callv3_client_auth_filter",
                 "chttp2_bound_write_size",
                 "error_flatten",
-                "event_engine_dns_non_client_channel",
                 "event_engine_fork",
                 "local_connector_secure",
+                "pipelined_read_secure_endpoint",
                 "pollset_alternative",
+                "promise_based_http2_client_transport",
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
@@ -111,6 +108,9 @@ EXPERIMENTS = {
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
             ],
+            "secure_endpoint_test": [
+                "pipelined_read_secure_endpoint",
+            ],
             "xds_end2end_test": [
                 "error_flatten",
             ],
@@ -119,20 +119,14 @@ EXPERIMENTS = {
             "cancel_ares_query_test": [
                 "event_engine_dns",
             ],
-            "channelz_test": [
-                "shard_channelz_index",
-            ],
             "core_end2end_test": [
                 "chaotic_good_framing_layer",
                 "event_engine_client",
+                "event_engine_dns_non_client_channel",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "event_engine_secure_endpoint",
-                "posix_ee_skip_grpc_init",
                 "shard_global_connection_pool",
-            ],
-            "cpp_end2end_test": [
-                "posix_ee_skip_grpc_init",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -153,13 +147,13 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
-                "callv3_client_auth_filter",
                 "chttp2_bound_write_size",
                 "error_flatten",
-                "event_engine_dns_non_client_channel",
                 "event_engine_fork",
                 "local_connector_secure",
+                "pipelined_read_secure_endpoint",
                 "pollset_alternative",
+                "promise_based_http2_client_transport",
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
@@ -189,6 +183,9 @@ EXPERIMENTS = {
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
             ],
+            "secure_endpoint_test": [
+                "pipelined_read_secure_endpoint",
+            ],
             "xds_end2end_test": [
                 "error_flatten",
             ],
@@ -197,20 +194,14 @@ EXPERIMENTS = {
             "cancel_ares_query_test": [
                 "event_engine_dns",
             ],
-            "channelz_test": [
-                "shard_channelz_index",
-            ],
             "core_end2end_test": [
                 "chaotic_good_framing_layer",
                 "event_engine_client",
+                "event_engine_dns_non_client_channel",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "event_engine_secure_endpoint",
-                "posix_ee_skip_grpc_init",
                 "shard_global_connection_pool",
-            ],
-            "cpp_end2end_test": [
-                "posix_ee_skip_grpc_init",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -231,13 +222,13 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
-                "callv3_client_auth_filter",
                 "chttp2_bound_write_size",
                 "error_flatten",
-                "event_engine_dns_non_client_channel",
                 "event_engine_fork",
                 "local_connector_secure",
+                "pipelined_read_secure_endpoint",
                 "pollset_alternative",
+                "promise_based_http2_client_transport",
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
@@ -267,6 +258,9 @@ EXPERIMENTS = {
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
             ],
+            "secure_endpoint_test": [
+                "pipelined_read_secure_endpoint",
+            ],
             "xds_end2end_test": [
                 "error_flatten",
             ],
@@ -275,20 +269,14 @@ EXPERIMENTS = {
             "cancel_ares_query_test": [
                 "event_engine_dns",
             ],
-            "channelz_test": [
-                "shard_channelz_index",
-            ],
             "core_end2end_test": [
                 "chaotic_good_framing_layer",
                 "event_engine_client",
+                "event_engine_dns_non_client_channel",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "event_engine_secure_endpoint",
-                "posix_ee_skip_grpc_init",
                 "shard_global_connection_pool",
-            ],
-            "cpp_end2end_test": [
-                "posix_ee_skip_grpc_init",
             ],
             "event_engine_client_test": [
                 "event_engine_client",

@@ -122,6 +122,7 @@ class Waker {
   }
 
   std::string DebugString() const {
+    if (is_unwakeable()) return "<unwakeable>";
     return absl::StrFormat("Waker{%p, %d}", wakeable_and_arg_.wakeable,
                            wakeable_and_arg_.wakeup_mask);
   }

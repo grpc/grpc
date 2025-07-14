@@ -24,6 +24,8 @@
 #include "absl/status/status.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/util/function_signature.h"
+#include "src/core/util/json/json.h"
 
 namespace grpc_core {
 

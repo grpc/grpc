@@ -43,6 +43,7 @@ CoreConfiguration::CoreConfiguration(Builder* builder)
       channel_init_(builder->channel_init_.Build()),
       handshaker_registry_(builder->handshaker_registry_.Build()),
       channel_creds_registry_(builder->channel_creds_registry_.Build()),
+      call_creds_registry_(builder->call_creds_registry_.Build()),
       service_config_parser_(builder->service_config_parser_.Build()),
       resolver_registry_(builder->resolver_registry_.Build()),
       lb_policy_registry_(builder->lb_policy_registry_.Build()),
@@ -50,7 +51,9 @@ CoreConfiguration::CoreConfiguration(Builder* builder)
       certificate_provider_registry_(
           builder->certificate_provider_registry_.Build()),
       endpoint_transport_registry_(
-          builder->endpoint_transport_registry_.Build()) {}
+          builder->endpoint_transport_registry_.Build()),
+      auth_context_comparator_registry_(
+          builder->auth_context_comparator_registry_.Build()) {}
 
 void CoreConfiguration::RegisterBuilder(
     BuilderScope scope, absl::AnyInvocable<void(Builder*)> builder,

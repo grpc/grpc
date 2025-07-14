@@ -241,7 +241,7 @@ void TestRequestResponseWithPayloadAndDeletedCallCreds(
 CORE_END2END_TEST(PerCallCredsOnInsecureTests,
                   RequestWithServerRejectingClientCreds) {
   InitClient(ChannelArgs());
-  InitServer(ChannelArgs().Set(FAIL_AUTH_CHECK_SERVER_ARG_NAME, true));
+  InitServer(DefaultServerArgs().Set(FAIL_AUTH_CHECK_SERVER_ARG_NAME, true));
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   auto* creds =
       grpc_md_only_test_credentials_create(fake_md_key, fake_md_value);

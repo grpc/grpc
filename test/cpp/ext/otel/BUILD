@@ -176,6 +176,7 @@ grpc_cc_test(
     deps = [
         ":otel_test_library",
         "//:grpc++",
+        "//src/core:posix_event_engine_poller_posix_default",
         "//src/cpp/ext/otel:otel_plugin",
         "//test/core/promise:test_context",
         "//test/core/test_util:fail_first_call_filter",

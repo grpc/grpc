@@ -45,6 +45,10 @@ class RetryFilter final {
  public:
   static const grpc_channel_filter kVtable;
 
+  static void UpdateBlackboard(const ServiceConfig& service_config,
+                               const Blackboard* old_blackboard,
+                               Blackboard* blackboard);
+
  private:
   // Old filter-stack style call implementation, in
   // retry_filter_legacy_call_data.{h,cc}
@@ -60,8 +64,8 @@ class RetryFilter final {
 
   const internal::RetryMethodConfig* GetRetryPolicy(Arena* arena);
 
-  RefCountedPtr<internal::ServerRetryThrottleData> retry_throttle_data() const {
-    return retry_throttle_data_;
+  RefCountedPtr<internal::RetryThrottler> retry_throttler() const {
+    return retry_throttler_;
   }
 
   ClientChannelFilter* client_channel() const { return client_channel_; }
@@ -80,15 +84,14 @@ class RetryFilter final {
                  0, INT_MAX);
   }
 
-  RetryFilter(const ChannelArgs& args, grpc_error_handle* error);
+  explicit RetryFilter(const grpc_channel_element_args& args);
 
   static grpc_error_handle Init(grpc_channel_element* elem,
                                 grpc_channel_element_args* args) {
     CHECK(args->is_last);
     CHECK(elem->filter == &kVtable);
-    grpc_error_handle error;
-    new (elem->channel_data) RetryFilter(args->channel_args, &error);
-    return error;
+    new (elem->channel_data) RetryFilter(*args);
+    return absl::OkStatus();
   }
 
   static void Destroy(grpc_channel_element* elem) {
@@ -105,7 +108,7 @@ class RetryFilter final {
   ClientChannelFilter* client_channel_;
   grpc_event_engine::experimental::EventEngine* const event_engine_;
   size_t per_rpc_retry_buffer_size_;
-  RefCountedPtr<internal::ServerRetryThrottleData> retry_throttle_data_;
+  RefCountedPtr<internal::RetryThrottler> retry_throttler_;
   const size_t service_config_parser_index_;
 };
 

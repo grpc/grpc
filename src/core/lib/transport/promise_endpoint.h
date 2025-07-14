@@ -44,7 +44,7 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/telemetry/context_list_entry.h"
+#include "src/core/util/dump_args.h"
 #include "src/core/util/sync.h"
 
 namespace grpc_core {
@@ -140,9 +140,10 @@ class PromiseEndpoint {
     // Assert previous read finishes.
     CHECK(!read_state_->complete.load(std::memory_order_relaxed));
     // Should not have pending reads.
-    CHECK(read_state_->pending_buffer.Count() == 0u);
+    CHECK_EQ(read_state_->pending_buffer.Count(), 0u);
     bool complete = true;
     while (read_state_->buffer.Length() < num_bytes) {
+      GRPC_LATENT_SEE_INNER_SCOPE("GRPC:Read:Loop");
       // Set read args with hinted bytes.
       grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs
           read_args;
@@ -160,7 +161,7 @@ class PromiseEndpoint {
         read_state_->waker = Waker();
         read_state_->pending_buffer.MoveFirstNBytesIntoSliceBuffer(
             read_state_->pending_buffer.Length(), read_state_->buffer);
-        DCHECK(read_state_->pending_buffer.Count() == 0u);
+        DCHECK_EQ(read_state_->pending_buffer.Count(), 0u);
       } else {
         complete = false;
         break;
@@ -232,29 +233,6 @@ class PromiseEndpoint {
     if (chaotic_good_ext != nullptr) {
       chaotic_good_ext->EnforceRxMemoryAlignment();
       chaotic_good_ext->EnableRpcReceiveCoalescing();
-      if (read_state_->buffer.Length() == 0) {
-        return;
-      }
-
-      // Copy everything from read_state_->buffer into a single slice and
-      // replace the contents of read_state_->buffer with that slice.
-      grpc_slice slice = grpc_slice_malloc_large(read_state_->buffer.Length());
-      CHECK(reinterpret_cast<uintptr_t>(GRPC_SLICE_START_PTR(slice)) % 64 == 0);
-      size_t ofs = 0;
-      for (size_t i = 0; i < read_state_->buffer.Count(); i++) {
-        memcpy(
-            GRPC_SLICE_START_PTR(slice) + ofs,
-            GRPC_SLICE_START_PTR(
-                read_state_->buffer.c_slice_buffer()->slices[i]),
-            GRPC_SLICE_LENGTH(read_state_->buffer.c_slice_buffer()->slices[i]));
-        ofs +=
-            GRPC_SLICE_LENGTH(read_state_->buffer.c_slice_buffer()->slices[i]);
-      }
-
-      read_state_->buffer.Clear();
-      read_state_->buffer.AppendIndexed(
-          grpc_event_engine::experimental::Slice(slice));
-      DCHECK(read_state_->buffer.Length() == ofs);
     }
   }
 

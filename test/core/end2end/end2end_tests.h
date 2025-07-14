@@ -48,7 +48,10 @@
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
+#include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/shim.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call_test_only.h"
@@ -96,8 +99,11 @@
 #define FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS (1 << 15)
 #define FEATURE_MASK_IS_CALL_V3 (1 << 16)
 #define FEATURE_MASK_IS_LOCAL_TCP_CREDS (1 << 17)
+#define FEATURE_MASK_IS_PH2_CLIENT (1 << 18)
 
 #define FAIL_AUTH_CHECK_SERVER_ARG_NAME "fail_auth_check"
+
+#define GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG "Ph2Client"
 
 namespace grpc_core {
 
@@ -130,6 +136,35 @@ struct CoreTestConfiguration {
   std::function<std::unique_ptr<CoreTestFixture>(
       const ChannelArgs& client_args, const ChannelArgs& server_args)>
       create_fixture;
+
+  // Final Test List = (All tests in include_test_suites)
+  //                   + (Tests in include_specific_tests)
+  //                   - (Tests in exclude_specific_tests)
+  //
+  // include_test_suites
+  // To enable all test suites, pass "*" as include_test_suites.
+  // To avoid adding all suites, pass "" as include_test_suites.
+  // To enable sepcific suites pass a `|` separated list to include_test_suites.
+  //
+  // include_specific_tests
+  // If you want to include a specific test, then add the name to
+  // include_specific_tests. Otherwise leave include_specific_tests empty.
+  // include_specific_tests should be used when we want to enable less
+  // than half of the tests that are present in the entire test suite.
+  //
+  // exclude_specific_tests
+  // If you want to exclude a specific test, then add the name to
+  // exclude_specific_tests. Otherwise leave exclude_specific_tests empty.
+  // exclude_specific_tests should be used when we want to include more
+  // than half of the tests that are present in the entire test suite.
+  //
+  // Example include_test_suites = "SuiteName1|SuiteName3|SuiteName5"
+  // Example include_specific_tests = "SuiteName10.Test4|SuiteName11.Test8"
+  // Example exclude_specific_tests = "SuiteName1.Test4|SuiteName3.Test8"
+  //
+  absl::string_view include_test_suites = "*";
+  absl::string_view include_specific_tests;
+  absl::string_view exclude_specific_tests;
 };
 
 const CoreTestConfiguration* CoreTestConfigurationNamed(absl::string_view name);
@@ -457,6 +492,16 @@ class CoreEnd2endTest {
     client_ = f.MakeClient(args, cq_);
     CHECK_NE(client_, nullptr);
   }
+
+  static ChannelArgs DefaultServerArgs() {
+    // TODO(b/424667351) : Remove ping timeout channel arg after fixing.
+    // This is a workaround for the flakiness that arises when a server is
+    // trying to gracefully shutdown, and waiting for a ping response from the
+    // client. In the failure cases, the client sockets are already shutdown
+    // with the notification not reaching the server socket.
+    return ChannelArgs().Set(GRPC_ARG_PING_TIMEOUT_MS, 5000);
+  }
+
   // Initialize the server.
   // If called, then InitClient must be called to create a client (otherwise one
   // will be provided).
@@ -691,6 +736,24 @@ inline auto MaybeAddNullConfig(
     GTEST_SKIP() << "Disabled for initial v3 testing";         \
   }
 
+inline bool IsTestEnabledInConfig(absl::string_view include_suite,
+                                  absl::string_view include_test,
+                                  absl::string_view exclude_test,
+                                  absl::string_view suite,
+                                  absl::string_view test) {
+  return (absl::StrContains((include_suite), "*") ||
+          absl::StrContains((include_suite), suite) ||
+          absl::StrContains(include_test, absl::StrCat(suite, ".", test))) &&
+         !absl::StrContains(exclude_test, absl::StrCat(suite, ".", test));
+}
+
+#define SKIP_IF_DISABLED_IN_CONFIG(include_suite, include_test, exclude_test,  \
+                                   suite, test)                                \
+  if (!IsTestEnabledInConfig(include_suite, include_test, exclude_test, suite, \
+                             test)) {                                          \
+    GTEST_SKIP();                                                              \
+  }
+
 #define SKIP_IF_LOCAL_TCP_CREDS()                                      \
   if (test_config()->feature_mask & FEATURE_MASK_IS_LOCAL_TCP_CREDS) { \
     GTEST_SKIP() << "Disabled for Local TCP Connection";               \
@@ -718,6 +781,9 @@ inline auto MaybeAddNullConfig(
         (grpc_core::ConfigVars::Get().PollStrategy() == "poll")) {           \
       GTEST_SKIP() << "call-v3 not supported with poll poller";              \
     }                                                                        \
+    SKIP_IF_DISABLED_IN_CONFIG(                                              \
+        GetParam()->include_test_suites, GetParam()->include_specific_tests, \
+        GetParam()->exclude_specific_tests, #suite, #name);                  \
     CoreEnd2endTest_##suite##_##name(GetParam(), nullptr, #suite).RunTest(); \
   }
 #endif
@@ -747,7 +813,12 @@ inline auto MaybeAddNullConfig(
         !IsEventEngineDnsEnabled()) {                                          \
       GTEST_SKIP() << "fuzzers need event engine";                             \
     }                                                                          \
-    if (IsEventEngineDnsNonClientChannelEnabled()) {                           \
+    SKIP_IF_DISABLED_IN_CONFIG(config->include_test_suites,                    \
+                               config->include_specific_tests,                 \
+                               config->exclude_specific_tests, #suite, #name); \
+    if (IsEventEngineDnsNonClientChannelEnabled() &&                           \
+        !grpc_event_engine::experimental::                                     \
+            EventEngineExperimentDisabledForPython()) {                        \
       GTEST_SKIP() << "event_engine_dns_non_client_channel experiment breaks " \
                       "fuzzing currently";                                     \
     }                                                                          \

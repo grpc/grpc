@@ -803,9 +803,9 @@ def main():
                         raise Exception(
                             "using perf buf perf report filename is unspecified"
                         )
-                    workers_and_base_names[
-                        worker.host_and_port
-                    ] = worker.perf_file_base_name
+                    workers_and_base_names[worker.host_and_port] = (
+                        worker.perf_file_base_name
+                    )
                 perf_report_failures += run_collect_perf_profile_jobs(
                     workers_and_base_names,
                     scenario.name,

@@ -26,8 +26,11 @@
 #include <utility>
 
 #include "absl/base/attributes.h"
+#include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
 #include "absl/strings/string_view.h"
+#include "src/core/channelz/channelz.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/promise/activity.h"
@@ -38,6 +41,7 @@
 #include "src/core/util/check_class_size.h"
 #include "src/core/util/construct_destruct.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 
@@ -167,6 +171,9 @@ class Party : public Activity, private Wakeable {
     // Destroy the participant before finishing.
     virtual void Destroy() = 0;
 
+    // Return a description of this participant.
+    virtual channelz::PropertyList ChannelzProperties() = 0;
+
     // Return a Handle instance for this participant.
     Wakeable* MakeNonOwningWakeable(Party* party);
 
@@ -281,6 +288,20 @@ class Party : public Activity, private Wakeable {
           party_->state_.load(std::memory_order_relaxed), wakeup_mask_);
     }
 
+    channelz::PropertyList ChannelzProperties() override {
+      channelz::PropertyList properties;
+      if (active_ != nullptr) {
+        properties.Set("active", active_->ChannelzProperties());
+      }
+      properties.Set("queued", [this]() {
+        channelz::PropertyTable queued;
+        next_.ForEach(
+            [&](Participant* p) { queued.AppendRow(p->ChannelzProperties()); });
+        return queued;
+      }());
+      return properties;
+    }
+
    private:
     friend class Party;
     friend class Arena;
@@ -367,6 +388,14 @@ class Party : public Activity, private Wakeable {
     return serializer;
   }
 
+  // Convert the party to a JSON object for visualization.
+  // This is an async operation because the party cannot be locked
+  // synchronously.
+  void ToJson(absl::AnyInvocable<void(Json::Object)>);
+
+  // Export the party to channelz.
+  void ExportToChannelz(std::string name, channelz::DataSink sink);
+
  protected:
   friend class Arena;
 
@@ -407,6 +436,7 @@ class Party : public Activity, private Wakeable {
     }
 
     bool PollParticipantPromise() override {
+      GRPC_LATENT_SEE_INNER_SCOPE(TypeName<SuppliedFactory>());
       if (!started_) {
         auto p = factory_.Make();
         Destruct(&factory_);
@@ -420,6 +450,21 @@ class Party : public Activity, private Wakeable {
         return true;
       }
       return false;
+    }
+
+    channelz::PropertyList ChannelzProperties() override {
+      return channelz::PropertyList()
+          .Set("on_complete", TypeName<OnComplete>())
+          .Set("factory", [this]() {
+            channelz::PropertyList factory;
+            if (started_) {
+              factory.Set("promise", PromiseProperty(&promise_));
+            } else {
+              factory.Set("factory",
+                          TypeName<typename Factory::UnderlyingFactory>());
+            }
+            return factory;
+          }());
     }
 
     void Destroy() override { delete this; }
@@ -463,6 +508,7 @@ class Party : public Activity, private Wakeable {
 
     // Inside party poll: drive from factory -> promise -> result
     bool PollParticipantPromise() override {
+      GRPC_LATENT_SEE_INNER_SCOPE(TypeName<SuppliedFactory>());
       switch (state_.load(std::memory_order_relaxed)) {
         case State::kFactory: {
           auto p = factory_.Make();
@@ -502,6 +548,23 @@ class Party : public Activity, private Wakeable {
     }
 
     void Destroy() override { this->Unref(); }
+
+    channelz::PropertyList ChannelzProperties() override {
+      channelz::PropertyList properties;
+      switch (state_.load(std::memory_order_relaxed)) {
+        case State::kFactory:
+          properties.Set("factory",
+                         TypeName<typename Factory::UnderlyingFactory>());
+          break;
+        case State::kPromise:
+          properties.Set("promise", PromiseProperty(&promise_));
+          break;
+        case State::kResult:
+          properties.Set("result", TypeName<typename Promise::Result>());
+          break;
+      }
+      return properties;
+    }
 
    private:
     enum class State : uint8_t { kFactory, kPromise, kResult };
@@ -580,7 +643,7 @@ class Party : public Activity, private Wakeable {
         // If the party is locked, we need to set the wakeup bits, and then
         // we'll immediately unref. Since something is running this should never
         // bring the refcount to zero.
-        if (kReffed) {
+        if constexpr (kReffed) {
           DCHECK_GT(cur_state & kRefMask, kOneRef);
         } else {
           DCHECK_GE(cur_state & kRefMask, kOneRef);
@@ -625,6 +688,8 @@ class Party : public Activity, private Wakeable {
         << absl::StrFormat("%016" PRIx64 " -> %016" PRIx64, prev_state,
                            new_state);
   }
+
+  channelz::PropertyList ChannelzPropertiesLocked();
 
   // Sentinel value for currently_polling_ when no participant is being polled.
   static constexpr uint8_t kNotPolling = 255;

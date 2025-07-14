@@ -1670,7 +1670,9 @@ class CallFilters {
         }
         return FinishStep(executor_.Start(
             &(stack_current_->stack->data_.*layout),
-            std::move(filters_->*input_location), filters_->call_data_));
+            std::move(filters_->*input_location),
+            filters_detail::Offset(filters_->call_data_,
+                                   stack_current_->call_data_offset)));
       } else {
         return FinishStep(executor_.Step(filters_->call_data_));
       }
@@ -1687,9 +1689,10 @@ class CallFilters {
           (filters_->call_state_.*on_done)();
           return ValueOrFailure<Output>{std::move(r->ok)};
         }
-        return FinishStep(
-            executor_.Start(&(stack_current_->stack->data_.*layout),
-                            std::move(r->ok), filters_->call_data_));
+        return FinishStep(executor_.Start(
+            &(stack_current_->stack->data_.*layout), std::move(r->ok),
+            filters_detail::Offset(filters_->call_data_,
+                                   stack_current_->call_data_offset)));
       }
       (filters_->call_state_.*on_done)();
       filters_->PushServerTrailingMetadata(std::move(r->error));
@@ -1727,7 +1730,9 @@ class CallFilters {
         }
         return FinishStep(executor_.Start(
             &(stack_current_->stack->data_.*layout),
-            std::move(filters_->*input_location), filters_->call_data_));
+            std::move(filters_->*input_location),
+            filters_detail::Offset(filters_->call_data_,
+                                   stack_current_->call_data_offset)));
       } else {
         return FinishStep(executor_.Step(filters_->call_data_));
       }
@@ -1742,9 +1747,10 @@ class CallFilters {
         if (stack_current_ == stack_end_) {
           return NextMsg{std::move(r->ok), &filters_->call_state_};
         }
-        return FinishStep(
-            executor_.Start(&(stack_current_->stack->data_.*layout),
-                            std::move(r->ok), filters_->call_data_));
+        return FinishStep(executor_.Start(
+            &(stack_current_->stack->data_.*layout), std::move(r->ok),
+            filters_detail::Offset(filters_->call_data_,
+                                   stack_current_->call_data_offset)));
       }
       (filters_->call_state_.*on_done)();
       filters_->PushServerTrailingMetadata(std::move(r->error));

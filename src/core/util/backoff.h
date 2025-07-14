@@ -79,6 +79,7 @@ class BackOff {
   bool initial_;
   /// current delay before retries
   Duration current_backoff_;
+  absl::InsecureBitGen bitgen_;
 };
 
 }  // namespace grpc_core

@@ -528,6 +528,9 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
     });
     if (endpoints.empty()) {
       status = absl::UnavailableError("address list must not be empty");
+      // TODO(roth): Replace this one-off special case with a more
+      // general solution.
+      if (IsPickFirstIgnoreEmptyUpdatesEnabled()) args.addresses = status;
     } else {
       // Shuffle the list if needed.
       auto config = static_cast<PickFirstConfig*>(args.config.get());
@@ -872,11 +875,18 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
   // Otherwise, process connectivity state change.
   switch (*connectivity_state_) {
     case GRPC_CHANNEL_TRANSIENT_FAILURE: {
-      bool prev_seen_transient_failure =
-          std::exchange(seen_transient_failure_, true);
       // If this is the first failure we've seen on this subchannel,
       // then we're still in the Happy Eyeballs pass.
-      if (!prev_seen_transient_failure && seen_transient_failure_) {
+      if (!seen_transient_failure_) {
+        // Only set seen_transient_failure_ on subchannels that we've
+        // already gotten to in this Happy Eyeballs pass.  We don't want
+        // to do this if a subchannel that we haven't yet gotten to reports
+        // TF, since that connection attempt might have been triggered by a
+        // different channel, and the subchannel may already be back in IDLE
+        // by the time we get there later in our Happy Eyeballs pass.
+        if (index_ <= subchannel_list_->attempting_index_) {
+          seen_transient_failure_ = true;
+        }
         // If a connection attempt fails before the timer fires, then
         // cancel the timer and start connecting on the next subchannel.
         if (index_ == subchannel_list_->attempting_index_) {
@@ -887,8 +897,8 @@ void PickFirst::SubchannelList::SubchannelData::OnConnectivityStateChange(
           ++subchannel_list_->attempting_index_;
           subchannel_list_->StartConnectingNextSubchannel();
         } else {
-          // If this was the last subchannel to fail, check if the Happy
-          // Eyeballs pass is complete.
+          // In case this was the last subchannel to fail, check if the
+          // Happy Eyeballs pass is complete.
           subchannel_list_->MaybeFinishHappyEyeballsPass();
         }
       } else if (subchannel_list_->IsHappyEyeballsPassComplete()) {

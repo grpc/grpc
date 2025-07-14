@@ -312,8 +312,9 @@ void EndpointRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
 
 // Write the data from slices and invoke the provided closure asynchronously
 // after the write is complete.
-void EndpointWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                   grpc_closure* cb, void* arg, int max_frame_size) {
+void EndpointWrite(
+    grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
+    grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args) {
   auto* eeep =
       reinterpret_cast<EventEngineEndpointWrapper::grpc_event_engine_endpoint*>(
           ep);
@@ -323,10 +324,7 @@ void EndpointWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
     return;
   }
 
-  EventEngine::Endpoint::WriteArgs write_args;
-  write_args.SetDeprecatedAndDiscouragedGoogleSpecificPointer(arg);
-  write_args.set_max_frame_size(max_frame_size);
-  if (eeep->wrapper->Write(cb, slices, std::move(write_args))) {
+  if (eeep->wrapper->Write(cb, slices, std::move(args))) {
     // Write succeeded immediately. Run the callback inline.
     eeep->wrapper->FinishPendingWrite(absl::OkStatus());
   }

@@ -30,7 +30,6 @@
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -53,7 +52,6 @@ void grpc_iomgr_init() {
   g_shutdown = 0;
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_rcv);
-  grpc_core::Executor::InitAll();
   g_root_object.next = g_root_object.prev = &g_root_object;
   g_root_object.name = const_cast<char*>("root");
   grpc_iomgr_platform_init();
@@ -142,7 +140,6 @@ void grpc_iomgr_shutdown() {
     gpr_mu_unlock(&g_mu);
     grpc_timer_list_shutdown();
     grpc_core::ExecCtx::Get()->Flush();
-    grpc_core::Executor::ShutdownAll();
   }
 
   // ensure all threads have left g_mu

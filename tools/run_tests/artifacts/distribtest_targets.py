@@ -235,11 +235,20 @@ class RubyDistribTest(object):
         if not protobuf_version == "":
             self.name += "_protobuf_%s" % protobuf_version
         self.platform = platform
+        platform_label = self.platform
         self.arch = arch
         self.docker_suffix = docker_suffix
         self.ruby_version = ruby_version
         self.protobuf_version = protobuf_version
-        self.labels = ["distribtest", "ruby", platform, arch, docker_suffix]
+        if platform_label.startswith("linux"):
+            platform_label = "linux"
+        self.labels = [
+            "distribtest",
+            "ruby",
+            platform_label,
+            arch,
+            docker_suffix,
+        ]
         if presubmit:
             self.labels.append("presubmit")
 
@@ -253,7 +262,7 @@ class RubyDistribTest(object):
             "x64": "x86_64",
             "x86": "x86",
         }
-        if not self.platform == "linux":
+        if self.platform not in ["linux-gnu", "linux-musl"]:
             raise Exception("Not supported yet.")
 
         dockerfile_name = "tools/dockerfile/distribtest/ruby_%s_%s" % (
@@ -370,14 +379,14 @@ class CppDistribTest(object):
                 "tools/dockerfile/distribtest/cpp_%s_%s"
                 % (self.docker_suffix, self.arch),
                 "test/distrib/cpp/run_distrib_test_%s.sh" % self.testcase,
-                timeout_seconds=60 * 60,
+                timeout_seconds=2 * 60 * 60,
             )
         elif self.platform == "windows":
             return create_jobspec(
                 self.name,
                 ["test\\distrib\\cpp\\run_distrib_test_%s.bat" % self.testcase],
                 environ={},
-                timeout_seconds=60 * 60,
+                timeout_seconds=2 * 60 * 60,
                 use_workspace=True,
             )
         else:
@@ -457,11 +466,11 @@ def targets():
         PythonDistribTest("linux", "x64", "fedora40"),
         PythonDistribTest("linux", "x64", "arch"),
         PythonDistribTest("linux", "x64", "alpine"),
-        PythonDistribTest("linux", "x64", "ubuntu2204"),
+        PythonDistribTest("linux", "x64", "ubuntu2404"),
         PythonDistribTest(
             "linux", "aarch64", "python39_buster", presubmit=True
         ),
-        PythonDistribTest("linux", "aarch64", "alpine"),
+        PythonDistribTest("linux", "aarch64", "alpine", presubmit=True),
         PythonDistribTest(
             "linux", "x64", "alpine3.18", source=True, presubmit=True
         ),
@@ -473,10 +482,10 @@ def targets():
         ),
         PythonDistribTest("linux", "x64", "fedora40", source=True),
         PythonDistribTest("linux", "x64", "arch", source=True),
-        PythonDistribTest("linux", "x64", "ubuntu2204", source=True),
+        PythonDistribTest("linux", "x64", "ubuntu2404", source=True),
         # Ruby
         RubyDistribTest(
-            "linux",
+            "linux-gnu",
             "x64",
             "debian11",
             ruby_version="ruby_3_2",
@@ -484,19 +493,28 @@ def targets():
             presubmit=True,
         ),
         RubyDistribTest(
-            "linux", "x64", "debian11", ruby_version="ruby_3_0", presubmit=True
+            "linux-gnu",
+            "x64",
+            "debian11",
+            ruby_version="ruby_3_1",
+            presubmit=True,
         ),
         RubyDistribTest(
-            "linux", "x64", "debian11", ruby_version="ruby_3_1", presubmit=True
+            "linux-gnu",
+            "x64",
+            "debian11",
+            ruby_version="ruby_3_2",
+            presubmit=True,
         ),
         RubyDistribTest(
-            "linux", "x64", "debian11", ruby_version="ruby_3_2", presubmit=True
+            "linux-gnu",
+            "x64",
+            "debian11",
+            ruby_version="ruby_3_3",
+            presubmit=True,
         ),
         RubyDistribTest(
-            "linux", "x64", "debian11", ruby_version="ruby_3_3", presubmit=True
-        ),
-        RubyDistribTest(
-            "linux",
+            "linux-gnu",
             "x64",
             "debian11",
             ruby_version="ruby_3_3",
@@ -504,10 +522,42 @@ def targets():
             presubmit=True,
         ),
         RubyDistribTest(
-            "linux", "x64", "debian11", ruby_version="ruby_3_4", presubmit=True
+            "linux-gnu",
+            "x64",
+            "debian11",
+            ruby_version="ruby_3_4",
+            presubmit=True,
         ),
-        RubyDistribTest("linux", "x64", "ubuntu2004"),
-        RubyDistribTest("linux", "x64", "ubuntu2204", presubmit=True),
+        RubyDistribTest("linux-gnu", "x64", "ubuntu2204", presubmit=True),
+        RubyDistribTest("linux-gnu", "x64", "ubuntu2404", presubmit=True),
+        RubyDistribTest(
+            "linux-musl",
+            "x64",
+            "alpine",
+            ruby_version="ruby_3_1",
+            presubmit=True,
+        ),
+        RubyDistribTest(
+            "linux-musl",
+            "x64",
+            "alpine",
+            ruby_version="ruby_3_2",
+            presubmit=True,
+        ),
+        RubyDistribTest(
+            "linux-musl",
+            "x64",
+            "alpine",
+            ruby_version="ruby_3_3",
+            presubmit=True,
+        ),
+        RubyDistribTest(
+            "linux-musl",
+            "x64",
+            "alpine",
+            ruby_version="ruby_3_4",
+            presubmit=True,
+        ),
         # PHP8
         PHP8DistribTest("linux", "x64", "debian12", presubmit=True),
         PHP8DistribTest("macos", "x64", presubmit=True),

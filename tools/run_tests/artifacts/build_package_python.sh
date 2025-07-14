@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+set -eux
 
 cd "$(dirname "$0")/../../.."
 
@@ -21,7 +21,13 @@ mkdir -p artifacts/
 
 # All the python packages have been built in the artifact phase already
 # and we only collect them here to deliver them to the distribtest phase.
-cp -r "${EXTERNAL_GIT_ROOT}"/input_artifacts/python_*/* artifacts/ || true
+find "${EXTERNAL_GIT_ROOT}"/input_artifacts/ \
+    -maxdepth 1 \
+    -type d \
+    -name "${ARTIFACT_PREFIX}*" \
+    -not -name "${EXCLUDE_PATTERN}" \
+    -print0 \
+        | xargs -0 -I% find % -type f -maxdepth 1 -exec cp -v {} ./artifacts \;
 
 # TODO: all the artifact builder configurations generate a grpcio-VERSION.tar.gz
 # source distribution package, and only one of them will end up

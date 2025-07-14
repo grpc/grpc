@@ -127,8 +127,10 @@ static void handle_write() {
 
   grpc_slice_buffer_reset_and_unref(&state.outgoing_buffer);
   grpc_slice_buffer_add(&state.outgoing_buffer, slice);
-  grpc_endpoint_write(state.tcp, &state.outgoing_buffer, &on_write, nullptr,
-                      /*max_frame_size=*/INT_MAX);
+  grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args;
+  args.set_max_frame_size(INT_MAX);
+  grpc_endpoint_write(state.tcp, &state.outgoing_buffer, &on_write,
+                      std::move(args));
 }
 
 static void handle_read(void* /*arg*/, grpc_error_handle error) {
@@ -179,9 +181,10 @@ static void on_connect(void* arg, grpc_endpoint* tcp,
     grpc_slice slice = grpc_slice_from_static_buffer(
         HTTP2_SETTINGS_FRAME, sizeof(HTTP2_SETTINGS_FRAME) - 1);
     grpc_slice_buffer_add(&state.outgoing_buffer, slice);
+    grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args;
+    args.set_max_frame_size(INT_MAX);
     grpc_endpoint_write(state.tcp, &state.outgoing_buffer,
-                        &on_writing_settings_frame, nullptr,
-                        /*max_frame_size=*/INT_MAX);
+                        &on_writing_settings_frame, std::move(args));
   } else {
     grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read,
                        /*urgent=*/false, /*min_progress_size=*/1);

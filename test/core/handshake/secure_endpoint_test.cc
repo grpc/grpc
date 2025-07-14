@@ -51,8 +51,9 @@ static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
   grpc_endpoint_read(m->wrapped_ep, slices, cb, urgent, min_progress_size);
 }
 
-static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                     grpc_closure* cb, void* arg, int max_frame_size) {
+static void me_write(
+    grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
+    grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args) {
   intercept_endpoint* m = reinterpret_cast<intercept_endpoint*>(ep);
   int remaining = slices->length;
   while (remaining > 0) {
@@ -61,13 +62,14 @@ static void me_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
         tsi_fake_zero_copy_grpc_protector_next_frame_size(slices);
     ASSERT_GT(next_frame_size, TSI_FAKE_FRAME_HEADER_SIZE);
     // Ensure the protected data size does not exceed the max_frame_size.
-    ASSERT_LE(next_frame_size - TSI_FAKE_FRAME_HEADER_SIZE, max_frame_size);
+    ASSERT_LE(next_frame_size - TSI_FAKE_FRAME_HEADER_SIZE,
+              args.max_frame_size());
     // Move this frame into a staging buffer and repeat.
     grpc_slice_buffer_move_first(slices, next_frame_size, &m->staging_buffer);
     remaining -= next_frame_size;
   }
   grpc_slice_buffer_swap(&m->staging_buffer, slices);
-  grpc_endpoint_write(m->wrapped_ep, slices, cb, arg, max_frame_size);
+  grpc_endpoint_write(m->wrapped_ep, slices, cb, std::move(args));
 }
 
 static void me_add_to_pollset(grpc_endpoint* /*ep*/,

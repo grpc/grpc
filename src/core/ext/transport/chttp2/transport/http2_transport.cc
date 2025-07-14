@@ -36,8 +36,8 @@ namespace http2 {
 // and it is functions. The code will be written iteratively.
 // Do not use or edit any of these functions unless you are
 // familiar with the PH2 project (Moving chttp2 to promises.)
-// TODO(tjagtap) : [PH2][P3] : Update the experimental status of the code before
-// http2 rollout begins.
+// TODO(tjagtap) : [PH2][P3] : We may not need this file. Delete once Server
+// Transport is complete.
 
 }  // namespace http2
 }  // namespace grpc_core

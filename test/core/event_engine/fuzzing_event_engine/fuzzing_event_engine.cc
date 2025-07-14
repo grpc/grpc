@@ -23,14 +23,18 @@
 #include <atomic>
 #include <chrono>
 #include <limits>
+#include <memory>
+#include <optional>
 #include <vector>
 
 #include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
+#include "absl/types/span.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/extensions/blocking_dns.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/telemetry/stats.h"
@@ -156,6 +160,8 @@ void FuzzingEventEngine::Tick(Duration max_time) {
       grpc_core::MutexLock now_lock(&*now_mu_);
       if (!tasks_by_time_.empty()) {
         incr = std::min(incr, tasks_by_time_.begin()->first - now_);
+      } else {
+        GRPC_TRACE_LOG(fuzzing_ee_timers, INFO) << "no timers scheduled";
       }
       const auto max_incr =
           std::numeric_limits<
@@ -434,8 +440,12 @@ bool FuzzingEventEngine::FuzzingEndpoint::Write(
           std::make_shared<WriteEventCallback>(m->TakeEventCallback());
       for (const auto& r : it->second) {
         g_fuzzing_event_engine->RunAfterExactlyLocked(
-            std::chrono::microseconds(r.delay_us()),
-            [r, write_event_callback]() {
+            std::min(std::chrono::duration_cast<Duration>(
+                         std::chrono::microseconds(r.delay_us())),
+                     g_fuzzing_event_engine->max_delay_write()),
+            [middle = middle_, index = my_index(), r, write_event_callback]() {
+              grpc_core::MutexLock lock(&*mu_);
+              if (middle->closed[index]) return;
               std::vector<WriteMetric> metrics;
               for (const auto& m : r.returned_endpoint_metrics()) {
                 metrics.push_back(WriteMetric{m.key(), m.value()});
@@ -462,32 +472,72 @@ absl::Time FuzzingEventEngine::NowAsAbslTime() {
              g_fuzzing_event_engine->now_.time_since_epoch().count());
 }
 
-std::vector<size_t> FuzzingEventEngine::FuzzingEndpoint::AllWriteMetrics() {
-  std::vector<size_t> out;
-  out.reserve(g_fuzzing_event_engine->endpoint_metrics_by_id_.size());
-  for (const auto& [key, _] : g_fuzzing_event_engine->endpoint_metrics_by_id_) {
-    out.push_back(key);
+class FuzzingEventEngine::FuzzingEndpoint::MetricsSet
+    : public EventEngine::Endpoint::MetricsSet {
+ public:
+  explicit MetricsSet(absl::Span<const size_t> keys) {
+    keys_.assign(keys.begin(), keys.end());
   }
-  return out;
-}
 
-std::optional<absl::string_view>
-FuzzingEventEngine::FuzzingEndpoint::GetMetricName(size_t key) {
-  auto it = g_fuzzing_event_engine->endpoint_metrics_by_id_.find(key);
-  if (it == g_fuzzing_event_engine->endpoint_metrics_by_id_.end()) {
-    return std::nullopt;
+  bool IsSet(size_t key) const override {
+    return std::find(keys_.begin(), keys_.end(), key) != keys_.end();
   }
-  return it->second;
-}
 
-std::optional<size_t> FuzzingEventEngine::FuzzingEndpoint::GetMetricKey(
-    absl::string_view name) {
-  auto it =
-      g_fuzzing_event_engine->endpoint_metrics_by_name_.find(std::string(name));
-  if (it == g_fuzzing_event_engine->endpoint_metrics_by_name_.end()) {
-    return std::nullopt;
+ private:
+  std::vector<size_t> keys_;
+};
+
+class FuzzingEventEngine::FuzzingEndpoint::FullMetricsSet
+    : public EventEngine::Endpoint::MetricsSet {
+ public:
+  bool IsSet(size_t key) const override {
+    return key < g_fuzzing_event_engine->endpoint_metrics_by_id_.size();
   }
-  return it->second;
+};
+
+class FuzzingEventEngine::FuzzingEndpoint::TelemetryInfo
+    : public EventEngine::Endpoint::TelemetryInfo {
+  std::vector<size_t> AllWriteMetrics() const override {
+    std::vector<size_t> out;
+    out.reserve(g_fuzzing_event_engine->endpoint_metrics_by_id_.size());
+    for (const auto& [key, _] :
+         g_fuzzing_event_engine->endpoint_metrics_by_id_) {
+      out.push_back(key);
+    }
+    return out;
+  }
+
+  std::optional<absl::string_view> GetMetricName(size_t key) const override {
+    auto it = g_fuzzing_event_engine->endpoint_metrics_by_id_.find(key);
+    if (it == g_fuzzing_event_engine->endpoint_metrics_by_id_.end()) {
+      return std::nullopt;
+    }
+    return it->second;
+  }
+
+  std::optional<size_t> GetMetricKey(absl::string_view name) const override {
+    auto it = g_fuzzing_event_engine->endpoint_metrics_by_name_.find(
+        std::string(name));
+    if (it == g_fuzzing_event_engine->endpoint_metrics_by_name_.end()) {
+      return std::nullopt;
+    }
+    return it->second;
+  }
+
+  std::shared_ptr<EventEngine::Endpoint::MetricsSet> GetMetricsSet(
+      absl::Span<const size_t> keys) const override {
+    return std::make_shared<MetricsSet>(keys);
+  }
+
+  std::shared_ptr<EventEngine::Endpoint::MetricsSet> GetFullMetricsSet()
+      const override {
+    return std::make_shared<FullMetricsSet>();
+  }
+};
+
+std::shared_ptr<EventEngine::Endpoint::TelemetryInfo>
+FuzzingEventEngine::FuzzingEndpoint::GetTelemetryInfo() const {
+  return std::make_shared<TelemetryInfo>();
 }
 
 void FuzzingEventEngine::FuzzingEndpoint::ScheduleDelayedWrite(
@@ -744,7 +794,9 @@ class FuzzerDNSResolver : public ExtendedType<EventEngine::DNSResolver,
 absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
 FuzzingEventEngine::GetDNSResolver(const DNSResolver::ResolverOptions&) {
 #if defined(GRPC_POSIX_SOCKET_TCP)
-  if (grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
+  if (grpc_core::IsEventEngineDnsNonClientChannelEnabled() &&
+      !grpc_event_engine::experimental::
+          EventEngineExperimentDisabledForPython()) {
     return std::make_unique<FuzzerDNSResolver>(shared_from_this());
   }
   return std::make_unique<NativePosixDNSResolver>(shared_from_this());

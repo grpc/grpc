@@ -35,7 +35,7 @@ namespace {
 // - first attempt gets ABORTED but is over limit, so no retry is done
 CORE_END2END_TEST(RetryTests, RetryThrottled) {
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
-  InitServer(ChannelArgs().Set(
+  InitServer(DefaultServerArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       "{\n"
       "  \"methodConfig\": [ {\n"

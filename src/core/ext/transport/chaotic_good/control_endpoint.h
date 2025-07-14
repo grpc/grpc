@@ -93,14 +93,22 @@ class ControlEndpoint {
 
   // Write some data to the control endpoint; returns a promise that resolves
   // to Empty{} -- it's not possible to see errors from this api.
-  auto Write(SliceBuffer&& bytes) { return buffer_->Queue(std::move(bytes)); }
+  auto Write(SliceBuffer&& bytes) {
+    return GRPC_LATENT_SEE_PROMISE("CtlEndpointEnqueueWrite",
+                                   buffer_->Queue(std::move(bytes)));
+  }
 
   // Read operations are simply passthroughs to the underlying promise endpoint.
   auto ReadSlice(size_t length) {
-    return AddErrorPrefix("CONTROL_CHANNEL: ", endpoint_->ReadSlice(length));
+    return AddErrorPrefix(
+        "CONTROL_CHANNEL: ",
+        GRPC_LATENT_SEE_PROMISE("CtlEndpointReadHdr",
+                                endpoint_->ReadSlice(length)));
   }
   auto Read(size_t length) {
-    return AddErrorPrefix("CONTROL_CHANNEL: ", endpoint_->Read(length));
+    return AddErrorPrefix(
+        "CONTROL_CHANNEL: ",
+        GRPC_LATENT_SEE_PROMISE("CtlEndpointRead", endpoint_->Read(length)));
   }
   auto GetPeerAddress() const { return endpoint_->GetPeerAddress(); }
   auto GetLocalAddress() const { return endpoint_->GetLocalAddress(); }

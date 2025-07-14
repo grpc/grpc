@@ -147,7 +147,7 @@ class ChannelCloseTest(unittest.TestCase):
     def test_context_manager_close_while_call_active(self):
         with grpc.insecure_channel(
             "localhost:{}".format(self._port)
-        ) as channel:  # pylint: disable=bad-continuation
+        ) as channel:
             multi_callable = channel.stream_stream(
                 grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_URI),
                 _registered_method=True,
@@ -162,7 +162,7 @@ class ChannelCloseTest(unittest.TestCase):
     def test_context_manager_close_while_many_calls_active(self):
         with grpc.insecure_channel(
             "localhost:{}".format(self._port)
-        ) as channel:  # pylint: disable=bad-continuation
+        ) as channel:
             multi_callable = channel.stream_stream(
                 grpc._common.fully_qualified_method(_SERVICE_NAME, _STREAM_URI),
                 _registered_method=True,

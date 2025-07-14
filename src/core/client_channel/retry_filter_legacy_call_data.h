@@ -370,7 +370,7 @@ class RetryFilter::LegacyCallData final {
 
   RetryFilter* chand_;
   grpc_polling_entity* pollent_;
-  RefCountedPtr<internal::ServerRetryThrottleData> retry_throttle_data_;
+  RefCountedPtr<internal::RetryThrottler> retry_throttler_;
   const internal::RetryMethodConfig* retry_policy_ = nullptr;
   BackOff retry_backoff_;
 

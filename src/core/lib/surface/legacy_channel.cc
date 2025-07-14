@@ -63,7 +63,7 @@ namespace grpc_core {
 
 absl::StatusOr<RefCountedPtr<Channel>> LegacyChannel::Create(
     std::string target, ChannelArgs args,
-    grpc_channel_stack_type channel_stack_type) {
+    grpc_channel_stack_type channel_stack_type, const Blackboard* blackboard) {
   if (grpc_channel_stack_type_is_client(channel_stack_type)) {
     auto channel_args_mutator =
         grpc_channel_args_get_client_channel_creation_mutator();
@@ -113,6 +113,7 @@ absl::StatusOr<RefCountedPtr<Channel>> LegacyChannel::Create(
       grpc_channel_stack_type_string(channel_stack_type), channel_stack_type,
       args);
   builder.SetTarget(target.c_str());
+  builder.SetBlackboard(blackboard);
   if (!CoreConfiguration::Get().channel_init().CreateStack(&builder)) {
     return nullptr;
   }
@@ -161,10 +162,7 @@ LegacyChannel::LegacyChannel(bool is_client, std::string target,
     node = channelz_node()->RefAsSubclass<channelz::ChannelNode>();
   }
   *channel_stack_->on_destroy = [node = std::move(node)]() {
-    if (node != nullptr) {
-      node->AddTraceEvent(channelz::ChannelTrace::Severity::Info,
-                          grpc_slice_from_static_string("Channel destroyed"));
-    }
+    GRPC_CHANNELZ_LOG(node) << "Channel destroyed";
     ShutdownInternally();
   };
 }
