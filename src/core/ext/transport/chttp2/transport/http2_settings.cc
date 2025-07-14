@@ -23,7 +23,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/strings/str_cat.h"
-#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/util/useful.h"
 
