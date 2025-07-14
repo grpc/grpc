@@ -7968,6 +7968,28 @@ grpc_cc_library(
         "channelz_property_list",
         "http2_status",
         "useful",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "http2_settings_manager",
+    srcs = [
+        "ext/transport/chttp2/transport/http2_settings_manager.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/http2_settings_manager.h",
+    ],
+    external_deps = [
+        "absl/functional:function_ref",
+        "absl/log",
+        "absl/strings",
+    ],
+    deps = [
+        "channelz_property_list",
+        "http2_settings",
+        "http2_status",
+        "useful",
         "//:chttp2_frame",
         "//:gpr_platform",
     ],
@@ -8096,6 +8118,7 @@ grpc_cc_library(
         "grpc_promise_endpoint",
         "header_assembler",
         "http2_settings",
+        "http2_settings_manager",
         "http2_status",
         "http2_transport",
         "inter_activity_mutex",
@@ -8153,6 +8176,7 @@ grpc_cc_library(
         "check_class_size",
         "grpc_promise_endpoint",
         "http2_settings",
+        "http2_settings_manager",
         "http2_status",
         "loop",
         "map",
@@ -8226,7 +8250,6 @@ grpc_cc_library(
         "call_spine",
         "channel_args",
         "grpc_promise_endpoint",
-        "http2_settings",
         "loop",
         "map",
         "mpsc",

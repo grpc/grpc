@@ -26,7 +26,6 @@
 #include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
 #include "src/core/channelz/property_list.h"
-#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/util/useful.h"
 
@@ -160,38 +159,6 @@ class Http2Settings {
   bool enable_push_ = true;
   bool allow_true_binary_metadata_ = false;
   bool allow_security_frame_ = false;
-};
-
-class Http2SettingsManager {
- public:
-  Http2Settings& mutable_local() { return local_; }
-  const Http2Settings& local() const { return local_; }
-  const Http2Settings& acked() const { return acked_; }
-  Http2Settings& mutable_peer() { return peer_; }
-  const Http2Settings& peer() const { return peer_; }
-
-  channelz::PropertyGrid ChannelzProperties() const {
-    return channelz::PropertyGrid()
-        .SetColumn("local", local_.ChannelzProperties())
-        .SetColumn("sent", sent_.ChannelzProperties())
-        .SetColumn("peer", peer_.ChannelzProperties())
-        .SetColumn("acked", acked_.ChannelzProperties());
-  }
-
-  std::optional<Http2SettingsFrame> MaybeSendUpdate();
-  GRPC_MUST_USE_RESULT bool AckLastSend();
-
- private:
-  enum class UpdateState : uint8_t {
-    kFirst,
-    kSending,
-    kIdle,
-  };
-  UpdateState update_state_ = UpdateState::kFirst;
-  Http2Settings local_;
-  Http2Settings sent_;
-  Http2Settings peer_;
-  Http2Settings acked_;
 };
 
 }  // namespace grpc_core

@@ -2316,6 +2316,7 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   src/core/ext/transport/chttp2/transport/http2_client_transport.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
+  src/core/ext/transport/chttp2/transport/http2_settings_manager.cc
   src/core/ext/transport/chttp2/transport/http2_stats_collector.cc
   src/core/ext/transport/chttp2/transport/http2_transport.cc
   src/core/ext/transport/chttp2/transport/huffsyms.cc
@@ -3418,6 +3419,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   src/core/ext/transport/chttp2/transport/http2_client_transport.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
+  src/core/ext/transport/chttp2/transport/http2_settings_manager.cc
   src/core/ext/transport/chttp2/transport/http2_stats_collector.cc
   src/core/ext/transport/chttp2/transport/http2_transport.cc
   src/core/ext/transport/chttp2/transport/huffsyms.cc
@@ -16612,7 +16614,6 @@ if(gRPC_BUILD_TESTS)
 add_executable(flow_control_test
   src/core/channelz/property_list.cc
   src/core/ext/transport/chttp2/transport/flow_control.cc
-  src/core/ext/transport/chttp2/transport/frame.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
@@ -16644,7 +16645,6 @@ add_executable(flow_control_test
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/transport/bdp_estimator.cc
   src/core/lib/transport/status_conversion.cc
