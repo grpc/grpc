@@ -65,9 +65,9 @@ absl::Status ValidateRootCertificates(const RootCertInfo* root_cert_info) {
         }
         return absl::OkStatus();
       },
-      [&](const SpiffeBundleMap& spiffe_bundle_map) {
-        // SPIFFE Bundle Maps are validated when they are loaded
-        // TODO(gtcooke94) double check this
+      [&](const SpiffeBundleMap&) {
+        // SPIFFE Bundle Maps validation is held in the `StatusOr` and would
+        // already be returned here.
         return absl::OkStatus();
       });
 }
