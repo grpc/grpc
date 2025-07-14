@@ -24,11 +24,12 @@ def py_grpc_run_time_type_check_test(name, srcs, **kwargs):
         srcs: The source files for the test.
         **kwargs: Additional arguments to pass to py_test.
     """
+
     # Remove main from kwargs since we set it explicitly
     test_kwargs = dict(kwargs)
     if "main" in test_kwargs:
         test_kwargs.pop("main")
-    
+
     py_test(
         name = name,
         srcs = srcs + ["//bazel:_run_time_type_check_main"],
@@ -36,4 +37,4 @@ def py_grpc_run_time_type_check_test(name, srcs, **kwargs):
         args = [name],  # Pass the test module name
         python_version = "PY3",
         **test_kwargs
-    ) 
+    )

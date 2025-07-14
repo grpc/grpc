@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
-load("@rules_python//python:defs.bzl", "py_library", "py_test")
+load("@rules_python//python:defs.bzl", "py_library")
 load("//bazel:internal_python_rules.bzl", "internal_py_grpc_test_with_runtime_type_check")
 
 package(
