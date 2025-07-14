@@ -52,7 +52,9 @@ class SingleLoader(object):
         self.suite = unittest.TestSuite()
         tests = []
 
-        for importer, module_name, is_package in pkgutil.walk_packages([os.path.dirname(os.path.relpath(__file__))]):
+        # Look in the current working directory for test modules
+        current_dir = os.getcwd()
+        for importer, module_name, is_package in pkgutil.walk_packages([current_dir]):
             if pattern in module_name:
                 module = importer.find_module(module_name).load_module(module_name)
                 tests.append(loader.loadTestsFromModule(module))
