@@ -16,7 +16,7 @@
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/wrappers.pb.h>
 
-#include "envoy/type/matcher/v3/http_inputs.pb.h" // IWYU pragma: keep
+#include "envoy/type/matcher/v3/http_inputs.pb.h"  // IWYU pragma: keep
 #include "google/protobuf/wrappers.upb.h"
 #include "gtest/gtest.h"
 #include "src/core/util/down_cast.h"

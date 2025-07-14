@@ -92,7 +92,8 @@ std::optional<XdsMatcher::OnMatch> ParseOnMatch(
     const xds_type_matcher_v3_Matcher_OnMatch* on_match,
     const XdsMatcherActionRegistry& action_registry,
     const UniqueTypeName& matcher_context, ValidationErrors* errors) {
-  // TODO(bpawan): b/431645620 Parse keep matching once we move to latest xds protos
+  // TODO(bpawan): b/431645620 Parse keep matching once we move to latest xds
+  // protos
   bool keep_matching = false;
   // Action is a variant which can have Action or a Nested Matcher
   if (xds_type_matcher_v3_Matcher_OnMatch_has_action(on_match)) {
