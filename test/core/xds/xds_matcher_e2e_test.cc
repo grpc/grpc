@@ -43,6 +43,14 @@ namespace grpc_core {
 namespace testing {
 namespace {
 
+// Force registration of protos that we use in text format.
+// On Windows, if these are not otherwise referenced, they may be
+// stripped from the binary, in which case TextFormat::ParseFromString()
+// will fail.
+envoy::type::matcher::v3::HttpRequestHeaderMatchInput
+    g_force_registration_http_request_header_match_input;
+google::protobuf::StringValue g_force_registration_string_value;
+
 // A simple action that holds a string, used for verification.
 class StringAction : public XdsMatcher::Action {
  public:
