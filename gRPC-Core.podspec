@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.74.0-dev'
+  version = '1.75.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -121,6 +121,7 @@ Pod::Spec.new do |s|
                       'include/grpc/byte_buffer_reader.h',
                       'include/grpc/census.h',
                       'include/grpc/compression.h',
+                      'include/grpc/create_channel_from_endpoint.h',
                       'include/grpc/credentials.h',
                       'include/grpc/event_engine/endpoint_config.h',
                       'include/grpc/event_engine/event_engine.h',
@@ -1411,6 +1412,7 @@ Pod::Spec.new do |s|
                       'src/core/handshaker/proxy_mapper_registry.cc',
                       'src/core/handshaker/proxy_mapper_registry.h',
                       'src/core/handshaker/security/legacy_secure_endpoint.cc',
+                      'src/core/handshaker/security/pipelined_secure_endpoint.cc',
                       'src/core/handshaker/security/secure_endpoint.cc',
                       'src/core/handshaker/security/secure_endpoint.h',
                       'src/core/handshaker/security/security_handshaker.cc',
@@ -1462,6 +1464,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/default_event_engine.h',
                       'src/core/lib/event_engine/default_event_engine_factory.cc',
                       'src/core/lib/event_engine/default_event_engine_factory.h',
+                      'src/core/lib/event_engine/endpoint_channel_arg_wrapper.cc',
+                      'src/core/lib/event_engine/endpoint_channel_arg_wrapper.h',
                       'src/core/lib/event_engine/event_engine.cc',
                       'src/core/lib/event_engine/event_engine_context.h',
                       'src/core/lib/event_engine/extensions/blocking_dns.h',
@@ -1972,6 +1976,7 @@ Pod::Spec.new do |s|
                       'src/core/telemetry/tcp_tracer.h',
                       'src/core/transport/auth_context.cc',
                       'src/core/transport/auth_context.h',
+                      'src/core/transport/auth_context_comparator_registry.h',
                       'src/core/transport/endpoint_transport.h',
                       'src/core/transport/endpoint_transport_client_channel_factory.cc',
                       'src/core/transport/endpoint_transport_client_channel_factory.h',
@@ -3213,6 +3218,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/common_closures.h',
                               'src/core/lib/event_engine/default_event_engine.h',
                               'src/core/lib/event_engine/default_event_engine_factory.h',
+                              'src/core/lib/event_engine/endpoint_channel_arg_wrapper.h',
                               'src/core/lib/event_engine/event_engine_context.h',
                               'src/core/lib/event_engine/extensions/blocking_dns.h',
                               'src/core/lib/event_engine/extensions/can_track_errors.h',
@@ -3485,6 +3491,7 @@ Pod::Spec.new do |s|
                               'src/core/telemetry/stats_data.h',
                               'src/core/telemetry/tcp_tracer.h',
                               'src/core/transport/auth_context.h',
+                              'src/core/transport/auth_context_comparator_registry.h',
                               'src/core/transport/endpoint_transport.h',
                               'src/core/transport/endpoint_transport_client_channel_factory.h',
                               'src/core/tsi/alts/crypt/gsec.h',

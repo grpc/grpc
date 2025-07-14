@@ -63,22 +63,18 @@ void PingPongStreaming(CoreEnd2endTest& test, int num_messages) {
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, PingPongStreaming1) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   PingPongStreaming(*this, 1);
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, PingPongStreaming3) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   PingPongStreaming(*this, 3);
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, PingPongStreaming10) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   PingPongStreaming(*this, 10);
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, PingPongStreaming30) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   PingPongStreaming(*this, 30);
 }
 }  // namespace grpc_core

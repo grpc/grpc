@@ -940,7 +940,7 @@ void XdsDependencyManager::MaybeReportUpdate() {
     endpoint_watchers_.erase(it++);
   }
   // Remove entries in dns_resolvers_ for any DNS name not in
-  // eds_resources_seen.
+  // dns_names_seen.
   for (auto it = dns_resolvers_.begin(); it != dns_resolvers_.end();) {
     const std::string& dns_name = it->first;
     if (dns_names_seen.find(dns_name) != dns_names_seen.end()) {

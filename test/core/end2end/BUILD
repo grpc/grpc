@@ -539,3 +539,12 @@ grpc_core_end2end_test_suite(
         "grpc:no-internal-poller",
     ],
 )
+
+grpc_core_end2end_test_suite(
+    name = "end2end_ph2",
+    config_src = "end2end_ph2_config.cc",
+    flaky = True,
+    tags = [
+        "grpc:no-internal-poller",
+    ],
+)

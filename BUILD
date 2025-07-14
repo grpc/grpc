@@ -215,11 +215,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gee"  # @unused
+g_stands_for = "gemini"  # @unused
 
-core_version = "48.0.0"  # @unused
+core_version = "49.0.0"  # @unused
 
-version = "1.74.0-dev"  # @unused
+version = "1.75.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -263,6 +263,7 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
     "include/grpc/compression.h",
+    "include/grpc/create_channel_from_endpoint.h",
     "include/grpc/fork.h",
     "include/grpc/grpc.h",
     "include/grpc/grpc_posix.h",
@@ -1275,6 +1276,7 @@ grpc_cc_library(
         "sockaddr_utils",
         "uri",
         "//src/core:channel_args",
+        "//src/core:channelz_property_list",
         "//src/core:connectivity_state",
         "//src/core:dual_ref_counted",
         "//src/core:json",
@@ -1721,11 +1723,18 @@ grpc_cc_library(
         "grpc_security_base",
         "legacy_channel",
         "stats",
+        "//:grpc_resolver_fake",
         "//src/core:channel_args",
+        "//src/core:channel_args_endpoint_config",
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_stack_type",
         "//src/core:direct_channel",
+        "//src/core:endpoint_channel_arg_wrapper",
         "//src/core:endpoint_transport",
+        "//src/core:event_engine_common",
+        "//src/core:event_engine_extensions",
+        "//src/core:event_engine_query_extensions",
+        "//src/core:event_engine_tcp_socket_utils",
         "//src/core:experiments",
         "//src/core:grpc_check",
         "//src/core:stats_data",
@@ -2164,6 +2173,7 @@ grpc_cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "config",
         "debug_location",
         "exec_ctx",
         "gpr",
@@ -2195,6 +2205,7 @@ grpc_cc_library(
         "//src/core:filter/auth/client_auth_filter.cc",
         "//src/core:filter/auth/server_auth_filter.cc",
         "//src/core:handshaker/security/legacy_secure_endpoint.cc",
+        "//src/core:handshaker/security/pipelined_secure_endpoint.cc",
         "//src/core:handshaker/security/secure_endpoint.cc",
         "//src/core:handshaker/security/security_handshaker.cc",
     ],
@@ -2259,6 +2270,7 @@ grpc_cc_library(
         "//src/core:handshaker_factory",
         "//src/core:handshaker_registry",
         "//src/core:iomgr_fwd",
+        "//src/core:latent_see",
         "//src/core:memory_quota",
         "//src/core:metadata_batch",
         "//src/core:poll",
@@ -2266,6 +2278,7 @@ grpc_cc_library(
         "//src/core:resource_quota",
         "//src/core:seq",
         "//src/core:slice",
+        "//src/core:slice_buffer",
         "//src/core:slice_refcount",
         "//src/core:stats_data",
         "//src/core:status_helper",
@@ -2709,11 +2722,13 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["//bazel:channelz"],
     deps = [
+        "channelz",
         "gpr",
         "grpc",
         "grpc++",
         "grpc++_config_proto",
         "//src/proto/grpc/channelz:channelz_proto",
+        "//src/proto/grpc/channelz/v2:service_cc_grpc",
     ],
     alwayslink = 1,
 )
@@ -3081,6 +3096,7 @@ grpc_cc_library(
         "debug_location",
         "gpr",
         "grpc_resolver",
+        "//src/core:auth_context_comparator_registry",
         "//src/core:call_creds_registry",
         "//src/core:certificate_provider_registry",
         "//src/core:channel_args_preconditioning",
@@ -5207,6 +5223,16 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "channelz_property_list_upbdefs",
     deps = ["//src/proto/grpc/channelz/v2:property_list_proto"],
+)
+
+grpc_upb_proto_library(
+    name = "channelz_v1_upb",
+    deps = ["//src/proto/grpc/channelz:channelz_proto_internal"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "channelz_v1_upbdefs",
+    deps = ["//src/proto/grpc/channelz:channelz_proto_internal"],
 )
 
 grpc_upb_proto_library(

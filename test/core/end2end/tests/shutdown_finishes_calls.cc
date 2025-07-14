@@ -30,7 +30,6 @@ namespace grpc_core {
 namespace {
 
 CORE_END2END_TEST(CoreEnd2endTests, EarlyServerShutdownFinishesInflightCalls) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   SKIP_IF_V3();
   SKIP_IF_FUZZING();
 

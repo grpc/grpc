@@ -28,7 +28,6 @@ namespace grpc_core {
 namespace {
 
 CORE_END2END_TEST(Http2Tests, GracefulServerShutdown) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(10)).Create();
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;

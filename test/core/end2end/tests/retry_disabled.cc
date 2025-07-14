@@ -36,7 +36,6 @@ namespace {
 // - 1 retry allowed for ABORTED status
 // - first attempt returns ABORTED but does not retry
 CORE_END2END_TEST(RetryTests, RetryDisabled) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
   InitServer(DefaultServerArgs());
   InitClient(
       ChannelArgs()

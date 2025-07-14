@@ -122,8 +122,7 @@ grpc_channel_filter InjectStatusFilter::kFilterVtable = {
 // - server returns ABORTED, but filter overwrites to INVALID_ARGUMENT,
 //   so no retry is done
 CORE_END2END_TEST(RetryTests, RetryRecvTrailingMetadataError) {
-  SKIP_TEST_PH2_CLIENT();  // TODO(tjagtap) [PH2][P2] Can test be enabled?
-  SKIP_IF_V3();            // Need to convert filter
+  SKIP_IF_V3();  // Need to convert filter
   CoreConfiguration::RegisterEphemeralBuilder(
       [](CoreConfiguration::Builder* builder) {
         builder->channel_init()

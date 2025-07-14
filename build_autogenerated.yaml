@@ -146,6 +146,7 @@ libs:
   - include/grpc/byte_buffer_reader.h
   - include/grpc/census.h
   - include/grpc/compression.h
+  - include/grpc/create_channel_from_endpoint.h
   - include/grpc/credentials.h
   - include/grpc/event_engine/endpoint_config.h
   - include/grpc/event_engine/event_engine.h
@@ -885,6 +886,7 @@ libs:
   - src/core/lib/event_engine/common_closures.h
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
+  - src/core/lib/event_engine/endpoint_channel_arg_wrapper.h
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/event_engine/extensions/blocking_dns.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
@@ -1156,6 +1158,7 @@ libs:
   - src/core/telemetry/stats_data.h
   - src/core/telemetry/tcp_tracer.h
   - src/core/transport/auth_context.h
+  - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
   - src/core/transport/endpoint_transport_client_channel_factory.h
   - src/core/tsi/alts/crypt/gsec.h
@@ -1791,6 +1794,7 @@ libs:
   - src/core/handshaker/http_connect/xds_http_proxy_mapper.cc
   - src/core/handshaker/proxy_mapper_registry.cc
   - src/core/handshaker/security/legacy_secure_endpoint.cc
+  - src/core/handshaker/security/pipelined_secure_endpoint.cc
   - src/core/handshaker/security/secure_endpoint.cc
   - src/core/handshaker/security/security_handshaker.cc
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc
@@ -1815,6 +1819,7 @@ libs:
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
+  - src/core/lib/event_engine/endpoint_channel_arg_wrapper.cc
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
@@ -2283,6 +2288,7 @@ libs:
   - include/grpc/byte_buffer_reader.h
   - include/grpc/census.h
   - include/grpc/compression.h
+  - include/grpc/create_channel_from_endpoint.h
   - include/grpc/credentials.h
   - include/grpc/event_engine/endpoint_config.h
   - include/grpc/event_engine/event_engine.h
@@ -2538,6 +2544,7 @@ libs:
   - src/core/lib/event_engine/common_closures.h
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
+  - src/core/lib/event_engine/endpoint_channel_arg_wrapper.h
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/event_engine/extensions/blocking_dns.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
@@ -2796,6 +2803,7 @@ libs:
   - src/core/telemetry/stats_data.h
   - src/core/telemetry/tcp_tracer.h
   - src/core/transport/auth_context.h
+  - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
   - src/core/transport/endpoint_transport_client_channel_factory.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
@@ -3020,6 +3028,7 @@ libs:
   - src/core/handshaker/http_connect/http_proxy_mapper.cc
   - src/core/handshaker/proxy_mapper_registry.cc
   - src/core/handshaker/security/legacy_secure_endpoint.cc
+  - src/core/handshaker/security/pipelined_secure_endpoint.cc
   - src/core/handshaker/security/secure_endpoint.cc
   - src/core/handshaker/security/security_handshaker.cc
   - src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc
@@ -3044,6 +3053,7 @@ libs:
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
+  - src/core/lib/event_engine/endpoint_channel_arg_wrapper.cc
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
@@ -4437,6 +4447,7 @@ libs:
   - include/grpc/byte_buffer.h
   - include/grpc/byte_buffer_reader.h
   - include/grpc/compression.h
+  - include/grpc/create_channel_from_endpoint.h
   - include/grpc/credentials.h
   - include/grpc/event_engine/endpoint_config.h
   - include/grpc/event_engine/event_engine.h
@@ -4798,6 +4809,7 @@ libs:
   - src/core/telemetry/stats_data.h
   - src/core/telemetry/tcp_tracer.h
   - src/core/transport/auth_context.h
+  - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
   - src/core/tsi/transport_security.h
@@ -4919,6 +4931,7 @@ libs:
   - src/core/handshaker/handshaker_registry.cc
   - src/core/handshaker/proxy_mapper_registry.cc
   - src/core/handshaker/security/legacy_secure_endpoint.cc
+  - src/core/handshaker/security/pipelined_secure_endpoint.cc
   - src/core/handshaker/security/secure_endpoint.cc
   - src/core/handshaker/security/security_handshaker.cc
   - src/core/lib/address_utils/parse_address.cc
@@ -5221,6 +5234,8 @@ libs:
   - src/cpp/server/channelz/channelz_service.h
   src:
   - src/proto/grpc/channelz/channelz.proto
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/service.proto
   - src/cpp/server/channelz/channelz_service.cc
   - src/cpp/server/channelz/channelz_service_plugin.cc
   deps:
@@ -6323,18 +6338,22 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/filter/blackboard.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
@@ -6401,17 +6420,18 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/filter/blackboard.cc
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
@@ -6455,8 +6475,7 @@ targets:
   - test/core/filters/blackboard_test.cc
   deps:
   - gtest
-  - upb_mini_descriptor_lib
-  - upb_wire_lib
+  - upb_textformat_lib
   - absl/base:config
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -7285,6 +7304,7 @@ targets:
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
   - src/core/telemetry/tcp_tracer.h
+  - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
   - src/core/util/atomic_utils.h
@@ -8330,6 +8350,29 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
+- name: channelz_v2_service_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/cpp/end2end/test_service_impl.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/cpp/end2end/channelz_v2_service_test.cc
+  - test/cpp/end2end/test_service_impl.cc
+  deps:
+  - gtest
+  - grpcpp_channelz
+  - grpc++_test_util
 - name: check_gcp_environment_linux_test
   gtest: true
   build: test
@@ -8954,18 +8997,22 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/channel/channel_args.h
@@ -9030,17 +9077,18 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/channel/channel_args.cc
@@ -9082,8 +9130,7 @@ targets:
   - test/core/promise/context_test.cc
   deps:
   - gtest
-  - upb_mini_descriptor_lib
-  - upb_wire_lib
+  - upb_textformat_lib
   - absl/base:config
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -9378,6 +9425,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -9422,6 +9470,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -9502,6 +9551,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -9634,6 +9684,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -9714,6 +9765,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -9758,6 +9810,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -9834,6 +9887,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -9878,6 +9932,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -9954,6 +10009,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -10086,6 +10142,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -10162,6 +10219,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -10294,6 +10352,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -10370,6 +10429,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -10414,6 +10474,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -10490,6 +10551,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -10622,6 +10684,339 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
+  - test/core/test_util/test_call_creds.cc
+  - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
+  deps:
+  - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
+  - grpc_authorization_provider
+  - protobuf
+  - grpc_test_util
+- name: end2end_ph2_no_logging_test
+  gtest: true
+  build: test
+  run: false
+  language: c++
+  headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/config.h
+  - src/core/ext/transport/chaotic_good/control_endpoint.h
+  - src/core/ext/transport/chaotic_good/data_endpoints.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/frame_transport.h
+  - src/core/ext/transport/chaotic_good/message_chunker.h
+  - src/core/ext/transport/chaotic_good/message_reassembly.h
+  - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/scheduler.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
+  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
+  - src/core/ext/transport/chaotic_good_legacy/config.h
+  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.h
+  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.h
+  - src/core/ext/transport/chaotic_good_legacy/frame.h
+  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
+  - src/core/ext/transport/chaotic_good_legacy/message_chunker.h
+  - src/core/ext/transport/chaotic_good_legacy/message_reassembly.h
+  - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
+  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/util/seq_bit_set.h
+  - test/core/call/batch_builder.h
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/test_util/fail_first_call_filter.h
+  - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
+  - test/core/test_util/postmortem.h
+  - test/core/test_util/test_call_creds.h
+  - test/core/test_util/test_lb_policies.h
+  src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
+  - src/core/ext/transport/chaotic_good/chaotic_good.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/control_endpoint.cc
+  - src/core/ext/transport/chaotic_good/data_endpoints.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/scheduler.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
+  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
+  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
+  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.cc
+  - src/core/ext/transport/chaotic_good_legacy/frame.cc
+  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
+  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/util/seq_bit_set.cc
+  - test/core/call/batch_builder.cc
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_ph2_config.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/no_logging.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/test_util/fail_first_call_filter.cc
+  - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
+  - test/core/test_util/test_call_creds.cc
+  - test/core/test_util/test_lb_policies.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
+  deps:
+  - gtest
+  - absl/log:log_entry
+  - absl/log:log_sink
+  - absl/log:log_sink_registry
+  - grpc_authorization_provider
+  - protobuf
+  - grpc_test_util
+- name: end2end_ph2_test
+  gtest: true
+  build: test
+  run: false
+  language: c++
+  headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/config.h
+  - src/core/ext/transport/chaotic_good/control_endpoint.h
+  - src/core/ext/transport/chaotic_good/data_endpoints.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/frame_transport.h
+  - src/core/ext/transport/chaotic_good/message_chunker.h
+  - src/core/ext/transport/chaotic_good/message_reassembly.h
+  - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/scheduler.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
+  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
+  - src/core/ext/transport/chaotic_good_legacy/config.h
+  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.h
+  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.h
+  - src/core/ext/transport/chaotic_good_legacy/frame.h
+  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
+  - src/core/ext/transport/chaotic_good_legacy/message_chunker.h
+  - src/core/ext/transport/chaotic_good_legacy/message_reassembly.h
+  - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
+  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/util/seq_bit_set.h
+  - test/core/call/batch_builder.h
+  - test/core/end2end/cq_verifier.h
+  - test/core/end2end/end2end_tests.h
+  - test/core/end2end/fixtures/h2_oauth2_common.h
+  - test/core/end2end/fixtures/h2_ssl_cred_reload_fixture.h
+  - test/core/end2end/fixtures/h2_ssl_tls_common.h
+  - test/core/end2end/fixtures/h2_tls_common.h
+  - test/core/end2end/fixtures/http_proxy_fixture.h
+  - test/core/end2end/fixtures/inproc_fixture.h
+  - test/core/end2end/fixtures/local_util.h
+  - test/core/end2end/fixtures/proxy.h
+  - test/core/end2end/fixtures/secure_fixture.h
+  - test/core/end2end/fixtures/sockpair_fixture.h
+  - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/test_util/fail_first_call_filter.h
+  - test/core/test_util/fake_stats_plugin.h
+  - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
+  - test/core/test_util/postmortem.h
+  - test/core/test_util/test_call_creds.h
+  - test/core/test_util/test_lb_policies.h
+  src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - test/core/end2end/end2end_test_fuzzer.proto
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/test_util/fuzz_config_vars.proto
+  - src/core/ext/transport/chaotic_good/chaotic_good.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/control_endpoint.cc
+  - src/core/ext/transport/chaotic_good/data_endpoints.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/scheduler.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
+  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
+  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
+  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.cc
+  - src/core/ext/transport/chaotic_good_legacy/frame.cc
+  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
+  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/util/seq_bit_set.cc
+  - test/core/call/batch_builder.cc
+  - test/core/end2end/cq_verifier.cc
+  - test/core/end2end/end2end_ph2_config.cc
+  - test/core/end2end/end2end_test_suites.cc
+  - test/core/end2end/end2end_tests.cc
+  - test/core/end2end/fixtures/http_proxy_fixture.cc
+  - test/core/end2end/fixtures/local_util.cc
+  - test/core/end2end/fixtures/proxy.cc
+  - test/core/end2end/tests/bad_ping.cc
+  - test/core/end2end/tests/binary_metadata.cc
+  - test/core/end2end/tests/call_creds.cc
+  - test/core/end2end/tests/call_host_override.cc
+  - test/core/end2end/tests/cancel_after_accept.cc
+  - test/core/end2end/tests/cancel_after_client_done.cc
+  - test/core/end2end/tests/cancel_after_invoke.cc
+  - test/core/end2end/tests/cancel_after_round_trip.cc
+  - test/core/end2end/tests/cancel_before_invoke.cc
+  - test/core/end2end/tests/cancel_in_a_vacuum.cc
+  - test/core/end2end/tests/cancel_with_status.cc
+  - test/core/end2end/tests/channelz.cc
+  - test/core/end2end/tests/client_streaming.cc
+  - test/core/end2end/tests/compressed_payload.cc
+  - test/core/end2end/tests/connectivity.cc
+  - test/core/end2end/tests/default_host.cc
+  - test/core/end2end/tests/disappearing_server.cc
+  - test/core/end2end/tests/empty_batch.cc
+  - test/core/end2end/tests/filter_causes_close.cc
+  - test/core/end2end/tests/filter_init_fails.cc
+  - test/core/end2end/tests/filtered_metadata.cc
+  - test/core/end2end/tests/graceful_server_shutdown.cc
+  - test/core/end2end/tests/grpc_authz.cc
+  - test/core/end2end/tests/high_initial_seqno.cc
+  - test/core/end2end/tests/hpack_size.cc
+  - test/core/end2end/tests/http2_stats.cc
+  - test/core/end2end/tests/invoke_large_request.cc
+  - test/core/end2end/tests/keepalive_timeout.cc
+  - test/core/end2end/tests/large_metadata.cc
+  - test/core/end2end/tests/max_concurrent_streams.cc
+  - test/core/end2end/tests/max_connection_age.cc
+  - test/core/end2end/tests/max_connection_idle.cc
+  - test/core/end2end/tests/max_message_length.cc
+  - test/core/end2end/tests/negative_deadline.cc
+  - test/core/end2end/tests/no_op.cc
+  - test/core/end2end/tests/payload.cc
+  - test/core/end2end/tests/ping.cc
+  - test/core/end2end/tests/ping_pong_streaming.cc
+  - test/core/end2end/tests/proxy_auth.cc
+  - test/core/end2end/tests/registered_call.cc
+  - test/core/end2end/tests/request_with_flags.cc
+  - test/core/end2end/tests/request_with_payload.cc
+  - test/core/end2end/tests/resource_quota_server.cc
+  - test/core/end2end/tests/retry.cc
+  - test/core/end2end/tests/retry_cancel_after_first_attempt_starts.cc
+  - test/core/end2end/tests/retry_cancel_during_delay.cc
+  - test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
+  - test/core/end2end/tests/retry_cancellation.cc
+  - test/core/end2end/tests/retry_disabled.cc
+  - test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
+  - test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
+  - test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
+  - test/core/end2end/tests/retry_lb_drop.cc
+  - test/core/end2end/tests/retry_lb_fail.cc
+  - test/core/end2end/tests/retry_non_retriable_status.cc
+  - test/core/end2end/tests/retry_non_retriable_status_before_trailers.cc
+  - test/core/end2end/tests/retry_per_attempt_recv_timeout.cc
+  - test/core/end2end/tests/retry_per_attempt_recv_timeout_on_last_attempt.cc
+  - test/core/end2end/tests/retry_recv_initial_metadata.cc
+  - test/core/end2end/tests/retry_recv_message.cc
+  - test/core/end2end/tests/retry_recv_message_replay.cc
+  - test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
+  - test/core/end2end/tests/retry_send_initial_metadata_refs.cc
+  - test/core/end2end/tests/retry_send_op_fails.cc
+  - test/core/end2end/tests/retry_send_recv_batch.cc
+  - test/core/end2end/tests/retry_server_pushback_delay.cc
+  - test/core/end2end/tests/retry_server_pushback_disabled.cc
+  - test/core/end2end/tests/retry_streaming.cc
+  - test/core/end2end/tests/retry_streaming_after_commit.cc
+  - test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
+  - test/core/end2end/tests/retry_throttled.cc
+  - test/core/end2end/tests/retry_too_many_attempts.cc
+  - test/core/end2end/tests/retry_transparent_goaway.cc
+  - test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
+  - test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
+  - test/core/end2end/tests/retry_unref_before_finish.cc
+  - test/core/end2end/tests/retry_unref_before_recv.cc
+  - test/core/end2end/tests/server_finishes_request.cc
+  - test/core/end2end/tests/server_streaming.cc
+  - test/core/end2end/tests/shutdown_finishes_calls.cc
+  - test/core/end2end/tests/shutdown_finishes_tags.cc
+  - test/core/end2end/tests/simple_delayed_request.cc
+  - test/core/end2end/tests/simple_metadata.cc
+  - test/core/end2end/tests/simple_request.cc
+  - test/core/end2end/tests/streaming_error_response.cc
+  - test/core/end2end/tests/timeout_before_request_call.cc
+  - test/core/end2end/tests/trailing_metadata.cc
+  - test/core/end2end/tests/write_buffering.cc
+  - test/core/end2end/tests/write_buffering_at_end.cc
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/test_util/fail_first_call_filter.cc
+  - test/core/test_util/fake_stats_plugin.cc
+  - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -10698,6 +11093,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -10742,6 +11138,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -10818,6 +11215,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -10950,6 +11348,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -11001,6 +11400,19 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/surface/channel_stack_type.h
@@ -11008,12 +11420,24 @@ targets:
   - src/core/util/avl.h
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
+  - src/core/util/json/json.h
+  - src/core/util/match.h
   - src/core/util/orphanable.h
+  - src/core/util/overload.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ref_counted_string.h
   - src/core/util/time.h
+  - src/core/util/upb_utils.h
+  - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/surface/channel_stack_type.cc
@@ -11022,7 +11446,9 @@ targets:
   - test/core/event_engine/endpoint_config_test.cc
   deps:
   - gtest
+  - upb_textformat_lib
   - absl/base:config
+  - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
@@ -11762,6 +12188,7 @@ targets:
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
   - src/core/telemetry/tcp_tracer.h
+  - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
   - src/core/util/atomic_utils.h
@@ -12597,19 +13024,23 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/channel/channel_args.h
@@ -12674,18 +13105,19 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/ext/transport/chttp2/transport/frame.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/channel/channel_args.cc
@@ -12728,8 +13160,7 @@ targets:
   - test/core/transport/chttp2/frame_test.cc
   deps:
   - gtest
-  - upb_mini_descriptor_lib
-  - upb_wire_lib
+  - upb_textformat_lib
   - absl/base:config
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -13764,6 +14195,7 @@ targets:
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
   - src/core/telemetry/tcp_tracer.h
+  - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
   - src/core/util/atomic_utils.h
@@ -14288,19 +14720,23 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/channel/channel_args.h
@@ -14366,18 +14802,19 @@ targets:
   - src/core/util/work_serializer.h
   - test/core/transport/chttp2/http2_common_test_inputs.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/ext/transport/chttp2/transport/frame.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/channel/channel_args.cc
@@ -14420,8 +14857,7 @@ targets:
   - test/core/transport/chttp2/http2_status_test.cc
   deps:
   - gtest
-  - upb_mini_descriptor_lib
-  - upb_wire_lib
+  - upb_textformat_lib
   - absl/base:config
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -16157,18 +16593,22 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/channel/channel_args.h
@@ -16233,17 +16673,18 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/channel/channel_args.cc
@@ -16285,8 +16726,7 @@ targets:
   - test/core/util/lru_cache_test.cc
   deps:
   - gtest
-  - upb_mini_descriptor_lib
-  - upb_wire_lib
+  - upb_textformat_lib
   - absl/base:config
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -17863,18 +18303,22 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/channel/channel_args.h
@@ -17939,17 +18383,18 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/channel/channel_args.cc
@@ -17991,8 +18436,7 @@ targets:
   - test/core/promise/poll_test.cc
   deps:
   - gtest
-  - upb_mini_descriptor_lib
-  - upb_wire_lib
+  - upb_textformat_lib
   - absl/base:config
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -19531,18 +19975,22 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/channel/channel_args.h
@@ -19612,17 +20060,18 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/channel/channel_args.cc
@@ -19670,8 +20119,7 @@ targets:
   - test/core/event_engine/query_extensions_test.cc
   deps:
   - gtest
-  - upb_mini_descriptor_lib
-  - upb_wire_lib
+  - upb_textformat_lib
   - absl/base:config
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -19693,10 +20141,10 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/empty.upb.h
@@ -19776,13 +20224,12 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
@@ -19831,8 +20278,7 @@ targets:
   - test/core/promise/race_test.cc
   deps:
   - gtest
-  - upb_mini_descriptor_lib
-  - upb_wire_lib
+  - upb_textformat_lib
   - absl/base:config
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -21139,18 +21585,22 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/channel/channel_args.h
@@ -21216,17 +21666,18 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/channel/channel_args.cc
@@ -21268,8 +21719,7 @@ targets:
   - test/core/promise/status_flag_test.cc
   deps:
   - gtest
-  - upb_mini_descriptor_lib
-  - upb_wire_lib
+  - upb_textformat_lib
   - absl/base:config
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -21673,18 +22123,22 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/channel/channel_args.h
@@ -21749,17 +22203,18 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/channel/channel_args.cc
@@ -21802,8 +22257,7 @@ targets:
   - test/core/util/tdigest_test.cc
   deps:
   - gtest
-  - upb_mini_descriptor_lib
-  - upb_wire_lib
+  - upb_textformat_lib
   - absl/base:config
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -21847,18 +22301,22 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/channel/channel_args.h
@@ -21925,17 +22383,18 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/channel/channel_args.cc
@@ -21980,8 +22439,7 @@ targets:
   - test/core/event_engine/posix/timer_heap_test.cc
   deps:
   - gtest
-  - upb_mini_descriptor_lib
-  - upb_wire_lib
+  - upb_textformat_lib
   - absl/base:config
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -22002,18 +22460,22 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/channel/channel_args.h
@@ -22082,17 +22544,18 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/channel/channel_args.cc
@@ -22140,8 +22603,7 @@ targets:
   - test/core/event_engine/slice_buffer_test.cc
   deps:
   - gtest
-  - upb_mini_descriptor_lib
-  - upb_wire_lib
+  - upb_textformat_lib
   - absl/base:config
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -22336,18 +22798,22 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/channel/channel_args.h
@@ -22412,17 +22878,18 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/channel/channel_args.cc
@@ -22465,8 +22932,7 @@ targets:
   - test/core/resource_quota/thread_quota_test.cc
   deps:
   - gtest
-  - upb_mini_descriptor_lib
-  - upb_wire_lib
+  - upb_textformat_lib
   - absl/base:config
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -23089,18 +23555,22 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/channel/channel_args.h
@@ -23165,17 +23635,18 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/channel/channel_args.cc
@@ -23217,8 +23688,7 @@ targets:
   - test/core/util/unique_ptr_with_bitset_test.cc
   deps:
   - gtest
-  - upb_mini_descriptor_lib
-  - upb_wire_lib
+  - upb_textformat_lib
   - absl/base:config
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -23628,19 +24098,23 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/transport/chttp2/transport/write_size_policy.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb.h
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/channel/channel_args.h
@@ -23704,18 +24178,19 @@ targets:
   - src/core/util/uri.h
   - src/core/util/work_serializer.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/ext/transport/chttp2/transport/write_size_policy.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/channel/channel_args.cc
@@ -23757,8 +24232,7 @@ targets:
   - test/core/transport/chttp2/write_size_policy_test.cc
   deps:
   - gtest
-  - upb_mini_descriptor_lib
-  - upb_wire_lib
+  - upb_textformat_lib
   - absl/base:config
   - absl/container:btree
   - absl/container:flat_hash_map

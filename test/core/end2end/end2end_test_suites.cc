@@ -87,6 +87,8 @@
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
 
+#define GRPC_END2END_TEST_SUITE_VLOG VLOG(2)
+
 namespace grpc_core {
 
 std::vector<CoreTestConfiguration> AllConfigs() {
@@ -136,6 +138,9 @@ class ConfigQuery {
     } else {
       exclude_features_ |= FEATURE_MASK_DO_NOT_GTEST;
     }
+    exclude_experiments_except_for_configs_.insert(
+        {ExperimentIds::kExperimentIdPromiseBasedHttp2ClientTransport,
+         {GRPC_HTTP2_PH2_CLIENT_CHTTP2_SERVER_CONFIG}});
   }
   ConfigQuery(const ConfigQuery&) = delete;
   ConfigQuery& operator=(const ConfigQuery&) = delete;
@@ -181,7 +186,7 @@ class ConfigQuery {
             break;
           }
         }
-        if (allowed) {
+        if (allowed && CanConfigRunWithExperiment(config)) {
           out.push_back(&config);
         }
       }
@@ -190,10 +195,40 @@ class ConfigQuery {
   }
 
  private:
+  bool CanConfigRunWithExperiment(const CoreTestConfiguration& config) const {
+    for (const auto& [experiment_id, configs] :
+         exclude_experiments_except_for_configs_) {
+      if (IsExperimentEnabled(experiment_id) &&
+          !configs.contains(config.name)) {
+        GRPC_END2END_TEST_SUITE_VLOG
+            << "CanConfigRunWithExperiment false {config : " << config.name
+            << ", experiment : " << experiment_id << " }";
+        return false;
+      }
+    }
+    GRPC_END2END_TEST_SUITE_VLOG
+        << "CanConfigRunWithExperiment true {config : " << config.name << " }";
+    return true;
+  }
+
   uint32_t enforce_features_ = 0;
   uint32_t exclude_features_ = 0;
+
+  // TODO(tjagtap) : [PH2][P3] Consider deprecating allowed_names_ and
+  // excluded_names_ in favour of include_test_suites , include_specific_tests
+  // and exclude_specific_tests
+  // This is poor design because the suite knows about the config. So when we
+  // add a new config, all the tests must know about it. Instead when we add a
+  // new config, we must choose which suites we want to include or exclude for
+  // it.
   std::vector<std::regex> allowed_names_;
   std::vector<std::regex> excluded_names_;
+
+  // If there is a new feature with its own experiment that we want to enable
+  // only for a few Configs, we can list that here. That will make sure that
+  // only the selected E2E test configs are run with the new experiment on.
+  absl::flat_hash_map<ExperimentIds, absl::flat_hash_set<absl::string_view>>
+      exclude_experiments_except_for_configs_;
 };
 
 CORE_END2END_TEST_SUITE(CoreEnd2endTests, ConfigQuery(fuzzing).Run());
