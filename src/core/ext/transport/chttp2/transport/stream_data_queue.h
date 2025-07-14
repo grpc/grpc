@@ -39,7 +39,7 @@ class Center : public RefCounted<Center<T>> {
   // Returns a promise that resolves when the data is enqueued.
   // It is expected that calls to this function are not done in parallel. At
   // most one call to this function should be pending at a time.
-  auto Enqueue(T data, uint32_t tokens) {
+  auto Enqueue(T data, const uint32_t tokens) {
     return [self = this->Ref(), tokens,
             data = std::move(data)]() mutable -> Poll<absl::Status> {
       MutexLock lock(&self->mu_);
@@ -76,7 +76,8 @@ class Center : public RefCounted<Center<T>> {
   // be dequeued even if its token cost is greater than max_tokens. It does not
   // cause the item itself to be partially dequeued; the entire item is always
   // returned.
-  std::optional<T> Dequeue(uint32_t max_tokens, bool allow_oversized_dequeue) {
+  std::optional<T> Dequeue(const uint32_t max_tokens,
+                           const bool allow_oversized_dequeue) {
     ReleasableMutexLock lock(&mu_);
     if (queue_.empty() ||
         (queue_.front().tokens > max_tokens && !allow_oversized_dequeue)) {
@@ -93,6 +94,9 @@ class Center : public RefCounted<Center<T>> {
     queue_.pop();
     tokens_consumed_ -= entry.tokens;
     auto waker = std::move(waker_);
+    GRPC_STREAM_DATA_QUEUE_DEBUG
+        << "Dequeue successful. Data tokens released: " << entry.tokens
+        << " Current tokens consumed: " << tokens_consumed_;
     lock.Release();
 
     // TODO(akshitpatel) : [PH2][P2] : Investigate a mechanism to only wake up
@@ -100,9 +104,6 @@ class Center : public RefCounted<Center<T>> {
     // this queue is revamped soon and so not spending time on optimization
     // right now.
     waker.Wakeup();
-    GRPC_STREAM_DATA_QUEUE_DEBUG
-        << "Dequeue successful. Data tokens released: " << entry.tokens
-        << " Current tokens consumed: " << tokens_consumed_;
     return std::move(entry.data);
   }
 
@@ -118,11 +119,22 @@ class Center : public RefCounted<Center<T>> {
   };
   Mutex mu_;
   std::queue<Entry> queue_ ABSL_GUARDED_BY(mu_);
+  // The maximum number of tokens that can be enqueued. This limit is used to
+  // exert back pressure on the sender. If the sender tries to enqueue more
+  // tokens than this limit, the enqueue promise will not resolve until the
+  // required number of tokens are consumed by the receiver. There is an
+  // exception to this rule: if the sender tries to enqueue an item when the
+  // queue has 0 tokens, the enqueue will always go through regardless of the
+  // number of tokens.
   uint32_t max_tokens_ ABSL_GUARDED_BY(mu_);
+  // The number of tokens that have been enqueued in the queue but not yet
+  // dequeued.
   uint32_t tokens_consumed_ ABSL_GUARDED_BY(mu_) = 0;
   Waker waker_ ABSL_GUARDED_BY(mu_);
 };
 
+// TODO(akshitpatel) : [PH2][P2] : This queue needs to be replaced with a
+// fast lock free queue.
 template <typename T>
 class SimpleQueue {
  public:
@@ -134,11 +146,12 @@ class SimpleQueue {
   SimpleQueue(const SimpleQueue&) = delete;
   SimpleQueue& operator=(const SimpleQueue&) = delete;
 
-  auto Enqueue(T data, uint32_t tokens) {
+  auto Enqueue(T data, const uint32_t tokens) {
     return center_->Enqueue(std::move(data), tokens);
   }
 
-  std::optional<T> Dequeue(uint32_t max_tokens, bool allow_oversized_dequeue) {
+  std::optional<T> Dequeue(const uint32_t max_tokens,
+                           const bool allow_oversized_dequeue) {
     return center_->Dequeue(max_tokens, allow_oversized_dequeue);
   }
 
@@ -151,6 +164,8 @@ class SimpleQueue {
   bool TestOnlyIsEmpty() { return center_->IsEmpty(); }
 
  private:
+  // This is solely added to handle race conditions between the class destructor
+  // and the pending enqueue promises.
   RefCountedPtr<Center<T>> center_;
 };
 
