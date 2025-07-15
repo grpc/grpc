@@ -12176,8 +12176,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/frame.h
+  - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -12187,9 +12201,22 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
+  - src/core/util/match.h
+  - src/core/util/overload.h
   - src/core/util/time.h
+  - src/core/util/upb_utils.h
+  - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
   - src/core/ext/transport/chttp2/transport/frame.cc
+  - src/core/ext/transport/chttp2/transport/http2_settings.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/slice/slice.cc
@@ -12200,7 +12227,9 @@ targets:
   - test/core/transport/chttp2/frame_test.cc
   deps:
   - gtest
+  - upb_textformat_lib
   - absl/container:flat_hash_map
+  - absl/functional:function_ref
   - absl/hash:hash
   - absl/status:statusor
   - absl/types:span
@@ -12960,6 +12989,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/hpack_parse_result.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
+  - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/transport/chttp2/transport/http2_stats_collector.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
@@ -13319,6 +13349,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/hpack_parse_result.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
+  - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/transport/chttp2/transport/http2_stats_collector.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
   - src/core/ext/transport/chttp2/transport/varint.cc
@@ -13746,8 +13777,22 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/frame.h
+  - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -13757,10 +13802,23 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
+  - src/core/util/match.h
+  - src/core/util/overload.h
   - src/core/util/time.h
+  - src/core/util/upb_utils.h
   - test/core/transport/chttp2/http2_common_test_inputs.h
+  - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
   - src/core/ext/transport/chttp2/transport/frame.cc
+  - src/core/ext/transport/chttp2/transport/http2_settings.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/slice/slice.cc
@@ -13771,7 +13829,9 @@ targets:
   - test/core/transport/chttp2/http2_status_test.cc
   deps:
   - gtest
+  - upb_textformat_lib
   - absl/container:flat_hash_map
+  - absl/functional:function_ref
   - absl/hash:hash
   - absl/status:statusor
   - absl/types:span
@@ -15188,6 +15248,7 @@ targets:
   - src/core/call/message.h
   - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/frame.h
+  - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/transport/chttp2/transport/message_assembler.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
@@ -15275,6 +15336,7 @@ targets:
   - src/core/call/message.cc
   - src/core/channelz/property_list.cc
   - src/core/ext/transport/chttp2/transport/frame.cc
+  - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c

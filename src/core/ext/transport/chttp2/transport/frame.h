@@ -315,6 +315,8 @@ inline constexpr absl::string_view kNoPushPromise =
     "RFC9113: PUSH_PROMISE MUST NOT be sent if the SETTINGS_ENABLE_PUSH "
     "setting of the "
     "peer endpoint is set to 0";
+inline constexpr absl::string_view kNoPushPromiseSettings =
+    "gRPC does not support PUSH_PROMISE";
 
 inline constexpr absl::string_view kFrameParserIncorrectPadding =
     "Incorrect length of padding in frame";
@@ -323,7 +325,18 @@ inline constexpr absl::string_view kGoAwayLength8 =
     "GOAWAY frame should have a Last-Stream-ID and Error Code making the "
     "minimum length 8 octets";
 
+inline constexpr absl::string_view kIncorrectWindowSizeSetting =
+    "RFC9113: Values above the maximum flow-control window size of (2^31)-1 "
+    "MUST be treated as a connection error of type FLOW_CONTROL_ERROR.";
+inline constexpr absl::string_view kIncorrectFrameSizeSetting =
+    "RFC9113: The initial value is 2^14 (16,384) octets. The value advertised"
+    " by an endpoint MUST be between this initial value and the maximum allowed"
+    " frame size (2^24)-1 or 16,777,215 octets), inclusive. ";
+
 inline constexpr uint32_t kMaxStreamId31Bit = 0x7fffffffu;
+inline constexpr uint32_t kMaxSize31Bit = 0x7fffffffu;
+inline constexpr uint32_t kMinimumFrameSize = 16384;
+inline constexpr uint32_t kMaximumFrameSize = 16777215;
 
 }  // namespace RFC9113
 }  // namespace grpc_core

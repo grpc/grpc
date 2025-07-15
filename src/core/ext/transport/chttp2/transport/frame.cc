@@ -24,6 +24,7 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/crash.h"
@@ -445,9 +446,34 @@ ValueOrHttp2Status<Http2Frame> ParseSettingsFrame(const Http2FrameHeader& hdr,
   while (payload.Length() != 0) {
     uint8_t buffer[6];
     payload.MoveFirstNBytesIntoBuffer(6, buffer);
+    uint16_t setting_id = Read2b(buffer);
+    uint32_t setting_value = Read4b(buffer + 2);
+    if (GPR_UNLIKELY(setting_id == Http2Settings::kInitialWindowSizeWireId &&
+                     setting_value > RFC9113::kMaxSize31Bit)) {
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kFlowControlError,
+          absl::StrCat(RFC9113::kIncorrectWindowSizeSetting, hdr.ToString()));
+    } else if (GPR_UNLIKELY(setting_id == Http2Settings::kMaxFrameSizeWireId &&
+                            (setting_value < RFC9113::kMinimumFrameSize ||
+                             setting_value > RFC9113::kMaximumFrameSize))) {
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(RFC9113::kIncorrectFrameSizeSetting, hdr.ToString()));
+    } else if (GPR_UNLIKELY(
+                   setting_id < Http2Settings::kHeaderTableSizeWireId ||
+                   setting_id > Http2Settings::kGrpcAllowSecurityFrameWireId ||
+                   (setting_id > Http2Settings::kMaxHeaderListSizeWireId &&
+                    setting_id <
+                        Http2Settings::kGrpcAllowTrueBinaryMetadataWireId))) {
+      // RFC9113 : An endpoint that receives a SETTINGS frame with any unknown
+      // or unsupported identifier MUST ignore that setting.
+      DVLOG(2) << "ParseSettingsFrame Discarding unknown setting " << setting_id
+               << " " << setting_value;
+      continue;
+    }
     frame.settings.push_back({
-        Read2b(buffer),
-        Read4b(buffer + 2),
+        setting_id,
+        setting_value,
     });
   }
   return ValueOrHttp2Status<Http2Frame>(std::move(frame));

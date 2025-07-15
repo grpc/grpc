@@ -16928,7 +16928,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(frame_test
+  src/core/channelz/property_list.cc
   src/core/ext/transport/chttp2/transport/frame.cc
+  src/core/ext/transport/chttp2/transport/http2_settings.cc
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/slice/slice.cc
@@ -16969,7 +16977,9 @@ target_include_directories(frame_test
 target_link_libraries(frame_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  upb_textformat_lib
   absl::flat_hash_map
+  absl::function_ref
   absl::hash
   absl::statusor
   absl::span
@@ -19123,6 +19133,7 @@ add_executable(header_assembler_test
   src/core/ext/transport/chttp2/transport/hpack_parse_result.cc
   src/core/ext/transport/chttp2/transport/hpack_parser.cc
   src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
+  src/core/ext/transport/chttp2/transport/http2_settings.cc
   src/core/ext/transport/chttp2/transport/http2_stats_collector.cc
   src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/transport/chttp2/transport/varint.cc
@@ -19951,7 +19962,15 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(http2_status_test
+  src/core/channelz/property_list.cc
   src/core/ext/transport/chttp2/transport/frame.cc
+  src/core/ext/transport/chttp2/transport/http2_settings.cc
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/slice/slice.cc
@@ -19992,7 +20011,9 @@ target_include_directories(http2_status_test
 target_link_libraries(http2_status_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  upb_textformat_lib
   absl::flat_hash_map
+  absl::function_ref
   absl::hash
   absl::statusor
   absl::span
@@ -22396,6 +22417,7 @@ add_executable(message_assembler_test
   src/core/call/message.cc
   src/core/channelz/property_list.cc
   src/core/ext/transport/chttp2/transport/frame.cc
+  src/core/ext/transport/chttp2/transport/http2_settings.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c

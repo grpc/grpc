@@ -15,12 +15,14 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 
 #include <algorithm>
+#include <cstdint>
 #include <initializer_list>
 #include <utility>
 
 #include "absl/status/status.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/slice/slice_buffer.h"
 
@@ -404,23 +406,30 @@ TEST(Frame, ParseHttp2SettingsFrame) {
                        /* Stream Identifier (31 bits) */ 0, 0, 0, 0),
             Http2Frame(Http2SettingsFrame{}));
 
-  EXPECT_EQ(ParseFrame(/* Length (3 octets) */ 0, 0, 6,
-                       /* Type (1 octet) */ 4,
-                       /* Unused Flags (7), ACK Flag (1) */ 0,
-                       /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                       /* Setting (6 octets each) */ 0x12, 0x34, 0x9a, 0xbc,
-                       0xde, 0xf0),
-            Http2Frame(Http2SettingsFrame{false, {{0x1234, 0x9abcdef0}}}));
-  EXPECT_EQ(ParseFrame(/* Length (3 octets) */ 0, 0, 12,
-                       /* Type (1 octet) */ 4,
-                       /* Unused Flags (7), ACK Flag (1) */ 0,
-                       /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                       /* Setting (6 octets each) */ 0x12, 0x34, 0x9a, 0xbc,
-                       0xde, 0xf0,
-                       /* Setting (6 octets each) */ 0x43, 0x21, 0x12, 0x34,
-                       0x56, 0x78),
+  EXPECT_EQ(ParseFrame(
+                /* Length (3 octets) */ 0, 0, 6,
+                /* Type (1 octet) */ 4,
+                /* Unused Flags (7), ACK Flag (1) */ 0,
+                /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                /* Setting (6 octets each) */
+                0xFE, 0x04, 0x9a, 0xbc, 0xde, 0xf0),
             Http2Frame(Http2SettingsFrame{
-                false, {{0x1234, 0x9abcdef0}, {0x4321, 0x12345678}}}));
+                false,
+                {{/*kGrpcPreferredReceiveCryptoFrameSizeWireId*/ 0xFE04,
+                  0x9abcdef0}}}));
+  EXPECT_EQ(
+      ParseFrame(/* Length (3 octets) */ 0, 0, 12,
+                 /* Type (1 octet) */ 4,
+                 /* Unused Flags (7), ACK Flag (1) */ 0,
+                 /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                 /* Setting (6 octets each) */
+                 0xFE, 0x04, 0x9a, 0xbc, 0xde, 0xf0,
+                 /* Setting (6 octets each) */
+                 0xFE, 0x05, 0x12, 0x34, 0x56, 0x78),
+      Http2Frame(Http2SettingsFrame{
+          false,
+          {{/*kGrpcPreferredReceiveCryptoFrameSizeWireId*/ 0xFE04, 0x9abcdef0},
+           {/*kGrpcAllowSecurityFrameWireId*/ 0xFE05, 0x12345678}}}));
   EXPECT_EQ(ParseFrame(/* Length (3 octets) */ 0, 0, 0,
                        /* Type (1 octet) */ 4,
                        /* Unused Flags (7), ACK Flag (1) */ 1,
@@ -433,6 +442,107 @@ TEST(Frame, ParseHttp2SettingsFrame) {
                        /* Unused Flags (7), ACK Flag (1) */ 0xff,
                        /* Stream Identifier (31 bits) */ 0x80, 0, 0, 0),
             Http2Frame(Http2SettingsFrame{true}));
+}
+
+TEST(Frame, ParseHttp2SettingsFrameInvalidSettings) {
+  /* Invalid SETTINGS_INITIAL_WINDOW_SIZE */
+  EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 6,
+                            /* Type (1 octet) */ 4,
+                            /* Unused Flags (7), ACK Flag (1) */ 0,
+                            /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                            /* Setting (6 octets each) */ 0,
+                            Http2Settings::kInitialWindowSizeWireId, 0xff, 0xff,
+                            0xff, 0xff),
+              Http2StatusIs(
+                  Http2Status::Http2ErrorType::kConnectionError,
+                  Http2ErrorCode::kFlowControlError,
+                  absl::StrCat(RFC9113::kIncorrectWindowSizeSetting,
+                               "{SETTINGS: flags=0, stream_id=0, length=6}")));
+  EXPECT_THAT(
+      ValidateFrame(/* Length (3 octets) */ 0, 0, 6,
+                    /* Type (1 octet) */ 4,
+                    /* Unused Flags (7), ACK Flag (1) */ 0,
+                    /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                    /* Setting (6 octets each) */ 0,
+                    Http2Settings::kInitialWindowSizeWireId, 0x80, 0, 0, 0),
+      Http2StatusIs(
+          Http2Status::Http2ErrorType::kConnectionError,
+          Http2ErrorCode::kFlowControlError,
+          absl::StrCat(RFC9113::kIncorrectWindowSizeSetting,
+                       "{SETTINGS: flags=0, stream_id=0, length=6}")));
+
+  /* Invalid SETTINGS_MAX_FRAME_SIZE */
+  EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 6,
+                            /* Type (1 octet) */ 4,
+                            /* Unused Flags (7), ACK Flag (1) */ 0,
+                            /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                            /* Setting (6 octets each) */ 0,
+                            Http2Settings::kMaxFrameSizeWireId,
+                            (RFC9113::kMinimumFrameSize - 1) >> 24,
+                            (RFC9113::kMinimumFrameSize - 1) >> 16,
+                            (RFC9113::kMinimumFrameSize - 1) >> 8,
+                            (RFC9113::kMinimumFrameSize - 1) & 0xff),
+              Http2StatusIs(
+                  Http2Status::Http2ErrorType::kConnectionError,
+                  Http2ErrorCode::kProtocolError,
+                  absl::StrCat(RFC9113::kIncorrectFrameSizeSetting,
+                               "{SETTINGS: flags=0, stream_id=0, length=6}")));
+  EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 6,
+                            /* Type (1 octet) */ 4,
+                            /* Unused Flags (7), ACK Flag (1) */ 0,
+                            /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                            /* Setting (6 octets each) */ 0,
+                            Http2Settings::kMaxFrameSizeWireId,
+                            (RFC9113::kMaximumFrameSize + 1) >> 24,
+                            (RFC9113::kMaximumFrameSize + 1) >> 16,
+                            (RFC9113::kMaximumFrameSize + 1) >> 8,
+                            (RFC9113::kMaximumFrameSize + 1) & 0xff),
+              Http2StatusIs(
+                  Http2Status::Http2ErrorType::kConnectionError,
+                  Http2ErrorCode::kProtocolError,
+                  absl::StrCat(RFC9113::kIncorrectFrameSizeSetting,
+                               "{SETTINGS: flags=0, stream_id=0, length=6}")));
+
+  // RFC9113 : An endpoint that receives a SETTINGS frame with any unknown
+  // or unsupported identifier MUST ignore that setting.
+  EXPECT_EQ(ParseFrame(/* Length (3 octets) */ 0, 0, 6,
+                       /* Type (1 octet) */ 4,
+                       /* Unused Flags (7), ACK Flag (1) */ 0,
+                       /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                       /* Setting (6 octets each) */ 0,
+                       (Http2Settings::kHeaderTableSizeWireId - 1), 0, 0, 0, 0),
+            Http2Frame(Http2SettingsFrame{}));
+
+  EXPECT_EQ(
+      ParseFrame(/* Length (3 octets) */ 0, 0, 6,
+                 /* Type (1 octet) */ 4,
+                 /* Unused Flags (7), ACK Flag (1) */ 0,
+                 /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                 /* Setting (6 octets each) */
+                 (Http2Settings::kGrpcAllowSecurityFrameWireId + 1) >> 8,
+                 (Http2Settings::kGrpcAllowSecurityFrameWireId + 1) & 0xff, 0,
+                 0, 0, 0),
+      Http2Frame(Http2SettingsFrame{}));
+
+  EXPECT_EQ(
+      ParseFrame(/* Length (3 octets) */ 0, 0, 6,
+                 /* Type (1 octet) */ 4,
+                 /* Unused Flags (7), ACK Flag (1) */ 0,
+                 /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                 /* Setting (6 octets each) */ 0,
+                 (Http2Settings::kMaxHeaderListSizeWireId + 1), 0, 0, 0, 0),
+      Http2Frame(Http2SettingsFrame{}));
+
+  EXPECT_EQ(
+      ParseFrame(/* Length (3 octets) */ 0, 0, 6,
+                 /* Type (1 octet) */ 4,
+                 /* Unused Flags (7), ACK Flag (1) */ 0,
+                 /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                 /* Setting (6 octets each) */
+                 (Http2Settings::kGrpcAllowTrueBinaryMetadataWireId - 1) >> 8,
+                 (Http2Settings::kGrpcAllowTrueBinaryMetadataWireId - 1) & 0xff,
+                 0, 0, 0, 0),
+      Http2Frame(Http2SettingsFrame{}));
 }
 
 TEST(Frame, ParseHttp2PingFrame) {
