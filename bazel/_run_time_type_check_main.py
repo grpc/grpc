@@ -33,6 +33,8 @@ install_import_hook('grpc.aio._interceptor')
 install_import_hook('grpc.aio._base_channel')
 install_import_hook('grpc.aio._base_server')
 install_import_hook('grpc.aio._typing')
+install_import_hook('grpc.aio._call')
+# install_import_hook('grpc.aio._metadata')
 
 
 class SingleLoader(object):
