@@ -905,7 +905,6 @@ src/core/call/call_state.h \
 src/core/call/client_call.cc \
 src/core/call/client_call.h \
 src/core/call/custom_metadata.h \
-src/core/call/filter_fusion.h \
 src/core/call/interception_chain.cc \
 src/core/call/interception_chain.h \
 src/core/call/message.cc \
@@ -1187,6 +1186,8 @@ src/core/ext/transport/chttp2/transport/http2_client_transport.cc \
 src/core/ext/transport/chttp2/transport/http2_client_transport.h \
 src/core/ext/transport/chttp2/transport/http2_settings.cc \
 src/core/ext/transport/chttp2/transport/http2_settings.h \
+src/core/ext/transport/chttp2/transport/http2_settings_manager.cc \
+src/core/ext/transport/chttp2/transport/http2_settings_manager.h \
 src/core/ext/transport/chttp2/transport/http2_stats_collector.cc \
 src/core/ext/transport/chttp2/transport/http2_stats_collector.h \
 src/core/ext/transport/chttp2/transport/http2_status.h \
@@ -2051,7 +2052,6 @@ src/core/filter/auth/server_auth_filter.cc \
 src/core/filter/blackboard.cc \
 src/core/filter/blackboard.h \
 src/core/filter/filter_args.h \
-src/core/filter/fused_filters.cc \
 src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc \
 src/core/handshaker/endpoint_info/endpoint_info_handshaker.h \
 src/core/handshaker/handshaker.cc \
@@ -2642,6 +2642,7 @@ src/core/telemetry/tcp_tracer.cc \
 src/core/telemetry/tcp_tracer.h \
 src/core/transport/auth_context.cc \
 src/core/transport/auth_context.h \
+src/core/transport/auth_context_comparator_registry.h \
 src/core/transport/endpoint_transport.h \
 src/core/transport/endpoint_transport_client_channel_factory.cc \
 src/core/transport/endpoint_transport_client_channel_factory.h \

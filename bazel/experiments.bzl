@@ -18,6 +18,7 @@
 
 EXPERIMENT_ENABLES = {
     "call_tracer_in_transport": "call_tracer_in_transport",
+    "channelz_use_v2_for_v1_service": "channelz_use_v2_for_v1_service",
     "chaotic_good_framing_layer": "chaotic_good_framing_layer",
     "chttp2_bound_write_size": "chttp2_bound_write_size",
     "error_flatten": "error_flatten",
@@ -72,6 +73,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "channelz_test": [
+                "channelz_use_v2_for_v1_service",
+            ],
             "core_end2end_test": [
                 "chttp2_bound_write_size",
                 "error_flatten",
@@ -79,6 +83,7 @@ EXPERIMENTS = {
                 "local_connector_secure",
                 "pipelined_read_secure_endpoint",
                 "pollset_alternative",
+                "promise_based_http2_client_transport",
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
@@ -100,9 +105,6 @@ EXPERIMENTS = {
                 "multiping",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "minimal_stack_test": [
-                "fuse_filters",
             ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
@@ -149,6 +151,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "channelz_test": [
+                "channelz_use_v2_for_v1_service",
+            ],
             "core_end2end_test": [
                 "chttp2_bound_write_size",
                 "error_flatten",
@@ -156,6 +161,7 @@ EXPERIMENTS = {
                 "local_connector_secure",
                 "pipelined_read_secure_endpoint",
                 "pollset_alternative",
+                "promise_based_http2_client_transport",
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
@@ -177,9 +183,6 @@ EXPERIMENTS = {
                 "multiping",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "minimal_stack_test": [
-                "fuse_filters",
             ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
@@ -226,6 +229,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "channelz_test": [
+                "channelz_use_v2_for_v1_service",
+            ],
             "core_end2end_test": [
                 "chttp2_bound_write_size",
                 "error_flatten",
@@ -233,6 +239,7 @@ EXPERIMENTS = {
                 "local_connector_secure",
                 "pipelined_read_secure_endpoint",
                 "pollset_alternative",
+                "promise_based_http2_client_transport",
                 "retry_in_callv3",
                 "secure_endpoint_offload_large_reads",
                 "secure_endpoint_offload_large_writes",
@@ -254,9 +261,6 @@ EXPERIMENTS = {
                 "multiping",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
-            ],
-            "minimal_stack_test": [
-                "fuse_filters",
             ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",

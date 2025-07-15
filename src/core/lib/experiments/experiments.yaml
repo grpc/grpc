@@ -18,7 +18,8 @@
 # expiry:      when is the next time this experiment *must* be updated
 #              (date, YYYY/MM/DD)
 # test_tags:   a set of bazel tags, that if a test declares them signals
-#              that that test should be run with this experiment enabled in CI
+#              that the test should be run with this experiment both enabled
+#              and disabled in CI
 # allow_in_fuzzing_config: optional boolean (true if not specified)
 #              if false, this experiment will not be included in fuzzers that
 #              explore the config space
@@ -46,6 +47,11 @@
   owner: roth@google.com
   test_tags: []
   allow_in_fuzzing_config: false
+- name: channelz_use_v2_for_v1_service
+  description: Use the v2 channelz service for the v1 channelz service.
+  expiry: 2025/09/01
+  owner: ctiller@google.com
+  test_tags: [channelz_test]
 - name: chaotic_good_framing_layer
   description: Enable the chaotic good framing layer.
   expiry: 2025/09/01
@@ -135,7 +141,7 @@
   description: If set, individual filters are merged into fused filters 
   expiry: 2025/09/30
   owner: vigneshbabu@google.com
-  test_tags: ["minimal_stack_test"]
+  test_tags: []
   allow_in_fuzzing_config: false
 - name: keep_alive_ping_timer_batch
   description:
@@ -198,7 +204,7 @@
     and also help with interop testing.
   expiry: 2025/10/03
   owner: tjagtap@google.com
-  test_tags: []
+  test_tags: ["core_end2end_test"]
   allow_in_fuzzing_config: true
 - name: promise_based_http2_server_transport
   description:
@@ -249,7 +255,7 @@
     ]
 - name: server_global_callbacks_ownership
   description: If set, server global callbacks ownership is fixed to not be owned by gRPC.
-  expiry: 2025/06/30
+  expiry: 2025/09/30
   owner: yashkt@google.com
   test_tags: []
 - name: shard_global_connection_pool

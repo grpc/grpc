@@ -127,6 +127,9 @@ grpc_fuzz_test(
         "fuzztest",
         "fuzztest_main",
     ],
+    tags = [
+        "channelz_test",
+    ],
     deps = [
         "//:channelz",
     ],
@@ -139,6 +142,9 @@ grpc_fuzz_test(
         "absl/log:check",
         "fuzztest",
         "fuzztest_main",
+    ],
+    tags = [
+        "channelz_test",
     ],
     deps = [
         "//:channelz",

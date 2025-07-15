@@ -42,7 +42,9 @@ idna==3.10
     #   hyperlink
     #   requests
 importlib-metadata==8.5.0
-    # via opentelemetry-api
+    # via
+    #   opentelemetry-api
+    #   typeguard
 incremental==24.7.2
     # via twisted
 opentelemetry-api==1.30.0
@@ -87,6 +89,8 @@ tomli==2.2.1
     # via incremental
 twisted==24.11.0
     # via -r requirements.bazel.txt
+typeguard==4.0.1
+    # via -r requirements.bazel.txt
 typing-extensions==4.13.2
     # via
     #   -r requirements.bazel.txt
@@ -94,6 +98,7 @@ typing-extensions==4.13.2
     #   opentelemetry-resourcedetector-gcp
     #   opentelemetry-sdk
     #   twisted
+    #   typeguard
 urllib3==2.2.3
     # via
     #   -r requirements.bazel.txt

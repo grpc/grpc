@@ -525,11 +525,6 @@ class SubchannelNode final : public BaseNode {
   // Sets the subchannel's connectivity state without health checking.
   void UpdateConnectivityState(grpc_connectivity_state state);
 
-  // Used when the subchannel's child socket changes. This should be set when
-  // the subchannel's transport is created and set to nullptr when the
-  // subchannel unrefs the transport.
-  void SetChildSocket(RefCountedPtr<SocketNode> socket);
-
   Json RenderJson() override;
 
   // proxy methods to composed classes.
@@ -543,10 +538,6 @@ class SubchannelNode final : public BaseNode {
   const std::string& target() const { return target_; }
   std::string connectivity_state() const;
   CallCounts GetCallCounts() const { return call_counter_.GetCallCounts(); }
-  WeakRefCountedPtr<SocketNode> child_socket() const {
-    MutexLock lock(&socket_mu_);
-    return child_socket_;
-  }
   const ChannelArgs& channel_args() const { return channel_args_; }
 
  private:
@@ -556,8 +547,6 @@ class SubchannelNode final : public BaseNode {
   friend class testing::SubchannelNodePeer;
 
   std::atomic<grpc_connectivity_state> connectivity_state_{GRPC_CHANNEL_IDLE};
-  mutable Mutex socket_mu_;
-  WeakRefCountedPtr<SocketNode> child_socket_ ABSL_GUARDED_BY(socket_mu_);
   std::string target_;
   CallCountingHelper call_counter_;
   // TODO(ctiller): keeping channel args here can create odd circular references
