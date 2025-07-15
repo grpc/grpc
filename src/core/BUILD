@@ -2980,6 +2980,7 @@ grpc_cc_library(
         "ref_counted",
         "strerror",
         "sync",
+        "useful",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:parse_address",
