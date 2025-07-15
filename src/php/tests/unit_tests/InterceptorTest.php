@@ -16,16 +16,20 @@
  * limitations under the License.
  *
  */
-/**
- * Interface exported by the server.
- */
-require_once(dirname(__FILE__).'/../../lib/Grpc/BaseStub.php');
-require_once(dirname(__FILE__).'/../../lib/Grpc/AbstractCall.php');
-require_once(dirname(__FILE__).'/../../lib/Grpc/UnaryCall.php');
-require_once(dirname(__FILE__).'/../../lib/Grpc/ClientStreamingCall.php');
-require_once(dirname(__FILE__).'/../../lib/Grpc/Interceptor.php');
-require_once(dirname(__FILE__).'/../../lib/Grpc/CallInvoker.php');
-require_once(dirname(__FILE__).'/../../lib/Grpc/Internal/InterceptorChannel.php');
+
+use Grpc\BaseStub;
+use Grpc\Channel;
+use Grpc\ChannelCredentials;
+use Grpc\Interceptor;
+use Grpc\Internal\InterceptorChannel;
+use Grpc\Server;
+use Grpc\Timeval;
+use PHPUnit\Framework\TestCase;
+use const Grpc\OP_RECV_CLOSE_ON_SERVER;
+use const Grpc\OP_RECV_MESSAGE;
+use const Grpc\OP_SEND_INITIAL_METADATA;
+use const Grpc\OP_SEND_STATUS_FROM_SERVER;
+use const Grpc\STATUS_OK;
 
 class SimpleRequest
 {
@@ -44,7 +48,7 @@ class SimpleRequest
     }
 }
 
-class InterceptorClient extends Grpc\BaseStub
+class InterceptorClient extends BaseStub
 {
 
     /**
@@ -91,7 +95,7 @@ class InterceptorClient extends Grpc\BaseStub
 }
 
 
-class ChangeMetadataInterceptor extends Grpc\Interceptor
+class ChangeMetadataInterceptor extends Interceptor
 {
     public function interceptUnaryUnary($method,
                                         $argument,
@@ -114,7 +118,7 @@ class ChangeMetadataInterceptor extends Grpc\Interceptor
     }
 }
 
-class ChangeMetadataInterceptor2 extends Grpc\Interceptor
+class ChangeMetadataInterceptor2 extends Interceptor
 {
     public function interceptUnaryUnary($method,
                                         $argument,
@@ -170,7 +174,7 @@ class ChangeRequestCall
     }
 }
 
-class ChangeRequestInterceptor extends Grpc\Interceptor
+class ChangeRequestInterceptor extends Interceptor
 {
     public function interceptUnaryUnary($method,
                                         $argument,
@@ -194,7 +198,7 @@ class ChangeRequestInterceptor extends Grpc\Interceptor
     }
 }
 
-class StopCallInterceptor extends Grpc\Interceptor
+class StopCallInterceptor extends Interceptor
 {
     public function interceptUnaryUnary($method,
                                         $argument,
@@ -215,7 +219,7 @@ class StopCallInterceptor extends Grpc\Interceptor
     }
 }
 
-class InterceptorTest extends \PHPUnit\Framework\TestCase
+class InterceptorTest extends TestCase
 {
     private $server;
     private $port;
@@ -223,11 +227,11 @@ class InterceptorTest extends \PHPUnit\Framework\TestCase
 
     public function setUp(): void
     {
-        $this->server = new Grpc\Server([]);
+        $this->server = new Server([]);
         $this->port = $this->server->addHttp2Port('0.0.0.0:0');
-        $this->channel = new Grpc\Channel('localhost:'.$this->port, [
+        $this->channel = new Channel('localhost:'.$this->port, [
             'force_new' => true,
-            'credentials' => Grpc\ChannelCredentials::createInsecure()]);
+            'credentials' => ChannelCredentials::createInsecure()]);
         $this->server->start();
     }
 
@@ -242,10 +246,10 @@ class InterceptorTest extends \PHPUnit\Framework\TestCase
     {
         $req_text = 'client_request';
         $channel_matadata_interceptor = new ChangeMetadataInterceptor();
-        $intercept_channel = Grpc\Interceptor::intercept($this->channel, $channel_matadata_interceptor);
+        $intercept_channel = Interceptor::intercept($this->channel, $channel_matadata_interceptor);
         $client = new InterceptorClient('localhost:'.$this->port, [
             'force_new' => true,
-            'credentials' => Grpc\ChannelCredentials::createInsecure(),
+            'credentials' => ChannelCredentials::createInsecure(),
         ], $intercept_channel);
         $req = new SimpleRequest($req_text);
         $unary_call = $client->UnaryCall($req);
@@ -270,11 +274,11 @@ class InterceptorTest extends \PHPUnit\Framework\TestCase
         $channel_matadata_interceptor = new ChangeMetadataInterceptor();
         $channel_matadata_intercepto2 = new ChangeMetadataInterceptor2();
         // test intercept separately.
-        $intercept_channel1 = Grpc\Interceptor::intercept($this->channel, $channel_matadata_interceptor);
-        $intercept_channel2 = Grpc\Interceptor::intercept($intercept_channel1, $channel_matadata_intercepto2);
+        $intercept_channel1 = Interceptor::intercept($this->channel, $channel_matadata_interceptor);
+        $intercept_channel2 = Interceptor::intercept($intercept_channel1, $channel_matadata_intercepto2);
         $client = new InterceptorClient('localhost:'.$this->port, [
             'force_new' => true,
-            'credentials' => Grpc\ChannelCredentials::createInsecure(),
+            'credentials' => ChannelCredentials::createInsecure(),
         ], $intercept_channel2);
 
         $req = new SimpleRequest($req_text);
@@ -296,11 +300,11 @@ class InterceptorTest extends \PHPUnit\Framework\TestCase
         unset($server_call);
 
         // test intercept by array.
-        $intercept_channel3 = Grpc\Interceptor::intercept($this->channel,
+        $intercept_channel3 = Interceptor::intercept($this->channel,
             [$channel_matadata_intercepto2, $channel_matadata_interceptor]);
         $client = new InterceptorClient('localhost:'.$this->port, [
             'force_new' => true,
-            'credentials' => Grpc\ChannelCredentials::createInsecure(),
+            'credentials' => ChannelCredentials::createInsecure(),
         ], $intercept_channel3);
 
         $req = new SimpleRequest($req_text);
@@ -326,11 +330,11 @@ class InterceptorTest extends \PHPUnit\Framework\TestCase
     {
         $req_text = 'client_request';
         $change_request_interceptor = new ChangeRequestInterceptor();
-        $intercept_channel = Grpc\Interceptor::intercept($this->channel,
+        $intercept_channel = Interceptor::intercept($this->channel,
             $change_request_interceptor);
         $client = new InterceptorClient('localhost:'.$this->port, [
             'force_new' => true,
-            'credentials' => Grpc\ChannelCredentials::createInsecure(),
+            'credentials' => ChannelCredentials::createInsecure(),
         ], $intercept_channel);
 
         $req = new SimpleRequest($req_text);
@@ -340,17 +344,17 @@ class InterceptorTest extends \PHPUnit\Framework\TestCase
         $this->assertSame('/phony_method', $event->method);
         $server_call = $event->call;
         $event = $server_call->startBatch([
-            Grpc\OP_RECV_MESSAGE => true,
+            OP_RECV_MESSAGE => true,
         ]);
         $this->assertSame('intercepted_unary_request', $event->message);
-        $event = $server_call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+        $server_call->startBatch([
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_STATUS_FROM_SERVER => [
                 'metadata' => [],
-                'code' => Grpc\STATUS_OK,
+                'code' => STATUS_OK,
                 'details' => '',
             ],
-            Grpc\OP_RECV_CLOSE_ON_SERVER => true,
+            OP_RECV_CLOSE_ON_SERVER => true,
         ]);
 
         $stream_call = $client->StreamCall();
@@ -359,17 +363,17 @@ class InterceptorTest extends \PHPUnit\Framework\TestCase
         $this->assertSame('/phony_method', $event->method);
         $server_call = $event->call;
         $event = $server_call->startBatch([
-            Grpc\OP_RECV_MESSAGE => true,
+            OP_RECV_MESSAGE => true,
         ]);
         $this->assertSame('intercepted_stream_request', $event->message);
-        $event = $server_call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+        $server_call->startBatch([
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_STATUS_FROM_SERVER => [
                 'metadata' => [],
-                'code' => Grpc\STATUS_OK,
+                'code' => STATUS_OK,
                 'details' => '',
             ],
-            Grpc\OP_RECV_CLOSE_ON_SERVER => true,
+            OP_RECV_CLOSE_ON_SERVER => true,
         ]);
 
         unset($unary_call);
@@ -381,11 +385,11 @@ class InterceptorTest extends \PHPUnit\Framework\TestCase
     {
         $req_text = 'client_request';
         $channel_request_interceptor = new StopCallInterceptor();
-        $intercept_channel = Grpc\Interceptor::intercept($this->channel,
+        $intercept_channel = Interceptor::intercept($this->channel,
             $channel_request_interceptor);
         $client = new InterceptorClient('localhost:'.$this->port, [
             'force_new' => true,
-            'credentials' => Grpc\ChannelCredentials::createInsecure(),
+            'credentials' => ChannelCredentials::createInsecure(),
         ], $intercept_channel);
 
         $req = new SimpleRequest($req_text);
@@ -403,14 +407,14 @@ class InterceptorTest extends \PHPUnit\Framework\TestCase
 
     public function testGetInterceptorChannelConnectivityState()
     {
-        $channel = new Grpc\Channel(
+        $channel = new Channel(
             'localhost:0',
             [
                 'force_new' => true,
-                'credentials' => Grpc\ChannelCredentials::createInsecure()
+                'credentials' => ChannelCredentials::createInsecure()
             ]
         );
-        $interceptor_channel = Grpc\Interceptor::intercept($channel, new Grpc\Interceptor());
+        $interceptor_channel = Interceptor::intercept($channel, new Interceptor());
         $state = $interceptor_channel->getConnectivityState();
         $this->assertEquals(0, $state);
         $channel->close();
@@ -418,16 +422,16 @@ class InterceptorTest extends \PHPUnit\Framework\TestCase
 
     public function testInterceptorChannelWatchConnectivityState()
     {
-        $channel = new Grpc\Channel(
+        $channel = new Channel(
             'localhost:0',
             [
                 'force_new' => true,
-                'credentials' => Grpc\ChannelCredentials::createInsecure()
+                'credentials' => ChannelCredentials::createInsecure()
             ]
         );
-        $interceptor_channel = Grpc\Interceptor::intercept($channel, new Grpc\Interceptor());
-        $now = Grpc\Timeval::now();
-        $deadline = $now->add(new Grpc\Timeval(100*1000));
+        $interceptor_channel = Interceptor::intercept($channel, new Interceptor());
+        $now = Timeval::now();
+        $deadline = $now->add(new Timeval(100*1000));
         $state = $interceptor_channel->watchConnectivityState(1, $deadline);
         $this->assertTrue($state);
         unset($time);
@@ -437,28 +441,28 @@ class InterceptorTest extends \PHPUnit\Framework\TestCase
 
     public function testInterceptorChannelClose()
     {
-        $channel = new Grpc\Channel(
+        $channel = new Channel(
             'localhost:0',
             [
                 'force_new' => true,
-                'credentials' => Grpc\ChannelCredentials::createInsecure()
+                'credentials' => ChannelCredentials::createInsecure()
             ]
         );
-        $interceptor_channel = Grpc\Interceptor::intercept($channel, new Grpc\Interceptor());
+        $interceptor_channel = Interceptor::intercept($channel, new Interceptor());
         $this->assertNotNull($interceptor_channel);
         $channel->close();
     }
 
     public function testInterceptorChannelGetTarget()
     {
-        $channel = new Grpc\Channel(
+        $channel = new Channel(
             'localhost:8888',
             [
                 'force_new' => true,
-                'credentials' => Grpc\ChannelCredentials::createInsecure()
+                'credentials' => ChannelCredentials::createInsecure()
             ]
         );
-        $interceptor_channel = Grpc\Interceptor::intercept($channel, new Grpc\Interceptor());
+        $interceptor_channel = Interceptor::intercept($channel, new Interceptor());
         $target = $interceptor_channel->getTarget();
         $this->assertTrue(is_string($target));
         $channel->close();

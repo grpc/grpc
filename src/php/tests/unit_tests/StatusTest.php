@@ -17,49 +17,53 @@
  *
  */
 
-require_once(dirname(__FILE__) . '/../../lib/Grpc/Status.php');
+use Grpc\Status;
+use PHPUnit\Framework\TestCase;
+use const Grpc\STATUS_INVALID_ARGUMENT;
+use const Grpc\STATUS_OK;
+use const Grpc\STATUS_UNIMPLEMENTED;
 
-class StatusTest extends \PHPUnit\Framework\TestCase
+class StatusTest extends TestCase
 {
     public function testStatusOk()
     {
         $status = [
-            'code' => \Grpc\STATUS_OK,
+            'code' => STATUS_OK,
             'details' => 'OK',
         ];
-        $return = \Grpc\Status::ok();
+        $return = Status::ok();
         $this->assertEquals($status, $return);
     }
 
     public function testStatusOkWithMetadata()
     {
         $status = [
-            'code' => \Grpc\STATUS_OK,
+            'code' => STATUS_OK,
             'details' => 'OK',
             'metadata' => ['a' => 1],
         ];
-        $return = \Grpc\Status::ok(['a' => 1]);
+        $return = Status::ok(['a' => 1]);
         $this->assertEquals($status, $return);
     }
 
     public function testStatusUnimplemented()
     {
         $status = [
-            'code' => \Grpc\STATUS_UNIMPLEMENTED,
+            'code' => STATUS_UNIMPLEMENTED,
             'details' => 'UNIMPLEMENTED',
         ];
-        $return = \Grpc\Status::unimplemented();
+        $return = Status::unimplemented();
         $this->assertEquals($status, $return);
     }
 
     public function testStatus()
     {
         $status = [
-            'code' => \Grpc\STATUS_INVALID_ARGUMENT,
+            'code' => STATUS_INVALID_ARGUMENT,
             'details' => 'invalid argument',
         ];
-        $return = \Grpc\Status::status(
-            \Grpc\STATUS_INVALID_ARGUMENT,
+        $return = Status::status(
+            STATUS_INVALID_ARGUMENT,
             "invalid argument"
         );
         $this->assertEquals($status, $return);
@@ -68,12 +72,12 @@ class StatusTest extends \PHPUnit\Framework\TestCase
     public function testStatusWithMetadata()
     {
         $status = [
-            'code' => \Grpc\STATUS_INVALID_ARGUMENT,
+            'code' => STATUS_INVALID_ARGUMENT,
             'details' => 'invalid argument',
             'metadata' => ['trailingMeta' => 100]
         ];
-        $return = \Grpc\Status::status(
-            \Grpc\STATUS_INVALID_ARGUMENT,
+        $return = Status::status(
+            STATUS_INVALID_ARGUMENT,
             "invalid argument",
             ['trailingMeta' => 100]
         );

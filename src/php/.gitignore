@@ -26,3 +26,4 @@ vendor/
 
 # PHPUnit
 .phpunit.result.cache
+log/codeCoverage

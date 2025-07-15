@@ -17,32 +17,40 @@
  *
  */
 
-require_once(dirname(__FILE__) . '/../../lib/Grpc/ServerCallReader.php');
-require_once(dirname(__FILE__) . '/../../lib/Grpc/ServerCallWriter.php');
-require_once(dirname(__FILE__) . '/../../lib/Grpc/Status.php');
-require_once(dirname(__FILE__) . '/../../lib/Grpc/MethodDescriptor.php');
-require_once(dirname(__FILE__) . '/../../lib/Grpc/RpcServer.php');
+use Grpc\BaseStub;
+use Grpc\MethodDescriptor;
+use Grpc\RpcServer;
+use PHPUnit\Framework\MockObject\MockObject;
+use PHPUnit\Framework\TestCase;
 
-class RpcServerTest extends \PHPUnit\Framework\TestCase
+class RpcServerTest extends TestCase
 {
+    /**
+     * @var RpcServer
+     */
     private $server;
+
+    /**
+     * @var BaseStub&MockObject
+     */
     private $mockService;
 
     public function setUp(): void
     {
-        $this->server = new \Grpc\RpcServer();
-        $this->mockService = $this->getMockBuilder(stdClass::class)
-            ->setMethods(['getMethodDescriptors', 'hello'])
+        $this->server = new RpcServer();
+        $this->mockService = $this->getMockBuilder(BaseStub::class)
+            ->disableOriginalConstructor()
+            ->addMethods(['getMethodDescriptors', 'hello'])
             ->getMock();
     }
 
     public function testHandleServices()
     {
-        $helloMethodDescriptor = new \Grpc\MethodDescriptor(
+        $helloMethodDescriptor = new MethodDescriptor(
             $this->mockService,
             'hello',
             'String',
-            \Grpc\MethodDescriptor::UNARY_CALL
+            MethodDescriptor::UNARY_CALL
         );
         $this->mockService->expects($this->once())
             ->method('getMethodDescriptors')
@@ -56,20 +64,21 @@ class RpcServerTest extends \PHPUnit\Framework\TestCase
             '/test/hello' => $helloMethodDescriptor
         ]);
 
-        $mockService2 = $this->getMockBuilder(stdClass::class)
-            ->setMethods(['getMethodDescriptors', 'hello', 'bye'])
+        $mockService2 = $this->getMockBuilder(BaseStub::class)
+            ->disableOriginalConstructor()
+            ->addMethods(['getMethodDescriptors', 'hello', 'bye'])
             ->getMock();
-        $helloMethodDescriptor2 = new \Grpc\MethodDescriptor(
+        $helloMethodDescriptor2 = new MethodDescriptor(
             $this->mockService,
             'hello',
             'Number',
-            \Grpc\MethodDescriptor::UNARY_CALL
+            MethodDescriptor::UNARY_CALL
         );
-        $byeMethodDescritor = new \Grpc\MethodDescriptor(
+        $byeMethodDescritor = new MethodDescriptor(
             $this->mockService,
             'bye',
             'String',
-            \Grpc\MethodDescriptor::UNARY_CALL
+            MethodDescriptor::UNARY_CALL
         );
         $mockService2->expects($this->once())
             ->method('getMethodDescriptors')

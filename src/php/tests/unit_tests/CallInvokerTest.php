@@ -16,17 +16,24 @@
  * limitations under the License.
  *
  */
-/**
- * Interface exported by the server.
- */
-require_once(dirname(__FILE__).'/../../lib/Grpc/BaseStub.php');
-require_once(dirname(__FILE__).'/../../lib/Grpc/AbstractCall.php');
-require_once(dirname(__FILE__).'/../../lib/Grpc/UnaryCall.php');
-require_once(dirname(__FILE__).'/../../lib/Grpc/ClientStreamingCall.php');
-require_once(dirname(__FILE__).'/../../lib/Grpc/Interceptor.php');
-require_once(dirname(__FILE__).'/../../lib/Grpc/CallInvoker.php');
-require_once(dirname(__FILE__).'/../../lib/Grpc/DefaultCallInvoker.php');
-require_once(dirname(__FILE__).'/../../lib/Grpc/Internal/InterceptorChannel.php');
+
+use Grpc\BaseStub;
+use Grpc\BidiStreamingCall;
+use Grpc\CallInvoker;
+use Grpc\Channel;
+use Grpc\ChannelCredentials;
+use Grpc\ClientStreamingCall;
+use Grpc\DefaultCallInvoker;
+use Grpc\Internal\InterceptorChannel;
+use Grpc\Server;
+use Grpc\ServerStreamingCall;
+use Grpc\UnaryCall;
+use PHPUnit\Framework\TestCase;
+use const Grpc\OP_RECV_CLOSE_ON_SERVER;
+use const Grpc\OP_RECV_MESSAGE;
+use const Grpc\OP_SEND_INITIAL_METADATA;
+use const Grpc\OP_SEND_STATUS_FROM_SERVER;
+use const Grpc\STATUS_OK;
 
 class CallInvokerSimpleRequest
 {
@@ -45,7 +52,7 @@ class CallInvokerSimpleRequest
     }
 }
 
-class CallInvokerClient extends Grpc\BaseStub
+class CallInvokerClient extends BaseStub
 {
 
   /**
@@ -79,7 +86,7 @@ class CallInvokerClient extends Grpc\BaseStub
   }
 }
 
-class CallInvokerUpdateChannel implements \Grpc\CallInvoker
+class CallInvokerUpdateChannel implements CallInvoker
 {
     private $channel;
 
@@ -88,7 +95,7 @@ class CallInvokerUpdateChannel implements \Grpc\CallInvoker
     }
 
     public function createChannelFactory($hostname, $opts) {
-        $this->channel = new \Grpc\Channel('localhost:50050', $opts);
+        $this->channel = new Channel('localhost:50050', $opts);
         return $this->channel;
     }
 
@@ -110,7 +117,7 @@ class CallInvokerUpdateChannel implements \Grpc\CallInvoker
 }
 
 
-class CallInvokerChangeRequest implements \Grpc\CallInvoker
+class CallInvokerChangeRequest implements CallInvoker
 {
     private $channel;
 
@@ -118,7 +125,7 @@ class CallInvokerChangeRequest implements \Grpc\CallInvoker
         return $this->channel;
     }
     public function createChannelFactory($hostname, $opts) {
-        $this->channel = new \Grpc\Channel($hostname, $opts);
+        $this->channel = new Channel($hostname, $opts);
         return $this->channel;
     }
 
@@ -145,7 +152,7 @@ class CallInvokerChangeRequestCall
 
     public function __construct($channel, $method, $deserialize, $options)
     {
-        $this->call = new \Grpc\UnaryCall($channel, $method, $deserialize, $options);
+        $this->call = new UnaryCall($channel, $method, $deserialize, $options);
     }
 
     public function start($argument, $metadata, $options) {
@@ -159,14 +166,20 @@ class CallInvokerChangeRequestCall
     }
 }
 
-class CallInvokerTest extends \PHPUnit\Framework\TestCase
+class CallInvokerTest extends TestCase
 {
+    /**
+     * @var Server
+     */
     private $server;
+    /**
+     * @var bool
+     */
     private $port;
 
     public function setUp(): void
     {
-        $this->server = new Grpc\Server([]);
+        $this->server = new Server([]);
         $this->port = $this->server->addHttp2Port('0.0.0.0:0');
         $this->server->start();
     }
@@ -178,7 +191,7 @@ class CallInvokerTest extends \PHPUnit\Framework\TestCase
 
     public function testCreateDefaultCallInvoker()
     {
-        $call_invoker = new \Grpc\DefaultCallInvoker();
+        $call_invoker = new DefaultCallInvoker();
         $this->assertNotNull($call_invoker);
     }
 
@@ -191,8 +204,8 @@ class CallInvokerTest extends \PHPUnit\Framework\TestCase
     public function testCallInvokerAccessChannel()
     {
         $call_invoker = new CallInvokerUpdateChannel();
-        $stub = new \Grpc\BaseStub('localhost:50051',
-          ['credentials' => \Grpc\ChannelCredentials::createInsecure(),
+        $stub = new BaseStub('localhost:50051',
+          ['credentials' => ChannelCredentials::createInsecure(),
             'grpc_call_invoker' => $call_invoker]);
         $this->assertEquals($call_invoker->getChannel()->getTarget(), 'dns:///localhost:50050');
         $call_invoker->getChannel()->close();
@@ -204,7 +217,7 @@ class CallInvokerTest extends \PHPUnit\Framework\TestCase
         $call_invoker = new CallInvokerChangeRequest();
         $client = new CallInvokerClient('localhost:'.$this->port, [
             'force_new' => true,
-            'credentials' => Grpc\ChannelCredentials::createInsecure(),
+            'credentials' => ChannelCredentials::createInsecure(),
             'grpc_call_invoker' => $call_invoker,
         ]);
 
@@ -215,17 +228,17 @@ class CallInvokerTest extends \PHPUnit\Framework\TestCase
         $this->assertSame('/phony_method', $event->method);
         $server_call = $event->call;
         $event = $server_call->startBatch([
-            Grpc\OP_RECV_MESSAGE => true,
+            OP_RECV_MESSAGE => true,
         ]);
         $this->assertSame('intercepted_unary_request', $event->message);
         $event = $server_call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_STATUS_FROM_SERVER => [
                 'metadata' => [],
-                'code' => Grpc\STATUS_OK,
+                'code' => STATUS_OK,
                 'details' => '',
             ],
-            Grpc\OP_RECV_CLOSE_ON_SERVER => true,
+            OP_RECV_CLOSE_ON_SERVER => true,
         ]);
         $call_invoker->getChannel()->close();
         unset($unary_call);

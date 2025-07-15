@@ -17,35 +17,69 @@
  *
  */
 
-class CallCredentialsTest extends \PHPUnit\Framework\TestCase
+use Grpc\Call;
+use Grpc\CallCredentials;
+use Grpc\Channel;
+use Grpc\ChannelCredentials;
+use Grpc\Server;
+use Grpc\ServerCredentials;
+use Grpc\Timeval;
+use PHPUnit\Framework\TestCase;
+use const Grpc\OP_RECV_CLOSE_ON_SERVER;
+use const Grpc\OP_RECV_INITIAL_METADATA;
+use const Grpc\OP_RECV_STATUS_ON_CLIENT;
+use const Grpc\OP_SEND_CLOSE_FROM_CLIENT;
+use const Grpc\OP_SEND_INITIAL_METADATA;
+use const Grpc\OP_SEND_STATUS_FROM_SERVER;
+use const Grpc\STATUS_INVALID_ARGUMENT;
+
+class CallCredentialsTest extends TestCase
 {
+    /**
+     * @var ChannelCredentials
+     */
     private $credentials;
+    /**
+     * @var CallCredentials
+     */
     private $call_credentials;
+    /**
+     * @var Server
+     */
     private $server;
+    /**
+     * @var bool
+     */
     private $port;
+    /**
+     * @var string
+     */
     private $host_override;
+    /**
+     * @var Channel
+     */
     private $channel;
 
     public function setUp(): void
     {
-        $this->credentials = Grpc\ChannelCredentials::createSsl(
+        $this->credentials = ChannelCredentials::createSsl(
             file_get_contents(dirname(__FILE__).'/../data/ca.pem'));
-        $this->call_credentials = Grpc\CallCredentials::createFromPlugin(
+        $this->call_credentials = CallCredentials::createFromPlugin(
             [$this, 'callbackFunc']);
-        $this->credentials = Grpc\ChannelCredentials::createComposite(
+        $this->credentials = ChannelCredentials::createComposite(
             $this->credentials,
             $this->call_credentials
         );
-        $server_credentials = Grpc\ServerCredentials::createSsl(
+        $server_credentials = ServerCredentials::createSsl(
             null,
             file_get_contents(dirname(__FILE__).'/../data/server1.key'),
             file_get_contents(dirname(__FILE__).'/../data/server1.pem'));
-        $this->server = new Grpc\Server();
+        $this->server = new Server();
         $this->port = $this->server->addSecureHttp2Port('0.0.0.0:0',
                                               $server_credentials);
         $this->server->start();
         $this->host_override = 'foo.test.google.fr';
-        $this->channel = new Grpc\Channel(
+        $this->channel = new Channel(
             'localhost:'.$this->port,
             [
             'force_new' => true,
@@ -72,16 +106,16 @@ class CallCredentialsTest extends \PHPUnit\Framework\TestCase
 
     public function testCreateFromPlugin()
     {
-        $deadline = Grpc\Timeval::infFuture();
+        $deadline = Timeval::infFuture();
         $status_text = 'xyz';
-        $call = new Grpc\Call($this->channel,
+        $call = new Call($this->channel,
                               '/abc/phony_method',
                               $deadline,
                               $this->host_override);
 
         $event = $call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_CLOSE_FROM_CLIENT => true,
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_CLOSE_FROM_CLIENT => true,
         ]);
 
         $this->assertTrue($event->send_metadata);
@@ -100,13 +134,13 @@ class CallCredentialsTest extends \PHPUnit\Framework\TestCase
         $server_call = $event->call;
 
         $event = $server_call->startBatch([
-            Grpc\OP_SEND_INITIAL_METADATA => [],
-            Grpc\OP_SEND_STATUS_FROM_SERVER => [
+            OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_STATUS_FROM_SERVER => [
                 'metadata' => [],
-                'code' => Grpc\STATUS_INVALID_ARGUMENT,
+                'code' => STATUS_INVALID_ARGUMENT,
                 'details' => $status_text,
             ],
-            Grpc\OP_RECV_CLOSE_ON_SERVER => true,
+            OP_RECV_CLOSE_ON_SERVER => true,
         ]);
 
         $this->assertTrue($event->send_metadata);
@@ -114,14 +148,14 @@ class CallCredentialsTest extends \PHPUnit\Framework\TestCase
         $this->assertFalse($event->cancelled);
 
         $event = $call->startBatch([
-            Grpc\OP_RECV_INITIAL_METADATA => true,
-            Grpc\OP_RECV_STATUS_ON_CLIENT => true,
+            OP_RECV_INITIAL_METADATA => true,
+            OP_RECV_STATUS_ON_CLIENT => true,
         ]);
 
         $this->assertSame([], $event->metadata);
         $status = $event->status;
         $this->assertSame([], $status->metadata);
-        $this->assertSame(Grpc\STATUS_INVALID_ARGUMENT, $status->code);
+        $this->assertSame(STATUS_INVALID_ARGUMENT, $status->code);
         $this->assertSame($status_text, $status->details);
 
         unset($call);
@@ -135,28 +169,28 @@ class CallCredentialsTest extends \PHPUnit\Framework\TestCase
 
     public function testCreateComposite()
     {
-        $call_credentials2 = Grpc\CallCredentials::createFromPlugin(
+        $call_credentials2 = CallCredentials::createFromPlugin(
             [$this, 'callbackFunc2']);
-        $call_credentials3 = Grpc\CallCredentials::createComposite(
+        $call_credentials3 = CallCredentials::createComposite(
             $this->call_credentials,
             $call_credentials2
         );
-        $this->assertSame('Grpc\CallCredentials',
+        $this->assertSame(CallCredentials::class,
                           get_class($call_credentials3));
     }
 
     public function testCreateFromPluginInvalidParam()
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $call_credentials = Grpc\CallCredentials::createFromPlugin(
+        $this->expectException(InvalidArgumentException::class);
+        $call_credentials = CallCredentials::createFromPlugin(
             'callbackFunc'
         );
     }
 
     public function testCreateCompositeInvalidParam()
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $call_credentials3 = Grpc\CallCredentials::createComposite(
+        $this->expectException(InvalidArgumentException::class);
+        $call_credentials3 = CallCredentials::createComposite(
             $this->call_credentials,
             $this->credentials
         );
