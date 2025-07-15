@@ -66,8 +66,8 @@ absl::Status ValidateRootCertificates(const RootCertInfo* root_cert_info) {
         return absl::OkStatus();
       },
       [&](const SpiffeBundleMap&) {
-        // SPIFFE Bundle Maps validation is held in the `StatusOr` and would
-        // already be returned here.
+        // SpiffeBundleMap validation is done when it is created - a value here
+        // inherently means that it is valid.
         return absl::OkStatus();
       });
 }
