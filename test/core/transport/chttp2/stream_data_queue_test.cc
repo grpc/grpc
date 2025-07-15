@@ -46,21 +46,21 @@ auto EnqueueAndCheckSuccess(http2::SimpleQueue<int>& queue, int data,
 
 void DequeueAndCheckPending(http2::SimpleQueue<int>& queue,
                             bool allow_oversized_dequeue,
-                            int allowed_deque_tokens) {
+                            int allowed_dequeue_tokens) {
   LOG(INFO) << "DequeueAndCheckPending for allow_oversized_dequeue: "
             << allow_oversized_dequeue
-            << " allowed_deque_tokens: " << allowed_deque_tokens;
-  auto result = queue.Dequeue(allowed_deque_tokens, allow_oversized_dequeue);
+            << " allowed_dequeue_tokens: " << allowed_dequeue_tokens;
+  auto result = queue.Dequeue(allowed_dequeue_tokens, allow_oversized_dequeue);
   EXPECT_FALSE(result.has_value());
 }
 
 void DequeueAndCheckSuccess(http2::SimpleQueue<int>& queue, int data,
                             bool allow_oversized_dequeue,
-                            int allowed_deque_tokens) {
+                            int allowed_dequeue_tokens) {
   LOG(INFO) << "DequeueAndCheckSuccess for data: " << data
             << " allow_oversized_dequeue: " << allow_oversized_dequeue
-            << " allowed_deque_tokens: " << allowed_deque_tokens;
-  auto result = queue.Dequeue(allowed_deque_tokens, allow_oversized_dequeue);
+            << " allowed_dequeue_tokens: " << allowed_dequeue_tokens;
+  auto result = queue.Dequeue(allowed_dequeue_tokens, allow_oversized_dequeue);
   EXPECT_TRUE(result.has_value());
 
   LOG(INFO) << "Dequeue successful for data: " << data;
@@ -68,11 +68,11 @@ void DequeueAndCheckSuccess(http2::SimpleQueue<int>& queue, int data,
 }
 
 bool DequeueAndCheck(http2::SimpleQueue<int>& queue, int data,
-                     bool allow_oversized_dequeue, int allowed_deque_tokens) {
+                     bool allow_oversized_dequeue, int allowed_dequeue_tokens) {
   LOG(INFO) << "DequeueAndCheck for data: " << data
             << " allow_oversized_dequeue: " << allow_oversized_dequeue
-            << " allowed_deque_tokens: " << allowed_deque_tokens;
-  auto result = queue.Dequeue(allowed_deque_tokens, allow_oversized_dequeue);
+            << " allowed_dequeue_tokens: " << allowed_dequeue_tokens;
+  auto result = queue.Dequeue(allowed_dequeue_tokens, allow_oversized_dequeue);
   if (!result.has_value()) {
     LOG(INFO) << "Dequeue result is empty";
     return false;
