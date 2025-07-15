@@ -18,8 +18,6 @@
 
 set -ex
 
-find . -path "*/artifacts/*" -size +80M
-
 find . -path "*/artifacts/*" -size +80M | egrep '.*' && echo "Found Python artifacts larger than 80 MB." && FAILED="true"
 
 
