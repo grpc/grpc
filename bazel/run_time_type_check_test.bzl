@@ -35,6 +35,5 @@ def py_grpc_run_time_type_check_test(name, srcs, **kwargs):
         srcs = srcs + ["//bazel:_run_time_type_check_main"],
         main = "//bazel:_run_time_type_check_main.py",
         args = [name],  # Pass the test module name
-        python_version = "PY3",
         **test_kwargs
     )
