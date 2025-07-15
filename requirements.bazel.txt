@@ -37,6 +37,6 @@ opentelemetry-sdk
 protobuf
 pyyaml  # for DNS test
 requests
-typeguard==4.0.0
+typeguard~=4.0.0
 twisted  # for DNS test
 urllib3
