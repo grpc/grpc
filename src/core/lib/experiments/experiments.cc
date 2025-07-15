@@ -26,6 +26,9 @@ namespace {
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const description_channelz_use_v2_for_v1_service =
+    "Use the v2 channelz service for the v1 channelz service.";
+const char* const additional_constraints_channelz_use_v2_for_v1_service = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -186,6 +189,10 @@ namespace grpc_core {
 const ExperimentMetadata g_experiment_metadata[] = {
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
+    {"channelz_use_v2_for_v1_service",
+     description_channelz_use_v2_for_v1_service,
+     additional_constraints_channelz_use_v2_for_v1_service, nullptr, 0, false,
+     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -302,6 +309,9 @@ namespace {
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const description_channelz_use_v2_for_v1_service =
+    "Use the v2 channelz service for the v1 channelz service.";
+const char* const additional_constraints_channelz_use_v2_for_v1_service = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -462,6 +472,10 @@ namespace grpc_core {
 const ExperimentMetadata g_experiment_metadata[] = {
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
+    {"channelz_use_v2_for_v1_service",
+     description_channelz_use_v2_for_v1_service,
+     additional_constraints_channelz_use_v2_for_v1_service, nullptr, 0, false,
+     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -578,6 +592,9 @@ namespace {
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const description_channelz_use_v2_for_v1_service =
+    "Use the v2 channelz service for the v1 channelz service.";
+const char* const additional_constraints_channelz_use_v2_for_v1_service = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -738,6 +755,10 @@ namespace grpc_core {
 const ExperimentMetadata g_experiment_metadata[] = {
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
+    {"channelz_use_v2_for_v1_service",
+     description_channelz_use_v2_for_v1_service,
+     additional_constraints_channelz_use_v2_for_v1_service, nullptr, 0, false,
+     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
