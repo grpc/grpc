@@ -84,4 +84,4 @@ if __name__ == "__main__":
     result = runner.run(loader.suite)
 
     if not result.wasSuccessful():
-        sys.exit('Test failure') 
+        sys.exit('Test failure')
