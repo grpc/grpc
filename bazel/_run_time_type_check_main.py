@@ -24,7 +24,7 @@ from typeguard import install_import_hook
 # Temporarily disable most hooks due to type annotation issues
 # install_import_hook('grpc.aio')
 # install_import_hook('grpc.aio._channel')
-install_import_hook('grpc.aio._server')  # Keep this one to test our type error
+install_import_hook('grpc.aio._server')
 install_import_hook('grpc.aio._utils')
 install_import_hook('grpc.aio._interceptor')
 # install_import_hook('grpc.aio._base_channel')
