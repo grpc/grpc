@@ -933,8 +933,7 @@ struct cq_is_finished_arg {
 class ExecCtxNext : public grpc_core::ExecCtx {
  public:
   explicit ExecCtxNext(void* arg)
-      : ExecCtx(0, GRPC_LATENT_SEE_METADATA("ExecCtx for CqNext")),
-        check_ready_to_finish_arg_(arg) {}
+      : ExecCtx(0), check_ready_to_finish_arg_(arg) {}
 
   bool CheckReadyToFinish() override {
     cq_is_finished_arg* a =
@@ -1181,8 +1180,7 @@ static void del_plucker(grpc_completion_queue* cq, void* tag,
 class ExecCtxPluck : public grpc_core::ExecCtx {
  public:
   explicit ExecCtxPluck(void* arg)
-      : ExecCtx(0, GRPC_LATENT_SEE_METADATA("ExecCtx for CqPluck")),
-        check_ready_to_finish_arg_(arg) {}
+      : ExecCtx(0), check_ready_to_finish_arg_(arg) {}
 
   bool CheckReadyToFinish() override {
     cq_is_finished_arg* a =

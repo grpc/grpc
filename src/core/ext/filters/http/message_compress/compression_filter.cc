@@ -229,7 +229,7 @@ ChannelCompression::DecompressArgs ChannelCompression::HandleIncomingMetadata(
 
 void ClientCompressionFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, ClientCompressionFilter* filter) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
+  GRPC_LATENT_SEE_SCOPE(
       "ClientCompressionFilter::Call::OnClientInitialMetadata");
   compression_algorithm_ =
       filter->compression_engine_.HandleOutgoingMetadata(md);
@@ -238,7 +238,7 @@ void ClientCompressionFilter::Call::OnClientInitialMetadata(
 
 MessageHandle ClientCompressionFilter::Call::OnClientToServerMessage(
     MessageHandle message, ClientCompressionFilter* filter) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
+  GRPC_LATENT_SEE_SCOPE(
       "ClientCompressionFilter::Call::OnClientToServerMessage");
   return filter->compression_engine_.CompressMessage(
       std::move(message), compression_algorithm_, call_tracer_);
@@ -246,7 +246,7 @@ MessageHandle ClientCompressionFilter::Call::OnClientToServerMessage(
 
 void ClientCompressionFilter::Call::OnServerInitialMetadata(
     ServerMetadata& md, ClientCompressionFilter* filter) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
+  GRPC_LATENT_SEE_SCOPE(
       "ClientCompressionFilter::Call::OnServerInitialMetadata");
   decompress_args_ = filter->compression_engine_.HandleIncomingMetadata(md);
 }
@@ -254,7 +254,7 @@ void ClientCompressionFilter::Call::OnServerInitialMetadata(
 absl::StatusOr<MessageHandle>
 ClientCompressionFilter::Call::OnServerToClientMessage(
     MessageHandle message, ClientCompressionFilter* filter) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
+  GRPC_LATENT_SEE_SCOPE(
       "ClientCompressionFilter::Call::OnServerToClientMessage");
   return filter->compression_engine_.DecompressMessage(
       /*is_client=*/true, std::move(message), decompress_args_, call_tracer_);
@@ -262,7 +262,7 @@ ClientCompressionFilter::Call::OnServerToClientMessage(
 
 void ServerCompressionFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, ServerCompressionFilter* filter) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
+  GRPC_LATENT_SEE_SCOPE(
       "ServerCompressionFilter::Call::OnClientInitialMetadata");
   decompress_args_ = filter->compression_engine_.HandleIncomingMetadata(md);
 }
@@ -270,7 +270,7 @@ void ServerCompressionFilter::Call::OnClientInitialMetadata(
 absl::StatusOr<MessageHandle>
 ServerCompressionFilter::Call::OnClientToServerMessage(
     MessageHandle message, ServerCompressionFilter* filter) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
+  GRPC_LATENT_SEE_SCOPE(
       "ServerCompressionFilter::Call::OnClientToServerMessage");
   return filter->compression_engine_.DecompressMessage(
       /*is_client=*/false, std::move(message), decompress_args_,
@@ -279,7 +279,7 @@ ServerCompressionFilter::Call::OnClientToServerMessage(
 
 void ServerCompressionFilter::Call::OnServerInitialMetadata(
     ServerMetadata& md, ServerCompressionFilter* filter) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
+  GRPC_LATENT_SEE_SCOPE(
       "ServerCompressionFilter::Call::OnServerInitialMetadata");
   compression_algorithm_ =
       filter->compression_engine_.HandleOutgoingMetadata(md);
@@ -287,7 +287,7 @@ void ServerCompressionFilter::Call::OnServerInitialMetadata(
 
 MessageHandle ServerCompressionFilter::Call::OnServerToClientMessage(
     MessageHandle message, ServerCompressionFilter* filter) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
+  GRPC_LATENT_SEE_SCOPE(
       "ServerCompressionFilter::Call::OnServerToClientMessage");
   return filter->compression_engine_.CompressMessage(
       std::move(message), compression_algorithm_,
