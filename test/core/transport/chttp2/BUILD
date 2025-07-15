@@ -512,6 +512,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:http2_settings",
+        "//src/core:http2_settings_manager",
         "//test/core/test_util:grpc_test_util",
     ],
 )

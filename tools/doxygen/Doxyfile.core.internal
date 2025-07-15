@@ -1186,6 +1186,8 @@ src/core/ext/transport/chttp2/transport/http2_client_transport.cc \
 src/core/ext/transport/chttp2/transport/http2_client_transport.h \
 src/core/ext/transport/chttp2/transport/http2_settings.cc \
 src/core/ext/transport/chttp2/transport/http2_settings.h \
+src/core/ext/transport/chttp2/transport/http2_settings_manager.cc \
+src/core/ext/transport/chttp2/transport/http2_settings_manager.h \
 src/core/ext/transport/chttp2/transport/http2_stats_collector.cc \
 src/core/ext/transport/chttp2/transport/http2_stats_collector.h \
 src/core/ext/transport/chttp2/transport/http2_status.h \
