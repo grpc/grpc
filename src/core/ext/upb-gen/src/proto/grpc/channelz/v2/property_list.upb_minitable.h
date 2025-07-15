@@ -20,8 +20,8 @@ extern "C" {
 
 extern const upb_MiniTable grpc__channelz__v2__PropertyList_msg_init;
 extern const upb_MiniTable* grpc__channelz__v2__PropertyList_msg_init_ptr;
-extern const upb_MiniTable grpc__channelz__v2__PropertyList__PropertiesEntry_msg_init;
-extern const upb_MiniTable* grpc__channelz__v2__PropertyList__PropertiesEntry_msg_init_ptr;
+extern const upb_MiniTable grpc__channelz__v2__PropertyList__Element_msg_init;
+extern const upb_MiniTable* grpc__channelz__v2__PropertyList__Element_msg_init_ptr;
 extern const upb_MiniTable grpc__channelz__v2__PropertyGrid_msg_init;
 extern const upb_MiniTable* grpc__channelz__v2__PropertyGrid_msg_init_ptr;
 extern const upb_MiniTable grpc__channelz__v2__PropertyGrid__Row_msg_init;
