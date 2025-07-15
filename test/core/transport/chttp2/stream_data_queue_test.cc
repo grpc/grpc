@@ -41,21 +41,23 @@ auto EnqueueAndCheckSuccess(http2::SimpleQueue<int>& queue, int data,
 }
 
 void DequeueAndCheckPending(http2::SimpleQueue<int>& queue,
-                            bool allow_oversized_dequeue, int max_tokens) {
-  auto result = queue.Dequeue(max_tokens, allow_oversized_dequeue);
+                            bool allow_oversized_dequeue,
+                            int allowed_dequeue_tokens) {
+  auto result = queue.Dequeue(allowed_dequeue_tokens, allow_oversized_dequeue);
   EXPECT_FALSE(result.has_value());
 }
 
 void DequeueAndCheckSuccess(http2::SimpleQueue<int>& queue, int data,
-                            bool allow_oversized_dequeue, int max_tokens) {
-  auto result = queue.Dequeue(max_tokens, allow_oversized_dequeue);
+                            bool allow_oversized_dequeue,
+                            int allowed_dequeue_tokens) {
+  auto result = queue.Dequeue(allowed_dequeue_tokens, allow_oversized_dequeue);
   EXPECT_TRUE(result.has_value());
   EXPECT_EQ(result.value(), data);
 }
 
 bool DequeueAndCheck(http2::SimpleQueue<int>& queue, int data,
-                     bool allow_oversized_dequeue, int max_tokens) {
-  auto result = queue.Dequeue(max_tokens, allow_oversized_dequeue);
+                     bool allow_oversized_dequeue, int allowed_dequeue_tokens) {
+  auto result = queue.Dequeue(allowed_dequeue_tokens, allow_oversized_dequeue);
   if (!result.has_value()) {
     return false;
   }
@@ -157,8 +159,8 @@ TEST_F(SimpleQueueTest, DequeueEmptyQueueTest) {
   // Test to dequeue from an empty queue.
   http2::SimpleQueue<int> queue(/*max_tokens=*/100);
 
-  auto result =
-      queue.Dequeue(/*max_tokens=*/10, /*allow_oversized_dequeue=*/false);
+  auto result = queue.Dequeue(/*allowed_dequeue_tokens=*/10,
+                              /*allow_oversized_dequeue=*/false);
   EXPECT_FALSE(result.has_value());
 }
 
@@ -188,7 +190,7 @@ TEST_F(SimpleQueueTest, DequeueTest) {
                    [&queue, &on_dequeue_done](auto) {
                      DequeueAndCheckSuccess(queue, /*data=*/1,
                                             /*allow_oversized_dequeue=*/false,
-                                            /*max_tokens=*/10);
+                                            /*allowed_dequeue_tokens=*/10);
                      on_dequeue_done.Call(absl::OkStatus());
                      EXPECT_TRUE(queue.TestOnlyIsEmpty());
                      return absl::OkStatus();
@@ -225,23 +227,23 @@ TEST_F(SimpleQueueTest, DequeuePartialDequeueTest) {
              [&queue] {
                DequeueAndCheckPending(queue,
                                       /*allow_oversized_dequeue=*/false,
-                                      /*max_tokens=*/10);
+                                      /*allowed_dequeue_tokens=*/10);
                DequeueAndCheckSuccess(queue, /*data=*/1,
                                       /*allow_oversized_dequeue=*/true,
-                                      /*max_tokens=*/10);
+                                      /*allowed_dequeue_tokens=*/10);
                DequeueAndCheckSuccess(queue, /*data=*/2,
                                       /*allow_oversized_dequeue=*/false,
-                                      /*max_tokens=*/100);
+                                      /*allowed_dequeue_tokens=*/100);
                // Empty Queue
                DequeueAndCheckPending(queue,
                                       /*allow_oversized_dequeue=*/false,
-                                      /*max_tokens=*/10);
+                                      /*allowed_dequeue_tokens=*/10);
                DequeueAndCheckPending(queue,
                                       /*allow_oversized_dequeue=*/false,
-                                      /*max_tokens=*/100);
+                                      /*allowed_dequeue_tokens=*/100);
                DequeueAndCheckPending(queue,
                                       /*allow_oversized_dequeue=*/true,
-                                      /*max_tokens=*/10);
+                                      /*allowed_dequeue_tokens=*/10);
                return absl::OkStatus();
              }),
       [&on_dequeue_done, &queue](auto) {
@@ -254,8 +256,8 @@ TEST_F(SimpleQueueTest, DequeuePartialDequeueTest) {
   event_engine()->UnsetGlobalHooks();
 }
 
-TEST_F(SimpleQueueTest, DequeueMaxTokensTest) {
-  // Test to assert different combinations of max_tokens.
+TEST_F(SimpleQueueTest, DequeueTokensTest) {
+  // Test to assert different combinations of allowed_dequeue_tokens.
   http2::SimpleQueue<int> queue(/*max_tokens=*/200);
   Latch<void> enqueue_done;
   auto* party = GetParty();
@@ -282,32 +284,32 @@ TEST_F(SimpleQueueTest, DequeueMaxTokensTest) {
                // 2 entries
                DequeueAndCheckPending(queue,
                                       /*allow_oversized_dequeue=*/false,
-                                      /*max_tokens=*/10);
+                                      /*allowed_dequeue_tokens=*/10);
                DequeueAndCheckPending(queue,
                                       /*allow_oversized_dequeue=*/false,
-                                      /*max_tokens=*/99);
+                                      /*allowed_dequeue_tokens=*/99);
                DequeueAndCheckSuccess(queue, /*data=*/1,
                                       /*allow_oversized_dequeue=*/false,
-                                      /*max_tokens=*/100);
+                                      /*allowed_dequeue_tokens=*/100);
 
                // 1 entry
                DequeueAndCheckPending(queue,
                                       /*allow_oversized_dequeue=*/false,
-                                      /*max_tokens=*/5);
+                                      /*allowed_dequeue_tokens=*/5);
                DequeueAndCheckSuccess(queue, /*data=*/2,
                                       /*allow_oversized_dequeue=*/false,
-                                      /*max_tokens=*/500);
+                                      /*allowed_dequeue_tokens=*/500);
 
                // Empty Queue
                DequeueAndCheckPending(queue,
                                       /*allow_oversized_dequeue=*/false,
-                                      /*max_tokens=*/10);
+                                      /*allowed_dequeue_tokens=*/10);
                DequeueAndCheckPending(queue,
                                       /*allow_oversized_dequeue=*/false,
-                                      /*max_tokens=*/100);
+                                      /*allowed_dequeue_tokens=*/100);
                DequeueAndCheckPending(queue,
                                       /*allow_oversized_dequeue=*/true,
-                                      /*max_tokens=*/10);
+                                      /*allowed_dequeue_tokens=*/10);
                return absl::OkStatus();
              }),
       [&on_dequeue_done, &queue](auto) {
@@ -362,7 +364,7 @@ TEST_F(SimpleQueueTest, BigMessageEnqueueDequeueTest) {
         return If(
             DequeueAndCheck(queue, expected_data[expected_data_index++],
                             /*allow_oversized_dequeue=*/true,
-                            /*max_tokens=*/10),
+                            /*allowed_dequeue_tokens=*/10),
             [&dequeue_count, &on_dequeue_done, &execution_order,
              &queue]() -> LoopCtl<absl::Status> {
               if (--dequeue_count == 0) {

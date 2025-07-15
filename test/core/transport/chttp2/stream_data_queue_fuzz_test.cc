@@ -58,8 +58,10 @@ class SimpleQueueFuzzTest : public YodelTest {
   }
 
   bool DequeueAndCheck(SimpleQueue<int>& queue, int data,
-                       bool allow_oversized_dequeue, int max_tokens) {
-    auto result = queue.Dequeue(max_tokens, allow_oversized_dequeue);
+                       bool allow_oversized_dequeue,
+                       int allowed_dequeue_tokens) {
+    auto result =
+        queue.Dequeue(allowed_dequeue_tokens, allow_oversized_dequeue);
     if (!result.has_value()) {
       return false;
     }
@@ -126,7 +128,7 @@ YODEL_TEST(SimpleQueueFuzzTest, EnqueueAndDequeueMultiPartyTest) {
                   return If(
                       DequeueAndCheck(queue, /*data=*/current_dequeue_count,
                                       /*allow_oversized_dequeue=*/false,
-                                      /*max_tokens=*/10),
+                                      /*allowed_dequeue_tokens=*/10),
                       [&current_dequeue_count, &on_dequeue_done,
                        &queue]() -> LoopCtl<absl::Status> {
                         if (++current_dequeue_count == dequeue_count) {
