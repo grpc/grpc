@@ -38,17 +38,18 @@ class Center : public RefCounted<Center<T>> {
 
   // Returns a promise that resolves when the data is enqueued.
   // It is expected that calls to this function are not done in parallel. At
-  // most one call to this function should be pending at a time.
+  // most one call to this function should be pending at a time. If
+  // tokens_consumed_ is 0 or the new tokens fit within max_tokens_, then
+  // allow the enqueue to go through. Otherwise, return pending. Here, we are
+  // using tokens_consumed over queue_.empty() because there can be enqueues
+  // with tokens = 0. Enqueues with tokens = 0 are primarily for sending
+  // metadata as flow control does not apply to them.
   auto Enqueue(T data, const uint32_t tokens) {
     return [self = this->Ref(), tokens,
             data = std::move(data)]() mutable -> Poll<absl::Status> {
       MutexLock lock(&self->mu_);
       GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueueing data. Data tokens: "
                                    << tokens;
-      // If tokens_consumed_ is 0 or the new tokens will fit within max_tokens_,
-      // then allow the enqueue to go through. Otherwise, return pending. Here,
-      // we are using tokens_consumed over queue_.empty() because there can
-      // be enqueues with tokens = 0.
       const uint32_t max_tokens_consumed_threshold =
           self->max_tokens_ >= tokens ? self->max_tokens_ - tokens : 0;
       if (self->tokens_consumed_ == 0 ||

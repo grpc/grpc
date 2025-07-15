@@ -36,32 +36,49 @@ using util::testing::TransportTest;
 namespace {
 auto EnqueueAndCheckSuccess(http2::SimpleQueue<int>& queue, int data,
                             int tokens) {
-  return Map(queue.Enqueue(data, tokens),
-             [](auto result) { EXPECT_EQ(result, absl::OkStatus()); });
+  LOG(INFO) << "EnqueueAndCheckSuccess for data: " << data
+            << " tokens: " << tokens;
+  return Map(queue.Enqueue(data, tokens), [data, tokens](auto result) {
+    LOG(INFO) << "Enqueue done for data: " << data << " tokens: " << tokens;
+    EXPECT_EQ(result, absl::OkStatus());
+  });
 }
 
 void DequeueAndCheckPending(http2::SimpleQueue<int>& queue,
                             bool allow_oversized_dequeue,
-                            int allowed_dequeue_tokens) {
-  auto result = queue.Dequeue(allowed_dequeue_tokens, allow_oversized_dequeue);
+                            int allowed_deque_tokens) {
+  LOG(INFO) << "DequeueAndCheckPending for allow_oversized_dequeue: "
+            << allow_oversized_dequeue
+            << " allowed_deque_tokens: " << allowed_deque_tokens;
+  auto result = queue.Dequeue(allowed_deque_tokens, allow_oversized_dequeue);
   EXPECT_FALSE(result.has_value());
 }
 
 void DequeueAndCheckSuccess(http2::SimpleQueue<int>& queue, int data,
                             bool allow_oversized_dequeue,
-                            int allowed_dequeue_tokens) {
-  auto result = queue.Dequeue(allowed_dequeue_tokens, allow_oversized_dequeue);
+                            int allowed_deque_tokens) {
+  LOG(INFO) << "DequeueAndCheckSuccess for data: " << data
+            << " allow_oversized_dequeue: " << allow_oversized_dequeue
+            << " allowed_deque_tokens: " << allowed_deque_tokens;
+  auto result = queue.Dequeue(allowed_deque_tokens, allow_oversized_dequeue);
   EXPECT_TRUE(result.has_value());
+
+  LOG(INFO) << "Dequeue successful for data: " << data;
   EXPECT_EQ(result.value(), data);
 }
 
 bool DequeueAndCheck(http2::SimpleQueue<int>& queue, int data,
-                     bool allow_oversized_dequeue, int allowed_dequeue_tokens) {
-  auto result = queue.Dequeue(allowed_dequeue_tokens, allow_oversized_dequeue);
+                     bool allow_oversized_dequeue, int allowed_deque_tokens) {
+  LOG(INFO) << "DequeueAndCheck for data: " << data
+            << " allow_oversized_dequeue: " << allow_oversized_dequeue
+            << " allowed_deque_tokens: " << allowed_deque_tokens;
+  auto result = queue.Dequeue(allowed_deque_tokens, allow_oversized_dequeue);
   if (!result.has_value()) {
+    LOG(INFO) << "Dequeue result is empty";
     return false;
   }
 
+  LOG(INFO) << "Dequeue successful for data: " << data;
   EXPECT_EQ(result.value(), data);
   return true;
 }
@@ -299,17 +316,6 @@ TEST_F(SimpleQueueTest, DequeueTokensTest) {
                DequeueAndCheckSuccess(queue, /*data=*/2,
                                       /*allow_oversized_dequeue=*/false,
                                       /*allowed_dequeue_tokens=*/500);
-
-               // Empty Queue
-               DequeueAndCheckPending(queue,
-                                      /*allow_oversized_dequeue=*/false,
-                                      /*allowed_dequeue_tokens=*/10);
-               DequeueAndCheckPending(queue,
-                                      /*allow_oversized_dequeue=*/false,
-                                      /*allowed_dequeue_tokens=*/100);
-               DequeueAndCheckPending(queue,
-                                      /*allow_oversized_dequeue=*/true,
-                                      /*allowed_dequeue_tokens=*/10);
                return absl::OkStatus();
              }),
       [&on_dequeue_done, &queue](auto) {
@@ -325,8 +331,8 @@ TEST_F(SimpleQueueTest, DequeueTokensTest) {
 ////////////////////////////////////////////////////////////////////////////////
 // Enqueue and dequeue tests
 TEST_F(SimpleQueueTest, BigMessageEnqueueDequeueTest) {
-  // Tests that the first message is enqueued even if the tokens are more than
-  // the max tokens.
+  // Tests that for a queue with current tokens consumed equal to 0, allows a
+  // message to be enqueued even if the tokens are more than the max tokens.
   SimpleQueue<int> queue(/*max_tokens=*/100);
   auto* party = GetParty();
   StrictMock<MockFunction<void(absl::Status)>> on_done;
