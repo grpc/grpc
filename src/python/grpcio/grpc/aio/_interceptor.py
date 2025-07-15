@@ -21,7 +21,6 @@ from typing import (
     AsyncIterable,
     Awaitable,
     Callable,
-    Iterator,
     List,
     Optional,
     Sequence,
