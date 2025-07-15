@@ -56,140 +56,140 @@ from ._utils import _timeout_to_deadline
 _LOCAL_CANCELLATION_DETAILS = "Locally cancelled by application!"
 
 
-class UnaryUnaryCallResponse(UnaryUnaryCall):
-    """Final UnaryUnaryCall class finished with a response."""
+class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall):
+  """Final UnaryUnaryCall class finished with a response."""
 
-    _response: ResponseType
+  _response: ResponseType
 
-    def __init__(self, response: ResponseType) -> None:
-        self._response = response
+  def __init__(self, response: ResponseType) -> None:
+    self._response = response
 
-    def cancel(self) -> bool:
-        return False
+  def cancel(self) -> bool:
+    return False
 
-    def cancelled(self) -> bool:
-        return False
+  def cancelled(self) -> bool:
+    return False
 
-    def done(self) -> bool:
-        return True
+  def done(self) -> bool:
+    return True
 
-    def add_done_callback(self, unused_callback) -> None:
-        raise NotImplementedError()
+  def add_done_callback(self, unused_callback) -> None:
+    raise NotImplementedError()
 
-    def time_remaining(self) -> Optional[float]:
-        raise NotImplementedError()
+  def time_remaining(self) -> Optional[float]:
+    raise NotImplementedError()
 
-    async def initial_metadata(self) -> Optional[Metadata]:
-        return None
+  async def initial_metadata(self) -> Optional[Metadata]:
+    return None
 
-    async def trailing_metadata(self) -> Optional[Metadata]:
-        return None
+  async def trailing_metadata(self) -> Optional[Metadata]:
+    return None
 
-    async def code(self) -> grpc.StatusCode:
-        return grpc.StatusCode.OK
+  async def code(self) -> grpc.StatusCode:
+    return grpc.StatusCode.OK
 
-    async def details(self) -> str:
-        return ""
+  async def details(self) -> str:
+    return ""
 
-    async def debug_error_string(self) -> Optional[str]:
-        return None
+  async def debug_error_string(self) -> Optional[str]:
+    return None
 
-    def __await__(self):
-        if False:  # pylint: disable=using-constant-test
-            # This code path is never used, but a yield statement is needed
-            # for telling the interpreter that __await__ is a generator.
-            yield None
-        return self._response
+  def __await__(self):
+    if False:  # pylint: disable=using-constant-test
+      # This code path is never used, but a yield statement is needed
+      # for telling the interpreter that __await__ is a generator.
+      yield None
+    return self._response
 
-    async def wait_for_connection(self) -> None:
-        pass
+  async def wait_for_connection(self) -> None:
+    pass
 
 
 class _StreamCallResponseIterator:
-    _call: Union[UnaryStreamCall, StreamStreamCall]
-    _response_iterator: AsyncIterable[ResponseType]
+  _call: Union[_base_call.UnaryStreamCall, _base_call.StreamStreamCall]
+  _response_iterator: AsyncIterable[ResponseType]
 
-    def __init__(
-        self,
-        call: Union[UnaryStreamCall, StreamStreamCall],
-        response_iterator: AsyncIterable[ResponseType],
-    ) -> None:
-        self._response_iterator = response_iterator
-        self._call = call
+  def __init__(
+    self,
+    call: Union[_base_call.UnaryStreamCall, _base_call.StreamStreamCall],
+    response_iterator: AsyncIterable[ResponseType],
+  ) -> None:
+    self._response_iterator = response_iterator
+    self._call = call
 
-    def cancel(self) -> bool:
-        return self._call.cancel()
+  def cancel(self) -> bool:
+    return self._call.cancel()
 
-    def cancelled(self) -> bool:
-        return self._call.cancelled()
+  def cancelled(self) -> bool:
+    return self._call.cancelled()
 
-    def done(self) -> bool:
-        return self._call.done()
+  def done(self) -> bool:
+    return self._call.done()
 
-    def add_done_callback(self, callback) -> None:
-        self._call.add_done_callback(callback)
+  def add_done_callback(self, callback) -> None:
+    self._call.add_done_callback(callback)
 
-    def time_remaining(self) -> Optional[float]:
-        return self._call.time_remaining()
+  def time_remaining(self) -> Optional[float]:
+    return self._call.time_remaining()
 
-    async def initial_metadata(self) -> Optional[Metadata]:
-        return await self._call.initial_metadata()
+  async def initial_metadata(self) -> Optional[Metadata]:
+    return await self._call.initial_metadata()
 
-    async def trailing_metadata(self) -> Optional[Metadata]:
-        return await self._call.trailing_metadata()
+  async def trailing_metadata(self) -> Optional[Metadata]:
+    return await self._call.trailing_metadata()
 
-    async def code(self) -> grpc.StatusCode:
-        return await self._call.code()
+  async def code(self) -> grpc.StatusCode:
+    return await self._call.code()
 
-    async def details(self) -> str:
-        return await self._call.details()
+  async def details(self) -> str:
+    return await self._call.details()
 
-    async def debug_error_string(self) -> Optional[str]:
-        return await self._call.debug_error_string()
+  async def debug_error_string(self) -> Optional[str]:
+    return await self._call.debug_error_string()
 
-    def __aiter__(self):
-        return self._response_iterator.__aiter__()
+  def __aiter__(self):
+    return self._response_iterator.__aiter__()
 
-    async def wait_for_connection(self) -> None:
-        return await self._call.wait_for_connection()
+  async def wait_for_connection(self) -> None:
+    return await self._call.wait_for_connection()
 
 
 class UnaryStreamCallResponseIterator(
-    _StreamCallResponseIterator, UnaryStreamCall
+  _StreamCallResponseIterator, _base_call.UnaryStreamCall
 ):
-    """UnaryStreamCall class which uses an alternative response iterator."""
+  """UnaryStreamCall class which uses an alternative response iterator."""
 
-    async def read(self) -> Union[EOFType, ResponseType]:
-        # Behind the scenes everything goes through the
-        # async iterator. So this path should not be reached.
-        raise NotImplementedError()
+  async def read(self) -> Union[EOFType, ResponseType]:
+    # Behind the scenes everything goes through the
+    # async iterator. So this path should not be reached.
+    raise NotImplementedError()
 
 
 class StreamStreamCallResponseIterator(
-    _StreamCallResponseIterator, StreamStreamCall
+  _StreamCallResponseIterator, _base_call.StreamStreamCall
 ):
-    """StreamStreamCall class which uses an alternative response iterator."""
+  """StreamStreamCall class which uses an alternative response iterator."""
 
-    async def read(self) -> Union[EOFType, ResponseType]:
-        # Behind the scenes everything goes through the
-        # async iterator. So this path should not be reached.
-        raise NotImplementedError()
+  async def read(self) -> Union[EOFType, ResponseType]:
+    # Behind the scenes everything goes through the
+    # async iterator. So this path should not be reached.
+    raise NotImplementedError()
 
-    async def write(self, request: RequestType) -> None:
-        # Behind the scenes everything goes through the
-        # async iterator provided by the InterceptedStreamStreamCall.
-        # So this path should not be reached.
-        raise NotImplementedError()
+  async def write(self, request: RequestType) -> None:
+    # Behind the scenes everything goes through the
+    # async iterator provided by the InterceptedStreamStreamCall.
+    # So this path should not be reached.
+    raise NotImplementedError()
 
-    async def done_writing(self) -> None:
-        # Behind the scenes everything goes through the
-        # async iterator provided by the InterceptedStreamStreamCall.
-        # So this path should not be reached.
-        raise NotImplementedError()
+  async def done_writing(self) -> None:
+    # Behind the scenes everything goes through the
+    # async iterator provided by the InterceptedStreamStreamCall.
+    # So this path should not be reached.
+    raise NotImplementedError()
 
-    @property
-    def _done_writing_flag(self) -> bool:
-        return self._call._done_writing_flag
+  @property
+  def _done_writing_flag(self) -> bool:
+    return self._call._done_writing_flag
 
 
 class ServerInterceptor(metaclass=ABCMeta):
