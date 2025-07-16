@@ -108,6 +108,9 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
+            "minimal_stack_test": [
+                "fuse_filters",
+            ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
             ],
@@ -187,6 +190,9 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
+            "minimal_stack_test": [
+                "fuse_filters",
+            ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
             ],
@@ -265,6 +271,9 @@ EXPERIMENTS = {
                 "multiping",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "minimal_stack_test": [
+                "fuse_filters",
             ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
