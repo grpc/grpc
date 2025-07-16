@@ -497,18 +497,7 @@ ValueOrHttp2Status<Http2Frame> ParseSettingsFrame(const Http2FrameHeader& hdr,
     payload.MoveFirstNBytesIntoBuffer(6, buffer);
     uint16_t setting_id = Read2b(buffer);
     uint32_t setting_value = Read4b(buffer + 2);
-    if (GPR_UNLIKELY(setting_id == Http2Settings::kInitialWindowSizeWireId &&
-                     setting_value > RFC9113::kMaxSize31Bit)) {
-      return Http2Status::Http2ConnectionError(
-          Http2ErrorCode::kFlowControlError,
-          absl::StrCat(RFC9113::kIncorrectWindowSizeSetting, hdr.ToString()));
-    } else if (GPR_UNLIKELY(setting_id == Http2Settings::kMaxFrameSizeWireId &&
-                            (setting_value < RFC9113::kMinimumFrameSize ||
-                             setting_value > RFC9113::kMaximumFrameSize))) {
-      return Http2Status::Http2ConnectionError(
-          Http2ErrorCode::kProtocolError,
-          absl::StrCat(RFC9113::kIncorrectFrameSizeSetting, hdr.ToString()));
-    } else if (GPR_UNLIKELY(IsKnownSetting(setting_id))) {
+    if (GPR_UNLIKELY(IsKnownSetting(setting_id))) {
       continue;
     }
     frame.settings.push_back({
@@ -727,34 +716,6 @@ void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, const uint8_t flags,
   uint8_t* frame_hdr = payload.AddTiny(kGrpcHeaderSizeInBytes);
   frame_hdr[0] = flags;
   Write4b(length, frame_hdr + 1);
-}
-
-///////////////////////////////////////////////////////////////////////////////
-// Stream State and Frame Validatrors
-
-bool IsFrameValidForIdleStreamState(const uint8_t frame_type) {
-  // TODO(tjagtap) : [PH2][P1] : Add state and frame type validators here
-  return true;
-}
-
-bool IsFrameValidForOpenStreamState(const uint8_t frame_type) {
-  // TODO(tjagtap) : [PH2][P1] : Add state and frame type validators here
-  return true;
-}
-
-bool IsFrameValidForHalfCloseLocalStreamState(const uint8_t frame_type) {
-  // TODO(tjagtap) : [PH2][P1] : Add state and frame type validators here
-  return true;
-}
-
-bool IsFrameValidForHalfCloseRemoteStreamState(const uint8_t frame_type) {
-  // TODO(tjagtap) : [PH2][P1] : Add state and frame type validators here
-  return true;
-}
-
-bool IsFrameValidForClosedStreamState(const uint8_t frame_type) {
-  // TODO(tjagtap) : [PH2][P1] : Add state and frame type validators here
-  return true;
 }
 
 }  // namespace grpc_core
