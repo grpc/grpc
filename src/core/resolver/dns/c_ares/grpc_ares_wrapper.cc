@@ -484,14 +484,17 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver)
       }
     }
   }
-  // Any remaining fds in ev_driver->fds were not returned by ares_getsock() and
-  // are therefore no longer in use, so they can be shut down and removed from
-  // the list.
+  // We may be shutting down to completion of all requests, or due to a timeout
+  // or explicit caller-triggered cancellation. In any of these cases, shut
+  // down and destroy any remaining fds.
   while (ev_driver->fds != nullptr) {
     fd_node* cur = ev_driver->fds;
     ev_driver->fds = ev_driver->fds->next;
-    fd_node_shutdown_locked(cur, "c-ares fd shutdown");
-    if (!cur->readable_registered && !cur->writable_registered) {
+    if (ev_driver->shutting_down) {
+      fd_node_shutdown_locked(cur, "grpc_ares_notify_on_event_locked");
+    }
+    if (cur->already_shutdown && !cur->readable_registered &&
+        !cur->writable_registered) {
       fd_node_destroy_locked(cur);
     } else {
       cur->next = new_list;

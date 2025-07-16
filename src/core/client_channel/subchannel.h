@@ -85,6 +85,8 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
   virtual size_t GetInitialCallSizeEstimate() const = 0;
   virtual void Ping(grpc_closure* on_initiate, grpc_closure* on_ack) = 0;
 
+  virtual channelz::SubchannelNode* channelz_node() const = 0;
+
  protected:
   explicit ConnectedSubchannel(const ChannelArgs& args);
 

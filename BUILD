@@ -689,6 +689,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
+        "//src/core:channelz_v2tov1_legacy_api",
         "//src/core:client_channel_backup_poller",
         "//src/core:default_event_engine",
         "//src/core:endpoint_info_handshaker",
@@ -2713,8 +2714,9 @@ grpc_cc_library(
         "src/cpp/server/channelz/channelz_service.h",
     ],
     external_deps = [
-        "protobuf_headers",
         "absl/log",
+        "absl/strings",
+        "protobuf_headers",
     ],
     public_hdrs = [
         "include/grpcpp/ext/channelz_service_plugin.h",
@@ -2727,7 +2729,10 @@ grpc_cc_library(
         "grpc",
         "grpc++",
         "grpc++_config_proto",
-        "//src/proto/grpc/channelz:channelz_proto",
+        "//src/core:channelz_v2tov1_convert",
+        "//src/core:experiments",
+        "//src/proto/grpc/channelz:channelz_cc_grpc",
+        "//src/proto/grpc/channelz:channelz_cc_proto",
         "//src/proto/grpc/channelz/v2:service_cc_grpc",
     ],
     alwayslink = 1,
@@ -4395,7 +4400,6 @@ grpc_cc_library(
         "absl/container:flat_hash_set",
         "absl/cleanup",
         "absl/log:log",
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4410,7 +4414,6 @@ grpc_cc_library(
     visibility = ["//bazel:xds_client_core"],
     deps = [
         "backoff",
-        "call_tracer",
         "debug_location",
         "endpoint_addresses",
         "envoy_admin_upb",
@@ -4435,7 +4438,6 @@ grpc_cc_library(
         "ref_counted_ptr",
         "uri",
         "work_serializer",
-        "//src/core:default_event_engine",
         "//src/core:down_cast",
         "//src/core:dual_ref_counted",
         "//src/core:env",
@@ -4798,6 +4800,7 @@ grpc_cc_library(
         "//src/core:gpr_manual_constructor",
         "//src/core:grpc_check",
         "//src/core:http2_settings",
+        "//src/core:http2_settings_manager",
         "//src/core:http2_stats_collector",
         "//src/core:http2_status",
         "//src/core:http2_ztrace_collector",
@@ -5227,12 +5230,12 @@ grpc_upb_proto_reflection_library(
 
 grpc_upb_proto_library(
     name = "channelz_v1_upb",
-    deps = ["//src/proto/grpc/channelz:channelz_proto_internal"],
+    deps = ["//src/proto/grpc/channelz:channelz_proto"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "channelz_v1_upbdefs",
-    deps = ["//src/proto/grpc/channelz:channelz_proto_internal"],
+    deps = ["//src/proto/grpc/channelz:channelz_proto"],
 )
 
 grpc_upb_proto_library(
