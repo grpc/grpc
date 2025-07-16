@@ -146,12 +146,12 @@ class MetadataValidator:
         """
         Checks if an item conforms to MetadatumType (Tuple[str, Union[str, bytes]]).
         """
-        if not isinstance(item, tuple):
+        if not isinstance(item, (tuple, list)):
             return False
         if len(item) != 2:
             return False
         key, value = item
-        if not isinstance(key, str):
+        if not isinstance(key, (str, bytes)):
             return False
         if not isinstance(value, (str, bytes)):
             return False
