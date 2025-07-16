@@ -15,7 +15,7 @@
 
 import asyncio
 import sys
-from typing import Any, Iterable, List, Optional, Sequence
+from typing import Any, Iterable, List, Optional, Sequence, Union
 
 import grpc
 from grpc import _common
@@ -39,6 +39,7 @@ from ._interceptor import StreamUnaryClientInterceptor
 from ._interceptor import UnaryStreamClientInterceptor
 from ._interceptor import UnaryUnaryClientInterceptor
 from ._metadata import Metadata
+from ._metadata import MetadataValidator
 from ._typing import ChannelArgumentType
 from ._typing import DeserializingFunction
 from ._typing import MetadataType
@@ -47,6 +48,9 @@ from ._typing import RequestType
 from ._typing import ResponseType
 from ._typing import SerializingFunction
 from ._utils import _timeout_to_deadline
+
+MetadataKey = str
+MetadataValue = Union[str, bytes]
 
 _USER_AGENT = "grpc-python-asyncio/{}".format(_grpcio_metadata.__version__)
 
@@ -127,9 +131,10 @@ class _BaseMultiCallable:
             metadata, Sequence
         ):
             metadata = Metadata.from_tuple(tuple(metadata))
+        metadata = MetadataValidator.validate_and_initialize(metadata)
         if compression:
             metadata = Metadata(
-                *_compression.augment_metadata(metadata, compression)
+                *_compression.augment_metadata(metadata.to_tuple(), compression)
             )
         return metadata
 
