@@ -176,7 +176,8 @@ class AioRpcError(grpc.RpcError):
 
 
 def _create_rpc_error(
-    initial_metadata: Metadata, status: cygrpc.AioRpcStatus
+    initial_metadata: Union[Metadata, Tuple[MetadatumType, ...]],
+    status: cygrpc.AioRpcStatus,
 ) -> AioRpcError:
     return AioRpcError(
         _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[status.code()],
