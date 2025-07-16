@@ -241,8 +241,8 @@ class InterceptorTest extends \PHPUnit\Framework\TestCase
     public function testClientChangeMetadataOneInterceptor()
     {
         $req_text = 'client_request';
-        $channel_matadata_interceptor = new ChangeMetadataInterceptor();
-        $intercept_channel = Grpc\Interceptor::intercept($this->channel, $channel_matadata_interceptor);
+        $channel_metadata_interceptor = new ChangeMetadataInterceptor();
+        $intercept_channel = Grpc\Interceptor::intercept($this->channel, $channel_metadata_interceptor);
         $client = new InterceptorClient('localhost:'.$this->port, [
             'force_new' => true,
             'credentials' => Grpc\ChannelCredentials::createInsecure(),
@@ -267,11 +267,11 @@ class InterceptorTest extends \PHPUnit\Framework\TestCase
     public function testClientChangeMetadataTwoInterceptor()
     {
         $req_text = 'client_request';
-        $channel_matadata_interceptor = new ChangeMetadataInterceptor();
-        $channel_matadata_intercepto2 = new ChangeMetadataInterceptor2();
+        $channel_metadata_interceptor = new ChangeMetadataInterceptor();
+        $channel_metadata_interception2 = new ChangeMetadataInterceptor2();
         // test intercept separately.
-        $intercept_channel1 = Grpc\Interceptor::intercept($this->channel, $channel_matadata_interceptor);
-        $intercept_channel2 = Grpc\Interceptor::intercept($intercept_channel1, $channel_matadata_intercepto2);
+        $intercept_channel1 = Grpc\Interceptor::intercept($this->channel, $channel_metadata_interceptor);
+        $intercept_channel2 = Grpc\Interceptor::intercept($intercept_channel1, $channel_metadata_interception2);
         $client = new InterceptorClient('localhost:'.$this->port, [
             'force_new' => true,
             'credentials' => Grpc\ChannelCredentials::createInsecure(),
@@ -297,7 +297,7 @@ class InterceptorTest extends \PHPUnit\Framework\TestCase
 
         // test intercept by array.
         $intercept_channel3 = Grpc\Interceptor::intercept($this->channel,
-            [$channel_matadata_intercepto2, $channel_matadata_interceptor]);
+            [$channel_metadata_interception2, $channel_metadata_interceptor]);
         $client = new InterceptorClient('localhost:'.$this->port, [
             'force_new' => true,
             'credentials' => Grpc\ChannelCredentials::createInsecure(),
