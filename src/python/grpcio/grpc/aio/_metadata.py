@@ -18,6 +18,8 @@ from typing import Any, Iterator, List, Optional, Tuple, Union
 
 MetadataKey = Union[str, bytes]
 MetadataValue = Union[str, bytes]
+
+
 class Metadata(abc.Collection):
     """Metadata abstraction for the asynchronous calls and interceptors.
 
@@ -138,6 +140,7 @@ class Metadata(abc.Collection):
         view = tuple(self)
         return "{0}({1!r})".format(self.__class__.__name__, view)
 
+
 class MetadataValidator:
     @classmethod
     def is_metadatum_type(cls, item: Any) -> bool:
@@ -154,7 +157,7 @@ class MetadataValidator:
         if not isinstance(value, (str, bytes)):
             return False
         return True
-    
+
     @classmethod
     def is_valid_sequence_of_metadatum_type(cls, data: Any) -> bool:
         """
@@ -172,14 +175,18 @@ class MetadataValidator:
         # 2. Iterate through each item and validate using is_metadatum_type
         for item in data:
             if not cls.is_metadatum_type(item):
-                return False # If any item is not a MetadatumType, the whole sequence fails
+                return False  # If any item is not a MetadatumType, the whole sequence fails
 
-        return True # All checks passed
+        return True  # All checks passed
 
     @classmethod
-    def validate_and_initialize(cls, metadata: Optional[Any] = None) -> Metadata:
+    def validate_and_initialize(
+        cls, metadata: Optional[Any] = None
+    ) -> Metadata:
         metadata = metadata or Metadata()
-        if not isinstance(metadata, Metadata) and isinstance(metadata, (tuple, list)):
+        if not isinstance(metadata, Metadata) and isinstance(
+            metadata, (tuple, list)
+        ):
             if cls.is_valid_sequence_of_metadatum_type(metadata):
                 return Metadata.from_tuple(tuple(metadata))
             else:
