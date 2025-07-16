@@ -341,8 +341,8 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
     // Quickly send the ACK to the peer once the settings are applied
   } else {
     // TODO(tjagtap) : [PH2][P1]
-    // Stop the setting timeout promise from firing
-    // Updated the ACKed setting data structure
+    // Stop the setting timeout promise
+    // Update the ACKed setting data structure
   }
 
   return Http2Status::Ok();

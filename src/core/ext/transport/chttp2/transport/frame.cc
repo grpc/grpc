@@ -46,7 +46,6 @@ namespace {
 bool IsKnownSetting(const uint16_t setting_id) {
   // RFC9113 : An endpoint that receives a SETTINGS frame with any unknown
   // or unsupported identifier MUST ignore that setting.
-  DVLOG(2) << "ParseSettingsFrame Discarding unknown setting " << setting_id;
   return setting_id < Http2Settings::kHeaderTableSizeWireId ||
          setting_id > Http2Settings::kGrpcAllowSecurityFrameWireId ||
          (setting_id > Http2Settings::kMaxHeaderListSizeWireId &&
@@ -497,7 +496,7 @@ ValueOrHttp2Status<Http2Frame> ParseSettingsFrame(const Http2FrameHeader& hdr,
     payload.MoveFirstNBytesIntoBuffer(6, buffer);
     uint16_t setting_id = Read2b(buffer);
     uint32_t setting_value = Read4b(buffer + 2);
-    if (GPR_UNLIKELY(IsKnownSetting(setting_id))) {
+    if (GPR_UNLIKELY(!IsKnownSetting(setting_id))) {
       continue;
     }
     frame.settings.push_back({
@@ -634,6 +633,7 @@ std::string Http2FrameTypeString(FrameType frame_type) {
   }
   return absl::StrCat("UNKNOWN(", static_cast<uint8_t>(frame_type), ")");
 }
+
 }  // namespace
 
 std::string Http2FrameHeader::ToString() const {
