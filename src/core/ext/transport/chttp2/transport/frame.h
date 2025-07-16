@@ -25,6 +25,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -259,8 +260,8 @@ void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, const uint8_t flags,
 
 ///////////////////////////////////////////////////////////////////////////////
 // Settings Frame Validations
-http2::ValueOrHttp2Status<Http2SettingsFrame> ValidateSettingsValues(
-    Http2SettingsFrame&& frame);
+http2::Http2Status ValidateSettingsValues(
+    std::vector<Http2SettingsFrame::Setting>& list);
 
 ///////////////////////////////////////////////////////////////////////////////
 // RFC9113 Related Strings and Consts

@@ -43,7 +43,7 @@ namespace {
 ///////////////////////////////////////////////////////////////////////////////
 // Settings Frame Validations
 
-bool IsKnownSetting(const uint16_t setting_id) {
+bool IsUnknownSetting(const uint16_t setting_id) {
   // RFC9113 : An endpoint that receives a SETTINGS frame with any unknown
   // or unsupported identifier MUST ignore that setting.
   return setting_id < Http2Settings::kHeaderTableSizeWireId ||
@@ -52,37 +52,37 @@ bool IsKnownSetting(const uint16_t setting_id) {
           setting_id < Http2Settings::kGrpcAllowTrueBinaryMetadataWireId);
 }
 
-ValueOrHttp2Status<Http2SettingsFrame> ValidateSettingsValues(
-    Http2SettingsFrame&& frame) {
-  for (const auto& setting : frame.settings) {
+Http2Status ValidateSettingsValues(
+    std::vector<Http2SettingsFrame::Setting>& list) {
+  for (const auto& setting : list) {
     if (GPR_UNLIKELY(setting.id == Http2Settings::kInitialWindowSizeWireId &&
                      setting.value > RFC9113::kMaxSize31Bit)) {
       LOG(ERROR)
-          << "Http2Transport ValidateSettingsValues Invalid "
-             "Setting:{setting.id:kInitialWindowSizeWireId, setting.value"
-          << setting.value;
+          << "ValidateSettingsValues Invalid "
+             "Setting:{setting.id:kInitialWindowSizeWireId, setting.value: "
+          << setting.value << "}";
       return Http2Status::Http2ConnectionError(
           Http2ErrorCode::kFlowControlError,
           absl::StrCat(RFC9113::kIncorrectWindowSizeSetting,
                        "Invalid Setting:{setting.id:kInitialWindowSizeWireId, "
-                       "setting.value",
+                       "setting.value: ",
                        setting.value));
     } else if (GPR_UNLIKELY(setting.id == Http2Settings::kMaxFrameSizeWireId &&
                             (setting.value < RFC9113::kMinimumFrameSize ||
                              setting.value > RFC9113::kMaximumFrameSize))) {
-      LOG(ERROR) << "Http2Transport ValidateSettingsValues Invalid "
-                    "Setting:{setting.id:kMaxFrameSizeWireId, setting.value"
-                 << setting.value;
+      LOG(ERROR) << "ValidateSettingsValues Invalid "
+                    "Setting:{setting.id:kMaxFrameSizeWireId, setting.value: "
+                 << setting.value << "}";
       return Http2Status::Http2ConnectionError(
           Http2ErrorCode::kProtocolError,
-          absl::StrCat(
-              RFC9113::kIncorrectFrameSizeSetting,
-              "Invalid Setting:{setting.id:kMaxFrameSizeWireId, setting.value",
-              setting.value));
+          absl::StrCat(RFC9113::kIncorrectFrameSizeSetting,
+                       "Invalid Setting:{setting.id:kMaxFrameSizeWireId, "
+                       "setting.value: ",
+                       setting.value));
     }
   }
   DVLOG(2) << "Http2Transport ValidateSettingsValues Valid";
-  return std::move(frame);
+  return Http2Status::Ok();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -496,7 +496,7 @@ ValueOrHttp2Status<Http2Frame> ParseSettingsFrame(const Http2FrameHeader& hdr,
     payload.MoveFirstNBytesIntoBuffer(6, buffer);
     uint16_t setting_id = Read2b(buffer);
     uint32_t setting_value = Read4b(buffer + 2);
-    if (GPR_UNLIKELY(!IsKnownSetting(setting_id))) {
+    if (GPR_UNLIKELY(IsUnknownSetting(setting_id))) {
       continue;
     }
     frame.settings.push_back({

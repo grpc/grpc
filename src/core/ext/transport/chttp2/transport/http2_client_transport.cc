@@ -330,12 +330,10 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
 
   if (!frame.ack) {
     // Check if the received settings have legal values
-    ValueOrHttp2Status<Http2SettingsFrame> status =
-        ValidateSettingsValues(std::move(frame));
+    Http2Status status = ValidateSettingsValues(frame.settings);
     if (!status.IsOk()) {
-      return HandleError(std::move(status));
+      return status;
     }
-    frame = std::TakeValue(std::move(status));
     // TODO(tjagtap) : [PH2][P1]
     // Apply the new settings
     // Quickly send the ACK to the peer once the settings are applied
