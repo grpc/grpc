@@ -172,11 +172,7 @@ class MetadataValidator:
             return False
 
         # 2. Iterate through each item and validate using is_metadatum_type
-        for item in data:
-            if not cls.is_metadatum_type(item):
-                return False  # If any item is not a MetadatumType, the whole sequence fails
-
-        return True  # All checks passed
+        return all(cls.is_metadatum_type(item) for item in data)
 
     @classmethod
     def validate_and_initialize(
