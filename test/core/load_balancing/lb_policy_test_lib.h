@@ -102,8 +102,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   using CallAttributes =
       std::vector<ServiceConfigCallData::CallAttributeInterface*>;
 
-  using RequestConnectionCallback =
-      absl::AnyInvocable<void(absl::string_view)>;
+  using RequestConnectionCallback = absl::AnyInvocable<void(absl::string_view)>;
 
   // Channel-level subchannel state for a specific address and channel args.
   // This is analogous to the real subchannel in the ClientChannel code.

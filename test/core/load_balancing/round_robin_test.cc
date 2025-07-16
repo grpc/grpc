@@ -166,11 +166,10 @@ TEST_F(RoundRobinTest, StartsConnectingFromRandomIndex) {
     if (connect_order[0] != kAddresses[0]) {
       EXPECT_THAT(
           connect_order,
-          ::testing::AnyOf(
-              ::testing::ElementsAre(kAddresses[1], kAddresses[2],
-                                     kAddresses[0]),
-              ::testing::ElementsAre(kAddresses[2], kAddresses[0],
-                                     kAddresses[1])));
+          ::testing::AnyOf(::testing::ElementsAre(kAddresses[1], kAddresses[2],
+                                                  kAddresses[0]),
+                           ::testing::ElementsAre(kAddresses[2], kAddresses[0],
+                                                  kAddresses[1])));
       // We started on an index other than 0, so we're done.
       return;
     }
