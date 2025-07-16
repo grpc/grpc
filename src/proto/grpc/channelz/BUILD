@@ -12,32 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load(
-    "//bazel:grpc_build_system.bzl",
-    "grpc_cc_grpc_library",
-    "grpc_cc_proto_library",
-    "grpc_internal_proto_library",
-    "grpc_package",
-)
+load("//bazel:grpc_build_system.bzl", "grpc_cc_grpc_library", "grpc_cc_proto_library", "grpc_internal_proto_library", "grpc_package")
 
 licenses(["notice"])
 
 grpc_package(
     name = "channelz",
     visibility = "public",
-)
-
-grpc_internal_proto_library(
-    name = "channelz_proto",
-    srcs = ["channelz.proto"],
-    has_services = True,
-    deps = [
-        "@com_google_protobuf//:any_proto",
-        "@com_google_protobuf//:duration_proto",
-        "@com_google_protobuf//:empty_proto",
-        "@com_google_protobuf//:timestamp_proto",
-        "@com_google_protobuf//:wrappers_proto",
-    ],
 )
 
 grpc_cc_proto_library(
@@ -57,5 +38,18 @@ filegroup(
     name = "channelz_proto_file",
     srcs = [
         "channelz.proto",
+    ],
+)
+
+grpc_internal_proto_library(
+    name = "channelz_proto",
+    srcs = ["channelz.proto"],
+    has_services = True,
+    deps = [
+        "@com_google_googleapis//google/protobuf:any",
+        "@com_google_googleapis//google/protobuf:duration",
+        "@com_google_googleapis//google/protobuf:timestamp",
+        "@com_google_googleapis//google/protobuf:wrappers",
+        "@com_google_protobuf//:empty_proto",
     ],
 )
