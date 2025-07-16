@@ -26,6 +26,9 @@ namespace {
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const description_channelz_use_v2_for_v1_api =
+    "Use the v2 channelz API for the v1 channelz API.";
+const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
 const char* const description_channelz_use_v2_for_v1_service =
     "Use the v2 channelz service for the v1 channelz service.";
 const char* const additional_constraints_channelz_use_v2_for_v1_service = "{}";
@@ -192,6 +195,9 @@ namespace grpc_core {
 const ExperimentMetadata g_experiment_metadata[] = {
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
+    {"channelz_use_v2_for_v1_api", description_channelz_use_v2_for_v1_api,
+     additional_constraints_channelz_use_v2_for_v1_api, nullptr, 0, false,
+     true},
     {"channelz_use_v2_for_v1_service",
      description_channelz_use_v2_for_v1_service,
      additional_constraints_channelz_use_v2_for_v1_service, nullptr, 0, false,
@@ -314,6 +320,9 @@ namespace {
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const description_channelz_use_v2_for_v1_api =
+    "Use the v2 channelz API for the v1 channelz API.";
+const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
 const char* const description_channelz_use_v2_for_v1_service =
     "Use the v2 channelz service for the v1 channelz service.";
 const char* const additional_constraints_channelz_use_v2_for_v1_service = "{}";
@@ -480,6 +489,9 @@ namespace grpc_core {
 const ExperimentMetadata g_experiment_metadata[] = {
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
+    {"channelz_use_v2_for_v1_api", description_channelz_use_v2_for_v1_api,
+     additional_constraints_channelz_use_v2_for_v1_api, nullptr, 0, false,
+     true},
     {"channelz_use_v2_for_v1_service",
      description_channelz_use_v2_for_v1_service,
      additional_constraints_channelz_use_v2_for_v1_service, nullptr, 0, false,
@@ -602,6 +614,9 @@ namespace {
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const description_channelz_use_v2_for_v1_api =
+    "Use the v2 channelz API for the v1 channelz API.";
+const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
 const char* const description_channelz_use_v2_for_v1_service =
     "Use the v2 channelz service for the v1 channelz service.";
 const char* const additional_constraints_channelz_use_v2_for_v1_service = "{}";
@@ -768,6 +783,9 @@ namespace grpc_core {
 const ExperimentMetadata g_experiment_metadata[] = {
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
+    {"channelz_use_v2_for_v1_api", description_channelz_use_v2_for_v1_api,
+     additional_constraints_channelz_use_v2_for_v1_api, nullptr, 0, false,
+     true},
     {"channelz_use_v2_for_v1_service",
      description_channelz_use_v2_for_v1_service,
      additional_constraints_channelz_use_v2_for_v1_service, nullptr, 0, false,
