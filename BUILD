@@ -2734,7 +2734,8 @@ grpc_cc_library(
         "grpc++_config_proto",
         "//src/core:channelz_v2tov1_convert",
         "//src/core:experiments",
-        "//src/proto/grpc/channelz:channelz_proto",
+        "//src/proto/grpc/channelz:channelz_cc_grpc",
+        "//src/proto/grpc/channelz:channelz_cc_proto",
         "//src/proto/grpc/channelz/v2:service_cc_grpc",
     ],
     alwayslink = 1,
@@ -5228,12 +5229,12 @@ grpc_upb_proto_reflection_library(
 
 grpc_upb_proto_library(
     name = "channelz_v1_upb",
-    deps = ["//src/proto/grpc/channelz:channelz_proto_internal"],
+    deps = ["//src/proto/grpc/channelz:channelz_proto"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "channelz_v1_upbdefs",
-    deps = ["//src/proto/grpc/channelz:channelz_proto_internal"],
+    deps = ["//src/proto/grpc/channelz:channelz_proto"],
 )
 
 grpc_upb_proto_library(
