@@ -41,7 +41,6 @@
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/meta/type_traits.h"
 #include "absl/strings/str_cat.h"
@@ -58,6 +57,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
 #include "src/core/util/wait_for_single_owner.h"
 #include "test/core/call/batch_builder.h"
@@ -490,7 +490,7 @@ class CoreEnd2endTest {
     if (client_ != nullptr) ShutdownAndDestroyClient();
     auto& f = fixture();
     client_ = f.MakeClient(args, cq_);
-    CHECK_NE(client_, nullptr);
+    GRPC_CHECK_NE(client_, nullptr);
   }
 
   static ChannelArgs DefaultServerArgs() {
@@ -510,7 +510,7 @@ class CoreEnd2endTest {
     if (server_ != nullptr) ShutdownAndDestroyServer();
     auto& f = fixture();
     server_ = f.MakeServer(args, cq_, pre_server_start_);
-    CHECK_NE(server_, nullptr);
+    GRPC_CHECK_NE(server_, nullptr);
   }
   // Remove the client.
   void ShutdownAndDestroyClient() {
@@ -588,7 +588,7 @@ class CoreEnd2endTest {
   }
 
   void SetPostGrpcInitFunc(absl::AnyInvocable<void()> fn) {
-    CHECK(fixture_ == nullptr);
+    GRPC_CHECK(fixture_ == nullptr);
     post_grpc_init_func_ = std::move(fn);
   }
 

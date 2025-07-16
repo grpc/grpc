@@ -28,7 +28,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "src/core/credentials/call/call_credentials.h"
@@ -38,6 +37,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
@@ -96,7 +96,7 @@ struct grpc_channel_credentials
   // two different `grpc_channel_credentials` objects are used but they compare
   // as equal (assuming other channel args match).
   int cmp(const grpc_channel_credentials* other) const {
-    CHECK_NE(other, nullptr);
+    GRPC_CHECK_NE(other, nullptr);
     int r = type().Compare(other->type());
     if (r != 0) return r;
     return cmp_impl(other);

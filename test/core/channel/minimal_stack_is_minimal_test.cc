@@ -37,7 +37,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
@@ -52,6 +51,7 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/test_util/test_config.h"
 
 namespace {
@@ -97,7 +97,7 @@ std::vector<std::string> MakeStack(const char* transport_name,
   builder.SetTarget("foo.test.google.fr");
   {
     grpc_core::ExecCtx exec_ctx;
-    CHECK(grpc_core::CoreConfiguration::Get().channel_init().CreateStack(
+    GRPC_CHECK(grpc_core::CoreConfiguration::Get().channel_init().CreateStack(
         &builder));
   }
 

@@ -29,7 +29,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
@@ -47,6 +46,7 @@
 #include "src/core/load_balancing/backend_metric_parser.h"
 #include "src/core/load_balancing/oob_backend_metric_internal.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/memory.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -215,7 +215,7 @@ void OrcaProducer::Orphaned() {
     MutexLock lock(&mu_);
     stream_client_.reset();
   }
-  CHECK(subchannel_ != nullptr);  // Should not be called before Start().
+  GRPC_CHECK(subchannel_ != nullptr);  // Should not be called before Start().
   subchannel_->CancelConnectivityStateWatch(connectivity_watcher_);
   subchannel_->RemoveDataProducer(this);
 }

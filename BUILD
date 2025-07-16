@@ -895,7 +895,6 @@ grpc_cc_library(
     name = "grpc++_public_hdrs",
     hdrs = GRPCXX_PUBLIC_HDRS,
     external_deps = [
-        "absl/log:check",
         "absl/log:log",
         "absl/log:absl_check",
         "absl/log:absl_log",
@@ -914,6 +913,7 @@ grpc_cc_library(
         "global_callback_hook",
         "grpc_public_hdrs",
         "//src/core:gpr_atm",
+        "//src/core:grpc_check",
     ],
 )
 
@@ -943,7 +943,6 @@ grpc_cc_library(
         "src/cpp/server/secure_server_credentials.h",
     ],
     external_deps = [
-        "absl/log:check",
         "absl/log:log",
         "absl/log:absl_check",
         "absl/log:absl_log",
@@ -965,6 +964,7 @@ grpc_cc_library(
         "global_callback_hook",
         "grpc++_base",
         "//src/core:gpr_atm",
+        "//src/core:grpc_check",
         "//src/core:slice",
     ],
 )
@@ -983,7 +983,6 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/log",
-        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -998,6 +997,7 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:grpc_audit_logging",
         "//src/core:grpc_authorization_base",
+        "//src/core:grpc_check",
         "//src/core:grpc_matchers",
         "//src/core:grpc_rbac_engine",
         "//src/core:json",
@@ -1067,7 +1067,6 @@ grpc_cc_library(
         "src/cpp/client/secure_credentials.h",
     ],
     external_deps = [
-        "absl/log:check",
         "absl/strings",
     ],
     deps = [
@@ -1079,6 +1078,7 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_security_base",
         "transport_auth_context",
+        "//src/core:grpc_check",
     ],
 )
 
@@ -1091,9 +1091,6 @@ grpc_cc_library(
     hdrs = [
         "src/cpp/server/secure_server_credentials.h",
     ],
-    external_deps = [
-        "absl/log:check",
-    ],
     public_hdrs = [
         "include/grpcpp/xds_server_builder.h",
     ],
@@ -1103,6 +1100,7 @@ grpc_cc_library(
         "gpr",
         "grpc",
         "grpc++_base",
+        "//src/core:grpc_check",
         "//src/core:xds_enabled_server",
     ],
 )
@@ -1119,7 +1117,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:any_invocable",
-        "absl/log:check",
         "absl/log:log",
         "absl/log:absl_check",
         "absl/log:absl_log",
@@ -1149,6 +1146,7 @@ grpc_cc_library(
         "grpc_unsecure",
         "transport_auth_context",
         "//src/core:gpr_atm",
+        "//src/core:grpc_check",
         "//src/core:grpc_insecure_credentials",
     ],
 )
@@ -1323,7 +1321,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/container:inlined_vector",
-        "absl/log:check",
         "absl/log:log",
     ],
     deps = [
@@ -1334,6 +1331,7 @@ grpc_cc_library(
         "stats",
         "//src/core:closure",
         "//src/core:gpr_atm",
+        "//src/core:grpc_check",
         "//src/core:ref_counted",
         "//src/core:stats_data",
     ],
@@ -1372,14 +1370,12 @@ grpc_cc_library(
         "//src/core:lib/surface/byte_buffer.cc",
         "//src/core:lib/surface/byte_buffer_reader.cc",
     ],
-    external_deps = [
-        "absl/log:check",
-    ],
     deps = [
         "exec_ctx",
         "gpr_public_hdrs",
         "grpc_public_hdrs",
         "//src/core:compression",
+        "//src/core:grpc_check",
         "//src/core:slice",
     ],
 )
@@ -1505,7 +1501,6 @@ grpc_cc_library(
         "absl/container:flat_hash_set",
         "absl/functional:any_invocable",
         "absl/log",
-        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -1557,6 +1552,7 @@ grpc_cc_library(
         "//src/core:experiments",
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
+        "//src/core:grpc_check",
         "//src/core:grpc_sockaddr",
         "//src/core:init_internally",
         "//src/core:iomgr_fwd",
@@ -1594,7 +1590,6 @@ grpc_cc_library(
         "//src/core:telemetry/call_tracer.h",
     ],
     external_deps = [
-        "absl/log:check",
         "absl/status",
         "absl/strings",
     ],
@@ -1606,6 +1601,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:context",
         "//src/core:error",
+        "//src/core:grpc_check",
         "//src/core:message",
         "//src/core:metadata_batch",
         "//src/core:ref_counted_string",
@@ -1624,7 +1620,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/log:check",
         "absl/status:statusor",
         "absl/strings",
     ],
@@ -1647,6 +1642,7 @@ grpc_cc_library(
         "//src/core:channel_stack_type",
         "//src/core:compression",
         "//src/core:connectivity_state",
+        "//src/core:grpc_check",
         "//src/core:iomgr_fwd",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
@@ -1667,7 +1663,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/log:check",
         "absl/log:log",
         "absl/status",
         "absl/status:statusor",
@@ -1694,6 +1689,7 @@ grpc_cc_library(
         "//src/core:closure",
         "//src/core:dual_ref_counted",
         "//src/core:error",
+        "//src/core:grpc_check",
         "//src/core:init_internally",
         "//src/core:iomgr_fwd",
         "//src/core:metrics",
@@ -1714,7 +1710,6 @@ grpc_cc_library(
         "//src/core:lib/surface/channel_create.h",
     ],
     external_deps = [
-        "absl/log:check",
         "absl/status:statusor",
         "absl/strings",
     ],
@@ -1744,6 +1739,7 @@ grpc_cc_library(
         "//src/core:event_engine_query_extensions",
         "//src/core:event_engine_tcp_socket_utils",
         "//src/core:experiments",
+        "//src/core:grpc_check",
         "//src/core:stats_data",
     ],
 )
@@ -1763,7 +1759,6 @@ grpc_cc_library(
         "absl/container:flat_hash_set",
         "absl/hash",
         "absl/log",
-        "absl/log:check",
         "absl/random",
         "absl/status",
         "absl/status:statusor",
@@ -1810,6 +1805,7 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:error_utils",
         "//src/core:experiments",
+        "//src/core:grpc_check",
         "//src/core:interception_chain",
         "//src/core:iomgr_fwd",
         "//src/core:map",
@@ -1907,7 +1903,6 @@ grpc_cc_library(
         "absl/functional:any_invocable",
         "absl/functional:function_ref",
         "absl/log",
-        "absl/log:check",
         "absl/meta:type_traits",
         "absl/status",
         "absl/status:statusor",
@@ -1982,6 +1977,7 @@ grpc_cc_library(
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
         "//src/core:gpr_spinlock",
+        "//src/core:grpc_check",
         "//src/core:if",
         "//src/core:iomgr_fwd",
         "//src/core:latch",
@@ -2031,13 +2027,13 @@ grpc_cc_library(
         "src/cpp/server/load_reporter/load_data_store.h",
     ],
     external_deps = [
-        "absl/log:check",
         "absl/log:log",
     ],
     deps = [
         "gpr",
         "gpr_platform",
         "grpc++",
+        "//src/core:grpc_check",
         "//src/core:grpc_sockaddr",
     ],
 )
@@ -2099,7 +2095,6 @@ grpc_cc_library(
         "src/cpp/server/load_reporter/load_reporter_async_service_impl.h",
     ],
     external_deps = [
-        "absl/log:check",
         "absl/log:log",
         "absl/memory",
         "protobuf_headers",
@@ -2112,6 +2107,7 @@ grpc_cc_library(
         ":gpr",
         ":grpc++",
         ":lb_load_reporter",
+        "//src/core:grpc_check",
         "//src/core:sync",
         "//src/proto/grpc/lb/v1:load_reporter_cc_grpc",
     ],
@@ -2147,7 +2143,6 @@ grpc_cc_library(
         "src/cpp/server/load_reporter/load_reporter.h",
     ],
     external_deps = [
-        "absl/log:check",
         "absl/log:log",
         "opencensus-stats",
         "opencensus-tags",
@@ -2161,6 +2156,7 @@ grpc_cc_library(
         "gpr",
         "lb_get_cpu_stats",
         "lb_load_data_store",
+        "//src/core:grpc_check",
         "//src/core:sync",
         "//src/proto/grpc/lb/v1:load_reporter_cc_grpc",
     ],
@@ -2175,7 +2171,6 @@ grpc_cc_library(
         "//src/core:transport/auth_context.h",
     ],
     external_deps = [
-        "absl/log:check",
         "absl/log:log",
         "absl/strings",
     ],
@@ -2194,6 +2189,7 @@ grpc_cc_library(
         "//src/core:arena",
         "//src/core:channel_args",
         "//src/core:connection_context",
+        "//src/core:grpc_check",
         "//src/core:ref_counted",
         "//src/core:useful",
     ],
@@ -2234,7 +2230,6 @@ grpc_cc_library(
         "absl/container:inlined_vector",
         "absl/functional:any_invocable",
         "absl/log",
-        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -2274,6 +2269,7 @@ grpc_cc_library(
         "//src/core:event_engine_memory_allocator",
         "//src/core:experiments",
         "//src/core:gpr_atm",
+        "//src/core:grpc_check",
         "//src/core:handshaker_factory",
         "//src/core:handshaker_registry",
         "//src/core:iomgr_fwd",
@@ -2398,7 +2394,6 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/functional:any_invocable",
-        "absl/log:check",
         "absl/log:log",
         "absl/log:absl_check",
         "absl/log:absl_log",
@@ -2460,6 +2455,7 @@ grpc_cc_library(
         "//src/core:gpr_manual_constructor",
         "//src/core:grpc_audit_logging",
         "//src/core:grpc_backend_metric_provider",
+        "//src/core:grpc_check",
         "//src/core:grpc_crl_provider",
         "//src/core:grpc_service_config",
         "//src/core:grpc_tls_credentials",
@@ -2491,7 +2487,6 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/functional:any_invocable",
-        "absl/log:check",
         "absl/log:log",
         "absl/status",
         "absl/status:statusor",
@@ -2549,6 +2544,7 @@ grpc_cc_library(
         "//src/core:gpr_atm",
         "//src/core:gpr_manual_constructor",
         "//src/core:grpc_backend_metric_provider",
+        "//src/core:grpc_check",
         "//src/core:grpc_insecure_credentials",
         "//src/core:grpc_service_config",
         "//src/core:grpc_transport_chttp2_server",
@@ -2680,7 +2676,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/log:check",
         "absl/log:log",
         "absl/strings",
         "absl/time",
@@ -2704,6 +2699,7 @@ grpc_cc_library(
         "xds_orca_upb",
         "//src/core:default_event_engine",
         "//src/core:grpc_backend_metric_data",
+        "//src/core:grpc_check",
         "//src/core:ref_counted",
         "//src/core:time",
     ],
@@ -2841,7 +2837,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/log:check",
         "absl/numeric:bits",
         "absl/status",
         "absl/status:statusor",
@@ -2872,6 +2867,7 @@ grpc_cc_library(
         "//src/core:context",
         "//src/core:error",
         "//src/core:experiments",
+        "//src/core:grpc_check",
         "//src/core:logging_filter",
         "//src/core:metadata_batch",
         "//src/core:slice",
@@ -3098,7 +3094,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:any_invocable",
-        "absl/log:check",
     ],
     public_hdrs = [
         "//src/core:config/core_configuration.h",
@@ -3115,6 +3110,7 @@ grpc_cc_library(
         "//src/core:channel_creds_registry",
         "//src/core:channel_init",
         "//src/core:endpoint_transport",
+        "//src/core:grpc_check",
         "//src/core:handshaker_registry",
         "//src/core:lb_policy_registry",
         "//src/core:proxy_mapper_registry",
@@ -3185,7 +3181,6 @@ grpc_cc_library(
         "absl/container:inlined_vector",
         "absl/functional:any_invocable",
         "absl/log",
-        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings:str_format",
@@ -3209,6 +3204,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:closure",
         "//src/core:error",
+        "//src/core:grpc_check",
         "//src/core:ref_counted",
         "//src/core:slice",
         "//src/core:slice_buffer",
@@ -3337,7 +3333,6 @@ grpc_cc_library(
         "//src/core:lib/iomgr/iomgr.h",
     ],
     external_deps = [
-        "absl/log:check",
         "absl/log:log",
         "absl/strings",
         "absl/strings:str_format",
@@ -3352,6 +3347,7 @@ grpc_cc_library(
         "//src/core:closure",
         "//src/core:gpr_manual_constructor",
         "//src/core:gpr_spinlock",
+        "//src/core:grpc_check",
         "//src/core:iomgr_port",
         "//src/core:time",
         "//src/core:time_averaged_stats",
@@ -3525,7 +3521,6 @@ grpc_cc_library(
         "//src/core:service_config/service_config_impl.h",
     ],
     external_deps = [
-        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3536,6 +3531,7 @@ grpc_cc_library(
         "gpr",
         "ref_counted_ptr",
         "//src/core:channel_args",
+        "//src/core:grpc_check",
         "//src/core:grpc_service_config",
         "//src/core:json",
         "//src/core:json_args",
@@ -3559,7 +3555,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:function_ref",
-        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3570,6 +3565,7 @@ grpc_cc_library(
         "gpr_platform",
         "sockaddr_utils",
         "//src/core:channel_args",
+        "//src/core:grpc_check",
         "//src/core:resolved_address",
         "//src/core:useful",
     ],
@@ -3599,7 +3595,6 @@ grpc_cc_library(
         "//src/core:resolver/resolver_registry.h",
     ],
     external_deps = [
-        "absl/log:check",
         "absl/log:log",
         "absl/status",
         "absl/status:statusor",
@@ -3616,6 +3611,7 @@ grpc_cc_library(
         "server_address",
         "uri",
         "//src/core:channel_args",
+        "//src/core:grpc_check",
         "//src/core:grpc_service_config",
         "//src/core:iomgr_fwd",
     ],
@@ -3634,7 +3630,6 @@ grpc_cc_library(
         "@com_google_protobuf//upb/mem",
         "absl/base:core_headers",
         "absl/log",
-        "absl/log:check",
         "absl/status",
         "absl/strings",
     ],
@@ -3654,6 +3649,7 @@ grpc_cc_library(
         "//src/core:closure",
         "//src/core:error",
         "//src/core:grpc_backend_metric_data",
+        "//src/core:grpc_check",
         "//src/core:iomgr_fwd",
         "//src/core:pollset_set",
         "//src/core:slice",
@@ -3673,7 +3669,6 @@ grpc_cc_library(
         "//src/core:load_balancing/child_policy_handler.h",
     ],
     external_deps = [
-        "absl/log:check",
         "absl/log:log",
         "absl/status",
         "absl/strings",
@@ -3689,6 +3684,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:connectivity_state",
         "//src/core:delegating_helper",
+        "//src/core:grpc_check",
         "//src/core:lb_policy",
         "//src/core:lb_policy_registry",
         "//src/core:pollset_set",
@@ -3734,7 +3730,6 @@ grpc_cc_library(
         "absl/container:inlined_vector",
         "absl/functional:any_invocable",
         "absl/log",
-        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3798,6 +3793,7 @@ grpc_cc_library(
         "//src/core:gpr_manual_constructor",
         "//src/core:grpc_backend_metric_data",
         "//src/core:grpc_channel_idle_filter",
+        "//src/core:grpc_check",
         "//src/core:grpc_service_config",
         "//src/core:idle_filter_state",
         "//src/core:init_internally",
@@ -3864,7 +3860,6 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/functional:any_invocable",
         "absl/log",
-        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3896,6 +3891,7 @@ grpc_cc_library(
         "//src/core:closure",
         "//src/core:error",
         "//src/core:error_utils",
+        "//src/core:grpc_check",
         "//src/core:grpc_service_config",
         "//src/core:grpc_sockaddr",
         "//src/core:iomgr_fwd",
@@ -3927,7 +3923,6 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/functional:bind_front",
         "absl/log",
-        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3959,6 +3954,7 @@ grpc_cc_library(
         "//src/core:event_engine_common",
         "//src/core:event_engine_shim",
         "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:grpc_check",
         "//src/core:handshaker_registry",
         "//src/core:iomgr_fwd",
         "//src/core:pollset_set",
@@ -3983,7 +3979,6 @@ grpc_cc_library(
         "//src/core:credentials/transport/alts/alts_security_connector.h",
     ],
     external_deps = [
-        "absl/log:check",
         "absl/log:log",
         "absl/status",
         "absl/strings",
@@ -4010,6 +4005,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:closure",
         "//src/core:error",
+        "//src/core:grpc_check",
         "//src/core:iomgr_fwd",
         "//src/core:slice",
         "//src/core:slice_refcount",
@@ -4027,7 +4023,6 @@ grpc_cc_library(
         "//src/core:tsi/fake_transport_security.h",
     ],
     external_deps = [
-        "absl/log:check",
         "absl/log:log",
     ],
     visibility = [
@@ -4037,6 +4032,7 @@ grpc_cc_library(
         "gpr",
         "tsi_base",
         "//src/core:dump_args",
+        "//src/core:grpc_check",
         "//src/core:slice",
         "//src/core:useful",
     ],
@@ -4055,7 +4051,6 @@ grpc_cc_library(
         "//src/core:credentials/call/jwt/jwt_verifier.h",
     ],
     external_deps = [
-        "absl/log:check",
         "absl/log:log",
         "absl/status",
         "absl/status:statusor",
@@ -4085,6 +4080,7 @@ grpc_cc_library(
         "//src/core:closure",
         "//src/core:error",
         "//src/core:gpr_manual_constructor",
+        "//src/core:grpc_check",
         "//src/core:httpcli_ssl_credentials",
         "//src/core:iomgr_fwd",
         "//src/core:json",
@@ -4151,7 +4147,6 @@ grpc_cc_library(
     external_deps = [
         "@com_google_protobuf//upb/mem",
         "absl/log",
-        "absl/log:check",
         "absl/strings",
     ],
     visibility = ["//visibility:public"],
@@ -4170,6 +4165,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:closure",
         "//src/core:env",
+        "//src/core:grpc_check",
         "//src/core:pollset_set",
         "//src/core:slice",
         "//src/core:sync",
@@ -4209,7 +4205,6 @@ grpc_cc_library(
         "//src/core:tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h",
     ],
     external_deps = [
-        "absl/log:check",
         "absl/log:log",
         "absl/types:span",
         "libcrypto",
@@ -4222,6 +4217,7 @@ grpc_cc_library(
         "gpr",
         "gpr_platform",
         "tsi_base",
+        "//src/core:grpc_check",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:useful",
@@ -4241,7 +4237,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log",
-        "absl/log:check",
         "absl/memory",
         "libssl",
     ],
@@ -4250,6 +4245,7 @@ grpc_cc_library(
         "cpp_impl_of",
         "gpr",
         "grpc_public_hdrs",
+        "//src/core:grpc_check",
         "//src/core:ref_counted",
         "//src/core:slice",
         "//src/core:sync",
@@ -4268,7 +4264,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/log:check",
         "absl/log:log",
         "absl/status",
         "absl/status:statusor",
@@ -4293,6 +4288,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:env",
         "//src/core:error",
+        "//src/core:grpc_check",
         "//src/core:grpc_crl_provider",
         "//src/core:grpc_transport_chttp2_alpn",
         "//src/core:load_file",
@@ -4321,7 +4317,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/log:check",
         "absl/log:log",
         "absl/status",
         "absl/status:statusor",
@@ -4347,6 +4342,7 @@ grpc_cc_library(
         "//src/core:compression",
         "//src/core:context",
         "//src/core:experiments",
+        "//src/core:grpc_check",
         "//src/core:grpc_message_size_filter",
         "//src/core:latch",
         "//src/core:latent_see",
@@ -4405,7 +4401,6 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/container:flat_hash_set",
         "absl/cleanup",
-        "absl/log:check",
         "absl/log:log",
         "absl/status",
         "absl/status:statusor",
@@ -4449,6 +4444,7 @@ grpc_cc_library(
         "//src/core:dual_ref_counted",
         "//src/core:env",
         "//src/core:grpc_backend_metric_data",
+        "//src/core:grpc_check",
         "//src/core:json",
         "//src/core:per_cpu",
         "//src/core:ref_counted",
@@ -4489,7 +4485,6 @@ grpc_cc_library(
     hdrs = ["//src/core:resolver/fake/fake_resolver.h"],
     external_deps = [
         "absl/base:core_headers",
-        "absl/log:check",
         "absl/strings",
         "absl/time",
     ],
@@ -4508,6 +4503,7 @@ grpc_cc_library(
         "uri",
         "work_serializer",
         "//src/core:channel_args",
+        "//src/core:grpc_check",
         "//src/core:notification",
         "//src/core:ref_counted",
         "//src/core:sync",
@@ -4524,7 +4520,6 @@ grpc_cc_library(
         "//src/core:ext/transport/chttp2/transport/frame.h",
     ],
     external_deps = [
-        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4532,6 +4527,7 @@ grpc_cc_library(
     ],
     deps = [
         "gpr",
+        "//src/core:grpc_check",
         "//src/core:http2_status",
         "//src/core:slice",
         "//src/core:slice_buffer",
@@ -4556,7 +4552,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:function_ref",
-        "absl/log:check",
         "absl/log:log",
         "absl/status",
         "absl/strings",
@@ -4567,6 +4562,7 @@ grpc_cc_library(
         "grpc_trace",
         "hpack_parse_result",
         "stats",
+        "//src/core:grpc_check",
         "//src/core:hpack_constants",
         "//src/core:http2_stats_collector",
         "//src/core:metadata_batch",
@@ -4586,7 +4582,6 @@ grpc_cc_library(
         "//src/core:ext/transport/chttp2/transport/hpack_parse_result.h",
     ],
     external_deps = [
-        "absl/log:check",
         "absl/status",
         "absl/strings",
         "absl/strings:str_format",
@@ -4596,6 +4591,7 @@ grpc_cc_library(
         "grpc_base",
         "ref_counted_ptr",
         "//src/core:error",
+        "//src/core:grpc_check",
         "//src/core:hpack_constants",
         "//src/core:metadata_batch",
         "//src/core:ref_counted",
@@ -4614,7 +4610,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/log:check",
         "absl/log:log",
         "absl/random:bit_gen_ref",
         "absl/status",
@@ -4634,6 +4629,7 @@ grpc_cc_library(
         "stats",
         "//src/core:decode_huff",
         "//src/core:error",
+        "//src/core:grpc_check",
         "//src/core:hpack_constants",
         "//src/core:match",
         "//src/core:metadata_batch",
@@ -4655,7 +4651,6 @@ grpc_cc_library(
         "//src/core:ext/transport/chttp2/transport/hpack_encoder.h",
     ],
     external_deps = [
-        "absl/log:check",
         "absl/log:log",
         "absl/strings",
     ],
@@ -4669,6 +4664,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_public_hdrs",
         "grpc_trace",
+        "//src/core:grpc_check",
         "//src/core:hpack_constants",
         "//src/core:hpack_encoder_table",
         "//src/core:http2_ztrace_collector",
@@ -4689,12 +4685,10 @@ grpc_cc_library(
     hdrs = [
         "//src/core:ext/transport/chttp2/transport/bin_encoder.h",
     ],
-    external_deps = [
-        "absl/log:check",
-    ],
     deps = [
         "gpr",
         "gpr_platform",
+        "//src/core:grpc_check",
         "//src/core:huffsyms",
         "//src/core:slice",
     ],
@@ -4710,9 +4704,11 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/log:check",
     ],
-    deps = ["gpr"],
+    deps = [
+        "gpr",
+        "//src/core:grpc_check",
+    ],
 )
 
 grpc_cc_library(
@@ -4751,7 +4747,6 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
         "absl/functional:bind_front",
         "absl/hash",
-        "absl/log:check",
         "absl/log:log",
         "absl/meta:type_traits",
         "absl/random",
@@ -4803,6 +4798,7 @@ grpc_cc_library(
         "//src/core:event_engine_query_extensions",
         "//src/core:experiments",
         "//src/core:gpr_manual_constructor",
+        "//src/core:grpc_check",
         "//src/core:http2_settings",
         "//src/core:http2_settings_manager",
         "//src/core:http2_stats_collector",
@@ -4870,13 +4866,13 @@ grpc_cc_library(
         "//src/core:util/subprocess.h",
     ],
     external_deps = [
-        "absl/log:check",
         "absl/log:log",
         "absl/strings",
         "absl/types:span",
     ],
     deps = [
         "gpr",
+        "//src/core:grpc_check",
         "//src/core:strerror",
         "//src/core:tchar",
     ],
@@ -4892,8 +4888,10 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:no_destructor",
-        "absl/log:check",
         "absl/functional:function_ref",
+    ],
+    deps = [
+        "//src/core:grpc_check",
     ],
 )
 

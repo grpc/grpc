@@ -32,7 +32,6 @@
 
 #include "absl/container/inlined_vector.h"
 #include "absl/functional/function_ref.h"
-#include "absl/log/check.h"
 #include "absl/meta/type_traits.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/string_view.h"
@@ -45,6 +44,7 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/chunked_vector.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/if_list.h"
 #include "src/core/util/packed_table.h"
 #include "src/core/util/time.h"
@@ -107,7 +107,7 @@ struct TeMetadata {
                                   MetadataParseErrorFn on_error);
   static ValueType MementoToValue(MementoType te) { return te; }
   static StaticSlice Encode(ValueType x) {
-    CHECK(x == kTrailers);
+    GRPC_CHECK(x == kTrailers);
     return StaticSlice::FromStaticString("trailers");
   }
   static const char* DisplayValue(ValueType te);
@@ -213,7 +213,7 @@ struct CompressionAlgorithmBasedMetadata {
                                   MetadataParseErrorFn on_error);
   static ValueType MementoToValue(MementoType x) { return x; }
   static Slice Encode(ValueType x) {
-    CHECK(x != GRPC_COMPRESS_ALGORITHMS_COUNT);
+    GRPC_CHECK(x != GRPC_COMPRESS_ALGORITHMS_COUNT);
     return Slice::FromStaticString(CompressionAlgorithmAsString(x));
   }
   static const char* DisplayValue(ValueType x) {

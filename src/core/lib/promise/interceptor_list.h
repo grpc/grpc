@@ -24,7 +24,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -34,6 +33,7 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/util/construct_destruct.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 
@@ -64,7 +64,7 @@ class InterceptorList {
     // Update the next pointer stored with this map.
     // This is only valid to call once, and only before the map is used.
     void SetNext(Map* next) {
-      DCHECK_EQ(next_, nullptr);
+      GRPC_DCHECK_EQ(next_, nullptr);
       next_ = next;
     }
 

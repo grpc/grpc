@@ -48,9 +48,9 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc",
         "//src/core:match",
+        "//src/core:postmortem",
         "//src/core:time",
         "//test/core/test_util:grpc_test_util",
-        "//test/core/test_util:postmortem_emit",
     ],
 )
 
@@ -190,6 +190,7 @@ grpc_cc_library(
             "//src/core:chaotic_good_server",
             "//src/core:default_event_engine",
             "//src/core:no_destruct",
+            "//src/core:postmortem",
             "//src/core:slice",
             "//src/core:time",
             "//test/core/call:batch_builder",

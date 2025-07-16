@@ -39,9 +39,9 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc {
 
@@ -214,7 +214,7 @@ bool Channel::WaitForStateChangeImpl(grpc_connectivity_state last_observed,
   void* tag = nullptr;
   NotifyOnStateChangeImpl(last_observed, deadline, &cq, nullptr);
   cq.Next(&tag, &ok);
-  CHECK_EQ(tag, nullptr);
+  GRPC_CHECK_EQ(tag, nullptr);
   return ok;
 }
 

@@ -23,7 +23,6 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -37,6 +36,7 @@
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_factory.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/uri.h"
 #include "src/core/util/work_serializer.h"
@@ -240,7 +240,7 @@ grpc_core::ResolverArgs ConstructResolverArgs(
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
   grpc_core::ResolverArgs resolver_args;
   auto uri = grpc_core::URI::Parse("dns:localhost");
-  CHECK(uri.ok());
+  GRPC_CHECK(uri.ok());
   resolver_args.uri = *uri;
   resolver_args.args = channel_args;
   resolver_args.pollset_set = nullptr;

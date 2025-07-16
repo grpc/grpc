@@ -22,7 +22,6 @@
 #include <memory>
 #include <string>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
@@ -36,6 +35,7 @@
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 
@@ -112,12 +112,12 @@ class ChildPolicyHandler::Helper final
 
  private:
   bool CalledByPendingChild() const {
-    CHECK_NE(child_, nullptr);
+    GRPC_CHECK_NE(child_, nullptr);
     return child_ == parent()->pending_child_policy_.get();
   }
 
   bool CalledByCurrentChild() const {
-    CHECK_NE(child_, nullptr);
+    GRPC_CHECK_NE(child_, nullptr);
     return child_ == parent()->child_policy_.get();
   };
 
@@ -237,7 +237,7 @@ absl::Status ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
                            ? pending_child_policy_.get()
                            : child_policy_.get();
   }
-  CHECK_NE(policy_to_update, nullptr);
+  GRPC_CHECK_NE(policy_to_update, nullptr);
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED_OBJ(*tracer_)) {
     LOG(INFO) << "[child_policy_handler " << this << "] updating "

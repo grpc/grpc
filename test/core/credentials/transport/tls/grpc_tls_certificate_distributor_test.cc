@@ -25,10 +25,10 @@
 #include <string>
 #include <thread>
 
-#include "absl/log/check.h"
 #include "gmock/gmock.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 
@@ -132,7 +132,7 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
 
     void OnError(grpc_error_handle root_cert_error,
                  grpc_error_handle identity_cert_error) override {
-      CHECK(!root_cert_error.ok() || !identity_cert_error.ok());
+      GRPC_CHECK(!root_cert_error.ok() || !identity_cert_error.ok());
       std::string root_error_str;
       if (!root_cert_error.ok()) {
         root_error_str = std::string(root_cert_error.message());

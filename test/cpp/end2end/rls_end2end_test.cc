@@ -34,7 +34,6 @@
 #include <optional>
 #include <thread>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -50,6 +49,7 @@
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/service_config/service_config_impl.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/time.h"
 #include "src/core/util/uri.h"
@@ -419,7 +419,7 @@ class RlsEnd2endTest : public ::testing::Test {
 
     void Start() {
       LOG(INFO) << "starting " << type_ << " server on port " << port_;
-      CHECK(!running_);
+      GRPC_CHECK(!running_);
       running_ = true;
       service_.Start();
       grpc::internal::Mutex mu;

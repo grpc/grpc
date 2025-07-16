@@ -234,11 +234,11 @@ grpc_cc_benchmark(
     srcs = ["static_stride_scheduler_benchmark.cc"],
     external_deps = [
         "absl/algorithm:container",
-        "absl/log:check",
     ],
     monitoring = HISTORY,
     uses_event_engine = False,
     deps = [
+        "//src/core:grpc_check",
         "//src/core:no_destruct",
         "//src/core:static_stride_scheduler",
     ],

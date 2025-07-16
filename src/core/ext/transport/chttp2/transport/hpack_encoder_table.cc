@@ -18,15 +18,15 @@
 
 #include <algorithm>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 
 uint32_t HPackEncoderTable::AllocateIndex(size_t element_size) {
-  DCHECK_GE(element_size, 32u);
+  GRPC_DCHECK_GE(element_size, 32u);
 
   uint32_t new_index = tail_remote_index_ + table_elems_ + 1;
-  DCHECK(element_size <= MaxEntrySize());
+  GRPC_DCHECK_LE(element_size, MaxEntrySize());
 
   if (element_size > max_table_size_) {
     while (table_size_ > 0) {
@@ -41,7 +41,7 @@ uint32_t HPackEncoderTable::AllocateIndex(size_t element_size) {
   while (table_size_ + element_size > max_table_size_) {
     EvictOne();
   }
-  CHECK(table_elems_ < elem_size_.size());
+  GRPC_CHECK(table_elems_ < elem_size_.size());
   elem_size_[new_index % elem_size_.size()] =
       static_cast<uint16_t>(element_size);
   table_size_ += element_size;
@@ -70,17 +70,17 @@ bool HPackEncoderTable::SetMaxSize(uint32_t max_table_size) {
 
 void HPackEncoderTable::EvictOne() {
   tail_remote_index_++;
-  CHECK_GT(tail_remote_index_, 0u);
-  CHECK_GT(table_elems_, 0u);
+  GRPC_CHECK_GT(tail_remote_index_, 0u);
+  GRPC_CHECK_GT(table_elems_, 0u);
   auto removing_size = elem_size_[tail_remote_index_ % elem_size_.size()];
-  CHECK(table_size_ >= removing_size);
+  GRPC_CHECK(table_size_ >= removing_size);
   table_size_ -= removing_size;
   table_elems_--;
 }
 
 void HPackEncoderTable::Rebuild(uint32_t capacity) {
   decltype(elem_size_) new_elem_size(capacity);
-  CHECK_LE(table_elems_, capacity);
+  GRPC_CHECK_LE(table_elems_, capacity);
   for (uint32_t i = 0; i < table_elems_; i++) {
     uint32_t ofs = tail_remote_index_ + i + 1;
     new_elem_size[ofs % capacity] = elem_size_[ofs % elem_size_.size()];

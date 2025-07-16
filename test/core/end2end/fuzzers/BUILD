@@ -48,8 +48,8 @@ grpc_cc_library(
         "api_fuzzer_cc_proto",
         "//:gpr",
         "//:grpc",
+        "//src/core:postmortem",
         "//test/core/event_engine/fuzzing_event_engine",
-        "//test/core/test_util:postmortem_emit",
     ],
 )
 

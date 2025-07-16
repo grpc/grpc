@@ -20,7 +20,6 @@
 #include <optional>
 #include <string>
 
-#include "absl/log/check.h"
 #include "fuzztest/fuzztest.h"
 #include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
@@ -30,6 +29,7 @@
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"
@@ -72,7 +72,7 @@ class ServerFuzzer final : public BasicFuzzer {
     }
   }
 
-  ~ServerFuzzer() { CHECK_EQ(server_, nullptr); }
+  ~ServerFuzzer() { GRPC_CHECK_EQ(server_, nullptr); }
 
  private:
   Result CreateChannel(
@@ -109,7 +109,7 @@ void RunServerFuzzer(const fuzzer_input::Msg& msg,
 
 auto ParseTestProto(const std::string& proto) {
   fuzzer_input::Msg msg;
-  CHECK(google::protobuf::TextFormat::ParseFromString(proto, &msg));
+  GRPC_CHECK(google::protobuf::TextFormat::ParseFromString(proto, &msg));
   return msg;
 }
 
@@ -125,8 +125,8 @@ void ChaoticGood(fuzzer_input::Msg msg) {
         listener->Bind(grpc_event_engine::experimental::URIToResolvedAddress(
                            absl::StrCat("ipv4:0.0.0.0:", port_num))
                            .value());
-    CHECK_OK(port);
-    CHECK_EQ(port.value(), port_num);
+    GRPC_CHECK_OK(port);
+    GRPC_CHECK_EQ(port.value(), port_num);
     Server::FromC(server)->AddListener(
         OrphanablePtr<chaotic_good::ChaoticGoodServerListener>(listener));
   });

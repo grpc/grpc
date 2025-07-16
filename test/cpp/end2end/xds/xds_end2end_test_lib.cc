@@ -26,7 +26,6 @@
 #include <thread>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
@@ -39,6 +38,7 @@
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/server/server.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/tmpfile.h"
 #include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/xds_client/xds_channel_args.h"
@@ -155,7 +155,7 @@ XdsEnd2endTest::ServerThread::ServerThread(
 
 void XdsEnd2endTest::ServerThread::Start() {
   LOG(INFO) << "starting " << Type() << " server on port " << port_;
-  CHECK(!running_);
+  GRPC_CHECK(!running_);
   running_ = true;
   StartAllServices();
   grpc_core::Mutex mu;

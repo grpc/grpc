@@ -26,7 +26,6 @@
 #include <optional>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "src/core/call/call_spine.h"
@@ -55,6 +54,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 
@@ -84,8 +84,9 @@ void Http2ClientTransport::PerformOp(grpc_transport_op* op) {
     StopConnectivityWatch(op->stop_connectivity_watch);
     did_stuff = true;
   }
-  CHECK(!op->set_accept_stream) << "Set_accept_stream not supported on clients";
-  DCHECK(did_stuff) << "Unimplemented transport perform op ";
+  GRPC_CHECK(!op->set_accept_stream)
+      << "Set_accept_stream not supported on clients";
+  GRPC_DCHECK(did_stuff) << "Unimplemented transport perform op ";
 
   ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport PerformOp End";
@@ -715,7 +716,7 @@ Http2ClientTransport::Http2ClientTransport(
   Http2ErrorCode code = settings_.mutable_local().Apply(
       Http2Settings::kInitialWindowSizeWireId,
       (Http2Settings::max_initial_window_size() - 1));
-  DCHECK(code == Http2ErrorCode::kNoError);
+  GRPC_DCHECK(code == Http2ErrorCode::kNoError);
   std::optional<Http2SettingsFrame> settings_frame =
       settings_.MaybeSendUpdate();
   if (settings_frame.has_value()) {
@@ -845,7 +846,7 @@ void Http2ClientTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
 
 Http2ClientTransport::~Http2ClientTransport() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Destructor Begin";
-  DCHECK(stream_list_.empty());
+  GRPC_DCHECK(stream_list_.empty());
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Destructor End";
 }
 

@@ -24,7 +24,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "src/core/call/call_destination.h"
@@ -43,6 +42,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 
 namespace grpc_core {
@@ -67,8 +67,8 @@ constexpr int kMpscSize = 10;
 void Http2ServerTransport::SetCallDestination(
     RefCountedPtr<UnstartedCallDestination> call_destination) {
   // TODO(tjagtap) : [PH2][P2] : Implement this function.
-  CHECK(call_destination_ == nullptr);
-  CHECK(call_destination != nullptr);
+  GRPC_CHECK(call_destination_ == nullptr);
+  GRPC_CHECK(call_destination != nullptr);
   call_destination_ = call_destination;
   // got_acceptor_.Set(); // Copied from CG. Understand and fix.
 }

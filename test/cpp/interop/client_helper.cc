@@ -31,10 +31,10 @@
 
 #include "absl/flags/declare.h"
 #include "absl/flags/flag.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/credentials/call/oauth2/oauth2_utils.h"
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_credentials_provider.h"
@@ -68,7 +68,7 @@ std::string GetServiceAccountJsonKey() {
 std::string GetOauth2AccessToken() {
   std::shared_ptr<CallCredentials> creds = GoogleComputeEngineCredentials();
   char* token = grpc_test_fetch_oauth2_token_with_credentials(creds->c_creds_);
-  CHECK_NE(token, nullptr);
+  GRPC_CHECK_NE(token, nullptr);
   LOG(INFO) << "Get raw oauth2 access token: " << token;
   std::string access_token(token + sizeof("Bearer ") - 1);
   gpr_free(token);

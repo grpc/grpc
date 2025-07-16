@@ -28,7 +28,6 @@
 #include <utility>
 
 #include "absl/functional/bind_front.h"
-#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "src/core/config/core_configuration.h"
@@ -49,6 +48,7 @@
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/http_client/format_request.h"
 #include "src/core/util/http_client/parser.h"
 #include "src/core/util/status_helper.h"
@@ -201,7 +201,7 @@ HttpRequest::HttpRequest(
                     ContinueDoneWriteAfterScheduleOnExecCtx, this,
                     grpc_schedule_on_exec_ctx);
   if (!grpc_event_engine::experimental::UsePollsetAlternative()) {
-    CHECK(pollent);
+    GRPC_CHECK(pollent);
     grpc_polling_entity_add_to_pollset_set(pollent, pollset_set_);
   }
 }
@@ -259,7 +259,7 @@ void HttpRequest::Start() {
 void HttpRequest::Orphan() {
   {
     MutexLock lock(&mu_);
-    CHECK(!cancelled_);
+    GRPC_CHECK(!cancelled_);
     cancelled_ = true;
     // cancel potentially pending DNS resolution.
     if (use_event_engine_dns_resolver_) {

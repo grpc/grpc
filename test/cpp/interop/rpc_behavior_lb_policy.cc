@@ -20,10 +20,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/load_balancing/delegating_helper.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
 
@@ -92,7 +92,7 @@ class RpcBehaviorLbPolicy : public LoadBalancingPolicy {
             grpc_core::Json::FromArray({grpc_core::Json::FromObject(
                 {{std::string(delegate_->name()),
                   grpc_core::Json::FromObject({})}})}));
-    CHECK_OK(delegate_config);
+    GRPC_CHECK_OK(delegate_config);
     args.config = std::move(*delegate_config);
     return delegate_->UpdateLocked(std::move(args));
   }

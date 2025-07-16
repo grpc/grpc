@@ -35,7 +35,6 @@
 
 #include "absl/container/inlined_vector.h"
 #include "absl/functional/function_ref.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
@@ -73,6 +72,7 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
 #include "src/core/util/time.h"
 
@@ -284,7 +284,7 @@ auto MapResult(const NoInterceptor*, Promise x, void*) {
 template <typename Promise, typename Derived>
 auto MapResult(absl::Status (Derived::Call::*fn)(ServerMetadata&), Promise x,
                FilterCallData<Derived>* call_data) {
-  DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
+  GRPC_DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
   return OnCancel(Map(std::move(x),
                       [call_data](ServerMetadataHandle md) {
                         auto status =
@@ -305,7 +305,7 @@ auto MapResult(absl::Status (Derived::Call::*fn)(ServerMetadata&), Promise x,
 template <typename Promise, typename Derived>
 auto MapResult(void (Derived::Call::*fn)(ServerMetadata&), Promise x,
                FilterCallData<Derived>* call_data) {
-  DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
+  GRPC_DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
   return OnCancel(Map(std::move(x),
                       [call_data](ServerMetadataHandle md) {
                         call_data->call.OnServerTrailingMetadata(*md);
@@ -322,7 +322,7 @@ auto MapResult(void (Derived::Call::*fn)(ServerMetadata&), Promise x,
 template <typename Promise, typename Derived>
 auto MapResult(void (Derived::Call::*fn)(ServerMetadata&, Derived*), Promise x,
                FilterCallData<Derived>* call_data) {
-  DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
+  GRPC_DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
   return OnCancel(
       Map(std::move(x),
           [call_data](ServerMetadataHandle md) {
@@ -343,7 +343,7 @@ template <typename P, typename Call, typename Derived,
           typename = std::enable_if_t<IsFusedFilter<Derived>::value>>
 auto MapResult(void (Call::*fn)(ServerMetadata&, Derived*), P x,
                FilterCallData<Derived>* call_data) {
-  DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
+  GRPC_DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
   return OnCancel(
       Map(std::move(x),
           [call_data](ServerMetadataHandle md) {
@@ -364,7 +364,7 @@ template <typename P, typename Call, typename Derived,
           typename = std::enable_if_t<IsFusedFilter<Derived>::value>>
 auto MapResult(void (Call::*fn)(ServerMetadata&), P x,
                FilterCallData<Derived>* call_data) {
-  DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
+  GRPC_DCHECK(fn == &Derived::Call::OnServerTrailingMetadata);
   return OnCancel(Map(std::move(x),
                       [call_data](ServerMetadataHandle md) {
                         call_data->call.OnServerTrailingMetadata(*md);
@@ -549,7 +549,7 @@ template <typename Interceptor, typename Derived>
 auto RunCall(Interceptor interceptor, CallArgs call_args,
              NextPromiseFactory next_promise_factory,
              FilterCallData<Derived>* call_data) {
-  DCHECK(interceptor == &Derived::Call::OnClientInitialMetadata);
+  GRPC_DCHECK(interceptor == &Derived::Call::OnClientInitialMetadata);
   return RunCallImpl<Interceptor, Derived>::Run(
       std::move(call_args), std::move(next_promise_factory), call_data);
 }
@@ -1270,7 +1270,8 @@ class BaseCallData : public Activity, private Wakeable {
   ~BaseCallData() override;
 
   void set_pollent(grpc_polling_entity* pollent) {
-    CHECK(nullptr == pollent_.exchange(pollent, std::memory_order_release));
+    GRPC_CHECK(nullptr ==
+               pollent_.exchange(pollent, std::memory_order_release));
   }
 
   // Activity implementation (partial).
@@ -1313,7 +1314,7 @@ class BaseCallData : public Activity, private Wakeable {
     ~Flusher();
 
     void Resume(grpc_transport_stream_op_batch* batch) {
-      CHECK(!call_->is_last());
+      GRPC_CHECK(!call_->is_last());
       if (batch->HasOp()) {
         release_.push_back(batch);
       } else if (batch->on_complete != nullptr) {
@@ -1392,7 +1393,7 @@ class BaseCallData : public Activity, private Wakeable {
     PipeSender<MessageHandle>* original_sender() override { abort(); }
 
     void GotPipe(PipeReceiver<MessageHandle>* receiver) override {
-      CHECK_EQ(receiver_, nullptr);
+      GRPC_CHECK_EQ(receiver_, nullptr);
       receiver_ = receiver;
     }
 
@@ -1400,7 +1401,7 @@ class BaseCallData : public Activity, private Wakeable {
 
     PipeSender<MessageHandle>* Push() override { return &pipe_.sender; }
     PipeReceiver<MessageHandle>* Pull() override {
-      CHECK_NE(receiver_, nullptr);
+      GRPC_CHECK_NE(receiver_, nullptr);
       return receiver_;
     }
 
@@ -1421,12 +1422,12 @@ class BaseCallData : public Activity, private Wakeable {
     void GotPipe(PipeReceiver<MessageHandle>*) override { abort(); }
 
     void GotPipe(PipeSender<MessageHandle>* sender) override {
-      CHECK_EQ(sender_, nullptr);
+      GRPC_CHECK_EQ(sender_, nullptr);
       sender_ = sender;
     }
 
     PipeSender<MessageHandle>* Push() override {
-      CHECK_NE(sender_, nullptr);
+      GRPC_CHECK_NE(sender_, nullptr);
       return sender_;
     }
     PipeReceiver<MessageHandle>* Pull() override { return &pipe_.receiver; }
@@ -1941,7 +1942,7 @@ struct CallDataFilterWithFlagsMethods {
     if ((kFlags & kFilterIsLast) != 0) {
       ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, absl::OkStatus());
     } else {
-      CHECK_EQ(then_schedule_closure, nullptr);
+      GRPC_CHECK_EQ(then_schedule_closure, nullptr);
     }
   }
 };
@@ -1978,7 +1979,7 @@ template <typename F, uint8_t kFlags>
 struct ChannelFilterWithFlagsMethods {
   static absl::Status InitChannelElem(grpc_channel_element* elem,
                                       grpc_channel_element_args* args) {
-    CHECK(args->is_last == ((kFlags & kFilterIsLast) != 0));
+    GRPC_CHECK(args->is_last == ((kFlags & kFilterIsLast) != 0));
     auto status =
         F::Create(args->channel_args,
                   ChannelFilter::Args(args->channel_stack, elem,

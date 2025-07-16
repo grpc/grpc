@@ -22,7 +22,6 @@
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/core/call/metadata_batch.h"
@@ -37,6 +36,7 @@
 #include "src/core/server/server_config_selector.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_call_data.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/latent_see.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
@@ -123,7 +123,7 @@ ServerConfigSelectorFilter::ServerConfigSelectorFilter(
     RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider)
     : server_config_selector_provider_(
           std::move(server_config_selector_provider)) {
-  CHECK(server_config_selector_provider_ != nullptr);
+  GRPC_CHECK(server_config_selector_provider_ != nullptr);
   auto server_config_selector_watcher =
       std::make_unique<ServerConfigSelectorWatcher>(Ref());
   auto config_selector = server_config_selector_provider_->Watch(
