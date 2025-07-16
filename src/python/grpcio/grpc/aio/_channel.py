@@ -49,9 +49,6 @@ from ._typing import ResponseType
 from ._typing import SerializingFunction
 from ._utils import _timeout_to_deadline
 
-MetadataKey = str
-MetadataValue = Union[str, bytes]
-
 _USER_AGENT = "grpc-python-asyncio/{}".format(_grpcio_metadata.__version__)
 
 if sys.version_info[1] < 7:
