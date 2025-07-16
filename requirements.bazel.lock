@@ -93,6 +93,7 @@ typeguard==4.0.1
     # via -r requirements.bazel.txt
 typing-extensions==4.13.2
     # via
+    #   -r requirements.bazel.txt
     #   automat
     #   opentelemetry-resourcedetector-gcp
     #   opentelemetry-sdk
