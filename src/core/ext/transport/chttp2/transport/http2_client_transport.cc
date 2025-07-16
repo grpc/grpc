@@ -313,8 +313,8 @@ Http2Status Http2ClientTransport::ProcessHttp2RstStreamFrame(
   return Http2Status::Ok();
 }
 
-Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(Http2SettingsFrame >
-                                                            frame) {
+Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
+    Http2SettingsFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-settings
 
   GRPC_HTTP2_CLIENT_DLOG << "Http2Transport ProcessHttp2SettingsFrame { ack="
@@ -336,10 +336,11 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(Http2SettingsFrame >
       return HandleError(std::move(status));
     }
     frame = std::TakeValue(std::move(status));
-
+    // TODO(tjagtap) : [PH2][P1]
     // Apply the new settings
     // Quickly send the ACK to the peer once the settings are applied
   } else {
+    // TODO(tjagtap) : [PH2][P1]
     // Stop the setting timeout promise from firing
     // Updated the ACKed setting data structure
   }
