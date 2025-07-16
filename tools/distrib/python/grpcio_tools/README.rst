@@ -3,10 +3,14 @@ gRPC Python Tools
 
 Package for gRPC Python tools.
 
+Supported Python Versions
+-------------------------
+Python >= 3.6
+
 Installation
 ------------
 
-The gRPC Python tools package is available for Linux, macOS, and Windows.
+The gRPC Python tools package is available for Linux, Mac OS X, and Windows.
 
 Installing From PyPI
 ~~~~~~~~~~~~~~~~~~~~
@@ -33,7 +37,7 @@ when you installed Python (if not go back and install it!) then invoke:
 Windows users may need to invoke :code:`pip.exe` from a command line ran as
 administrator.
 
-n.b. On Windows and on macOS one *must* have a recent release of :code:`pip`
+n.b. On Windows and on Mac OS X one *must* have a recent release of :code:`pip`
 to retrieve the proper wheel from PyPI. Be sure to upgrade to the latest
 version!
 
