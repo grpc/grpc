@@ -43,18 +43,23 @@ namespace grpc_core {
   "|CoreEnd2endTests.BinaryMetadataServerHttp2FallbackClientTrueBinary"    \
   "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientHttp2Fallback"    \
   "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientTrueBinary"       \
+  "|CoreEnd2endTests.CancelAfterInvoke3"                                   \
+  "|CoreEnd2endTests.CancelAfterInvoke4"                                   \
+  "|CoreEnd2endTests.CancelAfterInvoke5"                                   \
+  "|CoreEnd2endTests.CancelAfterInvoke6"                                   \
+  "|CoreEnd2endTests.DeadlineAfterInvoke3"                                 \
+  "|CoreEnd2endTests.DeadlineAfterInvoke4"                                 \
+  "|CoreEnd2endTests.DeadlineAfterInvoke5"                                 \
+  "|CoreEnd2endTests.DeadlineAfterInvoke6"                                 \
+  "|CoreEnd2endTests.CancelWithStatus1"                                    \
+  "|CoreEnd2endTests.CancelWithStatus2"                                    \
   "|CoreEnd2endTests.CancelWithStatus3"                                    \
+  "|CoreEnd2endTests.CancelWithStatus4"                                    \
   "|CoreEnd2endTests.MaxMessageLengthOnClientOnResponseViaChannelArg"      \
   "|CoreEnd2endTests."                                                     \
   "MaxMessageLengthOnClientOnResponseViaServiceConfigWithIntegerJsonValue" \
   "|CoreEnd2endTests."                                                     \
   "MaxMessageLengthOnClientOnResponseViaServiceConfigWithStringJsonValue"  \
-  "|CoreEnd2endTests.PingPongStreaming1"                                   \
-  "|CoreEnd2endTests.PingPongStreaming10"                                  \
-  "|CoreEnd2endTests.PingPongStreaming10"                                  \
-  "|CoreEnd2endTests.PingPongStreaming3"                                   \
-  "|CoreEnd2endTests.PingPongStreaming3"                                   \
-  "|CoreEnd2endTests.PingPongStreaming30"                                  \
   "|CoreEnd2endTests.SimpleMetadata"                                       \
   "|CoreEnd2endTests.StreamingErrorResponse"                               \
   "|CoreEnd2endTests.StreamingErrorResponse"                               \

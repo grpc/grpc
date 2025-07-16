@@ -290,19 +290,18 @@ TEST(PropertyListTest, DurationNotFound) {
   EXPECT_EQ(val, nullptr);
 }
 
-void Fuzz(const grpc::channelz::v2::PropertyList& pl_msg) {
+void Fuzz(const grpc::channelz::v2::PropertyList& pl_msg,
+          std::string property_name) {
   upb::Arena arena;
   std::string serialized = pl_msg.SerializeAsString();
   const auto* pl = grpc_channelz_v2_PropertyList_parse(
       serialized.data(), serialized.size(), arena.ptr());
   if (pl == nullptr) return;
-  for (const auto& prop : pl_msg.properties()) {
-    Int64FromPropertyList(pl, prop.first);
-    StringFromPropertyList(pl, prop.first);
-    TimestampFromPropertyList(pl, prop.first);
-    PropertyListFromPropertyList(pl, prop.first, arena.ptr());
-    DurationFromPropertyList(pl, prop.first);
-  }
+  Int64FromPropertyList(pl, property_name);
+  StringFromPropertyList(pl, property_name);
+  TimestampFromPropertyList(pl, property_name);
+  PropertyListFromPropertyList(pl, property_name, arena.ptr());
+  DurationFromPropertyList(pl, property_name);
 }
 FUZZ_TEST(PropertyListTest, Fuzz);
 

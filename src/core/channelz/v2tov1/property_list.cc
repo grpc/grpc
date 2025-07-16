@@ -34,14 +34,14 @@ namespace {
 
 const grpc_channelz_v2_PropertyValue* FindProperty(
     const grpc_channelz_v2_PropertyList* pl, absl::string_view name) {
-  if (pl == nullptr) return nullptr;
-  size_t iter = kUpb_Map_Begin;
-  upb_StringView key;
-  const grpc_channelz_v2_PropertyValue* value;
-  while (
-      grpc_channelz_v2_PropertyList_properties_next(pl, &key, &value, &iter)) {
-    if (absl::string_view(key.data, key.size) == name) {
-      return value;
+  size_t size;
+  const grpc_channelz_v2_PropertyList_Element* const* elements =
+      grpc_channelz_v2_PropertyList_properties(pl, &size);
+  for (size_t i = 0; i < size; i++) {
+    const grpc_channelz_v2_PropertyList_Element* element = elements[i];
+    upb_StringView label = grpc_channelz_v2_PropertyList_Element_key(element);
+    if (absl::string_view(label.data, label.size) == name) {
+      return grpc_channelz_v2_PropertyList_Element_value(element);
     }
   }
   return nullptr;

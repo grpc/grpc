@@ -59,7 +59,7 @@ grpc_fuzz_test(
         "//:grpc",
         "//src/core:channelz_v2tov1_convert",
         "//src/core:json_reader",
-        "//src/proto/grpc/channelz:channelz_proto",
+        "//src/proto/grpc/channelz:channelz_cc_proto",
         "//src/proto/grpc/channelz/v2:channelz_cc_proto",
         "//src/proto/grpc/channelz/v2:property_list_cc_proto",
         "//test/core/test_util:grpc_test_util",

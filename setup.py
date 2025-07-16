@@ -57,6 +57,8 @@ CARES_INCLUDE = (
     os.path.join("third_party", "cares", "cares", "include"),
     os.path.join("third_party", "cares"),
     os.path.join("third_party", "cares", "cares"),
+    os.path.join("third_party", "cares", "cares", "src", "lib", "include"),
+    os.path.join("third_party", "cares", "cares", "src", "lib"),
 )
 if "darwin" in sys.platform:
     CARES_INCLUDE += (os.path.join("third_party", "cares", "config_darwin"),)
@@ -540,7 +542,7 @@ PACKAGE_DIRECTORIES = {
     "": PYTHON_STEM,
 }
 
-INSTALL_REQUIRES = ()
+INSTALL_REQUIRES = ("typing-extensions~=4.13",)
 
 EXTRAS_REQUIRES = {
     "protobuf": "grpcio-tools>={version}".format(version=grpc_version.VERSION),
