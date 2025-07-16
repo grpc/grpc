@@ -123,7 +123,9 @@ class _BaseMultiCallable:
         metadata, as it should be used for the current call.
         """
         metadata = metadata or Metadata()
-        if not isinstance(metadata, Metadata) and isinstance(metadata, (tuple, list)):
+        if not isinstance(metadata, Metadata) and isinstance(
+            metadata, (tuple, list)
+        ):
             metadata = Metadata.from_tuple(tuple(metadata))
         if compression:
             metadata = Metadata(

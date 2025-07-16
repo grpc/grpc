@@ -270,7 +270,8 @@ class Call:
         code = await self.code()
         if code != grpc.StatusCode.OK:
             raise _create_rpc_error(
-                await self._cython_call.initial_metadata(), await self._cython_call.status()
+                await self._cython_call.initial_metadata(),
+                await self._cython_call.status(),
             )
 
     def _repr(self) -> str:
