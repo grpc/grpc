@@ -15,7 +15,7 @@
 
 import asyncio
 import sys
-from typing import Any, Iterable, List, Optional, Sequence, Union
+from typing import Any, Iterable, List, Optional, Sequence
 
 import grpc
 from grpc import _common
