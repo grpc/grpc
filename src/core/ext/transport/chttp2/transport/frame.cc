@@ -38,8 +38,6 @@ using grpc_core::http2::ValueOrHttp2Status;
 
 namespace grpc_core {
 
-namespace {
-
 ///////////////////////////////////////////////////////////////////////////////
 // Settings Frame Validations
 
@@ -84,6 +82,8 @@ Http2Status ValidateSettingsValues(
   DVLOG(2) << "Http2Transport ValidateSettingsValues Valid";
   return Http2Status::Ok();
 }
+
+namespace {
 
 ///////////////////////////////////////////////////////////////////////////////
 // HTTP2 Framing Code
