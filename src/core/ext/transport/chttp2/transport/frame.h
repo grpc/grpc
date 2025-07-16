@@ -257,6 +257,14 @@ GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload);
 void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, const uint8_t flags,
                                    const uint32_t length);
 
+///////////////////////////////////////////////////////////////////////////////
+// Settings Frame Validations
+http2::ValueOrHttp2Status<Http2SettingsFrame> ValidateSettingsValues(
+    Http2SettingsFrame&& frame);
+
+///////////////////////////////////////////////////////////////////////////////
+// RFC9113 Related Strings and Consts
+
 namespace RFC9113 {
 // RFC9113: 5.1.1.
 inline constexpr absl::string_view kStreamIdMustBeOdd =

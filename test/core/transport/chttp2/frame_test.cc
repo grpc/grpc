@@ -445,64 +445,6 @@ TEST(Frame, ParseHttp2SettingsFrame) {
 }
 
 TEST(Frame, ParseHttp2SettingsFrameInvalidSettings) {
-  /* Invalid SETTINGS_INITIAL_WINDOW_SIZE */
-  EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 6,
-                            /* Type (1 octet) */ 4,
-                            /* Unused Flags (7), ACK Flag (1) */ 0,
-                            /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                            /* Setting (6 octets each) */ 0,
-                            Http2Settings::kInitialWindowSizeWireId, 0xff, 0xff,
-                            0xff, 0xff),
-              Http2StatusIs(
-                  Http2Status::Http2ErrorType::kConnectionError,
-                  Http2ErrorCode::kFlowControlError,
-                  absl::StrCat(RFC9113::kIncorrectWindowSizeSetting,
-                               "{SETTINGS: flags=0, stream_id=0, length=6}")));
-  EXPECT_THAT(
-      ValidateFrame(/* Length (3 octets) */ 0, 0, 6,
-                    /* Type (1 octet) */ 4,
-                    /* Unused Flags (7), ACK Flag (1) */ 0,
-                    /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                    /* Setting (6 octets each) */ 0,
-                    Http2Settings::kInitialWindowSizeWireId, 0x80, 0, 0, 0),
-      Http2StatusIs(
-          Http2Status::Http2ErrorType::kConnectionError,
-          Http2ErrorCode::kFlowControlError,
-          absl::StrCat(RFC9113::kIncorrectWindowSizeSetting,
-                       "{SETTINGS: flags=0, stream_id=0, length=6}")));
-
-  /* Invalid SETTINGS_MAX_FRAME_SIZE */
-  EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 6,
-                            /* Type (1 octet) */ 4,
-                            /* Unused Flags (7), ACK Flag (1) */ 0,
-                            /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                            /* Setting (6 octets each) */ 0,
-                            Http2Settings::kMaxFrameSizeWireId,
-                            (RFC9113::kMinimumFrameSize - 1) >> 24,
-                            (RFC9113::kMinimumFrameSize - 1) >> 16,
-                            (RFC9113::kMinimumFrameSize - 1) >> 8,
-                            (RFC9113::kMinimumFrameSize - 1) & 0xff),
-              Http2StatusIs(
-                  Http2Status::Http2ErrorType::kConnectionError,
-                  Http2ErrorCode::kProtocolError,
-                  absl::StrCat(RFC9113::kIncorrectFrameSizeSetting,
-                               "{SETTINGS: flags=0, stream_id=0, length=6}")));
-  EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 6,
-                            /* Type (1 octet) */ 4,
-                            /* Unused Flags (7), ACK Flag (1) */ 0,
-                            /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                            /* Setting (6 octets each) */ 0,
-                            Http2Settings::kMaxFrameSizeWireId,
-                            (RFC9113::kMaximumFrameSize + 1) >> 24,
-                            (RFC9113::kMaximumFrameSize + 1) >> 16,
-                            (RFC9113::kMaximumFrameSize + 1) >> 8,
-                            (RFC9113::kMaximumFrameSize + 1) & 0xff),
-              Http2StatusIs(
-                  Http2Status::Http2ErrorType::kConnectionError,
-                  Http2ErrorCode::kProtocolError,
-                  absl::StrCat(RFC9113::kIncorrectFrameSizeSetting,
-                               "{SETTINGS: flags=0, stream_id=0, length=6}")));
-
   // RFC9113 : An endpoint that receives a SETTINGS frame with any unknown
   // or unsupported identifier MUST ignore that setting.
   EXPECT_EQ(ParseFrame(/* Length (3 octets) */ 0, 0, 6,

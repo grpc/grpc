@@ -29,6 +29,9 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/crash.h"
 
+// TODO(tjagtap) TODO(akshitpatel): [PH2][P3] : Write micro benchmarks for
+// framing code
+
 using grpc_core::http2::Http2ErrorCode;
 using grpc_core::http2::Http2Status;
 using grpc_core::http2::ValueOrHttp2Status;
@@ -37,8 +40,54 @@ namespace grpc_core {
 
 namespace {
 
-// TODO(tjagtap) TODO(akshitpatel): [PH2][P3] : Write micro benchmarks for
-// framing code
+///////////////////////////////////////////////////////////////////////////////
+// Settings Frame Validations
+
+bool IsKnownSetting(const uint16_t setting_id) {
+  // RFC9113 : An endpoint that receives a SETTINGS frame with any unknown
+  // or unsupported identifier MUST ignore that setting.
+  DVLOG(2) << "ParseSettingsFrame Discarding unknown setting " << setting_id;
+  return setting_id < Http2Settings::kHeaderTableSizeWireId ||
+         setting_id > Http2Settings::kGrpcAllowSecurityFrameWireId ||
+         (setting_id > Http2Settings::kMaxHeaderListSizeWireId &&
+          setting_id < Http2Settings::kGrpcAllowTrueBinaryMetadataWireId);
+}
+
+ValueOrHttp2Status<Http2SettingsFrame> ValidateSettingsValues(
+    Http2SettingsFrame&& frame) {
+  for (const auto& setting : frame.settings) {
+    if (GPR_UNLIKELY(setting.id == Http2Settings::kInitialWindowSizeWireId &&
+                     setting.value > RFC9113::kMaxSize31Bit)) {
+      LOG(ERROR)
+          << "Http2Transport ValidateSettingsValues Invalid "
+             "Setting:{setting.id:kInitialWindowSizeWireId, setting.value"
+          << setting.value;
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kFlowControlError,
+          absl::StrCat(RFC9113::kIncorrectWindowSizeSetting,
+                       "Invalid Setting:{setting.id:kInitialWindowSizeWireId, "
+                       "setting.value",
+                       setting.value));
+    } else if (GPR_UNLIKELY(setting.id == Http2Settings::kMaxFrameSizeWireId &&
+                            (setting.value < RFC9113::kMinimumFrameSize ||
+                             setting.value > RFC9113::kMaximumFrameSize))) {
+      LOG(ERROR) << "Http2Transport ValidateSettingsValues Invalid "
+                    "Setting:{setting.id:kMaxFrameSizeWireId, setting.value"
+                 << setting.value;
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(
+              RFC9113::kIncorrectFrameSizeSetting,
+              "Invalid Setting:{setting.id:kMaxFrameSizeWireId, setting.value",
+              setting.value));
+    }
+  }
+  DVLOG(2) << "Http2Transport ValidateSettingsValues Valid";
+  return std::move(frame);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// HTTP2 Framing Code
 
 // HTTP2 Frame Types
 enum class FrameType : uint8_t {
@@ -459,16 +508,7 @@ ValueOrHttp2Status<Http2Frame> ParseSettingsFrame(const Http2FrameHeader& hdr,
       return Http2Status::Http2ConnectionError(
           Http2ErrorCode::kProtocolError,
           absl::StrCat(RFC9113::kIncorrectFrameSizeSetting, hdr.ToString()));
-    } else if (GPR_UNLIKELY(
-                   setting_id < Http2Settings::kHeaderTableSizeWireId ||
-                   setting_id > Http2Settings::kGrpcAllowSecurityFrameWireId ||
-                   (setting_id > Http2Settings::kMaxHeaderListSizeWireId &&
-                    setting_id <
-                        Http2Settings::kGrpcAllowTrueBinaryMetadataWireId))) {
-      // RFC9113 : An endpoint that receives a SETTINGS frame with any unknown
-      // or unsupported identifier MUST ignore that setting.
-      DVLOG(2) << "ParseSettingsFrame Discarding unknown setting " << setting_id
-               << " " << setting_value;
+    } else if (GPR_UNLIKELY(IsKnownSetting(setting_id))) {
       continue;
     }
     frame.settings.push_back({
@@ -669,6 +709,9 @@ http2::Http2ErrorCode Http2ErrorCodeFromRstFrameErrorCode(uint32_t error_code) {
   return static_cast<http2::Http2ErrorCode>(error_code);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// GRPC Header
+
 GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload) {
   CHECK_GE(payload.Length(), kGrpcHeaderSizeInBytes);
   uint8_t buffer[kGrpcHeaderSizeInBytes];
@@ -684,6 +727,34 @@ void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, const uint8_t flags,
   uint8_t* frame_hdr = payload.AddTiny(kGrpcHeaderSizeInBytes);
   frame_hdr[0] = flags;
   Write4b(length, frame_hdr + 1);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Stream State and Frame Validatrors
+
+bool IsFrameValidForIdleStreamState(const uint8_t frame_type) {
+  // TODO(tjagtap) : [PH2][P1] : Add state and frame type validators here
+  return true;
+}
+
+bool IsFrameValidForOpenStreamState(const uint8_t frame_type) {
+  // TODO(tjagtap) : [PH2][P1] : Add state and frame type validators here
+  return true;
+}
+
+bool IsFrameValidForHalfCloseLocalStreamState(const uint8_t frame_type) {
+  // TODO(tjagtap) : [PH2][P1] : Add state and frame type validators here
+  return true;
+}
+
+bool IsFrameValidForHalfCloseRemoteStreamState(const uint8_t frame_type) {
+  // TODO(tjagtap) : [PH2][P1] : Add state and frame type validators here
+  return true;
+}
+
+bool IsFrameValidForClosedStreamState(const uint8_t frame_type) {
+  // TODO(tjagtap) : [PH2][P1] : Add state and frame type validators here
+  return true;
 }
 
 }  // namespace grpc_core
