@@ -6835,6 +6835,7 @@ grpc_cc_library(
         "channel_args",
         "delegating_helper",
         "down_cast",
+        "experiments",
         "grpc_lb_policy_pick_first",
         "json",
         "lb_policy",

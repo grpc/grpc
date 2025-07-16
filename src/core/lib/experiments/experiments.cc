@@ -140,6 +140,11 @@ const char* const description_promise_based_inproc_transport =
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
+const char* const description_rr_wrr_connect_from_random_index =
+    "RR and WRR LB policies start connecting from a random index in the "
+    "address list.";
+const char* const additional_constraints_rr_wrr_connect_from_random_index =
+    "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -276,6 +281,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
+    {"rr_wrr_connect_from_random_index",
+     description_rr_wrr_connect_from_random_index,
+     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, false,
+     true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -434,6 +443,11 @@ const char* const description_promise_based_inproc_transport =
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
+const char* const description_rr_wrr_connect_from_random_index =
+    "RR and WRR LB policies start connecting from a random index in the "
+    "address list.";
+const char* const additional_constraints_rr_wrr_connect_from_random_index =
+    "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -570,6 +584,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
+    {"rr_wrr_connect_from_random_index",
+     description_rr_wrr_connect_from_random_index,
+     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, false,
+     true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -728,6 +746,11 @@ const char* const description_promise_based_inproc_transport =
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
+const char* const description_rr_wrr_connect_from_random_index =
+    "RR and WRR LB policies start connecting from a random index in the "
+    "address list.";
+const char* const additional_constraints_rr_wrr_connect_from_random_index =
+    "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -864,6 +887,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
+    {"rr_wrr_connect_from_random_index",
+     description_rr_wrr_connect_from_random_index,
+     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, false,
+     true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,

@@ -33,6 +33,7 @@
 #include "absl/status/statusor.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/load_balancing/delegating_helper.h"
 #include "src/core/load_balancing/lb_policy.h"
@@ -170,6 +171,13 @@ void EndpointList::Init(
                                               const ChannelArgs&)>
         create_endpoint) {
   if (endpoints == nullptr) return;
+  if (!IsRrWrrConnectFromRandomIndexEnabled()) {
+    endpoints->ForEach([&](const EndpointAddresses& endpoint) {
+      endpoints_.push_back(
+          create_endpoint(Ref(DEBUG_LOCATION, "Endpoint"), endpoint, args));
+    });
+    return;
+  }
   // If all clients get the same endpoint list in the same order, and they
   // all start connection attempts in that order, and all connection attempts
   // take approximately the same amount of time, then all clients are
