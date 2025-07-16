@@ -214,11 +214,11 @@ def grpc_deps():
     if "envoy_api" not in native.existing_rules():
         http_archive(
             name = "envoy_api",
-            sha256 = "cd8b49614408b43bd45d90e3e98d69e24eea632ff42ac3bfb8bca68bc31e377f",
-            strip_prefix = "data-plane-api-4de3c74cf21a9958c1cf26d8993c55c6e0d28b49",
+            sha256 = "a9f1eb76c8e8153ec81ce04403c8829b42786060b7bb1dcc91b597220b71eaf6",
+            strip_prefix = "data-plane-api-d9c5e84658eef279e9a021ff0517f8f8ee35d79a",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/4de3c74cf21a9958c1cf26d8993c55c6e0d28b49.tar.gz",
-                "https://github.com/envoyproxy/data-plane-api/archive/4de3c74cf21a9958c1cf26d8993c55c6e0d28b49.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/d9c5e84658eef279e9a021ff0517f8f8ee35d79a.tar.gz",
+                "https://github.com/envoyproxy/data-plane-api/archive/d9c5e84658eef279e9a021ff0517f8f8ee35d79a.tar.gz",
             ],
         )
 
@@ -351,11 +351,22 @@ def grpc_deps():
     if "com_github_cncf_xds" not in native.existing_rules():
         http_archive(
             name = "com_github_cncf_xds",
-            sha256 = "dc305e20c9fa80822322271b50aa2ffa917bf4fd3973bcec52bfc28dc32c5927",
-            strip_prefix = "xds-3a472e524827f72d1ad621c4983dd5af54c46776",
+            sha256 = "790c4c83b6950bb602fec221f6a529d9f368cdc8852aae7d2592d0d04b015f37",
+            strip_prefix = "xds-2ac532fd44436293585084f8d94c6bdb17835af0",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/3a472e524827f72d1ad621c4983dd5af54c46776.tar.gz",
-                "https://github.com/cncf/xds/archive/3a472e524827f72d1ad621c4983dd5af54c46776.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/2ac532fd44436293585084f8d94c6bdb17835af0.tar.gz",
+                "https://github.com/cncf/xds/archive/2ac532fd44436293585084f8d94c6bdb17835af0.tar.gz",
+            ],
+        )
+
+    if "com_github_google_cel_spec" not in native.existing_rules():
+        http_archive(
+            name = "com_github_google_cel_spec",
+            sha256 = "5cba6b0029e727d1f4d8fd134de4e747cecc0bc293d026017d7edc48058d09f7",
+            strip_prefix = "cel-spec-0.24.0",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/cel-spec/archive/refs/tags/v0.24.0.tar.gz",
+                "https://github.com/google/cel-spec/archive/refs/tags/v0.24.0.tar.gz",
             ],
         )
 
