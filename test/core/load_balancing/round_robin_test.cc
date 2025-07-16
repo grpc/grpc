@@ -144,95 +144,39 @@ TEST_F(RoundRobinTest, MultipleAddressesPerEndpoint) {
 }
 
 TEST_F(RoundRobinTest, StartsConnectingFromRandomIndex) {
-  const std::array<absl::string_view, 3> kAddresses0 = {
+  const std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
-  const std::array<absl::string_view, 3> kAddresses1 = {
-      "ipv4:127.0.0.2:441", "ipv4:127.0.0.2:442", "ipv4:127.0.0.2:443"};
-  const std::array<absl::string_view, 3> kAddresses2 = {
-      "ipv4:127.0.0.3:441", "ipv4:127.0.0.3:442", "ipv4:127.0.0.3:443"};
-  std::vector<absl::string_view> addresses;
+  std::vector<absl::string_view> connect_order;
   request_connection_callback_ = [&](absl::string_view address) {
-    addresses.push_back(address);
+    connect_order.push_back(address);
   };
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses0, nullptr), lb_policy()),
-            absl::OkStatus());
-  ExpectRoundRobinStartup(kAddresses0);
-  ASSERT_FALSE(addresses.empty());
-  bool started_on_index_other_than_0 = false;
-  if (addresses[0] == kAddresses0[0]) {
-    EXPECT_THAT(addresses, ::testing::ElementsAreArray(kAddresses0));
-  } else {
-    started_on_index_other_than_0 = true;
-    EXPECT_THAT(
-        addresses,
-        ::testing::AnyOf(
-            ::testing::ElementsAre(kAddresses0[1], kAddresses0[2],
-                                   kAddresses0[0]),
-            ::testing::ElementsAre(kAddresses0[2], kAddresses0[0],
-                                   kAddresses0[1])));
+  // On each address list update, we choose a random index to start
+  // connecting from rather than using index 0.  However, the random
+  // index might happen to be 0 on any given attempt.  We try 10 times
+  // to get one that is non-zero.
+  // Note that we send the same address list on every update.  But since
+  // we never told the subchannels to actually change their state when
+  // they were asked to connect, they will continue to report IDLE, so
+  // each successive update will re-request connection attempts.
+  for (size_t i = 0; i < 10; ++i) {
+    connect_order.clear();
+    EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses, nullptr), lb_policy()),
+              absl::OkStatus());
+    ASSERT_FALSE(connect_order.empty());
+    if (connect_order[0] != kAddresses[0]) {
+      EXPECT_THAT(
+          connect_order,
+          ::testing::AnyOf(
+              ::testing::ElementsAre(kAddresses[1], kAddresses[2],
+                                     kAddresses[0]),
+              ::testing::ElementsAre(kAddresses[2], kAddresses[0],
+                                     kAddresses[1])));
+      // We started on an index other than 0, so we're done.
+      return;
+    }
+    EXPECT_THAT(connect_order, ::testing::ElementsAreArray(kAddresses));
   }
-  addresses.clear();
-  // Send update to second address list.
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses1, nullptr), lb_policy()),
-            absl::OkStatus());
-  if (addresses[0] == kAddresses1[0]) {
-    EXPECT_THAT(addresses, ::testing::ElementsAreArray(kAddresses1));
-  } else {
-    started_on_index_other_than_0 = true;
-    EXPECT_THAT(
-        addresses,
-        ::testing::AnyOf(
-            ::testing::ElementsAre(kAddresses1[1], kAddresses1[2],
-                                   kAddresses1[0]),
-            ::testing::ElementsAre(kAddresses1[2], kAddresses1[0],
-                                   kAddresses1[1])));
-  }
-  for (absl::string_view address : kAddresses1) {
-    auto* subchannel = FindSubchannel(address);
-    ASSERT_NE(subchannel, nullptr);
-    EXPECT_TRUE(subchannel->ConnectionRequested());
-    subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-  }
-  for (size_t i = 0; i < kAddresses1.size(); ++i) {
-    auto* subchannel = FindSubchannel(kAddresses1[i]);
-    ASSERT_NE(subchannel, nullptr);
-    subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
-    auto picker = ExpectState(GRPC_CHANNEL_READY);
-    ExpectRoundRobinPicks(picker.get(),
-                          absl::MakeSpan(kAddresses1).subspan(0, i + 1));
-  }
-  addresses.clear();
-  // Send update to third address list.
-  EXPECT_EQ(ApplyUpdate(BuildUpdate(kAddresses2, nullptr), lb_policy()),
-            absl::OkStatus());
-  if (addresses[0] == kAddresses2[0]) {
-    EXPECT_THAT(addresses, ::testing::ElementsAreArray(kAddresses1));
-  } else {
-    started_on_index_other_than_0 = true;
-    EXPECT_THAT(
-        addresses,
-        ::testing::AnyOf(
-            ::testing::ElementsAre(kAddresses2[1], kAddresses2[2],
-                                   kAddresses2[0]),
-            ::testing::ElementsAre(kAddresses2[2], kAddresses2[0],
-                                   kAddresses2[1])));
-  }
-  for (absl::string_view address : kAddresses2) {
-    auto* subchannel = FindSubchannel(address);
-    ASSERT_NE(subchannel, nullptr);
-    EXPECT_TRUE(subchannel->ConnectionRequested());
-    subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
-  }
-  for (size_t i = 0; i < kAddresses2.size(); ++i) {
-    auto* subchannel = FindSubchannel(kAddresses2[i]);
-    ASSERT_NE(subchannel, nullptr);
-    subchannel->SetConnectivityState(GRPC_CHANNEL_READY);
-    auto picker = ExpectState(GRPC_CHANNEL_READY);
-    ExpectRoundRobinPicks(picker.get(),
-                          absl::MakeSpan(kAddresses2).subspan(0, i + 1));
-  }
-  // At least one of them should have started from an index other than 0.
-  EXPECT_TRUE(started_on_index_other_than_0);
+  FAIL() << "all attempts started connecting at index 0";
 }
 
 // TODO(roth): Add test cases:
