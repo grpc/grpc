@@ -211,6 +211,9 @@ libs:
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
+  - src/core/channelz/v2tov1/convert.h
+  - src/core/channelz/v2tov1/legacy_api.h
+  - src/core/channelz/v2tov1/property_list.h
   - src/core/channelz/ztrace_collector.h
   - src/core/client_channel/backup_poller.h
   - src/core/client_channel/client_channel.h
@@ -608,6 +611,8 @@ libs:
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
@@ -815,6 +820,7 @@ libs:
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h
   - src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.h
@@ -1148,6 +1154,7 @@ libs:
   - src/core/server/xds_channel_stack_modifier.h
   - src/core/service_config/service_config.h
   - src/core/service_config/service_config_call_data.h
+  - src/core/service_config/service_config_channel_arg_filter.h
   - src/core/service_config/service_config_impl.h
   - src/core/service_config/service_config_parser.h
   - src/core/telemetry/call_tracer.h
@@ -1319,6 +1326,9 @@ libs:
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
+  - src/core/channelz/v2tov1/convert.cc
+  - src/core/channelz/v2tov1/legacy_api.cc
+  - src/core/channelz/v2tov1/property_list.cc
   - src/core/client_channel/backup_poller.cc
   - src/core/client_channel/client_channel.cc
   - src/core/client_channel/client_channel_factory.cc
@@ -1585,6 +1595,7 @@ libs:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
@@ -1750,6 +1761,7 @@ libs:
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c
   - src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c
@@ -2795,6 +2807,7 @@ libs:
   - src/core/server/server_interface.h
   - src/core/service_config/service_config.h
   - src/core/service_config/service_config_call_data.h
+  - src/core/service_config/service_config_channel_arg_filter.h
   - src/core/service_config/service_config_impl.h
   - src/core/service_config/service_config_parser.h
   - src/core/telemetry/call_tracer.h
@@ -18488,6 +18501,24 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
+- name: stream_data_queue_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/transport/chttp2/transport/stream_data_queue.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/transport/util/transport_test.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/transport/chttp2/stream_data_queue_test.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
 - name: stream_leak_with_queued_flow_control_update_test
   gtest: true
   build: test
