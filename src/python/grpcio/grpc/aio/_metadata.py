@@ -184,5 +184,5 @@ class MetadataValidator:
             if cls.is_valid_sequence_of_metadatum_type(metadata):
                 return Metadata.from_tuple(tuple(metadata))
             else:
-                return Metadata()
+                raise TypeError(f"Invalid metadata format: {metadata!r}")
         return metadata
