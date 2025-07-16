@@ -4683,12 +4683,10 @@ grpc_cc_library(
     hdrs = [
         "//src/core:ext/transport/chttp2/transport/bin_encoder.h",
     ],
-    external_deps = [
-        "absl/log:check",
-    ],
     deps = [
         "gpr",
         "gpr_platform",
+        "//src/core:grpc_check",
         "//src/core:huffsyms",
         "//src/core:slice",
     ],

@@ -7114,10 +7114,12 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:any_invocable",
-        "absl/log:check",
         "absl/types:span",
     ],
-    deps = ["//:gpr"],
+    deps = [
+        "grpc_check",
+        "//:gpr",
+    ],
 )
 
 grpc_cc_library(
@@ -9857,8 +9859,8 @@ grpc_cc_library(
         "call_filters",
         "call_final_info",
         "channel_args",
-        "grpc_check",
         "gpr_manual_constructor",
+        "grpc_check",
         "metadata",
         "status_helper",
         "type_list",
