@@ -451,7 +451,7 @@ TEST(Frame, ParseHttp2SettingsFrameInvalidSettings) {
                        /* Type (1 octet) */ 4,
                        /* Unused Flags (7), ACK Flag (1) */ 0,
                        /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                       /* Setting (6 octets each) */ 0,
+                       /* Setting (6 octets each) */ /* Unknown Setting */ 0,
                        (Http2Settings::kHeaderTableSizeWireId - 1), 0, 0, 0, 0),
             Http2Frame(Http2SettingsFrame{}));
 
@@ -460,8 +460,8 @@ TEST(Frame, ParseHttp2SettingsFrameInvalidSettings) {
                  /* Type (1 octet) */ 4,
                  /* Unused Flags (7), ACK Flag (1) */ 0,
                  /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                 /* Setting (6 octets each) */
-                 (Http2Settings::kGrpcAllowSecurityFrameWireId + 1) >> 8,
+                 /* Setting (6 octets each) */ /* Unknown Setting */
+                     (Http2Settings::kGrpcAllowSecurityFrameWireId + 1) >> 8,
                  (Http2Settings::kGrpcAllowSecurityFrameWireId + 1) & 0xff, 0,
                  0, 0, 0),
       Http2Frame(Http2SettingsFrame{}));
@@ -471,7 +471,7 @@ TEST(Frame, ParseHttp2SettingsFrameInvalidSettings) {
                  /* Type (1 octet) */ 4,
                  /* Unused Flags (7), ACK Flag (1) */ 0,
                  /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                 /* Setting (6 octets each) */ 0,
+                 /* Setting (6 octets each) */ /* Unknown Setting */ 0,
                  (Http2Settings::kMaxHeaderListSizeWireId + 1), 0, 0, 0, 0),
       Http2Frame(Http2SettingsFrame{}));
 
@@ -480,11 +480,26 @@ TEST(Frame, ParseHttp2SettingsFrameInvalidSettings) {
                  /* Type (1 octet) */ 4,
                  /* Unused Flags (7), ACK Flag (1) */ 0,
                  /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                 /* Setting (6 octets each) */
-                 (Http2Settings::kGrpcAllowTrueBinaryMetadataWireId - 1) >> 8,
+                 /* Setting (6 octets each) */ /* Unknown Setting */
+                     (Http2Settings::kGrpcAllowTrueBinaryMetadataWireId - 1) >>
+                     8,
                  (Http2Settings::kGrpcAllowTrueBinaryMetadataWireId - 1) & 0xff,
                  0, 0, 0, 0),
       Http2Frame(Http2SettingsFrame{}));
+
+  // One Valid and one Unknown Setting
+  EXPECT_EQ(ParseFrame(/* Length (3 octets) */ 0, 0, 12,
+                       /* Type (1 octet) */ 4,
+                       /* Unused Flags (7), ACK Flag (1) */ 0,
+                       /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                       /* Setting (6 octets each) */ /* Valid Setting */
+                       0xFE, 0x04, 0x9a, 0xbc, 0xde, 0xf0,
+                       /* Setting (6 octets each) */ /* Unknown Setting */ 0,
+                       (Http2Settings::kHeaderTableSizeWireId - 1), 0, 0, 0, 0),
+            Http2Frame(Http2SettingsFrame{
+                false,
+                {{/*kGrpcPreferredReceiveCryptoFrameSizeWireId*/ 0xFE04,
+                  0x9abcdef0}}}));
 }
 
 TEST(Frame, ParseHttp2PingFrame) {
