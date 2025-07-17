@@ -52,6 +52,7 @@ absl::Status ValidateRootCertificates(const RootCertInfo* root_cert_info) {
   return Match(
       *root_cert_info,
       [&](const std::string& root_certificates) {
+        if (root_certificates.empty()) return absl::OkStatus();
         absl::StatusOr<std::vector<X509*>> parsed_roots =
             ParsePemCertificateChain(root_certificates);
         if (!parsed_roots.ok()) {
