@@ -44,9 +44,6 @@ class Metadata(abc.Collection):
             return cls(*raw_metadata)
         return cls()
 
-    def to_tuple(self) -> tuple:
-        return tuple(self._metadata.items())
-
     def add(self, key: MetadataKey, value: MetadataValue) -> None:
         self._metadata.setdefault(key, [])
         self._metadata[key].append(value)
