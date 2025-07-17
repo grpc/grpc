@@ -181,6 +181,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:chttp2_frame",
+        "//src/core:http2_settings",
         "//src/core:http2_status",
         "//src/core:slice_buffer",
     ],
@@ -597,6 +598,8 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:http2_client_transport",
+        "//src/core:http2_settings",
+        "//src/core:http2_status",
         "//src/core:message",
         "//src/core:metadata",
         "//test/core/promise:poll_matcher",
