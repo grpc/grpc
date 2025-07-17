@@ -191,6 +191,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       }
 
       void RequestConnection() override {
+        LOG(INFO) << "LB policy requested connection for " << state_->address_;
         state_->requested_connection_ = true;
         if (state_->test_->request_connection_callback_ != nullptr) {
           state_->test_->request_connection_callback_(state_->address_);
@@ -309,6 +310,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         bool validate_state_transition = true,
         absl::AnyInvocable<void()> run_before_flush = nullptr,
         SourceLocation location = SourceLocation()) {
+      LOG(INFO) << "Setting connectivity state of " << address_
+                << " to " << ConnectivityStateName(state) << " ("
+                << status << ")";
       ExecCtx exec_ctx;
       if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
         EXPECT_FALSE(status.ok())

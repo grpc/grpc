@@ -191,13 +191,13 @@ void EndpointList::Init(
   endpoints->ForEach([&](const EndpointAddresses& endpoint) {
     endpoint_list.push_back(endpoint);
   });
-  endpoints_.reserve(endpoint_list.size());
+  endpoints_.resize(endpoint_list.size());
   size_t start_index = absl::Uniform(SharedBitGen(), 0UL, endpoint_list.size());
   for (size_t i = 0; i < endpoint_list.size(); ++i) {
-    EndpointAddresses& endpoint =
-        endpoint_list[(start_index + i) % endpoint_list.size()];
-    endpoints_.push_back(
-        create_endpoint(Ref(DEBUG_LOCATION, "Endpoint"), endpoint, args));
+    size_t index = (start_index + i) % endpoint_list.size();
+    EndpointAddresses& endpoint = endpoint_list[index];
+    endpoints_[index] =
+        create_endpoint(Ref(DEBUG_LOCATION, "Endpoint"), endpoint, args);
   }
 }
 
