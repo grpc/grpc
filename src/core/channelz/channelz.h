@@ -462,11 +462,7 @@ class ChannelNode final : public BaseNode {
               bool is_internal_channel);
 
   void Orphaned() override {
-    ChannelArgs to_destroy;
-    {
-      MutexLock lock(&channel_args_mu_);
-      std::swap(channel_args_, to_destroy);
-    }
+    channel_args_ = ChannelArgs();
     BaseNode::Orphaned();
   }
 
@@ -485,9 +481,6 @@ class ChannelNode final : public BaseNode {
 
   // proxy methods to composed classes.
   void SetChannelArgs(const ChannelArgs& channel_args) {
-    ChannelArgs to_destroy;
-    MutexLock lock(&channel_args_mu_);
-    std::swap(channel_args_, to_destroy);
     channel_args_ = channel_args;
   }
   void RecordCallStarted() { call_counter_.RecordCallStarted(); }
@@ -501,10 +494,7 @@ class ChannelNode final : public BaseNode {
   CallCounts GetCallCounts() const { return call_counter_.GetCallCounts(); }
   std::set<intptr_t> child_channels() const;
   std::set<intptr_t> child_subchannels() const;
-  ChannelArgs channel_args() const {
-    MutexLock lock(&channel_args_mu_);
-    return channel_args_;
-  }
+  const ChannelArgs& channel_args() const { return channel_args_; }
 
  private:
   void PopulateChildRefs(Json::Object* json);
@@ -514,8 +504,7 @@ class ChannelNode final : public BaseNode {
   CallCountingHelper call_counter_;
   // TODO(ctiller): keeping channel args here can create odd circular references
   // that are hard to reason about. Consider moving this to a DataSource.
-  mutable Mutex channel_args_mu_;
-  ChannelArgs channel_args_ ABSL_GUARDED_BY(channel_args_mu_);
+  ChannelArgs channel_args_;
 
   // Least significant bit indicates whether the value is set.  Remaining
   // bits are a grpc_connectivity_state value.
@@ -529,24 +518,22 @@ class SubchannelNode final : public BaseNode {
   ~SubchannelNode() override;
 
   void Orphaned() override {
-    ChannelArgs to_destroy;
-    {
-      MutexLock lock(&channel_args_mu_);
-      std::swap(channel_args_, to_destroy);
-    }
+    channel_args_ = ChannelArgs();
     BaseNode::Orphaned();
   }
 
   // Sets the subchannel's connectivity state without health checking.
   void UpdateConnectivityState(grpc_connectivity_state state);
 
+  // Used when the subchannel's child socket changes. This should be set when
+  // the subchannel's transport is created and set to nullptr when the
+  // subchannel unrefs the transport.
+  void SetChildSocket(RefCountedPtr<SocketNode> socket);
+
   Json RenderJson() override;
 
   // proxy methods to composed classes.
   void SetChannelArgs(const ChannelArgs& channel_args) {
-    ChannelArgs to_destroy;
-    MutexLock lock(&channel_args_mu_);
-    std::swap(channel_args_, to_destroy);
     channel_args_ = channel_args;
   }
   void RecordCallStarted() { call_counter_.RecordCallStarted(); }
@@ -556,10 +543,11 @@ class SubchannelNode final : public BaseNode {
   const std::string& target() const { return target_; }
   std::string connectivity_state() const;
   CallCounts GetCallCounts() const { return call_counter_.GetCallCounts(); }
-  ChannelArgs channel_args() const {
-    MutexLock lock(&channel_args_mu_);
-    return channel_args_;
+  WeakRefCountedPtr<SocketNode> child_socket() const {
+    MutexLock lock(&socket_mu_);
+    return child_socket_;
   }
+  const ChannelArgs& channel_args() const { return channel_args_; }
 
  private:
   void AddNodeSpecificData(DataSink sink) override;
@@ -568,12 +556,13 @@ class SubchannelNode final : public BaseNode {
   friend class testing::SubchannelNodePeer;
 
   std::atomic<grpc_connectivity_state> connectivity_state_{GRPC_CHANNEL_IDLE};
+  mutable Mutex socket_mu_;
+  WeakRefCountedPtr<SocketNode> child_socket_ ABSL_GUARDED_BY(socket_mu_);
   std::string target_;
   CallCountingHelper call_counter_;
   // TODO(ctiller): keeping channel args here can create odd circular references
   // that are hard to reason about. Consider moving this to a DataSource.
-  mutable Mutex channel_args_mu_;
-  ChannelArgs channel_args_ ABSL_GUARDED_BY(channel_args_mu_);
+  ChannelArgs channel_args_;
 };
 
 // Handles channelz bookkeeping for servers
@@ -584,11 +573,7 @@ class ServerNode final : public BaseNode {
   ~ServerNode() override;
 
   void Orphaned() override {
-    ChannelArgs to_destroy;
-    {
-      MutexLock lock(&channel_args_mu_);
-      std::swap(channel_args_, to_destroy);
-    }
+    channel_args_ = ChannelArgs();
     BaseNode::Orphaned();
   }
 
@@ -599,9 +584,6 @@ class ServerNode final : public BaseNode {
 
   // proxy methods to composed classes.
   void SetChannelArgs(const ChannelArgs& channel_args) {
-    ChannelArgs to_destroy;
-    MutexLock lock(&channel_args_mu_);
-    std::swap(channel_args_, to_destroy);
     channel_args_ = channel_args;
   }
   void RecordCallStarted() { call_counter_.RecordCallStarted(); }
@@ -614,10 +596,7 @@ class ServerNode final : public BaseNode {
       const;
   std::map<intptr_t, WeakRefCountedPtr<SocketNode>> child_sockets() const;
 
-  ChannelArgs channel_args() const {
-    MutexLock lock(&channel_args_mu_);
-    return channel_args_;
-  }
+  const ChannelArgs& channel_args() const { return channel_args_; }
 
  private:
   void AddNodeSpecificData(DataSink sink) override;
@@ -625,8 +604,7 @@ class ServerNode final : public BaseNode {
   PerCpuCallCountingHelper call_counter_;
   // TODO(ctiller): keeping channel args here can create odd circular references
   // that are hard to reason about. Consider moving this to a DataSource.
-  mutable Mutex channel_args_mu_;
-  ChannelArgs channel_args_ ABSL_GUARDED_BY(channel_args_mu_);
+  ChannelArgs channel_args_;
 };
 
 #define GRPC_ARG_CHANNELZ_SECURITY "grpc.internal.channelz_security"
