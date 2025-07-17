@@ -18,7 +18,6 @@
 
 #if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 
-#include <ares.h>
 #include <grpc/support/log_windows.h>
 #include <winsock2.h>
 
@@ -27,6 +26,8 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
+// We pull in ares.h transitively here, ares.h is not self-contained
+// w.r.t. windows headers though, so make sure pull them in above.
 #include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/windows/grpc_polled_fd_windows.h"

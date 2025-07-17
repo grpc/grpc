@@ -76,8 +76,7 @@ class GrpcMessageAssembler {
   ValueOrHttp2Status<MessageHandle> ExtractMessage() {
     const size_t current_len = message_buffer_.Length();
     if (current_len < kGrpcHeaderSizeInBytes) {
-      // TODO(tjagtap) : [PH2][P3] : Write a test for this failure.
-      LOG(ERROR) << "Incomplete gRPC message received";
+      // TODO(tjagtap) : [PH2][P3] : Write a test for this.
       return ReturnNullOrError();
     }
     GrpcMessageHeader header = ExtractGrpcHeader(message_buffer_);
@@ -113,6 +112,7 @@ class GrpcMessageAssembler {
       return Http2Status::Http2StreamError(Http2ErrorCode::kInternalError,
                                            "Incomplete gRPC frame received");
     }
+    VLOG(2) << "Incomplete gRPC message received. Return nullptr";
     return ValueOrHttp2Status<MessageHandle>(nullptr);
   }
   bool is_end_stream_ = false;

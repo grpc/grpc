@@ -283,7 +283,7 @@ class RubyArtifact:
                 self.gem_platform,
             ],
             use_workspace=True,
-            timeout_seconds=180 * 60,
+            timeout_seconds=240 * 60,
             environ=environ,
         )
 
