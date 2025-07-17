@@ -19,24 +19,35 @@
 
 namespace Grpc\Internal;
 
+use Exception;
+use Grpc\Channel;
+use Grpc\Interceptor;
+use Grpc\Timeval;
+
 /**
  * This is a PRIVATE API and can change without notice.
  */
-class InterceptorChannel extends \Grpc\Channel
+class InterceptorChannel extends Channel
 {
+    /**
+     * @var Channel|InterceptorChannel
+     */
     private $next = null;
+    /**
+     * @var Interceptor|Interceptor[] $interceptor
+     */
     private $interceptor;
 
     /**
      * @param Channel|InterceptorChannel $channel An already created Channel
      * or InterceptorChannel object (optional)
-     * @param Interceptor  $interceptor
+     * @param Interceptor|Interceptor[]  $interceptor
      */
     public function __construct($channel, $interceptor)
     {
         if (!is_a($channel, 'Grpc\Channel') &&
             !is_a($channel, 'Grpc\Internal\InterceptorChannel')) {
-            throw new \Exception('The channel argument is not a Channel object '.
+            throw new Exception('The channel argument is not a Channel object '.
                 'or an InterceptorChannel object created by '.
                 'Interceptor::intercept($channel, Interceptor|Interceptor[] $interceptors)');
         }
@@ -44,33 +55,53 @@ class InterceptorChannel extends \Grpc\Channel
         $this->next = $channel;
     }
 
+    /**
+     * @return Channel|InterceptorChannel|null
+     */
     public function getNext()
     {
         return $this->next;
     }
 
+    /**
+     * @return Interceptor|Interceptor[]
+     */
     public function getInterceptor()
     {
         return $this->interceptor;
     }
 
-    public function getTarget()
+    /**
+     * @return string
+     */
+    public function getTarget(): string
     {
         return $this->getNext()->getTarget();
     }
 
-    public function watchConnectivityState($new_state, $deadline)
+  /**
+   * @param int $last_state
+   * @param Timeval $deadline
+   *
+   * @return bool
+   */
+  public function watchConnectivityState(int $last_state, Timeval $deadline): bool
     {
-        return $this->getNext()->watchConnectivityState($new_state, $deadline);
+        return $this->getNext()->watchConnectivityState($last_state, $deadline);
     }
 
-    public function getConnectivityState($try_to_connect = false)
+  /**
+   * @param bool $try_to_connect
+   *
+   * @return int
+   */
+    public function getConnectivityState(bool $try_to_connect = false): int
     {
         return $this->getNext()->getConnectivityState($try_to_connect);
     }
 
-    public function close()
+    public function close(): void
     {
-        return $this->getNext()->close();
+        $this->getNext()->close();
     }
 }

@@ -32,6 +32,13 @@ namespace Grpc;
  */
 class Status
 {
+    /**
+     * @param int        $code
+     * @param string     $details
+     * @param array|null $metadata
+     *
+     * @return array{code: int, details: string, metadata?: array<string, string[]>|null}
+     */
     public static function status(int $code, string $details, ?array $metadata = null): array
     {
         $status = [
@@ -44,10 +51,19 @@ class Status
         return $status;
     }
 
+    /**
+     * @param array|null $metadata
+     *
+     * @return array{code: int, details: string, metadata?: array<string, string[]>|null}
+     */
     public static function ok(?array $metadata = null): array
     {
         return Status::status(STATUS_OK, 'OK', $metadata);
     }
+
+    /**
+     * @return array{code: int, details: string, metadata?: array<string, string[]>|null}
+     */
     public static function unimplemented(): array
     {
         return Status::status(STATUS_UNIMPLEMENTED, 'UNIMPLEMENTED');

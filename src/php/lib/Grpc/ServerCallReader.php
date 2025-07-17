@@ -19,6 +19,8 @@
 
 namespace Grpc;
 
+use Google\Protobuf\Internal\Message;
+
 /**
  * This is an experimental and incomplete implementation of gRPC server
  * for PHP. APIs are _definitely_ going to be changed.
@@ -26,14 +28,24 @@ namespace Grpc;
  * DO NOT USE in production.
  */
 
+/**
+ * @template T of Message
+ */
 class ServerCallReader
 {
+    /**
+     * @param Call $call
+     * @param class-string<T> $request_type
+     */
     public function __construct($call, string $request_type)
     {
         $this->call_ = $call;
         $this->request_type_ = $request_type;
     }
 
+    /**
+     * @return T|null
+     */
     public function read()
     {
         $event = $this->call_->startBatch([
@@ -42,11 +54,18 @@ class ServerCallReader
         if ($event->message === null) {
             return null;
         }
+        /** @var T $data */
         $data = new $this->request_type_;
         $data->mergeFromString($event->message);
         return $data;
     }
 
+    /**
+     * @var Call
+     */
     private $call_;
+    /**
+     * @var class-string<T>
+     */
     private $request_type_;
 }

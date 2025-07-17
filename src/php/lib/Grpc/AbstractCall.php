@@ -19,9 +19,14 @@
 
 namespace Grpc;
 
+use Google\Protobuf\Internal\Message;
+
 /**
  * Class AbstractCall.
+ *
  * @package Grpc
+ *
+ * @template T of Message
  */
 abstract class AbstractCall
 {
@@ -29,8 +34,17 @@ abstract class AbstractCall
      * @var Call
      */
     protected $call;
+    /**
+     * @var array{0: class-string<T>, 1: string}
+     */
     protected $deserialize;
+    /**
+     * @var null|array<string, string[]>
+     */
     protected $metadata;
+    /**
+     * @var null|string
+     */
     protected $trailing_metadata;
 
     /**
@@ -39,9 +53,9 @@ abstract class AbstractCall
      * @param Channel  $channel     The channel to communicate on
      * @param string   $method      The method to call on the
      *                              remote server
-     * @param callback $deserialize A callback function to deserialize
+     * @param array{0: class-string<T>, 1: string} $deserialize A callback function to deserialize
      *                              the response
-     * @param array    $options     Call options (optional)
+     * @param array<string, mixed>    $options     Call options (optional)
      */
     public function __construct(Channel $channel,
                                 $method,
@@ -73,7 +87,7 @@ abstract class AbstractCall
     }
 
     /**
-     * @return mixed The metadata sent by the server
+     * @return array<string, string[]> The metadata sent by the server
      */
     public function getMetadata()
     {
@@ -81,7 +95,7 @@ abstract class AbstractCall
     }
 
     /**
-     * @return mixed The trailing metadata sent by the server
+     * @return string|null The trailing metadata sent by the server
      */
     public function getTrailingMetadata()
     {
@@ -107,7 +121,7 @@ abstract class AbstractCall
     /**
      * Serialize a message to the protobuf binary format.
      *
-     * @param mixed $data The Protobuf message
+     * @param T $data The Protobuf message
      *
      * @return string The protobuf binary format
      */
@@ -120,16 +134,17 @@ abstract class AbstractCall
     /**
      * Deserialize a response value to an object.
      *
-     * @param string $value The binary value to deserialize
+     * @param string|null $value The binary value to deserialize
      *
-     * @return mixed The deserialized value
+     * @return T|null The deserialized value
      */
     protected function _deserializeResponse($value)
     {
         if ($value === null) {
-            return;
+            return null;
         }
-        list($className, $deserializeFunc) = $this->deserialize;
+        [$className] = $this->deserialize;
+        /** @var T $obj */
         $obj = new $className();
         $obj->mergeFromString($value);
         return $obj;

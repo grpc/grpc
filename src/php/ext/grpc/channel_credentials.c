@@ -140,9 +140,9 @@ PHP_METHOD(ChannelCredentials, createDefault) {
 /**
  * Create SSL credentials.
  * @param string|null $pem_root_certs = null PEM encoding of the server root certificates (optional)
- * @param string|null $private_key = null PEM encoding of the client's
+ * @param string|null $pem_private_key = null PEM encoding of the client's
  *                                              private key (optional)
- * @param string|null $cert_chain = null PEM encoding of the client's
+ * @param string|null $pem_cert_chain = null PEM encoding of the client's
  *                                             certificate chain (optional)
  * @return ChannelCredentials The new SSL credentials object
  */
@@ -193,8 +193,8 @@ PHP_METHOD(ChannelCredentials, createSsl) {
 
 /**
  * Create composite credentials from two existing credentials.
- * @param ChannelCredentials $cred1_obj The first credential
- * @param CallCredentials $cred2_obj The second credential
+ * @param ChannelCredentials $channel_creds The first credential
+ * @param CallCredentials $call_creds The second credential
  * @return ChannelCredentials The new composite credentials object
  */
 PHP_METHOD(ChannelCredentials, createComposite) {
