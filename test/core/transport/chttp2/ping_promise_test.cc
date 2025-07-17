@@ -586,6 +586,10 @@ PING_SYSTEM_TEST(TestPingManagerNoPingRequest) {
 }
 
 PING_SYSTEM_TEST(TestPingManagerImportantPing) {
+  // Tests important flag for ping requests. Asserts the following:
+  // 1. The important flag is set correctly for the multiple ping requests.
+  // 2. Once a ping request is sent out, the important flag is reset.
+
   InitParty();
   StrictMock<MockFunction<void(absl::Status)>> on_done;
 
