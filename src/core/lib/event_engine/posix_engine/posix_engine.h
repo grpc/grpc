@@ -299,7 +299,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
 #endif  // defined(GRPC_POSIX_SOCKET_TCP) &&
         // !defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
 
-  TimerManager timer_manager_;
+  std::shared_ptr<TimerManager> timer_manager_;
 };
 
 }  // namespace grpc_event_engine::experimental

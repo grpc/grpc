@@ -147,6 +147,7 @@ class _Handler(Handler):
             self._condition.notify_all()
 
     def cancel(self):
+        termination_callbacks = []
         with self._condition:
             if self._code is None:
                 self._code = _CLIENT_INACTIVE

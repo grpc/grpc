@@ -26,6 +26,12 @@ namespace {
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const description_channelz_use_v2_for_v1_api =
+    "Use the v2 channelz API for the v1 channelz API.";
+const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
+const char* const description_channelz_use_v2_for_v1_service =
+    "Use the v2 channelz service for the v1 channelz service.";
+const char* const additional_constraints_channelz_use_v2_for_v1_service = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -76,6 +82,9 @@ const char* const additional_constraints_event_engine_secure_endpoint = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_fuse_filters =
+    "If set, individual filters are merged into fused filters";
+const char* const additional_constraints_fuse_filters = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -96,6 +105,13 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
+const char* const description_pipelined_read_secure_endpoint =
+    "Enable pipelined reads for EventEngine secure endpoints";
+const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
+const uint8_t required_experiments_pipelined_read_secure_endpoint[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
 const char* const description_pollset_alternative =
     "Code outside iomgr that relies directly on pollsets will use non-pollset "
     "alternatives when enabled.";
@@ -179,6 +195,13 @@ namespace grpc_core {
 const ExperimentMetadata g_experiment_metadata[] = {
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
+    {"channelz_use_v2_for_v1_api", description_channelz_use_v2_for_v1_api,
+     additional_constraints_channelz_use_v2_for_v1_api, nullptr, 0, false,
+     true},
+    {"channelz_use_v2_for_v1_service",
+     description_channelz_use_v2_for_v1_service,
+     additional_constraints_channelz_use_v2_for_v1_service, nullptr, 0, false,
+     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -210,6 +233,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"fuse_filters", description_fuse_filters,
+     additional_constraints_fuse_filters, nullptr, 0, false, false},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -227,6 +252,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
      true},
+    {"pipelined_read_secure_endpoint",
+     description_pipelined_read_secure_endpoint,
+     additional_constraints_pipelined_read_secure_endpoint,
+     required_experiments_pipelined_read_secure_endpoint, 3, false, false},
     {"pollset_alternative", description_pollset_alternative,
      additional_constraints_pollset_alternative,
      required_experiments_pollset_alternative, 2, false, false},
@@ -261,8 +290,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
     {"server_global_callbacks_ownership",
      description_server_global_callbacks_ownership,
-     additional_constraints_server_global_callbacks_ownership, nullptr, 0,
-     false, true},
+     additional_constraints_server_global_callbacks_ownership, nullptr, 0, true,
+     true},
     {"shard_global_connection_pool", description_shard_global_connection_pool,
      additional_constraints_shard_global_connection_pool, nullptr, 0, true,
      true},
@@ -291,6 +320,12 @@ namespace {
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const description_channelz_use_v2_for_v1_api =
+    "Use the v2 channelz API for the v1 channelz API.";
+const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
+const char* const description_channelz_use_v2_for_v1_service =
+    "Use the v2 channelz service for the v1 channelz service.";
+const char* const additional_constraints_channelz_use_v2_for_v1_service = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -341,6 +376,9 @@ const char* const additional_constraints_event_engine_secure_endpoint = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_fuse_filters =
+    "If set, individual filters are merged into fused filters";
+const char* const additional_constraints_fuse_filters = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -361,6 +399,13 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
+const char* const description_pipelined_read_secure_endpoint =
+    "Enable pipelined reads for EventEngine secure endpoints";
+const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
+const uint8_t required_experiments_pipelined_read_secure_endpoint[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
 const char* const description_pollset_alternative =
     "Code outside iomgr that relies directly on pollsets will use non-pollset "
     "alternatives when enabled.";
@@ -444,6 +489,13 @@ namespace grpc_core {
 const ExperimentMetadata g_experiment_metadata[] = {
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
+    {"channelz_use_v2_for_v1_api", description_channelz_use_v2_for_v1_api,
+     additional_constraints_channelz_use_v2_for_v1_api, nullptr, 0, false,
+     true},
+    {"channelz_use_v2_for_v1_service",
+     description_channelz_use_v2_for_v1_service,
+     additional_constraints_channelz_use_v2_for_v1_service, nullptr, 0, false,
+     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -475,6 +527,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"fuse_filters", description_fuse_filters,
+     additional_constraints_fuse_filters, nullptr, 0, false, false},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -492,6 +546,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
      true},
+    {"pipelined_read_secure_endpoint",
+     description_pipelined_read_secure_endpoint,
+     additional_constraints_pipelined_read_secure_endpoint,
+     required_experiments_pipelined_read_secure_endpoint, 3, false, false},
     {"pollset_alternative", description_pollset_alternative,
      additional_constraints_pollset_alternative,
      required_experiments_pollset_alternative, 2, false, false},
@@ -526,8 +584,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
     {"server_global_callbacks_ownership",
      description_server_global_callbacks_ownership,
-     additional_constraints_server_global_callbacks_ownership, nullptr, 0,
-     false, true},
+     additional_constraints_server_global_callbacks_ownership, nullptr, 0, true,
+     true},
     {"shard_global_connection_pool", description_shard_global_connection_pool,
      additional_constraints_shard_global_connection_pool, nullptr, 0, true,
      true},
@@ -556,6 +614,12 @@ namespace {
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const description_channelz_use_v2_for_v1_api =
+    "Use the v2 channelz API for the v1 channelz API.";
+const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
+const char* const description_channelz_use_v2_for_v1_service =
+    "Use the v2 channelz service for the v1 channelz service.";
+const char* const additional_constraints_channelz_use_v2_for_v1_service = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -606,6 +670,9 @@ const char* const additional_constraints_event_engine_secure_endpoint = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_fuse_filters =
+    "If set, individual filters are merged into fused filters";
+const char* const additional_constraints_fuse_filters = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -626,6 +693,13 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
+const char* const description_pipelined_read_secure_endpoint =
+    "Enable pipelined reads for EventEngine secure endpoints";
+const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
+const uint8_t required_experiments_pipelined_read_secure_endpoint[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
 const char* const description_pollset_alternative =
     "Code outside iomgr that relies directly on pollsets will use non-pollset "
     "alternatives when enabled.";
@@ -709,6 +783,13 @@ namespace grpc_core {
 const ExperimentMetadata g_experiment_metadata[] = {
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
+    {"channelz_use_v2_for_v1_api", description_channelz_use_v2_for_v1_api,
+     additional_constraints_channelz_use_v2_for_v1_api, nullptr, 0, false,
+     true},
+    {"channelz_use_v2_for_v1_service",
+     description_channelz_use_v2_for_v1_service,
+     additional_constraints_channelz_use_v2_for_v1_service, nullptr, 0, false,
+     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -740,6 +821,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"fuse_filters", description_fuse_filters,
+     additional_constraints_fuse_filters, nullptr, 0, false, false},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -757,6 +840,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
      true},
+    {"pipelined_read_secure_endpoint",
+     description_pipelined_read_secure_endpoint,
+     additional_constraints_pipelined_read_secure_endpoint,
+     required_experiments_pipelined_read_secure_endpoint, 3, false, false},
     {"pollset_alternative", description_pollset_alternative,
      additional_constraints_pollset_alternative,
      required_experiments_pollset_alternative, 2, false, false},
@@ -791,8 +878,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
     {"server_global_callbacks_ownership",
      description_server_global_callbacks_ownership,
-     additional_constraints_server_global_callbacks_ownership, nullptr, 0,
-     false, true},
+     additional_constraints_server_global_callbacks_ownership, nullptr, 0, true,
+     true},
     {"shard_global_connection_pool", description_shard_global_connection_pool,
      additional_constraints_shard_global_connection_pool, nullptr, 0, true,
      true},

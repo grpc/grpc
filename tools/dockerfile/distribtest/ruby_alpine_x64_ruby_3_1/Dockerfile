@@ -1,5 +1,4 @@
-#! /bin/bash -ex
-# Copyright 2025 The gRPC Authors
+# Copyright 2020 the gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,9 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-VIRTUALENV=.venv_check_pytype_updated
-python3.11 -m virtualenv $VIRTUALENV
-source $VIRTUALENV/bin/activate
+FROM ruby:3.1-alpine
 
-pip install pytype==2024.10.11
-pytype --output=~/.cache/pytype --config=grpc-style-config.toml
+# Our test infrastructure demands bash
+RUN apk update && apk add bash build-base
+

@@ -35,6 +35,11 @@ filegroup(
     srcs = ["_logging_threshold_test_main.py"],
 )
 
+filegroup(
+    name = "_run_time_type_check_main",
+    srcs = ["_run_time_type_check_main.py"],
+)
+
 ###############################################################################
 # VISIBILITY TARGETS
 #
