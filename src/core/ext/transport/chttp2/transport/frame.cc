@@ -718,4 +718,34 @@ void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, const uint8_t flags,
   Write4b(length, frame_hdr + 1);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Stream State and Frame Validators
+
+Http2Status IsFrameValidForIdleStreamState(const uint8_t frame_type) {
+  // RFC9113 : idle: Receiving any frame other than HEADERS or PRIORITY on a
+  // stream in this state MUST be treated as a connection error of type
+  // PROTOCOL_ERROR.
+  FrameType type = static_cast<FrameType>(frame_type);
+  if (GPR_LIKELY(type == FrameType::kHeader)) {
+    return Http2Status::Ok();
+  }
+  return Http2Status::Http2ConnectionError(Http2ErrorCode::kProtocolError,
+                                           std::string(RFC9113::kIdleState));
+}
+
+Http2Status IsFrameValidForHalfCloseRemoteStreamState(
+    const uint8_t frame_type) {
+  // RFC9113: half-closed (remote): If an endpoint receives additional frames,
+  // other than WINDOW_UPDATE, PRIORITY, or RST_STREAM, for a stream that is in
+  // this state, it MUST respond with a stream error of type STREAM_CLOSED.
+  FrameType type = static_cast<FrameType>(frame_type);
+  if (GPR_LIKELY(type == FrameType::kWindowUpdate ||
+                 type == FrameType::kRstStream)) {
+    return Http2Status::Ok();
+  }
+  return Http2Status::Http2StreamError(
+      Http2ErrorCode::kStreamClosed,
+      std::string(RFC9113::kHalfClosedRemoteState));
+}
+
 }  // namespace grpc_core

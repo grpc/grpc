@@ -345,7 +345,32 @@ inline constexpr uint32_t kMaxSize31Bit = 0x7fffffffu;
 inline constexpr uint32_t kMinimumFrameSize = 16384;
 inline constexpr uint32_t kMaximumFrameSize = 16777215;
 
+// Stream State Validations
+inline constexpr absl::string_view kIdleState =
+    "RFC9113 : idle: Receiving any frame other than HEADERS or PRIORITY on a "
+    "stream in this state MUST be treated as a connection error of type "
+    "PROTOCOL_ERROR.";
+
+inline constexpr absl::string_view kHalfClosedRemoteState =
+    "RFC9113: half-closed (remote): If an endpoint receives additional frames, "
+    "other than WINDOW_UPDATE, PRIORITY, or RST_STREAM, for a stream that is "
+    "in this state, it MUST respond with a stream error of type STREAM_CLOSED.";
+
 }  // namespace RFC9113
+
+///////////////////////////////////////////////////////////////////////////////
+// Stream State and Frame Validators
+
+http2::Http2Status IsFrameValidForIdleStreamState(uint8_t frame_type);
+
+http2::Http2Status IsFrameValidForHalfCloseRemoteStreamState(
+    uint8_t frame_type);
+
+// Note on other stream states :
+// Open : A stream in the "open" state may be used by both peers to send frames
+// of any type.
+// Half-closed (local): An endpoint can receive any type of frame in this state.
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_H
