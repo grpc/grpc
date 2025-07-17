@@ -172,8 +172,18 @@ class SimpleQueue {
   RefCountedPtr<Center<T>> center_;
 };
 
+template <typename MetadataHandle>
 class StreamDataQueue {
  public:
+  explicit StreamDataQueue(const bool is_client, const uint32_t stream_id,
+                           const uint32_t queue_size)
+      : stream_id_(stream_id),
+        is_client_(is_client),
+        queue_(queue_size),
+        initial_metadata_disassembler_(stream_id,
+                                       /*is_trailing_metadata=*/false),
+        trailing_metadata_disassembler_(stream_id,
+                                        /*is_trailing_metadata=*/true) {};
   ~StreamDataQueue() = default;
 
   StreamDataQueue(StreamDataQueue&& rhs) = delete;
@@ -181,7 +191,122 @@ class StreamDataQueue {
   StreamDataQueue(const StreamDataQueue&) = delete;
   StreamDataQueue& operator=(const StreamDataQueue&) = delete;
 
+  //////////////////////////////////////////////////////////////////////////////
+  // Enqueue Helpers
+  // These enqueue helpers are based on following assumptions:
+  // 1. The initial metadata is optional.
+  // 2. If there is a message(s) enqueued, initial metadata is expected to be
+  //    enqueued before the first message.
+  // 3. The trailing metadata is the final thing that is queued.
+  // 4. The ordering of initial metadata, messages and trailing metadata is
+  //    taken care by the Callv-3 stack.
+  // 5. Once a metadata/message is enqueued with end_stream set, no more
+  //    metadata/messages can be enqueued.
+  // 6. Currently initial metadata is not expected to be enqueued with
+  //    end_stream set. If the stream needs to be half closed, the client should
+  //    enqueue a half close message.
+
+  // Enqueue Initial Metadata.
+  // 1. MUST be called at most once.
+  // 2. This MUST be called before any messages are enqueued.
+  // 3. MUST not be called after trailing metadata is enqueued.
+  auto EnqueueInitialMetadata(MetadataHandle metadata) {
+    DCHECK(!is_initial_metadata_queued_);
+    DCHECK(!is_trailing_metadata_queued_);
+    DCHECK(metadata != nullptr);
+    DCHECK(!is_end_stream_);
+
+    is_initial_metadata_queued_ = true;
+    GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueueing initial metadata for stream "
+                                 << stream_id_;
+    return queue_.Enqueue(InitialMetadataType{std::move(metadata)},
+                          /*tokens=*/0);
+  }
+
+  // Enqueue Trailing Metadata.
+  // 1. MUST be called at most once.
+  // 2. No other enqueue functions can be called after this.
+  auto EnqueueTrailingMetadata(MetadataHandle metadata) {
+    DCHECK(metadata != nullptr);
+    DCHECK(!is_end_stream_);
+    DCHECK(!is_client_);
+
+    is_trailing_metadata_queued_ = true;
+    is_end_stream_ = true;
+    GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueueing trailing metadata for stream "
+                                 << stream_id_;
+    return queue_.Enqueue(TrailingMetadataType{std::move(metadata)},
+                          /*tokens=*/0);
+  }
+
+  // Returns a promise that resolves when the message is enqueued. There may be
+  // delays in queueing the message if data queue is full.
+  // 1. MUST be called after initial metadata is enqueued.
+  // 2. MUST not be called after trailing metadata is enqueued.
+  auto EnqueueMessage(MessageHandle message) {
+    DCHECK(is_initial_metadata_queued_);
+    DCHECK(message != nullptr);
+    DCHECK(!is_end_stream_);
+
+    GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueueing message for stream "
+                                 << stream_id_;
+    const uint32_t tokens = message->payload()->Length();
+    return queue_.Enqueue(std::move(message), tokens);
+  }
+
+  auto EnqueueHalfClosed() {
+    DCHECK(is_initial_metadata_queued_);
+    DCHECK(is_client_);
+    DCHECK(!is_end_stream_);
+
+    GRPC_STREAM_DATA_QUEUE_DEBUG << "Marking stream " << stream_id_
+                                 << " as half closed";
+    is_end_stream_ = true;
+    return queue_.Enqueue(HalfClosed{}, /*tokens=*/0);
+  }
+
+  auto EnqueueResetStream(uint32_t error_code) {
+    DCHECK(is_initial_metadata_queued_);
+    DCHECK(!is_end_stream_);
+
+    GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueueing reset stream for stream "
+                                 << stream_id_;
+    is_end_stream_ = true;
+    return queue_.Enqueue(ResetStream{error_code}, /*tokens=*/0);
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
+  // Dequeue Helpers
+  std::vector<Http2Frame> DequeueFrames(uint32_t max_tokens,
+                                        uint32_t max_frame_length);
+
  private:
+  struct InitialMetadataType {
+    MetadataHandle metadata;
+  };
+  struct TrailingMetadataType {
+    MetadataHandle metadata;
+  };
+  struct HalfClosed {};
+  struct ResetStream {
+    uint32_t error_code;
+  };
+  using QueueEntry = std::variant<InitialMetadataType, TrailingMetadataType,
+                                  MessageHandle, HalfClosed, ResetStream>;
+  const uint32_t stream_id_;
+  const bool is_client_;
+
+  // Accessed only during enqueue.
+  bool is_initial_metadata_queued_ = false;
+  bool is_trailing_metadata_queued_ = false;
+  bool is_end_stream_ = false;
+
+  // Access both during enqueue and dequeue.
+  SimpleQueue<QueueEntry> queue_;
+
+  // Accessed only during dequeue.
+  HeaderDisassembler initial_metadata_disassembler_;
+  HeaderDisassembler trailing_metadata_disassembler_;
 };
 
 }  // namespace http2

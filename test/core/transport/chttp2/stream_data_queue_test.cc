@@ -395,6 +395,221 @@ TEST_F(SimpleQueueTest, BigMessageEnqueueDequeueTest) {
   EXPECT_STREQ(execution_order.c_str(), "1234");
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// Stream Data Queue Tests
+
+namespace {
+// Helper functions to create test data.
+ClientMetadataHandle TestClientInitialMetadata() {
+  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
+  md->Set(HttpPathMetadata(), Slice::FromStaticString("/demo.Service/Step"));
+  return md;
+}
+
+ServerMetadataHandle TestServerInitialMetadata() {
+  auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
+  md->Set(HttpPathMetadata(), Slice::FromStaticString("/demo.Service/Step2"));
+  return md;
+}
+
+ServerMetadataHandle TestServerTrailingMetadata() {
+  auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
+  md->Set(HttpPathMetadata(), Slice::FromStaticString("/demo.Service/Step3"));
+  return md;
+}
+
+MessageHandle TestMessage(SliceBuffer payload, const uint32_t flags) {
+  return Arena::MakePooled<Message>(std::move(payload), flags);
+}
+
+template <typename MetadataHandle>
+void EnqueueInitialMetadataAndCheckSuccess(
+    StreamDataQueue<MetadataHandle>& queue, MetadataHandle metadata) {
+  auto promise = queue.EnqueueInitialMetadata(std::move(metadata));
+  auto result = promise();
+  ASSERT_TRUE(result.ready());
+  EXPECT_EQ(result.value(), absl::OkStatus());
+}
+
+template <typename MetadataHandle>
+void EnqueueTrailingMetadataAndCheckSuccess(
+    StreamDataQueue<MetadataHandle>& queue, MetadataHandle metadata) {
+  auto promise = queue.EnqueueTrailingMetadata(std::move(metadata));
+  auto result = promise();
+  ASSERT_TRUE(result.ready());
+  EXPECT_EQ(result.value(), absl::OkStatus());
+}
+
+template <typename MetadataHandle>
+static void EnqueueMessageAndCheckSuccess(
+    StreamDataQueue<MetadataHandle>& queue, MessageHandle message) {
+  auto promise = queue.EnqueueMessage(std::move(message));
+  auto result = promise();
+  ASSERT_TRUE(result.ready());
+  EXPECT_EQ(result.value(), absl::OkStatus());
+}
+
+void EnqueueResetStreamAndCheckSuccess(
+    StreamDataQueue<ClientMetadataHandle>& queue) {
+  auto promise = queue.EnqueueResetStream(/*error_code=*/0);
+  auto result = promise();
+  ASSERT_TRUE(result.ready());
+  EXPECT_EQ(result.value(), absl::OkStatus());
+}
+
+void EnqueueHalfClosedAndCheckSuccess(
+    StreamDataQueue<ClientMetadataHandle>& queue) {
+  auto promise = queue.EnqueueHalfClosed();
+  auto result = promise();
+  ASSERT_TRUE(result.ready());
+  EXPECT_EQ(result.value(), absl::OkStatus());
+}
+
+static void ExpectClientStreamQEnded(
+    StreamDataQueue<ClientMetadataHandle>& queue) {
+  ASSERT_DEATH(queue.EnqueueInitialMetadata(TestClientInitialMetadata()), "");
+  ASSERT_DEATH(queue.EnqueueMessage(TestMessage(
+                   SliceBuffer(Slice::ZeroContentsWithLength(1)), 0)),
+               "");
+  ASSERT_DEATH(queue.EnqueueHalfClosed(), "");
+  ASSERT_DEATH(queue.EnqueueResetStream(/*error_code=*/0), "");
+}
+
+void ExpectServerStreamQEnded(StreamDataQueue<ServerMetadataHandle>& queue) {
+  ASSERT_DEATH(queue.EnqueueInitialMetadata(TestServerInitialMetadata()), "");
+  ASSERT_DEATH(queue.EnqueueMessage(TestMessage(
+                   SliceBuffer(Slice::ZeroContentsWithLength(1)), 0)),
+               "");
+  ASSERT_DEATH(queue.EnqueueTrailingMetadata(TestServerTrailingMetadata()), "");
+}
+}  // namespace
+
+////////////////////////////////////////////////////////////////////////////////
+// Client Tests
+TEST(StreamDataQueueTest, ClientEnqueueInitialMetadataTest) {
+  HPackCompressor encoder;
+  StreamDataQueue<ClientMetadataHandle> stream_data_queue(/*is_client=*/true,
+                                                          /*stream_id=*/1,
+                                                          /*queue_size=*/10);
+  EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
+                                        TestClientInitialMetadata());
+  ASSERT_DEATH(
+      stream_data_queue.EnqueueInitialMetadata(TestClientInitialMetadata()),
+      "");
+}
+
+TEST(StreamDataQueueTest, ClientEnqueueMultipleMessagesTest) {
+  HPackCompressor encoder;
+  StreamDataQueue<ClientMetadataHandle> stream_data_queue(/*is_client=*/true,
+                                                          /*stream_id=*/1,
+                                                          /*queue_size=*/10);
+  ASSERT_DEATH(stream_data_queue.EnqueueMessage(TestMessage(
+                   SliceBuffer(Slice::ZeroContentsWithLength(1)), 0)),
+               "");
+  EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
+                                        TestClientInitialMetadata());
+
+  for (int count = 0; count < 10; ++count) {
+    EnqueueMessageAndCheckSuccess(
+        stream_data_queue,
+        TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(1)), 0));
+  }
+}
+
+TEST(StreamDataQueueTest, ClientEnqueueTrailingMetadataTest) {
+  HPackCompressor encoder;
+  StreamDataQueue<ClientMetadataHandle> stream_data_queue(/*is_client*/ true,
+                                                          /*stream_id=*/1,
+                                                          /*queue_size=*/10);
+
+  ASSERT_DEATH(
+      stream_data_queue.EnqueueTrailingMetadata(TestClientInitialMetadata()),
+      "");
+}
+
+TEST(StreamDataQueueTest, ClientEnqueueEndStreamTest) {
+  HPackCompressor encoder;
+  StreamDataQueue<ClientMetadataHandle> stream_data_queue(/*is_client=*/true,
+                                                          /*stream_id=*/1,
+                                                          /*queue_size=*/10);
+  EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
+                                        TestClientInitialMetadata());
+  EnqueueMessageAndCheckSuccess(
+      stream_data_queue,
+      TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(1)), 0));
+  EnqueueHalfClosedAndCheckSuccess(stream_data_queue);
+  ExpectClientStreamQEnded(stream_data_queue);
+}
+
+TEST(StreamDataQueueTest, ClientEnqueueResetStreamTest) {
+  HPackCompressor encoder;
+  StreamDataQueue<ClientMetadataHandle> stream_data_queue(/*is_client=*/true,
+                                                          /*stream_id=*/1,
+                                                          /*queue_size=*/10);
+  EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
+                                        TestClientInitialMetadata());
+  EnqueueResetStreamAndCheckSuccess(stream_data_queue);
+  ExpectClientStreamQEnded(stream_data_queue);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// Server Tests
+TEST(StreamDataQueueTest, ServerEnqueueInitialMetadataTest) {
+  HPackCompressor encoder;
+  StreamDataQueue<ServerMetadataHandle> stream_data_queue(/*is_client=*/false,
+                                                          /*stream_id=*/1,
+                                                          /*queue_size=*/10);
+  EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
+                                        TestServerInitialMetadata());
+  ASSERT_DEATH(
+      stream_data_queue.EnqueueInitialMetadata(TestServerInitialMetadata()),
+      "");
+}
+
+TEST(StreamDataQueueTest, ServerEnqueueMultipleMessagesTest) {
+  HPackCompressor encoder;
+  StreamDataQueue<ServerMetadataHandle> stream_data_queue(/*is_client=*/false,
+                                                          /*stream_id=*/1,
+                                                          /*queue_size=*/10);
+  ASSERT_DEATH(stream_data_queue.EnqueueMessage(TestMessage(
+                   SliceBuffer(Slice::ZeroContentsWithLength(1)), 0)),
+               "");
+  EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
+                                        TestServerInitialMetadata());
+
+  for (int count = 0; count < 10; ++count) {
+    EnqueueMessageAndCheckSuccess(
+        stream_data_queue,
+        TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(1)), 0));
+  }
+}
+
+TEST(StreamDataQueueTest, ServerEnqueueTrailingMetadataTest) {
+  HPackCompressor encoder;
+  StreamDataQueue<ServerMetadataHandle> stream_data_queue(/*is_client=*/false,
+                                                          /*stream_id=*/1,
+                                                          /*queue_size=*/10);
+  EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
+                                        TestServerInitialMetadata());
+  EnqueueMessageAndCheckSuccess(
+      stream_data_queue,
+      TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(1)), 0));
+  EnqueueTrailingMetadataAndCheckSuccess(stream_data_queue,
+                                         TestServerTrailingMetadata());
+  ExpectServerStreamQEnded(stream_data_queue);
+}
+
+TEST(StreamDataQueueTest, ServerResetStreamTest) {
+  HPackCompressor encoder;
+  StreamDataQueue<ServerMetadataHandle> stream_data_queue(/*is_client=*/false,
+                                                          /*stream_id=*/1,
+                                                          /*queue_size=*/10);
+  EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
+                                        TestServerInitialMetadata());
+  EnqueueResetStreamAndCheckSuccess(stream_data_queue);
+  ExpectServerStreamQEnded(stream_data_queue);
+}
+
 }  // namespace testing
 }  // namespace http2
 
