@@ -502,7 +502,7 @@ TEST(StreamDataQueueTest, ClientEnqueueMultipleMessagesTest) {
   HPackCompressor encoder;
   StreamDataQueue<ClientMetadataHandle> stream_data_queue(/*is_client=*/true,
                                                           /*stream_id=*/1,
-                                                          /*queue_size=*/10);
+                                                          /*queue_size=*/60);
   ASSERT_DEATH(stream_data_queue.EnqueueMessage(TestMessage(
                    SliceBuffer(Slice::ZeroContentsWithLength(1)), 0)),
                "");
@@ -570,7 +570,7 @@ TEST(StreamDataQueueTest, ServerEnqueueMultipleMessagesTest) {
   HPackCompressor encoder;
   StreamDataQueue<ServerMetadataHandle> stream_data_queue(/*is_client=*/false,
                                                           /*stream_id=*/1,
-                                                          /*queue_size=*/10);
+                                                          /*queue_size=*/60);
   ASSERT_DEATH(stream_data_queue.EnqueueMessage(TestMessage(
                    SliceBuffer(Slice::ZeroContentsWithLength(1)), 0)),
                "");

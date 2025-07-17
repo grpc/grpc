@@ -247,10 +247,12 @@ class StreamDataQueue {
     DCHECK(is_initial_metadata_queued_);
     DCHECK(message != nullptr);
     DCHECK(!is_end_stream_);
+        DCHECK_LE(message->payload()->Length(),
+              std::numeric_limits<uint32_t>::max() - kGrpcHeaderSizeInBytes);
 
     GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueueing message for stream "
                                  << stream_id_;
-    const uint32_t tokens = message->payload()->Length();
+    const uint32_t tokens = message->payload()->Length() + kGrpcHeaderSizeInBytes;
     return queue_.Enqueue(std::move(message), tokens);
   }
 
