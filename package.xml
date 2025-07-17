@@ -300,6 +300,8 @@
     <file baseinstalldir="/" name="src/core/credentials/transport/tls/load_system_roots_supported.cc" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/transport/tls/load_system_roots_supported.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/transport/tls/load_system_roots_windows.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/tls/spiffe_utils.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/tls/spiffe_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/transport/tls/ssl_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/transport/tls/ssl_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/transport/tls/tls_credentials.cc" role="src" />

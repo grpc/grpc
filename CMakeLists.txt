@@ -2268,6 +2268,7 @@ add_library(grpc
   src/core/credentials/transport/tls/load_system_roots_fallback.cc
   src/core/credentials/transport/tls/load_system_roots_supported.cc
   src/core/credentials/transport/tls/load_system_roots_windows.cc
+  src/core/credentials/transport/tls/spiffe_utils.cc
   src/core/credentials/transport/tls/ssl_utils.cc
   src/core/credentials/transport/tls/tls_credentials.cc
   src/core/credentials/transport/tls/tls_security_connector.cc
@@ -29357,7 +29358,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(spiffe_utils_test
-  src/core/credentials/transport/tls/spiffe_utils.cc
   test/core/credentials/transport/tls/spiffe_utils_test.cc
 )
 if(WIN32 AND MSVC)
@@ -33753,6 +33753,7 @@ target_include_directories(xds_certificate_provider_test
 target_link_libraries(xds_certificate_provider_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::overload
   grpc_test_util
 )
 
