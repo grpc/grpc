@@ -131,7 +131,7 @@ class _BaseMultiCallable:
         metadata = MetadataValidator.validate_and_initialize(metadata)
         if compression:
             metadata = Metadata(
-                *_compression.augment_metadata(metadata.to_tuple(), compression)
+                *_compression.augment_metadata(metadata, compression)
             )
         return metadata
 
