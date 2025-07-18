@@ -44,6 +44,7 @@ EXPERIMENT_ENABLES = {
     "promise_based_http2_server_transport": "promise_based_http2_server_transport",
     "promise_based_inproc_transport": "promise_based_inproc_transport",
     "retry_in_callv3": "retry_in_callv3",
+    "rr_wrr_connect_from_random_index": "rr_wrr_connect_from_random_index",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "secure_endpoint_offload_large_reads": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,secure_endpoint_offload_large_reads",
     "secure_endpoint_offload_large_writes": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,secure_endpoint_offload_large_writes",
@@ -87,6 +88,9 @@ EXPERIMENTS = {
             "cpp_end2end_test": [
                 "error_flatten",
             ],
+            "cpp_lb_end2end_test": [
+                "rr_wrr_connect_from_random_index",
+            ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
@@ -101,6 +105,9 @@ EXPERIMENTS = {
                 "multiping",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "lb_unit_test": [
+                "rr_wrr_connect_from_random_index",
             ],
             "minimal_stack_test": [
                 "fuse_filters",
@@ -165,6 +172,9 @@ EXPERIMENTS = {
             "cpp_end2end_test": [
                 "error_flatten",
             ],
+            "cpp_lb_end2end_test": [
+                "rr_wrr_connect_from_random_index",
+            ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
@@ -179,6 +189,9 @@ EXPERIMENTS = {
                 "multiping",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "lb_unit_test": [
+                "rr_wrr_connect_from_random_index",
             ],
             "minimal_stack_test": [
                 "fuse_filters",
@@ -243,6 +256,9 @@ EXPERIMENTS = {
             "cpp_end2end_test": [
                 "error_flatten",
             ],
+            "cpp_lb_end2end_test": [
+                "rr_wrr_connect_from_random_index",
+            ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
@@ -257,6 +273,9 @@ EXPERIMENTS = {
                 "multiping",
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "lb_unit_test": [
+                "rr_wrr_connect_from_random_index",
             ],
             "minimal_stack_test": [
                 "fuse_filters",

@@ -221,6 +221,13 @@
   expiry: 2025/09/06
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
+- name: rr_wrr_connect_from_random_index
+  description:
+    RR and WRR LB policies start connecting from a random index in the
+    address list.
+  expiry: 2025/10/31
+  owner: roth@google.com
+  test_tags: ["lb_unit_test", "cpp_lb_end2end_test"]
 - name: schedule_cancellation_over_write
   description: Allow cancellation op to be scheduled over a write
   expiry: 2025/10/01
