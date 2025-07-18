@@ -142,7 +142,7 @@ class _OpenTelemetryPlugin:
         elif isinstance(recorder, Histogram):
             recorder.record(value, attributes=decoded_labels)
 
-    def maybe_record_stats_data(self, stats_data: List[StatsData]) -> None:
+    def maybe_record_stats_data(self, stats_data: StatsData) -> None:
         # Records stats data to MeterProvider.
         if self._should_record(stats_data):
             self._record_stats_data(stats_data)
@@ -359,18 +359,18 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
 
     _exporter: "grpc_observability.Exporter"
     _plugins: List[_OpenTelemetryPlugin]
-    _registered_method: Set[bytes]
+    _registered_methods: Set[bytes]
     _client_option_activated: bool
     _server_option_activated: bool
 
     def __init__(
         self,
         *,
-        plugins: Optional[Iterable[_OpenTelemetryPlugin]],
+        plugins: Iterable[_OpenTelemetryPlugin],
     ):
         self._exporter = _OpenTelemetryExporterDelegator(plugins)
         self._registered_methods = set()
-        self._plugins = plugins
+        self._plugins = list(plugins)
         self._client_option_activated = False
         self._server_option_activated = False
 

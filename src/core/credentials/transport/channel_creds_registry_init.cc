@@ -57,7 +57,7 @@ class GoogleDefaultChannelCredsFactory : public ChannelCredsFactory<> {
   RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
       RefCountedPtr<ChannelCredsConfig> /*config*/) const override {
     return RefCountedPtr<grpc_channel_credentials>(
-        grpc_google_default_credentials_create(nullptr));
+        grpc_google_default_credentials_create(nullptr, nullptr));
   }
 
  private:
@@ -87,10 +87,12 @@ class TlsChannelCredsFactory : public ChannelCredsFactory<> {
     auto options = MakeRefCounted<grpc_tls_credentials_options>();
     if (!config->certificate_file().empty() ||
         !config->ca_certificate_file().empty()) {
+      // TODO(gtcooke94): Expose the spiffe_bundle_map option in the XDS
+      // bootstrap config to use here.
       options->set_certificate_provider(
           MakeRefCounted<FileWatcherCertificateProvider>(
               config->private_key_file(), config->certificate_file(),
-              config->ca_certificate_file(),
+              config->ca_certificate_file(), /*spiffe_bundle_map_file=*/"",
               config->refresh_interval().millis() / GPR_MS_PER_SEC));
     }
     options->set_watch_root_cert(!config->ca_certificate_file().empty());

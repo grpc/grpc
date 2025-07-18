@@ -134,9 +134,6 @@ RefCountedPtr<grpc_channel_security_connector>
 XdsCredentials::create_security_connector(
     RefCountedPtr<grpc_call_credentials> call_creds, const char* target_name,
     ChannelArgs* args) {
-  // TODO(yashykt): This arg will no longer need to be added after b/173119596
-  // is fixed.
-  *args = args->SetIfUnset(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, target_name);
   RefCountedPtr<grpc_channel_security_connector> security_connector;
   auto xds_certificate_provider = args->GetObjectRef<XdsCertificateProvider>();
   if (xds_certificate_provider != nullptr) {

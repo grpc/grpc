@@ -64,6 +64,8 @@
   default: true
 - name: free_large_allocator
   default: false
+- name: fuse_filters
+  default: false
 - name: keep_alive_ping_timer_batch
   default: false
 - name: local_connector_secure
@@ -74,8 +76,8 @@
   default: true
 - name: pollset_alternative
   default: false
-- name: posix_ee_skip_grpc_init
-  default: true
+- name: prioritize_finished_requests
+  default: false
 - name: promise_based_http2_client_transport
   default: false
 - name: promise_based_http2_server_transport
@@ -83,7 +85,7 @@
 - name: schedule_cancellation_over_write
   default: false
 - name: server_global_callbacks_ownership
-  default: false
+  default: true
 - name: shard_global_connection_pool
   default: true
 - name: sleep_promise_exec_ctx_removal

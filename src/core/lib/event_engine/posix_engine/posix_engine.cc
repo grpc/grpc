@@ -91,10 +91,14 @@ template <template <typename> typename PtrType>
 struct ForkHandlerPointers {
   PtrType<PosixEventEngine> event_engine;
   PtrType<ThreadPool> executor;
+  PtrType<TimerManager> timer_manager;
 
-  ForkHandlerPointers(PtrType<PosixEventEngine> ee,
-                      PtrType<ThreadPool> thread_pool)
-      : event_engine(std::move(ee)), executor(std::move(thread_pool)) {}
+  ForkHandlerPointers(PtrType<PosixEventEngine> event_engine,
+                      PtrType<ThreadPool> executor,
+                      PtrType<TimerManager> timer_manager)
+      : event_engine(std::move(event_engine)),
+        executor(std::move(executor)),
+        timer_manager(std::move(timer_manager)) {}
 };
 
 // Fork support - mutex and global list of event engines
@@ -112,16 +116,21 @@ std::vector<ForkHandlerPointers<std::shared_ptr>> LockForkHandlers() {
   // on a mutex in DeregisterEventEngineForFork but the weak pointer will not
   // be lockable here.
   locked.reserve(fork_handlers->size());
-  for (const auto& [event_engine, executor] : *fork_handlers) {
-    locked.emplace_back(event_engine.lock(), executor.lock());
+  for (const auto& [event_engine, executor, timer_manager] : *fork_handlers) {
+    locked.emplace_back(event_engine.lock(), executor.lock(),
+                        timer_manager.lock());
   }
   return locked;
 }
 
 void PrepareFork() {
-  for (const auto& [event_engine, executor] : LockForkHandlers()) {
+  for (const auto& [event_engine, executor, timer_manager] :
+       LockForkHandlers()) {
     if (event_engine != nullptr) {
       event_engine->BeforeFork();
+    }
+    if (timer_manager != nullptr) {
+      timer_manager->PrepareFork();
     }
     if (executor != nullptr) {
       executor->PrepareFork();
@@ -130,9 +139,13 @@ void PrepareFork() {
 }
 
 void PostForkInParent() {
-  for (const auto& [event_engine, executor] : LockForkHandlers()) {
+  for (const auto& [event_engine, executor, timer_manager] :
+       LockForkHandlers()) {
     if (executor != nullptr) {
       executor->PostFork();
+    }
+    if (timer_manager) {
+      timer_manager->PostFork();
     }
     if (event_engine != nullptr) {
       event_engine->AfterFork(PosixEventEngine::OnForkRole::kParent);
@@ -141,9 +154,13 @@ void PostForkInParent() {
 }
 
 void PostForkInChild() {
-  for (const auto& [event_engine, executor] : LockForkHandlers()) {
+  for (const auto& [event_engine, executor, timer_manager] :
+       LockForkHandlers()) {
     if (executor != nullptr) {
       executor->PostFork();
+    }
+    if (timer_manager) {
+      timer_manager->PostFork();
     }
     if (event_engine != nullptr) {
       event_engine->AfterFork(PosixEventEngine::OnForkRole::kChild);
@@ -153,7 +170,8 @@ void PostForkInChild() {
 
 void RegisterEventEngineForFork(
     const std::shared_ptr<PosixEventEngine>& posix_engine,
-    const std::shared_ptr<ThreadPool>& executor) {
+    const std::shared_ptr<ThreadPool>& executor,
+    const std::shared_ptr<TimerManager>& timer_manager) {
   if (!grpc_core::Fork::Enabled()) {
     return;
   }
@@ -166,7 +184,8 @@ void RegisterEventEngineForFork(
                               ptr.executor.expired();
                      }),
       fork_handlers->end());
-  fork_handlers->emplace_back(posix_engine, executor);
+  fork_handlers->emplace_back(std::move(posix_engine), std::move(executor),
+                              std::move(timer_manager));
   static bool handlers_installed = false;
   if (!handlers_installed) {
     pthread_atfork(PrepareFork, PostForkInParent, PostForkInChild);
@@ -198,8 +217,9 @@ void RegisterResolver(
 #else  // GRPC_ENABLE_FORK_SUPPORT && GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 
 void RegisterEventEngineForFork(
-    std::shared_ptr<PosixEventEngine> /* posix_engine */,
-    const std::shared_ptr<ThreadPool>& /* executor */) {}
+    const std::shared_ptr<PosixEventEngine>& /* posix_engine */,
+    const std::shared_ptr<ThreadPool>& /* executor */,
+    const std::shared_ptr<TimerManager>& /* timer_manager */) {}
 
 #endif  // GRPC_ENABLE_FORK_SUPPORT && GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 
@@ -531,7 +551,7 @@ void PosixEnginePollerManager::TriggerShutdown() {
 std::shared_ptr<PosixEventEngine> PosixEventEngine::MakePosixEventEngine() {
   // Can't use make_shared as ctor is private
   std::shared_ptr<PosixEventEngine> engine(new PosixEventEngine());
-  RegisterEventEngineForFork(engine, engine->executor_);
+  RegisterEventEngineForFork(engine, engine->executor_, engine->timer_manager_);
   return engine;
 }
 
@@ -541,32 +561,28 @@ PosixEventEngine::MakeTestOnlyPosixEventEngine(
         test_only_poller) {
   std::shared_ptr<PosixEventEngine> engine(
       new PosixEventEngine(std::move(test_only_poller)));
-  RegisterEventEngineForFork(engine, engine->executor_);
+  RegisterEventEngineForFork(engine, engine->executor_, engine->timer_manager_);
   return engine;
 }
 
 PosixEventEngine::PosixEventEngine(std::shared_ptr<PosixEventPoller> poller)
-    : grpc_core::KeepsGrpcInitialized(
-          /*enabled=*/!grpc_core::IsPosixEeSkipGrpcInitEnabled()),
-      connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
+    : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
       executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
       poller_manager_(poller),
 #endif
-      timer_manager_(executor_) {
+      timer_manager_(std::make_shared<TimerManager>(executor_)) {
 }
 
 PosixEventEngine::PosixEventEngine()
-    : grpc_core::KeepsGrpcInitialized(
-          /*enabled=*/!grpc_core::IsPosixEeSkipGrpcInitEnabled()),
-      connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
+    : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
       executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
       poller_manager_(executor_),
-      timer_manager_(executor_) {
+      timer_manager_(std::make_shared<TimerManager>(executor_)) {
   SchedulePoller();
 #else   // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-      timer_manager_(executor_) {
+      timer_manager_(std::make_shared<TimerManager>(executor_)) {
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 }
 
@@ -606,7 +622,7 @@ PosixEventEngine::~PosixEventEngine() {
   polling_cycle_.reset();
   poller_manager_.TriggerShutdown();
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  timer_manager_.Shutdown();
+  timer_manager_->Shutdown();
   executor_->Quiesce();
 }
 
@@ -614,7 +630,7 @@ bool PosixEventEngine::Cancel(EventEngine::TaskHandle handle) {
   grpc_core::MutexLock lock(&mu_);
   if (!known_handles_.contains(handle)) return false;
   auto* cd = reinterpret_cast<ClosureData*>(handle.keys[0]);
-  bool r = timer_manager_.TimerCancel(&cd->timer);
+  bool r = timer_manager_->TimerCancel(&cd->timer);
   known_handles_.erase(handle);
   if (r) delete cd;
   return r;
@@ -644,7 +660,7 @@ EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
     Run(std::move(cb));
     return TaskHandle::kInvalid;
   }
-  auto when_ts = ToTimestamp(timer_manager_.Now(), when);
+  auto when_ts = ToTimestamp(timer_manager_->Now(), when);
   auto* cd = new ClosureData;
   cd->cb = std::move(cb);
   cd->engine = this;
@@ -655,7 +671,7 @@ EventEngine::TaskHandle PosixEventEngine::RunAfterInternal(
   cd->handle = handle;
   GRPC_TRACE_LOG(event_engine, INFO)
       << "PosixEventEngine:" << this << " scheduling callback:" << handle;
-  timer_manager_.TimerInit(&cd->timer, when_ts, cd);
+  timer_manager_->TimerInit(&cd->timer, when_ts, cd);
   return handle;
 }
 
@@ -898,7 +914,6 @@ PosixEventEngine::CreatePosixListener(
     GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 
 void PosixEventEngine::AfterFork(OnForkRole on_fork_role) {
-  timer_manager_.PostFork();
   if (on_fork_role == OnForkRole::kChild) {
     if (grpc_core::IsEventEngineForkEnabled()) {
       AfterForkInChild();
@@ -918,7 +933,6 @@ void PosixEventEngine::BeforeFork() {
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   ResetPollCycle();
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  timer_manager_.PrepareFork();
 }
 
 void PosixEventEngine::AfterForkInChild() {
@@ -927,7 +941,7 @@ void PosixEventEngine::AfterForkInChild() {
   for (const auto& cb : resolver_handles_) {
     auto locked = cb.lock();
     if (locked != nullptr) {
-      locked->Reset();
+      locked->Reset(absl::CancelledError("Reset resolver on fork"));
     }
   }
 #endif

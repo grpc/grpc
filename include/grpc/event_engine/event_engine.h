@@ -23,13 +23,17 @@
 #include <grpc/support/port_platform.h>
 
 #include <bitset>
+#include <cstddef>
 #include <initializer_list>
+#include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/types/span.h"
 
 // TODO(vigneshbabu): Define the Endpoint::Write metrics collection system
 // TODO(hork): remove all references to the factory methods.
@@ -249,23 +253,32 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
     // A bitmask of the events that the caller is interested in.
     // Each bit corresponds to an entry in WriteEvent.
     using WriteEventSet = std::bitset<static_cast<int>(WriteEvent::kCount)>;
+
+    // A set of metrics that the caller is interested in.
+    class MetricsSet {
+     public:
+      virtual ~MetricsSet() = default;
+
+      virtual bool IsSet(size_t key) const = 0;
+    };
+
     // A sink to receive write events.
     // The requested metrics are the keys of the metrics that the caller is
     // interested in. The on_event callback will be called on each event
     // requested.
     class WriteEventSink final {
      public:
-      WriteEventSink(absl::Span<const size_t> requested_metrics,
+      WriteEventSink(std::shared_ptr<MetricsSet> requested_metrics,
                      std::initializer_list<WriteEvent> requested_events,
                      WriteEventCallback on_event)
-          : requested_metrics_(requested_metrics),
+          : requested_metrics_(std::move(requested_metrics)),
             on_event_(std::move(on_event)) {
         for (auto event : requested_events) {
           requested_events_mask_.set(static_cast<int>(event));
         }
       }
 
-      absl::Span<const size_t> requested_metrics() const {
+      const std::shared_ptr<MetricsSet>& requested_metrics() const {
         return requested_metrics_;
       }
 
@@ -282,7 +295,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
       WriteEventCallback TakeEventCallback() { return std::move(on_event_); }
 
      private:
-      absl::Span<const size_t> requested_metrics_;
+      std::shared_ptr<MetricsSet> requested_metrics_;
       WriteEventSet requested_events_mask_;
       // The callback to be called on each event.
       WriteEventCallback on_event_;
@@ -379,6 +392,11 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
       /// If the name is not found, returns std::nullopt.
       virtual std::optional<size_t> GetMetricKey(
           absl::string_view name) const = 0;
+      /// Returns a MetricsSet with all the keys from \a keys set.
+      virtual std::shared_ptr<MetricsSet> GetMetricsSet(
+          absl::Span<const size_t> keys) const = 0;
+      /// Returns a MetricsSet with all supported keys set.
+      virtual std::shared_ptr<MetricsSet> GetFullMetricsSet() const = 0;
     };
 
     /// Writes data out on the connection.

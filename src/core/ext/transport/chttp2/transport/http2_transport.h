@@ -24,7 +24,6 @@
 
 #include "src/core/call/call_spine.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
-#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/transport/promise_endpoint.h"
@@ -42,13 +41,7 @@ namespace http2 {
 // TODO(tjagtap) : [PH2][P3] : Update the experimental status of the code before
 // http2 rollout begins.
 
-#define HTTP2_TRANSPORT_DLOG \
-  DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
-
-#define HTTP2_CLIENT_DLOG \
-  DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
-
-#define HTTP2_SERVER_DLOG \
+#define GRPC_HTTP2_CLIENT_DLOG \
   DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
 
 // TODO(akshitpatel) : [PH2][P2] : Choose appropriate size later.
