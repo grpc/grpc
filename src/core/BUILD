@@ -1967,6 +1967,7 @@ grpc_cc_library(
         "absl/log:check",
         "absl/strings:str_format",
     ],
+    visibility = ["//bazel:core_credentials"],
     deps = [
         "no_destruct",
         "time_precise",
@@ -4767,6 +4768,7 @@ grpc_cc_library(
         "absl/functional:any_invocable",
         "absl/status:statusor",
     ],
+    visibility = ["//bazel:core_credentials"],
     deps = [
         "arena_promise",
         "context",
