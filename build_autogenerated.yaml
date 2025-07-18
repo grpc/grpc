@@ -994,7 +994,7 @@ libs:
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_windows.h
   - src/core/lib/iomgr/socket_factory_posix.h
-  - src/core/lib/iomgr/socket_mutator.h
+  - src/core/net/socket_mutator.h
   - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/iomgr/socket_utils_posix.h
   - src/core/lib/iomgr/socket_windows.h
@@ -2658,7 +2658,7 @@ libs:
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_windows.h
   - src/core/lib/iomgr/socket_factory_posix.h
-  - src/core/lib/iomgr/socket_mutator.h
+  - src/core/net/socket_mutator.h
   - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/iomgr/socket_utils_posix.h
   - src/core/lib/iomgr/socket_windows.h
@@ -4704,7 +4704,7 @@ libs:
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_windows.h
   - src/core/lib/iomgr/socket_factory_posix.h
-  - src/core/lib/iomgr/socket_mutator.h
+  - src/core/net/socket_mutator.h
   - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/iomgr/socket_utils_posix.h
   - src/core/lib/iomgr/socket_windows.h
@@ -6797,7 +6797,7 @@ targets:
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_windows.h
   - src/core/lib/iomgr/socket_factory_posix.h
-  - src/core/lib/iomgr/socket_mutator.h
+  - src/core/net/socket_mutator.h
   - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/iomgr/socket_utils_posix.h
   - src/core/lib/iomgr/socket_windows.h
@@ -11368,7 +11368,7 @@ targets:
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_windows.h
   - src/core/lib/iomgr/socket_factory_posix.h
-  - src/core/lib/iomgr/socket_mutator.h
+  - src/core/net/socket_mutator.h
   - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/iomgr/socket_utils_posix.h
   - src/core/lib/iomgr/socket_windows.h
@@ -13167,7 +13167,7 @@ targets:
   - src/core/lib/iomgr/sockaddr_posix.h
   - src/core/lib/iomgr/sockaddr_windows.h
   - src/core/lib/iomgr/socket_factory_posix.h
-  - src/core/lib/iomgr/socket_mutator.h
+  - src/core/net/socket_mutator.h
   - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/iomgr/socket_utils_posix.h
   - src/core/lib/iomgr/socket_windows.h

@@ -1548,7 +1548,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/socket_factory_posix.cc )
   s.files += %w( src/core/lib/iomgr/socket_factory_posix.h )
   s.files += %w( src/core/lib/iomgr/socket_mutator.cc )
-  s.files += %w( src/core/lib/iomgr/socket_mutator.h )
+  s.files += %w( src/core/net/socket_mutator.h )
   s.files += %w( src/core/lib/iomgr/socket_utils.h )
   s.files += %w( src/core/lib/iomgr/socket_utils_common_posix.cc )
   s.files += %w( src/core/lib/iomgr/socket_utils_linux.cc )

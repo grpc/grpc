@@ -1530,7 +1530,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_factory_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_factory_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_mutator.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/socket_mutator.h" role="src" />
+    <file baseinstalldir="/" name="src/core/net/socket_mutator.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_common_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/socket_utils_linux.cc" role="src" />

@@ -224,3 +224,8 @@ package_group(
     packages = [
     ],
 )
+
+package_group(
+    name = "socket_mutator",
+    packages = [],
+)

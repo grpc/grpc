@@ -24,7 +24,7 @@
 #include <utility>
 
 #include "src/core/lib/iomgr/port.h"
-#include "src/core/lib/iomgr/socket_mutator.h"
+#include "src/core/net/socket_mutator.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/ref_counted_ptr.h"
 
