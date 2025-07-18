@@ -19,6 +19,8 @@
 
 namespace Grpc;
 
+use Google\Protobuf\Internal\Message;
+
 /**
  * This is an experimental and incomplete implementation of gRPC server
  * for PHP. APIs are _definitely_ going to be changed.
@@ -26,14 +28,27 @@ namespace Grpc;
  * DO NOT USE in production.
  */
 
+/**
+ * @template T of Message
+ */
 class ServerCallWriter
 {
+    /**
+     * @param Call $call
+     * @param ServerContext $serverContext
+     */
     public function __construct($call, $serverContext)
     {
         $this->call_ = $call;
         $this->serverContext_ = $serverContext;
     }
 
+    /**
+     * @param T|null $data
+     * @param array<string, mixed> $options
+     *
+     * @return void
+     */
     public function start(
         $data = null,
         array $options = []
@@ -47,6 +62,12 @@ class ServerCallWriter
         $this->call_->startBatch($batch);
     }
 
+    /**
+     * @param T $data
+     * @param array<string, mixed> $options
+     *
+     * @return void
+     */
     public function write(
         $data,
         array $options = []
@@ -60,6 +81,12 @@ class ServerCallWriter
         $this->call_->startBatch($batch);
     }
 
+    /**
+     * @param T|null $data
+     * @param array<string, mixed> $options
+     *
+     * @return void
+     */
     public function finish(
         $data = null,
         array $options = []
@@ -79,6 +106,10 @@ class ServerCallWriter
 
     ////////////////////////////
 
+    /**
+     * @param array<string|int, mixed> $batch
+     * @param array<string, string[]> $initialMetadata
+     */
     private function addSendInitialMetadataOpIfNotSent(
         array &$batch,
         ?array $initialMetadata = null
@@ -89,6 +120,13 @@ class ServerCallWriter
         }
     }
 
+    /**
+     * @param array<string|int, mixed> $batch
+     * @param T|null $data
+     * @param array<string, mixed> $options
+     *
+     * @return void
+     */
     private function addSendMessageOpIfHasData(
         array &$batch,
         $data = null,
@@ -103,7 +141,16 @@ class ServerCallWriter
         }
     }
 
+    /**
+     * @var Call
+     */
     private $call_;
+    /**
+     * @var bool
+     */
     private $initialMetadataSent_ = false;
+    /**
+     * @var ServerContext
+     */
     private $serverContext_;
 }
