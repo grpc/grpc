@@ -67,6 +67,7 @@ grpc_cc_test(
         "//:grpc++",
         "//src/cpp/ext/otel:otel_plugin",
         "//test/core/promise:test_context",
+        "//test/core/test_util:fail_first_call_filter",
         "//test/core/test_util:grpc_test_util",
     ],
 )
