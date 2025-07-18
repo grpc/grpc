@@ -109,8 +109,8 @@ class _ServerInterceptor(grpc.ServerInterceptor):
 
 
 @unittest.skipIf(
-    os.name == "nt" or "darwin" in sys.platform,
-    "Observability is not supported in Windows and MacOS",
+    "darwin" in sys.platform,
+    "Observability is not supported in MacOS",
 )
 class OpenTelemetryObservabilityTest(unittest.TestCase):
     def setUp(self):

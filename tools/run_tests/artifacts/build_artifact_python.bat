@@ -41,10 +41,17 @@ set ARTIFACT_DIR=%cd%\%ARTIFACTS_OUT%
 @rem Set up gRPC Python tools
 python tools\distrib\python\make_grpcio_tools.py
 
+@rem Set up gRPC Python Observability
+python src/python/grpcio_observability/make_grpcio_observability.py
+
 @rem Build gRPC Python extensions
 python setup.py build_ext -c %EXT_COMPILER% || goto :error
 
 pushd tools\distrib\python\grpcio_tools
+python setup.py build_ext -c %EXT_COMPILER% || goto :error
+popd
+
+pushd src\python\grpcio_observability
 python setup.py build_ext -c %EXT_COMPILER% || goto :error
 popd
 
@@ -55,12 +62,17 @@ pushd tools\distrib\python\grpcio_tools
 python setup.py bdist_wheel || goto :error
 popd
 
+pushd src\python\grpcio_observability
+python setup.py bdist_wheel || goto :error
+popd
+
 @rem Ensure the generate artifacts are valid.
 python -m pip install packaging==21.3 twine==5.0.0
-python -m twine check dist\* tools\distrib\python\grpcio_tools\dist\* || goto :error
+python -m twine check dist\* tools\distrib\python\grpcio_tools\dist\* src\python\grpcio_observability\dist\* || goto :error
 
 xcopy /Y /I /S dist\* %ARTIFACT_DIR% || goto :error
 xcopy /Y /I /S tools\distrib\python\grpcio_tools\dist\* %ARTIFACT_DIR% || goto :error
+xcopy /Y /I /S src\python\grpcio_observability\dist\* %ARTIFACT_DIR% || goto :error
 
 goto :EOF
 
