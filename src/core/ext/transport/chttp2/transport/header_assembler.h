@@ -47,15 +47,6 @@ namespace http2 {
 
 #define ASSEMBLER_LOG DVLOG(3)
 
-constexpr absl::string_view kAssemblerContiguousSequenceError =
-    "RFC9113 : Field blocks MUST be transmitted as a contiguous sequence "
-    "of frames, with no interleaved frames of any other type or from any "
-    "other stream.";
-
-constexpr absl::string_view kAssemblerMismatchedStreamId =
-    "CONTINUATION frame has a different Stream Identifier than the preceeding "
-    "HEADERS frame.";
-
 constexpr absl::string_view kAssemblerHpackError =
     "RFC9113 : A decoding error in a field block MUST be treated as a "
     "connection error of type COMPRESSION_ERROR.";
