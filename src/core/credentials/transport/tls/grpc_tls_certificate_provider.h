@@ -31,7 +31,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_distributor.h"
-#include "src/core/credentials/transport/tls/spiffe_utils.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -122,7 +121,7 @@ class StaticDataCertificateProvider final
   }
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
-  std::shared_ptr<RootCertInfo> root_cert_info_;
+  std::string root_certificate_;
   PemKeyCertPairList pem_key_cert_pairs_;
   // Guards members below.
   Mutex mu_;
@@ -138,7 +137,6 @@ class FileWatcherCertificateProvider final
   FileWatcherCertificateProvider(std::string private_key_path,
                                  std::string identity_certificate_path,
                                  std::string root_cert_path,
-                                 std::string spiffe_bundle_map_path,
                                  int64_t refresh_interval_sec);
 
   ~FileWatcherCertificateProvider() override;
@@ -180,7 +178,6 @@ class FileWatcherCertificateProvider final
   std::string private_key_path_;
   std::string identity_certificate_path_;
   std::string root_cert_path_;
-  std::string spiffe_bundle_map_path_;
   int64_t refresh_interval_sec_ = 0;
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
@@ -191,18 +188,8 @@ class FileWatcherCertificateProvider final
   mutable Mutex mu_;
   // The most-recent credential data. It will be empty if the most recent read
   // attempt failed.
+  std::string root_certificate_ ABSL_GUARDED_BY(mu_);
   PemKeyCertPairList pem_key_cert_pairs_ ABSL_GUARDED_BY(mu_);
-  // The most-recent root data.
-  // - If unset, the status will be OK and the value will be nullptr
-  // - If a SPIFFE Bundle Map is configured and fails to read, the status will
-  // be not-Ok
-  // - If a string root cert is configured and fails to read, the status will be
-  // OK with a nullptr
-  // - Otherwise, holds either a SpiffeBundleMap or a string root cert
-  // TODO(gtcooke94) - refactor the handling for string root cert files such
-  // that their failure is a non-ok status rather than a nullptr
-  absl::StatusOr<std::shared_ptr<RootCertInfo>> root_cert_info_
-      ABSL_GUARDED_BY(mu_) = nullptr;
   // Stores each cert_name we get from the distributor callback and its watcher
   // information.
   std::map<std::string, WatcherInfo> watcher_info_ ABSL_GUARDED_BY(mu_);
