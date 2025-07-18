@@ -31,6 +31,7 @@ grpc_cc_library(
         "absl/log:check",
         "absl/synchronization",
     ],
+    visibility = ["//bazel:end2end_test_utils"],
     deps = [
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:grpc_test_util",
