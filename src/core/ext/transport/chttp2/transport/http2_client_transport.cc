@@ -510,15 +510,14 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
       },
       // Validate the incoming frame as per the current state of the transport
       [self = RefAsSubclass<Http2ClientTransport>()](Http2FrameHeader header) {
-        if (self->incoming_header_in_progress_ &&
-            (self->current_frame_header_.type != 9 /*Continuation*/ ||
-             self->current_frame_header_.stream_id !=
-                 self->incoming_header_stream_id_)) {
-          LOG(ERROR) << "Closing Connection " << header.ToString() << " "
-                     << kAssemblerContiguousSequenceError;
-          return self->HandleError(Http2Status::Http2ConnectionError(
-              Http2ErrorCode::kProtocolError,
-              std::string(kAssemblerContiguousSequenceError)));
+        Http2Status status = ValidateFrameHeader(
+            /*max_frame_size_setting*/ self->settings_.acked().max_frame_size(),
+            /*incoming_header_in_progress*/ self->incoming_header_in_progress_,
+            /*incoming_header_stream_id*/ self->incoming_header_stream_id_,
+            /*current_frame_header*/ header);
+
+        if (!status.IsOk()) {
+          return self->HandleError(std::move(status));
         }
         GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport ReadAndProcessOneFrame "
                                   "Validated Frame Header:"
