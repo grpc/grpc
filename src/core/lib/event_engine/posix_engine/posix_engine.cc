@@ -83,8 +83,8 @@ namespace grpc_event_engine::experimental {
 
 namespace {
 
-bool UsePosixPoller() {
-#if !defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
+bool ShouldUsePosixPoller() {
+#if defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
   return grpc_core::IsEventEnginePollerForPythonEnabled();
 #else
   return true;
@@ -414,6 +414,7 @@ PosixEventEngine::CreateEndpointFromUnconnectedFdInternal(
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   PosixError err;
   int connect_errno;
+  CHECK(poller_manager_.has_value());
   PosixEventPoller* poller = poller_manager_->Poller();
   do {
     err = poller->posix_interface().Connect(fd, addr.address(), addr.size());
@@ -516,19 +517,11 @@ void PosixEnginePollerManager::Run(absl::AnyInvocable<void()> cb) {
   }
 }
 
-void PosixEnginePollerManager::TriggerShutdown() {
-  if (UsePosixPoller()) {
-    poller_->Kick();
-  }
-}
+void PosixEnginePollerManager::TriggerShutdown() { poller_->Kick(); }
 
 grpc_event_engine::experimental::PosixEventPoller*
 PosixEnginePollerManager::Poller() const {
-  if (UsePosixPoller()) {
-    return poller_.get();
-  } else {
-    grpc_core::Crash("Posix polling was disabled");
-  }
+  return poller_.get();
 }
 
 std::shared_ptr<PosixEventEngine> PosixEventEngine::MakePosixEventEngine() {
@@ -561,7 +554,7 @@ PosixEventEngine::PosixEventEngine()
     : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
       executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-      poller_manager_(UsePosixPoller()
+      poller_manager_(ShouldUsePosixPoller()
                           ? std::optional<PosixEnginePollerManager>(executor_)
                           : std::nullopt),
       timer_manager_(std::make_shared<TimerManager>(executor_)) {
@@ -607,7 +600,7 @@ PosixEventEngine::~PosixEventEngine() {
   }
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   polling_cycle_.reset();
-  if (UsePosixPoller()) {
+  if (poller_manager_.has_value()) {
     poller_manager_->TriggerShutdown();
   }
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
@@ -710,6 +703,7 @@ PosixEventEngine::GetDNSResolver(
   // configuration.
   if (ShouldUseAresDnsResolver()) {
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+    CHECK(poller_manager_.has_value());
     GRPC_TRACE_LOG(event_engine_dns, INFO)
         << "PosixEventEngine::" << this << " creating AresResolver";
     auto ares_resolver = AresResolver::CreateAresResolver(
@@ -829,6 +823,7 @@ EventEngine::ConnectionHandle PosixEventEngine::Connect(
     OnConnectCallback on_connect, const ResolvedAddress& addr,
     const EndpointConfig& args, MemoryAllocator memory_allocator,
     Duration timeout) {
+  CHECK(poller_manager_.has_value());
   PosixTcpOptions options = TcpOptionsFromEndpointConfig(args);
   absl::StatusOr<EventEnginePosixInterface::PosixSocketCreateResult> socket =
       poller_manager_->Poller()
@@ -848,6 +843,7 @@ EventEngine::ConnectionHandle PosixEventEngine::CreateEndpointFromUnconnectedFd(
     int fd, EventEngine::OnConnectCallback on_connect,
     const EventEngine::ResolvedAddress& addr, const EndpointConfig& config,
     MemoryAllocator memory_allocator, EventEngine::Duration timeout) {
+  CHECK(poller_manager_.has_value());
   return CreateEndpointFromUnconnectedFdInternal(
       poller_manager_->Poller()->posix_interface().Adopt(fd),
       std::move(on_connect), addr, TcpOptionsFromEndpointConfig(config),
@@ -858,6 +854,7 @@ std::unique_ptr<EventEngine::Endpoint>
 PosixEventEngine::CreatePosixEndpointFromFd(int fd,
                                             const EndpointConfig& config,
                                             MemoryAllocator memory_allocator) {
+  DCHECK(poller_manager_.has_value());
   DCHECK_GT(fd, 0);
   PosixEventPoller* poller = poller_manager_->Poller();
   DCHECK_NE(poller, nullptr);
@@ -875,6 +872,7 @@ PosixEventEngine::CreateListener(
     absl::AnyInvocable<void(absl::Status)> on_shutdown,
     const EndpointConfig& config,
     std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
+  CHECK(poller_manager_.has_value());
   PosixEventEngineWithFdSupport::PosixAcceptCallback posix_on_accept =
       [on_accept_cb = std::move(on_accept)](
           int /*listener_fd*/, std::unique_ptr<EventEngine::Endpoint> ep,
@@ -894,6 +892,7 @@ PosixEventEngine::CreatePosixListener(
     absl::AnyInvocable<void(absl::Status)> on_shutdown,
     const EndpointConfig& config,
     std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
+  CHECK(poller_manager_.has_value());
   return std::make_unique<PosixEngineListener>(
       std::move(on_accept), std::move(on_shutdown), config,
       std::move(memory_allocator_factory), poller_manager_->Poller(),
@@ -901,7 +900,7 @@ PosixEventEngine::CreatePosixListener(
 }
 
 void PosixEventEngine::SchedulePoller() {
-  if (!UsePosixPoller()) {
+  if (!poller_manager_.has_value()) {
     return;
   }
   if (poller_manager_->Poller() != nullptr) {
@@ -979,14 +978,14 @@ void PosixEventEngine::AfterFork(OnForkRole on_fork_role) {
       AfterForkInChild();
     } else {
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-      if (UsePosixPoller()) {
+      if (poller_manager_.has_value()) {
         poller_manager_->Poller()->HandleForkInChild();
       }
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
     }
   }
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  if (UsePosixPoller()) {
+  if (poller_manager_.has_value()) {
     poller_manager_->Poller()->ResetKickState();
     SchedulePoller();
   }
@@ -1010,7 +1009,7 @@ void PosixEventEngine::AfterForkInChild() {
   }
 #endif
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  if (UsePosixPoller()) {
+  if (poller_manager_.has_value()) {
     poller_manager_->Poller()->HandleForkInChild();
   }
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
