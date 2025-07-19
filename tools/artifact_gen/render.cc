@@ -30,6 +30,20 @@ ABSL_FLAG(std::string, output_dir, "", "Directory to write rendered templates");
 namespace {
 void RenderTemplate(const std::string& filename, const nlohmann::json* build_yaml) {
   inja::Environment env{std::filesystem::path(absl::GetFlag(FLAGS_templates_dir) + "/" + filename).parent_path().string()+"/"};
+  env.add_callback("sorted", 1, [](inja::Arguments& args) {
+    nlohmann::json j = *args.at(0);
+    std::sort(j.begin(), j.end());
+    return j;
+  });
+  env.add_callback("len", 1, [](inja::Arguments& args) {
+    const nlohmann::json* j = args.at(0);
+    return j->end() - j->begin();
+  });
+  env.add_callback("startswith", 2, [](inja::Arguments& args) {
+    std::string str = args.at(0)->get<std::string>();
+    std::string prefix = args.at(1)->get<std::string>();
+    return absl::StartsWith(str, prefix);
+  });
   try {
     std::string rendered = env.render(
         LoadString(absl::GetFlag(FLAGS_templates_dir) + "/" + filename),
