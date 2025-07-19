@@ -441,6 +441,10 @@ void FilterStackCall::PublishAppMetadata(grpc_metadata_batch* b,
   if (is_trailing && buffered_metadata_[1] == nullptr) return;
   grpc_metadata_array* dest;
   dest = buffered_metadata_[is_trailing];
+  if (dest->metadata == nullptr) {
+    dest->metadata = static_cast<grpc_metadata*>(
+        gpr_malloc(sizeof(grpc_metadata) * dest->capacity));
+  }
   if (dest->count + b->count() > dest->capacity) {
     dest->capacity =
         std::max(dest->capacity + b->count(), dest->capacity * 3 / 2);
