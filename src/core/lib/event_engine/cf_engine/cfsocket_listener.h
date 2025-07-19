@@ -72,7 +72,6 @@ class CFSocketListenerImpl
 
   EventEngine::Listener::AcceptCallback on_accept_;
   absl::AnyInvocable<void(absl::Status)> on_shutdown_;
-  // EndpointConfig config_;
   std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory_;
 };
 
