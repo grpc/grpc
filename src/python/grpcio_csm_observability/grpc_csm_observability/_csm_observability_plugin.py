@@ -223,7 +223,7 @@ class CsmOpenTelemetryPluginOption(OpenTelemetryPluginOption):
 
     @staticmethod
     def is_active_on_server(
-        xds: bool,  # pylint: disable=unused-argument
+        xds: bool,  # pylint: disable=unused-argument #noqa: ARG004
     ) -> bool:
         """Determines whether this plugin option is active on a given server.
 
