@@ -26,6 +26,7 @@
 #include "src/core/lib/event_engine/cf_engine/cfsocket_listener.h"
 #include "src/core/lib/event_engine/cf_engine/cfstream_endpoint.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/util/strerror.h"
 
 namespace grpc_event_engine::experimental {
 
@@ -116,13 +117,19 @@ absl::StatusOr<int> CFSocketListenerImpl::Bind(
   // allow reuse of the address and port
   auto sin6_fd = CFSocketGetNative(ipv6cfsock);
   int sock_flag = 1;
-  int err1 = setsockopt(sin6_fd, SOL_SOCKET, SO_REUSEADDR, &sock_flag,
-                        sizeof(sock_flag));
-  int err2 = setsockopt(sin6_fd, SOL_SOCKET, SO_REUSEPORT, &sock_flag,
-                        sizeof(sock_flag));
-  if (err1 != 0 || err2 != 0) {
+  int err = setsockopt(sin6_fd, SOL_SOCKET, SO_REUSEADDR, &sock_flag,
+                       sizeof(sock_flag));
+  if (err != 0) {
     return absl::InternalError(absl::StrCat(
-        "CFSocketListenerImpl::Bind, setsockopt errors: ", err1, ", ", err2));
+        "CFSocketListenerImpl::Bind, setsockopt(SO_REUSEADDR) errors: ",
+        grpc_core::StrError(errno)));
+  }
+  err = setsockopt(sin6_fd, SOL_SOCKET, SO_REUSEPORT, &sock_flag,
+                   sizeof(sock_flag));
+  if (err != 0) {
+    return absl::InternalError(absl::StrCat(
+        "CFSocketListenerImpl::Bind, setsockopt(SO_REUSEPORT) errors: ",
+        grpc_core::StrError(errno)));
   }
 
   // bind socket to address
@@ -210,7 +217,7 @@ void CFSocketListenerImpl::handleConnect(CFSocketRef s,
               absl::StrCat("endpoint-tcp-server-connection: ", peer_name)));
 
       endpoint->AcceptSocket(
-          [that = self->Ref(), socketHandle, peer_name,
+          [that = self->Ref(), socketHandle, peer_name = std::move(peer_name),
            endpoint = std::move(endpoint)](absl::Status status) mutable {
             if (!status.ok()) {
               GRPC_TRACE_LOG(event_engine, ERROR)
