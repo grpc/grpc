@@ -164,7 +164,7 @@ class _Handler(Handler):
             while True:
                 if self._code is _CLIENT_INACTIVE:
                     raise ValueError("Huh? Cancelled but wanting status?")
-                elif self._code is None:
+                if self._code is None:
                     self._condition.wait()
                 else:
                     if self._unary_response is None:
@@ -182,7 +182,7 @@ class _Handler(Handler):
             while True:
                 if self._code is _CLIENT_INACTIVE:
                     raise ValueError("Huh? Cancelled but wanting status?")
-                elif self._code is None:
+                if self._code is None:
                     self._condition.wait()
                 else:
                     return self._trailing_metadata, self._code, self._details
