@@ -4,3 +4,4 @@ bazel-out
 build
 .cache
 .git
+*/venv-*
