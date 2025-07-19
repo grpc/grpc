@@ -42,6 +42,9 @@ build --client_env=CC=clang
 build --copt=-DGRPC_BAZEL_BUILD
 build --host_copt=-DGRPC_BAZEL_BUILD
 build --action_env=GRPC_BAZEL_RUNTIME=1
+build --features=external_include_paths
+build --per_file_copt=external/.*@-w
+build --host_per_file_copt=external/.*@-w
 
 build:opt --compilation_mode=opt
 build:opt --copt=-Wframe-larger-than=16384
