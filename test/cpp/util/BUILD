@@ -104,7 +104,7 @@ grpc_cc_library(
     ],
     deps = [
         "//:grpc++",
-        "//src/proto/grpc/channelz:channelz_proto",
+        "//src/proto/grpc/channelz/v1:channelz_proto",
     ],
 )
 
@@ -352,7 +352,7 @@ grpc_cc_binary(
         "//:gpr",
         "//:grpc++",
         "//:grpcpp_channelz",
-        "//src/proto/grpc/channelz:channelz_proto",
+        "//src/proto/grpc/channelz/v1:channelz_proto",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
@@ -386,7 +386,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//:grpcpp_channelz",
-        "//src/proto/grpc/channelz:channelz_proto",
+        "//src/proto/grpc/channelz/v1:channelz_proto",
         "//src/proto/grpc/testing:test_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",

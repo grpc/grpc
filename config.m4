@@ -59,6 +59,9 @@ if test "$PHP_GRPC" != "no"; then
     src/core/channelz/channelz.cc \
     src/core/channelz/channelz_registry.cc \
     src/core/channelz/property_list.cc \
+    src/core/channelz/v2tov1/convert.cc \
+    src/core/channelz/v2tov1/legacy_api.cc \
+    src/core/channelz/v2tov1/property_list.cc \
     src/core/client_channel/backup_poller.cc \
     src/core/client_channel/client_channel.cc \
     src/core/client_channel/client_channel_factory.cc \
@@ -322,13 +325,19 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-gen/google/api/http.upb_minitable.c \
     src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c \
+    src/core/ext/upb-gen/google/protobuf/api.upb_minitable.c \
+    src/core/ext/upb-gen/google/protobuf/compiler/plugin.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c \
+    src/core/ext/upb-gen/google/protobuf/field_mask.upb_minitable.c \
+    src/core/ext/upb-gen/google/protobuf/source_context.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c \
+    src/core/ext/upb-gen/google/protobuf/type.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c \
     src/core/ext/upb-gen/google/rpc/status.upb_minitable.c \
+    src/core/ext/upb-gen/src/proto/grpc/channelz/v1/channelz.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c \
@@ -487,13 +496,19 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-gen/google/api/http.upbdefs.c \
     src/core/ext/upbdefs-gen/google/api/httpbody.upbdefs.c \
     src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c \
+    src/core/ext/upbdefs-gen/google/protobuf/api.upbdefs.c \
+    src/core/ext/upbdefs-gen/google/protobuf/compiler/plugin.upbdefs.c \
     src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c \
     src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c \
     src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c \
+    src/core/ext/upbdefs-gen/google/protobuf/field_mask.upbdefs.c \
+    src/core/ext/upbdefs-gen/google/protobuf/source_context.upbdefs.c \
     src/core/ext/upbdefs-gen/google/protobuf/struct.upbdefs.c \
     src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c \
+    src/core/ext/upbdefs-gen/google/protobuf/type.upbdefs.c \
     src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c \
     src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c \
+    src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v1/channelz.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c \
@@ -1457,6 +1472,7 @@ if test "$PHP_GRPC" != "no"; then
     -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.75.0dev\""')
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/call)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz/v2tov1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/client_channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call)
@@ -1541,7 +1557,9 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/google/api)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/google/api/expr/v1alpha1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/google/protobuf)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/google/protobuf/compiler)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/google/rpc)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/src/proto/grpc/channelz/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/src/proto/grpc/channelz/v2)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/src/proto/grpc/gcp)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/src/proto/grpc/health/v1)
@@ -1594,7 +1612,9 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/google/api)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/google/api/expr/v1alpha1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/google/protobuf)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/google/protobuf/compiler)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/google/rpc)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/udpa/annotations)

@@ -23,7 +23,7 @@
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/status.h>
 
-#include "src/proto/grpc/channelz/channelz.grpc.pb.h"
+#include "src/proto/grpc/channelz/v1/channelz.grpc.pb.h"
 #include "src/proto/grpc/channelz/v2/service.grpc.pb.h"
 
 namespace grpc {
