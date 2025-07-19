@@ -13458,6 +13458,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/end2end/tests/invoke_large_request.cc
     test/core/end2end/tests/keepalive_timeout.cc
     test/core/end2end/tests/large_metadata.cc
+    test/core/end2end/tests/many_calls.cc
     test/core/end2end/tests/max_concurrent_streams.cc
     test/core/end2end/tests/max_connection_age.cc
     test/core/end2end/tests/max_connection_idle.cc
@@ -13853,6 +13854,7 @@ add_executable(end2end_http2_security_test
   test/core/end2end/tests/invoke_large_request.cc
   test/core/end2end/tests/keepalive_timeout.cc
   test/core/end2end/tests/large_metadata.cc
+  test/core/end2end/tests/many_calls.cc
   test/core/end2end/tests/max_concurrent_streams.cc
   test/core/end2end/tests/max_connection_age.cc
   test/core/end2end/tests/max_connection_idle.cc
@@ -14043,6 +14045,7 @@ add_executable(end2end_http2_test
   test/core/end2end/tests/invoke_large_request.cc
   test/core/end2end/tests/keepalive_timeout.cc
   test/core/end2end/tests/large_metadata.cc
+  test/core/end2end/tests/many_calls.cc
   test/core/end2end/tests/max_concurrent_streams.cc
   test/core/end2end/tests/max_connection_age.cc
   test/core/end2end/tests/max_connection_idle.cc
@@ -14335,6 +14338,7 @@ add_executable(end2end_inproc_test
   test/core/end2end/tests/invoke_large_request.cc
   test/core/end2end/tests/keepalive_timeout.cc
   test/core/end2end/tests/large_metadata.cc
+  test/core/end2end/tests/many_calls.cc
   test/core/end2end/tests/max_concurrent_streams.cc
   test/core/end2end/tests/max_connection_age.cc
   test/core/end2end/tests/max_connection_idle.cc
@@ -14919,6 +14923,7 @@ add_executable(end2end_posix_test
   test/core/end2end/tests/invoke_large_request.cc
   test/core/end2end/tests/keepalive_timeout.cc
   test/core/end2end/tests/large_metadata.cc
+  test/core/end2end/tests/many_calls.cc
   test/core/end2end/tests/max_concurrent_streams.cc
   test/core/end2end/tests/max_connection_age.cc
   test/core/end2end/tests/max_connection_idle.cc
