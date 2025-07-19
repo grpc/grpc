@@ -21,6 +21,7 @@
 #ifdef GPR_WINDOWS
 
 #include <windows.h>
+#include <memory>
 
 #include <cstdint>
 
