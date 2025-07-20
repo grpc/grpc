@@ -41,6 +41,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "test/core/load_balancing/lb_policy_test_lib.h"
+#include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
@@ -197,8 +198,21 @@ TEST_F(OutlierDetectionTest, Basic) {
 }
 
 TEST_F(OutlierDetectionTest, FailurePercentage) {
+  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
+  
   constexpr std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:440", "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"};
+  
+  // Set up metrics tracking
+  const auto kEjectionsEnforced =
+      GlobalInstrumentsRegistryTestPeer::FindUInt64CounterHandleByName(
+          "grpc.lb.outlier_detection.ejections_enforced")
+          .value();
+  const absl::string_view kLabelValues[] = {target_};
+  auto stats_plugin = std::make_shared<FakeStatsPlugin>(
+      nullptr, /*use_disabled_by_default_metrics=*/true);
+  stats_plugin_group_.AddStatsPlugin(stats_plugin, nullptr);
+  
   // Send initial update.
   absl::Status status = ApplyUpdate(
       BuildUpdate(kAddresses, ConfigBuilder()
@@ -221,6 +235,12 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
   // Advance time and run the timer callback to trigger ejection.
   IncrementTimeBy(Duration::Seconds(10));
   LOG(INFO) << "### ejection complete";
+  
+  // Check that enforced ejection metric was recorded
+  EXPECT_THAT(stats_plugin->GetUInt64CounterValue(kEjectionsEnforced, kLabelValues,
+                                                   {"failure_percentage"}),
+              ::testing::Optional(::testing::Gt(1)));
+  
   // Expect a picker update.
   std::vector<absl::string_view> remaining_addresses;
   for (const auto& addr : kAddresses) {
@@ -235,6 +255,8 @@ TEST_F(OutlierDetectionTest, FailurePercentage) {
 }
 
 TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
+  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
+  
   // Can't use timer duration expectation here, because the Happy
   // Eyeballs timer inside pick_first will use a different duration than
   // the timer in outlier_detection.
@@ -249,6 +271,17 @@ TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
       MakeEndpointAddresses(kEndpoint1Addresses),
       MakeEndpointAddresses(kEndpoint2Addresses),
       MakeEndpointAddresses(kEndpoint3Addresses)};
+  
+  // Set up metrics tracking
+  const auto kEjectionsEnforced =
+      GlobalInstrumentsRegistryTestPeer::FindUInt64CounterHandleByName(
+          "grpc.lb.outlier_detection.ejections_enforced")
+          .value();
+  const absl::string_view kLabelValues[] = {target_};
+  auto stats_plugin = std::make_shared<FakeStatsPlugin>(
+      nullptr, /*use_disabled_by_default_metrics=*/true);
+  stats_plugin_group_.AddStatsPlugin(stats_plugin, nullptr);
+  
   // Send initial update.
   absl::Status status = ApplyUpdate(
       BuildUpdate(kEndpoints, ConfigBuilder()
@@ -296,6 +329,12 @@ TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
   // Advance time and run the timer callback to trigger ejection.
   IncrementTimeBy(Duration::Seconds(10));
   LOG(INFO) << "### ejection complete";
+  
+  // Check that enforced ejection metric was recorded
+  EXPECT_THAT(stats_plugin->GetUInt64CounterValue(kEjectionsEnforced, kLabelValues,
+                                                   {"failure_percentage"}),
+              ::testing::Optional(::testing::Gt(1)));
+  
   // Expect a picker that removes the ejected address.
   WaitForRoundRobinListChange(
       {kEndpoint1Addresses[0], kEndpoint2Addresses[0], kEndpoint3Addresses[0]},
@@ -333,6 +372,8 @@ TEST_F(OutlierDetectionTest, MultipleAddressesPerEndpoint) {
 }
 
 TEST_F(OutlierDetectionTest, EjectionStateResetsWhenEndpointAddressesChange) {
+  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
+  
   // Can't use timer duration expectation here, because the Happy
   // Eyeballs timer inside pick_first will use a different duration than
   // the timer in outlier_detection.
@@ -354,6 +395,17 @@ TEST_F(OutlierDetectionTest, EjectionStateResetsWhenEndpointAddressesChange) {
                      .SetMaxEjectionTime(Duration::Seconds(1))
                      .SetBaseEjectionTime(Duration::Seconds(1))
                      .Build();
+  
+  // Set up metrics tracking
+  const auto kEjectionsEnforced =
+      GlobalInstrumentsRegistryTestPeer::FindUInt64CounterHandleByName(
+          "grpc.lb.outlier_detection.ejections_enforced")
+          .value();
+  const absl::string_view kLabelValues[] = {target_};
+  auto stats_plugin = std::make_shared<FakeStatsPlugin>(
+      nullptr, /*use_disabled_by_default_metrics=*/true);
+  stats_plugin_group_.AddStatsPlugin(stats_plugin, nullptr);
+  
   // Send initial update.
   absl::Status status =
       ApplyUpdate(BuildUpdate(kEndpoints, kConfig), lb_policy_.get());
@@ -392,6 +444,12 @@ TEST_F(OutlierDetectionTest, EjectionStateResetsWhenEndpointAddressesChange) {
   // Advance time and run the timer callback to trigger ejection.
   IncrementTimeBy(Duration::Seconds(10));
   LOG(INFO) << "### ejection complete";
+  
+  // Check that enforced ejection metric was recorded
+  EXPECT_THAT(stats_plugin->GetUInt64CounterValue(kEjectionsEnforced, kLabelValues,
+                                                   {"failure_percentage"}),
+              ::testing::Optional(::testing::Gt(1)));
+  
   // Expect a picker that removes the ejected address.
   WaitForRoundRobinListChange(
       {kEndpoint1Addresses[0], kEndpoint2Addresses[0], kEndpoint3Addresses[0]},
@@ -408,12 +466,25 @@ TEST_F(OutlierDetectionTest, EjectionStateResetsWhenEndpointAddressesChange) {
 }
 
 TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
+  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
+  
   // Can't use timer duration expectation here, because the Happy
   // Eyeballs timer inside pick_first will use a different duration than
   // the timer in outlier_detection.
   SetExpectedTimerDuration(std::nullopt);
   constexpr std::array<absl::string_view, 3> kAddresses = {
       "ipv4:127.0.0.1:440", "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442"};
+  
+  // Set up metrics tracking
+  const auto kEjectionsEnforced =
+      GlobalInstrumentsRegistryTestPeer::FindUInt64CounterHandleByName(
+          "grpc.lb.outlier_detection.ejections_enforced")
+          .value();
+  const absl::string_view kLabelValues[] = {target_};
+  auto stats_plugin = std::make_shared<FakeStatsPlugin>(
+      nullptr, /*use_disabled_by_default_metrics=*/true);
+  stats_plugin_group_.AddStatsPlugin(stats_plugin, nullptr);
+  
   // Send initial update.
   absl::Status status = ApplyUpdate(
       BuildUpdate(kAddresses,
@@ -453,10 +524,210 @@ TEST_F(OutlierDetectionTest, DoesNotWorkWithPickFirst) {
   // Advance time and run the timer callback to trigger ejection.
   IncrementTimeBy(Duration::Seconds(10));
   LOG(INFO) << "### ejection timer pass complete";
+  
+  // Check that no ejection metrics were recorded (since pick_first doesn't support ejection)
+  EXPECT_THAT(stats_plugin->GetUInt64CounterValue(kEjectionsEnforced, kLabelValues,
+                                                   {"failure_percentage"}),
+              ::testing::Optional(0));
+  
   // Subchannel should not be ejected.
   ExpectQueueEmpty();
   // Subchannel should not see a reconnection request.
   EXPECT_FALSE(subchannel->ConnectionRequested());
+}
+
+TEST_F(OutlierDetectionTest, Metrics) {
+  if (!IsEventEngineClientEnabled()) GTEST_SKIP() << "Needs event engine";
+  
+  // Test metric definitions
+  const auto* kEjectionsEnforcedDescriptor =
+      GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
+          "grpc.lb.outlier_detection.ejections_enforced");
+  ASSERT_NE(kEjectionsEnforcedDescriptor, nullptr);
+  EXPECT_EQ(kEjectionsEnforcedDescriptor->value_type,
+            GlobalInstrumentsRegistry::ValueType::kUInt64);
+  EXPECT_EQ(kEjectionsEnforcedDescriptor->instrument_type,
+            GlobalInstrumentsRegistry::InstrumentType::kCounter);
+  EXPECT_EQ(kEjectionsEnforcedDescriptor->enable_by_default, false);
+  EXPECT_EQ(kEjectionsEnforcedDescriptor->name, "grpc.lb.outlier_detection.ejections_enforced");
+  EXPECT_EQ(kEjectionsEnforcedDescriptor->unit, "{ejection}");
+  EXPECT_THAT(kEjectionsEnforcedDescriptor->label_keys, ::testing::ElementsAre("grpc.target"));
+  EXPECT_THAT(kEjectionsEnforcedDescriptor->optional_label_keys,
+              ::testing::ElementsAre("grpc.lb.outlier_detection.detection_method"));
+
+  const auto* kEjectionsUnenforcedDescriptor =
+      GlobalInstrumentsRegistryTestPeer::FindMetricDescriptorByName(
+          "grpc.lb.outlier_detection.ejections_unenforced");
+  ASSERT_NE(kEjectionsUnenforcedDescriptor, nullptr);
+  EXPECT_EQ(kEjectionsUnenforcedDescriptor->value_type,
+            GlobalInstrumentsRegistry::ValueType::kUInt64);
+  EXPECT_EQ(kEjectionsUnenforcedDescriptor->instrument_type,
+            GlobalInstrumentsRegistry::InstrumentType::kCounter);
+  EXPECT_EQ(kEjectionsUnenforcedDescriptor->enable_by_default, false);
+  EXPECT_EQ(kEjectionsUnenforcedDescriptor->name, "grpc.lb.outlier_detection.ejections_unenforced");
+  EXPECT_EQ(kEjectionsUnenforcedDescriptor->unit, "{ejection}");
+  EXPECT_THAT(kEjectionsUnenforcedDescriptor->label_keys, ::testing::ElementsAre("grpc.target"));
+  EXPECT_THAT(kEjectionsUnenforcedDescriptor->optional_label_keys,
+              ::testing::ElementsAre("grpc.lb.outlier_detection.detection_method",
+                                   "grpc.lb.outlier_detection.unenforced_reason"));
+
+  // Test metric values
+  const auto kEjectionsEnforced =
+      GlobalInstrumentsRegistryTestPeer::FindUInt64CounterHandleByName(
+          "grpc.lb.outlier_detection.ejections_enforced")
+          .value();
+  const auto kEjectionsUnenforced =
+      GlobalInstrumentsRegistryTestPeer::FindUInt64CounterHandleByName(
+          "grpc.lb.outlier_detection.ejections_unenforced")
+          .value();
+  const absl::string_view kLabelValues[] = {target_};
+  auto stats_plugin = std::make_shared<FakeStatsPlugin>(
+      nullptr, /*use_disabled_by_default_metrics=*/true);
+  stats_plugin_group_.AddStatsPlugin(stats_plugin, nullptr);
+
+  // Test success rate ejection with enforcement
+  constexpr std::array<absl::string_view, 3> kAddresses = {
+      "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443"};
+  
+  auto config = ConfigBuilder()
+                    .SetSuccessRateStdevFactor(1900)
+                    .SetSuccessRateEnforcementPercentage(100)
+                    .SetSuccessRateMinHosts(1)
+                    .SetSuccessRateRequestVolume(1)
+                    .SetMaxEjectionPercent(50)
+                    .Build();
+  
+  absl::Status status = ApplyUpdate(
+      BuildUpdate(kAddresses, config), lb_policy());
+  EXPECT_TRUE(status.ok()) << status;
+  
+  auto picker = ExpectRoundRobinStartup(kAddresses);
+  ASSERT_NE(picker, nullptr);
+  
+  // Report failures to trigger ejection
+  for (int i = 0; i < 10; ++i) {
+    DoPickWithFailedCall(picker.get());
+  }
+  
+  // Advance time to trigger ejection
+  IncrementTimeBy(Duration::Seconds(10));
+  
+    // Check that metrics were recorded
+  EXPECT_THAT(stats_plugin->GetUInt64CounterValue(kEjectionsEnforced, kLabelValues,
+                                                   {"success_rate"}),
+              ::testing::Optional(::testing::Gt(1)));
+
+  // Test unenforced ejection due to enforcement_percentage
+  auto config_unenforced = ConfigBuilder()
+                               .SetSuccessRateStdevFactor(1900)
+                               .SetSuccessRateEnforcementPercentage(10)  // Low enforcement percentage
+                               .SetSuccessRateMinHosts(1)
+                               .SetSuccessRateRequestVolume(1)
+                               .SetMaxEjectionPercent(50)
+                               .Build();
+  
+  status = ApplyUpdate(BuildUpdate(kAddresses, config_unenforced), lb_policy());
+  EXPECT_TRUE(status.ok()) << status;
+  
+  picker = ExpectRoundRobinStartup(kAddresses);
+  ASSERT_NE(picker, nullptr);
+  
+  // Report failures to trigger ejection
+  for (int i = 0; i < 10; ++i) {
+    DoPickWithFailedCall(picker.get());
+  }
+  
+  // Advance time to trigger ejection
+  IncrementTimeBy(Duration::Seconds(10));
+  
+  // Check that unenforced metrics were recorded
+  EXPECT_THAT(stats_plugin->GetUInt64CounterValue(kEjectionsUnenforced, kLabelValues,
+                                                   {"success_rate", "enforcement_percentage"}),
+              ::testing::Optional(::testing::Gt(0)));
+
+  // Test unenforced ejection due to max_ejection_overflow
+  auto config_max_overflow = ConfigBuilder()
+                                 .SetSuccessRateStdevFactor(1900)
+                                 .SetSuccessRateEnforcementPercentage(100)
+                                 .SetSuccessRateMinHosts(1)
+                                 .SetSuccessRateRequestVolume(1)
+                                 .SetMaxEjectionPercent(1)  // Very low max ejection percent
+                                 .Build();
+  
+  status = ApplyUpdate(BuildUpdate(kAddresses, config_max_overflow), lb_policy());
+  EXPECT_TRUE(status.ok()) << status;
+  
+  picker = ExpectRoundRobinStartup(kAddresses);
+  ASSERT_NE(picker, nullptr);
+  
+  // Report failures to trigger ejection
+  for (int i = 0; i < 10; ++i) {
+    DoPickWithFailedCall(picker.get());
+  }
+  
+  // Advance time to trigger ejection
+  IncrementTimeBy(Duration::Seconds(10));
+  
+  // Check that unenforced metrics were recorded due to max ejection overflow
+  EXPECT_THAT(stats_plugin->GetUInt64CounterValue(kEjectionsUnenforced, kLabelValues,
+                                                   {"success_rate", "max_ejection_overflow"}),
+              ::testing::Optional(::testing::Gt(1)));
+
+  // Test failure percentage ejection with enforcement
+  auto config_failure_percentage = ConfigBuilder()
+                                      .SetFailurePercentageThreshold(1)  // Very low threshold
+                                      .SetFailurePercentageEnforcementPercentage(100)
+                                      .SetFailurePercentageMinHosts(1)
+                                      .SetFailurePercentageRequestVolume(1)
+                                      .SetMaxEjectionPercent(50)
+                                      .Build();
+  
+  status = ApplyUpdate(BuildUpdate(kAddresses, config_failure_percentage), lb_policy());
+  EXPECT_TRUE(status.ok()) << status;
+  
+  picker = ExpectRoundRobinStartup(kAddresses);
+  ASSERT_NE(picker, nullptr);
+  
+  // Report failures to trigger ejection
+  for (int i = 0; i < 10; ++i) {
+    DoPickWithFailedCall(picker.get());
+  }
+  
+  // Advance time to trigger ejection
+  IncrementTimeBy(Duration::Seconds(10));
+  
+  // Check that failure percentage enforced metrics were recorded
+  EXPECT_THAT(stats_plugin->GetUInt64CounterValue(kEjectionsEnforced, kLabelValues,
+                                                   {"failure_percentage"}),
+              ::testing::Optional(::testing::Gt(1)));
+
+  // Test failure percentage unenforced ejection
+  auto config_failure_unenforced = ConfigBuilder()
+                                       .SetFailurePercentageThreshold(1)
+                                       .SetFailurePercentageEnforcementPercentage(10)  // Low enforcement
+                                       .SetFailurePercentageMinHosts(1)
+                                       .SetFailurePercentageRequestVolume(1)
+                                       .SetMaxEjectionPercent(50)
+                                       .Build();
+  
+  status = ApplyUpdate(BuildUpdate(kAddresses, config_failure_unenforced), lb_policy());
+  EXPECT_TRUE(status.ok()) << status;
+  
+  picker = ExpectRoundRobinStartup(kAddresses);
+  ASSERT_NE(picker, nullptr);
+  
+  // Report failures to trigger ejection
+  for (int i = 0; i < 10; ++i) {
+    DoPickWithFailedCall(picker.get());
+  }
+  
+  // Advance time to trigger ejection
+  IncrementTimeBy(Duration::Seconds(10));
+  
+  // Check that failure percentage unenforced metrics were recorded
+  EXPECT_THAT(stats_plugin->GetUInt64CounterValue(kEjectionsUnenforced, kLabelValues,
+                                                   {"failure_percentage", "enforcement_percentage"}),
+              ::testing::Optional(::testing::Gt(1)));
 }
 
 }  // namespace
