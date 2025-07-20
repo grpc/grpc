@@ -16,6 +16,7 @@
 # TODO(https://github.com/grpc/grpc/issues/21965): Run under setuptools.
 
 import os
+import socket
 
 _MAXIMUM_CHANNELS = 10
 
@@ -363,26 +364,25 @@ class SimpleStubsTest(unittest.TestCase):
 
     def test_default_wait_for_ready(self):
         addr, port, sock = get_socket()
-        sock.close()
         target = f"{addr}:{port}"
-        (
-            channel,
-            unused_method_handle,
-        ) = grpc._simple_stubs.ChannelCache.get().get_channel(
-            target=target,
-            options=(),
-            channel_credentials=None,
-            insecure=True,
-            compression=None,
-            method=_UNARY_UNARY,
-            _registered_method=True,
-        )
+        if os.name == "nt":
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            sock.bind(('localhost', 0))
+            port = sock.getsockname()[1]
+            target = f"localhost:{port}"
+            port = sock.getsockname()[1]
+        sock.close()
+        channel = grpc.insecure_channel(target)
         rpc_finished_event = threading.Event()
         rpc_failed_event = threading.Event()
         server = None
+        connectivity_state = None
 
         def _on_connectivity_changed(connectivity):
-            nonlocal server
+            nonlocal server, connectivity_state
+            print(f"Connectivity state changed to: {connectivity}")
+            connectivity_state = connectivity
             if connectivity is grpc.ChannelConnectivity.TRANSIENT_FAILURE:
                 self.assertFalse(rpc_finished_event.is_set())
                 self.assertFalse(rpc_failed_event.is_set())
@@ -399,7 +399,18 @@ class SimpleStubsTest(unittest.TestCase):
             else:
                 self.fail("Encountered unknown state.")
 
-        channel.subscribe(_on_connectivity_changed)
+        if os.name == "nt":
+            channel.subscribe(_on_connectivity_changed, try_to_connect=True)
+        else:
+            channel.subscribe(_on_connectivity_changed)
+
+        print("Waiting for TRANSIENT_FAILURE...")
+        start_time = time.time()
+        while connectivity_state != grpc.ChannelConnectivity.TRANSIENT_FAILURE:
+            if time.time() - start_time > 5.0:
+                print("Timeout waiting for TRANSIENT_FAILURE")
+                break
+            time.sleep(0.1)
 
         def _send_rpc():
             try:
