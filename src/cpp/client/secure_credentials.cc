@@ -84,21 +84,14 @@ std::shared_ptr<WrappedChannelCredentials> WrapChannelCredentials(
 
 }  // namespace
 
-std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials() {
-  grpc::internal::GrpcLibrary init;  // To call grpc_init().
-  return WrapChannelCredentials(
-      grpc_google_default_credentials_create(nullptr, nullptr));
-}
-
-std::shared_ptr<ChannelCredentials> GoogleDefaultDualCredentials() {
+std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials(
+    const GoogleDefaultCredentialsOptions& options) {
   grpc::internal::GrpcLibrary init;  // To call grpc_init().
   grpc_call_credentials* alts_call_creds = nullptr;
 
-  DefaultCallCredentialsCreationMethod call_credentials_creation_method =
-      grpc_core::internal::google_compute_engine_credential_creation_method();
-
-  if (call_credentials_creation_method ==
-      DefaultCallCredentialsCreationMethod::kFromDefaultGCE) {
+  if (options.use_alts &&
+      grpc_core::internal::google_compute_engine_credential_creation_method() ==
+          DefaultCallCredentialsCreationMethod::kFromDefaultGCE) {
     grpc_google_compute_engine_credentials_options* options = nullptr;
     options->create_alts_credentials = true;
     alts_call_creds = grpc_google_compute_engine_credentials_create(options);

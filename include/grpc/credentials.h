@@ -485,8 +485,8 @@ GRPCAPI grpc_call_credentials* grpc_composite_call_credentials_create(
     grpc_call_credentials* creds1, grpc_call_credentials* creds2,
     void* reserved);
 
-/** Context that can be used by the create credentials api in order to create
-   alts specific credentials. */
+/** Context that can be used by the google compute engine create credentials api
+   in order to configure the desired credentials. */
 typedef struct {
   /** Indicates if the credentials should be used on alts connections. */
   bool create_alts_credentials;
