@@ -403,30 +403,35 @@ static grpc_core::RefCountedPtr<grpc_call_credentials> make_default_call_creds(
   grpc_core::RefCountedPtr<grpc_call_credentials> call_creds;
   grpc_error_handle err;
 
-  // First, try the environment variable.
-  auto path_from_env = grpc_core::GetEnv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR);
-  if (path_from_env.has_value()) {
-    err = create_default_creds_from_path(*path_from_env, &call_creds);
-    if (err.ok()) return call_creds;
-    *error = grpc_error_add_child(*error, err);
-  }
+  switch (
+      grpc_core::internal::google_compute_engine_credential_creation_method()) {
+    case DefaultCallCredentialsCreationMethod::kFromEnviromentPathValue:
+      err = create_default_creds_from_path(
+          *grpc_core::GetEnv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR), &call_creds);
+      if (err.ok()) return call_creds;
+      *error = grpc_error_add_child(*error, err);
+      [[fallthrough]];
+    case DefaultCallCredentialsCreationMethod::kFromWellKnownFile:
+      err = create_default_creds_from_path(
+          grpc_get_well_known_google_credentials_file_path(), &call_creds);
+      if (err.ok()) return call_creds;
+      *error = grpc_error_add_child(*error, err);
 
-  // Then the well-known file.
-  err = create_default_creds_from_path(
-      grpc_get_well_known_google_credentials_file_path(), &call_creds);
-  if (err.ok()) return call_creds;
-  *error = grpc_error_add_child(*error, err);
-
-  update_tenancy();
-
-  if (metadata_server_available()) {
-    call_creds = grpc_core::RefCountedPtr<grpc_call_credentials>(
-        grpc_google_compute_engine_credentials_create(nullptr));
-    if (call_creds == nullptr) {
+      update_tenancy();
+      if (!metadata_server_available()) {
+        break;
+      }
+      [[fallthrough]];
+    case DefaultCallCredentialsCreationMethod::kFromDefaultGCE:
+      call_creds = grpc_core::RefCountedPtr<grpc_call_credentials>(
+          grpc_google_compute_engine_credentials_create(nullptr));
+      if (call_creds != nullptr) return call_creds;
       *error = GRPC_ERROR_CREATE(GRPC_GOOGLE_CREDENTIAL_CREATION_ERROR);
       *error = grpc_error_add_child(
           *error, GRPC_ERROR_CREATE("Failed to get credentials from network"));
-    }
+      break;
+    case DefaultCallCredentialsCreationMethod::kNone:
+      break;
   }
 
   return call_creds;
@@ -490,6 +495,28 @@ void grpc_flush_cached_google_default_credentials(void) {
   gpr_once_init(&g_once, init_default_credentials);
   MutexLock lock(g_state_mu);
   g_metadata_server_available = 0;
+}
+
+DefaultCallCredentialsCreationMethod
+google_compute_engine_credential_creation_method() {
+  // First, try the environment variable.
+  auto path_from_env = grpc_core::GetEnv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR);
+  if (path_from_env.has_value()) {
+    return DefaultCallCredentialsCreationMethod::kFromEnviromentPathValue;
+  }
+
+  // Then the well-known file.
+  if (grpc_get_well_known_google_credentials_file_path() != "") {
+    return DefaultCallCredentialsCreationMethod::kFromWellKnownFile;
+  }
+
+  update_tenancy();
+
+  if (metadata_server_available()) {
+    return DefaultCallCredentialsCreationMethod::kFromDefaultGCE;
+  }
+
+  return DefaultCallCredentialsCreationMethod::kNone;
 }
 
 }  // namespace internal
