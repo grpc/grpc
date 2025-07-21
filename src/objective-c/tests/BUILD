@@ -274,6 +274,7 @@ grpc_objc_testing_library(
         "//test/cpp/end2end:delegating_channel_test_lib",
         "//test/cpp/end2end:end2end_test_lib",
         "//test/cpp/end2end:exception_test_lib",
+        "//test/cpp/end2end:generic_end2end_test_lib",
         "//test/cpp/end2end:server_early_return_test_lib",
     ],
 )

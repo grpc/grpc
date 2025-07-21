@@ -517,13 +517,14 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "generic_end2end_test",
+grpc_cc_library(
+    name = "generic_end2end_test_lib",
+    testonly = True,
     srcs = ["generic_end2end_test.cc"],
     external_deps = [
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    linkstatic = True,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -533,6 +534,15 @@ grpc_cc_test(
         "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_test(
+    name = "generic_end2end_test",
+    tags = ["cpp_end2end_test"],
+    deps = [
+        ":generic_end2end_test_lib",
     ],
 )
 
