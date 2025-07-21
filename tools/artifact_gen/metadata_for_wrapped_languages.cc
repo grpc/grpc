@@ -660,16 +660,12 @@ void AddPhpConfig(nlohmann::json& config) {
 
   std::vector<std::string> windows_srcs;
   for (const auto& src : w32_srcs) {
-    windows_srcs.emplace_back(absl::StrReplaceAll(src, {{"", "\\\\"}}));
+    windows_srcs.emplace_back(absl::StrReplaceAll(src, {{"/", "\\\\"}}));
   }
   config["php_config_w32"]["srcs"] = windows_srcs;
   std::set<std::string> windows_dirs;
   for (const auto& dir : w32_dirs) {
-    std::vector<std::string> frags = absl::StrSplit(dir, '/');
-    for (size_t i = 0; i < frags.size(); ++i) {
-      windows_dirs.insert(
-          absl::StrJoin(frags.begin(), frags.begin() + i + 1, "\\\\"));
-    }
+    windows_dirs.emplace_back(absl::StrReplaceAll(dir, {{"/", "\\\\"}}));
   }
   config["php_config_w32"]["dirs"] = windows_dirs;
 }
