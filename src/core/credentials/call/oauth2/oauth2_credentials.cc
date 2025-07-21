@@ -363,22 +363,16 @@ class grpc_compute_engine_token_fetcher_alts_credentials
 }  // namespace
 
 grpc_call_credentials* grpc_google_compute_engine_credentials_create(
-    void* reserved) {
+    grpc_google_compute_engine_credentials_options* options) {
   GRPC_TRACE_LOG(api, INFO)
-      << "grpc_compute_engine_credentials_create(reserved=" << reserved << ")";
-  CHECK_EQ(reserved, nullptr);
+      << "grpc_compute_engine_credentials_create(options=" << options << ")";
+  if (options != nullptr && options->create_alts_credentials) {
+    return grpc_core::MakeRefCounted<
+               grpc_compute_engine_token_fetcher_alts_credentials>()
+        .release();
+  }
   return grpc_core::MakeRefCounted<
              grpc_compute_engine_token_fetcher_credentials>()
-      .release();
-}
-
-grpc_call_credentials* grpc_google_compute_engine_alts_credentials_create(
-    void* reserved) {
-  GRPC_TRACE_LOG(api, INFO)
-      << "grpc_compute_engine_credentials_create(reserved=" << reserved << ")";
-  CHECK_EQ(reserved, nullptr);
-  return grpc_core::MakeRefCounted<
-             grpc_compute_engine_token_fetcher_alts_credentials>()
       .release();
 }
 

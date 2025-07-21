@@ -485,18 +485,21 @@ GRPCAPI grpc_call_credentials* grpc_composite_call_credentials_create(
     grpc_call_credentials* creds1, grpc_call_credentials* creds2,
     void* reserved);
 
+/** Context that can be used by the create credentials api in order to create
+   alts specific credentials. */
+typedef struct {
+  /** Indicates if the credentials should be used on alts connections. */
+  bool create_alts_credentials;
+
+  /** Reserved for future use. */
+  void* reserved;
+} grpc_google_compute_engine_credentials_options;
+
 /** Creates a compute engine credentials object for connecting to Google.
    WARNING: Do NOT use this credentials to connect to a non-google service as
    this could result in an oauth2 token leak. */
 GRPCAPI grpc_call_credentials* grpc_google_compute_engine_credentials_create(
-    void* reserved);
-
-/** Creates a compute engine credentials object for connecting to Google with
-   alts as transport protocol.
-   WARNING: Do NOT use this credentials to connect to a non-google service as
-   this could result in an oauth2 token leak. */
-GRPCAPI grpc_call_credentials*
-grpc_google_compute_engine_alts_credentials_create(void* reserved);
+    grpc_google_compute_engine_credentials_options* options);
 
 /** Creates a composite channel credentials object. The security level of
  * resulting connection is determined by channel_creds. */
