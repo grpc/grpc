@@ -34,9 +34,14 @@ namespace http2 {
 template <typename T>
 class Center : public RefCounted<Center<T>> {
  public:
+  struct EnqueueResult {
+    absl::Status status;
+    bool is_first_enqueue;
+  };
+
   explicit Center(const uint32_t max_tokens) : max_tokens_(max_tokens) {}
 
-  // Returns a promise that resolves when the data is enqueued.
+  // A promise that resolves when the data is enqueued.
   // It is expected that calls to this function are not done in parallel. At
   // most one call to this function should be pending at a time. If
   // tokens_consumed_ is 0 or the new tokens fit within max_tokens_, then
@@ -44,31 +49,28 @@ class Center : public RefCounted<Center<T>> {
   // using tokens_consumed over queue_.empty() because there can be enqueues
   // with tokens = 0. Enqueues with tokens = 0 are primarily for sending
   // metadata as flow control does not apply to them.
-  auto Enqueue(T data, const uint32_t tokens) {
-    return [self = this->Ref(), tokens,
-            data = std::move(data)]() mutable -> Poll<absl::Status> {
-      MutexLock lock(&self->mu_);
-      GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueueing data. Data tokens: "
-                                   << tokens;
-      const uint32_t max_tokens_consumed_threshold =
-          self->max_tokens_ >= tokens ? self->max_tokens_ - tokens : 0;
-      if (self->tokens_consumed_ == 0 ||
-          self->tokens_consumed_ <= max_tokens_consumed_threshold) {
-        self->tokens_consumed_ += tokens;
-        self->queue_.emplace(Entry{std::move(data), tokens});
-        GRPC_STREAM_DATA_QUEUE_DEBUG
-            << "Enqueue successful. Data tokens: " << tokens
-            << " Current tokens consumed: " << self->tokens_consumed_;
-        return absl::OkStatus();
-      }
-
+  Poll<EnqueueResult> Enqueue(T& data, const uint32_t tokens) {
+    MutexLock lock(&mu_);
+    GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueueing data. Data tokens: " << tokens;
+    const uint32_t max_tokens_consumed_threshold =
+        max_tokens_ >= tokens ? max_tokens_ - tokens : 0;
+    if (tokens_consumed_ == 0 ||
+        tokens_consumed_ <= max_tokens_consumed_threshold) {
+      tokens_consumed_ += tokens;
+      queue_.emplace(Entry{std::move(data), tokens});
       GRPC_STREAM_DATA_QUEUE_DEBUG
-          << "Token threshold reached. Data tokens: " << tokens
-          << " Tokens consumed: " << self->tokens_consumed_
-          << " Max tokens: " << self->max_tokens_;
-      self->waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-      return Pending{};
-    };
+          << "Enqueue successful. Data tokens: " << tokens
+          << " Current tokens consumed: " << tokens_consumed_;
+      return EnqueueResult{absl::OkStatus(),
+                           /*is_first_enqueue=*/queue_.size() == 1};
+    }
+
+    GRPC_STREAM_DATA_QUEUE_DEBUG
+        << "Token threshold reached. Data tokens: " << tokens
+        << " Tokens consumed: " << tokens_consumed_
+        << " Max tokens: " << max_tokens_;
+    waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+    return Pending{};
   }
 
   // Sync function to dequeue the next entry. Returns nullopt if the queue is
@@ -149,8 +151,8 @@ class SimpleQueue {
   SimpleQueue(const SimpleQueue&) = delete;
   SimpleQueue& operator=(const SimpleQueue&) = delete;
 
-  auto Enqueue(T data, const uint32_t tokens) {
-    return center_->Enqueue(std::move(data), tokens);
+  auto Enqueue(T& data, const uint32_t tokens) {
+    return center_->Enqueue(data, tokens);
   }
 
   std::optional<T> Dequeue(const uint32_t allowed_dequeue_tokens,
@@ -173,7 +175,7 @@ class SimpleQueue {
 };
 
 template <typename MetadataHandle>
-class StreamDataQueue {
+class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
  public:
   explicit StreamDataQueue(const bool is_client, const uint32_t stream_id,
                            const uint32_t queue_size)
@@ -219,8 +221,18 @@ class StreamDataQueue {
     is_initial_metadata_queued_ = true;
     GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueueing initial metadata for stream "
                                  << stream_id_;
-    return queue_.Enqueue(InitialMetadataType{std::move(metadata)},
-                          /*tokens=*/0);
+    return [self = this->Ref(),
+            entry = QueueEntry{InitialMetadataType{
+                std::move(metadata)}}]() mutable -> Poll<absl::Status> {
+      MutexLock lock(&self->mu_);
+      auto result = self->queue_.Enqueue(entry, /*tokens=*/0);
+      if (result.ready()) {
+        // TODO(akshitpatel) : [PH2][P2] : Add the logic to set the is_writable
+        // flag.
+        return result.value().status;
+      }
+      return Pending{};
+    };
   }
 
   // Enqueue Trailing Metadata.
@@ -235,8 +247,18 @@ class StreamDataQueue {
     is_end_stream_ = true;
     GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueueing trailing metadata for stream "
                                  << stream_id_;
-    return queue_.Enqueue(TrailingMetadataType{std::move(metadata)},
-                          /*tokens=*/0);
+    return [self = this->Ref(),
+            entry = QueueEntry{TrailingMetadataType{
+                std::move(metadata)}}]() mutable -> Poll<absl::Status> {
+      MutexLock lock(&self->mu_);
+      auto result = self->queue_.Enqueue(entry, /*tokens=*/0);
+      if (result.ready()) {
+        // TODO(akshitpatel) : [PH2][P2] : Add the logic to set the is_writable
+        // flag.
+        return result.value().status;
+      }
+      return Pending{};
+    };
   }
 
   // Returns a promise that resolves when the message is enqueued. There may be
@@ -254,7 +276,17 @@ class StreamDataQueue {
                                  << stream_id_;
     const uint32_t tokens =
         message->payload()->Length() + kGrpcHeaderSizeInBytes;
-    return queue_.Enqueue(std::move(message), tokens);
+    return [self = this->Ref(), entry = QueueEntry{std::move(message)},
+            tokens]() mutable -> Poll<absl::Status> {
+      MutexLock lock(&self->mu_);
+      auto result = self->queue_.Enqueue(entry, tokens);
+      if (result.ready()) {
+        // TODO(akshitpatel) : [PH2][P2] : Add the logic to set the is_writable
+        // flag.
+        return result.value().status;
+      }
+      return Pending{};
+    };
   }
 
   auto EnqueueHalfClosed() {
@@ -265,7 +297,17 @@ class StreamDataQueue {
     GRPC_STREAM_DATA_QUEUE_DEBUG << "Marking stream " << stream_id_
                                  << " as half closed";
     is_end_stream_ = true;
-    return queue_.Enqueue(HalfClosed{}, /*tokens=*/0);
+    return [self = this->Ref(),
+            entry = QueueEntry{HalfClosed{}}]() mutable -> Poll<absl::Status> {
+      MutexLock lock(&self->mu_);
+      auto result = self->queue_.Enqueue(entry, /*tokens=*/0);
+      if (result.ready()) {
+        // TODO(akshitpatel) : [PH2][P2] : Add the logic to set the is_writable
+        // flag.
+        return result.value().status;
+      }
+      return Pending{};
+    };
   }
 
   auto EnqueueResetStream(uint32_t error_code) {
@@ -275,7 +317,18 @@ class StreamDataQueue {
     GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueueing reset stream for stream "
                                  << stream_id_;
     is_end_stream_ = true;
-    return queue_.Enqueue(ResetStream{error_code}, /*tokens=*/0);
+    return [self = this->Ref(),
+            entry = QueueEntry{
+                ResetStream{error_code}}]() mutable -> Poll<absl::Status> {
+      MutexLock lock(&self->mu_);
+      auto result = self->queue_.Enqueue(entry, /*tokens=*/0);
+      if (result.ready()) {
+        // TODO(akshitpatel) : [PH2][P2] : Add the logic to set the is_writable
+        // flag.
+        return result.value().status;
+      }
+      return Pending{};
+    };
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -305,6 +358,7 @@ class StreamDataQueue {
   bool is_end_stream_ = false;
 
   // Access both during enqueue and dequeue.
+  Mutex mu_;
   SimpleQueue<QueueEntry> queue_;
 
   // Accessed only during dequeue.

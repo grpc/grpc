@@ -53,8 +53,9 @@ class SimpleQueueFuzzTest : public YodelTest {
   }
 
   auto EnqueueAndCheckSuccess(SimpleQueue<int>& queue, int data, int tokens) {
-    return Map(queue.Enqueue(data, tokens),
-               [](auto result) { EXPECT_EQ(result, absl::OkStatus()); });
+    return Map([&queue, data,
+                tokens]() mutable { return queue.Enqueue(data, tokens); },
+               [](auto result) { EXPECT_EQ(result.status, absl::OkStatus()); });
   }
 
   bool DequeueAndCheck(SimpleQueue<int>& queue, int data,
