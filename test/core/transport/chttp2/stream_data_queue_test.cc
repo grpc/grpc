@@ -449,7 +449,7 @@ void EnqueueTrailingMetadataAndCheckSuccess(
 }
 
 template <typename MetadataHandle>
-static void EnqueueMessageAndCheckSuccess(
+void EnqueueMessageAndCheckSuccess(
     RefCountedPtr<StreamDataQueue<MetadataHandle>> queue,
     MessageHandle message) {
   LOG(INFO) << "Enqueueing message with tokens: "
