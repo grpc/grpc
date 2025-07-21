@@ -101,11 +101,10 @@ std::shared_ptr<ChannelCredentials> GoogleDefaultDualCredentials() {
       DefaultCallCredentialsCreationMethod::kFromDefaultGCE) {
     alts_call_creds =
         grpc_google_compute_engine_alts_credentials_create(nullptr);
-  } else
+  }
 
-    return WrapChannelCredentials(grpc_google_default_credentials_create(
-        grpc_google_compute_engine_credentials_create(nullptr),
-        alts_call_creds));
+  return WrapChannelCredentials(grpc_google_default_credentials_create(
+      grpc_google_compute_engine_credentials_create(nullptr), alts_call_creds));
 }
 
 std::shared_ptr<CallCredentials> ExternalAccountCredentials(
