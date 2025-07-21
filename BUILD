@@ -948,6 +948,13 @@ grpc_cc_library(
         "absl/log:absl_check",
         "absl/log:absl_log",
         "absl/strings:cord",
+        "absl/base:core_headers",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/synchronization:synchronization",
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/types:span",
     ],
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     select_deps = [
@@ -962,10 +969,19 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["//visibility:public"],
     deps = [
+        "generic_stub_internal",
         "global_callback_hook",
+        "gpr_public_hdrs",
         "grpc++_base",
+        "grpc++_config_proto",
+        "grpc_public_hdrs",
+        "ref_counted_ptr",
+        "transport_auth_context",
         "//src/core:gpr_atm",
         "//src/core:slice",
+        "@com_google_protobuf//:any_cc_proto",
+        "@com_google_protobuf//:protobuf",
+        "@com_google_protobuf//src/google/protobuf/io",
     ],
 )
 
