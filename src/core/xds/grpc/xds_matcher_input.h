@@ -38,6 +38,7 @@ template <>
 class XdsMatcherInputFactory<absl::string_view> {
  public:
   virtual absl::string_view type() const = 0;
+  virtual UniqueTypeName context_type() const = 0;
   virtual std::unique_ptr<XdsMatcher::InputValue<absl::string_view>>
   ParseAndCreateInput(const XdsResourceType::DecodeContext& context,
                       absl::string_view serialized_value,
@@ -49,7 +50,6 @@ template <typename T = absl::string_view>
 class XdsMatcherInputRegistry {
  public:
   XdsMatcherInputRegistry();
-  UniqueTypeName context_type() const { return RpcMatchContext::Type(); }
   std::unique_ptr<XdsMatcher::InputValue<T>> ParseAndCreateInput(
       const XdsResourceType::DecodeContext& context, const XdsExtension& input,
       const UniqueTypeName& matcher_context, ValidationErrors* errors) const;
@@ -90,6 +90,9 @@ class MetadataInputFactory : public XdsMatcherInputFactory<absl::string_view> {
   absl::string_view type() const override { return Type(); }
   static absl::string_view Type() {
     return "envoy.type.matcher.v3.HttpRequestHeaderMatchInput";
+  }
+  UniqueTypeName context_type() const override {
+    return RpcMatchContext::Type();
   }
   std::unique_ptr<XdsMatcher::InputValue<absl::string_view>>
   ParseAndCreateInput(const XdsResourceType::DecodeContext& context,

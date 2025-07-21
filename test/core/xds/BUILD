@@ -287,8 +287,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "xds_matcher_e2e_test",
-    srcs = ["xds_matcher_e2e_test.cc"],
+    name = "xds_matcher_parse_test",
+    srcs = ["xds_matcher_parse_test.cc"],
     external_deps = ["gtest"],
     uses_event_engine = False,
     uses_polling = False,

@@ -1919,7 +1919,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx xds_http_filters_test)
   add_dependencies(buildtests_cxx xds_lb_policy_registry_test)
   add_dependencies(buildtests_cxx xds_listener_resource_type_test)
-  add_dependencies(buildtests_cxx xds_matcher_e2e_test)
+  add_dependencies(buildtests_cxx xds_matcher_parse_test)
   add_dependencies(buildtests_cxx xds_matcher_test)
   add_dependencies(buildtests_cxx xds_metadata_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -41850,7 +41850,7 @@ target_link_libraries(xds_listener_resource_type_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(xds_matcher_e2e_test
+add_executable(xds_matcher_parse_test
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -42183,19 +42183,19 @@ add_executable(xds_matcher_e2e_test
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.pb.h
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.grpc.pb.h
-  test/core/xds/xds_matcher_e2e_test.cc
+  test/core/xds/xds_matcher_parse_test.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
-    target_compile_definitions(xds_matcher_e2e_test
+    target_compile_definitions(xds_matcher_parse_test
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
     )
   endif()
 endif()
-target_compile_features(xds_matcher_e2e_test PUBLIC cxx_std_17)
-target_include_directories(xds_matcher_e2e_test
+target_compile_features(xds_matcher_parse_test PUBLIC cxx_std_17)
+target_include_directories(xds_matcher_parse_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -42214,7 +42214,7 @@ target_include_directories(xds_matcher_e2e_test
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(xds_matcher_e2e_test
+target_link_libraries(xds_matcher_parse_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   ${_gRPC_PROTOBUF_LIBRARIES}

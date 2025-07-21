@@ -14,10 +14,11 @@
 
 #include "src/core/util/trie_lookup.h"
 
-#include <memory>
 #include <string>
-#include <utility>
+#include <unordered_map>
+#include <vector>
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 namespace grpc_core {
@@ -30,103 +31,66 @@ class TrieLookupTreeTest : public ::testing::Test {
 
 TEST_F(TrieLookupTreeTest, AddAndExactLookup) {
   ASSERT_TRUE(trie_.AddNode("key1", "value1"));
-  auto* result = trie_.Lookup("key1");
-  ASSERT_NE(result, nullptr);
-  EXPECT_EQ(*result, "value1");
+  EXPECT_THAT(trie_.Lookup("key1"), ::testing::Pointee(std::string("value1")));
 }
 
 TEST_F(TrieLookupTreeTest, AddMultipleNodes) {
   ASSERT_TRUE(trie_.AddNode("key1", "value1"));
   ASSERT_TRUE(trie_.AddNode("key2", "value2"));
-  auto* result1 = trie_.Lookup("key1");
-  ASSERT_NE(result1, nullptr);
-  EXPECT_EQ(*result1, "value1");
-  auto* result2 = trie_.Lookup("key2");
-  ASSERT_NE(result2, nullptr);
-  EXPECT_EQ(*result2, "value2");
+  EXPECT_THAT(trie_.Lookup("key1"), ::testing::Pointee(std::string("value1")));
+  EXPECT_THAT(trie_.Lookup("key2"), ::testing::Pointee(std::string("value2")));
 }
 
 TEST_F(TrieLookupTreeTest, AddPrefixKey) {
   ASSERT_TRUE(trie_.AddNode("apple", "fruit"));
   ASSERT_TRUE(trie_.AddNode("app", "software"));
-  auto* result1 = trie_.Lookup("apple");
-  ASSERT_NE(result1, nullptr);
-  EXPECT_EQ(*result1, "fruit");
-  auto* result2 = trie_.Lookup("app");
-  ASSERT_NE(result2, nullptr);
-  EXPECT_EQ(*result2, "software");
-}
-
-TEST_F(TrieLookupTreeTest, OverwriteValue) {
-  ASSERT_TRUE(trie_.AddNode("key", "old"));
-  auto* result_old = trie_.Lookup("key");
-  ASSERT_NE(result_old, nullptr);
-  EXPECT_EQ(*result_old, "old");
-  ASSERT_TRUE(trie_.AddNode("key", "new", /*allow_overwrite=*/true));
-  auto* result_new = trie_.Lookup("key");
-  ASSERT_NE(result_new, nullptr);
-  EXPECT_EQ(*result_new, "new");
-}
-
-TEST_F(TrieLookupTreeTest, PreventOverwrite) {
-  ASSERT_TRUE(trie_.AddNode("key", "value1"));
-  ASSERT_FALSE(trie_.AddNode("key", "value2", /*allow_overwrite=*/false));
-  // Verify the original value is still there.
-  auto* result = trie_.Lookup("key");
-  ASSERT_NE(result, nullptr);
-  EXPECT_EQ(*result, "value1");
+  EXPECT_THAT(trie_.Lookup("apple"), ::testing::Pointee(std::string("fruit")));
+  EXPECT_THAT(trie_.Lookup("app"), ::testing::Pointee(std::string("software")));
 }
 
 TEST_F(TrieLookupTreeTest, LookupNonExistent) {
   trie_.AddNode("key", "value");
-  EXPECT_EQ(trie_.Lookup("non-existent-key"), nullptr);
+  EXPECT_THAT(trie_.Lookup("non-existent-key"), ::testing::IsNull());
 }
 
 TEST_F(TrieLookupTreeTest, LookupPrefixWithoutValue) {
   trie_.AddNode("apple", "value");
-  EXPECT_EQ(trie_.Lookup("app"), nullptr);
+  EXPECT_THAT(trie_.Lookup("app"), ::testing::IsNull());
 }
 
 // === Tests for LookupLongestPrefix ===
 
 TEST_F(TrieLookupTreeTest, LongestPrefixExactMatch) {
   trie_.AddNode("a/b/c", "exact_match");
-  auto* result = trie_.LookupLongestPrefix("a/b/c");
-  ASSERT_NE(result, nullptr);
-  EXPECT_EQ(*result, "exact_match");
+  EXPECT_THAT(trie_.LookupLongestPrefix("a/b/c"),
+              ::testing::Pointee(std::string("exact_match")));
 }
 
 TEST_F(TrieLookupTreeTest, LongestPrefixPartialMatch) {
   trie_.AddNode("a/b", "prefix_match");
-  auto* result = trie_.LookupLongestPrefix("a/b/c/d");
-  ASSERT_NE(result, nullptr);
-  EXPECT_EQ(*result, "prefix_match");
+  EXPECT_THAT(trie_.LookupLongestPrefix("a/b/c/d"),
+              ::testing::Pointee(std::string("prefix_match")));
 }
 
 TEST_F(TrieLookupTreeTest, LongestPrefixMultipleMatches) {
   trie_.AddNode("a", "first");
   trie_.AddNode("a/b/c", "second_longest");
   trie_.AddNode("a/b", "third");
-  auto* result = trie_.LookupLongestPrefix("a/b/c/d");
-  ASSERT_NE(result, nullptr);
-  EXPECT_EQ(*result, "second_longest");
+  EXPECT_THAT(trie_.LookupLongestPrefix("a/b/c/d"),
+              ::testing::Pointee(std::string("second_longest")));
 }
 
 TEST_F(TrieLookupTreeTest, LongestPrefixNoMatch) {
   trie_.AddNode("x/y", "some_value");
-  auto* result = trie_.LookupLongestPrefix("a/b/c");
-  EXPECT_EQ(result, nullptr);
+  EXPECT_THAT(trie_.LookupLongestPrefix("a/b/c"), ::testing::IsNull());
 }
 
 TEST_F(TrieLookupTreeTest, LongestPrefixPathExistsButNoValue) {
   trie_.AddNode("a/b/c", "value");
-  // Longest prefix of "a/b" has no value, but the root does not have one
-  // either.
-  auto* result = trie_.LookupLongestPrefix("a/b");
-  EXPECT_EQ(result, nullptr);
+  EXPECT_THAT(trie_.LookupLongestPrefix("a/b"), ::testing::IsNull());
 }
 
-TEST_F(TrieLookupTreeTest, GetAllPrefixMatches) {
+TEST_F(TrieLookupTreeTest, ForEachPrefixMatch) {
   trie_.AddNode("a", "first");
   trie_.AddNode("a/b/c", "second");
   trie_.AddNode("a/b", "third");
@@ -135,23 +99,17 @@ TEST_F(TrieLookupTreeTest, GetAllPrefixMatches) {
   std::vector<std::string> matches_1;
   trie_.ForEachPrefixMatch(
       "a", [&](const std::string& v) { matches_1.push_back(v); });
-  EXPECT_EQ(matches_1.size(), 1);
-  EXPECT_EQ(matches_1[0], "first");
+  EXPECT_THAT(matches_1, ::testing::ElementsAre("first"));
   // Match "a/b" should return "first" and "third"
   std::vector<std::string> matches_2;
   trie_.ForEachPrefixMatch(
       "a/b", [&](const std::string& v) { matches_2.push_back(v); });
-  EXPECT_EQ(matches_2.size(), 2);
-  EXPECT_EQ(matches_2[0], "first");
-  EXPECT_EQ(matches_2[1], "third");
-  // Match "ab/b/c" should return "first", "third", "second"
+  EXPECT_THAT(matches_2, ::testing::ElementsAre("first", "third"));
+  // Match "a/b/c" should return "first", "third", "second"
   std::vector<std::string> matches_3;
   trie_.ForEachPrefixMatch(
       "a/b/c", [&](const std::string& v) { matches_3.push_back(v); });
-  EXPECT_EQ(matches_3.size(), 3);
-  EXPECT_EQ(matches_3[0], "first");
-  EXPECT_EQ(matches_3[1], "third");
-  EXPECT_EQ(matches_3[2], "second");
+  EXPECT_THAT(matches_3, ::testing::ElementsAre("first", "third", "second"));
 }
 
 TEST_F(TrieLookupTreeTest, ForEachTest) {
@@ -163,11 +121,11 @@ TEST_F(TrieLookupTreeTest, ForEachTest) {
   trie_.ForEach([&](const std::string_view key, const std::string& value) {
     map[std::string(key)] = value;
   });
-  ASSERT_EQ(map.size(), 4);
-  ASSERT_EQ(map["a"], "first");
-  ASSERT_EQ(map["a/b/c"], "second");
-  ASSERT_EQ(map["a/b"], "third");
-  ASSERT_EQ(map["a/e"], "unrelated");
+  EXPECT_THAT(map, ::testing::UnorderedElementsAre(
+                       ::testing::Pair("a", "first"),
+                       ::testing::Pair("a/b/c", "second"),
+                       ::testing::Pair("a/b", "third"),
+                       ::testing::Pair("a/e", "unrelated")));
 }
 
 TEST_F(TrieLookupTreeTest, EqualsTest) {
@@ -180,7 +138,7 @@ TEST_F(TrieLookupTreeTest, EqualsTest) {
   trie_new.AddNode("a/b/c", "second");
   trie_new.AddNode("a/b", "third");
   trie_new.AddNode("a/e", "unrelated");
-  ASSERT_EQ(trie_, trie_new);
+  EXPECT_EQ(trie_, trie_new);
 }
 
 }  // namespace testing

@@ -237,7 +237,7 @@ bool XdsMatcherPrefixMap::Equals(const XdsMatcher& other) const {
 
 std::string XdsMatcherPrefixMap::ToString() const {
   std::vector<std::string> map_parts;
-  root_.ForEach([&](const absl::string_view key, const OnMatch& value) {
+  root_.ForEach([&](absl::string_view key, const OnMatch& value) {
     map_parts.push_back(
         absl::StrCat("{\"", key, "\": ", value.ToString(), "}"));
   });

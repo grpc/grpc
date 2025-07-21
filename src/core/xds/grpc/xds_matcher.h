@@ -45,10 +45,10 @@ class XdsMatcher {
   // which the inputs will extract data.
   class MatchContext {
    public:
+    virtual ~MatchContext() = default;
     // Returns the type of context. The caller will use this to
     // determine which type to down-cast to.
     virtual UniqueTypeName type() const = 0;
-    virtual ~MatchContext() = default;
   };
 
   // Produces match input from MatchContext.
@@ -56,22 +56,23 @@ class XdsMatcher {
   class InputValue {
    public:
     using ProducedType = T;
+
+    virtual ~InputValue() = default;
     virtual UniqueTypeName type() const = 0;
     virtual bool Equals(const InputValue<T>& other) const = 0;
     // Gets the value to be matched from context.
     virtual std::optional<T> GetValue(const MatchContext& context) const = 0;
     virtual std::string ToString() const = 0;
-    virtual ~InputValue() = default;
   };
 
   // An action to be returned if the conditions match.
   class Action {
    public:
+    virtual ~Action() = default;
     virtual bool Equals(const Action& other) const = 0;
     virtual std::string ToString() const = 0;
     // The protobuf type of the action.
     virtual UniqueTypeName type() const = 0;
-    virtual ~Action() = default;
   };
 
   // Actions found while executing the match.
@@ -132,12 +133,12 @@ class XdsMatcherList : public XdsMatcher {
    public:
     using ConsumedType = T;
 
+    virtual ~InputMatcher() = default;
     virtual UniqueTypeName type() const = 0;
     // Returns true if the matcher matches the input.
     virtual bool Match(const std::optional<T>& input) const = 0;
     virtual bool Equals(const InputMatcher<T>& other) const = 0;
     virtual std::string ToString() const = 0;
-    virtual ~InputMatcher() = default;
   };
 
   class StringInputMatcher;
@@ -277,8 +278,17 @@ class XdsMatcherList::StringInputMatcher
 // all predicates are true.
 class XdsMatcherList::AndPredicate : public XdsMatcherList::Predicate {
  public:
-  explicit AndPredicate(std::vector<std::unique_ptr<Predicate>> predicates)
-      : predicates_(std::move(predicates)) {}
+  static std::unique_ptr<AndPredicate> Create(
+      std::vector<std::unique_ptr<Predicate>> predicates) {
+    if (std::any_of(predicates.begin(), predicates.end(),
+                    [](const std::unique_ptr<Predicate>& pred) {
+                      return pred == nullptr;
+                    })) {
+      return nullptr;
+    }
+    return std::unique_ptr<AndPredicate>(
+        new AndPredicate(std::move(predicates)));
+  }
 
   bool Match(const XdsMatcher::MatchContext& context) const override;
   static UniqueTypeName Type() {
@@ -289,6 +299,8 @@ class XdsMatcherList::AndPredicate : public XdsMatcherList::Predicate {
   std::string ToString() const override;
 
  private:
+  explicit AndPredicate(std::vector<std::unique_ptr<Predicate>> predicates)
+      : predicates_(std::move(predicates)) {}
   std::vector<std::unique_ptr<Predicate>> predicates_;
 };
 
@@ -296,9 +308,16 @@ class XdsMatcherList::AndPredicate : public XdsMatcherList::Predicate {
 // any one predicate is true.
 class XdsMatcherList::OrPredicate : public XdsMatcherList::Predicate {
  public:
-  explicit OrPredicate(std::vector<std::unique_ptr<Predicate>> predicates)
-      : predicates_(std::move(predicates)) {}
-
+  static std::unique_ptr<OrPredicate> Create(
+      std::vector<std::unique_ptr<Predicate>> predicates) {
+    if (std::any_of(predicates.begin(), predicates.end(),
+                    [](const std::unique_ptr<Predicate>& pred) {
+                      return pred == nullptr;
+                    })) {
+      return nullptr;
+    }
+    return std::unique_ptr<OrPredicate>(new OrPredicate(std::move(predicates)));
+  }
   bool Match(const XdsMatcher::MatchContext& context) const override;
   static UniqueTypeName Type() {
     return GRPC_UNIQUE_TYPE_NAME_HERE("XdsMatcherListOrPredicate");
@@ -309,20 +328,27 @@ class XdsMatcherList::OrPredicate : public XdsMatcherList::Predicate {
   std::string ToString() const override;
 
  private:
+  explicit OrPredicate(std::vector<std::unique_ptr<Predicate>> predicates)
+      : predicates_(std::move(predicates)) {}
   std::vector<std::unique_ptr<Predicate>> predicates_;
 };
 
 // A predicate that inverts another predicate.
 class XdsMatcherList::NotPredicate : public XdsMatcherList::Predicate {
  public:
-  explicit NotPredicate(std::unique_ptr<Predicate> predicate)
-      : predicate_(std::move(predicate)) {}
-
+  static std::unique_ptr<NotPredicate> Create(
+      std::unique_ptr<Predicate> predicate) {
+    if (predicate == nullptr) {
+      return nullptr;
+    }
+    return std::unique_ptr<NotPredicate>(
+        new NotPredicate(std::move(predicate)));
+  }
   bool Match(const XdsMatcher::MatchContext& context) const override {
     return !predicate_->Match(context);
   }
   static UniqueTypeName Type() {
-    return GRPC_UNIQUE_TYPE_NAME_HERE("XdsMatcherListOrPredicate");
+    return GRPC_UNIQUE_TYPE_NAME_HERE("XdsMatcherListNotPredicate");
   }
   UniqueTypeName type() const override { return Type(); }
   bool Equals(const Predicate& other) const override {
@@ -335,6 +361,8 @@ class XdsMatcherList::NotPredicate : public XdsMatcherList::Predicate {
   }
 
  private:
+  explicit NotPredicate(std::unique_ptr<Predicate> predicate)
+      : predicate_(std::move(predicate)) {}
   std::unique_ptr<Predicate> predicate_;
 };
 

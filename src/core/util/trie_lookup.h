@@ -30,9 +30,9 @@ template <typename Value>
 class TrieLookupTree {
  public:
   TrieLookupTree() : root_(std::make_unique<TrieNode>()) {}
+
   // Takes value by r-value reference to consume it.
-  bool AddNode(absl::string_view key, Value value,
-               bool allow_overwrite = true) {
+  bool AddNode(absl::string_view key, Value value) {
     auto* node = root_.get();
     for (auto c : key) {
       auto& child = node->child[c];
@@ -41,12 +41,10 @@ class TrieLookupTree {
       }
       node = child.get();
     }
-    if (node->value.has_value() && !allow_overwrite) {
-      return false;
-    }
     node->value = std::move(value);
     return true;
   }
+
   // Returns a const pointer to the value.
   const Value* Lookup(absl::string_view key) const {
     const auto* node = root_.get();
@@ -62,6 +60,7 @@ class TrieLookupTree {
     }
     return nullptr;
   }
+
   // Return longest matching prefix
   const Value* LookupLongestPrefix(absl::string_view key) const {
     const auto* node = root_.get();
@@ -81,7 +80,8 @@ class TrieLookupTree {
     }
     return matched_value;
   }
-  // Envokes cb for least to most matching prefix
+
+  // Invokes cb for least to most matching prefix
   void ForEachPrefixMatch(absl::string_view key,
                           absl::FunctionRef<void(const Value&)> cb) const {
     const auto* node = root_.get();
@@ -96,7 +96,8 @@ class TrieLookupTree {
       }
     }
   }
-  // Envokes cb for every value present in trie
+
+  // invokes cb for every value present in trie
   // Useful for ToString Method to dump Trie
   // Format of cb "void(key, value)"
   void ForEach(
@@ -105,6 +106,7 @@ class TrieLookupTree {
     std::string key;
     ForEachRecursive(root_.get(), key, cb);
   }
+
   // Check for equality
   bool operator==(const TrieLookupTree& other) const {
     if (this == &other) return true;

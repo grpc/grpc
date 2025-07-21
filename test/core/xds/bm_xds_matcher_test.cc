@@ -77,7 +77,7 @@ class TestAction : public XdsMatcher::Action {
   absl::string_view name() const { return name_; }
   bool Equals(const XdsMatcher::Action& other) const override {
     if (other.type() != type()) return false;
-    return name_ == static_cast<const TestAction&>(other).name_;
+    return name_ == DownCast<const TestAction&>(other).name_;
   }
   std::string ToString() const override {
     return absl::StrCat("TestAction{name=", name(), "}");

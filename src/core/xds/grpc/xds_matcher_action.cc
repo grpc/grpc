@@ -35,13 +35,12 @@ XdsMatcherActionRegistry::ParseAndCreateAction(
     errors->AddError("Unsupported Action. Not found in registry");
     return nullptr;
   }
-  if (std::holds_alternative<Json>(action.value)) {
-    errors->AddError(
-        "Unsuppored action format (Json fdound instead of string)");
-    return nullptr;
-  }
   const absl::string_view* serialized_value =
       std::get_if<absl::string_view>(&action.value);
+  if (serialized_value == nullptr) {
+    errors->AddError("Unsuppored action format (Json found instead of string)");
+    return nullptr;
+  }
   return it->second->ParseAndCreateAction(context, *serialized_value, errors);
 }
 

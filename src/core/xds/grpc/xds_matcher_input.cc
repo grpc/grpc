@@ -34,7 +34,7 @@ MetadataInputFactory::ParseAndCreateInput(
   auto http_header_input =
       envoy_type_matcher_v3_HttpRequestHeaderMatchInput_parse(
           serialized_value.data(), serialized_value.size(), context.arena);
-  if (!http_header_input) {
+  if (http_header_input == nullptr) {
     errors->AddError("Failed to parse HttpRequestHeaderMatchInput");
     return nullptr;
   }
@@ -57,25 +57,24 @@ std::unique_ptr<XdsMatcher::InputValue<absl::string_view>>
 XdsMatcherInputRegistry<absl::string_view>::ParseAndCreateInput(
     const XdsResourceType::DecodeContext& context, const XdsExtension& input,
     const UniqueTypeName& matcher_context, ValidationErrors* errors) const {
-  if (context_type() != matcher_context) {
-    errors->AddError(
-        absl::StrCat("Unsupported context:", context_type(),
-                     ". Parser supported context:", matcher_context));
-    return nullptr;
-  }
   const auto it = factories_.find(input.type);
   if (it == factories_.cend()) {
     errors->AddError(absl::StrCat("Unsupported Input type:", input.type));
     return nullptr;
   }
-  if (std::holds_alternative<Json>(input.value)) {
+  if (it->second->context_type() != matcher_context) {
     errors->AddError(
-        "Unsuppored action format (Json fdound instead of string)");
+        absl::StrCat("Unsupported context:", it->second->context_type(),
+                     ". Parser supported context:", matcher_context));
     return nullptr;
   }
-  const absl::string_view* serliased_value =
+  const absl::string_view* serialized_value =
       std::get_if<absl::string_view>(&input.value);
-  return it->second->ParseAndCreateInput(context, *serliased_value, errors);
+  if (serialized_value == nullptr) {
+    errors->AddError("Unsuppored action format (Json found instead of string)");
+    return nullptr;
+  }
+  return it->second->ParseAndCreateInput(context, *serialized_value, errors);
 }
 
 }  // namespace grpc_core

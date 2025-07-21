@@ -22132,7 +22132,7 @@ targets:
   - protoc
   - grpc_test_util
   uses_polling: false
-- name: xds_matcher_e2e_test
+- name: xds_matcher_parse_test
   gtest: true
   build: test
   language: c++
@@ -22222,7 +22222,7 @@ targets:
   - third_party/xds/xds/type/v3/cel.proto
   - third_party/xds/xds/type/v3/range.proto
   - third_party/xds/xds/type/v3/typed_struct.proto
-  - test/core/xds/xds_matcher_e2e_test.cc
+  - test/core/xds/xds_matcher_parse_test.cc
   deps:
   - gtest
   - protobuf
