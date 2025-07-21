@@ -695,22 +695,16 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "client_lb_end2end_test",
+grpc_cc_library(
+    name = "client_lb_end2end_test_lib",
+    testonly = True,
     srcs = ["client_lb_end2end_test.cc"],
     external_deps = [
         "absl/log:check",
         "absl/log:log",
         "gtest",
     ],
-    flaky = True,  # TODO(b/151315347)
-    tags = [
-        "cpp_end2end_test",
-        "cpp_lb_end2end_test",
-        # b/117575949.
-        "grpc:no-internal-poller",
-        "no_windows",
-    ],  # TODO(jtattermusch): fix test on windows
+    linkstatic = True,
     deps = [
         ":connection_attempt_injector",
         ":test_service_impl",
@@ -731,6 +725,22 @@ grpc_cc_test(
         "//test/core/test_util:test_lb_policies",
         "//test/cpp/util:test_util",
         "@com_github_cncf_xds//xds/data/orca/v3:pkg_cc_proto",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_test(
+    name = "client_lb_end2end_test",
+    flaky = True,  # TODO(b/151315347)
+    tags = [
+        "cpp_end2end_test",
+        "cpp_lb_end2end_test",
+        # b/117575949.
+        "grpc:no-internal-poller",
+        "no_windows",
+    ],  # TODO(jtattermusch): fix test on windows
+    deps = [
+        ":client_lb_end2end_test_lib",
     ],
 )
 
