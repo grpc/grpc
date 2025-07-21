@@ -281,6 +281,7 @@ grpc_objc_testing_library(
         "//test/cpp/end2end:mock_test_lib",
         "//test/cpp/end2end:raw_end2end_test_lib",
         "//test/cpp/end2end:server_early_return_test_lib",
+        "//test/cpp/end2end:service_config_end2end_test_lib",
     ],
 )
 
