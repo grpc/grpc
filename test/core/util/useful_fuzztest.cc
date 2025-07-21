@@ -103,4 +103,46 @@ void SaturatingMulWorksUint16(uint16_t a, uint16_t b) {
 }
 FUZZ_TEST(MyTestSuite, SaturatingMulWorksUint16);
 
+void ConstexprLogWorks(double y) {
+  double result = useful_detail::ConstexprLog(y);
+  double expect = std::log(y);
+  // We use EXPECT_FLOAT_EQ instead of alternatives:
+  // - EXPECT_NEAR: because we don't know the exact error margin, it can
+  //   be hard to make sure that the error is within a reasonable margin.
+  // - EXPECT_EQ: because we don't know the exact error margin, it can
+  //   be hard to make sure that the error
+  // - EXPECT_DOUBLE_EQ: because we're not actually that accurate
+  EXPECT_FLOAT_EQ(result, expect);
+}
+FUZZ_TEST(MyTestSuite, ConstexprLogWorks)
+    .WithDomains(fuzztest::InRange(1e-12, 1e9));
+
+void ConstexprExpWorks(double x) {
+  double result = useful_detail::ConstexprExp(x);
+  double expect = std::exp(x);
+  // We use EXPECT_FLOAT_EQ instead of alternatives:
+  // - EXPECT_NEAR: because we don't know the exact error margin, it can
+  //   be hard to make sure that the error is within a reasonable margin.
+  // - EXPECT_EQ: because we don't know the exact error margin, it can
+  //   be hard to make sure that the error
+  // - EXPECT_DOUBLE_EQ: because we're not actually that accurate
+  EXPECT_FLOAT_EQ(result, expect);
+}
+FUZZ_TEST(MyTestSuite, ConstexprExpWorks)
+    .WithDomains(fuzztest::InRange(-30, 30));
+
+void ConstexprPowWorks(double base, double exponent) {
+  double result = ConstexprPow(base, exponent);
+  double expect = std::pow(base, exponent);
+  // We use EXPECT_FLOAT_EQ instead of alternatives:
+  // - EXPECT_NEAR: because we don't know the exact error margin, it can
+  //   be hard to make sure that the error is within a reasonable margin.
+  // - EXPECT_EQ: because we don't know the exact error margin, it can
+  //   be hard to make sure that the error
+  // - EXPECT_DOUBLE_EQ: because we're not actually that accurate
+  EXPECT_FLOAT_EQ(result, expect);
+}
+FUZZ_TEST(MyTestSuite, ConstexprPowWorks)
+    .WithDomains(fuzztest::InRange(0.0, 1e9), fuzztest::InRange(0.0, 8.0));
+
 }  // namespace grpc_core

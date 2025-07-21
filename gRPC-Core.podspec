@@ -47,7 +47,7 @@ Pod::Spec.new do |s|
   s.requires_arc = false
 
   name = 'grpc'
-  abseil_version = '~> 1.20250512.0'
+  abseil_version = '~> 1.20250512.1'
 
   # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
   # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -255,6 +255,7 @@ Pod::Spec.new do |s|
                       'src/core/call/client_call.cc',
                       'src/core/call/client_call.h',
                       'src/core/call/custom_metadata.h',
+                      'src/core/call/filter_fusion.h',
                       'src/core/call/interception_chain.cc',
                       'src/core/call/interception_chain.h',
                       'src/core/call/message.cc',
@@ -433,6 +434,8 @@ Pod::Spec.new do |s|
                       'src/core/credentials/transport/tls/load_system_roots_supported.cc',
                       'src/core/credentials/transport/tls/load_system_roots_supported.h',
                       'src/core/credentials/transport/tls/load_system_roots_windows.cc',
+                      'src/core/credentials/transport/tls/spiffe_utils.cc',
+                      'src/core/credentials/transport/tls/spiffe_utils.h',
                       'src/core/credentials/transport/tls/ssl_utils.cc',
                       'src/core/credentials/transport/tls/ssl_utils.h',
                       'src/core/credentials/transport/tls/tls_credentials.cc',
@@ -531,6 +534,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/http2_client_transport.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings.cc',
                       'src/core/ext/transport/chttp2/transport/http2_settings.h',
+                      'src/core/ext/transport/chttp2/transport/http2_settings_manager.cc',
+                      'src/core/ext/transport/chttp2/transport/http2_settings_manager.h',
                       'src/core/ext/transport/chttp2/transport/http2_stats_collector.cc',
                       'src/core/ext/transport/chttp2/transport/http2_stats_collector.h',
                       'src/core/ext/transport/chttp2/transport/http2_status.h',
@@ -1395,6 +1400,7 @@ Pod::Spec.new do |s|
                       'src/core/filter/blackboard.cc',
                       'src/core/filter/blackboard.h',
                       'src/core/filter/filter_args.h',
+                      'src/core/filter/fused_filters.cc',
                       'src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc',
                       'src/core/handshaker/endpoint_info/endpoint_info_handshaker.h',
                       'src/core/handshaker/handshaker.cc',
@@ -1412,6 +1418,7 @@ Pod::Spec.new do |s|
                       'src/core/handshaker/proxy_mapper_registry.cc',
                       'src/core/handshaker/proxy_mapper_registry.h',
                       'src/core/handshaker/security/legacy_secure_endpoint.cc',
+                      'src/core/handshaker/security/pipelined_secure_endpoint.cc',
                       'src/core/handshaker/security/secure_endpoint.cc',
                       'src/core/handshaker/security/secure_endpoint.h',
                       'src/core/handshaker/security/security_handshaker.cc',
@@ -1953,6 +1960,7 @@ Pod::Spec.new do |s|
                       'src/core/service_config/service_config.h',
                       'src/core/service_config/service_config_call_data.h',
                       'src/core/service_config/service_config_channel_arg_filter.cc',
+                      'src/core/service_config/service_config_channel_arg_filter.h',
                       'src/core/service_config/service_config_impl.cc',
                       'src/core/service_config/service_config_impl.h',
                       'src/core/service_config/service_config_parser.cc',
@@ -1975,6 +1983,7 @@ Pod::Spec.new do |s|
                       'src/core/telemetry/tcp_tracer.h',
                       'src/core/transport/auth_context.cc',
                       'src/core/transport/auth_context.h',
+                      'src/core/transport/auth_context_comparator_registry.h',
                       'src/core/transport/endpoint_transport.h',
                       'src/core/transport/endpoint_transport_client_channel_factory.cc',
                       'src/core/transport/endpoint_transport_client_channel_factory.h',
@@ -2518,6 +2527,7 @@ Pod::Spec.new do |s|
                               'src/core/call/call_state.h',
                               'src/core/call/client_call.h',
                               'src/core/call/custom_metadata.h',
+                              'src/core/call/filter_fusion.h',
                               'src/core/call/interception_chain.h',
                               'src/core/call/message.h',
                               'src/core/call/metadata.h',
@@ -2607,6 +2617,7 @@ Pod::Spec.new do |s|
                               'src/core/credentials/transport/tls/grpc_tls_crl_provider.h',
                               'src/core/credentials/transport/tls/load_system_roots.h',
                               'src/core/credentials/transport/tls/load_system_roots_supported.h',
+                              'src/core/credentials/transport/tls/spiffe_utils.h',
                               'src/core/credentials/transport/tls/ssl_utils.h',
                               'src/core/credentials/transport/tls/tls_credentials.h',
                               'src/core/credentials/transport/tls/tls_security_connector.h',
@@ -2656,6 +2667,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/hpack_parser_table.h',
                               'src/core/ext/transport/chttp2/transport/http2_client_transport.h',
                               'src/core/ext/transport/chttp2/transport/http2_settings.h',
+                              'src/core/ext/transport/chttp2/transport/http2_settings_manager.h',
                               'src/core/ext/transport/chttp2/transport/http2_stats_collector.h',
                               'src/core/ext/transport/chttp2/transport/http2_status.h',
                               'src/core/ext/transport/chttp2/transport/http2_transport.h',
@@ -3473,6 +3485,7 @@ Pod::Spec.new do |s|
                               'src/core/server/xds_channel_stack_modifier.h',
                               'src/core/service_config/service_config.h',
                               'src/core/service_config/service_config_call_data.h',
+                              'src/core/service_config/service_config_channel_arg_filter.h',
                               'src/core/service_config/service_config_impl.h',
                               'src/core/service_config/service_config_parser.h',
                               'src/core/telemetry/call_tracer.h',
@@ -3484,6 +3497,7 @@ Pod::Spec.new do |s|
                               'src/core/telemetry/stats_data.h',
                               'src/core/telemetry/tcp_tracer.h',
                               'src/core/transport/auth_context.h',
+                              'src/core/transport/auth_context_comparator_registry.h',
                               'src/core/transport/endpoint_transport.h',
                               'src/core/transport/endpoint_transport_client_channel_factory.h',
                               'src/core/tsi/alts/crypt/gsec.h',

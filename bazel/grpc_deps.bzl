@@ -78,10 +78,11 @@ def grpc_deps():
     if "com_google_googletest" not in native.existing_rules():
         http_archive(
             name = "com_google_googletest",
-            sha256 = "745c55415660044610f7fcd3af7a6420d5de16a7dbb9ebfe2e131275676232be",
-            strip_prefix = "googletest-52eb8108c5bdec04579160ae17225d66034bd723",
+            sha256 = "65fab701d9829d38cb77c14acdc431d2108bfdbf8979e40eb8ae567edf10b27c",
+            strip_prefix = "googletest-1.17.0",
             urls = [
-                "https://github.com/google/googletest/archive/52eb8108c5bdec04579160ae17225d66034bd723.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/googletest/releases/download/v1.17.0/googletest-1.17.0.tar.gz",
+                "https://github.com/google/googletest/releases/download/v1.17.0/googletest-1.17.0.tar.gz",
             ],
             repo_mapping = {
                 "@abseil-cpp": "@com_google_absl",
@@ -140,11 +141,11 @@ def grpc_deps():
         http_archive(
             name = "com_github_cares_cares",
             build_file = "@com_github_grpc_grpc//third_party:cares/cares.BUILD",
-            sha256 = "bf26e5b25e259911914a85ae847b6d723488adb5af4f8bdeb9d0871a318476e3",
-            strip_prefix = "c-ares-6360e96b5cf8e5980c887ce58ef727e53d77243a",
+            sha256 = "cd1968cd09d384a5c553c82bf53ba458e47e9bfcdc253a3627f1b36ea6f814e2",
+            strip_prefix = "c-ares-d3a507e920e7af18a5efb7f9f1d8044ed4750013",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/c-ares/c-ares/archive/6360e96b5cf8e5980c887ce58ef727e53d77243a.tar.gz",
-                "https://github.com/c-ares/c-ares/archive/6360e96b5cf8e5980c887ce58ef727e53d77243a.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/c-ares/c-ares/archive/d3a507e920e7af18a5efb7f9f1d8044ed4750013.tar.gz",
+                "https://github.com/c-ares/c-ares/archive/d3a507e920e7af18a5efb7f9f1d8044ed4750013.tar.gz",
             ],
         )
 

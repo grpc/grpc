@@ -54,6 +54,7 @@ from grpc._typing import ResponseType
 from grpc._typing import SerializingFunction
 from grpc._typing import ServerCallbackTag
 from grpc._typing import ServerTagCallbackType
+from typing_extensions import override
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -145,9 +146,11 @@ class _RegisteredMethod(_Method):
         self._name = name
         self._registered_handler = registered_handler
 
+    @override
     def name(self) -> Optional[str]:
         return self._name
 
+    @override
     def handler(
         self, handler_call_details: _HandlerCallDetails
     ) -> Optional[grpc.RpcMethodHandler]:
@@ -161,9 +164,11 @@ class _GenericMethod(_Method):
     ):
         self._generic_handlers = generic_handlers
 
+    @override
     def name(self) -> Optional[str]:
         return None
 
+    @override
     def handler(
         self, handler_call_details: _HandlerCallDetails
     ) -> Optional[grpc.RpcMethodHandler]:
