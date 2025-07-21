@@ -114,12 +114,10 @@ GRPC_LLVM_WINDOWS_WARNING_FLAGS = GRPC_LLVM_WARNING_FLAGS + [
     # TODO(hork): see if the TraceFlag offense can be removed
     "-Wno-global-constructors",
     # TODO(hork): clean up EE offenses
-    "-Wno-missing-field-initializers",
     "-Wno-non-virtual-dtor",
     "-Wno-thread-safety-reference-return",
 
     # TODO(ctiller): offense: dump_args. signed to unsigned
-    "-Wno-sign-conversion",
     "-Wno-shorten-64-to-32",
 
     # TODO: general cleanup required. Maybe new developer or rainy day projects.
@@ -148,7 +146,6 @@ GRPC_LLVM_WINDOWS_WARNING_FLAGS = GRPC_LLVM_WARNING_FLAGS + [
     "-Wno-implicit-float-conversion",
     "-Wno-implicit-int-conversion",
     "-Wno-float-conversion",
-    "-Wno-unused-parameter",
     "-Wno-suggest-override",
     "-Wno-documentation",
     "-Wno-documentation-unknown-command",
