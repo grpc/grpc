@@ -500,8 +500,7 @@ void grpc_flush_cached_google_default_credentials(void) {
 DefaultCallCredentialsCreationMethod
 google_compute_engine_credential_creation_method() {
   // First, try the environment variable.
-  auto path_from_env = grpc_core::GetEnv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR);
-  if (path_from_env.has_value()) {
+  if (GetEnv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR).has_value()) {
     return DefaultCallCredentialsCreationMethod::kFromEnviromentPathValue;
   }
 
