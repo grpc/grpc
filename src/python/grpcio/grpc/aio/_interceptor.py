@@ -249,7 +249,7 @@ class ClientCallDetails(
         wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
     """
 
-    method: bytes
+    method: Union[str, bytes]
     timeout: Optional[float]
     metadata: Optional[Metadata]
     credentials: Optional[grpc.CallCredentials]
@@ -271,7 +271,7 @@ class UnaryUnaryClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
         ],
         client_call_details: ClientCallDetails,
         request: RequestType,
-    ) -> UnaryUnaryCall:
+    ) -> Union[UnaryUnaryCall, ResponseType]:
         """Intercepts a unary-unary invocation asynchronously.
 
         Args:
