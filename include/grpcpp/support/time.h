@@ -65,6 +65,13 @@ namespace grpc {
 // from and to should be absolute time.
 void Timepoint2Timespec(const std::chrono::system_clock::time_point& from,
                         gpr_timespec* to);
+// Converts a steady_clock::time_point to gpr_timespec using GPR_CLOCK_MONOTONIC.
+// This is safe and portable for timeout/duration-based values.
+void TimepointSteady2Timespec(const std::chrono::steady_clock::time_point& from,
+                              gpr_timespec* to);
+// WARNING: TimepointHR2Timespec assumes that high_resolution_clock is based on
+// Unix epoch. This is not true on all platforms (e.g., macOS/libc++) where it may
+// use boot time or arbitrary epoch. Prefer Timepoint2Timespec or TimepointSteady2Timespec instead.
 void TimepointHR2Timespec(
     const std::chrono::high_resolution_clock::time_point& from,
     gpr_timespec* to);

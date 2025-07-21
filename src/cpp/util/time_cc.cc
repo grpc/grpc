@@ -29,6 +29,7 @@ using std::chrono::high_resolution_clock;
 using std::chrono::nanoseconds;
 using std::chrono::seconds;
 using std::chrono::system_clock;
+using std::chrono::steady_clock;
 
 namespace grpc {
 
@@ -46,6 +47,22 @@ void Timepoint2Timespec(const system_clock::time_point& from,
   to->tv_sec = static_cast<int64_t>(secs.count());
   to->tv_nsec = static_cast<int32_t>(nsecs.count());
   to->clock_type = GPR_CLOCK_REALTIME;
+}
+
+void TimepointSteady2Timespec(const steady_clock::time_point& from,
+                              gpr_timespec* to) {
+  steady_clock::duration deadline = from.time_since_epoch();
+  seconds secs = duration_cast<seconds>(deadline);
+  if (from == steady_clock::time_point::max() ||
+      secs.count() >= gpr_inf_future(GPR_CLOCK_MONOTONIC).tv_sec ||
+      secs.count() < 0) {
+    *to = gpr_inf_future(GPR_CLOCK_MONOTONIC);
+    return;
+  }
+  nanoseconds nsecs = duration_cast<nanoseconds>(deadline - secs);
+  to->tv_sec = static_cast<int64_t>(secs.count());
+  to->tv_nsec = static_cast<int32_t>(nsecs.count());
+  to->clock_type = GPR_CLOCK_MONOTONIC;
 }
 
 void TimepointHR2Timespec(const high_resolution_clock::time_point& from,

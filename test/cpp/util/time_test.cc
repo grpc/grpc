@@ -22,8 +22,12 @@
 #include "gtest/gtest.h"
 #include "test/core/test_util/test_config.h"
 
+using std::chrono::seconds;
 using std::chrono::microseconds;
+using std::chrono::nanoseconds;
 using std::chrono::system_clock;
+using std::chrono::steady_clock;
+using std::chrono::duration_cast;
 
 namespace grpc {
 namespace {
@@ -43,6 +47,17 @@ TEST_F(TimeTest, AbsolutePointTest) {
   system_clock::time_point tp_converted_2 = Timespec2Timepoint(ts_converted);
   EXPECT_TRUE(tp == tp_converted);
   EXPECT_TRUE(tp == tp_converted_2);
+}
+
+TEST_F(TimeTest, SteadyClockConversionAccuracy) {
+  steady_clock::time_point now = steady_clock::now();
+  gpr_timespec ts;
+  TimepointSteady2Timespec(now, &ts);
+  steady_clock::time_point reconverted =
+      steady_clock::time_point(seconds(ts.tv_sec) + nanoseconds(ts.tv_nsec));
+  auto delta = duration_cast<nanoseconds>(reconverted - now).count();
+  int64_t allowable_nanos = 1000L;
+  EXPECT_LT(std::abs(delta), allowable_nanos);
 }
 
 // gpr_inf_future is treated specially and mapped to/from time_point::max()
