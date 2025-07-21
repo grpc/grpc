@@ -265,6 +265,14 @@ grpc_objc_testing_library(
     ],
 )
 
+grpc_objc_testing_library(
+    name = "CppEnd2EndTests-lib",
+    srcs = ["CppEnd2EndTests/CppEnd2EndTests.mm"],
+    deps = [
+        "//test/cpp/end2end:end2end_test_lib",
+    ],
+)
+
 grpc_objc_ios_unit_test(
     name = "EventEngineClientTests",
     deps = [":EventEngineClientTests-lib"],
@@ -278,6 +286,11 @@ grpc_objc_ios_unit_test(
 grpc_objc_ios_unit_test(
     name = "EventEngineUnitTests",
     deps = [":EventEngineUnitTests-lib"],
+)
+
+grpc_objc_ios_unit_test(
+    name = "CppEnd2EndTests",
+    deps = [":CppEnd2EndTests-lib"],
 )
 
 # Note that bazel currently doesn't support running tvos_unit_test
