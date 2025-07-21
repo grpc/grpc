@@ -584,14 +584,15 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "hybrid_end2end_test",
+grpc_cc_library(
+    name = "hybrid_end2end_test_lib",
+    testonly = True,
     srcs = ["hybrid_end2end_test.cc"],
     external_deps = [
         "absl/log:check",
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    linkstatic = True,
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -602,6 +603,15 @@ grpc_cc_test(
         "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_test(
+    name = "hybrid_end2end_test",
+    tags = ["cpp_end2end_test"],
+    deps = [
+        ":hybrid_end2end_test_lib",
     ],
 )
 
