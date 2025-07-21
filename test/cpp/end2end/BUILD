@@ -814,21 +814,16 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "grpclb_end2end_test",
+grpc_cc_library(
+    name = "grpclb_end2end_test_lib",
+    testonly = True,
     srcs = ["grpclb_end2end_test.cc"],
     external_deps = [
         "absl/log:check",
         "absl/log:log",
         "gtest",
     ],
-    flaky = True,  # TODO(b/150567713)
-    shard_count = 20,
-    tags = [
-        "cpp_end2end_test",
-        "cpp_lb_end2end_test",
-        "no_windows",
-    ],  # TODO(jtattermusch): fix test on windows
+    linkstatic = True,
     deps = [
         ":counted_service",
         ":test_service_impl",
@@ -845,6 +840,25 @@ grpc_cc_test(
         "//test/core/test_util:test_call_creds",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_test(
+    name = "grpclb_end2end_test",
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
+    flaky = True,  # TODO(b/150567713)
+    shard_count = 20,
+    tags = [
+        "cpp_end2end_test",
+        "cpp_lb_end2end_test",
+        "no_windows",
+    ],  # TODO(jtattermusch): fix test on windows
+    deps = [
+        ":grpclb_end2end_test_lib",
     ],
 )
 
