@@ -150,7 +150,8 @@ absl::StatusOr<int> CFSocketListenerImpl::Bind(
   GRPC_TRACE_LOG(event_engine, INFO)
       << "CFSocketListenerImpl::Bind, addr: "
       << ResolvedAddressToString(addr).value_or("")
-      << ", bind_addr: " << ResolvedAddressToString(bind_addr).value_or("");
+      << ", bind_addr: " << ResolvedAddressToString(bind_addr).value_or("")
+      << ", this: " << this;
 
   return bind_port;
 }
@@ -166,7 +167,8 @@ absl::Status CFSocketListenerImpl::Start() {
         static_cast<CFSocketListenerImpl*>(thatPtr)};
 
     GRPC_TRACE_LOG(event_engine, INFO)
-        << "CFSocketListenerImpl::Start, running CFRunLoop";
+        << "CFSocketListenerImpl::Start, running CFRunLoop"
+        << ", this: " << thatPtr;
 
     {
       grpc_core::MutexLock lock(&that->mu_);
@@ -182,7 +184,8 @@ absl::Status CFSocketListenerImpl::Start() {
     CFRunLoopRun();
 
     GRPC_TRACE_LOG(event_engine, INFO)
-        << "CFSocketListenerImpl::Start, CFRunLoop stopped";
+        << "CFSocketListenerImpl::Start, CFRunLoop stopped"
+        << ", this: " << thatPtr;
   });
 
   return absl::OkStatus();
@@ -205,7 +208,7 @@ void CFSocketListenerImpl::handleConnect(CFSocketRef s,
       auto addr_uri = ResolvedAddressToURI(peer_addr);
       if (!addr_uri.ok()) {
         GRPC_TRACE_LOG(event_engine, ERROR)
-            << "invalid peer name: " << addr_uri.status();
+            << "invalid peer name: " << addr_uri.status() << ", this: " << self;
       } else {
         peer_name = *addr_uri;
       }
@@ -222,7 +225,7 @@ void CFSocketListenerImpl::handleConnect(CFSocketRef s,
             if (!status.ok()) {
               GRPC_TRACE_LOG(event_engine, ERROR)
                   << "CFSocketListenerImpl::handleConnect, accept failed: "
-                  << status;
+                  << status << ", this: " << that.get();
               return;
             }
 
@@ -233,7 +236,8 @@ void CFSocketListenerImpl::handleConnect(CFSocketRef s,
                                  peer_name)));
             GRPC_TRACE_LOG(event_engine, INFO)
                 << "CFSocketListenerImpl::handleConnect, accepted socket: "
-                << socketHandle << ", peer_name: " << peer_name;
+                << socketHandle << ", peer_name: " << peer_name
+                << ", this: " << that.get();
           },
           socketHandle, peer_addr);
 
@@ -241,7 +245,8 @@ void CFSocketListenerImpl::handleConnect(CFSocketRef s,
     }
     default:
       GRPC_TRACE_LOG(event_engine, ERROR)
-          << "CFSocketListenerImpl::handleConnect, unexpected type: " << type;
+          << "CFSocketListenerImpl::handleConnect, unexpected type: " << type
+          << ", this: " << self;
       break;
   }
 }
