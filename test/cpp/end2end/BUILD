@@ -546,19 +546,14 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "health_service_end2end_test",
+grpc_cc_library(
+    name = "health_service_end2end_test_lib",
+    testonly = True,
     srcs = ["health_service_end2end_test.cc"],
     external_deps = [
         "gtest",
     ],
-    tags = [
-        "cpp_end2end_test",
-        # Will fail as sync health check service is enabled by default internally, which is however
-        # disabled in OSS:
-        # b/117623310.
-        "grpc:no-internal-poller",
-    ],
+    linkstatic = True,
     deps = [
         ":test_health_check_service_impl",
         ":test_service_impl",
@@ -571,6 +566,21 @@ grpc_cc_test(
         "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_test(
+    name = "health_service_end2end_test",
+    tags = [
+        "cpp_end2end_test",
+        # Will fail as sync health check service is enabled by default internally, which is however
+        # disabled in OSS:
+        # b/117623310.
+        "grpc:no-internal-poller",
+    ],
+    deps = [
+        ":health_service_end2end_test_lib",
     ],
 )
 
