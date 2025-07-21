@@ -1222,7 +1222,7 @@ TEST(Frame, ValidateFrameHeaderTest) {
                             RFC9113::kAssemblerContiguousSequenceError));
 
   // Header in progress, current frame is continuation, stream id matches
-  header = {/*length=*/10, /*type=kContinuation */ 9, /*flags=*/0,
+  header = {/*length=*/100, /*type=kContinuation */ 9, /*flags=*/0,
             /*stream_id=*/1};
   EXPECT_TRUE(ValidateFrameHeader(/*max_frame_size_setting=*/100,
                                   /*incoming_header_in_progress=*/true,

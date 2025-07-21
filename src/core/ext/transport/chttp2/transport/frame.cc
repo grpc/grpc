@@ -722,7 +722,7 @@ Http2Status ValidateFrameHeader(const uint32_t max_frame_size_setting,
                                 const bool incoming_header_in_progress,
                                 const uint32_t incoming_header_stream_id,
                                 Http2FrameHeader& current_frame_header) {
-  if (GPR_UNLIKELY(current_frame_header.length >= max_frame_size_setting)) {
+  if (GPR_UNLIKELY(current_frame_header.length > max_frame_size_setting)) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kFrameSizeError,
         absl::StrCat(RFC9113::kFrameSizeLargerThanMaxFrameSizeSetting,
@@ -738,7 +738,7 @@ Http2Status ValidateFrameHeader(const uint32_t max_frame_size_setting,
         Http2ErrorCode::kProtocolError,
         std::string(RFC9113::kAssemblerContiguousSequenceError));
   }
-  // TODO(tjagtap) : [PH2][P1]:Consider validating MAX_CONCURRENT_STREAMS here
+  // TODO(tjagtap) : [PH2][P2]:Consider validating MAX_CONCURRENT_STREAMS here
   return Http2Status::Ok();
 }
 
