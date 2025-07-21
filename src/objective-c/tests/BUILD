@@ -269,6 +269,7 @@ grpc_objc_testing_library(
     name = "CppEnd2EndTests-lib",
     srcs = ["CppEnd2EndTests/CppEnd2EndTests.mm"],
     deps = [
+        "//test/cpp/end2end:client_interceptors_end2end_test_lib",
         "//test/cpp/end2end:end2end_test_lib",
     ],
 )
