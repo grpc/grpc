@@ -276,6 +276,7 @@ grpc_objc_testing_library(
         "//test/cpp/end2end:end2end_test_lib",
         "//test/cpp/end2end:exception_test_lib",
         "//test/cpp/end2end:generic_end2end_test_lib",
+        "//test/cpp/end2end:grpclb_end2end_test_lib",
         "//test/cpp/end2end:health_service_end2end_test_lib",
         "//test/cpp/end2end:hybrid_end2end_test_lib",
         "//test/cpp/end2end:mock_test_lib",
