@@ -22,13 +22,17 @@
 #include <chrono>
 #include <random>
 #include <set>
+#include <string>
 #include <thread>
 #include <vector>
 
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_tracker/resource_tracker.h"
 #include "test/core/resource_quota/call_checker.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 namespace testing {
@@ -36,6 +40,24 @@ namespace testing {
 //
 // Helpers
 //
+
+class MockResourceTracker : public grpc_core::ResourceTracker {
+ public:
+  std::vector<std::string> GetMetrics() const override { return {"memory"}; }
+
+  absl::StatusOr<double> GetMetricValue(
+      const std::string& metric_name) const override {
+    if (metric_name == "memory") {
+      return memory_pressure_;
+    }
+    return absl::NotFoundError("Metric not found");
+  }
+
+  void SetMemoryPressure(double pressure) { memory_pressure_ = pressure; }
+
+ private:
+  double memory_pressure_ = 0.0;
+};
 
 template <size_t kSize>
 struct Sized {
@@ -197,12 +219,17 @@ TEST(MemoryQuotaTest, ContainerMemoryAccountedFor) {
   const double original_memory_pressure =
       owner.GetPressureInfo().instantaneous_pressure;
   EXPECT_LT(original_memory_pressure, 0.01);
-  SetContainerMemoryPressure(1.0);
+
+  MockResourceTracker mock_tracker;
+  grpc_core::ResourceTracker::Set(&mock_tracker);
+
+  mock_tracker.SetMemoryPressure(1.0);
   EXPECT_EQ(owner.GetPressureInfo().instantaneous_pressure, 1.0);
-  SetContainerMemoryPressure(0.0);
+  mock_tracker.SetMemoryPressure(0.0);
   EXPECT_EQ(owner.GetPressureInfo().instantaneous_pressure,
             original_memory_pressure);
-  SetContainerMemoryPressure(0.0);
+
+  grpc_core::ResourceTracker::Set(nullptr);
 }
 
 }  // namespace testing
