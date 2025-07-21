@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.74.0-dev'
+  version = '1.75.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -232,7 +232,7 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Privacy", version
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
-    abseil_version = '~> 1.20250127.1'
+    abseil_version = '~> 1.20250512.0'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
@@ -281,6 +281,7 @@ Pod::Spec.new do |s|
                       'src/core/call/call_state.h',
                       'src/core/call/client_call.h',
                       'src/core/call/custom_metadata.h',
+                      'src/core/call/filter_fusion.h',
                       'src/core/call/interception_chain.h',
                       'src/core/call/message.h',
                       'src/core/call/metadata.h',
@@ -370,6 +371,7 @@ Pod::Spec.new do |s|
                       'src/core/credentials/transport/tls/grpc_tls_crl_provider.h',
                       'src/core/credentials/transport/tls/load_system_roots.h',
                       'src/core/credentials/transport/tls/load_system_roots_supported.h',
+                      'src/core/credentials/transport/tls/spiffe_utils.h',
                       'src/core/credentials/transport/tls/ssl_utils.h',
                       'src/core/credentials/transport/tls/tls_credentials.h',
                       'src/core/credentials/transport/tls/tls_security_connector.h',
@@ -419,6 +421,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/hpack_parser_table.h',
                       'src/core/ext/transport/chttp2/transport/http2_client_transport.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings.h',
+                      'src/core/ext/transport/chttp2/transport/http2_settings_manager.h',
                       'src/core/ext/transport/chttp2/transport/http2_stats_collector.h',
                       'src/core/ext/transport/chttp2/transport/http2_status.h',
                       'src/core/ext/transport/chttp2/transport/http2_transport.h',
@@ -697,6 +700,10 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/google/rpc/status.upb_minitable.h',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h',
+                      'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h',
+                      'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h',
+                      'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h',
+                      'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h',
                       'src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h',
                       'src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h',
                       'src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h',
@@ -898,6 +905,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h',
                       'src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h',
                       'src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h',
+                      'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h',
+                      'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h',
                       'src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.h',
                       'src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.h',
                       'src/core/ext/upbdefs-gen/udpa/annotations/security.upbdefs.h',
@@ -968,6 +977,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/common_closures.h',
                       'src/core/lib/event_engine/default_event_engine.h',
                       'src/core/lib/event_engine/default_event_engine_factory.h',
+                      'src/core/lib/event_engine/endpoint_channel_arg_wrapper.h',
                       'src/core/lib/event_engine/event_engine_context.h',
                       'src/core/lib/event_engine/extensions/blocking_dns.h',
                       'src/core/lib/event_engine/extensions/can_track_errors.h',
@@ -1229,6 +1239,7 @@ Pod::Spec.new do |s|
                       'src/core/server/xds_channel_stack_modifier.h',
                       'src/core/service_config/service_config.h',
                       'src/core/service_config/service_config_call_data.h',
+                      'src/core/service_config/service_config_channel_arg_filter.h',
                       'src/core/service_config/service_config_impl.h',
                       'src/core/service_config/service_config_parser.h',
                       'src/core/telemetry/call_tracer.h',
@@ -1240,6 +1251,7 @@ Pod::Spec.new do |s|
                       'src/core/telemetry/stats_data.h',
                       'src/core/telemetry/tcp_tracer.h',
                       'src/core/transport/auth_context.h',
+                      'src/core/transport/auth_context_comparator_registry.h',
                       'src/core/transport/endpoint_transport.h',
                       'src/core/transport/endpoint_transport_client_channel_factory.h',
                       'src/core/tsi/alts/crypt/gsec.h',
@@ -1622,6 +1634,7 @@ Pod::Spec.new do |s|
                               'src/core/call/call_state.h',
                               'src/core/call/client_call.h',
                               'src/core/call/custom_metadata.h',
+                              'src/core/call/filter_fusion.h',
                               'src/core/call/interception_chain.h',
                               'src/core/call/message.h',
                               'src/core/call/metadata.h',
@@ -1711,6 +1724,7 @@ Pod::Spec.new do |s|
                               'src/core/credentials/transport/tls/grpc_tls_crl_provider.h',
                               'src/core/credentials/transport/tls/load_system_roots.h',
                               'src/core/credentials/transport/tls/load_system_roots_supported.h',
+                              'src/core/credentials/transport/tls/spiffe_utils.h',
                               'src/core/credentials/transport/tls/ssl_utils.h',
                               'src/core/credentials/transport/tls/tls_credentials.h',
                               'src/core/credentials/transport/tls/tls_security_connector.h',
@@ -1760,6 +1774,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/hpack_parser_table.h',
                               'src/core/ext/transport/chttp2/transport/http2_client_transport.h',
                               'src/core/ext/transport/chttp2/transport/http2_settings.h',
+                              'src/core/ext/transport/chttp2/transport/http2_settings_manager.h',
                               'src/core/ext/transport/chttp2/transport/http2_stats_collector.h',
                               'src/core/ext/transport/chttp2/transport/http2_status.h',
                               'src/core/ext/transport/chttp2/transport/http2_transport.h',
@@ -2038,6 +2053,10 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/google/rpc/status.upb_minitable.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h',
+                              'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h',
+                              'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h',
+                              'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h',
+                              'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h',
                               'src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h',
                               'src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h',
                               'src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h',
@@ -2239,6 +2258,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h',
                               'src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h',
                               'src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h',
+                              'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h',
+                              'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h',
                               'src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.h',
                               'src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.h',
                               'src/core/ext/upbdefs-gen/udpa/annotations/security.upbdefs.h',
@@ -2309,6 +2330,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/common_closures.h',
                               'src/core/lib/event_engine/default_event_engine.h',
                               'src/core/lib/event_engine/default_event_engine_factory.h',
+                              'src/core/lib/event_engine/endpoint_channel_arg_wrapper.h',
                               'src/core/lib/event_engine/event_engine_context.h',
                               'src/core/lib/event_engine/extensions/blocking_dns.h',
                               'src/core/lib/event_engine/extensions/can_track_errors.h',
@@ -2570,6 +2592,7 @@ Pod::Spec.new do |s|
                               'src/core/server/xds_channel_stack_modifier.h',
                               'src/core/service_config/service_config.h',
                               'src/core/service_config/service_config_call_data.h',
+                              'src/core/service_config/service_config_channel_arg_filter.h',
                               'src/core/service_config/service_config_impl.h',
                               'src/core/service_config/service_config_parser.h',
                               'src/core/telemetry/call_tracer.h',
@@ -2581,6 +2604,7 @@ Pod::Spec.new do |s|
                               'src/core/telemetry/stats_data.h',
                               'src/core/telemetry/tcp_tracer.h',
                               'src/core/transport/auth_context.h',
+                              'src/core/transport/auth_context_comparator_registry.h',
                               'src/core/transport/endpoint_transport.h',
                               'src/core/transport/endpoint_transport_client_channel_factory.h',
                               'src/core/tsi/alts/crypt/gsec.h',

@@ -22,8 +22,6 @@ extern const upb_MiniTable grpc__channelz__v2__Promise_msg_init;
 extern const upb_MiniTable* grpc__channelz__v2__Promise_msg_init_ptr;
 extern const upb_MiniTable grpc__channelz__v2__Promise__Custom_msg_init;
 extern const upb_MiniTable* grpc__channelz__v2__Promise__Custom_msg_init_ptr;
-extern const upb_MiniTable grpc__channelz__v2__Promise__Unknown_msg_init;
-extern const upb_MiniTable* grpc__channelz__v2__Promise__Unknown_msg_init_ptr;
 extern const upb_MiniTable grpc__channelz__v2__Promise__If_msg_init;
 extern const upb_MiniTable* grpc__channelz__v2__Promise__If_msg_init_ptr;
 extern const upb_MiniTable grpc__channelz__v2__Promise__Loop_msg_init;
@@ -38,6 +36,8 @@ extern const upb_MiniTable grpc__channelz__v2__Promise__JoinBranch_msg_init;
 extern const upb_MiniTable* grpc__channelz__v2__Promise__JoinBranch_msg_init_ptr;
 extern const upb_MiniTable grpc__channelz__v2__Promise__Join_msg_init;
 extern const upb_MiniTable* grpc__channelz__v2__Promise__Join_msg_init_ptr;
+extern const upb_MiniTable grpc__channelz__v2__Promise__Map_msg_init;
+extern const upb_MiniTable* grpc__channelz__v2__Promise__Map_msg_init_ptr;
 
 extern const upb_MiniTableFile src_proto_grpc_channelz_v2_promise_proto_upb_file_layout;
 

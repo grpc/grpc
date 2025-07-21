@@ -353,68 +353,79 @@ const std::string temp_dir = GetTempDir();
 std::vector<CoreTestConfiguration> End2endTestConfigs() {
   return std::vector<CoreTestConfiguration>{
       CoreTestConfiguration{
-          "Chttp2Fullstack",
-          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2, nullptr,
+          /*name=*/"Chttp2Fullstack",
+          /*feature_mask=*/FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+              FEATURE_MASK_IS_HTTP2,
+          /*overridden_call_host=*/nullptr,
+          /*create_fixture=*/
           [](const ChannelArgs& /*client_args*/,
              const ChannelArgs& /*server_args*/) {
             return std::make_unique<InsecureFixture>();
           }},
-      CoreTestConfiguration{"Chttp2FullstackCompression",
-                            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-                                FEATURE_MASK_IS_HTTP2 |
-                                FEATURE_MASK_DO_NOT_GTEST,
-                            nullptr,
-                            [](const ChannelArgs&, const ChannelArgs&) {
-                              return std::make_unique<CompressionFixture>();
-                            }},
       CoreTestConfiguration{
-          "Chttp2FullstackNoRetry",
-          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
-              FEATURE_MASK_DOES_NOT_SUPPORT_RETRY | FEATURE_MASK_DO_NOT_GTEST,
-          nullptr,
+          /*name=*/"Chttp2FullstackCompression",
+          /*feature_mask=*/FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+              FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_GTEST,
+          /*overridden_call_host=*/nullptr,
+          /*create_fixture=*/
+          [](const ChannelArgs&, const ChannelArgs&) {
+            return std::make_unique<CompressionFixture>();
+          }},
+      CoreTestConfiguration{
+          /*name=*/"Chttp2FullstackNoRetry",
+          /*feature_mask=*/FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+              FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
+              FEATURE_MASK_DO_NOT_GTEST,
+          /*overridden_call_host=*/nullptr,
+          /*create_fixture=*/
           [](const ChannelArgs& /*client_args*/,
              const ChannelArgs& /*server_args*/) {
             return std::make_unique<NoRetryFixture>();
           }},
-      CoreTestConfiguration{"Chttp2FullstackWithCensus",
-                            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-                                FEATURE_MASK_IS_HTTP2 |
-                                FEATURE_MASK_DO_NOT_GTEST,
-                            nullptr,
-                            [](const ChannelArgs&, const ChannelArgs&) {
-                              return std::make_unique<CensusFixture>();
-                            }},
       CoreTestConfiguration{
-          "Chttp2FullstackWithProxy",
-          FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
+          /*name=*/"Chttp2FullstackWithCensus",
+          /*feature_mask=*/FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+              FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_GTEST,
+          /*overridden_call_host=*/nullptr,
+          /*create_fixture=*/
+          [](const ChannelArgs&, const ChannelArgs&) {
+            return std::make_unique<CensusFixture>();
+          }},
+      CoreTestConfiguration{
+          /*name=*/"Chttp2FullstackWithProxy",
+          /*feature_mask=*/FEATURE_MASK_SUPPORTS_REQUEST_PROXYING |
               FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
               FEATURE_MASK_DO_NOT_FUZZ,
-          nullptr,
+          /*overridden_call_host=*/nullptr,
+          /*create_fixture=*/
           [](const ChannelArgs& client_args, const ChannelArgs& server_args) {
             return std::make_unique<ProxyFixture>(client_args, server_args);
           }},
       CoreTestConfiguration{
-          "Chttp2HttpProxy",
-          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL | FEATURE_MASK_IS_HTTP2 |
-              FEATURE_MASK_DO_NOT_FUZZ,
-          nullptr,
+          /*name=*/"Chttp2HttpProxy",
+          /*feature_mask=*/FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+              FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ,
+          /*overridden_call_host=*/nullptr,
+          /*create_fixture=*/
           [](const ChannelArgs& client_args, const ChannelArgs&) {
             return std::make_unique<HttpProxyFilter>(client_args);
           }},
-      CoreTestConfiguration{"Chttp2SocketPair",
-                            FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ |
-                                FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
-                            nullptr,
-                            [](const ChannelArgs&, const ChannelArgs&) {
-                              return std::make_unique<SockpairFixture>(
-                                  ChannelArgs());
-                            }},
       CoreTestConfiguration{
-          "Chttp2SocketPair1ByteAtATime",
-          FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_1BYTE_AT_A_TIME |
-              FEATURE_MASK_DO_NOT_FUZZ |
+          /*name=*/"Chttp2SocketPair",
+          /*feature_mask=*/FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ |
               FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
-          nullptr,
+          /*overridden_call_host=*/nullptr,
+          /*create_fixture=*/
+          [](const ChannelArgs&, const ChannelArgs&) {
+            return std::make_unique<SockpairFixture>(ChannelArgs());
+          }},
+      CoreTestConfiguration{
+          /*name=*/"Chttp2SocketPair1ByteAtATime",
+          /*feature_mask=*/FEATURE_MASK_IS_HTTP2 |
+              FEATURE_MASK_1BYTE_AT_A_TIME | FEATURE_MASK_DO_NOT_FUZZ |
+              FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
+          /*overridden_call_host=*/nullptr,
+          /*create_fixture=*/
           [](const ChannelArgs&, const ChannelArgs&) {
             return std::make_unique<SockpairFixture>(
                 ChannelArgs()
@@ -423,10 +434,11 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
                     .Set(GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE, 1));
           }},
       CoreTestConfiguration{
-          "Chttp2SocketPairMinstack",
-          FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_IS_MINSTACK |
+          /*name=*/"Chttp2SocketPairMinstack",
+          /*feature_mask=*/FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_IS_MINSTACK |
               FEATURE_MASK_DO_NOT_FUZZ,
-          nullptr,
+          /*overridden_call_host=*/nullptr,
+          /*create_fixture=*/
           [](const ChannelArgs&, const ChannelArgs&) {
             return std::make_unique<SockpairWithMinstackFixture>(ChannelArgs());
           }},

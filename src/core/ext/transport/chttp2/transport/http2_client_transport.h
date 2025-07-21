@@ -27,7 +27,7 @@
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
-#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
@@ -88,7 +88,8 @@ class Http2ClientTransport final : public ClientTransport {
   Http2ClientTransport(
       PromiseEndpoint endpoint, GRPC_UNUSED const ChannelArgs& channel_args,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine);
+          event_engine,
+      grpc_closure* on_receive_settings);
 
   Http2ClientTransport(const Http2ClientTransport&) = delete;
   Http2ClientTransport& operator=(const Http2ClientTransport&) = delete;
@@ -128,7 +129,7 @@ class Http2ClientTransport final : public ClientTransport {
     return AssertResultType<absl::Status>(Map(
         outgoing_frames_.MakeSender().Send(std::move(frame), 1),
         [](StatusFlag status) {
-          HTTP2_CLIENT_DLOG
+          GRPC_HTTP2_CLIENT_DLOG
               << "Http2ClientTransport::TestOnlyEnqueueOutgoingFrame status="
               << status;
           return (status.ok()) ? absl::OkStatus()
@@ -136,8 +137,9 @@ class Http2ClientTransport final : public ClientTransport {
         }));
   }
 
-  auto TestOnlySendPing(absl::AnyInvocable<void()> on_initiate) {
-    return ping_manager_.RequestPing(std::move(on_initiate));
+  auto TestOnlySendPing(absl::AnyInvocable<void()> on_initiate,
+                        bool important = false) {
+    return ping_manager_.RequestPing(std::move(on_initiate), important);
   }
 
   template <typename Factory>
@@ -201,7 +203,7 @@ class Http2ClientTransport final : public ClientTransport {
     return AssertResultType<absl::Status>(Map(
         outgoing_frames_.MakeSender().Send(std::move(frame), 1),
         [self = RefAsSubclass<Http2ClientTransport>()](StatusFlag status) {
-          HTTP2_CLIENT_DLOG
+          GRPC_HTTP2_CLIENT_DLOG
               << "Http2ClientTransport::EnqueueOutgoingFrame status=" << status;
           return (status.ok())
                      ? absl::OkStatus()
@@ -427,6 +429,7 @@ class Http2ClientTransport final : public ClientTransport {
   bool incoming_header_end_stream_;
   bool is_first_write_;
   uint32_t incoming_header_stream_id_;
+  grpc_closure* on_receive_settings_;
 
   // Ping related members
   // TODO(akshitpatel) : [PH2][P2] : Consider removing the timeout related
@@ -445,8 +448,8 @@ class Http2ClientTransport final : public ClientTransport {
   // Flags
   bool keepalive_permit_without_calls_;
 
-  auto SendPing(absl::AnyInvocable<void()> on_initiate) {
-    return ping_manager_.RequestPing(std::move(on_initiate));
+  auto SendPing(absl::AnyInvocable<void()> on_initiate, bool important) {
+    return ping_manager_.RequestPing(std::move(on_initiate), important);
   }
   auto WaitForPingAck() { return ping_manager_.WaitForPingAck(); }
 
@@ -486,6 +489,33 @@ class Http2ClientTransport final : public ClientTransport {
           Serialize(absl::Span<Http2Frame>(frames), output_buf);
           return endpoint_.Write(std::move(output_buf), {});
         }));
+  }
+
+  auto AckPing(uint64_t opaque_data) {
+    bool valid_ping_ack_received = true;
+
+    if (!ping_manager_.AckPing(opaque_data)) {
+      GRPC_HTTP2_CLIENT_DLOG << "Unknown ping response received for ping id="
+                             << opaque_data;
+      valid_ping_ack_received = false;
+    }
+
+    return If(
+        // It is possible that the PingRatePolicy may decide to not send a ping
+        // request (in cases like the number of inflight pings is too high).
+        // When this happens, it becomes important to ensure that if a ping ack
+        // is received and there is an "important" outstanding ping request, we
+        // should retry to send it out now.
+        valid_ping_ack_received && ping_manager_.ImportantPingRequested(),
+        [self = RefAsSubclass<Http2ClientTransport>()] {
+          return Map(self->TriggerWriteCycle(), [](const absl::Status status) {
+            return (status.ok())
+                       ? Http2Status::Ok()
+                       : Http2Status::AbslConnectionError(
+                             status.code(), std::string(status.message()));
+          });
+        },
+        [] { return Immediate(Http2Status::Ok()); });
   }
 
   class PingSystemInterfaceImpl : public PingInterface {

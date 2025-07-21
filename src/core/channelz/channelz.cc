@@ -30,12 +30,14 @@
 #include <string>
 #include <tuple>
 
+#include "absl/cleanup/cleanup.h"
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
 #include "src/core/channelz/channelz_registry.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -45,6 +47,7 @@
 #include "src/core/util/notification.h"
 #include "src/core/util/string.h"
 #include "src/core/util/time.h"
+#include "src/core/util/time_precise.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/uri.h"
 #include "src/core/util/useful.h"
@@ -57,67 +60,33 @@ namespace channelz {
 // DataSink
 //
 
-void DataSinkImplementation::AddAdditionalInfo(absl::string_view name,
-                                               Json::Object additional_info) {
+void DataSinkImplementation::AddData(absl::string_view name,
+                                     std::unique_ptr<Data> data) {
   MutexLock lock(&mu_);
-  additional_info_.emplace(std::string(name), std::move(additional_info));
+  additional_info_.emplace(name, std::move(data));
 }
 
-void DataSinkImplementation::AddChildObjects(
-    std::vector<RefCountedPtr<BaseNode>> child_objects) {
+Json::Object DataSinkImplementation::Finalize(bool) {
   MutexLock lock(&mu_);
-  for (auto& node : child_objects) {
-    child_objects_.push_back(std::move(node));
-  }
-}
-
-Json::Object DataSinkImplementation::Finalize(bool timed_out) {
-  if (timed_out) {
-    AddAdditionalInfo("channelzState", {{"timedOut", Json::FromBool(true)}});
-  }
-  MutexLock lock(&mu_);
-  MergeChildObjectsIntoAdditionalInfo();
   Json::Object out;
   for (auto& [name, additional_info] : additional_info_) {
-    out[name] = Json::FromObject(std::move(additional_info));
+    out[name] = Json::FromObject(additional_info->ToJson());
   }
   return out;
 }
 
-void DataSinkImplementation::MergeChildObjectsIntoAdditionalInfo() {
-  if (child_objects_.empty()) return;
-  Json::Object subobjects;
-  std::map<BaseNode::EntityType, std::set<int64_t>> child_objects_by_type;
-  for (auto& node : child_objects_) {
-    child_objects_by_type[node->type()].insert(node->uuid());
+void DataSinkImplementation::Finalize(bool timed_out,
+                                      grpc_channelz_v2_Entity* entity,
+                                      upb_Arena* arena) {
+  MutexLock lock(&mu_);
+  grpc_channelz_v2_Entity_set_timed_out(entity, timed_out);
+  for (auto& [name, additional_info] : additional_info_) {
+    auto* staple = grpc_channelz_v2_Entity_add_data(entity, arena);
+    grpc_channelz_v2_Data_set_name(staple,
+                                   CopyStdStringToUpbString(name, arena));
+    additional_info->FillProto(
+        grpc_channelz_v2_Data_mutable_value(staple, arena), arena);
   }
-  for (const auto& [type, child_objects] : child_objects_by_type) {
-    std::string key;
-    switch (type) {
-      case BaseNode::EntityType::kTopLevelChannel:
-      case BaseNode::EntityType::kSubchannel:
-      case BaseNode::EntityType::kListenSocket:
-      case BaseNode::EntityType::kServer:
-      case BaseNode::EntityType::kInternalChannel: {
-        LOG(ERROR) << "Nodes of type " << BaseNode::EntityTypeString(type)
-                   << " not supported for child object collection in DataSink";
-        continue;
-      }
-      case BaseNode::EntityType::kSocket:
-        key = "subSockets";
-        break;
-      case BaseNode::EntityType::kCall:
-        key = "calls";
-        break;
-    }
-    Json::Array uuids;
-    uuids.reserve(child_objects.size());
-    for (int64_t uuid : child_objects) {
-      uuids.push_back(Json::FromNumber(uuid));
-    }
-    subobjects[key] = Json::FromArray(std::move(uuids));
-  }
-  additional_info_.emplace("childObjects", std::move(subobjects));
 }
 
 //
@@ -222,7 +191,42 @@ void BaseNode::SerializeEntity(grpc_channelz_v2_Entity* entity,
     }
   }
   grpc_channelz_v2_Entity_set_orphaned(entity, orphaned_index_ != 0);
+
+  auto done = std::make_shared<Notification>();
+  auto sink_impl = std::make_shared<DataSinkImplementation>();
+  auto done_notifier = std::make_shared<DataSinkCompletionNotification>(
+      [done]() { done->Notify(); });
+  auto make_data_sink = [sink_impl, done_notifier]() {
+    return DataSink(sink_impl, done_notifier);
+  };
+  AddNodeSpecificData(make_data_sink());
+  {
+    MutexLock lock(&data_sources_mu_);
+    for (DataSource* data_source : data_sources_) {
+      data_source->AddData(make_data_sink());
+    }
+  }
+  make_data_sink().AddData("v1_compatibility",
+                           PropertyList().Set("name", name()));
+  bool completed =
+      done->WaitForNotificationWithTimeout(absl::Milliseconds(100));
+  sink_impl->Finalize(!completed, entity, arena);
+
   trace_.Render(entity, arena);
+}
+
+void BaseNode::AddNodeSpecificData(DataSink) {
+  // Default implementation does nothing.
+}
+
+std::string BaseNode::SerializeEntityToString() {
+  upb_Arena* arena = upb_Arena_New();
+  auto cleanup = absl::MakeCleanup([arena]() { upb_Arena_Free(arena); });
+  grpc_channelz_v2_Entity* entity = grpc_channelz_v2_Entity_new(arena);
+  SerializeEntity(entity, arena);
+  size_t length;
+  auto* bytes = grpc_channelz_v2_Entity_serialize(entity, arena, &length);
+  return std::string(bytes, length);
 }
 
 //
@@ -291,6 +295,17 @@ void CallCounts::PopulateJson(Json::Object& json) const {
   if (calls_failed != 0) {
     json["callsFailed"] = Json::FromString(absl::StrCat(calls_failed));
   }
+}
+
+PropertyList CallCounts::ToPropertyList() const {
+  return PropertyList()
+      .Set("calls_started", calls_started)
+      .Set("calls_succeeded", calls_succeeded)
+      .Set("calls_failed", calls_failed)
+      .Set("last_call_started_timestamp", [this]() -> std::optional<Timestamp> {
+        if (last_call_started_cycle == 0) return std::nullopt;
+        return Timestamp::FromCycleCounterRoundDown(last_call_started_cycle);
+      }());
 }
 
 //
@@ -424,6 +439,14 @@ Json ChannelNode::RenderJson() {
   return Json::FromObject(std::move(json));
 }
 
+void ChannelNode::AddNodeSpecificData(DataSink sink) {
+  sink.AddData("channel", PropertyList()
+                              .Set("target", target_)
+                              .Set("connectivity_state", connectivity_state()));
+  sink.AddData("call_counts", call_counter_.GetCallCounts().ToPropertyList());
+  sink.AddData("channel_args", channel_args_.ToPropertyList());
+}
+
 void ChannelNode::PopulateChildRefs(Json::Object* json) {
   auto child_subchannels = this->child_subchannels();
   auto child_channels = this->child_channels();
@@ -522,6 +545,14 @@ Json SubchannelNode::RenderJson() {
   return Json::FromObject(std::move(object));
 }
 
+void SubchannelNode::AddNodeSpecificData(DataSink sink) {
+  sink.AddData("channel", PropertyList()
+                              .Set("target", target_)
+                              .Set("connectivity_state", connectivity_state()));
+  sink.AddData("call_counts", call_counter_.GetCallCounts().ToPropertyList());
+  sink.AddData("channel_args", channel_args_.ToPropertyList());
+}
+
 //
 // ServerNode
 //
@@ -589,6 +620,11 @@ Json ServerNode::RenderJson() {
   return Json::FromObject(std::move(object));
 }
 
+void ServerNode::AddNodeSpecificData(DataSink sink) {
+  sink.AddData("call_counts", call_counter_.GetCallCounts().ToPropertyList());
+  sink.AddData("channel_args", channel_args_.ToPropertyList());
+}
+
 std::map<intptr_t, WeakRefCountedPtr<ListenSocketNode>>
 ServerNode::child_listen_sockets() const {
   std::map<intptr_t, WeakRefCountedPtr<ListenSocketNode>> result;
@@ -635,6 +671,27 @@ Json SocketNode::Security::Tls::RenderJson() {
   return Json::FromObject(std::move(data));
 }
 
+PropertyList SocketNode::Security::Tls::ToPropertyList() const {
+  PropertyList result;
+  switch (type) {
+    case NameType::kUnset:
+      break;
+    case NameType::kStandardName:
+      result.Set("standard_name", name);
+      break;
+    case NameType::kOtherName:
+      result.Set("other_name", name);
+      break;
+  }
+  if (!local_certificate.empty()) {
+    result.Set("local_certificate", absl::Base64Escape(local_certificate));
+  }
+  if (!remote_certificate.empty()) {
+    result.Set("remote_certificate", absl::Base64Escape(remote_certificate));
+  }
+  return result;
+}
+
 //
 // SocketNode::Security
 //
@@ -658,38 +715,22 @@ Json SocketNode::Security::RenderJson() {
   return Json::FromObject(std::move(data));
 }
 
-namespace {
-
-void* SecurityArgCopy(void* p) {
-  SocketNode::Security* xds_certificate_provider =
-      static_cast<SocketNode::Security*>(p);
-  return xds_certificate_provider->Ref().release();
-}
-
-void SecurityArgDestroy(void* p) {
-  SocketNode::Security* xds_certificate_provider =
-      static_cast<SocketNode::Security*>(p);
-  xds_certificate_provider->Unref();
-}
-
-int SecurityArgCmp(void* p, void* q) { return QsortCompare(p, q); }
-
-const grpc_arg_pointer_vtable kChannelArgVtable = {
-    SecurityArgCopy, SecurityArgDestroy, SecurityArgCmp};
-
-}  // namespace
-
-grpc_arg SocketNode::Security::MakeChannelArg() const {
-  return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_CHANNELZ_SECURITY),
-      const_cast<SocketNode::Security*>(this), &kChannelArgVtable);
-}
-
-RefCountedPtr<SocketNode::Security> SocketNode::Security::GetFromChannelArgs(
-    const grpc_channel_args* args) {
-  Security* security = grpc_channel_args_find_pointer<Security>(
-      args, GRPC_ARG_CHANNELZ_SECURITY);
-  return security != nullptr ? security->Ref() : nullptr;
+PropertyList SocketNode::Security::ToPropertyList() const {
+  switch (type) {
+    case ModelType::kUnset:
+      break;
+    case ModelType::kTls:
+      if (tls) {
+        return tls->ToPropertyList();
+      }
+      break;
+    case ModelType::kOther:
+      if (other.has_value()) {
+        return PropertyList().Set("other", JsonDump(*other));
+      }
+      break;
+  }
+  return PropertyList();
 }
 
 //
@@ -850,6 +891,45 @@ Json SocketNode::RenderJson() {
   return Json::FromObject(std::move(object));
 }
 
+void SocketNode::AddNodeSpecificData(DataSink sink) {
+  auto convert_cycle_counter =
+      [](gpr_cycle_counter cycle_counter) -> std::optional<Timestamp> {
+    if (cycle_counter == 0) return std::nullopt;
+    return Timestamp::FromCycleCounterRoundDown(cycle_counter);
+  };
+  sink.AddData("socket",
+               PropertyList().Set("local", local_).Set("remote", remote_));
+  sink.AddData(
+      "call_counts",
+      PropertyList()
+          .Set("streams_started",
+               streams_started_.load(std::memory_order_relaxed))
+          .Set("streams_succeeded",
+               streams_succeeded_.load(std::memory_order_relaxed))
+          .Set("streams_failed",
+               streams_failed_.load(std::memory_order_relaxed))
+          .Set("messages_sent", messages_sent_.load(std::memory_order_relaxed))
+          .Set("messages_received",
+               messages_received_.load(std::memory_order_relaxed))
+          .Set("keepalives_sent",
+               keepalives_sent_.load(std::memory_order_relaxed))
+          .Set("last_local_stream_created_timestamp",
+               convert_cycle_counter(last_local_stream_created_cycle_.load(
+                   std::memory_order_relaxed)))
+          .Set("last_remote_stream_created_timestamp",
+               convert_cycle_counter(last_remote_stream_created_cycle_.load(
+                   std::memory_order_relaxed)))
+          .Set("last_message_sent_timestamp",
+               convert_cycle_counter(
+                   last_message_sent_cycle_.load(std::memory_order_relaxed)))
+          .Set("last_message_received_timestamp",
+               convert_cycle_counter(last_message_received_cycle_.load(
+                   std::memory_order_relaxed))));
+  if (security_ != nullptr) {
+    sink.AddData("security", security_->ToPropertyList());
+  }
+}
+
 //
 // ListenSocketNode
 //
@@ -870,6 +950,10 @@ Json ListenSocketNode::RenderJson() {
   PopulateSocketAddressJson(&object, "local", local_addr_.c_str());
   PopulateJsonFromDataSources(object);
   return Json::FromObject(std::move(object));
+}
+
+void ListenSocketNode::AddNodeSpecificData(DataSink sink) {
+  sink.AddData("listen_socket", PropertyList().Set("local", local_addr_));
 }
 
 //

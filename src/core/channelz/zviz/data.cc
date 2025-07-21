@@ -70,9 +70,9 @@ bool PropertyListFormatter(Environment& env, google::protobuf::Any value,
   grpc::channelz::v2::PropertyList property_list;
   if (!value.UnpackTo(&property_list)) return false;
   auto& table = element.AppendTable(layout::TableIntent::kPropertyList);
-  for (const auto& [key, value] : property_list.properties()) {
-    table.AppendColumn().AppendText(layout::Intent::kKey, key);
-    Format(env, value, table.AppendColumn());
+  for (const auto& el : property_list.properties()) {
+    table.AppendColumn().AppendText(layout::Intent::kKey, el.key());
+    Format(env, el.value(), table.AppendColumn());
     table.NewRow();
   }
   return true;

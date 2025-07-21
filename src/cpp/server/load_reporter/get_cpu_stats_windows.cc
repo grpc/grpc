@@ -23,7 +23,6 @@
 #include <windows.h>
 
 #include <cstdint>
-#include <memory>
 
 #include "src/cpp/server/load_reporter/get_cpu_stats.h"
 
