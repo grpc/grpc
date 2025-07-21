@@ -66,6 +66,7 @@ class CFSocketListenerImpl
 
   grpc_core::Mutex mu_;
   bool started_ ABSL_GUARDED_BY(mu_) = false;
+  bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
   std::vector<std::tuple<CFTypeUniqueRef<CFSocketRef>>> ipv6cfsocks_
       ABSL_GUARDED_BY(mu_);
   CFRunLoopRef runloop_ ABSL_GUARDED_BY(mu_);
