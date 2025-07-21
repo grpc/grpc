@@ -778,14 +778,15 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "service_config_end2end_test",
+grpc_cc_library(
+    name = "service_config_end2end_test_lib",
+    testonly = True,
     srcs = ["service_config_end2end_test.cc"],
     external_deps = [
         "absl/log:check",
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    linkstatic = True,
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -797,6 +798,19 @@ grpc_cc_test(
         "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_test(
+    name = "service_config_end2end_test",
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
+    tags = ["cpp_end2end_test"],
+    deps = [
+        ":service_config_end2end_test_lib",
     ],
 )
 
