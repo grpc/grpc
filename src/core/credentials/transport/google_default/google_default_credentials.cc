@@ -505,7 +505,7 @@ google_compute_engine_credential_creation_method() {
   }
 
   // Then the well-known file.
-  if (grpc_get_well_known_google_credentials_file_path() != "") {
+  if (!grpc_get_well_known_google_credentials_file_path().empty()) {
     return DefaultCallCredentialsCreationMethod::kFromWellKnownFile;
   }
 
