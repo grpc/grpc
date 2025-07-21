@@ -33,11 +33,11 @@
 #include <memory>
 #include <sstream>
 
+#include "gtest/gtest.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/cpp/latent_see/latent_see_client.h"
 #include "src/proto/grpc/channelz/v2/latent_see.grpc.pb.h"
 #include "test/core/test_util/test_config.h"
-#include "gtest/gtest.h"
 
 namespace grpc {
 namespace testing {

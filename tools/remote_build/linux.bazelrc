@@ -58,10 +58,6 @@ build:msan --linkopt=--stdlib=libc++
 # TODO(jtattermusch): include the modified LD_LIBRARY_PATH in an msan-specific
 # toolchain configuration, instead of needing to explicitly set it here.
 build:msan --action_env=LD_LIBRARY_PATH=/usr/local/libcxx-msan/lib
-# TODO(veblush): Remove the following after upgrading cloud-cpp-cloud to
-# the version having https://github.com/googleapis/google-cloud-cpp/pull/14151
-build:msan --cxxopt='-std=c++17'
-build:msan --host_cxxopt='-std=c++17'
 # Attempt to fix flakes on MSAN thought to be related to MSAN being too slow
 # in unoptimized builds.
 build:msan --copt=-O1
@@ -85,7 +81,3 @@ build:ubsan --copt=-gmlt
 build:ubsan --test_timeout=60,600,1800,3600
 build:ubsan --cxxopt=--stdlib=libc++
 build:ubsan --test_tag_filters=-no_linux,-noubsan
-# TODO(veblush): Remove the following after upgrading cloud-cpp-cloud to
-# the version having https://github.com/googleapis/google-cloud-cpp/pull/14151
-build:ubsan --cxxopt='-std=c++17'
-build:ubsan --host_cxxopt='-std=c++17'

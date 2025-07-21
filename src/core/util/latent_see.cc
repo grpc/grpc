@@ -20,11 +20,11 @@
 #include <string>
 #include <vector>
 
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/sync.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
 
 namespace grpc_core::latent_see {
 
