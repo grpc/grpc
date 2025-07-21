@@ -53,6 +53,7 @@ CFSocketListenerImpl::CFSocketListenerImpl(
 
 CFSocketListenerImpl::~CFSocketListenerImpl() {
   on_shutdown_(absl::OkStatus());
+  dispatch_release(queue_);
 
   GRPC_TRACE_LOG(event_engine, INFO)
       << "CFSocketListenerImpl::~CFSocketListenerImpl, this: " << this;
@@ -64,6 +65,7 @@ void CFSocketListenerImpl::Shutdown() {
 
   grpc_core::MutexLock lock(&mu_);
 
+  shutdown_ = true;
   for (auto& [ipv6cfsock] : ipv6cfsocks_) {
     CFSocketInvalidate(ipv6cfsock);
   }
@@ -172,6 +174,10 @@ absl::Status CFSocketListenerImpl::Start() {
 
     {
       grpc_core::MutexLock lock(&that->mu_);
+      if (that->shutdown_) {
+        return;
+      }
+
       that->runloop_ = CFRunLoopGetCurrent();
       for (auto& [ipv6cfsock] : that->ipv6cfsocks_) {
         CFTypeUniqueRef<CFRunLoopSourceRef> ipv6cfsock_source =
