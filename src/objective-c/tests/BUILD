@@ -271,6 +271,7 @@ grpc_objc_testing_library(
     deps = [
         "//test/cpp/end2end:client_callback_end2end_test_lib",
         "//test/cpp/end2end:client_interceptors_end2end_test_lib",
+        "//test/cpp/end2end:client_lb_end2end_test_lib",
         "//test/cpp/end2end:delegating_channel_test_lib",
         "//test/cpp/end2end:end2end_test_lib",
         "//test/cpp/end2end:exception_test_lib",

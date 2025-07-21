@@ -22,6 +22,7 @@
 
 #include "gtest/gtest.h"
 #include "test/core/test_util/test_config.h"
+#include "test/cpp/end2end/connection_attempt_injector.h"
 
 @interface CppEnd2EndTests : XCTestCase
 @end
@@ -41,6 +42,7 @@
   grpc::testing::TestEnvironment env(&argc, (char **)argv);
 
   grpc_init();
+  grpc::testing::ConnectionAttemptInjector::Init();
   int r = RUN_ALL_TESTS();
   grpc_shutdown();
 
