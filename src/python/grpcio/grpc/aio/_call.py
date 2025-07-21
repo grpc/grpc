@@ -43,6 +43,7 @@ from ._typing import RequestIterableType
 from ._typing import RequestType
 from ._typing import ResponseType
 from ._typing import SerializingFunction
+from ._typing import MetadataType
 
 __all__ = "AioRpcError", "Call", "UnaryUnaryCall", "UnaryStreamCall"
 
@@ -176,7 +177,7 @@ class AioRpcError(grpc.RpcError):
 
 
 def _create_rpc_error(
-    initial_metadata: Union[Metadata, Tuple[MetadatumType, ...]],
+    initial_metadata: MetadataType,
     status: cygrpc.AioRpcStatus,
 ) -> AioRpcError:
     return AioRpcError(
