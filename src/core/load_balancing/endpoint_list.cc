@@ -28,10 +28,12 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/load_balancing/delegating_helper.h"
 #include "src/core/load_balancing/lb_policy.h"
@@ -42,6 +44,7 @@
 #include "src/core/util/json/json.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/shared_bit_gen.h"
 
 namespace grpc_core {
 
@@ -168,10 +171,34 @@ void EndpointList::Init(
                                               const ChannelArgs&)>
         create_endpoint) {
   if (endpoints == nullptr) return;
+  if (!IsRrWrrConnectFromRandomIndexEnabled()) {
+    endpoints->ForEach([&](const EndpointAddresses& endpoint) {
+      endpoints_.push_back(
+          create_endpoint(Ref(DEBUG_LOCATION, "Endpoint"), endpoint, args));
+    });
+    return;
+  }
+  // If all clients get the same endpoint list in the same order, and they
+  // all start connection attempts in that order, and all connection attempts
+  // take approximately the same amount of time, then all clients are
+  // likely to connect to the first endpoint in the list before any of
+  // the others.  As soon as the client has that initial connection,
+  // it will send all queued RPCs on that connection while it waits for
+  // other endpoints to become connected.  This can result in sending a
+  // potentially large burst of traffic to the first endpoint in the list.
+  // To avoid that, we start connecting from a random index into the list.
+  std::vector<EndpointAddresses> endpoint_list;
   endpoints->ForEach([&](const EndpointAddresses& endpoint) {
-    endpoints_.push_back(
-        create_endpoint(Ref(DEBUG_LOCATION, "Endpoint"), endpoint, args));
+    endpoint_list.push_back(endpoint);
   });
+  endpoints_.resize(endpoint_list.size());
+  size_t start_index = absl::Uniform(SharedBitGen(), 0UL, endpoint_list.size());
+  for (size_t i = 0; i < endpoint_list.size(); ++i) {
+    size_t index = (start_index + i) % endpoint_list.size();
+    EndpointAddresses& endpoint = endpoint_list[index];
+    endpoints_[index] =
+        create_endpoint(Ref(DEBUG_LOCATION, "Endpoint"), endpoint, args);
+  }
 }
 
 void EndpointList::ResetBackoffLocked() {

@@ -64,6 +64,8 @@
   default: true
 - name: free_large_allocator
   default: false
+- name: fuse_filters
+  default: false
 - name: keep_alive_ping_timer_batch
   default: false
 - name: local_connector_secure
@@ -83,7 +85,7 @@
 - name: schedule_cancellation_over_write
   default: false
 - name: server_global_callbacks_ownership
-  default: false
+  default: true
 - name: shard_global_connection_pool
   default: true
 - name: sleep_promise_exec_ctx_removal

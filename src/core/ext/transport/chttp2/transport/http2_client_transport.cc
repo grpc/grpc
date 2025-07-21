@@ -35,6 +35,7 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
@@ -315,17 +316,33 @@ Http2Status Http2ClientTransport::ProcessHttp2RstStreamFrame(
 Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
     Http2SettingsFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-settings
-  GRPC_HTTP2_CLIENT_DLOG << "Http2Transport ProcessHttp2SettingsFrame Factory";
-  // TODO(tjagtap) : [PH2][P2] : Implement this.
-  // Load into this.settings_
-  // Take necessary actions as per settings that have changed.
-  GRPC_HTTP2_CLIENT_DLOG
-      << "Http2Transport ProcessHttp2SettingsFrame Promise { ack=" << frame.ack
-      << ", settings length=" << frame.settings.size() << "}";
+
+  GRPC_HTTP2_CLIENT_DLOG << "Http2Transport ProcessHttp2SettingsFrame { ack="
+                         << frame.ack
+                         << ", settings length=" << frame.settings.size()
+                         << "}";
+
+  // The connector code needs us to run this
   if (on_receive_settings_ != nullptr) {
     ExecCtx::Run(DEBUG_LOCATION, on_receive_settings_, absl::OkStatus());
     on_receive_settings_ = nullptr;
   }
+
+  if (!frame.ack) {
+    // Check if the received settings have legal values
+    Http2Status status = ValidateSettingsValues(frame.settings);
+    if (!status.IsOk()) {
+      return status;
+    }
+    // TODO(tjagtap) : [PH2][P1]
+    // Apply the new settings
+    // Quickly send the ACK to the peer once the settings are applied
+  } else {
+    // TODO(tjagtap) : [PH2][P1]
+    // Stop the setting timeout promise
+    // Update the ACKed setting data structure
+  }
+
   return Http2Status::Ok();
 }
 
@@ -337,11 +354,7 @@ auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
       frame.ack,
       [self = RefAsSubclass<Http2ClientTransport>(), opaque = frame.opaque]() {
         // Received a ping ack.
-        if (!self->ping_manager_.AckPing(opaque)) {
-          GRPC_HTTP2_CLIENT_DLOG
-              << "Unknown ping response received for ping id=" << opaque;
-        }
-        return Immediate(Http2Status::Ok());
+        return self->AckPing(opaque);
       },
       [self = RefAsSubclass<Http2ClientTransport>(), opaque = frame.opaque]() {
         // TODO(akshitpatel) : [PH2][P2] : Have a counter to track number of
