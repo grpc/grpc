@@ -220,6 +220,7 @@ class Http2ClientTransport final : public ClientTransport {
 
   PromiseEndpoint endpoint_;
   Http2SettingsManager settings_;
+  grpc_core::Duration settings_timeout_;
 
   Http2FrameHeader current_frame_header_;
 
@@ -292,7 +293,6 @@ class Http2ClientTransport final : public ClientTransport {
     // TODO(akshitpatel) : [PH2][P3] : Investigate if this needs to be atomic.
     HttpStreamState stream_state;
     const uint32_t stream_id;
-    TransportSendQeueue send_queue;
     GrpcMessageAssembler assembler;
     HeaderAssembler header_assembler;
     // TODO(akshitpatel) : [PH2][P2] : StreamQ should maintain a flag that

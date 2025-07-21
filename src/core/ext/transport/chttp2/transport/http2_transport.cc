@@ -16,10 +16,13 @@
 //
 //
 
+#include "src/core/ext/transport/chttp2/transport/http2_transport.h"
+
 #include <cstdint>
 #include <utility>
 
 #include "src/core/call/call_spine.h"
+#include "src/core/call/metadata_info.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
@@ -37,6 +40,79 @@ namespace http2 {
 // familiar with the PH2 project (Moving chttp2 to promises.)
 // TODO(tjagtap) : [PH2][P3] : We may not need this file. Delete once Server
 // Transport is complete.
+
+void ReadSettingsFromChannelArgs(const grpc_core::ChannelArgs& channel_args,
+                                 Http2Settings& settings,
+                                 const bool is_client) {
+  int value =
+      channel_args.GetInt(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER).value_or(-1);
+  if (value >= 0) {
+    settings.SetHeaderTableSize(value);
+  }
+
+  if (!is_client) {
+    value = channel_args.GetInt(GRPC_ARG_MAX_CONCURRENT_STREAMS).value_or(-1);
+    if (value >= 0) {
+      settings.SetMaxConcurrentStreams(value);
+    }
+  } else if (channel_args.Contains(GRPC_ARG_MAX_CONCURRENT_STREAMS)) {
+    VLOG(2) << GRPC_ARG_MAX_CONCURRENT_STREAMS
+            << " is not available on clients";
+  }
+
+  value =
+      channel_args.GetInt(GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES).value_or(-1);
+  if (value >= 0) {
+    settings.SetInitialWindowSize(value);
+    // TODO(tjagtap) [PH2][P2] : Also set this for flow control.
+    // Refer to read_channel_args() in chttp2_transport.cc for more details.
+  }
+
+  settings.SetMaxHeaderListSize(
+      grpc_core::GetHardLimitFromChannelArgs(channel_args));
+
+  value = channel_args.GetInt(GRPC_ARG_HTTP2_MAX_FRAME_SIZE).value_or(-1);
+  if (value >= 0) {
+    settings.SetMaxFrameSize(value);
+  }
+
+  if (channel_args
+          .GetBool(GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE)
+          .value_or(false)) {
+    settings.SetPreferredReceiveCryptoMessageSize(INT_MAX);
+  }
+
+  value = channel_args.GetInt(GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY).value_or(-1);
+  if (value >= 0) {
+    settings.SetAllowTrueBinaryMetadata(value != 0);
+  }
+
+  settings.SetAllowSecurityFrame(
+      channel_args.GetBool(GRPC_ARG_SECURITY_FRAME_ALLOWED).value_or(false));
+
+  GRPC_HTTP2_COMMON_DLOG
+      << "Http2Settings: {"
+      << "header_table_size: " << settings.header_table_size()
+      << ", max_concurrent_streams: " << settings.max_concurrent_streams()
+      << ", initial_window_size: " << settings.initial_window_size()
+      << ", max_frame_size: " << settings.max_frame_size()
+      << ", max_header_list_size: " << settings.max_header_list_size()
+      << ", preferred_receive_crypto_message_size: "
+      << settings.preferred_receive_crypto_message_size()
+      << ", enable_push: " << settings.enable_push()
+      << ", allow_true_binary_metadata: "
+      << settings.allow_true_binary_metadata()
+      << ", allow_security_frame: " << settings.allow_security_frame() << "}";
+}
+
+void InitLocalSettings(Http2Settings& settings, const bool is_client) {
+  if (is_client) {
+    settings.SetEnablePush(false);
+    settings.SetMaxConcurrentStreams(0);
+  }
+  settings.SetMaxHeaderListSize(DEFAULT_MAX_HEADER_LIST_SIZE);
+  settings.SetAllowTrueBinaryMetadata(true);
+}
 
 }  // namespace http2
 }  // namespace grpc_core

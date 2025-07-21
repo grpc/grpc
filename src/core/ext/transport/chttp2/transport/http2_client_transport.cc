@@ -726,6 +726,10 @@ Http2ClientTransport::Http2ClientTransport(
 
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor Begin";
 
+  InitLocalSettings(settings_.mutable_local(), /*is_client=*/true);
+  ReadSettingsFromChannelArgs(channel_args, settings_.mutable_local(),
+                              /*is_client=*/true);
+
   // Initialize the general party and write party.
   auto general_party_arena = SimpleArenaAllocator(0)->MakeArena();
   general_party_arena->SetContext<EventEngine>(event_engine.get());
@@ -738,14 +742,33 @@ Http2ClientTransport::Http2ClientTransport(
   // The keepalive loop is only spawned if the keepalive time is not infinity.
   keepalive_manager_.Spawn(general_party_.get());
 
-  // TODO(tjagtap) : [PH2][P2] Fix Settings workflow.
+  // TODO(tjagtap) : [PH2][P2] Delete this hack once flow control is done.
+  // We are increasing the flow control window so that we can avoid sending
+  // WINDOW_UPDATE frames while flow control is under development. Once it is
+  // ready we should remove these lines.
+  // <DeleteAfterFlowControl>
   Http2ErrorCode code = settings_.mutable_local().Apply(
       Http2Settings::kInitialWindowSizeWireId,
       (Http2Settings::max_initial_window_size() - 1));
   DCHECK(code == Http2ErrorCode::kNoError);
+  // </DeleteAfterFlowControl>
+
+  const int max_hpack_table_size =
+      channel_args.GetInt(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER).value_or(-1);
+  if (max_hpack_table_size >= 0) {
+    encoder_.SetMaxUsableSize(max_hpack_table_size);
+  }
+
+  settings_timeout_ =
+      channel_args.GetDurationFromIntMillis(GRPC_ARG_SETTINGS_TIMEOUT)
+          .value_or(std::max(keepalive_timeout_ * 2,
+                             grpc_core::Duration::Minutes(1)));
+
   std::optional<Http2SettingsFrame> settings_frame =
       settings_.MaybeSendUpdate();
   if (settings_frame.has_value()) {
+    GRPC_HTTP2_CLIENT_DLOG
+        << "Http2ClientTransport Constructor Spawn SendFirstSettingsFrame";
     general_party_->Spawn(
         "SendFirstSettingsFrame",
         [self = RefAsSubclass<Http2ClientTransport>(),
@@ -1023,8 +1046,20 @@ void Http2ClientTransport::StartCall(CallHandler call_handler) {
           },
           [self = RefAsSubclass<Http2ClientTransport>(),
            call_handler](auto args /* Locked stream_id_mutex */) mutable {
-            // TODO (akshitpatel) : [PH2][P2] :
-            // Check for max concurrent streams.
+            // For a gRPC Client, we only need to check the
+            // MAX_CONCURRENT_STREAMS setting compliance at the time of
+            // sending (that is write path). A gRPC Client will never
+            // receive a stream initiated by a server, so we dont have to
+            // check MAX_CONCURRENT_STREAMS compliance on the Read-Path.
+            //
+            // TODO(tjagtap) : [PH2][P1] Check for MAX_CONCURRENT_STREAMS
+            // sent by peer before making a stream. Decide behaviour if we are
+            // crossing this threshold.
+            //
+            // TODO(tjagtap) : [PH2][P1] : For a server we will have to do
+            // this for incoming streams only. If a server receives more streams
+            // from a client than is allowed by the clients settings, whether or
+            // not we should fail is debatable.
             const uint32_t stream_id = self->NextStreamId(std::get<0>(args));
             return If(
                 self->MakeStream(call_handler, stream_id),
