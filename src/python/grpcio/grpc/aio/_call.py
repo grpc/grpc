@@ -38,12 +38,12 @@ from ._metadata import Metadata
 from ._typing import DeserializingFunction
 from ._typing import DoneCallbackType
 from ._typing import EOFType
+from ._typing import MetadataType
 from ._typing import MetadatumType
 from ._typing import RequestIterableType
 from ._typing import RequestType
 from ._typing import ResponseType
 from ._typing import SerializingFunction
-from ._typing import MetadataType
 
 __all__ = "AioRpcError", "Call", "UnaryUnaryCall", "UnaryStreamCall"
 
