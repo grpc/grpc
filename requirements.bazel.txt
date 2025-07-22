@@ -48,8 +48,8 @@ protobuf
 pyyaml  # for DNS test
 requests
 # Currently our CI uses Python < 3.8, hence <4.14.0 was added
-# TODO(asheshvidyut): remove the <4.14.0, when CI uses python >= 3.9
-typeguard~=4.0.0,<4.14.0
+# TODO(asheshvidyut): remove the <4.4.1, when CI uses python >= 3.9
+typeguard~=4.2.0,<4.4.1
 typing-extensions~=4.13
 twisted  # for DNS test
 urllib3
