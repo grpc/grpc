@@ -44,7 +44,6 @@ from ._typing import RequestIterableType
 from ._typing import RequestType
 from ._typing import ResponseType
 from ._typing import SerializingFunction
-from ._typing import MetadataType
 
 __all__ = "AioRpcError", "Call", "UnaryStreamCall", "UnaryUnaryCall"
 
