@@ -18,6 +18,7 @@ load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load(
     "//bazel:grpc_build_system.bzl",
+    "grpc_add_well_known_proto_upb_targets",
     "grpc_cc_library",
     "grpc_clang_cl_settings",
     "grpc_filegroup",
@@ -597,7 +598,6 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:endpoint_info_handshaker",
         "//src/core:experiments",
-        "//src/core:fused_filters",
         "//src/core:grpc_authorization_base",
         "//src/core:http_proxy_mapper",
         "//src/core:init_internally",
@@ -694,7 +694,6 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:endpoint_info_handshaker",
         "//src/core:experiments",
-        "//src/core:fused_filters",
         "//src/core:grpc_authorization_base",
         "//src/core:grpc_external_account_credentials",
         "//src/core:grpc_fake_credentials",
@@ -947,6 +946,13 @@ grpc_cc_library(
         "absl/log:absl_check",
         "absl/log:absl_log",
         "absl/strings:cord",
+        "absl/base:core_headers",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/synchronization:synchronization",
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/types:span",
     ],
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     select_deps = [
@@ -961,10 +967,19 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["//visibility:public"],
     deps = [
+        "generic_stub_internal",
         "global_callback_hook",
+        "gpr_public_hdrs",
         "grpc++_base",
+        "grpc++_config_proto",
+        "grpc_public_hdrs",
+        "ref_counted_ptr",
+        "transport_auth_context",
         "//src/core:gpr_atm",
         "//src/core:slice",
+        "@com_google_protobuf//:any_cc_proto",
+        "@com_google_protobuf//:protobuf",
+        "@com_google_protobuf//src/google/protobuf/io",
     ],
 )
 
@@ -5257,15 +5272,7 @@ WELL_KNOWN_PROTO_TARGETS = [
     "wrappers",
 ]
 
-[grpc_upb_proto_library(
-    name = "protobuf_" + target + "_upb",
-    deps = ["@com_google_protobuf//:" + target + "_proto"],
-) for target in WELL_KNOWN_PROTO_TARGETS]
-
-[grpc_upb_proto_reflection_library(
-    name = "protobuf_" + target + "_upbdefs",
-    deps = ["@com_google_protobuf//:" + target + "_proto"],
-) for target in WELL_KNOWN_PROTO_TARGETS]
+grpc_add_well_known_proto_upb_targets(targets = WELL_KNOWN_PROTO_TARGETS)
 
 grpc_generate_one_off_targets()
 
