@@ -18,7 +18,6 @@ import asyncio
 import collections
 import functools
 from typing import (
-    AnyStr,
     AsyncIterable,
     Awaitable,
     Callable,
@@ -247,7 +246,7 @@ class ClientCallDetails(
         wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
     """
 
-    method: AnyStr
+    method: bytes
     timeout: Optional[float]
     metadata: Optional[Metadata]
     credentials: Optional[grpc.CallCredentials]
