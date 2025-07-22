@@ -862,17 +862,14 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "proto_server_reflection_test",
+grpc_cc_library(
+    name = "proto_server_reflection_test_lib",
+    testonly = True,
     srcs = ["proto_server_reflection_test.cc"],
     external_deps = [
         "gtest",
     ],
-    tags = [
-        "cpp_end2end_test",
-        # b/117623310.
-        "grpc:no-internal-poller",
-    ],
+    linkstatic = True,
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -885,6 +882,19 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:grpc++_proto_reflection_desc_db",
         "//test/cpp/util:test_util",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_test(
+    name = "proto_server_reflection_test",
+    tags = [
+        "cpp_end2end_test",
+        # b/117623310.
+        "grpc:no-internal-poller",
+    ],
+    deps = [
+        ":proto_server_reflection_test_lib",
     ],
 )
 
