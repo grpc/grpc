@@ -29,7 +29,7 @@
 #   $ python3.8 -m venv .venv-bazel
 #   $ source .venv-bazel/bin/activate
 #   $ pip install pip-tools
-#   $ pip install -r requirements.bazel.lock
+#   $ pip install -r requirements.bazel.lock # make the change to version in requirements.bazel.txt after this
 #   $ pip-compile --no-upgrade --allow-unsafe requirements.bazel.txt -o requirements.bazel.lock
 #   $ deactivate
 
