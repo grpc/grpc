@@ -1840,7 +1840,6 @@ let package = Package(
         "src/core/service_config/service_config.h",
         "src/core/service_config/service_config_call_data.h",
         "src/core/service_config/service_config_channel_arg_filter.cc",
-        "src/core/service_config/service_config_channel_arg_filter.h",
         "src/core/service_config/service_config_impl.cc",
         "src/core/service_config/service_config_impl.h",
         "src/core/service_config/service_config_parser.cc",
