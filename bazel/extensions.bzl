@@ -17,6 +17,10 @@ load(
     "create_rbe_exec_properties_dict",
     "custom_exec_properties",
 )
+load(
+    "@com_github_grpc_grpc//third_party/py:python_configure.bzl",
+    _python_configure = "python_configure",
+)
 
 def _exec_properties_impl(ctx):
     for module in ctx.modules:
@@ -47,4 +51,14 @@ _custom_exec_properties = tag_class(attrs = {
 exec_properties = module_extension(
     implementation = _exec_properties_impl,
     tag_classes = {"custom_exec_properties": _custom_exec_properties},
+)
+
+def _python_configure_impl(ctx):
+    _python_configure(name = ctx.modules[0].tags.configure[0].name)
+
+_configure = tag_class(attrs = {"name": attr.string()})
+
+python_configure = module_extension(
+    implementation = _python_configure_impl,
+    tag_classes = {"configure": _configure},
 )

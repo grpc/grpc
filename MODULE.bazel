@@ -29,6 +29,7 @@ bazel_dep(name = "boringssl", version = "0.20241024.0")  # mistmatched 20241211
 bazel_dep(name = "c-ares", version = "1.19.1", repo_name = "com_github_cares_cares")
 bazel_dep(name = "envoy_api", version = "0.0.0-20250128-4de3c74")
 bazel_dep(name = "googleapis", version = "0.0.0", repo_name = "com_google_googleapis")
+
 # This is for google_cloud_cpp. Patch was taken from google_cloud_cpp repository
 archive_override(
     module_name = "googleapis",
@@ -169,3 +170,7 @@ exec_properties.custom_exec_properties(
     rbe_exec_properties_dict = {"os": "ubuntu", "machine_size": "large"},
 )
 use_repo(exec_properties, "grpc_custom_exec_properties")
+
+python_configure = use_extension("//bazel:extensions.bzl", "python_configure")
+python_configure.configure(name = "local_config_python")
+use_repo(python_configure, "local_config_python")
