@@ -353,6 +353,10 @@ libs:
   - src/core/ext/transport/chttp2/transport/write_size_policy.h
   - src/core/ext/transport/inproc/inproc_transport.h
   - src/core/ext/transport/inproc/legacy_inproc_transport.h
+  - src/core/ext/upb-gen/cel/expr/checked.upb.h
+  - src/core/ext/upb-gen/cel/expr/checked.upb_minitable.h
+  - src/core/ext/upb-gen/cel/expr/syntax.upb.h
+  - src/core/ext/upb-gen/cel/expr/syntax.upb_minitable.h
   - src/core/ext/upb-gen/envoy/admin/v3/certs.upb.h
   - src/core/ext/upb-gen/envoy/admin/v3/certs.upb_minitable.h
   - src/core/ext/upb-gen/envoy/admin/v3/clusters.upb.h
@@ -609,10 +613,6 @@ libs:
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
-  - src/core/ext/upb-gen/proto/cel/expr/checked.upb.h
-  - src/core/ext/upb-gen/proto/cel/expr/checked.upb_minitable.h
-  - src/core/ext/upb-gen/proto/cel/expr/syntax.upb.h
-  - src/core/ext/upb-gen/proto/cel/expr/syntax.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
@@ -697,6 +697,8 @@ libs:
   - src/core/ext/upb-gen/xds/type/v3/range.upb_minitable.h
   - src/core/ext/upb-gen/xds/type/v3/typed_struct.upb.h
   - src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.h
+  - src/core/ext/upbdefs-gen/cel/expr/checked.upbdefs.h
+  - src/core/ext/upbdefs-gen/cel/expr/syntax.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/admin/v3/certs.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/admin/v3/clusters.upbdefs.h
   - src/core/ext/upbdefs-gen/envoy/admin/v3/config_dump.upbdefs.h
@@ -820,8 +822,6 @@ libs:
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h
   - src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h
-  - src/core/ext/upbdefs-gen/proto/cel/expr/checked.upbdefs.h
-  - src/core/ext/upbdefs-gen/proto/cel/expr/syntax.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.h
@@ -1465,6 +1465,8 @@ libs:
   - src/core/ext/transport/chttp2/transport/writing.cc
   - src/core/ext/transport/inproc/inproc_transport.cc
   - src/core/ext/transport/inproc/legacy_inproc_transport.cc
+  - src/core/ext/upb-gen/cel/expr/checked.upb_minitable.c
+  - src/core/ext/upb-gen/cel/expr/syntax.upb_minitable.c
   - src/core/ext/upb-gen/envoy/admin/v3/certs.upb_minitable.c
   - src/core/ext/upb-gen/envoy/admin/v3/clusters.upb_minitable.c
   - src/core/ext/upb-gen/envoy/admin/v3/config_dump.upb_minitable.c
@@ -1593,8 +1595,6 @@ libs:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
-  - src/core/ext/upb-gen/proto/cel/expr/checked.upb_minitable.c
-  - src/core/ext/upb-gen/proto/cel/expr/syntax.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
@@ -1637,6 +1637,8 @@ libs:
   - src/core/ext/upb-gen/xds/type/v3/cel.upb_minitable.c
   - src/core/ext/upb-gen/xds/type/v3/range.upb_minitable.c
   - src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.c
+  - src/core/ext/upbdefs-gen/cel/expr/checked.upbdefs.c
+  - src/core/ext/upbdefs-gen/cel/expr/syntax.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/admin/v3/certs.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/admin/v3/clusters.upbdefs.c
   - src/core/ext/upbdefs-gen/envoy/admin/v3/config_dump.upbdefs.c
@@ -1760,8 +1762,6 @@ libs:
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c
   - src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c
-  - src/core/ext/upbdefs-gen/proto/cel/expr/checked.upbdefs.c
-  - src/core/ext/upbdefs-gen/proto/cel/expr/syntax.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c
@@ -7394,6 +7394,10 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/upb-gen/cel/expr/checked.upb.h
+  - src/core/ext/upb-gen/cel/expr/checked.upb_minitable.h
+  - src/core/ext/upb-gen/cel/expr/syntax.upb.h
+  - src/core/ext/upb-gen/cel/expr/syntax.upb_minitable.h
   - src/core/ext/upb-gen/envoy/annotations/deprecation.upb.h
   - src/core/ext/upb-gen/envoy/annotations/deprecation.upb_minitable.h
   - src/core/ext/upb-gen/envoy/annotations/resource.upb.h
@@ -7514,10 +7518,6 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
-  - src/core/ext/upb-gen/proto/cel/expr/checked.upb.h
-  - src/core/ext/upb-gen/proto/cel/expr/checked.upb_minitable.h
-  - src/core/ext/upb-gen/proto/cel/expr/syntax.upb.h
-  - src/core/ext/upb-gen/proto/cel/expr/syntax.upb_minitable.h
   - src/core/ext/upb-gen/udpa/annotations/migrate.upb.h
   - src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.h
   - src/core/ext/upb-gen/udpa/annotations/security.upb.h
@@ -7586,6 +7586,8 @@ targets:
   - src/core/lib/security/authorization/mock_cel/evaluator_core.h
   - src/core/lib/security/authorization/mock_cel/flat_expr_builder.h
   src:
+  - src/core/ext/upb-gen/cel/expr/checked.upb_minitable.c
+  - src/core/ext/upb-gen/cel/expr/syntax.upb_minitable.c
   - src/core/ext/upb-gen/envoy/annotations/deprecation.upb_minitable.c
   - src/core/ext/upb-gen/envoy/annotations/resource.upb_minitable.c
   - src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.c
@@ -7646,8 +7648,6 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
-  - src/core/ext/upb-gen/proto/cel/expr/checked.upb_minitable.c
-  - src/core/ext/upb-gen/proto/cel/expr/syntax.upb_minitable.c
   - src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.c
   - src/core/ext/upb-gen/udpa/annotations/security.upb_minitable.c
   - src/core/ext/upb-gen/udpa/annotations/sensitive.upb_minitable.c

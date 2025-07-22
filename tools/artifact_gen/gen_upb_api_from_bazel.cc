@@ -176,7 +176,7 @@ std::pair<std::string, std::string> GetExternalLink(const std::string& file) {
       {"@com_envoyproxy_protoc_gen_validate//", ""},
       {"@envoy_api//", ""},
       {"@opencensus_proto//", ""},
-      {"@dev_cel//", ""},
+      {"@dev_cel//", "proto/"},
   };
   for (const auto& link : kExternalLinks) {
     if (absl::StartsWith(file, link.first)) {

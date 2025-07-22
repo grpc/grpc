@@ -616,7 +616,7 @@ def _expand_upb_proto_library_rules(bazel_rules):
         ("@com_envoyproxy_protoc_gen_validate//", ""),
         ("@envoy_api//", ""),
         ("@opencensus_proto//", ""),
-        ("@dev_cel//", ""),
+        ("@dev_cel//", "proto/"),
     ]
     for name, bazel_rule in bazel_rules.items():
         gen_func = bazel_rule.get("generator_function", None)
