@@ -186,7 +186,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
       return absl::CancelledError("secure endpoint shutdown");
     }
 
-    GRPC_LATENT_SEE_INNER_SCOPE("unprotect");
+    GRPC_LATENT_SEE_SCOPE("unprotect");
     bool keep_looping = false;
     tsi_result result = TSI_OK;
 
@@ -321,7 +321,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(write_mu_) {
     if (shutdown_) return TSI_FAILED_PRECONDITION;
 
-    GRPC_LATENT_SEE_INNER_SCOPE("protect");
+    GRPC_LATENT_SEE_SCOPE("protect");
     uint8_t* cur = GRPC_SLICE_START_PTR(write_staging_buffer_);
     uint8_t* end = GRPC_SLICE_END_PTR(write_staging_buffer_);
 
@@ -569,7 +569,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
 
     bool Read(absl::AnyInvocable<void(absl::Status)> on_read,
               SliceBuffer* buffer, ReadArgs args) {
-      GRPC_LATENT_SEE_INNER_SCOPE("secure_endpoint read");
+      GRPC_LATENT_SEE_SCOPE("secure_endpoint read");
 
       grpc_core::ReleasableMutexLock lock(&read_queue_mu_);
       // If there's been an error observed asynchronously, then fail out with
@@ -614,7 +614,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
 
     bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
                SliceBuffer* data, WriteArgs args) {
-      GRPC_LATENT_SEE_INNER_SCOPE("secure_endpoint write");
+      GRPC_LATENT_SEE_SCOPE("secure_endpoint write");
       tsi_result result;
       frame_protector_.TraceOp("Write", data->c_slice_buffer());
       {
