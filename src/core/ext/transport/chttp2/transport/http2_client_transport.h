@@ -258,6 +258,7 @@ class Http2ClientTransport final : public ClientTransport {
         case HttpStreamState::kHalfClosedLocal:
           break;
         case HttpStreamState::kClosed:
+          DCHECK(false) << "MarkHalfClosedLocal called for a closed stream";
           break;
       }
     }
@@ -276,6 +277,7 @@ class Http2ClientTransport final : public ClientTransport {
         case HttpStreamState::kHalfClosedRemote:
           break;
         case HttpStreamState::kClosed:
+          DCHECK(false) << "MarkHalfClosedRemote called for a closed stream";
           break;
       }
     }
