@@ -946,7 +946,17 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc++_public_hdrs",
-    hdrs = GRPCXX_PUBLIC_HDRS,
+    hdrs = GRPCXX_PUBLIC_HDRS + [
+        "include/grpc/impl/call.h",
+        "include/grpc/support/alloc.h",
+        "include/grpc/support/cpu.h",
+        "include/grpc/support/port_platform.h",
+        "include/grpc/support/sync.h",
+        "include/grpc/support/sync_abseil.h",
+        "include/grpc/support/sync_generic.h",
+        "include/grpc/support/time.h",
+        "include/grpcpp/impl/generic_stub_internal.h",
+    ],
     external_deps = [
         "absl/log:check",
         "absl/log:log",
@@ -957,6 +967,9 @@ grpc_cc_library(
         "absl/synchronization",
         "protobuf_headers",
         "protobuf",
+        "absl/base:core_headers",
+        "absl/status",
+        "absl/functional:any_invocable",
     ],
     tags = [
         "avoid_dep",
@@ -965,8 +978,12 @@ grpc_cc_library(
     visibility = ["//bazel:grpc++_public_hdrs"],
     deps = [
         "global_callback_hook",
+        "grpc++_config_proto",
         "grpc_public_hdrs",
         "//src/core:gpr_atm",
+        "@com_google_protobuf//:any_cc_proto",
+        "@com_google_protobuf//:protobuf",
+        "@com_google_protobuf//src/google/protobuf/io",
     ],
 )
 
@@ -1027,6 +1044,7 @@ grpc_cc_library(
         "gpr_public_hdrs",
         "grpc++_base",
         "grpc++_config_proto",
+        "grpc_core_credentials_header",
         "grpc_public_hdrs",
         "ref_counted_ptr",
         "transport_auth_context",
@@ -2670,6 +2688,10 @@ grpc_cc_library(
     ],
     tags = ["nofixdeps"],
     visibility = ["//visibility:public"],
+    deps = [
+        "@com_google_protobuf//:protobuf",
+        "@com_google_protobuf//src/google/protobuf/io",
+    ],
 )
 
 grpc_cc_library(
