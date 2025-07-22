@@ -818,8 +818,13 @@ TEST_F(CredentialsTest, TestComputeEngineCredsWithAltsSuccess) {
       "GoogleComputeEngineTokenFetcherAltsCredentials{"
       "GoogleComputeEngineTokenFetcherCredentials{"
       "OAuth2TokenFetcherCredentials}}";
+  grpc_google_compute_engine_credentials_options* options =
+      static_cast<grpc_google_compute_engine_credentials_options*>(
+          gpr_malloc(sizeof(grpc_google_compute_engine_credentials_options)));
+  options->create_alts_credentials = true;
   grpc_call_credentials* creds =
-      grpc_google_compute_engine_alts_credentials_create(nullptr);
+      grpc_google_compute_engine_credentials_create(options);
+  gpr_free(options);
   // Check security level.
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
 
@@ -877,8 +882,13 @@ TEST_F(CredentialsTest, TestComputeEngineCredsWithAltsFailure) {
   auto state = RequestMetadataState::NewInstance(
       // TODO(roth): This should return UNAUTHENTICATED.
       absl::UnavailableError("error parsing oauth2 token"), {});
+  grpc_google_compute_engine_credentials_options* options =
+      static_cast<grpc_google_compute_engine_credentials_options*>(
+          gpr_malloc(sizeof(grpc_google_compute_engine_credentials_options)));
+  options->create_alts_credentials = true;
   grpc_call_credentials* creds =
-      grpc_google_compute_engine_alts_credentials_create(nullptr);
+      grpc_google_compute_engine_credentials_create(options);
+  gpr_free(options);
   HttpRequest::SetOverride(compute_engine_httpcli_get_failure_override,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
@@ -1840,8 +1850,13 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsWithAltsCallCredsSpecified) {
   grpc_flush_cached_google_default_credentials();
   grpc_call_credentials* call_creds_for_tls =
       grpc_google_compute_engine_credentials_create(nullptr);
+  grpc_google_compute_engine_credentials_options* options =
+      static_cast<grpc_google_compute_engine_credentials_options*>(
+          gpr_malloc(sizeof(grpc_google_compute_engine_credentials_options)));
+  options->create_alts_credentials = true;
   grpc_call_credentials* call_creds_for_alts =
-      grpc_google_compute_engine_alts_credentials_create(nullptr);
+      grpc_google_compute_engine_credentials_create(options);
+  gpr_free(options);
   set_gce_tenancy_checker_for_testing(test_gce_tenancy_checker);
   g_test_gce_tenancy_checker_called = false;
   g_test_is_on_gce = true;
