@@ -62,8 +62,6 @@ class PingInterface {
     // in any fashion.
     uint64_t opaque_data = 0;
   };
-  // TODO(tjagtap) : [PH2][P1] Change the return type of the promises to
-  // Promise<Http2Status> type when that is submitted.
 
   // Returns a promise that creates and sends a ping frame to the peer.
   virtual Promise<absl::Status> SendPing(SendPingArgs args) = 0;
@@ -112,8 +110,8 @@ class PingManager {
   // Returns a promise that resolves once a new ping is initiated and ack is
   // received for the same. The on_initiate callback is executed when the
   // ping is initiated.
-  auto RequestPing(absl::AnyInvocable<void()> on_initiate) {
-    return ping_callbacks_.RequestPing(std::move(on_initiate));
+  auto RequestPing(absl::AnyInvocable<void()> on_initiate, bool important) {
+    return ping_callbacks_.RequestPing(std::move(on_initiate), important);
   }
 
   // Returns a promise that resolves once the next valid ping ack is received.
@@ -127,6 +125,9 @@ class PingManager {
 
   uint64_t StartPing() { return ping_callbacks_.StartPing(); }
   bool PingRequested() { return ping_callbacks_.PingRequested(); }
+  bool ImportantPingRequested() const {
+    return ping_callbacks_.ImportantPingRequested();
+  }
   bool AckPing(uint64_t id) { return ping_callbacks_.AckPing(id); }
   size_t CountPingInflight() { return ping_callbacks_.CountPingInflight(); }
 
@@ -137,11 +138,19 @@ class PingManager {
         std::shared_ptr<grpc_event_engine::experimental::EventEngine>
             event_engine)
         : event_engine_(event_engine) {}
-    Promise<absl::Status> RequestPing(absl::AnyInvocable<void()> on_initiate);
+    Promise<absl::Status> RequestPing(absl::AnyInvocable<void()> on_initiate,
+                                      bool important);
     Promise<absl::Status> WaitForPingAck();
-    void CancelCallbacks() { ping_callbacks_.CancelAll(event_engine_.get()); }
-    uint64_t StartPing() { return ping_callbacks_.StartPing(SharedBitGen()); }
+    void CancelCallbacks() {
+      important_ping_requested_ = false;
+      ping_callbacks_.CancelAll(event_engine_.get());
+    }
+    uint64_t StartPing() {
+      important_ping_requested_ = false;
+      return ping_callbacks_.StartPing(SharedBitGen());
+    }
     bool PingRequested() { return ping_callbacks_.ping_requested(); }
+    bool ImportantPingRequested() const { return important_ping_requested_; }
     bool AckPing(uint64_t id) {
       return ping_callbacks_.AckPing(id, event_engine_.get());
     }
@@ -162,6 +171,12 @@ class PingManager {
    private:
     Chttp2PingCallbacks ping_callbacks_;
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+    // Return true if an "important" ping request needs to be started. This can
+    // be used to determine if a ping should be sent as soon as possible. If
+    // there are no outstanding ping requests, this is guaranteed to be false.
+    // If there is at least one outstanding ping request, this may be true or
+    // false.
+    bool important_ping_requested_ = false;
   };
 
   PingPromiseCallbacks ping_callbacks_;

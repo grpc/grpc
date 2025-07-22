@@ -291,6 +291,21 @@ absl::string_view ChannelArgs::Value::ToString(
   return backing_strings.back();
 }
 
+channelz::PropertyList ChannelArgs::ToPropertyList() const {
+  channelz::PropertyList result;
+  args_.ForEach(
+      [&result](const RefCountedStringValue& key, const Value& value) {
+        if (auto i = value.GetIfInt(); i.has_value()) {
+          result.Set(key.as_string_view(), *i);
+        } else if (auto s = value.GetIfString(); s != nullptr) {
+          result.Set(key.as_string_view(), s->as_string_view());
+        } else if (auto p = value.GetIfPointer(); p != nullptr) {
+          result.Set(key.as_string_view(), "POINTER");
+        }
+      });
+  return result;
+}
+
 std::string ChannelArgs::ToString() const {
   std::vector<absl::string_view> strings;
   std::list<std::string> backing_strings;

@@ -45,6 +45,7 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/useful.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
+#include "test/core/test_util/postmortem_emit.h"
 
 namespace grpc_core {
 
@@ -706,6 +707,9 @@ BasicFuzzer::Result BasicFuzzer::ExecuteAction(
     case api_fuzzer::Action::kSleepMs:
       return Pause(std::min(Duration::Milliseconds(action.sleep_ms()),
                             Duration::Minutes(1)));
+    case api_fuzzer::Action::kPostMortemEmit:
+      SilentPostMortemEmit();
+      break;
     default:
       Crash(absl::StrCat("Unsupported Fuzzing Action of type: ",
                          action.type_case()));

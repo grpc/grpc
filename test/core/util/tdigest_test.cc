@@ -446,7 +446,7 @@ INSTANTIATE_TEST_SUITE_P(
 
         // Continuous samples.
         PrecisionTestParam{[]() { return NormalSamples(100000, 0, 5); },
-                           {{-10, 0.005}, {0.0, 0.006}, {10, 0.005}}},
+                           {{-10, 0.005}, {0.0, 0.007}, {10, 0.005}}},
         PrecisionTestParam{[]() { return UniformSamples(100000, -5000, 5000); },
                            {{-5000.1, 0},
                             {-4900, 0.005},

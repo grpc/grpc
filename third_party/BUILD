@@ -10,8 +10,10 @@ exports_files([
     "constantly.BUILD",
     "cython.BUILD",
     "six.BUILD",
+    "typing_extensions.BUILD",
     "enum34.BUILD",
     "futures.BUILD",
+    "opencensus-cpp.patch",
     "protobuf.patch",
     "protoc-gen-validate.patch",
 ])

@@ -69,4 +69,80 @@ void SaturatingAddWorksUint8(uint8_t a, uint8_t b) {
 }
 FUZZ_TEST(MyTestSuite, SaturatingAddWorksUint8);
 
+template <typename T, typename Bigger>
+void SaturatingMulWorks(T a, T b) {
+  T result = SaturatingMul(a, b);
+  Bigger expect = Clamp<Bigger>(static_cast<Bigger>(a) * static_cast<Bigger>(b),
+                                std::numeric_limits<T>::min(),
+                                std::numeric_limits<T>::max());
+  EXPECT_EQ(result, expect);
+}
+
+void SaturatingMulWorksInt32(int32_t a, int32_t b) {
+  SaturatingMulWorks<int32_t, int64_t>(a, b);
+}
+FUZZ_TEST(MyTestSuite, SaturatingMulWorksInt32);
+void SaturatingMulWorksUint32(uint32_t a, uint32_t b) {
+  SaturatingMulWorks<uint32_t, uint64_t>(a, b);
+}
+FUZZ_TEST(MyTestSuite, SaturatingMulWorksUint32);
+void SaturatingMulWorksInt8(int8_t a, int8_t b) {
+  SaturatingMulWorks<int8_t, int16_t>(a, b);
+}
+FUZZ_TEST(MyTestSuite, SaturatingMulWorksInt8);
+void SaturatingMulWorksUint8(uint8_t a, uint8_t b) {
+  SaturatingMulWorks<uint8_t, uint16_t>(a, b);
+}
+FUZZ_TEST(MyTestSuite, SaturatingMulWorksUint8);
+void SaturatingMulWorksInt16(int16_t a, int16_t b) {
+  SaturatingMulWorks<int16_t, int32_t>(a, b);
+}
+FUZZ_TEST(MyTestSuite, SaturatingMulWorksInt16);
+void SaturatingMulWorksUint16(uint16_t a, uint16_t b) {
+  SaturatingMulWorks<uint16_t, uint32_t>(a, b);
+}
+FUZZ_TEST(MyTestSuite, SaturatingMulWorksUint16);
+
+void ConstexprLogWorks(double y) {
+  double result = useful_detail::ConstexprLog(y);
+  double expect = std::log(y);
+  // We use EXPECT_FLOAT_EQ instead of alternatives:
+  // - EXPECT_NEAR: because we don't know the exact error margin, it can
+  //   be hard to make sure that the error is within a reasonable margin.
+  // - EXPECT_EQ: because we don't know the exact error margin, it can
+  //   be hard to make sure that the error
+  // - EXPECT_DOUBLE_EQ: because we're not actually that accurate
+  EXPECT_FLOAT_EQ(result, expect);
+}
+FUZZ_TEST(MyTestSuite, ConstexprLogWorks)
+    .WithDomains(fuzztest::InRange(1e-12, 1e9));
+
+void ConstexprExpWorks(double x) {
+  double result = useful_detail::ConstexprExp(x);
+  double expect = std::exp(x);
+  // We use EXPECT_FLOAT_EQ instead of alternatives:
+  // - EXPECT_NEAR: because we don't know the exact error margin, it can
+  //   be hard to make sure that the error is within a reasonable margin.
+  // - EXPECT_EQ: because we don't know the exact error margin, it can
+  //   be hard to make sure that the error
+  // - EXPECT_DOUBLE_EQ: because we're not actually that accurate
+  EXPECT_FLOAT_EQ(result, expect);
+}
+FUZZ_TEST(MyTestSuite, ConstexprExpWorks)
+    .WithDomains(fuzztest::InRange(-30, 30));
+
+void ConstexprPowWorks(double base, double exponent) {
+  double result = ConstexprPow(base, exponent);
+  double expect = std::pow(base, exponent);
+  // We use EXPECT_FLOAT_EQ instead of alternatives:
+  // - EXPECT_NEAR: because we don't know the exact error margin, it can
+  //   be hard to make sure that the error is within a reasonable margin.
+  // - EXPECT_EQ: because we don't know the exact error margin, it can
+  //   be hard to make sure that the error
+  // - EXPECT_DOUBLE_EQ: because we're not actually that accurate
+  EXPECT_FLOAT_EQ(result, expect);
+}
+FUZZ_TEST(MyTestSuite, ConstexprPowWorks)
+    .WithDomains(fuzztest::InRange(0.0, 1e9), fuzztest::InRange(0.0, 8.0));
+
 }  // namespace grpc_core

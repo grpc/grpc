@@ -1,0 +1,146 @@
+diff --git a/bazel/deps.bzl b/bazel/deps.bzl
+index ff16f17..b16cfaf 100644
+--- a/bazel/deps.bzl
++++ b/bazel/deps.bzl
+@@ -32,8 +32,8 @@ def opencensus_cpp_deps():
+     maybe(
+         http_archive,
+         name = "com_github_jupp0r_prometheus_cpp",
+-        strip_prefix = "prometheus-cpp-master",
+-        urls = ["https://github.com/jupp0r/prometheus-cpp/archive/master.zip"],
++        strip_prefix = "prometheus-cpp-1.3.0",
++        urls = ["https://github.com/jupp0r/prometheus-cpp/archive/refs/tags/v1.3.0.tar.gz"],
+     )
+ 
+     # Curl library - used by zipkin exporter.
+diff --git a/opencensus/trace/BUILD b/opencensus/trace/BUILD
+index 5215dfc..ee1a678 100644
+--- a/opencensus/trace/BUILD
++++ b/opencensus/trace/BUILD
+@@ -79,7 +79,6 @@ cc_library(
+         ":trace_context",
+         "//opencensus/common/internal:random_lib",
+         "@com_google_absl//absl/base:core_headers",
+-        "@com_google_absl//absl/base:endian",
+         "@com_google_absl//absl/strings",
+         "@com_google_absl//absl/synchronization",
+         "@com_google_absl//absl/time",
+@@ -99,7 +98,6 @@ cc_library(
+     visibility = ["//visibility:public"],
+     deps = [
+         ":span_context",
+-        "@com_google_absl//absl/base:endian",
+         "@com_google_absl//absl/strings",
+     ],
+ )
+@@ -116,7 +114,7 @@ cc_library(
+     visibility = ["//visibility:public"],
+     deps = [
+         ":span_context",
+-        "@com_google_absl//absl/base:endian",
++        "@com_google_absl//absl/numeric:bits",
+         "@com_google_absl//absl/strings",
+     ],
+ )
+@@ -182,7 +180,6 @@ cc_library(
+     visibility = ["//visibility:public"],
+     deps = [
+         ":span_context",
+-        "@com_google_absl//absl/base:endian",
+         "@com_google_absl//absl/strings",
+     ],
+ )
+diff --git a/opencensus/trace/internal/cloud_trace_context.cc b/opencensus/trace/internal/cloud_trace_context.cc
+index da9df80..d2002db 100644
+--- a/opencensus/trace/internal/cloud_trace_context.cc
++++ b/opencensus/trace/internal/cloud_trace_context.cc
+@@ -16,16 +16,15 @@
+ 
+ #include <cstdint>
+ 
+-#include "opencensus/trace/span_context.h"
+-#include "opencensus/trace/span_id.h"
+-#include "opencensus/trace/trace_id.h"
+-#include "opencensus/trace/trace_options.h"
+-
+-#include "absl/base/internal/endian.h"
++#include "absl/numeric/bits.h"
+ #include "absl/strings/ascii.h"
+ #include "absl/strings/escaping.h"
+ #include "absl/strings/numbers.h"
+ #include "absl/strings/str_cat.h"
++#include "opencensus/trace/span_context.h"
++#include "opencensus/trace/span_id.h"
++#include "opencensus/trace/trace_id.h"
++#include "opencensus/trace/trace_options.h"
+ 
+ namespace opencensus {
+ namespace trace {
+@@ -43,16 +42,27 @@ bool IsHexDigits(absl::string_view s) {
+ 
+ // Returns a SpanId which is a big-endian encoding of a decimal number.
+ SpanId FromDecimal(uint64_t n) {
++  uint64_t big_endian_n;
++  if constexpr (absl::endian::native == absl::endian::little) {
++    big_endian_n = absl::byteswap(n);
++  } else {
++    big_endian_n = n;
++  }
+   uint8_t buf[8];
+-  absl::big_endian::Store64(buf, n);
++  memcpy(buf, static_cast<void*>(&big_endian_n), 8);
+   return SpanId(buf);
+ }
+ 
+ // Returns the decimal representation of the SpanId.
+ uint64_t ToDecimal(const SpanId& span_id) {
+-  uint64_t n;
+-  span_id.CopyTo(reinterpret_cast<uint8_t*>(&n));
+-  return absl::big_endian::ToHost64(n);
++  uint64_t big_endian_n;
++  span_id.CopyTo(reinterpret_cast<uint8_t*>(&big_endian_n));
++  uint64_t host_n;
++  if constexpr (absl::endian::native == absl::endian::little) {
++    return absl::byteswap(big_endian_n);
++  } else {
++    return big_endian_n;
++  }
+ }
+ 
+ }  // namespace
+diff --git a/opencensus/trace/internal/local_span_store_impl.cc b/opencensus/trace/internal/local_span_store_impl.cc
+index 4c71003..85d6f2a 100644
+--- a/opencensus/trace/internal/local_span_store_impl.cc
++++ b/opencensus/trace/internal/local_span_store_impl.cc
+@@ -22,7 +22,6 @@
+ #include <utility>
+ #include <vector>
+ 
+-#include "absl/base/internal/endian.h"
+ #include "absl/base/thread_annotations.h"
+ #include "absl/strings/string_view.h"
+ #include "absl/synchronization/mutex.h"
+diff --git a/opencensus/trace/internal/local_span_store_impl.h b/opencensus/trace/internal/local_span_store_impl.h
+index e2286f1..a082c49 100644
+--- a/opencensus/trace/internal/local_span_store_impl.h
++++ b/opencensus/trace/internal/local_span_store_impl.h
+@@ -25,7 +25,6 @@
+ #include <utility>
+ #include <vector>
+ 
+-#include "absl/base/internal/endian.h"
+ #include "absl/base/thread_annotations.h"
+ #include "absl/strings/string_view.h"
+ #include "absl/synchronization/mutex.h"
+diff --git a/opencensus/trace/internal/running_span_store_impl.cc b/opencensus/trace/internal/running_span_store_impl.cc
+index 0ec2101..c6aeed7 100644
+--- a/opencensus/trace/internal/running_span_store_impl.cc
++++ b/opencensus/trace/internal/running_span_store_impl.cc
+@@ -21,7 +21,6 @@
+ #include <utility>
+ #include <vector>
+ 
+-#include "absl/base/internal/endian.h"
+ #include "absl/base/thread_annotations.h"
+ #include "absl/strings/string_view.h"
+ #include "absl/synchronization/mutex.h"

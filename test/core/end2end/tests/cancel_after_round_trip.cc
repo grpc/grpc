@@ -80,7 +80,7 @@ CORE_END2END_TEST(CoreDeadlineTests, DeadlineAfterRoundTrip) {
 
 CORE_END2END_TEST(CoreClientChannelTests,
                   DeadlineAfterRoundTripWithServiceConfig) {
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       absl::StrCat(

@@ -54,6 +54,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
@@ -670,8 +671,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
                         nullptr, &t->http2_ztrace_collector));
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
-    } else if (grpc_core::IsRqFastRejectEnabled() &&
-               GPR_UNLIKELY(t->memory_owner.IsMemoryPressureHigh())) {
+    } else if (GPR_UNLIKELY(t->memory_owner.IsMemoryPressureHigh())) {
       // We have more streams allocated than we'd like, so apply some pushback
       // by refusing this stream.
       grpc_core::global_stats().IncrementRqCallsRejected();

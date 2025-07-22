@@ -1,0 +1,113 @@
+// Copyright 2025 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+///////////////////////////////////////////////////////////////////////////////
+// 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨
+//
+// This protocol is under active development, and will change in backwards
+// incompatible ways in the future.
+//
+// DO NOT take a dependency on this without contacting the gRPC authors
+// (who will advise against taking such a dependency in as strong a fashion
+// as they are able)
+//
+// 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨
+///////////////////////////////////////////////////////////////////////////////
+
+package grpc.channelz.v2;
+
+import "src/proto/grpc/channelz/v2/property_list.proto";
+
+message Promise {
+  // A custom promise - usually a specific poller implementation that
+  // has some custom data to export.
+  message Custom {
+    string type = 1;
+    PropertyList properties = 2;
+  }
+
+  // If(condition, true_factory, false_factory)
+  message If {
+    bool condition = 1;
+    string true_factory = 2;
+    string false_factory = 3;
+    Promise promise = 4;
+  }
+
+  // Loop(loop_factory)
+  message Loop {
+    string loop_factory = 1;
+    Promise promise = 2;
+    bool yield = 3;
+  }
+
+  // Race(child1, child2, ...)
+  message Race {
+    repeated Promise children = 1;
+  }
+
+  enum CompositionKind {
+    UNKNOWN = 0;
+    NORMAL = 1;
+    TRY = 2;
+  }
+
+  // One step in a sequence
+  message SeqStep {
+    string factory = 1;
+    Promise polling_promise = 2;
+  }
+
+  // Seq(step0, step1, ...)
+  // or TrySeq(step0, step1, ...)
+  // distinguished by kind
+  message Seq {
+    CompositionKind kind = 1;
+    repeated SeqStep steps = 2;
+  }
+
+  message JoinBranch {
+    string factory = 1;
+    oneof state {
+      Promise polling_promise = 2;
+      string result = 3;
+    }
+  }
+
+  // Join(case1, case2, ...)
+  // or TryJoin(case1, case2, ...)
+  // distiguished by kind
+  message Join {
+    CompositionKind kind = 1;
+    repeated JoinBranch branches = 2;
+  }
+
+  message Map {
+    Promise promise = 1;
+    string map_fn = 2;
+  }
+
+  oneof promise {
+    Custom custom_promise = 1;
+    string unknown_promise = 2;
+    If if_promise = 3;
+    Loop loop_promise = 4;
+    Race race_promise = 5;
+    Seq seq_promise = 6;
+    Join join_promise = 7;
+    Map map_promise = 8;
+  }
+}

@@ -28,6 +28,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
+#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "include/nlohmann/json.hpp"
 #include "pugixml.hpp"
@@ -152,12 +153,12 @@ static const char* kBuildExtraMetadata = R"json({
         "build": "all",
         "_RENAME": "address_sorting"
     },
-    "@com_google_protobuf//upb:base": {
+    "@com_google_protobuf//upb/base": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_base_lib"
     },
-    "@com_google_protobuf//upb:mem": {
+    "@com_google_protobuf//upb/mem": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_mem_lib"
@@ -167,7 +168,7 @@ static const char* kBuildExtraMetadata = R"json({
         "build": "all",
         "_RENAME": "upb_lex_lib"
     },
-    "@com_google_protobuf//upb:message": {
+    "@com_google_protobuf//upb/message": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_message_lib"
@@ -1099,7 +1100,15 @@ class ArtifactGen {
   }
 
   static std::string GetBazelLabel(std::string target_name) {
-    if (absl::StartsWith(target_name, "@")) return target_name;
+    if (absl::StartsWith(target_name, "@")) {
+      if (absl::StrContains(target_name, ':')) {
+        return target_name;
+      } else {
+        // @foo//bar/baz -> @foo//bar/baz:baz
+        std::vector<std::string> parts = absl::StrSplit(target_name, '/');
+        return absl::StrCat(target_name, ":", parts.back());
+      }
+    }
     if (absl::StrContains(target_name, ":")) {
       return absl::StrCat("//", target_name);
     } else {
