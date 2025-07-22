@@ -89,7 +89,7 @@ tomli==2.2.1
     # via incremental
 twisted==24.11.0
     # via -r requirements.bazel.txt
-typeguard==4.0.1
+typeguard==4.2.1
     # via -r requirements.bazel.txt
 typing-extensions==4.13.2
     # via
