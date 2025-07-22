@@ -20,8 +20,8 @@ import asyncio
 import collections
 import functools
 from typing import (
-    AsyncIterable,
     AnyStr,
+    AsyncIterable,
     Awaitable,
     Callable,
     List,
