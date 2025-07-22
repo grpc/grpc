@@ -316,7 +316,6 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/grpc.h",
     "include/grpc/grpc_posix.h",
     "include/grpc/grpc_security.h",
-    "include/grpc/grpc_security_constants.h",
     "include/grpc/passive_listener.h",
     "include/grpc/slice.h",
     "include/grpc/slice_buffer.h",
@@ -633,6 +632,7 @@ grpc_cc_library(
         "grpc_core_credentials_header",
         "grpc_http_filters",
         "grpc_security_base",
+        "grpc_security_constants",
         "grpc_trace",
         "http_connect_handshaker",
         "iomgr_timer",
@@ -729,6 +729,7 @@ grpc_cc_library(
         "grpc_jwt_credentials",
         "grpc_public_hdrs",
         "grpc_security_base",
+        "grpc_security_constants",
         "grpc_trace",
         "http_connect_handshaker",
         "httpcli",
@@ -945,6 +946,7 @@ grpc_cc_library(
         "channel_arg_names",
         "gpr_public_hdrs",
         "grpc_core_credentials_header",
+        "grpc_security_constants",
     ],
 )
 
@@ -1326,6 +1328,7 @@ grpc_cc_library(
         "channel_arg_names",
         "gpr",
         "grpc_core_credentials_header",
+        "grpc_security_constants",
     ],
 )
 
@@ -1616,6 +1619,7 @@ grpc_cc_library(
         "gpr",
         "grpc_core_credentials_header",
         "grpc_public_hdrs",
+        "grpc_security_constants",
         "grpc_trace",
         "iomgr_buffer_list",
         "iomgr_internal_errqueue",
@@ -2026,6 +2030,7 @@ grpc_cc_library(
         "gpr",
         "grpc_core_credentials_header",
         "grpc_public_hdrs",
+        "grpc_security_constants",
         "grpc_trace",
         "iomgr",
         "iomgr_timer",
@@ -2339,6 +2344,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_core_credentials_header",
         "grpc_public_hdrs",
+        "grpc_security_constants",
         "grpc_trace",
         "handshaker",
         "iomgr",
@@ -2403,11 +2409,28 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "grpc_security_constants",
+    hdrs = [
+        "include/grpc/grpc_security_constants.h",
+    ],
+)
+
 # TODO(hork): split credentials types into their own source files and targets.
 grpc_cc_library(
     name = "grpc_core_credentials_header",
-    hdrs = ["include/grpc/credentials.h"],
+    hdrs = [
+        "include/grpc/credentials.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/utility",
+    ],
     visibility = ["//bazel:core_credentials"],
+    deps = [
+        "gpr",
+        "grpc_security_constants",
+    ],
 )
 
 grpc_cc_library(
