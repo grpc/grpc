@@ -269,7 +269,7 @@ class UnaryUnaryClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
         ],
         client_call_details: ClientCallDetails,
         request: RequestType,
-    ) -> UnaryUnaryCall:
+    ) -> Union[UnaryUnaryCall, ResponseType]:
         """Intercepts a unary-unary invocation asynchronously.
 
         Args:
