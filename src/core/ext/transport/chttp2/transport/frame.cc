@@ -721,7 +721,7 @@ void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, const uint8_t flags,
 Http2Status ValidateFrameHeader(const uint32_t max_frame_size_setting,
                                 const bool incoming_header_in_progress,
                                 const uint32_t incoming_header_stream_id,
-                                Http2FrameHeader& current_frame_header) {
+                                const Http2FrameHeader& current_frame_header) {
   if (GPR_UNLIKELY(current_frame_header.length > max_frame_size_setting)) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kFrameSizeError,
