@@ -138,8 +138,7 @@ class CrlSslTransportSecurityTest
     void SetupHandshakers() {
       // Create client handshaker factory.
       tsi_ssl_client_handshaker_options client_options;
-      client_options.root_cert_info =
-          std::make_shared<RootCertInfo>(root_cert_.c_str());
+      client_options.pem_root_certs = root_cert_.c_str();
       client_options.pem_key_cert_pair = client_pem_key_cert_pairs_;
       client_options.crl_directory = crl_directory_;
       client_options.crl_provider = crl_provider_;
@@ -153,8 +152,7 @@ class CrlSslTransportSecurityTest
       tsi_ssl_server_handshaker_options server_options;
       server_options.pem_key_cert_pairs = server_pem_key_cert_pairs_;
       server_options.num_key_cert_pairs = 1;
-      server_options.root_cert_info =
-          std::make_shared<RootCertInfo>(root_cert_.c_str());
+      server_options.pem_client_root_certs = root_cert_.c_str();
       server_options.crl_directory = crl_directory_;
       server_options.crl_provider = crl_provider_;
       server_options.client_certificate_request =
