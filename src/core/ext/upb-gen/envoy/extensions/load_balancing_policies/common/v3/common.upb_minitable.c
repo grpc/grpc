@@ -51,16 +51,17 @@ static const upb_MiniTableSubInternal envoy_extensions_load_balancing_policies_c
   {.UPB_PRIVATE(submsg) = &google__protobuf__UInt64Value_msg_init_ptr},
 };
 
-static const upb_MiniTableField envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig__fields[3] = {
+static const upb_MiniTableField envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig__fields[4] = {
   {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
   {3, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {4, 10, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__ZoneAwareLbConfig_msg_init = {
   &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig__submsgs[0],
   &envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig__fields[0],
-  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 32), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.load_balancing_policies.common.v3.LocalityLbConfig.ZoneAwareLbConfig",
 #endif
@@ -69,6 +70,10 @@ const upb_MiniTable envoy__extensions__load_0balancing_0policies__common__v3__Lo
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x000900003f000018, &upb_psb1_1bt},
+    {0x000a00003f000020, &upb_psb1_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
 

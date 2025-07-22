@@ -404,23 +404,33 @@ if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
   include(cmake/opentelemetry-cpp.cmake)
 endif()
 
+# Setup external proto library at third_party/cel-spec if it doesn't exist
+if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cel-spec AND gRPC_DOWNLOAD_ARCHIVES)
+  # Download the archive via HTTP, validate the checksum, and extract to third_party/cel-spec.
+  download_archive(
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cel-spec
+    https://github.com/google/cel-spec/archive/v0.22.1.tar.gz
+    1f1ad32bce5d31cf82e9c8f40685b1902de3ab07c78403601e7a43c3fb4de9a6
+    cel-spec-0.22.1
+  )
+endif()
 # Setup external proto library at third_party/envoy-api with 2 download URLs
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/4de3c74cf21a9958c1cf26d8993c55c6e0d28b49.tar.gz
-    cd8b49614408b43bd45d90e3e98d69e24eea632ff42ac3bfb8bca68bc31e377f
-    data-plane-api-4de3c74cf21a9958c1cf26d8993c55c6e0d28b49
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/d9c5e84658eef279e9a021ff0517f8f8ee35d79a.tar.gz
+    a9f1eb76c8e8153ec81ce04403c8829b42786060b7bb1dcc91b597220b71eaf6
+    data-plane-api-d9c5e84658eef279e9a021ff0517f8f8ee35d79a
   )
 endif()
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://github.com/envoyproxy/data-plane-api/archive/4de3c74cf21a9958c1cf26d8993c55c6e0d28b49.tar.gz
-    cd8b49614408b43bd45d90e3e98d69e24eea632ff42ac3bfb8bca68bc31e377f
-    data-plane-api-4de3c74cf21a9958c1cf26d8993c55c6e0d28b49
+    https://github.com/envoyproxy/data-plane-api/archive/d9c5e84658eef279e9a021ff0517f8f8ee35d79a.tar.gz
+    a9f1eb76c8e8153ec81ce04403c8829b42786060b7bb1dcc91b597220b71eaf6
+    data-plane-api-d9c5e84658eef279e9a021ff0517f8f8ee35d79a
   )
 endif()
 # Setup external proto library at third_party/googleapis with 2 download URLs
@@ -485,18 +495,18 @@ if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds AND gRPC_DOWNLOAD_ARC
   # Download the archive via HTTP, validate the checksum, and extract to third_party/xds.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/3a472e524827f72d1ad621c4983dd5af54c46776.tar.gz
-    dc305e20c9fa80822322271b50aa2ffa917bf4fd3973bcec52bfc28dc32c5927
-    xds-3a472e524827f72d1ad621c4983dd5af54c46776
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/2ac532fd44436293585084f8d94c6bdb17835af0.tar.gz
+    790c4c83b6950bb602fec221f6a529d9f368cdc8852aae7d2592d0d04b015f37
+    xds-2ac532fd44436293585084f8d94c6bdb17835af0
   )
 endif()
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/xds.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds
-    https://github.com/cncf/xds/archive/3a472e524827f72d1ad621c4983dd5af54c46776.tar.gz
-    dc305e20c9fa80822322271b50aa2ffa917bf4fd3973bcec52bfc28dc32c5927
-    xds-3a472e524827f72d1ad621c4983dd5af54c46776
+    https://github.com/cncf/xds/archive/2ac532fd44436293585084f8d94c6bdb17835af0.tar.gz
+    790c4c83b6950bb602fec221f6a529d9f368cdc8852aae7d2592d0d04b015f37
+    xds-2ac532fd44436293585084f8d94c6bdb17835af0
   )
 endif()
 
@@ -803,6 +813,12 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
   test/core/tsi/alts/fake_handshaker/transport_security_common.proto test/core/tsi/alts/fake_handshaker/transport_security_common.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
+  third_party/cel-spec/proto/cel/expr/checked.proto proto/cel/expr/checked.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
+  third_party/cel-spec/proto/cel/expr/syntax.proto proto/cel/expr/syntax.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
   third_party/envoy-api/envoy/admin/v3/certs.proto envoy/admin/v3/certs.proto
@@ -2463,6 +2479,8 @@ add_library(grpc
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/proto/cel/expr/checked.upb_minitable.c
+  src/core/ext/upb-gen/proto/cel/expr/syntax.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
@@ -2628,6 +2646,8 @@ add_library(grpc
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c
   src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c
+  src/core/ext/upbdefs-gen/proto/cel/expr/checked.upbdefs.c
+  src/core/ext/upbdefs-gen/proto/cel/expr/syntax.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c
@@ -3438,7 +3458,6 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/writing.cc
   src/core/ext/transport/inproc/inproc_transport.cc
   src/core/ext/transport/inproc/legacy_inproc_transport.cc
-  src/core/ext/upb-gen/google/api/annotations.upb_minitable.c
   src/core/ext/upb-gen/google/api/http.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
@@ -4648,10 +4667,6 @@ add_library(benchmark_helpers ${_gRPC_STATIC_WIN32}
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -6742,6 +6757,14 @@ add_executable(admin_services_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.pb.h
@@ -8174,10 +8197,6 @@ add_executable(async_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -10127,6 +10146,8 @@ add_executable(cel_authorization_engine_test
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/proto/cel/expr/checked.upb_minitable.c
+  src/core/ext/upb-gen/proto/cel/expr/syntax.upb_minitable.c
   src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.c
   src/core/ext/upb-gen/udpa/annotations/security.upb_minitable.c
   src/core/ext/upb-gen/udpa/annotations/sensitive.upb_minitable.c
@@ -10389,10 +10410,6 @@ add_executable(cfstream_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -10812,10 +10829,6 @@ add_executable(channelz_service_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -10940,10 +10953,6 @@ add_executable(channelz_v2_service_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -11238,10 +11247,6 @@ add_executable(cli_call_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -11420,10 +11425,6 @@ add_executable(client_callback_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -11587,10 +11588,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -11665,10 +11662,6 @@ add_executable(client_interceptors_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -11751,10 +11744,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -12436,10 +12425,6 @@ add_executable(context_allocator_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -12671,10 +12656,6 @@ add_executable(crl_provider_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -12834,10 +12815,6 @@ add_executable(delegating_channel_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -15052,10 +15029,6 @@ add_executable(end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -15308,10 +15281,6 @@ add_executable(error_details_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -15686,10 +15655,6 @@ add_executable(exception_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -16554,10 +16519,6 @@ add_executable(flaky_network_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -17201,10 +17162,6 @@ add_executable(generic_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -17703,10 +17660,6 @@ add_executable(grpc_authz_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -18537,10 +18490,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -18726,10 +18675,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -19497,10 +19442,6 @@ add_executable(health_service_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -20183,10 +20124,6 @@ add_executable(hybrid_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -22356,10 +22293,6 @@ add_executable(message_allocator_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -22768,10 +22701,6 @@ add_executable(mock_stream_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -22847,10 +22776,6 @@ add_executable(mock_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -23041,10 +22966,6 @@ add_executable(nonblocking_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -23311,10 +23232,6 @@ add_executable(orca_service_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_service.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_service.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/orca_service.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -23506,10 +23423,6 @@ add_executable(otel_npc_metrics_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -23589,10 +23502,6 @@ add_executable(otel_plugin_option_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -23672,10 +23581,6 @@ add_executable(otel_plugin_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -23755,10 +23660,6 @@ add_executable(otel_tracing_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -24722,10 +24623,6 @@ add_executable(port_sharing_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -25101,6 +24998,14 @@ add_executable(pre_stop_hook_server_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.pb.h
@@ -26180,10 +26085,6 @@ add_executable(proto_server_reflection_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -26653,10 +26554,6 @@ add_executable(raw_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -27249,10 +27146,6 @@ add_executable(resource_quota_end2end_stress_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -27539,10 +27432,6 @@ add_executable(rls_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -27993,10 +27882,6 @@ add_executable(server_builder_plugin_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -28070,10 +27955,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -28149,10 +28030,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -28395,10 +28272,6 @@ add_executable(server_early_return_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -28470,10 +28343,6 @@ add_executable(server_interceptors_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -28592,10 +28461,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -28760,10 +28625,6 @@ add_executable(service_config_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -28958,10 +28819,6 @@ add_executable(shutdown_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -29932,10 +29789,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -31022,10 +30875,6 @@ add_executable(test_cpp_end2end_ssl_credentials_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -31098,10 +30947,6 @@ add_executable(test_cpp_end2end_tls_credentials_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -31483,10 +31328,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -31918,10 +31759,6 @@ add_executable(tls_key_export_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -33218,10 +33055,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -33289,6 +33122,14 @@ add_executable(xds_audit_logger_registry_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -33768,6 +33609,14 @@ add_executable(xds_client_test
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.pb.h
@@ -34371,6 +34220,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -34874,6 +34731,14 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(xds_cluster_resource_type_test
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -35414,6 +35279,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -35924,6 +35797,14 @@ add_executable(xds_common_types_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -36303,6 +36184,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -36817,10 +36706,6 @@ add_executable(xds_credentials_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
@@ -36956,6 +36841,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.pb.h
@@ -37575,6 +37468,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -38420,6 +38321,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -38950,6 +38859,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -39488,6 +39405,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -40022,6 +39947,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -40532,6 +40465,14 @@ add_executable(xds_http_filters_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -41006,6 +40947,14 @@ add_executable(xds_lb_policy_registry_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -41392,6 +41341,14 @@ add_executable(xds_listener_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -42222,6 +42179,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -42760,6 +42725,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -43389,6 +43362,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -43928,6 +43909,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -44471,6 +44460,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -44981,6 +44978,14 @@ add_executable(xds_route_config_resource_type_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -45404,6 +45409,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -45942,6 +45955,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
@@ -46485,6 +46506,14 @@ add_executable(xds_stats_watcher_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/envoy/admin/v3/certs.pb.h
@@ -47076,6 +47105,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/checked.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/proto/cel/expr/syntax.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h

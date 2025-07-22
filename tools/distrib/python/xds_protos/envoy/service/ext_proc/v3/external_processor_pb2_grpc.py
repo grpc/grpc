@@ -16,9 +16,10 @@ class ExternalProcessorStub(object):
     2. The service sends back a ProcessingResponse message that directs Envoy
     to either stop processing, continue without it, or send it the
     next chunk of the message body.
-    3. If so requested, Envoy sends the server chunks of the message body,
-    or the entire body at once. In either case, the server sends back
-    a ProcessingResponse after each message it receives.
+    3. If so requested, Envoy sends the server the message body in chunks,
+    or the entire body at once. In either case, the server may send back
+    a ProcessingResponse for each message it receives, or wait for certain amount
+    of body chunks received before streams back the ProcessingResponse messages.
     4. If so requested, Envoy sends the server the HTTP trailers,
     and the server sends back a ProcessingResponse.
     5. At this point, request processing is done, and we pick up again
@@ -58,9 +59,10 @@ class ExternalProcessorServicer(object):
     2. The service sends back a ProcessingResponse message that directs Envoy
     to either stop processing, continue without it, or send it the
     next chunk of the message body.
-    3. If so requested, Envoy sends the server chunks of the message body,
-    or the entire body at once. In either case, the server sends back
-    a ProcessingResponse after each message it receives.
+    3. If so requested, Envoy sends the server the message body in chunks,
+    or the entire body at once. In either case, the server may send back
+    a ProcessingResponse for each message it receives, or wait for certain amount
+    of body chunks received before streams back the ProcessingResponse messages.
     4. If so requested, Envoy sends the server the HTTP trailers,
     and the server sends back a ProcessingResponse.
     5. At this point, request processing is done, and we pick up again
@@ -112,9 +114,10 @@ class ExternalProcessor(object):
     2. The service sends back a ProcessingResponse message that directs Envoy
     to either stop processing, continue without it, or send it the
     next chunk of the message body.
-    3. If so requested, Envoy sends the server chunks of the message body,
-    or the entire body at once. In either case, the server sends back
-    a ProcessingResponse after each message it receives.
+    3. If so requested, Envoy sends the server the message body in chunks,
+    or the entire body at once. In either case, the server may send back
+    a ProcessingResponse for each message it receives, or wait for certain amount
+    of body chunks received before streams back the ProcessingResponse messages.
     4. If so requested, Envoy sends the server the HTTP trailers,
     and the server sends back a ProcessingResponse.
     5. At this point, request processing is done, and we pick up again

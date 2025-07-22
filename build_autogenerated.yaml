@@ -609,6 +609,10 @@ libs:
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/proto/cel/expr/checked.upb.h
+  - src/core/ext/upb-gen/proto/cel/expr/checked.upb_minitable.h
+  - src/core/ext/upb-gen/proto/cel/expr/syntax.upb.h
+  - src/core/ext/upb-gen/proto/cel/expr/syntax.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
@@ -816,6 +820,8 @@ libs:
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h
   - src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h
+  - src/core/ext/upbdefs-gen/proto/cel/expr/checked.upbdefs.h
+  - src/core/ext/upbdefs-gen/proto/cel/expr/syntax.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.h
@@ -1587,6 +1593,8 @@ libs:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/proto/cel/expr/checked.upb_minitable.c
+  - src/core/ext/upb-gen/proto/cel/expr/syntax.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
@@ -1752,6 +1760,8 @@ libs:
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c
   - src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c
+  - src/core/ext/upbdefs-gen/proto/cel/expr/checked.upbdefs.c
+  - src/core/ext/upbdefs-gen/proto/cel/expr/syntax.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c
@@ -2461,8 +2471,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/write_size_policy.h
   - src/core/ext/transport/inproc/inproc_transport.h
   - src/core/ext/transport/inproc/legacy_inproc_transport.h
-  - src/core/ext/upb-gen/google/api/annotations.upb.h
-  - src/core/ext/upb-gen/google/api/annotations.upb_minitable.h
   - src/core/ext/upb-gen/google/api/http.upb.h
   - src/core/ext/upb-gen/google/api/http.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
@@ -2994,7 +3002,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/writing.cc
   - src/core/ext/transport/inproc/inproc_transport.cc
   - src/core/ext/transport/inproc/legacy_inproc_transport.cc
-  - src/core/ext/upb-gen/google/api/annotations.upb_minitable.c
   - src/core/ext/upb-gen/google/api/http.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
@@ -3782,7 +3789,6 @@ libs:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -5441,6 +5447,8 @@ targets:
   - src/cpp/server/csds/csds.h
   src:
   - src/proto/grpc/testing/xds/v3/csds.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/admin/v3/certs.proto
   - third_party/envoy-api/envoy/admin/v3/clusters.proto
   - third_party/envoy-api/envoy/admin/v3/config_dump.proto
@@ -5890,7 +5898,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -7507,6 +7514,10 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/proto/cel/expr/checked.upb.h
+  - src/core/ext/upb-gen/proto/cel/expr/checked.upb_minitable.h
+  - src/core/ext/upb-gen/proto/cel/expr/syntax.upb.h
+  - src/core/ext/upb-gen/proto/cel/expr/syntax.upb_minitable.h
   - src/core/ext/upb-gen/udpa/annotations/migrate.upb.h
   - src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.h
   - src/core/ext/upb-gen/udpa/annotations/security.upb.h
@@ -7635,6 +7646,8 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/proto/cel/expr/checked.upb_minitable.c
+  - src/core/ext/upb-gen/proto/cel/expr/syntax.upb_minitable.c
   - src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.c
   - src/core/ext/upb-gen/udpa/annotations/security.upb_minitable.c
   - src/core/ext/upb-gen/udpa/annotations/sensitive.upb_minitable.c
@@ -7740,7 +7753,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -7852,7 +7864,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -7891,7 +7902,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -8093,7 +8103,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -8158,7 +8167,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -8200,7 +8208,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -8226,7 +8233,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -8255,7 +8261,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/api/httpbody.proto
   - third_party/googleapis/google/rpc/status.proto
@@ -8452,7 +8457,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -8520,7 +8524,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -8568,7 +8571,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -10707,7 +10709,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -10819,7 +10820,6 @@ targets:
   headers: []
   src:
   - src/proto/grpc/testing/echo_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -10928,7 +10928,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -11826,7 +11825,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -12327,7 +12325,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -12461,7 +12458,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -12692,7 +12688,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -12760,7 +12755,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -13640,7 +13634,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -13902,7 +13895,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -15237,7 +15229,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -15470,7 +15461,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -15489,7 +15479,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -15546,7 +15535,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -15706,7 +15694,6 @@ targets:
   - src/cpp/server/orca/orca_service.h
   src:
   - src/proto/grpc/testing/xds/v3/orca_service.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -15767,7 +15754,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -15802,7 +15788,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -15837,7 +15822,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -15873,7 +15857,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -16234,7 +16217,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -16391,6 +16373,8 @@ targets:
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
   - src/proto/grpc/testing/xds/v3/csds.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/admin/v3/certs.proto
   - third_party/envoy-api/envoy/admin/v3/clusters.proto
   - third_party/envoy-api/envoy/admin/v3/config_dump.proto
@@ -16971,7 +16955,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -17303,7 +17286,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -17681,7 +17663,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -17772,7 +17753,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -17956,7 +17936,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -17976,7 +17955,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -18000,7 +17978,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -18065,7 +18042,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -18085,7 +18061,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -18119,7 +18094,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -18170,7 +18144,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -18223,7 +18196,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -18531,7 +18503,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -18940,7 +18911,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -18960,7 +18930,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -19068,7 +19037,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -19212,7 +19180,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -19799,7 +19766,6 @@ targets:
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -19829,6 +19795,8 @@ targets:
   - third_party/protoc-gen-validate/validate/validate.h
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
@@ -19963,6 +19931,8 @@ targets:
   - third_party/protoc-gen-validate/validate/validate.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/admin/v3/certs.proto
   - third_party/envoy-api/envoy/admin/v3/clusters.proto
   - third_party/envoy-api/envoy/admin/v3/config_dump.proto
@@ -20131,6 +20101,8 @@ targets:
   - src/proto/grpc/testing/xds/v3/ads.proto
   - src/proto/grpc/testing/xds/v3/discovery.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -20267,6 +20239,8 @@ targets:
   - test/core/test_util/scoped_env_var.h
   - third_party/protoc-gen-validate/validate/validate.h
   src:
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -20416,6 +20390,8 @@ targets:
   - src/proto/grpc/testing/xds/v3/ads.proto
   - src/proto/grpc/testing/xds/v3/discovery.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -20558,6 +20534,8 @@ targets:
   - third_party/protoc-gen-validate/validate/validate.h
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
@@ -20668,6 +20646,8 @@ targets:
   - src/proto/grpc/testing/xds/v3/ads.proto
   - src/proto/grpc/testing/xds/v3/discovery.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -20805,7 +20785,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - third_party/googleapis/google/api/annotations.proto
   - third_party/googleapis/google/api/http.proto
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
@@ -20847,6 +20826,8 @@ targets:
   - src/proto/grpc/testing/xds/v3/csds.proto
   - src/proto/grpc/testing/xds/v3/discovery.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/admin/v3/certs.proto
   - third_party/envoy-api/envoy/admin/v3/clusters.proto
   - third_party/envoy-api/envoy/admin/v3/config_dump.proto
@@ -21018,6 +20999,8 @@ targets:
   - src/proto/grpc/testing/xds/v3/ads.proto
   - src/proto/grpc/testing/xds/v3/discovery.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -21250,6 +21233,8 @@ targets:
   - src/proto/grpc/testing/xds/v3/ads.proto
   - src/proto/grpc/testing/xds/v3/discovery.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -21397,6 +21382,8 @@ targets:
   - src/proto/grpc/testing/xds/v3/ads.proto
   - src/proto/grpc/testing/xds/v3/discovery.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -21545,6 +21532,8 @@ targets:
   - src/proto/grpc/testing/xds/v3/ads.proto
   - src/proto/grpc/testing/xds/v3/discovery.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -21694,6 +21683,8 @@ targets:
   - src/proto/grpc/testing/xds/v3/ads.proto
   - src/proto/grpc/testing/xds/v3/discovery.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -21837,6 +21828,8 @@ targets:
   - third_party/protoc-gen-validate/validate/validate.h
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -21969,6 +21962,8 @@ targets:
   - third_party/protoc-gen-validate/validate/validate.h
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/cluster/v3/circuit_breaker.proto
@@ -22078,6 +22073,8 @@ targets:
   - third_party/protoc-gen-validate/validate/validate.h
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -22301,6 +22298,8 @@ targets:
   - src/proto/grpc/testing/xds/v3/ads.proto
   - src/proto/grpc/testing/xds/v3/discovery.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -22450,6 +22449,8 @@ targets:
   - src/proto/grpc/testing/xds/v3/ads.proto
   - src/proto/grpc/testing/xds/v3/discovery.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -22629,6 +22630,8 @@ targets:
   - src/proto/grpc/testing/xds/v3/ads.proto
   - src/proto/grpc/testing/xds/v3/discovery.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -22781,6 +22784,8 @@ targets:
   - src/proto/grpc/testing/xds/v3/ads.proto
   - src/proto/grpc/testing/xds/v3/discovery.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -22933,6 +22938,8 @@ targets:
   - src/proto/grpc/testing/xds/v3/ads.proto
   - src/proto/grpc/testing/xds/v3/discovery.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -23076,6 +23083,8 @@ targets:
   src:
   - src/proto/grpc/lookup/v1/rls_config.proto
   - src/proto/grpc/reflection/v1alpha/reflection.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/core/v3/address.proto
@@ -23196,6 +23205,8 @@ targets:
   - src/proto/grpc/testing/xds/v3/ads.proto
   - src/proto/grpc/testing/xds/v3/discovery.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -23347,6 +23358,8 @@ targets:
   - src/proto/grpc/testing/xds/v3/ads.proto
   - src/proto/grpc/testing/xds/v3/discovery.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -23494,6 +23507,8 @@ targets:
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
   - src/proto/grpc/testing/xds/v3/csds.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/admin/v3/certs.proto
   - third_party/envoy-api/envoy/admin/v3/clusters.proto
   - third_party/envoy-api/envoy/admin/v3/config_dump.proto
@@ -23655,6 +23670,8 @@ targets:
   - src/proto/grpc/testing/xds/v3/ads.proto
   - src/proto/grpc/testing/xds/v3/discovery.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
+  - third_party/cel-spec/proto/cel/expr/checked.proto
+  - third_party/cel-spec/proto/cel/expr/syntax.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -23800,13 +23817,19 @@ targets:
   - posix
   - mac
 external_proto_libraries:
-- destination: third_party/envoy-api
-  hash: cd8b49614408b43bd45d90e3e98d69e24eea632ff42ac3bfb8bca68bc31e377f
-  proto_prefix: third_party/envoy-api/
-  strip_prefix: data-plane-api-4de3c74cf21a9958c1cf26d8993c55c6e0d28b49
+- destination: third_party/cel-spec
+  hash: 1f1ad32bce5d31cf82e9c8f40685b1902de3ab07c78403601e7a43c3fb4de9a6
+  proto_prefix: third_party/cel-spec/
+  strip_prefix: cel-spec-0.22.1
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/4de3c74cf21a9958c1cf26d8993c55c6e0d28b49.tar.gz
-  - https://github.com/envoyproxy/data-plane-api/archive/4de3c74cf21a9958c1cf26d8993c55c6e0d28b49.tar.gz
+  - https://github.com/google/cel-spec/archive/v0.22.1.tar.gz
+- destination: third_party/envoy-api
+  hash: a9f1eb76c8e8153ec81ce04403c8829b42786060b7bb1dcc91b597220b71eaf6
+  proto_prefix: third_party/envoy-api/
+  strip_prefix: data-plane-api-d9c5e84658eef279e9a021ff0517f8f8ee35d79a
+  urls:
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/d9c5e84658eef279e9a021ff0517f8f8ee35d79a.tar.gz
+  - https://github.com/envoyproxy/data-plane-api/archive/d9c5e84658eef279e9a021ff0517f8f8ee35d79a.tar.gz
 - destination: third_party/googleapis
   hash: 0513f0f40af63bd05dc789cacc334ab6cec27cc89db596557cb2dfe8919463e4
   proto_prefix: third_party/googleapis/
@@ -23829,10 +23852,10 @@ external_proto_libraries:
   - https://storage.googleapis.com/grpc-bazel-mirror/github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.zip
   - https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.zip
 - destination: third_party/xds
-  hash: dc305e20c9fa80822322271b50aa2ffa917bf4fd3973bcec52bfc28dc32c5927
+  hash: 790c4c83b6950bb602fec221f6a529d9f368cdc8852aae7d2592d0d04b015f37
   proto_prefix: third_party/xds/
-  strip_prefix: xds-3a472e524827f72d1ad621c4983dd5af54c46776
+  strip_prefix: xds-2ac532fd44436293585084f8d94c6bdb17835af0
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/3a472e524827f72d1ad621c4983dd5af54c46776.tar.gz
-  - https://github.com/cncf/xds/archive/3a472e524827f72d1ad621c4983dd5af54c46776.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/2ac532fd44436293585084f8d94c6bdb17835af0.tar.gz
+  - https://github.com/cncf/xds/archive/2ac532fd44436293585084f8d94c6bdb17835af0.tar.gz
 tests: []

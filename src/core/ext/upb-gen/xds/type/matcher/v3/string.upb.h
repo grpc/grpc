@@ -13,6 +13,7 @@
 
 #include "xds/type/matcher/v3/string.upb_minitable.h"
 
+#include "xds/core/v3/extension.upb_minitable.h"
 #include "xds/type/matcher/v3/regex.upb_minitable.h"
 #include "validate/validate.upb_minitable.h"
 
@@ -25,6 +26,7 @@ extern "C" {
 
 typedef struct xds_type_matcher_v3_StringMatcher { upb_Message UPB_PRIVATE(base); } xds_type_matcher_v3_StringMatcher;
 typedef struct xds_type_matcher_v3_ListStringMatcher { upb_Message UPB_PRIVATE(base); } xds_type_matcher_v3_ListStringMatcher;
+struct xds_core_v3_TypedExtensionConfig;
 struct xds_type_matcher_v3_RegexMatcher;
 
 
@@ -71,6 +73,7 @@ typedef enum {
   xds_type_matcher_v3_StringMatcher_match_pattern_suffix = 3,
   xds_type_matcher_v3_StringMatcher_match_pattern_safe_regex = 5,
   xds_type_matcher_v3_StringMatcher_match_pattern_contains = 7,
+  xds_type_matcher_v3_StringMatcher_match_pattern_custom = 8,
   xds_type_matcher_v3_StringMatcher_match_pattern_NOT_SET = 0
 } xds_type_matcher_v3_StringMatcher_match_pattern_oneofcases;
 UPB_INLINE xds_type_matcher_v3_StringMatcher_match_pattern_oneofcases xds_type_matcher_v3_StringMatcher_match_pattern_case(const xds_type_matcher_v3_StringMatcher* msg) {
@@ -175,6 +178,23 @@ UPB_INLINE bool xds_type_matcher_v3_StringMatcher_has_contains(const xds_type_ma
   const upb_MiniTableField field = {7, 16, -13, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void xds_type_matcher_v3_StringMatcher_clear_custom(xds_type_matcher_v3_StringMatcher* msg) {
+  const upb_MiniTableField field = {8, 16, -13, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE const struct xds_core_v3_TypedExtensionConfig* xds_type_matcher_v3_StringMatcher_custom(const xds_type_matcher_v3_StringMatcher* msg) {
+  const struct xds_core_v3_TypedExtensionConfig* default_val = NULL;
+  const struct xds_core_v3_TypedExtensionConfig* ret;
+  const upb_MiniTableField field = {8, 16, -13, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__TypedExtensionConfig_msg_init);
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool xds_type_matcher_v3_StringMatcher_has_custom(const xds_type_matcher_v3_StringMatcher* msg) {
+  const upb_MiniTableField field = {8, 16, -13, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
+}
 
 UPB_INLINE void xds_type_matcher_v3_StringMatcher_set_exact(xds_type_matcher_v3_StringMatcher *msg, upb_StringView value) {
   const upb_MiniTableField field = {1, 16, -13, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
@@ -208,6 +228,19 @@ UPB_INLINE void xds_type_matcher_v3_StringMatcher_set_ignore_case(xds_type_match
 UPB_INLINE void xds_type_matcher_v3_StringMatcher_set_contains(xds_type_matcher_v3_StringMatcher *msg, upb_StringView value) {
   const upb_MiniTableField field = {7, 16, -13, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+}
+UPB_INLINE void xds_type_matcher_v3_StringMatcher_set_custom(xds_type_matcher_v3_StringMatcher *msg, struct xds_core_v3_TypedExtensionConfig* value) {
+  const upb_MiniTableField field = {8, 16, -13, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__core__v3__TypedExtensionConfig_msg_init);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+}
+UPB_INLINE struct xds_core_v3_TypedExtensionConfig* xds_type_matcher_v3_StringMatcher_mutable_custom(xds_type_matcher_v3_StringMatcher* msg, upb_Arena* arena) {
+  struct xds_core_v3_TypedExtensionConfig* sub = (struct xds_core_v3_TypedExtensionConfig*)xds_type_matcher_v3_StringMatcher_custom(msg);
+  if (sub == NULL) {
+    sub = (struct xds_core_v3_TypedExtensionConfig*)_upb_Message_New(&xds__core__v3__TypedExtensionConfig_msg_init, arena);
+    if (sub) xds_type_matcher_v3_StringMatcher_set_custom(msg, sub);
+  }
+  return sub;
 }
 
 /* xds.type.matcher.v3.ListStringMatcher */

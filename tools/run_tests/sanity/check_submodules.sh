@@ -30,7 +30,7 @@ third_party/benchmark 12235e24652fc7f809373e7c11a5f73c5763fc4c
 third_party/bloaty 60209eb1ccc34d5deefb002d1b7f37545204f7f2
 third_party/boringssl-with-bazel c63fadbde60a2224c22189d14c4001bbd2a3a629
 third_party/cares/cares d3a507e920e7af18a5efb7f9f1d8044ed4750013
-third_party/envoy-api 4de3c74cf21a9958c1cf26d8993c55c6e0d28b49
+third_party/envoy-api d9c5e84658eef279e9a021ff0517f8f8ee35d79a
 third_party/googleapis fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0
 third_party/googletest 52eb8108c5bdec04579160ae17225d66034bd723
 third_party/opencensus-proto 4aa53e15cbf1a47bc9087e6cfdca214c1eea4e89
@@ -39,8 +39,9 @@ third_party/opentelemetry-cpp ced79860f8c8a091a2eabfee6d47783f828a9b59
 third_party/protobuf 74211c0dfc2777318ab53c2cd2c317a2ef9012de
 third_party/protoc-gen-validate 7b06248484ceeaa947e93ca2747eccf336a88ecc
 third_party/re2 0c5616df9c0aaa44c9440d87422012423d91c7d1
-third_party/xds 3a472e524827f72d1ad621c4983dd5af54c46776
+third_party/xds 2ac532fd44436293585084f8d94c6bdb17835af0
 third_party/zlib f1f503da85d52e56aae11557b4d79a42bcaa2b86
+third_party/cel-spec 9f069b3ee58b02d6f6736c5ebd6587075c1a1b22
 EOF
 
 if ! diff -u "$submodules" "$want_submodules"; then

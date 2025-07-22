@@ -96,6 +96,10 @@ EXTERNAL_PROTO_LIBRARIES = {
         destination="third_party/opencensus-proto/src",
         proto_prefix="third_party/opencensus-proto/src/",
     ),
+    "dev_cel": ExternalProtoLibrary(
+        destination="third_party/cel-spec",
+        proto_prefix="third_party/cel-spec/",
+    ),
 }
 
 # We want to get a list of source files for some external libraries
@@ -612,6 +616,7 @@ def _expand_upb_proto_library_rules(bazel_rules):
         ("@com_envoyproxy_protoc_gen_validate//", ""),
         ("@envoy_api//", ""),
         ("@opencensus_proto//", ""),
+        ("@dev_cel//", ""),
     ]
     for name, bazel_rule in bazel_rules.items():
         gen_func = bazel_rule.get("generator_function", None)
@@ -657,7 +662,11 @@ def _expand_upb_proto_library_rules(bazel_rules):
                         proto_src = proto_src[len(prefix_to_strip) :]
                         break
                 if proto_src.startswith("@"):
-                    raise Exception('"{0}" is unknown workspace.'.format(name))
+                    raise Exception(
+                        'In rule "{0}", proto source "{1}" comes from an unknown workspace.'.format(
+                            name, proto_src
+                        )
+                    )
                 proto_src_file = _try_extract_source_file_path(proto_src)
                 if not proto_src_file:
                     raise Exception(

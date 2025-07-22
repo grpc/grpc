@@ -35,6 +35,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
+#include "absl/strings/strip.h"
 #include "pugixml.hpp"
 
 // Command-line flags
@@ -175,6 +176,7 @@ std::pair<std::string, std::string> GetExternalLink(const std::string& file) {
       {"@com_envoyproxy_protoc_gen_validate//", ""},
       {"@envoy_api//", ""},
       {"@opencensus_proto//", ""},
+      {"@dev_cel//", ""},
   };
   for (const auto& link : kExternalLinks) {
     if (absl::StartsWith(file, link.first)) {
@@ -196,6 +198,24 @@ std::string GetBazelBinRootPath(
         kBazelBinRoot, "external/",
         absl::StrReplaceAll(elink.first, {{"@", ""}, {"//", ""}}),
         "/src/google/protobuf/_virtual_imports/", name_part, "_proto/", file);
+  }
+
+  if (elink.first == "@dev_cel//") {
+    // For `dev_cel`, the virtual import path is constructed differently.
+    // The name part is `<proto_name>_proto` and the file path within it
+    // does not include the `proto/` prefix.
+    std::string name_part = std::filesystem::path(file).stem().string();
+    // For upb generated files, we need to strip two extensions.
+    name_part = std::filesystem::path(name_part).stem().string();
+    name_part.append("_proto");
+
+    absl::string_view file_path = file;
+    absl::ConsumePrefix(&file_path, "proto/");
+
+    return absl::StrCat(
+        kBazelBinRoot, "external/",
+        absl::StrReplaceAll(elink.first, {{"@", ""}, {"//", ""}}),
+        "/proto/cel/expr/_virtual_imports/", name_part, "/", file_path);
   }
   if (absl::StartsWith(elink.first, "@")) {
     return absl::StrCat(
