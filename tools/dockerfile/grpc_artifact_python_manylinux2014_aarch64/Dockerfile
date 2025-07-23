@@ -41,7 +41,7 @@ RUN git config --global protocol.file.allow always && \
   git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/zlib
 
 #=================
-# Install ccache 
+# Install ccache
 
 # Install ccache from source since ccache 3.x packaged with most linux distributions
 # does not support Redis backend for caching.
