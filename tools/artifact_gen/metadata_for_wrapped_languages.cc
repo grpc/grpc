@@ -658,14 +658,14 @@ void AddPhpConfig(nlohmann::json& config) {
   config["php_config_m4"]["srcs"] = srcs;
   config["php_config_m4"]["dirs"] = dirs;
 
-  std::vector<std::string> windows_srcs;
+  std::set<std::string> windows_srcs;
   for (const auto& src : w32_srcs) {
-    windows_srcs.emplace_back(absl::StrReplaceAll(src, {{"/", "\\\\"}}));
+    windows_srcs.emplace(absl::StrReplaceAll(src, {{"/", "\\\\"}}));
   }
   config["php_config_w32"]["srcs"] = windows_srcs;
   std::set<std::string> windows_dirs;
   for (const auto& dir : w32_dirs) {
-    windows_dirs.emplace_back(absl::StrReplaceAll(dir, {{"/", "\\\\"}}));
+    windows_dirs.emplace(absl::StrReplaceAll(dir, {{"/", "\\\\"}}));
   }
   config["php_config_w32"]["dirs"] = windows_dirs;
 }
