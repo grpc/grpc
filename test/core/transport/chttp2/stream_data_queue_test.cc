@@ -519,15 +519,6 @@ TEST(StreamDataQueueTest, ClientEnqueueMultipleMessagesTest) {
   }
 }
 
-TEST(StreamDataQueueTest, ClientEnqueueTrailingMetadataTest) {
-  HPackCompressor encoder;
-  RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> stream_data_queue =
-      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
-          /*is_client*/ true,
-          /*stream_id=*/1,
-          /*queue_size=*/10);
-}
-
 TEST(StreamDataQueueTest, ClientEnqueueEndStreamTest) {
   HPackCompressor encoder;
   RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> stream_data_queue =
