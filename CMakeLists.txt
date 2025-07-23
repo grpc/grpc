@@ -2032,14 +2032,12 @@ add_library(gpr
   src/core/util/posix/env.cc
   src/core/util/posix/stat.cc
   src/core/util/posix/string.cc
-  src/core/util/posix/sync.cc
   src/core/util/posix/thd.cc
   src/core/util/posix/time.cc
   src/core/util/posix/tmpfile.cc
   src/core/util/strerror.cc
   src/core/util/string.cc
   src/core/util/sync.cc
-  src/core/util/sync_abseil.cc
   src/core/util/tchar.cc
   src/core/util/time_precise.cc
   src/core/util/time_util.cc
@@ -2048,7 +2046,6 @@ add_library(gpr
   src/core/util/windows/stat.cc
   src/core/util/windows/string.cc
   src/core/util/windows/string_util.cc
-  src/core/util/windows/sync.cc
   src/core/util/windows/thd.cc
   src/core/util/windows/time.cc
   src/core/util/windows/tmpfile.cc
@@ -2132,11 +2129,6 @@ foreach(_hdr
   include/grpc/impl/codegen/log.h
   include/grpc/impl/codegen/port_platform.h
   include/grpc/impl/codegen/sync.h
-  include/grpc/impl/codegen/sync_abseil.h
-  include/grpc/impl/codegen/sync_custom.h
-  include/grpc/impl/codegen/sync_generic.h
-  include/grpc/impl/codegen/sync_posix.h
-  include/grpc/impl/codegen/sync_windows.h
   include/grpc/support/alloc.h
   include/grpc/support/atm.h
   include/grpc/support/atm_gcc_atomic.h
@@ -2150,11 +2142,6 @@ foreach(_hdr
   include/grpc/support/port_platform.h
   include/grpc/support/string_util.h
   include/grpc/support/sync.h
-  include/grpc/support/sync_abseil.h
-  include/grpc/support/sync_custom.h
-  include/grpc/support/sync_generic.h
-  include/grpc/support/sync_posix.h
-  include/grpc/support/sync_windows.h
   include/grpc/support/thd_id.h
   include/grpc/support/time.h
 )

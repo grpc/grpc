@@ -1496,7 +1496,6 @@ LIBGRPC_SRC = \
     src/core/util/posix/env.cc \
     src/core/util/posix/stat.cc \
     src/core/util/posix/string.cc \
-    src/core/util/posix/sync.cc \
     src/core/util/posix/thd.cc \
     src/core/util/posix/time.cc \
     src/core/util/posix/tmpfile.cc \
@@ -1507,7 +1506,6 @@ LIBGRPC_SRC = \
     src/core/util/strerror.cc \
     src/core/util/string.cc \
     src/core/util/sync.cc \
-    src/core/util/sync_abseil.cc \
     src/core/util/tchar.cc \
     src/core/util/time.cc \
     src/core/util/time_averaged_stats.cc \
@@ -1523,7 +1521,6 @@ LIBGRPC_SRC = \
     src/core/util/windows/stat.cc \
     src/core/util/windows/string.cc \
     src/core/util/windows/string_util.cc \
-    src/core/util/windows/sync.cc \
     src/core/util/windows/thd.cc \
     src/core/util/windows/time.cc \
     src/core/util/windows/tmpfile.cc \

@@ -72,11 +72,6 @@
     <file baseinstalldir="/" name="include/grpc/impl/codegen/slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/status.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/codegen/sync.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_abseil.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_custom.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_generic.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_posix.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/impl/codegen/sync_windows.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/compression_types.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/connectivity_state.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/impl/grpc_types.h" role="src" />
@@ -100,11 +95,6 @@
     <file baseinstalldir="/" name="include/grpc/support/port_platform.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/string_util.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/sync.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/support/sync_abseil.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/support/sync_custom.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/support/sync_generic.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/support/sync_posix.h" role="src" />
-    <file baseinstalldir="/" name="include/grpc/support/sync_windows.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/thd_id.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/time.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/support/workaround_list.h" role="src" />
@@ -1997,7 +1987,6 @@
     <file baseinstalldir="/" name="src/core/util/posix/env.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/posix/stat.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/posix/string.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/util/posix/sync.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/posix/thd.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/posix/time.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/posix/tmpfile.cc" role="src" />
@@ -2022,7 +2011,6 @@
     <file baseinstalldir="/" name="src/core/util/string.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/sync.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/sync.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/sync_abseil.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/table.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/tchar.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/tchar.h" role="src" />
@@ -2055,7 +2043,6 @@
     <file baseinstalldir="/" name="src/core/util/windows/stat.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/string_util.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/util/windows/sync.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/thd.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/time.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/tmpfile.cc" role="src" />
