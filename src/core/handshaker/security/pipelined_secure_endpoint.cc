@@ -761,7 +761,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
     };
 
     static void ContinueUnprotect(grpc_core::RefCountedPtr<Impl> impl) {
-      GRPC_LATENT_SEE_PARENT_SCOPE("secure endpoint continue unprotect");
+      GRPC_LATENT_SEE_SCOPE("secure endpoint continue unprotect");
       ReadArgs args;
       std::unique_ptr<SliceBuffer> source_buffer;
       std::unique_ptr<SliceBuffer> read_buffer;
