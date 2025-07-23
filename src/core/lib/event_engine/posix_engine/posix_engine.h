@@ -107,23 +107,14 @@ class PosixEnginePollerManager
     return poller_.get();
   }
 
-  ThreadPool* Executor() { return executor_.get(); }
-
   void Run(experimental::EventEngine::Closure* closure) override;
   void Run(absl::AnyInvocable<void()>) override;
 
-  bool IsShuttingDown() {
-    return poller_state_.load(std::memory_order_acquire) ==
-           PollerState::kShuttingDown;
-  }
   void TriggerShutdown();
 
  private:
-  enum class PollerState { kExternal, kOk, kShuttingDown };
   std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller> poller_;
-  std::atomic<PollerState> poller_state_{PollerState::kOk};
   std::shared_ptr<ThreadPool> executor_;
-  bool trigger_shutdown_called_;
 };
 
 #endif  // GRPC_POSIX_SOCKET_TCP
@@ -260,6 +251,9 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
   std::atomic<intptr_t> aba_token_{0};
 #if GRPC_ENABLE_FORK_SUPPORT && GRPC_ARES == 1 && \
     defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
+
+  void RegisterAresResolverForFork(AresResolver* resolver);
+
   // A separate mutex to avoid deadlocks.
   grpc_core::Mutex resolver_handles_mu_;
   absl::InlinedVector<std::weak_ptr<AresResolver::ReinitHandle>, 16>
