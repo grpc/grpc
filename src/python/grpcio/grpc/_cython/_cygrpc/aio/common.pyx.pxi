@@ -174,14 +174,29 @@ async def generator_to_async_generator(object gen, object loop, object thread_po
 
 
 if PY_MINOR_VERSION < 12:
-    def _get_or_create_working_loop():
+    def _get_or_create_default_loop():
         return asyncio.get_event_loop_policy().get_event_loop()
 else:
-    def _get_or_create_working_loop():
+    def _get_or_create_default_loop():
+        import threading
+        warnings.warn(
+            (
+                'There is no current event loop running in thread'
+                f' {threading.current_thread().name}.'
+                ' gRPC will create one for you, but this behavior may change'
+                ' in future versions.'
+                ' Use asyncio.run() or asyncio.Runner with loop_factory'
+                ' of desired loop implementation.'
+                ' If you see this in Python REPL, use the dedicated asyncio'
+                ' REPL by running python -m asyncio.'
+            ),
+            DeprecationWarning,
+            stacklevel=1,
+        )
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
-
         return loop
+
 
 def get_working_loop():
     """Returns a running event loop.
@@ -192,7 +207,8 @@ def get_working_loop():
     try:
         return asyncio.get_running_loop()
     except RuntimeError:
-        _get_or_create_working_loop()
+        return _get_or_create_default_loop()
+
 
 
 def raise_if_not_valid_trailing_metadata(object metadata):
