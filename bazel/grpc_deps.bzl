@@ -359,9 +359,9 @@ def grpc_deps():
             ],
         )
 
-    if "com_github_google_cel_spec" not in native.existing_rules():
+    if "dev_cel" not in native.existing_rules():
         http_archive(
-            name = "com_github_google_cel_spec",
+            name = "dev_cel",
             sha256 = "5cba6b0029e727d1f4d8fd134de4e747cecc0bc293d026017d7edc48058d09f7",
             strip_prefix = "cel-spec-0.24.0",
             urls = [
