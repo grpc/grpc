@@ -17,8 +17,8 @@ load(
     "grpc_cc_grpc_library",
     "grpc_cc_proto_library",
     "grpc_internal_proto_library",
-    "grpc_proto_library",
     "grpc_package",
+    "grpc_proto_library",
 )
 
 licenses(["notice"])
