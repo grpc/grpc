@@ -232,7 +232,7 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Privacy", version
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
-    abseil_version = '~> 1.20250512.0'
+    abseil_version = '~> 1.20250512.1'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
@@ -285,7 +285,6 @@ Pod::Spec.new do |s|
                       'src/core/call/call_state.h',
                       'src/core/call/client_call.h',
                       'src/core/call/custom_metadata.h',
-                      'src/core/call/filter_fusion.h',
                       'src/core/call/interception_chain.h',
                       'src/core/call/message.h',
                       'src/core/call/metadata.h',
@@ -375,7 +374,6 @@ Pod::Spec.new do |s|
                       'src/core/credentials/transport/tls/grpc_tls_crl_provider.h',
                       'src/core/credentials/transport/tls/load_system_roots.h',
                       'src/core/credentials/transport/tls/load_system_roots_supported.h',
-                      'src/core/credentials/transport/tls/spiffe_utils.h',
                       'src/core/credentials/transport/tls/ssl_utils.h',
                       'src/core/credentials/transport/tls/tls_credentials.h',
                       'src/core/credentials/transport/tls/tls_security_connector.h',
@@ -1243,7 +1241,6 @@ Pod::Spec.new do |s|
                       'src/core/server/xds_channel_stack_modifier.h',
                       'src/core/service_config/service_config.h',
                       'src/core/service_config/service_config_call_data.h',
-                      'src/core/service_config/service_config_channel_arg_filter.h',
                       'src/core/service_config/service_config_impl.h',
                       'src/core/service_config/service_config_parser.h',
                       'src/core/telemetry/call_tracer.h',
@@ -1638,7 +1635,6 @@ Pod::Spec.new do |s|
                               'src/core/call/call_state.h',
                               'src/core/call/client_call.h',
                               'src/core/call/custom_metadata.h',
-                              'src/core/call/filter_fusion.h',
                               'src/core/call/interception_chain.h',
                               'src/core/call/message.h',
                               'src/core/call/metadata.h',
@@ -1728,7 +1724,6 @@ Pod::Spec.new do |s|
                               'src/core/credentials/transport/tls/grpc_tls_crl_provider.h',
                               'src/core/credentials/transport/tls/load_system_roots.h',
                               'src/core/credentials/transport/tls/load_system_roots_supported.h',
-                              'src/core/credentials/transport/tls/spiffe_utils.h',
                               'src/core/credentials/transport/tls/ssl_utils.h',
                               'src/core/credentials/transport/tls/tls_credentials.h',
                               'src/core/credentials/transport/tls/tls_security_connector.h',
@@ -2596,7 +2591,6 @@ Pod::Spec.new do |s|
                               'src/core/server/xds_channel_stack_modifier.h',
                               'src/core/service_config/service_config.h',
                               'src/core/service_config/service_config_call_data.h',
-                              'src/core/service_config/service_config_channel_arg_filter.h',
                               'src/core/service_config/service_config_impl.h',
                               'src/core/service_config/service_config_parser.h',
                               'src/core/telemetry/call_tracer.h',

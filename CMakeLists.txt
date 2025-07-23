@@ -2268,7 +2268,6 @@ add_library(grpc
   src/core/credentials/transport/tls/load_system_roots_fallback.cc
   src/core/credentials/transport/tls/load_system_roots_supported.cc
   src/core/credentials/transport/tls/load_system_roots_windows.cc
-  src/core/credentials/transport/tls/spiffe_utils.cc
   src/core/credentials/transport/tls/ssl_utils.cc
   src/core/credentials/transport/tls/tls_credentials.cc
   src/core/credentials/transport/tls/tls_security_connector.cc
@@ -2664,7 +2663,6 @@ add_library(grpc
   src/core/filter/auth/client_auth_filter.cc
   src/core/filter/auth/server_auth_filter.cc
   src/core/filter/blackboard.cc
-  src/core/filter/fused_filters.cc
   src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   src/core/handshaker/handshaker.cc
   src/core/handshaker/handshaker_registry.cc
@@ -3470,7 +3468,6 @@ add_library(grpc_unsecure
   src/core/filter/auth/client_auth_filter.cc
   src/core/filter/auth/server_auth_filter.cc
   src/core/filter/blackboard.cc
-  src/core/filter/fused_filters.cc
   src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc
   src/core/handshaker/handshaker.cc
   src/core/handshaker/handshaker_registry.cc
@@ -29362,6 +29359,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(spiffe_utils_test
+  src/core/credentials/transport/tls/spiffe_utils.cc
   test/core/credentials/transport/tls/spiffe_utils_test.cc
 )
 if(WIN32 AND MSVC)
@@ -33757,7 +33755,6 @@ target_include_directories(xds_certificate_provider_test
 target_link_libraries(xds_certificate_provider_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::overload
   grpc_test_util
 )
 
