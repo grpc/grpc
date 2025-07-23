@@ -43,8 +43,8 @@ cc_library(
     srcs = ["metadata_for_wrapped_languages.cc"],
     hdrs = ["metadata_for_wrapped_languages.h"],
     deps = [
-        ":build_metadata",
         "utils",
+        ":build_metadata",
         "@abseil-cpp//absl/log",
         "@abseil-cpp//absl/log:check",
         "@abseil-cpp//absl/strings",
