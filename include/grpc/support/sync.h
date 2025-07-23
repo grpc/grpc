@@ -20,6 +20,7 @@
 #define GRPC_SUPPORT_SYNC_H
 
 /* Platform-specific type declarations of gpr_mu and gpr_cv.   */
+#include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h> /* for gpr_timespec */
 
@@ -46,19 +47,30 @@ extern "C" {
                                  provides no memory barriers.
  */
 
-#include <grpc/support/sync_generic.h>  // IWYU pragma: export
+/* gpr_event */
+typedef struct {
+  gpr_atm state;
+} gpr_event;
 
-#if defined(GPR_CUSTOM_SYNC)
-#include <grpc/support/sync_custom.h>  // IWYU pragma: export
-#elif defined(GPR_ABSEIL_SYNC)
-#include <grpc/support/sync_abseil.h>  // IWYU pragma: export
-#elif defined(GPR_POSIX_SYNC)
-#include <grpc/support/sync_posix.h>  // IWYU pragma: export
-#elif defined(GPR_WINDOWS)
-#include <grpc/support/sync_windows.h>  // IWYU pragma: export
-#else
-#error Unable to determine platform for sync
-#endif
+#define GPR_EVENT_INIT {0}
+
+/* gpr_refcount */
+typedef struct {
+  gpr_atm count;
+} gpr_refcount;
+
+/* gpr_stats_counter */
+typedef struct {
+  gpr_atm value;
+} gpr_stats_counter;
+
+#define GPR_STATS_INIT {0}
+
+typedef intptr_t gpr_mu;
+typedef intptr_t gpr_cv;
+typedef int32_t gpr_once;
+
+#define GPR_ONCE_INIT 0
 
 /** --- Mutex interface ---
 

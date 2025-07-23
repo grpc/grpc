@@ -463,10 +463,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "sync",
     srcs = [
-        "//src/core:util/posix/sync.cc",
         "//src/core:util/sync.cc",
-        "//src/core:util/sync_abseil.cc",
-        "//src/core:util/windows/sync.cc",
     ],
     hdrs = [
         "util/sync.h",

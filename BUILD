@@ -235,11 +235,6 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/support/metrics.h",
     "include/grpc/support/string_util.h",
     "include/grpc/support/sync.h",
-    "include/grpc/support/sync_abseil.h",
-    "include/grpc/support/sync_custom.h",
-    "include/grpc/support/sync_generic.h",
-    "include/grpc/support/sync_posix.h",
-    "include/grpc/support/sync_windows.h",
     "include/grpc/support/thd_id.h",
     "include/grpc/support/time.h",
     "include/grpc/impl/call.h",
@@ -251,11 +246,6 @@ GPR_PUBLIC_HDRS = [
     "include/grpc/impl/codegen/gpr_types.h",
     "include/grpc/impl/codegen/log.h",
     "include/grpc/impl/codegen/sync.h",
-    "include/grpc/impl/codegen/sync_abseil.h",
-    "include/grpc/impl/codegen/sync_custom.h",
-    "include/grpc/impl/codegen/sync_generic.h",
-    "include/grpc/impl/codegen/sync_posix.h",
-    "include/grpc/impl/codegen/sync_windows.h",
 ]
 
 GRPC_PUBLIC_HDRS = [
