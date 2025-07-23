@@ -30,7 +30,7 @@ py_binary(
 py_binary(
     name = "client",
     srcs = ["client.py"],
-    imports = ["../../examples/protos"],
+    imports = ["../../protos"],
     python_version = "PY3",
     srcs_version = "PY2AND3",
     deps = [
