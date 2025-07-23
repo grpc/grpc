@@ -25,6 +25,7 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/host_port.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/test_util/port.h"
@@ -46,12 +47,12 @@ class SecureFixture : public grpc_core::CoreTestFixture {
   virtual grpc_core::ChannelArgs MutateServerArgs(grpc_core::ChannelArgs args) {
     return args;
   }
-
- private:
   virtual grpc_channel_credentials* MakeClientCreds(
       const grpc_core::ChannelArgs& args) = 0;
   virtual grpc_server_credentials* MakeServerCreds(
       const grpc_core::ChannelArgs& args) = 0;
+
+ private:
   grpc_server* MakeServer(
       const grpc_core::ChannelArgs& in_args, grpc_completion_queue* cq,
       absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {

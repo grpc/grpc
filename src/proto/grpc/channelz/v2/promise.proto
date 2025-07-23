@@ -39,12 +39,6 @@ message Promise {
     PropertyList properties = 2;
   }
 
-  // The default promise: we don't know much about it, maybe there's
-  // some debug text.
-  message Unknown {
-    string debug_text = 1;
-  }
-
   // If(condition, true_factory, false_factory)
   message If {
     bool condition = 1;
@@ -57,6 +51,7 @@ message Promise {
   message Loop {
     string loop_factory = 1;
     Promise promise = 2;
+    bool yield = 3;
   }
 
   // Race(child1, child2, ...)
@@ -100,12 +95,19 @@ message Promise {
     repeated JoinBranch branches = 2;
   }
 
+  message Map {
+    Promise promise = 1;
+    string map_fn = 2;
+  }
+
   oneof promise {
     Custom custom_promise = 1;
-    If if_promise = 2;
-    Loop loop_promise = 3;
-    Race race_promise = 4;
-    Seq seq_promise = 5;
-    Join join_promise = 6;
+    string unknown_promise = 2;
+    If if_promise = 3;
+    Loop loop_promise = 4;
+    Race race_promise = 5;
+    Seq seq_promise = 6;
+    Join join_promise = 7;
+    Map map_promise = 8;
   }
 }

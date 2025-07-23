@@ -18,6 +18,7 @@
 #include <cstdint>
 
 #include "absl/log/check.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/util/sync.h"
 
@@ -96,24 +97,26 @@ StatusFlag Mpsc::UnbufferedImmediateSend(Node* node) {
   return Success{};
 }
 
-Json Mpsc::PollNextJson() const {
-  Json::Object obj;
-  obj["what"] = Json::FromString("PollNext");
-  Json::Array accepted;
-  for (Node* n = accepted_head_; n != nullptr; n = n->spsc_next_) {
-    accepted.emplace_back(n->ToJson());
-  }
-  obj["accepted"] = Json::FromArray(std::move(accepted));
-  obj["closed"] = Json::FromBool(tail_ == nullptr);
-  obj["queued_tokens"] =
-      Json::FromNumber(queued_tokens_.load(std::memory_order_relaxed));
-  auto active_tokens = active_tokens_.load(std::memory_order_relaxed);
-  obj["active_tokens"] = Json::FromNumber(active_tokens & kActiveTokensMask);
-  obj["active_tokens_waker_bit"] =
-      Json::FromBool(active_tokens & kActiveTokensWakerBit);
-  obj["active_tokens_waking_bit"] =
-      Json::FromBool(active_tokens & kActiveTokensWakingBit);
-  return Json::FromObject(std::move(obj));
+channelz::PropertyList Mpsc::PollNextChannelzProperties() const {
+  return channelz::PropertyList()
+      .Set("accepted",
+           [this]() {
+             channelz::PropertyTable properties;
+             for (Node* n = accepted_head_; n != nullptr; n = n->spsc_next_) {
+               properties.AppendRow(n->ChannelzProperties());
+             }
+             return properties;
+           }())
+      .Set("closed", tail_ == nullptr)
+      .Set("queued_tokens", queued_tokens_.load(std::memory_order_relaxed))
+      .Set("active_tokens",
+           active_tokens_.load(std::memory_order_relaxed) & kActiveTokensMask)
+      .Set("active_tokens_waker_bit",
+           active_tokens_.load(std::memory_order_relaxed) &
+               kActiveTokensWakerBit)
+      .Set("active_tokens_waking_bit",
+           active_tokens_.load(std::memory_order_relaxed) &
+               kActiveTokensWakingBit);
 }
 
 Poll<ValueOrFailure<Mpsc::Node*>> Mpsc::PollNext() {
@@ -411,14 +414,12 @@ void Mpsc::ReleaseActiveTokens(bool wake_reader, uint64_t tokens) {
   }
 }
 
-Json::Object Mpsc::ToJson() const {
-  Json::Object obj;
-  obj["max_queued"] = Json::FromNumber(max_queued_);
-  obj["active_tokens"] =
-      Json::FromNumber(active_tokens_.load(std::memory_order_relaxed));
-  obj["queued_tokens"] =
-      Json::FromNumber(queued_tokens_.load(std::memory_order_relaxed));
-  return obj;
+channelz::PropertyList Mpsc::ChannelzProperties() const {
+  return channelz::PropertyList()
+      .Set("max_queued", max_queued_)
+      .Set("active_tokens",
+           active_tokens_.load(std::memory_order_relaxed) & kActiveTokensMask)
+      .Set("queued_tokens", queued_tokens_.load(std::memory_order_relaxed));
 }
 
 }  // namespace grpc_core::mpscpipe_detail

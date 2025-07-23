@@ -41,7 +41,7 @@ cd $(dirname $0)/../..
 if [ "${CHECK_MODE}" == "" ]
 then
   # Check that docker is installed and sudoless docker works.
-  docker run --rm -it debian:11 bash -c 'echo "sudoless docker run works!"' || \
+  docker run --rm debian:11 bash -c 'echo "sudoless docker run works!"' || \
       (echo "Error: docker not installed or sudoless docker doesn't work?" && exit 1)
 
   if [ "${HOST_ARCH_ONLY}" == "" ]; then
@@ -51,7 +51,7 @@ then
     # an emulator.
     # Perform a check that "qemu-user-static" with binfmt-misc hook
     # is installed, to give an early warning (otherwise building arm64 images won't work)
-    docker run --rm --platform=linux/arm64 -it arm64v8/debian:11 bash -c 'echo "able to run arm64 docker images with an emulator!"' || \
+    docker run --rm --platform=linux/arm64 arm64v8/debian:11 bash -c 'echo "able to run arm64 docker images with an emulator!"' || \
         (echo "Error: can't run arm64 images under an emulator. Have you run 'sudo apt-get install qemu-user-static'?" && exit 1)
   fi
 fi
@@ -70,7 +70,12 @@ ALL_DOCKERFILE_DIRS=(
 # These Docker directories contain obsolete images that cannot be built.
 # They are excluded from build processes, but the Dockerfiles are retained for archival purposes.
 EXCLUDE_DIRS=(
+  tools/dockerfile/distribtest/csharp_dotnet31_x64
+  tools/dockerfile/distribtest/csharp_dotnet5_x64
   tools/dockerfile/interoptest/grpc_interop_go1.8
+  tools/dockerfile/interoptest/grpc_interop_go1.11
+  tools/dockerfile/test/cxx_gcc_7_x64
+  tools/dockerfile/test/cxx_gcc_8_x64
 )
 
 # a list of docker directories that are based on ARM64 base images

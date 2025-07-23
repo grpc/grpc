@@ -124,9 +124,10 @@ static NSString *const kBearerPrefix = @"Bearer ";
 
   // Indicate pending read message request from user.
   NSUInteger _pendingReceiveNextMessages;
-}
 
-@synthesize state = _state;
+  // ivar for state property.
+  GRXWriterState _state;
+}
 
 + (void)initialize {
   // Guarantees the code in {} block is invoked only once. See ref at:
@@ -618,6 +619,12 @@ static NSString *const kBearerPrefix = @"Bearer ";
     }];
   } else {
     [self startCallWithWriteable:writeable];
+  }
+}
+
+- (GRXWriterState)state {
+  @synchronized(self) {
+    return _state;
   }
 }
 

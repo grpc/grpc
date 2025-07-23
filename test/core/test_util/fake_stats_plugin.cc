@@ -23,7 +23,7 @@ class FakeStatsClientFilter : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::string_view TypeName() { return "fake_stats_client"; }
+  static absl::string_view TypeName() { return "legacy_fake_stats_client"; }
 
   explicit FakeStatsClientFilter(
       FakeClientCallTracerFactory* fake_client_call_tracer_factory);

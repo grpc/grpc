@@ -19,8 +19,10 @@
 #ifndef GRPCPP_SECURITY_CREDENTIALS_H
 #define GRPCPP_SECURITY_CREDENTIALS_H
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpcpp/channel.h>
+#include <grpcpp/create_channel_posix.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/security/auth_context.h>
 #include <grpcpp/security/tls_credentials_options.h>
@@ -77,6 +79,17 @@ class ChannelCredentials : private grpc::internal::GrpcLibrary {
   grpc_channel_credentials* c_creds() { return c_creds_; }
 
  private:
+  friend std::shared_ptr<grpc::Channel>
+  grpc::experimental::CreateChannelFromEndpoint(
+      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+          endpoint,
+      const std::shared_ptr<ChannelCredentials>& creds,
+      const ChannelArguments& args);
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
+  friend std::shared_ptr<grpc::Channel> grpc::experimental::CreateChannelFromFd(
+      int fd, const std::shared_ptr<ChannelCredentials>& creds,
+      const ChannelArguments& args);
+#endif  // GPR_SUPPORT_CHANNELS_FROM_FD
   friend std::shared_ptr<grpc::Channel> CreateCustomChannel(
       const grpc::string& target,
       const std::shared_ptr<grpc::ChannelCredentials>& creds,

@@ -96,6 +96,13 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
+const char* const description_pipelined_read_secure_endpoint =
+    "Enable pipelined reads for EventEngine secure endpoints";
+const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
+const uint8_t required_experiments_pipelined_read_secure_endpoint[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
 const char* const description_pollset_alternative =
     "Code outside iomgr that relies directly on pollsets will use non-pollset "
     "alternatives when enabled.";
@@ -124,6 +131,11 @@ const char* const description_promise_based_inproc_transport =
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
+const char* const description_rr_wrr_connect_from_random_index =
+    "RR and WRR LB policies start connecting from a random index in the "
+    "address list.";
+const char* const additional_constraints_rr_wrr_connect_from_random_index =
+    "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -227,6 +239,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
      true},
+    {"pipelined_read_secure_endpoint",
+     description_pipelined_read_secure_endpoint,
+     additional_constraints_pipelined_read_secure_endpoint,
+     required_experiments_pipelined_read_secure_endpoint, 3, false, false},
     {"pollset_alternative", description_pollset_alternative,
      additional_constraints_pollset_alternative,
      required_experiments_pollset_alternative, 2, false, false},
@@ -247,6 +263,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
+    {"rr_wrr_connect_from_random_index",
+     description_rr_wrr_connect_from_random_index,
+     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, false,
+     true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -261,8 +281,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
     {"server_global_callbacks_ownership",
      description_server_global_callbacks_ownership,
-     additional_constraints_server_global_callbacks_ownership, nullptr, 0,
-     false, true},
+     additional_constraints_server_global_callbacks_ownership, nullptr, 0, true,
+     true},
     {"shard_global_connection_pool", description_shard_global_connection_pool,
      additional_constraints_shard_global_connection_pool, nullptr, 0, true,
      true},
@@ -361,6 +381,13 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
+const char* const description_pipelined_read_secure_endpoint =
+    "Enable pipelined reads for EventEngine secure endpoints";
+const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
+const uint8_t required_experiments_pipelined_read_secure_endpoint[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
 const char* const description_pollset_alternative =
     "Code outside iomgr that relies directly on pollsets will use non-pollset "
     "alternatives when enabled.";
@@ -389,6 +416,11 @@ const char* const description_promise_based_inproc_transport =
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
+const char* const description_rr_wrr_connect_from_random_index =
+    "RR and WRR LB policies start connecting from a random index in the "
+    "address list.";
+const char* const additional_constraints_rr_wrr_connect_from_random_index =
+    "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -492,6 +524,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
      true},
+    {"pipelined_read_secure_endpoint",
+     description_pipelined_read_secure_endpoint,
+     additional_constraints_pipelined_read_secure_endpoint,
+     required_experiments_pipelined_read_secure_endpoint, 3, false, false},
     {"pollset_alternative", description_pollset_alternative,
      additional_constraints_pollset_alternative,
      required_experiments_pollset_alternative, 2, false, false},
@@ -512,6 +548,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
+    {"rr_wrr_connect_from_random_index",
+     description_rr_wrr_connect_from_random_index,
+     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, false,
+     true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -526,8 +566,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
     {"server_global_callbacks_ownership",
      description_server_global_callbacks_ownership,
-     additional_constraints_server_global_callbacks_ownership, nullptr, 0,
-     false, true},
+     additional_constraints_server_global_callbacks_ownership, nullptr, 0, true,
+     true},
     {"shard_global_connection_pool", description_shard_global_connection_pool,
      additional_constraints_shard_global_connection_pool, nullptr, 0, true,
      true},
@@ -626,6 +666,13 @@ const char* const additional_constraints_multiping = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
+const char* const description_pipelined_read_secure_endpoint =
+    "Enable pipelined reads for EventEngine secure endpoints";
+const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
+const uint8_t required_experiments_pipelined_read_secure_endpoint[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
 const char* const description_pollset_alternative =
     "Code outside iomgr that relies directly on pollsets will use non-pollset "
     "alternatives when enabled.";
@@ -654,6 +701,11 @@ const char* const description_promise_based_inproc_transport =
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
+const char* const description_rr_wrr_connect_from_random_index =
+    "RR and WRR LB policies start connecting from a random index in the "
+    "address list.";
+const char* const additional_constraints_rr_wrr_connect_from_random_index =
+    "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -757,6 +809,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
      true},
+    {"pipelined_read_secure_endpoint",
+     description_pipelined_read_secure_endpoint,
+     additional_constraints_pipelined_read_secure_endpoint,
+     required_experiments_pipelined_read_secure_endpoint, 3, false, false},
     {"pollset_alternative", description_pollset_alternative,
      additional_constraints_pollset_alternative,
      required_experiments_pollset_alternative, 2, false, false},
@@ -777,6 +833,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
+    {"rr_wrr_connect_from_random_index",
+     description_rr_wrr_connect_from_random_index,
+     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, false,
+     true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -791,8 +851,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
     {"server_global_callbacks_ownership",
      description_server_global_callbacks_ownership,
-     additional_constraints_server_global_callbacks_ownership, nullptr, 0,
-     false, true},
+     additional_constraints_server_global_callbacks_ownership, nullptr, 0, true,
+     true},
     {"shard_global_connection_pool", description_shard_global_connection_pool,
      additional_constraints_shard_global_connection_pool, nullptr, 0, true,
      true},
