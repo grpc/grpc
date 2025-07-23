@@ -23818,11 +23818,12 @@ targets:
   - mac
 external_proto_libraries:
 - destination: third_party/cel-spec
-  hash: 1f1ad32bce5d31cf82e9c8f40685b1902de3ab07c78403601e7a43c3fb4de9a6
+  hash: 5cba6b0029e727d1f4d8fd134de4e747cecc0bc293d026017d7edc48058d09f7
   proto_prefix: third_party/cel-spec/
-  strip_prefix: cel-spec-0.22.1
+  strip_prefix: cel-spec-0.24.0
   urls:
-  - https://github.com/google/cel-spec/archive/v0.22.1.tar.gz
+  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/cel-spec/archive/refs/tags/v0.24.0.tar.gz
+  - https://github.com/google/cel-spec/archive/refs/tags/v0.24.0.tar.gz
 - destination: third_party/envoy-api
   hash: a9f1eb76c8e8153ec81ce04403c8829b42786060b7bb1dcc91b597220b71eaf6
   proto_prefix: third_party/envoy-api/

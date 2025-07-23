@@ -404,14 +404,23 @@ if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
   include(cmake/opentelemetry-cpp.cmake)
 endif()
 
-# Setup external proto library at third_party/cel-spec if it doesn't exist
+# Setup external proto library at third_party/cel-spec with 2 download URLs
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cel-spec AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/cel-spec.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cel-spec
-    https://github.com/google/cel-spec/archive/v0.22.1.tar.gz
-    1f1ad32bce5d31cf82e9c8f40685b1902de3ab07c78403601e7a43c3fb4de9a6
-    cel-spec-0.22.1
+    https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/cel-spec/archive/refs/tags/v0.24.0.tar.gz
+    5cba6b0029e727d1f4d8fd134de4e747cecc0bc293d026017d7edc48058d09f7
+    cel-spec-0.24.0
+  )
+endif()
+if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cel-spec AND gRPC_DOWNLOAD_ARCHIVES)
+  # Download the archive via HTTP, validate the checksum, and extract to third_party/cel-spec.
+  download_archive(
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cel-spec
+    https://github.com/google/cel-spec/archive/refs/tags/v0.24.0.tar.gz
+    5cba6b0029e727d1f4d8fd134de4e747cecc0bc293d026017d7edc48058d09f7
+    cel-spec-0.24.0
   )
 endif()
 # Setup external proto library at third_party/envoy-api with 2 download URLs
