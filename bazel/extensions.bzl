@@ -52,13 +52,3 @@ exec_properties = module_extension(
     implementation = _exec_properties_impl,
     tag_classes = {"custom_exec_properties": _custom_exec_properties},
 )
-
-def _python_configure_impl(ctx):
-    _python_configure(name = ctx.modules[0].tags.configure[0].name)
-
-_configure = tag_class(attrs = {"name": attr.string()})
-
-python_configure = module_extension(
-    implementation = _python_configure_impl,
-    tag_classes = {"configure": _configure},
-)

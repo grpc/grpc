@@ -171,6 +171,8 @@ exec_properties.custom_exec_properties(
 )
 use_repo(exec_properties, "grpc_custom_exec_properties")
 
-python_configure = use_extension("//bazel:extensions.bzl", "python_configure")
-python_configure.configure(name = "local_config_python")
-use_repo(python_configure, "local_config_python")
+python_configure = use_repo_rule(
+    "//third_party/py:python_configure.bzl",
+    "python_configure",
+)
+python_configure(name = "local_config_python")
