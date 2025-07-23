@@ -136,7 +136,6 @@ class Server(abc.ABC):
           A bool indicates if the operation times out.
         """
 
-    @abc.abstractmethod
     def add_registered_method_handlers(self, service_name, method_handlers):
         """Registers GenericRpcHandlers with this Server.
 
