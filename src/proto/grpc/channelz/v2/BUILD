@@ -47,6 +47,26 @@ grpc_internal_proto_library(
     ],
 )
 
+# TODO(roth): Migrate this to use separate
+# grpc_internal_proto_library/grpc_cc_proto_library/grpc_cc_grpc_library
+# rules when internal build system limitations are resolved.
+grpc_internal_proto_library(
+    name = "latent_see_proto",
+    srcs = ["latent_see.proto"],
+    has_services = True,
+)
+
+grpc_cc_proto_library(
+    name = "latent_see_cc_proto",
+    deps = [":latent_see_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "latent_see_cc_grpc",
+    srcs = [":latent_see_proto"],
+    deps = [":latent_see_cc_proto"],
+)
+
 grpc_internal_proto_library(
     name = "promise_proto",
     srcs = ["promise.proto"],
