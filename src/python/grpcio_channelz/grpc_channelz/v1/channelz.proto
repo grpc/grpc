@@ -287,7 +287,7 @@ message SocketData {
   // The amount of window, granted to the remote endpoint by the local endpoint.
   // This may be slightly out of date due to network latency.  This does NOT
   // include stream level or TCP level flow control info.
-  google.protobuf.Int64Value  remote_flow_control_window = 12;
+  google.protobuf.Int64Value remote_flow_control_window = 12;
 
   // Socket options set on this socket.  May be absent if 'summary' is set
   // on GetSocketRequest.
@@ -429,7 +429,8 @@ service Channelz {
   // Returns a single Server, or else a NOT_FOUND code.
   rpc GetServer(GetServerRequest) returns (GetServerResponse);
   // Gets all server sockets that exist in the process.
-  rpc GetServerSockets(GetServerSocketsRequest) returns (GetServerSocketsResponse);
+  rpc GetServerSockets(GetServerSocketsRequest)
+      returns (GetServerSocketsResponse);
   // Returns a single Channel, or else a NOT_FOUND code.
   rpc GetChannel(GetChannelRequest) returns (GetChannelResponse);
   // Returns a single Subchannel, or else a NOT_FOUND code.
@@ -515,9 +516,9 @@ message GetServerSocketsRequest {
 }
 
 message GetServerSocketsResponse {
-  // list of socket refs that the connection detail service knows about.  Sorted in
-  // ascending socket_id order.
-  // Must contain at least 1 result, otherwise 'end' must be true.
+  // list of socket refs that the connection detail service knows about.  Sorted
+  // in ascending socket_id order. Must contain at least 1 result, otherwise
+  // 'end' must be true.
   repeated SocketRef socket_ref = 1;
   // If set, indicates that the list of sockets is the final list.  Requesting
   // more sockets will only return more if they are created after this RPC
