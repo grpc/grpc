@@ -508,8 +508,6 @@ void PosixEnginePollerManager::Run(absl::AnyInvocable<void()> cb) {
   }
 }
 
-void PosixEnginePollerManager::TriggerShutdown() { poller_->Kick(); }
-
 std::shared_ptr<PosixEventEngine> PosixEventEngine::MakePosixEventEngine() {
   // Can't use make_shared as ctor is private
   std::shared_ptr<PosixEventEngine> engine(new PosixEventEngine());
@@ -582,7 +580,6 @@ PosixEventEngine::~PosixEventEngine() {
   }
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   polling_cycle_.reset();
-  poller_manager_.TriggerShutdown();
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   timer_manager_->Shutdown();
   executor_->Quiesce();
@@ -675,6 +672,12 @@ void PosixEventEngine::RegisterAresResolverForFork(AresResolver* resolver) {
   resolver_handles_.erase(new_end, resolver_handles_.end());
 }
 
+#else
+
+void PosixEventEngine::RegisterAresResolverForFork(AresResolver* resolver) {
+  // No-op
+}
+
 #endif  // GRPC_ENABLE_FORK_SUPPORT && GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 
 absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
@@ -693,9 +696,7 @@ PosixEventEngine::GetDNSResolver(
     if (!ares_resolver.ok()) {
       return ares_resolver.status();
     }
-#if GRPC_ENABLE_FORK_SUPPORT && GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
     RegisterAresResolverForFork(ares_resolver->get());
-#endif  // GRPC_ENABLE_FORK_SUPPORT && GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
     return std::make_unique<PosixEventEngine::PosixDNSResolver>(
         std::move(*ares_resolver));
 #else   // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING

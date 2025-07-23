@@ -103,14 +103,13 @@ class PosixEnginePollerManager
   explicit PosixEnginePollerManager(
       std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
           poller);
+
   grpc_event_engine::experimental::PosixEventPoller* Poller() const {
     return poller_.get();
   }
 
   void Run(experimental::EventEngine::Closure* closure) override;
   void Run(absl::AnyInvocable<void()>) override;
-
-  void TriggerShutdown();
 
  private:
   std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller> poller_;
@@ -249,17 +248,17 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
   grpc_core::Mutex mu_;
   TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);
   std::atomic<intptr_t> aba_token_{0};
-#if GRPC_ENABLE_FORK_SUPPORT && GRPC_ARES == 1 && \
-    defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
+#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
 
   void RegisterAresResolverForFork(AresResolver* resolver);
 
+#if GRPC_ENABLE_FORK_SUPPORT
   // A separate mutex to avoid deadlocks.
   grpc_core::Mutex resolver_handles_mu_;
   absl::InlinedVector<std::weak_ptr<AresResolver::ReinitHandle>, 16>
       resolver_handles_ ABSL_GUARDED_BY(resolver_handles_mu_);
-#endif  // defined(GRPC_ENABLE_FORK_SUPPORT) && GRPC_ARES == 1 &&
-        // defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
+#endif  // GRPC_ENABLE_FORK_SUPPORT
+#endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
   std::shared_ptr<ThreadPool> executor_;
 
 #if defined(GRPC_POSIX_SOCKET_TCP) && \
