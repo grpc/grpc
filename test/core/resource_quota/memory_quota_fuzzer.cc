@@ -82,8 +82,10 @@ class Fuzzer {
           ExecCtx::Get()->Flush();
           break;
         case memory_quota_fuzzer::Action::kCreateQuota:
-          memory_quotas_.emplace(action.quota(),
-                                 MemoryQuota(absl::StrCat("quota-step-", i)));
+          memory_quotas_.emplace(
+              action.quota(),
+              MemoryQuota(MakeRefCounted<channelz::ResourceQuotaNode>(
+                  absl::StrCat("quota-step-", i))));
           break;
         case memory_quota_fuzzer::Action::kDeleteQuota:
           memory_quotas_.erase(action.quota());

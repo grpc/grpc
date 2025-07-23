@@ -2201,6 +2201,9 @@ add_library(grpc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
+  src/core/channelz/v2tov1/convert.cc
+  src/core/channelz/v2tov1/legacy_api.cc
+  src/core/channelz/v2tov1/property_list.cc
   src/core/client_channel/backup_poller.cc
   src/core/client_channel/client_channel.cc
   src/core/client_channel/client_channel_factory.cc
@@ -2467,6 +2470,7 @@ add_library(grpc
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
@@ -2632,6 +2636,7 @@ add_library(grpc
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c
   src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c
@@ -9368,6 +9373,9 @@ add_executable(call_filters_test
   src/core/call/metadata.cc
   src/core/call/metadata_batch.cc
   src/core/call/parsed_metadata.cc
+  src/core/channelz/channel_trace.cc
+  src/core/channelz/channelz.cc
+  src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
@@ -9383,6 +9391,8 @@ add_executable(call_filters_test
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  src/core/lib/address_utils/parse_address.cc
+  src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
@@ -9395,6 +9405,8 @@ add_executable(call_filters_test
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/iomgr_internal.cc
+  src/core/lib/iomgr/sockaddr_utils_posix.cc
+  src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -9407,17 +9419,28 @@ add_executable(call_filters_test
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/channel_stack_type.cc
   src/core/lib/transport/call_final_info.cc
+  src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
+  src/core/telemetry/histogram_view.cc
+  src/core/telemetry/stats.cc
+  src/core/telemetry/stats_data.cc
   src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
+  src/core/util/grpc_if_nametoindex_posix.cc
+  src/core/util/grpc_if_nametoindex_unsupported.cc
+  src/core/util/json/json_reader.cc
+  src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
   src/core/util/ref_counted_string.cc
   src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
+  src/core/util/uri.cc
+  src/core/util/work_serializer.cc
   test/core/call/call_filters_test.cc
 )
 if(WIN32 AND MSVC)
@@ -9454,12 +9477,14 @@ target_link_libraries(call_filters_test
   upb_textformat_lib
   absl::config
   absl::no_destructor
+  absl::btree
   absl::flat_hash_map
   absl::inlined_vector
   absl::function_ref
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::string_view
   absl::span
   absl::utility
   gpr
@@ -9989,6 +10014,9 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(cancel_callback_test
+  src/core/channelz/channel_trace.cc
+  src/core/channelz/channelz.cc
+  src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
@@ -10004,6 +10032,9 @@ add_executable(cancel_callback_test
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  src/core/lib/address_utils/parse_address.cc
+  src/core/lib/address_utils/sockaddr_utils.cc
+  src/core/lib/channel/channel_args.cc
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
@@ -10013,6 +10044,8 @@ add_executable(cancel_callback_test
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/iomgr_internal.cc
+  src/core/lib/iomgr/sockaddr_utils_posix.cc
+  src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -10022,14 +10055,27 @@ add_executable(cancel_callback_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/lib/surface/channel_stack_type.cc
+  src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/telemetry/histogram_view.cc
+  src/core/telemetry/stats.cc
+  src/core/telemetry/stats_data.cc
   src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
+  src/core/util/grpc_if_nametoindex_posix.cc
+  src/core/util/grpc_if_nametoindex_unsupported.cc
+  src/core/util/json/json_reader.cc
+  src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
+  src/core/util/ref_counted_string.cc
   src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
+  src/core/util/uri.cc
+  src/core/util/work_serializer.cc
   test/core/promise/cancel_callback_test.cc
 )
 if(WIN32 AND MSVC)
@@ -10065,11 +10111,14 @@ target_link_libraries(cancel_callback_test
   gtest
   upb_textformat_lib
   absl::config
+  absl::btree
   absl::flat_hash_map
+  absl::inlined_vector
   absl::function_ref
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::string_view
   absl::span
   gpr
 )
@@ -11145,6 +11194,9 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(chunked_vector_test
+  src/core/channelz/channel_trace.cc
+  src/core/channelz/channelz.cc
+  src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
@@ -11160,6 +11212,9 @@ add_executable(chunked_vector_test
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  src/core/lib/address_utils/parse_address.cc
+  src/core/lib/address_utils/sockaddr_utils.cc
+  src/core/lib/channel/channel_args.cc
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
@@ -11169,6 +11224,8 @@ add_executable(chunked_vector_test
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/iomgr_internal.cc
+  src/core/lib/iomgr/sockaddr_utils_posix.cc
+  src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -11178,14 +11235,27 @@ add_executable(chunked_vector_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/lib/surface/channel_stack_type.cc
+  src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/telemetry/histogram_view.cc
+  src/core/telemetry/stats.cc
+  src/core/telemetry/stats_data.cc
   src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
+  src/core/util/grpc_if_nametoindex_posix.cc
+  src/core/util/grpc_if_nametoindex_unsupported.cc
+  src/core/util/json/json_reader.cc
+  src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
+  src/core/util/ref_counted_string.cc
   src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
+  src/core/util/uri.cc
+  src/core/util/work_serializer.cc
   test/core/util/chunked_vector_test.cc
 )
 if(WIN32 AND MSVC)
@@ -11221,11 +11291,14 @@ target_link_libraries(chunked_vector_test
   gtest
   upb_textformat_lib
   absl::config
+  absl::btree
   absl::flat_hash_map
+  absl::inlined_vector
   absl::function_ref
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::string_view
   absl::span
   gpr
 )
@@ -16632,6 +16705,9 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(flow_control_test
+  src/core/channelz/channel_trace.cc
+  src/core/channelz/channelz.cc
+  src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/ext/transport/chttp2/transport/flow_control.cc
   src/core/ext/transport/chttp2/transport/frame.cc
@@ -16651,6 +16727,9 @@ add_executable(flow_control_test
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  src/core/lib/address_utils/parse_address.cc
+  src/core/lib/address_utils/sockaddr_utils.cc
+  src/core/lib/channel/channel_args.cc
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
@@ -16660,6 +16739,8 @@ add_executable(flow_control_test
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/iomgr_internal.cc
+  src/core/lib/iomgr/sockaddr_utils_posix.cc
+  src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
@@ -16669,15 +16750,28 @@ add_executable(flow_control_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/lib/surface/channel_stack_type.cc
   src/core/lib/transport/bdp_estimator.cc
+  src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/telemetry/histogram_view.cc
+  src/core/telemetry/stats.cc
+  src/core/telemetry/stats_data.cc
   src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
+  src/core/util/grpc_if_nametoindex_posix.cc
+  src/core/util/grpc_if_nametoindex_unsupported.cc
+  src/core/util/json/json_reader.cc
+  src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
+  src/core/util/ref_counted_string.cc
   src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
+  src/core/util/uri.cc
+  src/core/util/work_serializer.cc
   test/core/transport/chttp2/flow_control_test.cc
 )
 if(WIN32 AND MSVC)
@@ -16713,11 +16807,14 @@ target_link_libraries(flow_control_test
   gtest
   upb_textformat_lib
   absl::config
+  absl::btree
   absl::flat_hash_map
+  absl::inlined_vector
   absl::function_ref
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::string_view
   absl::span
   gpr
 )
@@ -16727,6 +16824,9 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(for_each_test
+  src/core/channelz/channel_trace.cc
+  src/core/channelz/channelz.cc
+  src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
@@ -16742,6 +16842,9 @@ add_executable(for_each_test
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  src/core/lib/address_utils/parse_address.cc
+  src/core/lib/address_utils/sockaddr_utils.cc
+  src/core/lib/channel/channel_args.cc
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
@@ -16751,6 +16854,8 @@ add_executable(for_each_test
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/iomgr_internal.cc
+  src/core/lib/iomgr/sockaddr_utils_posix.cc
+  src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -16760,14 +16865,27 @@ add_executable(for_each_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/lib/surface/channel_stack_type.cc
+  src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/telemetry/histogram_view.cc
+  src/core/telemetry/stats.cc
+  src/core/telemetry/stats_data.cc
   src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
+  src/core/util/grpc_if_nametoindex_posix.cc
+  src/core/util/grpc_if_nametoindex_unsupported.cc
+  src/core/util/json/json_reader.cc
+  src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
+  src/core/util/ref_counted_string.cc
   src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
+  src/core/util/uri.cc
+  src/core/util/work_serializer.cc
   test/core/promise/for_each_test.cc
 )
 if(WIN32 AND MSVC)
@@ -16803,11 +16921,14 @@ target_link_libraries(for_each_test
   gtest
   upb_textformat_lib
   absl::config
+  absl::btree
   absl::flat_hash_map
+  absl::inlined_vector
   absl::function_ref
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::string_view
   absl::span
   gpr
 )
@@ -20760,6 +20881,9 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(interceptor_list_test
+  src/core/channelz/channel_trace.cc
+  src/core/channelz/channelz.cc
+  src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
@@ -20775,6 +20899,9 @@ add_executable(interceptor_list_test
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  src/core/lib/address_utils/parse_address.cc
+  src/core/lib/address_utils/sockaddr_utils.cc
+  src/core/lib/channel/channel_args.cc
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
@@ -20784,6 +20911,8 @@ add_executable(interceptor_list_test
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/iomgr_internal.cc
+  src/core/lib/iomgr/sockaddr_utils_posix.cc
+  src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -20793,14 +20922,27 @@ add_executable(interceptor_list_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/lib/surface/channel_stack_type.cc
+  src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/telemetry/histogram_view.cc
+  src/core/telemetry/stats.cc
+  src/core/telemetry/stats_data.cc
   src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
+  src/core/util/grpc_if_nametoindex_posix.cc
+  src/core/util/grpc_if_nametoindex_unsupported.cc
+  src/core/util/json/json_reader.cc
+  src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
+  src/core/util/ref_counted_string.cc
   src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
+  src/core/util/uri.cc
+  src/core/util/work_serializer.cc
   test/core/promise/interceptor_list_test.cc
 )
 if(WIN32 AND MSVC)
@@ -20836,11 +20978,14 @@ target_link_libraries(interceptor_list_test
   gtest
   upb_textformat_lib
   absl::config
+  absl::btree
   absl::flat_hash_map
+  absl::inlined_vector
   absl::function_ref
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::string_view
   absl::span
   gpr
 )
@@ -22119,6 +22264,9 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(map_pipe_test
+  src/core/channelz/channel_trace.cc
+  src/core/channelz/channelz.cc
+  src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
@@ -22134,6 +22282,9 @@ add_executable(map_pipe_test
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  src/core/lib/address_utils/parse_address.cc
+  src/core/lib/address_utils/sockaddr_utils.cc
+  src/core/lib/channel/channel_args.cc
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
@@ -22143,6 +22294,8 @@ add_executable(map_pipe_test
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/iomgr_internal.cc
+  src/core/lib/iomgr/sockaddr_utils_posix.cc
+  src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -22152,14 +22305,27 @@ add_executable(map_pipe_test
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/lib/surface/channel_stack_type.cc
+  src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/telemetry/histogram_view.cc
+  src/core/telemetry/stats.cc
+  src/core/telemetry/stats_data.cc
   src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
+  src/core/util/grpc_if_nametoindex_posix.cc
+  src/core/util/grpc_if_nametoindex_unsupported.cc
+  src/core/util/json/json_reader.cc
+  src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
+  src/core/util/ref_counted_string.cc
   src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
+  src/core/util/uri.cc
+  src/core/util/work_serializer.cc
   test/core/promise/map_pipe_test.cc
 )
 if(WIN32 AND MSVC)
@@ -22195,11 +22361,14 @@ target_link_libraries(map_pipe_test
   gtest
   upb_textformat_lib
   absl::config
+  absl::btree
   absl::flat_hash_map
+  absl::inlined_vector
   absl::function_ref
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::string_view
   absl::span
   gpr
 )
@@ -22553,6 +22722,9 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(message_assembler_test
   src/core/call/message.cc
+  src/core/channelz/channel_trace.cc
+  src/core/channelz/channelz.cc
+  src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
   src/core/ext/transport/chttp2/transport/frame.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
@@ -22570,6 +22742,9 @@ add_executable(message_assembler_test
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  src/core/lib/address_utils/parse_address.cc
+  src/core/lib/address_utils/sockaddr_utils.cc
+  src/core/lib/channel/channel_args.cc
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
@@ -22579,6 +22754,8 @@ add_executable(message_assembler_test
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/iomgr_internal.cc
+  src/core/lib/iomgr/sockaddr_utils_posix.cc
+  src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -22589,14 +22766,27 @@ add_executable(message_assembler_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/lib/surface/channel_stack_type.cc
+  src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/status_conversion.cc
+  src/core/telemetry/histogram_view.cc
+  src/core/telemetry/stats.cc
+  src/core/telemetry/stats_data.cc
   src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
+  src/core/util/grpc_if_nametoindex_posix.cc
+  src/core/util/grpc_if_nametoindex_unsupported.cc
+  src/core/util/json/json_reader.cc
+  src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
+  src/core/util/ref_counted_string.cc
   src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
+  src/core/util/uri.cc
+  src/core/util/work_serializer.cc
   test/core/transport/chttp2/message_assembler_test.cc
 )
 if(WIN32 AND MSVC)
@@ -22632,11 +22822,14 @@ target_link_libraries(message_assembler_test
   gtest
   upb_textformat_lib
   absl::config
+  absl::btree
   absl::flat_hash_map
+  absl::inlined_vector
   absl::function_ref
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::string_view
   absl::span
   gpr
 )

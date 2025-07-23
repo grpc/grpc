@@ -132,7 +132,8 @@ class FlowControlFuzzer {
     return &it->second;
   }
 
-  MemoryQuotaRefPtr memory_quota_ = MakeMemoryQuota("fuzzer");
+  MemoryQuotaRefPtr memory_quota_ =
+      MakeMemoryQuota(MakeRefCounted<channelz::ResourceQuotaNode>("fuzzer"));
   MemoryOwner memory_owner_ = memory_quota_->CreateMemoryOwner();
   std::unique_ptr<TransportFlowControl> tfc_;
   std::optional<uint32_t> queued_initial_window_size_;
