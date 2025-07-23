@@ -277,8 +277,9 @@ absl::StatusOr<std::string> ConvertServer(const std::string& serialized_entity,
       fetcher.GetEntitiesWithParent(grpc_channelz_v2_Entity_id(entity));
   if (children.ok()) {
     for (const auto& child_str : *children) {
+      upb::Arena child_arena;
       const auto* child_entity = grpc_channelz_v2_Entity_parse(
-          child_str.data(), child_str.size(), arena.ptr());
+          child_str.data(), child_str.size(), child_arena.ptr());
       if (child_entity == nullptr) continue;
       upb_StringView kind = grpc_channelz_v2_Entity_kind(child_entity);
       if (absl::string_view(kind.data, kind.size) != "listen_socket") {
@@ -287,8 +288,8 @@ absl::StatusOr<std::string> ConvertServer(const std::string& serialized_entity,
       auto* added = grpc_channelz_v1_Server_add_listen_socket(v1, arena.ptr());
       grpc_channelz_v1_SocketRef_set_socket_id(
           added, grpc_channelz_v2_Entity_id(child_entity));
-      if (auto v1_compat =
-              GetPropertyList(child_entity, "v1_compatibility", arena.ptr());
+      if (auto v1_compat = GetPropertyList(child_entity, "v1_compatibility",
+                                           child_arena.ptr());
           v1_compat != nullptr) {
         if (auto name = StringFromPropertyList(v1_compat, "name");
             name.has_value()) {
@@ -542,8 +543,9 @@ absl::StatusOr<std::string> ConvertChannel(const std::string& serialized_entity,
       fetcher.GetEntitiesWithParent(grpc_channelz_v2_Entity_id(entity));
   if (children.ok()) {
     for (const auto& child_str : *children) {
+      upb::Arena child_arena;
       const auto* child = grpc_channelz_v2_Entity_parse(
-          child_str.data(), child_str.size(), arena.ptr());
+          child_str.data(), child_str.size(), child_arena.ptr());
       if (child == nullptr) continue;
       upb_StringView child_kind = grpc_channelz_v2_Entity_kind(child);
       if (absl::string_view(child_kind.data, child_kind.size) == "channel") {
@@ -596,8 +598,9 @@ absl::StatusOr<std::string> ConvertSubchannel(
       fetcher.GetEntitiesWithParent(grpc_channelz_v2_Entity_id(entity));
   if (children.ok()) {
     for (const auto& child_str : *children) {
+      upb::Arena child_arena;
       const auto* child = grpc_channelz_v2_Entity_parse(
-          child_str.data(), child_str.size(), arena.ptr());
+          child_str.data(), child_str.size(), child_arena.ptr());
       if (child == nullptr) continue;
       upb_StringView child_kind = grpc_channelz_v2_Entity_kind(child);
       if (absl::string_view(child_kind.data, child_kind.size) == "channel") {
@@ -618,7 +621,7 @@ absl::StatusOr<std::string> ConvertSubchannel(
         grpc_channelz_v1_SocketRef_set_socket_id(
             child_ref, grpc_channelz_v2_Entity_id(child));
         if (auto v1_compat =
-                GetPropertyList(child, "v1_compatibility", arena.ptr());
+                GetPropertyList(child, "v1_compatibility", child_arena.ptr());
             v1_compat != nullptr) {
           if (auto name = StringFromPropertyList(v1_compat, "name");
               name.has_value()) {

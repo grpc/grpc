@@ -117,7 +117,7 @@ class LegacyConnectedSubchannel : public ConnectedSubchannel {
     channel_stack_.reset(DEBUG_LOCATION, "ConnectedSubchannel");
   }
 
-  channelz::SubchannelNode* channelz_node() const override {
+  channelz::SubchannelNode* channelz_node() const {
     return channelz_node_.get();
   }
 
@@ -219,8 +219,6 @@ class NewConnectedSubchannel : public ConnectedSubchannel {
   void Ping(grpc_closure*, grpc_closure*) override {
     Crash("legacy ping method called in call v3 impl");
   }
-
-  channelz::SubchannelNode* channelz_node() const override { return nullptr; }
 
  private:
   RefCountedPtr<UnstartedCallDestination> call_destination_;
@@ -412,21 +410,17 @@ class Subchannel::ConnectedSubchannelStateWatcher final
       // we will see TRANSIENT_FAILURE followed by SHUTDOWN, but if not, we
       // will see only SHUTDOWN.  Either way, we react to the first one we
       // see, ignoring anything that happens after that.
+      if (c->connected_subchannel_ == nullptr) return;
       if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
           new_state == GRPC_CHANNEL_SHUTDOWN) {
-        RefCountedPtr<ConnectedSubchannel> connected_subchannel =
-            std::move(c->connected_subchannel_);
-        if (connected_subchannel == nullptr) return;
         GRPC_TRACE_LOG(subchannel, INFO)
             << "subchannel " << c << " " << c->key_.ToString()
-            << ": Connected subchannel " << connected_subchannel.get()
+            << ": Connected subchannel " << c->connected_subchannel_.get()
             << " reports " << ConnectivityStateName(new_state) << ": "
             << status;
+        c->connected_subchannel_.reset();
         if (c->channelz_node() != nullptr) {
-          if (connected_subchannel->channelz_node() != nullptr) {
-            connected_subchannel->channelz_node()->RemoveParent(
-                c->channelz_node());
-          }
+          c->channelz_node()->SetChildSocket(nullptr);
         }
         // If the subchannel was created from an endpoint, then we report
         // TRANSIENT_FAILURE here instead of IDLE. The subchannel will never
@@ -886,9 +880,7 @@ bool Subchannel::PublishTransportLocked() {
       << "subchannel " << this << " " << key_.ToString()
       << ": new connected subchannel at " << connected_subchannel_.get();
   if (channelz_node_ != nullptr) {
-    if (socket_node != nullptr) {
-      socket_node->AddParent(channelz_node_.get());
-    }
+    channelz_node_->SetChildSocket(std::move(socket_node));
   }
   // Start watching connected subchannel.
   connected_subchannel_->StartWatch(

@@ -75,7 +75,6 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//src/core:channel_args",
-        "//src/core:channelz_v2tov1_legacy_api",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:channel_trace_proto_helper",
@@ -128,9 +127,6 @@ grpc_fuzz_test(
         "fuzztest",
         "fuzztest_main",
     ],
-    tags = [
-        "channelz_test",
-    ],
     deps = [
         "//:channelz",
     ],
@@ -143,9 +139,6 @@ grpc_fuzz_test(
         "absl/log:check",
         "fuzztest",
         "fuzztest_main",
-    ],
-    tags = [
-        "channelz_test",
     ],
     deps = [
         "//:channelz",

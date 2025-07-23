@@ -54,8 +54,8 @@ grpc_fuzz_test(
         "absl/log:check",
     ],
     deps = [
-        "//:channelz_upb",
-        "//:channelz_upbdefs",
+        "//:channelz_v1_upb",
+        "//:channelz_v1_upbdefs",
         "//:grpc",
         "//src/core:channelz_v2tov1_convert",
         "//src/core:json_reader",
