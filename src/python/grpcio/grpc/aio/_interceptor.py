@@ -53,6 +53,8 @@ from ._typing import SerializingFunction
 from ._utils import _timeout_to_deadline
 
 _LOCAL_CANCELLATION_DETAILS = "Locally cancelled by application!"
+
+
 class ServerInterceptor(metaclass=ABCMeta):
     """Affords intercepting incoming RPCs on the service-side.
 
