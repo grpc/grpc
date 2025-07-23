@@ -36,7 +36,7 @@ class Center : public RefCounted<Center<T>> {
  public:
   struct EnqueueResult {
     absl::Status status;
-    bool is_first_enqueue;
+    bool became_non_empty;
   };
 
   explicit Center(const uint32_t max_tokens) : max_tokens_(max_tokens) {}
@@ -62,7 +62,7 @@ class Center : public RefCounted<Center<T>> {
           << "Enqueue successful. Data tokens: " << tokens
           << " Current tokens consumed: " << tokens_consumed_;
       return EnqueueResult{absl::OkStatus(),
-                           /*is_first_enqueue=*/queue_.size() == 1};
+                           /*became_non_empty=*/queue_.size() == 1};
     }
 
     GRPC_STREAM_DATA_QUEUE_DEBUG
@@ -196,15 +196,17 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   //////////////////////////////////////////////////////////////////////////////
   // Enqueue Helpers
   // These enqueue helpers are based on following assumptions:
-  // 1. The initial metadata is optional.
-  // 2. If there is a message(s) enqueued, initial metadata is expected to be
-  //    enqueued before the first message.
-  // 3. The trailing metadata is the final thing that is queued.
-  // 4. The ordering of initial metadata, messages and trailing metadata is
+  // 1. The ordering of initial metadata, messages and trailing metadata is
   //    taken care by the Callv-3 stack.
-  // 5. Once a metadata/message is enqueued with end_stream set, no more
-  //    metadata/messages can be enqueued.
-  // 6. Currently initial metadata is not expected to be enqueued with
+  // 2. Initial metadata MUST be enqueued before the first message.
+  // 3. Initial metadata and trailing metadata are both optional. A server can
+  //    skip initial metadata and a client will never send trailing metadata.
+  // 4. A server will never send half close.
+  // 5. The trailing metadata/HalfClose/ResetStream MUST be the final thing that
+  //    is queued.
+  // 6. Initial Metadata and Trailing Metadata MUST be queued at most once per
+  //    stream.
+  // 7. Currently initial metadata is not expected to be enqueued with
   //    end_stream set. If the stream needs to be half closed, the client should
   //    enqueue a half close message.
 
@@ -219,14 +221,14 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     DCHECK(!is_end_stream_);
 
     is_initial_metadata_queued_ = true;
-    GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueueing initial metadata for stream "
-                                 << stream_id_;
     return [self = this->Ref(),
             entry = QueueEntry{InitialMetadataType{
                 std::move(metadata)}}]() mutable -> Poll<absl::Status> {
       MutexLock lock(&self->mu_);
       auto result = self->queue_.Enqueue(entry, /*tokens=*/0);
       if (result.ready()) {
+        GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueued initial metadata for stream "
+                                     << self->stream_id_;
         // TODO(akshitpatel) : [PH2][P2] : Add the logic to set the is_writable
         // flag.
         return result.value().status;
@@ -245,14 +247,14 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
 
     is_trailing_metadata_queued_ = true;
     is_end_stream_ = true;
-    GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueueing trailing metadata for stream "
-                                 << stream_id_;
     return [self = this->Ref(),
             entry = QueueEntry{TrailingMetadataType{
                 std::move(metadata)}}]() mutable -> Poll<absl::Status> {
       MutexLock lock(&self->mu_);
       auto result = self->queue_.Enqueue(entry, /*tokens=*/0);
       if (result.ready()) {
+        GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueued trailing metadata for stream "
+                                     << self->stream_id_;
         // TODO(akshitpatel) : [PH2][P2] : Add the logic to set the is_writable
         // flag.
         return result.value().status;
@@ -272,8 +274,6 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     DCHECK_LE(message->payload()->Length(),
               std::numeric_limits<uint32_t>::max() - kGrpcHeaderSizeInBytes);
 
-    GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueueing message for stream "
-                                 << stream_id_;
     const uint32_t tokens =
         message->payload()->Length() + kGrpcHeaderSizeInBytes;
     return [self = this->Ref(), entry = QueueEntry{std::move(message)},
@@ -281,6 +281,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
       MutexLock lock(&self->mu_);
       auto result = self->queue_.Enqueue(entry, tokens);
       if (result.ready()) {
+        GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueued message for stream "
+                                     << self->stream_id_;
         // TODO(akshitpatel) : [PH2][P2] : Add the logic to set the is_writable
         // flag.
         return result.value().status;
@@ -294,14 +296,14 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     DCHECK(is_client_);
     DCHECK(!is_end_stream_);
 
-    GRPC_STREAM_DATA_QUEUE_DEBUG << "Marking stream " << stream_id_
-                                 << " as half closed";
     is_end_stream_ = true;
     return [self = this->Ref(),
             entry = QueueEntry{HalfClosed{}}]() mutable -> Poll<absl::Status> {
       MutexLock lock(&self->mu_);
       auto result = self->queue_.Enqueue(entry, /*tokens=*/0);
       if (result.ready()) {
+        GRPC_STREAM_DATA_QUEUE_DEBUG << "Marked stream " << self->stream_id_
+                                     << " as half closed";
         // TODO(akshitpatel) : [PH2][P2] : Add the logic to set the is_writable
         // flag.
         return result.value().status;
@@ -314,8 +316,6 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     DCHECK(is_initial_metadata_queued_);
     DCHECK(!is_end_stream_);
 
-    GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueueing reset stream for stream "
-                                 << stream_id_;
     is_end_stream_ = true;
     return [self = this->Ref(),
             entry = QueueEntry{
@@ -323,6 +323,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
       MutexLock lock(&self->mu_);
       auto result = self->queue_.Enqueue(entry, /*tokens=*/0);
       if (result.ready()) {
+        GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueued reset stream for stream "
+                                     << self->stream_id_;
         // TODO(akshitpatel) : [PH2][P2] : Add the logic to set the is_writable
         // flag.
         return result.value().status;

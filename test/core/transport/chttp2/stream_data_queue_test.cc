@@ -499,18 +499,23 @@ TEST(StreamDataQueueTest, ClientEnqueueInitialMetadataTest) {
 
 TEST(StreamDataQueueTest, ClientEnqueueMultipleMessagesTest) {
   HPackCompressor encoder;
+  constexpr int num_messages = 10;
+  constexpr int message_size = 1;
+  constexpr int queued_size =
+      num_messages * (message_size + kGrpcHeaderSizeInBytes);
   RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> stream_data_queue =
       MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
           /*is_client=*/true,
           /*stream_id=*/1,
-          /*queue_size=*/60);
+          /*queue_size=*/queued_size);
   EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
                                         TestClientInitialMetadata());
 
   for (int count = 0; count < 10; ++count) {
     EnqueueMessageAndCheckSuccess(
         stream_data_queue,
-        TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(1)), 0));
+        TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(message_size)),
+                    0));
   }
 }
 
@@ -565,18 +570,23 @@ TEST(StreamDataQueueTest, ServerEnqueueInitialMetadataTest) {
 
 TEST(StreamDataQueueTest, ServerEnqueueMultipleMessagesTest) {
   HPackCompressor encoder;
+  constexpr int num_messages = 10;
+  constexpr int message_size = 1;
+  constexpr int queued_size =
+      num_messages * (message_size + kGrpcHeaderSizeInBytes);
   RefCountedPtr<StreamDataQueue<ServerMetadataHandle>> stream_data_queue =
       MakeRefCounted<StreamDataQueue<ServerMetadataHandle>>(
           /*is_client=*/false,
           /*stream_id=*/1,
-          /*queue_size=*/60);
+          /*queue_size=*/queued_size);
   EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
                                         TestServerInitialMetadata());
 
   for (int count = 0; count < 10; ++count) {
     EnqueueMessageAndCheckSuccess(
         stream_data_queue,
-        TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(1)), 0));
+        TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(message_size)),
+                    0));
   }
 }
 
