@@ -546,7 +546,7 @@ class _InterceptedStreamRequestMixin:
     async def _write_to_iterator_queue_interruptible(
         self,
         request: RequestType,
-        call: Union[InterceptedCall, _base_call.Call],
+        call: _base_call.Call,
     ):
         # Write the specified 'request' to the request iterator queue using the
         # specified 'call' to allow for interruption of the write in the case
