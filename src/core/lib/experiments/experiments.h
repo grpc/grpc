@@ -59,6 +59,8 @@ namespace grpc_core {
 #if defined(GRPC_CFSTREAM)
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
+inline bool IsChannelzUseV2ForV1ApiEnabled() { return false; }
+inline bool IsChannelzUseV2ForV1ServiceEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChttp2BoundWriteSizeEnabled() { return false; }
@@ -111,6 +113,8 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #elif defined(GPR_WINDOWS)
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
+inline bool IsChannelzUseV2ForV1ApiEnabled() { return false; }
+inline bool IsChannelzUseV2ForV1ServiceEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChttp2BoundWriteSizeEnabled() { return false; }
@@ -163,6 +167,8 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #else
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
+inline bool IsChannelzUseV2ForV1ApiEnabled() { return false; }
+inline bool IsChannelzUseV2ForV1ServiceEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChttp2BoundWriteSizeEnabled() { return false; }
@@ -216,6 +222,8 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #else
 enum ExperimentIds {
   kExperimentIdCallTracerInTransport,
+  kExperimentIdChannelzUseV2ForV1Api,
+  kExperimentIdChannelzUseV2ForV1Service,
   kExperimentIdChaoticGoodFramingLayer,
   kExperimentIdChttp2BoundWriteSize,
   kExperimentIdErrorFlatten,
@@ -257,6 +265,14 @@ enum ExperimentIds {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() {
   return IsExperimentEnabled<kExperimentIdCallTracerInTransport>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHANNELZ_USE_V2_FOR_V1_API
+inline bool IsChannelzUseV2ForV1ApiEnabled() {
+  return IsExperimentEnabled<kExperimentIdChannelzUseV2ForV1Api>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHANNELZ_USE_V2_FOR_V1_SERVICE
+inline bool IsChannelzUseV2ForV1ServiceEnabled() {
+  return IsExperimentEnabled<kExperimentIdChannelzUseV2ForV1Service>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() {

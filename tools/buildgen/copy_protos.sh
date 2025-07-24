@@ -34,7 +34,7 @@ copy_proto() {
   echo "Copied: $SRC_FILE -> $DST_FILE"
 }
 
-copy_proto "channelz" "channelz" "grpcio_channelz/grpc_channelz/v1"
+copy_proto "channelz" "channelz/v1" "grpcio_channelz/grpc_channelz/v1"
 copy_proto "health" "health/v1" "grpcio_health_checking/grpc_health/v1"
 copy_proto "reflection" "reflection/v1alpha" "grpcio_reflection/grpc_reflection/v1alpha"
 
