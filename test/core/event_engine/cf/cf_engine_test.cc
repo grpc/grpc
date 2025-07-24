@@ -141,7 +141,10 @@ TEST(CFEventEngineTest, TestResolveRemote) {
   dns_resolver.value()->LookupHostname(
       [&resolve_signal](auto result) {
         EXPECT_TRUE(result.status().ok());
-        EXPECT_THAT(ResolvedAddressesToStrings(result.value()),
+        auto resolved_addresses = ResolvedAddressesToStrings(result.value());
+        // TODO: same IP may be returned multiple times, deduplicate with a set
+        EXPECT_THAT(std::unordered_set<std::string>(resolved_addresses.begin(),
+                                                    resolved_addresses.end()),
                     testing::UnorderedElementsAre("127.0.0.1:80", "[::1]:80"));
 
         resolve_signal.Notify();
