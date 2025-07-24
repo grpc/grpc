@@ -14,7 +14,7 @@
 """Generates and compiles C++ grpc stubs from proto_library rules."""
 
 load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
-load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
 load("//bazel:generate_cc.bzl", "generate_cc")
 load("//bazel:protobuf.bzl", "well_known_proto_libs")
 
