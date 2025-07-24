@@ -22,7 +22,6 @@
 #include <winsock2.h>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -35,6 +34,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
 
 // TODO(apolcyn): remove this hack after fixing upstream.
@@ -446,8 +446,8 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
               GRPC_SLICE_LENGTH(write_buf_));
         ares_ssize_t total_sent = 0;
         for (size_t i = 0; i < GRPC_SLICE_LENGTH(write_buf_); i++) {
-          CHECK(GRPC_SLICE_START_PTR(currently_attempted)[i] ==
-                GRPC_SLICE_START_PTR(write_buf_)[i]);
+          GRPC_CHECK_EQ(GRPC_SLICE_START_PTR(currently_attempted)[i],
+                        GRPC_SLICE_START_PTR(write_buf_)[i]);
           total_sent++;
         }
         grpc_core::CSliceUnref(currently_attempted);
