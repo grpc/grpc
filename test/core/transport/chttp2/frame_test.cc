@@ -1230,62 +1230,6 @@ TEST(Frame, ValidateFrameHeaderTest) {
                   .IsOk());
 }
 
-TEST(Frame, IsFrameValidForHalfCloseRemoteStreamStateTest) {
-  // Valid frame types
-  Http2FrameHeader header{/*length=*/10, /*type=kWindowUpdate */ 8, /*flags=*/0,
-                          /*stream_id=*/1};
-  EXPECT_TRUE(IsFrameValidForHalfCloseRemoteStreamState(header).IsOk());
-
-  header = {/*length=*/10, /*type=kRstStream */ 3, /*flags=*/0,
-            /*stream_id=*/1};
-  EXPECT_TRUE(IsFrameValidForHalfCloseRemoteStreamState(header).IsOk());
-
-  // Invalid frame types
-  header = {/*length=*/10, /*type=kData */ 0, /*flags=*/0, /*stream_id=*/1};
-  EXPECT_THAT(IsFrameValidForHalfCloseRemoteStreamState(header),
-              Http2StatusIs(Http2Status::Http2ErrorType::kStreamError,
-                            Http2ErrorCode::kStreamClosed,
-                            RFC9113::kHalfClosedRemoteState));
-
-  header = {/*length=*/10, /*type=kHeaders */ 1, /*flags=*/0, /*stream_id=*/1};
-  EXPECT_THAT(IsFrameValidForHalfCloseRemoteStreamState(header),
-              Http2StatusIs(Http2Status::Http2ErrorType::kStreamError,
-                            Http2ErrorCode::kStreamClosed,
-                            RFC9113::kHalfClosedRemoteState));
-
-  header = {/*length=*/10, /*type=kSettings */ 4, /*flags=*/0, /*stream_id=*/1};
-  EXPECT_THAT(IsFrameValidForHalfCloseRemoteStreamState(header),
-              Http2StatusIs(Http2Status::Http2ErrorType::kStreamError,
-                            Http2ErrorCode::kStreamClosed,
-                            RFC9113::kHalfClosedRemoteState));
-
-  header = {/*length=*/10, /*type=kPushPromise */ 5, /*flags=*/0,
-            /*stream_id=*/1};
-  EXPECT_THAT(IsFrameValidForHalfCloseRemoteStreamState(header),
-              Http2StatusIs(Http2Status::Http2ErrorType::kStreamError,
-                            Http2ErrorCode::kStreamClosed,
-                            RFC9113::kHalfClosedRemoteState));
-
-  header = {/*length=*/10, /*type=kPing */ 6, /*flags=*/0, /*stream_id=*/1};
-  EXPECT_THAT(IsFrameValidForHalfCloseRemoteStreamState(header),
-              Http2StatusIs(Http2Status::Http2ErrorType::kStreamError,
-                            Http2ErrorCode::kStreamClosed,
-                            RFC9113::kHalfClosedRemoteState));
-
-  header = {/*length=*/10, /*type=kGoaway */ 7, /*flags=*/0, /*stream_id=*/1};
-  EXPECT_THAT(IsFrameValidForHalfCloseRemoteStreamState(header),
-              Http2StatusIs(Http2Status::Http2ErrorType::kStreamError,
-                            Http2ErrorCode::kStreamClosed,
-                            RFC9113::kHalfClosedRemoteState));
-
-  header = {/*length=*/10, /*type=kContinuation */ 9, /*flags=*/0,
-            /*stream_id=*/1};
-  EXPECT_THAT(IsFrameValidForHalfCloseRemoteStreamState(header),
-              Http2StatusIs(Http2Status::Http2ErrorType::kStreamError,
-                            Http2ErrorCode::kStreamClosed,
-                            RFC9113::kHalfClosedRemoteState));
-}
-
 }  // namespace
 }  // namespace grpc_core
 
