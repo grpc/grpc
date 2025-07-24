@@ -192,6 +192,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
       return absl::CancelledError("secure endpoint shutdown");
     }
 
+    GRPC_TRACE_LOG(secure_endpoint, INFO) << "Starting unprotect for " << this;
     bool keep_looping = false;
     tsi_result result = TSI_OK;
 
@@ -323,6 +324,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
     if (shutdown_) return TSI_FAILED_PRECONDITION;
 
     GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("protect");
+    GRPC_TRACE_LOG(secure_endpoint, INFO) << "Starting protect for " << this;
     uint8_t* cur = GRPC_SLICE_START_PTR(write_staging_buffer_);
     uint8_t* end = GRPC_SLICE_END_PTR(write_staging_buffer_);
 
@@ -417,6 +419,10 @@ class FrameProtector : public RefCounted<FrameProtector> {
     }
     // TODO(yangg) do different things according to the error type?
     if (result != TSI_OK) output_buffer_.Clear();
+
+    GRPC_TRACE_LOG(secure_endpoint, INFO)
+        << "Protect: " << this << " result: " << result;
+
     return result;
   }
 
@@ -888,6 +894,8 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       grpc_core::MutexLock read_lock(frame_protector_.read_mu());
       wrapped_ep = std::move(wrapped_ep_);
       frame_protector_.Shutdown();
+      GRPC_TRACE_LOG(secure_endpoint, INFO)
+          << "Shutdown for secure endpoint: " << this;
     }
 
     std::shared_ptr<TelemetryInfo> GetTelemetryInfo() const {
