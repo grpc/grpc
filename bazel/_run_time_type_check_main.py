@@ -26,7 +26,6 @@ from typeguard import install_import_hook
 # install_import_hook('grpc.aio._channel')
 install_import_hook('grpc.aio._server')
 install_import_hook('grpc.aio._utils')
-<<<<<<< HEAD
 install_import_hook('grpc.aio._interceptor')
 install_import_hook('grpc.aio._server')
 install_import_hook('grpc.aio._utils')
@@ -34,12 +33,10 @@ install_import_hook('grpc.aio._interceptor')
 install_import_hook('grpc.aio._base_channel')
 install_import_hook('grpc.aio._base_server')
 install_import_hook('grpc.aio._typing')
-=======
 # install_import_hook('grpc.aio._interceptor')
 # install_import_hook('grpc.aio._base_channel')
 # install_import_hook('grpc.aio._base_server')
 # install_import_hook('grpc.aio._typing')
->>>>>>> ebbe0a92a2 (uncomment only _call:)
 install_import_hook('grpc.aio._call')
 # install_import_hook('grpc.aio._metadata')
 
