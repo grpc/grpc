@@ -685,27 +685,27 @@ PosixEventEngine::GetDNSResolver(
     GRPC_UNUSED const EventEngine::DNSResolver::ResolverOptions& options) {
   // If c-ares is supported on the platform, build according to user's
   // configuration.
-  if (ShouldUseAresDnsResolver()) {
-#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  if (!ShouldUseAresDnsResolver()) {
     GRPC_TRACE_LOG(event_engine_dns, INFO)
-        << "PosixEventEngine::" << this << " creating AresResolver";
-    auto ares_resolver = AresResolver::CreateAresResolver(
-        options.dns_server,
-        std::make_unique<GrpcPolledFdFactoryPosix>(poller_manager_.Poller()),
-        shared_from_this());
-    if (!ares_resolver.ok()) {
-      return ares_resolver.status();
-    }
-    RegisterAresResolverForFork(ares_resolver->get());
-    return std::make_unique<PosixEventEngine::PosixDNSResolver>(
-        std::move(*ares_resolver));
-#else   // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-    grpc_core::Crash("Can not create CAres resolver with disabled poller");
-#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+        << "PosixEventEngine::" << this << " creating NativePosixDNSResolver";
+    return std::make_unique<NativePosixDNSResolver>(shared_from_this());
   }
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   GRPC_TRACE_LOG(event_engine_dns, INFO)
-      << "PosixEventEngine::" << this << " creating NativePosixDNSResolver";
-  return std::make_unique<NativePosixDNSResolver>(shared_from_this());
+      << "PosixEventEngine::" << this << " creating AresResolver";
+  auto ares_resolver = AresResolver::CreateAresResolver(
+      options.dns_server,
+      std::make_unique<GrpcPolledFdFactoryPosix>(poller_manager_.Poller()),
+      shared_from_this());
+  if (!ares_resolver.ok()) {
+    return ares_resolver.status();
+  }
+  RegisterAresResolverForFork(ares_resolver->get());
+  return std::make_unique<PosixEventEngine::PosixDNSResolver>(
+      std::move(*ares_resolver));
+#else   // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  grpc_core::Crash("Can not create CAres resolver with disabled poller");
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 }
 
 #else  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
