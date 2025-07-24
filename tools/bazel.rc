@@ -46,9 +46,10 @@ build --features=external_include_paths
 build --per_file_copt=external/.*@-w
 build --host_per_file_copt=external/.*@-w
 build --verbose_failures
-build --copt='-Wno-error=c++20-extensions'
-build --host_copt='-Wno-error=c++20-extensions'
+# build --copt='-Wno-error=c++20-extensions'
+# build --host_copt='-Wno-error=c++20-extensions'
 build --copt='--system-header-prefix=.'
+build --host_copt='--system-header-prefix=.'
 
 
 build:opt --compilation_mode=opt
