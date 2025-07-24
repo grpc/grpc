@@ -173,29 +173,42 @@ async def generator_to_async_generator(object gen, object loop, object thread_po
     await future
 
 
-if PY_MAJOR_VERSION >= 3 and PY_MINOR_VERSION >= 7:
-    def get_working_loop():
-        """Returns a running event loop.
-
-        Due to a defect of asyncio.get_event_loop, its returned event loop might
-        not be set as the default event loop for the main thread.
-        """
-        try:
-            return asyncio.get_running_loop()
-        except RuntimeError:
-            with warnings.catch_warnings():
-                # Convert DeprecationWarning to errors so we can capture them with except
-                warnings.simplefilter("error", DeprecationWarning)
-                try:
-                    return asyncio.get_event_loop_policy().get_event_loop()
-                # Since version 3.12, DeprecationWarning is emitted if there is no
-                # current event loop.
-                except DeprecationWarning:
-                    return asyncio.get_event_loop_policy().new_event_loop()
+if PY_MINOR_VERSION < 12:
+    def _get_or_create_default_loop():
+        return asyncio.get_event_loop_policy().get_event_loop()
 else:
-    def get_working_loop():
-        """Returns a running event loop."""
-        return asyncio.get_event_loop()
+    def _get_or_create_default_loop():
+        import threading
+        warnings.warn(
+            (
+                'There is no current event loop running in thread'
+                f' {threading.current_thread().name}.'
+                ' gRPC will create one for you, but this behavior may change'
+                ' in future versions.'
+                ' Use asyncio.run() or asyncio.Runner with loop_factory'
+                ' of desired loop implementation.'
+                ' If you see this in Python REPL, use the dedicated asyncio'
+                ' REPL by running python -m asyncio.'
+            ),
+            DeprecationWarning,
+            stacklevel=1,
+        )
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        return loop
+
+
+def get_working_loop():
+    """Returns a running event loop.
+
+    Due to a defect of asyncio.get_event_loop, its returned event loop might
+    not be set as the default event loop for the main thread.
+    """
+    try:
+        return asyncio.get_running_loop()
+    except RuntimeError:
+        return _get_or_create_default_loop()
+
 
 
 def raise_if_not_valid_trailing_metadata(object metadata):
