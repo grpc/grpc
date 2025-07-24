@@ -78,10 +78,9 @@ class _Handler(Handler):
                         request = self._requests.pop(0)
                         self._condition.notify_all()
                         return _common.ServerRpcRead(request, False, False)
-                    elif self._requests_closed:
+                    if self._requests_closed:
                         return _common.REQUESTS_CLOSED
-                    else:
-                        self._condition.wait()
+                    self._condition.wait()
                 else:
                     return _common.TERMINATED
 
@@ -108,8 +107,7 @@ class _Handler(Handler):
             if self._code is None:
                 self._termination_callbacks.append(callback)
                 return True
-            else:
-                return False
+            return False
 
     def initial_metadata(self):
         with self._condition:
@@ -136,7 +134,7 @@ class _Handler(Handler):
                     response = self._responses.pop(0)
                     self._condition.notify_all()
                     return response
-                elif self._code is None:
+                if self._code is None:
                     self._condition.wait()
                 else:
                     raise ValueError("No more responses!")
