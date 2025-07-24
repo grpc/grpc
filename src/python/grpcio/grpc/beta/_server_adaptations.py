@@ -135,7 +135,7 @@ class _Callback(stream.Consumer):
             while True:
                 if self._cancelled:
                     raise abandonment.Abandoned()
-                elif self._values:
+                if self._values:
                     return self._values.pop(0)
                 elif self._terminated:
                     return None
@@ -147,7 +147,7 @@ class _Callback(stream.Consumer):
             while True:
                 if self._cancelled:
                     raise abandonment.Abandoned()
-                elif self._terminated:
+                if self._terminated:
                     all_values = tuple(self._values)
                     self._values = None
                     return all_values
