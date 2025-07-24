@@ -14,6 +14,7 @@
 
 load(
     "//bazel:grpc_build_system.bzl",
+    "grpc_cc_grpc_library",
     "grpc_cc_proto_library",
     "grpc_internal_proto_library",
     "grpc_package",
@@ -44,6 +45,26 @@ grpc_internal_proto_library(
         "@com_google_protobuf//:empty_proto",
         "@com_google_protobuf//:timestamp_proto",
     ],
+)
+
+# TODO(roth): Migrate this to use separate
+# grpc_internal_proto_library/grpc_cc_proto_library/grpc_cc_grpc_library
+# rules when internal build system limitations are resolved.
+grpc_internal_proto_library(
+    name = "latent_see_proto",
+    srcs = ["latent_see.proto"],
+    has_services = True,
+)
+
+grpc_cc_proto_library(
+    name = "latent_see_cc_proto",
+    deps = [":latent_see_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "latent_see_cc_grpc",
+    srcs = [":latent_see_proto"],
+    deps = [":latent_see_cc_proto"],
 )
 
 grpc_internal_proto_library(
@@ -77,4 +98,12 @@ grpc_internal_proto_library(
 grpc_cc_proto_library(
     name = "service_cc_proto",
     deps = [":service_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "service_cc_grpc",
+    srcs = [":service_proto"],
+    deps = [
+        ":service_cc_proto",
+    ],
 )

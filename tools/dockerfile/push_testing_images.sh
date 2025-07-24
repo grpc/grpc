@@ -70,7 +70,12 @@ ALL_DOCKERFILE_DIRS=(
 # These Docker directories contain obsolete images that cannot be built.
 # They are excluded from build processes, but the Dockerfiles are retained for archival purposes.
 EXCLUDE_DIRS=(
+  tools/dockerfile/distribtest/csharp_dotnet31_x64
+  tools/dockerfile/distribtest/csharp_dotnet5_x64
   tools/dockerfile/interoptest/grpc_interop_go1.8
+  tools/dockerfile/interoptest/grpc_interop_go1.11
+  tools/dockerfile/test/cxx_gcc_7_x64
+  tools/dockerfile/test/cxx_gcc_8_x64
 )
 
 # a list of docker directories that are based on ARM64 base images

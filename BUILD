@@ -18,6 +18,7 @@ load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load(
     "//bazel:grpc_build_system.bzl",
+    "grpc_add_well_known_proto_upb_targets",
     "grpc_cc_library",
     "grpc_clang_cl_settings",
     "grpc_filegroup",
@@ -215,11 +216,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gee"  # @unused
+g_stands_for = "gemini"  # @unused
 
-core_version = "48.0.0"  # @unused
+core_version = "49.0.0"  # @unused
 
-version = "1.74.0-dev"  # @unused
+version = "1.75.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -263,6 +264,7 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
     "include/grpc/compression.h",
+    "include/grpc/create_channel_from_endpoint.h",
     "include/grpc/fork.h",
     "include/grpc/grpc.h",
     "include/grpc/grpc_posix.h",
@@ -688,6 +690,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
+        "//src/core:channelz_v2tov1_legacy_api",
         "//src/core:client_channel_backup_poller",
         "//src/core:default_event_engine",
         "//src/core:endpoint_info_handshaker",
@@ -944,6 +947,13 @@ grpc_cc_library(
         "absl/log:absl_check",
         "absl/log:absl_log",
         "absl/strings:cord",
+        "absl/base:core_headers",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/synchronization:synchronization",
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/types:span",
     ],
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     select_deps = [
@@ -958,10 +968,19 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["//visibility:public"],
     deps = [
+        "generic_stub_internal",
         "global_callback_hook",
+        "gpr_public_hdrs",
         "grpc++_base",
+        "grpc++_config_proto",
+        "grpc_public_hdrs",
+        "ref_counted_ptr",
+        "transport_auth_context",
         "//src/core:gpr_atm",
         "//src/core:slice",
+        "@com_google_protobuf//:any_cc_proto",
+        "@com_google_protobuf//:protobuf",
+        "@com_google_protobuf//src/google/protobuf/io",
     ],
 )
 
@@ -1263,7 +1282,6 @@ grpc_cc_library(
         "absl/functional:function_ref",
         "@com_google_protobuf//upb/base",
         "@com_google_protobuf//upb/mem",
-        "@com_google_protobuf//upb/reflection",
     ],
     deps = [
         "channelz_upb",
@@ -1278,6 +1296,7 @@ grpc_cc_library(
         "sockaddr_utils",
         "uri",
         "//src/core:channel_args",
+        "//src/core:channelz_property_list",
         "//src/core:connectivity_state",
         "//src/core:dual_ref_counted",
         "//src/core:json",
@@ -1680,6 +1699,7 @@ grpc_cc_library(
         "ref_counted_ptr",
         "stats",
         "//src/core:arena",
+        "//src/core:blackboard",
         "//src/core:call_arena_allocator",
         "//src/core:channel_args",
         "//src/core:channel_args_endpoint_config",
@@ -1726,11 +1746,18 @@ grpc_cc_library(
         "grpc_security_base",
         "legacy_channel",
         "stats",
+        "//:grpc_resolver_fake",
         "//src/core:channel_args",
+        "//src/core:channel_args_endpoint_config",
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_stack_type",
         "//src/core:direct_channel",
+        "//src/core:endpoint_channel_arg_wrapper",
         "//src/core:endpoint_transport",
+        "//src/core:event_engine_common",
+        "//src/core:event_engine_extensions",
+        "//src/core:event_engine_query_extensions",
+        "//src/core:event_engine_tcp_socket_utils",
         "//src/core:experiments",
         "//src/core:stats_data",
     ],
@@ -1783,6 +1810,7 @@ grpc_cc_library(
         "transport_auth_context",
         "//src/core:activity",
         "//src/core:arena_promise",
+        "//src/core:blackboard",
         "//src/core:cancel_callback",
         "//src/core:channel_args",
         "//src/core:channel_args_preconditioning",
@@ -1801,6 +1829,7 @@ grpc_cc_library(
         "//src/core:iomgr_fwd",
         "//src/core:map",
         "//src/core:metadata_batch",
+        "//src/core:per_cpu",
         "//src/core:pipe",
         "//src/core:poll",
         "//src/core:pollset_set",
@@ -2167,6 +2196,7 @@ grpc_cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "config",
         "debug_location",
         "exec_ctx",
         "gpr",
@@ -2197,6 +2227,7 @@ grpc_cc_library(
         "//src/core:filter/auth/client_auth_filter.cc",
         "//src/core:filter/auth/server_auth_filter.cc",
         "//src/core:handshaker/security/legacy_secure_endpoint.cc",
+        "//src/core:handshaker/security/pipelined_secure_endpoint.cc",
         "//src/core:handshaker/security/secure_endpoint.cc",
         "//src/core:handshaker/security/security_handshaker.cc",
     ],
@@ -2261,6 +2292,7 @@ grpc_cc_library(
         "//src/core:handshaker_factory",
         "//src/core:handshaker_registry",
         "//src/core:iomgr_fwd",
+        "//src/core:latent_see",
         "//src/core:memory_quota",
         "//src/core:metadata_batch",
         "//src/core:poll",
@@ -2268,6 +2300,7 @@ grpc_cc_library(
         "//src/core:resource_quota",
         "//src/core:seq",
         "//src/core:slice",
+        "//src/core:slice_buffer",
         "//src/core:slice_refcount",
         "//src/core:stats_data",
         "//src/core:status_helper",
@@ -2702,8 +2735,9 @@ grpc_cc_library(
         "src/cpp/server/channelz/channelz_service.h",
     ],
     external_deps = [
-        "protobuf_headers",
         "absl/log",
+        "absl/strings",
+        "protobuf_headers",
     ],
     public_hdrs = [
         "include/grpcpp/ext/channelz_service_plugin.h",
@@ -2711,11 +2745,65 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["//bazel:channelz"],
     deps = [
+        "channelz",
         "gpr",
         "grpc",
         "grpc++",
         "grpc++_config_proto",
+        "//src/core:channelz_v2tov1_convert",
+        "//src/core:experiments",
         "//src/proto/grpc/channelz:channelz_proto",
+        "//src/proto/grpc/channelz/v2:service_cc_grpc",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
+    name = "grpcpp_latent_see_service",
+    srcs = [
+        "src/cpp/latent_see/latent_see_service.cc",
+    ],
+    hdrs = [
+        "src/cpp/latent_see/latent_see_service.h",
+    ],
+    external_deps = [
+        "protobuf_headers",
+        "absl/log",
+    ],
+    tags = ["nofixdeps"],
+    visibility = ["//bazel:latent_see"],
+    deps = [
+        "gpr",
+        "grpc",
+        "grpc++",
+        "grpc++_config_proto",
+        "//src/core:latent_see",
+        "//src/proto/grpc/channelz/v2:latent_see_cc_grpc",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
+    name = "grpcpp_latent_see_client",
+    srcs = [
+        "src/cpp/latent_see/latent_see_client.cc",
+    ],
+    hdrs = [
+        "src/cpp/latent_see/latent_see_client.h",
+    ],
+    external_deps = [
+        "protobuf_headers",
+        "absl/log",
+    ],
+    tags = ["nofixdeps"],
+    visibility = ["//bazel:latent_see"],
+    deps = [
+        "gpr",
+        "grpc",
+        "grpc++",
+        "grpc++_config_proto",
+        "//src/core:latent_see",
+        "//src/proto/grpc/channelz/v2:latent_see_cc_grpc",
     ],
     alwayslink = 1,
 )
@@ -3084,6 +3172,7 @@ grpc_cc_library(
         "debug_location",
         "gpr",
         "grpc_resolver",
+        "//src/core:auth_context_comparator_registry",
         "//src/core:call_creds_registry",
         "//src/core:certificate_provider_registry",
         "//src/core:channel_args_preconditioning",
@@ -4271,8 +4360,10 @@ grpc_cc_library(
         "//src/core:grpc_crl_provider",
         "//src/core:grpc_transport_chttp2_alpn",
         "//src/core:load_file",
+        "//src/core:match",
         "//src/core:ref_counted",
         "//src/core:slice",
+        "//src/core:spiffe_utils",
         "//src/core:ssl_key_logging",
         "//src/core:ssl_transport_security_utils",
         "//src/core:sync",
@@ -4382,7 +4473,6 @@ grpc_cc_library(
         "absl/cleanup",
         "absl/log:check",
         "absl/log:log",
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4397,7 +4487,6 @@ grpc_cc_library(
     visibility = ["//bazel:xds_client_core"],
     deps = [
         "backoff",
-        "call_tracer",
         "debug_location",
         "endpoint_addresses",
         "envoy_admin_upb",
@@ -4422,7 +4511,6 @@ grpc_cc_library(
         "ref_counted_ptr",
         "uri",
         "work_serializer",
-        "//src/core:default_event_engine",
         "//src/core:down_cast",
         "//src/core:dual_ref_counted",
         "//src/core:env",
@@ -4510,6 +4598,7 @@ grpc_cc_library(
     ],
     deps = [
         "gpr",
+        "//src/core:http2_settings",
         "//src/core:http2_status",
         "//src/core:slice",
         "//src/core:slice_buffer",
@@ -4782,6 +4871,7 @@ grpc_cc_library(
         "//src/core:experiments",
         "//src/core:gpr_manual_constructor",
         "//src/core:http2_settings",
+        "//src/core:http2_settings_manager",
         "//src/core:http2_stats_collector",
         "//src/core:http2_status",
         "//src/core:http2_ztrace_collector",
@@ -5128,6 +5218,11 @@ grpc_upb_proto_reflection_library(
 )
 
 grpc_upb_proto_library(
+    name = "xds_type_matcher_upb",
+    deps = ["@com_github_cncf_xds//xds/type/matcher/v3:pkg"],
+)
+
+grpc_upb_proto_library(
     name = "xds_orca_upb",
     deps = ["@com_github_cncf_xds//xds/data/orca/v3:pkg"],
 )
@@ -5212,6 +5307,16 @@ grpc_upb_proto_reflection_library(
     deps = ["//src/proto/grpc/channelz/v2:promise_proto"],
 )
 
+grpc_upb_proto_library(
+    name = "channelz_v1_upb",
+    deps = ["//src/proto/grpc/channelz:channelz_proto_internal"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "channelz_v1_upbdefs",
+    deps = ["//src/proto/grpc/channelz:channelz_proto_internal"],
+)
+
 WELL_KNOWN_PROTO_TARGETS = [
     "any",
     "duration",
@@ -5221,27 +5326,9 @@ WELL_KNOWN_PROTO_TARGETS = [
     "wrappers",
 ]
 
-[grpc_upb_proto_library(
-    name = "protobuf_" + target + "_upb",
-    deps = ["@com_google_protobuf//:" + target + "_proto"],
-) for target in WELL_KNOWN_PROTO_TARGETS]
-
-[grpc_upb_proto_reflection_library(
-    name = "protobuf_" + target + "_upbdefs",
-    deps = ["@com_google_protobuf//:" + target + "_proto"],
-) for target in WELL_KNOWN_PROTO_TARGETS]
+grpc_add_well_known_proto_upb_targets(targets = WELL_KNOWN_PROTO_TARGETS)
 
 grpc_generate_one_off_targets()
-
-grpc_upb_proto_library(
-    name = "hack_protobuf_descriptor_upb_proto",
-    deps = ["@com_google_protobuf//:descriptor_proto"],
-)
-
-grpc_upb_proto_reflection_library(
-    name = "hack_protobuf_descriptor_upbdefs",
-    deps = ["@com_google_protobuf//:descriptor_proto"],
-)
 
 filegroup(
     name = "root_certificates",

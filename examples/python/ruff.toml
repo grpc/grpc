@@ -1,0 +1,216 @@
+# See https://docs.astral.sh/ruff/configuration/
+# For a full list of supported rules, see https://docs.astral.sh/ruff/rules/
+# For a full list of options, see https://docs.astral.sh/ruff/settings/
+
+extend = "../../ruff.toml"
+
+exclude = [
+    "*_pb2.py",
+    "*_pb2_grpc.py"
+]
+
+[lint]
+ignore = [
+    "A001",    # Variable {name} is shadowing a Python builtin
+    "A002",    # Function argument {name} is shadowing a Python builtin
+    "ANN001",  # Missing type annotation for function argument {name}
+    "ANN002",  # Missing type annotation for *{name}
+    "ANN003",  # Missing type annotation for **{name}
+    "ANN201",  # Missing return type annotation for public function {name}
+    "ANN202",  # Missing return type annotation for private function {name}
+    "ANN204",  # Missing return type annotation for special method {name}
+    "ANN205",  # Missing return type annotation for staticmethod {name}
+    "ANN206",  # Missing return type annotation for classmethod {name}
+    "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed in {name}
+    "ARG001",  # Unused function argument: {name}
+    "ARG002",  # Unused method argument: {name}
+    "ARG004",  # Unused static method argument: {name}
+    "ARG005",  # Unused lambda argument: {name}
+    "B007",    # Loop control variable {name} not used within loop body
+    "B011",    # Do not assert False (python -O removes these calls), raise AssertionError()
+    "B018",    # Found useless expression. Either assign it to a variable or remove it.
+    "B024",    # {name} is an abstract base class, but it has no abstract methods or properties
+    "B027",    # {name} is an empty method in an abstract base class, but has no abstract decorator
+    "B028",    # No explicit stacklevel keyword argument found
+    "B904",    # Within an except* clause, raise exceptions with raise ... from err or raise ... from None to distinguish them from errors in exception handling
+    "BLE001",  # Do not catch blind exception: {name}
+    "C402",    # Unnecessary generator (rewrite as a dict comprehension)
+    "C405",    # Unnecessary {kind} literal (rewrite as a set literal)
+    "C408",    # Unnecessary {kind}() call (rewrite as a literal)
+    "C901",    # {name} is too complex ({complexity} > {max_complexity})
+    "COM812",  # Trailing comma missing
+    "D100",    # Missing docstring in public module
+    "D101",    # Missing docstring in public class
+    "D102",    # Missing docstring in public method
+    "D103",    # Missing docstring in public function
+    "D104",    # Missing docstring in public package
+    "D105",    # Missing docstring in magic method
+    "D106",    # Missing docstring in public nested class
+    "D107",    # Missing docstring in __init__
+    "D200",    # One-line docstring should fit on one line
+    "D202",    # No blank lines allowed after function docstring (found {num_lines})
+    "D205",    # 1 blank line required between summary line and description
+    "D207",    # Docstring is under-indented
+    "D209",    # Multi-line docstring closing quotes should be on a separate line
+    "D212",    # Multi-line docstring summary should start at the first line
+    "D213",    # Multi-line docstring summary should start at the second line
+    "D400",    # First line should end with a period
+    "D401",    # First line of docstring should be in imperative mood: "{first_line}"
+    "D403",    # First word of the docstring should be capitalized: {} -> {}
+    "D404",    # First word of the docstring should not be "This"
+    "D410",    # Missing blank line after section ("{name}")
+    "D411",    # Missing blank line before section ("{name}")
+    "D413",    # Missing blank line after last section ("{name}")
+    "D415",    # First line should end with a period, question mark, or exclamation point
+    "D417",    # Missing argument description in the docstring for {definition}: {name}
+    "DTZ001",  # datetime.datetime() called without a tzinfo argument
+    "DTZ005",  # datetime.datetime.now() called without a tz argument
+    "E402",    # Module level import not at top of cell
+    "E501",    # Line too long ({width} > {limit})
+    "E712",    # Avoid equality comparisons to True; use {cond}: for truth checks
+    "E713",    # Test for membership should be not in
+    "E722",    # Do not use bare except
+    "E731",    # Do not assign a lambda expression, use a def
+    "EM101",   # Exception must not use a string literal, assign to variable first
+    "EM102",   # Exception must not use an f-string literal, assign to variable first
+    "EM103",   # Exception must not use a .format() string directly, assign to variable first
+    "ERA001",  # Found commented-out code
+    "F401",    # {name} imported but unused; consider using importlib.util.find_spec to test for availability
+    "F403",    # from {name} import * used; unable to detect undefined names
+    "F523",    # .format call has unused arguments at position(s): {message}
+    "F541",    # f-string without any placeholders
+    "F811",    # Redefinition of unused {name} from {row}
+    "F821",    # Undefined name {name}. {tip}
+    "F841",    # Local variable {name} is assigned to but never used
+    "FBT001",  # Boolean-typed positional argument in function definition
+    "FBT002",  # Boolean default positional argument in function definition
+    "FBT003",  # Boolean positional value in function call
+    "FIX002",  # Line contains TODO, consider resolving the issue
+    "FIX004",  # Line contains HACK, consider resolving the issue
+    "FLY002",  # Consider {expression} instead of string join
+    "FURB188", # Prefer str.removeprefix() over conditionally replacing with slice.
+    "G003",    # Logging statement uses +
+    "I001",    # Import block is un-sorted or un-formatted
+    "ICN001",  # {name} should be imported as {asname}
+    "INP001",  # File {filename} is part of an implicit namespace package. Add an __init__.py.
+    "ISC003",  # Explicitly concatenated string should be implicitly concatenated
+    "LOG015",  # {}() call on root logger
+    "N802",    # Function name {name} should be lowercase
+    "N803",    # Argument name {name} should be lowercase
+    "N806",    # Variable {name} in function should be lowercase
+    "N818",    # Exception name {name} should be named with an Error suffix
+    "PERF102", # When using only the {subset} of a dict use the {subset}() method
+    "PERF203", # try-except within a loop incurs performance overhead
+    "PERF401", # Use {message_str} to create a transformed list
+    "PIE796",  # Enum contains duplicate value: {value}
+    "PIE808",  # Unnecessary start argument in range
+    "PLC0206", # Extracting value from dictionary without calling .items()
+    "PLC0415", # import should be at the top-level of a file
+    "PYI006",  # Use < or >= for sys.version_info comparisons
+    "PYI024",  # Use typing.NamedTuple instead of collections.namedtuple
+    "PYI032",  # Prefer object to Any for the second parameter to {method_name}
+    "PYI045",  # __aiter__ methods should return an AsyncIterator, not an AsyncIterable
+    "PYI056",  # Calling .{name}() on __all__ may not be supported by all type checkers (use += instead)
+    "PLE0604", # Invalid object in __all__, must contain only strings
+    "PLE0605", # Invalid format for __all__, must be tuple or list
+    "PLR0911", # Too many return statements ({returns} > {max_returns})
+    "PLR0912", # Too many branches ({branches} > {max_branches})
+    "PLR0913", # Too many arguments in function definition ({c_args} > {max_args})
+    "PLR0915", # Too many statements ({statements} > {max_statements})
+    "PLR1704", # Redefining argument with the local name {name}
+    "PLR1711", # Useless return statement at end of function
+    "PLR1714", # Consider merging multiple comparisons: {expression}. Use a set if the elements are hashable.
+    "PLR2004", # Magic value used in comparison, consider replacing {value} with a constant variable
+    "PLR5501", # Use elif instead of else then if, to reduce indentation
+    "PLW0120", # else clause on loop without a break statement; remove the else and dedent its contents
+    "PLW0603", # Using the global statement to update {name} is discouraged
+    "PLW1508", # Invalid type for environment variable default; expected str or None
+    "PLW1641", # Object does not implement __hash__ method
+    "PLW2901", # Outer {outer_kind} variable {name} overwritten by inner {inner_kind} target
+    "PT009",   # Use a regular assert instead of unittest-style {assertion}
+    "PT015",   # Assertion always fails, replace with pytest.fail()
+    "PT017",   # Found assertion on exception {name} in except block, use pytest.raises() instead
+    "PT027",   # Use pytest.raises instead of unittest-style {assertion}
+    "PT028",   # Test function parameter {} has default argument
+    "PTH100",  # os.path.abspath() should be replaced by Path.resolve()
+    "PTH103",  # os.makedirs() should be replaced by Path.mkdir(parents=True)
+    "PTH107",  # os.remove() should be replaced by Path.unlink()
+    "PTH110",  # os.path.exists() should be replaced by Path.exists()
+    "PTH118",  # os.{module}.join() should be replaced by Path with / operator
+    "PTH120",  # os.path.dirname() should be replaced by Path.parent
+    "PTH123",  # open() should be replaced by Path.open()
+    "Q000",    # Single quotes found but double quotes preferred
+    "Q004",    # Unnecessary escape on inner quote character
+    "RET501",  # Do not explicitly return None in function if it is the only possible return value
+    "RET503",  # Missing explicit return at the end of function able to return non-None value
+    "RET504",  # Unnecessary assignment to {name} before return statement
+    "RET505",  # Unnecessary {branch} after return statement
+    "RET506",  # Unnecessary {branch} after raise statement
+    "RET507",  # Unnecessary {branch} after continue statement
+    "RSE102",  # Unnecessary parentheses on raised exception
+    "RUF002",  # Docstring contains ambiguous {}. Did you mean {}?
+    "RUF003",  # Comment contains ambiguous {}. Did you mean {}?
+    "RUF005",  # Consider {expression} instead of concatenation
+    "RUF013",  # PEP 484 prohibits implicit Optional
+    "RUF022",  # __all__ is not sorted
+    "RUF023",  # {}.__slots__ is not sorted
+    "RUF046",  # Value being cast to int is already an integer
+    "S101",    # Use of assert detected
+    "S104",    # Possible binding to all interfaces
+    "S105",    # Possible hardcoded password assigned to: "{}"
+    "S110",    # try-except-pass detected, consider logging the exception
+    "S301",    # pickle and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue
+    "S311",    # Standard pseudo-random generators are not suitable for cryptographic purposes
+    "S603",    # subprocess call: check for execution of untrusted input
+    "S324",    # Probable use of insecure hash functions in {library}: {string}
+    "SIM102",  # Use a single if statement instead of nested if statements
+    "SIM103",  # Return the condition {condition} directly
+    "SIM105",  # Use contextlib.suppress({exception}) instead of try-except-pass
+    "SIM108",  # Use ternary operator {contents} instead of if-else-block
+    "SIM110",  # Use {replacement} instead of for loop
+    "SIM113",  # Use enumerate() for index variable {index} in for loop
+    "SIM114",  # Combine if branches using logical or operator
+    "SIM115",  # Use a context manager for opening files
+    "SIM117",  # Use a single with statement with multiple contexts instead of nested with statements
+    "SIM118",  # Use key {operator} dict instead of key {operator} dict.keys()
+    "SIM300",  # Yoda condition detected
+    "SIM910",  # Use {expected} instead of {actual}
+    "SLF001",  # Private member accessed: {access}
+    "SLOT002", # Subclasses of {namedtuple_kind} should define __slots__
+    "T201",    # print found
+    "TC001",   # Move application import {} into a type-checking block
+    "TC003",   # Move standard library import {} into a type-checking block
+    "TD002",   # Missing author in TODO; try: # TODO(<author_name>): ... or # TODO @<author_name>: ...
+    "TD003",   # Missing issue link for this TODO
+    "TD004",   # Missing colon in TODO
+    "TD005",   # Missing issue description after TODO
+    "TRY002",  # Create your own exception
+    "TRY003",  # Avoid specifying long messages outside the exception class
+    "TRY004",  # Prefer TypeError exception for invalid type
+    "TRY203",  # Remove exception handler; error is immediately re-raised
+    "TRY300",  # Consider moving this statement to an else block
+    "TRY301",  # Abstract raise to an inner function
+    "TRY400",  # Use logging.exception instead of logging.error
+    "TRY401",  # Redundant exception object included in logging.exception call
+    "UP004",   # Class {name} inherits from object
+    "UP006",   # Use {to} instead of {from} for type annotation
+    "UP007",   # Use X | Y for type annotations
+    "UP008",   # Use super() instead of super(__class__, self)
+    "UP009",   # UTF-8 encoding declaration is unnecessary
+    "UP010",   # Unnecessary __future__ import {import} for target Python version
+    "UP015",   # Unnecessary mode argument
+    "UP018",   # Unnecessary {literal_type} call (rewrite as a literal)
+    "UP024",   # Replace aliased errors with OSError
+    "UP028",   # Replace yield over for loop with yield from
+    "UP030",   # Use implicit references for positional format fields
+    "UP031",   # Use format specifiers instead of percent format
+    "UP032",   # Use f-string instead of format call
+    "UP035",   # Import from {target} instead: {names}
+    "UP036",   # Version block is outdated for minimum Python version
+    "UP037",   # Remove quotes from type annotation
+    "UP045",   # Use X | None for type annotations
+    "YTT201",  # sys.version_info[0] == 3 referenced (python4), use >=
+    "YTT203",  # sys.version_info[1] compared to integer (python4), compare sys.version_info to tuple
+]
+
+select = ["ALL"]

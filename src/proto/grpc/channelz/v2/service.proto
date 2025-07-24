@@ -49,11 +49,18 @@ message QueryEntitiesRequest {
   // Filter the entities so that only children of this parent are returned.
   // If this is 0 then no parent filter is applied.
   int64 parent = 2;
+  // The first entity to return.
+  // If this is 0 then the first entity will be returned.
+  int64 start_entity_id = 3;
 }
 
 message QueryEntitiesResponse {
   // List of entities that match the query.
   repeated Entity entities = 1;
+  // If set, indicates that the list of entities is the final list.
+  // Requesting more will only return more if they are created after this RPC
+  // completes.
+  bool end = 2;
 }
 
 message GetEntityRequest {

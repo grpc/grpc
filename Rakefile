@@ -29,9 +29,10 @@ Rake::ExtensionTask.new('grpc_c', spec) do |ext|
   ext.lib_dir = File.join('src', 'ruby', 'lib', 'grpc')
   ext.cross_compile = true
   ext.cross_platform = [
-    'x86-mingw32', 'x64-mingw-ucrt',
-    'x86_64-linux', 'x86-linux', 'aarch64-linux',
-    'x86_64-darwin', 'arm64-darwin',
+    'x86-mingw32', 'x64-mingw32', 'x64-mingw-ucrt',
+    'x86_64-linux-gnu', 'x86_64-linux-musl', 'x86-linux-gnu',
+    'x86-linux-musl', 'aarch64-linux-gnu', 'aarch64-linux-musl',
+    'x86_64-darwin', 'arm64-darwin'
   ]
   ext.cross_compiling do |spec|
     spec.files = spec.files.select {
@@ -155,8 +156,12 @@ task 'gem:native', [:plat] do |t, args|
   prepare_ccache_cmd += "export PATH=\"$PATH:/usr/local/bin\" && "
   prepare_ccache_cmd += "source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc "
 
-  supported_windows_platforms = ['x86-mingw32', 'x64-mingw-ucrt']
-  supported_unix_platforms = ['x86_64-linux', 'x86-linux', 'aarch64-linux', 'x86_64-darwin', 'arm64-darwin']
+  supported_windows_platforms = ['x86-mingw32', 'x64-mingw32', 'x64-mingw-ucrt']
+  supported_unix_platforms = [
+    'x86_64-linux-gnu', 'x86_64-linux-musl', 'x86-linux-gnu',
+    'x86-linux-musl', 'aarch64-linux-gnu', 'aarch64-linux-musl',
+    'x86_64-darwin', 'arm64-darwin'
+  ]
   supported_platforms = supported_windows_platforms + supported_unix_platforms
 
   if selected_plat.empty?
@@ -205,13 +210,24 @@ task 'gem:native', [:plat] do |t, args|
   # Currently we hit "objcopy: grpc_c.bundle: file format not recognized"
   # TODO(apolcyn): make debug symbols work on aarch64 linux.
   # Currently we hit "objcopy: Unable to recognise the format of the input file `grpc_c.so'"
-  unix_platforms_without_debug_symbols = ['x86_64-darwin', 'arm64-darwin', 'aarch64-linux']
+  unix_platforms_without_debug_symbols = [
+    'x86_64-linux-musl', 'x86-linux-musl',
+    'aarch64-linux-gnu', 'aarch64-linux-musl', 'x86_64-darwin',
+    'arm64-darwin'
+  ]
 
   unix_platforms.each do |plat|
     if unix_platforms_without_debug_symbols.include?(plat)
       debug_symbols_dir = ''
     else
       debug_symbols_dir = File.join(Dir.pwd, 'src/ruby/nativedebug/symbols')
+    end
+    makefile_system_override = ''
+    if plat =~ /darwin/
+      # When cross-compiling c-core for macos from linux, we need to overwrite
+      # SYSTEM for our Makefile to work. Note this is not needed for mingw b/c
+      # C-core is built in a separate command.
+      makefile_system_override = 'Darwin'
     end
     run_rake_compiler(plat, <<~EOT)
       #{prepare_ccache_cmd} && \
@@ -223,7 +239,8 @@ task 'gem:native', [:plat] do |t, args|
         RUBY_CC_VERSION=#{RakeCompilerDock.ruby_cc_version(*target_ruby_minor_versions)} \
         V=#{verbose} \
         GRPC_CONFIG=#{grpc_config} \
-        GRPC_RUBY_BUILD_PROCS=#{nproc_override}
+        GRPC_RUBY_BUILD_PROCS=#{nproc_override} \
+        SYSTEM=#{makefile_system_override}
     EOT
   end
   # Generate debug symbol packages to complement the native libraries we just built

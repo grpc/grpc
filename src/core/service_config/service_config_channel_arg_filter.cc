@@ -95,7 +95,7 @@ class ServiceConfigChannelArgFilter final
 
 void ServiceConfigChannelArgFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, ServiceConfigChannelArgFilter* filter) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
+  GRPC_LATENT_SEE_SCOPE(
       "ServiceConfigChannelArgFilter::Call::OnClientInitialMetadata");
   const ServiceConfigParser::ParsedConfigVector* method_configs = nullptr;
   if (filter->service_config_ != nullptr) {

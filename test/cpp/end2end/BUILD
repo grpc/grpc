@@ -31,6 +31,7 @@ grpc_cc_library(
         "absl/log:check",
         "absl/synchronization",
     ],
+    visibility = ["//bazel:end2end_test_utils"],
     deps = [
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:grpc_test_util",
@@ -150,6 +151,25 @@ grpc_cc_test(
         "//:grpc++",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
+        "//test/core/test_util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "latent_see_service_test",
+    srcs = ["latent_see_service_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpcpp_latent_see_client",
+        "//:grpcpp_latent_see_service",
+        "//src/proto/grpc/channelz/v2:latent_see_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -337,6 +357,7 @@ grpc_cc_test(
         # b/117517566.
         "grpc:no-internal-poller",
         "no_test_ios",
+        "channelz_test",
     ],
     deps = [
         ":test_service_impl",
@@ -346,6 +367,45 @@ grpc_cc_test(
         "//:grpcpp_channelz",
         "//src/core:slice",
         "//src/proto/grpc/channelz:channelz_proto",
+        "//src/proto/grpc/testing:echo_cc_grpc",
+        "//src/proto/grpc/testing:echo_messages_cc_proto",
+        "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/test_util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "channelz_v2_service_test",
+    srcs = ["channelz_v2_service_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
+    # TODO(yulin-liang): The test is not able to load the certificate files on
+    # iOS. Figure out why.
+    tags = [
+        "cpp_end2end_test",
+        # b/117517566.
+        "grpc:no-internal-poller",
+        "no_test_ios",
+    ],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpcpp_channelz",
+        "//src/core:slice",
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+        "//src/proto/grpc/channelz/v2:service_cc_grpc",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//test/core/event_engine:event_engine_test_utils",
