@@ -29,14 +29,14 @@
 zend_class_entry *grpc_ce_server_credentials;
 PHP_GRPC_DECLARE_OBJECT_HANDLER(server_credentials_ce_handlers)
 
-/* Frees and destroys an instace of wrapped_grpc_server_credentials */
+/* Frees and destroys an instance of wrapped_grpc_server_credentials */
 PHP_GRPC_FREE_WRAPPED_FUNC_START(wrapped_grpc_server_credentials)
   if (p->wrapped != NULL) {
     grpc_server_credentials_release(p->wrapped);
   }
 PHP_GRPC_FREE_WRAPPED_FUNC_END()
 
-/* Initializes an instace of wrapped_grpc_server_credentials to be
+/* Initializes an instance of wrapped_grpc_server_credentials to be
  * associated with an object of a class specified by class_type */
 php_grpc_zend_object create_wrapped_grpc_server_credentials(
     zend_class_entry *class_type TSRMLS_DC) {
