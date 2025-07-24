@@ -42,9 +42,7 @@ class Center : public RefCounted<Center<T>> {
   explicit Center(const uint32_t max_tokens) : max_tokens_(max_tokens) {}
 
   // A promise that resolves when the data is enqueued.
-  // It is expected that calls to this function are not done in parallel. At
-  // most one call to this function should be pending at a time. If
-  // tokens_consumed_ is 0 or the new tokens fit within max_tokens_, then
+  // If tokens_consumed_ is 0 or the new tokens fit within max_tokens_, then
   // allow the enqueue to go through. Otherwise, return pending. Here, we are
   // using tokens_consumed over queue_.empty() because there can be enqueues
   // with tokens = 0. Enqueues with tokens = 0 are primarily for sending
