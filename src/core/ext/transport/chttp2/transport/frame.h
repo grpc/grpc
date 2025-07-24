@@ -259,9 +259,18 @@ void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, const uint8_t flags,
                                    const uint32_t length);
 
 ///////////////////////////////////////////////////////////////////////////////
-// Settings Frame Validations
+// Validations
+
 http2::Http2Status ValidateSettingsValues(
     std::vector<Http2SettingsFrame::Setting>& list);
+
+http2::Http2Status ValidateFrameHeader(uint32_t max_frame_size_setting,
+                                       bool incoming_header_in_progress,
+                                       uint32_t incoming_header_stream_id,
+                                       Http2FrameHeader& current_frame_header);
+
+http2::Http2Status IsFrameValidForHalfCloseRemoteStreamState(
+    Http2FrameHeader& current_frame_header);
 
 ///////////////////////////////////////////////////////////////////////////////
 // RFC9113 Related Strings and Consts
@@ -324,6 +333,18 @@ inline constexpr absl::string_view kNoPushPromise =
     "RFC9113: PUSH_PROMISE MUST NOT be sent if the SETTINGS_ENABLE_PUSH "
     "setting of the "
     "peer endpoint is set to 0";
+
+inline constexpr absl::string_view kAssemblerContiguousSequenceError =
+    "RFC9113 : Field blocks MUST be transmitted as a contiguous sequence "
+    "of frames, with no interleaved frames of any other type or from any "
+    "other stream.";
+inline constexpr absl::string_view kHalfClosedRemoteState =
+    "RFC9113: half-closed (remote): If an endpoint receives additional frames, "
+    "other than WINDOW_UPDATE, PRIORITY, or RST_STREAM, for a stream that is "
+    "in this state, it MUST respond with a stream error of type STREAM_CLOSED.";
+inline constexpr absl::string_view kFrameSizeLargerThanMaxFrameSizeSetting =
+    "RFC9113: An endpoint MUST send an error code of FRAME_SIZE_ERROR if a "
+    "frame exceeds the size defined in SETTINGS_MAX_FRAME_SIZE";
 
 inline constexpr absl::string_view kFrameParserIncorrectPadding =
     "Incorrect length of padding in frame";

@@ -718,4 +718,43 @@ void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, const uint8_t flags,
   Write4b(length, frame_hdr + 1);
 }
 
+Http2Status ValidateFrameHeader(const uint32_t max_frame_size_setting,
+                                const bool incoming_header_in_progress,
+                                const uint32_t incoming_header_stream_id,
+                                Http2FrameHeader& current_frame_header) {
+  if (GPR_UNLIKELY(current_frame_header.length > max_frame_size_setting)) {
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kFrameSizeError,
+        absl::StrCat(RFC9113::kFrameSizeLargerThanMaxFrameSizeSetting,
+                     ", Current Size = ", current_frame_header.length,
+                     ", Max Size = ", max_frame_size_setting));
+  }
+  if (GPR_UNLIKELY(
+          incoming_header_in_progress &&
+          (current_frame_header.type !=
+               static_cast<uint8_t>(FrameType::kContinuation) ||
+           current_frame_header.stream_id != incoming_header_stream_id))) {
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kProtocolError,
+        std::string(RFC9113::kAssemblerContiguousSequenceError));
+  }
+  // TODO(tjagtap) : [PH2][P2]:Consider validating MAX_CONCURRENT_STREAMS here
+  return Http2Status::Ok();
+}
+
+Http2Status IsFrameValidForHalfCloseRemoteStreamState(
+    Http2FrameHeader& current_frame_header) {
+  // RFC9113: half-closed (remote): If an endpoint receives additional frames,
+  // other than WINDOW_UPDATE, PRIORITY, or RST_STREAM, for a stream that is in
+  // this state, it MUST respond with a stream error of type STREAM_CLOSED.
+  FrameType type = static_cast<FrameType>(current_frame_header.type);
+  if (GPR_LIKELY(type == FrameType::kWindowUpdate ||
+                 type == FrameType::kRstStream)) {
+    return Http2Status::Ok();
+  }
+  return Http2Status::Http2StreamError(
+      Http2ErrorCode::kStreamClosed,
+      std::string(RFC9113::kHalfClosedRemoteState));
+}
+
 }  // namespace grpc_core

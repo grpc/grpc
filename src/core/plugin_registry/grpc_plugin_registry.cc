@@ -71,7 +71,6 @@ extern void RegisterConnectedChannel(CoreConfiguration::Builder* builder);
 extern void RegisterLoadBalancedCallDestination(
     CoreConfiguration::Builder* builder);
 extern void RegisterChttp2Transport(CoreConfiguration::Builder* builder);
-extern void RegisterFusedFilters(CoreConfiguration::Builder* builder);
 #ifndef GRPC_NO_RLS
 extern void RegisterRlsLbPolicy(CoreConfiguration::Builder* builder);
 #endif  // !GRPC_NO_RLS
@@ -132,7 +131,6 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterBackendMetricFilter(builder);
   RegisterSecurityFilters(builder);
   RegisterExtraFilters(builder);
-  RegisterFusedFilters(builder);
   RegisterBuiltins(builder);
 }
 

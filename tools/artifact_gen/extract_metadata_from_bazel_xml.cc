@@ -1154,9 +1154,6 @@ class ArtifactGen {
   std::map<std::string, std::string> bazel_label_to_dep_name_;
 
   const std::map<std::string, std::string> external_source_prefixes_ = {
-      // TODO(veblush) : Remove @utf8_range// item once protobuf is upgraded
-      // to 26.x
-      {"@utf8_range//", "third_party/utf8_range"},
       {"@com_googlesource_code_re2//", "third_party/re2"},
       {"@com_google_googletest//", "third_party/googletest"},
       {"@googletest//", "third_party/googletest"},

@@ -59,6 +59,8 @@ namespace grpc_core {
 #if defined(GRPC_CFSTREAM)
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
+inline bool IsChannelzUseV2ForV1ApiEnabled() { return false; }
+inline bool IsChannelzUseV2ForV1ServiceEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChttp2BoundWriteSizeEnabled() { return false; }
@@ -79,7 +81,6 @@ inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_SECURE_ENDPOINT
 inline bool IsEventEngineSecureEndpointEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
-inline bool IsFuseFiltersEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
@@ -112,6 +113,8 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #elif defined(GPR_WINDOWS)
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
+inline bool IsChannelzUseV2ForV1ApiEnabled() { return false; }
+inline bool IsChannelzUseV2ForV1ServiceEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChttp2BoundWriteSizeEnabled() { return false; }
@@ -132,7 +135,6 @@ inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_SECURE_ENDPOINT
 inline bool IsEventEngineSecureEndpointEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
-inline bool IsFuseFiltersEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
@@ -165,6 +167,8 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #else
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
+inline bool IsChannelzUseV2ForV1ApiEnabled() { return false; }
+inline bool IsChannelzUseV2ForV1ServiceEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChttp2BoundWriteSizeEnabled() { return false; }
@@ -185,7 +189,6 @@ inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_SECURE_ENDPOINT
 inline bool IsEventEngineSecureEndpointEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
-inline bool IsFuseFiltersEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
@@ -219,6 +222,8 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #else
 enum ExperimentIds {
   kExperimentIdCallTracerInTransport,
+  kExperimentIdChannelzUseV2ForV1Api,
+  kExperimentIdChannelzUseV2ForV1Service,
   kExperimentIdChaoticGoodFramingLayer,
   kExperimentIdChttp2BoundWriteSize,
   kExperimentIdErrorFlatten,
@@ -231,7 +236,6 @@ enum ExperimentIds {
   kExperimentIdEventEngineForAllOtherEndpoints,
   kExperimentIdEventEngineSecureEndpoint,
   kExperimentIdFreeLargeAllocator,
-  kExperimentIdFuseFilters,
   kExperimentIdKeepAlivePingTimerBatch,
   kExperimentIdLocalConnectorSecure,
   kExperimentIdMaxInflightPingsStrictLimit,
@@ -261,6 +265,14 @@ enum ExperimentIds {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() {
   return IsExperimentEnabled<kExperimentIdCallTracerInTransport>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHANNELZ_USE_V2_FOR_V1_API
+inline bool IsChannelzUseV2ForV1ApiEnabled() {
+  return IsExperimentEnabled<kExperimentIdChannelzUseV2ForV1Api>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHANNELZ_USE_V2_FOR_V1_SERVICE
+inline bool IsChannelzUseV2ForV1ServiceEnabled() {
+  return IsExperimentEnabled<kExperimentIdChannelzUseV2ForV1Service>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() {
@@ -309,10 +321,6 @@ inline bool IsEventEngineSecureEndpointEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_FREE_LARGE_ALLOCATOR
 inline bool IsFreeLargeAllocatorEnabled() {
   return IsExperimentEnabled<kExperimentIdFreeLargeAllocator>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_FUSE_FILTERS
-inline bool IsFuseFiltersEnabled() {
-  return IsExperimentEnabled<kExperimentIdFuseFilters>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_KEEP_ALIVE_PING_TIMER_BATCH
 inline bool IsKeepAlivePingTimerBatchEnabled() {

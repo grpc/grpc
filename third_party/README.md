@@ -121,36 +121,41 @@ git commit -m "update submodule boringssl-with-bazel with origin/master-with-baz
 
 ### Updating third_party/protobuf
 
-Updating the protobuf dependency is now part of the internal release process (see [go/grpc-release](http://go/grpc-release)).
+Before running `generate_projects`, you need to complete the following preparations.
+
+1. Update the Protobuf Version
+  - Modify `third_party/protobuf.patch` with the current version.
+  - Update the `protobuf_version` field in `build_handwritten.yaml`.
+
+2. Run Build Scripts
+
+```
+tools/distrib/python/make_grpcio_tools.py --cleanup_third_party
+tools/bazel build @com_google_protobuf//:protoc //src/compiler:all
+src/ruby/pb/generate_proto_ruby.sh
+src/php/bin/generate_proto_php.sh
+```
+
+After `generate_projects` has finished, run the following updates.
+
+1. Update `third_party/upb`
+
+```
+rm -rf third_party/upb/upb
+cp -r third_party/protobuf/upb third_party/upb
+tools/codegen/core/gen_upb_api.sh
+```
+
+2. Update `third_party/utf8_range`
+
+```
+rm -rf third_party/utf8_range
+cp -r third_party/protobuf/third_party/utf8_range third_party/utf8_range/
+```
 
 ### Updating third_party/envoy-api
 
 Apart from the above steps, please run `tools/codegen/core/gen_upb_api.sh` to regenerate upb files.
-
-### Updating third_party/upb
-
-Since upb is vendored in the gRPC repo, you cannot use submodule to update it. Please follow the steps below;
-1. Update third_party/upb directory by running
-   - `export GRPC_ROOT=~/git/grpc`
-   - `wget https://github.com/protocolbuffers/protobuf/releases/download/v25.1/protobuf-25.1.zip`
-   - `rm -rf $GRPC_ROOT/third_party/upb`
-   - `unzip protobuf-25.1.zip -d /tmp/protobuf`
-   - `cp -r /tmp/protobuf/protobuf-25.1/upb $GRPC_ROOT/third_party/upb`
-2. Update the dependency in `grpc_deps.bzl` to the same commit
-3. Populate the bazel download mirror by running `bazel/update_mirror.sh`
-4. Run `tools/buildgen/generate_projects.sh` to regenerate the generated files
-5. Run `tools/codegen/core/gen_upb_api.sh` to regenerate upb files.
-
-### Updating third_party/utf8_range
-
-```
-# set to wherever your grpc repo lives
-export GRPC_ROOT=~/git/grpc
-wget https://github.com/protocolbuffers/utf8_range/archive/refs/heads/main.zip
-rm -rf $GRPC_ROOT/third_party/utf8_range
-unzip main.zip -d $GRPC_ROOT/third_party
-mv $GRPC_ROOT/third_party/utf8_range-main $GRPC_ROOT/third_party/utf8_range
-```
 
 ### Updating third_party/xxhash
 

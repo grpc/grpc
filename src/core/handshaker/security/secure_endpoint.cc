@@ -186,11 +186,13 @@ class FrameProtector : public RefCounted<FrameProtector> {
 
   absl::Status Unprotect(absl::Status read_status)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_) {
+    GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("unprotect");
+
     if (shutdown_) {
       return absl::CancelledError("secure endpoint shutdown");
     }
 
-    GRPC_LATENT_SEE_INNER_SCOPE("unprotect");
+    GRPC_TRACE_LOG(secure_endpoint, INFO) << "Starting unprotect for " << this;
     bool keep_looping = false;
     tsi_result result = TSI_OK;
 
@@ -321,7 +323,8 @@ class FrameProtector : public RefCounted<FrameProtector> {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(write_mu_) {
     if (shutdown_) return TSI_FAILED_PRECONDITION;
 
-    GRPC_LATENT_SEE_INNER_SCOPE("protect");
+    GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("protect");
+    GRPC_TRACE_LOG(secure_endpoint, INFO) << "Starting protect for " << this;
     uint8_t* cur = GRPC_SLICE_START_PTR(write_staging_buffer_);
     uint8_t* end = GRPC_SLICE_END_PTR(write_staging_buffer_);
 
@@ -416,6 +419,10 @@ class FrameProtector : public RefCounted<FrameProtector> {
     }
     // TODO(yangg) do different things according to the error type?
     if (result != TSI_OK) output_buffer_.Clear();
+
+    GRPC_TRACE_LOG(secure_endpoint, INFO)
+        << "Protect: " << this << " result: " << result;
+
     return result;
   }
 
@@ -583,7 +590,7 @@ static void on_write(void* user_data, grpc_error_handle error) {
 static void endpoint_write(
     grpc_endpoint* secure_ep, grpc_slice_buffer* slices, grpc_closure* cb,
     grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args) {
-  GRPC_LATENT_SEE_INNER_SCOPE("secure_endpoint write");
+  GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("secure_endpoint write");
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
   tsi_result result;
   {
@@ -800,7 +807,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
 
     bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
                SliceBuffer* data, WriteArgs args) {
-      GRPC_LATENT_SEE_INNER_SCOPE("secure_endpoint write");
+      GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("secure_endpoint write");
       tsi_result result;
       frame_protector_.TraceOp("Write", data->c_slice_buffer());
       if (grpc_core::IsSecureEndpointOffloadLargeWritesEnabled()) {
@@ -887,6 +894,8 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       grpc_core::MutexLock read_lock(frame_protector_.read_mu());
       wrapped_ep = std::move(wrapped_ep_);
       frame_protector_.Shutdown();
+      GRPC_TRACE_LOG(secure_endpoint, INFO)
+          << "Shutdown for secure endpoint: " << this;
     }
 
     std::shared_ptr<TelemetryInfo> GetTelemetryInfo() const {
@@ -896,7 +905,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
 
    private:
     bool MaybeFinishReadImmediately() {
-      GRPC_LATENT_SEE_INNER_SCOPE("secure_endpoint maybe finish read");
+      GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("secure_endpoint maybe finish read");
       grpc_core::MutexLock lock(frame_protector_.read_mu());
       // If the read is large, since we got the bytes whilst still calling read,
       // offload the decryption to event engine.
@@ -927,7 +936,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
 
     static void FinishAsyncRead(grpc_core::RefCountedPtr<Impl> impl,
                                 absl::Status status) {
-      GRPC_LATENT_SEE_PARENT_SCOPE("secure endpoint finish async read");
+      GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("secure endpoint finish async read");
       {
         grpc_core::MutexLock lock(impl->frame_protector_.read_mu());
         if (status.ok() && impl->wrapped_ep_ == nullptr) {
@@ -962,7 +971,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
     };
 
     static void FinishAsyncWrite(grpc_core::RefCountedPtr<Impl> impl) {
-      GRPC_LATENT_SEE_PARENT_SCOPE("secure endpoint finish async write");
+      GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("secure endpoint finish async write");
       tsi_result result;
       std::unique_ptr<SliceBuffer> data;
       WriteArgs args;

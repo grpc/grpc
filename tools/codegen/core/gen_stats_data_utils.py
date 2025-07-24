@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Copyright 2017 gRPC authors.
+# Copyright 2025 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -280,6 +280,9 @@ class StatsDataGenerator:
             self._scopes.remove(scope)
         self._scopes = sorted(global_scopes) + sorted(self._scopes)
         self._scoped_stats_collector_generators = {}
+        self._shapes = sorted(
+            self._shapes, key=lambda s: (s.max, s.buckets, s.bits)
+        )
 
     def register_scoped_stats_collector_generator(
         self, scope, linked_global_scope, generator

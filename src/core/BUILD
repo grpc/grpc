@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@bazel_skylib//lib:selects.bzl", "selects")
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_add_well_known_proto_upb_targets",
@@ -34,8 +33,18 @@ package(
 )
 
 config_setting(
-    name = "enable_latent_see",
-    values = {"define": "GRPC_ENABLE_LATENT_SEE=1"},
+    name = "disable_latent_see",
+    values = {"define": "GRPC_LATENT_SEE=none"},
+)
+
+config_setting(
+    name = "extra_latent_see",
+    values = {"define": "GRPC_LATENT_SEE=extra"},
+)
+
+config_setting(
+    name = "default_latent_see",
+    values = {"define": "GRPC_LATENT_SEE=default"},
 )
 
 config_setting(
@@ -59,24 +68,6 @@ config_setting(
 config_setting(
     name = "minimize_threadyness",
     values = {"define": "GRPC_MINIMIZE_THREADYNESS=1"},
-)
-
-config_setting(
-    name = "grpc_no_filter_fusion_define",
-    values = {"define": "grpc_no_filter_fusion=true"},
-)
-
-selects.config_setting_group(
-    name = "grpc_no_filter_fusion",
-    match_any = [
-        ":grpc_no_filter_fusion_define",
-        # In addition to disabling filter fusion support when
-        # --define=grpc_no_filter_fusion=true is specified, we also disable it
-        # on mobile platforms where it is not likely to be needed and where
-        # reducing the binary size is more important.
-        "//:android",
-        "//:ios",
-    ],
 )
 
 grpc_cc_library(
@@ -214,7 +205,9 @@ grpc_cc_library(
         "util/latent_see.h",
     ],
     defines = select({
-        ":enable_latent_see": ["GRPC_ENABLE_LATENT_SEE"],
+        ":disable_latent_see": ["GRPC_DISABLE_LATENT_SEE"],
+        ":extra_latent_see": ["GRPC_EXTRA_LATENT_SEE"],
+        ":default_latent_see": [],
         "//conditions:default": [],
     }),
     external_deps = [
@@ -224,12 +217,14 @@ grpc_cc_library(
         "absl/log",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/container:flat_hash_map",
+        "absl/time",
     ],
     visibility = ["//bazel:latent_see"],
     deps = [
-        "per_cpu",
-        "ring_buffer",
+        "notification",
         "sync",
+        "//:backoff",
         "//:gpr",
     ],
 )
@@ -3643,37 +3638,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "fused_filters",
-    srcs = [
-        "filter/fused_filters.cc",
-    ],
-    defines = select({
-        ":grpc_no_filter_fusion": ["GRPC_NO_FILTER_FUSION"],
-        "//conditions:default": [],
-    }),
-    select_deps = [{
-        ":grpc_no_filter_fusion": [],
-        "//conditions:default": [
-            "experiments",
-            "filter_fusion",
-            "grpc_authorization_base",
-            "grpc_client_authority_filter",
-            "grpc_lb_policy_grpclb",
-            "grpc_message_size_filter",
-            "server_call_tracer_filter",
-            "service_config_channel_arg_filter",
-            "//:grpc_http_filters",
-            "//:grpc_security_base",
-        ],
-    }],
-    deps = [
-        "//:config",
-        "//:gpr",
-        "//:grpc_public_hdrs",
-    ],
-)
-
-grpc_cc_library(
     name = "subchannel_connector",
     hdrs = [
         "client_channel/connector.h",
@@ -3885,7 +3849,6 @@ grpc_cc_library(
     srcs = [
         "service_config/service_config_channel_arg_filter.cc",
     ],
-    hdrs = ["service_config/service_config_channel_arg_filter.h"],
     external_deps = [
         "absl/log",
         "absl/status",
@@ -9836,13 +9799,11 @@ grpc_cc_library(
         "call_filters",
         "call_final_info",
         "channel_args",
-        "gpr_manual_constructor",
         "metadata",
         "status_helper",
         "type_list",
         "//:grpc_base",
         "//:grpc_public_hdrs",
-        "//:promise",
     ],
 )
 
@@ -10593,6 +10554,28 @@ grpc_cc_library(
         "//:protobuf_wrappers_upb",
         "//:sockaddr_utils",
         "//:uri",
+    ],
+)
+
+grpc_cc_library(
+    name = "channelz_v2tov1_legacy_api",
+    srcs = ["channelz/v2tov1/legacy_api.cc"],
+    hdrs = ["channelz/v2tov1/legacy_api.h"],
+    external_deps = [
+        "absl/log",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        ":channelz_v2tov1_convert",
+        ":experiments",
+        ":json",
+        ":json_reader",
+        ":json_writer",
+        "//:channelz",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc_public_hdrs",
     ],
 )
 

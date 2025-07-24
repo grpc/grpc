@@ -685,6 +685,9 @@ LIBGRPC_SRC = \
     src/core/channelz/channelz.cc \
     src/core/channelz/channelz_registry.cc \
     src/core/channelz/property_list.cc \
+    src/core/channelz/v2tov1/convert.cc \
+    src/core/channelz/v2tov1/legacy_api.cc \
+    src/core/channelz/v2tov1/property_list.cc \
     src/core/client_channel/backup_poller.cc \
     src/core/client_channel/client_channel.cc \
     src/core/client_channel/client_channel_factory.cc \
@@ -955,6 +958,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c \
     src/core/ext/upb-gen/google/rpc/status.upb_minitable.c \
+    src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c \
@@ -1120,6 +1124,7 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c \
     src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c \
     src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c \
+    src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c \
@@ -1156,7 +1161,6 @@ LIBGRPC_SRC = \
     src/core/filter/auth/client_auth_filter.cc \
     src/core/filter/auth/server_auth_filter.cc \
     src/core/filter/blackboard.cc \
-    src/core/filter/fused_filters.cc \
     src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc \
     src/core/handshaker/handshaker.cc \
     src/core/handshaker/handshaker_registry.cc \

@@ -598,7 +598,6 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:endpoint_info_handshaker",
         "//src/core:experiments",
-        "//src/core:fused_filters",
         "//src/core:grpc_authorization_base",
         "//src/core:http_proxy_mapper",
         "//src/core:init_internally",
@@ -691,11 +690,11 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
+        "//src/core:channelz_v2tov1_legacy_api",
         "//src/core:client_channel_backup_poller",
         "//src/core:default_event_engine",
         "//src/core:endpoint_info_handshaker",
         "//src/core:experiments",
-        "//src/core:fused_filters",
         "//src/core:grpc_authorization_base",
         "//src/core:grpc_external_account_credentials",
         "//src/core:grpc_fake_credentials",
@@ -2736,8 +2735,9 @@ grpc_cc_library(
         "src/cpp/server/channelz/channelz_service.h",
     ],
     external_deps = [
-        "protobuf_headers",
         "absl/log",
+        "absl/strings",
+        "protobuf_headers",
     ],
     public_hdrs = [
         "include/grpcpp/ext/channelz_service_plugin.h",
@@ -2750,8 +2750,60 @@ grpc_cc_library(
         "grpc",
         "grpc++",
         "grpc++_config_proto",
+        "//src/core:channelz_v2tov1_convert",
+        "//src/core:experiments",
         "//src/proto/grpc/channelz:channelz_proto",
         "//src/proto/grpc/channelz/v2:service_cc_grpc",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
+    name = "grpcpp_latent_see_service",
+    srcs = [
+        "src/cpp/latent_see/latent_see_service.cc",
+    ],
+    hdrs = [
+        "src/cpp/latent_see/latent_see_service.h",
+    ],
+    external_deps = [
+        "protobuf_headers",
+        "absl/log",
+    ],
+    tags = ["nofixdeps"],
+    visibility = ["//bazel:latent_see"],
+    deps = [
+        "gpr",
+        "grpc",
+        "grpc++",
+        "grpc++_config_proto",
+        "//src/core:latent_see",
+        "//src/proto/grpc/channelz/v2:latent_see_cc_grpc",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
+    name = "grpcpp_latent_see_client",
+    srcs = [
+        "src/cpp/latent_see/latent_see_client.cc",
+    ],
+    hdrs = [
+        "src/cpp/latent_see/latent_see_client.h",
+    ],
+    external_deps = [
+        "protobuf_headers",
+        "absl/log",
+    ],
+    tags = ["nofixdeps"],
+    visibility = ["//bazel:latent_see"],
+    deps = [
+        "gpr",
+        "grpc",
+        "grpc++",
+        "grpc++_config_proto",
+        "//src/core:latent_see",
+        "//src/proto/grpc/channelz/v2:latent_see_cc_grpc",
     ],
     alwayslink = 1,
 )
@@ -5246,16 +5298,6 @@ grpc_upb_proto_reflection_library(
 )
 
 grpc_upb_proto_library(
-    name = "channelz_v1_upb",
-    deps = ["//src/proto/grpc/channelz:channelz_proto_internal"],
-)
-
-grpc_upb_proto_reflection_library(
-    name = "channelz_v1_upbdefs",
-    deps = ["//src/proto/grpc/channelz:channelz_proto_internal"],
-)
-
-grpc_upb_proto_library(
     name = "promise_upb",
     deps = ["//src/proto/grpc/channelz/v2:promise_proto"],
 )
@@ -5263,6 +5305,16 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "promise_upbdefs",
     deps = ["//src/proto/grpc/channelz/v2:promise_proto"],
+)
+
+grpc_upb_proto_library(
+    name = "channelz_v1_upb",
+    deps = ["//src/proto/grpc/channelz:channelz_proto_internal"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "channelz_v1_upbdefs",
+    deps = ["//src/proto/grpc/channelz:channelz_proto_internal"],
 )
 
 WELL_KNOWN_PROTO_TARGETS = [

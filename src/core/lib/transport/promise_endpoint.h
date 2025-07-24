@@ -74,7 +74,7 @@ class PromiseEndpoint {
   // `Write()` before the previous write finishes. Doing that results in
   // undefined behavior.
   auto Write(SliceBuffer data, WriteArgs write_args) {
-    GRPC_LATENT_SEE_PARENT_SCOPE("GRPC:Write");
+    GRPC_LATENT_SEE_SCOPE("GRPC:Write");
     // Start write and assert previous write finishes.
     auto prev = write_state_->state.exchange(WriteState::kWriting,
                                              std::memory_order_relaxed);
@@ -136,14 +136,14 @@ class PromiseEndpoint {
   // `Read()` before the previous read finishes. Doing that results in
   // undefined behavior.
   auto Read(size_t num_bytes) {
-    GRPC_LATENT_SEE_PARENT_SCOPE("GRPC:Read");
+    GRPC_LATENT_SEE_SCOPE("GRPC:Read");
     // Assert previous read finishes.
     CHECK(!read_state_->complete.load(std::memory_order_relaxed));
     // Should not have pending reads.
     CHECK_EQ(read_state_->pending_buffer.Count(), 0u);
     bool complete = true;
     while (read_state_->buffer.Length() < num_bytes) {
-      GRPC_LATENT_SEE_INNER_SCOPE("GRPC:Read:Loop");
+      GRPC_LATENT_SEE_SCOPE("GRPC:Read:Loop");
       // Set read args with hinted bytes.
       grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs
           read_args;

@@ -41,7 +41,7 @@ static void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
 
 template <class Fixture, class ClientContextMutator, class ServerContextMutator>
 static void BM_UnaryPingPong(benchmark::State& state) {
-  GRPC_LATENT_SEE_PARENT_SCOPE("BM_UnaryPingPong");
+  GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("BM_UnaryPingPong");
   EchoTestService::AsyncService service;
   std::unique_ptr<Fixture> fixture(new Fixture(&service));
   EchoRequest send_request;
@@ -75,7 +75,7 @@ static void BM_UnaryPingPong(benchmark::State& state) {
   std::unique_ptr<EchoTestService::Stub> stub(
       EchoTestService::NewStub(fixture->channel()));
   for (auto _ : state) {
-    GRPC_LATENT_SEE_PARENT_SCOPE("OneRequest");
+    GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("OneRequest");
     recv_response.Clear();
     ClientContext cli_ctx;
     ClientContextMutator cli_ctx_mut(&cli_ctx);
@@ -85,7 +85,7 @@ static void BM_UnaryPingPong(benchmark::State& state) {
     void* t;
     bool ok;
     {
-      GRPC_LATENT_SEE_INNER_SCOPE("WaitForRequest");
+      GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("WaitForRequest");
       CHECK(fixture->cq()->Next(&t, &ok));
     }
     CHECK(ok);
@@ -95,7 +95,7 @@ static void BM_UnaryPingPong(benchmark::State& state) {
     ServerContextMutator svr_ctx_mut(&senv->ctx);
     senv->response_writer.Finish(send_response, Status::OK, tag(3));
     {
-      GRPC_LATENT_SEE_INNER_SCOPE("WaitForCqs");
+      GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("WaitForCqs");
       for (int i = (1 << 3) | (1 << 4); i != 0;) {
         CHECK(fixture->cq()->Next(&t, &ok));
         CHECK(ok);
@@ -106,7 +106,7 @@ static void BM_UnaryPingPong(benchmark::State& state) {
       CHECK(recv_status.ok());
     }
     {
-      GRPC_LATENT_SEE_INNER_SCOPE("RequestEcho");
+      GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("RequestEcho");
       senv->~ServerEnv();
       senv = new (senv) ServerEnv();
       service.RequestEcho(&senv->ctx, &senv->recv_request,
