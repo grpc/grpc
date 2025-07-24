@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.73.0</span>
+   &#160;<span id="projectnumber">1.74.0</span>
    </div>
   </td>
  </tr>
@@ -70,7 +70,8 @@ $(function() {
 <a href="#nested-classes">Data Structures</a> &#124;
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
-<a href="#pub-static-methods">Static Public Member Functions</a>  </div>
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
+<a href="#friends">Friends</a>  </div>
   <div class="headertitle">
 <div class="title">grpc_core::experimental::Json Class Reference</div>  </div>
 </div><!--header-->
@@ -150,6 +151,12 @@ Static Public Member Functions</h2></td></tr>
 <tr class="separator:abf2734f8bdd5002090e287530521d6e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a44bf619997d1f33417407208dd7157ff"><td class="memItemLeft" align="right" valign="top">static <a class="el" href="classgrpc__core_1_1experimental_1_1_json.html">Json</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__core_1_1experimental_1_1_json.html#a44bf619997d1f33417407208dd7157ff">FromArray</a> (<a class="el" href="classgrpc__core_1_1experimental_1_1_json.html#ac65bbcf82a383aeb823594d631a8cd4e">Array</a> &amp;&amp;<a class="el" href="classgrpc__core_1_1experimental_1_1_json.html#a397803c046eecb1f29f253c8bc02535e">array</a>)</td></tr>
 <tr class="separator:a44bf619997d1f33417407208dd7157ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
+Friends</h2></td></tr>
+<tr class="memitem:a8736106d6d1889edb23e4319616c51b2"><td class="memTemplParams" colspan="2">template&lt;typename Sink &gt; </td></tr>
+<tr class="memitem:a8736106d6d1889edb23e4319616c51b2"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc__core_1_1experimental_1_1_json.html#a8736106d6d1889edb23e4319616c51b2">AbslStringify</a> (Sink &amp;sink, <a class="el" href="classgrpc__core_1_1experimental_1_1_json.html#a42ab3d14c94ec45eaae8038ad9c3919a">Type</a> <a class="el" href="classgrpc__core_1_1experimental_1_1_json.html#aa5e36215996faebb941a884cbedc922d">type</a>)</td></tr>
+<tr class="separator:a8736106d6d1889edb23e4319616c51b2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Typedef Documentation</h2>
 <a id="ac65bbcf82a383aeb823594d631a8cd4e"></a>
@@ -833,13 +840,52 @@ template&lt;typename T &gt; </div>
 
 </div>
 </div>
+<h2 class="groupheader">Friends And Related Function Documentation</h2>
+<a id="a8736106d6d1889edb23e4319616c51b2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8736106d6d1889edb23e4319616c51b2">&#9670;&nbsp;</a></span>AbslStringify</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename Sink &gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void AbslStringify </td>
+          <td>(</td>
+          <td class="paramtype">Sink &amp;&#160;</td>
+          <td class="paramname"><em>sink</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classgrpc__core_1_1experimental_1_1_json.html#a42ab3d14c94ec45eaae8038ad9c3919a">Type</a>&#160;</td>
+          <td class="paramname"><em>type</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following file:<ul>
 <li>include/grpc/support/<a class="el" href="json_8h_source.html">json.h</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Jun 7 2025 19:35:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Jul 24 2025 18:13:20 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

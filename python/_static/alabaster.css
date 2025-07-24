@@ -13,7 +13,7 @@ body {
 
 
 div.document {
-    width: 1140px;
+    width: auto;
     margin: 30px auto 0 auto;
 }
 
@@ -47,7 +47,7 @@ div.body > .section {
 }
 
 div.footer {
-    width: 1140px;
+    width: auto;
     margin: 20px auto 30px auto;
     font-size: 14px;
     color: #888;
