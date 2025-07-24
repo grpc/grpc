@@ -357,6 +357,7 @@ grpc_cc_test(
         # b/117517566.
         "grpc:no-internal-poller",
         "no_test_ios",
+        "channelz_test",
     ],
     deps = [
         ":test_service_impl",
