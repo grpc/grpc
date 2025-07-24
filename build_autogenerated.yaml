@@ -285,6 +285,7 @@ libs:
   - src/core/credentials/transport/tls/grpc_tls_crl_provider.h
   - src/core/credentials/transport/tls/load_system_roots.h
   - src/core/credentials/transport/tls/load_system_roots_supported.h
+  - src/core/credentials/transport/tls/spiffe_utils.h
   - src/core/credentials/transport/tls/ssl_utils.h
   - src/core/credentials/transport/tls/tls_credentials.h
   - src/core/credentials/transport/tls/tls_security_connector.h
@@ -1399,6 +1400,7 @@ libs:
   - src/core/credentials/transport/tls/load_system_roots_fallback.cc
   - src/core/credentials/transport/tls/load_system_roots_supported.cc
   - src/core/credentials/transport/tls/load_system_roots_windows.cc
+  - src/core/credentials/transport/tls/spiffe_utils.cc
   - src/core/credentials/transport/tls/ssl_utils.cc
   - src/core/credentials/transport/tls/tls_credentials.cc
   - src/core/credentials/transport/tls/tls_security_connector.cc
@@ -11186,7 +11188,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/test_util/scoped_env_var.h
   src:
   - test/core/xds/file_watcher_certificate_provider_factory_test.cc
   deps:
@@ -18483,10 +18486,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/credentials/transport/tls/spiffe_utils.h
+  headers: []
   src:
-  - src/core/credentials/transport/tls/spiffe_utils.cc
   - test/core/credentials/transport/tls/spiffe_utils_test.cc
   deps:
   - gtest
@@ -20081,6 +20082,7 @@ targets:
   - test/core/xds/xds_certificate_provider_test.cc
   deps:
   - gtest
+  - absl/functional:overload
   - grpc_test_util
   uses_polling: false
 - name: xds_client_test

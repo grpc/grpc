@@ -219,6 +219,11 @@ void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs& args,
 
 absl::string_view SpiffeBundleKey::GetRoot() { return root_; }
 
+const JsonLoaderInterface* SpiffeBundle::JsonLoader(const JsonArgs&) {
+  static const auto* kLoader = JsonObjectLoader<SpiffeBundle>().Finish();
+  return kLoader;
+}
+
 void SpiffeBundle::JsonPostLoad(const Json& json, const JsonArgs& args,
                                 ValidationErrors* errors) {
   auto keys = LoadJsonObjectField<std::vector<SpiffeBundleKey>>(
@@ -232,6 +237,14 @@ void SpiffeBundle::JsonPostLoad(const Json& json, const JsonArgs& args,
 }
 
 absl::Span<const std::string> SpiffeBundle::GetRoots() { return roots_; }
+
+const JsonLoaderInterface* SpiffeBundleMap::JsonLoader(const JsonArgs&) {
+  static const auto* kLoader =
+      JsonObjectLoader<SpiffeBundleMap>()
+          .Field("trust_domains", &SpiffeBundleMap::bundles_)
+          .Finish();
+  return kLoader;
+}
 
 void SpiffeBundleMap::JsonPostLoad(const Json&, const JsonArgs&,
                                    ValidationErrors* errors) {
