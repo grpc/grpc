@@ -1,4 +1,5 @@
 <?php
+
 /*
  *
  * Copyright 2015 gRPC authors.
@@ -43,11 +44,12 @@ abstract class AbstractCall
      *                              the response
      * @param array    $options     Call options (optional)
      */
-    public function __construct(Channel $channel,
-                                $method,
-                                $deserialize,
-                                array $options = [])
-    {
+    public function __construct(
+        Channel $channel,
+        $method,
+        $deserialize,
+        array $options = []
+    ) {
         if (array_key_exists('timeout', $options) &&
             is_numeric($timeout = $options['timeout'])
         ) {
@@ -129,7 +131,7 @@ abstract class AbstractCall
         if ($value === null) {
             return;
         }
-        list($className, $deserializeFunc) = $this->deserialize;
+        [$className, $deserializeFunc] = $this->deserialize;
         $obj = new $className();
         $obj->mergeFromString($value);
         return $obj;
