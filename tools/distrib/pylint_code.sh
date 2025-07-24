@@ -41,7 +41,7 @@ VIRTUALENV=".venv-pylint"
 
 # When running locally, allow to reuse existing venv.
 if [[ ! -d "${VIRTUALENV}" ]]; then
-  python3.7 -m virtualenv "${VIRTUALENV}"
+  python3.11 -m virtualenv "${VIRTUALENV}"
 fi
 
 source "${VIRTUALENV}/bin/activate"
