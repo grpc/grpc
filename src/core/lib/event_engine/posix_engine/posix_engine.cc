@@ -657,9 +657,9 @@ void PosixEventEngine::PosixDNSResolver::LookupTXT(LookupTXTCallback on_resolve,
 #ifdef GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
 
+void PosixEventEngine::RegisterAresResolverForFork(
+    GRPC_UNUSED AresResolver* resolver) {
 #if GRPC_ENABLE_FORK_SUPPORT && GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-
-void PosixEventEngine::RegisterAresResolverForFork(AresResolver* resolver) {
   grpc_core::MutexLock lock(&resolver_handles_mu_);
   resolver_handles_.emplace_back(resolver->GetReinitHandle());
   // Cleanup in case we have expired callbacks, prevents the list from
@@ -670,15 +670,8 @@ void PosixEventEngine::RegisterAresResolverForFork(AresResolver* resolver) {
         return callback.expired();
       });
   resolver_handles_.erase(new_end, resolver_handles_.end());
-}
-
-#else
-
-void PosixEventEngine::RegisterAresResolverForFork(AresResolver* resolver) {
-  // No-op
-}
-
 #endif  // GRPC_ENABLE_FORK_SUPPORT && GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+}
 
 absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
 PosixEventEngine::GetDNSResolver(
