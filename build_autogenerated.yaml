@@ -1236,7 +1236,6 @@ libs:
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ref_counted_string.h
-  - src/core/util/ring_buffer.h
   - src/core/util/shared_bit_gen.h
   - src/core/util/single_set_ptr.h
   - src/core/util/sorted_pack.h
@@ -2854,7 +2853,6 @@ libs:
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ref_counted_string.h
-  - src/core/util/ring_buffer.h
   - src/core/util/shared_bit_gen.h
   - src/core/util/single_set_ptr.h
   - src/core/util/sorted_pack.h
@@ -4853,7 +4851,6 @@ libs:
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ref_counted_string.h
-  - src/core/util/ring_buffer.h
   - src/core/util/shared_bit_gen.h
   - src/core/util/single_set_ptr.h
   - src/core/util/sorted_pack.h
@@ -5320,6 +5317,8 @@ targets:
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
+  - src/core/lib/experiments/config.h
+  - src/core/lib/experiments/experiments.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
@@ -5335,6 +5334,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/wait_set.h
   - src/core/util/atomic_utils.h
+  - src/core/util/backoff.h
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
@@ -5343,12 +5343,12 @@ targets:
   - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/match.h
+  - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
-  - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
-  - src/core/util/ring_buffer.h
+  - src/core/util/shared_bit_gen.h
   - src/core/util/time.h
   - src/core/util/upb_utils.h
   - test/core/promise/test_wakeup_schedulers.h
@@ -5370,12 +5370,15 @@ targets:
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/experiments/config.cc
+  - src/core/lib/experiments/experiments.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/wait_set.cc
+  - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
-  - src/core/util/per_cpu.cc
+  - src/core/util/shared_bit_gen.cc
   - src/core/util/time.cc
   - test/core/promise/activity_test.cc
   deps:
@@ -6379,6 +6382,7 @@ targets:
   - src/core/lib/transport/timeout_encoding.h
   - src/core/util/atomic_utils.h
   - src/core/util/avl.h
+  - src/core/util/backoff.h
   - src/core/util/bitset.h
   - src/core/util/chunked_vector.h
   - src/core/util/cpp_impl_of.h
@@ -6392,14 +6396,14 @@ targets:
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
+  - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
   - src/core/util/packed_table.h
-  - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ref_counted_string.h
-  - src/core/util/ring_buffer.h
+  - src/core/util/shared_bit_gen.h
   - src/core/util/sorted_pack.h
   - src/core/util/spinlock.h
   - src/core/util/status_helper.h
@@ -6458,11 +6462,12 @@ targets:
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/lib/transport/timeout_encoding.cc
+  - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
-  - src/core/util/per_cpu.cc
   - src/core/util/ref_counted_string.cc
+  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - test/core/call/call_filters_test.cc
@@ -6522,6 +6527,8 @@ targets:
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
+  - src/core/lib/experiments/config.h
+  - src/core/lib/experiments/experiments.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/promise_factory.h
@@ -6530,6 +6537,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/status_flag.h
   - src/core/util/atomic_utils.h
+  - src/core/util/backoff.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
   - src/core/util/function_signature.h
@@ -6537,12 +6545,12 @@ targets:
   - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/match.h
+  - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
-  - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
-  - src/core/util/ring_buffer.h
+  - src/core/util/shared_bit_gen.h
   - src/core/util/time.h
   - src/core/util/upb_utils.h
   - test/core/promise/poll_matcher.h
@@ -6565,11 +6573,14 @@ targets:
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/experiments/config.cc
+  - src/core/lib/experiments/experiments.cc
   - src/core/lib/promise/activity.cc
+  - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
-  - src/core/util/per_cpu.cc
+  - src/core/util/shared_bit_gen.cc
   - src/core/util/time.cc
   - test/core/call/call_state_test.cc
   deps:
@@ -6929,7 +6940,6 @@ targets:
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ref_counted_string.h
-  - src/core/util/ring_buffer.h
   - src/core/util/shared_bit_gen.h
   - src/core/util/single_set_ptr.h
   - src/core/util/sorted_pack.h
@@ -7305,6 +7315,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
+  - src/core/util/backoff.h
   - src/core/util/bitset.h
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
@@ -7315,12 +7326,12 @@ targets:
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
+  - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
-  - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
-  - src/core/util/ring_buffer.h
+  - src/core/util/shared_bit_gen.h
   - src/core/util/spinlock.h
   - src/core/util/status_helper.h
   - src/core/util/time.h
@@ -7361,10 +7372,11 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/transport/status_conversion.cc
+  - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
-  - src/core/util/per_cpu.cc
+  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - test/core/promise/cancel_callback_test.cc
@@ -7998,6 +8010,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
+  - src/core/util/backoff.h
   - src/core/util/bitset.h
   - src/core/util/chunked_vector.h
   - src/core/util/cpp_impl_of.h
@@ -8009,12 +8022,12 @@ targets:
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
+  - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
-  - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
-  - src/core/util/ring_buffer.h
+  - src/core/util/shared_bit_gen.h
   - src/core/util/spinlock.h
   - src/core/util/status_helper.h
   - src/core/util/time.h
@@ -8055,10 +8068,11 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/transport/status_conversion.cc
+  - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
-  - src/core/util/per_cpu.cc
+  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - test/core/util/chunked_vector_test.cc
@@ -10988,6 +11002,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
+  - src/core/util/backoff.h
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
@@ -10997,12 +11012,12 @@ targets:
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
+  - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
-  - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
-  - src/core/util/ring_buffer.h
+  - src/core/util/shared_bit_gen.h
   - src/core/util/spinlock.h
   - src/core/util/status_helper.h
   - src/core/util/time.h
@@ -11038,10 +11053,11 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/transport/status_conversion.cc
+  - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
-  - src/core/util/per_cpu.cc
+  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - test/core/promise/exec_ctx_wakeup_scheduler_test.cc
@@ -11499,7 +11515,6 @@ targets:
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ref_counted_string.h
-  - src/core/util/ring_buffer.h
   - src/core/util/shared_bit_gen.h
   - src/core/util/single_set_ptr.h
   - src/core/util/sorted_pack.h
@@ -11903,6 +11918,7 @@ targets:
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
+  - src/core/util/backoff.h
   - src/core/util/bitset.h
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
@@ -11913,12 +11929,12 @@ targets:
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
+  - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
-  - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
-  - src/core/util/ring_buffer.h
+  - src/core/util/shared_bit_gen.h
   - src/core/util/spinlock.h
   - src/core/util/status_helper.h
   - src/core/util/time.h
@@ -11964,10 +11980,11 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/transport/bdp_estimator.cc
   - src/core/lib/transport/status_conversion.cc
+  - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
-  - src/core/util/per_cpu.cc
+  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - test/core/transport/chttp2/flow_control_test.cc
@@ -12057,6 +12074,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
+  - src/core/util/backoff.h
   - src/core/util/bitset.h
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
@@ -12067,12 +12085,12 @@ targets:
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
+  - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
-  - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
-  - src/core/util/ring_buffer.h
+  - src/core/util/shared_bit_gen.h
   - src/core/util/spinlock.h
   - src/core/util/status_helper.h
   - src/core/util/time.h
@@ -12114,10 +12132,11 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/transport/status_conversion.cc
+  - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
-  - src/core/util/per_cpu.cc
+  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - test/core/promise/for_each_test.cc
@@ -13299,7 +13318,6 @@ targets:
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ref_counted_string.h
-  - src/core/util/ring_buffer.h
   - src/core/util/shared_bit_gen.h
   - src/core/util/single_set_ptr.h
   - src/core/util/sorted_pack.h
@@ -14093,6 +14111,8 @@ targets:
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
+  - src/core/lib/experiments/config.h
+  - src/core/lib/experiments/experiments.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
@@ -14105,6 +14125,7 @@ targets:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/seq.h
   - src/core/util/atomic_utils.h
+  - src/core/util/backoff.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
   - src/core/util/function_signature.h
@@ -14113,12 +14134,12 @@ targets:
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
+  - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
-  - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
-  - src/core/util/ring_buffer.h
+  - src/core/util/shared_bit_gen.h
   - src/core/util/time.h
   - src/core/util/upb_utils.h
   - test/core/promise/test_wakeup_schedulers.h
@@ -14140,11 +14161,14 @@ targets:
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/experiments/config.cc
+  - src/core/lib/experiments/experiments.cc
   - src/core/lib/promise/activity.cc
+  - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
-  - src/core/util/per_cpu.cc
+  - src/core/util/shared_bit_gen.cc
   - src/core/util/time.cc
   - test/core/promise/inter_activity_pipe_test.cc
   deps:
@@ -14237,6 +14261,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
+  - src/core/util/backoff.h
   - src/core/util/bitset.h
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
@@ -14247,12 +14272,12 @@ targets:
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
+  - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
-  - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
-  - src/core/util/ring_buffer.h
+  - src/core/util/shared_bit_gen.h
   - src/core/util/spinlock.h
   - src/core/util/status_helper.h
   - src/core/util/time.h
@@ -14294,10 +14319,11 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/transport/status_conversion.cc
+  - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
-  - src/core/util/per_cpu.cc
+  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - test/core/promise/interceptor_list_test.cc
@@ -14568,6 +14594,8 @@ targets:
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
+  - src/core/lib/experiments/config.h
+  - src/core/lib/experiments/experiments.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
@@ -14583,6 +14611,7 @@ targets:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/seq.h
   - src/core/util/atomic_utils.h
+  - src/core/util/backoff.h
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
@@ -14591,12 +14620,12 @@ targets:
   - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/match.h
+  - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
-  - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
-  - src/core/util/ring_buffer.h
+  - src/core/util/shared_bit_gen.h
   - src/core/util/time.h
   - src/core/util/upb_utils.h
   - test/core/promise/test_wakeup_schedulers.h
@@ -14618,11 +14647,14 @@ targets:
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/experiments/config.cc
+  - src/core/lib/experiments/experiments.cc
   - src/core/lib/promise/activity.cc
+  - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
-  - src/core/util/per_cpu.cc
+  - src/core/util/shared_bit_gen.cc
   - src/core/util/time.cc
   - test/core/promise/latch_test.cc
   deps:
@@ -14633,6 +14665,55 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
+  - absl/status:statusor
+  - absl/types:span
+  - gpr
+  uses_polling: false
+- name: latent_see_service_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/cpp/latent_see/latent_see_client.h
+  - src/cpp/latent_see/latent_see_service.h
+  src:
+  - src/proto/grpc/channelz/v2/latent_see.proto
+  - src/cpp/latent_see/latent_see_client.cc
+  - src/cpp/latent_see/latent_see_service.cc
+  - test/cpp/end2end/latent_see_service_test.cc
+  deps:
+  - gtest
+  - grpc++_test_util
+- name: latent_see_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/experiments/config.h
+  - src/core/lib/experiments/experiments.h
+  - src/core/util/backoff.h
+  - src/core/util/json/json.h
+  - src/core/util/json/json_reader.h
+  - src/core/util/latent_see.h
+  - src/core/util/match.h
+  - src/core/util/notification.h
+  - src/core/util/overload.h
+  - src/core/util/shared_bit_gen.h
+  - src/core/util/time.h
+  src:
+  - src/core/lib/experiments/config.cc
+  - src/core/lib/experiments/experiments.cc
+  - src/core/util/backoff.cc
+  - src/core/util/json/json_reader.cc
+  - src/core/util/latent_see.cc
+  - src/core/util/shared_bit_gen.cc
+  - src/core/util/time.cc
+  - test/core/util/latent_see_test.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
+  deps:
+  - gtest
+  - absl/container:flat_hash_map
+  - absl/functional:function_ref
   - absl/status:statusor
   - absl/types:span
   - gpr
@@ -14757,6 +14838,8 @@ targets:
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
+  - src/core/lib/experiments/config.h
+  - src/core/lib/experiments/experiments.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/promise_factory.h
@@ -14768,6 +14851,7 @@ targets:
   - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/wait_set.h
   - src/core/util/atomic_utils.h
+  - src/core/util/backoff.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
   - src/core/util/function_signature.h
@@ -14775,12 +14859,12 @@ targets:
   - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/match.h
+  - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
-  - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
-  - src/core/util/ring_buffer.h
+  - src/core/util/shared_bit_gen.h
   - src/core/util/time.h
   - src/core/util/upb_utils.h
   - test/core/promise/poll_matcher.h
@@ -14802,12 +14886,15 @@ targets:
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/experiments/config.cc
+  - src/core/lib/experiments/experiments.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/wait_set.cc
+  - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
-  - src/core/util/per_cpu.cc
+  - src/core/util/shared_bit_gen.cc
   - src/core/util/time.cc
   - test/core/promise/lock_based_mpsc_test.cc
   deps:
@@ -14865,6 +14952,8 @@ targets:
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
+  - src/core/lib/experiments/config.h
+  - src/core/lib/experiments/experiments.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
@@ -14877,6 +14966,7 @@ targets:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/seq.h
   - src/core/util/atomic_utils.h
+  - src/core/util/backoff.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
   - src/core/util/function_signature.h
@@ -14884,12 +14974,12 @@ targets:
   - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/match.h
+  - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
-  - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
-  - src/core/util/ring_buffer.h
+  - src/core/util/shared_bit_gen.h
   - src/core/util/time.h
   - src/core/util/upb_utils.h
   - third_party/upb/upb/generated_code_support.h
@@ -14910,11 +15000,14 @@ targets:
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/experiments/config.cc
+  - src/core/lib/experiments/experiments.cc
   - src/core/lib/promise/activity.cc
+  - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
-  - src/core/util/per_cpu.cc
+  - src/core/util/shared_bit_gen.cc
   - src/core/util/time.cc
   - test/core/promise/loop_test.cc
   deps:
@@ -15017,6 +15110,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
+  - src/core/util/backoff.h
   - src/core/util/bitset.h
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
@@ -15027,12 +15121,12 @@ targets:
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
+  - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
-  - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
-  - src/core/util/ring_buffer.h
+  - src/core/util/shared_bit_gen.h
   - src/core/util/spinlock.h
   - src/core/util/status_helper.h
   - src/core/util/time.h
@@ -15074,10 +15168,11 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/transport/status_conversion.cc
+  - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
-  - src/core/util/per_cpu.cc
+  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - test/core/promise/map_pipe_test.cc
@@ -15314,6 +15409,7 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/transport/status_conversion.h
   - src/core/util/atomic_utils.h
+  - src/core/util/backoff.h
   - src/core/util/bitset.h
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
@@ -15324,12 +15420,12 @@ targets:
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
+  - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
-  - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
-  - src/core/util/ring_buffer.h
+  - src/core/util/shared_bit_gen.h
   - src/core/util/spinlock.h
   - src/core/util/status_helper.h
   - src/core/util/time.h
@@ -15375,10 +15471,11 @@ targets:
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/transport/status_conversion.cc
+  - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
-  - src/core/util/per_cpu.cc
+  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - test/core/transport/chttp2/message_assembler_test.cc
@@ -15603,6 +15700,8 @@ targets:
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
+  - src/core/lib/experiments/config.h
+  - src/core/lib/experiments/experiments.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
@@ -15617,6 +15716,7 @@ targets:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/seq.h
   - src/core/util/atomic_utils.h
+  - src/core/util/backoff.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
   - src/core/util/function_signature.h
@@ -15627,10 +15727,9 @@ targets:
   - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
-  - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
-  - src/core/util/ring_buffer.h
+  - src/core/util/shared_bit_gen.h
   - src/core/util/time.h
   - src/core/util/upb_utils.h
   - test/core/promise/poll_matcher.h
@@ -15652,11 +15751,14 @@ targets:
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/experiments/config.cc
+  - src/core/lib/experiments/experiments.cc
   - src/core/lib/promise/activity.cc
+  - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
-  - src/core/util/per_cpu.cc
+  - src/core/util/shared_bit_gen.cc
   - src/core/util/time.cc
   - test/core/promise/observable_test.cc
   deps:
@@ -16063,12 +16165,13 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/transport/status_conversion.h
+  - src/core/util/backoff.h
   - src/core/util/bitset.h
   - src/core/util/glob.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
-  - src/core/util/per_cpu.h
-  - src/core/util/ring_buffer.h
+  - src/core/util/notification.h
+  - src/core/util/shared_bit_gen.h
   - src/core/util/spinlock.h
   - src/core/util/status_helper.h
   - src/core/util/time.h
@@ -16092,9 +16195,10 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/transport/status_conversion.cc
+  - src/core/util/backoff.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
-  - src/core/util/per_cpu.cc
+  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - test/core/resource_quota/periodic_update_test.cc
@@ -16758,6 +16862,8 @@ targets:
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
+  - src/core/lib/experiments/config.h
+  - src/core/lib/experiments/experiments.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
@@ -16773,6 +16879,7 @@ targets:
   - src/core/lib/promise/promise_mutex.h
   - src/core/lib/promise/seq.h
   - src/core/util/atomic_utils.h
+  - src/core/util/backoff.h
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
@@ -16781,12 +16888,12 @@ targets:
   - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/match.h
+  - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
-  - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
-  - src/core/util/ring_buffer.h
+  - src/core/util/shared_bit_gen.h
   - src/core/util/time.h
   - src/core/util/upb_utils.h
   - test/core/promise/test_wakeup_schedulers.h
@@ -16808,11 +16915,14 @@ targets:
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/experiments/config.cc
+  - src/core/lib/experiments/experiments.cc
   - src/core/lib/promise/activity.cc
+  - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
-  - src/core/util/per_cpu.cc
+  - src/core/util/shared_bit_gen.cc
   - src/core/util/time.cc
   - test/core/promise/promise_mutex_test.cc
   deps:
@@ -17037,6 +17147,8 @@ targets:
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
   - src/core/util/seq_bit_set.h
+  - src/cpp/latent_see/latent_see_client.h
+  - src/cpp/latent_see/latent_see_service.h
   - test/cpp/qps/benchmark_config.h
   - test/cpp/qps/client.h
   - test/cpp/qps/driver.h
@@ -17051,6 +17163,7 @@ targets:
   - test/cpp/qps/usage_timer.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - src/proto/grpc/channelz/v2/latent_see.proto
   - src/proto/grpc/testing/benchmark_service.proto
   - src/proto/grpc/testing/control.proto
   - src/proto/grpc/testing/messages.proto
@@ -17080,6 +17193,8 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/util/seq_bit_set.cc
+  - src/cpp/latent_see/latent_see_client.cc
+  - src/cpp/latent_see/latent_see_service.cc
   - test/cpp/qps/benchmark_config.cc
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_callback.cc
@@ -17142,6 +17257,7 @@ targets:
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
   - src/core/util/seq_bit_set.h
+  - src/cpp/latent_see/latent_see_service.h
   - test/cpp/qps/client.h
   - test/cpp/qps/histogram.h
   - test/cpp/qps/interarrival.h
@@ -17152,6 +17268,7 @@ targets:
   - test/cpp/qps/usage_timer.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - src/proto/grpc/channelz/v2/latent_see.proto
   - src/proto/grpc/testing/benchmark_service.proto
   - src/proto/grpc/testing/control.proto
   - src/proto/grpc/testing/messages.proto
@@ -17180,6 +17297,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/util/seq_bit_set.cc
+  - src/cpp/latent_see/latent_see_service.cc
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_callback.cc
   - test/cpp/qps/client_sync.cc
@@ -17476,6 +17594,7 @@ targets:
   - src/core/telemetry/stats_data.h
   - src/core/util/atomic_utils.h
   - src/core/util/avl.h
+  - src/core/util/backoff.h
   - src/core/util/bitset.h
   - src/core/util/check_class_size.h
   - src/core/util/chunked_vector.h
@@ -17502,7 +17621,6 @@ targets:
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ref_counted_string.h
-  - src/core/util/ring_buffer.h
   - src/core/util/shared_bit_gen.h
   - src/core/util/single_set_ptr.h
   - src/core/util/sorted_pack.h
@@ -17580,6 +17698,7 @@ targets:
   - src/core/telemetry/histogram_view.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
+  - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/grpc_if_nametoindex_posix.cc
@@ -19583,6 +19702,8 @@ targets:
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
+  - src/core/lib/experiments/config.h
+  - src/core/lib/experiments/experiments.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/promise_factory.h
@@ -19592,6 +19713,7 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/wait_for_callback.h
   - src/core/util/atomic_utils.h
+  - src/core/util/backoff.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
   - src/core/util/function_signature.h
@@ -19602,10 +19724,9 @@ targets:
   - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
-  - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
-  - src/core/util/ring_buffer.h
+  - src/core/util/shared_bit_gen.h
   - src/core/util/time.h
   - src/core/util/upb_utils.h
   - test/core/promise/test_wakeup_schedulers.h
@@ -19627,11 +19748,14 @@ targets:
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/experiments/config.cc
+  - src/core/lib/experiments/experiments.cc
   - src/core/lib/promise/activity.cc
+  - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
-  - src/core/util/per_cpu.cc
+  - src/core/util/shared_bit_gen.cc
   - src/core/util/time.cc
   - test/core/promise/wait_for_callback_test.cc
   deps:
