@@ -157,6 +157,9 @@ class OpenTelemetryPluginImpl::ClientCallTracer
   const bool registered_method_;
   OpenTelemetryPluginImpl* otel_plugin_;
   std::shared_ptr<OpenTelemetryPluginImpl::ClientScopeConfig> scope_config_;
+  // TODO(ctiller@): When refactoring the tracer code, consider the possibility
+  // of removing this mutex. More discussion in
+  // https://github.com/grpc/grpc/pull/39195/files#r2191231973.
   grpc_core::Mutex mu_;
   // Non-transparent retry attempts per call (includes initial attempt)
   uint64_t retries_ ABSL_GUARDED_BY(&mu_) = 0;
