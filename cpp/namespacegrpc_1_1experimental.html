@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.73.0</span>
+   &#160;<span id="projectnumber">1.74.0</span>
    </div>
   </td>
  </tr>
@@ -182,9 +182,15 @@ Functions</h2></td></tr>
 <tr class="memitem:ab4c7e40417b37179d52667f3208f69a3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#ab4c7e40417b37179d52667f3208f69a3">ChannelResetConnectionBackoff</a> (<a class="el" href="classgrpc_1_1_channel.html">Channel</a> *channel)</td></tr>
 <tr class="memdesc:ab4c7e40417b37179d52667f3208f69a3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Resets the channel's connection backoff.  <a href="namespacegrpc_1_1experimental.html#ab4c7e40417b37179d52667f3208f69a3">More...</a><br /></td></tr>
 <tr class="separator:ab4c7e40417b37179d52667f3208f69a3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ade1acd14d2c430d2cb44f6288b5228cd"><td class="memItemLeft" align="right" valign="top">int64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#ade1acd14d2c430d2cb44f6288b5228cd">ChannelGetChannelzUuid</a> (<a class="el" href="classgrpc_1_1_channel.html">Channel</a> *channel)</td></tr>
+<tr class="memdesc:ade1acd14d2c430d2cb44f6288b5228cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Retrieves a channel's channelz uuid TODO(ctiller): Once we see whether this proves useful, either create a gRFC and change this to be a method of the <a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel.">Channel</a> class, or remove it.  <a href="namespacegrpc_1_1experimental.html#ade1acd14d2c430d2cb44f6288b5228cd">More...</a><br /></td></tr>
+<tr class="separator:ade1acd14d2c430d2cb44f6288b5228cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af089b10a266c70f15aeb7e2156295a30"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel.html">Channel</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#af089b10a266c70f15aeb7e2156295a30">CreateCustomChannelWithInterceptors</a> (const grpc::string &amp;target, const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a> &gt; &amp;creds, const <a class="el" href="classgrpc_1_1_channel_arguments.html">ChannelArguments</a> &amp;args, std::vector&lt; std::unique_ptr&lt; <a class="el" href="classgrpc_1_1experimental_1_1_client_interceptor_factory_interface.html">experimental::ClientInterceptorFactoryInterface</a> &gt;&gt; interceptor_creators)</td></tr>
 <tr class="memdesc:af089b10a266c70f15aeb7e2156295a30"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a new <em>custom</em> <em><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel.">Channel</a></em> pointing to <em>target</em> with <em>interceptors</em> being invoked per call.  <a href="namespacegrpc_1_1experimental.html#af089b10a266c70f15aeb7e2156295a30">More...</a><br /></td></tr>
 <tr class="separator:af089b10a266c70f15aeb7e2156295a30"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5b17f0e8292e6b2fb243849ac7c0e077"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel.html">grpc::Channel</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#a5b17f0e8292e6b2fb243849ac7c0e077">CreateChannelFromEndpoint</a> (std::unique_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html">grpc_event_engine::experimental::EventEngine::Endpoint</a> &gt; endpoint, const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a> &gt; &amp;creds, const <a class="el" href="classgrpc_1_1_channel_arguments.html">ChannelArguments</a> &amp;args)</td></tr>
+<tr class="memdesc:a5b17f0e8292e6b2fb243849ac7c0e077"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a new <em><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel.">Channel</a></em> from an EventEngine endpoint.  <a href="namespacegrpc_1_1experimental.html#a5b17f0e8292e6b2fb243849ac7c0e077">More...</a><br /></td></tr>
+<tr class="separator:a5b17f0e8292e6b2fb243849ac7c0e077"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a718f256dc9bf553b923b5202422b6fe7"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel.html">grpc::Channel</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#a718f256dc9bf553b923b5202422b6fe7">CreateCustomChannelWithInterceptors</a> (const grpc::string &amp;target, const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">grpc::ChannelCredentials</a> &gt; &amp;creds, const <a class="el" href="classgrpc_1_1_channel_arguments.html">grpc::ChannelArguments</a> &amp;args, std::vector&lt; std::unique_ptr&lt; <a class="el" href="classgrpc_1_1experimental_1_1_client_interceptor_factory_interface.html">grpc::experimental::ClientInterceptorFactoryInterface</a> &gt;&gt; interceptor_creators)</td></tr>
 <tr class="separator:a718f256dc9bf553b923b5202422b6fe7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a845a1ccd03791217297f52281777a9b4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">grpc::Status</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1experimental.html#a845a1ccd03791217297f52281777a9b4">StsCredentialsOptionsFromJson</a> (const std::string &amp;json_string, <a class="el" href="structgrpc_1_1experimental_1_1_sts_credentials_options.html">StsCredentialsOptions</a> *options)</td></tr>
@@ -335,6 +341,26 @@ template&lt;class Request , class Response &gt; </div>
 
 </div>
 </div>
+<a id="ade1acd14d2c430d2cb44f6288b5228cd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ade1acd14d2c430d2cb44f6288b5228cd">&#9670;&nbsp;</a></span>ChannelGetChannelzUuid()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">int64_t grpc::experimental::ChannelGetChannelzUuid </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_channel.html">Channel</a> *&#160;</td>
+          <td class="paramname"><em>channel</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Retrieves a channel's channelz uuid TODO(ctiller): Once we see whether this proves useful, either create a gRFC and change this to be a method of the <a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel.">Channel</a> class, or remove it. </p>
+
+</div>
+</div>
 <a id="ab4c7e40417b37179d52667f3208f69a3"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab4c7e40417b37179d52667f3208f69a3">&#9670;&nbsp;</a></span>ChannelResetConnectionBackoff()</h2>
 
@@ -353,6 +379,51 @@ template&lt;class Request , class Response &gt; </div>
 
 <p>Resets the channel's connection backoff. </p>
 <p>TODO(roth): Once we see whether this proves useful, either create a gRFC and change this to be a method of the <a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel.">Channel</a> class, or remove it. </p>
+
+</div>
+</div>
+<a id="a5b17f0e8292e6b2fb243849ac7c0e077"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5b17f0e8292e6b2fb243849ac7c0e077">&#9670;&nbsp;</a></span>CreateChannelFromEndpoint()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_channel.html">grpc::Channel</a>&gt; grpc::experimental::CreateChannelFromEndpoint </td>
+          <td>(</td>
+          <td class="paramtype">std::unique_ptr&lt; <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html">grpc_event_engine::experimental::EventEngine::Endpoint</a> &gt;&#160;</td>
+          <td class="paramname"><em>endpoint</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a> &gt; &amp;&#160;</td>
+          <td class="paramname"><em>creds</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const <a class="el" href="classgrpc_1_1_channel_arguments.html">ChannelArguments</a> &amp;&#160;</td>
+          <td class="paramname"><em>args</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Creates a new <em><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel.">Channel</a></em> from an EventEngine endpoint. </p>
+<p>The channel target will be hard-coded to something like "ipv4:127.0.0.1:80". The default authority will be set to the endpoint's peer address, but the application can override it using the GRPC_ARG_DEFAULT_AUTHORITY channel argument. This API supports both secure and insecure channel credentials.</p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">endpoint</td><td>A unique pointer to an EventEngine endpoint representing an established connection. </td></tr>
+    <tr><td class="paramname">creds</td><td>The channel credentials used to secure the connection. </td></tr>
+    <tr><td class="paramname">args</td><td><a class="el" href="classgrpc_1_1_channel.html" title="Channels represent a connection to an endpoint. Created by CreateChannel.">Channel</a> arguments used to configure the channel behavior. </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
@@ -681,7 +752,7 @@ template&lt;class Request , class Response &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Jun 7 2025 19:35:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Jul 24 2025 18:13:19 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

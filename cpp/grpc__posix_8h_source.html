@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.73.0</span>
+   &#160;<span id="projectnumber">1.74.0</span>
    </div>
   </td>
  </tr>
@@ -109,14 +109,23 @@ $(function() {
 <div class="line"><a name="l00056"></a><span class="lineno">   56</span>&#160; </div>
 <div class="line"><a name="l00057"></a><span class="lineno">   57</span>&#160;<span class="preprocessor">#ifdef __cplusplus</span></div>
 <div class="line"><a name="l00058"></a><span class="lineno">   58</span>&#160;}</div>
-<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160;<span class="preprocessor">#endif</span></div>
-<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160; </div>
-<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_GRPC_POSIX_H */</span><span class="preprocessor"></span></div>
+<div class="line"><a name="l00059"></a><span class="lineno">   59</span>&#160; </div>
+<div class="line"><a name="l00060"></a><span class="lineno">   60</span>&#160;<span class="keyword">namespace </span><a class="code" href="namespacegrpc__core_1_1experimental.html">grpc_core::experimental</a> {</div>
+<div class="line"><a name="l00061"></a><span class="lineno">   61</span>&#160; </div>
+<div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<a class="code" href="grpc__types_8h.html#a432bfa6b9f6603643cdf9de8804c254e">grpc_channel</a>* CreateChannelFromFd(<span class="keywordtype">int</span> fd, <a class="code" href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a>* creds,</div>
+<div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;                                  <span class="keyword">const</span> <a class="code" href="structgrpc__channel__args.html">grpc_channel_args</a>* args);</div>
+<div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160; </div>
+<div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;}  <span class="comment">// namespace grpc_core::experimental</span></div>
+<div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160; </div>
+<div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;<span class="preprocessor">#endif  // __cplusplus</span></div>
+<div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160; </div>
+<div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_GRPC_POSIX_H */</span><span class="preprocessor"></span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="asupport_2port__platform_8h_html_a2865c3b28ea7db75be4c725adb1edc7d"><div class="ttname"><a href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a></div><div class="ttdeci">#define GRPCAPI</div><div class="ttdef"><b>Definition:</b> port_platform.h:733</div></div>
 <div class="ttc" id="astructgrpc__channel__args_html"><div class="ttname"><a href="structgrpc__channel__args.html">grpc_channel_args</a></div><div class="ttdoc">An array of arguments that can be passed around.</div><div class="ttdef"><b>Definition:</b> grpc_types.h:130</div></div>
 <div class="ttc" id="agrpc__types_8h_html"><div class="ttname"><a href="grpc__types_8h.html">grpc_types.h</a></div></div>
 <div class="ttc" id="agrpc_8h_html_ab4ed40ea84a2f70ffd81a84bd8ee634b"><div class="ttname"><a href="grpc_8h.html#ab4ed40ea84a2f70ffd81a84bd8ee634b">grpc_channel_credentials</a></div><div class="ttdeci">struct grpc_channel_credentials grpc_channel_credentials</div><div class="ttdoc">— grpc_channel_credentials object.</div><div class="ttdef"><b>Definition:</b> grpc.h:286</div></div>
+<div class="ttc" id="anamespacegrpc__core_1_1experimental_html"><div class="ttname"><a href="namespacegrpc__core_1_1experimental.html">grpc_core::experimental</a></div><div class="ttdef"><b>Definition:</b> grpc_audit_logging.h:32</div></div>
 <div class="ttc" id="agrpc_8h_html"><div class="ttname"><a href="grpc_8h.html">grpc.h</a></div></div>
 <div class="ttc" id="agrpc__posix_8h_html_a5d6e9cceffeb7796877341b5818ccc1d"><div class="ttname"><a href="grpc__posix_8h.html#a5d6e9cceffeb7796877341b5818ccc1d">grpc_server_add_channel_from_fd</a></div><div class="ttdeci">GRPCAPI void grpc_server_add_channel_from_fd(grpc_server *server, int fd, grpc_server_credentials *creds)</div><div class="ttdoc">Add the connected secure communication channel based on file descriptor 'fd' to the 'server' and serv...</div></div>
 <div class="ttc" id="agrpc__types_8h_html_a2bbbaad8f7a806f6c834b68c5dd916d8"><div class="ttname"><a href="grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8">grpc_server</a></div><div class="ttdeci">struct grpc_server grpc_server</div><div class="ttdoc">A server listens to some port and responds to request calls.</div><div class="ttdef"><b>Definition:</b> grpc_types.h:63</div></div>
@@ -126,7 +135,7 @@ $(function() {
 <div class="ttc" id="asupport_2port__platform_8h_html"><div class="ttname"><a href="support_2port__platform_8h.html">port_platform.h</a></div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Sat Jun 7 2025 19:35:56 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Thu Jul 24 2025 18:13:19 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
