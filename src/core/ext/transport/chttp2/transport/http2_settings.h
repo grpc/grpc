@@ -151,7 +151,7 @@ class Http2Settings {
 
  private:
   // RFC9113 states the default value for SETTINGS_HEADER_TABLE_SIZE
-  uint32_t header_table_size_ = 4096;
+  uint32_t header_table_size_ = 4096u;
 
   // TODO(tjagtap) [PH2][P4] : Get the history of why this default was decided
   // and write it here.
