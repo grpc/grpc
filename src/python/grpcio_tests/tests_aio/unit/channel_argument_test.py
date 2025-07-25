@@ -140,7 +140,7 @@ class TestChannelArgument(AioTestBase):
                     (ValueError, TypeError),
                     aio.insecure_channel,
                     "[::]:0",
-                    options=invalid_arg,  # type: ignore
+                    options=invalid_arg,
                 )
 
     async def test_max_message_length_applied(self):
