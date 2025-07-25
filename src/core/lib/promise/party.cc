@@ -155,7 +155,7 @@ Party::Participant::~Participant() {
 // Party::SpawnSerializer
 
 bool Party::SpawnSerializer::PollParticipantPromise() {
-  GRPC_LATENT_SEE_INNER_SCOPE("SpawnSerializer::PollParticipantPromise");
+  GRPC_LATENT_SEE_SCOPE("SpawnSerializer::PollParticipantPromise");
   if (active_ == nullptr) {
     active_ = next_.Pop().value_or(nullptr);
   }
@@ -278,7 +278,7 @@ void Party::ForceImmediateRepoll(WakeupMask mask) {
 }
 
 void Party::RunLockedAndUnref(Party* party, uint64_t prev_state) {
-  GRPC_LATENT_SEE_PARENT_SCOPE("Party::RunLocked");
+  GRPC_LATENT_SEE_SCOPE("Party::RunLocked");
 #ifdef GRPC_MAXIMIZE_THREADYNESS
   Thread thd(
       "RunParty",
@@ -305,7 +305,7 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state) {
     GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void Run() {
       g_run_state = this;
       do {
-        GRPC_LATENT_SEE_INNER_SCOPE("run_one_party");
+        GRPC_LATENT_SEE_SCOPE("run_one_party");
         CHECK(first.party != nullptr);
         first.party->RunPartyAndUnref(first.prev_state);
         first = std::exchange(next, PartyWakeup{});
@@ -342,9 +342,9 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state) {
       auto* event_engine =
           arena->GetContext<grpc_event_engine::experimental::EventEngine>();
       CHECK(event_engine != nullptr) << "; " << GRPC_DUMP_ARGS(party, arena);
-      GRPC_LATENT_SEE_INNER_SCOPE("offload_one_party");
+      GRPC_LATENT_SEE_SCOPE("offload_one_party");
       event_engine->Run([wakeup]() {
-        GRPC_LATENT_SEE_PARENT_SCOPE("Party::RunLocked offload");
+        GRPC_LATENT_SEE_SCOPE("Party::RunLocked offload");
         ExecCtx exec_ctx;
         RunState{wakeup}.Run();
       });
@@ -478,7 +478,7 @@ uint64_t Party::NextAllocationMask(uint64_t current_allocation_mask) {
 #endif
 
 size_t Party::AddParticipant(Participant* participant) {
-  GRPC_LATENT_SEE_INNER_SCOPE("Party::AddParticipant");
+  GRPC_LATENT_SEE_SCOPE("Party::AddParticipant");
   uint64_t state = state_.load(std::memory_order_acquire);
   uint64_t allocated;
   size_t slot;
@@ -544,7 +544,7 @@ void Party::WakeupAsync(WakeupMask wakeup_mask) {
         wakeup_mask_ |= wakeup_mask;
         arena_->GetContext<grpc_event_engine::experimental::EventEngine>()->Run(
             [this, prev_state]() {
-              GRPC_LATENT_SEE_PARENT_SCOPE("Party::WakeupAsync");
+              GRPC_LATENT_SEE_SCOPE("Party::WakeupAsync");
               ExecCtx exec_ctx;
               RunLockedAndUnref(this, prev_state);
             });

@@ -379,7 +379,8 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             _cyobservability.activate_stats()
             self.set_stats(True)
         except Exception as e:  # pylint: disable=broad-except
-            raise ValueError(f"Activate observability metrics failed with: {e}")
+            error_msg = f"Activate observability metrics failed with: {e}"
+            raise ValueError(error_msg)
 
         try:
             _cyobservability.cyobservability_init(self._exporter)
