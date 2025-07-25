@@ -25,6 +25,8 @@ from grpc.experimental import aio
 from tests_aio.unit import _common
 from tests_aio.unit._test_base import AioTestBase
 
+from typeguard import suppress_type_checks
+
 _TEST_CLIENT_TO_SERVER = "/test/TestClientToServer"
 _TEST_SERVER_TO_CLIENT = "/test/TestServerToClient"
 _TEST_TRAILING_METADATA = "/test/TestTrailingMetadata"
@@ -267,12 +269,13 @@ class TestMetadata(AioTestBase):
         "https://github.com/grpc/grpc/issues/21943",
     )
     async def test_invalid_metadata(self):
-        multicallable = self._client.unary_unary(_TEST_CLIENT_TO_SERVER)
-        for exception_type, metadata in _INVALID_METADATA_TEST_CASES:
-            with self.subTest(metadata=metadata):
-                with self.assertRaises(exception_type):
-                    call = multicallable(_REQUEST, metadata=metadata)
-                    await call
+        with suppress_type_checks():
+            multicallable = self._client.unary_unary(_TEST_CLIENT_TO_SERVER)
+            for exception_type, metadata in _INVALID_METADATA_TEST_CASES:
+                with self.subTest(metadata=metadata):
+                    with self.assertRaises(exception_type):
+                        call = multicallable(_REQUEST, metadata=metadata)
+                        await call
 
     async def test_generic_handler(self):
         multicallable = self._client.unary_unary(_TEST_GENERIC_HANDLER)

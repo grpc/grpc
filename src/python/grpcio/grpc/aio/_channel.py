@@ -564,7 +564,6 @@ class Channel(_base_channel.Channel):
             self._loop,
         )
 
-
 def insecure_channel(
     target: str,
     options: Optional[ChannelArgumentType] = None,
