@@ -115,6 +115,9 @@ EXPERIMENTS = {
             "lb_unit_test": [
                 "rr_wrr_connect_from_random_index",
             ],
+            "minimal_stack_test": [
+                "fuse_filters",
+            ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
             ],
@@ -200,6 +203,9 @@ EXPERIMENTS = {
             "lb_unit_test": [
                 "rr_wrr_connect_from_random_index",
             ],
+            "minimal_stack_test": [
+                "fuse_filters",
+            ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
             ],
@@ -284,6 +290,9 @@ EXPERIMENTS = {
             ],
             "lb_unit_test": [
                 "rr_wrr_connect_from_random_index",
+            ],
+            "minimal_stack_test": [
+                "fuse_filters",
             ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",

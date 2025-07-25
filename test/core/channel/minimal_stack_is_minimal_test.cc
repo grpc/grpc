@@ -147,19 +147,38 @@ TEST(ChannelStackFilters, LooksAsExpected) {
             std::vector<std::string>(
                 {"server", "message_size", "server_call_tracer", "connected"}));
 
-  EXPECT_EQ(
-      MakeStack("chttp2", no_args, GRPC_CLIENT_DIRECT_CHANNEL),
-      std::vector<std::string>({"authority", "message_size", "http-client",
-                                "compression", "connected"}));
-  EXPECT_EQ(
-      MakeStack("chttp2", no_args, GRPC_CLIENT_SUBCHANNEL),
-      std::vector<std::string>({"authority", "message_size", "http-client",
-                                "compression", "connected"}));
-
-  EXPECT_EQ(MakeStack("chttp2", no_args, GRPC_SERVER_CHANNEL),
-            std::vector<std::string>({"server", "message_size", "http-server",
-                                      "compression", "server_call_tracer",
-                                      "connected"}));
+#ifndef GRPC_NO_FILTER_FUSION
+  if (grpc_core::IsFuseFiltersEnabled()) {
+    EXPECT_EQ(MakeStack("chttp2", no_args, GRPC_CLIENT_DIRECT_CHANNEL),
+              std::vector<std::string>({"authority",
+                                        "message_size+http-client+compression",
+                                        "connected"}));
+    EXPECT_EQ(MakeStack("chttp2", no_args, GRPC_CLIENT_SUBCHANNEL),
+              std::vector<std::string>({"authority",
+                                        "message_size+http-client+compression",
+                                        "connected"}));
+    EXPECT_EQ(MakeStack("chttp2", no_args, GRPC_SERVER_CHANNEL),
+              std::vector<std::string>(
+                  {"server",
+                   "message_size+http-server+compression+server_call_tracer",
+                   "connected"}));
+  } else {
+#endif
+    EXPECT_EQ(
+        MakeStack("chttp2", no_args, GRPC_CLIENT_DIRECT_CHANNEL),
+        std::vector<std::string>({"authority", "message_size", "http-client",
+                                  "compression", "connected"}));
+    EXPECT_EQ(
+        MakeStack("chttp2", no_args, GRPC_CLIENT_SUBCHANNEL),
+        std::vector<std::string>({"authority", "message_size", "http-client",
+                                  "compression", "connected"}));
+    EXPECT_EQ(MakeStack("chttp2", no_args, GRPC_SERVER_CHANNEL),
+              std::vector<std::string>({"server", "message_size", "http-server",
+                                        "compression", "server_call_tracer",
+                                        "connected"}));
+#ifndef GRPC_NO_FILTER_FUSION
+  }
+#endif
   EXPECT_EQ(MakeStack(nullptr, no_args, GRPC_CLIENT_CHANNEL),
             std::vector<std::string>({"client_idle", "client-channel"}));
 }
