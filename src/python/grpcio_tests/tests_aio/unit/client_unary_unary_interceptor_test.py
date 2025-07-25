@@ -46,6 +46,7 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
 
     def test_invalid_interceptor(self):
         with suppress_type_checks():
+
             class InvalidInterceptor:
                 """Just an invalid Interceptor"""
 
@@ -578,6 +579,7 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
     async def test_cancel_inside_interceptor_after_rpc_not_awaiting(self):
         class Interceptor(aio.UnaryUnaryClientInterceptor):
             with suppress_type_checks():
+
                 async def intercept_unary_unary(
                     self, continuation, client_call_details, request
                 ):
