@@ -22,7 +22,7 @@
 
 #include "gtest/gtest.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/socket_mutator.h"
+#include "src/core/net/socket_mutator.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
 

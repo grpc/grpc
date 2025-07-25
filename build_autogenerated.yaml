@@ -1131,6 +1131,7 @@ libs:
   - src/core/load_balancing/weighted_target/weighted_target.h
   - src/core/load_balancing/xds/xds_channel_args.h
   - src/core/load_balancing/xds/xds_override_host.h
+  - src/core/net/socket_mutator.h
   - src/core/resolver/dns/c_ares/dns_resolver_ares.h
   - src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h
   - src/core/resolver/dns/c_ares/grpc_ares_wrapper.h
@@ -2032,6 +2033,7 @@ libs:
   - src/core/load_balancing/xds/xds_cluster_manager.cc
   - src/core/load_balancing/xds/xds_override_host.cc
   - src/core/load_balancing/xds/xds_wrr_locality.cc
+  - src/core/net/socket_mutator.cc
   - src/core/plugin_registry/grpc_plugin_registry.cc
   - src/core/plugin_registry/grpc_plugin_registry_extra.cc
   - src/core/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -2792,6 +2794,7 @@ libs:
   - src/core/load_balancing/subchannel_interface.h
   - src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h
   - src/core/load_balancing/weighted_target/weighted_target.h
+  - src/core/net/socket_mutator.h
   - src/core/resolver/dns/c_ares/dns_resolver_ares.h
   - src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h
   - src/core/resolver/dns/c_ares/grpc_ares_wrapper.h
@@ -3260,6 +3263,7 @@ libs:
   - src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc
   - src/core/load_balancing/weighted_round_robin/weighted_round_robin.cc
   - src/core/load_balancing/weighted_target/weighted_target.cc
+  - src/core/net/socket_mutator.cc
   - src/core/plugin_registry/grpc_plugin_registry.cc
   - src/core/plugin_registry/grpc_plugin_registry_noextra.cc
   - src/core/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -4813,6 +4817,7 @@ libs:
   - src/core/load_balancing/lb_policy_factory.h
   - src/core/load_balancing/lb_policy_registry.h
   - src/core/load_balancing/subchannel_interface.h
+  - src/core/net/socket_mutator.h
   - src/core/resolver/endpoint_addresses.h
   - src/core/resolver/resolver.h
   - src/core/resolver/resolver_factory.h
@@ -5138,6 +5143,7 @@ libs:
   - src/core/lib/transport/transport_op_string.cc
   - src/core/load_balancing/lb_policy.cc
   - src/core/load_balancing/lb_policy_registry.cc
+  - src/core/net/socket_mutator.cc
   - src/core/resolver/endpoint_addresses.cc
   - src/core/resolver/resolver.cc
   - src/core/resolver/resolver_registry.cc
@@ -6907,6 +6913,7 @@ targets:
   - src/core/load_balancing/lb_policy_factory.h
   - src/core/load_balancing/lb_policy_registry.h
   - src/core/load_balancing/subchannel_interface.h
+  - src/core/net/socket_mutator.h
   - src/core/resolver/endpoint_addresses.h
   - src/core/resolver/resolver.h
   - src/core/resolver/resolver_factory.h
@@ -7196,6 +7203,7 @@ targets:
   - src/core/lib/transport/transport_op_string.cc
   - src/core/load_balancing/lb_policy.cc
   - src/core/load_balancing/lb_policy_registry.cc
+  - src/core/net/socket_mutator.cc
   - src/core/resolver/endpoint_addresses.cc
   - src/core/resolver/resolver.cc
   - src/core/resolver/resolver_registry.cc
@@ -11483,6 +11491,7 @@ targets:
   - src/core/load_balancing/lb_policy_factory.h
   - src/core/load_balancing/lb_policy_registry.h
   - src/core/load_balancing/subchannel_interface.h
+  - src/core/net/socket_mutator.h
   - src/core/resolver/endpoint_addresses.h
   - src/core/resolver/resolver.h
   - src/core/resolver/resolver_factory.h
@@ -11772,6 +11781,7 @@ targets:
   - src/core/lib/transport/transport_op_string.cc
   - src/core/load_balancing/lb_policy.cc
   - src/core/load_balancing/lb_policy_registry.cc
+  - src/core/net/socket_mutator.cc
   - src/core/resolver/endpoint_addresses.cc
   - src/core/resolver/resolver.cc
   - src/core/resolver/resolver_registry.cc
@@ -13285,6 +13295,7 @@ targets:
   - src/core/load_balancing/lb_policy_factory.h
   - src/core/load_balancing/lb_policy_registry.h
   - src/core/load_balancing/subchannel_interface.h
+  - src/core/net/socket_mutator.h
   - src/core/resolver/endpoint_addresses.h
   - src/core/resolver/resolver.h
   - src/core/resolver/resolver_factory.h
@@ -13590,6 +13601,7 @@ targets:
   - src/core/lib/transport/transport_op_string.cc
   - src/core/load_balancing/lb_policy.cc
   - src/core/load_balancing/lb_policy_registry.cc
+  - src/core/net/socket_mutator.cc
   - src/core/resolver/endpoint_addresses.cc
   - src/core/resolver/resolver.cc
   - src/core/resolver/resolver_registry.cc

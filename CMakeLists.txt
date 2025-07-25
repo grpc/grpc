@@ -2906,6 +2906,7 @@ add_library(grpc
   src/core/load_balancing/xds/xds_cluster_manager.cc
   src/core/load_balancing/xds/xds_override_host.cc
   src/core/load_balancing/xds/xds_wrr_locality.cc
+  src/core/net/socket_mutator.cc
   src/core/plugin_registry/grpc_plugin_registry.cc
   src/core/plugin_registry/grpc_plugin_registry_extra.cc
   src/core/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -3701,6 +3702,7 @@ add_library(grpc_unsecure
   src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc
   src/core/load_balancing/weighted_round_robin/weighted_round_robin.cc
   src/core/load_balancing/weighted_target/weighted_target.cc
+  src/core/net/socket_mutator.cc
   src/core/plugin_registry/grpc_plugin_registry.cc
   src/core/plugin_registry/grpc_plugin_registry_noextra.cc
   src/core/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -6062,6 +6064,7 @@ add_library(grpc_authorization_provider
   src/core/lib/transport/transport_op_string.cc
   src/core/load_balancing/lb_policy.cc
   src/core/load_balancing/lb_policy_registry.cc
+  src/core/net/socket_mutator.cc
   src/core/resolver/endpoint_addresses.cc
   src/core/resolver/resolver.cc
   src/core/resolver/resolver_registry.cc
@@ -9858,6 +9861,7 @@ add_executable(call_utils_test
   src/core/lib/transport/transport_op_string.cc
   src/core/load_balancing/lb_policy.cc
   src/core/load_balancing/lb_policy_registry.cc
+  src/core/net/socket_mutator.cc
   src/core/resolver/endpoint_addresses.cc
   src/core/resolver/resolver.cc
   src/core/resolver/resolver_registry.cc
@@ -16421,6 +16425,7 @@ add_executable(filter_fusion_test
   src/core/lib/transport/transport_op_string.cc
   src/core/load_balancing/lb_policy.cc
   src/core/load_balancing/lb_policy_registry.cc
+  src/core/net/socket_mutator.cc
   src/core/resolver/endpoint_addresses.cc
   src/core/resolver/resolver.cc
   src/core/resolver/resolver_registry.cc
@@ -19362,6 +19367,7 @@ add_executable(header_assembler_test
   src/core/lib/transport/transport_op_string.cc
   src/core/load_balancing/lb_policy.cc
   src/core/load_balancing/lb_policy_registry.cc
+  src/core/net/socket_mutator.cc
   src/core/resolver/endpoint_addresses.cc
   src/core/resolver/resolver.cc
   src/core/resolver/resolver_registry.cc
