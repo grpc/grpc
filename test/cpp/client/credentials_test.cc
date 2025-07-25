@@ -29,6 +29,7 @@
 #include "absl/log/check.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/util/env.h"
 #include "src/core/util/tmpfile.h"
 #include "src/cpp/client/secure_credentials.h"
@@ -69,6 +70,12 @@ TEST(CredentialsTest, InvalidGoogleRefreshToken) {
 
 TEST(CredentialsTest, DefaultCredentials) {
   auto creds = GoogleDefaultCredentials();
+}
+
+TEST(CredentialsTest, DefaultCredentialsWithAlts) {
+  GoogleDefaultCredentialsOptions options = {};
+  options.use_alts = true;
+  auto creds = GoogleDefaultCredentials(options);
 }
 
 TEST(CredentialsTest, ExternalAccountCredentials) {

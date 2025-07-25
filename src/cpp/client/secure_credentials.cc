@@ -88,9 +88,15 @@ std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials(
     const GoogleDefaultCredentialsOptions& options) {
   grpc::internal::GrpcLibrary init;  // To call grpc_init().
   grpc_call_credentials* alts_call_creds = nullptr;
+  grpc_error_handle error;
+  DefaultCallCredentialsCreationMethod default_credentials_type =
+      DefaultCallCredentialsCreationMethod::kNone;
+  grpc_core::RefCountedPtr<grpc_call_credentials> tls_call_credentials =
+      grpc_core::internal::make_default_call_creds(&error,
+                                                   &default_credentials_type);
 
-  if (options.use_alts &&
-      grpc_core::internal::google_compute_engine_credential_creation_method() ==
+  if (error.ok() && options.use_alts &&
+      default_credentials_type ==
           DefaultCallCredentialsCreationMethod::kFromDefaultGCE) {
     grpc_google_compute_engine_credentials_options* options = {};
     options->create_alts_credentials = true;
@@ -98,7 +104,7 @@ std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials(
   }
 
   return WrapChannelCredentials(grpc_google_default_credentials_create(
-      grpc_google_compute_engine_credentials_create(nullptr), alts_call_creds));
+      tls_call_credentials.release(), alts_call_creds));
 }
 
 std::shared_ptr<CallCredentials> ExternalAccountCredentials(
