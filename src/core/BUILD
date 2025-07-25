@@ -10403,6 +10403,9 @@ grpc_cc_library(
         "channelz/zviz/layout.cc",
     ],
     hdrs = ["channelz/zviz/layout.h"],
+    external_deps = [
+        "absl/strings",
+    ],
     deps = [
         "zviz_environment",
         "//src/proto/grpc/channelz/v2:channelz_cc_proto",
@@ -10451,6 +10454,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "zviz_style",
+    srcs = [
+        "channelz/zviz/style.cc",
+    ],
+    hdrs = ["channelz/zviz/style.h"],
+    external_deps = [
+        "absl/strings:string_view",
+    ],
+)
+
+grpc_cc_library(
     name = "zviz_entity",
     srcs = [
         "channelz/zviz/entity.cc",
@@ -10466,6 +10480,7 @@ grpc_cc_library(
         "zviz_environment",
         "zviz_layout",
         "zviz_strings",
+        "zviz_style",
         "zviz_trace",
         "//src/proto/grpc/channelz/v2:channelz_cc_proto",
     ],
@@ -10483,6 +10498,7 @@ grpc_cc_library(
         "absl/strings:string_view",
         "absl/types:span",
         "absl/functional:function_ref",
+        "absl/log:check",
     ],
 )
 
