@@ -173,18 +173,18 @@ class PythonArtifact:
             )
             environ["PIP"] = "/opt/python/{}/bin/pip".format(self.py_version)
             environ["GRPC_SKIP_PIP_CYTHON_UPGRADE"] = "TRUE"
-            if self.arch == "aarch64":
-                # As we won't strip the binary with auditwheel (see below), strip
-                # it at link time.
-                environ["LDFLAGS"] = "-s"
-            else:
-                # only run auditwheel if we're not crosscompiling
-                environ["GRPC_RUN_AUDITWHEEL_REPAIR"] = "TRUE"
-                # only build the packages that depend on grpcio-tools
-                # if we're not crosscompiling.
-                # - they require protoc to run on current architecture
-                # - they only have sdist packages anyway, so it's useless to build them again
-                environ["GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS"] = "TRUE"
+            # if self.arch == "aarch64":
+            #     # As we won't strip the binary with auditwheel (see below), strip
+            #     # it at link time.
+            #     environ["LDFLAGS"] = "-s"
+            # else:
+            # only run auditwheel if we're not crosscompiling
+            environ["GRPC_RUN_AUDITWHEEL_REPAIR"] = "TRUE"
+            # only build the packages that depend on grpcio-tools
+            # if we're not crosscompiling.
+            # - they require protoc to run on current architecture
+            # - they only have sdist packages anyway, so it's useless to build them again
+            environ["GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS"] = "TRUE"
             return create_docker_jobspec(
                 self.name,
                 "tools/dockerfile/grpc_artifact_python_%s_%s"
