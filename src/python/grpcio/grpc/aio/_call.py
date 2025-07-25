@@ -98,7 +98,7 @@ class AioRpcError(grpc.RpcError):
             Server.
           trailing_metadata: Optional metadata that could be sent by the Server.
           details: Optional details explaining the reason of the error.
-          debug_error_string: Optional string
+          debug_error_string: Optional debug error string that could be sent by the Server.
         """
 
         super().__init__()
