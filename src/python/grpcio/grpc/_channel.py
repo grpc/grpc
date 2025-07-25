@@ -1782,6 +1782,7 @@ def _channel_managed_call_management(state: _ChannelCallState):
           context: Context object for distributed tracing.
           _registered_call_handle: An int representing the call handle of the
             method, or None if the method is not registered.
+
         Returns:
           A cygrpc.IntegratedCall with which to conduct an RPC.
         """
