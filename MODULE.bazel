@@ -179,3 +179,15 @@ python_configure(name = "local_config_python")
 # C++ toolchains in local_config_cc - necessary for Windows build
 cc_configure = use_extension("@rules_cc//cc:extensions.bzl", "cc_configure_extension")
 use_repo(cc_configure, "local_config_cc")
+
+archive_override(
+    module_name = "zlib",
+    url = "https://github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz",
+    # sha256 = "sha256-mpOyt9/ax3zrpaVYpYDnRmfdb+3kWFuR7vtg8Dty3yM=",
+    strip_prefix = "zlib-1.3.1",
+    patches = [
+        "//:third_party/zlib-1.3.1.bcr.5/patches/add_build_file.patch",
+        "//:third_party/zlib-1.3.1.bcr.5/patches/module_dot_bazel.patch",
+    ],
+    patch_strip = 0,
+)
