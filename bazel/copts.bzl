@@ -165,6 +165,7 @@ GRPC_LLVM_WINDOWS_WARNING_FLAGS = GRPC_LLVM_WARNING_FLAGS + [
 # supress warnings from external headers in strict builds
 GRPC_WARNINGS_SUPRESS = [
     "--system-header-prefix=fuzztest/",
+    "--system-header-prefix=absl/",
 ]
 
 GRPC_DEFAULT_COPTS = select({
