@@ -1853,6 +1853,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/service_config/service_config.h )
   s.files += %w( src/core/service_config/service_config_call_data.h )
   s.files += %w( src/core/service_config/service_config_channel_arg_filter.cc )
+  s.files += %w( src/core/service_config/service_config_channel_arg_filter.h )
   s.files += %w( src/core/service_config/service_config_impl.cc )
   s.files += %w( src/core/service_config/service_config_impl.h )
   s.files += %w( src/core/service_config/service_config_parser.cc )
