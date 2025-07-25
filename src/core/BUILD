@@ -4655,9 +4655,11 @@ grpc_cc_library(
         "error",
         "iomgr_fwd",
         "load_file",
+        "match",
         "ref_counted",
         "slice",
         "slice_refcount",
+        "spiffe_utils",
         "ssl_key_logging",
         "ssl_transport_security_utils",
         "status_helper",
@@ -5810,6 +5812,7 @@ grpc_cc_library(
     deps = [
         "certificate_provider_factory",
         "down_cast",
+        "env",
         "grpc_tls_credentials",
         "json",
         "json_args",
@@ -10551,6 +10554,28 @@ grpc_cc_library(
         "//:protobuf_wrappers_upb",
         "//:sockaddr_utils",
         "//:uri",
+    ],
+)
+
+grpc_cc_library(
+    name = "channelz_v2tov1_legacy_api",
+    srcs = ["channelz/v2tov1/legacy_api.cc"],
+    hdrs = ["channelz/v2tov1/legacy_api.h"],
+    external_deps = [
+        "absl/log",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        ":channelz_v2tov1_convert",
+        ":experiments",
+        ":json",
+        ":json_reader",
+        ":json_writer",
+        "//:channelz",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc_public_hdrs",
     ],
 )
 

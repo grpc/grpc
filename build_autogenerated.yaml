@@ -211,6 +211,9 @@ libs:
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
+  - src/core/channelz/v2tov1/convert.h
+  - src/core/channelz/v2tov1/legacy_api.h
+  - src/core/channelz/v2tov1/property_list.h
   - src/core/channelz/ztrace_collector.h
   - src/core/client_channel/backup_poller.h
   - src/core/client_channel/client_channel.h
@@ -282,6 +285,7 @@ libs:
   - src/core/credentials/transport/tls/grpc_tls_crl_provider.h
   - src/core/credentials/transport/tls/load_system_roots.h
   - src/core/credentials/transport/tls/load_system_roots_supported.h
+  - src/core/credentials/transport/tls/spiffe_utils.h
   - src/core/credentials/transport/tls/ssl_utils.h
   - src/core/credentials/transport/tls/tls_credentials.h
   - src/core/credentials/transport/tls/tls_security_connector.h
@@ -608,6 +612,8 @@ libs:
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
@@ -815,6 +821,7 @@ libs:
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h
   - src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.h
@@ -1318,6 +1325,9 @@ libs:
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
+  - src/core/channelz/v2tov1/convert.cc
+  - src/core/channelz/v2tov1/legacy_api.cc
+  - src/core/channelz/v2tov1/property_list.cc
   - src/core/client_channel/backup_poller.cc
   - src/core/client_channel/client_channel.cc
   - src/core/client_channel/client_channel_factory.cc
@@ -1390,6 +1400,7 @@ libs:
   - src/core/credentials/transport/tls/load_system_roots_fallback.cc
   - src/core/credentials/transport/tls/load_system_roots_supported.cc
   - src/core/credentials/transport/tls/load_system_roots_windows.cc
+  - src/core/credentials/transport/tls/spiffe_utils.cc
   - src/core/credentials/transport/tls/ssl_utils.cc
   - src/core/credentials/transport/tls/tls_credentials.cc
   - src/core/credentials/transport/tls/tls_security_connector.cc
@@ -1584,6 +1595,7 @@ libs:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
@@ -1749,6 +1761,7 @@ libs:
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c
   - src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c
@@ -11175,7 +11188,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/test_util/scoped_env_var.h
   src:
   - test/core/xds/file_watcher_certificate_provider_factory_test.cc
   deps:
@@ -18472,10 +18486,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/credentials/transport/tls/spiffe_utils.h
+  headers: []
   src:
-  - src/core/credentials/transport/tls/spiffe_utils.cc
   - test/core/credentials/transport/tls/spiffe_utils_test.cc
   deps:
   - gtest
@@ -20070,6 +20082,7 @@ targets:
   - test/core/xds/xds_certificate_provider_test.cc
   deps:
   - gtest
+  - absl/functional:overload
   - grpc_test_util
   uses_polling: false
 - name: xds_client_test
