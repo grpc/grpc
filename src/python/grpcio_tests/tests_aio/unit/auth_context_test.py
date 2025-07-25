@@ -20,11 +20,10 @@ import unittest
 import grpc
 from grpc.experimental import aio
 from grpc.experimental import session_cache
+from typeguard import suppress_type_checks
 
 from tests.unit import resources
 from tests_aio.unit._test_base import AioTestBase
-
-from typeguard import suppress_type_checks
 
 _REQUEST = b"\x00\x00\x00"
 _RESPONSE = b"\x00\x00\x00"

@@ -18,11 +18,10 @@ import unittest
 import grpc
 from grpc.experimental import aio
 from grpc.experimental.aio import Metadata
+from typeguard import suppress_type_checks
 
 from tests_aio.unit import _common
 from tests_aio.unit._test_base import AioTestBase
-
-from typeguard import suppress_type_checks
 
 _TEST_UNARY_UNARY = "/test/TestUnaryUnary"
 _INITIAL_METADATA_FROM_CLIENT_TO_SERVER = aio.Metadata(
