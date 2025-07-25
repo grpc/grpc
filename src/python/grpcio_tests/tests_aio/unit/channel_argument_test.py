@@ -29,6 +29,8 @@ from tests.unit.framework import common
 from tests_aio.unit._test_base import AioTestBase
 from tests_aio.unit._test_server import start_test_server
 
+from typeguard import suppress_type_checks
+
 _RANDOM_SEED = 42
 
 _ENABLE_REUSE_PORT = "SO_REUSEPORT enabled"
@@ -133,12 +135,13 @@ class TestChannelArgument(AioTestBase):
 
     async def test_invalid_client_args(self):
         for invalid_arg in _INVALID_TEST_CHANNEL_ARGS:
-            self.assertRaises(
-                (ValueError, TypeError),
-                aio.insecure_channel,
-                "[::]:0",
-                options=invalid_arg,
-            )
+            with suppress_type_checks():
+                self.assertRaises(
+                    (ValueError, TypeError),
+                    aio.insecure_channel,
+                    "[::]:0",
+                    options=invalid_arg, # type: ignore
+                )
 
     async def test_max_message_length_applied(self):
         address, server = await start_test_server()

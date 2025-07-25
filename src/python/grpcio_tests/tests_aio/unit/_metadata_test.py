@@ -22,6 +22,8 @@ from grpc.experimental.aio import Metadata
 from tests_aio.unit import _common
 from tests_aio.unit._test_base import AioTestBase
 
+from typeguard import suppress_type_checks
+
 _TEST_UNARY_UNARY = "/test/TestUnaryUnary"
 _INITIAL_METADATA_FROM_CLIENT_TO_SERVER = aio.Metadata(
     ("client-to-server", "question"),
@@ -195,16 +197,17 @@ class TestTypeMetadata(unittest.TestCase):
             del metadata["other key"]
 
     def test_metadata_from_tuple(self):
-        scenarios = (
-            (None, Metadata()),
-            (Metadata(), Metadata()),
-            (self._DEFAULT_DATA, Metadata(*self._DEFAULT_DATA)),
-            (self._MULTI_ENTRY_DATA, Metadata(*self._MULTI_ENTRY_DATA)),
-            (Metadata(*self._DEFAULT_DATA), Metadata(*self._DEFAULT_DATA)),
-        )
-        for source, expected in scenarios:
-            with self.subTest(raw_metadata=source, expected=expected):
-                self.assertEqual(expected, Metadata.from_tuple(source))
+        with suppress_type_checks():
+            scenarios = (
+                (None, Metadata()),
+                (Metadata(), Metadata()),
+                (self._DEFAULT_DATA, Metadata(*self._DEFAULT_DATA)),
+                (self._MULTI_ENTRY_DATA, Metadata(*self._MULTI_ENTRY_DATA)),
+                (Metadata(*self._DEFAULT_DATA), Metadata(*self._DEFAULT_DATA)),
+            )
+            for source, expected in scenarios:
+                with self.subTest(raw_metadata=source, expected=expected):
+                    self.assertEqual(expected, Metadata.from_tuple(source))
 
 
 class TestMetadataWithServer(AioTestBase):

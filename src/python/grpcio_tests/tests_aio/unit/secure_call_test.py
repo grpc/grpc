@@ -24,6 +24,7 @@ from src.proto.grpc.testing import test_pb2_grpc
 from tests.unit import resources
 from tests_aio.unit._test_base import AioTestBase
 from tests_aio.unit._test_server import start_test_server
+from typeguard import suppress_type_checks
 
 _SERVER_HOST_OVERRIDE = "foo.test.google.fr"
 _NUM_STREAM_RESPONSES = 5
@@ -34,26 +35,27 @@ class _SecureCallMixin:
     """A Mixin to run the call tests over a secure channel."""
 
     async def setUp(self):
-        server_credentials = grpc.ssl_server_credentials(
-            [(resources.private_key(), resources.certificate_chain())]
-        )
-        channel_credentials = grpc.ssl_channel_credentials(
-            resources.test_root_certificates()
-        )
+        with suppress_type_checks():
+            server_credentials = grpc.ssl_server_credentials(
+                [(resources.private_key(), resources.certificate_chain())]
+            )
+            channel_credentials = grpc.ssl_channel_credentials(
+                resources.test_root_certificates()
+            )
 
-        self._server_address, self._server = await start_test_server(
-            secure=True, server_credentials=server_credentials
-        )
-        channel_options = (
-            (
-                "grpc.ssl_target_name_override",
-                _SERVER_HOST_OVERRIDE,
-            ),
-        )
-        self._channel = aio.secure_channel(
-            self._server_address, channel_credentials, channel_options
-        )
-        self._stub = test_pb2_grpc.TestServiceStub(self._channel)
+            self._server_address, self._server = await start_test_server(
+                secure=True, server_credentials=server_credentials
+            )
+            channel_options = (
+                (
+                    "grpc.ssl_target_name_override",
+                    _SERVER_HOST_OVERRIDE,
+                ),
+            )
+            self._channel = aio.secure_channel(
+                self._server_address, channel_credentials, channel_options
+            )
+            self._stub = test_pb2_grpc.TestServiceStub(self._channel)
 
     async def tearDown(self):
         await self._channel.close()
@@ -70,16 +72,17 @@ class TestUnaryUnarySecureCall(_SecureCallMixin, AioTestBase):
         self.assertEqual(await call.code(), grpc.StatusCode.OK)
 
     async def test_call_with_credentials(self):
-        call_credentials = grpc.composite_call_credentials(
-            grpc.access_token_call_credentials("abc"),
-            grpc.access_token_call_credentials("def"),
-        )
-        call = self._stub.UnaryCall(
-            messages_pb2.SimpleRequest(), credentials=call_credentials
-        )
-        response = await call
+        with suppress_type_checks():
+            call_credentials = grpc.composite_call_credentials(
+                grpc.access_token_call_credentials("abc"),
+                grpc.access_token_call_credentials("def"),
+            )
+            call = self._stub.UnaryCall(
+                messages_pb2.SimpleRequest(), credentials=call_credentials
+            )
+            response = await call
 
-        self.assertIsInstance(response, messages_pb2.SimpleResponse)
+            self.assertIsInstance(response, messages_pb2.SimpleResponse)
 
 
 class TestUnaryStreamSecureCall(_SecureCallMixin, AioTestBase):
