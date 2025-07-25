@@ -18,7 +18,7 @@ set -e
 
 # PHASE 0: query bazel for information we'll need
 cd $(dirname $0)/../..
-tools/bazel query --noimplicit_deps --output=xml 'deps(let all_targets = //test/... in $all_targets - attr("tags", "grpc-fuzztest", $all_targets))' > tools/artifact_gen/test_deps.xml
+tools/bazel query --noimplicit_deps --output=xml 'deps(//test/... - attr("tags", "grpc-fuzztest", //test/...))' > tools/artifact_gen/test_deps.xml
 tools/bazel query --noimplicit_deps --output=xml 'deps(//:all)' > tools/artifact_gen/root_all_deps.xml
 tools/bazel query --noimplicit_deps --output=xml 'deps(//src/compiler/...)' > tools/artifact_gen/compiler_deps.xml
 tools/bazel query --noimplicit_deps --output=xml 'kind(alias, "//third_party:*")' > tools/artifact_gen/third_party_alias_deps.xml
