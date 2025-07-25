@@ -50,6 +50,8 @@ export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=${GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS
 mkdir -p "${ARTIFACTS_OUT}"
 ARTIFACT_DIR="$PWD/${ARTIFACTS_OUT}"
 
+echo "AUDITWHEEL_ARCH: $AUDITWHEEL_ARCH"
+
 # check whether we are crosscompiling. AUDITWHEEL_ARCH is set by the dockcross docker image.
 if [ "$AUDITWHEEL_ARCH" == "aarch64" ]
 then
