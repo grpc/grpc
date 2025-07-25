@@ -1,6 +1,6 @@
 --- /dev/null
 +++ BUILD.bazel
-@@ -0,0 +1,147 @@
+@@ -0,0 +1,145 @@
 +# Adapted from https://github.com/protocolbuffers/protobuf/blob/master/third_party/zlib.BUILD
 +
 +#  Copyright 2008 Google Inc.  All rights reserved.
@@ -77,16 +77,14 @@
 +    srcs = _ZLIB_HEADERS,
 +    outs = _ZLIB_PREFIXED_HEADERS,
 +    cmd_bash = "cp $(SRCS) $(@D)/zlib/include/",
-+    cmd_bat = """
-+    md "$(@D)\\zlib\\include\\" 2>NUL || (
++    cmd_bat = """md "$(@D)\\zlib\\include\\" 2>NUL || (
 +        if exist "$(@D)\\zlib\\include\\" (
 +            echo Directory already exists, skipping mkdir
 +        ) else (
 +            echo Failed to create directory: "$(@D)\\zlib\\include\\" >&2
 +            exit /b 1
 +        )
-+    ) && 
-+    """ +
++    ) && """ +
 +    " && ".join(
 +         ["@copy /Y \"$(location %s)\" \"$(@D)\\zlib\\include\\\"  >NUL" %
 +          s for s in _ZLIB_HEADERS],
