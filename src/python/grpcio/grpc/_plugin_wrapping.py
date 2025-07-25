@@ -65,11 +65,11 @@ class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
                 else:
                     self._state.called = True
             else:
-                raise RuntimeError(
-                    'AuthMetadataPluginCallback raised exception "{}"!'.format(
-                        self._state.exception
-                    )
+                error_msg = (
+                    "AuthMetadataPluginCallback"
+                    'raised exception "{self._state.exception}"!'
                 )
+                raise RuntimeError(error_msg)
         if error is None:
             self._callback(metadata, cygrpc.StatusCode.ok, None)
         else:
