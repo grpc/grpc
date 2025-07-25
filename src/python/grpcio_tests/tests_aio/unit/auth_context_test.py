@@ -174,8 +174,12 @@ class TestAuthContext(AioTestBase):
             auth_data = pickle.loads(response)
             auth_ctx = auth_data[_AUTH_CTX]
             self.assertCountEqual(_CLIENT_IDS, auth_data[_ID])
-            self.assertEqual("x509_subject_alternative_name", auth_data[_ID_KEY])
-            self.assertSequenceEqual([b"ssl"], auth_ctx["transport_security_type"])
+            self.assertEqual(
+                "x509_subject_alternative_name", auth_data[_ID_KEY]
+            )
+            self.assertSequenceEqual(
+                [b"ssl"], auth_ctx["transport_security_type"]
+            )
             self.assertSequenceEqual(
                 [b"*.test.google.com"], auth_ctx["x509_common_name"]
             )
