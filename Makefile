@@ -763,6 +763,7 @@ LIBGRPC_SRC = \
     src/core/credentials/transport/tls/load_system_roots_fallback.cc \
     src/core/credentials/transport/tls/load_system_roots_supported.cc \
     src/core/credentials/transport/tls/load_system_roots_windows.cc \
+    src/core/credentials/transport/tls/spiffe_utils.cc \
     src/core/credentials/transport/tls/ssl_utils.cc \
     src/core/credentials/transport/tls/tls_credentials.cc \
     src/core/credentials/transport/tls/tls_security_connector.cc \
@@ -1160,7 +1161,6 @@ LIBGRPC_SRC = \
     src/core/filter/auth/client_auth_filter.cc \
     src/core/filter/auth/server_auth_filter.cc \
     src/core/filter/blackboard.cc \
-    src/core/filter/fused_filters.cc \
     src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc \
     src/core/handshaker/handshaker.cc \
     src/core/handshaker/handshaker_registry.cc \

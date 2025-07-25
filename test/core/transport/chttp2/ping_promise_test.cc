@@ -111,6 +111,18 @@ class PingManagerTest : public YodelTest {
         .PreconditionChannelArgs(nullptr);
   }
 
+  void SpawnPingRequest(PingManager& ping_system, bool important,
+                        absl::AnyInvocable<void()> on_initiate_cb,
+                        absl::AnyInvocable<absl::Status()> on_done_cb) {
+    GetParty()->Spawn(
+        "PingRequest",
+        TrySeq(ping_system.RequestPing(std::move(on_initiate_cb), important),
+               [on_done_cb = std::move(on_done_cb)]() mutable {
+                 return on_done_cb();
+               }),
+        [](auto) { LOG(INFO) << "Reached PingRequest end"; });
+  }
+
  private:
   void InitCoreConfiguration() override {}
   void Shutdown() override { party_.reset(); }
@@ -142,10 +154,13 @@ PING_SYSTEM_TEST(TestPingRequest) {
   EXPECT_EQ(ping_system.CountPingInflight(), 0);
   EXPECT_FALSE(ping_system.PingRequested());
 
-  party->Spawn("PingRequest", ping_system.RequestPing([&execution_order]() {
-    LOG(INFO) << "Ping requested. Waiting for ack.";
-    execution_order.append("2");
-  }),
+  party->Spawn("PingRequest",
+               ping_system.RequestPing(
+                   [&execution_order]() {
+                     LOG(INFO) << "Ping requested. Waiting for ack.";
+                     execution_order.append("2");
+                   },
+                   /*important*/ false),
                [&on_done](auto) {
                  LOG(INFO) << "Got a Ping Ack";
                  on_done.Call(absl::OkStatus());
@@ -194,10 +209,13 @@ PING_SYSTEM_TEST(TestPingUnrelatedAck) {
   EXPECT_EQ(ping_system.CountPingInflight(), 0);
   EXPECT_FALSE(ping_system.PingRequested());
 
-  party->Spawn("PingRequest", ping_system.RequestPing([&execution_order]() {
-    LOG(INFO) << "Ping requested. Waiting for ack.";
-    execution_order.append("2");
-  }),
+  party->Spawn("PingRequest",
+               ping_system.RequestPing(
+                   [&execution_order]() {
+                     LOG(INFO) << "Ping requested. Waiting for ack.";
+                     execution_order.append("2");
+                   },
+                   /*important*/ false),
                [&on_done](auto) {
                  LOG(INFO) << "Got a Ping Ack";
                  on_done.Call(absl::OkStatus());
@@ -328,15 +346,16 @@ PING_SYSTEM_TEST(TestPingManagerNoAck) {
   PingManager ping_system(GetChannelArgs(), std::move(ping_interface),
                           event_engine());
   auto party = GetParty();
-  party->Spawn("PingRequest",
-               TrySeq(ping_system.RequestPing([]() {
-                 LOG(INFO) << "Ping requested. Waiting for ack.";
-               }),
-                      []() {
-                        Crash("Unreachable");
-                        return absl::OkStatus();
-                      }),
-               [](auto) { LOG(INFO) << "Received a Ping Ack"; });
+  party->Spawn(
+      "PingRequest",
+      TrySeq(ping_system.RequestPing(
+                 []() { LOG(INFO) << "Ping requested. Waiting for ack."; },
+                 /*important*/ false),
+             []() {
+               Crash("Unreachable");
+               return absl::OkStatus();
+             }),
+      [](auto) { LOG(INFO) << "Received a Ping Ack"; });
 
   party->Spawn(
       "PingManager",
@@ -383,7 +402,8 @@ PING_SYSTEM_TEST(DISABLED_TestPingManagerDelayedPing) {
   // Ping 1
   party->Spawn(
       "PingRequest",
-      TrySeq(ping_system.RequestPing([]() { LOG(INFO) << "Ping initiated"; }),
+      TrySeq(ping_system.RequestPing([]() { LOG(INFO) << "Ping initiated"; },
+                                     /*important*/ false),
              []() {
                Crash("Unreachable");
                return absl::OkStatus();
@@ -403,7 +423,8 @@ PING_SYSTEM_TEST(DISABLED_TestPingManagerDelayedPing) {
   // Ping 2
   party->Spawn(
       "PingRequest2",
-      TrySeq(ping_system.RequestPing([]() { LOG(INFO) << "Ping initiated"; }),
+      TrySeq(ping_system.RequestPing([]() { LOG(INFO) << "Ping initiated"; },
+                                     /*important*/ false),
              []() {
                Crash("Unreachable");
                return absl::OkStatus();
@@ -451,12 +472,13 @@ PING_SYSTEM_TEST(TestPingManagerAck) {
                           event_engine());
   auto party = GetParty();
 
-  party->Spawn("PingRequest",
-               TrySeq(ping_system.RequestPing([]() {
-                 LOG(INFO) << "Ping requested. Waiting for ack.";
-               }),
-                      []() { return absl::OkStatus(); }),
-               [](auto) { LOG(INFO) << "Reached PingRequest end"; });
+  party->Spawn(
+      "PingRequest",
+      TrySeq(ping_system.RequestPing(
+                 []() { LOG(INFO) << "Ping requested. Waiting for ack."; },
+                 /*important*/ false),
+             []() { return absl::OkStatus(); }),
+      [](auto) { LOG(INFO) << "Reached PingRequest end"; });
 
   party->Spawn(
       "PingManager",
@@ -501,12 +523,13 @@ PING_SYSTEM_TEST(TestPingManagerDelayedAck) {
   PingManager ping_system(GetChannelArgs(), std::move(ping_interface),
                           event_engine());
   auto party = GetParty();
-  party->Spawn("PingRequest",
-               TrySeq(ping_system.RequestPing([]() {
-                 LOG(INFO) << "Ping requested. Waiting for ack.";
-               }),
-                      []() { return absl::OkStatus(); }),
-               [](auto) { LOG(INFO) << "Reached PingRequest end"; });
+  party->Spawn(
+      "PingRequest",
+      TrySeq(ping_system.RequestPing(
+                 []() { LOG(INFO) << "Ping requested. Waiting for ack."; },
+                 /*important*/ false),
+             []() { return absl::OkStatus(); }),
+      [](auto) { LOG(INFO) << "Reached PingRequest end"; });
 
   party->Spawn(
       "PingManager",
@@ -554,6 +577,80 @@ PING_SYSTEM_TEST(TestPingManagerNoPingRequest) {
       },
       [&on_done](auto) {
         on_done.Call(absl::OkStatus());
+        LOG(INFO) << "Reached PingManager end";
+      });
+
+  WaitForAllPendingWork();
+  event_engine()->TickUntilIdle();
+  event_engine()->UnsetGlobalHooks();
+}
+
+PING_SYSTEM_TEST(TestPingManagerImportantPing) {
+  // Tests important flag for ping requests. Asserts the following:
+  // 1. The important flag is set correctly for the multiple ping requests.
+  // 2. Once a ping request is sent out, the important flag is reset.
+
+  InitParty();
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+
+  std::unique_ptr<StrictMock<MockPingInterface>> ping_interface =
+      std::make_unique<StrictMock<MockPingInterface>>();
+  ping_interface->ExpectSendPing(SendPingArgs{false, 1234});
+  ping_interface->ExpectPingTimeout();
+
+  PingManager ping_system(
+      GetChannelArgs().Set(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS, 1),
+      std::move(ping_interface), event_engine());
+
+  EXPECT_CALL(on_done, Call(absl::OkStatus()));
+  EXPECT_FALSE(ping_system.PingRequested());
+  EXPECT_FALSE(ping_system.ImportantPingRequested());
+
+  SpawnPingRequest(
+      ping_system, /*important=*/false,
+      [] { LOG(INFO) << "Ping1 requested. Waiting for ack."; },
+      [] {
+        Crash("Unreachable. No Ping ack expected.");
+        return absl::OkStatus();
+      });
+
+  EXPECT_TRUE(ping_system.PingRequested());
+  EXPECT_FALSE(ping_system.ImportantPingRequested());
+
+  SpawnPingRequest(
+      ping_system, /*important=*/true,
+      [] { LOG(INFO) << "Ping2 requested. Waiting for ack."; },
+      [] {
+        Crash("Unreachable. No Ping ack expected.");
+        return absl::OkStatus();
+      });
+
+  EXPECT_TRUE(ping_system.PingRequested());
+  EXPECT_TRUE(ping_system.ImportantPingRequested());
+
+  SpawnPingRequest(
+      ping_system, /*important=*/false,
+      [] { LOG(INFO) << "Ping3 requested. Waiting for ack."; },
+      [] {
+        Crash("Unreachable. No Ping ack expected.");
+        return absl::OkStatus();
+      });
+
+  EXPECT_TRUE(ping_system.PingRequested());
+  EXPECT_TRUE(ping_system.ImportantPingRequested());
+
+  GetParty()->Spawn(
+      "PingManager",
+      [&ping_system] {
+        return ping_system.MaybeSendPing(/*next_allowed_ping_interval=*/
+                                         Duration::Seconds(1),
+                                         /*ping_timeout=*/Duration::Seconds(
+                                             100));
+      },
+      [&on_done, &ping_system](auto) {
+        on_done.Call(absl::OkStatus());
+        EXPECT_FALSE(ping_system.PingRequested());
+        EXPECT_FALSE(ping_system.ImportantPingRequested());
         LOG(INFO) << "Reached PingManager end";
       });
 

@@ -14,10 +14,9 @@
 
 load(
     "//bazel:grpc_build_system.bzl",
-    "grpc_cc_grpc_library",
-    "grpc_cc_proto_library",
     "grpc_internal_proto_library",
     "grpc_package",
+    "grpc_proto_library",
 )
 
 licenses(["notice"])
@@ -27,29 +26,25 @@ grpc_package(
     visibility = "public",
 )
 
-grpc_internal_proto_library(
+# TODO(roth): Migrate this to use separate
+# grpc_internal_proto_library/grpc_cc_proto_library/grpc_cc_grpc_library
+# rules when internal build system limitations are resolved.
+grpc_proto_library(
     name = "channelz_proto",
     srcs = ["channelz.proto"],
     has_services = True,
+    well_known_protos = True,
+)
+
+grpc_internal_proto_library(
+    name = "channelz_proto_internal",
+    srcs = ["channelz.proto"],
     deps = [
         "@com_google_protobuf//:any_proto",
         "@com_google_protobuf//:duration_proto",
         "@com_google_protobuf//:empty_proto",
         "@com_google_protobuf//:timestamp_proto",
         "@com_google_protobuf//:wrappers_proto",
-    ],
-)
-
-grpc_cc_proto_library(
-    name = "channelz_cc_proto",
-    deps = [":channelz_proto"],
-)
-
-grpc_cc_grpc_library(
-    name = "channelz_cc_grpc",
-    srcs = [":channelz_proto"],
-    deps = [
-        ":channelz_cc_proto",
     ],
 )
 

@@ -45,12 +45,11 @@ class RootCertificatesWatcher final
       RefCountedPtr<grpc_tls_certificate_distributor> parent)
       : parent_(std::move(parent)) {}
 
-  void OnCertificatesChanged(std::optional<absl::string_view> root_certs,
+  void OnCertificatesChanged(std::shared_ptr<RootCertInfo> roots,
                              std::optional<PemKeyCertPairList>
                              /* key_cert_pairs */) override {
-    if (root_certs.has_value()) {
-      parent_->SetKeyMaterials("", std::string(root_certs.value()),
-                               std::nullopt);
+    if (roots != nullptr) {
+      parent_->SetKeyMaterials("", roots, std::nullopt);
     }
   }
 
@@ -79,10 +78,10 @@ class IdentityCertificatesWatcher final
       : parent_(std::move(parent)) {}
 
   void OnCertificatesChanged(
-      std::optional<absl::string_view> /* root_certs */,
+      std::shared_ptr<RootCertInfo> /* root_certs */,
       std::optional<PemKeyCertPairList> key_cert_pairs) override {
     if (key_cert_pairs.has_value()) {
-      parent_->SetKeyMaterials("", std::nullopt, key_cert_pairs);
+      parent_->SetKeyMaterials("", nullptr, key_cert_pairs);
     }
   }
 

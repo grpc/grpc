@@ -29,7 +29,7 @@
 #   $ python3.8 -m venv .venv-bazel
 #   $ source .venv-bazel/bin/activate
 #   $ pip install pip-tools
-#   $ pip install -r requirements.bazel.lock
+#   $ pip install -r requirements.bazel.lock # make the change to version in requirements.bazel.txt after this
 #   $ pip-compile --no-upgrade --allow-unsafe requirements.bazel.txt -o requirements.bazel.lock
 #   $ deactivate
 
@@ -47,9 +47,9 @@ opentelemetry-sdk
 protobuf
 pyyaml  # for DNS test
 requests
-# Currently our CI uses Python < 3.8, hence <4.14.0 was added
-# TODO(asheshvidyut): remove the <4.14.0, when CI uses python >= 3.9
-typeguard~=4.0.0,<4.14.0
+# Currently our CI uses Python < 3.8, hence <4.4.1 was added
+# TODO(asheshvidyut): remove the <4.4.1, when CI uses python >= 3.9
+typeguard~=4.2.0,<4.4.1
 typing-extensions~=4.13
 twisted  # for DNS test
 urllib3
