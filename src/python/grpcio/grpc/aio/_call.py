@@ -25,6 +25,7 @@ from typing import (
     Generator,
     Generic,
     Optional,
+    Sequence,
     Tuple,
     Union,
 )
@@ -183,8 +184,8 @@ def _create_rpc_error(
     return AioRpcError(
         _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[status.code()],
         (
-            Metadata.from_tuple(initial_metadata)
-            if isinstance(initial_metadata, tuple)
+            Metadata.from_tuple(tuple(initial_metadata))
+            if isinstance(initial_metadata, Sequence)
             else initial_metadata
         ),
         Metadata.from_tuple(status.trailing_metadata()),
