@@ -109,7 +109,8 @@ class State(_common.ChannelRpcHandler):
     def take_invocation_metadata(self):
         with self._condition:
             if self._invocation_metadata is None:
-                raise ValueError("Expected invocation metadata!")
+                error_msg = "Expected invocation metadata!"
+                raise ValueError(error_msg)
             else:
                 invocation_metadata = self._invocation_metadata
                 self._invocation_metadata = None
@@ -118,9 +119,11 @@ class State(_common.ChannelRpcHandler):
     def take_invocation_metadata_and_request(self):
         with self._condition:
             if self._invocation_metadata is None:
-                raise ValueError("Expected invocation metadata!")
+                error_msg = "Expected invocation metadata!"
+                raise ValueError(error_msg)
             elif not self._requests:
-                raise ValueError("Expected at least one request!")
+                error_msg = "Expected at least one request!"
+                raise ValueError(error_msg)
             else:
                 invocation_metadata = self._invocation_metadata
                 self._invocation_metadata = None
