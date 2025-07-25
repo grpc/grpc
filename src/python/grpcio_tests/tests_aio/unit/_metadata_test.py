@@ -112,17 +112,18 @@ class TestTypeMetadata(unittest.TestCase):
                 self.assertEqual(len(metadata), len(args))
 
     def test_get_item(self):
-        metadata = Metadata(
-            ("key", "value1"), ("key", "value2"), ("key2", "other value")
-        )
-        self.assertEqual(metadata["key"], "value1")
-        self.assertEqual(metadata["key2"], "other value")
-        self.assertEqual(metadata.get("key"), "value1")
-        self.assertEqual(metadata.get("key2"), "other value")
+        with suppress_type_checks():
+            metadata = Metadata(
+                ("key", "value1"), ("key", "value2"), ("key2", "other value")
+            )
+            self.assertEqual(metadata["key"], "value1")
+            self.assertEqual(metadata["key2"], "other value")
+            self.assertEqual(metadata.get("key"), "value1")
+            self.assertEqual(metadata.get("key2"), "other value")
 
-        with self.assertRaises(KeyError):
-            metadata["key not found"]
-        self.assertIsNone(metadata.get("key not found"))
+            with self.assertRaises(KeyError):
+                metadata["key not found"]
+            self.assertIsNone(metadata.get("key not found"))
 
     def test_add_value(self):
         metadata = Metadata()
@@ -183,18 +184,19 @@ class TestTypeMetadata(unittest.TestCase):
         self.assertEqual(metadata.get_all("key"), ["value1", b"new value 2"])
 
     def test_delete_values(self):
-        metadata = Metadata(*self._MULTI_ENTRY_DATA)
-        del metadata["key1"]
-        self.assertEqual(metadata.get("key1"), "other value 1")
+        with suppress_type_checks():
+            metadata = Metadata(*self._MULTI_ENTRY_DATA)
+            del metadata["key1"]
+            self.assertEqual(metadata.get("key1"), "other value 1")
 
-        metadata.delete_all("key1")
-        self.assertNotIn("key1", metadata)
+            metadata.delete_all("key1")
+            self.assertNotIn("key1", metadata)
 
-        metadata.delete_all("key2")
-        self.assertEqual(len(metadata), 0)
+            metadata.delete_all("key2")
+            self.assertEqual(len(metadata), 0)
 
-        with self.assertRaises(KeyError):
-            del metadata["other key"]
+            with self.assertRaises(KeyError):
+                del metadata["other key"]
 
     def test_metadata_from_tuple(self):
         with suppress_type_checks():
@@ -220,18 +222,19 @@ class TestMetadataWithServer(AioTestBase):
         await self._server.stop(None)
 
     async def test_init_metadata_with_client_interceptor(self):
-        async with aio.insecure_channel(
-            self._address,
-            interceptors=[UnaryUnaryAddMetadataInterceptor()],
-        ) as channel:
-            multicallable = channel.unary_unary(_TEST_UNARY_UNARY)
-            for metadata in [
-                _INITIAL_METADATA_FROM_CLIENT_TO_SERVER,
-                _INITIAL_METADATA_FROM_CLIENT_TO_SERVER_TUPLE,
-            ]:
-                call = multicallable(_REQUEST, metadata=metadata)
-                await call
-                self.assertEqual(grpc.StatusCode.OK, await call.code())
+        with suppress_type_checks():
+            async with aio.insecure_channel(
+                self._address,
+                interceptors=[UnaryUnaryAddMetadataInterceptor()],
+            ) as channel:
+                multicallable = channel.unary_unary(_TEST_UNARY_UNARY)
+                for metadata in [
+                    _INITIAL_METADATA_FROM_CLIENT_TO_SERVER,
+                    _INITIAL_METADATA_FROM_CLIENT_TO_SERVER_TUPLE,
+                ]:
+                    call = multicallable(_REQUEST, metadata=metadata)
+                    await call
+                    self.assertEqual(grpc.StatusCode.OK, await call.code())
 
 
 if __name__ == "__main__":
