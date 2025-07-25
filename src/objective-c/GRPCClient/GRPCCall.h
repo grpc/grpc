@@ -36,13 +36,13 @@
 
 #import <Foundation/Foundation.h>
 
-#import "GRPCCallOptions.h"
-#import "GRPCDispatchable.h"
-#import "GRPCTypes.h"
+#import "src/objective-c/GRPCClient/GRPCCallOptions.h"
+#import "src/objective-c/GRPCClient/GRPCDispatchable.h"
+#import "src/objective-c/GRPCClient/GRPCTypes.h"
 
 // The legacy header is included for backwards compatibility. Some V1 API users are still using
 // GRPCCall by importing GRPCCall.h header so we need this import.
-#import "GRPCCallLegacy.h"
+#import "src/objective-c/GRPCClient/GRPCCallLegacy.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
