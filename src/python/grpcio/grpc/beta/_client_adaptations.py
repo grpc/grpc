@@ -134,7 +134,7 @@ class _Rendezvous(future.Future, face.Call):
             raise future.CancelledError()
 
     def add_done_callback(self, fn):
-        self._future.add_done_callback(lambda ignored_callback: fn(self))
+        self._future.add_done_callback(lambda _ignored_callback: fn(self))
 
     def __iter__(self):
         return self
