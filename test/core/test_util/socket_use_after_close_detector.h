@@ -20,7 +20,7 @@
 #define GRPC_TEST_CORE_TEST_UTIL_SOCKET_USE_AFTER_CLOSE_DETECTOR_H
 
 #include <grpc/support/port_platform.h>
-#include <grpc/support/sync_generic.h>
+#include <grpc/support/sync.h>
 
 #include <memory>
 #include <thread>
