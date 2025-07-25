@@ -16,7 +16,7 @@ from collections import OrderedDict
 from collections import abc
 from typing import Any, Iterator, List, Optional, Tuple, Union
 
-MetadataKey = Union[str, bytes]
+MetadataKey = str
 MetadataValue = Union[str, bytes]
 
 class Metadata(abc.Collection):  # noqa: PLW1641
@@ -38,7 +38,7 @@ class Metadata(abc.Collection):  # noqa: PLW1641
             self.add(md_key, md_value)
 
     @classmethod
-    def from_tuple(cls, raw_metadata: Optional[tuple]):
+    def from_tuple(cls, raw_metadata: tuple):
         if raw_metadata:
             return cls(*raw_metadata)
         return cls()
@@ -135,52 +135,3 @@ class Metadata(abc.Collection):  # noqa: PLW1641
     def __repr__(self) -> str:
         view = tuple(self)
         return "{0}({1!r})".format(self.__class__.__name__, view)
-
-
-class MetadataValidator:
-    @classmethod
-    def is_metadatum_type(cls, item: Any) -> bool:
-        """
-        Checks if an item conforms to MetadatumType (Tuple[str, Union[str, bytes]]).
-        """
-        if not isinstance(item, (tuple, list)):
-            return False
-        if len(item) != 2:
-            return False
-        key, value = item
-        if not isinstance(key, (str, bytes)):
-            return False
-        if not isinstance(value, (str, bytes)):
-            return False
-        return True
-
-    @classmethod
-    def is_valid_sequence_of_metadatum_type(cls, data: Any) -> bool:
-        """
-        Checks if the input is a sequence (tuple or list) where every element
-        conforms to MetadatumType.
-        """
-        # Allow empty sequences as valid
-        if not data:
-            return True
-
-        # 1. Check if the input itself is a sequence type you expect (e.g., tuple or list)
-        if not isinstance(data, (tuple, list)):
-            return False
-
-        # 2. Iterate through each item and validate using is_metadatum_type
-        return all(cls.is_metadatum_type(item) for item in data)
-
-    @classmethod
-    def validate_and_initialize(
-        cls, metadata: Optional[Any] = None
-    ) -> Metadata:
-        metadata = metadata or Metadata()
-        if not isinstance(metadata, Metadata) and isinstance(
-            metadata, (tuple, list)
-        ):
-            if cls.is_valid_sequence_of_metadatum_type(metadata):
-                return Metadata.from_tuple(tuple(metadata))
-            else:
-                raise TypeError(f"Invalid metadata format: {metadata!r}")
-        return metadata
