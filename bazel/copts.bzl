@@ -162,8 +162,13 @@ GRPC_LLVM_WINDOWS_WARNING_FLAGS = GRPC_LLVM_WARNING_FLAGS + [
     "-Wno-unused-private-field",  # GRPC_UNUSED does not appear to work for private fields
 ]
 
+# supress warnings from external headers in strict builds
+GRPC_WARNINGS_SUPRESS = [
+    "--system-header-prefix=fuzztest/",
+]
+
 GRPC_DEFAULT_COPTS = select({
-    "//:use_strict_warning": GRPC_LLVM_WARNING_FLAGS + ["-DUSE_STRICT_WARNING=1"],
-    "//:use_strict_warning_windows": GRPC_LLVM_WINDOWS_WARNING_FLAGS + ["-DUSE_STRICT_WARNING=1"],
+    "//:use_strict_warning": GRPC_LLVM_WARNING_FLAGS + ["-DUSE_STRICT_WARNING=1"] + GRPC_WARNINGS_SUPRESS,
+    "//:use_strict_warning_windows": GRPC_LLVM_WINDOWS_WARNING_FLAGS + ["-DUSE_STRICT_WARNING=1"] + GRPC_WARNINGS_SUPRESS,
     "//conditions:default": [],
 })
