@@ -1045,6 +1045,7 @@ class InterceptedStreamStreamCall(
     def time_remaining(self) -> Optional[float]:
         raise NotImplementedError()
 
+
 class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall):
     """Final UnaryUnaryCall class finished with a response."""
 
