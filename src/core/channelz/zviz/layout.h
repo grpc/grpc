@@ -17,6 +17,7 @@
 
 #include <string>
 
+#include "absl/strings/str_cat.h"
 #include "google/protobuf/duration.pb.h"
 #include "google/protobuf/timestamp.pb.h"
 #include "src/core/channelz/zviz/environment.h"
@@ -47,13 +48,13 @@ void AbslStringify(Sink& sink, Intent intent) {
       sink.Append("heading");
       break;
     case Intent::kEntityRef:
-      sink.Append("entity_ref");
+      sink.Append("entity-ref");
       break;
     case Intent::kTrace:
       sink.Append("trace");
       break;
     case Intent::kTraceDescription:
-      sink.Append("trace_description");
+      sink.Append("trace-description");
       break;
     case Intent::kTimestamp:
       sink.Append("timestamp");
@@ -80,6 +81,7 @@ enum class TableIntent {
   kTrace,
   kPropertyList,
   kPropertyGrid,
+  kPropertyTable,
 };
 
 template <typename Sink>
@@ -89,10 +91,13 @@ void AbslStringify(Sink& sink, TableIntent intent) {
       sink.Append("trace");
       break;
     case TableIntent::kPropertyList:
-      sink.Append("property_list");
+      sink.Append("property-list");
       break;
     case TableIntent::kPropertyGrid:
-      sink.Append("property_grid");
+      sink.Append("property-grid");
+      break;
+    case TableIntent::kPropertyTable:
+      sink.Append("property-table");
       break;
   }
 }

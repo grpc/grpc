@@ -65,7 +65,7 @@ TEST(TraceTest, ChangeDetectors) {
 [0] [0,0] APPEND_COLUMN
 [0] [0,0] APPEND_TEXT timestamp [value elided]
 [0] [1,0] APPEND_COLUMN
-[0] [1,0] APPEND_TEXT trace_description foo)");
+[0] [1,0] APPEND_TEXT trace-description foo)");
 }
 
 }  // namespace

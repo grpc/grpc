@@ -57,7 +57,7 @@ message Channel {
 }
 
 // Subchannel is a logical grouping of channels, subchannels, and sockets.
-// A subchannel is load balanced over by it's ancestor
+// A subchannel is load balanced over by its ancestor
 message Subchannel {
   // The identifier for this channel.
   SubchannelRef ref = 1;

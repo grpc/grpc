@@ -42,7 +42,7 @@ TEST(TextTest, TextEscapes) {
   EXPECT_EQ(t.Render(), "foo&amp;bar");
 }
 
-TEST(ContainerTest, SimpleDiv) {
+TEST(ContainerTest, EmptyDiv) {
   Container c{"div"};
   EXPECT_EQ(c.Render(), "<div/>");
 }
@@ -126,21 +126,125 @@ TEST(ContainerTest, LinkDivEscapes) {
 
 TEST(ContainerTest, EmptyTable) {
   Container c{"body"};
-  c.NewTable();
-  EXPECT_EQ(c.Render(), "<body><table/></body>");
+  c.NewTable("");
+  // This is a golden file test.
+  // The extra tbody is expected.
+  EXPECT_EQ(c.Render(),
+            "<body><table class=\"\"><tbody></tbody></table></body>");
 }
 
 TEST(ContainerTest, TableWithContent) {
   Container c{"body"};
-  auto& table = c.NewTable();
+  auto& table = c.NewTable("");
   table.Cell(0, 0).Text("foo");
   table.Cell(1, 0).Text("bar");
   table.Cell(0, 2).Text("baz");
+  // This is a golden file test.
+  // The extra divs in the cells are expected.
   EXPECT_EQ(c.Render(),
-            "<body><table>"
-            "<tr><td>foo</td><td>bar</td></tr>"
+            "<body><table class=\"\">"
+            "<tbody>"
+            "<tr><td><div>foo</div></td><td><div>bar</div></td></tr>"
             "<tr><td/><td/></tr>"
-            "<tr><td>baz</td><td/></tr>"
+            "<tr><td><div>baz</div></td><td/></tr>"
+            "</tbody>"
+            "</table></body>");
+}
+
+TEST(ContainerTest, TableWithMissingCell) {
+  Container c{"body"};
+  auto& table = c.NewTable("my-table");
+  table.Cell(0, 0).Text("A");
+  table.Cell(1, 0).Text("B");
+  table.Cell(0, 1).Text("C");
+  // This is a golden file test.
+  // The extra divs in the cells are expected.
+  EXPECT_EQ(c.Render(),
+            "<body><table class=\"my-table\">"
+            "<tbody>"
+            "<tr><td><div>A</div></td><td><div>B</div></td></tr>"
+            "<tr><td><div>C</div></td><td/></tr>"
+            "</tbody>"
+            "</table></body>");
+}
+
+TEST(ContainerTest, NestedTable) {
+  Container c{"body"};
+  auto& table = c.NewTable("my-table");
+  table.Cell(0, 0).Text("A");
+  table.Cell(1, 0).Text("B");
+  auto& nested_table = table.Cell(0, 1).NewTable("nested-table");
+  nested_table.Cell(0, 0).Text("C");
+  nested_table.Cell(1, 0).Text("D");
+  // This is a golden file test.
+  // The extra divs in the cells are expected.
+  EXPECT_EQ(c.Render(),
+            "<body><table class=\"my-table\">"
+            "<tbody>"
+            "<tr><td><div>A</div></td><td><div>B</div></td></tr>"
+            "<tr><td><div><table class=\"nested-table\">"
+            "<tbody>"
+            "<tr><td><div>C</div></td><td><div>D</div></td></tr>"
+            "</tbody>"
+            "</table></div></td><td/></tr>"
+            "</tbody>"
+            "</table></body>");
+}
+
+TEST(ContainerTest, PropertyGrid) {
+  Container c{"body"};
+  auto& table = c.NewTable("property-grid");
+  table.set_num_header_rows(1);
+  table.set_num_header_columns(1);
+  table.Cell(1, 0).Text("local");
+  table.Cell(2, 0).Text("sent");
+  table.Cell(3, 0).Text("peer");
+  table.Cell(4, 0).Text("acked");
+  table.Cell(0, 1).Text("ENABLE_PUSH");
+  table.Cell(1, 1).Text("true");
+  table.Cell(2, 1).Text("true");
+  table.Cell(3, 1).Text("false");
+  table.Cell(4, 1).Text("true");
+  // This is a golden file test.
+  // The extra divs in the cells are expected.
+  EXPECT_EQ(c.Render(),
+            "<body><table class=\"property-grid\">"
+            "<thead>"
+            "<tr><th/><th><div>local</div></th><th><div>sent</div></"
+            "th><th><div>peer</div></th><th><div>acked</div></th></tr>"
+            "</thead>"
+            "<tbody>"
+            "<tr><th><div>ENABLE_PUSH</div></th><td><div>true</div></"
+            "td><td><div>true</div></td><td><div>false</div></"
+            "td><td><div>true</div></td></tr>"
+            "</tbody>"
+            "</table></body>");
+}
+
+TEST(ContainerTest, NestedPropertyList) {
+  Container c{"body"};
+  auto& table = c.NewTable("property-list");
+  table.Cell(0, 0).Text("ping_callbacks");
+  auto& nested_table = table.Cell(1, 0).NewTable("property-list");
+  nested_table.Cell(0, 0).Text("inflight");
+  nested_table.Cell(1, 0).Text("...");
+  table.Cell(0, 1).Text("ping_on_rst_stream_percent");
+  table.Cell(1, 1).Text("1");
+  // This is a golden file test.
+  // The extra divs in the cells are expected.
+  EXPECT_EQ(c.Render(),
+            "<body><table class=\"property-list\">"
+            "<tbody>"
+            "<tr><td><div>ping_callbacks</div></td><td><div>"
+            "<table class=\"property-list\">"
+            "<tbody>"
+            "<tr><td><div>inflight</div></td><td><div>...</div></td></tr>"
+            "</tbody>"
+            "</table>"
+            "</div></td></tr>"
+            "<tr><td><div>ping_on_rst_stream_percent</div></td><td><div>1</"
+            "div></td></tr>"
+            "</tbody>"
             "</table></body>");
 }
 

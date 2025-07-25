@@ -22,6 +22,7 @@
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/function_ref.h"
+#include "absl/log/check.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_zviz::html {
@@ -48,9 +49,12 @@ class Table;
 class Container final : public Item {
  public:
   explicit Container(std::string tag) : tag_(std::move(tag)) {}
+  Container() = default;
   std::string Render() const override;
 
   Container& Attribute(std::string name, std::string value) {
+    CHECK(tag_.has_value())
+        << "Attributes can only be set on containers with a tag.";
     attributes_.emplace_back(std::move(name), std::move(value));
     return *this;
   }
@@ -76,10 +80,11 @@ class Container final : public Item {
   Container& LinkDiv(std::string clazz, std::string text, std::string url) {
     return Div(clazz, [&](Container& div) { div.Link(std::move(text), url); });
   }
-  Table& NewTable();
+  Table& NewTable(std::string clazz);
+  Container& AddStyle(absl::string_view style);
 
  private:
-  std::string tag_;
+  std::optional<std::string> tag_;
   std::vector<std::pair<std::string, std::string>> attributes_;
   std::vector<std::unique_ptr<html::Item>> items_;
 };
@@ -88,11 +93,18 @@ Container Div(std::string clazz, absl::FunctionRef<void(Container&)> f);
 
 class Table final : public Item {
  public:
+  explicit Table(std::string clazz) : clazz_(std::move(clazz)) {}
+
   Container& Cell(int column, int row);
+  void set_num_header_columns(int n) { num_header_columns_ = n; }
+  void set_num_header_rows(int n) { num_header_rows_ = n; }
   std::string Render() const override;
 
  private:
   using Address = std::tuple<int, int>;
+  std::string clazz_;
+  int num_header_columns_ = 0;
+  int num_header_rows_ = 0;
   int num_columns_ = 0;
   int num_rows_ = 0;
   absl::flat_hash_map<Address, Container> cells_;

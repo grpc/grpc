@@ -37,19 +37,24 @@ Container Div(std::string clazz, absl::FunctionRef<void(Container&)> f) {
 }
 
 std::string Container::Render() const {
-  std::string s = absl::StrCat("<", tag_);
-  for (const auto& [name, value] : attributes_) {
-    absl::StrAppend(&s, " ", name, "=\"", HtmlEscape(value), "\"");
+  std::string s;
+  if (tag_.has_value()) {
+    absl::StrAppend(&s, "<", *tag_);
+    for (const auto& [name, value] : attributes_) {
+      absl::StrAppend(&s, " ", name, "=\"", HtmlEscape(value), "\"");
+    }
+    if (items_.empty()) {
+      absl::StrAppend(&s, "/>");
+      return s;
+    }
+    absl::StrAppend(&s, ">");
   }
-  if (items_.empty()) {
-    absl::StrAppend(&s, "/>");
-    return s;
-  }
-  absl::StrAppend(&s, ">");
   for (const auto& item : items_) {
     absl::StrAppend(&s, item->Render());
   }
-  absl::StrAppend(&s, "</", tag_, ">");
+  if (tag_.has_value()) {
+    absl::StrAppend(&s, "</", *tag_, ">");
+  }
   return s;
 }
 
@@ -71,33 +76,65 @@ Container& Container::NewDiv(std::string clazz) {
   return div;
 }
 
-Table& Container::NewTable() { return NewItem<Table>(); }
+Container& Container::AddStyle(absl::string_view style) {
+  NewItem<Container>("style").Text(std::string(style));
+  return *this;
+}
+
+Table& Container::NewTable(std::string clazz) {
+  return NewItem<Table>(std::move(clazz));
+}
 
 Container& Table::Cell(int column, int row) {
   num_columns_ = std::max(num_columns_, column + 1);
   num_rows_ = std::max(num_rows_, row + 1);
   auto it = cells_.find(std::tuple(column, row));
   if (it == cells_.end()) {
-    it = cells_.emplace(std::tuple(column, row), Container("td")).first;
+    it = cells_.emplace(std::tuple(column, row), Container("div")).first;
   }
   return it->second;
 }
 
 std::string Table::Render() const {
-  if (cells_.empty()) return "<table/>";
-  std::string s = "<table>";
-  for (int r = 0; r < num_rows_; ++r) {
-    absl::StrAppend(&s, "<tr>");
-    for (int c = 0; c < num_columns_; ++c) {
-      auto it = cells_.find(std::tuple(c, r));
-      if (it == cells_.end()) {
-        absl::StrAppend(&s, "<td/>");
-      } else {
-        absl::StrAppend(&s, it->second.Render());
+  std::string s = absl::StrCat("<table class=\"", HtmlEscape(clazz_), "\">");
+
+  int r = 0;
+  if (num_header_rows_ > 0) {
+    absl::StrAppend(&s, "<thead>");
+    for (; r < num_header_rows_; ++r) {
+      absl::StrAppend(&s, "<tr>");
+      for (int c = 0; c < num_columns_; ++c) {
+        auto it = cells_.find(std::tuple(c, r));
+        if (it == cells_.end()) {
+          absl::StrAppend(&s, "<th/>");
+        } else {
+          absl::StrAppend(&s, "<th>", it->second.Render(), "</th>");
+        }
       }
+      absl::StrAppend(&s, "</tr>");
     }
-    absl::StrAppend(&s, "</tr>");
+    absl::StrAppend(&s, "</thead>");
   }
+
+  absl::StrAppend(&s, "<tbody>");
+  if (r < num_rows_) {
+    for (; r < num_rows_; ++r) {
+      absl::StrAppend(&s, "<tr>");
+      for (int c = 0; c < num_columns_; ++c) {
+        auto it = cells_.find(std::tuple(c, r));
+        const char* tag = c < num_header_columns_ ? "th" : "td";
+        if (it == cells_.end()) {
+          absl::StrAppend(&s, "<", tag, "/>");
+        } else {
+          absl::StrAppend(&s, "<", tag, ">", it->second.Render(), "</", tag,
+                          ">");
+        }
+      }
+      absl::StrAppend(&s, "</tr>");
+    }
+  }
+  absl::StrAppend(&s, "</tbody>");
+
   absl::StrAppend(&s, "</table>");
   return s;
 }

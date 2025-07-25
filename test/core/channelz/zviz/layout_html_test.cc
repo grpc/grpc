@@ -69,15 +69,101 @@ TEST(HtmlLayoutTest, AppendTable) {
   table.AppendColumn().AppendText(Intent::kKey, "Key2");
   table.AppendColumn().AppendText(Intent::kValue, "Value2");
   EXPECT_EQ(container.Render(),
-            "<body><table>"
+            "<body><table class=\"zviz-trace\">"
+            "<thead>"
             "<tr>"
-            "<td><div class=\"zviz-key\">Key</div></td>"
-            "<td><div class=\"zviz-value\">Value</div></td>"
+            "<th><div><div class=\"zviz-key\">Key</div></div></th>"
+            "<th><div><div class=\"zviz-value\">Value</div></div></th>"
+            "</tr>"
+            "</thead>"
+            "<tbody>"
+            "<tr>"
+            "<td><div><div class=\"zviz-key\">Key2</div></div></td>"
+            "<td><div><div class=\"zviz-value\">Value2</div></div></td>"
+            "</tr>"
+            "</tbody>"
+            "</table></body>");
+}
+
+TEST(HtmlLayoutTest, NestedTable) {
+  html::Container container("body");
+  HtmlElement element(container);
+  Table& table = element.AppendTable(TableIntent::kPropertyList);
+  table.AppendColumn().AppendText(Intent::kKey, "ping_callbacks");
+  Table& nested_table =
+      table.AppendColumn().AppendTable(TableIntent::kPropertyList);
+  nested_table.AppendColumn().AppendText(Intent::kKey, "inflight");
+  nested_table.AppendColumn().AppendText(Intent::kValue, "...");
+  nested_table.NewRow();
+  table.NewRow();
+  table.AppendColumn().AppendText(Intent::kKey, "ping_on_rst_stream_percent");
+  table.AppendColumn().AppendText(Intent::kValue, "1");
+  table.NewRow();
+  EXPECT_EQ(container.Render(),
+            "<body><table class=\"zviz-property-list\">"
+            "<tbody>"
+            "<tr>"
+            "<td><div><div class=\"zviz-key\">ping_callbacks</div></div></td>"
+            "<td><div>"
+            "<table class=\"zviz-property-list\">"
+            "<tbody>"
+            "<tr>"
+            "<td><div><div class=\"zviz-key\">inflight</div></div></td>"
+            "<td><div><div class=\"zviz-value\">...</div></div></td>"
+            "</tr>"
+            "</tbody>"
+            "</table>"
+            "</div></td>"
             "</tr>"
             "<tr>"
-            "<td><div class=\"zviz-key\">Key2</div></td>"
-            "<td><div class=\"zviz-value\">Value2</div></td>"
+            "<td><div><div "
+            "class=\"zviz-key\">ping_on_rst_stream_percent</div></div></td>"
+            "<td><div><div class=\"zviz-value\">1</div></div></td>"
             "</tr>"
+            "</tbody>"
+            "</table></body>");
+}
+
+TEST(HtmlLayoutTest, DeeperNestedTable) {
+  html::Container container("body");
+  HtmlElement element(container);
+  Table& table = element.AppendTable(TableIntent::kPropertyList);
+  table.AppendColumn().AppendText(Intent::kKey, "ping_callbacks");
+  Table& nested_table =
+      table.AppendColumn().AppendTable(TableIntent::kPropertyList);
+  nested_table.AppendColumn().AppendText(Intent::kKey, "inflight");
+  nested_table.AppendColumn().AppendTable(TableIntent::kPropertyTable);
+  nested_table.NewRow();
+  table.NewRow();
+  table.AppendColumn().AppendText(Intent::kKey, "ping_on_rst_stream_percent");
+  table.AppendColumn().AppendText(Intent::kValue, "1");
+  table.NewRow();
+  EXPECT_EQ(container.Render(),
+            "<body><table class=\"zviz-property-list\">"
+            "<tbody>"
+            "<tr>"
+            "<td><div><div class=\"zviz-key\">ping_callbacks</div></div></td>"
+            "<td><div>"
+            "<table class=\"zviz-property-list\">"
+            "<tbody>"
+            "<tr>"
+            "<td><div><div class=\"zviz-key\">inflight</div></div></td>"
+            "<td><div>"
+            "<table "
+            "class=\"zviz-property-table\"><thead><tr></tr></thead><tbody></"
+            "tbody></table>"
+            "</div></td>"
+            "</tr>"
+            "</tbody>"
+            "</table>"
+            "</div></td>"
+            "</tr>"
+            "<tr>"
+            "<td><div><div "
+            "class=\"zviz-key\">ping_on_rst_stream_percent</div></div></td>"
+            "<td><div><div class=\"zviz-value\">1</div></div></td>"
+            "</tr>"
+            "</tbody>"
             "</table></body>");
 }
 
