@@ -183,7 +183,7 @@ use_repo(cc_configure, "local_config_cc")
 archive_override(
     module_name = "zlib",
     url = "https://github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz",
-    # sha256 = "sha256-mpOyt9/ax3zrpaVYpYDnRmfdb+3kWFuR7vtg8Dty3yM=",
+    integrity = "sha256-mpOyt9/ax3zrpaVYpYDnRmfdb+3kWFuR7vtg8Dty3yM=",
     strip_prefix = "zlib-1.3.1",
     patches = [
         "//:third_party/zlib-1.3.1.bcr.5/patches/add_build_file.patch",

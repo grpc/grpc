@@ -1,6 +1,6 @@
 --- /dev/null
 +++ BUILD.bazel
-@@ -0,0 +1,140 @@
+@@ -0,0 +1,147 @@
 +# Adapted from https://github.com/protocolbuffers/protobuf/blob/master/third_party/zlib.BUILD
 +
 +#  Copyright 2008 Google Inc.  All rights reserved.
