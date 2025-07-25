@@ -17,15 +17,15 @@
 #include <algorithm>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 #include "src/core/channelz/zviz/environment.h"
 #include "src/core/channelz/zviz/layout.h"
 #include "src/core/util/no_destruct.h"
 #include "src/proto/grpc/channelz/v2/channelz.pb.h"
 #include "src/proto/grpc/channelz/v2/property_list.pb.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/span.h"
 
 namespace grpc_zviz {
 
