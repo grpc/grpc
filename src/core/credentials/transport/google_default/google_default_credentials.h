@@ -48,6 +48,13 @@
   "/" GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE
 #endif
 
+enum class DefaultCallCredentialsCreationMethod {
+  kNone,
+  kFromEnviromentPathValue,
+  kFromWellKnownFile,
+  kFromDefaultGCE,
+};
+
 class grpc_google_default_channel_credentials
     : public grpc_channel_credentials {
  public:
@@ -91,6 +98,10 @@ namespace internal {
 typedef bool (*grpc_gce_tenancy_checker)(void);
 
 void set_gce_tenancy_checker_for_testing(grpc_gce_tenancy_checker checker);
+
+grpc_core::RefCountedPtr<grpc_call_credentials> make_default_call_creds(
+    grpc_error_handle* error,
+    DefaultCallCredentialsCreationMethod* default_credentials_type);
 
 // TEST-ONLY. Reset the internal global state.
 void grpc_flush_cached_google_default_credentials(void);
