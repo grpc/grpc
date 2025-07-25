@@ -2,6 +2,6 @@
 <Project>
   <PropertyGroup>
     <GrpcCsharpVersion>2.75.0-dev</GrpcCsharpVersion>
-    <GoogleProtobufVersion>{"major":4,"minor":31,"patch":1,"string":"4.31.1"}</GoogleProtobufVersion>
+    <GoogleProtobufVersion>4.31.1</GoogleProtobufVersion>
   </PropertyGroup>
 </Project>
