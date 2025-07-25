@@ -18,13 +18,13 @@ import unittest
 
 import grpc
 from grpc.experimental import aio
+from typeguard import suppress_type_checks
 
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
 from tests.unit import resources
 from tests_aio.unit._test_base import AioTestBase
 from tests_aio.unit._test_server import start_test_server
-from typeguard import suppress_type_checks
 
 _SERVER_HOST_OVERRIDE = "foo.test.google.fr"
 _NUM_STREAM_RESPONSES = 5

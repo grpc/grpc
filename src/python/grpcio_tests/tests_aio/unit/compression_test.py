@@ -21,11 +21,10 @@ import unittest
 
 import grpc
 from grpc.experimental import aio
+from typeguard import suppress_type_checks
 
 from tests_aio.unit import _common
 from tests_aio.unit._test_base import AioTestBase
-
-from typeguard import suppress_type_checks
 
 _GZIP_CHANNEL_ARGUMENT = ("grpc.default_compression_algorithm", 2)
 _GZIP_DISABLED_CHANNEL_ARGUMENT = (
