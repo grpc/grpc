@@ -197,7 +197,7 @@ class TestTypeMetadata(unittest.TestCase):
             with self.assertRaises(KeyError):
                 del metadata["other key"]
 
-    def test_metadata_from_tuple(self):
+    def test_metadata_from_tuple_or_cls(self):
         scenarios = (
             (None, Metadata()),
             (Metadata(), Metadata()),
