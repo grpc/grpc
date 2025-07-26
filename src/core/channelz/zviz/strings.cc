@@ -23,6 +23,10 @@ std::string DisplayKind(absl::string_view kind) {
   if (kind == "channel") return "Channel";
   if (kind == "subchannel") return "Subchannel";
   if (kind == "socket") return "Socket";
+  if (kind == "listen_socket") return "Listen Socket";
+  if (kind == "server") return "Server";
+  if (kind == "call") return "Call";
+  if (kind == "internal_channel") return "Internal Channel";
   return absl::StrCat("Entity kind '", kind, "'");
 }
 
