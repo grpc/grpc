@@ -35,27 +35,26 @@ class _SecureCallMixin:
     """A Mixin to run the call tests over a secure channel."""
 
     async def setUp(self):
-        with suppress_type_checks():
-            server_credentials = grpc.ssl_server_credentials(
-                [(resources.private_key(), resources.certificate_chain())]
-            )
-            channel_credentials = grpc.ssl_channel_credentials(
-                resources.test_root_certificates()
-            )
+        server_credentials = grpc.ssl_server_credentials(
+            [(resources.private_key(), resources.certificate_chain())]
+        )
+        channel_credentials = grpc.ssl_channel_credentials(
+            resources.test_root_certificates()
+        )
 
-            self._server_address, self._server = await start_test_server(
-                secure=True, server_credentials=server_credentials
-            )
-            channel_options = (
-                (
-                    "grpc.ssl_target_name_override",
-                    _SERVER_HOST_OVERRIDE,
-                ),
-            )
-            self._channel = aio.secure_channel(
-                self._server_address, channel_credentials, channel_options
-            )
-            self._stub = test_pb2_grpc.TestServiceStub(self._channel)
+        self._server_address, self._server = await start_test_server(
+            secure=True, server_credentials=server_credentials
+        )
+        channel_options = (
+            (
+                "grpc.ssl_target_name_override",
+                _SERVER_HOST_OVERRIDE,
+            ),
+        )
+        self._channel = aio.secure_channel(
+            self._server_address, channel_credentials, channel_options
+        )
+        self._stub = test_pb2_grpc.TestServiceStub(self._channel)
 
     async def tearDown(self):
         await self._channel.close()
