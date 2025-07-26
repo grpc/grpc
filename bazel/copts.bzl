@@ -170,6 +170,6 @@ GRPC_SUPRESS_WARNINGS = [
 
 GRPC_DEFAULT_COPTS = select({
     "//:use_strict_warning": GRPC_LLVM_WARNING_FLAGS + ["-DUSE_STRICT_WARNING=1"] + GRPC_SUPRESS_WARNINGS,
-    "//:use_strict_warning_windows": GRPC_LLVM_WINDOWS_WARNING_FLAGS + ["-DUSE_STRICT_WARNING=1"] + GRPC_SUPRESS_WARNINGS,
+    "//:use_strict_warning_windows": GRPC_LLVM_WINDOWS_WARNING_FLAGS + ["-DUSE_STRICT_WARNING=1"],
     "//conditions:default": [],
 })
