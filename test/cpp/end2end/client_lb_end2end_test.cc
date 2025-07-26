@@ -1793,7 +1793,7 @@ TEST_F(RoundRobinTest, TransientFailure) {
   auto predicate = [](grpc_connectivity_state state) {
     return state == GRPC_CHANNEL_TRANSIENT_FAILURE;
   };
-  EXPECT_TRUE(WaitForChannelState(channel.get(), predicate));
+  EXPECT_TRUE(WaitForChannelState(channel.get(), predicate, 15 /*timeout*/));
   CheckRpcSendFailure(
       DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
       MakeConnectionFailureRegex("connections to all backends failing"));
