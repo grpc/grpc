@@ -96,44 +96,43 @@ class TestAuthContext(AioTestBase):
         )
 
     async def test_secure_no_cert(self):
-        with suppress_type_checks():
-            handler = grpc.method_handlers_generic_handler(
-                "test",
-                {
-                    "UnaryUnary": grpc.unary_unary_rpc_method_handler(
-                        handle_unary_unary
-                    )
-                },
-            )
-            server = aio.server()
-            server.add_generic_rpc_handlers((handler,))
-            server_cred = grpc.ssl_server_credentials(_SERVER_CERTS)
-            port = server.add_secure_port("[::]:0", server_cred)
-            await server.start()
+        handler = grpc.method_handlers_generic_handler(
+            "test",
+            {
+                "UnaryUnary": grpc.unary_unary_rpc_method_handler(
+                    handle_unary_unary
+                )
+            },
+        )
+        server = aio.server()
+        server.add_generic_rpc_handlers((handler,))
+        server_cred = grpc.ssl_server_credentials(_SERVER_CERTS)
+        port = server.add_secure_port("[::]:0", server_cred)
+        await server.start()
 
-            channel_creds = grpc.ssl_channel_credentials(
-                root_certificates=_TEST_ROOT_CERTIFICATES
-            )
-            channel = aio.secure_channel(
-                "localhost:{}".format(port),
-                channel_creds,
-                options=_PROPERTY_OPTIONS,
-            )
-            response = await channel.unary_unary(_UNARY_UNARY)(_REQUEST)
-            await channel.close()
-            await server.stop(None)
+        channel_creds = grpc.ssl_channel_credentials(
+            root_certificates=_TEST_ROOT_CERTIFICATES
+        )
+        channel = aio.secure_channel(
+            "localhost:{}".format(port),
+            channel_creds,
+            options=_PROPERTY_OPTIONS,
+        )
+        response = await channel.unary_unary(_UNARY_UNARY)(_REQUEST)
+        await channel.close()
+        await server.stop(None)
 
-            auth_data = pickle.loads(response)
-            self.assertIsNone(auth_data[_ID])
-            self.assertIsNone(auth_data[_ID_KEY])
-            self.assertDictEqual(
-                {
-                    "security_level": [b"TSI_PRIVACY_AND_INTEGRITY"],
-                    "transport_security_type": [b"ssl"],
-                    "ssl_session_reused": [b"false"],
-                },
-                auth_data[_AUTH_CTX],
-            )
+        auth_data = pickle.loads(response)
+        self.assertIsNone(auth_data[_ID])
+        self.assertIsNone(auth_data[_ID_KEY])
+        self.assertDictEqual(
+            {
+                "security_level": [b"TSI_PRIVACY_AND_INTEGRITY"],
+                "transport_security_type": [b"ssl"],
+                "ssl_session_reused": [b"false"],
+            },
+            auth_data[_AUTH_CTX],
+        )
 
     async def test_secure_client_cert(self):
         handler = grpc.method_handlers_generic_handler(

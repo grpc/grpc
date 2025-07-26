@@ -71,17 +71,16 @@ class TestUnaryUnarySecureCall(_SecureCallMixin, AioTestBase):
         self.assertEqual(await call.code(), grpc.StatusCode.OK)
 
     async def test_call_with_credentials(self):
-        with suppress_type_checks():
-            call_credentials = grpc.composite_call_credentials(
-                grpc.access_token_call_credentials("abc"),
-                grpc.access_token_call_credentials("def"),
-            )
-            call = self._stub.UnaryCall(
-                messages_pb2.SimpleRequest(), credentials=call_credentials
-            )
-            response = await call
+        call_credentials = grpc.composite_call_credentials(
+            grpc.access_token_call_credentials("abc"),
+            grpc.access_token_call_credentials("def"),
+        )
+        call = self._stub.UnaryCall(
+            messages_pb2.SimpleRequest(), credentials=call_credentials
+        )
+        response = await call
 
-            self.assertIsInstance(response, messages_pb2.SimpleResponse)
+        self.assertIsInstance(response, messages_pb2.SimpleResponse)
 
 
 class TestUnaryStreamSecureCall(_SecureCallMixin, AioTestBase):
