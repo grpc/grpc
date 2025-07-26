@@ -438,6 +438,7 @@ class ArtifactGen {
         {"@com_envoyproxy_protoc_gen_validate//", ""},
         {"@envoy_api//", ""},
         {"@opencensus_proto//", ""},
+        {"@dev_cel//", "proto/"},
     };
     for (auto& [name, bazel_rule] : rules_) {
       if (bazel_rule.generator_function != "grpc_upb_proto_library" &&
@@ -1188,6 +1189,13 @@ class ArtifactGen {
                "third_party/opencensus-proto/src",
                "third_party/opencensus-proto/src/",
            },
+       },
+       {
+         "dev_cel",
+         {
+            "third_party/cel-spec",
+            "third_party/cel-spec/",
+          },
        }};
 };
 
