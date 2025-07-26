@@ -37,4 +37,4 @@ python -VV
 pip install black==25.1.0
 pip list
 
-black --config=grpc-style-config.toml $ACTION "${DIRS[@]}"
+exec black --config=grpc-style-config.toml "${ACTION}" "${DIRS[@]}"
