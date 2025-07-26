@@ -50,6 +50,14 @@ then
   sed -ibak "s/<\/GrpcCsharpVersion>/-singleplatform<\/GrpcCsharpVersion>/" build/dependencies.props
 fi
 
+cd protoc_plugins
+mkdir protoc_linux_s390x
+cd protoc_linux_s390x
+cp ../../../../bazel-bin/src/compiler/grpc_csharp_plugin ./
+cp ../../../../bazel-bin/external/com_google_protobuf/protoc ./
+cd ..
+cd ..
+
 dotnet restore Grpc.sln
 
 dotnet pack --configuration Release Grpc.Tools --output ../../artifacts
