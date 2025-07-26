@@ -32,6 +32,7 @@ int main(int argc, char** argv) {
 
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
+#if !defined(GRPC_CFSTREAM)
   {
     grpc_core::ExecCtx exec_ctx;
 
@@ -47,6 +48,7 @@ int main(int argc, char** argv) {
       grpc_core::ExecCtx::Get()->Flush();
     }
   }
+#endif
 
   grpc_shutdown();
   return 0;
