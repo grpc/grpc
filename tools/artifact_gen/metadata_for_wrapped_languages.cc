@@ -16,9 +16,11 @@
 
 #include <fstream>
 #include <initializer_list>
+#include <map>
 #include <optional>
 #include <regex>
 #include <set>
+#include <string>
 #include <vector>
 
 #include "absl/log/check.h"
@@ -29,6 +31,8 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
 #include "absl/strings/str_split.h"
+#include "include/nlohmann/json.hpp"
+#include "build_metadata.h"
 #include "utils.h"
 
 namespace {
@@ -82,68 +86,6 @@ void AddCApis(nlohmann::json& config) {
   }
   config["c_apis"] = apis;
   config["c_api_headers"] = c_api_headers;
-}
-
-auto MakePhpConfig(const nlohmann::json& config,
-                   std::initializer_list<std::string> remove_libs) {
-  std::set<std::string> srcs;
-  for (const auto& src : config["php_config_m4"]["src"]) {
-    srcs.insert(src);
-  }
-  std::map<std::string, const nlohmann::json*> lib_maps;
-  for (const auto& lib : config["libs"]) {
-    lib_maps[lib["name"]] = &lib;
-  }
-  std::vector<std::string> php_deps = config["php_config_m4"]["deps"];
-  std::set<std::string> php_full_deps;
-  for (const auto& dep : php_deps) {
-    php_full_deps.insert(dep);
-    auto it = lib_maps.find(dep);
-    if (it != lib_maps.end()) {
-      const nlohmann::json* lib = it->second;
-      std::vector<std::string> transitive_deps = (*lib)["transitive_deps"];
-      php_full_deps.insert(transitive_deps.begin(), transitive_deps.end());
-    }
-  }
-  for (const auto& lib : remove_libs) {
-    php_full_deps.erase(lib);
-  }
-  for (const auto& dep : php_full_deps) {
-    auto it = lib_maps.find(dep);
-    if (it != lib_maps.end()) {
-      const nlohmann::json* lib = it->second;
-      std::vector<std::string> src = (*lib)["src"];
-      srcs.insert(src.begin(), src.end());
-    }
-  }
-  std::set<std::string> dirs;
-  for (const auto& src : srcs) {
-    dirs.insert(src.substr(0, src.rfind('/')));
-  }
-  return std::pair(std::move(srcs), std::move(dirs));
-}
-
-void AddPhpConfig(nlohmann::json& config) {
-  auto [srcs, dirs] = MakePhpConfig(config, {"z", "cares", "@zlib//:zlib"});
-  auto [w32_srcs, w32_dirs] = MakePhpConfig(config, {"cares"});
-
-  config["php_config_m4"]["srcs"] = srcs;
-  config["php_config_m4"]["dirs"] = dirs;
-
-  std::vector<std::string> windows_srcs;
-  for (const auto& src : w32_srcs) {
-    windows_srcs.emplace_back(absl::StrReplaceAll(src, {{"/", "\\\\"}}));
-  }
-  config["php_config_w32"]["srcs"] = windows_srcs;
-  std::set<std::string> windows_dirs;
-  for (const auto& dir : w32_dirs) {
-    std::vector<std::string> frags = absl::StrSplit(dir, '/');
-    for (size_t i = 0; i < frags.size(); ++i) {
-      windows_dirs.insert(
-          absl::StrJoin(frags.begin(), frags.begin() + i + 1, "\\\\"));
-    }
-  }
-  config["php_config_w32"]["dirs"] = windows_dirs;
 }
 
 struct Version {
@@ -236,6 +178,13 @@ void ExpandVersion(nlohmann::json& config) {
   settings["php_version"]["php_composer"] = php_composer;
   settings["python_version"]["pep440"] = pep440;
   settings["ruby_version"]["ruby_version"] = ruby_version;
+  
+  // Add PHP stability computation
+  std::string php_stability = version.tag.has_value() ? "beta" : "stable";
+  settings["php_version"]["php_stability"] = php_stability;
+  
+  // Expand protobuf_version to have the same structure as other versions
+  ExpandOneVersion(settings, "protobuf_version");
 }
 
 void AddBoringSslMetadata(nlohmann::json& metadata) {
@@ -255,13 +204,21 @@ void AddBoringSslMetadata(nlohmann::json& metadata) {
     std::sort(ret.begin(), ret.end());
     return ret;
   };
-  std::vector<std::string> asm_outputs;
+  // Build asm_outputs like the Python version - preserve categories
+  nlohmann::json asm_outputs = nlohmann::json::object();
   for (auto it = sources.begin(); it != sources.end(); ++it) {
-    for (const auto& file : it.value()) {
+    const std::string& category = it.key();
+    const auto& files = it.value();
+    bool has_asm = false;
+    for (const auto& file : files) {
       std::string file_str = file;
       if (absl::EndsWith(file_str, ".S") || absl::EndsWith(file_str, ".asm")) {
-        asm_outputs.push_back(file);
+        has_asm = true;
+        break;
       }
+    }
+    if (has_asm) {
+      asm_outputs[category] = files;
     }
   }
   metadata["raw_boringssl_build_output_for_debugging"]["files"] = sources;
@@ -271,7 +228,14 @@ void AddBoringSslMetadata(nlohmann::json& metadata) {
        {"language", "c"},
        {"secure", false},
        {"src", file_list({"ssl", "crypto"})},
-       {"asm_src", file_list({"asm"})},
+       {"asm_src", [&asm_outputs, &file_list]() {
+         nlohmann::json result = nlohmann::json::object();
+         for (auto it = asm_outputs.begin(); it != asm_outputs.end(); ++it) {
+           const std::string& category = it.key();
+           result[category] = file_list({category});
+         }
+         return result;
+       }()},
        {"headers",
         file_list({"ssl_headers", "ssl_internal_headers", "crypto_headers",
                    "crypto_internal_headers", "fips_fragments"})},
@@ -319,6 +283,114 @@ void AddAbseilMetadata(nlohmann::json& config) {
     build["secure"] = false;
     config["libs"].push_back(build);
   }
+}
+
+void AddCaresMetadata(nlohmann::json& config) {
+  // This translates the contents of src/c-ares/gen_build_yaml.py into C++
+  // to match what the Python build system does
+  nlohmann::json cares_lib = {
+    {"name", "cares"},
+    {"defaults", "cares"},
+    {"build", "private"},
+    {"language", "c"},
+    {"secure", false},
+    {"src", nlohmann::json::array({
+      "third_party/cares/cares/src/lib/ares__read_line.c",
+      "third_party/cares/cares/src/lib/ares__get_hostent.c",
+      "third_party/cares/cares/src/lib/ares__close_sockets.c",
+      "third_party/cares/cares/src/lib/ares__timeval.c",
+      "third_party/cares/cares/src/lib/ares_gethostbyaddr.c",
+      "third_party/cares/cares/src/lib/ares_getenv.c",
+      "third_party/cares/cares/src/lib/ares_free_string.c",
+      "third_party/cares/cares/src/lib/ares_free_hostent.c",
+      "third_party/cares/cares/src/lib/ares_fds.c",
+      "third_party/cares/cares/src/lib/ares_expand_string.c",
+      "third_party/cares/cares/src/lib/ares_create_query.c",
+      "third_party/cares/cares/src/lib/ares_cancel.c",
+      "third_party/cares/cares/src/lib/ares_android.c",
+      "third_party/cares/cares/src/lib/ares_parse_txt_reply.c",
+      "third_party/cares/cares/src/lib/ares_parse_srv_reply.c",
+      "third_party/cares/cares/src/lib/ares_parse_soa_reply.c",
+      "third_party/cares/cares/src/lib/ares_parse_ptr_reply.c",
+      "third_party/cares/cares/src/lib/ares_parse_ns_reply.c",
+      "third_party/cares/cares/src/lib/ares_parse_naptr_reply.c",
+      "third_party/cares/cares/src/lib/ares_parse_mx_reply.c",
+      "third_party/cares/cares/src/lib/ares_parse_caa_reply.c",
+      "third_party/cares/cares/src/lib/ares_options.c",
+      "third_party/cares/cares/src/lib/ares_nowarn.c",
+      "third_party/cares/cares/src/lib/ares_mkquery.c",
+      "third_party/cares/cares/src/lib/ares_llist.c",
+      "third_party/cares/cares/src/lib/ares_getsock.c",
+      "third_party/cares/cares/src/lib/ares_getnameinfo.c",
+      "third_party/cares/cares/src/lib/bitncmp.c",
+      "third_party/cares/cares/src/lib/ares_writev.c",
+      "third_party/cares/cares/src/lib/ares_version.c",
+      "third_party/cares/cares/src/lib/ares_timeout.c",
+      "third_party/cares/cares/src/lib/ares_strerror.c",
+      "third_party/cares/cares/src/lib/ares_strcasecmp.c",
+      "third_party/cares/cares/src/lib/ares_search.c",
+      "third_party/cares/cares/src/lib/ares_platform.c",
+      "third_party/cares/cares/src/lib/windows_port.c",
+      "third_party/cares/cares/src/lib/inet_ntop.c",
+      "third_party/cares/cares/src/lib/ares__sortaddrinfo.c",
+      "third_party/cares/cares/src/lib/ares__readaddrinfo.c",
+      "third_party/cares/cares/src/lib/ares_parse_uri_reply.c",
+      "third_party/cares/cares/src/lib/ares__parse_into_addrinfo.c",
+      "third_party/cares/cares/src/lib/ares_parse_a_reply.c",
+      "third_party/cares/cares/src/lib/ares_parse_aaaa_reply.c",
+      "third_party/cares/cares/src/lib/ares_library_init.c",
+      "third_party/cares/cares/src/lib/ares_init.c",
+      "third_party/cares/cares/src/lib/ares_gethostbyname.c",
+      "third_party/cares/cares/src/lib/ares_getaddrinfo.c",
+      "third_party/cares/cares/src/lib/ares_freeaddrinfo.c",
+      "third_party/cares/cares/src/lib/ares_expand_name.c",
+      "third_party/cares/cares/src/lib/ares_destroy.c",
+      "third_party/cares/cares/src/lib/ares_data.c",
+      "third_party/cares/cares/src/lib/ares__addrinfo_localhost.c",
+      "third_party/cares/cares/src/lib/ares__addrinfo2hostent.c",
+      "third_party/cares/cares/src/lib/inet_net_pton.c",
+      "third_party/cares/cares/src/lib/ares_strsplit.c",
+      "third_party/cares/cares/src/lib/ares_strdup.c",
+      "third_party/cares/cares/src/lib/ares_send.c",
+      "third_party/cares/cares/src/lib/ares_rand.c",
+      "third_party/cares/cares/src/lib/ares_query.c",
+      "third_party/cares/cares/src/lib/ares_process.c"
+    })},
+    {"headers", nlohmann::json::array({
+      "third_party/cares/ares_build.h",
+      "third_party/cares/cares/include/ares_version.h",
+      "third_party/cares/cares/include/ares.h",
+      "third_party/cares/cares/include/ares_rules.h",
+      "third_party/cares/cares/include/ares_dns.h",
+      "third_party/cares/cares/include/ares_nameser.h",
+      "third_party/cares/cares/src/tools/ares_getopt.h",
+      "third_party/cares/cares/src/lib/ares_strsplit.h",
+      "third_party/cares/cares/src/lib/ares_android.h",
+      "third_party/cares/cares/src/lib/ares_private.h",
+      "third_party/cares/cares/src/lib/ares_llist.h",
+      "third_party/cares/cares/src/lib/ares_platform.h",
+      "third_party/cares/cares/src/lib/ares_ipv6.h",
+      "third_party/cares/cares/src/lib/config-dos.h",
+      "third_party/cares/cares/src/lib/bitncmp.h",
+      "third_party/cares/cares/src/lib/ares_strcasecmp.h",
+      "third_party/cares/cares/src/lib/setup_once.h",
+      "third_party/cares/cares/src/lib/ares_inet_net_pton.h",
+      "third_party/cares/cares/src/lib/ares_data.h",
+      "third_party/cares/cares/src/lib/ares_getenv.h",
+      "third_party/cares/cares/src/lib/config-win32.h",
+      "third_party/cares/cares/src/lib/ares_strdup.h",
+      "third_party/cares/cares/src/lib/ares_iphlpapi.h",
+      "third_party/cares/cares/src/lib/ares_setup.h",
+      "third_party/cares/cares/src/lib/ares_writev.h",
+      "third_party/cares/cares/src/lib/ares_nowarn.h",
+      "third_party/cares/config_darwin/ares_config.h",
+      "third_party/cares/config_freebsd/ares_config.h",
+      "third_party/cares/config_linux/ares_config.h",
+      "third_party/cares/config_openbsd/ares_config.h"
+    })}
+  };
+  
+  config["libs"].push_back(cares_lib);
 }
 
 class TransitiveDepsCalculator {
@@ -389,15 +461,349 @@ void ExpandSupportedPythonVersions(nlohmann::json& config) {
   settings["min_python_version"] = supported_python_versions.front();
   settings["max_python_version"] = supported_python_versions.back();
 }
+
+void ProcessSwiftPackageFiles(nlohmann::json& config) {
+  // Get the swift_package.deps and collect all files, then deduplicate and sort
+  if (!config.contains("swift_package") || !config["swift_package"].contains("deps")) {
+    return;
+  }
+  
+  auto& swift_package = config["swift_package"];
+  auto& deps = swift_package["deps"];
+  auto& libs = config["libs"];
+  
+  std::set<std::string> all_files;
+  
+  // Collect files from all dependencies
+  for (const auto& dep : deps) {
+    std::string dep_name = dep.get<std::string>();
+    
+    // Find the library with this name
+    for (const auto& lib : libs) {
+      if (lib.contains("name") && lib["name"].get<std::string>() == dep_name) {
+        // Add all files from this library
+        if (lib.contains("public_headers")) {
+          for (const auto& file : lib["public_headers"]) {
+            all_files.insert(file.get<std::string>());
+          }
+        }
+        if (lib.contains("headers")) {
+          for (const auto& file : lib["headers"]) {
+            all_files.insert(file.get<std::string>());
+          }
+        }
+        if (lib.contains("src")) {
+          for (const auto& file : lib["src"]) {
+            all_files.insert(file.get<std::string>());
+          }
+        }
+        break;
+      }
+    }
+  }
+  
+  // Convert to sorted JSON array
+  nlohmann::json sorted_files = nlohmann::json::array();
+  for (const auto& file : all_files) {
+    sorted_files.push_back(file);
+  }
+  
+  // Add to swift_package for template use
+  swift_package["all_files"] = sorted_files;
+}
+
+void ProcessSwiftBoringSSLPackageFiles(nlohmann::json& config) {
+  // Get the swift_boringssl_package.deps and collect all files, then deduplicate and sort
+  if (!config.contains("swift_boringssl_package") || !config["swift_boringssl_package"].contains("deps")) {
+    return;
+  }
+  
+  auto& swift_boringssl_package = config["swift_boringssl_package"];
+  auto& deps = swift_boringssl_package["deps"];
+  auto& libs = config["libs"];
+  
+  std::set<std::string> all_files;
+  const std::string prefix_to_remove = "third_party/boringssl-with-bazel/";
+  
+  // Collect files from all dependencies
+  for (const auto& dep : deps) {
+    std::string dep_name = dep.get<std::string>();
+    
+    // Find the library with this name
+    for (const auto& lib : libs) {
+      if (lib.contains("name") && lib["name"].get<std::string>() == dep_name) {
+        // Add all src files from this library (BoringSSL template only uses src files)
+        if (lib.contains("src")) {
+          for (const auto& file : lib["src"]) {
+            std::string file_path = file.get<std::string>();
+            // Remove the prefix if it exists
+            if (absl::StartsWith(file_path, prefix_to_remove)) {
+              file_path = file_path.substr(prefix_to_remove.length());
+            }
+            all_files.insert(file_path);
+          }
+        }
+        break;
+      }
+    }
+  }
+  
+  // Convert to sorted JSON array
+  nlohmann::json sorted_files = nlohmann::json::array();
+  for (const auto& file : all_files) {
+    sorted_files.push_back(file);
+  }
+  
+  // Add to swift_boringssl_package for template use
+  swift_boringssl_package["all_files"] = sorted_files;
+}
+
+// Helper function to resolve dependencies and collect files from libraries
+// This eliminates duplication across PHP, Ruby, and Python file collection functions
+struct DependencyResolver {
+  explicit DependencyResolver(const nlohmann::json& config) : config_(config) {
+    // Build library maps
+    for (const auto& lib : config_["libs"]) {
+      std::string lib_name = lib["name"];
+      lib_maps_[lib_name] = &lib;
+    }
+    
+    // Get Bazel label to renamed mapping
+    bazel_label_to_renamed_ = grpc_tools::artifact_gen::GetBazelLabelToRenamedMapping();
+  }
+  
+  // Expand a list of dependencies to include transitive dependencies
+  std::set<std::string> ExpandTransitiveDeps(const std::vector<std::string>& deps, const std::set<std::string>& exclusions = {}) {
+    std::set<std::string> full_deps;
+    for (const auto& dep : deps) {
+      full_deps.insert(dep);
+      auto it = lib_maps_.find(dep);
+      if (it != lib_maps_.end()) {
+        const nlohmann::json* lib = it->second;
+        std::vector<std::string> transitive_deps = (*lib)["transitive_deps"];
+        full_deps.insert(transitive_deps.begin(), transitive_deps.end());
+      }
+    }
+    
+    // Remove exclusions
+    for (const auto& exclusion : exclusions) {
+      full_deps.erase(exclusion);
+    }
+    
+    return full_deps;
+  }
+  
+  // Collect files from a set of dependencies
+  std::set<std::string> CollectFiles(const std::set<std::string>& deps, const std::vector<std::string>& file_types) {
+    std::set<std::string> files;
+    
+    for (const auto& dep : deps) {
+      std::string actual_lib_name = dep;
+      
+      // Check if this is a renamed Bazel label
+      auto rename_it = bazel_label_to_renamed_.find(dep);
+      if (rename_it != bazel_label_to_renamed_.end()) {
+        actual_lib_name = rename_it->second;
+      }
+      
+      auto it = lib_maps_.find(actual_lib_name);
+      if (it != lib_maps_.end()) {
+        const nlohmann::json* lib = it->second;
+        
+        // Collect specified file types
+        for (const auto& file_type : file_types) {
+          if (lib->contains(file_type)) {
+            std::vector<std::string> file_list = (*lib)[file_type];
+            files.insert(file_list.begin(), file_list.end());
+          }
+        }
+      }
+    }
+    
+    return files;
+  }
+  
+private:
+  const nlohmann::json& config_;
+  std::map<std::string, const nlohmann::json*> lib_maps_;
+  std::map<std::string, std::string> bazel_label_to_renamed_;
+};
+
+auto MakePhpConfig(const nlohmann::json& config,
+                   std::initializer_list<std::string> remove_libs) {
+  DependencyResolver resolver(config);
+  std::set<std::string> srcs;
+  for (const auto& src : config["php_config_m4"]["src"]) {
+    srcs.insert(src.get<std::string>());
+  }
+
+  std::vector<std::string> php_deps = config["php_config_m4"]["deps"];
+  auto php_full_deps = resolver.ExpandTransitiveDeps(
+      php_deps, std::set<std::string>(remove_libs));
+
+  auto dep_files = resolver.CollectFiles(php_full_deps, {"src"});
+  srcs.insert(dep_files.begin(), dep_files.end());
+
+  std::set<std::string> dirs;
+  for (const auto& src : srcs) {
+    dirs.insert(src.substr(0, src.rfind('/')));
+  }
+  return std::pair(std::move(srcs), std::move(dirs));
+}
+
+void AddPhpConfig(nlohmann::json& config) {
+  auto [srcs, dirs] = MakePhpConfig(config, {"z", "cares", "@zlib//:zlib"});
+  auto [w32_srcs, w32_dirs] = MakePhpConfig(config, {"cares"});
+
+  config["php_config_m4"]["srcs"] = srcs;
+  config["php_config_m4"]["dirs"] = dirs;
+
+  std::set<std::string> windows_srcs;
+  for (const auto& src : w32_srcs) {
+    windows_srcs.emplace(absl::StrReplaceAll(src, {{"/", "\\\\"}}));
+  }
+  config["php_config_w32"]["srcs"] = windows_srcs;
+  std::set<std::string> windows_dirs;
+  for (const auto& dir : w32_dirs) {
+    windows_dirs.emplace(absl::StrReplaceAll(dir, {{"/", "\\\\"}}));
+  }
+  config["php_config_w32"]["dirs"] = windows_dirs;
+}
+
+std::set<std::string> MakePhpPackageXmlSrcs(const nlohmann::json& config) {
+  DependencyResolver resolver(config);
+  std::set<std::string> srcs;
+  
+  // Start with php_config_m4.src + php_config_m4.headers (like Python template)
+  for (const auto& src : config["php_config_m4"]["src"]) {
+    srcs.insert(src);
+  }
+  for (const auto& header : config["php_config_m4"]["headers"]) {
+    srcs.insert(header);
+  }
+  
+  // Get PHP dependencies and expand transitive dependencies
+  std::vector<std::string> php_deps = config["php_config_m4"]["deps"];
+  auto php_full_deps = resolver.ExpandTransitiveDeps(php_deps, {"cares"});
+  
+  // Collect public_headers + headers + src files
+  auto dep_files = resolver.CollectFiles(php_full_deps, {"public_headers", "headers", "src"});
+  srcs.insert(dep_files.begin(), dep_files.end());
+  
+  return srcs;
+}
+
+std::set<std::string> MakeRubyGemFiles(const nlohmann::json& config) {
+  DependencyResolver resolver(config);
+  
+  // Get Ruby dependencies and expand transitive dependencies
+  std::vector<std::string> ruby_deps = config["ruby_gem"]["deps"];
+  auto ruby_full_deps = resolver.ExpandTransitiveDeps(ruby_deps);
+  
+  // Collect public_headers + headers + src files
+  return resolver.CollectFiles(ruby_full_deps, {"public_headers", "headers", "src"});
+}
+
+
+
+nlohmann::json MakePythonCoreSourceFiles(const nlohmann::json& config) {
+  DependencyResolver resolver(config);
+  
+  // Get Python dependencies and expand transitive dependencies
+  std::vector<std::string> python_deps = config["python_dependencies"]["deps"];
+  auto python_full_deps = resolver.ExpandTransitiveDeps(python_deps);
+  
+  // Collect src files only
+  auto srcs = resolver.CollectFiles(python_full_deps, {"src"});
+  
+  // Convert to sorted JSON array
+  nlohmann::json sorted_files = nlohmann::json::array();
+  for (const auto& src : srcs) {
+    sorted_files.push_back(src);
+  }
+  
+  return sorted_files;
+}
+
+nlohmann::json MakePythonAsmSourceFiles(const nlohmann::json& config) {
+  DependencyResolver resolver(config);
+  nlohmann::json asm_files = nlohmann::json::array();
+  
+  // Get Python dependencies and expand transitive dependencies
+  std::vector<std::string> python_deps = config["python_dependencies"]["deps"];
+  auto python_full_deps = resolver.ExpandTransitiveDeps(python_deps);
+  
+  // For ASM files, we need custom logic since asm_src is a dictionary
+  std::map<std::string, const nlohmann::json*> lib_maps;
+  for (const auto& lib : config["libs"]) {
+    std::string lib_name = lib["name"];
+    lib_maps[lib_name] = &lib;
+  }
+  
+  auto bazel_label_to_renamed = grpc_tools::artifact_gen::GetBazelLabelToRenamedMapping();
+  
+  for (const auto& dep : python_full_deps) {
+    std::string actual_lib_name = dep;
+    
+    // Check if this is a renamed Bazel label
+    auto rename_it = bazel_label_to_renamed.find(dep);
+    if (rename_it != bazel_label_to_renamed.end()) {
+      actual_lib_name = rename_it->second;
+    }
+    
+    auto it = lib_maps.find(actual_lib_name);
+    if (it != lib_maps.end()) {
+      const nlohmann::json* lib = it->second;
+      if (lib->contains("asm_src")) {
+        // asm_src is a dictionary in the Python template
+        nlohmann::json asm_src = (*lib)["asm_src"];
+        for (auto it = asm_src.begin(); it != asm_src.end(); ++it) {
+          nlohmann::json asm_entry = nlohmann::json::object();
+          asm_entry["asm"] = it.key();
+          asm_entry["asm_src"] = it.value();
+          asm_files.push_back(asm_entry);
+        }
+      }
+    }
+  }
+  
+  return asm_files;
+}
+
 }  // namespace
 
 void AddMetadataForWrappedLanguages(nlohmann::json& config) {
   AddCApis(config);
   AddBoringSslMetadata(config);
   AddAbseilMetadata(config);
+  AddCaresMetadata(config);
   ExpandTransitiveDeps(config);
-  AddPhpConfig(config);
   ExpandVersion(config);
   AddSupportedBazelVersions(config);
   ExpandSupportedPythonVersions(config);
+  ProcessSwiftPackageFiles(config);
+  ProcessSwiftBoringSSLPackageFiles(config);
+  AddPhpConfig(config);
+  
+  // Add package.xml-specific file collection
+  auto package_xml_srcs = MakePhpPackageXmlSrcs(config);
+  nlohmann::json package_xml_files = nlohmann::json::array();
+  for (const auto& src : package_xml_srcs) {
+    package_xml_files.push_back(src);
+  }
+  config["package_xml_srcs"] = package_xml_files;
+  
+  // Add Ruby gem file collection
+  auto ruby_gem_files = MakeRubyGemFiles(config);
+  nlohmann::json ruby_gem_files_array = nlohmann::json::array();
+  for (const auto& file : ruby_gem_files) {
+    ruby_gem_files_array.push_back(file);
+  }
+  config["ruby_gem_files"] = ruby_gem_files_array;
+  
+  // Add Python core dependencies file collection
+  auto python_core_files = MakePythonCoreSourceFiles(config);
+  auto python_asm_files = MakePythonAsmSourceFiles(config);
+  config["python_core_source_files"] = python_core_files;
+  config["python_asm_source_files"] = python_asm_files;
 }

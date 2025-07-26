@@ -39,7 +39,6 @@ let package = Package(
         "examples/",
         "src/objective-c/",
       ],
-    
       sources: [
         "include/grpc/byte_buffer.h",
         "include/grpc/byte_buffer_reader.h",
@@ -2342,4 +2341,4 @@ let package = Package(
   ],
   cLanguageStandard: .gnu11,
   cxxLanguageStandard: .cxx17
-)
+) 
