@@ -218,19 +218,18 @@ class TestMetadataWithServer(AioTestBase):
         await self._server.stop(None)
 
     async def test_init_metadata_with_client_interceptor(self):
-        with suppress_type_checks():
-            async with aio.insecure_channel(
-                self._address,
-                interceptors=[UnaryUnaryAddMetadataInterceptor()],
-            ) as channel:
-                multicallable = channel.unary_unary(_TEST_UNARY_UNARY)
-                for metadata in [
-                    _INITIAL_METADATA_FROM_CLIENT_TO_SERVER,
-                    _INITIAL_METADATA_FROM_CLIENT_TO_SERVER_TUPLE,
-                ]:
-                    call = multicallable(_REQUEST, metadata=metadata)
-                    await call
-                    self.assertEqual(grpc.StatusCode.OK, await call.code())
+        async with aio.insecure_channel(
+            self._address,
+            interceptors=[UnaryUnaryAddMetadataInterceptor()],
+        ) as channel:
+            multicallable = channel.unary_unary(_TEST_UNARY_UNARY)
+            for metadata in [
+                _INITIAL_METADATA_FROM_CLIENT_TO_SERVER,
+                _INITIAL_METADATA_FROM_CLIENT_TO_SERVER_TUPLE,
+            ]:
+                call = multicallable(_REQUEST, metadata=metadata)
+                await call
+                self.assertEqual(grpc.StatusCode.OK, await call.code())
 
 
 if __name__ == "__main__":
