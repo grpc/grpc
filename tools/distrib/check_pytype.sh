@@ -13,9 +13,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-VIRTUALENV=.venv_check_pytype
-python3.11 -m virtualenv $VIRTUALENV
-source $VIRTUALENV/bin/activate
+set -eux
+
+VIRTUALENV=".venv-ci-pytype"
+python3.11 -m virtualenv "${VIRTUALENV}"
+source "${VIRTUALENV}/bin/activate"
+python -VV
 
 pip install pytype==2024.10.11
+pip list
+
 pytype --output=~/.cache/pytype --config=grpc-style-config.toml

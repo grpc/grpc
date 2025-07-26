@@ -13,10 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
-
-# NOTE(rbellevi): We ignore generated code.
-IGNORE_PATTERNS=--ignore-patterns='.*pb2\.py,.*pb2_grpc\.py'
+set -eux
 
 # change to root directory
 cd "$(dirname "$0")/../.."
@@ -37,34 +34,25 @@ TEST_DIRS=(
     'src/python/grpcio_tests/tests_gevent'
 )
 
-VIRTUALENV=".venv-pylint"
-
-# When running locally, allow to reuse existing venv.
-if [[ ! -d "${VIRTUALENV}" ]]; then
-  python3.11 -m virtualenv "${VIRTUALENV}"
-fi
-
+VIRTUALENV=".venv-ci-pylint"
+python3.11 -m virtualenv "${VIRTUALENV}"
 source "${VIRTUALENV}/bin/activate"
-python3 --version
+python -VV
 
 # TODO(https://github.com/grpc/grpc/issues/23394): Update Pylint.
-pip install --upgrade astroid==2.15.8 \
-  pylint==2.17.7 \
-  "isort~=5.11"
+pip install --upgrade astroid==2.15.8 pylint==2.17.7 "isort~=5.11"
+pip list
 
 EXIT=0
 for dir in "${DIRS[@]}"; do
-  python3 -m pylint --rcfile=.pylintrc -rn "$dir" ${IGNORE_PATTERNS}  || EXIT=1
+  pylint --rcfile=.pylintrc -rn "$dir" || EXIT=1
 done
 
 for dir in "${TEST_DIRS[@]}"; do
-  python3 -m pylint --rcfile=.pylintrc-tests -rn "$dir" ${IGNORE_PATTERNS} || EXIT=1
+  pylint --rcfile=.pylintrc-tests -rn "$dir" || EXIT=1
 done
 
-find examples/python \
-  -iname "*.py" \
-  -not -name "*_pb2.py" \
-  -not -name "*_pb2_grpc.py" \
-  | xargs python3 -m pylint --rcfile=.pylintrc-examples -rn ${IGNORE_PATTERNS}
+find examples/python -iname "*.py" -not -name "*_pb2*.py" \
+  | xargs pylint --rcfile=.pylintrc-examples -rn
 
 exit $EXIT
