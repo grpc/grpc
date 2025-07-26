@@ -43,4 +43,4 @@ python -VV
 pip install ruff==0.12.2
 pip list
 
-exec ruff check "${ACTION}" "${DIRS[@]}"
+exec ruff check $ACTION "${DIRS[@]}"
