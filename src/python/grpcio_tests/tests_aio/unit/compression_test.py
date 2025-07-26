@@ -142,23 +142,21 @@ class TestCompression(AioTestBase):
             self.assertEqual(grpc.StatusCode.OK, await call.code())
 
     async def test_client_call_level_compression_baned_compression(self):
-        with suppress_type_checks():
-            multicallable = self._channel.unary_unary(_TEST_UNARY_UNARY)
+        multicallable = self._channel.unary_unary(_TEST_UNARY_UNARY)
 
-            # GZIP is disabled, this call should fail
-            call = multicallable(_REQUEST, compression=grpc.Compression.Gzip)
-            with self.assertRaises(aio.AioRpcError) as exception_context:
-                await call
-            rpc_error = exception_context.exception
-            self.assertEqual(grpc.StatusCode.UNIMPLEMENTED, rpc_error.code())
+        # GZIP is disabled, this call should fail
+        call = multicallable(_REQUEST, compression=grpc.Compression.Gzip)
+        with self.assertRaises(aio.AioRpcError) as exception_context:
+            await call
+        rpc_error = exception_context.exception
+        self.assertEqual(grpc.StatusCode.UNIMPLEMENTED, rpc_error.code())
 
     async def test_client_call_level_compression_allowed_compression(self):
-        with suppress_type_checks():
-            multicallable = self._channel.unary_unary(_TEST_UNARY_UNARY)
+        multicallable = self._channel.unary_unary(_TEST_UNARY_UNARY)
 
-            # Deflate is allowed, this call should succeed
-            call = multicallable(_REQUEST, compression=grpc.Compression.Deflate)
-            self.assertEqual(grpc.StatusCode.OK, await call.code())
+        # Deflate is allowed, this call should succeed
+        call = multicallable(_REQUEST, compression=grpc.Compression.Deflate)
+        self.assertEqual(grpc.StatusCode.OK, await call.code())
 
     async def test_server_call_level_compression(self):
         multicallable = self._channel.stream_stream(_TEST_SET_COMPRESSION)
