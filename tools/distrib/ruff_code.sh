@@ -15,6 +15,9 @@
 
 set -eux
 
+ACTION="${1:-}"
+[[ $ACTION == '' ]] || [[ $ACTION == '--fix' ]]
+
 # change to root directory
 cd "$(dirname "$0")/../.."
 
@@ -40,10 +43,4 @@ python -VV
 pip install ruff==0.12.2
 pip list
 
-# Check if --fix flag is provided
-RUFF_COMMAND="ruff check"
-if [[ "$1" == "--fix" ]]; then
-    RUFF_COMMAND="ruff check --fix"
-fi
-
-exec $RUFF_COMMAND "${DIRS[@]}"
+exec ruff check "${ACTION}" "${DIRS[@]}"
