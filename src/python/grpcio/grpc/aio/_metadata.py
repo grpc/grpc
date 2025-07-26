@@ -100,7 +100,7 @@ class Metadata(abc.Collection):  # noqa: PLW1641
         return abc.ItemsView(self)
 
     def get(
-        self, key: MetadataKey, default: MetadataValue = None
+        self, key: MetadataKey, default: Optional[MetadataValue] = None
     ) -> Optional[MetadataValue]:
         try:
             return self[key]

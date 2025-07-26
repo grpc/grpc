@@ -111,18 +111,17 @@ class TestTypeMetadata(unittest.TestCase):
                 self.assertEqual(len(metadata), len(args))
 
     def test_get_item(self):
-        with suppress_type_checks():
-            metadata = Metadata(
-                ("key", "value1"), ("key", "value2"), ("key2", "other value")
-            )
-            self.assertEqual(metadata["key"], "value1")
-            self.assertEqual(metadata["key2"], "other value")
-            self.assertEqual(metadata.get("key"), "value1")
-            self.assertEqual(metadata.get("key2"), "other value")
+        metadata = Metadata(
+            ("key", "value1"), ("key", "value2"), ("key2", "other value")
+        )
+        self.assertEqual(metadata["key"], "value1")
+        self.assertEqual(metadata["key2"], "other value")
+        self.assertEqual(metadata.get("key"), "value1")
+        self.assertEqual(metadata.get("key2"), "other value")
 
-            with self.assertRaises(KeyError):
-                metadata["key not found"]
-            self.assertIsNone(metadata.get("key not found"))
+        with self.assertRaises(KeyError):
+            metadata["key not found"]
+        self.assertIsNone(metadata.get("key not found"))
 
     def test_add_value(self):
         metadata = Metadata()
@@ -183,19 +182,18 @@ class TestTypeMetadata(unittest.TestCase):
         self.assertEqual(metadata.get_all("key"), ["value1", b"new value 2"])
 
     def test_delete_values(self):
-        with suppress_type_checks():
-            metadata = Metadata(*self._MULTI_ENTRY_DATA)
-            del metadata["key1"]
-            self.assertEqual(metadata.get("key1"), "other value 1")
+        metadata = Metadata(*self._MULTI_ENTRY_DATA)
+        del metadata["key1"]
+        self.assertEqual(metadata.get("key1"), "other value 1")
 
-            metadata.delete_all("key1")
-            self.assertNotIn("key1", metadata)
+        metadata.delete_all("key1")
+        self.assertNotIn("key1", metadata)
 
-            metadata.delete_all("key2")
-            self.assertEqual(len(metadata), 0)
+        metadata.delete_all("key2")
+        self.assertEqual(len(metadata), 0)
 
-            with self.assertRaises(KeyError):
-                del metadata["other key"]
+        with self.assertRaises(KeyError):
+            del metadata["other key"]
 
     def test_metadata_from_tuple_or_cls(self):
         scenarios = (
