@@ -17,7 +17,6 @@ import unittest
 
 import grpc
 from grpc.experimental import aio
-from typeguard import suppress_type_checks
 
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
@@ -26,6 +25,7 @@ from tests_aio.unit import _constants
 from tests_aio.unit._test_base import AioTestBase
 from tests_aio.unit._test_server import _INITIAL_METADATA_KEY
 from tests_aio.unit._test_server import _TRAILING_METADATA_KEY
+from typeguard import suppress_type_checks
 from tests_aio.unit._test_server import start_test_server
 
 _LOCAL_CANCEL_DETAILS_EXPECTATION = "Locally cancelled by application!"
@@ -45,7 +45,6 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
 
     def test_invalid_interceptor(self):
         with suppress_type_checks():
-
             class InvalidInterceptor:
                 """Just an invalid Interceptor"""
 
@@ -577,41 +576,38 @@ class TestInterceptedUnaryUnaryCall(AioTestBase):
 
     async def test_cancel_inside_interceptor_after_rpc_not_awaiting(self):
         class Interceptor(aio.UnaryUnaryClientInterceptor):
-            with suppress_type_checks():
+            async def intercept_unary_unary(
+                self, continuation, client_call_details, request
+            ):
+                call = await continuation(client_call_details, request)
+                call.cancel()
+                return call
 
-                async def intercept_unary_unary(
-                    self, continuation, client_call_details, request
-                ):
-                    call = await continuation(client_call_details, request)
-                    call.cancel()
-                    return call
+        async with aio.insecure_channel(
+            self._server_target, interceptors=[Interceptor()]
+        ) as channel:
+            multicallable = channel.unary_unary(
+                "/grpc.testing.TestService/UnaryCall",
+                request_serializer=messages_pb2.SimpleRequest.SerializeToString,
+                response_deserializer=messages_pb2.SimpleResponse.FromString,
+            )
+            call = multicallable(messages_pb2.SimpleRequest())
 
-        with suppress_type_checks():
-            async with aio.insecure_channel(
-                self._server_target, interceptors=[Interceptor()]
-            ) as channel:
-                multicallable = channel.unary_unary(
-                    "/grpc.testing.TestService/UnaryCall",
-                    request_serializer=messages_pb2.SimpleRequest.SerializeToString,
-                    response_deserializer=messages_pb2.SimpleResponse.FromString,
-                )
-                call = multicallable(messages_pb2.SimpleRequest())
+            with self.assertRaises(asyncio.CancelledError):
+                await call
 
-                with self.assertRaises(asyncio.CancelledError):
-                    await call
-
-                self.assertTrue(call.cancelled())
-                self.assertTrue(call.done())
-                self.assertEqual(await call.code(), grpc.StatusCode.CANCELLED)
-                self.assertEqual(
-                    await call.details(), _LOCAL_CANCEL_DETAILS_EXPECTATION
-                )
-                self.assertEqual(await call.initial_metadata(), aio.Metadata())
-                self.assertEqual(
-                    await call.trailing_metadata(),
-                    aio.Metadata(),
-                    "When the raw response is None, empty metadata is returned",
-                )
+            self.assertTrue(call.cancelled())
+            self.assertTrue(call.done())
+            self.assertEqual(await call.code(), grpc.StatusCode.CANCELLED)
+            self.assertEqual(
+                await call.details(), _LOCAL_CANCEL_DETAILS_EXPECTATION
+            )
+            self.assertEqual(await call.initial_metadata(), aio.Metadata())
+            self.assertEqual(
+                await call.trailing_metadata(),
+                aio.Metadata(),
+                "When the raw response is None, empty metadata is returned",
+            )
 
     async def test_initial_metadata_modification(self):
         class Interceptor(aio.UnaryUnaryClientInterceptor):
