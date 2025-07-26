@@ -173,25 +173,25 @@ class PythonArtifact:
             )
             environ["PIP"] = "/opt/python/{}/bin/pip".format(self.py_version)
             environ["GRPC_SKIP_PIP_CYTHON_UPGRADE"] = "TRUE"
-            if self.arch == "aarch64":
-                # As we won't strip the binary with auditwheel (see below), strip
-                # it at link time.
-                environ["LDFLAGS"] = "-s"
-            else:
-                # only run auditwheel if we're not crosscompiling
-                environ["GRPC_RUN_AUDITWHEEL_REPAIR"] = "TRUE"
-                # only build the packages that depend on grpcio-tools
-                # if we're not crosscompiling.
-                # - they require protoc to run on current architecture
-                # - they only have sdist packages anyway, so it's useless to build them again
-                environ["GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS"] = "TRUE"
+            # if self.arch == "aarch64":
+            #     # As we won't strip the binary with auditwheel (see below), strip
+            #     # it at link time.
+            #     environ["LDFLAGS"] = "-s"
+            # else:
+            # only run auditwheel if we're not crosscompiling
+            environ["GRPC_RUN_AUDITWHEEL_REPAIR"] = "TRUE"
+            # only build the packages that depend on grpcio-tools
+            # if we're not crosscompiling.
+            # - they require protoc to run on current architecture
+            # - they only have sdist packages anyway, so it's useless to build them again
+            environ["GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS"] = "TRUE"
             return create_docker_jobspec(
                 self.name,
                 "tools/dockerfile/grpc_artifact_python_%s_%s"
                 % (self.platform, self.arch),
                 "tools/run_tests/artifacts/build_artifact_python.sh",
                 environ=environ,
-                timeout_seconds=60 * 60 * 2,
+                timeout_seconds=60 * 60 * 4,
             )
         elif "musllinux" in self.platform:
             environ["PYTHON"] = "/opt/python/{}/bin/python".format(
@@ -246,7 +246,7 @@ class PythonArtifact:
                 self.name,
                 ["tools/run_tests/artifacts/build_artifact_python.sh"],
                 environ=environ,
-                timeout_seconds=60 * 60 * 2,
+                timeout_seconds=60 * 60 * 4,
                 use_workspace=True,
             )
 
@@ -410,74 +410,74 @@ def targets():
             ProtocArtifact("macos", "x64", presubmit=True),
             ProtocArtifact("windows", "x64", presubmit=True),
             ProtocArtifact("windows", "x86", presubmit=True),
-            PythonArtifact("manylinux2014", "x64", "cp39-cp39", presubmit=True),
-            PythonArtifact("manylinux2014", "x64", "cp310-cp310"),
-            PythonArtifact("manylinux2014", "x64", "cp311-cp311"),
-            PythonArtifact("manylinux2014", "x64", "cp312-cp312"),
-            PythonArtifact(
-                "manylinux2014", "x64", "cp313-cp313", presubmit=True
-            ),
-            PythonArtifact("manylinux2014", "x86", "cp39-cp39", presubmit=True),
-            PythonArtifact("manylinux2014", "x86", "cp310-cp310"),
-            PythonArtifact("manylinux2014", "x86", "cp311-cp311"),
-            PythonArtifact("manylinux2014", "x86", "cp312-cp312"),
-            PythonArtifact(
-                "manylinux2014", "x86", "cp313-cp313", presubmit=True
-            ),
-            PythonArtifact(
-                "manylinux2014", "aarch64", "cp39-cp39", presubmit=True
-            ),
-            PythonArtifact("manylinux2014", "aarch64", "cp310-cp310"),
-            PythonArtifact("manylinux2014", "aarch64", "cp311-cp311"),
-            PythonArtifact("manylinux2014", "aarch64", "cp312-cp312"),
+            # PythonArtifact("manylinux2014", "x64", "cp39-cp39", presubmit=True),
+            # PythonArtifact("manylinux2014", "x64", "cp310-cp310"),
+            # PythonArtifact("manylinux2014", "x64", "cp311-cp311"),
+            # PythonArtifact("manylinux2014", "x64", "cp312-cp312"),
+            # PythonArtifact(
+            #     "manylinux2014", "x64", "cp313-cp313", presubmit=True
+            # ),
+            # PythonArtifact("manylinux2014", "x86", "cp39-cp39", presubmit=True),
+            # PythonArtifact("manylinux2014", "x86", "cp310-cp310"),
+            # PythonArtifact("manylinux2014", "x86", "cp311-cp311"),
+            # PythonArtifact("manylinux2014", "x86", "cp312-cp312"),
+            # PythonArtifact(
+            #     "manylinux2014", "x86", "cp313-cp313", presubmit=True
+            # ),
+            # PythonArtifact(
+            #     "manylinux2014", "aarch64", "cp39-cp39", presubmit=True
+            # ),
+            # PythonArtifact("manylinux2014", "aarch64", "cp310-cp310"),
+            # PythonArtifact("manylinux2014", "aarch64", "cp311-cp311"),
+            # PythonArtifact("manylinux2014", "aarch64", "cp312-cp312"),
             PythonArtifact(
                 "manylinux2014", "aarch64", "cp313-cp313", presubmit=True
             ),
-            PythonArtifact("linux_extra", "armv7", "cp39-cp39", presubmit=True),
-            PythonArtifact("linux_extra", "armv7", "cp310-cp310"),
-            PythonArtifact("linux_extra", "armv7", "cp311-cp311"),
-            PythonArtifact("linux_extra", "armv7", "cp312-cp312"),
-            PythonArtifact(
-                "linux_extra", "armv7", "cp313-cp313", presubmit=True
-            ),
-            PythonArtifact("musllinux_1_1", "x64", "cp39-cp39", presubmit=True),
-            PythonArtifact("musllinux_1_1", "x64", "cp310-cp310"),
-            PythonArtifact("musllinux_1_1", "x64", "cp311-cp311"),
-            PythonArtifact("musllinux_1_1", "x64", "cp312-cp312"),
-            PythonArtifact(
-                "musllinux_1_1", "x64", "cp313-cp313", presubmit=True
-            ),
-            PythonArtifact("musllinux_1_1", "x86", "cp39-cp39", presubmit=True),
-            PythonArtifact("musllinux_1_1", "x86", "cp310-cp310"),
-            PythonArtifact("musllinux_1_1", "x86", "cp311-cp311"),
-            PythonArtifact("musllinux_1_1", "x86", "cp312-cp312"),
-            PythonArtifact(
-                "musllinux_1_1", "x86", "cp313-cp313", presubmit=True
-            ),
-            PythonArtifact(
-                "musllinux_1_1", "aarch64", "cp39-cp39", presubmit=True
-            ),
-            PythonArtifact("musllinux_1_1", "aarch64", "cp310-cp310"),
-            PythonArtifact("musllinux_1_1", "aarch64", "cp311-cp311"),
-            PythonArtifact("musllinux_1_1", "aarch64", "cp312-cp312"),
-            PythonArtifact(
-                "musllinux_1_1", "aarch64", "cp313-cp313", presubmit=True
-            ),
-            PythonArtifact("macos", "x64", "python3.9", presubmit=True),
-            PythonArtifact("macos", "x64", "python3.10"),
-            PythonArtifact("macos", "x64", "python3.11"),
-            PythonArtifact("macos", "x64", "python3.12"),
-            PythonArtifact("macos", "x64", "python3.13", presubmit=True),
-            PythonArtifact("windows", "x86", "Python39_32bit", presubmit=True),
-            PythonArtifact("windows", "x86", "Python310_32bit"),
-            PythonArtifact("windows", "x86", "Python311_32bit"),
-            PythonArtifact("windows", "x86", "Python312_32bit"),
-            PythonArtifact("windows", "x86", "Python313_32bit", presubmit=True),
-            PythonArtifact("windows", "x64", "Python39", presubmit=True),
-            PythonArtifact("windows", "x64", "Python310"),
-            PythonArtifact("windows", "x64", "Python311"),
-            PythonArtifact("windows", "x64", "Python312"),
-            PythonArtifact("windows", "x64", "Python313", presubmit=True),
+            # PythonArtifact("linux_extra", "armv7", "cp39-cp39", presubmit=True),
+            # PythonArtifact("linux_extra", "armv7", "cp310-cp310"),
+            # PythonArtifact("linux_extra", "armv7", "cp311-cp311"),
+            # PythonArtifact("linux_extra", "armv7", "cp312-cp312"),
+            # PythonArtifact(
+            #     "linux_extra", "armv7", "cp313-cp313", presubmit=True
+            # ),
+            # PythonArtifact("musllinux_1_1", "x64", "cp39-cp39", presubmit=True),
+            # PythonArtifact("musllinux_1_1", "x64", "cp310-cp310"),
+            # PythonArtifact("musllinux_1_1", "x64", "cp311-cp311"),
+            # PythonArtifact("musllinux_1_1", "x64", "cp312-cp312"),
+            # PythonArtifact(
+            #     "musllinux_1_1", "x64", "cp313-cp313", presubmit=True
+            # ),
+            # PythonArtifact("musllinux_1_1", "x86", "cp39-cp39", presubmit=True),
+            # PythonArtifact("musllinux_1_1", "x86", "cp310-cp310"),
+            # PythonArtifact("musllinux_1_1", "x86", "cp311-cp311"),
+            # PythonArtifact("musllinux_1_1", "x86", "cp312-cp312"),
+            # PythonArtifact(
+            #     "musllinux_1_1", "x86", "cp313-cp313", presubmit=True
+            # ),
+            # PythonArtifact(
+            #     "musllinux_1_1", "aarch64", "cp39-cp39", presubmit=True
+            # ),
+            # PythonArtifact("musllinux_1_1", "aarch64", "cp310-cp310"),
+            # PythonArtifact("musllinux_1_1", "aarch64", "cp311-cp311"),
+            # PythonArtifact("musllinux_1_1", "aarch64", "cp312-cp312"),
+            # PythonArtifact(
+            #     "musllinux_1_1", "aarch64", "cp313-cp313", presubmit=True
+            # ),
+            # PythonArtifact("macos", "x64", "python3.9", presubmit=True),
+            # PythonArtifact("macos", "x64", "python3.10"),
+            # PythonArtifact("macos", "x64", "python3.11"),
+            # PythonArtifact("macos", "x64", "python3.12"),
+            # PythonArtifact("macos", "x64", "python3.13", presubmit=True),
+            # PythonArtifact("windows", "x86", "Python39_32bit", presubmit=True),
+            # PythonArtifact("windows", "x86", "Python310_32bit"),
+            # PythonArtifact("windows", "x86", "Python311_32bit"),
+            # PythonArtifact("windows", "x86", "Python312_32bit"),
+            # PythonArtifact("windows", "x86", "Python313_32bit", presubmit=True),
+            # PythonArtifact("windows", "x64", "Python39", presubmit=True),
+            # PythonArtifact("windows", "x64", "Python310"),
+            # PythonArtifact("windows", "x64", "Python311"),
+            # PythonArtifact("windows", "x64", "Python312"),
+            # PythonArtifact("windows", "x64", "Python313", presubmit=True),
             RubyArtifact("linux", "x86-mingw32", presubmit=True),
             RubyArtifact("linux", "x64-mingw-ucrt", presubmit=True),
             RubyArtifact("linux", "x86_64-linux-gnu", presubmit=True),
