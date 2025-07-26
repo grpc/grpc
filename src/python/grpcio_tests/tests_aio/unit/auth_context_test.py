@@ -136,52 +136,51 @@ class TestAuthContext(AioTestBase):
             )
 
     async def test_secure_client_cert(self):
-        with suppress_type_checks():
-            handler = grpc.method_handlers_generic_handler(
-                "test",
-                {
-                    "UnaryUnary": grpc.unary_unary_rpc_method_handler(
-                        handle_unary_unary
-                    )
-                },
-            )
-            server = aio.server()
-            server.add_generic_rpc_handlers((handler,))
-            server_cred = grpc.ssl_server_credentials(
-                _SERVER_CERTS,
-                root_certificates=_TEST_ROOT_CERTIFICATES,
-                require_client_auth=True,
-            )
-            port = server.add_secure_port("[::]:0", server_cred)
-            await server.start()
+        handler = grpc.method_handlers_generic_handler(
+            "test",
+            {
+                "UnaryUnary": grpc.unary_unary_rpc_method_handler(
+                    handle_unary_unary
+                )
+            },
+        )
+        server = aio.server()
+        server.add_generic_rpc_handlers((handler,))
+        server_cred = grpc.ssl_server_credentials(
+            _SERVER_CERTS,
+            root_certificates=_TEST_ROOT_CERTIFICATES,
+            require_client_auth=True,
+        )
+        port = server.add_secure_port("[::]:0", server_cred)
+        await server.start()
 
-            channel_creds = grpc.ssl_channel_credentials(
-                root_certificates=_TEST_ROOT_CERTIFICATES,
-                private_key=_PRIVATE_KEY,
-                certificate_chain=_CERTIFICATE_CHAIN,
-            )
-            channel = aio.secure_channel(
-                "localhost:{}".format(port),
-                channel_creds,
-                options=_PROPERTY_OPTIONS,
-            )
+        channel_creds = grpc.ssl_channel_credentials(
+            root_certificates=_TEST_ROOT_CERTIFICATES,
+            private_key=_PRIVATE_KEY,
+            certificate_chain=_CERTIFICATE_CHAIN,
+        )
+        channel = aio.secure_channel(
+            "localhost:{}".format(port),
+            channel_creds,
+            options=_PROPERTY_OPTIONS,
+        )
 
-            response = await channel.unary_unary(_UNARY_UNARY)(_REQUEST)
-            await channel.close()
-            await server.stop(None)
+        response = await channel.unary_unary(_UNARY_UNARY)(_REQUEST)
+        await channel.close()
+        await server.stop(None)
 
-            auth_data = pickle.loads(response)
-            auth_ctx = auth_data[_AUTH_CTX]
-            self.assertCountEqual(_CLIENT_IDS, auth_data[_ID])
-            self.assertEqual(
-                "x509_subject_alternative_name", auth_data[_ID_KEY]
-            )
-            self.assertSequenceEqual(
-                [b"ssl"], auth_ctx["transport_security_type"]
-            )
-            self.assertSequenceEqual(
-                [b"*.test.google.com"], auth_ctx["x509_common_name"]
-            )
+        auth_data = pickle.loads(response)
+        auth_ctx = auth_data[_AUTH_CTX]
+        self.assertCountEqual(_CLIENT_IDS, auth_data[_ID])
+        self.assertEqual(
+            "x509_subject_alternative_name", auth_data[_ID_KEY]
+        )
+        self.assertSequenceEqual(
+            [b"ssl"], auth_ctx["transport_security_type"]
+        )
+        self.assertSequenceEqual(
+            [b"*.test.google.com"], auth_ctx["x509_common_name"]
+        )
 
     async def _do_one_shot_client_rpc(
         self, channel_creds, channel_options, port, expect_ssl_session_reused
@@ -198,47 +197,46 @@ class TestAuthContext(AioTestBase):
         await channel.close()
 
     async def test_session_resumption(self):
-        with suppress_type_checks():
-            # Set up a secure server
-            handler = grpc.method_handlers_generic_handler(
-                "test",
-                {
-                    "UnaryUnary": grpc.unary_unary_rpc_method_handler(
-                        handle_unary_unary
-                    )
-                },
-            )
-            server = aio.server()
-            server.add_generic_rpc_handlers((handler,))
-            server_cred = grpc.ssl_server_credentials(_SERVER_CERTS)
-            port = server.add_secure_port("[::]:0", server_cred)
-            await server.start()
+        # Set up a secure server
+        handler = grpc.method_handlers_generic_handler(
+            "test",
+            {
+                "UnaryUnary": grpc.unary_unary_rpc_method_handler(
+                    handle_unary_unary
+                )
+            },
+        )
+        server = aio.server()
+        server.add_generic_rpc_handlers((handler,))
+        server_cred = grpc.ssl_server_credentials(_SERVER_CERTS)
+        port = server.add_secure_port("[::]:0", server_cred)
+        await server.start()
 
-            # Create a cache for TLS session tickets
-            cache = session_cache.ssl_session_cache_lru(1)
-            channel_creds = grpc.ssl_channel_credentials(
-                root_certificates=_TEST_ROOT_CERTIFICATES
-            )
-            channel_options = _PROPERTY_OPTIONS + (
-                ("grpc.ssl_session_cache", cache),
-            )
+        # Create a cache for TLS session tickets
+        cache = session_cache.ssl_session_cache_lru(1)
+        channel_creds = grpc.ssl_channel_credentials(
+            root_certificates=_TEST_ROOT_CERTIFICATES
+        )
+        channel_options = _PROPERTY_OPTIONS + (
+            ("grpc.ssl_session_cache", cache),
+        )
 
-            # Initial connection has no session to resume
-            await self._do_one_shot_client_rpc(
-                channel_creds,
-                channel_options,
-                port,
-                expect_ssl_session_reused=[b"false"],
-            )
+        # Initial connection has no session to resume
+        await self._do_one_shot_client_rpc(
+            channel_creds,
+            channel_options,
+            port,
+            expect_ssl_session_reused=[b"false"],
+        )
 
-            # Subsequent connections resume sessions
-            await self._do_one_shot_client_rpc(
-                channel_creds,
-                channel_options,
-                port,
-                expect_ssl_session_reused=[b"true"],
-            )
-            await server.stop(None)
+        # Subsequent connections resume sessions
+        await self._do_one_shot_client_rpc(
+            channel_creds,
+            channel_options,
+            port,
+            expect_ssl_session_reused=[b"true"],
+        )
+        await server.stop(None)
 
 
 if __name__ == "__main__":
