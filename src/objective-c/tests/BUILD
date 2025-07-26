@@ -245,6 +245,16 @@ grpc_objc_testing_library(
 )
 
 grpc_objc_testing_library(
+    name = "EventEngineServerTests-lib",
+    srcs = ["EventEngineTests/CFEventEngineServerTests.mm"],
+    deps = [
+        "//src/core:cf_event_engine",
+        "//test/core/event_engine/test_suite/posix:oracle_event_engine_posix",
+        "//test/core/event_engine/test_suite/tests:server",
+    ],
+)
+
+grpc_objc_testing_library(
     name = "EventEngineUnitTests-lib",
     srcs = ["EventEngineTests/CFEventEngineUnitTests.mm"],
     deps = [
@@ -255,14 +265,49 @@ grpc_objc_testing_library(
     ],
 )
 
+grpc_objc_testing_library(
+    name = "CppEnd2EndTests-lib",
+    srcs = ["CppEnd2EndTests/CppEnd2EndTests.mm"],
+    deps = [
+        "//test/cpp/end2end:client_callback_end2end_test_lib",
+        "//test/cpp/end2end:client_interceptors_end2end_test_lib",
+        "//test/cpp/end2end:client_lb_end2end_test_lib",
+        "//test/cpp/end2end:delegating_channel_test_lib",
+        "//test/cpp/end2end:end2end_test_lib",
+        "//test/cpp/end2end:exception_test_lib",
+        "//test/cpp/end2end:generic_end2end_test_lib",
+        "//test/cpp/end2end:grpclb_end2end_test_lib",
+        # health_service_end2end_test call EnableDefaultHealthCheckService which
+        # conflicts with proto_server_reflection_test
+        # "//test/cpp/end2end:health_service_end2end_test_lib",
+        "//test/cpp/end2end:hybrid_end2end_test_lib",
+        "//test/cpp/end2end:mock_test_lib",
+        "//test/cpp/end2end:proto_server_reflection_test_lib",
+        "//test/cpp/end2end:raw_end2end_test_lib",
+        "//test/cpp/end2end:server_early_return_test_lib",
+        "//test/cpp/end2end:service_config_end2end_test_lib",
+        "//test/cpp/end2end:server_builder_plugin_test_lib",
+    ],
+)
+
 grpc_objc_ios_unit_test(
     name = "EventEngineClientTests",
     deps = [":EventEngineClientTests-lib"],
 )
 
 grpc_objc_ios_unit_test(
+    name = "EventEngineServerTests",
+    deps = [":EventEngineServerTests-lib"],
+)
+
+grpc_objc_ios_unit_test(
     name = "EventEngineUnitTests",
     deps = [":EventEngineUnitTests-lib"],
+)
+
+grpc_objc_ios_unit_test(
+    name = "CppEnd2EndTests",
+    deps = [":CppEnd2EndTests-lib"],
 )
 
 # Note that bazel currently doesn't support running tvos_unit_test
