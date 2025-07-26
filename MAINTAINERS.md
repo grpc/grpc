@@ -38,7 +38,6 @@ for general contribution guidelines.
 - [stanley-cheung](https://github.com/stanley-cheung), Google LLC
 - [thisisnotapril](https://github.com/thisisnotapril), Google LLC
 - [tjagtap](https://github.com/tjagtap), Google LLC
-- [veblush](https://github.com/veblush), Google LLC
 - [vishalpowar](https://github.com/vishalpowar), Google LLC
 - [wenbozhu](https://github.com/wenbozhu), Google LLC
 - [yashykt](https://github.com/yashykt), Google LLC
@@ -90,6 +89,7 @@ for general contribution guidelines.
 - [sreecha](https://github.com/sreecha), LinkedIn
 - [srini100](https://github.com/srini100), Google LLC
 - [summerxyt](https://github.com/summerxyt), Google LLC
+- [veblush](https://github.com/veblush), Google LLC
 - [vjpai](https://github.com/vjpai), Google LLC
 - [Vizerai](https://github.com/Vizerai), Google LLC
 - [wcevans](https://github.com/wcevans), Google LLC
