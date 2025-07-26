@@ -261,14 +261,13 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
   std::shared_ptr<ThreadPool> executor_;
 
-#if defined(GRPC_POSIX_SOCKET_TCP) && \
-    !defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
+#if defined(GRPC_POSIX_SOCKET_TCP)
 
   // RAII wrapper for a polling cycle. Starts a new one in ctor and stops
   // in dtor.
   class PollingCycle {
    public:
-    explicit PollingCycle(PosixEnginePollerManager* poller_manager);
+    explicit PollingCycle(PosixEnginePollerManager* manager);
     ~PollingCycle();
 
    private:
@@ -284,13 +283,11 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
   void SchedulePoller();
   void ResetPollCycle();
 
-  PosixEnginePollerManager poller_manager_;
-
   // Ensures there's ever only one of these.
   std::optional<PollingCycle> polling_cycle_ ABSL_GUARDED_BY(&mu_);
 
-#endif  // defined(GRPC_POSIX_SOCKET_TCP) &&
-        // !defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
+  std::optional<PosixEnginePollerManager> poller_manager_;
+#endif  // defined(GRPC_POSIX_SOCKET_TCP)
 
   std::shared_ptr<TimerManager> timer_manager_;
 };
