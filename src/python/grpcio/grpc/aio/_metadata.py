@@ -16,7 +16,7 @@ from collections import OrderedDict
 from collections import abc
 from typing import Any, Iterator, List, Optional, Tuple, Union
 
-MetadataKey = str
+MetadataKey = Union[str, bytes]
 MetadataValue = Union[str, bytes]
 
 class Metadata(abc.Collection):  # noqa: PLW1641
