@@ -207,7 +207,7 @@ class TestTypeMetadata(unittest.TestCase):
         )
         for source, expected in scenarios:
             with self.subTest(raw_metadata=source, expected=expected):
-                self.assertEqual(expected, Metadata.from_tuple(source))
+                self.assertEqual(expected, Metadata.from_tuple_or_cls(source))
 
 
 class TestMetadataWithServer(AioTestBase):
