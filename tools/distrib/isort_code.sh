@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+set -eux
 
 ACTION=${1:---overwrite-in-place}
 [[ $ACTION == '--overwrite-in-place' ]] || [[ $ACTION == '--diff' ]]
@@ -33,9 +33,12 @@ DIRS=(
     'setup.py'
 )
 
-VIRTUALENV=venv_isort_code
-python3 -m virtualenv $VIRTUALENV
-source $VIRTUALENV/bin/activate
+VIRTUALENV=".venv-ci-isort"
+python3 -m virtualenv "${VIRTUALENV}"
+source "${VIRTUALENV}/bin/activate"
+python -VV
 
-python3 -m pip install isort==5.9.2
-python3 -m isort $ACTION --settings-path=grpc-style-config.toml --dont-follow-links "${DIRS[@]}"
+pip install isort==5.13.2
+pip list
+
+isort $ACTION --settings-path=grpc-style-config.toml "${DIRS[@]}"

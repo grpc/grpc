@@ -1,4 +1,5 @@
 [MAIN]
+py-version = 3.9
 load-plugins=
 	pylint.extensions.no_self_use,
 	pylint.extensions.comparison_placement,
@@ -9,6 +10,9 @@ ignore=
 	src/python/grpcio_tests/tests/unit/framework,
 	src/python/grpcio_tests/tests/unit/framework/common,
 	src/python/grpcio_tests/tests/unit/framework/foundation,
+ignore-patterns=
+	.*pb2\.py,
+	.*pb2_grpc\.py,
 
 [VARIABLES]
 
