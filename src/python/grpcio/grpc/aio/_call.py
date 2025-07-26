@@ -181,14 +181,14 @@ def _create_rpc_error(
     initial_metadata: MetadataType,
     status: cygrpc.AioRpcStatus,
 ) -> AioRpcError:
-    metadata = (
+    initial_metadata = (
         Metadata.from_tuple(tuple(initial_metadata))
         if isinstance(initial_metadata, Sequence)
         else initial_metadata
     )
     return AioRpcError(
         _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[status.code()],
-        metadata,
+        initial_metadata,
         Metadata.from_tuple(status.trailing_metadata()),
         details=status.details(),
         debug_error_string=status.debug_error_string(),
