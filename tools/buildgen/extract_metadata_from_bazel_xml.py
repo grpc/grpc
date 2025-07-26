@@ -1377,7 +1377,8 @@ _BUILD_EXTRA_METADATA = {
 # We need a complete picture of all the targets and dependencies we're interested in
 # so we run multiple bazel queries and merge the results.
 _BAZEL_DEPS_QUERIES = [
-    'deps("//test/...")',
+    'deps(//test/... - attr("tags", "grpc-fuzztest", //test/...))',
+    # 'deps("//test/...")',
     'deps("//:all")',
     'deps("//src/compiler/...")',
     # allow resolving alias() targets to the actual targets they point to
