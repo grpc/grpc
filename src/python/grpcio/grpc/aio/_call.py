@@ -25,7 +25,6 @@ from typing import (
     Generator,
     Generic,
     Optional,
-    Sequence,
     Tuple,
     Union,
 )
