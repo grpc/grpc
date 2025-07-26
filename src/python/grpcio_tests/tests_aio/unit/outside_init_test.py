@@ -30,19 +30,18 @@ _NUM_OF_LOOPS = 50
 
 class TestOutsideInit(unittest.TestCase):
     def test_behavior_outside_asyncio(self):
-        with suppress_type_checks():
-            # Ensures non-AsyncIO object can be initiated
-            channel_creds = grpc.ssl_channel_credentials()
+        # Ensures non-AsyncIO object can be initiated
+        channel_creds = grpc.ssl_channel_credentials()
 
-            # Ensures AsyncIO API not raising outside of AsyncIO.
-            # NOTE(lidiz) This behavior is bound with GAPIC generator, and required
-            # by test frameworks like pytest. In test frameworks, objects shared
-            # across cases need to be created outside of AsyncIO coroutines.
-            aio.insecure_channel("")
-            aio.secure_channel("", channel_creds)
-            aio.server()
-            aio.init_grpc_aio()
-            aio.shutdown_grpc_aio()
+        # Ensures AsyncIO API not raising outside of AsyncIO.
+        # NOTE(lidiz) This behavior is bound with GAPIC generator, and required
+        # by test frameworks like pytest. In test frameworks, objects shared
+        # across cases need to be created outside of AsyncIO coroutines.
+        aio.insecure_channel("")
+        aio.secure_channel("", channel_creds)
+        aio.server()
+        aio.init_grpc_aio()
+        aio.shutdown_grpc_aio()
 
     def test_multi_ephemeral_loops(self):
         # Initializes AIO module outside. It's part of the test. We especially
