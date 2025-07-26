@@ -183,7 +183,8 @@ def _create_rpc_error(
 ) -> AioRpcError:
     initial_metadata = (
         Metadata.from_tuple(tuple(initial_metadata))
-        if isinstance(initial_metadata, Sequence)
+        if not isinstance(initial_metadata, Metadata)
+        and isinstance(initial_metadata, Sequence)
         else initial_metadata
     )
     return AioRpcError(
