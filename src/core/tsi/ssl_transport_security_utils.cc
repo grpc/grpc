@@ -428,4 +428,25 @@ absl::StatusOr<EVP_PKEY*> ParsePemPrivateKey(
   return pkey;
 }
 
+absl::StatusOr<std::string> ParseUriString(GENERAL_NAME* subject_alt_name) {
+  if (subject_alt_name == nullptr || subject_alt_name->type != GEN_URI) {
+    return absl::InvalidArgumentError("Could not parse ASN1 string to UTF8");
+  }
+  // This shouldn't be a possible if statement to enter because if the type is
+  // GEN_URI it then by definition should have a d.uniformResourceIdentifier.
+  // But we can still keep it for safety.
+  if (subject_alt_name->d.uniformResourceIdentifier == nullptr) {
+    return absl::InvalidArgumentError("Could not parse ASN1 string to UTF8");
+  }
+  unsigned char* name = nullptr;
+  int name_size =
+      ASN1_STRING_to_UTF8(&name, subject_alt_name->d.uniformResourceIdentifier);
+  if (name_size < 0 || name == nullptr) {
+    OPENSSL_free(name);
+    return absl::InvalidArgumentError("Could not parse ASN1 string to UTF8");
+  }
+  std::string ret(reinterpret_cast<char const*>(name), name_size);
+  OPENSSL_free(name);
+  return ret;
+}
 }  // namespace grpc_core
