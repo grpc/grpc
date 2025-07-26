@@ -15,6 +15,7 @@
 from collections import OrderedDict
 from collections import abc
 from typing import Any, Iterator, List, Optional, Tuple, Union
+from typing_extensions import Self
 
 MetadataKey = Union[str, bytes]
 MetadataValue = Union[str, bytes]
@@ -38,7 +39,7 @@ class Metadata(abc.Collection):  # noqa: PLW1641
             self.add(md_key, md_value)
 
     @classmethod
-    def from_tuple(cls, raw_metadata: tuple):
+    def from_tuple_or_cls(cls, raw_metadata: Optional[Union[tuple, Self]]):
         if raw_metadata:
             return cls(*raw_metadata)
         return cls()
