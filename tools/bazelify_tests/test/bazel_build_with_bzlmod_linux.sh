@@ -23,8 +23,7 @@ tools/bazel \
     --ignore_dev_dependency \
     -- \
     :all \
-    -:grpcpp_csm_observability \  # Needs google_cloud_cpp to be added to BCR
-    -attr("tags", "grpc-fuzztest", :all)
+    -:grpcpp_csm_observability   # Needs google_cloud_cpp to be added to BCR
 
 # Test if examples are buildable without dev dependencies.
 tools/bazel \
@@ -45,9 +44,7 @@ tools/bazel \
     --enable_workspace=false \
     -- \
     //test/core/config:all \
-    //test/cpp/common:all \
-    -attr("tags", "grpc-fuzztest", //test/core/config:all) \
-    -attr("tags", "grpc-fuzztest", //test/cpp/common:all)
+    //test/cpp/common:all
 
 # Test if public targets are buildable with openssl and without dev
 # dependencies.
@@ -59,5 +56,4 @@ tools/bazel \
     --define=//third_party:grpc_use_openssl=true \
     -- \
     :all \
-    -:grpcpp_csm_observability \  # Needs google_cloud_cpp to be added to BCR
-    -attr("tags", "grpc-fuzztest", :all)
+    -:grpcpp_csm_observability   # Needs google_cloud_cpp to be added to BCR
