@@ -181,16 +181,10 @@ def _create_rpc_error(
     initial_metadata: MetadataType,
     status: cygrpc.AioRpcStatus,
 ) -> AioRpcError:
-    initial_metadata = (
-        Metadata.from_tuple(tuple(initial_metadata))
-        if not isinstance(initial_metadata, Metadata)
-        and isinstance(initial_metadata, Sequence)
-        else initial_metadata
-    )
     return AioRpcError(
         _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[status.code()],
-        initial_metadata,
-        Metadata.from_tuple(status.trailing_metadata()),
+        Metadata.from_tuple_or_cls(initial_metadata),
+        Metadata.from_tuple_or_cls(status.trailing_metadata()),
         details=status.details(),
         debug_error_string=status.debug_error_string(),
     )
@@ -253,13 +247,13 @@ class Call:
 
     async def initial_metadata(self) -> Metadata:
         raw_metadata_tuple = await self._cython_call.initial_metadata()
-        return Metadata.from_tuple(raw_metadata_tuple)
+        return Metadata.from_tuple_or_cls(raw_metadata_tuple)
 
     async def trailing_metadata(self) -> Metadata:
         raw_metadata_tuple = (
             await self._cython_call.status()
         ).trailing_metadata()
-        return Metadata.from_tuple(raw_metadata_tuple)
+        return Metadata.from_tuple_or_cls(raw_metadata_tuple)
 
     async def code(self) -> grpc.StatusCode:
         cygrpc_code = (await self._cython_call.status()).code()
