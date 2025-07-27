@@ -156,6 +156,12 @@ Http2Status Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
     return Http2Status::Ok();
   }
 
+  if (stream->GetStreamState() == HttpStreamState::kHalfClosedRemote) {
+    return Http2Status::Http2StreamError(
+        Http2ErrorCode::kStreamClosed,
+        std::string(RFC9113::kHalfClosedRemoteState));
+  }
+
   // Add frame to assembler
   GRPC_HTTP2_CLIENT_DLOG
       << "Http2Transport ProcessHttp2DataFrame AppendNewDataFrame";
@@ -227,6 +233,11 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
         << "Http2Transport ProcessHttp2HeaderFrame Promise { stream_id="
         << frame.stream_id << "} Lookup Failed";
     return Http2Status::Ok();
+  }
+  if (stream->GetStreamState() == HttpStreamState::kHalfClosedRemote) {
+    return Http2Status::Http2StreamError(
+        Http2ErrorCode::kStreamClosed,
+        std::string(RFC9113::kHalfClosedRemoteState));
   }
 
   incoming_header_in_progress_ = !frame.end_headers;
@@ -423,6 +434,11 @@ Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
     // receives an unexpected stream identifier MUST respond with a connection
     // error (Section 5.4.1) of type PROTOCOL_ERROR.
     return Http2Status::Ok();
+  }
+  if (stream->GetStreamState() == HttpStreamState::kHalfClosedRemote) {
+    return Http2Status::Http2StreamError(
+        Http2ErrorCode::kStreamClosed,
+        std::string(RFC9113::kHalfClosedRemoteState));
   }
 
   HeaderAssembler& assember = stream->header_assembler;

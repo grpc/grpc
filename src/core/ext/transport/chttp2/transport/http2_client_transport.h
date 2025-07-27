@@ -282,6 +282,8 @@ class Http2ClientTransport final : public ClientTransport {
       }
     }
 
+    HttpStreamState GetStreamState() const { return stream_state; }
+
     inline bool IsClosed() const {
       return stream_state == HttpStreamState::kClosed;
     }
