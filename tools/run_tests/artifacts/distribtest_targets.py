@@ -177,6 +177,9 @@ class PythonDistribTest(object):
         if presubmit:
             self.labels.append("presubmit")
 
+        if platform == "linux" and arch == "aarch64":
+            self.labels.append("linux_aarch64")
+
     def pre_build_jobspecs(self):
         return []
 
@@ -461,28 +464,28 @@ def targets():
         CSharpDistribTest("windows", "x86", presubmit=True),
         CSharpDistribTest("windows", "x64", presubmit=True),
         # Python
-        # PythonDistribTest("linux", "x64", "bullseye", presubmit=True),
-        # PythonDistribTest("linux", "x86", "bullseye", presubmit=True),
-        # PythonDistribTest("linux", "x64", "fedora40"),
-        # PythonDistribTest("linux", "x64", "arch"),
-        # PythonDistribTest("linux", "x64", "alpine"),
-        # PythonDistribTest("linux", "x64", "ubuntu2404"),
+        PythonDistribTest("linux", "x64", "bullseye", presubmit=True),
+        PythonDistribTest("linux", "x86", "bullseye", presubmit=True),
+        PythonDistribTest("linux", "x64", "fedora40"),
+        PythonDistribTest("linux", "x64", "arch"),
+        PythonDistribTest("linux", "x64", "alpine"),
+        PythonDistribTest("linux", "x64", "ubuntu2404"),
         PythonDistribTest(
             "linux", "aarch64", "python39_buster", presubmit=True
         ),
         PythonDistribTest("linux", "aarch64", "alpine", presubmit=True),
-        # PythonDistribTest(
-        #     "linux", "x64", "alpine3.18", source=True, presubmit=True
-        # ),
-        # PythonDistribTest(
-        #     "linux", "x64", "bullseye", source=True, presubmit=True
-        # ),
-        # PythonDistribTest(
-        #     "linux", "x86", "bullseye", source=True, presubmit=True
-        # ),
-        # PythonDistribTest("linux", "x64", "fedora40", source=True),
-        # PythonDistribTest("linux", "x64", "arch", source=True),
-        # PythonDistribTest("linux", "x64", "ubuntu2404", source=True),
+        PythonDistribTest(
+            "linux", "x64", "alpine3.18", source=True, presubmit=True
+        ),
+        PythonDistribTest(
+            "linux", "x64", "bullseye", source=True, presubmit=True
+        ),
+        PythonDistribTest(
+            "linux", "x86", "bullseye", source=True, presubmit=True
+        ),
+        PythonDistribTest("linux", "x64", "fedora40", source=True),
+        PythonDistribTest("linux", "x64", "arch", source=True),
+        PythonDistribTest("linux", "x64", "ubuntu2404", source=True),
         # Ruby
         RubyDistribTest(
             "linux-gnu",
