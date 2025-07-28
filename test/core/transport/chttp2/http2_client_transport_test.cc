@@ -706,7 +706,7 @@ TEST(Http2CommonTransportTest, TestReadChannelArgs) {
   EXPECT_EQ(settings.allow_security_frame(), true);
   // Default settings
   EXPECT_EQ(settings.max_concurrent_streams(), 4294967295u);
-  // EXPECT_EQ(settings.max_header_list_size(), 16777216u);
+  EXPECT_EQ(settings.max_header_list_size(), 16384u);  // TODO(TJ)
   EXPECT_EQ(settings.enable_push(), true);
 
   // If ChannelArgs don't have a value for the setting, the default must be
@@ -717,7 +717,7 @@ TEST(Http2CommonTransportTest, TestReadChannelArgs) {
   EXPECT_EQ(settings2.max_concurrent_streams(), 4294967295u);
   EXPECT_EQ(settings2.initial_window_size(), 65535u);
   EXPECT_EQ(settings2.max_frame_size(), 16384u);
-  // EXPECT_EQ(settings2.max_header_list_size(), 16777216u);
+  EXPECT_EQ(settings2.max_header_list_size(), 16384u);  // TODO(TJ)
   EXPECT_EQ(settings2.preferred_receive_crypto_message_size(), 0u);
   EXPECT_EQ(settings2.enable_push(), true);
   EXPECT_EQ(settings2.allow_true_binary_metadata(), false);

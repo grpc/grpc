@@ -83,8 +83,10 @@ class Http2FrameTestHelper {
     settings.push_back({Http2Settings::kEnablePushWireId, 0});
     // TODO(tjagtap) : [PH2][P2] Replace with 65535 once flow control is
     // done.
+    settings.push_back({Http2Settings::kMaxConcurrentStreamsWireId, 0});
     settings.push_back({Http2Settings::kInitialWindowSizeWireId, 2147483646});
-    settings.push_back({Http2Settings::kMaxHeaderListSizeWireId, 16384});
+    settings.push_back({Http2Settings::kMaxHeaderListSizeWireId, 16384u});
+    settings.push_back({Http2Settings::kGrpcAllowTrueBinaryMetadataWireId, 1u});
     return EventEngineSliceFromHttp2Frame(
         Http2SettingsFrame{false, std::move(settings)});
   }
