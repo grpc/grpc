@@ -34,6 +34,7 @@ install_import_hook('grpc.aio._metadata')
 
 # SYNC
 install_import_hook('grpc._auth')
+install_import_hook('grpc._channel')
 
 class SingleLoader(object):
     def __init__(self, pattern: str):
