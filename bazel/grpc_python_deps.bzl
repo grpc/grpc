@@ -34,6 +34,7 @@ def grpc_python_deps():
         actual = "@local_config_python//:python_headers",
     )
 
+    # This version should be same as that in G3
     http_archive(
         name = "typing_extensions",
         build_file = "@com_github_grpc_grpc//third_party:typing_extensions.BUILD",
