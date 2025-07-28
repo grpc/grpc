@@ -443,7 +443,8 @@ class _Context(grpc.ServicerContext):
                     self._state.initial_metadata_allowed = False
                     self._state.due.add(_SEND_INITIAL_METADATA_TOKEN)
                 else:
-                    raise ValueError("Initial metadata no longer allowed!")
+                    error_msg = "Initial metadata no longer allowed!"
+                    raise ValueError(error_msg)
 
     def set_trailing_metadata(self, trailing_metadata: MetadataType) -> None:
         with self._state.condition:
@@ -1381,7 +1382,8 @@ def _stop(state: _ServerState, grace: Optional[float]) -> threading.Event:
 def _start(state: _ServerState) -> None:
     with state.lock:
         if state.stage is not _ServerStage.STOPPED:
-            raise ValueError("Cannot start already-started server!")
+            error_msg = "Cannot start already-started server!"
+            raise ValueError(error_msg)
         state.server.start()
         state.stage = _ServerStage.STARTED
         # Request a call for each registered method so we can handle any of them.

@@ -802,12 +802,13 @@ def intercept_channel(
             and not isinstance(interceptor, grpc.StreamUnaryClientInterceptor)
             and not isinstance(interceptor, grpc.StreamStreamClientInterceptor)
         ):
-            raise TypeError(
+            error_msg = (
                 "interceptor must be "
                 "grpc.UnaryUnaryClientInterceptor or "
                 "grpc.UnaryStreamClientInterceptor or "
                 "grpc.StreamUnaryClientInterceptor or "
-                "grpc.StreamStreamClientInterceptor or "
+                "grpc.StreamStreamClientInterceptor"
             )
+            raise TypeError(error_msg)
         channel = _Channel(channel, interceptor)
     return channel

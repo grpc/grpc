@@ -95,10 +95,11 @@ class AioRpcError(grpc.RpcError):
 
         Args:
           code: The status code with which the RPC has been finalized.
-          details: Optional details explaining the reason of the error.
           initial_metadata: Optional initial metadata that could be sent by the
             Server.
           trailing_metadata: Optional metadata that could be sent by the Server.
+          details: Optional details explaining the reason of the error.
+          debug_error_string: Optional string
         """
         super().__init__()
         self._code = code
@@ -476,7 +477,7 @@ class _StreamRequestMixin(Call):
                         return
 
             await self._done_writing()
-        except:  # pylint: disable=bare-except
+        except:  # pylint: disable=bare-except # noqa: E722
             # Client iterators can raise exceptions, which we should handle by
             # cancelling the RPC and logging the client's error. No exceptions
             # should escape this function.
