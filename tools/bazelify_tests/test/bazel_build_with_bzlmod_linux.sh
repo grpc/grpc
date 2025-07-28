@@ -23,7 +23,7 @@ tools/bazel \
     --ignore_dev_dependency \
     -- \
     :all \
-    -:grpcpp_csm_observability   # Needs google_cloud_cpp to be added to BCR
+    -:grpcpp_csm_observability  # Needs google_cloud_cpp to be added to BCR
 
 # Test if examples are buildable without dev dependencies.
 tools/bazel \
@@ -56,4 +56,4 @@ tools/bazel \
     --define=//third_party:grpc_use_openssl=true \
     -- \
     :all \
-    -:grpcpp_csm_observability   # Needs google_cloud_cpp to be added to BCR
+    -:grpcpp_csm_observability  # Needs google_cloud_cpp to be added to BCR
