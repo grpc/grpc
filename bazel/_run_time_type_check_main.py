@@ -38,6 +38,9 @@ install_import_hook('grpc._channel')
 install_import_hook('grpc._common')
 install_import_hook('grpc._compression')
 install_import_hook('grpc._interceptor')
+install_import_hook('grpc._observability')
+install_import_hook('grpc._plugin_wrapping')
+install_import_hook('grpc._runtime_protos')
 
 class SingleLoader(object):
     def __init__(self, pattern: str):
