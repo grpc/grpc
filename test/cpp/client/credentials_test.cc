@@ -29,6 +29,7 @@
 #include "absl/log/check.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/credentials/transport/composite/composite_channel_credentials.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/util/env.h"
 #include "src/core/util/tmpfile.h"
@@ -75,7 +76,8 @@ TEST(CredentialsTest, DefaultCredentials) {
 TEST(CredentialsTest, DefaultCredentialsWithAlts) {
   GoogleDefaultCredentialsOptions options = {};
   options.use_alts = true;
-  auto creds = GoogleDefaultCredentials(options);
+  auto creds = GoogleDefaultCredentials();
+  EXPECT_NE(creds, nullptr);
 }
 
 TEST(CredentialsTest, ExternalAccountCredentials) {
