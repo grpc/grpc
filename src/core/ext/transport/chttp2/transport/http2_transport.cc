@@ -66,8 +66,10 @@ void ReadSettingsFromChannelArgs(const grpc_core::ChannelArgs& channel_args,
       settings.SetMaxConcurrentStreams(value);
     }
   } else if (channel_args.Contains(GRPC_ARG_MAX_CONCURRENT_STREAMS)) {
-    VLOG(2) << GRPC_ARG_MAX_CONCURRENT_STREAMS
-            << " is not available on clients";
+    // We do not allow the channel arg to alter our 0 setting for
+    // MAX_CONCURRENT_STREAMS for clients because we dont support PUSH_PROMISE
+    LOG(WARNING) << "ChannelArg GRPC_ARG_MAX_CONCURRENT_STREAMS is not "
+                    "available on clients";
   }
 
   value =
