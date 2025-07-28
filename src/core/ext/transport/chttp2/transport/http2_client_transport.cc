@@ -453,11 +453,19 @@ Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
 
 Http2Status Http2ClientTransport::ProcessHttp2SecurityFrame(
     Http2SecurityFrame frame) {
-  GRPC_HTTP2_CLIENT_DLOG << "Http2Transport ProcessHttp2SecurityFrame Factory";
-  // TODO(tjagtap) : [PH2][P2] : Implement this.
-  GRPC_HTTP2_CLIENT_DLOG
-      << "Http2Transport ProcessHttp2SecurityFrame Promise { payload="
-      << frame.payload.JoinIntoString() << " }";
+  GRPC_HTTP2_CLIENT_DLOG << "Http2Transport ProcessHttp2SecurityFrame "
+                            "ProcessHttp2SecurityFrame { payload="
+                         << frame.payload.JoinIntoString() << " }";
+  if ((settings_.acked().allow_security_frame() ||
+       settings_.local().allow_security_frame()) &&
+      settings_.peer().allow_security_frame()) {
+    // TODO(tjagtap) : [PH2][P4] : Evaluate when to accept the frame and when to
+    // reject it. Compare it with the requirement and with CHTTP2.
+    // TODO(tjagtap) : [PH2][P3] : Add handling of Security frame
+    // Just the frame.payload needs to be passed to the endpoint_ object.
+    // Refer usage of TransportFramingEndpointExtension.
+  }
+  // Ignore the Security frame if it is not expected.
   return Http2Status::Ok();
 }
 
@@ -753,6 +761,12 @@ Http2ClientTransport::Http2ClientTransport(
           return self->EnqueueOutgoingFrame(std::move(frame));
         },
         [](GRPC_UNUSED absl::Status status) {});
+  }
+  if (settings_.local().allow_security_frame()) {
+    // TODO(tjagtap) : [PH2][P3] : Setup the plumbing to pass the security frame
+    // to the endpoing via TransportFramingEndpointExtension.
+    // Also decide if this plumbing is done here, or when the peer sends
+    // allow_security_frame too.
   }
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor End";
 }
