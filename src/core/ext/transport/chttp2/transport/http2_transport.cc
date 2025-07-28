@@ -38,12 +38,13 @@ namespace http2 {
 // and it is functions. The code will be written iteratively.
 // Do not use or edit any of these functions unless you are
 // familiar with the PH2 project (Moving chttp2 to promises.)
-// TODO(tjagtap) : [PH2][P3] : We may not need this file. Delete once Server
-// Transport is complete.
 
 void InitLocalSettings(Http2Settings& settings, const bool is_client) {
   if (is_client) {
+    // gRPC has never supported PUSH_PROMISE and we have no plan to do so in the
+    // future.
     settings.SetEnablePush(false);
+    // This is to make it double-sure that server cannot initite a stream.
     settings.SetMaxConcurrentStreams(0);
   }
   settings.SetMaxHeaderListSize(DEFAULT_MAX_HEADER_LIST_SIZE);
