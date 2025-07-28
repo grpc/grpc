@@ -661,8 +661,13 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
         break;
       }
       hostname_qa->result.emplace_back(node->ai_addr, node->ai_addrlen);
-      ares_inet_ntop(node->ai_family, node->ai_addr, output.data(),
-                     output.size());
+      void* addr_ptr = nullptr;
+      if (node->ai_family == AF_INET) {
+        addr_ptr = &reinterpret_cast<sockaddr_in*>(node->ai_addr)->sin_addr;
+      } else if (node->ai_family == AF_INET6) {
+        addr_ptr = &reinterpret_cast<sockaddr_in6*>(node->ai_addr)->sin6_addr;
+      }
+      ares_inet_ntop(node->ai_family, addr_ptr, output.data(), output.size());
       switch (node->ai_family) {
         case AF_INET6: {
           GRPC_TRACE_LOG(cares_resolver, INFO)
