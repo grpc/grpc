@@ -54,28 +54,28 @@ void InitLocalSettings(Http2Settings& settings, const bool is_client) {
 void ReadSettingsFromChannelArgs(const grpc_core::ChannelArgs& channel_args,
                                  Http2Settings& settings,
                                  const bool is_client) {
-  int value =
-      channel_args.GetInt(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER).value_or(-1);
-  if (value >= 0) {
-    settings.SetHeaderTableSize(value);
+  if (channel_args.Contains(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER)) {
+    settings.SetHeaderTableSize(
+        channel_args.GetInt(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER)
+            .value_or(-1));
   }
 
-  if (!is_client) {
-    value = channel_args.GetInt(GRPC_ARG_MAX_CONCURRENT_STREAMS).value_or(-1);
-    if (value >= 0) {
-      settings.SetMaxConcurrentStreams(value);
+  if (channel_args.Contains(GRPC_ARG_MAX_CONCURRENT_STREAMS)) {
+    if (!is_client) {
+      settings.SetMaxConcurrentStreams(
+          channel_args.GetInt(GRPC_ARG_MAX_CONCURRENT_STREAMS).value_or(-1));
+    } else {
+      // We do not allow the channel arg to alter our 0 setting for
+      // MAX_CONCURRENT_STREAMS for clients because we dont support PUSH_PROMISE
+      LOG(WARNING) << "ChannelArg GRPC_ARG_MAX_CONCURRENT_STREAMS is not "
+                      "available on clients";
     }
-  } else if (channel_args.Contains(GRPC_ARG_MAX_CONCURRENT_STREAMS)) {
-    // We do not allow the channel arg to alter our 0 setting for
-    // MAX_CONCURRENT_STREAMS for clients because we dont support PUSH_PROMISE
-    LOG(WARNING) << "ChannelArg GRPC_ARG_MAX_CONCURRENT_STREAMS is not "
-                    "available on clients";
   }
 
-  value =
-      channel_args.GetInt(GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES).value_or(-1);
-  if (value >= 0) {
-    settings.SetInitialWindowSize(value);
+  if (channel_args.Contains(GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES)) {
+    settings.SetInitialWindowSize(
+        channel_args.GetInt(GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES)
+            .value_or(-1));
     // TODO(tjagtap) [PH2][P2] : Also set this for flow control.
     // Refer to read_channel_args() in chttp2_transport.cc for more details.
   }
@@ -83,9 +83,9 @@ void ReadSettingsFromChannelArgs(const grpc_core::ChannelArgs& channel_args,
   settings.SetMaxHeaderListSize(
       grpc_core::GetHardLimitFromChannelArgs(channel_args));
 
-  value = channel_args.GetInt(GRPC_ARG_HTTP2_MAX_FRAME_SIZE).value_or(-1);
-  if (value >= 0) {
-    settings.SetMaxFrameSize(value);
+  if (channel_args.Contains(GRPC_ARG_HTTP2_MAX_FRAME_SIZE)) {
+    settings.SetMaxFrameSize(
+        channel_args.GetInt(GRPC_ARG_HTTP2_MAX_FRAME_SIZE).value_or(-1));
   }
 
   if (channel_args
@@ -94,9 +94,10 @@ void ReadSettingsFromChannelArgs(const grpc_core::ChannelArgs& channel_args,
     settings.SetPreferredReceiveCryptoMessageSize(INT_MAX);
   }
 
-  value = channel_args.GetInt(GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY).value_or(-1);
-  if (value >= 0) {
-    settings.SetAllowTrueBinaryMetadata(value != 0);
+  if (channel_args.Contains(GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY)) {
+    settings.SetAllowTrueBinaryMetadata(
+        channel_args.GetInt(GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY).value_or(-1) !=
+        0);
   }
 
   settings.SetAllowSecurityFrame(
