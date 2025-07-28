@@ -73,11 +73,20 @@ class Http2FrameTestHelper {
         Http2RstStreamFrame{stream_id, error_code});
   }
 
-  EventEngineSlice EventEngineSliceFromHttp2SettingsFrame(
+  EventEngineSlice EventEngineSliceFromHttp2SettingsFrameAck(
       std::vector<Http2SettingsFrame::Setting> settings) const {
-    if (settings.empty()) {
-      return EventEngineSliceFromHttp2Frame(Http2SettingsFrame{true, {}});
-    }
+    return EventEngineSliceFromHttp2Frame(Http2SettingsFrame{true, {}});
+  }
+
+  EventEngineSlice EventEngineSliceFromHttp2SettingsFrameDefault() const {
+    std::vector<Http2SettingsFrame::Setting> settings;
+    settings.push_back({Http2Settings::kEnablePushWireId, 0});
+    settings.push_back({Http2Settings::kMaxConcurrentStreamsWireId, 0u});
+    // TODO(tjagtap) : [PH2][P2] Replace with 65535 once flow control is
+    // done.
+    settings.push_back({Http2Settings::kInitialWindowSizeWireId, 2147483646u});
+    settings.push_back({Http2Settings::kMaxHeaderListSizeWireId, 16384u});
+    settings.push_back({Http2Settings::kGrpcAllowTrueBinaryMetadataWireId, 1u});
     return EventEngineSliceFromHttp2Frame(
         Http2SettingsFrame{false, std::move(settings)});
   }
