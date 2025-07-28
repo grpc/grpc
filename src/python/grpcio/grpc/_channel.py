@@ -137,7 +137,7 @@ class _RPCState(object):
 
     def __init__(
         self,
-        due: Sequence[cygrpc.OperationType],
+        due: Sequence[int],
         initial_metadata: Optional[MetadataType],
         trailing_metadata: Optional[MetadataType],
         code: Optional[grpc.StatusCode],
