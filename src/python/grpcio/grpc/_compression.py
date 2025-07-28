@@ -53,7 +53,8 @@ def create_channel_option(compression: Optional[grpc.Compression]):
 
 
 def augment_metadata(
-    metadata: Optional[Union[MetadataType, grpc.aio.Metadata]], compression: Optional[grpc.Compression]
+    metadata: Optional[Union[MetadataType, grpc.aio.Metadata]],
+    compression: Optional[grpc.Compression],
 ):
     if not metadata and not compression:
         return None
