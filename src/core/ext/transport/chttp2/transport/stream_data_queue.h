@@ -32,14 +32,18 @@ namespace http2 {
 #define GRPC_STREAM_DATA_QUEUE_DEBUG VLOG(2)
 
 template <typename T>
-class Center : public RefCounted<Center<T>> {
+class SimpleQueue {
  public:
   struct EnqueueResult {
     absl::Status status;
     bool became_non_empty;
   };
 
-  explicit Center(const uint32_t max_tokens) : max_tokens_(max_tokens) {}
+  explicit SimpleQueue(const uint32_t max_tokens) : max_tokens_(max_tokens) {}
+  SimpleQueue(SimpleQueue&& rhs) = delete;
+  SimpleQueue& operator=(SimpleQueue&& rhs) = delete;
+  SimpleQueue(const SimpleQueue&) = delete;
+  SimpleQueue& operator=(const SimpleQueue&) = delete;
 
   // A promise that resolves when the data is enqueued.
   // If tokens_consumed_ is 0 or the new tokens fit within max_tokens_, then
@@ -47,8 +51,32 @@ class Center : public RefCounted<Center<T>> {
   // using tokens_consumed over queue_.empty() because there can be enqueues
   // with tokens = 0. Enqueues with tokens = 0 are primarily for sending
   // metadata as flow control does not apply to them.
-  Poll<EnqueueResult> Enqueue(T& data, const uint32_t tokens) {
-    MutexLock lock(&mu_);
+  auto Enqueue(T& data, const uint32_t tokens) {
+    return PollEnqueue(data, tokens);
+  }
+
+  // Sync function to dequeue the next entry. Returns nullopt if the queue is
+  // empty or if the front of the queue has more tokens than
+  // allowed_dequeue_tokens. When allow_oversized_dequeue parameter is set to
+  // true, it allows an item to be dequeued even if its token cost is greater
+  // than allowed_dequeue_tokens. It does not cause the item itself to be
+  // partially dequeued; either the entire item is returned or nullopt is
+  // returned.
+  std::optional<T> Dequeue(const uint32_t allowed_dequeue_tokens,
+                           const bool allow_oversized_dequeue) {
+    return DequeueInternal(allowed_dequeue_tokens, allow_oversized_dequeue);
+  }
+
+  // Dequeues the next entry immediately ignoring the tokens. If the queue is
+  // empty, returns nullopt.
+  std::optional<T> ImmediateDequeue() {
+    return DequeueInternal(std::numeric_limits<uint32_t>::max(), true);
+  }
+
+  bool TestOnlyIsEmpty() const { return IsEmpty(); }
+
+ private:
+  Poll<EnqueueResult> PollEnqueue(T& data, const uint32_t tokens) {
     GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueueing data. Data tokens: " << tokens;
     const uint32_t max_tokens_consumed_threshold =
         max_tokens_ >= tokens ? max_tokens_ - tokens : 0;
@@ -71,16 +99,8 @@ class Center : public RefCounted<Center<T>> {
     return Pending{};
   }
 
-  // Sync function to dequeue the next entry. Returns nullopt if the queue is
-  // empty or if the front of the queue has more tokens than
-  // allowed_dequeue_tokens. When allow_oversized_dequeue parameter is set to
-  // true, it allows an item to be dequeued even if its token cost is greater
-  // than allowed_dequeue_tokens. It does not cause the item itself to be
-  // partially dequeued; either the entire item is returned or nullopt is
-  // returned.
-  std::optional<T> Dequeue(const uint32_t allowed_dequeue_tokens,
-                           const bool allow_oversized_dequeue) {
-    ReleasableMutexLock lock(&mu_);
+  std::optional<T> DequeueInternal(const uint32_t allowed_dequeue_tokens,
+                                   const bool allow_oversized_dequeue) {
     if (queue_.empty() || (queue_.front().tokens > allowed_dequeue_tokens &&
                            !allow_oversized_dequeue)) {
       GRPC_STREAM_DATA_QUEUE_DEBUG
@@ -100,7 +120,6 @@ class Center : public RefCounted<Center<T>> {
     GRPC_STREAM_DATA_QUEUE_DEBUG
         << "Dequeue successful. Data tokens released: " << entry.tokens
         << " Current tokens consumed: " << tokens_consumed_;
-    lock.Release();
 
     // TODO(akshitpatel) : [PH2][P2] : Investigate a mechanism to only wake up
     // if the sender will be able to send more data. There is a high chance that
@@ -110,18 +129,14 @@ class Center : public RefCounted<Center<T>> {
     return std::move(entry.data);
   }
 
-  bool IsEmpty() {
-    MutexLock lock(&mu_);
-    return queue_.empty();
-  }
+  bool IsEmpty() const { return queue_.empty(); }
 
- private:
   struct Entry {
     T data;
     uint32_t tokens;
   };
-  Mutex mu_;
-  std::queue<Entry> queue_ ABSL_GUARDED_BY(mu_);
+
+  std::queue<Entry> queue_;
   // The maximum number of tokens that can be enqueued. This limit is used to
   // exert back pressure on the sender. If the sender tries to enqueue more
   // tokens than this limit, the enqueue promise will not resolve until the
@@ -129,47 +144,11 @@ class Center : public RefCounted<Center<T>> {
   // exception to this rule: if the sender tries to enqueue an item when the
   // queue has 0 tokens, the enqueue will always go through regardless of the
   // number of tokens.
-  uint32_t max_tokens_ ABSL_GUARDED_BY(mu_);
+  uint32_t max_tokens_;
   // The number of tokens that have been enqueued in the queue but not yet
   // dequeued.
-  uint32_t tokens_consumed_ ABSL_GUARDED_BY(mu_) = 0;
-  Waker waker_ ABSL_GUARDED_BY(mu_);
-};
-
-// TODO(akshitpatel) : [PH2][P2] : This queue needs to be replaced with a
-// fast lock free queue.
-template <typename T>
-class SimpleQueue {
- public:
-  explicit SimpleQueue(uint32_t max_tokens)
-      : center_(MakeRefCounted<Center<T>>(max_tokens)) {}
-
-  SimpleQueue(SimpleQueue&& rhs) = default;
-  SimpleQueue& operator=(SimpleQueue&& rhs) = default;
-  SimpleQueue(const SimpleQueue&) = delete;
-  SimpleQueue& operator=(const SimpleQueue&) = delete;
-
-  auto Enqueue(T& data, const uint32_t tokens) {
-    return center_->Enqueue(data, tokens);
-  }
-
-  std::optional<T> Dequeue(const uint32_t allowed_dequeue_tokens,
-                           const bool allow_oversized_dequeue) {
-    return center_->Dequeue(allowed_dequeue_tokens, allow_oversized_dequeue);
-  }
-
-  // Dequeues the next entry immediately ignoring the tokens. If the queue is
-  // empty, returns nullopt.
-  std::optional<T> ImmediateDequeue() {
-    return center_->Dequeue(std::numeric_limits<uint32_t>::max(), true);
-  }
-
-  bool TestOnlyIsEmpty() const { return center_->IsEmpty(); }
-
- private:
-  // This is solely added to handle race conditions between the class destructor
-  // and the pending enqueue promises.
-  RefCountedPtr<Center<T>> center_;
+  uint32_t tokens_consumed_ = 0;
+  Waker waker_;
 };
 
 template <typename MetadataHandle>
