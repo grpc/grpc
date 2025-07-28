@@ -20,6 +20,7 @@ import os
 import pkgutil
 
 from typeguard import install_import_hook
+# AIO
 install_import_hook('grpc.aio')
 install_import_hook('grpc.aio._channel')
 install_import_hook('grpc.aio._server')
@@ -31,6 +32,8 @@ install_import_hook('grpc.aio._typing')
 install_import_hook('grpc.aio._call')
 install_import_hook('grpc.aio._metadata')
 
+# SYNC
+install_import_hook('grpc._auth')
 
 class SingleLoader(object):
     def __init__(self, pattern: str):
