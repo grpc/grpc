@@ -424,6 +424,12 @@ MessageHandle TestMessage(SliceBuffer payload, const uint32_t flags) {
   return Arena::MakePooled<Message>(std::move(payload), flags);
 }
 
+// Encoded string of header ":path: /demo.Service/Step".
+static const std::vector<uint8_t> kPathDemoServiceStep = {
+    0x40, 0x05, 0x3a, 0x70, 0x61, 0x74, 0x68, 0x12, 0x2f,
+    0x64, 0x65, 0x6d, 0x6f, 0x2e, 0x53, 0x65, 0x72, 0x76,
+    0x69, 0x63, 0x65, 0x2f, 0x53, 0x74, 0x65, 0x70};
+
 template <typename MetadataHandle>
 void EnqueueInitialMetadataAndCheckSuccess(
     RefCountedPtr<StreamDataQueue<MetadataHandle>> queue,
@@ -482,6 +488,71 @@ void EnqueueHalfClosedAndCheckSuccess(
   EXPECT_EQ(result.value(), absl::OkStatus());
   LOG(INFO) << "Enqueueing half closed success";
 }
+
+template <typename MetadataHandle>
+static void DequeueAndCheckSuccess(
+    RefCountedPtr<StreamDataQueue<MetadataHandle>> queue,
+    std::vector<Http2Frame> expected_frames, const uint32_t max_tokens = 10,
+    const uint32_t max_frame_length = 10) {
+  auto frames = queue->DequeueFrames(max_tokens, max_frame_length);
+  ASSERT_TRUE(frames.ok());
+  ASSERT_EQ(frames.value().frames.size(), expected_frames.size());
+
+  auto& frames_vector = frames.value().frames;
+  for (int count = 0; count < frames_vector.size(); ++count) {
+    EXPECT_EQ((frames_vector[count]), (expected_frames[count]));
+  }
+}
+
+template <typename MetadataHandle>
+static void DequeueMessageAndCheckSuccess(
+    RefCountedPtr<StreamDataQueue<MetadataHandle>> queue,
+    std::vector<int> expected_frames_length, const uint32_t max_tokens = 10,
+    const uint32_t max_frame_length = 10) {
+  auto frames = queue->DequeueFrames(max_tokens, max_frame_length);
+  ASSERT_TRUE(frames.ok());
+  ASSERT_EQ(frames.value().frames.size(), expected_frames_length.size());
+  auto& frames_vector = frames.value().frames;
+  for (int count = 0; count < frames.value().frames.size(); ++count) {
+    EXPECT_EQ(std::get<Http2DataFrame>(frames_vector[count]).payload.Length(),
+              expected_frames_length[count]);
+  }
+}
+
+void GetExpectedInitialMetadataFrames(
+    const uint32_t max_frame_length, std::vector<Http2Frame>& expected_frames) {
+  uint32_t left_over = kPathDemoServiceStep.size();
+  uint32_t current = 0;
+
+  if (left_over > 0) {
+    int frame_length = std::min(left_over, max_frame_length);
+    left_over -= frame_length;
+    bool end_headers = (left_over == 0);
+
+    expected_frames.emplace_back(
+        Http2HeaderFrame{/*stream_id=*/1, end_headers,
+                         /*end_stream=*/false,
+                         /*payload=*/
+                         SliceBuffer(Slice::FromCopiedString(std::string(
+                             kPathDemoServiceStep.begin(),
+                             kPathDemoServiceStep.begin() + frame_length)))});
+    current += frame_length;
+  }
+
+  while (left_over > 0) {
+    int frame_length = std::min(left_over, max_frame_length);
+    left_over -= frame_length;
+    bool end_headers = (left_over == 0);
+    expected_frames.emplace_back(Http2ContinuationFrame{
+        /*stream_id=*/1, end_headers,
+        /*payload=*/
+        SliceBuffer(Slice::FromCopiedString(std::string(
+            kPathDemoServiceStep.begin() + current,
+            kPathDemoServiceStep.begin() + current + frame_length)))});
+    current += frame_length;
+  }
+}
+
 }  // namespace
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -544,6 +615,78 @@ TEST(StreamDataQueueTest, ClientEnqueueResetStreamTest) {
   EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
                                         TestClientInitialMetadata());
   EnqueueResetStreamAndCheckSuccess(stream_data_queue);
+}
+
+TEST(StreamDataQueueTest, ClientEmptyDequeueTest) {
+  HPackCompressor encoder;
+  RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> stream_data_queue =
+      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
+          /*is_client=*/true,
+          /*stream_id=*/1,
+          /*queue_size=*/10);
+  DequeueAndCheckSuccess(stream_data_queue, std::vector<Http2Frame>());
+}
+
+TEST(StreamDataQueueTest, ClientDequeueMetadataSingleFrameTest) {
+  HPackCompressor encoder;
+  std::vector<Http2Frame> expected_frames;
+  const uint32_t max_frame_length = kPathDemoServiceStep.size();
+  RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> stream_data_queue =
+      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
+          /*is_client=*/true,
+          /*stream_id=*/1,
+          /*queue_size=*/10);
+  EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
+                                        TestClientInitialMetadata());
+  GetExpectedInitialMetadataFrames(max_frame_length, expected_frames);
+  DequeueAndCheckSuccess(stream_data_queue, std::move(expected_frames),
+                         /*max_tokens=*/10, max_frame_length);
+}
+
+TEST(StreamDataQueueTest, ClientDequeueFramesTest) {
+  HPackCompressor encoder;
+  const uint32_t max_frame_length = 17;
+  std::vector<Http2Frame> expected_frames;
+  RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> stream_data_queue =
+      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
+          /*is_client=*/true,
+          /*stream_id=*/1,
+          /*queue_size=*/10);
+  EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
+                                        TestClientInitialMetadata());
+
+  GetExpectedInitialMetadataFrames(max_frame_length, expected_frames);
+  DequeueAndCheckSuccess(stream_data_queue, std::move(expected_frames),
+                         /*max_tokens=*/10,
+                         /*max_frame_length=*/max_frame_length);
+
+  EnqueueMessageAndCheckSuccess(
+      stream_data_queue,
+      TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(50)), 0));
+  DequeueMessageAndCheckSuccess(stream_data_queue,
+                                /*expected_frames_length=*/{10, 10, 10, 10, 10},
+                                /*max_tokens=*/50,
+                                /*max_frame_length=*/10);
+  DequeueMessageAndCheckSuccess(stream_data_queue,
+                                /*expected_frames_length=*/{5},
+                                /*max_tokens=*/50,
+                                /*max_frame_length=*/10);
+
+  EnqueueMessageAndCheckSuccess(
+      stream_data_queue,
+      TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(50)), 0));
+  DequeueMessageAndCheckSuccess(stream_data_queue,
+                                /*expected_frames_length=*/{15, 10},
+                                /*max_tokens=*/25,
+                                /*max_frame_length=*/15);
+  DequeueMessageAndCheckSuccess(stream_data_queue,
+                                /*expected_frames_length=*/{15, 10},
+                                /*max_tokens=*/25,
+                                /*max_frame_length=*/15);
+  DequeueMessageAndCheckSuccess(stream_data_queue,
+                                /*expected_frames_length=*/{5},
+                                /*max_tokens=*/25,
+                                /*max_frame_length=*/15);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

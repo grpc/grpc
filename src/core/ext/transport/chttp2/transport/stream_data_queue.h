@@ -312,8 +312,57 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
 
   //////////////////////////////////////////////////////////////////////////////
   // Dequeue Helpers
-  std::vector<Http2Frame> DequeueFrames(uint32_t max_tokens,
-                                        uint32_t max_frame_length);
+
+  // TODO(akshitpatel) : [PH2][P2] : Decide on whether it is needed to return
+  // the number of tokens consumed by one call of this function.
+  struct DequeueResult {
+    std::vector<Http2Frame> frames;
+    bool is_writable;
+  };
+
+  // This function is deliberately a synchronous call. The caller of this
+  // function (most likely flow control) should not be blocked till we have
+  // enough data to return. The goal here is to return as much data as
+  // possible in one go with max_tokens as the upper limit.
+  // General idea:
+  // Out goal here is to push as much data as possible with max_tokens as the
+  // upper limit. Though we will not prefer sending incomplete messages. We
+  // handle the scenario of incomplete messages in the following way:
+  // 1. If we have sent x full messages and available flow control tokens cannot
+  //    accommodate x+1 message, we will not dequeue the x+1st message and
+  //    create frames for x messages.
+  // 2. If the flow control tokens cannot accommodate first message itself, we
+  //    will fully dequeue the first message from the queueand create frames for
+  //    the incomplete first message with max_tokens as the upper limit.
+  absl::StatusOr<DequeueResult> DequeueFrames(const uint32_t max_fc_tokens,
+                                              const uint32_t max_frame_length) {
+    MutexLock lock(&mu_);
+    GRPC_STREAM_DATA_QUEUE_DEBUG << "Dequeueing frames for stream "
+                                 << stream_id_
+                                 << " Max fc tokens: " << max_fc_tokens
+                                 << " Max frame length: " << max_frame_length
+                                 << " Is closed: " << is_closed_;
+    HandleDequeue handle_dequeue(max_fc_tokens, max_frame_length, *this);
+    while (message_disassembler_.GetBufferedLength() < max_fc_tokens) {
+      auto queue_entry = queue_.Dequeue(
+          max_fc_tokens - message_disassembler_.GetBufferedLength(),
+          (message_disassembler_.GetBufferedLength() == 0));
+      if (!queue_entry.has_value()) {
+        // Nothing more to dequeue right now.
+        GRPC_STREAM_DATA_QUEUE_DEBUG << "No more data to dequeue";
+        break;
+      }
+      std::visit(handle_dequeue, std::move(*queue_entry));
+    }
+
+    return DequeueResult{handle_dequeue.GetFrames(), /*is_writable=*/false};
+  }
+
+  bool IsClosed() const {
+    GRPC_STREAM_DATA_QUEUE_DEBUG << " StreamDataQueue Is closed: "
+                                 << is_closed_;
+    return is_closed_;
+  }
 
  private:
   struct InitialMetadataType {
@@ -328,6 +377,120 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   };
   using QueueEntry = std::variant<InitialMetadataType, TrailingMetadataType,
                                   MessageHandle, HalfClosed, ResetStream>;
+
+  class HandleDequeue {
+   public:
+    HandleDequeue(uint32_t max_tokens, uint32_t max_frame_length,
+                  StreamDataQueue& queue)
+        : queue_(queue),
+          max_frame_length_(max_frame_length),
+          max_fc_tokens_(max_tokens),
+          fc_tokens_available_(max_tokens) {}
+
+    void operator()(InitialMetadataType initial_metadata) {
+      GRPC_STREAM_DATA_QUEUE_DEBUG << "Preparing initial metadata for sending";
+      queue_.initial_metadata_disassembler_.PrepareForSending(
+          std::move(initial_metadata.metadata), queue_.encoder_);
+      MaybeAppendInitialMetadataFrames();
+    }
+
+    void operator()(TrailingMetadataType trailing_metadata) {
+      GRPC_STREAM_DATA_QUEUE_DEBUG << "Preparing trailing metadata for sending";
+      DCHECK(!queue_.is_closed_);
+      queue_.trailing_metadata_disassembler_.PrepareForSending(
+          std::move(trailing_metadata.metadata), queue_.encoder_);
+      queue_.is_closed_ = true;
+    }
+
+    void operator()(MessageHandle message) {
+      GRPC_STREAM_DATA_QUEUE_DEBUG << "Preparing message for sending";
+      queue_.message_disassembler_.PrepareBatchedMessageForSending(
+          std::move(message));
+    }
+
+    void operator()(HalfClosed half_closed) {
+      GRPC_STREAM_DATA_QUEUE_DEBUG << "Preparing end of stream for sending";
+      DCHECK(!queue_.is_closed_);
+      is_half_closed_ = true;
+      queue_.is_closed_ = true;
+    }
+
+    void operator()(ResetStream reset_stream) {
+      GRPC_STREAM_DATA_QUEUE_DEBUG << "Preparing reset stream for sending";
+      DCHECK(!queue_.is_closed_);
+      queue_.is_closed_ = true;
+      is_reset_stream_ = true;
+      error_code_ = reset_stream.error_code;
+    }
+
+    std::vector<Http2Frame> GetFrames() {
+      MaybeAppendMessageFrames();
+      if (queue_.is_closed_) {
+        MaybeAppendEndOfStreamFrame();
+        MaybeAppendTrailingMetadataFrames();
+        MaybeAppendResetStreamFrame();
+      }
+      return std::move(frames_);
+    }
+
+   private:
+    void MaybeAppendInitialMetadataFrames() {
+      while (queue_.initial_metadata_disassembler_.HasMoreData()) {
+        // TODO(akshitpatel) : [PH2][P0] : I do not think we need this.
+        // HasMoreData() should be enough.
+        bool is_end_headers = false;
+        frames_.emplace_back(queue_.initial_metadata_disassembler_.GetNextFrame(
+            max_frame_length_, is_end_headers));
+      }
+    }
+
+    void MaybeAppendTrailingMetadataFrames() {
+      while (queue_.trailing_metadata_disassembler_.HasMoreData()) {
+        // TODO(akshitpatel) : [PH2][P0] : I do not think we need this.
+        // HasMoreData() should be enough.
+        bool is_end_headers = false;
+        frames_.emplace_back(
+            queue_.trailing_metadata_disassembler_.GetNextFrame(
+                max_frame_length_, is_end_headers));
+      }
+    }
+
+    void MaybeAppendEndOfStreamFrame() {
+      if (is_half_closed_) {
+        frames_.emplace_back(Http2DataFrame{/*stream_id=*/queue_.stream_id_,
+                                            /*end_stream=*/true,
+                                            /*payload=*/SliceBuffer()});
+      }
+    }
+
+    void MaybeAppendMessageFrames() {
+      while (queue_.message_disassembler_.GetBufferedLength() > 0 &&
+             fc_tokens_available_ > 0) {
+        Http2DataFrame frame = queue_.message_disassembler_.GenerateNextFrame(
+            queue_.stream_id_,
+            std::min(fc_tokens_available_, max_frame_length_));
+        fc_tokens_available_ -= frame.payload.Length();
+        frames_.emplace_back(std::move(frame));
+      }
+    }
+
+    void MaybeAppendResetStreamFrame() {
+      if (is_reset_stream_) {
+        frames_.emplace_back(
+            Http2RstStreamFrame{queue_.stream_id_, error_code_});
+      }
+    }
+
+    StreamDataQueue& queue_;
+    const uint32_t max_frame_length_;
+    const uint32_t max_fc_tokens_;
+    uint32_t fc_tokens_available_;
+    bool is_half_closed_ = false;
+    bool is_reset_stream_ = false;
+    uint32_t error_code_ = 0;
+    std::vector<Http2Frame> frames_;
+  };
+
   const uint32_t stream_id_;
   const bool is_client_;
 
@@ -343,6 +506,9 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // Accessed only during dequeue.
   HeaderDisassembler initial_metadata_disassembler_;
   HeaderDisassembler trailing_metadata_disassembler_;
+  GrpcMessageDisassembler message_disassembler_;
+  HPackCompressor encoder_;
+  bool is_closed_ = false;
 };
 
 }  // namespace http2
