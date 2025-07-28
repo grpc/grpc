@@ -132,7 +132,7 @@ class AresResolver : public RefCountedDNSResolverInterface {
   // These callbacks are invoked from the c-ares library, so disable thread
   // safety analysis. We are guaranteed to be holding mutex_.
   static void OnHostbynameDoneLocked(void* arg, int status, int /*timeouts*/,
-                                     struct hostent* hostent)
+                                     struct ares_addrinfo* addrinfo)
       ABSL_NO_THREAD_SAFETY_ANALYSIS;
   static void OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
                                    unsigned char* abuf,
