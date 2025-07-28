@@ -66,7 +66,7 @@ enum class HttpStreamState : uint8_t {
 
 void InitLocalSettings(Http2Settings& settings, const bool is_client);
 
-void ReadSettingsFromChannelArgs(const grpc_core::ChannelArgs& channel_args,
+void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
                                  Http2Settings& settings, const bool is_client);
 
 }  // namespace http2

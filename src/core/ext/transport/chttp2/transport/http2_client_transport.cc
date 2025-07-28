@@ -758,8 +758,7 @@ Http2ClientTransport::Http2ClientTransport(
 
   settings_timeout_ =
       channel_args.GetDurationFromIntMillis(GRPC_ARG_SETTINGS_TIMEOUT)
-          .value_or(std::max(keepalive_timeout_ * 2,
-                             grpc_core::Duration::Minutes(1)));
+          .value_or(std::max(keepalive_timeout_ * 2, Duration::Minutes(1)));
 
   std::optional<Http2SettingsFrame> settings_frame =
       settings_.MaybeSendUpdate();

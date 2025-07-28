@@ -220,7 +220,7 @@ class Http2ClientTransport final : public ClientTransport {
 
   PromiseEndpoint endpoint_;
   Http2SettingsManager settings_;
-  grpc_core::Duration settings_timeout_;
+  Duration settings_timeout_;
 
   Http2FrameHeader current_frame_header_;
 
