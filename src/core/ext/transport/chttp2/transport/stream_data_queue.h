@@ -40,8 +40,8 @@ class SimpleQueue {
   };
 
   explicit SimpleQueue(const uint32_t max_tokens) : max_tokens_(max_tokens) {}
-  SimpleQueue(SimpleQueue&& rhs) = default;
-  SimpleQueue& operator=(SimpleQueue&& rhs) = default;
+  SimpleQueue(SimpleQueue&& rhs) = delete;
+  SimpleQueue& operator=(SimpleQueue&& rhs) = delete;
   SimpleQueue(const SimpleQueue&) = delete;
   SimpleQueue& operator=(const SimpleQueue&) = delete;
 
