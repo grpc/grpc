@@ -44,10 +44,12 @@ namespace grpc_core {
   "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientHttp2Fallback"    \
   "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientTrueBinary"       \
   "|CoreEnd2endTests.CancelAfterAccept"                                    \
+  "|CoreEnd2endTests.CancelAfterClientDone"                                \
   "|CoreEnd2endTests.CancelAfterInvoke3"                                   \
   "|CoreEnd2endTests.CancelAfterInvoke4"                                   \
   "|CoreEnd2endTests.CancelAfterInvoke5"                                   \
   "|CoreEnd2endTests.CancelAfterInvoke6"                                   \
+  "|CoreEnd2endTests.CancelAfterRoundTrip"                                 \
   "|CoreEnd2endTests.CancelWithStatus1"                                    \
   "|CoreEnd2endTests.CancelWithStatus2"                                    \
   "|CoreEnd2endTests.CancelWithStatus3"                                    \
