@@ -716,7 +716,10 @@ TEST(Http2CommonTransportTest, TestReadChannelArgs) {
   EXPECT_EQ(settings2.max_concurrent_streams(), 4294967295u);
   EXPECT_EQ(settings2.initial_window_size(), 65535u);
   EXPECT_EQ(settings2.max_frame_size(), 16384u);
-  EXPECT_EQ(settings2.max_header_list_size(), 16777216u);  // TODO(TJ)
+  // TODO(tjagtap) : [PH2][P4] : Investigate why we change it in
+  // ReadSettingsFromChannelArgs . Right now ReadSettingsFromChannelArgs is
+  // functinally similar to the legacy read_channel_args.
+  EXPECT_EQ(settings2.max_header_list_size(), 16777216u);
   EXPECT_EQ(settings2.preferred_receive_crypto_message_size(), 0u);
   EXPECT_EQ(settings2.enable_push(), true);
   EXPECT_EQ(settings2.allow_true_binary_metadata(), false);
@@ -727,7 +730,10 @@ TEST(Http2CommonTransportTest, TestReadChannelArgs) {
   EXPECT_EQ(settings2.max_concurrent_streams(), 4294967295u);
   EXPECT_EQ(settings2.initial_window_size(), 65535u);
   EXPECT_EQ(settings2.max_frame_size(), 16384u);
-  EXPECT_EQ(settings2.max_header_list_size(), 16384u);  // TODO(TJ)
+  // TODO(tjagtap) : [PH2][P4] : Investigate why we change it in
+  // ReadSettingsFromChannelArgs . Right now ReadSettingsFromChannelArgs is
+  // functinally similar to the legacy read_channel_args.
+  EXPECT_EQ(settings2.max_header_list_size(), 16384u);
   EXPECT_EQ(settings2.preferred_receive_crypto_message_size(), 0u);
   EXPECT_EQ(settings2.enable_push(), true);
   EXPECT_EQ(settings2.allow_true_binary_metadata(), false);
