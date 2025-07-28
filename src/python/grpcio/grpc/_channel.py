@@ -972,7 +972,7 @@ class _MultiThreadedRendezvous(
 def _start_unary_request(
     request: Any,
     timeout: Optional[float],
-    request_serializer: SerializingFunction,
+    request_serializer: Optional[SerializingFunction],
 ) -> Tuple[Optional[float], Optional[bytes], Optional[grpc.RpcError]]:
     deadline = _deadline(timeout)
     serialized_request = _common.serialize(request, request_serializer)
@@ -2001,7 +2001,7 @@ def _augment_options(
         + compression_option
         + (
             (
-                cygrpc.ChannelArgKey.primary_user_agent_string,
+                _common.decode(cygrpc.ChannelArgKey.primary_user_agent_string),
                 _USER_AGENT,
             ),
         )
