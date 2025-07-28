@@ -181,7 +181,8 @@ class StreamDataQueueFuzzTest : public YodelTest {
 
   class AssembleFrames {
    public:
-    AssembleFrames(const uint32_t stream_id) : header_assembler_(stream_id) {}
+    explicit AssembleFrames(const uint32_t stream_id)
+        : header_assembler_(stream_id) {}
     void operator()(Http2HeaderFrame frame) {
       auto status = header_assembler_.AppendHeaderFrame(std::move(frame));
       EXPECT_TRUE(status.IsOk());
@@ -224,7 +225,7 @@ class StreamDataQueueFuzzTest : public YodelTest {
     }
     std::vector<MessageHandle> GetMessages() {
       std::vector<MessageHandle> messages;
-      while (1) {
+      while (true) {
         auto message = message_assembler_.ExtractMessage();
         if (message.IsOk() && message.value() != nullptr) {
           messages.push_back(TakeValue(std::move(message)));

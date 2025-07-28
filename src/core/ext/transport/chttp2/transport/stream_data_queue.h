@@ -332,8 +332,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   //    accommodate x+1 message, we will not dequeue the x+1st message and
   //    create frames for x messages.
   // 2. If the flow control tokens cannot accommodate first message itself, we
-  //    will fully dequeue the first message from the queueand create frames for
-  //    the incomplete first message with max_tokens as the upper limit.
+  //    will fully dequeue the first message from the queue and create frames
+  //    for the incomplete first message with max_tokens as the upper limit.
   absl::StatusOr<DequeueResult> DequeueFrames(const uint32_t max_fc_tokens,
                                               const uint32_t max_frame_length) {
     MutexLock lock(&mu_);
