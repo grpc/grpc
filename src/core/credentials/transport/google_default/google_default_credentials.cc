@@ -461,14 +461,14 @@ void grpc_flush_cached_google_default_credentials(void) {
   g_metadata_server_available = 0;
 }
 
-grpc_core::RefCountedPtr<grpc_call_credentials> make_default_call_creds(
+RefCountedPtr<grpc_call_credentials> make_default_call_creds(
     grpc_error_handle* error,
     DefaultCallCredentialsCreationMethod* default_credentials_type) {
-  grpc_core::RefCountedPtr<grpc_call_credentials> call_creds;
+  RefCountedPtr<grpc_call_credentials> call_creds;
   grpc_error_handle err;
 
   // First, try the environment variable.
-  auto path_from_env = grpc_core::GetEnv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR);
+  auto path_from_env = GetEnv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR);
   if (path_from_env.has_value()) {
     err = create_default_creds_from_path(*path_from_env, &call_creds);
     if (err.ok()) {
@@ -492,7 +492,7 @@ grpc_core::RefCountedPtr<grpc_call_credentials> make_default_call_creds(
   update_tenancy();
 
   if (metadata_server_available()) {
-    call_creds = grpc_core::RefCountedPtr<grpc_call_credentials>(
+    call_creds = RefCountedPtr<grpc_call_credentials>(
         grpc_google_compute_engine_credentials_create(nullptr));
     if (call_creds == nullptr) {
       *error = GRPC_ERROR_CREATE(GRPC_GOOGLE_CREDENTIAL_CREATION_ERROR);

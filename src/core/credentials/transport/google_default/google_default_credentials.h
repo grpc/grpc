@@ -99,7 +99,7 @@ typedef bool (*grpc_gce_tenancy_checker)(void);
 
 void set_gce_tenancy_checker_for_testing(grpc_gce_tenancy_checker checker);
 
-grpc_core::RefCountedPtr<grpc_call_credentials> make_default_call_creds(
+RefCountedPtr<grpc_call_credentials> make_default_call_creds(
     grpc_error_handle* error,
     DefaultCallCredentialsCreationMethod* default_credentials_type);
 
