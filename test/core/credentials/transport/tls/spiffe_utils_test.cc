@@ -530,8 +530,8 @@ TEST(SpiffeBundle, MultipleRootsSuccess) {
 TEST(SpiffeBundle, BundleRootToPem) {
   const absl::string_view base = "foo";
   EXPECT_EQ(SpiffeBundleRootToPem(base),
-            absl::StrCat("--------BEGIN CERTIFICATE--------\n", base,
-                         "\n--------END CERTIFICATE--------"));
+            absl::StrCat("-----BEGIN CERTIFICATE-----\n", base,
+                         "\n-----END CERTIFICATE-----"));
 }
 
 }  // namespace testing
