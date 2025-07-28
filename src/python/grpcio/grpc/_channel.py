@@ -1816,7 +1816,7 @@ def _channel_managed_call_management(state: _ChannelCallState):
 
 class _ChannelConnectivityState(object):
     lock: threading.RLock
-    channel: grpc.Channel
+    channel: cygrpc.Channel
     polling: bool
     connectivity: grpc.ChannelConnectivity
     try_to_connect: bool
@@ -1831,7 +1831,7 @@ class _ChannelConnectivityState(object):
     ]
     delivering: bool
 
-    def __init__(self, channel: grpc.Channel):
+    def __init__(self, channel: cygrpc.Channel):
         self.lock = threading.RLock()
         self.channel = channel
         self.polling = False
