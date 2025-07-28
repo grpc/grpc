@@ -55,7 +55,6 @@ ignore = [
     "I001",    # Import block is un-sorted or un-formatted
     "ISC003",  # Explicitly concatenated string should be implicitly concatenated
     "N802",    # Function name {name} should be lowercase
-    "N803",    # Argument name {name} should be lowercase
     "N818",    # Exception name {name} should be named with an Error suffix
     "PERF203", # try-except within a loop incurs performance overhead
     "PLC0415", # import should be at the top-level of a file
