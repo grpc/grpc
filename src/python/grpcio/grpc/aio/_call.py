@@ -100,7 +100,6 @@ class AioRpcError(grpc.RpcError):
             Server.
           trailing_metadata: Optional metadata that could be sent by the Server.
         """
-
         super().__init__()
         self._code = code
         self._details = details
@@ -752,7 +751,7 @@ class StreamStreamCall(
         self._init_stream_response_mixin(self._initializer)
 
     async def _prepare_rpc(self):
-        """This method prepares the RPC for receiving/sending messages.
+        """Prepares the RPC for receiving/sending messages.
 
         All other operations around the stream should only happen after the
         completion of this method.

@@ -80,7 +80,7 @@ class _OpenTelemetryPlugin:
 
     def __init__(self, plugin: OpenTelemetryPlugin):
         self._plugin = plugin
-        self._metric_to_recorder = dict()
+        self._metric_to_recorder = {}
         self.identifier = str(id(self))
         self._enabled_client_plugin_options = None
         self._enabled_server_plugin_options = None
@@ -149,7 +149,6 @@ class _OpenTelemetryPlugin:
 
     def get_client_exchange_labels(self) -> Dict[str, AnyStr]:
         """Get labels used for client side Metadata Exchange."""
-
         labels_for_exchange = {}
         for plugin_option in self._enabled_client_plugin_options:
             if hasattr(plugin_option, "get_label_injector") and hasattr(
