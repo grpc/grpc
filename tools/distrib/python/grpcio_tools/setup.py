@@ -159,10 +159,14 @@ class BuildExt(build_ext.build_ext):
 if sys.platform == "darwin":
     if "MACOSX_DEPLOYMENT_TARGET" not in os.environ:
         target_ver = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET")
-        if target_ver is not None and (target_ver == "" or tuple(int(p) for p in target_ver.split(".")) < (
-            10,
-            14,
-        )):
+        if target_ver is not None and (
+            target_ver == ""
+            or tuple(int(p) for p in target_ver.split("."))
+            < (
+                10,
+                14,
+            )
+        ):
             os.environ["MACOSX_DEPLOYMENT_TARGET"] = "11.0"
 
 # There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
