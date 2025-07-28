@@ -74,16 +74,20 @@ class SpiffeBundleKey final {
 // https://github.com/grpc/proposal/blob/master/A87-mtls-spiffe-support.md
 class SpiffeBundle final {
  public:
-  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
-    static const auto* kLoader = JsonObjectLoader<SpiffeBundle>().Finish();
-    return kLoader;
-  }
-
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
   void JsonPostLoad(const Json& json, const JsonArgs&,
                     ValidationErrors* errors);
 
   // Returns a vector of the roots in this SPIFFE Bundle.
   absl::Span<const std::string> GetRoots();
+
+  bool operator==(const SpiffeBundle& other) const {
+    return roots_ == other.roots_;
+  }
+
+  bool operator!=(const SpiffeBundle& other) const {
+    return roots_ != other.roots_;
+  }
 
  private:
   std::vector<std::string> roots_;
@@ -97,14 +101,7 @@ class SpiffeBundle final {
 // Only configuring X509 roots is supported.
 class SpiffeBundleMap final {
  public:
-  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
-    static const auto* kLoader =
-        JsonObjectLoader<SpiffeBundleMap>()
-            .Field("trust_domains", &SpiffeBundleMap::bundles_)
-            .Finish();
-    return kLoader;
-  }
-
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
   void JsonPostLoad(const Json& json, const JsonArgs&,
                     ValidationErrors* errors);
 
@@ -119,7 +116,15 @@ class SpiffeBundleMap final {
   absl::StatusOr<absl::Span<const std::string>> GetRoots(
       absl::string_view trust_domain);
 
-  size_t size() { return bundles_.size(); }
+  size_t size() const { return bundles_.size(); }
+
+  bool operator==(const SpiffeBundleMap& other) const {
+    return bundles_ == other.bundles_;
+  }
+
+  bool operator!=(const SpiffeBundleMap& other) const {
+    return bundles_ != other.bundles_;
+  }
 
  private:
   struct StringCmp {

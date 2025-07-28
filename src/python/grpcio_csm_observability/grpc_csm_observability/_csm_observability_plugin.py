@@ -223,7 +223,7 @@ class CsmOpenTelemetryPluginOption(OpenTelemetryPluginOption):
 
     @staticmethod
     def is_active_on_server(
-        xds: bool,  # pylint: disable=unused-argument
+        xds: bool,  # pylint: disable=unused-argument #noqa: ARG004
     ) -> bool:
         """Determines whether this plugin option is active on a given server.
 
@@ -259,10 +259,11 @@ class CsmOpenTelemetryPlugin(OpenTelemetryPlugin):
     def __init__(
         self,
         *,
-        plugin_options: Iterable[OpenTelemetryPluginOption] = [],
+        plugin_options: Optional[Iterable[OpenTelemetryPluginOption]] = None,
         meter_provider: Optional[MeterProvider] = None,
         generic_method_attribute_filter: Optional[Callable[[str], bool]] = None,
     ):
+        plugin_options = plugin_options or []
         new_options = list(plugin_options) + [CsmOpenTelemetryPluginOption()]
         super().__init__(
             plugin_options=new_options,

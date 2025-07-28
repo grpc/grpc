@@ -55,7 +55,7 @@ class OpenTelemetryPluginImpl::ClientCallTracer
                                      grpc_core::NonPolymorphicRefCount,
                                      UnrefBehavior> {
    public:
-    CallAttemptTracer(const OpenTelemetryPluginImpl::ClientCallTracer* parent,
+    CallAttemptTracer(OpenTelemetryPluginImpl::ClientCallTracer* const parent,
                       uint64_t attempt_num, bool is_transparent_retry);
 
     ~CallAttemptTracer() override;
@@ -105,7 +105,7 @@ class OpenTelemetryPluginImpl::ClientCallTracer
 
     void PopulateLabelInjectors(grpc_metadata_batch* metadata);
 
-    const ClientCallTracer* parent_;
+    ClientCallTracer* const parent_;
     // Start time (for measuring latency).
     absl::Time start_time_;
     std::unique_ptr<LabelsIterable> injected_labels_;
@@ -157,11 +157,18 @@ class OpenTelemetryPluginImpl::ClientCallTracer
   const bool registered_method_;
   OpenTelemetryPluginImpl* otel_plugin_;
   std::shared_ptr<OpenTelemetryPluginImpl::ClientScopeConfig> scope_config_;
+  // TODO(ctiller@): When refactoring the tracer code, consider the possibility
+  // of removing this mutex. More discussion in
+  // https://github.com/grpc/grpc/pull/39195/files#r2191231973.
   grpc_core::Mutex mu_;
-  // Non-transparent attempts per call (including first attempt)
+  // Non-transparent retry attempts per call (includes initial attempt)
   uint64_t retries_ ABSL_GUARDED_BY(&mu_) = 0;
   // Transparent retries per call
   uint64_t transparent_retries_ ABSL_GUARDED_BY(&mu_) = 0;
+  // Retry delay
+  absl::Duration retry_delay_ ABSL_GUARDED_BY(&mu_);
+  absl::Time time_at_last_attempt_end_ ABSL_GUARDED_BY(&mu_);
+  uint64_t num_active_attempts_ ABSL_GUARDED_BY(&mu_) = 0;
   opentelemetry::nostd::shared_ptr<opentelemetry::trace::Span> span_;
 };
 

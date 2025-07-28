@@ -12,8 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("@bazel_skylib//lib:selects.bzl", "selects")
 load(
     "//bazel:grpc_build_system.bzl",
+    "grpc_add_well_known_proto_upb_targets",
     "grpc_cc_library",
     "grpc_cc_proto_library",
     "grpc_generate_one_off_internal_targets",
@@ -32,8 +34,18 @@ package(
 )
 
 config_setting(
-    name = "enable_latent_see",
-    values = {"define": "GRPC_ENABLE_LATENT_SEE=1"},
+    name = "disable_latent_see",
+    values = {"define": "GRPC_LATENT_SEE=none"},
+)
+
+config_setting(
+    name = "extra_latent_see",
+    values = {"define": "GRPC_LATENT_SEE=extra"},
+)
+
+config_setting(
+    name = "default_latent_see",
+    values = {"define": "GRPC_LATENT_SEE=default"},
 )
 
 config_setting(
@@ -57,6 +69,24 @@ config_setting(
 config_setting(
     name = "minimize_threadyness",
     values = {"define": "GRPC_MINIMIZE_THREADYNESS=1"},
+)
+
+config_setting(
+    name = "grpc_no_filter_fusion_define",
+    values = {"define": "grpc_no_filter_fusion=true"},
+)
+
+selects.config_setting_group(
+    name = "grpc_no_filter_fusion",
+    match_any = [
+        ":grpc_no_filter_fusion_define",
+        # In addition to disabling filter fusion support when
+        # --define=grpc_no_filter_fusion=true is specified, we also disable it
+        # on mobile platforms where it is not likely to be needed and where
+        # reducing the binary size is more important.
+        "//:android",
+        "//:ios",
+    ],
 )
 
 grpc_cc_library(
@@ -194,7 +224,9 @@ grpc_cc_library(
         "util/latent_see.h",
     ],
     defines = select({
-        ":enable_latent_see": ["GRPC_ENABLE_LATENT_SEE"],
+        ":disable_latent_see": ["GRPC_DISABLE_LATENT_SEE"],
+        ":extra_latent_see": ["GRPC_EXTRA_LATENT_SEE"],
+        ":default_latent_see": [],
         "//conditions:default": [],
     }),
     external_deps = [
@@ -204,12 +236,14 @@ grpc_cc_library(
         "absl/log",
         "absl/strings",
         "absl/strings:str_format",
+        "absl/container:flat_hash_map",
+        "absl/time",
     ],
     visibility = ["//bazel:latent_see"],
     deps = [
-        "per_cpu",
-        "ring_buffer",
+        "notification",
         "sync",
+        "//:backoff",
         "//:gpr",
     ],
 )
@@ -1948,6 +1982,7 @@ grpc_cc_library(
         "absl/log:check",
         "absl/strings:str_format",
     ],
+    visibility = ["//bazel:core_credentials"],
     deps = [
         "no_destruct",
         "time_precise",
@@ -2980,6 +3015,7 @@ grpc_cc_library(
         "ref_counted",
         "strerror",
         "sync",
+        "useful",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:parse_address",
@@ -3621,6 +3657,37 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "fused_filters",
+    srcs = [
+        "filter/fused_filters.cc",
+    ],
+    defines = select({
+        ":grpc_no_filter_fusion": ["GRPC_NO_FILTER_FUSION"],
+        "//conditions:default": [],
+    }),
+    select_deps = [{
+        ":grpc_no_filter_fusion": [],
+        "//conditions:default": [
+            "experiments",
+            "filter_fusion",
+            "grpc_authorization_base",
+            "grpc_client_authority_filter",
+            "grpc_lb_policy_grpclb",
+            "grpc_message_size_filter",
+            "server_call_tracer_filter",
+            "service_config_channel_arg_filter",
+            "//:grpc_http_filters",
+            "//:grpc_security_base",
+        ],
+    }],
+    deps = [
+        "//:config",
+        "//:gpr",
+        "//:grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
     name = "subchannel_connector",
     hdrs = [
         "client_channel/connector.h",
@@ -3832,6 +3899,7 @@ grpc_cc_library(
     srcs = [
         "service_config/service_config_channel_arg_filter.cc",
     ],
+    hdrs = ["service_config/service_config_channel_arg_filter.h"],
     external_deps = [
         "absl/log",
         "absl/status",
@@ -4638,9 +4706,11 @@ grpc_cc_library(
         "error",
         "iomgr_fwd",
         "load_file",
+        "match",
         "ref_counted",
         "slice",
         "slice_refcount",
+        "spiffe_utils",
         "ssl_key_logging",
         "ssl_transport_security_utils",
         "status_helper",
@@ -4713,6 +4783,7 @@ grpc_cc_library(
         "absl/functional:any_invocable",
         "absl/status:statusor",
     ],
+    visibility = ["//bazel:core_credentials"],
     deps = [
         "arena_promise",
         "context",
@@ -5792,6 +5863,7 @@ grpc_cc_library(
     deps = [
         "certificate_provider_factory",
         "down_cast",
+        "env",
         "grpc_tls_credentials",
         "json",
         "json_args",
@@ -6775,6 +6847,7 @@ grpc_cc_library(
         "absl/functional:function_ref",
         "absl/log",
         "absl/log:check",
+        "absl/random",
         "absl/status",
         "absl/status:statusor",
     ],
@@ -6782,12 +6855,14 @@ grpc_cc_library(
         "channel_args",
         "delegating_helper",
         "down_cast",
+        "experiments",
         "grpc_lb_policy_pick_first",
         "json",
         "lb_policy",
         "lb_policy_registry",
         "pollset_set",
         "resolved_address",
+        "shared_bit_gen",
         "subchannel_interface",
         "//:config",
         "//:debug_location",
@@ -7842,6 +7917,7 @@ grpc_cc_library(
         "channelz_property_list",
         "experiments",
         "http2_settings",
+        "http2_settings_manager",
         "memory_quota",
         "time",
         "useful",
@@ -7968,6 +8044,28 @@ grpc_cc_library(
         "channelz_property_list",
         "http2_status",
         "useful",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "http2_settings_manager",
+    srcs = [
+        "ext/transport/chttp2/transport/http2_settings_manager.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/http2_settings_manager.h",
+    ],
+    external_deps = [
+        "absl/functional:function_ref",
+        "absl/log",
+        "absl/strings",
+    ],
+    deps = [
+        "channelz_property_list",
+        "http2_settings",
+        "http2_status",
+        "useful",
         "//:chttp2_frame",
         "//:gpr_platform",
     ],
@@ -8064,8 +8162,10 @@ grpc_cc_library(
     ],
     deps = [
         "arena",
+        "header_assembler",
         "http2_status",
         "message",
+        "message_assembler",
         "metadata_batch",
     ],
 )
@@ -8096,6 +8196,7 @@ grpc_cc_library(
         "grpc_promise_endpoint",
         "header_assembler",
         "http2_settings",
+        "http2_settings_manager",
         "http2_status",
         "http2_transport",
         "inter_activity_mutex",
@@ -8153,6 +8254,7 @@ grpc_cc_library(
         "check_class_size",
         "grpc_promise_endpoint",
         "http2_settings",
+        "http2_settings_manager",
         "http2_status",
         "loop",
         "map",
@@ -8226,7 +8328,6 @@ grpc_cc_library(
         "call_spine",
         "channel_args",
         "grpc_promise_endpoint",
-        "http2_settings",
         "loop",
         "map",
         "mpsc",
@@ -9749,11 +9850,13 @@ grpc_cc_library(
         "call_filters",
         "call_final_info",
         "channel_args",
+        "gpr_manual_constructor",
         "metadata",
         "status_helper",
         "type_list",
         "//:grpc_base",
         "//:grpc_public_hdrs",
+        "//:promise",
     ],
 )
 
@@ -10353,6 +10456,9 @@ grpc_cc_library(
         "channelz/zviz/layout.cc",
     ],
     hdrs = ["channelz/zviz/layout.h"],
+    external_deps = [
+        "absl/strings",
+    ],
     deps = [
         "zviz_environment",
         "//src/proto/grpc/channelz/v2:channelz_cc_proto",
@@ -10401,6 +10507,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "zviz_style",
+    srcs = [
+        "channelz/zviz/style.cc",
+    ],
+    hdrs = ["channelz/zviz/style.h"],
+    external_deps = [
+        "absl/strings:string_view",
+    ],
+)
+
+grpc_cc_library(
     name = "zviz_entity",
     srcs = [
         "channelz/zviz/entity.cc",
@@ -10416,6 +10533,7 @@ grpc_cc_library(
         "zviz_environment",
         "zviz_layout",
         "zviz_strings",
+        "zviz_style",
         "zviz_trace",
         "//src/proto/grpc/channelz/v2:channelz_cc_proto",
     ],
@@ -10433,6 +10551,7 @@ grpc_cc_library(
         "absl/strings:string_view",
         "absl/types:span",
         "absl/functional:function_ref",
+        "absl/log:check",
     ],
 )
 
@@ -10504,6 +10623,28 @@ grpc_cc_library(
         "//:protobuf_wrappers_upb",
         "//:sockaddr_utils",
         "//:uri",
+    ],
+)
+
+grpc_cc_library(
+    name = "channelz_v2tov1_legacy_api",
+    srcs = ["channelz/v2tov1/legacy_api.cc"],
+    hdrs = ["channelz/v2tov1/legacy_api.h"],
+    external_deps = [
+        "absl/log",
+        "absl/status:statusor",
+        "absl/strings",
+    ],
+    deps = [
+        ":channelz_v2tov1_convert",
+        ":experiments",
+        ":json",
+        ":json_reader",
+        ":json_writer",
+        "//:channelz",
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc_public_hdrs",
     ],
 )
 
@@ -10834,20 +10975,6 @@ WELL_KNOWN_PROTO_TARGETS = [
     "wrappers",
 ]
 
-[
-    grpc_upb_proto_library(
-        name = "protobuf_" + target + "_upb",
-        deps = ["@com_google_protobuf//:" + target + "_proto"],
-    )
-    for target in WELL_KNOWN_PROTO_TARGETS
-]
-
-[
-    grpc_upb_proto_reflection_library(
-        name = "protobuf_" + target + "_upbdefs",
-        deps = ["@com_google_protobuf//:" + target + "_proto"],
-    )
-    for target in WELL_KNOWN_PROTO_TARGETS
-]
+grpc_add_well_known_proto_upb_targets(targets = WELL_KNOWN_PROTO_TARGETS)
 
 grpc_generate_one_off_internal_targets()

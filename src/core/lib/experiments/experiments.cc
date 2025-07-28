@@ -26,6 +26,12 @@ namespace {
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const description_channelz_use_v2_for_v1_api =
+    "Use the v2 channelz API for the v1 channelz API.";
+const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
+const char* const description_channelz_use_v2_for_v1_service =
+    "Use the v2 channelz service for the v1 channelz service.";
+const char* const additional_constraints_channelz_use_v2_for_v1_service = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -76,6 +82,9 @@ const char* const additional_constraints_event_engine_secure_endpoint = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_fuse_filters =
+    "If set, individual filters are merged into fused filters";
+const char* const additional_constraints_fuse_filters = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -131,6 +140,11 @@ const char* const description_promise_based_inproc_transport =
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
+const char* const description_rr_wrr_connect_from_random_index =
+    "RR and WRR LB policies start connecting from a random index in the "
+    "address list.";
+const char* const additional_constraints_rr_wrr_connect_from_random_index =
+    "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -186,6 +200,13 @@ namespace grpc_core {
 const ExperimentMetadata g_experiment_metadata[] = {
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
+    {"channelz_use_v2_for_v1_api", description_channelz_use_v2_for_v1_api,
+     additional_constraints_channelz_use_v2_for_v1_api, nullptr, 0, false,
+     true},
+    {"channelz_use_v2_for_v1_service",
+     description_channelz_use_v2_for_v1_service,
+     additional_constraints_channelz_use_v2_for_v1_service, nullptr, 0, false,
+     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -217,6 +238,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"fuse_filters", description_fuse_filters,
+     additional_constraints_fuse_filters, nullptr, 0, false, false},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -258,6 +281,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
+    {"rr_wrr_connect_from_random_index",
+     description_rr_wrr_connect_from_random_index,
+     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, false,
+     true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -272,8 +299,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
     {"server_global_callbacks_ownership",
      description_server_global_callbacks_ownership,
-     additional_constraints_server_global_callbacks_ownership, nullptr, 0,
-     false, true},
+     additional_constraints_server_global_callbacks_ownership, nullptr, 0, true,
+     true},
     {"shard_global_connection_pool", description_shard_global_connection_pool,
      additional_constraints_shard_global_connection_pool, nullptr, 0, true,
      true},
@@ -302,6 +329,12 @@ namespace {
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const description_channelz_use_v2_for_v1_api =
+    "Use the v2 channelz API for the v1 channelz API.";
+const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
+const char* const description_channelz_use_v2_for_v1_service =
+    "Use the v2 channelz service for the v1 channelz service.";
+const char* const additional_constraints_channelz_use_v2_for_v1_service = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -352,6 +385,9 @@ const char* const additional_constraints_event_engine_secure_endpoint = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_fuse_filters =
+    "If set, individual filters are merged into fused filters";
+const char* const additional_constraints_fuse_filters = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -407,6 +443,11 @@ const char* const description_promise_based_inproc_transport =
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
+const char* const description_rr_wrr_connect_from_random_index =
+    "RR and WRR LB policies start connecting from a random index in the "
+    "address list.";
+const char* const additional_constraints_rr_wrr_connect_from_random_index =
+    "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -462,6 +503,13 @@ namespace grpc_core {
 const ExperimentMetadata g_experiment_metadata[] = {
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
+    {"channelz_use_v2_for_v1_api", description_channelz_use_v2_for_v1_api,
+     additional_constraints_channelz_use_v2_for_v1_api, nullptr, 0, false,
+     true},
+    {"channelz_use_v2_for_v1_service",
+     description_channelz_use_v2_for_v1_service,
+     additional_constraints_channelz_use_v2_for_v1_service, nullptr, 0, false,
+     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -493,6 +541,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"fuse_filters", description_fuse_filters,
+     additional_constraints_fuse_filters, nullptr, 0, false, false},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -534,6 +584,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
+    {"rr_wrr_connect_from_random_index",
+     description_rr_wrr_connect_from_random_index,
+     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, false,
+     true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -548,8 +602,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
     {"server_global_callbacks_ownership",
      description_server_global_callbacks_ownership,
-     additional_constraints_server_global_callbacks_ownership, nullptr, 0,
-     false, true},
+     additional_constraints_server_global_callbacks_ownership, nullptr, 0, true,
+     true},
     {"shard_global_connection_pool", description_shard_global_connection_pool,
      additional_constraints_shard_global_connection_pool, nullptr, 0, true,
      true},
@@ -578,6 +632,12 @@ namespace {
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
+const char* const description_channelz_use_v2_for_v1_api =
+    "Use the v2 channelz API for the v1 channelz API.";
+const char* const additional_constraints_channelz_use_v2_for_v1_api = "{}";
+const char* const description_channelz_use_v2_for_v1_service =
+    "Use the v2 channelz service for the v1 channelz service.";
+const char* const additional_constraints_channelz_use_v2_for_v1_service = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -628,6 +688,9 @@ const char* const additional_constraints_event_engine_secure_endpoint = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_fuse_filters =
+    "If set, individual filters are merged into fused filters";
+const char* const additional_constraints_fuse_filters = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -683,6 +746,11 @@ const char* const description_promise_based_inproc_transport =
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
+const char* const description_rr_wrr_connect_from_random_index =
+    "RR and WRR LB policies start connecting from a random index in the "
+    "address list.";
+const char* const additional_constraints_rr_wrr_connect_from_random_index =
+    "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -738,6 +806,13 @@ namespace grpc_core {
 const ExperimentMetadata g_experiment_metadata[] = {
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
+    {"channelz_use_v2_for_v1_api", description_channelz_use_v2_for_v1_api,
+     additional_constraints_channelz_use_v2_for_v1_api, nullptr, 0, false,
+     true},
+    {"channelz_use_v2_for_v1_service",
+     description_channelz_use_v2_for_v1_service,
+     additional_constraints_channelz_use_v2_for_v1_service, nullptr, 0, false,
+     true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -769,6 +844,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"fuse_filters", description_fuse_filters,
+     additional_constraints_fuse_filters, nullptr, 0, false, false},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -810,6 +887,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
+    {"rr_wrr_connect_from_random_index",
+     description_rr_wrr_connect_from_random_index,
+     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, false,
+     true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -824,8 +905,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
     {"server_global_callbacks_ownership",
      description_server_global_callbacks_ownership,
-     additional_constraints_server_global_callbacks_ownership, nullptr, 0,
-     false, true},
+     additional_constraints_server_global_callbacks_ownership, nullptr, 0, true,
+     true},
     {"shard_global_connection_pool", description_shard_global_connection_pool,
      additional_constraints_shard_global_connection_pool, nullptr, 0, true,
      true},

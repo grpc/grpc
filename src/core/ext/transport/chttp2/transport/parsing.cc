@@ -54,6 +54,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
@@ -212,7 +213,7 @@ std::string FrameTypeString(uint8_t frame_type, uint8_t flags) {
 std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
     grpc_chttp2_transport* t, const grpc_slice& slice,
     size_t& requests_started) {
-  GRPC_LATENT_SEE_INNER_SCOPE("grpc_chttp2_perform_read");
+  GRPC_LATENT_SEE_SCOPE("grpc_chttp2_perform_read");
 
   const uint8_t* beg = GRPC_SLICE_START_PTR(slice);
   const uint8_t* end = GRPC_SLICE_END_PTR(slice);

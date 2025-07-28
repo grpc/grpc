@@ -25,6 +25,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -257,6 +258,20 @@ GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload);
 void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, const uint8_t flags,
                                    const uint32_t length);
 
+///////////////////////////////////////////////////////////////////////////////
+// Validations
+
+http2::Http2Status ValidateSettingsValues(
+    std::vector<Http2SettingsFrame::Setting>& list);
+
+http2::Http2Status ValidateFrameHeader(uint32_t max_frame_size_setting,
+                                       bool incoming_header_in_progress,
+                                       uint32_t incoming_header_stream_id,
+                                       Http2FrameHeader& current_frame_header);
+
+///////////////////////////////////////////////////////////////////////////////
+// RFC9113 Related Strings and Consts
+
 namespace RFC9113 {
 // RFC9113: 5.1.1.
 inline constexpr absl::string_view kStreamIdMustBeOdd =
@@ -316,6 +331,18 @@ inline constexpr absl::string_view kNoPushPromise =
     "setting of the "
     "peer endpoint is set to 0";
 
+inline constexpr absl::string_view kAssemblerContiguousSequenceError =
+    "RFC9113 : Field blocks MUST be transmitted as a contiguous sequence "
+    "of frames, with no interleaved frames of any other type or from any "
+    "other stream.";
+inline constexpr absl::string_view kHalfClosedRemoteState =
+    "RFC9113: half-closed (remote): If an endpoint receives additional frames, "
+    "other than WINDOW_UPDATE, PRIORITY, or RST_STREAM, for a stream that is "
+    "in this state, it MUST respond with a stream error of type STREAM_CLOSED.";
+inline constexpr absl::string_view kFrameSizeLargerThanMaxFrameSizeSetting =
+    "RFC9113: An endpoint MUST send an error code of FRAME_SIZE_ERROR if a "
+    "frame exceeds the size defined in SETTINGS_MAX_FRAME_SIZE";
+
 inline constexpr absl::string_view kFrameParserIncorrectPadding =
     "Incorrect length of padding in frame";
 inline constexpr absl::string_view kIncorrectFrame = "Incorrect Frame";
@@ -323,7 +350,18 @@ inline constexpr absl::string_view kGoAwayLength8 =
     "GOAWAY frame should have a Last-Stream-ID and Error Code making the "
     "minimum length 8 octets";
 
+inline constexpr absl::string_view kIncorrectWindowSizeSetting =
+    "RFC9113: Values above the maximum flow-control window size of (2^31)-1 "
+    "MUST be treated as a connection error of type FLOW_CONTROL_ERROR.";
+inline constexpr absl::string_view kIncorrectFrameSizeSetting =
+    "RFC9113: The initial value is 2^14 (16,384) octets. The value advertised"
+    " by an endpoint MUST be between this initial value and the maximum allowed"
+    " frame size (2^24)-1 or 16,777,215 octets), inclusive. ";
+
 inline constexpr uint32_t kMaxStreamId31Bit = 0x7fffffffu;
+inline constexpr uint32_t kMaxSize31Bit = 0x7fffffffu;
+inline constexpr uint32_t kMinimumFrameSize = 16384;
+inline constexpr uint32_t kMaximumFrameSize = 16777215;
 
 }  // namespace RFC9113
 }  // namespace grpc_core

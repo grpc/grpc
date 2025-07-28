@@ -33,7 +33,7 @@ DIRS=(
 )
 
 VIRTUALENV=.venv-ruff
-python3.11 -m virtualenv $VIRTUALENV
+python3 -m virtualenv $VIRTUALENV
 source $VIRTUALENV/bin/activate
 python3 --version
 

@@ -181,6 +181,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:chttp2_frame",
+        "//src/core:http2_settings",
         "//src/core:http2_status",
         "//src/core:slice_buffer",
     ],
@@ -512,6 +513,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:http2_settings",
+        "//src/core:http2_settings_manager",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -596,6 +598,8 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:http2_client_transport",
+        "//src/core:http2_settings",
+        "//src/core:http2_status",
         "//src/core:message",
         "//src/core:metadata",
         "//test/core/promise:poll_matcher",
@@ -752,6 +756,33 @@ grpc_fuzz_test(
         "//src/core:keepalive",
         "//src/core:map",
         "//src/core:try_seq",
+        "//test/core/call/yodel:yodel_test",
+    ],
+)
+
+grpc_cc_test(
+    name = "stream_data_queue_test",
+    srcs = ["stream_data_queue_test.cc"],
+    deps = [
+        "//src/core:loop",
+        "//src/core:sleep",
+        "//src/core:stream_data_queue",
+        "//test/core/transport/util:transport_test",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "stream_data_queue_fuzz_test",
+    srcs = ["stream_data_queue_fuzz_test.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        "//src/core:loop",
+        "//src/core:sleep",
+        "//src/core:stream_data_queue",
         "//test/core/call/yodel:yodel_test",
     ],
 )

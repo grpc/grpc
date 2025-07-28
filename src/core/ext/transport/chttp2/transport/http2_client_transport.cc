@@ -35,6 +35,7 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
@@ -155,6 +156,12 @@ Http2Status Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
     return Http2Status::Ok();
   }
 
+  if (stream->GetStreamState() == HttpStreamState::kHalfClosedRemote) {
+    return Http2Status::Http2StreamError(
+        Http2ErrorCode::kStreamClosed,
+        std::string(RFC9113::kHalfClosedRemoteState));
+  }
+
   // Add frame to assembler
   GRPC_HTTP2_CLIENT_DLOG
       << "Http2Transport ProcessHttp2DataFrame AppendNewDataFrame";
@@ -226,6 +233,11 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
         << "Http2Transport ProcessHttp2HeaderFrame Promise { stream_id="
         << frame.stream_id << "} Lookup Failed";
     return Http2Status::Ok();
+  }
+  if (stream->GetStreamState() == HttpStreamState::kHalfClosedRemote) {
+    return Http2Status::Http2StreamError(
+        Http2ErrorCode::kStreamClosed,
+        std::string(RFC9113::kHalfClosedRemoteState));
   }
 
   incoming_header_in_progress_ = !frame.end_headers;
@@ -315,17 +327,33 @@ Http2Status Http2ClientTransport::ProcessHttp2RstStreamFrame(
 Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
     Http2SettingsFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-settings
-  GRPC_HTTP2_CLIENT_DLOG << "Http2Transport ProcessHttp2SettingsFrame Factory";
-  // TODO(tjagtap) : [PH2][P2] : Implement this.
-  // Load into this.settings_
-  // Take necessary actions as per settings that have changed.
-  GRPC_HTTP2_CLIENT_DLOG
-      << "Http2Transport ProcessHttp2SettingsFrame Promise { ack=" << frame.ack
-      << ", settings length=" << frame.settings.size() << "}";
+
+  GRPC_HTTP2_CLIENT_DLOG << "Http2Transport ProcessHttp2SettingsFrame { ack="
+                         << frame.ack
+                         << ", settings length=" << frame.settings.size()
+                         << "}";
+
+  // The connector code needs us to run this
   if (on_receive_settings_ != nullptr) {
     ExecCtx::Run(DEBUG_LOCATION, on_receive_settings_, absl::OkStatus());
     on_receive_settings_ = nullptr;
   }
+
+  if (!frame.ack) {
+    // Check if the received settings have legal values
+    Http2Status status = ValidateSettingsValues(frame.settings);
+    if (!status.IsOk()) {
+      return status;
+    }
+    // TODO(tjagtap) : [PH2][P1]
+    // Apply the new settings
+    // Quickly send the ACK to the peer once the settings are applied
+  } else {
+    // TODO(tjagtap) : [PH2][P1]
+    // Stop the setting timeout promise
+    // Update the ACKed setting data structure
+  }
+
   return Http2Status::Ok();
 }
 
@@ -337,11 +365,7 @@ auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
       frame.ack,
       [self = RefAsSubclass<Http2ClientTransport>(), opaque = frame.opaque]() {
         // Received a ping ack.
-        if (!self->ping_manager_.AckPing(opaque)) {
-          GRPC_HTTP2_CLIENT_DLOG
-              << "Unknown ping response received for ping id=" << opaque;
-        }
-        return Immediate(Http2Status::Ok());
+        return self->AckPing(opaque);
       },
       [self = RefAsSubclass<Http2ClientTransport>(), opaque = frame.opaque]() {
         // TODO(akshitpatel) : [PH2][P2] : Have a counter to track number of
@@ -410,6 +434,11 @@ Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
     // receives an unexpected stream identifier MUST respond with a connection
     // error (Section 5.4.1) of type PROTOCOL_ERROR.
     return Http2Status::Ok();
+  }
+  if (stream->GetStreamState() == HttpStreamState::kHalfClosedRemote) {
+    return Http2Status::Http2StreamError(
+        Http2ErrorCode::kStreamClosed,
+        std::string(RFC9113::kHalfClosedRemoteState));
   }
 
   HeaderAssembler& assember = stream->header_assembler;
@@ -497,15 +526,14 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
       },
       // Validate the incoming frame as per the current state of the transport
       [self = RefAsSubclass<Http2ClientTransport>()](Http2FrameHeader header) {
-        if (self->incoming_header_in_progress_ &&
-            (self->current_frame_header_.type != 9 /*Continuation*/ ||
-             self->current_frame_header_.stream_id !=
-                 self->incoming_header_stream_id_)) {
-          LOG(ERROR) << "Closing Connection " << header.ToString() << " "
-                     << kAssemblerContiguousSequenceError;
-          return self->HandleError(Http2Status::Http2ConnectionError(
-              Http2ErrorCode::kProtocolError,
-              std::string(kAssemblerContiguousSequenceError)));
+        Http2Status status = ValidateFrameHeader(
+            /*max_frame_size_setting*/ self->settings_.acked().max_frame_size(),
+            /*incoming_header_in_progress*/ self->incoming_header_in_progress_,
+            /*incoming_header_stream_id*/ self->incoming_header_stream_id_,
+            /*current_frame_header*/ header);
+
+        if (!status.IsOk()) {
+          return self->HandleError(std::move(status));
         }
         GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport ReadAndProcessOneFrame "
                                   "Validated Frame Header:"

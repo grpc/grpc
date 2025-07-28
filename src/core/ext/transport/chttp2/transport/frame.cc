@@ -24,9 +24,13 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/crash.h"
+
+// TODO(tjagtap) TODO(akshitpatel): [PH2][P3] : Write micro benchmarks for
+// framing code
 
 using grpc_core::http2::Http2ErrorCode;
 using grpc_core::http2::Http2Status;
@@ -34,10 +38,55 @@ using grpc_core::http2::ValueOrHttp2Status;
 
 namespace grpc_core {
 
+///////////////////////////////////////////////////////////////////////////////
+// Settings Frame Validations
+
+bool IsUnknownSetting(const uint16_t setting_id) {
+  // RFC9113 : An endpoint that receives a SETTINGS frame with any unknown
+  // or unsupported identifier MUST ignore that setting.
+  return setting_id < Http2Settings::kHeaderTableSizeWireId ||
+         setting_id > Http2Settings::kGrpcAllowSecurityFrameWireId ||
+         (setting_id > Http2Settings::kMaxHeaderListSizeWireId &&
+          setting_id < Http2Settings::kGrpcAllowTrueBinaryMetadataWireId);
+}
+
+Http2Status ValidateSettingsValues(
+    std::vector<Http2SettingsFrame::Setting>& list) {
+  for (const auto& setting : list) {
+    if (GPR_UNLIKELY(setting.id == Http2Settings::kInitialWindowSizeWireId &&
+                     setting.value > RFC9113::kMaxSize31Bit)) {
+      LOG(ERROR)
+          << "ValidateSettingsValues Invalid "
+             "Setting:{setting.id:kInitialWindowSizeWireId, setting.value: "
+          << setting.value << "}";
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kFlowControlError,
+          absl::StrCat(RFC9113::kIncorrectWindowSizeSetting,
+                       "Invalid Setting:{setting.id:kInitialWindowSizeWireId, "
+                       "setting.value: ",
+                       setting.value));
+    } else if (GPR_UNLIKELY(setting.id == Http2Settings::kMaxFrameSizeWireId &&
+                            (setting.value < RFC9113::kMinimumFrameSize ||
+                             setting.value > RFC9113::kMaximumFrameSize))) {
+      LOG(ERROR) << "ValidateSettingsValues Invalid "
+                    "Setting:{setting.id:kMaxFrameSizeWireId, setting.value: "
+                 << setting.value << "}";
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(RFC9113::kIncorrectFrameSizeSetting,
+                       "Invalid Setting:{setting.id:kMaxFrameSizeWireId, "
+                       "setting.value: ",
+                       setting.value));
+    }
+  }
+  DVLOG(2) << "Http2Transport ValidateSettingsValues Valid";
+  return Http2Status::Ok();
+}
+
 namespace {
 
-// TODO(tjagtap) TODO(akshitpatel): [PH2][P3] : Write micro benchmarks for
-// framing code
+///////////////////////////////////////////////////////////////////////////////
+// HTTP2 Framing Code
 
 // HTTP2 Frame Types
 enum class FrameType : uint8_t {
@@ -445,9 +494,14 @@ ValueOrHttp2Status<Http2Frame> ParseSettingsFrame(const Http2FrameHeader& hdr,
   while (payload.Length() != 0) {
     uint8_t buffer[6];
     payload.MoveFirstNBytesIntoBuffer(6, buffer);
+    uint16_t setting_id = Read2b(buffer);
+    uint32_t setting_value = Read4b(buffer + 2);
+    if (GPR_UNLIKELY(IsUnknownSetting(setting_id))) {
+      continue;
+    }
     frame.settings.push_back({
-        Read2b(buffer),
-        Read4b(buffer + 2),
+        setting_id,
+        setting_value,
     });
   }
   return ValueOrHttp2Status<Http2Frame>(std::move(frame));
@@ -579,6 +633,7 @@ std::string Http2FrameTypeString(FrameType frame_type) {
   }
   return absl::StrCat("UNKNOWN(", static_cast<uint8_t>(frame_type), ")");
 }
+
 }  // namespace
 
 std::string Http2FrameHeader::ToString() const {
@@ -643,6 +698,9 @@ http2::Http2ErrorCode Http2ErrorCodeFromRstFrameErrorCode(uint32_t error_code) {
   return static_cast<http2::Http2ErrorCode>(error_code);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// GRPC Header
+
 GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload) {
   CHECK_GE(payload.Length(), kGrpcHeaderSizeInBytes);
   uint8_t buffer[kGrpcHeaderSizeInBytes];
@@ -658,6 +716,30 @@ void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, const uint8_t flags,
   uint8_t* frame_hdr = payload.AddTiny(kGrpcHeaderSizeInBytes);
   frame_hdr[0] = flags;
   Write4b(length, frame_hdr + 1);
+}
+
+Http2Status ValidateFrameHeader(const uint32_t max_frame_size_setting,
+                                const bool incoming_header_in_progress,
+                                const uint32_t incoming_header_stream_id,
+                                Http2FrameHeader& current_frame_header) {
+  if (GPR_UNLIKELY(current_frame_header.length > max_frame_size_setting)) {
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kFrameSizeError,
+        absl::StrCat(RFC9113::kFrameSizeLargerThanMaxFrameSizeSetting,
+                     ", Current Size = ", current_frame_header.length,
+                     ", Max Size = ", max_frame_size_setting));
+  }
+  if (GPR_UNLIKELY(
+          incoming_header_in_progress &&
+          (current_frame_header.type !=
+               static_cast<uint8_t>(FrameType::kContinuation) ||
+           current_frame_header.stream_id != incoming_header_stream_id))) {
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kProtocolError,
+        std::string(RFC9113::kAssemblerContiguousSequenceError));
+  }
+  // TODO(tjagtap) : [PH2][P2]:Consider validating MAX_CONCURRENT_STREAMS here
+  return Http2Status::Ok();
 }
 
 }  // namespace grpc_core

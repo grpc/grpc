@@ -78,10 +78,10 @@ TEST(EntityTest, ChangeDetectors) {
 [0] [0] [0,0] APPEND_COLUMN
 [0] [0] [0,0] APPEND_TEXT timestamp [value elided]
 [0] [0] [1,0] APPEND_COLUMN
-[0] [0] [1,0] APPEND_TEXT trace_description foo
+[0] [0] [1,0] APPEND_TEXT trace-description foo
 [0] [0] NEW_ROW
 [1] DATA bar type.googleapis.com/grpc.channelz.v2.PropertyList
-[1] [0] APPEND_TABLE property_list
+[1] [0] APPEND_TABLE property-list
 [1] [0] [0,0] APPEND_COLUMN
 [1] [0] [0,0] APPEND_TEXT key baz
 [1] [0] [1,0] APPEND_COLUMN

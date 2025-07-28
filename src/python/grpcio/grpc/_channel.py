@@ -246,7 +246,7 @@ def _event_handler(
             except Exception as e:  # pylint: disable=broad-except
                 # NOTE(rbellevi): We suppress but log errors here so as not to
                 # kill the channel spin thread.
-                logging.error(
+                _LOGGER.error(
                     "Exception in callback %s: %s", repr(callback.func), repr(e)
                 )
         return done and state.fork_epoch >= cygrpc.get_fork_epoch()
@@ -1984,7 +1984,7 @@ def _unsubscribe(
     callback: Callable[[grpc.ChannelConnectivity], None],
 ) -> None:
     with state.lock:
-        for index, (subscribed_callback, unused_connectivity) in enumerate(
+        for index, (subscribed_callback, _unused_connectivity) in enumerate(
             state.callbacks_and_connectivities
         ):
             if callback == subscribed_callback:

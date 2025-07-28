@@ -136,7 +136,9 @@ class Server(abc.ABC):
           A bool indicates if the operation times out.
         """
 
-    def add_registered_method_handlers(self, service_name, method_handlers):
+    def add_registered_method_handlers(  # noqa: B027
+        self, service_name, method_handlers
+    ):
         """Registers GenericRpcHandlers with this Server.
 
         This method is only safe to call before the server is started.

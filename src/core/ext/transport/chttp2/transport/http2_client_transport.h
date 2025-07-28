@@ -27,7 +27,7 @@
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
-#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
@@ -137,8 +137,9 @@ class Http2ClientTransport final : public ClientTransport {
         }));
   }
 
-  auto TestOnlySendPing(absl::AnyInvocable<void()> on_initiate) {
-    return ping_manager_.RequestPing(std::move(on_initiate));
+  auto TestOnlySendPing(absl::AnyInvocable<void()> on_initiate,
+                        bool important = false) {
+    return ping_manager_.RequestPing(std::move(on_initiate), important);
   }
 
   template <typename Factory>
@@ -257,6 +258,7 @@ class Http2ClientTransport final : public ClientTransport {
         case HttpStreamState::kHalfClosedLocal:
           break;
         case HttpStreamState::kClosed:
+          DCHECK(false) << "MarkHalfClosedLocal called for a closed stream";
           break;
       }
     }
@@ -275,9 +277,12 @@ class Http2ClientTransport final : public ClientTransport {
         case HttpStreamState::kHalfClosedRemote:
           break;
         case HttpStreamState::kClosed:
+          DCHECK(false) << "MarkHalfClosedRemote called for a closed stream";
           break;
       }
     }
+
+    HttpStreamState GetStreamState() const { return stream_state; }
 
     inline bool IsClosed() const {
       return stream_state == HttpStreamState::kClosed;
@@ -447,8 +452,8 @@ class Http2ClientTransport final : public ClientTransport {
   // Flags
   bool keepalive_permit_without_calls_;
 
-  auto SendPing(absl::AnyInvocable<void()> on_initiate) {
-    return ping_manager_.RequestPing(std::move(on_initiate));
+  auto SendPing(absl::AnyInvocable<void()> on_initiate, bool important) {
+    return ping_manager_.RequestPing(std::move(on_initiate), important);
   }
   auto WaitForPingAck() { return ping_manager_.WaitForPingAck(); }
 
@@ -488,6 +493,33 @@ class Http2ClientTransport final : public ClientTransport {
           Serialize(absl::Span<Http2Frame>(frames), output_buf);
           return endpoint_.Write(std::move(output_buf), {});
         }));
+  }
+
+  auto AckPing(uint64_t opaque_data) {
+    bool valid_ping_ack_received = true;
+
+    if (!ping_manager_.AckPing(opaque_data)) {
+      GRPC_HTTP2_CLIENT_DLOG << "Unknown ping response received for ping id="
+                             << opaque_data;
+      valid_ping_ack_received = false;
+    }
+
+    return If(
+        // It is possible that the PingRatePolicy may decide to not send a ping
+        // request (in cases like the number of inflight pings is too high).
+        // When this happens, it becomes important to ensure that if a ping ack
+        // is received and there is an "important" outstanding ping request, we
+        // should retry to send it out now.
+        valid_ping_ack_received && ping_manager_.ImportantPingRequested(),
+        [self = RefAsSubclass<Http2ClientTransport>()] {
+          return Map(self->TriggerWriteCycle(), [](const absl::Status status) {
+            return (status.ok())
+                       ? Http2Status::Ok()
+                       : Http2Status::AbslConnectionError(
+                             status.code(), std::string(status.message()));
+          });
+        },
+        [] { return Immediate(Http2Status::Ok()); });
   }
 
   class PingSystemInterfaceImpl : public PingInterface {

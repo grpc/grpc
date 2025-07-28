@@ -14,6 +14,9 @@
 
 #include "src/core/channelz/zviz/data.h"
 
+#include <algorithm>
+#include <vector>
+
 #include "absl/container/flat_hash_map.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -69,6 +72,7 @@ bool PropertyListFormatter(Environment& env, google::protobuf::Any value,
                            layout::Element& element) {
   grpc::channelz::v2::PropertyList property_list;
   if (!value.UnpackTo(&property_list)) return false;
+  if (property_list.properties().empty()) return true;
   auto& table = element.AppendTable(layout::TableIntent::kPropertyList);
   for (const auto& el : property_list.properties()) {
     table.AppendColumn().AppendText(layout::Intent::kKey, el.key());
@@ -87,9 +91,27 @@ bool PropertyGridFormatter(Environment& env, google::protobuf::Any value,
   for (const auto& column : property_grid.columns()) {
     table.AppendColumn().AppendText(layout::Intent::kKey, column);
   }
+  table.NewRow();
   for (const auto& row : property_grid.rows()) {
-    table.NewRow();
     table.AppendColumn().AppendText(layout::Intent::kKey, row.label());
+    for (const auto& value : row.value()) {
+      Format(env, value, table.AppendColumn());
+    }
+    table.NewRow();
+  }
+  return true;
+}
+
+bool PropertyTableFormatter(Environment& env, google::protobuf::Any value,
+                            layout::Element& element) {
+  grpc::channelz::v2::PropertyTable property_table;
+  if (!value.UnpackTo(&property_table)) return false;
+  auto& table = element.AppendTable(layout::TableIntent::kPropertyTable);
+  for (const auto& column : property_table.columns()) {
+    table.AppendColumn().AppendText(layout::Intent::kKey, column);
+  }
+  for (const auto& row : property_table.rows()) {
+    table.NewRow();
     for (const auto& value : row.value()) {
       Format(env, value, table.AppendColumn());
     }
@@ -107,6 +129,8 @@ const grpc_core::NoDestruct<absl::flat_hash_map<absl::string_view, Formatter>>
                          PropertyListFormatter);
       formatters.emplace("type.googleapis.com/grpc.channelz.v2.PropertyGrid",
                          PropertyGridFormatter);
+      formatters.emplace("type.googleapis.com/grpc.channelz.v2.PropertyTable",
+                         PropertyTableFormatter);
       return formatters;
     }());
 
