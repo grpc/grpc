@@ -58,7 +58,7 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     const std::string& root_cert_path,
     const std::string& spiffe_bundle_map_path,
     unsigned int refresh_interval_sec) {
-  c_provider_ = grpc_tls_spiffe_based_certificate_provider_file_watcher_create(
+  c_provider_ = grpc_tls_certificate_provider_file_watcher_create(
       private_key_path.c_str(), identity_certificate_path.c_str(),
       root_cert_path.c_str(), spiffe_bundle_map_path.c_str(),
       refresh_interval_sec);
