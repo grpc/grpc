@@ -39,15 +39,9 @@ ignore = [
     "D401",    # First line of docstring should be in imperative mood: "{first_line}"
     "D413",    # Missing blank line after last section ("{name}")
     "D415",    # First line should end with a period, question mark, or exclamation point
-    "D417",    # Missing argument description in the docstring for {definition}: {name}
-    "DTZ001",  # datetime.datetime() called without a tzinfo argument
     "DTZ005",  # datetime.datetime.now() called without a tz argument
-    "E402",    # Module level import not at top of cell
     "E501",    # Line too long ({width} > {limit})
-    "E713",    # Test for membership should be not in
-    "E722",    # Do not use bare except
     "E731",    # Do not assign a lambda expression, use a def
-    "EM101",   # Exception must not use a string literal, assign to variable first
     "ERA001",  # Found commented-out code
     "F401",    # {name} imported but unused; consider using importlib.util.find_spec to test for availability
     "F403",    # from {name} import * used; unable to detect undefined names
