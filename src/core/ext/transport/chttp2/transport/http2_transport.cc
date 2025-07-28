@@ -51,8 +51,9 @@ void InitLocalSettings(Http2Settings& settings, const bool is_client) {
   settings.SetAllowTrueBinaryMetadata(true);
 }
 
-void ReadChannelArgs(const grpc_core::ChannelArgs& channel_args,
-                     Http2Settings& settings, const bool is_client) {
+void ReadSettingsFromChannelArgs(const grpc_core::ChannelArgs& channel_args,
+                                 Http2Settings& settings,
+                                 const bool is_client) {
   if (channel_args.Contains(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER)) {
     settings.SetHeaderTableSize(
         channel_args.GetInt(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER)
