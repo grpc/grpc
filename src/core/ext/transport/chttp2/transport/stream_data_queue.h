@@ -45,10 +45,23 @@ class SimpleQueue {
   SimpleQueue(const SimpleQueue&) = delete;
   SimpleQueue& operator=(const SimpleQueue&) = delete;
 
+  // A promise that resolves when the data is enqueued.
+  // If tokens_consumed_ is 0 or the new tokens fit within max_tokens_, then
+  // allow the enqueue to go through. Otherwise, return pending. Here, we are
+  // using tokens_consumed over queue_.empty() because there can be enqueues
+  // with tokens = 0. Enqueues with tokens = 0 are primarily for sending
+  // metadata as flow control does not apply to them.
   auto Enqueue(T& data, const uint32_t tokens) {
     return PollEnqueue(data, tokens);
   }
 
+  // Sync function to dequeue the next entry. Returns nullopt if the queue is
+  // empty or if the front of the queue has more tokens than
+  // allowed_dequeue_tokens. When allow_oversized_dequeue parameter is set to
+  // true, it allows an item to be dequeued even if its token cost is greater
+  // than allowed_dequeue_tokens. It does not cause the item itself to be
+  // partially dequeued; either the entire item is returned or nullopt is
+  // returned.
   std::optional<T> Dequeue(const uint32_t allowed_dequeue_tokens,
                            const bool allow_oversized_dequeue) {
     return DequeueInternal(allowed_dequeue_tokens, allow_oversized_dequeue);
@@ -63,12 +76,6 @@ class SimpleQueue {
   bool TestOnlyIsEmpty() const { return IsEmpty(); }
 
  private:
-  // A promise that resolves when the data is enqueued.
-  // If tokens_consumed_ is 0 or the new tokens fit within max_tokens_, then
-  // allow the enqueue to go through. Otherwise, return pending. Here, we are
-  // using tokens_consumed over queue_.empty() because there can be enqueues
-  // with tokens = 0. Enqueues with tokens = 0 are primarily for sending
-  // metadata as flow control does not apply to them.
   Poll<EnqueueResult> PollEnqueue(T& data, const uint32_t tokens) {
     GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueueing data. Data tokens: " << tokens;
     const uint32_t max_tokens_consumed_threshold =
@@ -92,13 +99,6 @@ class SimpleQueue {
     return Pending{};
   }
 
-  // Sync function to dequeue the next entry. Returns nullopt if the queue is
-  // empty or if the front of the queue has more tokens than
-  // allowed_dequeue_tokens. When allow_oversized_dequeue parameter is set to
-  // true, it allows an item to be dequeued even if its token cost is greater
-  // than allowed_dequeue_tokens. It does not cause the item itself to be
-  // partially dequeued; either the entire item is returned or nullopt is
-  // returned.
   std::optional<T> DequeueInternal(const uint32_t allowed_dequeue_tokens,
                                    const bool allow_oversized_dequeue) {
     if (queue_.empty() || (queue_.front().tokens > allowed_dequeue_tokens &&
@@ -131,7 +131,6 @@ class SimpleQueue {
 
   bool IsEmpty() const { return queue_.empty(); }
 
- private:
   struct Entry {
     T data;
     uint32_t tokens;
