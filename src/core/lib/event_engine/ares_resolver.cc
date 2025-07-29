@@ -14,14 +14,12 @@
 #include "src/core/lib/event_engine/ares_resolver.h"
 
 #include <grpc/support/port_platform.h>
-#include <netinet/in.h>
 #include <sys/socket.h>
 
 #include <cstddef>
 #include <string>
 #include <vector>
 
-#include "absl/cleanup/cleanup.h"
 #include "src/core/lib/iomgr/port.h"
 
 // IWYU pragma: no_include <ares_version.h>
@@ -56,6 +54,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/cleanup/cleanup.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
