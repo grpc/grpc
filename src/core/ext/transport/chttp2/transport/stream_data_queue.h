@@ -419,9 +419,14 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     }
 
     std::vector<Http2Frame> GetFrames() {
-      // Order of appending frames is important. There may be scenarios where
-      // a reset stream frames is appended after HalfClose or Trailing
-      // Metadata.
+      // TODO(akshitpatel) : [PH2][P3] : There is a second option here. We can
+      //  only append messages here. Additionally, when Trailing
+      //  Metadata/HalfClose/ResetStream is dequeued, we can first flush the
+      //  buffered messages and then append the respective frames. This will
+      //  ensure that we do not break the ordering of the queue.
+
+      // Order of appending frames is important. There may be scenarios where a
+      // reset stream frames is appended after HalfClose or Trailing Metadata.
       MaybeAppendMessageFrames();
       MaybeAppendEndOfStreamFrame();
       MaybeAppendTrailingMetadataFrames();
