@@ -49,6 +49,14 @@ Json ToJson(const PropertyValue& value) {
         return Json::FromString(
             gpr_format_timespec(v.as_timespec(GPR_CLOCK_REALTIME)));
       },
+      [](absl::Time v) {
+        gpr_timespec ts;
+        ts.clock_type = GPR_CLOCK_REALTIME;
+        auto osts = absl::ToTimespec(v);
+        ts.tv_sec = osts.tv_sec;
+        ts.tv_nsec = osts.tv_nsec;
+        return Json::FromString(gpr_format_timespec(ts));
+      },
       [](absl::Status v) { return Json::FromString(v.ToString()); },
       [](std::shared_ptr<OtherPropertyValue> v) {
         return Json::FromObject(v->TakeJsonObject());
@@ -91,6 +99,16 @@ void FillUpbValue(const PropertyValue& value,
             grpc_channelz_v2_PropertyValue_mutable_timestamp_value(proto,
                                                                    arena);
         auto ts = v.as_timespec(GPR_CLOCK_REALTIME);
+        google_protobuf_Timestamp_set_seconds(timestamp_proto, ts.tv_sec);
+        google_protobuf_Timestamp_set_nanos(timestamp_proto, ts.tv_nsec);
+        grpc_channelz_v2_PropertyValue_set_timestamp_value(proto,
+                                                           timestamp_proto);
+      },
+      [proto, arena](absl::Time v) {
+        auto* timestamp_proto =
+            grpc_channelz_v2_PropertyValue_mutable_timestamp_value(proto,
+                                                                   arena);
+        auto ts = absl::ToTimespec(v);
         google_protobuf_Timestamp_set_seconds(timestamp_proto, ts.tv_sec);
         google_protobuf_Timestamp_set_nanos(timestamp_proto, ts.tv_nsec);
         grpc_channelz_v2_PropertyValue_set_timestamp_value(proto,
