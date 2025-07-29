@@ -130,7 +130,7 @@ absl::Status ValidatePath(absl::string_view path) {
 
 }  // namespace
 
-std::string SpiffeBundleRootToPem(absl::string_view spiffe_bundle_root) {
+std::string AddPemBlockWrapping(absl::string_view spiffe_bundle_root) {
   return absl::StrCat(kCertificatePrefix, spiffe_bundle_root,
                       kCertificateSuffix);
 }
@@ -207,7 +207,7 @@ void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs& args,
     }
     if (!x5c->empty()) {
       ValidationErrors::ScopedField field(errors, "[0]");
-      std::string pem_cert = SpiffeBundleRootToPem((*x5c)[0]);
+      std::string pem_cert = AddPemBlockWrapping((*x5c)[0]);
       auto certs = ParsePemCertificateChain(pem_cert);
       if (!certs.ok()) {
         errors->AddError(certs.status().ToString());
@@ -299,7 +299,7 @@ absl::Status SpiffeBundle::CreateX509Stack() {
   root_stack_ = std::make_unique<STACK_OF(X509)*>(sk_X509_new_null());
   absl::Status status = absl::OkStatus();
   for (const auto& pem_cert : roots_) {
-    auto cert = ParsePemCertificateChain(SpiffeBundleRootToPem(pem_cert));
+    auto cert = ParsePemCertificateChain(AddPemBlockWrapping(pem_cert));
     if (!cert.status().ok()) {
       status = cert.status();
       break;
@@ -351,7 +351,7 @@ absl::StatusOr<absl::Span<const std::string>> SpiffeBundleMap::GetRoots(
 }
 
 absl::StatusOr<STACK_OF(X509) *> SpiffeBundleMap::GetRootStack(
-    const absl::string_view trust_domain) {
+    absl::string_view trust_domain) {
   if (auto it = bundles_.find(trust_domain); it != bundles_.end()) {
     return it->second.GetRootStack();
   }

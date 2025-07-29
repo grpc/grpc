@@ -178,7 +178,7 @@ absl::StatusOr<std::vector<X509*>> ParsePemCertificateChain(
 // in private_key_pem. Caller takes ownership of the EVP_PKEY pointer.
 absl::StatusOr<EVP_PKEY*> ParsePemPrivateKey(absl::string_view private_key_pem);
 
-// Safely parses a URI from OpenSSLs GENERAL_NAME to a string representation.
+// Safely parses a URI from OpenSSL's GENERAL_NAME to a string representation.
 absl::StatusOr<std::string> ParseUriString(GENERAL_NAME* subject_alt_name);
 }  // namespace grpc_core
 
