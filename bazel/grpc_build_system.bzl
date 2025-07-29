@@ -238,6 +238,7 @@ def grpc_proto_library(
         well_known_protos = False,
         has_services = True,
         use_external = False,
+        extra_deps = [],
         generate_mocks = False):
     cc_grpc_library(
         name = name,
@@ -247,6 +248,7 @@ def grpc_proto_library(
         well_known_protos = well_known_protos,
         proto_only = not has_services,
         use_external = use_external,
+        extra_deps = extra_deps,
         generate_mocks = generate_mocks,
     )
 
