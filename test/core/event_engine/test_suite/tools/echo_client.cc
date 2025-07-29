@@ -107,7 +107,8 @@ void RunUntilInterrupted() {
   auto engine = GetDefaultEventEngine();
   std::unique_ptr<EventEngine::Endpoint> endpoint;
   grpc_core::Notification connected;
-  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
+  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>("bar"));
   ChannelArgsEndpointConfig config{grpc_core::CoreConfiguration::Get()
                                        .channel_args_preconditioning()
                                        .PreconditionChannelArgs(nullptr)};

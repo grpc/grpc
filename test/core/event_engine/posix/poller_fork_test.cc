@@ -236,7 +236,9 @@ class PollerForkTest : public ::testing::Test {
     std::vector<std::unique_ptr<EventEngine::Endpoint>> endpoints;
     auto listener = ee()->CreateListener(
         std::move(on_accept), std::move(on_shutdown), config,
-        std::make_unique<grpc_core::MemoryQuota>("foo"));
+        std::make_unique<grpc_core::MemoryQuota>(
+            grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+                "bar")));
     if (!listener.ok()) {
       return std::move(listener).status();
     }

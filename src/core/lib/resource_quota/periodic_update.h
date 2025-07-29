@@ -48,6 +48,14 @@ class PeriodicUpdate {
     return false;
   }
 
+  // Interrupt execution: call f as if the period expired, and then continue
+  // from where we left off.
+  // Returns false if this was not possible (eg we were at the end of a tick)
+  // Argument to the callback is the amount of time expired so far.
+  bool Interrupt(absl::FunctionRef<void(Duration)> f);
+
+  Duration period() const { return period_; }
+
  private:
   bool MaybeEndPeriod(absl::FunctionRef<void(Duration)> f);
 

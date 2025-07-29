@@ -127,7 +127,8 @@ absl::StatusOr<int> ChaoticGoodServerListener::Bind(
   auto ee_listener = event_engine_->CreateListener(
       std::move(accept_cb), std::move(shutdown_cb),
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(args_),
-      std::make_unique<MemoryQuota>("chaotic_good_server_listener"));
+      std::make_unique<MemoryQuota>(MakeRefCounted<channelz::ResourceQuotaNode>(
+          "chaotic_good_server_listener")));
   if (!ee_listener.ok()) {
     LOG(ERROR) << "Bind failed: " << ee_listener.status().ToString();
     return ee_listener.status();

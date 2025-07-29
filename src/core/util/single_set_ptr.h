@@ -90,9 +90,10 @@ class SingleSetRefCountedPtr {
 
   bool is_set() const { return p_.is_set(); }
 
-  RefCountedPtr<T> GetOrCreate() {
+  template <typename... Args>
+  RefCountedPtr<T> GetOrCreate(Args&&... args) {
     T* p = Get();
-    if (p == nullptr) p = Set(MakeRefCounted<T>());
+    if (p == nullptr) p = Set(MakeRefCounted<T>(std::forward<Args>(args)...));
     return p->Ref();
   }
   T* Get() const { return p_.Get(); }
@@ -106,6 +107,8 @@ class SingleSetRefCountedPtr {
   T& operator*() const { return *Get(); }
 
   T* Set(RefCountedPtr<T> p) { return p_.Set(p.release()); }
+
+  void Reset() { p_.Reset(); }
 
  private:
   struct UnrefDeleter {

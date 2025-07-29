@@ -186,7 +186,10 @@ absl::Status ConnectionManager::BindAndStartListener(
   ChannelArgsEndpointConfig config;
   auto status = event_engine->CreateListener(
       std::move(accept_cb), [](absl::Status status) { CHECK_OK(status); },
-      config, std::make_unique<grpc_core::MemoryQuota>("foo"));
+      config,
+      std::make_unique<grpc_core::MemoryQuota>(
+          grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+              "foo")));
   if (!status.ok()) {
     return status.status();
   }
