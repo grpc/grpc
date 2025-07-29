@@ -32,6 +32,8 @@
 #include <atomic>
 #include <chrono>
 #include <memory>
+#include <optional>
+#include <string>
 #include <vector>
 
 #include "absl/status/status.h"
@@ -326,14 +328,14 @@ TEST_P(ChannelzChannelTest, BasicChannelProto) {
 
 class TestZTrace final : public ZTrace {
  public:
-  void Run(Timestamp deadline, std::map<std::string, std::string> args,
+  void Run(Args args,
            std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
-           absl::AnyInvocable<void(Json)> callback) override {
+           Callback callback) override {
     engine->RunAfter(Duration::Milliseconds(100),
                      [callback = std::move(callback)]() mutable {
                        Json::Object object;
                        object["test"] = Json::FromString("yes");
-                       callback(Json::FromObject(std::move(object)));
+                       callback(JsonDump(Json::FromObject(std::move(object))));
                      });
   }
 };
@@ -401,9 +403,12 @@ TEST_P(ChannelzChannelTest, ZTrace) {
   Notification done;
   std::string json_text;
   channelz_channel->RunZTrace(
-      "test_ztrace", Timestamp::Now() + Duration::Milliseconds(300), {},
-      grpc_event_engine::experimental::GetDefaultEventEngine(), [&](Json json) {
-        json_text = JsonDump(json);
+      "test_ztrace", {},
+      grpc_event_engine::experimental::GetDefaultEventEngine(),
+      [&](absl::StatusOr<std::optional<std::string>> result) {
+        ASSERT_TRUE(result.ok());
+        ASSERT_TRUE(result->has_value());
+        json_text = **result;
         done.Notify();
       });
   done.WaitForNotification();
