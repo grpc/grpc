@@ -290,7 +290,8 @@ absl::Span<const std::string> SpiffeBundle::GetRoots() { return roots_; }
 
 absl::StatusOr<STACK_OF(X509) *> SpiffeBundle::GetRootStack() {
   if (root_stack_ == nullptr) {
-    return absl::FailedPreconditionError("root_stack_ has not been initialized");
+    return absl::FailedPreconditionError(
+        "root_stack_ has not been initialized");
   }
   return *root_stack_;
 }

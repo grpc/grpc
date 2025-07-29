@@ -1034,13 +1034,16 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
 
   // Internal helper function for creating TLS and mTLS creds.
   // Not intended to be used by tests.
-  static std::vector<experimental::IdentityKeyCertPair> MakeIdentityKeyCertPairForSpiffeMtlsCreds();
+  static std::vector<experimental::IdentityKeyCertPair>
+  MakeIdentityKeyCertPairForSpiffeMtlsCreds();
 
   // Returns XdsCredentials with mTLS fallback creds.
   static std::shared_ptr<ChannelCredentials> CreateXdsChannelCredentials();
   static std::shared_ptr<ChannelCredentials> CreateTlsChannelCredentials();
-  static std::shared_ptr<ChannelCredentials> CreateSpiffeXdsChannelCredentials();
-  static std::shared_ptr<ChannelCredentials> CreateSpiffeTlsChannelCredentials();
+  static std::shared_ptr<ChannelCredentials>
+  CreateSpiffeXdsChannelCredentials();
+  static std::shared_ptr<ChannelCredentials>
+  CreateSpiffeTlsChannelCredentials();
 
   // Creates various types of server credentials.
   static std::shared_ptr<ServerCredentials> CreateFakeServerCredentials();

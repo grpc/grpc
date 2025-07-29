@@ -518,7 +518,8 @@ grpc_tls_certificate_provider_file_watcher_create(
   return new grpc_core::FileWatcherCertificateProvider(
       private_key_path == nullptr ? "" : private_key_path,
       identity_certificate_path == nullptr ? "" : identity_certificate_path,
-      root_cert_path == nullptr ? "" : root_cert_path, spiffe_bundle_map_path == nullptr ? "" : spiffe_bundle_map_path,
+      root_cert_path == nullptr ? "" : root_cert_path,
+      spiffe_bundle_map_path == nullptr ? "" : spiffe_bundle_map_path,
       refresh_interval_sec);
 }
 

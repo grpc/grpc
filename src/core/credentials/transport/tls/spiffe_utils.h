@@ -31,8 +31,8 @@
 
 namespace grpc_core {
 
-// Adds the leading and trailing lines expected for a PEM formatted certificate around the raw
-// base64 certificate data stored in a SPIFFE bundle map.
+// Adds the leading and trailing lines expected for a PEM formatted certificate
+// around the raw base64 certificate data stored in a SPIFFE bundle map.
 std::string AddPemBlockWrapping(absl::string_view spiffe_bundle_root);
 
 // A representation of a SPIFFE ID per the spec:
@@ -83,7 +83,8 @@ class SpiffeBundleKey final {
 class SpiffeBundle final {
  public:
   // Do not use - only exists to work with the JSON library.
-  // SpiffeBundles should be used by loading a SpiffeBundleMap via SpiffeBundleMap::FromFile
+  // SpiffeBundles should be used by loading a SpiffeBundleMap via
+  // SpiffeBundleMap::FromFile
   SpiffeBundle() = default;
   ~SpiffeBundle();
   SpiffeBundle(const SpiffeBundle& other);
@@ -138,10 +139,12 @@ class SpiffeBundleMap final {
   static absl::StatusOr<SpiffeBundleMap> FromFile(absl::string_view file_path);
 
   // Returns the roots for a given trust domain in the SPIFFE Bundle Map.
-  absl::StatusOr<absl::Span<const std::string>> GetRoots(absl::string_view trust_domain);
+  absl::StatusOr<absl::Span<const std::string>> GetRoots(
+      absl::string_view trust_domain);
 
   // The caller does not take ownership of the stack of roots.
-  absl::StatusOr<STACK_OF(X509) *> GetRootStack(const absl::string_view trust_domain);
+  absl::StatusOr<STACK_OF(X509) *> GetRootStack(
+      const absl::string_view trust_domain);
   size_t size() const { return bundles_.size(); }
 
   bool operator==(const SpiffeBundleMap& other) const {
@@ -155,7 +158,9 @@ class SpiffeBundleMap final {
  private:
   struct StringCmp {
     using is_transparent = void;
-    bool operator()(absl::string_view a, absl::string_view b) const { return a < b; }
+    bool operator()(absl::string_view a, absl::string_view b) const {
+      return a < b;
+    }
   };
 
   std::map<std::string, SpiffeBundle, StringCmp> bundles_;
