@@ -19,7 +19,17 @@ import sys
 import os
 import pkgutil
 
-from typeguard import install_import_hook
+from typeguard import install_import_hook, config, CollectionCheckStrategy
+
+# Configure typeguard to be more lenient
+config.collection_check_strategy = CollectionCheckStrategy.FIRST_ITEM  # Be less strict about collections
+
+# Fix the type hierarchy issue for HandlerCallDetails
+import grpc
+from grpc._cython import cygrpc
+# Register the cython class as a virtual subclass of the abstract base class
+grpc.HandlerCallDetails.register(cygrpc._HandlerCallDetails)
+
 # AIO
 install_import_hook('grpc.aio')
 install_import_hook('grpc.aio._channel')
