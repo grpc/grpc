@@ -81,7 +81,9 @@ class InProcessCHTTP2 {
           listener_started.Notify();
         },
         [](absl::Status status) { CHECK(status.ok()); }, config,
-        std::make_unique<grpc_core::MemoryQuota>("foo"));
+        std::make_unique<grpc_core::MemoryQuota>(
+            grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+                "bar")));
     if (!listener.ok()) {
       grpc_core::Crash(absl::StrCat("failed to start listener: ",
                                     listener.status().ToString()));
@@ -93,8 +95,9 @@ class InProcessCHTTP2 {
     // Creating the client
     std::unique_ptr<EventEngine::Endpoint> client_endpoint;
     grpc_core::Notification client_connected;
-    auto client_memory_quota =
-        std::make_unique<grpc_core::MemoryQuota>("client");
+    auto client_memory_quota = std::make_unique<grpc_core::MemoryQuota>(
+        grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+            "client"));
     std::ignore = fuzzing_engine->Connect(
         [&](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> endpoint) {
           CHECK(endpoint.ok());
