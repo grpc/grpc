@@ -483,6 +483,8 @@ void PosixEventEngine::OnConnectFinishInternal(int connection_handle) {
   }
 }
 
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+
 void PosixEventEngine::ThreadPoolSchedulerAdapter::Run(
     experimental::EventEngine::Closure* closure) {
   if (executor_ != nullptr) {
@@ -496,6 +498,8 @@ void PosixEventEngine::ThreadPoolSchedulerAdapter::Run(
     executor_->Run(std::move(cb));
   }
 }
+
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 
 std::shared_ptr<PosixEventEngine> PosixEventEngine::MakePosixEventEngine() {
   // Can't use make_shared as ctor is private
@@ -524,19 +528,26 @@ PosixEventEngine::PosixEventEngine(std::shared_ptr<PosixEventPoller> poller)
       timer_manager_(std::make_shared<TimerManager>(executor_)) {
 }
 
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+
 PosixEventEngine::PosixEventEngine()
     : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
       executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
-#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
       scheduler_adapter_(executor_),
       timer_manager_(std::make_shared<TimerManager>(executor_)) {
   poller_ =
       grpc_event_engine::experimental::MakeDefaultPoller(&scheduler_adapter_);
   SchedulePoller();
-#else   // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-      timer_manager_(std::make_shared<TimerManager>(executor_)) {
-#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 }
+
+#else  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+
+PosixEventEngine::PosixEventEngine()
+    : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
+      executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
+      timer_manager_(std::make_shared<TimerManager>(executor_)) {}
+
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 
 #endif  // GRPC_POSIX_SOCKET_TCP
 
