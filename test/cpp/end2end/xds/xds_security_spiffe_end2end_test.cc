@@ -279,7 +279,8 @@ class XdsSecurityTest : public XdsEnd2endTest {
         "(foo|waterzooi).test.google.(fr|be)");
     bad_san_1_.set_exact("192.168.1.4");
     bad_san_2_.set_exact("foo.test.google.in");
-    authenticated_identity_ = {"spiffe://foo.bar.com/9eebccd2-12bf-40a6-b262-65fe0487d453"};
+    authenticated_identity_ = {
+        "spiffe://foo.bar.com/9eebccd2-12bf-40a6-b262-65fe0487d453"};
     fallback_authenticated_identity_ = {"*.test.google.fr",
                                         "waterzooi.test.google.be",
                                         "*.test.youtube.com", "192.168.1.3"};
@@ -419,10 +420,10 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsSecurityTest,
 TEST_P(XdsSecurityTest, TestMtlsConfigurationWithRootPluginUpdateSpiffe) {
   auto map = grpc_core::SpiffeBundleMap::FromFile(kClientSpiffeBundleMapPath);
   ASSERT_TRUE(map.ok());
-  auto bad_map = grpc_core::SpiffeBundleMap::FromFile(kServerSpiffeBundleMapPath);
+  auto bad_map =
+      grpc_core::SpiffeBundleMap::FromFile(kServerSpiffeBundleMapPath);
   ASSERT_TRUE(bad_map.ok());
-  g_fake1_cert_data_map->Set(
-      {{"", {"", identity_pair_, *map}}});
+  g_fake1_cert_data_map->Set({{"", {"", identity_pair_, *map}}});
   g_fake2_cert_data_map->Set({{"", {"", bad_identity_pair_, *bad_map}}});
   UpdateAndVerifyXdsSecurityConfiguration("fake_plugin1", "", "fake_plugin1",
                                           "", {server_san_exact_},

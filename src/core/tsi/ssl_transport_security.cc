@@ -1283,7 +1283,8 @@ static absl::StatusOr<std::string> GetSpiffeUriFromCert(X509* cert) {
         if (uri_count > 1) {
           sk_GENERAL_NAME_pop_free(subject_alt_names, GENERAL_NAME_free);
           return absl::InvalidArgumentError(
-              "spiffe: more than one SAN URI found while doing SPIFFE validation. Must "
+              "spiffe: more than one SAN URI found while doing SPIFFE "
+              "validation. Must "
               "have exactly one URI SAN that is the SPIFFE ID.");
         }
         spiffe_uri = grpc_core::ParseUriString(subject_alt_name);
@@ -1316,7 +1317,8 @@ absl::Status ConfigureSpiffeRoots(
     X509_STORE_CTX* ctx, grpc_core::SpiffeBundleMap* spiffe_bundle_map) {
   CHECK(ctx != nullptr);
   if (spiffe_bundle_map == nullptr) {
-    return absl::InvalidArgumentError("cannot configure spiffe roots with a nullptr spiffe_bundle_map.");
+    return absl::InvalidArgumentError(
+        "cannot configure spiffe roots with a nullptr spiffe_bundle_map.");
   }
   X509* leaf_cert = X509_STORE_CTX_get0_cert(ctx);
   if (leaf_cert == nullptr) {
@@ -2544,13 +2546,13 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
                 nullptr);
           },
           [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
-              X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context);
-              X509_STORE_set_flags(cert_store, X509_V_FLAG_PARTIAL_CHAIN |
-                                                   X509_V_FLAG_TRUSTED_FIRST);
-              const void* p = &spiffe_bundle_map;
-              void* map = const_cast<void*>(p);
-              SSL_CTX_set_ex_data(ssl_context,
-                                  g_ssl_ctx_ex_spiffe_bundle_map_index, map);
+            X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context);
+            X509_STORE_set_flags(cert_store, X509_V_FLAG_PARTIAL_CHAIN |
+                                                 X509_V_FLAG_TRUSTED_FIRST);
+            const void* p = &spiffe_bundle_map;
+            void* map = const_cast<void*>(p);
+            SSL_CTX_set_ex_data(ssl_context,
+                                g_ssl_ctx_ex_spiffe_bundle_map_index, map);
           });
       X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context);
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
@@ -2774,14 +2776,14 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
               }
             },
             [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
-                X509_STORE* cert_store =
-                    SSL_CTX_get_cert_store(impl->ssl_contexts[i]);
-                X509_STORE_set_flags(cert_store, X509_V_FLAG_PARTIAL_CHAIN |
-                                                     X509_V_FLAG_TRUSTED_FIRST);
-                const void* p = &spiffe_bundle_map;
-                void* map = const_cast<void*>(p);
-                SSL_CTX_set_ex_data(impl->ssl_contexts[i],
-                                    g_ssl_ctx_ex_spiffe_bundle_map_index, map);
+              X509_STORE* cert_store =
+                  SSL_CTX_get_cert_store(impl->ssl_contexts[i]);
+              X509_STORE_set_flags(cert_store, X509_V_FLAG_PARTIAL_CHAIN |
+                                                   X509_V_FLAG_TRUSTED_FIRST);
+              const void* p = &spiffe_bundle_map;
+              void* map = const_cast<void*>(p);
+              SSL_CTX_set_ex_data(impl->ssl_contexts[i],
+                                  g_ssl_ctx_ex_spiffe_bundle_map_index, map);
             });
         if (result != TSI_OK) {
           break;

@@ -167,18 +167,18 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server1.pem",
         "//test/core/tsi/test_creds/spiffe_end2end:ca.pem",
         "//test/core/tsi/test_creds/spiffe_end2end:client.key",
-        "//test/core/tsi/test_creds/spiffe_end2end:client_spiffebundle.json",
         "//test/core/tsi/test_creds/spiffe_end2end:client_spiffe.pem",
+        "//test/core/tsi/test_creds/spiffe_end2end:client_spiffebundle.json",
+        "//test/core/tsi/test_creds/spiffe_end2end:intermediate.cnf",
         "//test/core/tsi/test_creds/spiffe_end2end:intermediate_ca.key",
         "//test/core/tsi/test_creds/spiffe_end2end:intermediate_ca.pem",
-        "//test/core/tsi/test_creds/spiffe_end2end:intermediate.cnf",
         "//test/core/tsi/test_creds/spiffe_end2end:intermediate_gen.sh",
         "//test/core/tsi/test_creds/spiffe_end2end:leaf_and_intermediate_chain.pem",
         "//test/core/tsi/test_creds/spiffe_end2end:leaf_signed_by_intermediate.key",
         "//test/core/tsi/test_creds/spiffe_end2end:leaf_signed_by_intermediate.pem",
         "//test/core/tsi/test_creds/spiffe_end2end:server.key",
-        "//test/core/tsi/test_creds/spiffe_end2end:server_spiffebundle.json",
         "//test/core/tsi/test_creds/spiffe_end2end:server_spiffe.pem",
+        "//test/core/tsi/test_creds/spiffe_end2end:server_spiffebundle.json",
     ],
     external_deps = [
         "absl/log:check",
@@ -218,7 +218,6 @@ grpc_cc_test(
         "@envoy_api//envoy/type/v3:pkg_cc_proto",
     ],
 )
-
 
 grpc_cc_test(
     name = "xds_cluster_end2end_test",

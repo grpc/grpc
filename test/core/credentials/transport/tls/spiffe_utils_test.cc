@@ -71,8 +71,9 @@ absl::StatusOr<X509*> ReadCertificateFromFile(absl::string_view filepath) {
 
 bool CompareX509(const X509* a, const X509* b) {
   if (a == b) return true;  // both null or same ptr
-  if (a == nullptr || b == nullptr)
-    return false;              // One is null, the other is not, not equal
+  if (a == nullptr || b == nullptr) {
+    return false;  // One is null, the other is not, not equal
+  }
   return X509_cmp(a, b) == 0;  // Uses internal comparison
 }
 

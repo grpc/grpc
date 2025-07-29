@@ -262,7 +262,8 @@ class SpiffeSslTransportSecurityTest
 struct tsi_test_fixture_vtable
     SpiffeSslTransportSecurityTest::SslTsiTestFixture::kVtable = {
         &SpiffeSslTransportSecurityTest::SslTsiTestFixture::SetupHandshakers,
-        &SpiffeSslTransportSecurityTest::SslTsiTestFixture::CheckHandshakerPeers,
+        &SpiffeSslTransportSecurityTest::SslTsiTestFixture::
+            CheckHandshakerPeers,
         &SpiffeSslTransportSecurityTest::SslTsiTestFixture::Destruct};
 
 // Valid SPIFFE Bundles on both sides with the root configured for the
