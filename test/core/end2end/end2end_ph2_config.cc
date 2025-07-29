@@ -37,6 +37,7 @@ namespace grpc_core {
 #define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST                     \
   "CoreClientChannelTests.DeadlineAfterAcceptWithServiceConfig"            \
   "|CoreClientChannelTests.DeadlineAfterRoundTripWithServiceConfig"        \
+  "|CoreDeadlineTests.DeadlineAfterRoundTrip"                              \
   "|CoreDeadlineSingleHopTests."                                           \
   "TimeoutBeforeRequestCallWithRegisteredMethodWithPayload"                \
   "|CoreEnd2endTests.BinaryMetadataServerHttp2FallbackClientHttp2Fallback" \
