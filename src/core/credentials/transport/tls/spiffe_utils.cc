@@ -256,7 +256,7 @@ SpiffeBundle::SpiffeBundle(const SpiffeBundle& other) {
   if (other.root_stack_ != nullptr) {
     root_stack_ =
         std::make_unique<STACK_OF(X509)*>(sk_X509_dup(*other.root_stack_));
-    for (auto i = 0; i < sk_X509_num(*root_stack_); i++) {
+    for (size_t i = 0; i < sk_X509_num(*root_stack_); i++) {
       X509* x = sk_X509_value(*root_stack_, i);
       CHECK(X509_up_ref(x));
     }
@@ -269,7 +269,7 @@ SpiffeBundle& SpiffeBundle::operator=(const SpiffeBundle& other) {
     if (other.root_stack_ != nullptr) {
       root_stack_ =
           std::make_unique<STACK_OF(X509)*>(sk_X509_dup(*other.root_stack_));
-      for (auto i = 0; i < sk_X509_num(*root_stack_); i++) {
+      for (size_t i = 0; i < sk_X509_num(*root_stack_); i++) {
         X509* x = sk_X509_value(*root_stack_, i);
         CHECK(X509_up_ref(x));
       }
