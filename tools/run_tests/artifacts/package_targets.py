@@ -181,14 +181,14 @@ class PythonPackage:
 
             # all the artifact builder configurations generate
             # grpcio-VERSION.tar.gz and grpcio-VERSION-py3-none-any.whl files.
-            # These files with same names causes copy conflicts in the 
-            # grpc_collect_all_packages job where all these targets are built 
-            # together in the same machine and try to copy to the same 
-            # artifacts directory. 
-            # Hence copy them only in the common python linux packages job and 
+            # These files with same names causes copy conflicts in the
+            # grpc_collect_all_packages job where all these targets are built
+            # together in the same machine and try to copy to the same
+            # artifacts directory.
+            # Hence copy them only in the common python linux packages job and
             # exclude them in the aarch64 specific targets.
             # NOTE: While this solves the problem for grpc_collect_all_packages,
-            # individual presubmit jobs for the aarch64 builds will miss these 
+            # individual presubmit jobs for the aarch64 builds will miss these
             # 2 files.
             environ["EXCLUDE_PATTERNS"] = "*.tar.gz *py3-none-any.whl"
 
