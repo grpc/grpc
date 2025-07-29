@@ -160,6 +160,8 @@ class StreamDataQueueFuzzTest : public YodelTest {
     party2_ = Party::Make(std::move(general_party_arena));
   }
 
+  HPackCompressor& GetEncoder() { return encoder_; }
+
   // Helper functions to create test data.
   ClientMetadataHandle TestClientInitialMetadata() {
     auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
@@ -223,8 +225,7 @@ class StreamDataQueueFuzzTest : public YodelTest {
       EXPECT_TRUE(status_or_metadata.IsOk());
       return TakeValue(std::move(status_or_metadata));
     }
-    std::vector<MessageHandle> GetMessages() {
-      std::vector<MessageHandle> messages;
+    void GetMessages(std::vector<MessageHandle>& messages) {
       while (true) {
         auto message = message_assembler_.ExtractMessage();
         if (message.IsOk() && message.value() != nullptr) {
@@ -233,7 +234,6 @@ class StreamDataQueueFuzzTest : public YodelTest {
           break;
         }
       }
-      return messages;
     }
 
    private:
@@ -252,6 +252,7 @@ class StreamDataQueueFuzzTest : public YodelTest {
 
   RefCountedPtr<Party> party_;
   RefCountedPtr<Party> party2_;
+  HPackCompressor encoder_;
 };
 
 YODEL_TEST(StreamDataQueueFuzzTest, EnqueueDequeueMultiParty) {
@@ -261,7 +262,7 @@ YODEL_TEST(StreamDataQueueFuzzTest, EnqueueDequeueMultiParty) {
   constexpr uint32_t max_tokens = 75;
   constexpr uint32_t queue_size = 100;
   constexpr uint32_t stream_id = 1;
-  constexpr uint32_t num_messages = 1;
+  constexpr uint32_t num_messages = 100;
   StrictMock<MockFunction<void()>> on_enqueue_done;
   StrictMock<MockFunction<void()>> on_dequeue_done;
   EXPECT_CALL(on_enqueue_done, Call());
@@ -271,17 +272,13 @@ YODEL_TEST(StreamDataQueueFuzzTest, EnqueueDequeueMultiParty) {
       /*is_client=*/true,
       /*stream_id=*/stream_id,
       /*queue_size=*/queue_size);
-  std::vector<MessageHandle> messages = TestMessages(num_messages);
+  std::vector<MessageHandle> messages_to_be_sent = TestMessages(num_messages);
   std::vector<MessageHandle> messages_copy = TestMessages(num_messages);
-  std::vector<Http2Frame> received_frames;
+  std::vector<MessageHandle> dequeued_messages;
   uint message_index = 0;
+  AssembleFrames assembler(stream_id);
 
-  auto validate = [this,
-                   &messages_copy](std::vector<Http2Frame>& received_frames) {
-    AssembleFrames assembler(stream_id);
-    for (auto& frame : received_frames) {
-      std::visit(assembler, std::move(frame));
-    }
+  auto validate = [this, &messages_copy, &dequeued_messages, &assembler]() {
     auto metadata = assembler.GetMetadata();
     auto expected_metadata = TestClientInitialMetadata();
     absl::string_view metadata_value =
@@ -289,7 +286,7 @@ YODEL_TEST(StreamDataQueueFuzzTest, EnqueueDequeueMultiParty) {
     absl::string_view expected_metadata_value =
         expected_metadata->get_pointer(HttpPathMetadata())->as_string_view();
     EXPECT_EQ(metadata_value, expected_metadata_value);
-    auto messages = assembler.GetMessages();
+    auto& messages = dequeued_messages;
     EXPECT_EQ(messages.size(), messages_copy.size());
     for (int i = 0; i < messages.size(); ++i) {
       EXPECT_EQ(messages[i]->flags(), messages_copy[i]->flags());
@@ -297,17 +294,19 @@ YODEL_TEST(StreamDataQueueFuzzTest, EnqueueDequeueMultiParty) {
                 messages_copy[i]->payload()->JoinIntoString());
     }
   };
+
   GetParty()->Spawn(
       "EnqueuePromise",
       TrySeq(
           stream_data_queue.EnqueueInitialMetadata(TestClientInitialMetadata()),
-          [&stream_data_queue, &messages, &message_index] {
-            return Loop([&stream_data_queue, &messages, &message_index] {
+          [&stream_data_queue, &messages_to_be_sent, &message_index] {
+            return Loop([&stream_data_queue, &messages_to_be_sent,
+                         &message_index] {
               return If(
-                  message_index < messages.size(),
-                  [&stream_data_queue, &messages, &message_index] {
-                    return Map(stream_data_queue.EnqueueMessage(
-                                   std::move(messages[message_index++])),
+                  message_index < messages_to_be_sent.size(),
+                  [&stream_data_queue, &messages_to_be_sent, &message_index] {
+                    return Map(stream_data_queue.EnqueueMessage(std::move(
+                                   messages_to_be_sent[message_index++])),
                                [](auto) -> LoopCtl<absl::Status> {
                                  return Continue{};
                                });
@@ -322,20 +321,22 @@ YODEL_TEST(StreamDataQueueFuzzTest, EnqueueDequeueMultiParty) {
 
   GetParty2()->Spawn(
       "DequeuePromise",
-      Loop([&stream_data_queue, &received_frames, &validate]() {
+      Loop([this, &stream_data_queue, &validate, &dequeued_messages,
+            &assembler]() {
         return If(
-            stream_data_queue.IsClosed(),
-            [&validate, &received_frames]() -> LoopCtl<absl::Status> {
-              validate(received_frames);
+            dequeued_messages.size() >= num_messages,
+            [&validate]() -> LoopCtl<absl::Status> {
+              validate();
               return absl::OkStatus();
             },
-            [&stream_data_queue, &received_frames] {
-              auto frames =
-                  stream_data_queue.DequeueFrames(max_tokens, max_frame_length);
+            [this, &stream_data_queue, &assembler, &dequeued_messages] {
+              auto frames = stream_data_queue.DequeueFrames(
+                  max_tokens, max_frame_length, GetEncoder());
               EXPECT_TRUE(frames.ok());
               for (auto& frame : frames.value().frames) {
-                received_frames.push_back(std::move(frame));
+                std::visit(assembler, std::move(frame));
               }
+              assembler.GetMessages(dequeued_messages);
               return Map(
                   Sleep(Duration::Seconds(1)),
                   [](auto) -> LoopCtl<absl::Status> { return Continue{}; });

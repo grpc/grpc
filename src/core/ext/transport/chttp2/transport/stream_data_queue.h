@@ -179,11 +179,11 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // 3. Initial metadata and trailing metadata are both optional. A server can
   //    skip initial metadata and a client will never send trailing metadata.
   // 4. A server will never send half close.
-  // 5. The trailing metadata/HalfClose/ResetStream MUST be the final thing that
-  //    is queued.
-  // 6. Initial Metadata and Trailing Metadata MUST be queued at most once per
-  //    stream.
-  // 7. Currently initial metadata is not expected to be enqueued with
+  // 5. Trailing metadata/HalfClose/ResetStream MUST be enqueued at most once
+  //    per stream.
+  // 6. After trailing metadata/HalfClose only ResetStream MAY be enqueued.
+  // 7. The ResetStream MUST be the final thing that is queued.
+  // 8. Currently initial metadata is not expected to be enqueued with
   //    end_stream set. If the stream needs to be half closed, the client should
   //    enqueue a half close message.
 
@@ -193,7 +193,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // 3. MUST not be called after trailing metadata is enqueued.
   auto EnqueueInitialMetadata(MetadataHandle metadata) {
     DCHECK(!is_initial_metadata_queued_);
-    DCHECK(!is_trailing_metadata_queued_);
+    DCHECK(!is_trailing_metadata_or_half_close_queued_);
     DCHECK(metadata != nullptr);
     DCHECK(!is_end_stream_);
 
@@ -221,9 +221,9 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     DCHECK(metadata != nullptr);
     DCHECK(!is_end_stream_);
     DCHECK(!is_client_);
+    DCHECK(!is_trailing_metadata_or_half_close_queued_);
 
-    is_trailing_metadata_queued_ = true;
-    is_end_stream_ = true;
+    is_trailing_metadata_or_half_close_queued_ = true;
     return [self = this->Ref(),
             entry = QueueEntry{TrailingMetadataType{
                 std::move(metadata)}}]() mutable -> Poll<absl::Status> {
@@ -250,6 +250,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     DCHECK(!is_end_stream_);
     DCHECK_LE(message->payload()->Length(),
               std::numeric_limits<uint32_t>::max() - kGrpcHeaderSizeInBytes);
+    DCHECK(!is_trailing_metadata_or_half_close_queued_);
 
     const uint32_t tokens =
         message->payload()->Length() + kGrpcHeaderSizeInBytes;
@@ -272,8 +273,9 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     DCHECK(is_initial_metadata_queued_);
     DCHECK(is_client_);
     DCHECK(!is_end_stream_);
+    DCHECK(!is_trailing_metadata_or_half_close_queued_);
 
-    is_end_stream_ = true;
+    is_trailing_metadata_or_half_close_queued_ = true;
     return [self = this->Ref(),
             entry = QueueEntry{HalfClosed{}}]() mutable -> Poll<absl::Status> {
       MutexLock lock(&self->mu_);
@@ -331,18 +333,20 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // 1. If we have sent x full messages and available flow control tokens cannot
   //    accommodate x+1 message, we will not dequeue the x+1st message and
   //    create frames for x messages.
-  // 2. If the flow control tokens cannot accommodate first message itself, we
-  //    will fully dequeue the first message from the queue and create frames
-  //    for the incomplete first message with max_tokens as the upper limit.
+  // 2. If the flow control tokens cannot accommodate first message, we
+  //    dequeue the first message from the queue and create frames for
+  //    the partial first message (sum of payload of all returned frames <=
+  //    max_fc_tokens).
   absl::StatusOr<DequeueResult> DequeueFrames(const uint32_t max_fc_tokens,
-                                              const uint32_t max_frame_length) {
+                                              const uint32_t max_frame_length,
+                                              HPackCompressor& encoder) {
     MutexLock lock(&mu_);
     GRPC_STREAM_DATA_QUEUE_DEBUG << "Dequeueing frames for stream "
                                  << stream_id_
                                  << " Max fc tokens: " << max_fc_tokens
-                                 << " Max frame length: " << max_frame_length
-                                 << " Is closed: " << is_closed_;
-    HandleDequeue handle_dequeue(max_fc_tokens, max_frame_length, *this);
+                                 << " Max frame length: " << max_frame_length;
+    HandleDequeue handle_dequeue(max_fc_tokens, max_frame_length, encoder,
+                                 *this);
     while (message_disassembler_.GetBufferedLength() < max_fc_tokens) {
       auto queue_entry = queue_.Dequeue(
           max_fc_tokens - message_disassembler_.GetBufferedLength(),
@@ -356,12 +360,6 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     }
 
     return DequeueResult{handle_dequeue.GetFrames(), /*is_writable=*/false};
-  }
-
-  bool IsClosed() const {
-    GRPC_STREAM_DATA_QUEUE_DEBUG << " StreamDataQueue Is closed: "
-                                 << is_closed_;
-    return is_closed_;
   }
 
  private:
@@ -381,25 +379,24 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   class HandleDequeue {
    public:
     HandleDequeue(uint32_t max_tokens, uint32_t max_frame_length,
-                  StreamDataQueue& queue)
+                  HPackCompressor& encoder, StreamDataQueue& queue)
         : queue_(queue),
           max_frame_length_(max_frame_length),
           max_fc_tokens_(max_tokens),
-          fc_tokens_available_(max_tokens) {}
+          fc_tokens_available_(max_tokens),
+          encoder_(encoder) {}
 
     void operator()(InitialMetadataType initial_metadata) {
       GRPC_STREAM_DATA_QUEUE_DEBUG << "Preparing initial metadata for sending";
       queue_.initial_metadata_disassembler_.PrepareForSending(
-          std::move(initial_metadata.metadata), queue_.encoder_);
+          std::move(initial_metadata.metadata), encoder_);
       MaybeAppendInitialMetadataFrames();
     }
 
     void operator()(TrailingMetadataType trailing_metadata) {
       GRPC_STREAM_DATA_QUEUE_DEBUG << "Preparing trailing metadata for sending";
-      DCHECK(!queue_.is_closed_);
       queue_.trailing_metadata_disassembler_.PrepareForSending(
-          std::move(trailing_metadata.metadata), queue_.encoder_);
-      queue_.is_closed_ = true;
+          std::move(trailing_metadata.metadata), encoder_);
     }
 
     void operator()(MessageHandle message) {
@@ -410,33 +407,30 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
 
     void operator()(HalfClosed half_closed) {
       GRPC_STREAM_DATA_QUEUE_DEBUG << "Preparing end of stream for sending";
-      DCHECK(!queue_.is_closed_);
       is_half_closed_ = true;
-      queue_.is_closed_ = true;
     }
 
     void operator()(ResetStream reset_stream) {
       GRPC_STREAM_DATA_QUEUE_DEBUG << "Preparing reset stream for sending";
-      DCHECK(!queue_.is_closed_);
-      queue_.is_closed_ = true;
       is_reset_stream_ = true;
       error_code_ = reset_stream.error_code;
     }
 
     std::vector<Http2Frame> GetFrames() {
+      // Order of appending frames is important. There may be scenarios where
+      // a reset stream frames is appended after HalfClose or Trailing
+      // Metadata.
       MaybeAppendMessageFrames();
-      if (queue_.is_closed_) {
-        MaybeAppendEndOfStreamFrame();
-        MaybeAppendTrailingMetadataFrames();
-        MaybeAppendResetStreamFrame();
-      }
+      MaybeAppendEndOfStreamFrame();
+      MaybeAppendTrailingMetadataFrames();
+      MaybeAppendResetStreamFrame();
       return std::move(frames_);
     }
 
    private:
-    void MaybeAppendInitialMetadataFrames() {
+    inline void MaybeAppendInitialMetadataFrames() {
       while (queue_.initial_metadata_disassembler_.HasMoreData()) {
-        // TODO(akshitpatel) : [PH2][P0] : I do not think we need this.
+        // TODO(akshitpatel) : [PH2][P2] : I do not think we need this.
         // HasMoreData() should be enough.
         bool is_end_headers = false;
         frames_.emplace_back(queue_.initial_metadata_disassembler_.GetNextFrame(
@@ -444,9 +438,9 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
       }
     }
 
-    void MaybeAppendTrailingMetadataFrames() {
+    inline void MaybeAppendTrailingMetadataFrames() {
       while (queue_.trailing_metadata_disassembler_.HasMoreData()) {
-        // TODO(akshitpatel) : [PH2][P0] : I do not think we need this.
+        // TODO(akshitpatel) : [PH2][P2] : I do not think we need this.
         // HasMoreData() should be enough.
         bool is_end_headers = false;
         frames_.emplace_back(
@@ -455,15 +449,16 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
       }
     }
 
-    void MaybeAppendEndOfStreamFrame() {
+    inline void MaybeAppendEndOfStreamFrame() {
       if (is_half_closed_) {
+        DCHECK(!is_reset_stream_);
         frames_.emplace_back(Http2DataFrame{/*stream_id=*/queue_.stream_id_,
                                             /*end_stream=*/true,
                                             /*payload=*/SliceBuffer()});
       }
     }
 
-    void MaybeAppendMessageFrames() {
+    inline void MaybeAppendMessageFrames() {
       while (queue_.message_disassembler_.GetBufferedLength() > 0 &&
              fc_tokens_available_ > 0) {
         Http2DataFrame frame = queue_.message_disassembler_.GenerateNextFrame(
@@ -474,8 +469,9 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
       }
     }
 
-    void MaybeAppendResetStreamFrame() {
+    inline void MaybeAppendResetStreamFrame() {
       if (is_reset_stream_) {
+        DCHECK(!is_half_closed_);
         frames_.emplace_back(
             Http2RstStreamFrame{queue_.stream_id_, error_code_});
       }
@@ -487,8 +483,9 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     uint32_t fc_tokens_available_;
     bool is_half_closed_ = false;
     bool is_reset_stream_ = false;
-    uint32_t error_code_ = 0;
+    uint32_t error_code_ = static_cast<uint32_t>(Http2ErrorCode::kNoError);
     std::vector<Http2Frame> frames_;
+    HPackCompressor& encoder_;
   };
 
   const uint32_t stream_id_;
@@ -496,7 +493,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
 
   // Accessed only during enqueue.
   bool is_initial_metadata_queued_ = false;
-  bool is_trailing_metadata_queued_ = false;
+  bool is_trailing_metadata_or_half_close_queued_ = false;
   bool is_end_stream_ = false;
 
   // Access both during enqueue and dequeue.
@@ -507,8 +504,6 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   HeaderDisassembler initial_metadata_disassembler_;
   HeaderDisassembler trailing_metadata_disassembler_;
   GrpcMessageDisassembler message_disassembler_;
-  HPackCompressor encoder_;
-  bool is_closed_ = false;
 };
 
 }  // namespace http2
