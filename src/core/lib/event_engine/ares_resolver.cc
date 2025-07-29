@@ -13,7 +13,6 @@
 // limitations under the License.
 #include "src/core/lib/event_engine/ares_resolver.h"
 
-#include <absl/cleanup/cleanup.h>
 #include <grpc/support/port_platform.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -22,6 +21,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/cleanup/cleanup.h"
 #include "src/core/lib/iomgr/port.h"
 
 // IWYU pragma: no_include <ares_version.h>
