@@ -347,10 +347,12 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
                                  << " Max frame length: " << max_frame_length;
     HandleDequeue handle_dequeue(max_fc_tokens, max_frame_length, encoder,
                                  *this);
-    while (message_disassembler_.GetBufferedLength() < max_fc_tokens) {
+    while (message_disassembler_.GetBufferedLength() <= max_fc_tokens) {
+      const uint32_t tokens_to_dequeue =
+          max_fc_tokens - message_disassembler_.GetBufferedLength();
       auto queue_entry = queue_.Dequeue(
-          max_fc_tokens - message_disassembler_.GetBufferedLength(),
-          (message_disassembler_.GetBufferedLength() == 0));
+          tokens_to_dequeue, (message_disassembler_.GetBufferedLength() == 0 &&
+                              tokens_to_dequeue > 0));
       if (!queue_entry.has_value()) {
         // Nothing more to dequeue right now.
         GRPC_STREAM_DATA_QUEUE_DEBUG << "No more data to dequeue";
@@ -451,7 +453,6 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
 
     inline void MaybeAppendEndOfStreamFrame() {
       if (is_half_closed_) {
-        DCHECK(!is_reset_stream_);
         frames_.emplace_back(Http2DataFrame{/*stream_id=*/queue_.stream_id_,
                                             /*end_stream=*/true,
                                             /*payload=*/SliceBuffer()});
@@ -471,7 +472,6 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
 
     inline void MaybeAppendResetStreamFrame() {
       if (is_reset_stream_) {
-        DCHECK(!is_half_closed_);
         frames_.emplace_back(
             Http2RstStreamFrame{queue_.stream_id_, error_code_});
       }

@@ -430,6 +430,18 @@ const std::vector<uint8_t> kPathDemoServiceStep = {
     0x64, 0x65, 0x6d, 0x6f, 0x2e, 0x53, 0x65, 0x72, 0x76,
     0x69, 0x63, 0x65, 0x2f, 0x53, 0x74, 0x65, 0x70};
 
+// Encoded string of header ":path: /demo.Service/Step2".
+const std::vector<uint8_t> kPathDemoServiceStep2 = {
+    0x40, 0x05, 0x3a, 0x70, 0x61, 0x74, 0x68, 0x13, 0x2f,
+    0x64, 0x65, 0x6d, 0x6f, 0x2e, 0x53, 0x65, 0x72, 0x76,
+    0x69, 0x63, 0x65, 0x2f, 0x53, 0x74, 0x65, 0x70, 0x32};
+
+// Encoded string of header ":path: /demo.Service/Step3".
+const std::vector<uint8_t> kPathDemoServiceStep3 = {
+    0x40, 0x05, 0x3a, 0x70, 0x61, 0x74, 0x68, 0x13, 0x2f,
+    0x64, 0x65, 0x6d, 0x6f, 0x2e, 0x53, 0x65, 0x72, 0x76,
+    0x69, 0x63, 0x65, 0x2f, 0x53, 0x74, 0x65, 0x70, 0x33};
+
 template <typename MetadataHandle>
 void EnqueueInitialMetadataAndCheckSuccess(
     RefCountedPtr<StreamDataQueue<MetadataHandle>> queue,
@@ -437,7 +449,7 @@ void EnqueueInitialMetadataAndCheckSuccess(
   LOG(INFO) << "Enqueueing initial metadata";
   auto promise = queue->EnqueueInitialMetadata(std::move(metadata));
   auto result = promise();
-  ASSERT_TRUE(result.ready());
+  EXPECT_TRUE(result.ready());
   EXPECT_EQ(result.value(), absl::OkStatus());
   LOG(INFO) << "Enqueueing initial metadata success";
 }
@@ -449,7 +461,7 @@ void EnqueueTrailingMetadataAndCheckSuccess(
   LOG(INFO) << "Enqueueing trailing metadata";
   auto promise = queue->EnqueueTrailingMetadata(std::move(metadata));
   auto result = promise();
-  ASSERT_TRUE(result.ready());
+  EXPECT_TRUE(result.ready());
   EXPECT_EQ(result.value(), absl::OkStatus());
   LOG(INFO) << "Enqueueing trailing metadata success";
 }
@@ -463,7 +475,7 @@ void EnqueueMessageAndCheckSuccess(
             << " and flags: " << message->flags();
   auto promise = queue->EnqueueMessage(std::move(message));
   auto result = promise();
-  ASSERT_TRUE(result.ready());
+  EXPECT_TRUE(result.ready());
   EXPECT_EQ(result.value(), absl::OkStatus());
   LOG(INFO) << "Enqueueing message success";
 }
@@ -474,7 +486,7 @@ void EnqueueResetStreamAndCheckSuccess(
   LOG(INFO) << "Enqueueing reset stream";
   auto promise = queue->EnqueueResetStream(/*error_code=*/0);
   auto result = promise();
-  ASSERT_TRUE(result.ready());
+  EXPECT_TRUE(result.ready());
   EXPECT_EQ(result.value(), absl::OkStatus());
   LOG(INFO) << "Enqueueing reset stream success";
 }
@@ -484,7 +496,7 @@ void EnqueueHalfClosedAndCheckSuccess(
   LOG(INFO) << "Enqueueing half closed";
   auto promise = queue->EnqueueHalfClosed();
   auto result = promise();
-  ASSERT_TRUE(result.ready());
+  EXPECT_TRUE(result.ready());
   EXPECT_EQ(result.value(), absl::OkStatus());
   LOG(INFO) << "Enqueueing half closed success";
 }
@@ -495,8 +507,8 @@ void DequeueAndCheckSuccess(
     std::vector<Http2Frame> expected_frames, HPackCompressor& encoder,
     const uint32_t max_tokens = 10, const uint32_t max_frame_length = 10) {
   auto frames = queue->DequeueFrames(max_tokens, max_frame_length, encoder);
-  ASSERT_TRUE(frames.ok());
-  ASSERT_EQ(frames.value().frames.size(), expected_frames.size());
+  EXPECT_TRUE(frames.ok());
+  EXPECT_EQ(frames.value().frames.size(), expected_frames.size());
 
   auto& frames_vector = frames.value().frames;
   for (int count = 0; count < frames_vector.size(); ++count) {
@@ -510,8 +522,8 @@ void DequeueMessageAndCheckSuccess(
     std::vector<int> expected_frames_length, HPackCompressor& encoder,
     const uint32_t max_tokens = 10, const uint32_t max_frame_length = 10) {
   auto frames = queue->DequeueFrames(max_tokens, max_frame_length, encoder);
-  ASSERT_TRUE(frames.ok());
-  ASSERT_EQ(frames.value().frames.size(), expected_frames_length.size());
+  EXPECT_TRUE(frames.ok());
+  EXPECT_EQ(frames.value().frames.size(), expected_frames_length.size());
   auto& frames_vector = frames.value().frames;
   for (int count = 0; count < frames.value().frames.size(); ++count) {
     EXPECT_EQ(std::get<Http2DataFrame>(frames_vector[count]).payload.Length(),
@@ -519,9 +531,11 @@ void DequeueMessageAndCheckSuccess(
   }
 }
 
-void GetExpectedInitialMetadataFrames(
-    const uint32_t max_frame_length, std::vector<Http2Frame>& expected_frames) {
-  uint32_t left_over = kPathDemoServiceStep.size();
+void GetExpectedMetadataFrames(const uint32_t max_frame_length,
+                               std::vector<Http2Frame>& expected_frames,
+                               const std::vector<uint8_t>& encoded_data,
+                               bool end_stream) {
+  uint32_t left_over = encoded_data.size();
   uint32_t current = 0;
 
   if (left_over > 0) {
@@ -529,13 +543,12 @@ void GetExpectedInitialMetadataFrames(
     left_over -= frame_length;
     bool end_headers = (left_over == 0);
 
-    expected_frames.emplace_back(
-        Http2HeaderFrame{/*stream_id=*/1, end_headers,
-                         /*end_stream=*/false,
-                         /*payload=*/
-                         SliceBuffer(Slice::FromCopiedString(std::string(
-                             kPathDemoServiceStep.begin(),
-                             kPathDemoServiceStep.begin() + frame_length)))});
+    expected_frames.emplace_back(Http2HeaderFrame{
+        /*stream_id=*/1, end_headers,
+        /*end_stream=*/end_stream,
+        /*payload=*/
+        SliceBuffer(Slice::FromCopiedString(std::string(
+            encoded_data.begin(), encoded_data.begin() + frame_length)))});
     current += frame_length;
   }
 
@@ -546,9 +559,9 @@ void GetExpectedInitialMetadataFrames(
     expected_frames.emplace_back(Http2ContinuationFrame{
         /*stream_id=*/1, end_headers,
         /*payload=*/
-        SliceBuffer(Slice::FromCopiedString(std::string(
-            kPathDemoServiceStep.begin() + current,
-            kPathDemoServiceStep.begin() + current + frame_length)))});
+        SliceBuffer(Slice::FromCopiedString(
+            std::string(encoded_data.begin() + current,
+                        encoded_data.begin() + current + frame_length)))});
     current += frame_length;
   }
 }
@@ -638,7 +651,8 @@ TEST(StreamDataQueueTest, ClientDequeueMetadataSingleFrameTest) {
           /*queue_size=*/10);
   EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
                                         TestClientInitialMetadata());
-  GetExpectedInitialMetadataFrames(max_frame_length, expected_frames);
+  GetExpectedMetadataFrames(max_frame_length, expected_frames,
+                            kPathDemoServiceStep, /*end_stream=*/false);
   DequeueAndCheckSuccess(stream_data_queue, std::move(expected_frames), encoder,
                          /*max_tokens=*/10, max_frame_length);
 }
@@ -655,7 +669,8 @@ TEST(StreamDataQueueTest, ClientDequeueFramesTest) {
   EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
                                         TestClientInitialMetadata());
 
-  GetExpectedInitialMetadataFrames(max_frame_length, expected_frames);
+  GetExpectedMetadataFrames(max_frame_length, expected_frames,
+                            kPathDemoServiceStep, /*end_stream=*/false);
   DequeueAndCheckSuccess(stream_data_queue, std::move(expected_frames), encoder,
                          /*max_tokens=*/10,
                          /*max_frame_length=*/max_frame_length);
@@ -688,6 +703,51 @@ TEST(StreamDataQueueTest, ClientDequeueFramesTest) {
                                 /*expected_frames_length=*/{5}, encoder,
                                 /*max_tokens=*/25,
                                 /*max_frame_length=*/15);
+}
+
+TEST(StreamDataQueueTest, ClientEnqueueDequeueFlowTest) {
+  HPackCompressor encoder;
+  const uint32_t max_frame_length = 17;
+  std::vector<Http2Frame> expected_initial_metadata_frames;
+  std::vector<int> expected_frames_length = {6};
+  std::vector<Http2Frame> expected_close_frames;
+  SliceBuffer expected_payload;
+  AppendGrpcHeaderToSliceBuffer(expected_payload, /*flags=*/0,
+                                /*payload_length=*/1);
+  expected_payload.Append(Slice::ZeroContentsWithLength(1));
+  expected_close_frames.emplace_back(
+      Http2DataFrame{/*stream_id=*/1,
+                     /*end_stream=*/false,
+                     /*payload=*/std::move(expected_payload)});
+  expected_close_frames.emplace_back(Http2DataFrame{/*stream_id=*/1,
+                                                    /*end_stream=*/true,
+                                                    /*payload=*/SliceBuffer()});
+  expected_close_frames.emplace_back(
+      Http2RstStreamFrame{/*stream_id=*/1, /*error_code=*/0});
+
+  RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> stream_data_queue =
+      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
+          /*is_client=*/true,
+          /*stream_id=*/1,
+          /*queue_size=*/10);
+  EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
+                                        TestClientInitialMetadata());
+  EnqueueMessageAndCheckSuccess(
+      stream_data_queue,
+      TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(1)), 0));
+  EnqueueHalfClosedAndCheckSuccess(stream_data_queue);
+  EnqueueResetStreamAndCheckSuccess(stream_data_queue);
+
+  // Dequeue Initial Metadata
+  GetExpectedMetadataFrames(max_frame_length, expected_initial_metadata_frames,
+                            kPathDemoServiceStep, /*end_stream=*/false);
+  DequeueAndCheckSuccess(stream_data_queue,
+                         std::move(expected_initial_metadata_frames), encoder,
+                         /*max_tokens=*/0, max_frame_length);
+
+  // Dequeue Message, Half Close and Reset Stream
+  DequeueAndCheckSuccess(stream_data_queue, std::move(expected_close_frames),
+                         encoder, /*max_tokens=*/6, max_frame_length);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -751,6 +811,51 @@ TEST(StreamDataQueueTest, ServerResetStreamTest) {
   EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
                                         TestServerInitialMetadata());
   EnqueueResetStreamAndCheckSuccess(stream_data_queue);
+}
+
+TEST(StreamDataQueueTest, ServerEnqueueDequeueFlowTest) {
+  HPackCompressor encoder;
+  const uint32_t max_frame_length = 17;
+  std::vector<Http2Frame> expected_initial_metadata_frames;
+  std::vector<int> expected_frames_length = {6};
+  std::vector<Http2Frame> expected_close_frames;
+  SliceBuffer expected_payload;
+  AppendGrpcHeaderToSliceBuffer(expected_payload, /*flags=*/0,
+                                /*payload_length=*/1);
+  expected_payload.Append(Slice::ZeroContentsWithLength(1));
+  expected_close_frames.emplace_back(
+      Http2DataFrame{/*stream_id=*/1,
+                     /*end_stream=*/false,
+                     /*payload=*/std::move(expected_payload)});
+  GetExpectedMetadataFrames(max_frame_length, expected_close_frames,
+                            kPathDemoServiceStep3, /*end_stream=*/true);
+  expected_close_frames.emplace_back(
+      Http2RstStreamFrame{/*stream_id=*/1, /*error_code=*/0});
+
+  RefCountedPtr<StreamDataQueue<ServerMetadataHandle>> stream_data_queue =
+      MakeRefCounted<StreamDataQueue<ServerMetadataHandle>>(
+          /*is_client=*/false,
+          /*stream_id=*/1,
+          /*queue_size=*/10);
+  EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
+                                        TestServerInitialMetadata());
+  EnqueueMessageAndCheckSuccess(
+      stream_data_queue,
+      TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(1)), 0));
+  EnqueueTrailingMetadataAndCheckSuccess(stream_data_queue,
+                                         TestServerTrailingMetadata());
+  EnqueueResetStreamAndCheckSuccess(stream_data_queue);
+
+  // Dequeue Initial Metadata
+  GetExpectedMetadataFrames(max_frame_length, expected_initial_metadata_frames,
+                            kPathDemoServiceStep2, /*end_stream=*/false);
+  DequeueAndCheckSuccess(stream_data_queue,
+                         std::move(expected_initial_metadata_frames), encoder,
+                         /*max_tokens=*/0, max_frame_length);
+
+  // Dequeue Message, Trailing Metadata and Reset Stream
+  DequeueAndCheckSuccess(stream_data_queue, std::move(expected_close_frames),
+                         encoder, /*max_tokens=*/6, max_frame_length);
 }
 
 }  // namespace testing
