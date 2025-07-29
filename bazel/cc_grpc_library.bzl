@@ -73,6 +73,12 @@ def cc_grpc_library(
     extra_deps = []
     proto_targets = []
 
+    if name == "reflection_proto":
+        extra_deps += [
+            "//third_party/protobuf",
+            "//third_party/protobuf/io",
+        ]
+
     if not grpc_only:
         proto_target = name + "_only"
         cc_proto_target = name if proto_only else name + "_cc_proto"
