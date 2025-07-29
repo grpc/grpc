@@ -82,30 +82,8 @@ namespace grpc {
 namespace testing {
 namespace {
 
-using ::envoy::config::rbac::v3::Policy;
-using ::envoy::config::rbac::v3::RBAC_Action_ALLOW;
-using ::envoy::config::rbac::v3::RBAC_Action_DENY;
-using ::envoy::config::rbac::v3::RBAC_Action_LOG;
-using ::envoy::config::rbac::v3::
-    RBAC_AuditLoggingOptions_AuditCondition_ON_ALLOW;
-using ::envoy::config::rbac::v3::
-    RBAC_AuditLoggingOptions_AuditCondition_ON_DENY;
-using ::envoy::config::rbac::v3::
-    RBAC_AuditLoggingOptions_AuditCondition_ON_DENY_AND_ALLOW;
-using ::envoy::extensions::filters::http::rbac::v3::RBAC;
-using ::envoy::extensions::filters::http::rbac::v3::RBACPerRoute;
-using ::envoy::extensions::transport_sockets::tls::v3::DownstreamTlsContext;
 using ::envoy::extensions::transport_sockets::tls::v3::UpstreamTlsContext;
 using ::envoy::type::matcher::v3::StringMatcher;
-using ::xds::type::v3::TypedStruct;
-
-using ::grpc::experimental::ExternalCertificateVerifier;
-using ::grpc::experimental::IdentityKeyCertPair;
-using ::grpc::experimental::RegisterAuditLoggerFactory;
-using ::grpc::experimental::StaticDataCertificateProvider;
-using ::grpc_core::experimental::AuditLoggerRegistry;
-using ::grpc_core::testing::ScopedExperimentalEnvVar;
-using ::grpc_core::testing::TestAuditLoggerFactory;
 
 constexpr char kClientKeyPath[] =
     "test/core/tsi/test_creds/spiffe_end2end/client.key";
