@@ -14,7 +14,7 @@
 
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64/Dockerfile.inja`!!!
 
-FROM dockcross/manylinux2014-aarch64
+FROM quay.io/pypa/manylinux2014_aarch64:2025.07.14-1
 
 # TODO: simplify the list of third_party modules list
 # NOTE: git>=2.46 allows leading paths like third_party/* to include all subdirectories
@@ -53,7 +53,6 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
     && cd ../.. \
     && rm -rf ccache-4.11.3 ccache.tar.gz
 
-
 #===================================
 # Install Python build requirements
 RUN /opt/python/cp39-cp39/bin/pip install --upgrade 'cython==3.1.1' && \
@@ -64,5 +63,4 @@ RUN /opt/python/cp39-cp39/bin/pip install --upgrade 'cython==3.1.1' && \
 
 
 # manylinux_2_17 is the preferred alias of manylinux2014
-# ENV AUDITWHEEL_ARCH aarch64
 ENV AUDITWHEEL_PLAT manylinux_2_17_$AUDITWHEEL_ARCH
