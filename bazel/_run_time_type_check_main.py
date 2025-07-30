@@ -19,11 +19,7 @@ import sys
 import os
 import pkgutil
 
-from typeguard import install_import_hook, config, CollectionCheckStrategy
-
-# Configure typeguard to be more lenient
-# This config makes str behave like iterable
-config.collection_check_strategy = CollectionCheckStrategy.FIRST_ITEM
+from typeguard import install_import_hook
 
 # Fix the type hierarchy issue for HandlerCallDetails
 import grpc
