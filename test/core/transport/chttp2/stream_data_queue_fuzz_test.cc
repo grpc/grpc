@@ -27,6 +27,7 @@ namespace grpc_core {
 
 using http2::SimpleQueue;
 using http2::StreamDataQueue;
+using http2::ValueOrHttp2Status;
 using ::testing::MockFunction;
 using ::testing::StrictMock;
 
@@ -145,19 +146,17 @@ class StreamDataQueueFuzzTest : public YodelTest {
   Party* GetParty2() { return party2_.get(); }
 
   void InitParty() {
-    auto general_party_arena = SimpleArenaAllocator(0)->MakeArena();
-    general_party_arena
-        ->SetContext<grpc_event_engine::experimental::EventEngine>(
-            event_engine().get());
-    party_ = Party::Make(std::move(general_party_arena));
+    auto party_arena = SimpleArenaAllocator(0)->MakeArena();
+    party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine().get());
+    party_ = Party::Make(std::move(party_arena));
   }
 
   void InitParty2() {
-    auto general_party_arena = SimpleArenaAllocator(0)->MakeArena();
-    general_party_arena
-        ->SetContext<grpc_event_engine::experimental::EventEngine>(
-            event_engine().get());
-    party2_ = Party::Make(std::move(general_party_arena));
+    auto party_arena = SimpleArenaAllocator(0)->MakeArena();
+    party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine().get());
+    party2_ = Party::Make(std::move(party_arena));
   }
 
   HPackCompressor& GetEncoder() { return encoder_; }
@@ -220,14 +219,16 @@ class StreamDataQueueFuzzTest : public YodelTest {
     }
     ClientMetadataHandle GetMetadata() {
       DCHECK(header_assembler_.IsReady());
-      auto status_or_metadata = header_assembler_.ReadMetadata(
-          parser_, /*is_initial_metadata=*/true, /*is_client=*/true);
+      ValueOrHttp2Status<ClientMetadataHandle> status_or_metadata =
+          header_assembler_.ReadMetadata(parser_, /*is_initial_metadata=*/true,
+                                         /*is_client=*/true);
       EXPECT_TRUE(status_or_metadata.IsOk());
       return TakeValue(std::move(status_or_metadata));
     }
     void GetMessages(std::vector<MessageHandle>& messages) {
       while (true) {
-        auto message = message_assembler_.ExtractMessage();
+        ValueOrHttp2Status<MessageHandle> message =
+            message_assembler_.ExtractMessage();
         if (message.IsOk() && message.value() != nullptr) {
           messages.push_back(TakeValue(std::move(message)));
         } else {

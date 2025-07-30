@@ -195,7 +195,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     DCHECK(!is_initial_metadata_queued_);
     DCHECK(!is_trailing_metadata_or_half_close_queued_);
     DCHECK(metadata != nullptr);
-    DCHECK(!is_end_stream_);
+    DCHECK(!is_reset_stream_queued_);
 
     is_initial_metadata_queued_ = true;
     return [self = this->Ref(),
@@ -216,10 +216,10 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
 
   // Enqueue Trailing Metadata.
   // 1. MUST be called at most once.
-  // 2. No other enqueue functions can be called after this.
+  // 2. MUST be called only for a server.
   auto EnqueueTrailingMetadata(MetadataHandle metadata) {
     DCHECK(metadata != nullptr);
-    DCHECK(!is_end_stream_);
+    DCHECK(!is_reset_stream_queued_);
     DCHECK(!is_client_);
     DCHECK(!is_trailing_metadata_or_half_close_queued_);
 
@@ -247,7 +247,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   auto EnqueueMessage(MessageHandle message) {
     DCHECK(is_initial_metadata_queued_);
     DCHECK(message != nullptr);
-    DCHECK(!is_end_stream_);
+    DCHECK(!is_reset_stream_queued_);
     DCHECK_LE(message->payload()->Length(),
               std::numeric_limits<uint32_t>::max() - kGrpcHeaderSizeInBytes);
     DCHECK(!is_trailing_metadata_or_half_close_queued_);
@@ -269,10 +269,13 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     };
   }
 
+  // Enqueue Half Closed.
+  // 1. MUST be called at most once.
+  // 2. MUST be called only for a client.
   auto EnqueueHalfClosed() {
     DCHECK(is_initial_metadata_queued_);
     DCHECK(is_client_);
-    DCHECK(!is_end_stream_);
+    DCHECK(!is_reset_stream_queued_);
     DCHECK(!is_trailing_metadata_or_half_close_queued_);
 
     is_trailing_metadata_or_half_close_queued_ = true;
@@ -293,9 +296,9 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
 
   auto EnqueueResetStream(uint32_t error_code) {
     DCHECK(is_initial_metadata_queued_);
-    DCHECK(!is_end_stream_);
+    DCHECK(!is_reset_stream_queued_);
 
-    is_end_stream_ = true;
+    is_reset_stream_queued_ = true;
     return [self = this->Ref(),
             entry = QueueEntry{
                 ResetStream{error_code}}]() mutable -> Poll<absl::Status> {
@@ -322,14 +325,17 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     bool is_writable;
   };
 
+  // TODO(akshitpatel) : [PH2][P4] : Measure the performance of this function
+  // and optimize it if needed.
+
   // This function is deliberately a synchronous call. The caller of this
-  // function (most likely flow control) should not be blocked till we have
-  // enough data to return. The goal here is to return as much data as
-  // possible in one go with max_tokens as the upper limit.
-  // General idea:
-  // Out goal here is to push as much data as possible with max_tokens as the
-  // upper limit. Though we will not prefer sending incomplete messages. We
-  // handle the scenario of incomplete messages in the following way:
+  // function should not be blocked till we have enough data to return. This is
+  // because the caller needs to dequeue frames from multiple streams in a
+  // single cycle. The goal here is to return as much data as possible in one go
+  // with max_tokens as the upper limit. General idea: Out goal here is to push
+  // as much data as possible with max_tokens as the upper limit. Though we will
+  // not prefer sending incomplete messages. We handle the scenario of
+  // incomplete messages in the following way:
   // 1. If we have sent x full messages and available flow control tokens cannot
   //    accommodate x+1 message, we will not dequeue the x+1st message and
   //    create frames for x messages.
@@ -344,15 +350,19 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     GRPC_STREAM_DATA_QUEUE_DEBUG << "Dequeueing frames for stream "
                                  << stream_id_
                                  << " Max fc tokens: " << max_fc_tokens
-                                 << " Max frame length: " << max_frame_length;
+                                 << " Max frame length: " << max_frame_length
+                                 << " Message disassembler buffered length: "
+                                 << message_disassembler_.GetBufferedLength();
+
     HandleDequeue handle_dequeue(max_fc_tokens, max_frame_length, encoder,
                                  *this);
     while (message_disassembler_.GetBufferedLength() <= max_fc_tokens) {
       const uint32_t tokens_to_dequeue =
           max_fc_tokens - message_disassembler_.GetBufferedLength();
-      auto queue_entry = queue_.Dequeue(
-          tokens_to_dequeue, (message_disassembler_.GetBufferedLength() == 0 &&
-                              tokens_to_dequeue > 0));
+      std::optional<QueueEntry> queue_entry =
+          queue_.Dequeue(tokens_to_dequeue, /*allow_oversized_dequeue*/ (
+                             message_disassembler_.GetBufferedLength() == 0 &&
+                             tokens_to_dequeue > 0));
       if (!queue_entry.has_value()) {
         // Nothing more to dequeue right now.
         GRPC_STREAM_DATA_QUEUE_DEBUG << "No more data to dequeue";
@@ -471,6 +481,9 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
             queue_.stream_id_,
             std::min(fc_tokens_available_, max_frame_length_));
         fc_tokens_available_ -= frame.payload.Length();
+        GRPC_STREAM_DATA_QUEUE_DEBUG
+            << "Appending message frame with length " << frame.payload.Length()
+            << "Available tokens: " << fc_tokens_available_;
         frames_.emplace_back(std::move(frame));
       }
     }
@@ -499,7 +512,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // Accessed only during enqueue.
   bool is_initial_metadata_queued_ = false;
   bool is_trailing_metadata_or_half_close_queued_ = false;
-  bool is_end_stream_ = false;
+  bool is_reset_stream_queued_ = false;
 
   // Access both during enqueue and dequeue.
   Mutex mu_;

@@ -22,6 +22,7 @@
 #include "gtest/gtest.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/sleep.h"
+#include "test/core/transport/chttp2/http2_common_test_inputs.h"
 #include "test/core/transport/util/transport_test.h"
 
 namespace grpc_core {
@@ -401,6 +402,11 @@ TEST_F(SimpleQueueTest, BigMessageEnqueueDequeueTest) {
 // Stream Data Queue Tests
 
 namespace {
+
+using grpc_core::http2::testing::kPathDemoServiceStep;
+using grpc_core::http2::testing::kPathDemoServiceStep2;
+using grpc_core::http2::testing::kPathDemoServiceStep3;
+
 // Helper functions to create test data.
 ClientMetadataHandle TestClientInitialMetadata() {
   auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
@@ -423,24 +429,6 @@ ServerMetadataHandle TestServerTrailingMetadata() {
 MessageHandle TestMessage(SliceBuffer payload, const uint32_t flags) {
   return Arena::MakePooled<Message>(std::move(payload), flags);
 }
-
-// Encoded string of header ":path: /demo.Service/Step".
-const std::vector<uint8_t> kPathDemoServiceStep = {
-    0x40, 0x05, 0x3a, 0x70, 0x61, 0x74, 0x68, 0x12, 0x2f,
-    0x64, 0x65, 0x6d, 0x6f, 0x2e, 0x53, 0x65, 0x72, 0x76,
-    0x69, 0x63, 0x65, 0x2f, 0x53, 0x74, 0x65, 0x70};
-
-// Encoded string of header ":path: /demo.Service/Step2".
-const std::vector<uint8_t> kPathDemoServiceStep2 = {
-    0x40, 0x05, 0x3a, 0x70, 0x61, 0x74, 0x68, 0x13, 0x2f,
-    0x64, 0x65, 0x6d, 0x6f, 0x2e, 0x53, 0x65, 0x72, 0x76,
-    0x69, 0x63, 0x65, 0x2f, 0x53, 0x74, 0x65, 0x70, 0x32};
-
-// Encoded string of header ":path: /demo.Service/Step3".
-const std::vector<uint8_t> kPathDemoServiceStep3 = {
-    0x40, 0x05, 0x3a, 0x70, 0x61, 0x74, 0x68, 0x13, 0x2f,
-    0x64, 0x65, 0x6d, 0x6f, 0x2e, 0x53, 0x65, 0x72, 0x76,
-    0x69, 0x63, 0x65, 0x2f, 0x53, 0x74, 0x65, 0x70, 0x33};
 
 template <typename MetadataHandle>
 void EnqueueInitialMetadataAndCheckSuccess(
@@ -506,7 +494,8 @@ void DequeueAndCheckSuccess(
     RefCountedPtr<StreamDataQueue<MetadataHandle>> queue,
     std::vector<Http2Frame> expected_frames, HPackCompressor& encoder,
     const uint32_t max_tokens = 10, const uint32_t max_frame_length = 10) {
-  auto frames = queue->DequeueFrames(max_tokens, max_frame_length, encoder);
+  absl::StatusOr<typename StreamDataQueue<MetadataHandle>::DequeueResult>
+      frames = queue->DequeueFrames(max_tokens, max_frame_length, encoder);
   EXPECT_TRUE(frames.ok());
   EXPECT_EQ(frames.value().frames.size(), expected_frames.size());
 
@@ -521,7 +510,8 @@ void DequeueMessageAndCheckSuccess(
     RefCountedPtr<StreamDataQueue<MetadataHandle>> queue,
     std::vector<int> expected_frames_length, HPackCompressor& encoder,
     const uint32_t max_tokens = 10, const uint32_t max_frame_length = 10) {
-  auto frames = queue->DequeueFrames(max_tokens, max_frame_length, encoder);
+  absl::StatusOr<typename StreamDataQueue<MetadataHandle>::DequeueResult>
+      frames = queue->DequeueFrames(max_tokens, max_frame_length, encoder);
   EXPECT_TRUE(frames.ok());
   EXPECT_EQ(frames.value().frames.size(), expected_frames_length.size());
   auto& frames_vector = frames.value().frames;
@@ -707,7 +697,7 @@ TEST(StreamDataQueueTest, ClientDequeueFramesTest) {
 
 TEST(StreamDataQueueTest, ClientEnqueueDequeueFlowTest) {
   HPackCompressor encoder;
-  const uint32_t max_frame_length = 17;
+  const uint32_t max_frame_length = 8;
   std::vector<Http2Frame> expected_initial_metadata_frames;
   std::vector<int> expected_frames_length = {6};
   std::vector<Http2Frame> expected_close_frames;
@@ -814,7 +804,7 @@ TEST(StreamDataQueueTest, ServerResetStreamTest) {
 
 TEST(StreamDataQueueTest, ServerEnqueueDequeueFlowTest) {
   HPackCompressor encoder;
-  const uint32_t max_frame_length = 17;
+  const uint32_t max_frame_length = 50;
   std::vector<Http2Frame> expected_initial_metadata_frames;
   std::vector<int> expected_frames_length = {6};
   std::vector<Http2Frame> expected_close_frames;

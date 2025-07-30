@@ -18639,6 +18639,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/stream_data_queue.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/transport/chttp2/http2_common_test_inputs.h
   - test/core/transport/util/transport_test.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
