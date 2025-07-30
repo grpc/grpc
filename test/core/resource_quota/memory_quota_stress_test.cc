@@ -44,7 +44,8 @@ class StressTest {
   // Create a stress test with some size.
   StressTest(size_t num_quotas, size_t num_allocators) {
     for (size_t i = 0; i < num_quotas; ++i) {
-      quotas_.emplace_back(absl::StrCat("quota[", i, "]"));
+      quotas_.emplace_back(MakeRefCounted<channelz::ResourceQuotaNode>(
+          absl::StrCat("quota[", i, "]")));
     }
     std::random_device g;
     std::uniform_int_distribution<size_t> dist(0, num_quotas - 1);

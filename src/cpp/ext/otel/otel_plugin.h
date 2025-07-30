@@ -356,6 +356,12 @@ class OpenTelemetryPluginImpl
   };
 
   struct ClientMetrics {
+    struct Call {
+      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>> retries;
+      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>
+          transparent_retries;
+      std::unique_ptr<opentelemetry::metrics::Histogram<double>> retry_delay;
+    } call;
     struct Attempt {
       std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>> started;
       std::unique_ptr<opentelemetry::metrics::Histogram<double>> duration;

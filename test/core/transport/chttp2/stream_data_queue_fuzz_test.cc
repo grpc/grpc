@@ -43,18 +43,10 @@ class SimpleQueueFuzzTest : public YodelTest {
     party_ = Party::Make(std::move(party_arena));
   }
 
-  Party* GetParty2() { return party2_.get(); }
-
-  void InitParty2() {
-    auto party_arena = SimpleArenaAllocator(0)->MakeArena();
-    party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
-        event_engine().get());
-    party2_ = Party::Make(std::move(party_arena));
-  }
-
   auto EnqueueAndCheckSuccess(SimpleQueue<int>& queue, int data, int tokens) {
-    return Map(queue.Enqueue(data, tokens),
-               [](auto result) { EXPECT_EQ(result, absl::OkStatus()); });
+    return Map([&queue, data,
+                tokens]() mutable { return queue.Enqueue(data, tokens); },
+               [](auto result) { EXPECT_EQ(result.status, absl::OkStatus()); });
   }
 
   bool DequeueAndCheck(SimpleQueue<int>& queue, int data,
@@ -72,17 +64,10 @@ class SimpleQueueFuzzTest : public YodelTest {
 
  private:
   void InitCoreConfiguration() override {}
-  void InitTest() override {
-    InitParty();
-    InitParty2();
-  }
-  void Shutdown() override {
-    party_.reset();
-    party2_.reset();
-  }
+  void InitTest() override { InitParty(); }
+  void Shutdown() override { party_.reset(); }
 
   RefCountedPtr<Party> party_;
-  RefCountedPtr<Party> party2_;
 };
 
 YODEL_TEST(SimpleQueueFuzzTest, NoOp) {}
@@ -93,8 +78,6 @@ YODEL_TEST(SimpleQueueFuzzTest, EnqueueAndDequeueMultiPartyTest) {
   // 1. All enqueues and dequeues are successful.
   // 2. The dequeue data is the same as the enqueue data.
   SimpleQueue<int> queue(/*max_tokens=*/100);
-  auto* party = GetParty();
-  auto* party2 = GetParty2();
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   StrictMock<MockFunction<void(absl::Status)>> on_dequeue_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
@@ -104,7 +87,7 @@ YODEL_TEST(SimpleQueueFuzzTest, EnqueueAndDequeueMultiPartyTest) {
   int current_enqueue_count = 0;
   int current_dequeue_count = 0;
 
-  party->Spawn(
+  GetParty()->Spawn(
       "EnqueueTest",
       Loop([this, &queue, &on_done, &current_enqueue_count]() mutable {
         return If(
@@ -123,30 +106,30 @@ YODEL_TEST(SimpleQueueFuzzTest, EnqueueAndDequeueMultiPartyTest) {
       }),
       [](auto) { LOG(INFO) << "Reached end of EnqueueTest"; });
 
-  party2->Spawn("DequeueTest",
-                Loop([&on_dequeue_done, this, &queue, &current_dequeue_count] {
-                  return If(
-                      DequeueAndCheck(queue, /*data=*/current_dequeue_count,
-                                      /*allow_oversized_dequeue=*/false,
-                                      /*allowed_dequeue_tokens=*/10),
-                      [&current_dequeue_count, &on_dequeue_done,
-                       &queue]() -> LoopCtl<absl::Status> {
-                        if (++current_dequeue_count == dequeue_count) {
-                          on_dequeue_done.Call(absl::OkStatus());
-                          EXPECT_TRUE(queue.TestOnlyIsEmpty());
-                          return absl::OkStatus();
-                        } else {
-                          return Continue();
-                        }
-                      },
-                      [] {
-                        return Map(Sleep(Duration::Seconds(1)),
-                                   [](auto) -> LoopCtl<absl::Status> {
-                                     return Continue();
-                                   });
-                      });
-                }),
-                [](auto) { LOG(INFO) << "Reached end of DequeueTest"; });
+  GetParty()->Spawn(
+      "DequeueTest",
+      Loop([&on_dequeue_done, this, &queue, &current_dequeue_count] {
+        return If(
+            DequeueAndCheck(queue, /*data=*/current_dequeue_count,
+                            /*allow_oversized_dequeue=*/false,
+                            /*allowed_dequeue_tokens=*/10),
+            [&current_dequeue_count, &on_dequeue_done,
+             &queue]() -> LoopCtl<absl::Status> {
+              if (++current_dequeue_count == dequeue_count) {
+                on_dequeue_done.Call(absl::OkStatus());
+                EXPECT_TRUE(queue.TestOnlyIsEmpty());
+                return absl::OkStatus();
+              } else {
+                return Continue();
+              }
+            },
+            [] {
+              return Map(
+                  Sleep(Duration::Seconds(1)),
+                  [](auto) -> LoopCtl<absl::Status> { return Continue(); });
+            });
+      }),
+      [](auto) { LOG(INFO) << "Reached end of DequeueTest"; });
 
   WaitForAllPendingWork();
   event_engine()->TickUntilIdle();
