@@ -36,14 +36,10 @@ static const upb_MiniTableField envoy_config_core_v3_HealthStatusSet__fields[1] 
 const upb_MiniTable envoy__config__core__v3__HealthStatusSet_msg_init = {
   NULL,
   &envoy_config_core_v3_HealthStatusSet__fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.HealthStatusSet",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_ppv4_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__config__core__v3__HealthStatusSet_msg_init_ptr = &envoy__config__core__v3__HealthStatusSet_msg_init;
@@ -102,44 +98,10 @@ static const upb_MiniTableField envoy_config_core_v3_HealthCheck__fields[25] = {
 const upb_MiniTable envoy__config__core__v3__HealthCheck_msg_init = {
   &envoy_config_core_v3_HealthCheck__submsgs[0],
   &envoy_config_core_v3_HealthCheck__fields[0],
-  UPB_SIZE(104, 184), 25, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(248), 0,
+  UPB_SIZE(104, 184), 25, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.HealthCheck",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x00b0001008070042, &upb_pom_1bt_max128b},
-    {0x00b000100908004a, &upb_pom_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x00b000100b09005a, &upb_pom_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x00b000100d0b006a, &upb_pom_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001800003f00018a, &upb_pss_2bt},
-    {0x000c00003f000190, &upb_psv4_2bt},
-    {0x000a00003f000198, &upb_psb1_2bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x00a800003f1401ca, &upb_prm_2bt_maxmaxb},
-    {0x000b00003f0001d0, &upb_psb1_2bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__config__core__v3__HealthCheck_msg_init_ptr = &envoy__config__core__v3__HealthCheck_msg_init;
@@ -151,16 +113,10 @@ static const upb_MiniTableField envoy_config_core_v3_HealthCheck_Payload__fields
 const upb_MiniTable envoy__config__core__v3__HealthCheck__Payload_msg_init = {
   NULL,
   &envoy_config_core_v3_HealthCheck_Payload__fields[0],
-  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.HealthCheck.Payload",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000080100000a, &upb_pos_1bt},
-    {0x0010000802000012, &upb_pob_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__config__core__v3__HealthCheck__Payload_msg_init_ptr = &envoy__config__core__v3__HealthCheck__Payload_msg_init;
@@ -192,28 +148,10 @@ static const upb_MiniTableField envoy_config_core_v3_HealthCheck_HttpHealthCheck
 const upb_MiniTable envoy__config__core__v3__HealthCheck__HttpHealthCheck_msg_init = {
   &envoy_config_core_v3_HealthCheck_HttpHealthCheck__submsgs[0],
   &envoy_config_core_v3_HealthCheck_HttpHealthCheck__fields[0],
-  UPB_SIZE(72, 120), 12, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(120), 0,
+  UPB_SIZE(72, 120), 12, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.HealthCheck.HttpHealthCheck",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001800003f00000a, &upb_pss_1bt},
-    {0x002800003f000012, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x004000003f010022, &upb_prm_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x004800003f020032, &upb_prm_1bt_maxmaxb},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x005000003f000042, &upb_prs_1bt},
-    {0x005800003f03004a, &upb_prm_1bt_maxmaxb},
-    {0x000c00003f000050, &upb_psv4_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x006800003f050062, &upb_prm_1bt_maxmaxb},
-    {0x001000003f000068, &upb_psv4_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__config__core__v3__HealthCheck__HttpHealthCheck_msg_init_ptr = &envoy__config__core__v3__HealthCheck__HttpHealthCheck_msg_init;
@@ -232,16 +170,10 @@ static const upb_MiniTableField envoy_config_core_v3_HealthCheck_TcpHealthCheck_
 const upb_MiniTable envoy__config__core__v3__HealthCheck__TcpHealthCheck_msg_init = {
   &envoy_config_core_v3_HealthCheck_TcpHealthCheck__submsgs[0],
   &envoy_config_core_v3_HealthCheck_TcpHealthCheck__fields[0],
-  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 40), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.HealthCheck.TcpHealthCheck",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001800003f010012, &upb_prm_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__config__core__v3__HealthCheck__TcpHealthCheck_msg_init_ptr = &envoy__config__core__v3__HealthCheck__TcpHealthCheck_msg_init;
@@ -252,14 +184,10 @@ static const upb_MiniTableField envoy_config_core_v3_HealthCheck_RedisHealthChec
 const upb_MiniTable envoy__config__core__v3__HealthCheck__RedisHealthCheck_msg_init = {
   NULL,
   &envoy_config_core_v3_HealthCheck_RedisHealthCheck__fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.HealthCheck.RedisHealthCheck",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__config__core__v3__HealthCheck__RedisHealthCheck_msg_init_ptr = &envoy__config__core__v3__HealthCheck__RedisHealthCheck_msg_init;
@@ -276,16 +204,10 @@ static const upb_MiniTableField envoy_config_core_v3_HealthCheck_GrpcHealthCheck
 const upb_MiniTable envoy__config__core__v3__HealthCheck__GrpcHealthCheck_msg_init = {
   &envoy_config_core_v3_HealthCheck_GrpcHealthCheck__submsgs[0],
   &envoy_config_core_v3_HealthCheck_GrpcHealthCheck__fields[0],
-  UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(32, 48), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.HealthCheck.GrpcHealthCheck",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_pss_1bt},
-    {0x001800003f000012, &upb_pss_1bt},
-    {0x002800003f00001a, &upb_prm_1bt_maxmaxb},
-  })
 };
 
 const upb_MiniTable* envoy__config__core__v3__HealthCheck__GrpcHealthCheck_msg_init_ptr = &envoy__config__core__v3__HealthCheck__GrpcHealthCheck_msg_init;
@@ -301,16 +223,10 @@ static const upb_MiniTableField envoy_config_core_v3_HealthCheck_CustomHealthChe
 const upb_MiniTable envoy__config__core__v3__HealthCheck__CustomHealthCheck_msg_init = {
   &envoy_config_core_v3_HealthCheck_CustomHealthCheck__submsgs[0],
   &envoy_config_core_v3_HealthCheck_CustomHealthCheck__fields[0],
-  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.HealthCheck.CustomHealthCheck",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002000080300001a, &upb_pom_1bt_maxmaxb},
-  })
 };
 
 const upb_MiniTable* envoy__config__core__v3__HealthCheck__CustomHealthCheck_msg_init_ptr = &envoy__config__core__v3__HealthCheck__CustomHealthCheck_msg_init;
@@ -321,14 +237,10 @@ static const upb_MiniTableField envoy_config_core_v3_HealthCheck_TlsOptions__fie
 const upb_MiniTable envoy__config__core__v3__HealthCheck__TlsOptions_msg_init = {
   NULL,
   &envoy_config_core_v3_HealthCheck_TlsOptions__fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.core.v3.HealthCheck.TlsOptions",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_prs_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__config__core__v3__HealthCheck__TlsOptions_msg_init_ptr = &envoy__config__core__v3__HealthCheck__TlsOptions_msg_init;
