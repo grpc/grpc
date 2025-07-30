@@ -15,7 +15,6 @@
 // limitations under the License.
 //
 //
-#include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -55,16 +54,17 @@ namespace grpc {
 namespace testing {
 namespace {
 
-const char* kRootPath = "test/core/tsi/test_creds/crl_data/ca.pem";
-const char* kRevokedKeyPath = "test/core/tsi/test_creds/crl_data/revoked.key";
-const char* kRevokedCertPath = "test/core/tsi/test_creds/crl_data/revoked.pem";
-const char* kValidKeyPath = "test/core/tsi/test_creds/crl_data/valid.key";
-const char* kValidCertPath = "test/core/tsi/test_creds/crl_data/valid.pem";
-const char* kRootCrlPath = "test/core/tsi/test_creds/crl_data/crls/current.crl";
-const char* kCrlDirectoryPath =
-    "test/core/tsi/test_creds/crl_data/crl_provider_test_dir/";
-constexpr char kMessage[] = "Hello";
+const absl::string_view kRootPath = "test/core/tsi/test_creds/crl_data/ca.pem";
+const absl::string_view kRevokedKeyPath =
+    "test/core/tsi/test_creds/crl_data/revoked.key";
+const absl::string_view kRevokedCertPath =
+    "test/core/tsi/test_creds/crl_data/revoked.pem";
+const absl::string_view kValidKeyPath =
+    "test/core/tsi/test_creds/crl_data/valid.key";
+const absl::string_view kValidCertPath =
+    "test/core/tsi/test_creds/crl_data/valid.pem";
 
+constexpr char kMessage[] = "Hello";
 constexpr absl::string_view kCaPemPath =
     "test/core/tsi/test_creds/spiffe_end2end/ca.pem";
 constexpr absl::string_view kClientKeyPath =
@@ -92,8 +92,7 @@ class SpiffeBundleMapTest : public ::testing::Test {
     auto certificate_provider =
         std::make_shared<experimental::FileWatcherCertificateProvider>(
             std::string(key_path), std::string(cert_path),
-            std::string(root_path), std::string(spiffe_bundle_map_path),
-            10000000000);
+            std::string(root_path), std::string(spiffe_bundle_map_path), 1);
     grpc::experimental::TlsServerCredentialsOptions options(
         certificate_provider);
     options.watch_root_certs();
@@ -143,21 +142,18 @@ void DoRpc(const std::string& server_addr,
   grpc::testing::EchoResponse response;
   request.set_message(kMessage);
   ClientContext context;
-  context.set_deadline(grpc_timeout_seconds_to_deadline(/*time_s=*/150000));
+  context.set_deadline(grpc_timeout_seconds_to_deadline(/*time_s=*/15));
   grpc::Status result = stub->Echo(&context, request, &response);
   if (expect_success) {
-    EXPECT_TRUE(result.ok());
-    if (!result.ok()) {
-      LOG(ERROR) << result.error_message().c_str() << ", "
-                 << result.error_details().c_str();
-    }
+    EXPECT_TRUE(result.ok()) << result.error_message().c_str() << ", "
+                             << result.error_details().c_str();
     EXPECT_EQ(response.message(), kMessage);
   } else {
     EXPECT_FALSE(result.ok());
   }
 }
 
-TEST_F(SpiffeBundleMapTest, TODOGood) {
+TEST_F(SpiffeBundleMapTest, ServerSideSpiffeTLS) {
   server_addr_ = absl::StrCat("localhost:",
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
@@ -187,7 +183,6 @@ TEST_F(SpiffeBundleMapTest, TODOGood) {
   options.set_root_cert_name("root");
   options.watch_identity_key_cert_pairs();
   options.set_identity_cert_name("identity");
-  std::string root_crl = grpc_core::testing::GetFileContents(kRootCrlPath);
 
   options.set_check_call_host(false);
   auto verifier = std::make_shared<experimental::NoOpCertificateVerifier>();
@@ -196,8 +191,146 @@ TEST_F(SpiffeBundleMapTest, TODOGood) {
   DoRpc(server_addr_, options, true);
 }
 
-// Spiffe chain
-// Failures
+TEST_F(SpiffeBundleMapTest, ClientSideSpiffeTLS) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() {
+    RunServer(&notification, kServerKeyPath, kServerCertPath, kCaPemPath, "");
+  });
+  notification.WaitForNotification();
+
+  auto certificate_provider =
+      std::make_shared<experimental::FileWatcherCertificateProvider>(
+          std::string(kClientKeyPath), std::string(kClientCertPath),
+          /*root_cert_path=*/"", std::string(kClientSpiffeBundleMapPath), 1);
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_certificate_provider(certificate_provider);
+  options.watch_root_certs();
+  options.set_root_cert_name("root");
+  options.watch_identity_key_cert_pairs();
+  options.set_identity_cert_name("identity");
+
+  options.set_check_call_host(false);
+  auto verifier = std::make_shared<experimental::NoOpCertificateVerifier>();
+  options.set_certificate_verifier(verifier);
+
+  DoRpc(server_addr_, options, true);
+}
+
+TEST_F(SpiffeBundleMapTest, SpiffeMTLS) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() {
+    RunServer(&notification, kServerKeyPath, kServerCertPath, "",
+              kServerSpiffeBundleMapPath);
+  });
+  notification.WaitForNotification();
+
+  auto certificate_provider =
+      std::make_shared<experimental::FileWatcherCertificateProvider>(
+          std::string(kClientKeyPath), std::string(kClientCertPath),
+          /*root_cert_path=*/"", std::string(kClientSpiffeBundleMapPath), 1);
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_certificate_provider(certificate_provider);
+  options.watch_root_certs();
+  options.set_root_cert_name("root");
+  options.watch_identity_key_cert_pairs();
+  options.set_identity_cert_name("identity");
+
+  options.set_check_call_host(false);
+  auto verifier = std::make_shared<experimental::NoOpCertificateVerifier>();
+  options.set_certificate_verifier(verifier);
+
+  DoRpc(server_addr_, options, true);
+}
+
+TEST_F(SpiffeBundleMapTest, SpiffeWithCertChain) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() {
+    RunServer(&notification, kServerChainKeyPath, kServerChainCertPath, "",
+              kServerSpiffeBundleMapPath);
+  });
+  notification.WaitForNotification();
+
+  auto certificate_provider =
+      std::make_shared<experimental::FileWatcherCertificateProvider>(
+          std::string(kClientKeyPath), std::string(kClientCertPath),
+          /*root_cert_path=*/"", std::string(kClientSpiffeBundleMapPath), 1);
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_certificate_provider(certificate_provider);
+  options.watch_root_certs();
+  options.set_root_cert_name("root");
+  options.watch_identity_key_cert_pairs();
+  options.set_identity_cert_name("identity");
+
+  options.set_check_call_host(false);
+  auto verifier = std::make_shared<experimental::NoOpCertificateVerifier>();
+  options.set_certificate_verifier(verifier);
+
+  DoRpc(server_addr_, options, true);
+}
+
+TEST_F(SpiffeBundleMapTest, ServerBadMap) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  // Use the client-side spiffe bundle map on the server side to force a failure
+  server_thread_ = new std::thread([&]() {
+    RunServer(&notification, kServerKeyPath, kServerCertPath, "",
+              kClientSpiffeBundleMapPath);
+  });
+  notification.WaitForNotification();
+
+  auto certificate_provider =
+      std::make_shared<experimental::FileWatcherCertificateProvider>(
+          std::string(kClientKeyPath), std::string(kClientCertPath),
+          /*root_cert_path=*/"", std::string(kClientSpiffeBundleMapPath), 1);
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_certificate_provider(certificate_provider);
+  options.watch_root_certs();
+  options.set_root_cert_name("root");
+  options.watch_identity_key_cert_pairs();
+  options.set_identity_cert_name("identity");
+
+  options.set_check_call_host(false);
+  auto verifier = std::make_shared<experimental::NoOpCertificateVerifier>();
+  options.set_certificate_verifier(verifier);
+
+  DoRpc(server_addr_, options, false);
+}
+
+TEST_F(SpiffeBundleMapTest, ClientBadMap) {
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() {
+    RunServer(&notification, kServerKeyPath, kServerCertPath, "",
+              kServerSpiffeBundleMapPath);
+  });
+  notification.WaitForNotification();
+
+  // Use the server-side spiffe bundle map on the client side to force a failure
+  auto certificate_provider =
+      std::make_shared<experimental::FileWatcherCertificateProvider>(
+          std::string(kClientKeyPath), std::string(kClientCertPath),
+          /*root_cert_path=*/"", std::string(kServerSpiffeBundleMapPath), 1);
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_certificate_provider(certificate_provider);
+  options.watch_root_certs();
+  options.set_root_cert_name("root");
+  options.watch_identity_key_cert_pairs();
+  options.set_identity_cert_name("identity");
+
+  options.set_check_call_host(false);
+  auto verifier = std::make_shared<experimental::NoOpCertificateVerifier>();
+  options.set_certificate_verifier(verifier);
+
+  DoRpc(server_addr_, options, false);
+}
 
 }  // namespace
 }  // namespace testing
