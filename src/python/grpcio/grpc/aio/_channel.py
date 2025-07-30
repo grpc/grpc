@@ -89,8 +89,8 @@ class _BaseMultiCallable:
     _loop: asyncio.AbstractEventLoop
     _channel: cygrpc.AioChannel
     _method: bytes
-    _request_serializer: SerializingFunction
-    _response_deserializer: DeserializingFunction
+    _request_serializer: Optional[SerializingFunction]
+    _response_deserializer: Optional[DeserializingFunction]
     _interceptors: Optional[Sequence[ClientInterceptor]]
     _references: List[Any]
     _loop: asyncio.AbstractEventLoop
@@ -100,8 +100,8 @@ class _BaseMultiCallable:
         self,
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         interceptors: Optional[Sequence[ClientInterceptor]],
         references: List[Any],
         loop: asyncio.AbstractEventLoop,
@@ -123,8 +123,10 @@ class _BaseMultiCallable:
         metadata, as it should be used for the current call.
         """
         metadata = metadata or Metadata()
-        if not isinstance(metadata, Metadata) and isinstance(metadata, tuple):
-            metadata = Metadata.from_tuple(metadata)
+        if not isinstance(metadata, Metadata) and isinstance(
+            metadata, Sequence
+        ):
+            metadata = Metadata.from_tuple(tuple(metadata))
         if compression:
             metadata = Metadata(
                 *_compression.augment_metadata(metadata, compression)
@@ -434,9 +436,8 @@ class Channel(_base_channel.Channel):
                             continue
                     else:
                         # Unidentified Call object
-                        raise cygrpc.InternalError(
-                            f"Unrecognized call object: {candidate}"
-                        )
+                        error_msg = f"Unrecognized call object: {candidate}"
+                        raise cygrpc.InternalError(error_msg)
 
                     calls.append(candidate)
                     call_tasks.append(task)

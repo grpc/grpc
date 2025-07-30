@@ -20,7 +20,6 @@
 #include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
 #if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 
-#include <ares.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log_windows.h>
 #include <grpc/support/string_util.h>
@@ -41,6 +40,8 @@
 #include "src/core/lib/iomgr/tcp_windows.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
+// We pull in ares.h transitively here, ares.h is not self-contained
+// w.r.t. windows headers though, so make sure pull them in above.
 #include "src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/util/crash.h"

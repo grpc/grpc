@@ -83,6 +83,34 @@ grpc_cc_benchmark(
     ],
 )
 
+grpc_cc_benchmark(
+    name = "bm_latent_see",
+    srcs = ["bm_latent_see.cc"],
+    external_deps = [
+    ],
+    monitoring = HISTORY,
+    deps = [
+        "//src/core:latent_see",
+    ],
+)
+
+grpc_cc_test(
+    name = "latent_see_test",
+    srcs = ["latent_see_test.cc"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+        "gtest_main",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:json",
+        "//src/core:json_reader",
+        "//src/core:latent_see",
+    ],
+)
+
 grpc_cc_test(
     name = "examine_stack_test",
     srcs = ["examine_stack_test.cc"],

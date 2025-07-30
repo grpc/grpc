@@ -505,7 +505,8 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   a[1].type = GRPC_ARG_POINTER;
   a[1].value.pointer.p = grpc_resource_quota_create("test");
   a[1].value.pointer.vtable = grpc_resource_quota_arg_vtable();
-  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
+  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>("bar"));
   grpc_channel_args args = {GPR_ARRAY_SIZE(a), a};
   if (grpc_event_engine::experimental::UseEventEngineListener()) {
     // Create an event engine wrapped endpoint to test release_fd operations.

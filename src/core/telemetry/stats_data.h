@@ -1,4 +1,4 @@
-// Copyright 2017 gRPC authors.
+// Copyright 2025 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,57 +32,56 @@ namespace grpc_core {
 class GlobalStatsCollector;
 class Http2GlobalStatsCollector;
 class Http2StatsCollector;
-class HistogramCollector_16777216_20_64;
-class Histogram_16777216_20_64 {
+class HistogramCollector_80_10_64;
+class Histogram_80_10_64 {
+ public:
+  static int BucketFor(int value);
+  const uint64_t* buckets() const { return buckets_; }
+  size_t bucket_count() const { return 10; }
+  void Increment(int value) {
+    ++buckets_[Histogram_80_10_64::BucketFor(value)];
+  }
+  friend Histogram_80_10_64 operator-(const Histogram_80_10_64& left,
+                                      const Histogram_80_10_64& right);
+
+ private:
+  friend class HistogramCollector_80_10_64;
+  uint64_t buckets_[10]{};
+};
+class HistogramCollector_80_10_64 {
+ public:
+  void Increment(int value) {
+    buckets_[Histogram_80_10_64::BucketFor(value)].fetch_add(
+        1, std::memory_order_relaxed);
+  }
+  void Collect(Histogram_80_10_64* result) const;
+
+ private:
+  std::atomic<uint64_t> buckets_[10]{};
+};
+class HistogramCollector_100_20_64;
+class Histogram_100_20_64 {
  public:
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
   size_t bucket_count() const { return 20; }
   void Increment(int value) {
-    ++buckets_[Histogram_16777216_20_64::BucketFor(value)];
+    ++buckets_[Histogram_100_20_64::BucketFor(value)];
   }
-  friend Histogram_16777216_20_64 operator-(
-      const Histogram_16777216_20_64& left,
-      const Histogram_16777216_20_64& right);
+  friend Histogram_100_20_64 operator-(const Histogram_100_20_64& left,
+                                       const Histogram_100_20_64& right);
 
  private:
-  friend class HistogramCollector_16777216_20_64;
+  friend class HistogramCollector_100_20_64;
   uint64_t buckets_[20]{};
 };
-class HistogramCollector_16777216_20_64 {
+class HistogramCollector_100_20_64 {
  public:
   void Increment(int value) {
-    buckets_[Histogram_16777216_20_64::BucketFor(value)].fetch_add(
+    buckets_[Histogram_100_20_64::BucketFor(value)].fetch_add(
         1, std::memory_order_relaxed);
   }
-  void Collect(Histogram_16777216_20_64* result) const;
-
- private:
-  std::atomic<uint64_t> buckets_[20]{};
-};
-class HistogramCollector_100000_20_64;
-class Histogram_100000_20_64 {
- public:
-  static int BucketFor(int value);
-  const uint64_t* buckets() const { return buckets_; }
-  size_t bucket_count() const { return 20; }
-  void Increment(int value) {
-    ++buckets_[Histogram_100000_20_64::BucketFor(value)];
-  }
-  friend Histogram_100000_20_64 operator-(const Histogram_100000_20_64& left,
-                                          const Histogram_100000_20_64& right);
-
- private:
-  friend class HistogramCollector_100000_20_64;
-  uint64_t buckets_[20]{};
-};
-class HistogramCollector_100000_20_64 {
- public:
-  void Increment(int value) {
-    buckets_[Histogram_100000_20_64::BucketFor(value)].fetch_add(
-        1, std::memory_order_relaxed);
-  }
-  void Collect(Histogram_100000_20_64* result) const;
+  void Collect(Histogram_100_20_64* result) const;
 
  private:
   std::atomic<uint64_t> buckets_[20]{};
@@ -141,6 +140,61 @@ class HistogramCollector_65536_26_64 {
  private:
   std::atomic<uint64_t> buckets_[26]{};
 };
+class HistogramCollector_100000_20_64;
+class Histogram_100000_20_64 {
+ public:
+  static int BucketFor(int value);
+  const uint64_t* buckets() const { return buckets_; }
+  size_t bucket_count() const { return 20; }
+  void Increment(int value) {
+    ++buckets_[Histogram_100000_20_64::BucketFor(value)];
+  }
+  friend Histogram_100000_20_64 operator-(const Histogram_100000_20_64& left,
+                                          const Histogram_100000_20_64& right);
+
+ private:
+  friend class HistogramCollector_100000_20_64;
+  uint64_t buckets_[20]{};
+};
+class HistogramCollector_100000_20_64 {
+ public:
+  void Increment(int value) {
+    buckets_[Histogram_100000_20_64::BucketFor(value)].fetch_add(
+        1, std::memory_order_relaxed);
+  }
+  void Collect(Histogram_100000_20_64* result) const;
+
+ private:
+  std::atomic<uint64_t> buckets_[20]{};
+};
+class HistogramCollector_1800000_40_64;
+class Histogram_1800000_40_64 {
+ public:
+  static int BucketFor(int value);
+  const uint64_t* buckets() const { return buckets_; }
+  size_t bucket_count() const { return 40; }
+  void Increment(int value) {
+    ++buckets_[Histogram_1800000_40_64::BucketFor(value)];
+  }
+  friend Histogram_1800000_40_64 operator-(
+      const Histogram_1800000_40_64& left,
+      const Histogram_1800000_40_64& right);
+
+ private:
+  friend class HistogramCollector_1800000_40_64;
+  uint64_t buckets_[40]{};
+};
+class HistogramCollector_1800000_40_64 {
+ public:
+  void Increment(int value) {
+    buckets_[Histogram_1800000_40_64::BucketFor(value)].fetch_add(
+        1, std::memory_order_relaxed);
+  }
+  void Collect(Histogram_1800000_40_64* result) const;
+
+ private:
+  std::atomic<uint64_t> buckets_[40]{};
+};
 class Histogram_16777216_8_8 {
  public:
   static int BucketFor(int value);
@@ -159,29 +213,30 @@ class Histogram_16777216_8_8 {
  private:
   uint8_t buckets_[8]{};
 };
-class HistogramCollector_100_20_64;
-class Histogram_100_20_64 {
+class HistogramCollector_16777216_20_64;
+class Histogram_16777216_20_64 {
  public:
   static int BucketFor(int value);
   const uint64_t* buckets() const { return buckets_; }
   size_t bucket_count() const { return 20; }
   void Increment(int value) {
-    ++buckets_[Histogram_100_20_64::BucketFor(value)];
+    ++buckets_[Histogram_16777216_20_64::BucketFor(value)];
   }
-  friend Histogram_100_20_64 operator-(const Histogram_100_20_64& left,
-                                       const Histogram_100_20_64& right);
+  friend Histogram_16777216_20_64 operator-(
+      const Histogram_16777216_20_64& left,
+      const Histogram_16777216_20_64& right);
 
  private:
-  friend class HistogramCollector_100_20_64;
+  friend class HistogramCollector_16777216_20_64;
   uint64_t buckets_[20]{};
 };
-class HistogramCollector_100_20_64 {
+class HistogramCollector_16777216_20_64 {
  public:
   void Increment(int value) {
-    buckets_[Histogram_100_20_64::BucketFor(value)].fetch_add(
+    buckets_[Histogram_16777216_20_64::BucketFor(value)].fetch_add(
         1, std::memory_order_relaxed);
   }
-  void Collect(Histogram_100_20_64* result) const;
+  void Collect(Histogram_16777216_20_64* result) const;
 
  private:
   std::atomic<uint64_t> buckets_[20]{};
@@ -213,61 +268,6 @@ class HistogramCollector_16777216_50_64 {
 
  private:
   std::atomic<uint64_t> buckets_[50]{};
-};
-class HistogramCollector_80_10_64;
-class Histogram_80_10_64 {
- public:
-  static int BucketFor(int value);
-  const uint64_t* buckets() const { return buckets_; }
-  size_t bucket_count() const { return 10; }
-  void Increment(int value) {
-    ++buckets_[Histogram_80_10_64::BucketFor(value)];
-  }
-  friend Histogram_80_10_64 operator-(const Histogram_80_10_64& left,
-                                      const Histogram_80_10_64& right);
-
- private:
-  friend class HistogramCollector_80_10_64;
-  uint64_t buckets_[10]{};
-};
-class HistogramCollector_80_10_64 {
- public:
-  void Increment(int value) {
-    buckets_[Histogram_80_10_64::BucketFor(value)].fetch_add(
-        1, std::memory_order_relaxed);
-  }
-  void Collect(Histogram_80_10_64* result) const;
-
- private:
-  std::atomic<uint64_t> buckets_[10]{};
-};
-class HistogramCollector_1800000_40_64;
-class Histogram_1800000_40_64 {
- public:
-  static int BucketFor(int value);
-  const uint64_t* buckets() const { return buckets_; }
-  size_t bucket_count() const { return 40; }
-  void Increment(int value) {
-    ++buckets_[Histogram_1800000_40_64::BucketFor(value)];
-  }
-  friend Histogram_1800000_40_64 operator-(
-      const Histogram_1800000_40_64& left,
-      const Histogram_1800000_40_64& right);
-
- private:
-  friend class HistogramCollector_1800000_40_64;
-  uint64_t buckets_[40]{};
-};
-class HistogramCollector_1800000_40_64 {
- public:
-  void Increment(int value) {
-    buckets_[Histogram_1800000_40_64::BucketFor(value)].fetch_add(
-        1, std::memory_order_relaxed);
-  }
-  void Collect(Histogram_1800000_40_64* result) const;
-
- private:
-  std::atomic<uint64_t> buckets_[40]{};
 };
 struct GlobalStats {
   enum class Counter {

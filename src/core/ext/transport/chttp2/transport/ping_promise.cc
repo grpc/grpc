@@ -40,7 +40,8 @@ using grpc_event_engine::experimental::EventEngine;
                 GRPC_TRACE_FLAG_ENABLED(http2_ping)))
 
 Promise<absl::Status> PingManager::PingPromiseCallbacks::RequestPing(
-    Callback on_initiate) {
+    Callback on_initiate, bool important) {
+  important_ping_requested_ = (important_ping_requested_ || important);
   std::shared_ptr<Latch<void>> latch = std::make_shared<Latch<void>>();
   auto on_ack = [latch]() { latch->Set(); };
   ping_callbacks_.OnPing(std::move(on_initiate), std::move(on_ack));

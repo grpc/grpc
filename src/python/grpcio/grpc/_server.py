@@ -54,6 +54,7 @@ from grpc._typing import ResponseType
 from grpc._typing import SerializingFunction
 from grpc._typing import ServerCallbackTag
 from grpc._typing import ServerTagCallbackType
+from typing_extensions import override
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -145,9 +146,11 @@ class _RegisteredMethod(_Method):
         self._name = name
         self._registered_handler = registered_handler
 
+    @override
     def name(self) -> Optional[str]:
         return self._name
 
+    @override
     def handler(
         self, handler_call_details: _HandlerCallDetails
     ) -> Optional[grpc.RpcMethodHandler]:
@@ -161,9 +164,11 @@ class _GenericMethod(_Method):
     ):
         self._generic_handlers = generic_handlers
 
+    @override
     def name(self) -> Optional[str]:
         return None
 
+    @override
     def handler(
         self, handler_call_details: _HandlerCallDetails
     ) -> Optional[grpc.RpcMethodHandler]:
@@ -438,7 +443,8 @@ class _Context(grpc.ServicerContext):
                     self._state.initial_metadata_allowed = False
                     self._state.due.add(_SEND_INITIAL_METADATA_TOKEN)
                 else:
-                    raise ValueError("Initial metadata no longer allowed!")
+                    error_msg = "Initial metadata no longer allowed!"
+                    raise ValueError(error_msg)
 
     def set_trailing_metadata(self, trailing_metadata: MetadataType) -> None:
         with self._state.condition:
@@ -1027,7 +1033,7 @@ def _reject_rpc(
     )
     rpc_event.call.start_server_batch(
         operations,
-        lambda ignored_event: (
+        lambda _ignored_event: (
             rpc_state,
             (),
         ),
@@ -1297,7 +1303,7 @@ def _process_event_and_continue(
             if rpc_future is not None:
                 state.active_rpc_count += 1
                 rpc_future.add_done_callback(
-                    lambda unused_future: _on_call_completed(state)
+                    lambda _unused_future: _on_call_completed(state)
                 )
             if state.stage is _ServerStage.STARTED:
                 if (
@@ -1376,7 +1382,8 @@ def _stop(state: _ServerState, grace: Optional[float]) -> threading.Event:
 def _start(state: _ServerState) -> None:
     with state.lock:
         if state.stage is not _ServerStage.STOPPED:
-            raise ValueError("Cannot start already-started server!")
+            error_msg = "Cannot start already-started server!"
+            raise ValueError(error_msg)
         state.server.start()
         state.stage = _ServerStage.STARTED
         # Request a call for each registered method so we can handle any of them.
@@ -1395,10 +1402,11 @@ def _validate_generic_rpc_handlers(
     for generic_rpc_handler in generic_rpc_handlers:
         service_attribute = getattr(generic_rpc_handler, "service", None)
         if service_attribute is None:
-            raise AttributeError(
-                '"{}" must conform to grpc.GenericRpcHandler type but does '
-                'not have "service" method!'.format(generic_rpc_handler)
+            error_msg = (
+                f'"{generic_rpc_handler}" must conform to'
+                'grpc.GenericRpcHandler type but does not have "service" method!'
             )
+            raise AttributeError(error_msg)
 
 
 def _augment_options(
