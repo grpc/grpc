@@ -42,7 +42,9 @@ TEST_F(WindowsEndpointTest, BasicCommunication) {
   // Setup
   auto thread_pool = MakeThreadPool(8);
   IOCP iocp(thread_pool.get());
-  grpc_core::MemoryQuota quota("endpoint_test");
+  grpc_core::MemoryQuota quota(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+          "endpoint_test"));
   SOCKET sockpair[2];
   CreateSockpair(sockpair, IOCP::GetDefaultSocketFlags());
   auto wrapped_client_socket = iocp.Watch(sockpair[0]);
@@ -88,7 +90,9 @@ TEST_F(WindowsEndpointTest, Conversation) {
   // Setup
   auto thread_pool = MakeThreadPool(8);
   IOCP iocp(thread_pool.get());
-  grpc_core::MemoryQuota quota("endpoint_test");
+  grpc_core::MemoryQuota quota(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+          "endpoint_test"));
   SOCKET sockpair[2];
   CreateSockpair(sockpair, IOCP::GetDefaultSocketFlags());
   sockaddr_in loopback_addr = GetSomeIpv4LoopbackAddress();

@@ -80,7 +80,7 @@ class _OpenTelemetryPlugin:
 
     def __init__(self, plugin: OpenTelemetryPlugin):
         self._plugin = plugin
-        self._metric_to_recorder = dict()
+        self._metric_to_recorder = {}
         self.identifier = str(id(self))
         self._enabled_client_plugin_options = None
         self._enabled_server_plugin_options = None
@@ -149,7 +149,6 @@ class _OpenTelemetryPlugin:
 
     def get_client_exchange_labels(self) -> Dict[str, AnyStr]:
         """Get labels used for client side Metadata Exchange."""
-
         labels_for_exchange = {}
         for plugin_option in self._enabled_client_plugin_options:
             if hasattr(plugin_option, "get_label_injector") and hasattr(
@@ -509,18 +508,16 @@ def _start_open_telemetry_observability(
             _OPEN_TELEMETRY_OBSERVABILITY = otel_o11y
             _OPEN_TELEMETRY_OBSERVABILITY.observability_init()
         else:
-            raise RuntimeError(
-                "gPRC Python observability was already initialized!"
-            )
+            error_msg = "gPRC Python observability was already initialized!"
+            raise RuntimeError(error_msg)
 
 
 def _end_open_telemetry_observability() -> None:
     global _OPEN_TELEMETRY_OBSERVABILITY  # pylint: disable=global-statement
     with _observability_lock:
         if not _OPEN_TELEMETRY_OBSERVABILITY:
-            raise RuntimeError(
-                "Trying to end gPRC Python observability without initialize first!"
-            )
+            error_msg = "Trying to end gPRC Python observability without initialize first!"
+            raise RuntimeError(error_msg)
         else:
             _OPEN_TELEMETRY_OBSERVABILITY.observability_deinit()
             _OPEN_TELEMETRY_OBSERVABILITY = None

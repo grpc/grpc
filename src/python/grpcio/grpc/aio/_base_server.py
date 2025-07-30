@@ -195,7 +195,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         self,
         code: grpc.StatusCode,
         details: str = "",
-        trailing_metadata: MetadataType = tuple(),
+        trailing_metadata: MetadataType = (),
     ) -> NoReturn:
         """Raises an exception to terminate the RPC with a non-OK status.
 

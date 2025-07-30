@@ -156,7 +156,8 @@ TEST(PosixEventEngineTest, IndefiniteConnectTimeoutOrRstTest) {
   auto quota = grpc_core::ResourceQuota::Default();
   args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
   ChannelArgsEndpointConfig config(args);
-  auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
+  auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>("bar"));
   posix_ee->Connect(
       [&signal](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> status) {
         EXPECT_EQ(status.status().code(), absl::StatusCode::kUnknown);
@@ -185,7 +186,8 @@ TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
   auto quota = grpc_core::ResourceQuota::Default();
   args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
   ChannelArgsEndpointConfig config(args);
-  auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>("bar");
+  auto memory_quota = absl::make_unique<grpc_core::MemoryQuota>(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>("bar"));
   auto connection_handle = posix_ee->Connect(
       [](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> /*status*/) {
         FAIL() << "The on_connect callback should not have run since the "
