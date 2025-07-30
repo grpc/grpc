@@ -406,15 +406,12 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
       call_creds_for_tls);
   grpc_error_handle error;
   grpc_core::ExecCtx exec_ctx;
-  DefaultCallCredentialsCreationMethod default_credentials_type =
-      DefaultCallCredentialsCreationMethod::kNone;
 
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_google_default_credentials_create(" << call_creds_for_tls << ")";
 
   if (call_creds == nullptr) {
-    call_creds = grpc_core::internal::make_default_call_creds(
-        &error, &default_credentials_type);
+    call_creds = grpc_core::internal::make_default_call_creds(&error, nullptr);
   }
 
   if (call_creds != nullptr) {
@@ -472,8 +469,10 @@ RefCountedPtr<grpc_call_credentials> make_default_call_creds(
   if (path_from_env.has_value()) {
     err = create_default_creds_from_path(*path_from_env, &call_creds);
     if (err.ok()) {
-      *default_credentials_type =
-          DefaultCallCredentialsCreationMethod::kFromEnviromentPathValue;
+      if (default_credentials_type) {
+        *default_credentials_type =
+            DefaultCallCredentialsCreationMethod::kFromEnviromentPathValue;
+      }
       return call_creds;
     }
     *error = grpc_error_add_child(*error, err);
@@ -483,8 +482,10 @@ RefCountedPtr<grpc_call_credentials> make_default_call_creds(
   err = create_default_creds_from_path(
       grpc_get_well_known_google_credentials_file_path(), &call_creds);
   if (err.ok()) {
-    *default_credentials_type =
-        DefaultCallCredentialsCreationMethod::kFromWellKnownFile;
+    if (default_credentials_type) {
+      *default_credentials_type =
+          DefaultCallCredentialsCreationMethod::kFromWellKnownFile;
+    }
     return call_creds;
   }
   *error = grpc_error_add_child(*error, err);
@@ -498,7 +499,7 @@ RefCountedPtr<grpc_call_credentials> make_default_call_creds(
       *error = GRPC_ERROR_CREATE(GRPC_GOOGLE_CREDENTIAL_CREATION_ERROR);
       *error = grpc_error_add_child(
           *error, GRPC_ERROR_CREATE("Failed to get credentials from network"));
-    } else {
+    } else if (default_credentials_type) {
       *default_credentials_type =
           DefaultCallCredentialsCreationMethod::kFromDefaultGCE;
     }

@@ -214,6 +214,8 @@ GRPCAPI void grpc_call_credentials_release(grpc_call_credentials* creds);
    identity of the default service account of the machine. Supplying any other
    sort of call credential will result in undefined behavior, up to and
    including the sudden and unexpected failure of RPCs.
+   It is in the caller's responsibility to ensure that both specified
+   credentials assert the correct identities.
 
    If nullptr is supplied, the returned channel credentials object will use a
    default call credentials object based on the Application Default Credentials
@@ -488,11 +490,8 @@ GRPCAPI grpc_call_credentials* grpc_composite_call_credentials_create(
 /** Context that can be used by the google compute engine create credentials api
    in order to configure the desired credentials. */
 typedef struct {
-  /** Indicates if the credentials should be used on alts connections. */
-  bool create_alts_credentials;
-
-  /** Reserved for future use. */
-  void* reserved;
+  /** Additional query parameters to include in the authentication request */
+  const char* query_params;
 } grpc_google_compute_engine_credentials_options;
 
 /** Creates a compute engine credentials object for connecting to Google.

@@ -42,6 +42,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/credentials/call/json_util.h"
@@ -293,6 +294,9 @@ class grpc_compute_engine_token_fetcher_credentials
     : public grpc_core::Oauth2TokenFetcherCredentials {
  public:
   grpc_compute_engine_token_fetcher_credentials() = default;
+  explicit grpc_compute_engine_token_fetcher_credentials(
+      std::vector<grpc_core::URI::QueryParam> query_params)
+      : query_params_(query_params) {}
   ~grpc_compute_engine_token_fetcher_credentials() override = default;
 
   std::string debug_string() override {
@@ -301,12 +305,10 @@ class grpc_compute_engine_token_fetcher_credentials
         grpc_core::Oauth2TokenFetcherCredentials::debug_string());
   }
 
- protected:
-  grpc_core::OrphanablePtr<grpc_core::HttpRequest>
-  BuildAndStartHttpRequestWithQueryParams(
-      std::vector<grpc_core::URI::QueryParam> query_parameter_pairs,
+ private:
+  grpc_core::OrphanablePtr<grpc_core::HttpRequest> StartHttpRequest(
       grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
-      grpc_http_response* response, grpc_closure* on_complete) {
+      grpc_http_response* response, grpc_closure* on_complete) override {
     grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),
                                const_cast<char*>("Google")};
     grpc_http_request request;
@@ -319,7 +321,7 @@ class grpc_compute_engine_token_fetcher_credentials
     auto uri = grpc_core::URI::Create("http", /*user_info=*/"",
                                       GRPC_COMPUTE_ENGINE_METADATA_HOST,
                                       GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH,
-                                      query_parameter_pairs, "" /* fragment */);
+                                      query_params_, "" /* fragment */);
     CHECK(uri.ok());  // params are hardcoded
     auto http_request = grpc_core::HttpRequest::Get(
         std::move(*uri), /*args=*/nullptr, pollent, &request, deadline,
@@ -330,49 +332,27 @@ class grpc_compute_engine_token_fetcher_credentials
     return http_request;
   }
 
- private:
-  grpc_core::OrphanablePtr<grpc_core::HttpRequest> StartHttpRequest(
-      grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
-      grpc_http_response* response, grpc_closure* on_complete) override {
-    return BuildAndStartHttpRequestWithQueryParams({}, pollent, deadline,
-                                                   response, on_complete);
-  }
+  std::vector<grpc_core::URI::QueryParam> query_params_ = {};
 };
-
-class grpc_compute_engine_token_fetcher_alts_credentials
-    : public grpc_compute_engine_token_fetcher_credentials {
- public:
-  grpc_compute_engine_token_fetcher_alts_credentials() = default;
-  ~grpc_compute_engine_token_fetcher_alts_credentials() override = default;
-
-  std::string debug_string() override {
-    return absl::StrFormat(
-        "GoogleComputeEngineTokenFetcherAltsCredentials{%s}",
-        grpc_compute_engine_token_fetcher_credentials::debug_string());
-  }
-
- private:
-  grpc_core::OrphanablePtr<grpc_core::HttpRequest> StartHttpRequest(
-      grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
-      grpc_http_response* response, grpc_closure* on_complete) override {
-    return BuildAndStartHttpRequestWithQueryParams(
-        {{"transport", "alts"}}, pollent, deadline, response, on_complete);
-  }
-};
-
 }  // namespace
 
 grpc_call_credentials* grpc_google_compute_engine_credentials_create(
     grpc_google_compute_engine_credentials_options* options) {
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_compute_engine_credentials_create(options=" << options << ")";
-  if (options != nullptr && options->create_alts_credentials) {
-    return grpc_core::MakeRefCounted<
-               grpc_compute_engine_token_fetcher_alts_credentials>()
-        .release();
+  std::vector<grpc_core::URI::QueryParam> parsed_query_params;
+  if (options != nullptr && options->query_params != nullptr) {
+    for (absl::string_view query_pair :
+         absl::StrSplit(options->query_params, '&')) {
+      const std::pair<absl::string_view, absl::string_view> possible_kv =
+          absl::StrSplit(query_pair, absl::MaxSplits('=', 1));
+      parsed_query_params.push_back(
+          {grpc_core::URI::PercentDecode(possible_kv.first),
+           grpc_core::URI::PercentDecode(possible_kv.second)});
+    }
   }
   return grpc_core::MakeRefCounted<
-             grpc_compute_engine_token_fetcher_credentials>()
+             grpc_compute_engine_token_fetcher_credentials>(parsed_query_params)
       .release();
 }
 
