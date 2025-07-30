@@ -712,8 +712,7 @@ TEST(StreamDataQueueTest, ClientEnqueueDequeueFlowTest) {
   std::vector<int> expected_frames_length = {6};
   std::vector<Http2Frame> expected_close_frames;
   SliceBuffer expected_payload;
-  AppendGrpcHeaderToSliceBuffer(expected_payload, /*flags=*/0,
-                                /*payload_length=*/1);
+  AppendGrpcHeaderToSliceBuffer(expected_payload, /*flags=*/0, /*length=*/1);
   expected_payload.Append(Slice::ZeroContentsWithLength(1));
   expected_close_frames.emplace_back(
       Http2DataFrame{/*stream_id=*/1,
@@ -820,8 +819,7 @@ TEST(StreamDataQueueTest, ServerEnqueueDequeueFlowTest) {
   std::vector<int> expected_frames_length = {6};
   std::vector<Http2Frame> expected_close_frames;
   SliceBuffer expected_payload;
-  AppendGrpcHeaderToSliceBuffer(expected_payload, /*flags=*/0,
-                                /*payload_length=*/1);
+  AppendGrpcHeaderToSliceBuffer(expected_payload, /*flags=*/0, /*length=*/1);
   expected_payload.Append(Slice::ZeroContentsWithLength(1));
   expected_close_frames.emplace_back(
       Http2DataFrame{/*stream_id=*/1,
