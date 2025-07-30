@@ -39,6 +39,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/notification.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/testing/echo_messages.pb.h"
@@ -53,16 +54,6 @@
 namespace grpc {
 namespace testing {
 namespace {
-
-const absl::string_view kRootPath = "test/core/tsi/test_creds/crl_data/ca.pem";
-const absl::string_view kRevokedKeyPath =
-    "test/core/tsi/test_creds/crl_data/revoked.key";
-const absl::string_view kRevokedCertPath =
-    "test/core/tsi/test_creds/crl_data/revoked.pem";
-const absl::string_view kValidKeyPath =
-    "test/core/tsi/test_creds/crl_data/valid.key";
-const absl::string_view kValidCertPath =
-    "test/core/tsi/test_creds/crl_data/valid.pem";
 
 constexpr char kMessage[] = "Hello";
 constexpr absl::string_view kCaPemPath =
@@ -130,7 +121,10 @@ class SpiffeBundleMapTest : public ::testing::Test {
 
 void DoRpc(const std::string& server_addr,
            const experimental::TlsChannelCredentialsOptions& tls_options,
-           bool expect_success) {
+           bool expect_success,
+           absl::string_view failure_message_start="",
+           absl::string_view failure_message_end="",
+           StatusCode failure_code=StatusCode::OK) {
   ChannelArguments channel_args;
   channel_args.SetSslTargetNameOverride("foo.test.google.fr");
   std::shared_ptr<Channel> channel = grpc::CreateCustomChannel(
@@ -150,6 +144,9 @@ void DoRpc(const std::string& server_addr,
     EXPECT_EQ(response.message(), kMessage);
   } else {
     EXPECT_FALSE(result.ok());
+    EXPECT_EQ(result.error_code(), failure_code);
+    EXPECT_THAT(result.error_message(), ::testing::StartsWith(failure_message_start));
+    EXPECT_THAT(result.error_message(), ::testing::EndsWith(failure_message_end));
   }
 }
 
@@ -274,6 +271,86 @@ TEST_F(SpiffeBundleMapTest, SpiffeWithCertChain) {
   DoRpc(server_addr_, options, true);
 }
 
+TEST_F(SpiffeBundleMapTest, ServerSpiffeReload) {
+  auto server_bundle_map = grpc_core::testing::GetFileContents(std::string(kServerSpiffeBundleMapPath));
+  auto client_bundle_map = grpc_core::testing::GetFileContents(std::string(kClientSpiffeBundleMapPath));
+  grpc_core::testing::TmpFile tmp_bundle_map(server_bundle_map);
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() {
+    RunServer(&notification, kServerChainKeyPath, kServerChainCertPath, "",
+              tmp_bundle_map.name());
+  });
+  notification.WaitForNotification();
+
+  auto certificate_provider =
+      std::make_shared<experimental::FileWatcherCertificateProvider>(
+          std::string(kClientKeyPath), std::string(kClientCertPath),
+          /*root_cert_path=*/"", std::string(kClientSpiffeBundleMapPath), 1);
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_certificate_provider(certificate_provider);
+  options.watch_root_certs();
+  options.set_root_cert_name("root");
+  options.watch_identity_key_cert_pairs();
+  options.set_identity_cert_name("identity");
+
+  options.set_check_call_host(false);
+  auto verifier = std::make_shared<experimental::NoOpCertificateVerifier>();
+  options.set_certificate_verifier(verifier);
+  DoRpc(server_addr_, options, true);
+
+  // Update the spiffe bundle map to something that will fail
+  tmp_bundle_map.RewriteFile(client_bundle_map);
+  // Wait 2 seconds to ensure a refresh happens
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
+  constexpr absl::string_view expected_message_start = "failed to connect to all addresses; last error: UNAVAILABLE:";
+  constexpr absl::string_view expected_message_end = "Socket closed";
+  const StatusCode expected_status = StatusCode::UNAVAILABLE;
+  DoRpc(server_addr_, options, false, expected_message_start, expected_message_end, expected_status);
+}
+
+TEST_F(SpiffeBundleMapTest, ClientSpiffeReload) {
+  auto server_bundle_map = grpc_core::testing::GetFileContents(std::string(kServerSpiffeBundleMapPath));
+  auto client_bundle_map = grpc_core::testing::GetFileContents(std::string(kClientSpiffeBundleMapPath));
+  grpc_core::testing::TmpFile tmp_bundle_map(client_bundle_map);
+  server_addr_ = absl::StrCat("localhost:",
+                              std::to_string(grpc_pick_unused_port_or_die()));
+  absl::Notification notification;
+  server_thread_ = new std::thread([&]() {
+    RunServer(&notification, kServerChainKeyPath, kServerChainCertPath, "",
+              kServerSpiffeBundleMapPath);
+  });
+  notification.WaitForNotification();
+
+  auto certificate_provider =
+      std::make_shared<experimental::FileWatcherCertificateProvider>(
+          std::string(kClientKeyPath), std::string(kClientCertPath),
+          /*root_cert_path=*/"", tmp_bundle_map.name(), 1);
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_certificate_provider(certificate_provider);
+  options.watch_root_certs();
+  options.set_root_cert_name("root");
+  options.watch_identity_key_cert_pairs();
+  options.set_identity_cert_name("identity");
+
+  options.set_check_call_host(false);
+  auto verifier = std::make_shared<experimental::NoOpCertificateVerifier>();
+  options.set_certificate_verifier(verifier);
+  DoRpc(server_addr_, options, true);
+
+  // Update the spiffe bundle map to something that will fail
+  tmp_bundle_map.RewriteFile(server_bundle_map);
+  // Wait 2 seconds to ensure a refresh happens
+  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
+  constexpr absl::string_view expected_message_start = "failed to connect to all addresses; last error: UNKNOWN:";
+  constexpr absl::string_view expected_message_end = "Tls handshake failed (TSI_PROTOCOL_FAILURE): SSL_ERROR_SSL: error:1000007d:SSL routines:OPENSSL_internal:CERTIFICATE_VERIFY_FAILED";
+  const StatusCode expected_status = StatusCode::UNAVAILABLE;
+  DoRpc(server_addr_, options, false, expected_message_start, expected_message_end, expected_status);
+}
+
 TEST_F(SpiffeBundleMapTest, ServerBadMap) {
   server_addr_ = absl::StrCat("localhost:",
                               std::to_string(grpc_pick_unused_port_or_die()));
@@ -300,7 +377,10 @@ TEST_F(SpiffeBundleMapTest, ServerBadMap) {
   auto verifier = std::make_shared<experimental::NoOpCertificateVerifier>();
   options.set_certificate_verifier(verifier);
 
-  DoRpc(server_addr_, options, false);
+  constexpr absl::string_view expected_message_start = "failed to connect to all addresses; last error: UNAVAILABLE:"; 
+  constexpr absl::string_view expected_message_end = "Socket closed";
+  const StatusCode expected_status = StatusCode::UNAVAILABLE;
+  DoRpc(server_addr_, options, false, expected_message_start, expected_message_end, expected_status);
 }
 
 TEST_F(SpiffeBundleMapTest, ClientBadMap) {
@@ -329,7 +409,10 @@ TEST_F(SpiffeBundleMapTest, ClientBadMap) {
   auto verifier = std::make_shared<experimental::NoOpCertificateVerifier>();
   options.set_certificate_verifier(verifier);
 
-  DoRpc(server_addr_, options, false);
+  constexpr absl::string_view expected_message_start = "failed to connect to all addresses; last error: UNKNOWN:"; 
+  constexpr absl::string_view expected_message_end = "Tls handshake failed (TSI_PROTOCOL_FAILURE): SSL_ERROR_SSL: error:1000007d:SSL routines:OPENSSL_internal:CERTIFICATE_VERIFY_FAILED";
+  const StatusCode expected_status = StatusCode::UNAVAILABLE;
+  DoRpc(server_addr_, options, false, expected_message_start, expected_message_end, expected_status);
 }
 
 }  // namespace
