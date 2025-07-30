@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,7 +19,7 @@ cd $(dirname $0)/../../..
 # protoc and grpc_*_plugin binaries can be obtained by running
 # $ bazel build @com_google_protobuf//:protoc //src/compiler:all
 PROTOC=bazel-bin/external/com_google_protobuf/protoc
-PLUGIN=protoc-gen-grpc=bazel-bin/src/compiler/grpc_php_plugin
+PLUGIN=protoc-gen-grpc=bazel-bin/src/compiler/grpc_php_plugin_binary
 
 $PROTOC --proto_path=src/proto/math \
        --php_out=src/php/tests/generated_code \

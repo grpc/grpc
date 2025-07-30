@@ -6,8 +6,8 @@
 namespace Grpc\Testing\ClientConfigureRequest;
 
 use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
+use Google\Protobuf\RepeatedField;
 
 /**
  * Metadata to be attached for the given type of RPCs.
