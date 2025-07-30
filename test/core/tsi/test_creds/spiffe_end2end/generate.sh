@@ -56,6 +56,6 @@ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial \
  -in spiffe-cert.csr -out invalid_utf8_san_spiffe.pem -extensions spiffe_client_non_utf8 \
   -extfile spiffe-openssl.cnf -days 3650 -sha256
 
-rm *.rsa
-rm *.csr
-rm *.srl
+rm ./*.rsa
+rm ./*.csr
+rm ./*.srl
