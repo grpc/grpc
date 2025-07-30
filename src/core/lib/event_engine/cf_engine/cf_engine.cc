@@ -24,6 +24,7 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "src/core/lib/event_engine/cf_engine/cf_engine.h"
+#include "src/core/lib/event_engine/cf_engine/cfsocket_listener.h"
 #include "src/core/lib/event_engine/cf_engine/cfstream_endpoint.h"
 #include "src/core/lib/event_engine/cf_engine/dns_service_resolver.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
@@ -81,11 +82,14 @@ CFEventEngine::~CFEventEngine() {
 
 absl::StatusOr<std::unique_ptr<EventEngine::Listener>>
 CFEventEngine::CreateListener(
-    Listener::AcceptCallback /* on_accept */,
-    absl::AnyInvocable<void(absl::Status)> /* on_shutdown */,
-    const EndpointConfig& /* config */,
-    std::unique_ptr<MemoryAllocatorFactory> /* memory_allocator_factory */) {
-  grpc_core::Crash("unimplemented");
+    Listener::AcceptCallback on_accept,
+    absl::AnyInvocable<void(absl::Status)> on_shutdown,
+    const EndpointConfig& config,
+    std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
+  return std::make_unique<CFSocketListener>(
+      std::static_pointer_cast<CFEventEngine>(shared_from_this()),
+      std::move(on_accept), std::move(on_shutdown), config,
+      std::move(memory_allocator_factory));
 }
 
 CFEventEngine::ConnectionHandle CFEventEngine::Connect(
