@@ -66,8 +66,6 @@ constexpr absl::string_view kNonSpiffeKeyPath =
     "test/core/tsi/test_creds/crl_data/valid.key";
 constexpr absl::string_view kNonSpiffeCertPath =
     "test/core/tsi/test_creds/crl_data/valid.pem";
-constexpr absl::string_view kNonSpiffeCAPath =
-    "test/core/tsi/test_creds/crl_data/ca.pem";
 constexpr absl::string_view kMultiSanKeyPath =
     "test/core/tsi/test_creds/spiffe_end2end/multi_san.key";
 constexpr absl::string_view kMultiSanCertPath =
