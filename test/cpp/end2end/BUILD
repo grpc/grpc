@@ -981,15 +981,14 @@ grpc_cc_binary(
     ],
 )
 
-grpc_cc_test(
-    name = "server_interceptors_end2end_test",
+grpc_cc_library(
+    name = "server_interceptors_end2end_test_lib",
+    testonly = True,
     srcs = ["server_interceptors_end2end_test.cc"],
     external_deps = [
         "gtest",
     ],
-    tags = [
-        "cpp_end2end_test",
-    ],
+    linkstatic = True,
     deps = [
         ":interceptors_util",
         ":test_service_impl",
@@ -1000,6 +999,15 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_test(
+    name = "server_interceptors_end2end_test",
+    tags = ["cpp_end2end_test"],
+    deps = [
+        ":server_interceptors_end2end_test_lib",
     ],
 )
 
