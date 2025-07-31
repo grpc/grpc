@@ -256,7 +256,14 @@ class StreamDataQueueFuzzTest : public YodelTest {
   HPackCompressor encoder_;
 };
 
+// TODO(akshitpatel) : [PH2][P3] : Add a test for server side.
 YODEL_TEST(StreamDataQueueFuzzTest, EnqueueDequeueMultiParty) {
+  // Test to enqueue and dequeue in a loop. This test enqueues 100 messages and
+  // dequeues all frames and assembles them back into 100 messages. This test
+  // asserts the following:
+  // 1. All enqueues and dequeues are successful.
+  // 2. The dequeue messages are the same as the enqueue messages.
+
   InitParty();
   InitParty2();
   constexpr uint32_t max_frame_length = 44;

@@ -374,6 +374,11 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     return DequeueResult{handle_dequeue.GetFrames(), /*is_writable=*/false};
   }
 
+  bool TestOnlyIsEmpty() {
+    MutexLock lock(&mu_);
+    return queue_.TestOnlyIsEmpty();
+  }
+
  private:
   struct InitialMetadataType {
     MetadataHandle metadata;

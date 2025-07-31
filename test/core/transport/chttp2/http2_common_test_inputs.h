@@ -104,6 +104,43 @@ inline std::vector<absl::StatusCode> FewAbslErrorCodes() {
   return codes;
 }
 
+// Helper function to append Header and Continuation frames to the expected
+// frames vector based on max_frame_length. The encoded_data is the byte array
+// representation of the encoded metadata.
+inline void GetExpectedHeaderAndContinuationFrames(
+    const uint32_t max_frame_length, std::vector<Http2Frame>& expected_frames,
+    const std::vector<uint8_t>& encoded_data, bool end_stream) {
+  uint32_t left_over = encoded_data.size();
+  uint32_t current = 0;
+
+  if (left_over > 0) {
+    int frame_length = std::min(left_over, max_frame_length);
+    left_over -= frame_length;
+    bool end_headers = (left_over == 0);
+
+    expected_frames.emplace_back(Http2HeaderFrame{
+        /*stream_id=*/1, end_headers,
+        /*end_stream=*/end_stream,
+        /*payload=*/
+        SliceBuffer(Slice::FromCopiedString(std::string(
+            encoded_data.begin(), encoded_data.begin() + frame_length)))});
+    current += frame_length;
+  }
+
+  while (left_over > 0) {
+    int frame_length = std::min(left_over, max_frame_length);
+    left_over -= frame_length;
+    bool end_headers = (left_over == 0);
+    expected_frames.emplace_back(Http2ContinuationFrame{
+        /*stream_id=*/1, end_headers,
+        /*payload=*/
+        SliceBuffer(Slice::FromCopiedString(
+            std::string(encoded_data.begin() + current,
+                        encoded_data.begin() + current + frame_length)))});
+    current += frame_length;
+  }
+}
+
 }  // namespace testing
 }  // namespace http2
 }  // namespace grpc_core
