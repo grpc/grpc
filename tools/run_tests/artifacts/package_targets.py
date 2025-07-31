@@ -178,26 +178,14 @@ class PythonPackage:
                 "tools/dockerfile/grpc_artifact_python_musllinux_1_1_aarch64"
             )
             environ["ARTIFACT_PREFIX"] = "python_musllinux_1_1_aarch64_"
-
-            # all the artifact builder configurations generate
-            # grpcio-VERSION.tar.gz and grpcio-VERSION-py3-none-any.whl files.
-            # These files with same names causes copy conflicts in the
-            # grpc_collect_all_packages job where all these targets are built
-            # together in the same machine and try to copy to the same
-            # artifacts directory.
-            # Hence copy them only in the common python linux packages job and
-            # exclude them in the aarch64 specific targets.
-            # NOTE: While this solves the problem for grpc_collect_all_packages,
-            # individual presubmit jobs for the aarch64 builds will miss these
-            # 2 files.
-            environ["EXCLUDE_PATTERNS"] = "*.tar.gz *py3-none-any.whl"
+            environ["EXCLUDE_PATTERNS"] = ""
 
         if "manylinux2014" in self.platform and "aarch64" in self.arch:
             dockerfile_dir = (
                 "tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64"
             )
             environ["ARTIFACT_PREFIX"] = "python_manylinux2014_aarch64_"
-            environ["EXCLUDE_PATTERNS"] = "*.tar.gz *py3-none-any.whl"
+            environ["EXCLUDE_PATTERNS"] = ""
 
         return create_docker_jobspec(
             self.name,
