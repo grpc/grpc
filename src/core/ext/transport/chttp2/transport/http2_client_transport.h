@@ -220,7 +220,7 @@ class Http2ClientTransport final : public ClientTransport {
 
   PromiseEndpoint endpoint_;
   Http2SettingsManager settings_;
-  Duration settings_timeout_;
+  SettingsTimeoutManager transport_settings_;
 
   Http2FrameHeader current_frame_header_;
 
@@ -373,6 +373,20 @@ class Http2ClientTransport final : public ClientTransport {
                  self->keepalive_manager_.GotData();
                  return status;
                });
+  }
+
+  // TODO(tjagtap) : [PH2][P1] : Plumbing. Call this after the SETTINGS frame
+  // has been written to endpoint_.
+  void SpawnWaitForSettingsTimeout() {
+    general_party_->Spawn(
+        "WaitForSettingsTimeout", transport_settings_.WaitForSettingsTimeout(),
+        [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
+          if (!status.ok()) {
+            return self->HandleError(Http2Status::Http2ConnectionError(
+                Http2ErrorCode::kProtocolError, "Settings Timeout"));
+          }
+         return absl::OkStatus();
+        });
   }
 
   auto EndpointRead(const size_t num_bytes) {
