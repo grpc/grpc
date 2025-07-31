@@ -110,7 +110,7 @@ inline std::vector<absl::StatusCode> FewAbslErrorCodes() {
 // representation of the encoded metadata.
 inline void GetExpectedHeaderAndContinuationFrames(
     const uint32_t max_frame_length, std::vector<Http2Frame>& expected_frames,
-    const std::vector<uint8_t>& encoded_data, bool end_stream) {
+    const std::vector<uint8_t>& encoded_data, const bool end_stream) {
   DCHECK_LE(encoded_data.size(), std::numeric_limits<uint32_t>::max());
   SliceBuffer encoded_metadata(
       Slice::FromCopiedBuffer(encoded_data.data(), encoded_data.size()));
