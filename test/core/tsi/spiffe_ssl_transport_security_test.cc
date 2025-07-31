@@ -99,7 +99,7 @@ class SpiffeSslTransportSecurityTest
           grpc_core::testing::GetFileContents(client_cert_path.data());
       // We set this and it shouldn't matter if we set spiffe bundles
       if (ca_path.has_value()) {
-        root_cert_ = grpc_core::testing::GetFileContents(ca_path->data());
+        ca_certificates_ = grpc_core::testing::GetFileContents(ca_path->data());
       }
       if (!server_spiffe_bundle_map_path.empty()) {
         auto server_map =
@@ -155,7 +155,7 @@ class SpiffeSslTransportSecurityTest
         client_options.root_cert_info = client_spiffe_bundle_map_;
       } else {
         client_options.root_cert_info =
-            std::make_shared<RootCertInfo>(root_cert_);
+            std::make_shared<RootCertInfo>(ca_certificates_);
       }
       client_options.min_tls_version = GetParam();
       client_options.max_tls_version = GetParam();
@@ -170,7 +170,7 @@ class SpiffeSslTransportSecurityTest
         server_options.root_cert_info = server_spiffe_bundle_map_;
       } else {
         server_options.root_cert_info =
-            std::make_shared<RootCertInfo>(root_cert_);
+            std::make_shared<RootCertInfo>(ca_certificates_);
       }
       server_options.client_certificate_request =
           TSI_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY;
@@ -239,7 +239,7 @@ class SpiffeSslTransportSecurityTest
     static struct tsi_test_fixture_vtable kVtable;
 
     tsi_test_fixture base_;
-    std::string root_cert_;
+    std::string ca_certificates_;
     tsi_ssl_server_handshaker_factory* server_handshaker_factory_;
     tsi_ssl_client_handshaker_factory* client_handshaker_factory_;
     std::shared_ptr<RootCertInfo> server_spiffe_bundle_map_;
