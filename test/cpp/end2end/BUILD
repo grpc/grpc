@@ -1059,14 +1059,15 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "shutdown_test",
+grpc_cc_library(
+    name = "shutdown_test_lib",
+    testonly = True,
     srcs = ["shutdown_test.cc"],
     external_deps = [
         "absl/log:check",
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    linkstatic = True,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -1076,6 +1077,15 @@ grpc_cc_test(
         "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_test(
+    name = "shutdown_test",
+    tags = ["cpp_end2end_test"],
+    deps = [
+        ":shutdown_test_lib",
     ],
 )
 
