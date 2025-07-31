@@ -4309,14 +4309,6 @@ add_library(upb_mini_descriptor_lib
   third_party/upb/upb/mini_descriptor/internal/base92.c
   third_party/upb/upb/mini_descriptor/internal/encode.c
   third_party/upb/upb/mini_descriptor/link.c
-  third_party/upb/upb/wire/decode_fast/dispatch.c
-  third_party/upb/upb/wire/decode_fast/field_fixed.c
-  third_party/upb/upb/wire/decode_fast/field_generic.c
-  third_party/upb/upb/wire/decode_fast/field_message.c
-  third_party/upb/upb/wire/decode_fast/field_string.c
-  third_party/upb/upb/wire/decode_fast/field_varint.c
-  third_party/upb/upb/wire/decode_fast/function_array.c
-  third_party/upb/upb/wire/decode_fast/select.c
   third_party/upb/upb/wire/eps_copy_input_stream.c
   third_party/upb/upb/wire/internal/decoder.c
   third_party/upb/upb/wire/reader.c
@@ -4555,7 +4547,6 @@ endif()
 add_library(upb_wire_lib
   third_party/upb/upb/message/internal/iterator.c
   third_party/upb/upb/wire/decode.c
-  third_party/upb/upb/wire/decode_fast/dispatch.c
   third_party/upb/upb/wire/encode.c
   third_party/upb/upb/wire/eps_copy_input_stream.c
   third_party/upb/upb/wire/internal/decoder.c

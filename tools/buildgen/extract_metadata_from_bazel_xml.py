@@ -1099,6 +1099,12 @@ def _detect_and_print_issues(build_yaml_like: BuildYaml) -> None:
                     )
 
 
+def _remove_upb_decode_fast(bazel_rules: BuildDict) -> None:
+    for name, rule in bazel_rules.items():
+        for attribute in ("srcs", "hdrs", "deps", "_TRANSITIVE_DEPS", "_EXCLUDE_DEPS", "_COLLAPSED_HEADERS", "_COLLAPSED_SRCS"):
+            if attribute in rule:
+                rule[attribute] = [d for d in rule[attribute] if "/decode_fast" not in d]
+
 # extra metadata that will be used to construct build.yaml
 # there are mostly extra properties that we weren't able to obtain from the bazel build
 # _TYPE: whether this is library, target or test
@@ -1490,6 +1496,9 @@ _populate_transitive_metadata(bazel_rules, list(all_extra_metadata.keys()))
 # Certain build metadata of certain test targets depend on the transitive
 # metadata that wasn't available earlier.
 update_test_metadata_with_transitive_metadata(all_extra_metadata, bazel_rules)
+
+# TODO(hork): replace custom build config with UPB's CMakelists.txt.
+_remove_upb_decode_fast(bazel_rules)
 
 # Step 5: Generate the final metadata for all the targets.
 # This is done by combining the bazel build metadata and the "extra metadata"
