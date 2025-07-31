@@ -23,6 +23,7 @@
 #include <grpc/support/port_platform.h>
 #include <openssl/evp.h>
 #include <openssl/x509.h>
+#include <openssl/x509v3.h>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
