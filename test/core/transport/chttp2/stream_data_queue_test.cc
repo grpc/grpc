@@ -402,12 +402,6 @@ TEST_F(SimpleQueueTest, BigMessageEnqueueDequeueTest) {
 // Stream Data Queue Tests
 
 namespace {
-
-using http2::testing::GetExpectedHeaderAndContinuationFrames;
-using http2::testing::kPathDemoServiceStep;
-using http2::testing::kPathDemoServiceStep2;
-using http2::testing::kPathDemoServiceStep3;
-
 // Helper functions to create test data.
 ClientMetadataHandle TestClientInitialMetadata() {
   auto md = Arena::MakePooledForOverwrite<ClientMetadata>();

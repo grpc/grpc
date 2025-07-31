@@ -25,6 +25,7 @@
 #include <utility>
 
 #include "absl/strings/string_view.h"
+#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 
 namespace grpc_core {
