@@ -403,10 +403,10 @@ TEST_F(SimpleQueueTest, BigMessageEnqueueDequeueTest) {
 
 namespace {
 
-using grpc_core::http2::testing::GetExpectedHeaderAndContinuationFrames;
-using grpc_core::http2::testing::kPathDemoServiceStep;
-using grpc_core::http2::testing::kPathDemoServiceStep2;
-using grpc_core::http2::testing::kPathDemoServiceStep3;
+using http2::testing::GetExpectedHeaderAndContinuationFrames;
+using http2::testing::kPathDemoServiceStep;
+using http2::testing::kPathDemoServiceStep2;
+using http2::testing::kPathDemoServiceStep3;
 
 // Helper functions to create test data.
 ClientMetadataHandle TestClientInitialMetadata() {
