@@ -2703,6 +2703,7 @@ add_library(grpc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/event_engine/ares_resolver.cc
   src/core/lib/event_engine/cf_engine/cf_engine.cc
+  src/core/lib/event_engine/cf_engine/cfsocket_listener.cc
   src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
   src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
@@ -3508,6 +3509,7 @@ add_library(grpc_unsecure
   src/core/lib/debug/trace_flags.cc
   src/core/lib/event_engine/ares_resolver.cc
   src/core/lib/event_engine/cf_engine/cf_engine.cc
+  src/core/lib/event_engine/cf_engine/cfsocket_listener.cc
   src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
   src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
@@ -5906,6 +5908,7 @@ add_library(grpc_authorization_provider
   src/core/lib/debug/trace_flags.cc
   src/core/lib/event_engine/ares_resolver.cc
   src/core/lib/event_engine/cf_engine/cf_engine.cc
+  src/core/lib/event_engine/cf_engine/cfsocket_listener.cc
   src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
   src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
@@ -9733,6 +9736,7 @@ add_executable(call_utils_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/event_engine/ares_resolver.cc
   src/core/lib/event_engine/cf_engine/cf_engine.cc
+  src/core/lib/event_engine/cf_engine/cfsocket_listener.cc
   src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
   src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
@@ -10412,6 +10416,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/test_suite/event_engine_test_framework.cc
     test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
     test/core/event_engine/test_suite/tests/client_test.cc
+    test/core/event_engine/test_suite/tests/server_test.cc
     test/core/event_engine/test_suite/tests/timer_test.cc
   )
   if(WIN32 AND MSVC)
@@ -16344,6 +16349,7 @@ add_executable(filter_fusion_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/event_engine/ares_resolver.cc
   src/core/lib/event_engine/cf_engine/cf_engine.cc
+  src/core/lib/event_engine/cf_engine/cfsocket_listener.cc
   src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
   src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
@@ -19333,6 +19339,7 @@ add_executable(header_assembler_test
   src/core/lib/debug/trace_flags.cc
   src/core/lib/event_engine/ares_resolver.cc
   src/core/lib/event_engine/cf_engine/cf_engine.cc
+  src/core/lib/event_engine/cf_engine/cfsocket_listener.cc
   src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
   src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
   src/core/lib/event_engine/channel_args_endpoint_config.cc

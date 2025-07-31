@@ -35,10 +35,14 @@ namespace grpc_core {
 
 class Http2SettingsManager {
  public:
+  // Only local and peer settings can be edited by the transport.
   Http2Settings& mutable_local() { return local_; }
-  const Http2Settings& local() const { return local_; }
-  const Http2Settings& acked() const { return acked_; }
   Http2Settings& mutable_peer() { return peer_; }
+
+  const Http2Settings& local() const { return local_; }
+  // Before the first SETTINGS ACK frame is received acked_ will hold the
+  // default values.
+  const Http2Settings& acked() const { return acked_; }
   const Http2Settings& peer() const { return peer_; }
 
   channelz::PropertyGrid ChannelzProperties() const {
@@ -49,7 +53,14 @@ class Http2SettingsManager {
         .SetColumn("acked", acked_.ChannelzProperties());
   }
 
+  // Returns nullopt if we don't need to send a SETTINGS frame to the peer.
+  // Returns Http2SettingsFrame if we need to send a SETTINGS frame to the
+  // peer. Transport MUST send a frame returned by this function to the peer.
+  // This function is not idempotent.
   std::optional<Http2SettingsFrame> MaybeSendUpdate();
+
+  // Call when we receive an ACK from our peer.
+  // This function is not idempotent.
   GRPC_MUST_USE_RESULT bool AckLastSend();
 
  private:

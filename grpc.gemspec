@@ -1353,6 +1353,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/ares_resolver.h )
   s.files += %w( src/core/lib/event_engine/cf_engine/cf_engine.cc )
   s.files += %w( src/core/lib/event_engine/cf_engine/cf_engine.h )
+  s.files += %w( src/core/lib/event_engine/cf_engine/cfsocket_listener.cc )
+  s.files += %w( src/core/lib/event_engine/cf_engine/cfsocket_listener.h )
   s.files += %w( src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc )
   s.files += %w( src/core/lib/event_engine/cf_engine/cfstream_endpoint.h )
   s.files += %w( src/core/lib/event_engine/cf_engine/cftype_unique_ref.h )
