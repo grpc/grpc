@@ -23,7 +23,7 @@ mkdir -p artifacts/
 # and we only collect them here to deliver them to the distribtest phase.
 
 # Disable file glob generation so that the '*' used in the Patterns are not expanded
-set -f
+# set -f
 
 # Build the find command to include all files which start with ARTIFACT_PREFIX but does not match any of the EXCLUDE_PATTERNS
 find_cmd=(
@@ -65,6 +65,6 @@ ls ./artifacts
 echo "Listing artifacts after tar.gz copy"
 ls ./artifacts
 
-set +f
+# set +f
 
 exit 1
