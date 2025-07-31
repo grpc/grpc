@@ -497,6 +497,7 @@ grpc_cc_library(
         "absl/log:log",
     ],
     deps = [
+        "//:chttp2_frame",
         "//src/core:http2_status",
     ],
 )
@@ -767,6 +768,7 @@ grpc_cc_test(
         "//src/core:loop",
         "//src/core:sleep",
         "//src/core:stream_data_queue",
+        "//test/core/transport/chttp2:http2_common_test_inputs",
         "//test/core/transport/util:transport_test",
     ],
 )
