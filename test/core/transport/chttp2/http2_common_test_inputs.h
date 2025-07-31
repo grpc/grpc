@@ -25,6 +25,7 @@
 #include <utility>
 
 #include "absl/strings/string_view.h"
+#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 
 namespace grpc_core {
@@ -48,6 +49,24 @@ constexpr absl::string_view kStr1024 =
     "6000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
     "7000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
     "8000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 ";
+
+// Encoded string of header ":path: /demo.Service/Step".
+const std::vector<uint8_t> kPathDemoServiceStep = {
+    0x40, 0x05, 0x3a, 0x70, 0x61, 0x74, 0x68, 0x12, 0x2f,
+    0x64, 0x65, 0x6d, 0x6f, 0x2e, 0x53, 0x65, 0x72, 0x76,
+    0x69, 0x63, 0x65, 0x2f, 0x53, 0x74, 0x65, 0x70};
+
+// Encoded string of header ":path: /demo.Service/Step2".
+const std::vector<uint8_t> kPathDemoServiceStep2 = {
+    0x40, 0x05, 0x3a, 0x70, 0x61, 0x74, 0x68, 0x13, 0x2f,
+    0x64, 0x65, 0x6d, 0x6f, 0x2e, 0x53, 0x65, 0x72, 0x76,
+    0x69, 0x63, 0x65, 0x2f, 0x53, 0x74, 0x65, 0x70, 0x32};
+
+// Encoded string of header ":path: /demo.Service/Step3".
+const std::vector<uint8_t> kPathDemoServiceStep3 = {
+    0x40, 0x05, 0x3a, 0x70, 0x61, 0x74, 0x68, 0x13, 0x2f,
+    0x64, 0x65, 0x6d, 0x6f, 0x2e, 0x53, 0x65, 0x72, 0x76,
+    0x69, 0x63, 0x65, 0x2f, 0x53, 0x74, 0x65, 0x70, 0x33};
 
 constexpr absl::string_view kString1 = "One Hello World!";
 constexpr absl::string_view kString2 = "Two Hello World!";
@@ -84,6 +103,43 @@ inline std::vector<absl::StatusCode> FewAbslErrorCodes() {
   codes.push_back(absl::StatusCode::kInvalidArgument);
   codes.push_back(absl::StatusCode::kInternal);
   return codes;
+}
+
+// Helper function to append Header and Continuation frames to the expected
+// frames vector based on max_frame_length. The encoded_data is the byte array
+// representation of the encoded metadata.
+inline void GetExpectedHeaderAndContinuationFrames(
+    const uint32_t max_frame_length, std::vector<Http2Frame>& expected_frames,
+    const std::vector<uint8_t>& encoded_data, bool end_stream) {
+  uint32_t left_over = encoded_data.size();
+  uint32_t current = 0;
+
+  if (left_over > 0) {
+    int frame_length = std::min(left_over, max_frame_length);
+    left_over -= frame_length;
+    bool end_headers = (left_over == 0);
+
+    expected_frames.emplace_back(Http2HeaderFrame{
+        /*stream_id=*/1, end_headers,
+        /*end_stream=*/end_stream,
+        /*payload=*/
+        SliceBuffer(Slice::FromCopiedString(std::string(
+            encoded_data.begin(), encoded_data.begin() + frame_length)))});
+    current += frame_length;
+  }
+
+  while (left_over > 0) {
+    int frame_length = std::min(left_over, max_frame_length);
+    left_over -= frame_length;
+    bool end_headers = (left_over == 0);
+    expected_frames.emplace_back(Http2ContinuationFrame{
+        /*stream_id=*/1, end_headers,
+        /*payload=*/
+        SliceBuffer(Slice::FromCopiedString(
+            std::string(encoded_data.begin() + current,
+                        encoded_data.begin() + current + frame_length)))});
+    current += frame_length;
+  }
 }
 
 }  // namespace testing
