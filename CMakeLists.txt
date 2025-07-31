@@ -328,6 +328,8 @@ if(MSVC)
   set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /we4789")
   # To decrease the size of PDB files
   set(CMAKE_EXE_LINKER_FLAGS "/opt:ref /opt:icf /pdbcompress")
+  # Needed to compile upb. See https://github.com/protocolbuffers/protobuf/blob/6216ae471f22f407b6e74ed70e688872f2761d35/upb/wire/decode_fast/BUILD#L17-L19
+  set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /Zc:preprocessor")
 endif()
 if (MINGW)
   add_definitions(-D_WIN32_WINNT=0x600)
