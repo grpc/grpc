@@ -273,7 +273,7 @@ TEST_P(SpiffeSslTransportSecurityTest, MTLSSpiffe) {
       kServerKeyPath, kServerCertPath, kClientKeyPath, kClientCertPath,
       kServerSpiffeBundleMapPath, kClientSpiffeBundleMapPath, kNonSpiffeCAPath,
       /*expect_server_success=*/true,
-      /*expect_client_success_1_2=*/true, /*expected_client_success_1_3=*/true);
+      /*expect_client_success_1_2=*/true, /*expect_client_success_1_3=*/true);
   fixture->Run();
 }
 
@@ -287,7 +287,7 @@ TEST_P(SpiffeSslTransportSecurityTest, MTLSSpiffeChain) {
       kNonSpiffeCAPath,
       /*expect_server_success=*/true,
       /*expect_client_success_1_2=*/true,
-      /*expected_client_success_1_3=*/true);
+      /*expect_client_success_1_3=*/true);
   fixture->Run();
 }
 
@@ -299,7 +299,7 @@ TEST_P(SpiffeSslTransportSecurityTest, ClientSideSpiffeBundle) {
                                         kClientSpiffeBundleMapPath, kCaPemPath,
                                         /*expect_server_success=*/true,
                                         /*expect_client_success_1_2=*/true,
-                                        /*expected_client_success_1_3=*/true);
+                                        /*expect_client_success_1_3=*/true);
   fixture->Run();
 }
 
@@ -311,7 +311,7 @@ TEST_P(SpiffeSslTransportSecurityTest, ServerSideSpiffeBundle) {
       kServerSpiffeBundleMapPath, "", kCaPemPath,
       /*expect_server_success=*/true,
       /*expect_client_success_1_2=*/true,
-      /*expected_client_success_1_3=*/true);
+      /*expect_client_success_1_3=*/true);
   fixture->Run();
 }
 
@@ -324,7 +324,7 @@ TEST_P(SpiffeSslTransportSecurityTest, MTLSSpiffeServerMismatchFail) {
       kClientSpiffeBundleMapPath, kClientSpiffeBundleMapPath, kNonSpiffeCAPath,
       /*expect_server_success=*/false,
       /*expect_client_success_1_2=*/false,
-      /*expected_client_success_1_3=*/true);
+      /*expect_client_success_1_3=*/true);
   fixture->Run();
 }
 
@@ -336,7 +336,7 @@ TEST_P(SpiffeSslTransportSecurityTest, MTLSSpiffeClientMismatchFail) {
       kServerSpiffeBundleMapPath, kServerSpiffeBundleMapPath, kNonSpiffeCAPath,
       /*expect_server_success=*/false,
       /*expect_client_success_1_2=*/false,
-      /*expected_client_success_1_3=*/false);
+      /*expect_client_success_1_3=*/false);
   fixture->Run();
 }
 
@@ -346,7 +346,7 @@ TEST_P(SpiffeSslTransportSecurityTest, NonSpiffeServerCertFail) {
       kServerSpiffeBundleMapPath, kClientSpiffeBundleMapPath, kNonSpiffeCAPath,
       /*expect_server_success=*/false,
       /*expect_client_success_1_2=*/false,
-      /*expected_client_success_1_3=*/false);
+      /*expect_client_success_1_3=*/false);
   fixture->Run();
 }
 
@@ -357,7 +357,7 @@ TEST_P(SpiffeSslTransportSecurityTest, NonSpiffeClientCertFail) {
       kServerSpiffeBundleMapPath, kClientSpiffeBundleMapPath, kNonSpiffeCAPath,
       /*expect_server_success=*/false,
       /*expect_client_success_1_2=*/false,
-      /*expected_client_success_1_3=*/true);
+      /*expect_client_success_1_3=*/true);
   fixture->Run();
 }
 
@@ -376,7 +376,7 @@ TEST_P(SpiffeSslTransportSecurityTest, MultiSanSpiffeCertFails) {
                             kMultiSanCertPath, "", "", kCaPemPath,
                             /*expect_server_success=*/true,
                             /*expect_client_success_1_2=*/true,
-                            /*expected_client_success_1_3=*/true);
+                            /*expect_client_success_1_3=*/true);
   fixture_pass->Run();
   // Should fail SPIFFE verification because of multiple URI SANs.
   auto* fixture_fail = new SslTsiTestFixture(
@@ -384,7 +384,7 @@ TEST_P(SpiffeSslTransportSecurityTest, MultiSanSpiffeCertFails) {
       kServerSpiffeBundleMapPath, "", kCaPemPath,
       /*expect_server_success=*/false,
       /*expect_client_success_1_2=*/false,
-      /*expected_client_success_1_3=*/true);
+      /*expect_client_success_1_3=*/true);
   fixture_fail->Run();
 }
 
@@ -403,7 +403,7 @@ TEST_P(SpiffeSslTransportSecurityTest, InvalidUTF8Fails) {
       kInvalidUtf8SanCertPath, "", "", kCaPemPath,
       /*expect_server_success=*/true,
       /*expect_client_success_1_2=*/true,
-      /*expected_client_success_1_3=*/true);
+      /*expect_client_success_1_3=*/true);
   fixture_pass->Run();
   // Should fail SPIFFE verification because of multiple URI SANs.
   auto* fixture_fail = new SslTsiTestFixture(
@@ -411,7 +411,7 @@ TEST_P(SpiffeSslTransportSecurityTest, InvalidUTF8Fails) {
       kInvalidUtf8SanCertPath, kServerSpiffeBundleMapPath, "", kCaPemPath,
       /*expect_server_success=*/false,
       /*expect_client_success_1_2=*/false,
-      /*expected_client_success_1_3=*/true);
+      /*expect_client_success_1_3=*/true);
   fixture_fail->Run();
 }
 
