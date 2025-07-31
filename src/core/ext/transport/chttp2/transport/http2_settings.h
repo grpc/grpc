@@ -48,7 +48,7 @@ class Http2Settings {
     kGrpcAllowSecurityFrameWireId = 65029,
   };
 
-  void Diff(bool is_first_send, const Http2Settings& old,
+  void Diff(bool is_first_send, const Http2Settings& old_setting,
             absl::FunctionRef<void(uint16_t key, uint32_t value)> cb) const;
   GRPC_MUST_USE_RESULT http2::Http2ErrorCode Apply(uint16_t key,
                                                    uint32_t value);
@@ -175,7 +175,14 @@ class Http2Settings {
   bool enable_push_ = true;
 
   // gRPC defined setting
+  // Unlike most other SETTINGS, this setting is negotiated between the client
+  // and the server.
   bool allow_true_binary_metadata_ = false;
+
+  // gRPC defined setting
+  // Unlike most other SETTINGS, this setting is negotiated between the client
+  // and the server. Both have to set it to true for the system to successfully
+  // apply the custom SECURITY frame.
   bool allow_security_frame_ = false;
 };
 
