@@ -31,6 +31,8 @@ namespace http2 {
 
 #define GRPC_STREAM_DATA_QUEUE_DEBUG VLOG(2)
 
+// SimpleQueue is a NOT thread safe.
+// Note: SimpleQueue is a single producer single consumer queue.
 template <typename T>
 class SimpleQueue {
  public:
@@ -50,7 +52,8 @@ class SimpleQueue {
   // allow the enqueue to go through. Otherwise, return pending. Here, we are
   // using tokens_consumed over queue_.empty() because there can be enqueues
   // with tokens = 0. Enqueues with tokens = 0 are primarily for sending
-  // metadata as flow control does not apply to them.
+  // metadata as flow control does not apply to them. This function is NOT
+  // thread safe.
   auto Enqueue(T& data, const uint32_t tokens) {
     return PollEnqueue(data, tokens);
   }
@@ -61,18 +64,19 @@ class SimpleQueue {
   // true, it allows an item to be dequeued even if its token cost is greater
   // than allowed_dequeue_tokens. It does not cause the item itself to be
   // partially dequeued; either the entire item is returned or nullopt is
-  // returned.
+  // returned. This function is NOT thread safe.
   std::optional<T> Dequeue(const uint32_t allowed_dequeue_tokens,
                            const bool allow_oversized_dequeue) {
     return DequeueInternal(allowed_dequeue_tokens, allow_oversized_dequeue);
   }
 
   // Dequeues the next entry immediately ignoring the tokens. If the queue is
-  // empty, returns nullopt.
+  // empty, returns nullopt. This function is NOT thread safe.
   std::optional<T> ImmediateDequeue() {
     return DequeueInternal(std::numeric_limits<uint32_t>::max(), true);
   }
 
+  // Returns true if the queue is empty. This function is NOT thread safe.
   bool TestOnlyIsEmpty() const { return IsEmpty(); }
 
  private:
@@ -151,6 +155,9 @@ class SimpleQueue {
   Waker waker_;
 };
 
+// StreamDataQueue is a thread safe.
+// Note: StreamDataQueue is a single producer single
+// consumer queue.
 template <typename MetadataHandle>
 class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
  public:
@@ -191,6 +198,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // 1. MUST be called at most once.
   // 2. This MUST be called before any messages are enqueued.
   // 3. MUST not be called after trailing metadata is enqueued.
+  // 4. This function is thread safe.
   auto EnqueueInitialMetadata(MetadataHandle metadata) {
     DCHECK(!is_initial_metadata_queued_);
     DCHECK(!is_trailing_metadata_or_half_close_queued_);
@@ -217,6 +225,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // Enqueue Trailing Metadata.
   // 1. MUST be called at most once.
   // 2. MUST be called only for a server.
+  // 3. This function is thread safe.
   auto EnqueueTrailingMetadata(MetadataHandle metadata) {
     DCHECK(metadata != nullptr);
     DCHECK(!is_reset_stream_queued_);
@@ -244,6 +253,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // delays in queueing the message if data queue is full.
   // 1. MUST be called after initial metadata is enqueued.
   // 2. MUST not be called after trailing metadata is enqueued.
+  // 3. This function is thread safe.
   auto EnqueueMessage(MessageHandle message) {
     DCHECK(is_initial_metadata_queued_);
     DCHECK(message != nullptr);
@@ -272,6 +282,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // Enqueue Half Closed.
   // 1. MUST be called at most once.
   // 2. MUST be called only for a client.
+  // 3. This function is thread safe.
   auto EnqueueHalfClosed() {
     DCHECK(is_initial_metadata_queued_);
     DCHECK(is_client_);
@@ -294,6 +305,9 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     };
   }
 
+  // Enqueue Reset Stream.
+  // 1. MUST be called at most once.
+  // 3. This function is thread safe.
   auto EnqueueResetStream(uint32_t error_code) {
     DCHECK(is_initial_metadata_queued_);
     DCHECK(!is_reset_stream_queued_);
@@ -343,6 +357,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   //    dequeue the first message from the queue and create frames for
   //    the partial first message (sum of payload of all returned frames <=
   //    max_fc_tokens).
+  // This function is thread safe.
   absl::StatusOr<DequeueResult> DequeueFrames(const uint32_t max_fc_tokens,
                                               const uint32_t max_frame_length,
                                               HPackCompressor& encoder) {
@@ -374,6 +389,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     return DequeueResult{handle_dequeue.GetFrames(), /*is_writable=*/false};
   }
 
+  // Returns true if the queue is empty. This function is thread safe.
   bool TestOnlyIsEmpty() {
     MutexLock lock(&mu_);
     return queue_.TestOnlyIsEmpty();

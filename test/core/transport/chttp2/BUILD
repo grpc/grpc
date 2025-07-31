@@ -497,6 +497,7 @@ grpc_cc_library(
         "absl/log:log",
     ],
     deps = [
+        "//:chttp2_frame",
         "//src/core:http2_status",
     ],
 )
