@@ -27,7 +27,7 @@ mkdir -p artifacts/
 
 # Build the find command to include all files which start with ARTIFACT_PREFIX but does not match any of the EXCLUDE_PATTERNS
 find_cmd=(
-    find .
+    find "${EXTERNAL_GIT_ROOT}/input_artifacts/"
     -maxdepth 1
     -type d
     -name "${ARTIFACT_PREFIX}*"
