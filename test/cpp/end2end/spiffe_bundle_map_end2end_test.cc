@@ -183,8 +183,10 @@ void DoRpc(const std::string& server_addr,
   } else {
     EXPECT_FALSE(result.ok());
     EXPECT_EQ(result.error_code(), failure_code);
+#if GTEST_USES_POSIX_RE
     EXPECT_THAT(result.error_message(),
                 ::testing::MatchesRegex(failure_message_regex));
+#endif
   }
 }
 
