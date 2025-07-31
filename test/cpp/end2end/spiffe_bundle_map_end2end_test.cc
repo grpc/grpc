@@ -52,7 +52,7 @@ namespace grpc {
 namespace testing {
 namespace {
 
-constexpr char kMessage[] = "Hello";
+constexpr absl::string_view kMessage = "Hello";
 constexpr absl::string_view kCaPemPath =
     "test/core/tsi/test_creds/spiffe_end2end/ca.pem";
 constexpr absl::string_view kClientKeyPath =
@@ -137,7 +137,6 @@ class SpiffeBundleMapTest : public ::testing::Test {
     CHECK_NE(server_credentials.get(), nullptr);
 
     grpc::ServerBuilder builder;
-    TestServiceImpl service_;
 
     builder.AddListeningPort(server_addr_, server_credentials);
     builder.RegisterService("foo.test.google.fr", &service_);
@@ -221,8 +220,6 @@ TEST_F(SpiffeBundleMapTest, ServerSideSpiffeTLS) {
   options.set_identity_cert_name("identity");
 
   options.set_check_call_host(false);
-  auto verifier = std::make_shared<experimental::NoOpCertificateVerifier>();
-  options.set_certificate_verifier(verifier);
 
   DoRpc(server_addr_, options, true);
 }
@@ -396,7 +393,7 @@ TEST_F(SpiffeBundleMapTest, ClientSpiffeReload) {
         MakeTlsHandshakeFailureRegex(expected_message_start), expected_status);
 }
 
-TEST_F(SpiffeBundleMapTest, ServerBadMap) {
+TEST_F(SpiffeBundleMapTest, ServerSideSpiffeVerificationFailure) {
   server_addr_ = absl::StrCat("localhost:",
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
@@ -429,7 +426,7 @@ TEST_F(SpiffeBundleMapTest, ServerBadMap) {
         MakeConnectionFailureRegex(expected_message_start), expected_status);
 }
 
-TEST_F(SpiffeBundleMapTest, ClientBadMap) {
+TEST_F(SpiffeBundleMapTest, ClientSideSpiffeVerificationFailure) {
   server_addr_ = absl::StrCat("localhost:",
                               std::to_string(grpc_pick_unused_port_or_die()));
   absl::Notification notification;
