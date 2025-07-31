@@ -66,3 +66,5 @@ echo "Listing artifacts after tar.gz copy"
 ls ./artifacts
 
 set +f
+
+exit 1
