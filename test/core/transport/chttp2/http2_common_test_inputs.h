@@ -111,34 +111,33 @@ inline std::vector<absl::StatusCode> FewAbslErrorCodes() {
 inline void GetExpectedHeaderAndContinuationFrames(
     const uint32_t max_frame_length, std::vector<Http2Frame>& expected_frames,
     const std::vector<uint8_t>& encoded_data, bool end_stream) {
-  uint32_t left_over = encoded_data.size();
-  uint32_t current = 0;
+  DCHECK_LE(encoded_data.size(), std::numeric_limits<uint32_t>::max());
+  SliceBuffer encoded_metadata(
+      Slice::FromCopiedBuffer(encoded_data.data(), encoded_data.size()));
 
-  if (left_over > 0) {
-    int frame_length = std::min(left_over, max_frame_length);
-    left_over -= frame_length;
-    bool end_headers = (left_over == 0);
+  if (encoded_metadata.Length() > 0) {
+    uint32_t frame_length = std::min(
+        static_cast<uint32_t>(encoded_metadata.Length()), max_frame_length);
+    SliceBuffer payload;
+    encoded_metadata.MoveFirstNBytesIntoSliceBuffer(frame_length, payload);
+    bool end_headers = (encoded_metadata.Length() == 0);
 
-    expected_frames.emplace_back(Http2HeaderFrame{
-        /*stream_id=*/1, end_headers,
-        /*end_stream=*/end_stream,
-        /*payload=*/
-        SliceBuffer(Slice::FromCopiedString(std::string(
-            encoded_data.begin(), encoded_data.begin() + frame_length)))});
-    current += frame_length;
+    expected_frames.emplace_back(Http2HeaderFrame{/*stream_id=*/1, end_headers,
+                                                  /*end_stream=*/end_stream,
+                                                  /*payload=*/
+                                                  std::move(payload)});
   }
 
-  while (left_over > 0) {
-    int frame_length = std::min(left_over, max_frame_length);
-    left_over -= frame_length;
-    bool end_headers = (left_over == 0);
-    expected_frames.emplace_back(Http2ContinuationFrame{
-        /*stream_id=*/1, end_headers,
-        /*payload=*/
-        SliceBuffer(Slice::FromCopiedString(
-            std::string(encoded_data.begin() + current,
-                        encoded_data.begin() + current + frame_length)))});
-    current += frame_length;
+  while (encoded_metadata.Length() > 0) {
+    int frame_length = std::min(
+        static_cast<uint32_t>(encoded_metadata.Length()), max_frame_length);
+    SliceBuffer payload;
+    encoded_metadata.MoveFirstNBytesIntoSliceBuffer(frame_length, payload);
+    bool end_headers = (encoded_metadata.Length() == 0);
+    expected_frames.emplace_back(Http2ContinuationFrame{/*stream_id=*/1,
+                                                        end_headers,
+                                                        /*payload=*/
+                                                        std::move(payload)});
   }
 }
 
