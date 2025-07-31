@@ -35,6 +35,7 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
+#include "src/core/channelz/channelz.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/promise/activity.h"
@@ -233,6 +234,7 @@ class PressureController {
   double Update(double error);
   // Textual representation of the controller.
   std::string DebugString() const;
+  channelz::PropertyList ChannelzProperties() const;
 
  private:
   // How many update periods have we reached the same decision in a row?
@@ -264,6 +266,8 @@ class PressureTracker {
  public:
   double AddSampleAndGetControlValue(double sample);
 
+  channelz::PropertyList ChannelzProperties();
+
  private:
   std::atomic<double> max_this_round_{0.0};
   std::atomic<double> report_{0.0};
@@ -279,7 +283,8 @@ static constexpr size_t kBigAllocatorThreshold = 0.5 * 1024 * 1024;
 static constexpr size_t kSmallAllocatorThreshold = 0.1 * 1024 * 1024;
 
 class BasicMemoryQuota final
-    : public std::enable_shared_from_this<BasicMemoryQuota> {
+    : public std::enable_shared_from_this<BasicMemoryQuota>,
+      public channelz::DataSource {
  public:
   // Data about current memory pressure.
   struct PressureInfo {
@@ -292,7 +297,9 @@ class BasicMemoryQuota final
     size_t max_recommended_allocation_size = 0;
   };
 
-  explicit BasicMemoryQuota(std::string name);
+  explicit BasicMemoryQuota(
+      RefCountedPtr<channelz::ResourceQuotaNode> channelz_node);
+  ~BasicMemoryQuota() { channelz::DataSource::SourceDestructing(); }
 
   // Start the reclamation activity.
   void Start();
@@ -324,7 +331,9 @@ class BasicMemoryQuota final
   ReclaimerQueue* reclaimer_queue(size_t i) { return &reclaimers_[i]; }
 
   // The name of this quota
-  absl::string_view name() const { return name_; }
+  absl::string_view name() const { return channelz_node()->name(); }
+
+  void AddData(channelz::DataSink sink) override;
 
  private:
   friend class ReclamationSweep;
@@ -378,8 +387,6 @@ class BasicMemoryQuota final
   std::atomic<uint64_t> reclamation_counter_{0};
   // Memory pressure smoothing
   memory_quota_detail::PressureTracker pressure_tracker_;
-  // The name of this quota - used for debugging/tracing/etc..
-  std::string name_;
 };
 
 // MemoryAllocatorImpl grants the owner the ability to allocate memory from an
@@ -452,6 +459,8 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   size_t IncrementShardIndex() {
     return chosen_shard_idx_.fetch_add(1, std::memory_order_relaxed);
   }
+
+  void FillChannelzProperties(channelz::PropertyList& list);
 
  private:
   static constexpr size_t kMaxQuotaBufferSize = 1024 * 1024;
@@ -550,8 +559,9 @@ class MemoryOwner final : public MemoryAllocator {
 class MemoryQuota final
     : public grpc_event_engine::experimental::MemoryAllocatorFactory {
  public:
-  explicit MemoryQuota(std::string name)
-      : memory_quota_(std::make_shared<BasicMemoryQuota>(std::move(name))) {
+  explicit MemoryQuota(RefCountedPtr<channelz::ResourceQuotaNode> channelz_node)
+      : memory_quota_(
+            std::make_shared<BasicMemoryQuota>(std::move(channelz_node))) {
     memory_quota_->Start();
   }
   ~MemoryQuota() override {
@@ -580,8 +590,9 @@ class MemoryQuota final
 };
 
 using MemoryQuotaRefPtr = std::shared_ptr<MemoryQuota>;
-inline MemoryQuotaRefPtr MakeMemoryQuota(std::string name) {
-  return std::make_shared<MemoryQuota>(std::move(name));
+inline MemoryQuotaRefPtr MakeMemoryQuota(
+    RefCountedPtr<channelz::ResourceQuotaNode> channelz_node) {
+  return std::make_shared<MemoryQuota>(std::move(channelz_node));
 }
 
 std::vector<std::shared_ptr<BasicMemoryQuota>> AllMemoryQuotas();

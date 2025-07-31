@@ -156,6 +156,12 @@ Http2Status Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
     return Http2Status::Ok();
   }
 
+  if (stream->GetStreamState() == HttpStreamState::kHalfClosedRemote) {
+    return Http2Status::Http2StreamError(
+        Http2ErrorCode::kStreamClosed,
+        std::string(RFC9113::kHalfClosedRemoteState));
+  }
+
   // Add frame to assembler
   GRPC_HTTP2_CLIENT_DLOG
       << "Http2Transport ProcessHttp2DataFrame AppendNewDataFrame";
@@ -227,6 +233,11 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
         << "Http2Transport ProcessHttp2HeaderFrame Promise { stream_id="
         << frame.stream_id << "} Lookup Failed";
     return Http2Status::Ok();
+  }
+  if (stream->GetStreamState() == HttpStreamState::kHalfClosedRemote) {
+    return Http2Status::Http2StreamError(
+        Http2ErrorCode::kStreamClosed,
+        std::string(RFC9113::kHalfClosedRemoteState));
   }
 
   incoming_header_in_progress_ = !frame.end_headers;
@@ -424,6 +435,11 @@ Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
     // error (Section 5.4.1) of type PROTOCOL_ERROR.
     return Http2Status::Ok();
   }
+  if (stream->GetStreamState() == HttpStreamState::kHalfClosedRemote) {
+    return Http2Status::Http2StreamError(
+        Http2ErrorCode::kStreamClosed,
+        std::string(RFC9113::kHalfClosedRemoteState));
+  }
 
   HeaderAssembler& assember = stream->header_assembler;
   Http2Status result = assember.AppendContinuationFrame(std::move(frame));
@@ -437,11 +453,19 @@ Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
 
 Http2Status Http2ClientTransport::ProcessHttp2SecurityFrame(
     Http2SecurityFrame frame) {
-  GRPC_HTTP2_CLIENT_DLOG << "Http2Transport ProcessHttp2SecurityFrame Factory";
-  // TODO(tjagtap) : [PH2][P2] : Implement this.
-  GRPC_HTTP2_CLIENT_DLOG
-      << "Http2Transport ProcessHttp2SecurityFrame Promise { payload="
-      << frame.payload.JoinIntoString() << " }";
+  GRPC_HTTP2_CLIENT_DLOG << "Http2Transport ProcessHttp2SecurityFrame "
+                            "ProcessHttp2SecurityFrame { payload="
+                         << frame.payload.JoinIntoString() << " }";
+  if ((settings_.acked().allow_security_frame() ||
+       settings_.local().allow_security_frame()) &&
+      settings_.peer().allow_security_frame()) {
+    // TODO(tjagtap) : [PH2][P4] : Evaluate when to accept the frame and when to
+    // reject it. Compare it with the requirement and with CHTTP2.
+    // TODO(tjagtap) : [PH2][P3] : Add handling of Security frame
+    // Just the frame.payload needs to be passed to the endpoint_ object.
+    // Refer usage of TransportFramingEndpointExtension.
+  }
+  // Ignore the Security frame if it is not expected.
   return Http2Status::Ok();
 }
 
@@ -705,10 +729,11 @@ Http2ClientTransport::Http2ClientTransport(
                                                 : Duration::Infinity()),
           keepalive_time_),
       keepalive_permit_without_calls_(false) {
-  // TODO(tjagtap) : [PH2][P2] : Save and apply channel_args.
-  // TODO(tjagtap) : [PH2][P2] : Initialize settings_ to appropriate values.
-
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor Begin";
+
+  InitLocalSettings(settings_.mutable_local(), /*is_client=*/true);
+  ReadSettingsFromChannelArgs(channel_args, settings_.mutable_local(),
+                              /*is_client=*/true);
 
   // Initialize the general party and write party.
   auto general_party_arena = SimpleArenaAllocator(0)->MakeArena();
@@ -722,14 +747,32 @@ Http2ClientTransport::Http2ClientTransport(
   // The keepalive loop is only spawned if the keepalive time is not infinity.
   keepalive_manager_.Spawn(general_party_.get());
 
-  // TODO(tjagtap) : [PH2][P2] Fix Settings workflow.
+  // TODO(tjagtap) : [PH2][P2] Delete this hack once flow control is done.
+  // We are increasing the flow control window so that we can avoid sending
+  // WINDOW_UPDATE frames while flow control is under development. Once it is
+  // ready we should remove these lines.
+  // <DeleteAfterFlowControl>
   Http2ErrorCode code = settings_.mutable_local().Apply(
       Http2Settings::kInitialWindowSizeWireId,
       (Http2Settings::max_initial_window_size() - 1));
   DCHECK(code == Http2ErrorCode::kNoError);
+  // </DeleteAfterFlowControl>
+
+  const int max_hpack_table_size =
+      channel_args.GetInt(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER).value_or(-1);
+  if (max_hpack_table_size >= 0) {
+    encoder_.SetMaxUsableSize(max_hpack_table_size);
+  }
+
+  settings_timeout_ =
+      channel_args.GetDurationFromIntMillis(GRPC_ARG_SETTINGS_TIMEOUT)
+          .value_or(std::max(keepalive_timeout_ * 2, Duration::Minutes(1)));
+
   std::optional<Http2SettingsFrame> settings_frame =
       settings_.MaybeSendUpdate();
   if (settings_frame.has_value()) {
+    GRPC_HTTP2_CLIENT_DLOG
+        << "Http2ClientTransport Constructor Spawn SendFirstSettingsFrame";
     general_party_->Spawn(
         "SendFirstSettingsFrame",
         [self = RefAsSubclass<Http2ClientTransport>(),
@@ -737,6 +780,12 @@ Http2ClientTransport::Http2ClientTransport(
           return self->EnqueueOutgoingFrame(std::move(frame));
         },
         [](GRPC_UNUSED absl::Status status) {});
+  }
+  if (settings_.local().allow_security_frame()) {
+    // TODO(tjagtap) : [PH2][P3] : Setup the plumbing to pass the security frame
+    // to the endpoing via TransportFramingEndpointExtension.
+    // Also decide if this plumbing is done here, or when the peer sends
+    // allow_security_frame too.
   }
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor End";
 }
@@ -1007,8 +1056,20 @@ void Http2ClientTransport::StartCall(CallHandler call_handler) {
           },
           [self = RefAsSubclass<Http2ClientTransport>(),
            call_handler](auto args /* Locked stream_id_mutex */) mutable {
-            // TODO (akshitpatel) : [PH2][P2] :
-            // Check for max concurrent streams.
+            // For a gRPC Client, we only need to check the
+            // MAX_CONCURRENT_STREAMS setting compliance at the time of
+            // sending (that is write path). A gRPC Client will never
+            // receive a stream initiated by a server, so we dont have to
+            // check MAX_CONCURRENT_STREAMS compliance on the Read-Path.
+            //
+            // TODO(tjagtap) : [PH2][P1] Check for MAX_CONCURRENT_STREAMS
+            // sent by peer before making a stream. Decide behaviour if we are
+            // crossing this threshold.
+            //
+            // TODO(tjagtap) : [PH2][P1] : For a server we will have to do
+            // this for incoming streams only. If a server receives more streams
+            // from a client than is allowed by the clients settings, whether or
+            // not we should fail is debatable.
             const uint32_t stream_id = self->NextStreamId(std::get<0>(args));
             return If(
                 self->MakeStream(call_handler, stream_id),

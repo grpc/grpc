@@ -407,6 +407,21 @@ MATCHER_P7(GaugeDataIsIncrementalForSpecificMetricAndLabelSet, metric_name,
   return result;
 }
 
+// Helper matcher to check whether a value is within a certain range
+MATCHER_P2(IsWithinRange, lo, hi,
+           absl::StrCat(negation ? "isn't" : "is", " between ",
+                        ::testing::PrintToString(lo), " and ",
+                        ::testing::PrintToString(hi))) {
+  return (lo) <= arg && arg <= (hi);
+}
+
+// Specialization of Extract to be able to use `IsWithinRange` matcher within
+// the `HistogramResultEq` matcher defined above.
+template <typename T>
+struct Extract<const IsWithinRangeMatcherP2<T, T>> {
+  using Type = T;
+};
+
 }  // namespace testing
 }  // namespace grpc
 

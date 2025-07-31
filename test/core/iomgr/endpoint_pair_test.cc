@@ -54,7 +54,8 @@ grpc_endpoint_pair grpc_iomgr_event_engine_shim_endpoint_pair(
   grpc_core::ExecCtx ctx;
   grpc_endpoint_pair p;
   auto ee = grpc_event_engine::experimental::GetDefaultEventEngine();
-  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
+  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>("bar"));
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
@@ -78,7 +79,9 @@ grpc_endpoint_pair grpc_iomgr_event_engine_shim_endpoint_pair(
   ChannelArgsEndpointConfig config(args);
   auto listener = *ee->CreateListener(
       std::move(accept_cb), [](absl::Status /*status*/) {}, config,
-      std::make_unique<grpc_core::MemoryQuota>("foo"));
+      std::make_unique<grpc_core::MemoryQuota>(
+          grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+              "bar")));
 
   CHECK_OK(listener->Bind(*resolved_addr));
   CHECK_OK(listener->Start());
