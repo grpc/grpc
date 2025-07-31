@@ -83,15 +83,13 @@ class SpiffeSslTransportSecurityTest
   // A tsi_test_fixture implementation.
   class SslTsiTestFixture {
    public:
-    SslTsiTestFixture(absl::string_view server_key_path,
-                      absl::string_view server_cert_path,
-                      absl::string_view client_key_path,
-                      absl::string_view client_cert_path,
-                      absl::string_view server_spiffe_bundle_map_path,
-                      absl::string_view client_spiffe_bundle_map_path,
-                      absl::string_view ca_path, bool expect_server_success,
-                      bool expect_client_success_1_2,
-                      bool expect_client_success_1_3) {
+    SslTsiTestFixture(
+        absl::string_view server_key_path, absl::string_view server_cert_path,
+        absl::string_view client_key_path, absl::string_view client_cert_path,
+        absl::string_view server_spiffe_bundle_map_path,
+        absl::string_view client_spiffe_bundle_map_path,
+        std::optional<absl::string_view> ca_path, bool expect_server_success,
+        bool expect_client_success_1_2, bool expect_client_success_1_3) {
       tsi_test_fixture_init(&base_);
       base_.test_unused_bytes = true;
       base_.vtable = &kVtable;
@@ -102,17 +100,19 @@ class SpiffeSslTransportSecurityTest
       client_cert_ =
           grpc_core::testing::GetFileContents(client_cert_path.data());
       // We set this and it shouldn't matter if we set spiffe bundles
-      root_cert_ = grpc_core::testing::GetFileContents(ca_path.data());
+      if (ca_path.has_value()) {
+        root_cert_ = grpc_core::testing::GetFileContents(ca_path->data());
+      }
       if (!server_spiffe_bundle_map_path.empty()) {
         auto server_map =
             grpc_core::SpiffeBundleMap::FromFile(server_spiffe_bundle_map_path);
-        EXPECT_TRUE(server_map.ok());
+        CHECK(server_map.ok());
         server_spiffe_bundle_map_ = std::make_shared<RootCertInfo>(*server_map);
       }
       if (!client_spiffe_bundle_map_path.empty()) {
         auto client_map =
             grpc_core::SpiffeBundleMap::FromFile(client_spiffe_bundle_map_path);
-        EXPECT_TRUE(client_map.ok());
+        CHECK(client_map.ok());
         client_spiffe_bundle_map_ = std::make_shared<RootCertInfo>(*client_map);
       }
       expect_server_success_ = expect_server_success;
@@ -271,7 +271,7 @@ struct tsi_test_fixture_vtable
 TEST_P(SpiffeSslTransportSecurityTest, MTLSSpiffe) {
   auto* fixture = new SslTsiTestFixture(
       kServerKeyPath, kServerCertPath, kClientKeyPath, kClientCertPath,
-      kServerSpiffeBundleMapPath, kClientSpiffeBundleMapPath, kNonSpiffeCAPath,
+      kServerSpiffeBundleMapPath, kClientSpiffeBundleMapPath, std::nullopt,
       /*expect_server_success=*/true,
       /*expect_client_success_1_2=*/true, /*expect_client_success_1_3=*/true);
   fixture->Run();
@@ -284,15 +284,15 @@ TEST_P(SpiffeSslTransportSecurityTest, MTLSSpiffeChain) {
   auto* fixture = new SslTsiTestFixture(
       kServerChainKeyPath, kServerChainCertPath, kClientKeyPath,
       kClientCertPath, kServerSpiffeBundleMapPath, kClientSpiffeBundleMapPath,
-      kNonSpiffeCAPath,
+      std::nullopt,
       /*expect_server_success=*/true,
       /*expect_client_success_1_2=*/true,
       /*expect_client_success_1_3=*/true);
   fixture->Run();
 }
 
-// Just Spiffe bundles on the client side - the server side has the root
-// configured as a certificate
+// Valid SPIFFE bundle on the client side, but the server side has a flat list
+// of CA certificates.
 TEST_P(SpiffeSslTransportSecurityTest, ClientSideSpiffeBundle) {
   auto* fixture = new SslTsiTestFixture(kServerKeyPath, kServerCertPath,
                                         kClientKeyPath, kClientCertPath, "",
@@ -303,8 +303,8 @@ TEST_P(SpiffeSslTransportSecurityTest, ClientSideSpiffeBundle) {
   fixture->Run();
 }
 
-// Just SPIFFE bundles on the server side - the client side has the root
-// configured as a certificate
+// Valid SPIFFE bundle on the server side, but the client side has a flat list
+// of CA certificates.
 TEST_P(SpiffeSslTransportSecurityTest, ServerSideSpiffeBundle) {
   auto* fixture = new SslTsiTestFixture(
       kServerKeyPath, kServerCertPath, kClientKeyPath, kClientCertPath,
@@ -315,59 +315,69 @@ TEST_P(SpiffeSslTransportSecurityTest, ServerSideSpiffeBundle) {
   fixture->Run();
 }
 
-// Use the good client spiffebundle on the server side so we don't get a
-// matching trust domain on the server side for the client's leaf certificate
-// Client-side TLS 1.3 sees success
+// Valid SPIFFE bundle on the client side, but the server side has a SPIFFE
+// bundle that does not have a trust domain that will match the client leaf
+// certificate. When negotiating TLS 1.3, the client-side handshake succeeds
+// because server verification of the client certificate occurs after the
+// client-side handshake is complete.
 TEST_P(SpiffeSslTransportSecurityTest, MTLSSpiffeServerMismatchFail) {
   auto* fixture = new SslTsiTestFixture(
       kServerKeyPath, kServerCertPath, kClientKeyPath, kClientCertPath,
-      kClientSpiffeBundleMapPath, kClientSpiffeBundleMapPath, kNonSpiffeCAPath,
+      kClientSpiffeBundleMapPath, kClientSpiffeBundleMapPath, std::nullopt,
       /*expect_server_success=*/false,
       /*expect_client_success_1_2=*/false,
       /*expect_client_success_1_3=*/true);
   fixture->Run();
 }
 
-// Use the good server side spiffebundle on the client side so we don't get a
-// matching trust domain on the client side for the server's leaf certificate
+// Valid SPIFFE bundle on the server side, but the client side has a SPIFFE
+// bundle that does not have a trust domain that will match the server leaf
+// certificate.
 TEST_P(SpiffeSslTransportSecurityTest, MTLSSpiffeClientMismatchFail) {
   auto* fixture = new SslTsiTestFixture(
       kServerKeyPath, kServerCertPath, kClientKeyPath, kClientCertPath,
-      kServerSpiffeBundleMapPath, kServerSpiffeBundleMapPath, kNonSpiffeCAPath,
+      kServerSpiffeBundleMapPath, kServerSpiffeBundleMapPath, std::nullopt,
       /*expect_server_success=*/false,
       /*expect_client_success_1_2=*/false,
       /*expect_client_success_1_3=*/false);
   fixture->Run();
 }
 
+// The client side is configured with only a SPIFFE bundle, but the server leaf
+// certificate does not have a SPIFFE ID.
 TEST_P(SpiffeSslTransportSecurityTest, NonSpiffeServerCertFail) {
   auto* fixture = new SslTsiTestFixture(
       kNonSpiffeKeyPath, kNonSpiffeCertPath, kClientKeyPath, kClientCertPath,
-      kServerSpiffeBundleMapPath, kClientSpiffeBundleMapPath, kNonSpiffeCAPath,
+      kServerSpiffeBundleMapPath, kClientSpiffeBundleMapPath, std::nullopt,
       /*expect_server_success=*/false,
       /*expect_client_success_1_2=*/false,
       /*expect_client_success_1_3=*/false);
   fixture->Run();
 }
 
+// The server side is configured with only a SPIFFE bundle, but the client leaf
+// certificate does not have a SPIFFE ID. When negotiating TLS 1.3, the
+// client-side handshake succeeds because server verification of the client
+// certificate occurs after the client-side handshake is complete.
 TEST_P(SpiffeSslTransportSecurityTest, NonSpiffeClientCertFail) {
   // TLS1.3 client will pass because it validates the server
   auto* fixture = new SslTsiTestFixture(
       kServerKeyPath, kServerCertPath, kNonSpiffeKeyPath, kNonSpiffeCertPath,
-      kServerSpiffeBundleMapPath, kClientSpiffeBundleMapPath, kNonSpiffeCAPath,
+      kServerSpiffeBundleMapPath, kClientSpiffeBundleMapPath, std::nullopt,
       /*expect_server_success=*/false,
       /*expect_client_success_1_2=*/false,
       /*expect_client_success_1_3=*/true);
   fixture->Run();
 }
 
-// Just SPIFFE bundles on the server side - the client side has what should be a
-// valid cert but with multiple URI SANs which should fail SPIFFE verification.
-// This specific failure should show up in logs. If SPIFFE verification is NOT
-// done, we would expect this to pass - it's a function of the SPIFFE spec to
-// fail on multiple URI SANs. We verify that the certificates used here would
-// otherwise succeed when the root CA is used directly rather than the SPIFFE
-// Bundle Map, then that same setup fails when a SPIFFE Bundle Map is used.
+// The server side is configued with a SPIFFE bundle, but the client side has a
+// certificate with multiple URI SANs which should fail SPIFFE verification. The
+// client's certificate is otherwise valid. This specific failure should show up
+// in logs. If SPIFFE verification is NOT done, we would expect this to pass -
+// it's a function of the SPIFFE spec to fail on multiple URI SANs. We verify
+// that the certificates used here would otherwise succeed when the root CA is
+// used directly rather than the SPIFFE Bundle Map, then that same setup fails
+// when a SPIFFE Bundle Map is used.
 TEST_P(SpiffeSslTransportSecurityTest, MultiSanSpiffeCertFails) {
   // Passes because SPIFFE verification is not done, and this would be valid in
   // that case.
@@ -388,13 +398,14 @@ TEST_P(SpiffeSslTransportSecurityTest, MultiSanSpiffeCertFails) {
   fixture_fail->Run();
 }
 
-// Just SPIFFE bundles on the server side - the client side has what should be a
-// valid cert but with multiple URI SANs which should fail SPIFFE verification.
-// This specific failure should show up in logs. If SPIFFE verification is NOT
-// done, we would expect this to pass - it's a function of the SPIFFE spec to
-// fail on multiple URI SANs. We verify that the certificates used here would
-// otherwise succeed when the root CA is used directly rather than the SPIFFE
-// Bundle Map, then that same setup fails when a SPIFFE Bundle Map is used.
+// The server side is configued with a SPIFFE bundle, but the client side has a
+// certificate with multiple URI SANs which should fail SPIFFE verification. The
+// client's certificate is otherwise valid. This specific failure should show up
+// in logs. If SPIFFE verification is NOT done, we would expect this to pass -
+// it's a function of the SPIFFE spec to fail on multiple URI SANs. We verify
+// that the certificates used here would otherwise succeed when the root CA is
+// used directly rather than the SPIFFE Bundle Map, then that same setup fails
+// when a SPIFFE Bundle Map is used.
 TEST_P(SpiffeSslTransportSecurityTest, InvalidUTF8Fails) {
   // Passes because SPIFFE verification is not done, and this would be valid in
   // that case.
@@ -414,8 +425,6 @@ TEST_P(SpiffeSslTransportSecurityTest, InvalidUTF8Fails) {
       /*expect_client_success_1_3=*/true);
   fixture_fail->Run();
 }
-
-// CRLs + Spiffe?
 
 std::string TestNameSuffix(
     const ::testing::TestParamInfo<tsi_tls_version>& version) {
