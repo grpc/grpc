@@ -25,6 +25,9 @@ mkdir -p artifacts/
 # Disable file glob generation so that the '*' used in the Patterns are not expanded
 # set -f
 
+echo "List artifacts in source dir"
+ls -R "${EXTERNAL_GIT_ROOT}/input_artifacts/"
+
 # Build the find command to include all files which start with ARTIFACT_PREFIX but does not match any of the EXCLUDE_PATTERNS
 find_cmd=(
     find "${EXTERNAL_GIT_ROOT}/input_artifacts/"
