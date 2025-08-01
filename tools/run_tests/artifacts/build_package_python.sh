@@ -22,9 +22,6 @@ mkdir -p artifacts/
 # All the python packages have been built in the artifact phase already
 # and we only collect them here to deliver them to the distribtest phase.
 
-echo "List artifacts in source dir"
-ls -R "${EXTERNAL_GIT_ROOT}/input_artifacts/"
-
 # Build the find command to include all files which start with ARTIFACT_PREFIX but does not match any of the EXCLUDE_PATTERNS
 find_cmd=(
     find "${EXTERNAL_GIT_ROOT}/input_artifacts/"
@@ -40,17 +37,10 @@ if [[ -n "$EXCLUDE_PATTERNS" ]]; then
     done
 fi
 
-echo "Print find_cmd"
-echo "${find_cmd[@]}"
-
 # Copy all files except '*.tar.gz' and '*py3-none-any.whl' files.
 "${find_cmd[@]}" -print0 \
     | xargs -0 -I% find % -type f -not -name "*.tar.gz" \
     -not -name "*py3-none-any.whl" -maxdepth 1 -exec cp -v {} ./artifacts \;
-
-
-echo "Listing artifacts before tar.gz copy"
-ls ./artifacts
 
 # all the artifact builder configurations generate an equivalent 
 # grpcio-VERSION.tar.gz source distribution package and 
@@ -61,8 +51,3 @@ ls ./artifacts
 "${find_cmd[@]}" -print0 \
     | xargs -0 -I% find % -type f \( -name "*.tar.gz" -o \
     -name "*py3-none-any.whl" \) -maxdepth 1 -exec cp -vf {} ./artifacts \;
-
-echo "Listing artifacts after tar.gz copy"
-ls ./artifacts
-
-exit 1
