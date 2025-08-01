@@ -10657,6 +10657,16 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "lows",
+    hdrs = ["ext/transport/chttp2/transport/lows.h"],
+    deps = [
+        "if",
+        "loop",
+        "mpsc",
+    ],
+)
+
 ### UPB Targets
 
 grpc_upb_proto_library(

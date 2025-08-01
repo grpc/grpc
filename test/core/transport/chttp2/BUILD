@@ -788,3 +788,12 @@ grpc_fuzz_test(
         "//test/core/call/yodel:yodel_test",
     ],
 )
+
+grpc_cc_test(
+    name = "lows_test",
+    srcs = ["lows_test.cc"],
+    deps = [
+        "//src/core:lows",
+        "//test/core/transport/util:transport_test",
+    ],
+)
