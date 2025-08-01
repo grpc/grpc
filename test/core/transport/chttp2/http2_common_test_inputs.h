@@ -126,18 +126,18 @@ inline void GetExpectedHeaderAndContinuationFrames(
                                                   /*end_stream=*/end_stream,
                                                   /*payload=*/
                                                   std::move(payload)});
-  }
 
-  while (encoded_metadata.Length() > 0) {
-    int frame_length = std::min(
-        static_cast<uint32_t>(encoded_metadata.Length()), max_frame_length);
-    SliceBuffer payload;
-    encoded_metadata.MoveFirstNBytesIntoSliceBuffer(frame_length, payload);
-    bool end_headers = (encoded_metadata.Length() == 0);
-    expected_frames.emplace_back(Http2ContinuationFrame{/*stream_id=*/1,
-                                                        end_headers,
-                                                        /*payload=*/
-                                                        std::move(payload)});
+    while (encoded_metadata.Length() > 0) {
+      uint32_t frame_length = std::min(
+          static_cast<uint32_t>(encoded_metadata.Length()), max_frame_length);
+      SliceBuffer payload;
+      encoded_metadata.MoveFirstNBytesIntoSliceBuffer(frame_length, payload);
+      bool end_headers = (encoded_metadata.Length() == 0);
+      expected_frames.emplace_back(Http2ContinuationFrame{/*stream_id=*/1,
+                                                          end_headers,
+                                                          /*payload=*/
+                                                          std::move(payload)});
+    }
   }
 }
 
