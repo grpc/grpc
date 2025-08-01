@@ -1776,7 +1776,7 @@ static void perform_stream_op_locked(void* stream_op,
   // client_channel filter.)
   if (!t->is_client && !grpc_core::IsCallTracerInTransportEnabled() &&
       op->send_initial_metadata) {
-    s->call_tracer = s->arena->GetContext<grpc_core::CallTracerInterface>();
+    s->call_tracer = s->arena->GetContext<grpc_core::ServerCallTracer>();
   }
   if (GRPC_TRACE_FLAG_ENABLED(http)) {
     LOG(INFO) << "perform_stream_op_locked[s=" << s << "; op=" << op

@@ -542,7 +542,11 @@ FilterStackCall::BatchControl* FilterStackCall::ReuseOrAllocateBatchControl(
     *pslot = bctl;
   }
   bctl->call_ = this;
-  bctl->call_tracer_ = arena()->GetContext<CallTracerAnnotationInterface>();
+  if (is_client()) {
+    bctl->call_tracer_ = arena()->GetContext<ClientCallTracer>();
+  } else {
+    bctl->call_tracer_ = arena()->GetContext<ServerCallTracer>();
+  }
   bctl->op_.payload = &stream_op_payload_;
   return bctl;
 }

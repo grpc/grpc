@@ -44,9 +44,9 @@ namespace grpc_core {
 // The interface hierarchy is as follows -
 //                 CallTracerAnnotationInterface
 //                    |                  |
-//        ClientCallTracer       CallTracerInterface
+//        ClientCallTracerInterface       CallTracerInterface
 //                                |              |
-//                      CallAttemptTracer    ServerCallTracer
+//                      CallAttemptTracer    ServerCallTracerInterface
 
 // The base class for all tracer implementations.
 class CallTracerAnnotationInterface {
@@ -129,10 +129,13 @@ class CallTracerInterface : public CallTracerAnnotationInterface {
   virtual std::shared_ptr<TcpCallTracer> StartNewTcpTrace() = 0;
 };
 
+class ClientCallTracerInterface;
+class ServerCallTracerInterface;
+
 // Interface for a tracer that records activities on a call. Actual attempts for
 // this call are traced with CallAttemptTracer after invoking RecordNewAttempt()
 // on the ClientCallTracer object.
-class ClientCallTracer : public CallTracerAnnotationInterface {
+class ClientCallTracerInterface : public CallTracerAnnotationInterface {
  public:
   // Interface for a tracer that records activities on a particular call
   // attempt.
@@ -170,22 +173,22 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
                                   RefCountedStringValue value) = 0;
   };
 
-  ~ClientCallTracer() override {}
+  ~ClientCallTracerInterface() override {}
 
   // Records a new attempt for the associated call. \a transparent denotes
   // whether the attempt is being made as a transparent retry or as a
   // non-transparent retry/hedging attempt. (There will be at least one attempt
-  // even if the call is not being retried.) The `ClientCallTracer` object
-  // retains ownership to the newly created `CallAttemptTracer` object.
+  // even if the call is not being retried.) The `ClientCallTracerInterface`
+  // object retains ownership to the newly created `CallAttemptTracer` object.
   // RecordEnd() serves as an indication that the call stack is done with all
   // API calls, and the tracer library is free to destroy it after that.
   virtual CallAttemptTracer* StartNewAttempt(bool is_transparent_retry) = 0;
 };
 
 // Interface for a tracer that records activities on a server call.
-class ServerCallTracer : public CallTracerInterface {
+class ServerCallTracerInterface : public CallTracerInterface {
  public:
-  ~ServerCallTracer() override {}
+  ~ServerCallTracerInterface() override {}
   // TODO(yashykt): The following two methods `RecordReceivedTrailingMetadata`
   // and `RecordEnd` should be moved into CallTracerInterface.
   virtual void RecordReceivedTrailingMetadata(
@@ -195,15 +198,15 @@ class ServerCallTracer : public CallTracerInterface {
   virtual void RecordEnd(const grpc_call_final_info* final_info) = 0;
 };
 
-// Interface for a factory that can create a ServerCallTracer object per
-// server call.
+// Interface for a factory that can create a ServerCallTracerInterface object
+// per server call.
 class ServerCallTracerFactory {
  public:
   struct RawPointerChannelArgTag {};
 
   virtual ~ServerCallTracerFactory() {}
 
-  virtual ServerCallTracer* CreateNewServerCallTracer(
+  virtual ServerCallTracerInterface* CreateNewServerCallTracer(
       Arena* arena, const ChannelArgs& channel_args) = 0;
 
   // Returns true if a server is to be traced, false otherwise.
@@ -225,38 +228,185 @@ class ServerCallTracerFactory {
   static absl::string_view ChannelArgName();
 };
 
+class ClientCallTracer {
+ public:
+  explicit ClientCallTracer(ClientCallTracerInterface* impl) : impl_(impl) {}
+
+  CallAttemptTracer* StartNewAttempt(bool is_transparent_retry) {
+    return new CallAttemptTracer(impl_->StartNewAttempt(is_transparent_retry));
+  }
+
+  void RecordAnnotation(absl::string_view annotation) {
+    impl_->RecordAnnotation(annotation);
+  }
+  void RecordAnnotation(
+      const CallTracerAnnotationInterface::Annotation& annotation) {
+    impl_->RecordAnnotation(annotation);
+  }
+  std::string TraceId() { return impl_->TraceId(); }
+  std::string SpanId() { return impl_->SpanId(); }
+  bool IsSampled() { return impl_->IsSampled(); }
+
+ private:
+  ClientCallTracerInterface* impl_;
+};
+
+class CallAttemptTracer {
+ public:
+  using OptionalLabelKey =
+      ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey;
+  explicit CallAttemptTracer(ClientCallTracerInterface::CallAttemptTracer* impl)
+      : impl_(impl) {}
+
+  void RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata) {
+    impl_->RecordSendInitialMetadata(send_initial_metadata);
+  }
+  void RecordSendTrailingMetadata(grpc_metadata_batch* send_trailing_metadata) {
+    impl_->RecordSendTrailingMetadata(send_trailing_metadata);
+  }
+  void RecordSendMessage(const Message& send_message) {
+    impl_->RecordSendMessage(send_message);
+  }
+  void RecordSendCompressedMessage(const Message& send_compressed_message) {
+    impl_->RecordSendCompressedMessage(send_compressed_message);
+  }
+  void RecordReceivedInitialMetadata(
+      grpc_metadata_batch* recv_initial_metadata) {
+    impl_->RecordReceivedInitialMetadata(recv_initial_metadata);
+  }
+  void RecordReceivedMessage(const Message& recv_message) {
+    impl_->RecordReceivedMessage(recv_message);
+  }
+  void RecordReceivedDecompressedMessage(
+      const Message& recv_decompressed_message) {
+    impl_->RecordReceivedDecompressedMessage(recv_decompressed_message);
+  }
+  void RecordCancel(grpc_error_handle cancel_error) {
+    impl_->RecordCancel(cancel_error);
+  }
+  void RecordIncomingBytes(
+      const CallTracerInterface::TransportByteSize& transport_byte_size) {
+    impl_->RecordIncomingBytes(transport_byte_size);
+  }
+  void RecordOutgoingBytes(
+      const CallTracerInterface::TransportByteSize& transport_byte_size) {
+    impl_->RecordOutgoingBytes(transport_byte_size);
+  }
+  std::shared_ptr<TcpCallTracer> StartNewTcpTrace() {
+    return impl_->StartNewTcpTrace();
+  }
+  void RecordReceivedTrailingMetadata(
+      absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
+      const grpc_transport_stream_stats* transport_stream_stats) {
+    impl_->RecordReceivedTrailingMetadata(status, recv_trailing_metadata,
+                                          transport_stream_stats);
+  }
+  void RecordEnd() { impl_->RecordEnd(); }
+  void SetOptionalLabel(OptionalLabelKey key, RefCountedStringValue value) {
+    impl_->SetOptionalLabel(key, value);
+  }
+  void RecordAnnotation(absl::string_view annotation) {
+    impl_->RecordAnnotation(annotation);
+  }
+  void RecordAnnotation(
+      const CallTracerAnnotationInterface::Annotation& annotation) {
+    impl_->RecordAnnotation(annotation);
+  }
+  std::string TraceId() { return impl_->TraceId(); }
+  std::string SpanId() { return impl_->SpanId(); }
+  bool IsSampled() { return impl_->IsSampled(); }
+
+ private:
+  ClientCallTracerInterface::CallAttemptTracer* impl_;
+};
+
+class ServerCallTracer {
+ public:
+  explicit ServerCallTracer(ServerCallTracerInterface* impl) : impl_(impl) {}
+
+  void RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata) {
+    impl_->RecordSendInitialMetadata(send_initial_metadata);
+  }
+  void RecordSendTrailingMetadata(grpc_metadata_batch* send_trailing_metadata) {
+    impl_->RecordSendTrailingMetadata(send_trailing_metadata);
+  }
+  void RecordSendMessage(const Message& send_message) {
+    impl_->RecordSendMessage(send_message);
+  }
+  void RecordSendCompressedMessage(const Message& send_compressed_message) {
+    impl_->RecordSendCompressedMessage(send_compressed_message);
+  }
+  void RecordReceivedInitialMetadata(
+      grpc_metadata_batch* recv_initial_metadata) {
+    impl_->RecordReceivedInitialMetadata(recv_initial_metadata);
+  }
+  void RecordReceivedMessage(const Message& recv_message) {
+    impl_->RecordReceivedMessage(recv_message);
+  }
+  void RecordReceivedDecompressedMessage(
+      const Message& recv_decompressed_message) {
+    impl_->RecordReceivedDecompressedMessage(recv_decompressed_message);
+  }
+  void RecordCancel(grpc_error_handle cancel_error) {
+    impl_->RecordCancel(cancel_error);
+  }
+  void RecordIncomingBytes(
+      const CallTracerInterface::TransportByteSize& transport_byte_size) {
+    impl_->RecordIncomingBytes(transport_byte_size);
+  }
+  void RecordOutgoingBytes(
+      const CallTracerInterface::TransportByteSize& transport_byte_size) {
+    impl_->RecordOutgoingBytes(transport_byte_size);
+  }
+  std::shared_ptr<TcpCallTracer> StartNewTcpTrace() {
+    return impl_->StartNewTcpTrace();
+  }
+  void RecordReceivedTrailingMetadata(
+      grpc_metadata_batch* recv_trailing_metadata) {
+    impl_->RecordReceivedTrailingMetadata(recv_trailing_metadata);
+  }
+  void RecordEnd(const grpc_call_final_info* final_info) {
+    impl_->RecordEnd(final_info);
+  }
+  void RecordAnnotation(absl::string_view annotation) {
+    impl_->RecordAnnotation(annotation);
+  }
+  void RecordAnnotation(
+      const CallTracerAnnotationInterface::Annotation& annotation) {
+    impl_->RecordAnnotation(annotation);
+  }
+  std::string TraceId() { return impl_->TraceId(); }
+  std::string SpanId() { return impl_->SpanId(); }
+  bool IsSampled() { return impl_->IsSampled(); }
+
+ private:
+  ServerCallTracerInterface* impl_;
+};
+
 // Convenience functions to add call tracers to a call context. Allows setting
 // multiple call tracers to a single call. It is only valid to add client call
 // tracers before the client_channel filter sees the send_initial_metadata op.
-void AddClientCallTracerToContext(Arena* arena, ClientCallTracer* tracer);
+void AddClientCallTracerToContext(Arena* arena,
+                                  ClientCallTracerInterface* tracer);
 
 // TODO(yashykt): We want server call tracers to be registered through the
 // ServerCallTracerFactory, which has yet to be made into a list.
-void AddServerCallTracerToContext(Arena* arena, ServerCallTracer* tracer);
+void AddServerCallTracerToContext(Arena* arena,
+                                  ServerCallTracerInterface* tracer);
 
 template <>
-struct ArenaContextType<CallTracerInterface> {
-  static void Destroy(CallTracerAnnotationInterface*) {}
+struct ArenaContextType<ClientCallTracer> {
+  static void Destroy(ClientCallTracer*) {}
 };
 
 template <>
-struct ArenaContextType<CallTracerAnnotationInterface> {
-  static void Destroy(CallTracerAnnotationInterface*) {}
+struct ArenaContextType<ServerCallTracer> {
+  static void Destroy(ServerCallTracer*) {}
 };
 
 template <>
-struct ContextSubclass<ClientCallTracer::CallAttemptTracer> {
-  using Base = CallTracerInterface;
-};
-
-template <>
-struct ContextSubclass<ServerCallTracer> {
-  using Base = CallTracerInterface;
-};
-
-template <>
-struct ContextSubclass<ClientCallTracer> {
-  using Base = CallTracerAnnotationInterface;
+struct ArenaContextType<CallAttemptTracer> {
+  static void Destroy(CallAttemptTracer*) {}
 };
 
 }  // namespace grpc_core

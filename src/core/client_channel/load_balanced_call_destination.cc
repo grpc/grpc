@@ -47,8 +47,8 @@ class LbCallState : public ClientChannelLbCallState {
     return service_config_call_data->GetCallAttribute(type);
   }
 
-  ClientCallTracer::CallAttemptTracer* GetCallAttemptTracer() const override {
-    return GetContext<ClientCallTracer::CallAttemptTracer>();
+  CallAttemptTracer* GetCallAttemptTracer() const override {
+    return GetContext<CallAttemptTracer>();
   }
 };
 
@@ -239,8 +239,7 @@ void LoadBalancedCallDestination::StartCall(
               }
               // If it was queued, add a trace annotation.
               if (was_queued) {
-                auto* tracer =
-                    MaybeGetContext<ClientCallTracer::CallAttemptTracer>();
+                auto* tracer = MaybeGetContext<CallAttemptTracer>();
                 if (tracer != nullptr) {
                   tracer->RecordAnnotation("Delayed LB pick complete.");
                 }

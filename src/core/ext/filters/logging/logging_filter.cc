@@ -361,15 +361,14 @@ void ClientLoggingFilter::Call::OnClientInitialMetadata(
     return;
   }
   call_data_->LogClientHeader(
-      /*is_client=*/true, MaybeGetContext<CallTracerAnnotationInterface>(), md);
+      /*is_client=*/true, MaybeGetContext<ClientCallTracer>(), md);
 }
 
 void ClientLoggingFilter::Call::OnServerInitialMetadata(ServerMetadata& md) {
   GRPC_LATENT_SEE_SCOPE("ClientLoggingFilter::Call::OnServerInitialMetadata");
   if (!call_data_.has_value()) return;
   call_data_->LogServerHeader(
-      /*is_client=*/true, MaybeGetContext<CallTracerAnnotationInterface>(),
-      &md);
+      /*is_client=*/true, MaybeGetContext<ClientCallTracer>(), &md);
 }
 
 void ClientLoggingFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
@@ -378,12 +377,11 @@ void ClientLoggingFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
   if (md.get(GrpcCallWasCancelled()).value_or(false) &&
       md.get(GrpcStatusMetadata()) == GRPC_STATUS_CANCELLED) {
     call_data_->LogCancel(
-        /*is_client=*/true, MaybeGetContext<CallTracerAnnotationInterface>());
+        /*is_client=*/true, MaybeGetContext<ClientCallTracer>());
     return;
   }
   call_data_->LogServerTrailer(
-      /*is_client=*/true, MaybeGetContext<CallTracerAnnotationInterface>(),
-      &md);
+      /*is_client=*/true, MaybeGetContext<ClientCallTracer>(), &md);
 }
 
 void ClientLoggingFilter::Call::OnClientToServerMessage(
@@ -391,7 +389,7 @@ void ClientLoggingFilter::Call::OnClientToServerMessage(
   GRPC_LATENT_SEE_SCOPE("ClientLoggingFilter::Call::OnClientToServerMessage");
   if (!call_data_.has_value()) return;
   call_data_->LogClientMessage(
-      /*is_client=*/true, MaybeGetContext<CallTracerAnnotationInterface>(),
+      /*is_client=*/true, MaybeGetContext<ClientCallTracer>(),
       message.payload());
 }
 
@@ -399,7 +397,7 @@ void ClientLoggingFilter::Call::OnClientToServerHalfClose() {
   GRPC_LATENT_SEE_SCOPE("ClientLoggingFilter::Call::OnClientToServerHalfClose");
   if (!call_data_.has_value()) return;
   call_data_->LogClientHalfClose(
-      /*is_client=*/true, MaybeGetContext<CallTracerAnnotationInterface>());
+      /*is_client=*/true, MaybeGetContext<ClientCallTracer>());
 }
 
 void ClientLoggingFilter::Call::OnServerToClientMessage(
@@ -407,7 +405,7 @@ void ClientLoggingFilter::Call::OnServerToClientMessage(
   GRPC_LATENT_SEE_SCOPE("ClientLoggingFilter::Call::OnServerToClientMessage");
   if (!call_data_.has_value()) return;
   call_data_->LogServerMessage(
-      /*is_client=*/true, MaybeGetContext<CallTracerAnnotationInterface>(),
+      /*is_client=*/true, MaybeGetContext<ClientCallTracer>(),
       message.payload());
 }
 
@@ -432,16 +430,14 @@ void ServerLoggingFilter::Call::OnClientInitialMetadata(ClientMetadata& md) {
     return;
   }
   call_data_->LogClientHeader(
-      /*is_client=*/false, MaybeGetContext<CallTracerAnnotationInterface>(),
-      md);
+      /*is_client=*/false, MaybeGetContext<ServerCallTracer>(), md);
 }
 
 void ServerLoggingFilter::Call::OnServerInitialMetadata(ServerMetadata& md) {
   GRPC_LATENT_SEE_SCOPE("ServerLoggingFilter::Call::OnServerInitialMetadata");
   if (!call_data_.has_value()) return;
   call_data_->LogServerHeader(
-      /*is_client=*/false, MaybeGetContext<CallTracerAnnotationInterface>(),
-      &md);
+      /*is_client=*/false, MaybeGetContext<ServerCallTracer>(), &md);
 }
 
 void ServerLoggingFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
@@ -450,12 +446,11 @@ void ServerLoggingFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
   if (md.get(GrpcCallWasCancelled()).value_or(false) &&
       md.get(GrpcStatusMetadata()) == GRPC_STATUS_CANCELLED) {
     call_data_->LogCancel(
-        /*is_client=*/false, MaybeGetContext<CallTracerAnnotationInterface>());
+        /*is_client=*/false, MaybeGetContext<ServerCallTracer>());
     return;
   }
   call_data_->LogServerTrailer(
-      /*is_client=*/false, MaybeGetContext<CallTracerAnnotationInterface>(),
-      &md);
+      /*is_client=*/false, MaybeGetContext<ServerCallTracer>(), &md);
 }
 
 void ServerLoggingFilter::Call::OnClientToServerMessage(
@@ -463,7 +458,7 @@ void ServerLoggingFilter::Call::OnClientToServerMessage(
   GRPC_LATENT_SEE_SCOPE("ServerLoggingFilter::Call::OnClientToServerMessage");
   if (!call_data_.has_value()) return;
   call_data_->LogClientMessage(
-      /*is_client=*/false, MaybeGetContext<CallTracerAnnotationInterface>(),
+      /*is_client=*/false, MaybeGetContext<ServerCallTracer>(),
       message.payload());
 }
 
@@ -471,7 +466,7 @@ void ServerLoggingFilter::Call::OnClientToServerHalfClose() {
   GRPC_LATENT_SEE_SCOPE("ServerLoggingFilter::Call::OnClientToServerHalfClose");
   if (!call_data_.has_value()) return;
   call_data_->LogClientHalfClose(
-      /*is_client=*/false, MaybeGetContext<CallTracerAnnotationInterface>());
+      /*is_client=*/false, MaybeGetContext<ServerCallTracer>());
 }
 
 void ServerLoggingFilter::Call::OnServerToClientMessage(
@@ -479,7 +474,7 @@ void ServerLoggingFilter::Call::OnServerToClientMessage(
   GRPC_LATENT_SEE_SCOPE("ServerLoggingFilter::Call::OnServerToClientMessage");
   if (!call_data_.has_value()) return;
   call_data_->LogServerMessage(
-      /*is_client=*/false, MaybeGetContext<CallTracerAnnotationInterface>(),
+      /*is_client=*/false, MaybeGetContext<ServerCallTracer>(),
       message.payload());
 }
 

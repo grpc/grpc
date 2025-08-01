@@ -1871,7 +1871,7 @@ std::optional<absl::Status> ClientChannelFilter::CallData::CheckResolution(
   }
   // If the call was queued, add trace annotation.
   if (was_queued) {
-    auto* call_tracer = arena()->GetContext<CallTracerAnnotationInterface>();
+    auto* call_tracer = arena()->GetContext<ClientCallTracer>();
     if (call_tracer != nullptr) {
       call_tracer->RecordAnnotation("Delayed name resolution complete.");
     }
@@ -2290,7 +2290,8 @@ class ClientChannelFilter::LoadBalancedCall::LbCallState final
   ServiceConfigCallData::CallAttributeInterface* GetCallAttribute(
       UniqueTypeName type) const override;
 
-  ClientCallTracer::CallAttemptTracer* GetCallAttemptTracer() const override;
+  ClientCallTracerInterface::CallAttemptTracer* GetCallAttemptTracer()
+      const override;
 
  private:
   LoadBalancedCall* lb_call_;
@@ -2307,7 +2308,7 @@ ClientChannelFilter::LoadBalancedCall::LbCallState::GetCallAttribute(
   return service_config_call_data->GetCallAttribute(type);
 }
 
-ClientCallTracer::CallAttemptTracer*
+ClientCallTracerInterface::CallAttemptTracer*
 ClientChannelFilter::LoadBalancedCall::LbCallState::GetCallAttemptTracer()
     const {
   return lb_call_->call_attempt_tracer();
@@ -2364,10 +2365,9 @@ class ClientChannelFilter::LoadBalancedCall::BackendMetricAccessor final
 
 namespace {
 
-ClientCallTracer::CallAttemptTracer* CreateCallAttemptTracer(
+ClientCallTracerInterface::CallAttemptTracer* CreateCallAttemptTracer(
     Arena* arena, bool is_transparent_retry) {
-  auto* call_tracer = DownCast<ClientCallTracer*>(
-      arena->GetContext<CallTracerAnnotationInterface>());
+  auto* call_tracer = arena->GetContext<ClientCallTracer>();
   if (call_tracer == nullptr) return nullptr;
   auto* tracer = call_tracer->StartNewAttempt(is_transparent_retry);
   arena->SetContext<CallTracerInterface>(tracer);
