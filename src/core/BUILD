@@ -79,13 +79,8 @@ config_setting(
 selects.config_setting_group(
     name = "grpc_no_filter_fusion",
     match_any = [
-        ":grpc_no_filter_fusion_define",
-        # In addition to disabling filter fusion support when
-        # --define=grpc_no_filter_fusion=true is specified, we also disable it
-        # on mobile platforms where it is not likely to be needed and where
-        # reducing the binary size is more important.
-        "//:android",
-        "//:ios",
+        ":grpc_no_filter_fusion_define",  # --define=grpc_no_filter_fusion=true
+        "//:grpc_small_clients",
     ],
 )
 
