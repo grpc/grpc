@@ -14,7 +14,7 @@
 
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_musllinux_1_2_x86/Dockerfile.template`!!!
 
-FROM quay.io/pypa/musllinux_1_2_i686:2025.07.14-5
+FROM quay.io/pypa/musllinux_1_2_i686:2025.07.27-1
 
 # TODO: simplify the list of third_party modules list
 # NOTE: git>=2.46 allows leading paths like third_party/* to include all subdirectories
