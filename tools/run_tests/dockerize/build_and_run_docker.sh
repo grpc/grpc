@@ -216,9 +216,9 @@ fi
 # Copy contents of OUTPUT_DIR back under the git repo root
 if [ "${OUTPUT_DIR}" != "" ]
 then
-  # update existing *tar.gz and *py3-none-any.whl files
+  # use -f to copy existing *tar.gz and *py3-none-any.whl files
   # without throwing 'file exists' error
-  cp -ur "${TEMP_OUTPUT_DIR}/${OUTPUT_DIR}" \
+  cp -rf "${TEMP_OUTPUT_DIR}/${OUTPUT_DIR}" \
     "${git_root}" || DOCKER_EXIT_CODE=$?
 fi
 
