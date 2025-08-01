@@ -711,8 +711,8 @@ void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor* service, b
     const MethodDescriptor* method = service->method(i);
     std::string method_name(method->name());
     if (append_async_suffix == true) {
-      if (!method->client_streaming() && !method->server_streaming() && method_name.size() >= 5 &&
-          method_name.compare(method_name.size() - 5, 5, "Async") != 0) {
+      if (!(method_name.size() >= 5 &&
+            method_name.compare(method_name.size() - 5, 5, "Async") == 0)) {
         method_name += "Async";
       }
     }
