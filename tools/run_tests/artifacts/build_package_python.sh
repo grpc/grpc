@@ -22,9 +22,6 @@ mkdir -p artifacts/
 # All the python packages have been built in the artifact phase already
 # and we only collect them here to deliver them to the distribtest phase.
 
-# Disable file glob generation so that the '*' used in the Patterns are not expanded
-# set -f
-
 echo "List artifacts in source dir"
 ls -R "${EXTERNAL_GIT_ROOT}/input_artifacts/"
 
@@ -62,12 +59,10 @@ ls ./artifacts
 # package targets independently, the copy will fail due to copy conflicts 
 # with the same name. Hence use a -f flag. 
 "${find_cmd[@]}" -print0 \
-    | xargs -0 -I% find % -type f -name "*.tar.gz" \
-    -name "*py3-none-any.whl" -maxdepth 1 -exec cp -vf {} ./artifacts \;
+    | xargs -0 -I% find % -type f \( -name "*.tar.gz" -o \
+    -name "*py3-none-any.whl" \) -maxdepth 1 -exec cp -vf {} ./artifacts \;
 
 echo "Listing artifacts after tar.gz copy"
 ls ./artifacts
-
-# set +f
 
 exit 1
