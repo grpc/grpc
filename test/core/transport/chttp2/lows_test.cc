@@ -17,9 +17,10 @@
 //
 
 #include "src/core/ext/transport/chttp2/transport/lows.h"
-#include "test/core/transport/util/transport_test.h"
-#include "gtest/gtest.h"
+
 #include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "test/core/transport/util/transport_test.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -86,9 +87,9 @@ void DequeueAndCheckSuccess(Lows& lows, const uint32_t expected_stream_id) {
 // Enqueue tests
 TEST_F(LowsTest, EnqueueTest) {
   Lows lows(/*max_queue_size=*/1);
-  SpawnEnqueueAndCheckSuccess(GetParty(), lows, /*stream_id=*/1,
-                              Lows::StreamPriority::kDefault,
-                              [](absl::Status status) { EXPECT_TRUE(status.ok()); });
+  SpawnEnqueueAndCheckSuccess(
+      GetParty(), lows, /*stream_id=*/1, Lows::StreamPriority::kDefault,
+      [](absl::Status status) { EXPECT_TRUE(status.ok()); });
 
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
@@ -139,15 +140,15 @@ TEST_F(LowsTest, MultipleEnqueueDequeueTest) {
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call()).Times(expected_stream_ids.size());
 
-  SpawnEnqueueAndCheckSuccess(GetParty(), lows, /*stream_id=*/1,
-                              Lows::StreamPriority::kDefault,
-                              [](absl::Status status) { EXPECT_TRUE(status.ok()); });
-  SpawnEnqueueAndCheckSuccess(GetParty(), lows, /*stream_id=*/2,
-                              Lows::StreamPriority::kDefault,
-                              [](absl::Status status) { EXPECT_TRUE(status.ok()); });
-  SpawnEnqueueAndCheckSuccess(GetParty(), lows, /*stream_id=*/3,
-                              Lows::StreamPriority::kDefault,
-                              [](absl::Status status) { EXPECT_TRUE(status.ok()); });
+  SpawnEnqueueAndCheckSuccess(
+      GetParty(), lows, /*stream_id=*/1, Lows::StreamPriority::kDefault,
+      [](absl::Status status) { EXPECT_TRUE(status.ok()); });
+  SpawnEnqueueAndCheckSuccess(
+      GetParty(), lows, /*stream_id=*/2, Lows::StreamPriority::kDefault,
+      [](absl::Status status) { EXPECT_TRUE(status.ok()); });
+  SpawnEnqueueAndCheckSuccess(
+      GetParty(), lows, /*stream_id=*/3, Lows::StreamPriority::kDefault,
+      [](absl::Status status) { EXPECT_TRUE(status.ok()); });
 
   GetParty()->Spawn(
       "Dequeue",
