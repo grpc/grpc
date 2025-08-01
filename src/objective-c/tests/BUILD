@@ -288,7 +288,11 @@ grpc_objc_testing_library(
         "//test/cpp/end2end:service_config_end2end_test_lib",
         "//test/cpp/end2end:server_builder_plugin_test_lib",
         "//test/cpp/end2end:server_interceptors_end2end_test_lib",
-        "//test/cpp/end2end:shutdown_test_lib",
+        # shutdown_test sets the echo server without streaming support which
+        # conflicts with streaming_throughput_test
+        # "//test/cpp/end2end:shutdown_test_lib",
+        "//test/cpp/end2end:connection_attempt_injector",
+        "//test/cpp/end2end:streaming_throughput_test_lib",
     ],
 )
 

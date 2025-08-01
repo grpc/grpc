@@ -1089,14 +1089,15 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "streaming_throughput_test",
+grpc_cc_library(
+    name = "streaming_throughput_test_lib",
+    testonly = True,
     srcs = ["streaming_throughput_test.cc"],
     external_deps = [
         "gtest",
     ],
+    linkstatic = True,
     tags = [
-        "cpp_end2end_test",
         "no_windows",
     ],
     deps = [
@@ -1108,6 +1109,18 @@ grpc_cc_test(
         "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_test(
+    name = "streaming_throughput_test",
+    tags = [
+        "cpp_end2end_test",
+        "no_windows",
+    ],
+    deps = [
+        ":streaming_throughput_test_lib",
     ],
 )
 
