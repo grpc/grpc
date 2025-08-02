@@ -17,6 +17,8 @@
  *
  */
 
+#import <Foundation/Foundation.h>
+
 /**
  * An object that processes its methods with a dispatch queue.
  */
