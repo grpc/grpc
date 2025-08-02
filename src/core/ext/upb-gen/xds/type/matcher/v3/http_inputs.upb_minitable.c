@@ -9,7 +9,6 @@
 #include <stddef.h>
 #include "upb/generated_code_support.h"
 #include "xds/type/matcher/v3/http_inputs.upb_minitable.h"
-#include "xds/annotations/v3/status.upb_minitable.h"
 
 // Must be last.
 #include "upb/port/def.inc"
