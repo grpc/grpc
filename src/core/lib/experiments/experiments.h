@@ -108,7 +108,8 @@ inline bool IsShardGlobalConnectionPoolEnabled() { return true; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
-inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_TSI_FRAME_PROTECTOR_WITHOUT_LOCKS
+inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
@@ -163,7 +164,8 @@ inline bool IsShardGlobalConnectionPoolEnabled() { return true; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
-inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_TSI_FRAME_PROTECTOR_WITHOUT_LOCKS
+inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 
 #else
@@ -218,7 +220,8 @@ inline bool IsShardGlobalConnectionPoolEnabled() { return true; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
-inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_TSI_FRAME_PROTECTOR_WITHOUT_LOCKS
+inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return true; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #endif
 
