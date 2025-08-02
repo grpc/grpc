@@ -120,6 +120,15 @@ grpc_proto_plugin(
     deps = [":grpc_plugin_support"],
 )
 
+# Alias for protoc compatibility
+native.genrule(
+    name = "protoc_gen_grpc_python",
+    srcs = [":grpc_python_plugin"],
+    outs = ["protoc-gen-grpc_python"],
+    cmd = "cp $< $@",
+    executable = True,
+)
+
 grpc_proto_plugin(
     name = "grpc_ruby_plugin",
     srcs = ["ruby_plugin.cc"],
