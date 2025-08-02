@@ -64,6 +64,7 @@ grpc_fuzz_test(
     ],
     deps = [
         "//:grpc",
+        "//:grpc_base",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -78,8 +79,11 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:grpc_base",
+        "//src/core:useful",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
