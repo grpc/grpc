@@ -79,6 +79,8 @@ grpc_cc_library(
     visibility = ["//test/core:__subpackages__"],
     deps = [
         "//:grpc",
+        "//:grpc_base",
+        "//src/core:compression",
         "//src/core:slice",
         "//test/core/end2end:cq_verifier",
     ],
