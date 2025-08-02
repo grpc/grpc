@@ -285,12 +285,12 @@ class StatsPlugin {
 
   // Whether this stats plugin is enabled for the channel specified by \a scope.
   // Returns true and a channel-specific ScopeConfig which may then be used to
-  // configure the ClientCallTracer in GetClientCallTracer().
+  // configure the ClientCallTracerInterface in GetClientCallTracer().
   virtual std::pair<bool, std::shared_ptr<ScopeConfig>> IsEnabledForChannel(
       const experimental::StatsPluginChannelScope& scope) const = 0;
   // Whether this stats plugin is enabled for the server specified by \a args.
   // Returns true and a server-specific ScopeConfig which may then be used to
-  // configure the ServerCallTracer in GetServerCallTracer().
+  // configure the ServerCallTracerInterface in GetServerCallTracer().
   virtual std::pair<bool, std::shared_ptr<ScopeConfig>> IsEnabledForServer(
       const ChannelArgs& args) const = 0;
   // Gets a scope config for the client channel specified by \a scope. Note that
@@ -344,14 +344,14 @@ class StatsPlugin {
   virtual bool IsInstrumentEnabled(
       GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) const = 0;
 
-  // Gets a ClientCallTracer associated with this stats plugin which can be used
-  // in a call.
-  virtual ClientCallTracer* GetClientCallTracer(
+  // Gets a ClientCallTracerInterface associated with this stats plugin which
+  // can be used in a call.
+  virtual ClientCallTracerInterface* GetClientCallTracer(
       const Slice& path, bool registered_method,
       std::shared_ptr<ScopeConfig> scope_config) = 0;
-  // Gets a ServerCallTracer associated with this stats plugin which can be used
-  // in a call.
-  virtual ServerCallTracer* GetServerCallTracer(
+  // Gets a ServerCallTracerInterface associated with this stats plugin which
+  // can be used in a call.
+  virtual ServerCallTracerInterface* GetServerCallTracer(
       std::shared_ptr<ScopeConfig> scope_config) = 0;
 
   // TODO(yijiem): This is an optimization for the StatsPlugin to create its own

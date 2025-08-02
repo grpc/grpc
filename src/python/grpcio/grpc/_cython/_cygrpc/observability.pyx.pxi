@@ -36,11 +36,11 @@ def clear_server_call_tracer_factory() -> None:
 
 
 def maybe_save_server_trace_context(RequestCallEvent event) -> None:
-  cdef ServerCallTracer* server_call_tracer
+  cdef ServerCallTracerInterface* server_call_tracer
   with _observability.get_plugin() as plugin:
     if not (plugin and plugin.tracing_enabled):
       return
-    server_call_tracer = static_cast['ServerCallTracer*'](_get_call_tracer(event.call.c_call))
+    server_call_tracer = static_cast['ServerCallTracerInterface*'](_get_call_tracer(event.call.c_call))
     # TraceId and SpanId is hex string, need to convert to str
     trace_id = _decode(codecs.decode(server_call_tracer.TraceId(), 'hex_codec'))
     span_id = _decode(codecs.decode(server_call_tracer.SpanId(), 'hex_codec'))
@@ -49,7 +49,7 @@ def maybe_save_server_trace_context(RequestCallEvent event) -> None:
 
 
 cdef void _set_call_tracer(grpc_call* call, void* capsule_ptr):
-  cdef ClientCallTracer* call_tracer = <ClientCallTracer*>capsule_ptr
+  cdef ClientCallTracerInterface* call_tracer = <ClientCallTracerInterface*>capsule_ptr
   grpc_call_tracer_set_and_manage(call, call_tracer)
 
 

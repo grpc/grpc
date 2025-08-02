@@ -33,7 +33,7 @@ namespace grpc_observability {
 class PythonOpenCensusServerCallTracerFactory
     : public grpc_core::ServerCallTracerFactory {
  public:
-  grpc_core::ServerCallTracer* CreateNewServerCallTracer(
+  grpc_core::ServerCallTracerInterface* CreateNewServerCallTracer(
       grpc_core::Arena* arena,
       const grpc_core::ChannelArgs& channel_args) override;
   explicit PythonOpenCensusServerCallTracerFactory(
@@ -54,7 +54,8 @@ inline absl::string_view GetMethod(const grpc_core::Slice& path) {
   return absl::StripPrefix(path.as_string_view(), "/");
 }
 
-class PythonOpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
+class PythonOpenCensusServerCallTracer
+    : public grpc_core::ServerCallTracerInterface {
  public:
   // Maximum size of server stats that are sent on the wire.
   static constexpr uint32_t kMaxServerStatsLen = 16;

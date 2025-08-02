@@ -47,7 +47,7 @@ namespace grpc {
 namespace internal {
 
 using OptionalLabelKey =
-    grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey;
+    grpc_core::ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey;
 
 namespace {
 
@@ -357,15 +357,17 @@ bool ServiceMeshLabelsInjector::AddOptionalLabels(
   // Performs JSON label name format to CSM Observability Metric spec format
   // conversion.
   absl::string_view service_name =
-      optional_labels[static_cast<size_t>(
-                          grpc_core::ClientCallTracer::CallAttemptTracer::
-                              OptionalLabelKey::kXdsServiceName)]
-          .as_string_view();
+      optional_labels
+          [static_cast<size_t>(
+               grpc_core::ClientCallTracerInterface::CallAttemptTracer::
+                   OptionalLabelKey::kXdsServiceName)]
+              .as_string_view();
   absl::string_view service_namespace =
-      optional_labels[static_cast<size_t>(
-                          grpc_core::ClientCallTracer::CallAttemptTracer::
-                              OptionalLabelKey::kXdsServiceNamespace)]
-          .as_string_view();
+      optional_labels
+          [static_cast<size_t>(
+               grpc_core::ClientCallTracerInterface::CallAttemptTracer::
+                   OptionalLabelKey::kXdsServiceNamespace)]
+              .as_string_view();
   return callback("csm.service_name",
                   service_name.empty()
                       ? "unknown"
