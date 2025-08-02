@@ -181,7 +181,6 @@ class DelegatingClientCallTracer : public ClientCallTracerInterface {
     std::string TraceId() override { return tracers_[0]->TraceId(); }
     std::string SpanId() override { return tracers_[0]->SpanId(); }
     bool IsSampled() override { return tracers_[0]->IsSampled(); }
-    bool IsDelegatingTracer() override { return true; }
 
    private:
     // There is no additional synchronization needed since filters/interceptors
@@ -218,7 +217,6 @@ class DelegatingClientCallTracer : public ClientCallTracerInterface {
   std::string TraceId() override { return tracers_[0]->TraceId(); }
   std::string SpanId() override { return tracers_[0]->SpanId(); }
   bool IsSampled() override { return tracers_[0]->IsSampled(); }
-  bool IsDelegatingTracer() override { return true; }
 
   // There is no additional synchronization needed since filters/interceptors
   // will be adding call tracers to the context and these are already
@@ -319,7 +317,6 @@ class DelegatingServerCallTracer : public ServerCallTracerInterface {
   std::string TraceId() override { return tracers_[0]->TraceId(); }
   std::string SpanId() override { return tracers_[0]->SpanId(); }
   bool IsSampled() override { return tracers_[0]->IsSampled(); }
-  bool IsDelegatingTracer() override { return true; }
 
   void AddTracer(ServerCallTracerInterface* tracer) {
     tracers_.push_back(tracer);
@@ -333,56 +330,62 @@ class DelegatingServerCallTracer : public ServerCallTracerInterface {
   std::vector<ServerCallTracerInterface*> tracers_;
 };
 
-void AddClientCallTracerToContext(Arena* arena,
-                                  ClientCallTracerInterface* tracer) {
-  if (arena->GetContext<CallTracerAnnotationInterface>() == nullptr) {
-    // This is the first call tracer. Set it directly.
-    arena->SetContext<CallTracerAnnotationInterface>(tracer);
-  } else {
-    // There was already a call tracer present.
-    auto* orig_tracer = DownCast<ClientCallTracerInterface*>(
-        arena->GetContext<CallTracerAnnotationInterface>());
-    if (orig_tracer->IsDelegatingTracer()) {
-      // We already created a delegating tracer. Just add the new tracer to the
-      // list.
-      DownCast<DelegatingClientCallTracer*>(orig_tracer)->AddTracer(tracer);
-    } else {
-      // Create a new delegating tracer and add the first tracer and the new
-      // tracer to the list.
+void SetClientCallTracersOnContext(
+    Arena* arena, absl::Span<ClientCallTracerInterface* const> tracers) {
+  switch (tracers.size()) {
+    case 0:
+      arena->SetContext<CallTracer>(nullptr);
+      arena->SetContext<ClientCallTracer>(nullptr);
+      return;
+    case 1: {
+      auto* client_call_tracer =
+          arena->ManagedNew<ClientCallTracer>(tracers[0]);
+      arena->SetContext<CallTracer>(client_call_tracer);
+      arena->SetContext<ClientCallTracer>(client_call_tracer);
+      return;
+    }
+    default: {
       auto* delegating_tracer =
           GetContext<Arena>()->ManagedNew<DelegatingClientCallTracer>(
-              orig_tracer);
-      arena->SetContext<CallTracerAnnotationInterface>(delegating_tracer);
-      delegating_tracer->AddTracer(tracer);
+              tracers[0]);
+      for (int i = 1; i < tracers.size(); ++i) {
+        delegating_tracer->AddTracer(tracers[i]);
+      }
+      auto* client_call_tracer =
+          arena->ManagedNew<ClientCallTracer>(delegating_tracer);
+      arena->SetContext<CallTracer>(client_call_tracer);
+      arena->SetContext<ClientCallTracer>(client_call_tracer);
+      return;
     }
   }
 }
 
-void AddServerCallTracerToContext(Arena* arena,
-                                  ServerCallTracerInterface* tracer) {
-  DCHECK_EQ(arena->GetContext<CallTracerInterface>(),
-            arena->GetContext<CallTracerAnnotationInterface>());
-  if (arena->GetContext<CallTracerAnnotationInterface>() == nullptr) {
-    // This is the first call tracer. Set it directly.
-    arena->SetContext<CallTracerAnnotationInterface>(tracer);
-    arena->SetContext<CallTracerInterface>(tracer);
-  } else {
-    // There was already a call tracer present.
-    auto* orig_tracer = DownCast<ServerCallTracerInterface*>(
-        arena->GetContext<CallTracerAnnotationInterface>());
-    if (orig_tracer->IsDelegatingTracer()) {
-      // We already created a delegating tracer. Just add the new tracer to the
-      // list.
-      DownCast<DelegatingServerCallTracer*>(orig_tracer)->AddTracer(tracer);
-    } else {
-      // Create a new delegating tracer and add the first tracer and the new
-      // tracer to the list.
+void SetServerCallTracerOnContext(
+    Arena* arena, absl::Span<ServerCallTracerInterface* const> tracers) {
+  switch (tracers.size()) {
+    case 0:
+      arena->SetContext<CallTracer>(nullptr);
+      arena->SetContext<ServerCallTracer>(nullptr);
+      return;
+    case 1: {
+      auto* server_call_tracer =
+          arena->ManagedNew<ServerCallTracer>(tracers[0]);
+      arena->SetContext<CallTracer>(server_call_tracer);
+      arena->SetContext<ServerCallTracer>(server_call_tracer);
+      return;
+    }
+    default: {
       auto* delegating_tracer =
           GetContext<Arena>()->ManagedNew<DelegatingServerCallTracer>(
-              orig_tracer);
-      arena->SetContext<CallTracerAnnotationInterface>(delegating_tracer);
-      arena->SetContext<CallTracerInterface>(delegating_tracer);
-      delegating_tracer->AddTracer(tracer);
+              tracers[0]);
+      for (int i = 1; i < tracers.size(); ++i) {
+        delegating_tracer->AddTracer(tracers[i]);
+      }
+      auto* server_call_tracer =
+          arena->ManagedNew<ServerCallTracer>(delegating_tracer);
+      arena->SetContext<CallTracer>(server_call_tracer);
+      arena->SetContext<ServerCallTracer>(server_call_tracer);
+      return;
     }
   }
 }

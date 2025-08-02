@@ -19,8 +19,9 @@
 #include <memory>
 #include <optional>
 
-#include "absl/log/check.h"
 #include "src/core/util/crash.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/log/check.h"
 
 namespace grpc_core {
 
@@ -101,23 +102,23 @@ RegisteredMetricCallback::~RegisteredMetricCallback() {
 
 void GlobalStatsPluginRegistry::StatsPluginGroup::AddClientCallTracers(
     const Slice& path, bool registered_method, Arena* arena) {
+  absl::InlinedVector<ClientCallTracerInterface*, 1> tracers;
   for (auto& state : plugins_state_) {
     auto* call_tracer = state.plugin->GetClientCallTracer(
         path, registered_method, state.scope_config);
-    if (call_tracer != nullptr) {
-      AddClientCallTracerToContext(arena, call_tracer);
-    }
+    if (call_tracer != nullptr) tracers.push_back(call_tracer);
   }
+  SetClientCallTracersOnContext(arena, tracers);
 }
 
 void GlobalStatsPluginRegistry::StatsPluginGroup::AddServerCallTracers(
     Arena* arena) {
+  absl::InlinedVector<ServerCallTracerInterface*, 1> tracers;
   for (auto& state : plugins_state_) {
     auto* call_tracer = state.plugin->GetServerCallTracer(state.scope_config);
-    if (call_tracer != nullptr) {
-      AddServerCallTracerToContext(arena, call_tracer);
-    }
+    if (call_tracer != nullptr) tracers.push_back(call_tracer);
   }
+  SetServerCallTracerOnContext(arena, tracers);
 }
 
 int GlobalStatsPluginRegistry::StatsPluginGroup::ChannelArgsCompare(

@@ -953,9 +953,14 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
       }()),
       arena(arena),
       flow_control(&t->flow_control),
-      call_tracer_wrapper(this),
-      call_tracer(arena->GetContext<grpc_core::CallTracerInterface>()) {
+      call_tracer_wrapper(t->is_client, this),
+      call_tracer(arena->GetContext<grpc_core::CallTracer>()) {
   t->streams_allocated.fetch_add(1, std::memory_order_relaxed);
+  if (t->is_client) {
+    call_attempt_tracer = arena->GetContext<grpc_core::CallAttemptTracer>();
+  } else {
+    server_call_tracer = arena->GetContext<grpc_core::ServerCallTracer>();
+  }
   if (server_data) {
     id = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(server_data));
     GRPC_TRACE_VLOG(http, 2)
@@ -1771,12 +1776,12 @@ static void perform_stream_op_locked(void* stream_op,
   grpc_chttp2_transport* t = s->t.get();
 
   s->traced = op->is_traced;
-  // Some server filters populate CallTracerInterface in the context only after
+  // Some server filters populate CallTracer in the context only after
   // reading initial metadata. (Client-side population is done by
   // client_channel filter.)
   if (!t->is_client && !grpc_core::IsCallTracerInTransportEnabled() &&
       op->send_initial_metadata) {
-    s->call_tracer = s->arena->GetContext<grpc_core::CallTracerInterface>();
+    s->call_tracer = s->arena->GetContext<grpc_core::CallTracer>();
   }
   if (GRPC_TRACE_FLAG_ENABLED(http)) {
     LOG(INFO) << "perform_stream_op_locked[s=" << s << "; op=" << op

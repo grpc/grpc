@@ -614,10 +614,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       return nullptr;
     }
 
-    ClientCallTracerInterface::CallAttemptTracer* GetCallAttemptTracer()
-        const override {
-      return nullptr;
-    }
+    CallAttemptTracer* GetCallAttemptTracer() const override { return nullptr; }
 
     std::vector<void*> allocations_;
     std::map<UniqueTypeName, ServiceConfigCallData::CallAttributeInterface*>

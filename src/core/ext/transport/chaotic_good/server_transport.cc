@@ -23,13 +23,6 @@
 #include <string>
 #include <tuple>
 
-#include "absl/cleanup/cleanup.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/random/bit_gen_ref.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "src/core/channelz/property_list.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
@@ -48,7 +41,15 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/random/bit_gen_ref.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -151,7 +152,7 @@ auto ChaoticGoodServerTransport::StreamDispatch::SendCallInitialMetadataAndBody(
 auto ChaoticGoodServerTransport::StreamDispatch::CallOutboundLoop(
     uint32_t stream_id, CallInitiator call_initiator) {
   std::shared_ptr<TcpCallTracer> call_tracer;
-  auto tracer = call_initiator.arena()->GetContext<CallTracerInterface>();
+  auto* tracer = call_initiator.arena()->GetContext<ServerCallTracer>();
   if (tracer != nullptr && tracer->IsSampled()) {
     call_tracer = tracer->StartNewTcpTrace();
   }

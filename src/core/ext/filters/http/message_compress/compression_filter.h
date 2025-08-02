@@ -37,6 +37,7 @@
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/call_tracer.h"
 
 namespace grpc_core {
 
@@ -86,12 +87,11 @@ class ChannelCompression {
 
   // Compress one message synchronously.
   MessageHandle CompressMessage(MessageHandle message,
-                                grpc_compression_algorithm algorithm,
-                                CallTracerInterface* call_tracer) const;
+                                grpc_compression_algorithm algorithm) const;
   // Decompress one message synchronously.
-  absl::StatusOr<MessageHandle> DecompressMessage(
-      bool is_client, MessageHandle message, DecompressArgs args,
-      CallTracerInterface* call_tracer) const;
+  absl::StatusOr<MessageHandle> DecompressMessage(bool is_client,
+                                                  MessageHandle message,
+                                                  DecompressArgs args) const;
 
   channelz::PropertyList ChannelzProperties() const {
     return channelz::PropertyList()
@@ -163,7 +163,7 @@ class ClientCompressionFilter final
     ChannelCompression::DecompressArgs decompress_args_;
     // TODO(yashykt): Remove call_tracer_ after migration to call v3 stack. (See
     // https://github.com/grpc/grpc/pull/38729 for more information.)
-    CallTracerInterface* call_tracer_ = nullptr;
+    CallAttemptTracer* call_tracer_ = nullptr;
   };
 
  private:

@@ -30,9 +30,14 @@ void Chttp2CallTracerWrapper::RecordIncomingBytes(
   stream_->stats.incoming.header_bytes += transport_byte_size.header_bytes;
   // Update new API.
   if (!IsCallTracerInTransportEnabled()) return;
-  auto* call_tracer = stream_->call_tracer;
-  if (call_tracer != nullptr) {
-    call_tracer->RecordIncomingBytes(transport_byte_size);
+  if (is_client_) {
+    if (stream_->call_attempt_tracer != nullptr) {
+      stream_->call_attempt_tracer->RecordIncomingBytes(transport_byte_size);
+    }
+  } else {
+    if (stream_->server_call_tracer != nullptr) {
+      stream_->server_call_tracer->RecordIncomingBytes(transport_byte_size);
+    }
   }
 }
 
@@ -44,10 +49,28 @@ void Chttp2CallTracerWrapper::RecordOutgoingBytes(
   stream_->stats.outgoing.header_bytes +=
       transport_byte_size.header_bytes;  // Update new API.
   if (!IsCallTracerInTransportEnabled()) return;
-  auto* call_tracer = stream_->call_tracer;
-  if (call_tracer != nullptr) {
-    call_tracer->RecordOutgoingBytes(transport_byte_size);
+  if (is_client_) {
+    if (stream_->call_attempt_tracer != nullptr) {
+      stream_->call_attempt_tracer->RecordOutgoingBytes(transport_byte_size);
+    }
+  } else {
+    if (stream_->server_call_tracer != nullptr) {
+      stream_->server_call_tracer->RecordOutgoingBytes(transport_byte_size);
+    }
   }
+}
+
+std::shared_ptr<TcpCallTracer> Chttp2CallTracerWrapper::StartNewTcpTrace() {
+  if (is_client_) {
+    if (stream_->call_attempt_tracer != nullptr) {
+      return stream_->call_attempt_tracer->StartNewTcpTrace();
+    }
+  } else {
+    if (stream_->server_call_tracer != nullptr) {
+      return stream_->server_call_tracer->StartNewTcpTrace();
+    }
+  }
+  return nullptr;
 }
 
 }  // namespace grpc_core

@@ -9026,6 +9026,7 @@ grpc_cc_library(
         "sync",
         "try_join",
         "try_seq",
+        "//:call_tracer",
         "//:exec_ctx",
         "//:gpr_platform",
         "//:grpc_base",
@@ -10172,6 +10173,7 @@ grpc_cc_library(
         "absl/functional:function_ref",
         "absl/log:check",
         "absl/strings",
+        "absl/container:inlined_vector",
         "absl/types:span",
     ],
     deps = [
