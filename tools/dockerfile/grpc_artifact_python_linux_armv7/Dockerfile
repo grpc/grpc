@@ -58,6 +58,7 @@ RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.10.15" "3.10.15" /o
 RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.11.10" "3.11.10" /opt/python/cp311-cp311
 RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.12.6" "3.12.6" /opt/python/cp312-cp312
 RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.13.0" "3.13.0rc2" /opt/python/cp313-cp313
+RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.14.0" "3.14.0b4" /opt/python/cp314-cp314
 
 ENV AUDITWHEEL_ARCH armv7l
 ENV AUDITWHEEL_PLAT linux_armv7l
@@ -76,7 +77,6 @@ RUN unset CMAKE_TOOLCHAIN_FILE && unset AS AR CC CPP CXX LD STRIP OBJCOPY \
     && make -j4 && make install \
     && cd ../.. \
     && rm -rf ccache-4.11.3 ccache.tar.gz
-
 
 
 # The dockcross base of this image sets CC and CXX to absolute paths, which makes it impossible to redirect their invocations

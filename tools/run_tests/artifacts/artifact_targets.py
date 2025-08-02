@@ -121,6 +121,9 @@ class PythonArtifact:
         if platform == _LATEST_MANYLINUX:
             self.labels.append("latest-manylinux")
         if "manylinux" in platform:
+            if arch == "aarch64":
+                self.labels.append("linux_aarch64")
+            # else:
             self.labels.append("linux")
         if "linux_extra" in platform:
             # linux_extra wheels used to be built by a separate kokoro job.
@@ -128,6 +131,9 @@ class PythonArtifact:
             # in the regular artifact build.
             self.labels.append("linux")
         if "musllinux" in platform:
+            if arch == "aarch64":
+                self.labels.append("linux_aarch64")
+            # else:
             self.labels.append("linux")
 
     def pre_build_jobspecs(self):
@@ -177,21 +183,22 @@ class PythonArtifact:
                 # As we won't strip the binary with auditwheel (see below), strip
                 # it at link time.
                 environ["LDFLAGS"] = "-s"
-            else:
-                # only run auditwheel if we're not crosscompiling
-                environ["GRPC_RUN_AUDITWHEEL_REPAIR"] = "TRUE"
-                # only build the packages that depend on grpcio-tools
-                # if we're not crosscompiling.
-                # - they require protoc to run on current architecture
-                # - they only have sdist packages anyway, so it's useless to build them again
-                environ["GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS"] = "TRUE"
+            # else:
+            # only run auditwheel if we're not crosscompiling
+            environ["GRPC_RUN_AUDITWHEEL_REPAIR"] = "TRUE"
+            # only build the packages that depend on grpcio-tools
+            # if we're not crosscompiling.
+            # - they require protoc to run on current architecture
+            # - they only have sdist packages anyway, so it's useless to build them again
+            environ["GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS"] = "TRUE"
+
             return create_docker_jobspec(
                 self.name,
                 "tools/dockerfile/grpc_artifact_python_%s_%s"
                 % (self.platform, self.arch),
                 "tools/run_tests/artifacts/build_artifact_python.sh",
                 environ=environ,
-                timeout_seconds=60 * 60 * 2,
+                timeout_seconds=60 * 60 * 4,
             )
         elif "musllinux" in self.platform:
             environ["PYTHON"] = "/opt/python/{}/bin/python".format(
@@ -246,7 +253,7 @@ class PythonArtifact:
                 self.name,
                 ["tools/run_tests/artifacts/build_artifact_python.sh"],
                 environ=environ,
-                timeout_seconds=60 * 60 * 2,
+                timeout_seconds=60 * 60 * 4,
                 use_workspace=True,
             )
 
@@ -463,21 +470,21 @@ def targets():
             PythonArtifact(
                 "musllinux_1_1", "aarch64", "cp313-cp313", presubmit=True
             ),
-            PythonArtifact("macos", "x64", "python3.9", presubmit=True),
-            PythonArtifact("macos", "x64", "python3.10"),
-            PythonArtifact("macos", "x64", "python3.11"),
-            PythonArtifact("macos", "x64", "python3.12"),
-            PythonArtifact("macos", "x64", "python3.13", presubmit=True),
-            PythonArtifact("windows", "x86", "Python39_32bit", presubmit=True),
-            PythonArtifact("windows", "x86", "Python310_32bit"),
-            PythonArtifact("windows", "x86", "Python311_32bit"),
-            PythonArtifact("windows", "x86", "Python312_32bit"),
-            PythonArtifact("windows", "x86", "Python313_32bit", presubmit=True),
-            PythonArtifact("windows", "x64", "Python39", presubmit=True),
-            PythonArtifact("windows", "x64", "Python310"),
-            PythonArtifact("windows", "x64", "Python311"),
-            PythonArtifact("windows", "x64", "Python312"),
-            PythonArtifact("windows", "x64", "Python313", presubmit=True),
+            # PythonArtifact("macos", "x64", "python3.9", presubmit=True),
+            # PythonArtifact("macos", "x64", "python3.10"),
+            # PythonArtifact("macos", "x64", "python3.11"),
+            # PythonArtifact("macos", "x64", "python3.12"),
+            # PythonArtifact("macos", "x64", "python3.13", presubmit=True),
+            # PythonArtifact("windows", "x86", "Python39_32bit", presubmit=True),
+            # PythonArtifact("windows", "x86", "Python310_32bit"),
+            # PythonArtifact("windows", "x86", "Python311_32bit"),
+            # PythonArtifact("windows", "x86", "Python312_32bit"),
+            # PythonArtifact("windows", "x86", "Python313_32bit", presubmit=True),
+            # PythonArtifact("windows", "x64", "Python39", presubmit=True),
+            # PythonArtifact("windows", "x64", "Python310"),
+            # PythonArtifact("windows", "x64", "Python311"),
+            # PythonArtifact("windows", "x64", "Python312"),
+            # PythonArtifact("windows", "x64", "Python313", presubmit=True),
             RubyArtifact("linux", "x86-mingw32", presubmit=True),
             RubyArtifact("linux", "x64-mingw-ucrt", presubmit=True),
             RubyArtifact("linux", "x86_64-linux-gnu", presubmit=True),
