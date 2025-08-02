@@ -69,7 +69,7 @@ TEST_F(CallTracerTest, MultipleClientCallAttemptTracers) {
   AddClientCallTracerToContext(arena_.get(), &client_call_tracer2);
   AddClientCallTracerToContext(arena_.get(), &client_call_tracer3);
   auto* attempt_tracer =
-      DownCast<ClientCallTracer*>(
+      DownCast<ClientCallTracerInterface*>(
           arena_->GetContext<CallTracerAnnotationInterface>())
           ->StartNewAttempt(true /* is_transparent_retry */);
   attempt_tracer->RecordAnnotation("Test");
