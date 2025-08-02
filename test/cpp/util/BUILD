@@ -182,9 +182,14 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/strings",
     ],
     deps = [
+        ":grpc++_proto_reflection_desc_db",
         ":grpc_cli_utils",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
     ],
 )
 
@@ -376,6 +381,7 @@ grpc_cc_binary(
     deps = [
         ":grpc++_proto_reflection_desc_db",
         ":grpc_cli_libs",
+        ":grpc_cli_utils",
         ":test_config",
         "//:grpc++",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
