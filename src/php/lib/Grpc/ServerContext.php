@@ -28,49 +28,88 @@ namespace Grpc;
 
 class ServerContext
 {
+    /**
+     * @param object{metadata: array<string, string[]>, host: string, method: string, absolute_deadline :Timeval, call: Call} $event
+     */
     public function __construct($event)
     {
         $this->event = $event;
     }
 
+    /**
+     * @return array<string, string[]>
+     */
     public function clientMetadata()
     {
         return $this->event->metadata;
     }
+
+    /**
+     * @return Timeval
+     */
     public function deadline()
     {
         return $this->event->absolute_deadline;
     }
+
+    /**
+     * @return string
+     */
     public function host()
     {
         return $this->event->host;
     }
+
+    /**
+     * @return string
+     */
     public function method()
     {
         return $this->event->method;
     }
 
+    /**
+     * @param array<string, string[]> $initialMetadata
+     */
     public function setInitialMetadata($initialMetadata)
     {
         $this->initialMetadata_ = $initialMetadata;
     }
 
+    /**
+     * @return array<string, string[]>
+     */
     public function initialMetadata()
     {
         return $this->initialMetadata_;
     }
 
+    /**
+     * @param array{code: int, details: string, metadata?: array<string, string[]>|null} $status
+     */
     public function setStatus($status)
     {
         $this->status_ = $status;
     }
 
+    /**
+     * @return array{code: int, details: string, metadata?: array<string, string[]>|null}|null
+     */
     public function status()
     {
         return $this->status_;
     }
 
+    /**
+     * @var object{metadata: array<string, string[]>, host: string, method: string, absolute_deadline :Timeval}
+     */
     private $event;
+    /**
+     * @var array<string, string[]>
+     */
     private $initialMetadata_;
+    /**
+     * @var array{code: int, details: string, metadata?: array<string, string[]>|null}|null
+     */
     private $status_;
 }
