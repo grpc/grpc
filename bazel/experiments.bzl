@@ -34,6 +34,7 @@ EXPERIMENT_ENABLES = {
     "free_large_allocator": "free_large_allocator",
     "fuse_filters": "fuse_filters",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
+    "keepalive_ping_timeout_enabled": "keepalive_ping_timeout_enabled",
     "local_connector_secure": "local_connector_secure",
     "max_inflight_pings_strict_limit": "max_inflight_pings_strict_limit",
     "monitoring_experiment": "monitoring_experiment",

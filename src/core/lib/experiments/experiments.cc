@@ -89,6 +89,10 @@ const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
 const char* const additional_constraints_keep_alive_ping_timer_batch = "{}";
+const char* const description_keepalive_ping_timeout_enabled =
+    "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
+    "callback to re-schedule itself to the next ping interval.";
+const char* const additional_constraints_keepalive_ping_timeout_enabled = "{}";
 const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
@@ -242,6 +246,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_fuse_filters, nullptr, 0, false, false},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
+     true},
+    {"keepalive_ping_timeout_enabled",
+     description_keepalive_ping_timeout_enabled,
+     additional_constraints_keepalive_ping_timeout_enabled, nullptr, 0, true,
      true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
@@ -392,6 +400,10 @@ const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
 const char* const additional_constraints_keep_alive_ping_timer_batch = "{}";
+const char* const description_keepalive_ping_timeout_enabled =
+    "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
+    "callback to re-schedule itself to the next ping interval.";
+const char* const additional_constraints_keepalive_ping_timeout_enabled = "{}";
 const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
@@ -545,6 +557,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_fuse_filters, nullptr, 0, false, false},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
+     true},
+    {"keepalive_ping_timeout_enabled",
+     description_keepalive_ping_timeout_enabled,
+     additional_constraints_keepalive_ping_timeout_enabled, nullptr, 0, true,
      true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
@@ -695,6 +711,10 @@ const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
 const char* const additional_constraints_keep_alive_ping_timer_batch = "{}";
+const char* const description_keepalive_ping_timeout_enabled =
+    "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
+    "callback to re-schedule itself to the next ping interval.";
+const char* const additional_constraints_keepalive_ping_timeout_enabled = "{}";
 const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
@@ -848,6 +868,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_fuse_filters, nullptr, 0, false, false},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
+     true},
+    {"keepalive_ping_timeout_enabled",
+     description_keepalive_ping_timeout_enabled,
+     additional_constraints_keepalive_ping_timeout_enabled, nullptr, 0, true,
      true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
