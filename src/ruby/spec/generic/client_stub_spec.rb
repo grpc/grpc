@@ -232,6 +232,21 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
         th.join
       end
 
+      it 'should raise an error with UTF-8 encoded error messages' do
+        server_port = create_test_server
+        host = "localhost:#{server_port}"
+        th = run_request_response(@sent_msg, @resp, @fail, details: "エラー")
+        stub = GRPC::ClientStub.new(host, :this_channel_is_insecure)
+        error = nil
+        begin
+          get_response(stub)
+        rescue GRPC::BadStatus
+          error = $!
+        end
+        expect(error&.details).to eq("エラー")
+        th.join
+      end
+
       it 'should receive UNAVAILABLE if call credentials plugin fails' do
         server_port = create_secure_test_server
         server_started_notifier = GRPC::Notifier.new
@@ -1036,7 +1051,8 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
   def run_request_response(expected_input, resp, status,
                            expected_metadata: {},
                            server_initial_md: {},
-                           server_trailing_md: {})
+                           server_trailing_md: {},
+                           details: nil)
     wanted_metadata = expected_metadata.clone
     wakey_thread do |notifier|
       c = expect_server_to_be_invoked(
@@ -1046,7 +1062,7 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
         expect(c.metadata[k.to_s]).to eq(v)
       end
       c.remote_send(resp)
-      c.send_status(status, status == @pass ? 'OK' : 'NOK', true,
+      c.send_status(status, details || (status == @pass ? 'OK' : 'NOK'), true,
                     metadata: server_trailing_md)
       close_active_server_call(c)
     end
