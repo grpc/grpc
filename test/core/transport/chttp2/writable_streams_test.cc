@@ -16,7 +16,7 @@
 //
 //
 
-#include "src/core/ext/transport/chttp2/transport/lows.h"
+#include "src/core/ext/transport/chttp2/transport/writable_streams.h"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -31,9 +31,9 @@ using ::testing::MockFunction;
 using ::testing::StrictMock;
 using util::testing::TransportTest;
 
-class LowsTest : public TransportTest {
+class WritableStreamsTest : public TransportTest {
  protected:
-  LowsTest() { InitParty(); }
+  WritableStreamsTest() { InitParty(); }
 
   Party* GetParty() { return party_.get(); }
 
@@ -48,19 +48,21 @@ class LowsTest : public TransportTest {
   RefCountedPtr<Party> party_;
 };
 
-void EnqueueAndCheckSuccess(Lows& lows, const uint32_t stream_id,
-                            const Lows::StreamPriority priority) {
+void EnqueueAndCheckSuccess(WritableStreams& lows, const uint32_t stream_id,
+                            const WritableStreams::StreamPriority priority) {
   auto promise = lows.Enqueue(stream_id, priority);
   auto result = promise();
   EXPECT_TRUE(result.ready());
-  EXPECT_EQ(result.value(), absl::OkStatus());
+  LOG(INFO) << "EnqueueAndCheckSuccess result " << result.value();
+  EXPECT_TRUE(result.value().ok());
 }
 void SpawnEnqueueAndCheckSuccess(
-    Party* party, Lows& lows, const uint32_t stream_id,
-    const Lows::StreamPriority priority,
+    Party* party, WritableStreams& lows, const uint32_t stream_id,
+    const WritableStreams::StreamPriority priority,
     absl::AnyInvocable<void(absl::Status)> on_complete) {
   LOG(INFO) << "Spawn EnqueueAndCheckSuccess for stream id " << stream_id
-            << " with priority " << Lows::GetPriorityString(priority);
+            << " with priority "
+            << WritableStreams::GetPriorityString(priority);
   party->Spawn(
       "EnqueueAndCheckSuccess",
       [stream_id, priority, &lows] {
@@ -73,11 +75,14 @@ void SpawnEnqueueAndCheckSuccess(
         on_complete(status);
       });
 }
-void DequeueAndCheckSuccess(Lows& lows, const uint32_t expected_stream_id) {
+void DequeueAndCheckSuccess(WritableStreams& lows,
+                            const uint32_t expected_stream_id) {
   auto promise = lows.Next(/*transport_tokens_available=*/true);
   auto result = promise();
   EXPECT_TRUE(result.ready());
   EXPECT_TRUE(result.value().ok());
+  LOG(INFO) << "DequeueAndCheckSuccess result " << result.value()
+            << " stream id " << *(result.value());
   EXPECT_EQ(*result.value(), expected_stream_id);
 }
 
@@ -85,33 +90,37 @@ void DequeueAndCheckSuccess(Lows& lows, const uint32_t expected_stream_id) {
 
 /////////////////////////////////////////////////////////////////////////////////
 // Enqueue tests
-TEST_F(LowsTest, EnqueueTest) {
-  Lows lows(/*max_queue_size=*/1);
+TEST_F(WritableStreamsTest, EnqueueTest) {
+  // Simple test to ensure that enqueue promise works.
+  WritableStreams lows(/*max_queue_size=*/1);
   SpawnEnqueueAndCheckSuccess(
-      GetParty(), lows, /*stream_id=*/1, Lows::StreamPriority::kDefault,
+      GetParty(), lows, /*stream_id=*/1,
+      WritableStreams::StreamPriority::kDefault,
       [](absl::Status status) { EXPECT_TRUE(status.ok()); });
 
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
 }
 
-TEST_F(LowsTest, MultipleEnqueueTest) {
-  Lows lows(/*max_queue_size=*/3);
+TEST_F(WritableStreamsTest, MultipleEnqueueTest) {
+  // Test to ensure that multiple enqueues up to the max queue size resolve
+  // immediately.
+  WritableStreams lows(/*max_queue_size=*/3);
   std::string execution_order;
   SpawnEnqueueAndCheckSuccess(GetParty(), lows, /*stream_id=*/1,
-                              Lows::StreamPriority::kDefault,
+                              WritableStreams::StreamPriority::kDefault,
                               [&execution_order](absl::Status status) {
                                 execution_order.append("1");
                                 EXPECT_TRUE(status.ok());
                               });
   SpawnEnqueueAndCheckSuccess(GetParty(), lows, /*stream_id=*/2,
-                              Lows::StreamPriority::kStreamClosed,
+                              WritableStreams::StreamPriority::kStreamClosed,
                               [&execution_order](absl::Status status) {
                                 execution_order.append("2");
                                 EXPECT_TRUE(status.ok());
                               });
   SpawnEnqueueAndCheckSuccess(GetParty(), lows, /*stream_id=*/3,
-                              Lows::StreamPriority::kTransportJail,
+                              WritableStreams::StreamPriority::kTransportJail,
                               [&execution_order](absl::Status status) {
                                 execution_order.append("3");
                                 EXPECT_TRUE(status.ok());
@@ -124,30 +133,38 @@ TEST_F(LowsTest, MultipleEnqueueTest) {
 
 /////////////////////////////////////////////////////////////////////////////////
 // Dequeue tests
-TEST_F(LowsTest, EnqueueDequeueTest) {
-  Lows lows(/*max_queue_size=*/1);
-  EnqueueAndCheckSuccess(lows, /*stream_id=*/1, Lows::StreamPriority::kDefault);
+TEST_F(WritableStreamsTest, EnqueueDequeueTest) {
+  // Simple test to ensure that enqueue and dequeue works.
+  WritableStreams lows(/*max_queue_size=*/1);
+  EnqueueAndCheckSuccess(lows, /*stream_id=*/1,
+                         WritableStreams::StreamPriority::kDefault);
   DequeueAndCheckSuccess(lows, /*expected_stream_id=*/1);
 
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
 }
 
-TEST_F(LowsTest, MultipleEnqueueDequeueTest) {
-  Lows lows(/*max_queue_size=*/1);
+TEST_F(WritableStreamsTest, MultipleEnqueueDequeueTest) {
+  // Test to ensure that multiple enqueues and dequeues works. This test also
+  // simulates the case where the queue is full and the producer is blocked on
+  // the queue.
+  WritableStreams lows(/*max_queue_size=*/1);
   uint dequeue_count = 0;
   std::vector<uint32_t> expected_stream_ids = {1, 2, 3};
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call()).Times(expected_stream_ids.size());
 
   SpawnEnqueueAndCheckSuccess(
-      GetParty(), lows, /*stream_id=*/1, Lows::StreamPriority::kDefault,
+      GetParty(), lows, /*stream_id=*/1,
+      WritableStreams::StreamPriority::kDefault,
       [](absl::Status status) { EXPECT_TRUE(status.ok()); });
   SpawnEnqueueAndCheckSuccess(
-      GetParty(), lows, /*stream_id=*/2, Lows::StreamPriority::kDefault,
+      GetParty(), lows, /*stream_id=*/2,
+      WritableStreams::StreamPriority::kDefault,
       [](absl::Status status) { EXPECT_TRUE(status.ok()); });
   SpawnEnqueueAndCheckSuccess(
-      GetParty(), lows, /*stream_id=*/3, Lows::StreamPriority::kDefault,
+      GetParty(), lows, /*stream_id=*/3,
+      WritableStreams::StreamPriority::kDefault,
       [](absl::Status status) { EXPECT_TRUE(status.ok()); });
 
   GetParty()->Spawn(
@@ -177,62 +194,11 @@ TEST_F(LowsTest, MultipleEnqueueDequeueTest) {
   event_engine()->UnsetGlobalHooks();
 }
 
-TEST_F(LowsTest, EnqueueDequeueSamePriorityTest) {
-  Lows lows(/*max_queue_size=*/3);
-  std::string execution_order;
-  uint dequeue_count = 0;
-  std::vector<uint32_t> expected_stream_ids = {1, 2, 3};
-  StrictMock<MockFunction<void()>> on_done;
-  EXPECT_CALL(on_done, Call()).Times(expected_stream_ids.size());
-
-  SpawnEnqueueAndCheckSuccess(GetParty(), lows, /*stream_id=*/1,
-                              Lows::StreamPriority::kDefault,
-                              [&execution_order](absl::Status status) {
-                                execution_order.append("1");
-                                EXPECT_TRUE(status.ok());
-                              });
-  SpawnEnqueueAndCheckSuccess(GetParty(), lows, /*stream_id=*/2,
-                              Lows::StreamPriority::kDefault,
-                              [&execution_order](absl::Status status) {
-                                execution_order.append("2");
-                                EXPECT_TRUE(status.ok());
-                              });
-  SpawnEnqueueAndCheckSuccess(GetParty(), lows, /*stream_id=*/3,
-                              Lows::StreamPriority::kDefault,
-                              [&execution_order](absl::Status status) {
-                                execution_order.append("3");
-                                EXPECT_TRUE(status.ok());
-                              });
-
-  GetParty()->Spawn(
-      "Dequeue",
-      [&lows, &dequeue_count, &expected_stream_ids, &on_done] {
-        return Loop([&lows, &dequeue_count, &expected_stream_ids, &on_done]() {
-          return If(
-              dequeue_count < expected_stream_ids.size(),
-              [&lows, &dequeue_count, &expected_stream_ids, &on_done]() {
-                return Map(lows.Next(/*transport_tokens_available=*/true),
-                           [&dequeue_count, &expected_stream_ids,
-                            &on_done](absl::StatusOr<uint32_t> result)
-                               -> LoopCtl<absl::Status> {
-                             EXPECT_TRUE(result.ok());
-                             EXPECT_EQ(result.value(),
-                                       expected_stream_ids[dequeue_count++]);
-                             on_done.Call();
-                             return Continue();
-                           });
-              },
-              []() -> LoopCtl<absl::Status> { return absl::OkStatus(); });
-        });
-      },
-      [](auto) {});
-  event_engine()->TickUntilIdle();
-  event_engine()->UnsetGlobalHooks();
-  EXPECT_STREQ(execution_order.c_str(), "123");
-}
-
-TEST_F(LowsTest, EnqueueDequeueDifferentPriorityTest) {
-  Lows lows(/*max_queue_size=*/3);
+TEST_F(WritableStreamsTest, EnqueueDequeueDifferentPriorityTest) {
+  // Test to ensure that stream ids are dequeued in the correct order based on
+  // their priorities. The enqueues are done upto the max queue size and the
+  // dequeue is done for all the stream ids.
+  WritableStreams lows(/*max_queue_size=*/3);
   std::string execution_order;
   uint dequeue_count = 0;
   std::vector<uint32_t> expected_stream_ids = {2, 3, 1};
@@ -240,19 +206,19 @@ TEST_F(LowsTest, EnqueueDequeueDifferentPriorityTest) {
   EXPECT_CALL(on_done, Call()).Times(expected_stream_ids.size());
 
   SpawnEnqueueAndCheckSuccess(GetParty(), lows, /*stream_id=*/1,
-                              Lows::StreamPriority::kDefault,
+                              WritableStreams::StreamPriority::kDefault,
                               [&execution_order](absl::Status status) {
                                 execution_order.append("1");
                                 EXPECT_TRUE(status.ok());
                               });
   SpawnEnqueueAndCheckSuccess(GetParty(), lows, /*stream_id=*/2,
-                              Lows::StreamPriority::kStreamClosed,
+                              WritableStreams::StreamPriority::kStreamClosed,
                               [&execution_order](absl::Status status) {
                                 execution_order.append("2");
                                 EXPECT_TRUE(status.ok());
                               });
   SpawnEnqueueAndCheckSuccess(GetParty(), lows, /*stream_id=*/3,
-                              Lows::StreamPriority::kTransportJail,
+                              WritableStreams::StreamPriority::kTransportJail,
                               [&execution_order](absl::Status status) {
                                 execution_order.append("3");
                                 EXPECT_TRUE(status.ok());
@@ -285,8 +251,11 @@ TEST_F(LowsTest, EnqueueDequeueDifferentPriorityTest) {
   EXPECT_STREQ(execution_order.c_str(), "123");
 }
 
-TEST_F(LowsTest, DequeueWithTransportTokensUnavailableTest) {
-  Lows lows(/*max_queue_size=*/3);
+TEST_F(WritableStreamsTest, DequeueWithTransportTokensUnavailableTest) {
+  // Test to ensure that transport jail stream ids are dequeued only when
+  // transport tokens are available. The enqueues are done upto the max queue
+  // size and the dequeue is done for all the stream ids.
+  WritableStreams lows(/*max_queue_size=*/3);
   std::string execution_order;
   uint dequeue_count = 0;
   std::vector<uint32_t> expected_stream_ids = {2, 1, 3};
@@ -295,19 +264,19 @@ TEST_F(LowsTest, DequeueWithTransportTokensUnavailableTest) {
   EXPECT_CALL(on_done, Call()).Times(expected_stream_ids.size());
 
   SpawnEnqueueAndCheckSuccess(GetParty(), lows, /*stream_id=*/1,
-                              Lows::StreamPriority::kDefault,
+                              WritableStreams::StreamPriority::kDefault,
                               [&execution_order](absl::Status status) {
                                 execution_order.append("1");
                                 EXPECT_TRUE(status.ok());
                               });
   SpawnEnqueueAndCheckSuccess(GetParty(), lows, /*stream_id=*/2,
-                              Lows::StreamPriority::kStreamClosed,
+                              WritableStreams::StreamPriority::kStreamClosed,
                               [&execution_order](absl::Status status) {
                                 execution_order.append("2");
                                 EXPECT_TRUE(status.ok());
                               });
   SpawnEnqueueAndCheckSuccess(GetParty(), lows, /*stream_id=*/3,
-                              Lows::StreamPriority::kTransportJail,
+                              WritableStreams::StreamPriority::kTransportJail,
                               [&execution_order](absl::Status status) {
                                 execution_order.append("3");
                                 EXPECT_TRUE(status.ok());
@@ -344,120 +313,6 @@ TEST_F(LowsTest, DequeueWithTransportTokensUnavailableTest) {
   event_engine()->UnsetGlobalHooks();
   EXPECT_STREQ(execution_order.c_str(), "123");
 }
-
-// TEST_F(LowsTest, EnqueueDequeueFlowTest) {
-//   Lows lows(/*max_queue_size=*/2);
-//   std::string execution_order;
-//   std::vector<uint32_t> expected_stream_ids = {2, 3, 1, 4};
-//   std::vector<bool> transport_tokens_available = {true, false, true};
-//   StrictMock<MockFunction<void()>> on_done;
-//   EXPECT_CALL(on_done, Call()).Times(expected_stream_ids.size());
-//   Latch<void> latch1;
-//   Latch<void> latch2;
-//   Latch<void> latch3;
-
-//   SpawnEnqueueAndCheckSuccess(GetParty(), lows, /*stream_id=*/1,
-//                               Lows::StreamPriority::kDefault,
-//                               [&execution_order](absl::Status status) {
-//                                 execution_order.append("1");
-//                                 EXPECT_TRUE(status.ok());
-//                               });
-//   SpawnEnqueueAndCheckSuccess(GetParty(), lows, /*stream_id=*/2,
-//                               Lows::StreamPriority::kStreamClosed,
-//                               [&execution_order, &latch1](absl::Status
-//                               status) {
-//                                 execution_order.append("2");
-//                                 EXPECT_TRUE(status.ok());
-//                                 latch1.Set();
-//                                 LOG(INFO) << "latch1 set";
-//                               });
-//   SpawnEnqueueAndCheckSuccess(GetParty(), lows, /*stream_id=*/3,
-//                               Lows::StreamPriority::kTransportJail,
-//                               [&execution_order, &latch2](absl::Status
-//                               status) {
-//                                 execution_order.append("3");
-//                                 EXPECT_TRUE(status.ok());
-//                                 latch2.Set();
-//                                 LOG(INFO) << "latch2 set";
-//                               });
-//   SpawnEnqueueAndCheckSuccess(GetParty(), lows, /*stream_id=*/4,
-//                               Lows::StreamPriority::kDefault,
-//                               [&execution_order, &latch3](absl::Status
-//                               status) {
-//                                 execution_order.append("4");
-//                                 EXPECT_TRUE(status.ok());
-//                                 latch3.Set();
-//                                 LOG(INFO) << "latch3 set";
-//                               });
-
-//   GetParty()->Spawn(
-//       "Dequeue1",
-//       [&lows, &latch1, &on_done]() {
-//         return TrySeq(
-//             latch1.Wait(),
-//             [&lows]() {
-//               LOG(INFO) << "Dequeue1";
-//               return lows.Next(/*transport_tokens_available=*/true);
-//             },
-//             [&on_done](uint32_t stream_id) {
-//               LOG(INFO) << "Dequeue1 stream id " << stream_id;
-//               EXPECT_EQ(stream_id, 2);
-//               on_done.Call();
-//             });
-//       },
-//       [](auto) {});
-//   GetParty()->Spawn(
-//       "Dequeue2",
-//       [&lows, &latch2, &on_done]() {
-//         return TrySeq(
-//             latch2.Wait(),
-//             [&lows]() {
-//               LOG(INFO) << "Dequeue2";
-//               return lows.Next(/*transport_tokens_available=*/true);
-//             },
-//             [&on_done](uint32_t stream_id) {
-//               LOG(INFO) << "Dequeue2 stream id " << stream_id;
-//               EXPECT_EQ(stream_id, 3);
-//               on_done.Call();
-//             });
-//       },
-//       [](auto) {});
-//   GetParty()->Spawn(
-//       "Dequeue3",
-//       [&lows, &latch2, &on_done]() {
-//         return TrySeq(
-//             latch2.Wait(),
-//             [&lows]() {
-//               LOG(INFO) << "Dequeue3";
-//               return lows.Next(/*transport_tokens_available=*/true);
-//             },
-//             [&on_done](uint32_t stream_id) {
-//               LOG(INFO) << "Dequeue3 stream id " << stream_id;
-//               EXPECT_EQ(stream_id, 1);
-//               on_done.Call();
-//             });
-//       },
-//       [](auto) {});
-//   GetParty()->Spawn(
-//       "Dequeue4",
-//       [&lows, &latch3, &on_done]() {
-//         return TrySeq(
-//             latch3.Wait(),
-//             [&lows]() {
-//               LOG(INFO) << "Dequeue4";
-//               return lows.Next(/*transport_tokens_available=*/true);
-//             },
-//             [&on_done](uint32_t stream_id) {
-//               LOG(INFO) << "Dequeue4 stream id " << stream_id;
-//               EXPECT_EQ(stream_id, 4);
-//               on_done.Call();
-//             });
-//       },
-//       [](auto) {});
-
-//   event_engine()->TickUntilIdle();
-//   event_engine()->UnsetGlobalHooks();
-// }
 
 }  // namespace testing
 }  // namespace http2

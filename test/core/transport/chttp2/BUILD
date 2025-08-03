@@ -790,10 +790,10 @@ grpc_fuzz_test(
 )
 
 grpc_cc_test(
-    name = "lows_test",
-    srcs = ["lows_test.cc"],
+    name = "writable_streams_test",
+    srcs = ["writable_streams_test.cc"],
     deps = [
-        "//src/core:lows",
+        "//src/core:writable_streams",
         "//test/core/transport/util:transport_test",
     ],
 )

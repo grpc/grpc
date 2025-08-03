@@ -10658,8 +10658,8 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "lows",
-    hdrs = ["ext/transport/chttp2/transport/lows.h"],
+    name = "writable_streams",
+    hdrs = ["ext/transport/chttp2/transport/writable_streams.h"],
     deps = [
         "if",
         "loop",
