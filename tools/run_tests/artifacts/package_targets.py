@@ -173,9 +173,9 @@ class PythonPackage:
             "ARTIFACT_PREFIX": "python_",
             "EXCLUDE_PATTERNS": "python_musllinux_1_1_aarch64_* python_manylinux2014_aarch64_*",
         }
-        if "musllinux_1_1" in self.platform and "aarch64" in self.arch:
+        if "musllinux_1_2" in self.platform and "aarch64" in self.arch:
             dockerfile_dir = (
-                "tools/dockerfile/grpc_artifact_python_musllinux_1_1_aarch64"
+                "tools/dockerfile/grpc_artifact_python_musllinux_1_2_aarch64"
             )
             environ["ARTIFACT_PREFIX"] = "python_musllinux_1_1_aarch64_"
             environ["EXCLUDE_PATTERNS"] = ""

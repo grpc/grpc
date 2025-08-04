@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_musllinux_1_1_aarch64/Dockerfile.inja`!!!
+# AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_musllinux_1_2_aarch64/Dockerfile.inja`!!!
 
-FROM quay.io/pypa/musllinux_1_2_aarch64:2025.07.14-2
+FROM quay.io/pypa/musllinux_1_2_aarch64:2025.07.27-1
 
 # TODO: simplify the list of third_party modules list
 # NOTE: git>=2.46 allows leading paths like third_party/* to include all subdirectories

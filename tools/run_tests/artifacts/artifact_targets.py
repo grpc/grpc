@@ -453,32 +453,35 @@ def targets():
             PythonArtifact(
                 "linux_extra", "armv7", "cp314-cp314", presubmit=True
             ),
-            PythonArtifact("musllinux_1_1", "x64", "cp39-cp39", presubmit=True),
-            PythonArtifact("musllinux_1_1", "x64", "cp310-cp310"),
-            PythonArtifact("musllinux_1_1", "x64", "cp311-cp311"),
-            PythonArtifact("musllinux_1_1", "x64", "cp312-cp312"),
-            PythonArtifact("musllinux_1_1", "x64", "cp313-cp313"),
+            PythonArtifact("musllinux_1_2", "x64", "cp39-cp39", presubmit=True),
+            PythonArtifact("musllinux_1_2", "x64", "cp310-cp310"),
+            PythonArtifact("musllinux_1_2", "x64", "cp311-cp311"),
+            PythonArtifact("musllinux_1_2", "x64", "cp312-cp312"),
             PythonArtifact(
-                "musllinux_1_1", "x64", "cp314-cp314", presubmit=True
+                "musllinux_1_2", "x64", "cp313-cp313", presubmit=True
             ),
-            PythonArtifact("musllinux_1_1", "x86", "cp39-cp39", presubmit=True),
-            PythonArtifact("musllinux_1_1", "x86", "cp310-cp310"),
-            PythonArtifact("musllinux_1_1", "x86", "cp311-cp311"),
-            PythonArtifact("musllinux_1_1", "x86", "cp312-cp312"),
-            PythonArtifact("musllinux_1_1", "x86", "cp313-cp313"),
+            PythonArtifact("musllinux_1_2", "x86", "cp39-cp39", presubmit=True),
+            PythonArtifact("musllinux_1_2", "x86", "cp310-cp310"),
+            PythonArtifact("musllinux_1_2", "x86", "cp311-cp311"),
+            PythonArtifact("musllinux_1_2", "x86", "cp312-cp312"),
             PythonArtifact(
-                "musllinux_1_1", "x86", "cp314-cp314", presubmit=True
+                "musllinux_1_2", "x86", "cp313-cp313", presubmit=True
             ),
             PythonArtifact(
-                "musllinux_1_1", "aarch64", "cp39-cp39", presubmit=True
+                "musllinux_1_2", "x86", "cp314-cp314", presubmit=True
             ),
-            PythonArtifact("musllinux_1_1", "aarch64", "cp310-cp310"),
-            PythonArtifact("musllinux_1_1", "aarch64", "cp311-cp311"),
-            PythonArtifact("musllinux_1_1", "aarch64", "cp312-cp312"),
-            PythonArtifact("musllinux_1_1", "aarch64", "cp313-cp313"),
             PythonArtifact(
-                "musllinux_1_1", "aarch64", "cp314-cp314", presubmit=True
+                "musllinux_1_2", "aarch64", "cp39-cp39", presubmit=True
             ),
+            PythonArtifact("musllinux_1_2", "aarch64", "cp310-cp310"),
+            PythonArtifact("musllinux_1_2", "aarch64", "cp311-cp311"),
+            PythonArtifact("musllinux_1_2", "aarch64", "cp312-cp312"),
+            PythonArtifact(
+                "musllinux_1_2", "aarch64", "cp313-cp313", presubmit=True
+            ),
+            PythonArtifact(
+                "musllinux_1_2", "aarch64", "cp314-cp314", presubmit=True
+            )
             PythonArtifact("macos", "x64", "python3.9", presubmit=True),
             PythonArtifact("macos", "x64", "python3.10"),
             PythonArtifact("macos", "x64", "python3.11"),
