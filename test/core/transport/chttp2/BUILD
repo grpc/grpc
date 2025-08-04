@@ -793,6 +793,7 @@ grpc_cc_test(
     name = "writable_streams_test",
     srcs = ["writable_streams_test.cc"],
     deps = [
+        "//src/core:loop",
         "//src/core:writable_streams",
         "//test/core/transport/util:transport_test",
     ],

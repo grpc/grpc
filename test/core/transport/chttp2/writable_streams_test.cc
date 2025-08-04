@@ -20,6 +20,7 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/lib/promise/loop.h"
 #include "test/core/transport/util/transport_test.h"
 
 namespace grpc_core {
@@ -312,6 +313,78 @@ TEST_F(WritableStreamsTest, DequeueWithTransportTokensUnavailableTest) {
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
   EXPECT_STREQ(execution_order.c_str(), "123");
+}
+
+TEST_F(WritableStreamsTest, EnqueueDequeueFlowTest) {
+  // Test to enqueue 4 stream ids and dequeue them as the queue is full. The
+  // test asserts the following:
+  // 1. Stream ids are dequeued in the correct order based on their priorities.
+  //    This includes the case where if a new stream id with a higher priority
+  //    is enqueued, the stream id is dequeued before the already stream ids
+  //    in the queue.
+  WritableStreams lows(/*max_queue_size=*/2);
+  std::string execution_order;
+  std::vector<uint32_t> expected_stream_ids = {2, 3, 1, 4};
+  uint dequeue_count = 0;
+  std::vector<bool> transport_tokens_available = {true, true, true, false};
+  StrictMock<MockFunction<void()>> on_done;
+  EXPECT_CALL(on_done, Call()).Times(expected_stream_ids.size());
+
+  GetParty()->Spawn(
+      "EnqueueAndDequeue",
+      [&lows, &dequeue_count, &expected_stream_ids, &transport_tokens_available,
+       &on_done] {
+        return TrySeq(
+            lows.Enqueue(/*stream_id=*/1,
+                         WritableStreams::StreamPriority::kDefault),
+            [&lows] {
+              return lows.Enqueue(
+                  /*stream_id=*/2,
+                  WritableStreams::StreamPriority::kStreamClosed);
+            },
+            [&lows, &transport_tokens_available, &dequeue_count] {
+              return lows.Next(transport_tokens_available[dequeue_count]);
+            },
+            [&lows, &dequeue_count, &expected_stream_ids,
+             &on_done](uint32_t stream_id) {
+              EXPECT_EQ(stream_id, expected_stream_ids[dequeue_count++]);
+              on_done.Call();
+              return lows.Enqueue(
+                  /*stream_id=*/3,
+                  WritableStreams::StreamPriority::kTransportJail);
+            },
+            [&lows, &transport_tokens_available, &dequeue_count] {
+              return lows.Next(transport_tokens_available[dequeue_count]);
+            },
+            [&lows, &dequeue_count, &expected_stream_ids,
+             &on_done](uint32_t stream_id) {
+              EXPECT_EQ(stream_id, expected_stream_ids[dequeue_count++]);
+              on_done.Call();
+              return lows.Enqueue(/*stream_id=*/4,
+                                  WritableStreams::StreamPriority::kDefault);
+            },
+            [&lows, &transport_tokens_available, &dequeue_count] {
+              return lows.Next(transport_tokens_available[dequeue_count]);
+            },
+            [&lows, &dequeue_count, &expected_stream_ids,
+             &transport_tokens_available, &on_done](uint32_t stream_id) {
+              EXPECT_EQ(stream_id, expected_stream_ids[dequeue_count++]);
+              on_done.Call();
+              return Map(lows.Next(transport_tokens_available[dequeue_count]),
+                         [&expected_stream_ids, &dequeue_count,
+                          &on_done](absl::StatusOr<uint32_t> stream_id) {
+                           EXPECT_TRUE(stream_id.ok());
+                           EXPECT_EQ(*stream_id,
+                                     expected_stream_ids[dequeue_count++]);
+                           on_done.Call();
+                           return absl::OkStatus();
+                         });
+            });
+      },
+      [](auto) {});
+
+  event_engine()->TickUntilIdle();
+  event_engine()->UnsetGlobalHooks();
 }
 
 }  // namespace testing

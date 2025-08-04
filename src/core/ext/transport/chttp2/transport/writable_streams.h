@@ -22,8 +22,9 @@
 #include <queue>
 
 #include "src/core/lib/promise/if.h"
-#include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/mpsc.h"
+#include "src/core/lib/promise/race.h"
+#include "src/core/lib/promise/try_seq.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -88,31 +89,49 @@ class WritableStreams {
 
   // Dequeues a single stream id from the queue.
   // Returns a promise that resolves to the next stream id or an error if the
-  // dequeue fails.
+  // dequeue fails. High level flow:
+  // 1. Synchronous dequeue from the mpsc queue to get a batch of stream ids.
+  // 2. If the batch is non-empty, the stream ids are pushed to the prioritized
+  //    queue.
+  // 3. If the prioritized queue is non-empty, the stream with the highest
+  //    priority is popped. If there are multiple stream ids with the same
+  //    priority, the stream enqueued first is popped first.
+  // 4. If the prioritized queue is empty, the mpsc queue is queried again for
+  //    a batch of stream ids. If the mpsc queue is empty, we block until a
+  //    stream id is enqueued.
+  // 5. Once mpsc dequeue promise is resolved, the stream ids are pushed to the
+  //    prioritized queue.
+  // 6. Return the stream id with the highest priority.
+
   auto Next(const bool transport_tokens_available) {
     // TODO(akshitpatel) : [PH2][P2] - Need to add an immediate dequeue option
-    // for the mpsc queue. This will be used in scenario where a stream with
-    // higher priority is enqueued successfully, then the next call to Next
-    // should return that stream id immediately (based on the new priority).
-    // Also enable the flow_test which is commented out currently once this is
-    // implemented.
-    return AssertResultType<absl::StatusOr<uint32_t>>(
-        Loop([this, transport_tokens_available]() {
+    // for the mpsc queue in favor of the race.
+
+    return AssertResultType<absl::StatusOr<uint32_t>>(TrySeq(
+        Race(queue_.NextBatch(kMaxBatchSize),
+             Immediate(ValueOrFailure<std::vector<StreamIDAndPriority>>(
+                 std::vector<StreamIDAndPriority>()))),
+        [this,
+         transport_tokens_available](std::vector<StreamIDAndPriority> batch) {
+          for (auto stream_id_priority : batch) {
+            prioritized_queue_.Push(stream_id_priority.stream_id,
+                                    stream_id_priority.priority);
+          }
           std::optional<uint32_t> stream_id =
               prioritized_queue_.Pop(transport_tokens_available);
           return If(
               stream_id.has_value(),
-              [stream_id]() -> LoopCtl<absl::StatusOr<uint32_t>> {
+              [stream_id]() -> absl::StatusOr<uint32_t> {
                 GRPC_LOWS_DEBUG << "Next stream id " << stream_id.value();
                 return stream_id.value();
               },
-              [this] {
+              [this, transport_tokens_available] {
                 GRPC_LOWS_DEBUG << "Query queue for next batch";
                 return Map(
                     queue_.NextBatch(kMaxBatchSize),
-                    [this](
+                    [this, transport_tokens_available](
                         ValueOrFailure<std::vector<StreamIDAndPriority>> batch)
-                        -> LoopCtl<absl::StatusOr<uint32_t>> {
+                        -> absl::StatusOr<uint32_t> {
                       if (batch.ok()) {
                         GRPC_LOWS_DEBUG << "Next batch size "
                                         << batch.value().size();
@@ -120,7 +139,16 @@ class WritableStreams {
                           prioritized_queue_.Push(stream_id_priority.stream_id,
                                                   stream_id_priority.priority);
                         }
-                        return Continue();
+                        std::optional<uint32_t> stream_id =
+                            prioritized_queue_.Pop(transport_tokens_available);
+                        // TODO(akshitpatel) : [PH2][P4] - This DCHECK should
+                        // ideally be fine. But in case if queue_.NextBatch
+                        // spuriously returns an empty batch, move to a Loop
+                        // to avoid this.
+                        DCHECK(stream_id.has_value());
+                        GRPC_LOWS_DEBUG << "Next stream id "
+                                        << stream_id.value();
+                        return stream_id.value();
                       }
                       return absl::InternalError("Failed to read from queue");
                     });

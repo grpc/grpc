@@ -10662,8 +10662,9 @@ grpc_cc_library(
     hdrs = ["ext/transport/chttp2/transport/writable_streams.h"],
     deps = [
         "if",
-        "loop",
         "mpsc",
+        "race",
+        "try_seq",
     ],
 )
 
