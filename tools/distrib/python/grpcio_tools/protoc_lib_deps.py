@@ -382,7 +382,7 @@ CC_FILES=[
     'third_party/protobuf/upb_generator/plugin.cc'
 ]
 
-PROTO_FILES = [
+PROTO_FILES=[
     'google/protobuf/any.proto',
     'google/protobuf/api.proto',
     'google/protobuf/compiler/plugin.proto',
@@ -391,8 +391,8 @@ PROTO_FILES = [
     'google/protobuf/duration.proto',
     'google/protobuf/empty.proto',
     'google/protobuf/field_mask.proto',
-    'google/protobuf/java_features.proto',
     'google/protobuf/go_features.proto',
+    'google/protobuf/java_features.proto',
     'google/protobuf/source_context.proto',
     'google/protobuf/struct.proto',
     'google/protobuf/timestamp.proto',
