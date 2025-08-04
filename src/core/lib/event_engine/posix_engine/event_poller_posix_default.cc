@@ -62,7 +62,8 @@ std::shared_ptr<PosixEventPoller> MakeDefaultPoller(
 
 #else  // GRPC_POSIX_SOCKET_TCP
 
-std::shared_ptr<PosixEventPoller> MakeDefaultPoller(Scheduler* /*scheduler*/) {
+std::shared_ptr<PosixEventPoller> MakeDefaultPoller(
+    std::shared_ptr<ThreadPool> /*thread_pool*/) {
   return nullptr;
 }
 
