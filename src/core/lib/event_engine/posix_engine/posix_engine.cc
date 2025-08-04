@@ -506,6 +506,7 @@ std::shared_ptr<PosixEventEngine>
 PosixEventEngine::MakeTestOnlyPosixEventEngine(
     std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
         test_only_poller) {
+  // Calling a private PosixEventEngine constructor - can't do make_shared
   std::shared_ptr<PosixEventEngine> engine(
       new PosixEventEngine(std::move(test_only_poller)));
   RegisterEventEngineForFork(engine, engine->executor_, engine->timer_manager_);
