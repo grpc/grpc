@@ -789,8 +789,8 @@ void PollPoller::Kick() { grpc_core::Crash("unimplemented"); }
 
 // If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
 // nullptr.
-std::shared_ptr<PollPoller> MakePollPoller(Scheduler* /*scheduler*/,
-                                           bool /* use_phony_poll */) {
+std::shared_ptr<PollPoller> MakePollPoller(
+    std::shared_ptr<ThreadPool> /*thread_pool*/, bool /* use_phony_poll */) {
   return nullptr;
 }
 

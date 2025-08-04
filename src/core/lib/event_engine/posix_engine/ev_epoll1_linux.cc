@@ -512,7 +512,7 @@ namespace grpc_event_engine::experimental {
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::Poller;
 
-Epoll1Poller::Epoll1Poller(Scheduler* /* engine */) {
+Epoll1Poller::Epoll1Poller(std::shared_ptr<ThreadPool> /* thread_pool */) {
   grpc_core::Crash("unimplemented");
 }
 
@@ -549,7 +549,8 @@ void Epoll1Poller::ResetKickState() { grpc_core::Crash("unimplemented"); }
 
 // If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
 // nullptr.
-std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(Scheduler* /*scheduler*/) {
+std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(
+    std::shared_ptr<ThreadPool> /*thread_pool*/) {
   return nullptr;
 }
 
