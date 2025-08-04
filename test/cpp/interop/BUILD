@@ -33,6 +33,10 @@ grpc_cc_library(
         "absl/flags:flag",
     ],
     deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc_base",
         "//test/cpp/util:test_util",
     ],
 )
@@ -82,10 +86,19 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log:check",
+        "absl/flags:flag",
+        "absl/log:log",
     ],
     deps = [
         ":server_helper_lib",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc_base",
+        "//:grpcpp_backend_metric_recorder",
+        "//:grpcpp_call_metric_recorder",
         "//:grpcpp_orca_service",
+        "//src/core:sync",
         "//src/proto/grpc/testing:empty_cc_proto",
         "//src/proto/grpc/testing:messages_cc_proto",
         "//src/proto/grpc/testing:test_cc_grpc",
@@ -104,16 +117,27 @@ grpc_cc_library(
         "interop_client.h",
     ],
     external_deps = [
+        "absl/cleanup",
         "absl/flags:flag",
         "absl/log:check",
         "absl/log:log",
+        "absl/strings",
+        "absl/strings:str_format",
     ],
     deps = [
         ":backend_metrics_lb_policy",
+        "//:config",
+        "//:config_vars",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc_base",
+        "//:grpc_core_credentials_header",
         "//src/proto/grpc/testing:empty_cc_proto",
         "//src/proto/grpc/testing:messages_cc_proto",
         "//src/proto/grpc/testing:test_cc_grpc",
         "//test/core/credentials/call/oauth2:oauth2_utils",
+        "//test/core/test_util:grpc_test_util_base",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
@@ -126,9 +150,15 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/log",
     ],
     deps = [
         ":client_helper_lib",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//test/core/test_util:grpc_test_util",
+        "//test/cpp/util:test_config",
     ],
 )
 
@@ -536,11 +566,18 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log:check",
+        "absl/log:log",
+        "absl/strings:str_format",
     ],
     tags = ["nobuilder"],
     deps = [
+        "//:config",
+        "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//:oob_backend_metric",
+        "//src/core:delegating_helper",
+        "//src/core:pollset_set",
         "//src/proto/grpc/testing:messages_cc_proto",
     ],
 )
