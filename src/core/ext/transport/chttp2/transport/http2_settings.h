@@ -48,7 +48,7 @@ class Http2Settings {
     kGrpcAllowSecurityFrameWireId = 65029,
   };
 
-  void Diff(bool is_first_send, const Http2Settings& old,
+  void Diff(bool is_first_send, const Http2Settings& old_setting,
             absl::FunctionRef<void(uint16_t key, uint32_t value)> cb) const;
   GRPC_MUST_USE_RESULT http2::Http2ErrorCode Apply(uint16_t key,
                                                    uint32_t value);
@@ -150,14 +150,39 @@ class Http2Settings {
   }
 
  private:
-  uint32_t header_table_size_ = 4096;
+  // RFC9113 states the default value for SETTINGS_HEADER_TABLE_SIZE
+  uint32_t header_table_size_ = 4096u;
+
+  // TODO(tjagtap) [PH2][P4] : Get the history of why this default was decided
+  // and write it here.
   uint32_t max_concurrent_streams_ = 4294967295u;
+
+  // RFC9113 states the default for SETTINGS_INITIAL_WINDOW_SIZE
   uint32_t initial_window_size_ = 65535u;
+
+  // RFC9113 states the default for SETTINGS_MAX_FRAME_SIZE
   uint32_t max_frame_size_ = 16384u;
+
+  // TODO(tjagtap) [PH2][P4] : Get the history of why this default was decided
+  // and write it here.
   uint32_t max_header_list_size_ = 16777216u;
+
+  // gRPC defined setting
   uint32_t preferred_receive_crypto_message_size_ = 0u;
+
+  // RFC9113 defined default is true. However, for gRPC we always then set it to
+  // false via the SetEnablePush function
   bool enable_push_ = true;
+
+  // gRPC defined setting
+  // Unlike most other SETTINGS, this setting is negotiated between the client
+  // and the server.
   bool allow_true_binary_metadata_ = false;
+
+  // gRPC defined setting
+  // Unlike most other SETTINGS, this setting is negotiated between the client
+  // and the server. Both have to set it to true for the system to successfully
+  // apply the custom SECURITY frame.
   bool allow_security_frame_ = false;
 };
 

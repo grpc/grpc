@@ -18,6 +18,8 @@
 
 EXPERIMENT_ENABLES = {
     "call_tracer_in_transport": "call_tracer_in_transport",
+    "channelz_use_v2_for_v1_api": "channelz_use_v2_for_v1_api",
+    "channelz_use_v2_for_v1_service": "channelz_use_v2_for_v1_service",
     "chaotic_good_framing_layer": "chaotic_good_framing_layer",
     "chttp2_bound_write_size": "chttp2_bound_write_size",
     "error_flatten": "error_flatten",
@@ -30,6 +32,7 @@ EXPERIMENT_ENABLES = {
     "event_engine_for_all_other_endpoints": "event_engine_client,event_engine_dns,event_engine_dns_non_client_channel,event_engine_for_all_other_endpoints,event_engine_listener",
     "event_engine_secure_endpoint": "event_engine_secure_endpoint",
     "free_large_allocator": "free_large_allocator",
+    "fuse_filters": "fuse_filters",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
     "max_inflight_pings_strict_limit": "max_inflight_pings_strict_limit",
@@ -72,6 +75,10 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "channelz_test": [
+                "channelz_use_v2_for_v1_api",
+                "channelz_use_v2_for_v1_service",
+            ],
             "core_end2end_test": [
                 "chttp2_bound_write_size",
                 "error_flatten",
@@ -107,6 +114,9 @@ EXPERIMENTS = {
             ],
             "lb_unit_test": [
                 "rr_wrr_connect_from_random_index",
+            ],
+            "minimal_stack_test": [
+                "fuse_filters",
             ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
@@ -153,6 +163,10 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "channelz_test": [
+                "channelz_use_v2_for_v1_api",
+                "channelz_use_v2_for_v1_service",
+            ],
             "core_end2end_test": [
                 "chttp2_bound_write_size",
                 "error_flatten",
@@ -188,6 +202,9 @@ EXPERIMENTS = {
             ],
             "lb_unit_test": [
                 "rr_wrr_connect_from_random_index",
+            ],
+            "minimal_stack_test": [
+                "fuse_filters",
             ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
@@ -234,6 +251,10 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "channelz_test": [
+                "channelz_use_v2_for_v1_api",
+                "channelz_use_v2_for_v1_service",
+            ],
             "core_end2end_test": [
                 "chttp2_bound_write_size",
                 "error_flatten",
@@ -269,6 +290,9 @@ EXPERIMENTS = {
             ],
             "lb_unit_test": [
                 "rr_wrr_connect_from_random_index",
+            ],
+            "minimal_stack_test": [
+                "fuse_filters",
             ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",

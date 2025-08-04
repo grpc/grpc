@@ -60,6 +60,7 @@ TEST_TARGETS=(
   //src/objective-c/tests:CFStreamTests
   # Needs oracle engine, which doesn't work with GRPC_IOS_EVENT_ENGINE_CLIENT=1
   //src/objective-c/tests:EventEngineClientTests
+  //src/objective-c/tests:EventEngineServerTests
   //src/objective-c/tests:tvtests_build_test
   # codegen plugin tests
   //src/objective-c/tests:objc_codegen_plugin_test

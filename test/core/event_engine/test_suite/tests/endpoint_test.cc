@@ -69,7 +69,8 @@ using namespace std::chrono_literals;
 TEST_F(EventEngineEndpointTest, WriteEventCallbackEndpointValidityTest) {
   grpc_core::ExecCtx ctx;
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
-  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
+  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>("bar"));
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
@@ -95,7 +96,10 @@ TEST_F(EventEngineEndpointTest, WriteEventCallbackEndpointValidityTest) {
       [](absl::Status status) {
         ASSERT_TRUE(status.ok()) << status.ToString();
       },
-      config, std::make_unique<grpc_core::MemoryQuota>("foo"));
+      config,
+      std::make_unique<grpc_core::MemoryQuota>(
+          grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+              "bar")));
 
   ASSERT_TRUE(listener->Bind(*resolved_addr).ok());
   ASSERT_TRUE(listener->Start().ok());

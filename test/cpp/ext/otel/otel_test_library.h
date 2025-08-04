@@ -91,9 +91,9 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
     }
 
     Options& set_labels_to_inject(
-        std::map<
-            grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
-            grpc_core::RefCountedStringValue>
+        std::map<grpc_core::ClientCallTracerInterface::CallAttemptTracer::
+                     OptionalLabelKey,
+                 grpc_core::RefCountedStringValue>
             labels) {
       labels_to_inject = std::move(labels);
       return *this;
@@ -165,7 +165,8 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
             opentelemetry::sdk::resource::Resource::Create({}));
     std::unique_ptr<grpc::internal::LabelsInjector> labels_injector;
     bool use_meter_provider = true;
-    std::map<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
+    std::map<grpc_core::ClientCallTracerInterface::CallAttemptTracer::
+                 OptionalLabelKey,
              grpc_core::RefCountedStringValue>
         labels_to_inject;
     std::string service_config;
@@ -248,8 +249,9 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
 
   const absl::string_view kMethodName = "grpc.testing.EchoTestService/Echo";
   const absl::string_view kGenericMethodName = "foo/bar";
-  std::map<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
-           grpc_core::RefCountedStringValue>
+  std::map<
+      grpc_core::ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey,
+      grpc_core::RefCountedStringValue>
       labels_to_inject_;
   std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> reader_;
   std::string server_address_;
@@ -406,6 +408,21 @@ MATCHER_P7(GaugeDataIsIncrementalForSpecificMetricAndLabelSet, metric_name,
   }
   return result;
 }
+
+// Helper matcher to check whether a value is within a certain range
+MATCHER_P2(IsWithinRange, lo, hi,
+           absl::StrCat(negation ? "isn't" : "is", " between ",
+                        ::testing::PrintToString(lo), " and ",
+                        ::testing::PrintToString(hi))) {
+  return (lo) <= arg && arg <= (hi);
+}
+
+// Specialization of Extract to be able to use `IsWithinRange` matcher within
+// the `HistogramResultEq` matcher defined above.
+template <typename T>
+struct Extract<const IsWithinRangeMatcherP2<T, T>> {
+  using Type = T;
+};
 
 }  // namespace testing
 }  // namespace grpc

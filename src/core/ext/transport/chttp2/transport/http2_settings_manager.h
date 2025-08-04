@@ -35,10 +35,14 @@ namespace grpc_core {
 
 class Http2SettingsManager {
  public:
+  // Only local and peer settings can be edited by the transport.
   Http2Settings& mutable_local() { return local_; }
-  const Http2Settings& local() const { return local_; }
-  const Http2Settings& acked() const { return acked_; }
   Http2Settings& mutable_peer() { return peer_; }
+
+  const Http2Settings& local() const { return local_; }
+  // Before the first SETTINGS ACK frame is received acked_ will hold the
+  // default values.
+  const Http2Settings& acked() const { return acked_; }
   const Http2Settings& peer() const { return peer_; }
 
   channelz::PropertyGrid ChannelzProperties() const {
@@ -49,7 +53,14 @@ class Http2SettingsManager {
         .SetColumn("acked", acked_.ChannelzProperties());
   }
 
+  // Returns nullopt if we don't need to send a SETTINGS frame to the peer.
+  // Returns Http2SettingsFrame if we need to send a SETTINGS frame to the
+  // peer. Transport MUST send a frame returned by this function to the peer.
+  // This function is not idempotent.
   std::optional<Http2SettingsFrame> MaybeSendUpdate();
+
+  // Call when we receive an ACK from our peer.
+  // This function is not idempotent.
   GRPC_MUST_USE_RESULT bool AckLastSend();
 
  private:
@@ -59,9 +70,20 @@ class Http2SettingsManager {
     kIdle,
   };
   UpdateState update_state_ = UpdateState::kFirst;
+
+  // This holds a copy of the peers settings.
+  Http2Settings peer_;
+
+  // These are different sets of our settings.
+  // local_  : Setting that has been changed inside our transport,
+  //           but not yet sent to the peer.
+  // sent_   : New settings frame is sent to the peer but we have not yet
+  //           received the ACK from the peer.
+  // acked_  : The settings that have already been ACKed by the peer. These
+  //           settings can be enforced and any violation of these settings by a
+  //           peer may cause an error.
   Http2Settings local_;
   Http2Settings sent_;
-  Http2Settings peer_;
   Http2Settings acked_;
 };
 
