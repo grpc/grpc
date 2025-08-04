@@ -187,14 +187,16 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
 
   PosixEventEngine();
 
-#ifdef GRPC_POSIX_SOCKET_TCP
+#if defined(GRPC_POSIX_SOCKET_TCP) && \
+    !defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
   // Constructs an EventEngine which has a shared ownership of the poller. Use
   // the MakeTestOnlyPosixEventEngine static method to call this. Its expected
   // to be used only in tests.
   explicit PosixEventEngine(
       std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
           poller);
-#endif  // GRPC_POSIX_SOCKET_TCP
+#endif  // defined(GRPC_POSIX_SOCKET_TCP) &&
+  // !defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
 
   EventEngine::TaskHandle RunAfterInternal(Duration when,
                                            absl::AnyInvocable<void()> cb);

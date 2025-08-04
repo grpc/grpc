@@ -490,6 +490,8 @@ std::shared_ptr<PosixEventEngine> PosixEventEngine::MakePosixEventEngine() {
   return engine;
 }
 
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+
 std::shared_ptr<PosixEventEngine>
 PosixEventEngine::MakeTestOnlyPosixEventEngine(
     std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
@@ -503,23 +505,30 @@ PosixEventEngine::MakeTestOnlyPosixEventEngine(
 PosixEventEngine::PosixEventEngine(std::shared_ptr<PosixEventPoller> poller)
     : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
       executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
-#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
       poller_(std::move(poller)),
-#endif
       timer_manager_(std::make_shared<TimerManager>(executor_)) {
+  CHECK_NE(poller_, nullptr);
 }
-
-#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 
 PosixEventEngine::PosixEventEngine()
     : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
       executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
       timer_manager_(std::make_shared<TimerManager>(executor_)) {
   poller_ = grpc_event_engine::experimental::MakeDefaultPoller(executor_);
+  CHECK_NE(poller_, nullptr);
   SchedulePoller();
 }
 
 #else  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+
+std::shared_ptr<PosixEventEngine>
+PosixEventEngine::MakeTestOnlyPosixEventEngine(
+    std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
+        test_only_poller) {
+  grpc_core::Crash(
+      "PosixEventEngine::MakeTestOnlyPosixEventEngine not available on this "
+      "platform");
+}
 
 PosixEventEngine::PosixEventEngine()
     : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
