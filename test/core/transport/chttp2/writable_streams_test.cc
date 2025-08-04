@@ -120,12 +120,13 @@ TEST_F(WritableStreamsTest, MultipleEnqueueTest) {
                                 execution_order.append("2");
                                 EXPECT_TRUE(status.ok());
                               });
-  SpawnEnqueueAndCheckSuccess(GetParty(), lows, /*stream_id=*/3,
-                              WritableStreams::StreamPriority::kTransportJail,
-                              [&execution_order](absl::Status status) {
-                                execution_order.append("3");
-                                EXPECT_TRUE(status.ok());
-                              });
+  SpawnEnqueueAndCheckSuccess(
+      GetParty(), lows, /*stream_id=*/3,
+      WritableStreams::StreamPriority::kWaitForTransportFlowControl,
+      [&execution_order](absl::Status status) {
+        execution_order.append("3");
+        EXPECT_TRUE(status.ok());
+      });
 
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
@@ -218,12 +219,13 @@ TEST_F(WritableStreamsTest, EnqueueDequeueDifferentPriorityTest) {
                                 execution_order.append("2");
                                 EXPECT_TRUE(status.ok());
                               });
-  SpawnEnqueueAndCheckSuccess(GetParty(), lows, /*stream_id=*/3,
-                              WritableStreams::StreamPriority::kTransportJail,
-                              [&execution_order](absl::Status status) {
-                                execution_order.append("3");
-                                EXPECT_TRUE(status.ok());
-                              });
+  SpawnEnqueueAndCheckSuccess(
+      GetParty(), lows, /*stream_id=*/3,
+      WritableStreams::StreamPriority::kWaitForTransportFlowControl,
+      [&execution_order](absl::Status status) {
+        execution_order.append("3");
+        EXPECT_TRUE(status.ok());
+      });
 
   GetParty()->Spawn(
       "Dequeue",
@@ -253,9 +255,9 @@ TEST_F(WritableStreamsTest, EnqueueDequeueDifferentPriorityTest) {
 }
 
 TEST_F(WritableStreamsTest, DequeueWithTransportTokensUnavailableTest) {
-  // Test to ensure that transport jail stream ids are dequeued only when
-  // transport tokens are available. The enqueues are done upto the max queue
-  // size and the dequeue is done for all the stream ids.
+  // Test to ensure that stream ids waiting on transport flow control are
+  // dequeued only when transport tokens are available. The enqueues are done
+  // upto the max queue size and the dequeue is done for all the stream ids.
   WritableStreams lows(/*max_queue_size=*/3);
   std::string execution_order;
   uint dequeue_count = 0;
@@ -276,12 +278,13 @@ TEST_F(WritableStreamsTest, DequeueWithTransportTokensUnavailableTest) {
                                 execution_order.append("2");
                                 EXPECT_TRUE(status.ok());
                               });
-  SpawnEnqueueAndCheckSuccess(GetParty(), lows, /*stream_id=*/3,
-                              WritableStreams::StreamPriority::kTransportJail,
-                              [&execution_order](absl::Status status) {
-                                execution_order.append("3");
-                                EXPECT_TRUE(status.ok());
-                              });
+  SpawnEnqueueAndCheckSuccess(
+      GetParty(), lows, /*stream_id=*/3,
+      WritableStreams::StreamPriority::kWaitForTransportFlowControl,
+      [&execution_order](absl::Status status) {
+        execution_order.append("3");
+        EXPECT_TRUE(status.ok());
+      });
 
   GetParty()->Spawn(
       "Dequeue",
@@ -350,8 +353,8 @@ TEST_F(WritableStreamsTest, EnqueueDequeueFlowTest) {
               EXPECT_EQ(stream_id, expected_stream_ids[dequeue_count++]);
               on_done.Call();
               return lows.Enqueue(
-                  /*stream_id=*/3,
-                  WritableStreams::StreamPriority::kTransportJail);
+                  /*stream_id=*/3, WritableStreams::StreamPriority::
+                                       kWaitForTransportFlowControl);
             },
             [&lows, &transport_tokens_available, &dequeue_count] {
               return lows.Next(transport_tokens_available[dequeue_count]);

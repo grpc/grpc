@@ -35,9 +35,9 @@ class WritableStreams {
  public:
   enum class StreamPriority : uint8_t {
     kStreamClosed = 0,
-    kTransportJail,
+    kWaitForTransportFlowControl,
     kDefault,
-    kMax
+    kLastPriority
   };
   WritableStreams(
       const uint32_t max_queue_size = std::numeric_limits<uint32_t>::max())
@@ -78,12 +78,12 @@ class WritableStreams {
                                "Failed to enqueue stream id ", stream_id));
   }
 
-  // A synchronous function to add a stream id to the transport jail. Transport
-  // jail signifies that the stream id is waiting for transport tokens to be
-  // available.
-  absl::Status AddToTransportJail(const uint32_t stream_id) {
-    prioritized_queue_.Push(stream_id, StreamPriority::kTransportJail);
-    GRPC_LOWS_DEBUG << "AddToTransportJail stream id " << stream_id;
+  // A synchronous function to add a stream id to the transport flow control
+  // wait list.
+  absl::Status BlockedOnTransportFlowControl(const uint32_t stream_id) {
+    prioritized_queue_.Push(stream_id,
+                            StreamPriority::kWaitForTransportFlowControl);
+    GRPC_LOWS_DEBUG << "BlockedOnTransportFlowControl stream id " << stream_id;
     return absl::OkStatus();
   }
 
@@ -161,8 +161,8 @@ class WritableStreams {
     switch (priority) {
       case StreamPriority::kStreamClosed:
         return "StreamClosed";
-      case StreamPriority::kTransportJail:
-        return "TransportJail";
+      case StreamPriority::kWaitForTransportFlowControl:
+        return "WaitForTransportFlowControl";
       case StreamPriority::kDefault:
         return "Default";
       default:
@@ -173,13 +173,13 @@ class WritableStreams {
  private:
   class PrioritizedQueue {
    public:
-    PrioritizedQueue() : buckets_(kMaxPriority) {}
+    PrioritizedQueue() : buckets_(kLastPriority) {}
 
     // Pushes a stream id with the given priority to the queue. Sorting is done
     // based on the priority. If the priority is higher than the max priority,
     // it will be set to the default priority.
     void Push(const uint32_t stream_id, StreamPriority priority) {
-      if (priority >= StreamPriority::kMax) {
+      if (priority >= StreamPriority::kLastPriority) {
         priority = StreamPriority::kDefault;
       }
 
@@ -189,15 +189,16 @@ class WritableStreams {
     }
 
     // Pops a stream id from the queue based on the priority. If the priority is
-    // transport jail, transport_tokens_available is checked to see if the
-    // stream id can be popped.
+    // kWaitForTransportFlowControl, transport_tokens_available is checked to
+    // see if the stream id can be popped.
     std::optional<uint32_t> Pop(const bool transport_tokens_available) {
       for (uint8_t i = 0; i < buckets_.size(); ++i) {
         auto& bucket = buckets_[i];
         if (!bucket.empty()) {
-          if (i == kTransportJailIndex && !transport_tokens_available) {
+          if (i == kWaitForTransportFlowControlIndex &&
+              !transport_tokens_available) {
             GRPC_LOWS_DEBUG << "Transport tokens unavailable, skipping "
-                               "transport jail";
+                               "transport flow control wait list";
             continue;
           }
 
@@ -212,10 +213,10 @@ class WritableStreams {
       return std::nullopt;
     }
 
-    static constexpr uint8_t kMaxPriority =
-        static_cast<uint8_t>(StreamPriority::kMax);
-    static constexpr uint8_t kTransportJailIndex =
-        static_cast<uint8_t>(StreamPriority::kTransportJail);
+    static constexpr uint8_t kLastPriority =
+        static_cast<uint8_t>(StreamPriority::kLastPriority);
+    static constexpr uint8_t kWaitForTransportFlowControlIndex =
+        static_cast<uint8_t>(StreamPriority::kWaitForTransportFlowControl);
     std::vector<std::queue<uint32_t>> buckets_;
   };
 
