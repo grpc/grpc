@@ -152,7 +152,7 @@ TEST_F(WritableStreamsTest, MultipleEnqueueDequeueTest) {
   // simulates the case where the queue is full and the producer is blocked on
   // the queue.
   WritableStreams writable_streams(/*max_queue_size=*/1);
-  uint dequeue_count = 0;
+  uint32_t dequeue_count = 0;
   std::vector<uint32_t> expected_stream_ids = {1, 2, 3};
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call()).Times(expected_stream_ids.size());
@@ -206,7 +206,7 @@ TEST_F(WritableStreamsTest, EnqueueDequeueDifferentPriorityTest) {
   // dequeue is done for all the stream ids.
   WritableStreams writable_streams(/*max_queue_size=*/3);
   std::string execution_order;
-  uint dequeue_count = 0;
+  uint32_t dequeue_count = 0;
   std::vector<uint32_t> expected_stream_ids = {2, 3, 1};
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call()).Times(expected_stream_ids.size());
@@ -267,7 +267,7 @@ TEST_F(WritableStreamsTest, DequeueWithTransportTokensUnavailableTest) {
   // upto the max queue size and the dequeue is done for all the stream ids.
   WritableStreams writable_streams(/*max_queue_size=*/3);
   std::string execution_order;
-  uint dequeue_count = 0;
+  uint32_t dequeue_count = 0;
   std::vector<uint32_t> expected_stream_ids = {2, 1, 3};
   std::vector<bool> transport_tokens_available = {true, false, true};
   StrictMock<MockFunction<void()>> on_done;
@@ -335,7 +335,7 @@ TEST_F(WritableStreamsTest, EnqueueDequeueFlowTest) {
   WritableStreams writable_streams(/*max_queue_size=*/2);
   std::string execution_order;
   std::vector<uint32_t> expected_stream_ids = {2, 3, 1, 4};
-  uint dequeue_count = 0;
+  uint32_t dequeue_count = 0;
   std::vector<bool> transport_tokens_available = {true, true, true, false};
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call()).Times(expected_stream_ids.size());
