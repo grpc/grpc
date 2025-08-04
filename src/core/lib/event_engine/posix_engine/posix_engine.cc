@@ -531,7 +531,7 @@ PosixEventEngine::PosixEventEngine()
   }
 }
 
-#else  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+#else   // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 
 std::shared_ptr<PosixEventEngine>
 PosixEventEngine::MakeTestOnlyPosixEventEngine(
