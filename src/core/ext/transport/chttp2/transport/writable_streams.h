@@ -43,7 +43,7 @@ class WritableStreams {
     kDefault,
     kLastPriority
   };
-  WritableStreams(
+  explicit WritableStreams(
       const uint32_t max_queue_size = std::numeric_limits<uint32_t>::max())
       : queue_(max_queue_size) {}
 
