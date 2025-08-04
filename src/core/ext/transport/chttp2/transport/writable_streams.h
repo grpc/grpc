@@ -21,6 +21,8 @@
 
 #include <queue>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/race.h"
@@ -29,13 +31,15 @@
 namespace grpc_core {
 namespace http2 {
 
-#define GRPC_LOWS_DEBUG VLOG(2)
+#define GRPC_WRITABLE_STREAMS_DEBUG VLOG(2)
 
 class WritableStreams {
  public:
   enum class StreamPriority : uint8_t {
+    // Highest priority
     kStreamClosed = 0,
     kWaitForTransportFlowControl,
+    // Lowest Priority
     kDefault,
     kLastPriority
   };
@@ -56,9 +60,9 @@ class WritableStreams {
         queue_.MakeSender().Send(StreamIDAndPriority{stream_id, priority},
                                  /*tokens*/ 1),
         [stream_id, priority](StatusFlag status) {
-          GRPC_LOWS_DEBUG << "Enqueue stream id " << stream_id
-                          << " with priority " << GetPriorityString(priority)
-                          << " status " << status;
+          GRPC_WRITABLE_STREAMS_DEBUG
+              << "Enqueue stream id " << stream_id << " with priority "
+              << GetPriorityString(priority) << " status " << status;
           return status.ok() ? absl::OkStatus()
                              : absl::InternalError(absl::StrCat(
                                    "Failed to enqueue stream id ", stream_id));
@@ -70,9 +74,10 @@ class WritableStreams {
                                           const StreamPriority priority) {
     StatusFlag status = queue_.MakeSender().UnbufferedImmediateSend(
         StreamIDAndPriority{stream_id, priority}, /*tokens*/ 1);
-    GRPC_LOWS_DEBUG << "UnbufferedImmediateEnqueue stream id " << stream_id
-                    << " with priority " << GetPriorityString(priority)
-                    << " status " << status;
+    GRPC_WRITABLE_STREAMS_DEBUG << "UnbufferedImmediateEnqueue stream id "
+                                << stream_id << " with priority "
+                                << GetPriorityString(priority) << " status "
+                                << status;
     return (status.ok()) ? absl::OkStatus()
                          : absl::InternalError(absl::StrCat(
                                "Failed to enqueue stream id ", stream_id));
@@ -83,7 +88,8 @@ class WritableStreams {
   absl::Status BlockedOnTransportFlowControl(const uint32_t stream_id) {
     prioritized_queue_.Push(stream_id,
                             StreamPriority::kWaitForTransportFlowControl);
-    GRPC_LOWS_DEBUG << "BlockedOnTransportFlowControl stream id " << stream_id;
+    GRPC_WRITABLE_STREAMS_DEBUG << "BlockedOnTransportFlowControl stream id "
+                                << stream_id;
     return absl::OkStatus();
   }
 
@@ -122,19 +128,20 @@ class WritableStreams {
           return If(
               stream_id.has_value(),
               [stream_id]() -> absl::StatusOr<uint32_t> {
-                GRPC_LOWS_DEBUG << "Next stream id " << stream_id.value();
+                GRPC_WRITABLE_STREAMS_DEBUG << "Next stream id "
+                                            << stream_id.value();
                 return stream_id.value();
               },
               [this, transport_tokens_available] {
-                GRPC_LOWS_DEBUG << "Query queue for next batch";
+                GRPC_WRITABLE_STREAMS_DEBUG << "Query queue for next batch";
                 return Map(
                     queue_.NextBatch(kMaxBatchSize),
                     [this, transport_tokens_available](
                         ValueOrFailure<std::vector<StreamIDAndPriority>> batch)
                         -> absl::StatusOr<uint32_t> {
                       if (batch.ok()) {
-                        GRPC_LOWS_DEBUG << "Next batch size "
-                                        << batch.value().size();
+                        GRPC_WRITABLE_STREAMS_DEBUG << "Next batch size "
+                                                    << batch.value().size();
                         for (auto stream_id_priority : batch.value()) {
                           prioritized_queue_.Push(stream_id_priority.stream_id,
                                                   stream_id_priority.priority);
@@ -146,8 +153,8 @@ class WritableStreams {
                         // spuriously returns an empty batch, move to a Loop
                         // to avoid this.
                         DCHECK(stream_id.has_value());
-                        GRPC_LOWS_DEBUG << "Next stream id "
-                                        << stream_id.value();
+                        GRPC_WRITABLE_STREAMS_DEBUG << "Next stream id "
+                                                    << stream_id.value();
                         return stream_id.value();
                       }
                       return absl::InternalError("Failed to read from queue");
@@ -183,8 +190,9 @@ class WritableStreams {
         priority = StreamPriority::kDefault;
       }
 
-      GRPC_LOWS_DEBUG << "Pushing stream id " << stream_id << " with priority "
-                      << GetPriorityString(priority);
+      GRPC_WRITABLE_STREAMS_DEBUG << "Pushing stream id " << stream_id
+                                  << " with priority "
+                                  << GetPriorityString(priority);
       buckets_[static_cast<uint8_t>(priority)].push(stream_id);
     }
 
@@ -197,16 +205,17 @@ class WritableStreams {
         if (!bucket.empty()) {
           if (i == kWaitForTransportFlowControlIndex &&
               !transport_tokens_available) {
-            GRPC_LOWS_DEBUG << "Transport tokens unavailable, skipping "
-                               "transport flow control wait list";
+            GRPC_WRITABLE_STREAMS_DEBUG
+                << "Transport tokens unavailable, skipping "
+                   "transport flow control wait list";
             continue;
           }
 
           uint32_t stream_id = bucket.front();
           bucket.pop();
-          GRPC_LOWS_DEBUG << "Popping stream id " << stream_id
-                          << " from priority "
-                          << GetPriorityString(static_cast<StreamPriority>(i));
+          GRPC_WRITABLE_STREAMS_DEBUG
+              << "Popping stream id " << stream_id << " from priority "
+              << GetPriorityString(static_cast<StreamPriority>(i));
           return stream_id;
         }
       }

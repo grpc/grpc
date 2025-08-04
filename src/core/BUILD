@@ -10660,6 +10660,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "writable_streams",
     hdrs = ["ext/transport/chttp2/transport/writable_streams.h"],
+    external_deps = [
+        "absl/log",
+        "absl/log:check",
+    ],
     deps = [
         "if",
         "mpsc",
