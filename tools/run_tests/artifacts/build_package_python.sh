@@ -21,14 +21,33 @@ mkdir -p artifacts/
 
 # All the python packages have been built in the artifact phase already
 # and we only collect them here to deliver them to the distribtest phase.
-find "${EXTERNAL_GIT_ROOT}"/input_artifacts/ \
-    -maxdepth 1 \
-    -type d \
-    -name "${ARTIFACT_PREFIX}*" \
-    -not -name "${EXCLUDE_PATTERN}" \
-    -print0 \
-        | xargs -0 -I% find % -type f -maxdepth 1 -exec cp -v {} ./artifacts \;
 
-# TODO: all the artifact builder configurations generate a grpcio-VERSION.tar.gz
-# source distribution package, and only one of them will end up
-# in the artifacts/ directory. They should be all equivalent though.
+# Build the find command to include all files which start with ARTIFACT_PREFIX but does not match any of the EXCLUDE_PATTERNS
+find_cmd=(
+    find "${EXTERNAL_GIT_ROOT}/input_artifacts/"
+    -maxdepth 1
+    -type d
+    -name "${ARTIFACT_PREFIX}*"
+)
+
+# 2. Loop through the exclusion patterns and add them to the command array
+if [[ -n "$EXCLUDE_PATTERNS" ]]; then
+    for pattern in $EXCLUDE_PATTERNS; do
+        find_cmd+=(-not -name "$pattern")
+    done
+fi
+
+# Copy all files except '*.tar.gz' and '*py3-none-any.whl' files.
+"${find_cmd[@]}" -print0 \
+    | xargs -0 -I% find % -type f -not -name "*.tar.gz" \
+    -not -name "*py3-none-any.whl" -maxdepth 1 -exec cp -v {} ./artifacts \;
+
+# all the artifact builder configurations generate an equivalent 
+# grpcio-VERSION.tar.gz source distribution package and 
+# grpcio-VERSION-py3-none-any.whl file. Only one of them will end up in the 
+# artifacts/ directory. However when this script is executed by the different 
+# package targets independently, the copy will fail due to copy conflicts 
+# with the same name. Hence use a -f flag. 
+"${find_cmd[@]}" -print0 \
+    | xargs -0 -I% find % -type f \( -name "*.tar.gz" -o \
+    -name "*py3-none-any.whl" \) -maxdepth 1 -exec cp -vf {} ./artifacts \;

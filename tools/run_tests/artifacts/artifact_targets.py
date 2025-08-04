@@ -121,6 +121,8 @@ class PythonArtifact:
         if platform == _LATEST_MANYLINUX:
             self.labels.append("latest-manylinux")
         if "manylinux" in platform:
+            if arch == "aarch64":
+                self.labels.append("linux_aarch64")
             self.labels.append("linux")
         if "linux_extra" in platform:
             # linux_extra wheels used to be built by a separate kokoro job.
@@ -128,6 +130,8 @@ class PythonArtifact:
             # in the regular artifact build.
             self.labels.append("linux")
         if "musllinux" in platform:
+            if arch == "aarch64":
+                self.labels.append("linux_aarch64")
             self.labels.append("linux")
 
     def pre_build_jobspecs(self):
@@ -177,14 +181,19 @@ class PythonArtifact:
                 # As we won't strip the binary with auditwheel (see below), strip
                 # it at link time.
                 environ["LDFLAGS"] = "-s"
-            else:
-                # only run auditwheel if we're not crosscompiling
-                environ["GRPC_RUN_AUDITWHEEL_REPAIR"] = "TRUE"
-                # only build the packages that depend on grpcio-tools
-                # if we're not crosscompiling.
-                # - they require protoc to run on current architecture
-                # - they only have sdist packages anyway, so it's useless to build them again
-                environ["GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS"] = "TRUE"
+
+            # currently all manylinux architectures (including aarch64) do not
+            # require cross-compiling, hence the below values can be set for all
+            # manylinux targets
+
+            # only run auditwheel if we're not crosscompiling
+            environ["GRPC_RUN_AUDITWHEEL_REPAIR"] = "TRUE"
+            # only build the packages that depend on grpcio-tools
+            # if we're not crosscompiling.
+            # - they require protoc to run on current architecture
+            # - they only have sdist packages anyway, so it's useless to build them again
+            environ["GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS"] = "TRUE"
+
             return create_docker_jobspec(
                 self.name,
                 "tools/dockerfile/grpc_artifact_python_%s_%s"
