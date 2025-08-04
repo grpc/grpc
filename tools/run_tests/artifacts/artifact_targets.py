@@ -482,7 +482,7 @@ def targets():
             ),
             PythonArtifact(
                 "musllinux_1_2", "aarch64", "cp314-cp314", presubmit=True
-            )
+            ),
             PythonArtifact("macos", "x64", "python3.9", presubmit=True),
             PythonArtifact("macos", "x64", "python3.10"),
             PythonArtifact("macos", "x64", "python3.11"),
