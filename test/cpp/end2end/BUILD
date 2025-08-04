@@ -82,6 +82,7 @@ grpc_cc_library(
         "gtest",
     ],
     deps = [
+        "//:grpc++",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/cpp/util:test_util",
     ],
