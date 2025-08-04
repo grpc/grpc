@@ -404,6 +404,9 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
 
     // TODO(akshitpatel) : [PH2][P2] : Add a check for flow control tokens.
     is_writable_ = false;
+    GRPC_STREAM_DATA_QUEUE_DEBUG << "Stream id: " << stream_id_
+                                 << " writable state changed to "
+                                 << is_writable_;
     return DequeueResult{handle_dequeue.GetFrames(), is_writable_};
   }
 
@@ -550,6 +553,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   bool UpdateWritableStateLocked(const bool became_non_empty)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     if (!is_writable_ && became_non_empty) {
+      GRPC_STREAM_DATA_QUEUE_DEBUG << "Stream id: " << stream_id_
+                                   << " writeable state changed to true";
       is_writable_ = true;
       return true;
     }
