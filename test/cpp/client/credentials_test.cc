@@ -71,12 +71,13 @@ TEST(CredentialsTest, InvalidGoogleRefreshToken) {
 
 TEST(CredentialsTest, DefaultCredentials) {
   auto creds = GoogleDefaultCredentials();
+  EXPECT_NE(creds, nullptr);
 }
 
 TEST(CredentialsTest, DefaultCredentialsWithAlts) {
   GoogleDefaultCredentialsOptions options = {};
   options.use_alts = true;
-  auto creds = GoogleDefaultCredentials();
+  auto creds = GoogleDefaultCredentials(&options);
   EXPECT_NE(creds, nullptr);
 }
 

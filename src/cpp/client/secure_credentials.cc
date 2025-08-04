@@ -95,15 +95,18 @@ std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials(
       grpc_core::internal::make_default_call_creds(&error,
                                                    &default_credentials_type);
 
-  if (error.ok() && options.use_alts &&
+  if (!error.ok()) {
+    tls_call_credentials.reset();
+    return WrapChannelCredentials(
+        grpc_google_default_credentials_create(nullptr, nullptr));
+  }
+
+  if (options.use_alts &&
       default_credentials_type ==
           DefaultCallCredentialsCreationMethod::kFromDefaultGCE) {
-    grpc_google_compute_engine_credentials_options* options =
-        static_cast<grpc_google_compute_engine_credentials_options*>(
-            gpr_malloc(sizeof(grpc_google_compute_engine_credentials_options)));
-    options->query_params = "transport=alts";
-    alts_call_creds = grpc_google_compute_engine_credentials_create(options);
-    gpr_free(options);
+    grpc_google_compute_engine_credentials_options* options = {};
+    options.query_params = "transport=alts";
+    alts_call_creds = grpc_google_compute_engine_credentials_create(&options);
   }
 
   return WrapChannelCredentials(grpc_google_default_credentials_create(
