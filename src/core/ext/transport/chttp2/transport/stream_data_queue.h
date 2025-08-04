@@ -468,6 +468,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
    private:
     inline void MaybeAppendInitialMetadataFrames() {
       while (queue_.initial_metadata_disassembler_.HasMoreData()) {
+        DCHECK(!is_half_closed_);
+        DCHECK(!is_reset_stream_);
         // TODO(akshitpatel) : [PH2][P2] : I do not think we need this.
         // HasMoreData() should be enough.
         bool is_end_headers = false;
