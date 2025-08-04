@@ -104,7 +104,7 @@ std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials(
   if (options.use_alts &&
       default_credentials_type ==
           DefaultCallCredentialsCreationMethod::kFromDefaultGCE) {
-    grpc_google_compute_engine_credentials_options* options = {};
+    grpc_google_compute_engine_credentials_options options = {};
     options.query_params = "transport=alts";
     alts_call_creds = grpc_google_compute_engine_credentials_create(&options);
   }

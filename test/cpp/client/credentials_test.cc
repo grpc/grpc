@@ -77,7 +77,7 @@ TEST(CredentialsTest, DefaultCredentials) {
 TEST(CredentialsTest, DefaultCredentialsWithAlts) {
   GoogleDefaultCredentialsOptions options = {};
   options.use_alts = true;
-  auto creds = GoogleDefaultCredentials(&options);
+  auto creds = GoogleDefaultCredentials(options);
   EXPECT_NE(creds, nullptr);
 }
 
