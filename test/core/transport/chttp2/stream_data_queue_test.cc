@@ -433,7 +433,7 @@ void EnqueueInitialMetadataAndCheckSuccess(
   auto promise = queue->EnqueueInitialMetadata(std::move(metadata));
   auto result = promise();
   EXPECT_TRUE(result.ready());
-  EXPECT_EQ(result.value(), absl::OkStatus());
+  EXPECT_TRUE(result.value().ok());
   LOG(INFO) << "Enqueueing initial metadata success";
 }
 
@@ -445,7 +445,7 @@ void EnqueueTrailingMetadataAndCheckSuccess(
   auto promise = queue->EnqueueTrailingMetadata(std::move(metadata));
   auto result = promise();
   EXPECT_TRUE(result.ready());
-  EXPECT_EQ(result.value(), absl::OkStatus());
+  EXPECT_TRUE(result.value().ok());
   LOG(INFO) << "Enqueueing trailing metadata success";
 }
 
@@ -459,7 +459,7 @@ void EnqueueMessageAndCheckSuccess(
   auto promise = queue->EnqueueMessage(std::move(message));
   auto result = promise();
   EXPECT_TRUE(result.ready());
-  EXPECT_EQ(result.value(), absl::OkStatus());
+  EXPECT_TRUE(result.value().ok());
   LOG(INFO) << "Enqueueing message success";
 }
 
@@ -470,7 +470,7 @@ void EnqueueResetStreamAndCheckSuccess(
   auto promise = queue->EnqueueResetStream(/*error_code=*/0);
   auto result = promise();
   EXPECT_TRUE(result.ready());
-  EXPECT_EQ(result.value(), absl::OkStatus());
+  EXPECT_TRUE(result.value().ok());
   LOG(INFO) << "Enqueueing reset stream success";
 }
 
@@ -480,7 +480,7 @@ void EnqueueHalfClosedAndCheckSuccess(
   auto promise = queue->EnqueueHalfClosed();
   auto result = promise();
   EXPECT_TRUE(result.ready());
-  EXPECT_EQ(result.value(), absl::OkStatus());
+  EXPECT_TRUE(result.value().ok());
   LOG(INFO) << "Enqueueing half closed success";
 }
 
