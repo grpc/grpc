@@ -477,9 +477,7 @@ def targets():
             PythonArtifact("musllinux_1_2", "aarch64", "cp310-cp310"),
             PythonArtifact("musllinux_1_2", "aarch64", "cp311-cp311"),
             PythonArtifact("musllinux_1_2", "aarch64", "cp312-cp312"),
-            PythonArtifact(
-                "musllinux_1_2", "aarch64", "cp313-cp313", presubmit=True
-            ),
+            PythonArtifact("musllinux_1_2", "aarch64", "cp313-cp313"),
             PythonArtifact(
                 "musllinux_1_2", "aarch64", "cp314-cp314", presubmit=True
             ),
