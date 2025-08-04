@@ -379,12 +379,12 @@ class EventPollerTest : public ::testing::Test {
   void SetUp() override {
     engine_ = PosixEventEngine::MakePosixEventEngine();
     EXPECT_NE(engine_, nullptr);
-    thread_pool_ = std::make_shared<TestThreadPool>(engine_.get());
+    thread_pool_ = std::make_shared<TestThreadPool>(engine_);
     EXPECT_NE(thread_pool_, nullptr);
     g_event_poller = MakeDefaultPoller(thread_pool_);
     engine_ = PosixEventEngine::MakeTestOnlyPosixEventEngine(g_event_poller);
     EXPECT_NE(engine_, nullptr);
-    thread_pool_->ChangeCurrentEventEngine(engine_.get());
+    thread_pool_->ChangeCurrentEventEngine(engine_);
     if (g_event_poller != nullptr) {
       LOG(INFO) << "Using poller: " << g_event_poller->Name();
     }

@@ -201,12 +201,12 @@ class PosixEndpointTest : public ::testing::TestWithParam<bool> {
     oracle_ee_ = std::make_shared<PosixOracleEventEngine>();
     thread_pool_ =
         std::make_shared<grpc_event_engine::experimental::TestThreadPool>(
-            posix_ee_.get());
+            posix_ee_);
     EXPECT_NE(thread_pool_, nullptr);
     poller_ = MakeDefaultPoller(thread_pool_);
     posix_ee_ = PosixEventEngine::MakeTestOnlyPosixEventEngine(poller_);
     EXPECT_NE(posix_ee_, nullptr);
-    thread_pool_->ChangeCurrentEventEngine(posix_ee_.get());
+    thread_pool_->ChangeCurrentEventEngine(posix_ee_);
     if (poller_ != nullptr) {
       LOG(INFO) << "Using poller: " << poller_->Name();
     }

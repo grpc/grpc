@@ -28,12 +28,13 @@ namespace experimental {
 class TestThreadPool final : public ThreadPool {
  public:
   TestThreadPool() = default;
-  explicit TestThreadPool(grpc_event_engine::experimental::EventEngine* engine)
-      : engine_(engine) {}
+  explicit TestThreadPool(
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine)
+      : engine_(std::move(engine)) {}
 
   void ChangeCurrentEventEngine(
-      grpc_event_engine::experimental::EventEngine* engine) {
-    engine_ = engine;
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine) {
+    engine_ = std::move(engine);
   }
 
   void Run(experimental::EventEngine::Closure* closure) override {
@@ -60,7 +61,7 @@ class TestThreadPool final : public ThreadPool {
 #endif  // GRPC_ENABLE_FORK_SUPPORT
 
  private:
-  grpc_event_engine::experimental::EventEngine* engine_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
 
 // Creates a client socket and blocks until it connects to the specified

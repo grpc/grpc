@@ -175,7 +175,7 @@ int main(int argc, char** argv) {
   // until we clear out the iomgr shutdown code.
   grpc_init();
   g_thread_pool = new TestThreadPool(
-      grpc_event_engine::experimental::GetDefaultEventEngine().get());
+      grpc_event_engine::experimental::GetDefaultEventEngine());
   int r = RUN_ALL_TESTS();
   benchmark::RunTheBenchmarksNamespaced();
   grpc_shutdown();
