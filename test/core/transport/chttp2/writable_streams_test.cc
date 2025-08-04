@@ -68,7 +68,15 @@ void SpawnEnqueueAndCheckSuccess(
   party->Spawn(
       "EnqueueAndCheckSuccess",
       [stream_id, priority, &writable_streams] {
-        return writable_streams.Enqueue(stream_id, priority);
+        return If(
+            priority !=
+                WritableStreams::StreamPriority::kWaitForTransportFlowControl,
+            [&writable_streams, stream_id, priority]() {
+              return writable_streams.Enqueue(stream_id, priority);
+            },
+            [&writable_streams, stream_id]() {
+              return writable_streams.BlockedOnTransportFlowControl(stream_id);
+            });
       },
       [stream_id,
        on_complete = std::move(on_complete)](absl::Status status) mutable {
@@ -360,9 +368,8 @@ TEST_F(WritableStreamsTest, EnqueueDequeueFlowTest) {
              &on_done](uint32_t stream_id) {
               EXPECT_EQ(stream_id, expected_stream_ids[dequeue_count++]);
               on_done.Call();
-              return writable_streams.Enqueue(
-                  /*stream_id=*/3, WritableStreams::StreamPriority::
-                                       kWaitForTransportFlowControl);
+              return writable_streams.BlockedOnTransportFlowControl(
+                  /*stream_id=*/3);
             },
             [&writable_streams, &transport_tokens_available, &dequeue_count] {
               return writable_streams.Next(
