@@ -17,8 +17,8 @@ set -ex
 
 # env variable values extracted from PythonArtifact in tools/run_tests/artifacts/artifact_targets.py
 # TODO(jtattermusch): find a better way of configuring the python artifact build (the current approach mostly serves as a demonstration)
-export PYTHON=/opt/python/cp313-cp313/bin/python
-export PIP=/opt/python/cp313-cp313/bin/pip
+export PYTHON=/opt/python/cp314-cp314/bin/python
+export PIP=/opt/python/cp314-cp314/bin/pip
 export GRPC_SKIP_PIP_CYTHON_UPGRADE=TRUE
 export GRPC_RUN_AUDITWHEEL_REPAIR=TRUE
 export GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS=TRUE
