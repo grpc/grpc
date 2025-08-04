@@ -2371,6 +2371,7 @@ grpc_cc_library(
         "absl/status",
     ],
     deps = [
+        "event_engine_thread_pool",
         "gpr_atm",
         "posix_event_engine_closure",
         "posix_event_engine_event_poller",
@@ -2479,6 +2480,7 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_poller",
+        "event_engine_thread_pool",
         "event_engine_time_util",
         "iomgr_port",
         "posix_event_engine_closure",
@@ -2519,6 +2521,7 @@ grpc_cc_library(
     deps = [
         "common_event_engine_closures",
         "event_engine_poller",
+        "event_engine_thread_pool",
         "event_engine_time_util",
         "iomgr_port",
         "posix_event_engine_closure",

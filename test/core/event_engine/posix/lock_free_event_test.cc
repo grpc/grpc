@@ -31,29 +31,14 @@
 #include "src/core/lib/event_engine/posix_engine/lockfree_event.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/util/sync.h"
+#include "test/core/event_engine/posix/posix_engine_test_utils.h"
 
 using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::Scheduler;
+using ::grpc_event_engine::experimental::TestThreadPool;
 
 namespace {
-class TestScheduler : public Scheduler {
- public:
-  explicit TestScheduler(std::shared_ptr<EventEngine> engine)
-      : engine_(std::move(engine)) {}
-  void Run(
-      grpc_event_engine::experimental::EventEngine::Closure* closure) override {
-    engine_->Run(closure);
-  }
 
-  void Run(absl::AnyInvocable<void()> cb) override {
-    engine_->Run(std::move(cb));
-  }
-
- private:
-  std::shared_ptr<EventEngine> engine_;
-};
-
-TestScheduler* g_scheduler;
+grpc_event_engine::experimental::TestThreadPool* g_thread_pool;
 
 }  // namespace
 
@@ -61,7 +46,7 @@ namespace grpc_event_engine {
 namespace experimental {
 
 TEST(LockFreeEventTest, BasicTest) {
-  LockfreeEvent event(g_scheduler);
+  LockfreeEvent event(g_thread_pool);
   grpc_core::Mutex mu;
   grpc_core::CondVar cv;
   event.InitEvent();
@@ -101,7 +86,7 @@ TEST(LockFreeEventTest, BasicTest) {
 
 TEST(LockFreeEventTest, MultiThreadedTest) {
   std::vector<std::thread> threads;
-  LockfreeEvent event(g_scheduler);
+  LockfreeEvent event(g_thread_pool);
   grpc_core::Mutex mu;
   grpc_core::CondVar cv;
   bool signalled = false;
@@ -153,24 +138,11 @@ TEST(LockFreeEventTest, MultiThreadedTest) {
 
 namespace {
 
-// A trivial callback sceduler which inherits from the Scheduler interface but
-// immediatey runs the callback/closure.
-class BenchmarkCallbackScheduler : public Scheduler {
- public:
-  BenchmarkCallbackScheduler() = default;
-  void Run(
-      grpc_event_engine::experimental::EventEngine::Closure* closure) override {
-    closure->Run();
-  }
-
-  void Run(absl::AnyInvocable<void()> cb) override { cb(); }
-};
-
 // A benchmark which repeatedly registers a NotifyOn callback and invokes the
 // callback with SetReady. This benchmark is intended to measure the cost of
 // NotifyOn and SetReady implementations of the lock free event.
 void BM_LockFreeEvent(benchmark::State& state) {
-  BenchmarkCallbackScheduler cb_scheduler;
+  TestThreadPool cb_scheduler;
   LockfreeEvent event(&cb_scheduler);
   event.InitEvent();
   PosixEngineClosure* notify_on_closure =
@@ -202,8 +174,8 @@ int main(int argc, char** argv) {
   // TODO(ctiller): EventEngine temporarily needs grpc to be initialized first
   // until we clear out the iomgr shutdown code.
   grpc_init();
-  g_scheduler = new TestScheduler(
-      grpc_event_engine::experimental::GetDefaultEventEngine());
+  g_thread_pool = new TestThreadPool(
+      grpc_event_engine::experimental::GetDefaultEventEngine().get());
   int r = RUN_ALL_TESTS();
   benchmark::RunTheBenchmarksNamespaced();
   grpc_shutdown();
