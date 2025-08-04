@@ -16,24 +16,19 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 
-#include <algorithm>
 #include <memory>
 #include <thread>
-#include <utility>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/lockfree_event.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/util/sync.h"
 #include "test/core/event_engine/posix/posix_engine_test_utils.h"
 
-using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::TestThreadPool;
 
 namespace {
