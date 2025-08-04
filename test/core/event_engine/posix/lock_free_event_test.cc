@@ -174,10 +174,13 @@ int main(int argc, char** argv) {
   // TODO(ctiller): EventEngine temporarily needs grpc to be initialized first
   // until we clear out the iomgr shutdown code.
   grpc_init();
-  g_thread_pool = new TestThreadPool(
-      grpc_event_engine::experimental::GetDefaultEventEngine());
+  // Variable here to ensure lifetime
+  auto ee = grpc_event_engine::experimental::GetDefaultEventEngine();
+  g_thread_pool = new TestThreadPool(ee.get());
   int r = RUN_ALL_TESTS();
   benchmark::RunTheBenchmarksNamespaced();
+  // Time to let EE go.
+  ee.reset();
   grpc_shutdown();
   return r;
 }
