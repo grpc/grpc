@@ -66,7 +66,7 @@ EXTERNAL_LINKS = [
     ("@utf8_range//", "third_party/protobuf/third_party/utf8_range"),
 ]
 
-PROTOBUF_PROTO_PREFIX = "@com_google_protobuf//src/"
+PROTOBUF_PROTO_PREFIX = "google/protobuf"
 
 # will be added to include path when building grpcio_tools
 CC_INCLUDES = [
@@ -137,6 +137,10 @@ BAZEL_DEPS_COMMON_PROTOS_QUERIES = [
     "@com_google_protobuf//:well_known_type_protos",
     # has both plugin.proto and descriptor.proto
     "@com_google_protobuf//:compiler_plugin_proto",
+    # language features protos
+    "@com_google_protobuf//:cpp_features_proto",
+    "@com_google_protobuf//:java_features_proto",
+    "@com_google_protobuf//:go_features_proto",
 ]
 
 
@@ -225,9 +229,9 @@ def _generate_deps_file_content():
     for target in BAZEL_DEPS_COMMON_PROTOS_QUERIES:
         raw_proto_files += _bazel_query(target)
     proto_files = [
-        name[len(PROTOBUF_PROTO_PREFIX) :].replace(":", "/")
+        name[name.find(PROTOBUF_PROTO_PREFIX):].replace(":", "/")
         for name in raw_proto_files
-        if name.endswith(".proto") and name.startswith(PROTOBUF_PROTO_PREFIX)
+        if name.endswith(".proto") and PROTOBUF_PROTO_PREFIX in name
     ]
 
     commit_hash = protobuf_submodule_commit_hash()
