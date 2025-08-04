@@ -95,7 +95,7 @@ std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials(
       grpc_core::internal::make_default_call_creds(&error,
                                                    &default_credentials_type);
 
-  if (tls_call_credentials.get() != nullptr) {
+  if (tls_call_credentials.get() == nullptr) {
     return WrapChannelCredentials(
         grpc_google_default_credentials_create(nullptr, nullptr));
   }
