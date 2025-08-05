@@ -123,14 +123,14 @@ TEST_F(WritableStreamsTest, MultipleEnqueueTest) {
                                 execution_order.append("1");
                                 EXPECT_TRUE(status.ok());
                               });
-  SpawnEnqueueAndCheckSuccess(GetParty(), writable_streams, /*stream_id=*/2,
+  SpawnEnqueueAndCheckSuccess(GetParty(), writable_streams, /*stream_id=*/3,
                               WritableStreams::StreamPriority::kStreamClosed,
                               [&execution_order](absl::Status status) {
                                 execution_order.append("2");
                                 EXPECT_TRUE(status.ok());
                               });
   SpawnEnqueueAndCheckSuccess(
-      GetParty(), writable_streams, /*stream_id=*/3,
+      GetParty(), writable_streams, /*stream_id=*/5,
       WritableStreams::StreamPriority::kWaitForTransportFlowControl,
       [&execution_order](absl::Status status) {
         execution_order.append("3");
@@ -146,6 +146,7 @@ TEST_F(WritableStreamsTest, MultipleEnqueueTest) {
 // Dequeue tests
 TEST_F(WritableStreamsTest, EnqueueDequeueTest) {
   // Simple test to ensure that enqueue and dequeue works.
+  // TODO(akshitpatel) : [PH2][P2] - Make this parameterized.
   WritableStreams writable_streams(/*max_queue_size=*/1);
   EnqueueAndCheckSuccess(writable_streams, /*stream_id=*/1,
                          WritableStreams::StreamPriority::kDefault);
@@ -159,9 +160,10 @@ TEST_F(WritableStreamsTest, MultipleEnqueueDequeueTest) {
   // Test to ensure that multiple enqueues and dequeues works. This test also
   // simulates the case where the queue is full and the producer is blocked on
   // the queue.
+  // TODO(akshitpatel) : [PH2][P2] - Make this parameterized.
   WritableStreams writable_streams(/*max_queue_size=*/1);
   uint32_t dequeue_count = 0;
-  std::vector<uint32_t> expected_stream_ids = {1, 2, 3};
+  std::vector<uint32_t> expected_stream_ids = {1, 3, 5};
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call()).Times(expected_stream_ids.size());
 
@@ -170,11 +172,11 @@ TEST_F(WritableStreamsTest, MultipleEnqueueDequeueTest) {
       WritableStreams::StreamPriority::kDefault,
       [](absl::Status status) { EXPECT_TRUE(status.ok()); });
   SpawnEnqueueAndCheckSuccess(
-      GetParty(), writable_streams, /*stream_id=*/2,
+      GetParty(), writable_streams, /*stream_id=*/3,
       WritableStreams::StreamPriority::kDefault,
       [](absl::Status status) { EXPECT_TRUE(status.ok()); });
   SpawnEnqueueAndCheckSuccess(
-      GetParty(), writable_streams, /*stream_id=*/3,
+      GetParty(), writable_streams, /*stream_id=*/5,
       WritableStreams::StreamPriority::kDefault,
       [](absl::Status status) { EXPECT_TRUE(status.ok()); });
 
@@ -215,7 +217,7 @@ TEST_F(WritableStreamsTest, EnqueueDequeueDifferentPriorityTest) {
   WritableStreams writable_streams(/*max_queue_size=*/3);
   std::string execution_order;
   uint32_t dequeue_count = 0;
-  std::vector<uint32_t> expected_stream_ids = {2, 3, 1};
+  std::vector<uint32_t> expected_stream_ids = {3, 5, 1};
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call()).Times(expected_stream_ids.size());
 
@@ -225,14 +227,14 @@ TEST_F(WritableStreamsTest, EnqueueDequeueDifferentPriorityTest) {
                                 execution_order.append("1");
                                 EXPECT_TRUE(status.ok());
                               });
-  SpawnEnqueueAndCheckSuccess(GetParty(), writable_streams, /*stream_id=*/2,
+  SpawnEnqueueAndCheckSuccess(GetParty(), writable_streams, /*stream_id=*/3,
                               WritableStreams::StreamPriority::kStreamClosed,
                               [&execution_order](absl::Status status) {
                                 execution_order.append("2");
                                 EXPECT_TRUE(status.ok());
                               });
   SpawnEnqueueAndCheckSuccess(
-      GetParty(), writable_streams, /*stream_id=*/3,
+      GetParty(), writable_streams, /*stream_id=*/5,
       WritableStreams::StreamPriority::kWaitForTransportFlowControl,
       [&execution_order](absl::Status status) {
         execution_order.append("3");
@@ -276,7 +278,7 @@ TEST_F(WritableStreamsTest, DequeueWithTransportTokensUnavailableTest) {
   WritableStreams writable_streams(/*max_queue_size=*/3);
   std::string execution_order;
   uint32_t dequeue_count = 0;
-  std::vector<uint32_t> expected_stream_ids = {2, 1, 3};
+  std::vector<uint32_t> expected_stream_ids = {3, 1, 5};
   std::vector<bool> transport_tokens_available = {true, false, true};
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call()).Times(expected_stream_ids.size());
@@ -287,14 +289,14 @@ TEST_F(WritableStreamsTest, DequeueWithTransportTokensUnavailableTest) {
                                 execution_order.append("1");
                                 EXPECT_TRUE(status.ok());
                               });
-  SpawnEnqueueAndCheckSuccess(GetParty(), writable_streams, /*stream_id=*/2,
+  SpawnEnqueueAndCheckSuccess(GetParty(), writable_streams, /*stream_id=*/3,
                               WritableStreams::StreamPriority::kStreamClosed,
                               [&execution_order](absl::Status status) {
                                 execution_order.append("2");
                                 EXPECT_TRUE(status.ok());
                               });
   SpawnEnqueueAndCheckSuccess(
-      GetParty(), writable_streams, /*stream_id=*/3,
+      GetParty(), writable_streams, /*stream_id=*/5,
       WritableStreams::StreamPriority::kWaitForTransportFlowControl,
       [&execution_order](absl::Status status) {
         execution_order.append("3");
@@ -342,7 +344,7 @@ TEST_F(WritableStreamsTest, EnqueueDequeueFlowTest) {
   //    in the queue.
   WritableStreams writable_streams(/*max_queue_size=*/2);
   std::string execution_order;
-  std::vector<uint32_t> expected_stream_ids = {2, 3, 1, 4};
+  std::vector<uint32_t> expected_stream_ids = {3, 5, 1, 7};
   uint32_t dequeue_count = 0;
   std::vector<bool> transport_tokens_available = {true, true, true, false};
   StrictMock<MockFunction<void()>> on_done;
@@ -357,7 +359,7 @@ TEST_F(WritableStreamsTest, EnqueueDequeueFlowTest) {
                                      WritableStreams::StreamPriority::kDefault),
             [&writable_streams] {
               return writable_streams.Enqueue(
-                  /*stream_id=*/2,
+                  /*stream_id=*/3,
                   WritableStreams::StreamPriority::kStreamClosed);
             },
             [&writable_streams, &transport_tokens_available, &dequeue_count] {
@@ -369,7 +371,7 @@ TEST_F(WritableStreamsTest, EnqueueDequeueFlowTest) {
               EXPECT_EQ(stream_id, expected_stream_ids[dequeue_count++]);
               on_done.Call();
               return writable_streams.BlockedOnTransportFlowControl(
-                  /*stream_id=*/3);
+                  /*stream_id=*/5);
             },
             [&writable_streams, &transport_tokens_available, &dequeue_count] {
               return writable_streams.Next(
@@ -380,7 +382,7 @@ TEST_F(WritableStreamsTest, EnqueueDequeueFlowTest) {
               EXPECT_EQ(stream_id, expected_stream_ids[dequeue_count++]);
               on_done.Call();
               return writable_streams.Enqueue(
-                  /*stream_id=*/4, WritableStreams::StreamPriority::kDefault);
+                  /*stream_id=*/7, WritableStreams::StreamPriority::kDefault);
             },
             [&writable_streams, &transport_tokens_available, &dequeue_count] {
               return writable_streams.Next(

@@ -45,7 +45,7 @@ class WritableStreams {
   };
   explicit WritableStreams(
       const uint32_t max_queue_size = std::numeric_limits<uint32_t>::max())
-      : queue_(max_queue_size) {}
+      : queue_(max_queue_size), sender_(queue_.MakeSender()) {}
 
   // WritableStreams is neither copyable nor movable.
   WritableStreams(const WritableStreams&) = delete;
@@ -63,8 +63,8 @@ class WritableStreams {
     // to the prioritized queue.
     DCHECK(priority != StreamPriority::kWaitForTransportFlowControl);
     return AssertResultType<absl::Status>(Map(
-        queue_.MakeSender().Send(StreamIDAndPriority{stream_id, priority},
-                                 /*tokens*/ 1),
+        sender_.Send(StreamIDAndPriority{stream_id, priority},
+                     /*tokens*/ 1),
         [stream_id, priority](StatusFlag status) {
           GRPC_WRITABLE_STREAMS_DEBUG
               << "Enqueue stream id " << stream_id << " with priority "
@@ -78,7 +78,7 @@ class WritableStreams {
   // A synchronous version of Enqueue.
   absl::Status UnbufferedImmediateEnqueue(const uint32_t stream_id,
                                           const StreamPriority priority) {
-    StatusFlag status = queue_.MakeSender().UnbufferedImmediateSend(
+    StatusFlag status = sender_.UnbufferedImmediateSend(
         StreamIDAndPriority{stream_id, priority}, /*tokens*/ 1);
     GRPC_WRITABLE_STREAMS_DEBUG << "UnbufferedImmediateEnqueue stream id "
                                 << stream_id << " with priority "
@@ -119,16 +119,16 @@ class WritableStreams {
     // TODO(akshitpatel) : [PH2][P2] - Need to add an immediate dequeue option
     // for the mpsc queue in favor of the race.
 
+    // The current MPSC queue does not have a version of NextBatch that resolves
+    // immediately. So we made this Race to ensure that the "Dequeue" from the
+    // mpsc resolves immediately - Either with data , or empty.
     return AssertResultType<absl::StatusOr<uint32_t>>(TrySeq(
         Race(queue_.NextBatch(kMaxBatchSize),
              Immediate(ValueOrFailure<std::vector<StreamIDAndPriority>>(
                  std::vector<StreamIDAndPriority>()))),
         [this,
          transport_tokens_available](std::vector<StreamIDAndPriority> batch) {
-          for (auto stream_id_priority : batch) {
-            prioritized_queue_.Push(stream_id_priority.stream_id,
-                                    stream_id_priority.priority);
-          }
+          AddToPrioritizedQueue(batch);
           std::optional<uint32_t> stream_id =
               prioritized_queue_.Pop(transport_tokens_available);
           return If(
@@ -141,6 +141,8 @@ class WritableStreams {
               [this, transport_tokens_available] {
                 GRPC_WRITABLE_STREAMS_DEBUG << "Query queue for next batch";
                 return Map(
+                    // PrioritizedQueue is empty at this point. Hence we block
+                    // on mpsc queue to get a new batch of stream ids.
                     queue_.NextBatch(kMaxBatchSize),
                     [this, transport_tokens_available](
                         ValueOrFailure<std::vector<StreamIDAndPriority>> batch)
@@ -148,10 +150,7 @@ class WritableStreams {
                       if (batch.ok()) {
                         GRPC_WRITABLE_STREAMS_DEBUG << "Next batch size "
                                                     << batch.value().size();
-                        for (auto stream_id_priority : batch.value()) {
-                          prioritized_queue_.Push(stream_id_priority.stream_id,
-                                                  stream_id_priority.priority);
-                        }
+                        AddToPrioritizedQueue(batch.value());
                         std::optional<uint32_t> stream_id =
                             prioritized_queue_.Pop(transport_tokens_available);
                         // TODO(akshitpatel) : [PH2][P4] - This DCHECK should
@@ -235,13 +234,31 @@ class WritableStreams {
     std::vector<std::queue<uint32_t>> buckets_;
   };
 
-  static constexpr uint32_t kMaxBatchSize =
-      /*max_default_concurrent_streams_per_connection*/ 100;
   struct StreamIDAndPriority {
     const uint32_t stream_id;
     const StreamPriority priority;
   };
+
+  void AddToPrioritizedQueue(const std::vector<StreamIDAndPriority> batch) {
+    for (auto stream_id_priority : batch) {
+      prioritized_queue_.Push(stream_id_priority.stream_id,
+                              stream_id_priority.priority);
+    }
+  }
+
+  // TODO(akshitpatel) : [PH2][P4] - Verify if this works for large number of
+  // active streams based on the load tests. The reasoning to use max uint32_t
+  // is that even when the streams are dequeued from the queue, the streams
+  // will only be marked as non-writable after stream data queue dequeue
+  // happens. With this said, it should not matter whether the streams are
+  // kept in mpsc queue or in the PriorityQueue. Additionally, having all
+  // the writable streams in the PriorityQueue will return streams based on
+  // a more recent enqueue snapshot.
+  static constexpr uint32_t kMaxBatchSize =
+      std::numeric_limits<uint32_t>::max();
+
   MpscReceiver<StreamIDAndPriority> queue_;
+  MpscSender<StreamIDAndPriority> sender_;
   PrioritizedQueue prioritized_queue_;
 };
 
