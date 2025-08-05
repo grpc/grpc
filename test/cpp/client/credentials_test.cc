@@ -28,6 +28,9 @@
 #include <cstddef>
 #include <memory>
 
+#include "absl/log/check.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/env.h"
 #include "src/core/util/http_client/httpcli.h"
@@ -35,15 +38,11 @@
 #include "src/core/util/uri.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "test/cpp/util/tls_test_utils.h"
-#include "testing/base/public/gmock.h"
-#include "testing/base/public/gunit.h"
-#include "third_party/absl/log/check.h"
-#include "third_party/grpc/include/grpc/support/string_util.h"
 
-#define CA_CERT_PATH "third_party/grpc/src/core/tsi/test_creds/ca.pem"
-#define SERVER_CERT_PATH "third_party/grpc/src/core/tsi/test_creds/server1.pem"
-#define SERVER_KEY_PATH "third_party/grpc/src/core/tsi/test_creds/server1.key"
-#define CRL_DIR_PATH "third_party/grpc/test/core/tsi/test_creds/crl_data/crls"
+#define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
+#define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
+#define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
+#define CRL_DIR_PATH "test/core/tsi/test_creds/crl_data/crls"
 
 namespace {
 
