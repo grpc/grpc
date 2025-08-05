@@ -10,7 +10,7 @@
 
 #include <grpcpp/support/async_stream.h>
 #include <grpcpp/support/sync_stream.h>
-#include "gmock/gmock.h"
+#include <gmock/gmock.h>
 namespace grpc {
 namespace testing {
 
