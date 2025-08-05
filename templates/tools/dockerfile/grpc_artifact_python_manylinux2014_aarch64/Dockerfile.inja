@@ -20,5 +20,7 @@ FROM quay.io/pypa/manylinux2014_aarch64:2025.07.14-1
 {% include "../ccache.include" %}
 {% include "../python_pip_builds.include" %}
 
+RUN yum update -y && yum install -y libffi-devel
+
 # manylinux_2_17 is the preferred alias of manylinux2014
 ENV AUDITWHEEL_PLAT manylinux_2_17_$AUDITWHEEL_ARCH

@@ -23,7 +23,7 @@ FROM quay.io/pypa/manylinux2014_x86_64:2025.07.14-5
 {% include "../python_pip_builds.include" %}
 
 # TODO(jtattermusch): revisit which of the deps are really required
-RUN yum update -y && yum install -y curl-devel expat-devel gettext-devel openssl-devel zlib-devel
+RUN yum update -y && yum install -y curl-devel expat-devel gettext-devel openssl-devel zlib-devel libffi-devel
 
 # manylinux_2_17 is the preferred alias of manylinux2014
 ENV AUDITWHEEL_PLAT manylinux_2_17_$AUDITWHEEL_ARCH

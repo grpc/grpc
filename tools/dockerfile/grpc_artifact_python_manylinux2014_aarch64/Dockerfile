@@ -63,5 +63,7 @@ RUN /opt/python/cp39-cp39/bin/pip install --upgrade 'cython==3.1.1' && \
   /opt/python/cp314-cp314/bin/pip install --upgrade 'cython==3.1.1'
 
 
+RUN yum update -y && yum install -y libffi-devel
+
 # manylinux_2_17 is the preferred alias of manylinux2014
 ENV AUDITWHEEL_PLAT manylinux_2_17_$AUDITWHEEL_ARCH

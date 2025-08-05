@@ -66,7 +66,7 @@ RUN /opt/python/cp39-cp39/bin/pip install --upgrade 'cython==3.1.1' && \
 
 
 # TODO(jtattermusch): revisit which of the deps are really required
-RUN yum update -y && yum install -y curl-devel expat-devel gettext-devel openssl-devel zlib-devel
+RUN yum update -y && yum install -y curl-devel expat-devel gettext-devel openssl-devel zlib-devel libffi-devel
 
 # manylinux_2_17 is the preferred alias of manylinux2014
 ENV AUDITWHEEL_PLAT manylinux_2_17_$AUDITWHEEL_ARCH
