@@ -54,30 +54,14 @@ class WritableStreams {
   WritableStreams& operator=(WritableStreams&&) = delete;
 
   // Enqueues a stream id with the given priority.
-  // Returns a promise that resolves when the enqueue is complete.
-  auto Enqueue(const uint32_t stream_id, const StreamPriority priority) {
+  absl::Status Enqueue(const uint32_t stream_id,
+                       const StreamPriority priority) {
     // Streams waiting for transport flow control MUST not be added to list of
     // writable streams via this API, instead they MUST be added via
     // BlockedOnTransportFlowControl. The reason being there is no merit in
     // re-adding the stream to mpsc queue while it can be immediately enqueued
     // to the prioritized queue.
     DCHECK(priority != StreamPriority::kWaitForTransportFlowControl);
-    return AssertResultType<absl::Status>(Map(
-        sender_.Send(StreamIDAndPriority{stream_id, priority},
-                     /*tokens*/ 1),
-        [stream_id, priority](StatusFlag status) {
-          GRPC_WRITABLE_STREAMS_DEBUG
-              << "Enqueue stream id " << stream_id << " with priority "
-              << GetPriorityString(priority) << " status " << status;
-          return status.ok() ? absl::OkStatus()
-                             : absl::InternalError(absl::StrCat(
-                                   "Failed to enqueue stream id ", stream_id));
-        }));
-  }
-
-  // A synchronous version of Enqueue.
-  absl::Status UnbufferedImmediateEnqueue(const uint32_t stream_id,
-                                          const StreamPriority priority) {
     StatusFlag status = sender_.UnbufferedImmediateSend(
         StreamIDAndPriority{stream_id, priority}, /*tokens*/ 1);
     GRPC_WRITABLE_STREAMS_DEBUG << "UnbufferedImmediateEnqueue stream id "
