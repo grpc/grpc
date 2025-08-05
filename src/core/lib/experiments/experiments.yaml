@@ -118,7 +118,7 @@
     ]
 - name: event_engine_fork
   description: Enables event engine fork handling, including onfork events and file descriptor generations
-  expiry: 2025/08/01
+  expiry: 2025/10/01
   owner: eostroukhov@google.com
   test_tags: ["core_end2end_test", "event_engine_fork_test"]
   uses_polling: true
