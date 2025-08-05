@@ -11,7 +11,7 @@ The resource quota system provides a mechanism for controlling the amount of res
 *   **`ResourceQuota`**: The `ResourceQuota` class is the main class for managing resource quotas. It is a container for a `MemoryQuota` and a `ThreadQuota`.
 *   **`MemoryQuota`**: The `MemoryQuota` class is responsible for managing memory usage. It provides a way to reserve and release memory, and it can be configured to limit the total amount of memory that can be used.
 *   **`ThreadQuota`**: The `ThreadQuota` class is responsible for managing thread usage. It provides a way to reserve and release threads, and it can be configured to limit the total number of threads that can be used.
-*   **`Arena`**: An `Arena` is a custom memory allocator that is used by the resource quota system. It is designed to be very fast, and it is used to allocate memory for things like call objects and metadata.
+*   **`Arena`**: An `Arena` is a custom memory allocator that is used by the resource quota system. It is designed to be very fast, and it is used to allocate memory for things like call objects and metadata. In addition to memory allocation, the Arena also serves as an index for context objects associated with a call, indexed by type. This allows various parts of the gRPC stack to attach and retrieve objects within the scope of a single Arena.
 
 ## Files
 
