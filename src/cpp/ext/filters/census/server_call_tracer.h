@@ -30,7 +30,7 @@ namespace internal {
 class OpenCensusServerCallTracerFactory
     : public grpc_core::ServerCallTracerFactory {
  public:
-  grpc_core::ServerCallTracer* CreateNewServerCallTracer(
+  grpc_core::ServerCallTracerInterface* CreateNewServerCallTracer(
       grpc_core::Arena* arena, const grpc_core::ChannelArgs& /*args*/) override;
 };
 

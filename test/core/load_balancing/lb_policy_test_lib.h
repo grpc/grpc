@@ -614,7 +614,8 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       return nullptr;
     }
 
-    ClientCallTracer::CallAttemptTracer* GetCallAttemptTracer() const override {
+    ClientCallTracerInterface::CallAttemptTracer* GetCallAttemptTracer()
+        const override {
       return nullptr;
     }
 

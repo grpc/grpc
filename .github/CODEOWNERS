@@ -9,5 +9,5 @@
 /src/core/server/xds* @markdroth
 /src/core/service_config/** @markdroth
 /src/core/xds/** @markdroth
-/tools/dockerfile/** @drfloob @apolcyn
+/tools/dockerfile/** @drfloob
 /tools/dockerfile/**/*python* @sergiitk

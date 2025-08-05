@@ -14,11 +14,9 @@
 
 #include <arpa/inet.h>
 #include <fcntl.h>
-#include <gmock/gmock.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/status.h>
-#include <gtest/gtest.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -40,6 +38,8 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"

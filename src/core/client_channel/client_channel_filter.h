@@ -373,7 +373,7 @@ class ClientChannelFilter::LoadBalancedCall
 
  protected:
   ClientChannelFilter* chand() const { return chand_; }
-  ClientCallTracer::CallAttemptTracer* call_attempt_tracer() const {
+  ClientCallTracerInterface::CallAttemptTracer* call_attempt_tracer() const {
     return call_attempt_tracer_;
   }
   ConnectedSubchannel* connected_subchannel() const {
@@ -434,7 +434,7 @@ class ClientChannelFilter::LoadBalancedCall
   // previous attempt yet leading to a situation where we have two active call
   // attempt tracers, and so we cannot rely on the arena to give us the right
   // tracer when performing cleanup.
-  ClientCallTracer::CallAttemptTracer* call_attempt_tracer_;
+  ClientCallTracerInterface::CallAttemptTracer* call_attempt_tracer_;
 
   absl::AnyInvocable<void()> on_commit_;
 

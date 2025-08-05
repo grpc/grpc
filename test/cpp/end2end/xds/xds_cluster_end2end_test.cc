@@ -44,7 +44,7 @@ using ::envoy::type::v3::FractionalPercent;
 
 using ClientStats = LrsServiceImpl::ClientStats;
 using OptionalLabelKey =
-    grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey;
+    grpc_core::ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey;
 
 constexpr char kLbDropType[] = "lb";
 constexpr char kThrottleDropType[] = "throttle";

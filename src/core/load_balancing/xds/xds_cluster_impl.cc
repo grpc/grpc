@@ -407,10 +407,11 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
   auto* call_attempt_tracer = call_state->GetCallAttemptTracer();
   if (call_attempt_tracer != nullptr) {
     call_attempt_tracer->SetOptionalLabel(
-        ClientCallTracer::CallAttemptTracer::OptionalLabelKey::kXdsServiceName,
+        ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey::
+            kXdsServiceName,
         service_telemetry_label_);
     call_attempt_tracer->SetOptionalLabel(
-        ClientCallTracer::CallAttemptTracer::OptionalLabelKey::
+        ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey::
             kXdsServiceNamespace,
         namespace_telemetry_label_);
   }
@@ -444,7 +445,8 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
     // Add locality label to per-call metrics if needed.
     if (call_attempt_tracer != nullptr) {
       call_attempt_tracer->SetOptionalLabel(
-          ClientCallTracer::CallAttemptTracer::OptionalLabelKey::kLocality,
+          ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey::
+              kLocality,
           subchannel_wrapper->locality());
     }
     // Handle load reporting.

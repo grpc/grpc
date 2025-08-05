@@ -262,7 +262,8 @@ grpc_call* grpc_call_from_top_element(grpc_call_element* surface_element);
 void grpc_call_log_batch(const char* file, int line, const grpc_op* ops,
                          size_t nops);
 
-void grpc_call_tracer_set(grpc_call* call, grpc_core::ClientCallTracer* tracer);
+void grpc_call_tracer_set(grpc_call* call,
+                          grpc_core::ClientCallTracerInterface* tracer);
 
 // Sets call tracer on the call and manages its life by using the call's arena.
 // When using this API, the tracer will be destroyed by grpc_call arena when
@@ -271,8 +272,8 @@ void grpc_call_tracer_set(grpc_call* call, grpc_core::ClientCallTracer* tracer);
 // Arena to manage the lifetime of the call tracer. Python needs this API
 // because the tracer was created within a separate shared object library which
 // doesn't have access to core functions like arena->ManagedNew<>.
-void grpc_call_tracer_set_and_manage(grpc_call* call,
-                                     grpc_core::ClientCallTracer* tracer);
+void grpc_call_tracer_set_and_manage(
+    grpc_call* call, grpc_core::ClientCallTracerInterface* tracer);
 
 void* grpc_call_tracer_get(grpc_call* call);
 
@@ -287,11 +288,11 @@ uint8_t grpc_call_is_client(grpc_call* call);
 
 class ClientCallTracerWrapper {
  public:
-  explicit ClientCallTracerWrapper(grpc_core::ClientCallTracer* tracer)
+  explicit ClientCallTracerWrapper(grpc_core::ClientCallTracerInterface* tracer)
       : tracer_(tracer) {}
 
  private:
-  std::unique_ptr<grpc_core::ClientCallTracer> tracer_;
+  std::unique_ptr<grpc_core::ClientCallTracerInterface> tracer_;
 };
 
 // Return an appropriate compression algorithm for the requested compression \a

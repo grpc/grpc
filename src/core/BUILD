@@ -79,13 +79,8 @@ config_setting(
 selects.config_setting_group(
     name = "grpc_no_filter_fusion",
     match_any = [
-        ":grpc_no_filter_fusion_define",
-        # In addition to disabling filter fusion support when
-        # --define=grpc_no_filter_fusion=true is specified, we also disable it
-        # on mobile platforms where it is not likely to be needed and where
-        # reducing the binary size is more important.
-        "//:android",
-        "//:ios",
+        ":grpc_no_filter_fusion_define",  # --define=grpc_no_filter_fusion=true
+        "//:grpc_small_clients",
     ],
 )
 
@@ -2989,11 +2984,13 @@ grpc_cc_library(
     name = "cf_event_engine",
     srcs = [
         "lib/event_engine/cf_engine/cf_engine.cc",
+        "lib/event_engine/cf_engine/cfsocket_listener.cc",
         "lib/event_engine/cf_engine/cfstream_endpoint.cc",
         "lib/event_engine/cf_engine/dns_service_resolver.cc",
     ],
     hdrs = [
         "lib/event_engine/cf_engine/cf_engine.h",
+        "lib/event_engine/cf_engine/cfsocket_listener.h",
         "lib/event_engine/cf_engine/cfstream_endpoint.h",
         "lib/event_engine/cf_engine/cftype_unique_ref.h",
         "lib/event_engine/cf_engine/dns_service_resolver.h",
