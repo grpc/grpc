@@ -22,10 +22,10 @@
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-#include <gtest/gtest.h>
 #include <string.h>
 
 #include "absl/strings/escaping.h"
+#include "gtest/gtest.h"
 #include "src/core/credentials/call/jwt/json_token.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/http_client/httpcli.h"

@@ -16,9 +16,8 @@
 
 #include "src/core/credentials/call/call_creds_registry.h"
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/call/jwt_token_file/jwt_token_file_call_credentials.h"
 #include "test/core/test_util/test_call_creds.h"
