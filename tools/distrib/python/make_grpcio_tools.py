@@ -66,7 +66,7 @@ EXTERNAL_LINKS = [
     ("@utf8_range//", "third_party/protobuf/third_party/utf8_range"),
 ]
 
-PROTOBUF_PROTO_PREFIX = "google/protobuf"
+PROTOBUF_PROTO_PREFIX = "@com_google_protobuf//"
 
 # will be added to include path when building grpcio_tools
 CC_INCLUDES = [
@@ -80,7 +80,7 @@ CC_INCLUDES = [
 ]
 
 # include path for .proto files
-PROTO_INCLUDE = os.path.join("third_party", "protobuf", "src")
+PROTO_INCLUDE = os.path.join("third_party", "protobuf")
 
 # the target directory is relative to the grpcio_tools package root.
 GRPCIO_TOOLS_ROOT_PREFIX = "tools/distrib/python/grpcio_tools/"
@@ -92,6 +92,8 @@ COPY_FILES_SOURCE_TARGET_PAIRS = [
     ("src/compiler", "grpc_root/src/compiler"),
     ("third_party/abseil-cpp/absl", "third_party/abseil-cpp/absl"),
     ("third_party/protobuf/src", "third_party/protobuf/src"),
+    ("third_party/protobuf/go", "third_party/protobuf/go"),
+    ("third_party/protobuf/java", "third_party/protobuf/java"),
     ("third_party/protobuf/upb", "third_party/protobuf/upb"),
     (
         "third_party/protobuf/upb_generator",
@@ -229,9 +231,9 @@ def _generate_deps_file_content():
     for target in BAZEL_DEPS_COMMON_PROTOS_QUERIES:
         raw_proto_files += _bazel_query(target)
     proto_files = [
-        name[name.find(PROTOBUF_PROTO_PREFIX):].replace(":", "/")
+        name[len(PROTOBUF_PROTO_PREFIX):].replace(":", "/")
         for name in raw_proto_files
-        if name.endswith(".proto") and PROTOBUF_PROTO_PREFIX in name
+        if name.endswith(".proto") and name.startswith(PROTOBUF_PROTO_PREFIX)
     ]
 
     commit_hash = protobuf_submodule_commit_hash()
