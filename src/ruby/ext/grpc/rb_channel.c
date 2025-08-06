@@ -62,6 +62,7 @@ static VALUE grpc_rb_cChannelArgs;
 /* grpc_rb_channel wraps a grpc_channel. */
 typedef struct grpc_rb_channel {
   grpc_channel* channel;
+  VALUE mark;
 } grpc_rb_channel;
 
 static void grpc_rb_channel_free(void* p) {
@@ -76,13 +77,19 @@ static void grpc_rb_channel_free(void* p) {
   xfree(p);
 }
 
-static rb_data_type_t grpc_channel_data_type = {
-    "grpc_channel",
-    {NULL, grpc_rb_channel_free, GRPC_RB_MEMSIZE_UNAVAILABLE, {NULL, NULL}},
-    NULL,
-    NULL,
+static void grpc_rb_channel_mark(void* p) {
+  rb_gc_mark(((grpc_rb_channel*)p)->mark);
+}
+
+static rb_data_type_t grpc_channel_data_type = {"grpc_channel",
+                                                {grpc_rb_channel_mark,
+                                                 grpc_rb_channel_free,
+                                                 GRPC_RB_MEMSIZE_UNAVAILABLE,
+                                                 {NULL, NULL}},
+                                                NULL,
+                                                NULL,
 #ifdef RUBY_TYPED_FREE_IMMEDIATELY
-    RUBY_TYPED_FREE_IMMEDIATELY
+                                                RUBY_TYPED_FREE_IMMEDIATELY
 #endif
 };
 
@@ -91,6 +98,7 @@ static VALUE grpc_rb_channel_alloc(VALUE cls) {
   grpc_ruby_init();
   grpc_rb_channel* wrapper = ALLOC(grpc_rb_channel);
   wrapper->channel = NULL;
+  wrapper->mark = Qnil;
   return TypedData_Wrap_Struct(cls, &grpc_channel_data_type, wrapper);
 }
 
@@ -139,6 +147,7 @@ static VALUE grpc_rb_channel_init(int argc, VALUE* argv, VALUE self) {
       return Qnil;
     }
     wrapper->channel = grpc_channel_create(target_chars, creds, &channel_args);
+    wrapper->mark = rb_credentials;
   }
   grpc_rb_channel_args_destroy(&channel_args);
   if (wrapper->channel == NULL) {
