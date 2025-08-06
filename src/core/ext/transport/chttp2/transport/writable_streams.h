@@ -54,6 +54,7 @@ class WritableStreams {
   WritableStreams& operator=(WritableStreams&&) = delete;
 
   // Enqueues a stream id with the given priority.
+  // If this returns error, transport MUST be closed.
   absl::Status Enqueue(const uint32_t stream_id,
                        const StreamPriority priority) {
     // Streams waiting for transport flow control MUST not be added to list of
@@ -98,15 +99,16 @@ class WritableStreams {
   // 5. Once mpsc dequeue promise is resolved, the stream ids are pushed to the
   //    prioritized queue.
   // 6. Return the stream id with the highest priority.
-
+  // If this returns error, transport MUST be closed.
   auto Next(const bool transport_tokens_available) {
     // TODO(akshitpatel) : [PH2][P2] - Need to add an immediate dequeue option
     // for the mpsc queue in favor of the race.
 
-    // The current MPSC queue does not have a version of NextBatch that resolves
-    // immediately. So we made this Race to ensure that the "Dequeue" from the
-    // mpsc resolves immediately - Either with data , or empty.
     return AssertResultType<absl::StatusOr<uint32_t>>(TrySeq(
+        // The current MPSC queue does not have a version of NextBatch that
+        // resolves immediately. So we made this Race to ensure that the
+        // "Dequeue" from the mpsc resolves immediately - Either with data , or
+        // empty.
         Race(queue_.NextBatch(kMaxBatchSize),
              Immediate(ValueOrFailure<std::vector<StreamIDAndPriority>>(
                  std::vector<StreamIDAndPriority>()))),
@@ -223,7 +225,7 @@ class WritableStreams {
     const StreamPriority priority;
   };
 
-  void AddToPrioritizedQueue(const std::vector<StreamIDAndPriority> batch) {
+  void AddToPrioritizedQueue(const std::vector<StreamIDAndPriority>& batch) {
     for (auto stream_id_priority : batch) {
       prioritized_queue_.Push(stream_id_priority.stream_id,
                               stream_id_priority.priority);
