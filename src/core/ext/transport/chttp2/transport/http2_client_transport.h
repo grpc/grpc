@@ -385,7 +385,7 @@ class Http2ClientTransport final : public ClientTransport {
             return self->HandleError(Http2Status::Http2ConnectionError(
                 Http2ErrorCode::kProtocolError, "Settings Timeout"));
           }
-         return absl::OkStatus();
+          return absl::OkStatus();
         });
   }
 
