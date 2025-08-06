@@ -12069,6 +12069,7 @@ targets:
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
+  - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/iomgr/closure.h
@@ -12096,6 +12097,10 @@ targets:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
+  - src/core/lib/promise/sleep.h
+  - src/core/lib/promise/status_flag.h
+  - src/core/lib/promise/try_seq.h
+  - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
@@ -12185,6 +12190,8 @@ targets:
   - src/core/lib/iomgr/sockaddr_utils_posix.cc
   - src/core/lib/iomgr/socket_utils_windows.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/promise/sleep.cc
+  - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
