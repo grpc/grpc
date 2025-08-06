@@ -460,7 +460,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
           std::move(message));
     }
 
-    void operator()(HalfClosed half_closed) {
+    void operator()(GRPC_UNUSED HalfClosed half_closed) {
       GRPC_STREAM_DATA_QUEUE_DEBUG << "Preparing end of stream for sending";
       is_half_closed_ = true;
     }
