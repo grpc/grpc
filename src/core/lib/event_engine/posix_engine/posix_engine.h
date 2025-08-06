@@ -268,6 +268,11 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
   void SchedulePoller();
   void ResetPollCycle();
 
+  PosixEventPoller* GetPollerChecked() const {
+    CHECK_NE(poller_, nullptr);
+    return poller_.get();
+  }
+
   std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller> poller_;
 
   // Ensures there's ever only one of these.

@@ -213,6 +213,7 @@ PosixEventEngine::PollingCycle::PollingCycle(
     : executor_(std::move(executor)),
       poller_(std::move(poller)),
       is_scheduled_(1) {
+  CHECK_NE(poller_, nullptr);
   executor_->Run([this]() { PollerWorkInternal(); });
 }
 
@@ -506,16 +507,13 @@ PosixEventEngine::PosixEventEngine(std::shared_ptr<PosixEventPoller> poller)
     : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
       executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
       poller_(std::move(poller)),
-      timer_manager_(std::make_shared<TimerManager>(executor_)) {
-  CHECK_NE(poller_, nullptr);
-}
+      timer_manager_(std::make_shared<TimerManager>(executor_)) {}
 
 PosixEventEngine::PosixEventEngine()
     : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
       executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
       timer_manager_(std::make_shared<TimerManager>(executor_)) {
   poller_ = grpc_event_engine::experimental::MakeDefaultPoller(executor_);
-  CHECK_NE(poller_, nullptr);
   SchedulePoller();
 }
 
@@ -679,7 +677,7 @@ PosixEventEngine::GetDNSResolver(
       << "PosixEventEngine::" << this << " creating AresResolver";
   auto ares_resolver = AresResolver::CreateAresResolver(
       options.dns_server,
-      std::make_unique<GrpcPolledFdFactoryPosix>(poller_.get()),
+      std::make_unique<GrpcPolledFdFactoryPosix>(GetPollerChecked()),
       shared_from_this());
   if (!ares_resolver.ok()) {
     return ares_resolver.status();
@@ -790,7 +788,8 @@ EventEngine::ConnectionHandle PosixEventEngine::Connect(
     Duration timeout) {
   PosixTcpOptions options = TcpOptionsFromEndpointConfig(args);
   absl::StatusOr<EventEnginePosixInterface::PosixSocketCreateResult> socket =
-      poller_->posix_interface().CreateAndPrepareTcpClientSocket(options, addr);
+      GetPollerChecked()->posix_interface().CreateAndPrepareTcpClientSocket(
+          options, addr);
   if (!socket.ok()) {
     Run([on_connect = std::move(on_connect),
          status = socket.status()]() mutable { on_connect(status); });
@@ -806,8 +805,8 @@ EventEngine::ConnectionHandle PosixEventEngine::CreateEndpointFromUnconnectedFd(
     const EventEngine::ResolvedAddress& addr, const EndpointConfig& config,
     MemoryAllocator memory_allocator, EventEngine::Duration timeout) {
   return CreateEndpointFromUnconnectedFdInternal(
-      poller_->posix_interface().Adopt(fd), std::move(on_connect), addr,
-      TcpOptionsFromEndpointConfig(config), std::move(memory_allocator),
+      GetPollerChecked()->posix_interface().Adopt(fd), std::move(on_connect),
+      addr, TcpOptionsFromEndpointConfig(config), std::move(memory_allocator),
       timeout);
 }
 
@@ -816,10 +815,10 @@ PosixEventEngine::CreatePosixEndpointFromFd(int fd,
                                             const EndpointConfig& config,
                                             MemoryAllocator memory_allocator) {
   DCHECK_GT(fd, 0);
-  DCHECK_NE(poller_, nullptr);
+  PosixEventPoller* poller = GetPollerChecked();
   EventHandle* handle =
-      poller_->CreateHandle(poller_->posix_interface().Adopt(fd), "tcp-client",
-                            poller_->CanTrackErrors());
+      poller->CreateHandle(poller->posix_interface().Adopt(fd), "tcp-client",
+                           poller->CanTrackErrors());
   return CreatePosixEndpoint(handle, nullptr, shared_from_this(),
                              std::move(memory_allocator),
                              TcpOptionsFromEndpointConfig(config));
@@ -925,17 +924,20 @@ PosixEventEngine::CreatePosixListener(
     GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 
 void PosixEventEngine::AfterFork(OnForkRole on_fork_role) {
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  PosixEventPoller* poller = GetPollerChecked();
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   if (on_fork_role == OnForkRole::kChild) {
     if (grpc_core::IsEventEngineForkEnabled()) {
       AfterForkInChild();
     } else {
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-      poller_->HandleForkInChild();
+      poller->HandleForkInChild();
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
     }
   }
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  poller_->ResetKickState();
+  poller->ResetKickState();
   SchedulePoller();
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 }
@@ -957,7 +959,7 @@ void PosixEventEngine::AfterForkInChild() {
   }
 #endif
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  poller_->HandleForkInChild();
+  GetPollerChecked()->HandleForkInChild();
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
   for (const auto& cb : resolver_handles_) {
