@@ -219,7 +219,7 @@ g_stands_for = "gee"  # @unused
 
 core_version = "49.0.0"  # @unused
 
-version = "1.74.0"  # @unused
+version = "1.74.1"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
