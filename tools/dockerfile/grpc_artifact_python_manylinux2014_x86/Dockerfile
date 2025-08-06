@@ -16,7 +16,7 @@
 
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_manylinux2014_x86/Dockerfile.inja`!!!
 
-FROM quay.io/pypa/manylinux2014_i686:2024-09-09-f386546
+FROM quay.io/pypa/manylinux2014_i686:2025.07.14-5
 
 # TODO: simplify the list of third_party modules list
 # NOTE: git>=2.46 allows leading paths like third_party/* to include all subdirectories
