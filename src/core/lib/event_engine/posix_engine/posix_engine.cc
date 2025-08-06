@@ -676,8 +676,7 @@ PosixEventEngine::GetDNSResolver(
   GRPC_TRACE_LOG(event_engine_dns, INFO)
       << "PosixEventEngine::" << this << " creating AresResolver";
   auto ares_resolver = AresResolver::CreateAresResolver(
-      options.dns_server,
-      std::make_unique<GrpcPolledFdFactoryPosix>(GetPollerChecked()),
+      options.dns_server, std::make_unique<GrpcPolledFdFactoryPosix>(poller_),
       shared_from_this());
   if (!ares_resolver.ok()) {
     return ares_resolver.status();
