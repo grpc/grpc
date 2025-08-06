@@ -20342,6 +20342,24 @@ targets:
   - linux
   - posix
   - mac
+- name: writable_streams_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/transport/chttp2/transport/writable_streams.h
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/transport/util/transport_test.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/transport/chttp2/writable_streams_test.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
 - name: write_size_policy_test
   gtest: true
   build: test

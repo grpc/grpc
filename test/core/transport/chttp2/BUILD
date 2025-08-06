@@ -788,3 +788,16 @@ grpc_fuzz_test(
         "//test/core/call/yodel:yodel_test",
     ],
 )
+
+grpc_cc_test(
+    name = "writable_streams_test",
+    srcs = ["writable_streams_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//src/core:loop",
+        "//src/core:writable_streams",
+        "//test/core/transport/util:transport_test",
+    ],
+)
