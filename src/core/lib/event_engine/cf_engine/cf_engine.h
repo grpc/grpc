@@ -30,7 +30,7 @@
 
 namespace grpc_event_engine::experimental {
 
-class CFEventEngine : public EventEngine, public Scheduler {
+class CFEventEngine : public EventEngine {
  public:
   CFEventEngine();
   ~CFEventEngine() override;
@@ -57,6 +57,7 @@ class CFEventEngine : public EventEngine, public Scheduler {
   TaskHandle RunAfter(Duration when,
                       absl::AnyInvocable<void()> closure) override;
   bool Cancel(TaskHandle handle) override;
+  ThreadPool* thread_pool() const { return thread_pool_.get(); }
 
  private:
   struct Closure;

@@ -681,7 +681,8 @@ TEST_F(OTelTracingTest, PropagationParentToChild) {
 #ifdef GRPC_LINUX_ERRQUEUE
 // Test presence of TCP write annotations
 TEST_F(OTelTracingTest, TcpWriteAnnotations) {
-  if (!grpc_event_engine::experimental::MakeDefaultPoller(/*scheduler=*/nullptr)
+  if (!grpc_event_engine::experimental::MakeDefaultPoller(
+           /*thread_pool=*/nullptr)
            ->CanTrackErrors()) {
     GTEST_SKIP() << "Test disabled if poller doesn't support errqueue";
   }
