@@ -154,6 +154,9 @@ class PythonPackage:
             self.labels.append(arch)
             self.name += "_" + arch
 
+            if self.arch == "aarch64":
+                self.labels.append("linux_aarch64")
+
     def pre_build_jobspecs(self):
         return []
 
@@ -168,14 +171,21 @@ class PythonPackage:
         environ = {
             "PYTHON": "/opt/python/cp39-cp39/bin/python",
             "ARTIFACT_PREFIX": "python_",
-            "EXCLUDE_PATTERN": "python_musllinux_1_1_aarch64_*",
+            "EXCLUDE_PATTERNS": "python_musllinux_1_1_aarch64_* python_manylinux2014_aarch64_*",
         }
         if "musllinux_1_1" in self.platform and "aarch64" in self.arch:
             dockerfile_dir = (
                 "tools/dockerfile/grpc_artifact_python_musllinux_1_1_aarch64"
             )
             environ["ARTIFACT_PREFIX"] = "python_musllinux_1_1_aarch64_"
-            environ["EXCLUDE_PATTERN"] = ""
+            environ["EXCLUDE_PATTERNS"] = ""
+
+        if "manylinux2014" in self.platform and "aarch64" in self.arch:
+            dockerfile_dir = (
+                "tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64"
+            )
+            environ["ARTIFACT_PREFIX"] = "python_manylinux2014_aarch64_"
+            environ["EXCLUDE_PATTERNS"] = ""
 
         return create_docker_jobspec(
             self.name,
@@ -213,5 +223,6 @@ def targets():
         RubyPackage(),
         PythonPackage(),
         PythonPackage("musllinux_1_1", "aarch64"),
+        PythonPackage("manylinux2014", "aarch64"),
         PHPPackage(),
     ]
