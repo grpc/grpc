@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_musllinux_1_1_aarch64/Dockerfile.inja`!!!
+# AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_musllinux_1_2_x86/Dockerfile.template`!!!
 
-FROM quay.io/pypa/musllinux_1_1_aarch64:2024-09-09-f386546
+FROM quay.io/pypa/musllinux_1_2_i686:2025.07.27-1
 
 # TODO: simplify the list of third_party modules list
 # NOTE: git>=2.46 allows leading paths like third_party/* to include all subdirectories
@@ -41,18 +41,7 @@ RUN git config --global protocol.file.allow always && \
 
 
 # Preinstall zstd and hiredis for ccache to avoid *_FROM_INTERNET downloads.
-RUN apk add openssl openssl-dev zstd zstd-dev hiredis-dev
-
-# For some reason, this specific build segfaults on ccache unless cython is intalled.
-#===================================
-# Install Python build requirements
-RUN /opt/python/cp39-cp39/bin/pip install --upgrade 'cython==3.1.1' && \
-  /opt/python/cp310-cp310/bin/pip install --upgrade 'cython==3.1.1' && \
-  /opt/python/cp311-cp311/bin/pip install --upgrade 'cython==3.1.1' && \
-  /opt/python/cp312-cp312/bin/pip install --upgrade 'cython==3.1.1' && \
-  /opt/python/cp313-cp313/bin/pip install --upgrade 'cython==3.1.1'
-
-
+RUN apk add zstd zstd-dev hiredis-dev
 #=================
 # Install ccache
 
@@ -67,4 +56,12 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
     && cd ../.. \
     && rm -rf ccache-4.11.3 ccache.tar.gz
 
+
+#===================================
+# Install Python build requirements
+RUN /opt/python/cp39-cp39/bin/pip install --upgrade 'cython==3.1.1' && \
+  /opt/python/cp310-cp310/bin/pip install --upgrade 'cython==3.1.1' && \
+  /opt/python/cp311-cp311/bin/pip install --upgrade 'cython==3.1.1' && \
+  /opt/python/cp312-cp312/bin/pip install --upgrade 'cython==3.1.1' && \
+  /opt/python/cp313-cp313/bin/pip install --upgrade 'cython==3.1.1'
 

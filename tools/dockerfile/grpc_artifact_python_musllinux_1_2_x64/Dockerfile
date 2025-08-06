@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_musllinux_1_1_x86/Dockerfile.template`!!!
+# AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_musllinux_1_2_x64/Dockerfile.template`!!!
 
-FROM quay.io/pypa/musllinux_1_1_i686:2024-09-09-f386546
+FROM quay.io/pypa/musllinux_1_2_x86_64:2025.07.25-1
 
 # TODO: simplify the list of third_party modules list
 # NOTE: git>=2.46 allows leading paths like third_party/* to include all subdirectories
@@ -41,7 +41,7 @@ RUN git config --global protocol.file.allow always && \
 
 
 # Preinstall zstd and hiredis for ccache to avoid *_FROM_INTERNET downloads.
-RUN apk add zstd zstd-dev hiredis-dev
+RUN apk add openssl openssl-dev zstd zstd-dev hiredis-dev
 #=================
 # Install ccache
 
