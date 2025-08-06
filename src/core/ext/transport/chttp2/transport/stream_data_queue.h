@@ -216,6 +216,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
             << "Enqueued initial metadata for stream " << self->stream_id_
             << " with status: " << result.value().status;
         if (result.value().status.ok()) {
+          DCHECK(result.value().became_non_empty);
           return self->UpdateWritableStateLocked(
               result.value().became_non_empty);
         }
