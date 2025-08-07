@@ -379,13 +379,13 @@ class Http2ClientTransport final : public ClientTransport {
   auto WaitForSettingsTimeoutDone() {
     return [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
       if (!status.ok()) {
-        return self->HandleError(Http2Status::Http2ConnectionError(
-            Http2ErrorCode::kProtocolError,
-            std::string(RFC9113::kSettingsTimeout)));
+        GRPC_UNUSED absl::Status result =
+            self->HandleError(Http2Status::Http2ConnectionError(
+                Http2ErrorCode::kProtocolError,
+                std::string(RFC9113::kSettingsTimeout)));
       } else {
         self->SettingsAckReceived();
       }
-      return absl::OkStatus();
     };
   }
 
