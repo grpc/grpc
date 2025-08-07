@@ -710,15 +710,11 @@ auto Http2ClientTransport::StreamMultiplexerLoop() {
                   /*max_frame_length*/ std::numeric_limits<uint32_t>::max(),
                   self->encoder_);
           if (result.ok() && result->is_writable) {
-            absl::Status status;
-            if (/*transport_tokens_available*/ false) {
-              status =
-                  self->writable_stream_list_.BlockedOnTransportFlowControl(
-                      stream_id);
-            } else {
-              status = self->writable_stream_list_.Enqueue(
-                  stream_id, WritableStreams::StreamPriority::kDefault);
-            }
+            // TODO(akshitpatel) : [PH2][P3] : Plug transport_tokens when
+            // transport flow control is implemented.
+            absl::Status status = self->writable_stream_list_.Enqueue(
+                stream_id, WritableStreams::StreamPriority::kDefault);
+
             if (!status.ok()) {
               LOG(ERROR) << "Failed to enqueue stream " << stream_id
                          << " with status: " << status;
