@@ -14,7 +14,6 @@
 #include "src/core/lib/event_engine/ares_resolver.h"
 
 #include <grpc/support/port_platform.h>
-#include <sys/socket.h>
 
 #include <cstddef>
 #include <string>
@@ -350,8 +349,7 @@ void AresResolver::LookupHostname(
   callback_map_.emplace(++id_, std::move(callback));
   auto* resolver_arg = new HostnameQueryArg(this, id_, name, port);
   CHECK_NE(channel_, nullptr);
-  struct ares_addrinfo_hints af_inet = {
-      .ai_flags = 0, .ai_socktype = 0, .ai_family = AF_INET, .ai_protocol = 0};
+  struct ares_addrinfo_hints af_inet = {0, AF_INET, 0, 0};
   if (AresIsIpv6LoopbackAvailable()) {
     // Note that using AF_UNSPEC for both IPv6 and IPv4 queries does not work in
     // all cases, e.g. for localhost:<> it only gets back the IPv6 result (i.e.
@@ -639,6 +637,12 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
   auto* hostname_qa = static_cast<HostnameQueryArg*>(arg);
   CHECK_GT(hostname_qa->pending_requests--, 0);
   auto* ares_resolver = hostname_qa->ares_resolver;
+  // Use an inlined vector as a stack-allocated buffer for the sockaddr.
+  // The size is based on `sockaddr_storage`, a standard type guaranteed to be
+  // large enough for any address family's sockaddr. This avoids heap
+  // allocations for typical cases while still allowing the buffer to grow if an
+  // unusually large address is encountered.
+  absl::InlinedVector<std::byte, sizeof(sockaddr_storage)> ss;
   if (status != ARES_SUCCESS) {
     std::string error_msg =
         absl::StrFormat("address lookup failed for %s: %s",
@@ -658,9 +662,9 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
         LOG(ERROR) << "A/AAAA response exceeds maximum record size of 65536";
         break;
       }
-      sockaddr_storage ss;
-      memcpy(&ss, node->ai_addr, node->ai_addrlen);
-      sockaddr* sa = reinterpret_cast<sockaddr*>(&ss);
+      ss.resize(node->ai_addrlen);
+      memcpy(ss.data(), node->ai_addr, node->ai_addrlen);
+      sockaddr* sa = reinterpret_cast<sockaddr*>(ss.data());
       // Set the port on the copied struct.
       if (sa->sa_family == AF_INET) {
         reinterpret_cast<sockaddr_in*>(sa)->sin_port = htons(hostname_qa->port);
