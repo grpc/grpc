@@ -102,7 +102,7 @@ ChannelCompression::ChannelCompression(const ChannelArgs& args)
 
 MessageHandle ChannelCompression::CompressMessage(
     MessageHandle message, grpc_compression_algorithm algorithm,
-    CallTracerInterface* call_tracer) const {
+    CallTracer* call_tracer) const {
   GRPC_TRACE_LOG(compression, INFO)
       << "CompressMessage: len=" << message->payload()->Length()
       << " alg=" << algorithm << " flags=" << message->flags();
@@ -156,7 +156,7 @@ MessageHandle ChannelCompression::CompressMessage(
 
 absl::StatusOr<MessageHandle> ChannelCompression::DecompressMessage(
     bool is_client, MessageHandle message, DecompressArgs args,
-    CallTracerInterface* call_tracer) const {
+    CallTracer* call_tracer) const {
   GRPC_TRACE_LOG(compression, INFO)
       << "DecompressMessage: len=" << message->payload()->Length()
       << " max=" << args.max_recv_message_length.value_or(-1)
@@ -233,7 +233,7 @@ void ClientCompressionFilter::Call::OnClientInitialMetadata(
       "ClientCompressionFilter::Call::OnClientInitialMetadata");
   compression_algorithm_ =
       filter->compression_engine_.HandleOutgoingMetadata(md);
-  call_tracer_ = MaybeGetContext<CallTracerInterface>();
+  call_tracer_ = MaybeGetContext<CallTracer>();
 }
 
 MessageHandle ClientCompressionFilter::Call::OnClientToServerMessage(
@@ -274,7 +274,7 @@ ServerCompressionFilter::Call::OnClientToServerMessage(
       "ServerCompressionFilter::Call::OnClientToServerMessage");
   return filter->compression_engine_.DecompressMessage(
       /*is_client=*/false, std::move(message), decompress_args_,
-      MaybeGetContext<CallTracerInterface>());
+      MaybeGetContext<CallTracer>());
 }
 
 void ServerCompressionFilter::Call::OnServerInitialMetadata(
@@ -291,7 +291,7 @@ MessageHandle ServerCompressionFilter::Call::OnServerToClientMessage(
       "ServerCompressionFilter::Call::OnServerToClientMessage");
   return filter->compression_engine_.CompressMessage(
       std::move(message), compression_algorithm_,
-      MaybeGetContext<CallTracerInterface>());
+      MaybeGetContext<CallTracer>());
 }
 
 }  // namespace grpc_core
