@@ -144,7 +144,7 @@ mv "${GRPCIO_STRIPPED_TAR_GZ}" "${GRPCIO_TAR_GZ}"
 "${PYTHON}" tools/distrib/python/make_grpcio_tools.py
 
 # Build gRPC tools package source distribution
-${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py sdist
+GRPC_EXPERIMENTS=event_engine_for_all_other_endpoints,event_engine_callback_cq,event_engine_client,event_engine_dns,event_engine_listener,event_engine_fork ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py sdist
 
 # Build gRPC tools package binary distribution
 # shellcheck disable=SC2086
