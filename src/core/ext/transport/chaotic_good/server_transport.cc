@@ -151,7 +151,7 @@ auto ChaoticGoodServerTransport::StreamDispatch::SendCallInitialMetadataAndBody(
 auto ChaoticGoodServerTransport::StreamDispatch::CallOutboundLoop(
     uint32_t stream_id, CallInitiator call_initiator) {
   std::shared_ptr<TcpCallTracer> call_tracer;
-  auto tracer = call_initiator.arena()->GetContext<CallTracerInterface>();
+  auto tracer = call_initiator.arena()->GetContext<CallTracer>();
   if (tracer != nullptr && tracer->IsSampled()) {
     call_tracer = tracer->StartNewTcpTrace();
   }
