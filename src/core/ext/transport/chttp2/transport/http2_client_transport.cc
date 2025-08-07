@@ -690,7 +690,7 @@ auto Http2ClientTransport::StreamMultiplexerLoop() {
       << "Http2ClientTransport StreamMultiplexerLoop Factory";
   return Loop([self = RefAsSubclass<Http2ClientTransport>()]() mutable {
     return TrySeq(
-        self->writable_stream_list_.Next(/*transport_tokens_available=*/true),
+        self->writable_stream_list_.Next(/*transport_tokens_available*/ true),
         [self](uint32_t stream_id) mutable
             -> absl::StatusOr<std::vector<Http2Frame>> {
           auto stream = self->LookupStream(stream_id);
@@ -711,7 +711,7 @@ auto Http2ClientTransport::StreamMultiplexerLoop() {
                   self->encoder_);
           if (result.ok() && result->is_writable) {
             absl::Status status;
-            if (/*transport_tokens_available==0*/ false) {
+            if (/*transport_tokens_available*/ false) {
               status =
                   self->writable_stream_list_.BlockedOnTransportFlowControl(
                       stream_id);
