@@ -807,7 +807,7 @@ TEST_F(SettingsTimeoutManagerTest, NoTimeoutThreeSettings) {
       [&notification](
           absl::StatusOr<std::tuple<grpc_core::Empty, grpc_core::Empty>>
               status) {
-        EXPECT_OK(status);
+        EXPECT_TRUE(status.ok());
         notification.Notify();
       });
   notification.WaitForNotification();
@@ -824,7 +824,7 @@ TEST_F(SettingsTimeoutManagerTest, NoTimeoutOneSettingRareOrder) {
       TryJoin<absl::StatusOr>(MockSettingsAckReceived(manager),
                               MockStartSettingsTimeout(manager)),
       [&notification](absl::StatusOr<std::tuple<Empty, Empty>> status) {
-        EXPECT_OK(status);
+        EXPECT_TRUE(status.ok());
         notification.Notify();
       });
   notification.WaitForNotification();
@@ -847,7 +847,7 @@ TEST_F(SettingsTimeoutManagerTest, NoTimeoutThreeSettingsRareOrder) {
       [&notification](
           absl::StatusOr<std::tuple<grpc_core::Empty, grpc_core::Empty>>
               status) {
-        EXPECT_OK(status);
+        EXPECT_TRUE(status.ok());
         notification.Notify();
       });
   notification.WaitForNotification();
@@ -872,7 +872,7 @@ TEST_F(SettingsTimeoutManagerTest, NoTimeoutThreeSettingsMixedOrder) {
       [&notification](
           absl::StatusOr<std::tuple<grpc_core::Empty, grpc_core::Empty>>
               status) {
-        EXPECT_OK(status);
+        EXPECT_TRUE(status.ok());
         notification.Notify();
       });
   notification.WaitForNotification();
