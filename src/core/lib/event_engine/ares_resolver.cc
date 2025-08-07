@@ -764,31 +764,34 @@ void AresResolver::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
   GRPC_TRACE_LOG(cares_resolver, INFO)
       << "(EventEngine c-ares resolver) resolver:" << ares_resolver
       << " OnSRVQueryDoneLocked name=" << qa->query_name << " ARES_SUCCESS";
-  struct ares_srv_reply* reply = nullptr;
-  status = ares_parse_srv_reply(abuf, alen, &reply);
+
+  ares_dns_record_t* dns_reply = nullptr;
+  status = ares_dns_parse(abuf, alen, 0, &dns_reply);
   GRPC_TRACE_LOG(cares_resolver, INFO)
       << "(EventEngine c-ares resolver) resolver:" << ares_resolver
-      << " ares_parse_srv_reply: " << status;
+      << " ares_dns_parse: " << status;
   if (status != ARES_SUCCESS) {
     fail("Failed to parse SRV reply");
     return;
   }
+  absl::Cleanup cleanup = [=]() { ares_dns_record_destroy(dns_reply); };
   std::vector<EventEngine::DNSResolver::SRVRecord> result;
-  for (struct ares_srv_reply* srv_it = reply; srv_it != nullptr;
-       srv_it = srv_it->next) {
-    if (result.size() == kMaxRecordSize) {
-      LOG(ERROR) << "SRV response exceeds maximum record size of 65536";
-      break;
+  size_t count = ares_dns_record_rr_cnt(dns_reply, ARES_SECTION_ANSWER);
+  for (size_t i = 0; i < count; ++i) {
+    const ares_dns_rr_t* record =
+        ares_dns_record_rr_get_const(dns_reply, ARES_SECTION_ANSWER, i);
+    if (ares_dns_rr_get_type(record) == ARES_REC_TYPE_SRV) {
+      if (result.size() == kMaxRecordSize) {
+        LOG(ERROR) << "SRV response exceeds maximum record size of 65536";
+        break;
+      }
+      EventEngine::DNSResolver::SRVRecord srv_record;
+      srv_record.host = ares_dns_rr_get_str(record, ARES_RR_SRV_TARGET);
+      srv_record.priority = ares_dns_rr_get_u16(record, ARES_RR_SRV_PRIORITY);
+      srv_record.weight = ares_dns_rr_get_u16(record, ARES_RR_SRV_WEIGHT);
+      srv_record.port = ares_dns_rr_get_u16(record, ARES_RR_SRV_PORT);
+      result.push_back(std::move(srv_record));
     }
-    EventEngine::DNSResolver::SRVRecord record;
-    record.host = srv_it->host;
-    record.port = srv_it->port;
-    record.priority = srv_it->priority;
-    record.weight = srv_it->weight;
-    result.push_back(std::move(record));
-  }
-  if (reply != nullptr) {
-    ares_free_data(reply);
   }
   ares_resolver->event_engine_->Run(
       [callback = std::move(callback), result = std::move(result)]() mutable {
@@ -827,20 +830,37 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
   GRPC_TRACE_LOG(cares_resolver, INFO)
       << "(EventEngine c-ares resolver) resolver:" << ares_resolver
       << " OnTXTDoneLocked name=" << qa->query_name << " ARES_SUCCESS";
-  struct ares_txt_ext* reply = nullptr;
-  status = ares_parse_txt_reply_ext(buf, len, &reply);
-  if (status != ARES_SUCCESS) {
+  ares_dns_record_t* dnsrec = nullptr;
+  // Parse the wire buffer into a DNS record tree.
+  status = ares_dns_parse(buf, len, 0 /*flags*/, &dnsrec);
+  if (status != ARES_SUCCESS || dnsrec == nullptr) {
     fail("Failed to parse TXT result");
     return;
   }
+  absl::Cleanup cleanup = [=]() { ares_dns_record_destroy(dnsrec); };
   std::vector<std::string> result;
-  for (struct ares_txt_ext* part = reply; part != nullptr; part = part->next) {
-    if (part->record_start) {
-      result.emplace_back(reinterpret_cast<char*>(part->txt), part->length);
-    } else {
-      absl::StrAppend(
-          &result.back(),
-          std::string(reinterpret_cast<char*>(part->txt), part->length));
+  const size_t an_cnt = ares_dns_record_rr_cnt(dnsrec, ARES_SECTION_ANSWER);
+  for (size_t i = 0; i < an_cnt; ++i) {
+    ares_dns_rr_t* rr = ares_dns_record_rr_get(dnsrec, ARES_SECTION_ANSWER, i);
+    if (!rr || ares_dns_rr_get_type(rr) != ARES_REC_TYPE_TXT) {
+      continue;
+    }
+    std::string* rec = nullptr;
+    const size_t n = ares_dns_rr_get_abin_cnt(rr, ARES_RR_TXT_DATA);
+    for (size_t j = 0; j < n; ++j) {
+      size_t chunk_len = 0;
+      const unsigned char* chunk =
+          ares_dns_rr_get_abin(rr, ARES_RR_TXT_DATA, j, &chunk_len);
+      if (chunk && chunk_len > 0) {
+        if (rec == nullptr) {
+          rec = &result.emplace_back(reinterpret_cast<const char*>(chunk),
+                                     chunk_len);
+        } else {
+          absl::StrAppend(
+              rec, absl::string_view(reinterpret_cast<const char*>(chunk),
+                                     chunk_len));
+        }
+      }
     }
   }
   GRPC_TRACE_LOG(cares_resolver, INFO)
@@ -851,8 +871,6 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
       LOG(INFO) << record;
     }
   }
-  // Clean up.
-  ares_free_data(reply);
   ares_resolver->event_engine_->Run(
       [callback = std::move(callback), result = std::move(result)]() mutable {
         callback(std::move(result));
