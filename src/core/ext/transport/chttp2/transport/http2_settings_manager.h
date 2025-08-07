@@ -68,10 +68,9 @@ class Http2SettingsManager {
 
   // Call when we receive an ACK from our peer.
   // This function is not idempotent.
-  GRPC_MUST_USE_RESULT bool AckLastSend
+  GRPC_MUST_USE_RESULT bool AckLastSend();
 
-      GRPC_MUST_USE_RESULT bool
-      IsAckExpected() const {
+  GRPC_MUST_USE_RESULT bool IsAckExpected() const {
     return (update_state_ == UpdateState::kSending);
   }
 

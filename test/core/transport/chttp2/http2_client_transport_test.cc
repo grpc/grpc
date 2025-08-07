@@ -758,12 +758,6 @@ class SettingsTimeoutManagerTest : public ::testing::Test {
       grpc_event_engine::experimental::GetDefaultEventEngine();
 };
 
-struct Output {
-  int sent;
-  int pending;
-  int waker_size;
-};
-
 auto MockStartSettingsTimeout(SettingsTimeoutManager& manager) {
   LOG(INFO) << "MockStartSettingsTimeout";
   return manager.WaitForSettingsTimeout();

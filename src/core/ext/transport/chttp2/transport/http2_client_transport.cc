@@ -542,8 +542,7 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
       [self = RefAsSubclass<Http2ClientTransport>()](Http2FrameHeader header) {
         Http2Status status = ValidateFrameHeader(
             /*max_frame_size_setting*/ self->settings_.acked().max_frame_size(),
-            /*incoming_header_in_progress*/
-            self->incoming_header_in_progress_,
+            /*incoming_header_in_progress*/ self->incoming_header_in_progress_,
             /*incoming_header_stream_id*/ self->incoming_header_stream_id_,
             /*current_frame_header*/ header);
 
@@ -790,6 +789,7 @@ Http2ClientTransport::Http2ClientTransport(
     // TODO(tjagtap) : [PH2][P3] : Setup the plumbing to pass the security frame
     // to the endpoing via TransportFramingEndpointExtension.
     // Also decide if this plumbing is done here, or when the peer sends
+    // allow_security_frame too.
   }
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor End";
 }
