@@ -101,13 +101,17 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterHttpConnectHandshaker(builder);
   RegisterTCPConnectHandshaker(builder);
   RegisterChttp2Transport(builder);
+#ifndef GRPC_MINIMAL_LB_POLICY
   RegisterPriorityLbPolicy(builder);
   RegisterOutlierDetectionLbPolicy(builder);
   RegisterWeightedTargetLbPolicy(builder);
+#endif
   RegisterPickFirstLbPolicy(builder);
+#ifndef GRPC_MINIMAL_LB_POLICY
   RegisterRoundRobinLbPolicy(builder);
   RegisterRingHashLbPolicy(builder);
   RegisterWeightedRoundRobinLbPolicy(builder);
+#endif
   BuildClientChannelConfiguration(builder);
   SecurityRegisterHandshakerFactories(builder);
   RegisterClientAuthorityFilter(builder);
