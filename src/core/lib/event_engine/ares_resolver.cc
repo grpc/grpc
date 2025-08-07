@@ -652,20 +652,30 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
         << "(EventEngine c-ares resolver) resolver:" << ares_resolver
         << " OnHostbynameDoneLocked name=" << hostname_qa->query_name
         << " ARES_SUCCESS";
-    std::array<char, std::max(INET6_ADDRSTRLEN, INET_ADDRSTRLEN)> output;
     for (struct ares_addrinfo_node* node = addrinfo->nodes; node != nullptr;
          node = node->ai_next) {
       if (hostname_qa->result.size() == kMaxRecordSize) {
         LOG(ERROR) << "A/AAAA response exceeds maximum record size of 65536";
         break;
       }
-      hostname_qa->result.emplace_back(node->ai_addr, node->ai_addrlen);
+      sockaddr_storage ss;
+      memcpy(&ss, node->ai_addr, node->ai_addrlen);
+      sockaddr* sa = reinterpret_cast<sockaddr*>(&ss);
+      // Set the port on the copied struct.
+      if (sa->sa_family == AF_INET) {
+        reinterpret_cast<sockaddr_in*>(sa)->sin_port = htons(hostname_qa->port);
+      } else if (sa->sa_family == AF_INET6) {
+        reinterpret_cast<sockaddr_in6*>(sa)->sin6_port =
+            htons(hostname_qa->port);
+      }
+      hostname_qa->result.emplace_back(sa, node->ai_addrlen);
       void* addr_ptr = nullptr;
       if (node->ai_family == AF_INET) {
-        addr_ptr = &reinterpret_cast<sockaddr_in*>(node->ai_addr)->sin_addr;
+        addr_ptr = &reinterpret_cast<sockaddr_in*>(sa)->sin_addr;
       } else if (node->ai_family == AF_INET6) {
-        addr_ptr = &reinterpret_cast<sockaddr_in6*>(node->ai_addr)->sin6_addr;
+        addr_ptr = &reinterpret_cast<sockaddr_in6*>(sa)->sin6_addr;
       }
+      std::array<char, std::max(INET6_ADDRSTRLEN, INET_ADDRSTRLEN)> output;
       ares_inet_ntop(node->ai_family, addr_ptr, output.data(), output.size());
       switch (node->ai_family) {
         case AF_INET6: {
