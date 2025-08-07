@@ -101,7 +101,7 @@ class Http2SettingsManager {
 // Timeout for getting an ack back on settings changes
 #define GRPC_ARG_SETTINGS_TIMEOUT "grpc.http2.settings_timeout"
 
-#define GRPC_SETTINGS_TIMEOUT_DLOG LOG(ERROR)  // TODO change to DVLOG(INFO)
+#define GRPC_SETTINGS_TIMEOUT_DLOG DLOG(INFO)
 
 // This class can only be used only from a promise based HTTP2 transports
 // general_party_ .
@@ -134,7 +134,7 @@ class SettingsTimeoutManager {
         Race(
             [this]() -> Poll<absl::Status> {
               GRPC_SETTINGS_TIMEOUT_DLOG
-                  << "SettingsTimeoutManager::WaitForSettingsTimeout Race 1";
+                  << "SettingsTimeoutManager::WaitForSettingsTimeout Race";
               // This Promise will "win" the race if we receive the SETTINGS
               // ACK from the peer within the timeout time.
               if (DidReceiveAck()) {
