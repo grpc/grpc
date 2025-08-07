@@ -759,6 +759,9 @@ class SettingsTimeoutManagerTest : public ::testing::Test {
       grpc_event_engine::experimental::GetDefaultEventEngine();
 };
 
+constexpr uint32_t kSettingsShortTimeout = 300;
+constexpr uint32_t kSettingsLongTimeoutTest = 1400;
+
 auto MockStartSettingsTimeout(SettingsTimeoutManager& manager) {
   LOG(INFO) << "MockStartSettingsTimeout Factory";
   return manager.WaitForSettingsTimeout();
@@ -773,13 +776,25 @@ auto MockSettingsAckReceived(SettingsTimeoutManager& manager) {
   };
 }
 
+auto MockSettingsAckReceivedDelayed(SettingsTimeoutManager& manager) {
+  LOG(INFO) << "MockSettingsAckReceived Factory";
+  return TrySeq(Sleep(Duration::Milliseconds(kSettingsShortTimeout * 0.8),
+                      [&manager]() -> Poll<absl::Status> {
+                        LOG(INFO)
+                            << "MockSettingsAckReceived OnSettingsAckReceived";
+                        manager.OnSettingsAckReceived();
+                        return absl::OkStatus();
+                      }));
+}
+
 TEST_F(SettingsTimeoutManagerTest, NoTimeoutOneSetting) {
   // First start the timer and then immediately send the ACK
   // Check that the status must always be OK.
   auto party = MakeParty();
   SettingsTimeoutManager manager;
   ExecCtx exec_ctx;
-  manager.SetSettingsTimeout(ChannelArgs(), Duration::Milliseconds(300));
+  manager.SetSettingsTimeout(ChannelArgs(),
+                             Duration::Milliseconds(kSettingsShortTimeout));
   Notification notification;
   party->Spawn(
       "SettingsTimeoutManagerTest",
@@ -798,7 +813,8 @@ TEST_F(SettingsTimeoutManagerTest, NoTimeoutThreeSettings) {
   auto party = MakeParty();
   SettingsTimeoutManager manager;
   ExecCtx exec_ctx;
-  manager.SetSettingsTimeout(ChannelArgs(), Duration::Milliseconds(300));
+  manager.SetSettingsTimeout(ChannelArgs(),
+                             Duration::Milliseconds(kSettingsShortTimeout));
   Notification notification;
   party->Spawn(
       "SettingsTimeoutManagerTest",
@@ -817,6 +833,32 @@ TEST_F(SettingsTimeoutManagerTest, NoTimeoutThreeSettings) {
   notification.WaitForNotification();
 }
 
+TEST_F(SettingsTimeoutManagerTest, NoTimeoutThreeSettingsDelayed) {
+  // Starting the timer and sending the ACK immediately three times in a row.
+  // Check that the status must always be OK.
+  auto party = MakeParty();
+  SettingsTimeoutManager manager;
+  ExecCtx exec_ctx;
+  manager.SetSettingsTimeout(ChannelArgs(),
+                             Duration::Milliseconds(kSettingsShortTimeout));
+  Notification notification;
+  party->Spawn(
+      "SettingsTimeoutManagerTest",
+      TrySeq(TryJoin<absl::StatusOr>(MockStartSettingsTimeout(manager),
+                                     MockSettingsAckReceivedDelayed(manager)),
+             TryJoin<absl::StatusOr>(MockStartSettingsTimeout(manager),
+                                     MockSettingsAckReceivedDelayed(manager)),
+             TryJoin<absl::StatusOr>(MockStartSettingsTimeout(manager),
+                                     MockSettingsAckReceivedDelayed(manager))),
+      [&notification](
+          absl::StatusOr<std::tuple<grpc_core::Empty, grpc_core::Empty>>
+              status) {
+        EXPECT_TRUE(status.ok());
+        notification.Notify();
+      });
+  notification.WaitForNotification();
+}
+
 TEST_F(SettingsTimeoutManagerTest, NoTimeoutOneSettingRareOrder) {
   // Emulating the case where we receive the ACK before we even spawn the timer.
   // This could happen if our write promise gets blocked on a very large write
@@ -826,7 +868,8 @@ TEST_F(SettingsTimeoutManagerTest, NoTimeoutOneSettingRareOrder) {
   auto party = MakeParty();
   SettingsTimeoutManager manager;
   ExecCtx exec_ctx;
-  manager.SetSettingsTimeout(ChannelArgs(), Duration::Milliseconds(300));
+  manager.SetSettingsTimeout(ChannelArgs(),
+                             Duration::Milliseconds(kSettingsShortTimeout));
   Notification notification;
   party->Spawn(
       "SettingsTimeoutManagerTest",
@@ -848,7 +891,8 @@ TEST_F(SettingsTimeoutManagerTest, NoTimeoutThreeSettingsRareOrder) {
   auto party = MakeParty();
   SettingsTimeoutManager manager;
   ExecCtx exec_ctx;
-  manager.SetSettingsTimeout(ChannelArgs(), Duration::Milliseconds(300));
+  manager.SetSettingsTimeout(ChannelArgs(),
+                             Duration::Milliseconds(kSettingsShortTimeout));
   Notification notification;
   party->Spawn(
       "SettingsTimeoutManagerTest",
@@ -871,7 +915,8 @@ TEST_F(SettingsTimeoutManagerTest, NoTimeoutThreeSettingsMixedOrder) {
   auto party = MakeParty();
   SettingsTimeoutManager manager;
   ExecCtx exec_ctx;
-  manager.SetSettingsTimeout(ChannelArgs(), Duration::Milliseconds(300));
+  manager.SetSettingsTimeout(ChannelArgs(),
+                             Duration::Milliseconds(kSettingsShortTimeout));
   Notification notification;
   party->Spawn(
       "SettingsTimeoutManagerTest",
@@ -899,8 +944,9 @@ TEST_F(SettingsTimeoutManagerTest, TimeoutOneSetting) {
   auto party = MakeParty();
   SettingsTimeoutManager manager;
   ExecCtx exec_ctx;
-  manager.SetSettingsTimeout(ChannelArgs().Set(GRPC_ARG_SETTINGS_TIMEOUT, 300),
-                             Duration::Milliseconds(300));
+  manager.SetSettingsTimeout(
+      ChannelArgs().Set(GRPC_ARG_SETTINGS_TIMEOUT, kSettingsShortTimeout),
+      Duration::Milliseconds(kSettingsShortTimeout));
   Notification notification1;
   Notification notification2;
   party->Spawn("SettingsTimeoutManagerTestStart",
@@ -912,7 +958,7 @@ TEST_F(SettingsTimeoutManagerTest, TimeoutOneSetting) {
                });
   party->Spawn(
       "SettingsTimeoutManagerTestAck",
-      TrySeq(Sleep(Duration::Milliseconds(1400)),
+      TrySeq(Sleep(Duration::Milliseconds(kSettingsLongTimeoutTest)),
              MockSettingsAckReceived(manager)),
       [&notification2](absl::Status status) { notification2.Notify(); });
   notification1.WaitForNotification();
