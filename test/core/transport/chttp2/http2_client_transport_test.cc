@@ -774,6 +774,8 @@ auto MockSettingsAckReceived(SettingsTimeoutManager& manager) {
 }
 
 TEST_F(SettingsTimeoutManagerTest, NoTimeoutOneSetting) {
+  // First start the timer and then immediately send the ACK
+  // Check that the status must always be OK.
   auto party = MakeParty();
   SettingsTimeoutManager manager;
   ExecCtx exec_ctx;
@@ -791,6 +793,8 @@ TEST_F(SettingsTimeoutManagerTest, NoTimeoutOneSetting) {
 }
 
 TEST_F(SettingsTimeoutManagerTest, NoTimeoutThreeSettings) {
+  // Starting the timer and sending the ACK immediately three times in a row.
+  // Check that the status must always be OK.
   auto party = MakeParty();
   SettingsTimeoutManager manager;
   ExecCtx exec_ctx;
@@ -814,6 +818,11 @@ TEST_F(SettingsTimeoutManagerTest, NoTimeoutThreeSettings) {
 }
 
 TEST_F(SettingsTimeoutManagerTest, NoTimeoutOneSettingRareOrder) {
+  // Emulating the case where we receive the ACK before we even spawn the timer.
+  // This could happen if our write promise gets blocked on a very large write
+  // and the RTT is low and peer responsiveness is high.
+  //
+  // Check that the status must always be OK.
   auto party = MakeParty();
   SettingsTimeoutManager manager;
   ExecCtx exec_ctx;
@@ -831,6 +840,11 @@ TEST_F(SettingsTimeoutManagerTest, NoTimeoutOneSettingRareOrder) {
 }
 
 TEST_F(SettingsTimeoutManagerTest, NoTimeoutThreeSettingsRareOrder) {
+  // Emulating the case where we receive the ACK before we even spawn the timer.
+  // This could happen if our write promise gets blocked on a very large write
+  // and the RTT is low and peer responsiveness is high.
+  //
+  // Check that the status must always be OK.
   auto party = MakeParty();
   SettingsTimeoutManager manager;
   ExecCtx exec_ctx;
@@ -879,6 +893,9 @@ TEST_F(SettingsTimeoutManagerTest, NoTimeoutThreeSettingsMixedOrder) {
 }
 
 TEST_F(SettingsTimeoutManagerTest, TimeoutOneSetting) {
+  // Testing one timeout test
+  // Also ensuring that receiving the ACK after the timeout does not crash or
+  // leak memory.
   auto party = MakeParty();
   SettingsTimeoutManager manager;
   ExecCtx exec_ctx;
