@@ -68,6 +68,13 @@ def _python3_check(fn):
 
 
 def _run_in_subprocess(test_case):
+    print("sys.version_info:", sys.version_info)
+    print("sys.platform:", sys.platform)
+    print("multiprocessing.get_start_method:", multiprocessing.get_start_method())
+    if sys.version_info >= (3, 14) and ("linux" in sys.platform):
+        print("Changing multiprocessing start method")
+        multiprocessing.set_start_method("fork", force=True)
+
     sys.path.insert(
         0, os.path.join(os.path.realpath(os.path.dirname(__file__)), "..")
     )
@@ -149,7 +156,10 @@ class DynamicStubTest(unittest.TestCase):
 
 if __name__ == "__main__":
 
+    print("sys.version_info in main:", sys.version_info)
+    print("sys.platform in main:", sys.platform)
     if sys.version_info >= (3, 14) and ("linux" in sys.platform):
+        print("Changing multiprocessing start method in main")
         multiprocessing.set_start_method("fork")
 
     logging.basicConfig()
