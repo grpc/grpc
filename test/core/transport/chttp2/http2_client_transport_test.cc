@@ -38,6 +38,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/promise/try_join.h"
+#include "src/core/util/notification.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/time.h"
 #include "test/core/promise/poll_matcher.h"
@@ -759,12 +760,12 @@ class SettingsTimeoutManagerTest : public ::testing::Test {
 };
 
 auto MockStartSettingsTimeout(SettingsTimeoutManager& manager) {
-  LOG(INFO) << "MockStartSettingsTimeout";
+  LOG(INFO) << "MockStartSettingsTimeout Factory";
   return manager.WaitForSettingsTimeout();
 }
 
 auto MockSettingsAckReceived(SettingsTimeoutManager& manager) {
-  LOG(INFO) << "MockSettingsAckReceived";
+  LOG(INFO) << "MockSettingsAckReceived Factory";
   return [&manager]() -> Poll<absl::Status> {
     LOG(INFO) << "MockSettingsAckReceived OnSettingsAckReceived";
     manager.OnSettingsAckReceived();
@@ -777,13 +778,13 @@ TEST_F(SettingsTimeoutManagerTest, NoTimeoutOneSetting) {
   SettingsTimeoutManager manager;
   ExecCtx exec_ctx;
   manager.SetSettingsTimeout(ChannelArgs(), Duration::Milliseconds(300));
-  absl::Notification notification;
+  Notification notification;
   party->Spawn(
       "SettingsTimeoutManagerTest",
       TryJoin<absl::StatusOr>(MockStartSettingsTimeout(manager),
                               MockSettingsAckReceived(manager)),
       [&notification](absl::StatusOr<std::tuple<Empty, Empty>> status) {
-        EXPECT_OK(status);
+        EXPECT_TRUE(status.ok());
         notification.Notify();
       });
   notification.WaitForNotification();
@@ -794,7 +795,7 @@ TEST_F(SettingsTimeoutManagerTest, NoTimeoutThreeSettings) {
   SettingsTimeoutManager manager;
   ExecCtx exec_ctx;
   manager.SetSettingsTimeout(ChannelArgs(), Duration::Milliseconds(300));
-  absl::Notification notification;
+  Notification notification;
   party->Spawn(
       "SettingsTimeoutManagerTest",
       TrySeq(TryJoin<absl::StatusOr>(MockStartSettingsTimeout(manager),
