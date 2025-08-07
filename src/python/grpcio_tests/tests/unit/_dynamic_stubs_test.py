@@ -148,5 +148,9 @@ class DynamicStubTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
+
+    if sys.version_info >= (3, 14) and ("linux" in sys.platform):
+        multiprocessing.set_start_method("fork")
+
     logging.basicConfig()
     unittest.main(verbosity=2)
