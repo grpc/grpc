@@ -778,13 +778,12 @@ auto MockSettingsAckReceived(SettingsTimeoutManager& manager) {
 
 auto MockSettingsAckReceivedDelayed(SettingsTimeoutManager& manager) {
   LOG(INFO) << "MockSettingsAckReceived Factory";
-  return TrySeq(Sleep(Duration::Milliseconds(kSettingsShortTimeout * 0.8),
-                      [&manager]() -> Poll<absl::Status> {
-                        LOG(INFO)
-                            << "MockSettingsAckReceived OnSettingsAckReceived";
-                        manager.OnSettingsAckReceived();
-                        return absl::OkStatus();
-                      }));
+  return TrySeq(Sleep(Duration::Milliseconds(kSettingsShortTimeout * 0.8)),
+                [&manager]() -> Poll<absl::Status> {
+                  LOG(INFO) << "MockSettingsAckReceived OnSettingsAckReceived";
+                  manager.OnSettingsAckReceived();
+                  return absl::OkStatus();
+                });
 }
 
 TEST_F(SettingsTimeoutManagerTest, NoTimeoutOneSetting) {
