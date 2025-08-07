@@ -376,22 +376,25 @@ class Http2ClientTransport final : public ClientTransport {
   }
 
   bool SettingsAckReceived() { return settings_.AckLastSend(); }
+  auto WaitForSettingsTimeoutDone() {
+    return [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
+      if (!status.ok()) {
+        return self->HandleError(Http2Status::Http2ConnectionError(
+            Http2ErrorCode::kProtocolError,
+            std::string(RFC9113::kSettingsTimeout)));
+      } else {
+        self->SettingsAckReceived();
+      }
+      return absl::OkStatus();
+    };
+  }
 
   // TODO(tjagtap) : [PH2][P1] : Plumbing. Call this after the SETTINGS frame
   // has been written to endpoint_.
   void SpawnWaitForSettingsTimeout() {
-    general_party_->Spawn(
-        "WaitForSettingsTimeout", transport_settings_.WaitForSettingsTimeout(),
-        [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
-          if (!status.ok()) {
-            return self->HandleError(Http2Status::Http2ConnectionError(
-                Http2ErrorCode::kProtocolError,
-                std::string(RFC9113::kSettingsTimeout)));
-          } else {
-            self->SettingsAckReceived();
-          }
-          return absl::OkStatus();
-        });
+    general_party_->Spawn("WaitForSettingsTimeout",
+                          transport_settings_.WaitForSettingsTimeout(),
+                          WaitForSettingsTimeoutDone());
   }
 
   auto EndpointRead(const size_t num_bytes) {
