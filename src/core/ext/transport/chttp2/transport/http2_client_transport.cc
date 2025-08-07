@@ -691,10 +691,10 @@ auto Http2ClientTransport::StreamMultiplexerLoop() {
   return Loop([self = RefAsSubclass<Http2ClientTransport>()]() mutable {
     return TrySeq(
         self->writable_stream_list_.Next(/*transport_tokens_available*/ true),
-        [self](uint32_t stream_id) mutable
+        [self](const uint32_t stream_id) mutable
             -> absl::StatusOr<std::vector<Http2Frame>> {
-          auto stream = self->LookupStream(stream_id);
-          if (stream == nullptr) {
+          RefCountedPtr<Stream> stream = self->LookupStream(stream_id);
+          if (GPR_UNLIKELY(stream == nullptr)) {
             // TODO(akshitpatel) : [PH2][P2] : Race condition. Stream was
             // closed before we could dequeue. Determine should we have a
             // DCHECK here based on how ResetStream/Aborts are handled.
