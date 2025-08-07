@@ -181,6 +181,20 @@ selects.config_setting_group(
     ],
 )
 
+bool_flag(
+    name = "minimal_lb_policy",
+    build_setting_default = False,
+)
+
+# Disable all load balancer policies except pick_first (the default).
+# This saves binary size. However, this can be influenced by service config. So it should only be
+# set by clients that know that none of their services are relying on load balancing. Thus this flag
+# is not enabled by default even for grpc_small_clients.
+config_setting(
+    name = "grpc_minimal_lb_policy_flag",
+    flag_values = {":minimal_lb_policy": "true"},
+)
+
 # Fuzzers can be built as fuzzers or as tests
 config_setting(
     name = "grpc_build_fuzzers",
@@ -646,6 +660,11 @@ grpc_cc_library(
     ],
     defines = select({
         ":grpc_no_xds": ["GRPC_NO_XDS"],
+        "//conditions:default": [],
+    }) + select({
+        # The registration is the only place where the plugins are referenced directly, so by
+        # excluding them from BuildCoreConfiguration, they will be stripped by the linker.
+        ":grpc_minimal_lb_policy_flag": ["GRPC_MINIMAL_LB_POLICY"],
         "//conditions:default": [],
     }),
     external_deps = [
