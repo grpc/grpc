@@ -54,6 +54,7 @@ namespace http2 {
 
 // TODO(akshitpatel) : [PH2][P2] : Choose appropriate size later.
 constexpr int kMpscSize = 10;
+constexpr uint32_t kStreamQueueSize = /*1 MB*/ 1000000;
 
 enum class HttpStreamState : uint8_t {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-stream-states

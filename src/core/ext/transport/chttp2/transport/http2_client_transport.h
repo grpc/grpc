@@ -193,7 +193,9 @@ class Http2ClientTransport final : public ClientTransport {
   // Returns a promise that will do the cleanup after the WriteLoop ends.
   auto OnWriteLoopEnded();
 
-  // Returns a promise to keep draining messages from all the active streams.
+  // Returns a promise to keep draining data and control frames from all the
+  // active streams. This includes all stream specific frames like data, header,
+  // continuation and reset stream frames.
   auto StreamMultiplexerLoop();
 
   // Returns a promise that will do the cleanup after the StreamMultiplexerLoop
@@ -245,26 +247,26 @@ class Http2ClientTransport final : public ClientTransport {
           did_push_trailing_metadata(false),
           data_queue(MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
               /*is_client*/ true, /*stream_id*/ stream_id1,
-              /*queue_size*/ std::numeric_limits<uint32_t>::max())) {}
+              /*queue_size*/ kStreamQueueSize)) {}
 
     ////////////////////////////////////////////////////////////////////////////
     // Data Queue Helpers
 
-    auto EnqueueInitialMetadata(ClientMetadataHandle metadata) {
+    auto EnqueueInitialMetadata(ClientMetadataHandle&& metadata) {
       GRPC_HTTP2_CLIENT_DLOG
           << "Http2ClientTransport::Stream::EnqueueInitialMetadata stream_id="
           << stream_id;
       return data_queue->EnqueueInitialMetadata(std::move(metadata));
     }
 
-    auto EnqueueTrailingMetadata(ClientMetadataHandle metadata) {
+    auto EnqueueTrailingMetadata(ClientMetadataHandle&& metadata) {
       GRPC_HTTP2_CLIENT_DLOG
           << "Http2ClientTransport::Stream::EnqueueTrailingMetadata stream_id="
           << stream_id;
       return data_queue->EnqueueTrailingMetadata(std::move(metadata));
     }
 
-    auto EnqueueMessage(MessageHandle message) {
+    auto EnqueueMessage(MessageHandle&& message) {
       GRPC_HTTP2_CLIENT_DLOG
           << "Http2ClientTransport::Stream::EnqueueMessage stream_id="
           << stream_id;
