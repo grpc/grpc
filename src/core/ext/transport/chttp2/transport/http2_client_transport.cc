@@ -381,10 +381,10 @@ auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
         // RFC9113: PING responses SHOULD be given higher priority than any
         // other frame.
         self->pending_ping_acks_.push_back(opaque);
-        // TODO(akshitpatel) : [PH2][P2] : This is done assuming that the
-        // other ProcessFrame promises may return stream or connection
-        // failures. If this does not turn out to be true, consider returning
-        // absl::Status here.
+        // TODO(akshitpatel) : [PH2][P2] : This is done assuming that the other
+        // ProcessFrame promises may return stream or connection failures. If
+        // this does not turn out to be true, consider returning absl::Status
+        // here.
         return Map(self->TriggerWriteCycle(), [](absl::Status status) {
           return (status.ok())
                      ? Http2Status::Ok()
@@ -435,10 +435,10 @@ Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
     // TODO(tjagtap) : [PH2][P3] : Implement this.
     // RFC9113 : The identifier of a newly established stream MUST be
     // numerically greater than all streams that the initiating endpoint has
-    // opened or reserved. This governs streams that are opened using a
-    // HEADERS frame and streams that are reserved using PUSH_PROMISE. An
-    // endpoint that receives an unexpected stream identifier MUST respond
-    // with a connection error (Section 5.4.1) of type PROTOCOL_ERROR.
+    // opened or reserved. This governs streams that are opened using a HEADERS
+    // frame and streams that are reserved using PUSH_PROMISE. An endpoint that
+    // receives an unexpected stream identifier MUST respond with a connection
+    // error (Section 5.4.1) of type PROTOCOL_ERROR.
     return Http2Status::Ok();
   }
   if (stream->GetStreamState() == HttpStreamState::kHalfClosedRemote) {
@@ -465,8 +465,8 @@ Http2Status Http2ClientTransport::ProcessHttp2SecurityFrame(
   if ((settings_.acked().allow_security_frame() ||
        settings_.local().allow_security_frame()) &&
       settings_.peer().allow_security_frame()) {
-    // TODO(tjagtap) : [PH2][P4] : Evaluate when to accept the frame and when
-    // to reject it. Compare it with the requirement and with CHTTP2.
+    // TODO(tjagtap) : [PH2][P4] : Evaluate when to accept the frame and when to
+    // reject it. Compare it with the requirement and with CHTTP2.
     // TODO(tjagtap) : [PH2][P3] : Add handling of Security frame
     // Just the frame.payload needs to be passed to the endpoint_ object.
     // Refer usage of TransportFramingEndpointExtension.
@@ -566,9 +566,9 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
       // Parse the payload of the frame based on frame type.
       [self = RefAsSubclass<Http2ClientTransport>()](
           SliceBuffer payload) -> absl::StatusOr<Http2Frame> {
-        GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport "
-                                  "ReadAndProcessOneFrame ParseFramePayload "
-                               << payload.JoinIntoString();
+        GRPC_HTTP2_CLIENT_DLOG
+            << "Http2ClientTransport ReadAndProcessOneFrame ParseFramePayload "
+            << payload.JoinIntoString();
         ValueOrHttp2Status<Http2Frame> frame =
             ParseFramePayload(self->current_frame_header_, std::move(payload));
         if (!frame.IsOk()) {
@@ -628,8 +628,8 @@ auto Http2ClientTransport::WriteFromQueue() {
           std::vector<Http2Frame> frames) {
         SliceBuffer output_buf;
         if (self->is_first_write_) {
-          GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Write "
-                                    "GRPC_CHTTP2_CLIENT_CONNECT_STRING";
+          GRPC_HTTP2_CLIENT_DLOG
+              << "Http2ClientTransport Write GRPC_CHTTP2_CLIENT_CONNECT_STRING";
           output_buf.Append(Slice(grpc_slice_from_copied_string(
               GRPC_CHTTP2_CLIENT_CONNECT_STRING)));
           self->is_first_write_ = false;
@@ -652,18 +652,18 @@ auto Http2ClientTransport::WriteLoop() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteLoop Factory";
   return AssertResultType<absl::Status>(
       Loop([self = RefAsSubclass<Http2ClientTransport>()]() {
-        // TODO(akshitpatel) : [PH2][P1] : Once a common SliceBuffer is used,
-        // we can move bytes_sent_in_last_write_ to be a local variable.
+        // TODO(akshitpatel) : [PH2][P1] : Once a common SliceBuffer is used, we
+        // can move bytes_sent_in_last_write_ to be a local variable.
         self->bytes_sent_in_last_write_ = false;
         return TrySeq(
-            // TODO(akshitpatel) : [PH2][P1] : WriteFromQueue may write
-            // settings acks as well. This will break the call to
-            // ResetPingClock as it only needs to be called on writing
-            // Data/Header/WindowUpdate frames. Possible fixes: Either
-            // WriteFromQueue iterates over all the frames and figures out the
-            // types of frames needed (this may anyways be needed to check
-            // that we do not send frames for closed streams) or we have flags
-            // to indicate the types of frame that are enqueued.
+            // TODO(akshitpatel) : [PH2][P1] : WriteFromQueue may write settings
+            // acks as well. This will break the call to ResetPingClock as it
+            // only needs to be called on writing Data/Header/WindowUpdate
+            // frames. Possible fixes: Either WriteFromQueue iterates over all
+            // the frames and figures out the types of frames needed (this may
+            // anyways be needed to check that we do not send frames for closed
+            // streams) or we have flags to indicate the types of frame that are
+            // enqueued.
             self->WriteFromQueue(), [self] { return self->MaybeSendPing(); },
             [self] { return self->MaybeSendPingAcks(); },
             [self]() -> LoopCtl<absl::Status> {
@@ -712,10 +712,10 @@ Http2ClientTransport::Http2ClientTransport(
           Duration::Seconds(10),
           channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIME_MS)
               .value_or(Duration::Infinity()))),
-      // Keepalive timeout is only passed to the keepalive manager if it is
-      // less than the ping timeout. As keepalives use pings for health
-      // checks, if keepalive timeout is greater than ping timeout, we would
-      // always hit the ping timeout first.
+      // Keepalive timeout is only passed to the keepalive manager if it is less
+      // than the ping timeout. As keepalives use pings for health checks, if
+      // keepalive timeout is greater than ping timeout, we would always hit the
+      // ping timeout first.
       keepalive_timeout_(std::max(
           Duration::Zero(),
           channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIMEOUT_MS)
@@ -787,10 +787,9 @@ Http2ClientTransport::Http2ClientTransport(
         [](GRPC_UNUSED absl::Status status) {});
   }
   if (settings_.local().allow_security_frame()) {
-    // TODO(tjagtap) : [PH2][P3] : Setup the plumbing to pass the security
-    // frame to the endpoing via TransportFramingEndpointExtension. Also
-    // decide if this plumbing is done here, or when the peer sends
-    // allow_security_frame too.
+    // TODO(tjagtap) : [PH2][P3] : Setup the plumbing to pass the security frame
+    // to the endpoing via TransportFramingEndpointExtension.
+    // Also decide if this plumbing is done here, or when the peer sends
   }
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor End";
 }
@@ -955,8 +954,8 @@ bool Http2ClientTransport::MakeStream(CallHandler call_handler,
           //    cancelled, for_each() should return with an error. The
           //    WasCancelled() function can be used to determinie if the call
           //    was cancelled.
-          // At this point, both the above mentioned approaches seem to be
-          // more or less the same as both are running on the call party.
+          // At this point, both the above mentioned approaches seem to be more
+          // or less the same as both are running on the call party.
           self->CloseStream(stream_id, absl::CancelledError(),
                             CloseStreamArgs{
                                 /*close_reads=*/true,
@@ -1072,9 +1071,9 @@ void Http2ClientTransport::StartCall(CallHandler call_handler) {
             // crossing this threshold.
             //
             // TODO(tjagtap) : [PH2][P1] : For a server we will have to do
-            // this for incoming streams only. If a server receives more
-            // streams from a client than is allowed by the clients settings,
-            // whether or not we should fail is debatable.
+            // this for incoming streams only. If a server receives more streams
+            // from a client than is allowed by the clients settings, whether or
+            // not we should fail is debatable.
             const uint32_t stream_id = self->NextStreamId(std::get<0>(args));
             return If(
                 self->MakeStream(call_handler, stream_id),
