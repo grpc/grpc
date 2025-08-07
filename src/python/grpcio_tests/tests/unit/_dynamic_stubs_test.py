@@ -148,8 +148,9 @@ class DynamicStubTest(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
+    print("multiprocessing.get_start_method()",multiprocessing.get_start_method())
     if sys.version_info >= (3, 14) and ("linux" in sys.platform):
+        print("Changing multiprocessing start method in main")
         multiprocessing.set_start_method("fork")
 
     logging.basicConfig()
