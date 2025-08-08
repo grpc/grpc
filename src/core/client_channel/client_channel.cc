@@ -896,8 +896,7 @@ void ClientChannel::StartCall(UnstartedCallHandler unstarted_handler) {
               if (!status.ok()) return status;
               // If the call was queued, add trace annotation.
               if (was_queued) {
-                auto* call_tracer =
-                    MaybeGetContext<CallTracerAnnotationInterface>();
+                auto* call_tracer = MaybeGetContext<CallTracer>();
                 if (call_tracer != nullptr) {
                   call_tracer->RecordAnnotation(
                       "Delayed name resolution complete.");

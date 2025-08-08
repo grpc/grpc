@@ -262,8 +262,7 @@ grpc_call* grpc_call_from_top_element(grpc_call_element* surface_element);
 void grpc_call_log_batch(const char* file, int line, const grpc_op* ops,
                          size_t nops);
 
-void grpc_call_tracer_set(grpc_call* call,
-                          grpc_core::ClientCallTracerInterface* tracer);
+void grpc_call_tracer_set(grpc_call* call, grpc_core::ClientCallTracer* tracer);
 
 // Sets call tracer on the call and manages its life by using the call's arena.
 // When using this API, the tracer will be destroyed by grpc_call arena when

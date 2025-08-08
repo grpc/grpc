@@ -28,11 +28,12 @@ namespace grpc_core {
 
 namespace {
 
-void MaybeCreateCallAttemptTracer(bool is_transparent_retry) {
-  auto* call_tracer = MaybeGetContext<ClientCallTracerInterface>();
+void MaybeCreateCallAttemptTracer(ClientCallTracer* call_tracer,
+                                  bool is_transparent_retry) {
   if (call_tracer == nullptr) return;
-  auto* tracer = call_tracer->StartNewAttempt(is_transparent_retry);
-  SetContext<CallTracerInterface>(tracer);
+  auto* tracer =
+      call_tracer->StartNewAttempt(is_transparent_retry, GetContext<Arena>());
+  SetContext<CallAttemptTracer>(tracer);
 }
 
 class LbCallState : public ClientChannelLbCallState {
@@ -47,9 +48,8 @@ class LbCallState : public ClientChannelLbCallState {
     return service_config_call_data->GetCallAttribute(type);
   }
 
-  ClientCallTracerInterface::CallAttemptTracer* GetCallAttemptTracer()
-      const override {
-    return GetContext<ClientCallTracerInterface::CallAttemptTracer>();
+  CallAttemptTracer* GetCallAttemptTracer() const override {
+    return GetContext<CallAttemptTracer>();
   }
 };
 
@@ -188,20 +188,28 @@ LoopCtl<absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>> PickSubchannel(
 
 }  // namespace
 
+LoadBalancedCallDestination::LoadBalancedCallDestination(
+    ClientChannel::PickerObservable picker)
+    : picker_(std::move(picker)),
+      client_call_tracer_(MaybeGetContext<ClientCallTracer>()) {}
+
 void LoadBalancedCallDestination::StartCall(
     UnstartedCallHandler unstarted_handler) {
   // If there is a call tracer, create a call attempt tracer.
+  // TODO(ctiller): once context propagation is implemented, this will be
+  // removed.
   bool* is_transparent_retry_metadata =
       unstarted_handler.UnprocessedClientInitialMetadata().get_pointer(
           IsTransparentRetry());
   bool is_transparent_retry = is_transparent_retry_metadata != nullptr
                                   ? *is_transparent_retry_metadata
                                   : false;
-  MaybeCreateCallAttemptTracer(is_transparent_retry);
+  MaybeCreateCallAttemptTracer(client_call_tracer_, is_transparent_retry);
   // Spawn a promise to do the LB pick.
   // This will eventually start the call.
   unstarted_handler.SpawnGuardedUntilCallCompletes(
-      "lb_pick", [unstarted_handler, picker = picker_]() mutable {
+      "lb_pick", [unstarted_handler, picker = picker_,
+                  client_call_tracer = client_call_tracer_]() mutable {
         return Map(
             // Wait for the LB picker.
             CheckDelayed(Loop(
@@ -223,7 +231,7 @@ void LoadBalancedCallDestination::StartCall(
                       });
                 })),
             // Create call stack on the connected subchannel.
-            [unstarted_handler](
+            [unstarted_handler, client_call_tracer](
                 std::tuple<
                     absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>,
                     bool>
@@ -240,8 +248,7 @@ void LoadBalancedCallDestination::StartCall(
               }
               // If it was queued, add a trace annotation.
               if (was_queued) {
-                auto* tracer = MaybeGetContext<
-                    ClientCallTracerInterface::CallAttemptTracer>();
+                auto* tracer = MaybeGetContext<CallAttemptTracer>();
                 if (tracer != nullptr) {
                   tracer->RecordAnnotation("Delayed LB pick complete.");
                 }

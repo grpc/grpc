@@ -42,8 +42,8 @@ class CallTracerTest : public ::testing::Test {
 
 TEST_F(CallTracerTest, BasicClientCallTracer) {
   FakeClientCallTracer client_call_tracer(&annotation_logger_);
-  AddClientCallTracerToContext(arena_.get(), &client_call_tracer);
-  arena_->GetContext<CallTracerAnnotationInterface>()->RecordAnnotation("Test");
+  SetClientCallTracersOnContext(arena_.get(), {&client_call_tracer});
+  arena_->GetContext<CallTracer>()->RecordAnnotation("Test");
   EXPECT_EQ(annotation_logger_, std::vector<std::string>{"Test"});
 }
 
@@ -52,10 +52,10 @@ TEST_F(CallTracerTest, MultipleClientCallTracers) {
   FakeClientCallTracer client_call_tracer1(&annotation_logger_);
   FakeClientCallTracer client_call_tracer2(&annotation_logger_);
   FakeClientCallTracer client_call_tracer3(&annotation_logger_);
-  AddClientCallTracerToContext(arena_.get(), &client_call_tracer1);
-  AddClientCallTracerToContext(arena_.get(), &client_call_tracer2);
-  AddClientCallTracerToContext(arena_.get(), &client_call_tracer3);
-  arena_->GetContext<CallTracerAnnotationInterface>()->RecordAnnotation("Test");
+  std::vector<ClientCallTracerInterface*> client_call_tracers = {
+      &client_call_tracer1, &client_call_tracer2, &client_call_tracer3};
+  SetClientCallTracersOnContext(arena_.get(), client_call_tracers);
+  arena_->GetContext<CallTracer>()->RecordAnnotation("Test");
   EXPECT_EQ(annotation_logger_,
             std::vector<std::string>({"Test", "Test", "Test"}));
 }
@@ -65,13 +65,12 @@ TEST_F(CallTracerTest, MultipleClientCallAttemptTracers) {
   FakeClientCallTracer client_call_tracer1(&annotation_logger_);
   FakeClientCallTracer client_call_tracer2(&annotation_logger_);
   FakeClientCallTracer client_call_tracer3(&annotation_logger_);
-  AddClientCallTracerToContext(arena_.get(), &client_call_tracer1);
-  AddClientCallTracerToContext(arena_.get(), &client_call_tracer2);
-  AddClientCallTracerToContext(arena_.get(), &client_call_tracer3);
+  std::vector<ClientCallTracerInterface*> client_call_tracers = {
+      &client_call_tracer1, &client_call_tracer2, &client_call_tracer3};
+  SetClientCallTracersOnContext(arena_.get(), client_call_tracers);
   auto* attempt_tracer =
-      DownCast<ClientCallTracerInterface*>(
-          arena_->GetContext<CallTracerAnnotationInterface>())
-          ->StartNewAttempt(true /* is_transparent_retry */);
+      arena_->GetContext<ClientCallTracer>()->StartNewAttempt(
+          true /* is_transparent_retry */, arena_.get());
   attempt_tracer->RecordAnnotation("Test");
   EXPECT_EQ(annotation_logger_,
             std::vector<std::string>({"Test", "Test", "Test"}));
@@ -80,9 +79,9 @@ TEST_F(CallTracerTest, MultipleClientCallAttemptTracers) {
 
 TEST_F(CallTracerTest, BasicServerCallTracerTest) {
   FakeServerCallTracer server_call_tracer(&annotation_logger_);
-  AddServerCallTracerToContext(arena_.get(), &server_call_tracer);
-  arena_->GetContext<CallTracerAnnotationInterface>()->RecordAnnotation("Test");
-  arena_->GetContext<CallTracerAnnotationInterface>()->RecordAnnotation("Test");
+  SetServerCallTracerOnContext(arena_.get(), {&server_call_tracer});
+  arena_->GetContext<CallTracer>()->RecordAnnotation("Test");
+  arena_->GetContext<CallTracer>()->RecordAnnotation("Test");
   EXPECT_EQ(annotation_logger_, std::vector<std::string>({"Test", "Test"}));
 }
 
@@ -91,10 +90,10 @@ TEST_F(CallTracerTest, MultipleServerCallTracers) {
   FakeServerCallTracer server_call_tracer1(&annotation_logger_);
   FakeServerCallTracer server_call_tracer2(&annotation_logger_);
   FakeServerCallTracer server_call_tracer3(&annotation_logger_);
-  AddServerCallTracerToContext(arena_.get(), &server_call_tracer1);
-  AddServerCallTracerToContext(arena_.get(), &server_call_tracer2);
-  AddServerCallTracerToContext(arena_.get(), &server_call_tracer3);
-  arena_->GetContext<CallTracerAnnotationInterface>()->RecordAnnotation("Test");
+  std::vector<ServerCallTracerInterface*> server_call_tracers = {
+      &server_call_tracer1, &server_call_tracer2, &server_call_tracer3};
+  SetServerCallTracerOnContext(arena_.get(), server_call_tracers);
+  arena_->GetContext<CallTracer>()->RecordAnnotation("Test");
   EXPECT_EQ(annotation_logger_,
             std::vector<std::string>({"Test", "Test", "Test"}));
 }

@@ -162,8 +162,9 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
         // GRPC_CONTEXT_CALL_TRACER as a matter of convenience. In the future
         // promise-based world, we would just a single tracer object for each
         // stack (call, subchannel_call, server_call.)
-        arena->SetContext<CallTracerAnnotationInterface>(server_call_tracer);
-        arena->SetContext<CallTracerInterface>(server_call_tracer);
+        auto* tracer = arena->ManagedNew<ServerCallTracer>(server_call_tracer);
+        arena->SetContext<CallTracer>(tracer);
+        arena->SetContext<ServerCallTracer>(tracer);
       }
     }
     (*channel_stack->stats_plugin_group)->AddServerCallTracers(arena.get());
@@ -542,7 +543,6 @@ FilterStackCall::BatchControl* FilterStackCall::ReuseOrAllocateBatchControl(
     *pslot = bctl;
   }
   bctl->call_ = this;
-  bctl->call_tracer_ = arena()->GetContext<CallTracerAnnotationInterface>();
   bctl->op_.payload = &stream_op_payload_;
   return bctl;
 }

@@ -15,11 +15,12 @@
 #ifndef GRPC_SRC_CORE_CLIENT_CHANNEL_LOAD_BALANCED_CALL_DESTINATION_H
 #define GRPC_SRC_CORE_CLIENT_CHANNEL_LOAD_BALANCED_CALL_DESTINATION_H
 
-#include "absl/functional/any_invocable.h"
 #include "src/core/call/call_destination.h"
 #include "src/core/client_channel/client_channel.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/load_balancing/lb_policy.h"
+#include "src/core/telemetry/call_tracer.h"
+#include "absl/functional/any_invocable.h"
 
 namespace grpc_core {
 
@@ -32,8 +33,7 @@ struct ContextType<LbOnCommit> {};
 
 class LoadBalancedCallDestination final : public UnstartedCallDestination {
  public:
-  explicit LoadBalancedCallDestination(ClientChannel::PickerObservable picker)
-      : picker_(std::move(picker)) {}
+  explicit LoadBalancedCallDestination(ClientChannel::PickerObservable picker);
 
   void Orphaned() override {}
 
@@ -41,6 +41,7 @@ class LoadBalancedCallDestination final : public UnstartedCallDestination {
 
  private:
   ClientChannel::PickerObservable picker_;
+  ClientCallTracer* client_call_tracer_;
 };
 
 }  // namespace grpc_core

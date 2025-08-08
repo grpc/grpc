@@ -490,22 +490,23 @@ grpc_call_error grpc_call_start_batch_and_execute(grpc_call* call,
 }
 
 void grpc_call_tracer_set(grpc_call* call,
-                          grpc_core::ClientCallTracerInterface* tracer) {
-  grpc_call_get_arena(call)
-      ->SetContext<grpc_core::CallTracerAnnotationInterface>(tracer);
+                          grpc_core::ClientCallTracer* tracer) {
+  grpc_core::Arena* arena = grpc_call_get_arena(call);
+  arena->SetContext<grpc_core::CallTracer>(tracer);
+  arena->SetContext<grpc_core::ClientCallTracer>(tracer);
 }
 
 void grpc_call_tracer_set_and_manage(
     grpc_call* call, grpc_core::ClientCallTracerInterface* tracer) {
   grpc_core::Arena* arena = grpc_call_get_arena(call);
   arena->ManagedNew<ClientCallTracerWrapper>(tracer);
-  return arena->SetContext<grpc_core::CallTracerAnnotationInterface>(tracer);
+  grpc_call_tracer_set(call,
+                       arena->ManagedNew<grpc_core::ClientCallTracer>(tracer));
 }
 
 void* grpc_call_tracer_get(grpc_call* call) {
   grpc_core::Arena* arena = grpc_call_get_arena(call);
-  auto* call_tracer =
-      arena->GetContext<grpc_core::CallTracerAnnotationInterface>();
+  auto* call_tracer = arena->GetContext<grpc_core::CallTracer>();
   return call_tracer;
 }
 

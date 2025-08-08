@@ -32,8 +32,8 @@ namespace grpc_core {
 // grpc_transport_stream_stats struct.
 class Chttp2CallTracerWrapper final : public CallTracerInterface {
  public:
-  explicit Chttp2CallTracerWrapper(grpc_chttp2_stream* stream)
-      : stream_(stream) {}
+  Chttp2CallTracerWrapper(bool is_client, grpc_chttp2_stream* stream)
+      : is_client_(is_client), stream_(stream) {}
 
   void RecordIncomingBytes(
       const TransportByteSize& transport_byte_size) override;
@@ -54,7 +54,7 @@ class Chttp2CallTracerWrapper final : public CallTracerInterface {
   void RecordReceivedDecompressedMessage(
       const Message& /*recv_decompressed_message*/) override {}
   void RecordCancel(grpc_error_handle /*cancel_error*/) override {}
-  std::shared_ptr<TcpCallTracer> StartNewTcpTrace() override { return nullptr; }
+  std::shared_ptr<TcpCallTracer> StartNewTcpTrace() override;
   void RecordAnnotation(absl::string_view /*annotation*/) override {}
   void RecordAnnotation(const Annotation& /*annotation*/) override {}
   std::string TraceId() override { return ""; }
@@ -62,6 +62,7 @@ class Chttp2CallTracerWrapper final : public CallTracerInterface {
   bool IsSampled() override { return false; }
 
  private:
+  bool is_client_;
   grpc_chttp2_stream* stream_;
 };
 

@@ -738,7 +738,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
                    grpc_event_engine::experimental::
                        grpc_is_event_engine_endpoint(t->ep.get())) {
           // New way of collecting TCP traces
-          ctx.AddTcpCallTracer(s->call_tracer->StartNewTcpTrace(),
+          ctx.AddTcpCallTracer(s->call_tracer_wrapper.StartNewTcpTrace(),
                                s->byte_counter);
         }
       }

@@ -714,7 +714,11 @@ struct grpc_chttp2_stream {
   // annotations as soon as we have parsed initial metadata, but in our legacy
   // stack, we create the stream before parsing headers. In the new v3 stack,
   // that won't be an issue.
-  grpc_core::CallTracerInterface* call_tracer = nullptr;
+  union {
+    grpc_core::ServerCallTracer* server_call_tracer;
+    grpc_core::CallAttemptTracer* call_attempt_tracer;
+  };
+  grpc_core::CallTracer* call_tracer = nullptr;
   // TODO(yashykt): Remove this once call_tracer_transport_fix is rolled out
   grpc_core::CallTracerAnnotationInterface* parent_call_tracer = nullptr;
 
