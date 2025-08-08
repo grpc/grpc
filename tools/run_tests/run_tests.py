@@ -876,8 +876,6 @@ class PythonLanguage(object):
                 # Default set tested on master. Test oldest and newest.
                 return (
                     python39_config,
-                    # TODO(ssreenithi): remove once `no running loop` issue is verified
-                    python312_config,
                     python314_config,
                 )
         elif args.compiler == "python3.9":
