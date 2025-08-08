@@ -58,6 +58,16 @@ config_setting(
     flag_values = {":small_client": "true"},
 )
 
+bool_flag(
+    name = "exclude_small_client",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "not_exclude_small_client_flag",  # Negative so it can be used with match_all.
+    flag_values = {":exclude_small_client": "false"},
+)
+
 config_setting(
     name = "grpc_no_ares",
     values = {"define": "grpc_no_ares=true"},
@@ -137,15 +147,29 @@ config_setting(
     constraint_values = ["@platforms//os:fuchsia"],
 )
 
-# Automatically disable certain deps for space-constrained clients where
-# optional features may not be needed and binary size is more important.
-# This includes mobile clients, and builds which request it explicitly.
+# Opt-ins for small clients, before the opt-out flag is applied.
 selects.config_setting_group(
-    name = "grpc_small_clients",
+    name = "grpc_small_clients_enable",
     match_any = [
-        ":small_client_flag",  # --//:small_client
+        ":small_client_flag",
         ":android",
         ":ios",
+        ":fuchsia",
+    ],
+    visibility = ["//visibility:private"],
+)
+
+# Automatically disable certain deps for space-constrained clients where
+# optional features may not be needed and binary size is more important.
+# This includes Android, iOS, Fuchsia, and builds which request it explicitly with
+# --//:small_client.
+#
+# A build can opt out of this behavior by setting --//:exclude_small_client.
+selects.config_setting_group(
+    name = "grpc_small_clients",
+    match_all = [
+        ":grpc_small_clients_enable",
+        ":not_exclude_small_client_flag",
     ],
 )
 
