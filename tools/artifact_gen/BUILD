@@ -37,6 +37,7 @@ cc_library(
         "@abseil-cpp//absl/log:check",
         "@abseil-cpp//absl/strings",
         "@nlohmann_json//:json",
+        "@curl//:curl",
     ],
 )
 

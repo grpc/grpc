@@ -28,6 +28,8 @@ import python_version
 
 import grpc_version
 
+import python_protobuf_version
+
 
 class _NoOpCommand(setuptools.Command):
     """No-op command."""
@@ -63,7 +65,10 @@ PACKAGE_DIRECTORIES = {
 }
 
 INSTALL_REQUIRES = (
-    "protobuf>=6.31.1,<7.0.0",
+    "protobuf>={min_version},<{max_version}".format(
+        min_version=python_protobuf_version.PYTHON_PROTOBUF_MIN_VERSION,
+        max_version=python_protobuf_version.PYTHON_PROTOBUF_MAX_VERSION,
+    ),
     "grpcio>={version}".format(version=grpc_version.VERSION),
     "googleapis-common-protos>=1.5.5",
 )
