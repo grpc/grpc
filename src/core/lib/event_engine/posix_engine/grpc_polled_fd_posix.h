@@ -118,6 +118,7 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
       ares_socket_t as) override {
     grpc_core::MutexLock lock(&mu_);
     owned_fds_.insert(as);
+    CHECK_NE(poller_, nullptr);
     FileDescriptor fd(as, poller_->posix_interface().generation());
     return std::make_unique<GrpcPolledFdPosix>(
         as,

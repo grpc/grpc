@@ -117,7 +117,7 @@ void LockfreeEvent::NotifyOn(PosixEngineClosure* closure) {
         if (state_.compare_exchange_strong(curr, kClosureNotReady,
                                            std::memory_order_acq_rel,
                                            std::memory_order_acquire)) {
-          scheduler_->Run(closure);
+          thread_pool_->Run(closure);
           return;  // Successful. Return.
         }
         break;  // retry
@@ -131,7 +131,7 @@ void LockfreeEvent::NotifyOn(PosixEngineClosure* closure) {
           absl::Status shutdown_err =
               grpc_core::internal::StatusGetFromHeapPtr(curr & ~kShutdownBit);
           closure->SetStatus(shutdown_err);
-          scheduler_->Run(closure);
+          thread_pool_->Run(closure);
           return;
         }
 
@@ -187,7 +187,7 @@ bool LockfreeEvent::SetShutdown(absl::Status shutdown_error) {
                                            std::memory_order_acquire)) {
           auto closure = reinterpret_cast<PosixEngineClosure*>(curr);
           closure->SetStatus(shutdown_error);
-          scheduler_->Run(closure);
+          thread_pool_->Run(closure);
           return true;
         }
         // 'curr' was a closure but now changed to a different state. We will
@@ -234,7 +234,7 @@ void LockfreeEvent::SetReady() {
           // notify_on (or set_shutdown)
           auto closure = reinterpret_cast<PosixEngineClosure*>(curr);
           closure->SetStatus(absl::OkStatus());
-          scheduler_->Run(closure);
+          thread_pool_->Run(closure);
           return;
         }
         // else the state changed again (only possible by either a racing

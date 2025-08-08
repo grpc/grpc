@@ -21,14 +21,13 @@
 
 #include "absl/status/status.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 
 namespace grpc_event_engine::experimental {
 
-class Scheduler;
-
 class LockfreeEvent {
  public:
-  explicit LockfreeEvent(Scheduler* scheduler) : scheduler_(scheduler) {}
+  explicit LockfreeEvent(ThreadPool* thread_pool) : thread_pool_(thread_pool) {}
 
   LockfreeEvent(const LockfreeEvent&) = delete;
   LockfreeEvent& operator=(const LockfreeEvent&) = delete;
@@ -62,7 +61,7 @@ class LockfreeEvent {
   enum State { kClosureNotReady = 0, kClosureReady = 2, kShutdownBit = 1 };
 
   std::atomic<intptr_t> state_;
-  Scheduler* scheduler_;
+  ThreadPool* thread_pool_;
 };
 
 }  // namespace grpc_event_engine::experimental

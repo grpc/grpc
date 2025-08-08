@@ -118,6 +118,7 @@ grpc_cc_benchmark(
         "//src/core:posix_event_engine_closure",
         "//src/core:posix_event_engine_event_poller",
         "//src/core:posix_event_engine_lockfree_event",
+        "//test/core/event_engine/posix:posix_engine_test_utils",
         "//test/core/test_util:grpc_test_util",
     ],
 )

@@ -72,7 +72,7 @@ class PollEventHandle : public EventHandle {
       : fd_(fd),
         pending_actions_(0),
         poller_handles_list_(this),
-        scheduler_(poller->GetScheduler()),
+        thread_pool_(poller->GetThreadPool()),
         poller_(std::move(poller)),
         is_orphaned_(false),
         is_shutdown_(false),
@@ -175,7 +175,7 @@ class PollEventHandle : public EventHandle {
   void Unref() {
     if (ref_count_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
       if (on_done_ != nullptr) {
-        scheduler_->Run(on_done_);
+        thread_pool_->Run(on_done_);
       }
       delete this;
     }
@@ -200,7 +200,7 @@ class PollEventHandle : public EventHandle {
   FileDescriptor fd_;
   int pending_actions_;
   PollPoller::HandlesList poller_handles_list_;
-  Scheduler* scheduler_;
+  ThreadPool* thread_pool_;
   std::shared_ptr<PollPoller> poller_;
   bool is_orphaned_;
   bool is_shutdown_;
@@ -293,7 +293,7 @@ int PollEventHandle::NotifyOnLocked(PosixEngineClosure** st,
                                     PosixEngineClosure* closure) {
   if (is_shutdown_ || pollhup_) {
     closure->SetStatus(shutdown_error_);
-    scheduler_->Run(closure);
+    thread_pool_->Run(closure);
   } else if (*st == reinterpret_cast<PosixEngineClosure*>(kClosureNotReady)) {
     // not ready ==> switch to a waiting state by setting the closure
     *st = closure;
@@ -302,7 +302,7 @@ int PollEventHandle::NotifyOnLocked(PosixEngineClosure** st,
     // already ready ==> queue the closure to run immediately
     *st = reinterpret_cast<PosixEngineClosure*>(kClosureNotReady);
     closure->SetStatus(shutdown_error_);
-    scheduler_->Run(closure);
+    thread_pool_->Run(closure);
     return 1;
   } else {
     // upcallptr was set to a different closure.  This is an error!
@@ -327,7 +327,7 @@ int PollEventHandle::SetReadyLocked(PosixEngineClosure** st) {
     PosixEngineClosure* closure = *st;
     *st = reinterpret_cast<PosixEngineClosure*>(kClosureNotReady);
     closure->SetStatus(shutdown_error_);
-    scheduler_->Run(closure);
+    thread_pool_->Run(closure);
     return 1;
   }
 }
@@ -402,7 +402,7 @@ void PollEventHandle::NotifyOnError(PosixEngineClosure* on_error) {
   on_error->SetStatus(
       absl::Status(absl::StatusCode::kCancelled,
                    "Polling engine does not support tracking errors"));
-  scheduler_->Run(on_error);
+  thread_pool_->Run(on_error);
 }
 
 void PollEventHandle::SetReadable() {
@@ -503,8 +503,9 @@ void PollPoller::PollerHandlesListRemoveHandle(PollEventHandle* handle) {
   --num_poll_handles_;
 }
 
-PollPoller::PollPoller(Scheduler* scheduler, bool use_phony_poll)
-    : scheduler_(scheduler),
+PollPoller::PollPoller(std::shared_ptr<ThreadPool> thread_pool,
+                       bool use_phony_poll)
+    : thread_pool_(std::move(thread_pool)),
       use_phony_poll_(use_phony_poll),
       was_kicked_(false),
       was_kicked_ext_(false),
@@ -752,12 +753,12 @@ void PollPoller::ResetKickState() {
   was_kicked_ext_ = false;
 }
 
-std::shared_ptr<PollPoller> MakePollPoller(Scheduler* scheduler,
-                                           bool use_phony_poll) {
+std::shared_ptr<PollPoller> MakePollPoller(
+    std::shared_ptr<ThreadPool> thread_pool, bool use_phony_poll) {
   static bool kPollPollerSupported =
       grpc_event_engine::experimental::SupportsWakeupFd();
   if (kPollPollerSupported) {
-    return std::make_shared<PollPoller>(scheduler, use_phony_poll);
+    return std::make_shared<PollPoller>(std::move(thread_pool), use_phony_poll);
   }
   return nullptr;
 }
@@ -788,8 +789,8 @@ void PollPoller::Kick() { grpc_core::Crash("unimplemented"); }
 
 // If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
 // nullptr.
-std::shared_ptr<PollPoller> MakePollPoller(Scheduler* /*scheduler*/,
-                                           bool /* use_phony_poll */) {
+std::shared_ptr<PollPoller> MakePollPoller(
+    std::shared_ptr<ThreadPool> /*thread_pool*/, bool /* use_phony_poll */) {
   return nullptr;
 }
 
