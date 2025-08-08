@@ -841,7 +841,8 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
   std::vector<std::string> result;
   const size_t an_cnt = ares_dns_record_rr_cnt(dnsrec, ARES_SECTION_ANSWER);
   for (size_t i = 0; i < an_cnt; ++i) {
-    ares_dns_rr_t* rr = ares_dns_record_rr_get(dnsrec, ARES_SECTION_ANSWER, i);
+    const ares_dns_rr_t* rr =
+        ares_dns_record_rr_get_const(dnsrec, ARES_SECTION_ANSWER, i);
     if (!rr || ares_dns_rr_get_type(rr) != ARES_REC_TYPE_TXT) {
       continue;
     }
@@ -851,7 +852,7 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
       size_t chunk_len = 0;
       const unsigned char* chunk =
           ares_dns_rr_get_abin(rr, ARES_RR_TXT_DATA, j, &chunk_len);
-      if (chunk && chunk_len > 0) {
+      if (chunk != nullptr && chunk_len > 0) {
         if (rec == nullptr) {
           rec = &result.emplace_back(reinterpret_cast<const char*>(chunk),
                                      chunk_len);
