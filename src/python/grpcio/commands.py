@@ -124,12 +124,43 @@ class BuildProjectMetadata(setuptools.Command):
         pass
 
     def run(self):
-        with open(
-            os.path.join(PYTHON_STEM, "grpc/_grpcio_metadata.py"), "w"
-        ) as module_file:
-            module_file.write(
-                '__version__ = """{}"""'.format(self.distribution.get_version())
-            )
+        module_file_path = os.path.join(PYTHON_STEM, "grpc/_grpcio_metadata.py")
+        version = self.distribution.get_version()
+
+        skip_metadata_update_on_match = os.environ.get(
+            "GRPC_PYTHON_BUILD_SKIP_METADATA_ON_VERSION_MATCH", "0"
+        )
+        if skip_metadata_update_on_match == "1":
+            with open(module_file_path, "r") as module_file:
+                # prevent replacing the copyright header
+                if self._get_version_in_grpcio_metadata(module_file) == version:
+                    print(
+                        f"Version match in _grpcio_metadata.py: {version},"
+                        " skipping the update"
+                    )
+                    return
+
+        with open(module_file_path, "w") as module_file:
+            module_file.write(f'__version__ = """{version}"""')
+
+    def _get_version_in_grpcio_metadata(self, module_file):
+        try:
+            import ast
+
+            tree = ast.parse(module_file.read())
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Assign):
+                    for target in node.targets:
+                        if isinstance(target, ast.Name):
+                            variable_name = target.id
+                            if variable_name != "__version__":
+                                continue
+                            if isinstance(node.value, ast.Constant):
+                                return node.value.value
+        except:
+            raise
+
+        return "-1"
 
 
 class BuildPy(build_py.build_py):
