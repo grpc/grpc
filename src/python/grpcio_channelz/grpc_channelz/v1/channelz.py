@@ -55,9 +55,9 @@ if sys.version_info[0] >= 3 and sys.version_info[1] >= 6:
     add_channelz_servicer.__doc__ = _add_channelz_servicer_doc
 
     __all__ = [
-        "aio",
-        "add_channelz_servicer",
         "ChannelzServicer",
+        "add_channelz_servicer",
+        "aio",
     ]
 
 else:
@@ -70,6 +70,6 @@ else:
     add_channelz_servicer.__doc__ = _add_channelz_servicer_doc
 
     __all__ = [
-        "add_channelz_servicer",
         "ChannelzServicer",
+        "add_channelz_servicer",
     ]
