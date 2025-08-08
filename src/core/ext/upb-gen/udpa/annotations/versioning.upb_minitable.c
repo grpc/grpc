@@ -22,14 +22,10 @@ static const upb_MiniTableField udpa_annotations_VersioningAnnotation__fields[1]
 const upb_MiniTable udpa__annotations__VersioningAnnotation_msg_init = {
   NULL,
   &udpa_annotations_VersioningAnnotation__fields[0],
-  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "udpa.annotations.VersioningAnnotation",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* udpa__annotations__VersioningAnnotation_msg_init_ptr = &udpa__annotations__VersioningAnnotation_msg_init;

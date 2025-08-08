@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 26
-    ndkVersion "25.1.8937393"
+    ndkVersion "27.3.13750724"
     defaultConfig {
         applicationId "io.grpc.android.interop.cpp"
         minSdkVersion 21
