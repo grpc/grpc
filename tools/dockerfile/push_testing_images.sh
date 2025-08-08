@@ -82,7 +82,7 @@ EXCLUDE_DIRS=(
 ARM_DOCKERFILE_DIRS=(
   tools/dockerfile/distribtest/python_alpine_aarch64
   tools/dockerfile/distribtest/python_python39_buster_aarch64
-  tools/dockerfile/grpc_artifact_python_musllinux_1_1_aarch64
+  tools/dockerfile/grpc_artifact_python_musllinux_1_2_aarch64
   tools/dockerfile/test/bazel_arm64
   tools/dockerfile/test/csharp_debian11_arm64
   tools/dockerfile/test/php8_debian12_arm64
