@@ -738,8 +738,10 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
                    grpc_event_engine::experimental::
                        grpc_is_event_engine_endpoint(t->ep.get())) {
           // New way of collecting TCP traces
-          ctx.AddTcpCallTracer(s->call_tracer->StartNewTcpTrace(),
-                               s->byte_counter);
+          auto tcp_call_tracer = s->call_tracer->StartNewTcpTrace();
+          if (tcp_call_tracer != nullptr) {
+            ctx.AddTcpCallTracer(std::move(tcp_call_tracer), s->byte_counter);
+          }
         }
       }
       outbuf_relative_start_pos += num_stream_bytes;
