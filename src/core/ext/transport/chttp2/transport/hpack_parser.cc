@@ -1106,9 +1106,9 @@ void HPackParser::BeginFrame(grpc_metadata_batch* metadata_buffer,
   log_info_ = log_info;
 }
 
-grpc_error_handle HPackParser::Parse(
-    const grpc_slice& slice, bool is_last, absl::BitGenRef bitsrc,
-    CallTracerAnnotationInterface* call_tracer) {
+grpc_error_handle HPackParser::Parse(const grpc_slice& slice, bool is_last,
+                                     absl::BitGenRef bitsrc,
+                                     CallSpan* call_tracer) {
   if (GPR_UNLIKELY(!unparsed_bytes_.empty())) {
     unparsed_bytes_.insert(unparsed_bytes_.end(), GRPC_SLICE_START_PTR(slice),
                            GRPC_SLICE_END_PTR(slice));
@@ -1129,8 +1129,8 @@ grpc_error_handle HPackParser::Parse(
                     is_last, call_tracer);
 }
 
-grpc_error_handle HPackParser::ParseInput(
-    Input input, bool is_last, CallTracerAnnotationInterface* call_tracer) {
+grpc_error_handle HPackParser::ParseInput(Input input, bool is_last,
+                                          CallSpan* call_tracer) {
   ParseInputInner(&input);
   if (is_last && is_boundary()) {
     if (state_.metadata_early_detection.Reject(state_.frame_length,
