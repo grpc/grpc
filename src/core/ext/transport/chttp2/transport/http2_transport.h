@@ -49,9 +49,6 @@ namespace http2 {
 #define GRPC_HTTP2_COMMON_DLOG \
   DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
 
-// Timeout for getting an ack back on settings changes
-#define GRPC_ARG_SETTINGS_TIMEOUT "grpc.http2.settings_timeout"
-
 // TODO(akshitpatel) : [PH2][P2] : Choose appropriate size later.
 constexpr int kMpscSize = 10;
 

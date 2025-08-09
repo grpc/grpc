@@ -646,6 +646,7 @@ grpc_cc_test(
         "//src/core:http2_server_transport",
         "//src/core:message",
         "//src/core:metadata",
+        "//src/core:notification",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/transport/chttp2:http2_frame_test_helper",
