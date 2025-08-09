@@ -229,11 +229,11 @@ class Flow {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Flow() : id_(0) {}
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Flow(const Metadata* metadata) {
     Appender appender;
+    metadata_ = metadata;
     if (GPR_LIKELY(!appender.Enabled())) {
       id_ = 0;
       return;
     }
-    metadata_ = metadata;
     AppendBegin(appender);
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~Flow() {
@@ -248,11 +248,11 @@ class Flow {
   Flow(Flow&& other) noexcept
       : metadata_(other.metadata_), id_(std::exchange(other.id_, 0)) {}
   Flow& operator=(Flow&& other) noexcept {
+    metadata_ = other.metadata_;
     if (id_ != 0) {
       Appender appender;
       if (GPR_LIKELY(!appender.Enabled())) AppendEnd(appender);
     }
-    metadata_ = other.metadata_;
     id_ = std::exchange(other.id_, 0);
     return *this;
   }
