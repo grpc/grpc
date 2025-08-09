@@ -460,7 +460,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
           std::move(message));
     }
 
-    void operator()(HalfClosed half_closed) {
+    void operator()(GRPC_UNUSED HalfClosed half_closed) {
       GRPC_STREAM_DATA_QUEUE_DEBUG << "Preparing end of stream for sending";
       is_half_closed_ = true;
     }
@@ -503,8 +503,9 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     inline void MaybeAppendTrailingMetadataFrames() {
       while (queue_.trailing_metadata_disassembler_.HasMoreData()) {
         DCHECK(!is_half_closed_);
-        DCHECK_EQ(queue_.message_disassembler_.GetBufferedLength(), 0);
-        DCHECK_EQ(queue_.initial_metadata_disassembler_.GetBufferedLength(), 0);
+        DCHECK_EQ(queue_.message_disassembler_.GetBufferedLength(), 0u);
+        DCHECK_EQ(queue_.initial_metadata_disassembler_.GetBufferedLength(),
+                  0u);
         // TODO(akshitpatel) : [PH2][P2] : I do not think we need this.
         // HasMoreData() should be enough.
         bool is_end_headers = false;
@@ -516,10 +517,11 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
 
     inline void MaybeAppendEndOfStreamFrame() {
       if (is_half_closed_) {
-        DCHECK_EQ(queue_.message_disassembler_.GetBufferedLength(), 0);
-        DCHECK_EQ(queue_.initial_metadata_disassembler_.GetBufferedLength(), 0);
+        DCHECK_EQ(queue_.message_disassembler_.GetBufferedLength(), 0u);
+        DCHECK_EQ(queue_.initial_metadata_disassembler_.GetBufferedLength(),
+                  0u);
         DCHECK_EQ(queue_.trailing_metadata_disassembler_.GetBufferedLength(),
-                  0);
+                  0u);
         frames_.emplace_back(Http2DataFrame{/*stream_id=*/queue_.stream_id_,
                                             /*end_stream=*/true,
                                             /*payload=*/SliceBuffer()});
@@ -529,7 +531,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     inline void MaybeAppendMessageFrames() {
       while (queue_.message_disassembler_.GetBufferedLength() > 0 &&
              fc_tokens_available_ > 0) {
-        DCHECK_EQ(queue_.initial_metadata_disassembler_.GetBufferedLength(), 0);
+        DCHECK_EQ(queue_.initial_metadata_disassembler_.GetBufferedLength(),
+                  0u);
         Http2DataFrame frame = queue_.message_disassembler_.GenerateNextFrame(
             queue_.stream_id_,
             std::min(fc_tokens_available_, max_frame_length_));
@@ -545,10 +548,11 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
       if (is_reset_stream_) {
         // TODO(akshitpatel) : [PH2][P2] : Consider if we can send reset stream
         // frame without flushing all the messages enqueued until now.
-        DCHECK_EQ(queue_.message_disassembler_.GetBufferedLength(), 0);
-        DCHECK_EQ(queue_.initial_metadata_disassembler_.GetBufferedLength(), 0);
+        DCHECK_EQ(queue_.message_disassembler_.GetBufferedLength(), 0u);
+        DCHECK_EQ(queue_.initial_metadata_disassembler_.GetBufferedLength(),
+                  0u);
         DCHECK_EQ(queue_.trailing_metadata_disassembler_.GetBufferedLength(),
-                  0);
+                  0u);
         frames_.emplace_back(
             Http2RstStreamFrame{queue_.stream_id_, error_code_});
       }
