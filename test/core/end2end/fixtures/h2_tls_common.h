@@ -104,9 +104,11 @@ class TlsFixture : public SecureFixture {
       }
       case SecurityPrimitives::ProviderType::FILE_PROVIDER: {
         client_provider_ = grpc_tls_certificate_provider_file_watcher_create(
-            SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
+            SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH,
+            /*spiffe_bundle_map_path=*/"", 1);
         server_provider_ = grpc_tls_certificate_provider_file_watcher_create(
-            SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH, 1);
+            SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH,
+            /*spiffe_bundle_map_path=*/"", 1);
         break;
       }
     }

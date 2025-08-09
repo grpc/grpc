@@ -154,6 +154,72 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "xds_security_spiffe_end2end_test",
+    size = "large",
+    srcs = ["xds_security_spiffe_end2end_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:badclient.key",
+        "//src/core/tsi/test_creds:badclient.pem",
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+        "//test/core/tsi/test_creds/spiffe_end2end:ca.pem",
+        "//test/core/tsi/test_creds/spiffe_end2end:client.key",
+        "//test/core/tsi/test_creds/spiffe_end2end:client_spiffe.pem",
+        "//test/core/tsi/test_creds/spiffe_end2end:client_spiffebundle.json",
+        "//test/core/tsi/test_creds/spiffe_end2end:intermediate.cnf",
+        "//test/core/tsi/test_creds/spiffe_end2end:intermediate_ca.key",
+        "//test/core/tsi/test_creds/spiffe_end2end:intermediate_ca.pem",
+        "//test/core/tsi/test_creds/spiffe_end2end:intermediate_gen.sh",
+        "//test/core/tsi/test_creds/spiffe_end2end:leaf_and_intermediate_chain.pem",
+        "//test/core/tsi/test_creds/spiffe_end2end:leaf_signed_by_intermediate.key",
+        "//test/core/tsi/test_creds/spiffe_end2end:leaf_signed_by_intermediate.pem",
+        "//test/core/tsi/test_creds/spiffe_end2end:server.key",
+        "//test/core/tsi/test_creds/spiffe_end2end:server_spiffe.pem",
+        "//test/core/tsi/test_creds/spiffe_end2end:server_spiffebundle.json",
+    ],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
+    # flaky = True,  # TODO(b/144705388)
+    linkstatic = True,  # Fixes dyld error on MacOS
+    # shard_count = 25,
+    tags = [
+        "no_test_ios",
+        "no_windows",
+        "xds_end2end_test",
+    ],  # TODO(jtattermusch): fix test on windows
+    deps = [
+        ":xds_end2end_test_lib",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/core:grpc_audit_logging",
+        "//src/proto/grpc/testing:echo_cc_grpc",
+        "//src/proto/grpc/testing:echo_messages_cc_proto",
+        "//test/core/test_util:audit_logging_utils",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
+        "//test/cpp/util:tls_test_utils",
+        "@envoy_api//envoy/config/cluster/v3:pkg_cc_proto",
+        "@envoy_api//envoy/config/endpoint/v3:pkg_cc_proto",
+        "@envoy_api//envoy/config/listener/v3:pkg_cc_proto",
+        "@envoy_api//envoy/config/route/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/clusters/aggregate/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/http/rbac/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/http/router/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/transport_sockets/tls/v3:pkg_cc_proto",
+        "@envoy_api//envoy/type/v3:pkg_cc_proto",
+    ],
+)
+
+grpc_cc_test(
     name = "xds_cluster_end2end_test",
     size = "large",
     srcs = ["xds_cluster_end2end_test.cc"],

@@ -656,6 +656,11 @@ grpc_tls_certificate_provider_static_data_create(
  *   be null if no identity credentials are needed.
  * - root_cert_path is the file path to the root certificate bundle. This
  *   may be null if no root certs are needed.
+ * - spiffe_bundle_map_path is the file path to the SPIFFE Bundle Map. If
+ * configured, this will be used to find the roots of trust for a given SPIFFE
+ * domain during verification. See
+ *   https://github.com/grpc/proposal/blob/master/A87-mtls-spiffe-support.md for
+ * more details on SPIFFE verification.
  * - refresh_interval_sec is the refreshing interval that we will check the
  *   files for updates.
  * It does not take ownership of parameters.
@@ -663,7 +668,8 @@ grpc_tls_certificate_provider_static_data_create(
 GRPCAPI grpc_tls_certificate_provider*
 grpc_tls_certificate_provider_file_watcher_create(
     const char* private_key_path, const char* identity_certificate_path,
-    const char* root_cert_path, unsigned int refresh_interval_sec);
+    const char* root_cert_path, const char* spiffe_bundle_map_path,
+    unsigned int refresh_interval_sec);
 
 /**
  * EXPERIMENTAL API - Subject to change

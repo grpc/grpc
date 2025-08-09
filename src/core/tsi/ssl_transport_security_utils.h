@@ -23,6 +23,7 @@
 #include <grpc/support/port_platform.h>
 #include <openssl/evp.h>
 #include <openssl/x509.h>
+#include <openssl/x509v3.h>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -177,6 +178,9 @@ absl::StatusOr<std::vector<X509*>> ParsePemCertificateChain(
 // Returns an EVP_PKEY instance parsed from the non-empty PEM private key block
 // in private_key_pem. Caller takes ownership of the EVP_PKEY pointer.
 absl::StatusOr<EVP_PKEY*> ParsePemPrivateKey(absl::string_view private_key_pem);
+
+// Safely parses a URI from OpenSSL's GENERAL_NAME to a string representation.
+absl::StatusOr<std::string> ParseUriString(GENERAL_NAME* subject_alt_name);
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_UTILS_H
