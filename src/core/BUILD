@@ -3331,11 +3331,13 @@ grpc_cc_library(
     name = "socket_mutator",
     srcs = [
         "lib/iomgr/socket_mutator.cc",
+        "net/socket_mutator.cc",
     ],
     hdrs = [
         "lib/iomgr/socket_mutator.h",
+        "net/socket_mutator.h",
     ],
-    visibility = ["//bazel:alt_grpc_base_legacy"],
+    visibility = ["//bazel:socket_mutator"],
     deps = [
         "channel_args",
         "useful",
