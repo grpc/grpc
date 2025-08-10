@@ -70,8 +70,11 @@ class Http2SettingsManager {
   // This function is not idempotent.
   GRPC_MUST_USE_RESULT bool AckLastSend();
 
-  GRPC_MUST_USE_RESULT bool IsAckExpected() const {
-    return (update_state_ == UpdateState::kSending);
+  GRPC_MUST_USE_RESULT bool IsPreviousSettingsPromiseResolved() const {
+    return did_previous_settings_promise_resolve_;
+  }
+  void SetPreviousSettingsPromiseResolved(const bool value) {
+    did_previous_settings_promise_resolve_ = value;
   }
 
  private:
@@ -96,6 +99,8 @@ class Http2SettingsManager {
   Http2Settings local_;
   Http2Settings sent_;
   Http2Settings acked_;
+
+  bool did_previous_settings_promise_resolve_ = false;
 };
 
 // Timeout for getting an ack back on settings changes

@@ -375,7 +375,10 @@ class Http2ClientTransport final : public ClientTransport {
                });
   }
 
-  bool SettingsAckReceived() { return settings_.AckLastSend(); }
+  // HTTP2 Settings
+  void MarkPeerSettingsResolved() {
+    settings_.SetPreviousSettingsPromiseResolved(true);
+  }
   auto WaitForSettingsTimeoutDone() {
     return [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
       if (!status.ok()) {
@@ -384,14 +387,14 @@ class Http2ClientTransport final : public ClientTransport {
                 Http2ErrorCode::kProtocolError,
                 std::string(RFC9113::kSettingsTimeout)));
       } else {
-        self->SettingsAckReceived();
+        self->MarkPeerSettingsResolved();
       }
     };
   }
-
   // TODO(tjagtap) : [PH2][P1] : Plumbing. Call this after the SETTINGS frame
   // has been written to endpoint_.
   void SpawnWaitForSettingsTimeout() {
+    settings_.SetPreviousSettingsPromiseResolved(false);
     general_party_->Spawn("WaitForSettingsTimeout",
                           transport_settings_.WaitForSettingsTimeout(),
                           WaitForSettingsTimeoutDone());

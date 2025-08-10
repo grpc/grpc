@@ -350,7 +350,7 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
     // Quickly send the ACK to the peer once the settings are applied
   } else {
     // Process the SETTINGS ACK Frame
-    if (settings_.IsAckExpected()) {
+    if (settings_.AckLastSend()) {
       transport_settings_.OnSettingsAckReceived();
     } else {
       // TODO(tjagtap) [PH2][P4] : The RFC does not say anything about what
