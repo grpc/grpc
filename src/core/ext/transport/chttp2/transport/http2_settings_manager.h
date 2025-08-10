@@ -208,7 +208,7 @@ class SettingsTimeoutManager {
     DCHECK_EQ(number_of_acks_unprocessed_, 0);
     ++number_of_acks_unprocessed_;
     if (did_register_waker_) {
-      // It is possible that we receive the ACK before our timeout promise is
+      // It is possible that we receive the ACK before WaitForSettingsTimeout is
       // scheduled. That is why we do this inside an if.
       waker_.Wakeup();
       did_register_waker_ = false;
