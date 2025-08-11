@@ -14362,6 +14362,21 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: instrument_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/telemetry/instrument.h
+  src:
+  - src/core/telemetry/instrument.cc
+  - test/core/telemetry/instrument_test.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
+  deps:
+  - gtest
+  - absl/container:node_hash_map
+  - grpc_test_util
+  uses_polling: false
 - name: inter_activity_latch_test
   gtest: true
   build: test
