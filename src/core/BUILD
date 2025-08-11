@@ -10188,6 +10188,38 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "instrument",
+    srcs = [
+        "telemetry/instrument.cc",
+    ],
+    hdrs = [
+        "telemetry/instrument.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
+        "absl/functional:function_ref",
+        "absl/log:check",
+        "absl/log",
+        "absl/strings",
+        "absl/types:span",
+        "absl/container:flat_hash_set",
+        "absl/container:flat_hash_map",
+        "absl/container:node_hash_map",
+        "absl/hash",
+    ],
+    deps = [
+        "avl",
+        "match",
+        "per_cpu",
+        "ref_counted",
+        "sync",
+        "//:gpr",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "wait_for_single_owner",
     srcs = ["util/wait_for_single_owner.cc"],
     hdrs = ["util/wait_for_single_owner.h"],
