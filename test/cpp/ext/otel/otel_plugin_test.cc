@@ -896,8 +896,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, OptionalPerCallLocalityLabel) {
                                            kServerCallDurationInstrumentName})
                     .add_optional_label("grpc.lb.locality")
                     .set_labels_to_inject(
-                        {{grpc_core::ClientCallTracer::CallAttemptTracer::
-                              OptionalLabelKey::kLocality,
+                        {{grpc_core::ClientCallTracerInterface::
+                              CallAttemptTracer::OptionalLabelKey::kLocality,
                           grpc_core::RefCountedStringValue("locality")}})));
   SendRPC();
   auto data = ReadCurrentMetricsData(
@@ -975,7 +975,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
           .set_metric_names({grpc::OpenTelemetryPluginBuilder::
                                  kClientAttemptDurationInstrumentName})
           .set_labels_to_inject(
-              {{grpc_core::ClientCallTracer::CallAttemptTracer::
+              {{grpc_core::ClientCallTracerInterface::CallAttemptTracer::
                     OptionalLabelKey::kLocality,
                 grpc_core::RefCountedStringValue("locality")}})));
   SendRPC();

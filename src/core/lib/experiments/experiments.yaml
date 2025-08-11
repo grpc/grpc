@@ -118,7 +118,7 @@
     ]
 - name: event_engine_fork
   description: Enables event engine fork handling, including onfork events and file descriptor generations
-  expiry: 2025/08/01
+  expiry: 2025/10/01
   owner: eostroukhov@google.com
   test_tags: ["core_end2end_test", "event_engine_fork_test"]
   uses_polling: true
@@ -157,7 +157,7 @@
   test_tags: []
 - name: local_connector_secure
   description: Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP connections.
-  expiry: 2025/07/31
+  expiry: 2025/09/30
   owner: mattstev@google.com
   test_tags: ["core_end2end_test"]
 - name: max_inflight_pings_strict_limit

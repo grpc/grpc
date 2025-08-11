@@ -32,7 +32,7 @@
 
 namespace grpc_observability {
 
-class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
+class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracerInterface {
  public:
   class PythonOpenCensusCallAttemptTracer : public CallAttemptTracer {
    public:

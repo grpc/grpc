@@ -253,6 +253,7 @@ int ServerHandshakerFactoryAlpnCallback(SSL* /*ssl*/, const unsigned char** out,
 static gpr_once g_init_openssl_once = GPR_ONCE_INIT;
 static int g_ssl_ctx_ex_factory_index = -1;
 static int g_ssl_ctx_ex_crl_provider_index = -1;
+static int g_ssl_ctx_ex_spiffe_bundle_map_index = -1;
 static const unsigned char kSslSessionIdContext[] = {'g', 'r', 'p', 'c'};
 static int g_ssl_ex_verified_root_cert_index = -1;
 #if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
@@ -342,6 +343,10 @@ static void init_openssl(void) {
   g_ssl_ctx_ex_crl_provider_index =
       SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
   CHECK_NE(g_ssl_ctx_ex_crl_provider_index, -1);
+
+  g_ssl_ctx_ex_spiffe_bundle_map_index =
+      SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
+  CHECK_NE(g_ssl_ctx_ex_spiffe_bundle_map_index, -1);
 
   g_ssl_ex_verified_root_cert_index = SSL_get_ex_new_index(
       0, nullptr, nullptr, nullptr, verified_root_cert_free);
@@ -1234,6 +1239,105 @@ static int CheckChainRevocation(
   return 1;
 }
 
+static grpc_core::SpiffeBundleMap* GetSpiffeBundleMap(X509_STORE_CTX* ctx) {
+  CHECK(ctx != nullptr);
+  ERR_clear_error();
+  int ssl_index = SSL_get_ex_data_X509_STORE_CTX_idx();
+  if (ssl_index < 0) {
+    char err_str[256];
+    ERR_error_string_n(ERR_get_error(), err_str, sizeof(err_str));
+    GRPC_TRACE_LOG(tsi, INFO)
+        << "error getting the SSL index from the X509_STORE_CTX while getting "
+           "the SPIFFE Bundle Map: "
+        << err_str;
+    return nullptr;
+  }
+  SSL* ssl = static_cast<SSL*>(X509_STORE_CTX_get_ex_data(ctx, ssl_index));
+  if (ssl == nullptr) {
+    GRPC_TRACE_LOG(tsi, INFO)
+        << "error while fetching SPIFFE Bundle Map. SSL object is null";
+    return nullptr;
+  }
+  SSL_CTX* ssl_ctx = SSL_get_SSL_CTX(ssl);
+  return static_cast<grpc_core::SpiffeBundleMap*>(
+      SSL_CTX_get_ex_data(ssl_ctx, g_ssl_ctx_ex_spiffe_bundle_map_index));
+}
+
+static absl::StatusOr<std::string> GetSpiffeUriFromCert(X509* cert) {
+  CHECK(cert != nullptr);
+  GENERAL_NAMES* subject_alt_names = static_cast<GENERAL_NAMES*>(
+      X509_get_ext_d2i(cert, NID_subject_alt_name, nullptr, nullptr));
+  int uri_count = 0;
+  absl::StatusOr<std::string> spiffe_uri = absl::InvalidArgumentError(
+      "spiffe: no SPIFFE ID found in leaf certificate.");
+  if (subject_alt_names != nullptr) {
+    size_t subject_alt_name_count = sk_GENERAL_NAME_num(subject_alt_names);
+    for (size_t i = 0; i < subject_alt_name_count; i++) {
+      GENERAL_NAME* subject_alt_name =
+          sk_GENERAL_NAME_value(subject_alt_names, TSI_SIZE_AS_SIZE(i));
+      if (subject_alt_name == nullptr) {
+        continue;
+      }
+      if (subject_alt_name->type == GEN_URI) {
+        uri_count++;
+        if (uri_count > 1) {
+          sk_GENERAL_NAME_pop_free(subject_alt_names, GENERAL_NAME_free);
+          return absl::InvalidArgumentError(
+              "spiffe: more than one SAN URI found while doing SPIFFE "
+              "validation. Must "
+              "have exactly one URI SAN that is the SPIFFE ID.");
+        }
+        spiffe_uri = grpc_core::ParseUriString(subject_alt_name);
+      }
+    }
+  }
+  sk_GENERAL_NAME_pop_free(subject_alt_names, GENERAL_NAME_free);
+  GRPC_RETURN_IF_ERROR(spiffe_uri.status());
+  if (spiffe_uri->empty()) {
+    return absl::InvalidArgumentError(
+        "spiffe: no URI SAN found in leaf certificate");
+  }
+  return spiffe_uri;
+}
+
+static absl::StatusOr<std::string> SpiffeTrustDomainFromCert(X509* cert) {
+  CHECK(cert != nullptr);
+  auto subject_name = GetSpiffeUriFromCert(cert);
+  GRPC_RETURN_IF_ERROR(subject_name.status());
+  auto spiffe_id = grpc_core::SpiffeId::FromString(*subject_name);
+  GRPC_RETURN_IF_ERROR(spiffe_id.status());
+  return std::string(spiffe_id->trust_domain());
+}
+
+// Fills ctx's trusted roots with the roots in the SPIFFE Bundle Map that
+// are associated with the to-be-verified leaf certificate's trust domain.
+// For more detail see
+// https://github.com/grpc/proposal/blob/master/A87-mtls-spiffe-support.md
+absl::Status ConfigureSpiffeRoots(
+    X509_STORE_CTX* ctx, grpc_core::SpiffeBundleMap* spiffe_bundle_map) {
+  CHECK(ctx != nullptr);
+  if (spiffe_bundle_map == nullptr) {
+    return absl::InvalidArgumentError(
+        "cannot configure spiffe roots with a nullptr spiffe_bundle_map.");
+  }
+  X509* leaf_cert = X509_STORE_CTX_get0_cert(ctx);
+  if (leaf_cert == nullptr) {
+    return absl::InvalidArgumentError(
+        "A SPIFFE bundle map was configured but the leaf cert is null");
+  }
+  absl::StatusOr<std::string> trust_domain =
+      SpiffeTrustDomainFromCert(leaf_cert);
+  GRPC_RETURN_IF_ERROR(trust_domain.status());
+  auto root_stack = spiffe_bundle_map->GetRootStack(*trust_domain);
+  GRPC_RETURN_IF_ERROR(root_stack.status());
+  if (*root_stack == nullptr) {
+    return absl::InvalidArgumentError(
+        "spiffe: root stack in the SPIFFE Bundle Map is nullptr.");
+  }
+  X509_STORE_CTX_set0_trusted_stack(ctx, *root_stack);
+  return absl::OkStatus();
+}
+
 // The custom verification function to set in OpenSSL using
 // X509_set_cert_verify_callback. This calls the standard OpenSSL procedure
 // (X509_verify_cert), then also extracts the root certificate in the built
@@ -1241,12 +1345,24 @@ static int CheckChainRevocation(
 // returns 1 on success, indicating a trusted chain to a root of trust was
 // found, 0 if a trusted chain could not be built.
 static int CustomVerificationFunction(X509_STORE_CTX* ctx, void* arg) {
+  CHECK(ctx != nullptr);
+  grpc_core::SpiffeBundleMap* spiffe_bundle_map = GetSpiffeBundleMap(ctx);
+  if (spiffe_bundle_map != nullptr) {
+    // If a SPIFFE Bundle Map is configured, we'll use
+    // X509_STORE_CTX_set0_trusted_stack to then configure these as the roots
+    // for verification.
+    absl::Status status = ConfigureSpiffeRoots(ctx, spiffe_bundle_map);
+    if (!status.ok()) {
+      VLOG(2) << "Failed to configure SPIFFE roots: " << status;
+      return -1;
+    }
+  }
   int ret = X509_verify_cert(ctx);
   if (ret <= 0) {
     VLOG(2) << "Failed to verify cert chain.";
     // Verification failed. We shouldn't expect to have a verified chain, so
-    // there is no need to attempt to extract the root cert from it, check for
-    // revocation, or check anything else.
+    // there is no need to attempt to extract the root cert from it, check
+    // for revocation, or check anything else.
     return ret;
   }
   grpc_core::experimental::CrlProvider* provider = GetCrlProvider(ctx);
@@ -1260,9 +1376,9 @@ static int CustomVerificationFunction(X509_STORE_CTX* ctx, void* arg) {
   return RootCertExtractCallback(ctx, arg);
 }
 
-// Sets the min and max TLS version of |ssl_context| to |min_tls_version| and
-// |max_tls_version|, respectively. Calling this method is a no-op when using
-// OpenSSL versions < 1.1.
+// Sets the min and max TLS version of |ssl_context| to |min_tls_version|
+// and |max_tls_version|, respectively. Calling this method is a no-op when
+// using OpenSSL versions < 1.1.
 static tsi_result tsi_set_min_and_max_tls_versions(
     SSL_CTX* ssl_context, tsi_tls_version min_tls_version,
     tsi_tls_version max_tls_version) {
@@ -2429,12 +2545,14 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
                 ssl_context, pem_root_certs.c_str(), pem_root_certs.size(),
                 nullptr);
           },
-          [&](const grpc_core::SpiffeBundleMap&) {
-            // TODO(gtcooke94) - implement SPIFFE Bundle Map verification. Crash
-            // until this is done.
-            grpc_core::Crash(
-                "spiffe bundle maps were configured but are not fully "
-                "implemented.");
+          [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
+            X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context);
+            X509_STORE_set_flags(cert_store, X509_V_FLAG_PARTIAL_CHAIN |
+                                                 X509_V_FLAG_TRUSTED_FIRST);
+            const void* p = &spiffe_bundle_map;
+            void* map = const_cast<void*>(p);
+            SSL_CTX_set_ex_data(ssl_context,
+                                g_ssl_ctx_ex_spiffe_bundle_map_index, map);
           });
       X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context);
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
@@ -2657,12 +2775,15 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
                 SSL_CTX_set_client_CA_list(impl->ssl_contexts[i], root_names);
               }
             },
-            [&](const grpc_core::SpiffeBundleMap&) {
-              // TODO(gtcooke94) - implement SPIFFE Bundle Map verification.
-              // Crash until this is done.
-              grpc_core::Crash(
-                  "spiffe bundle maps were configured but are not fully "
-                  "implemented.");
+            [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
+              X509_STORE* cert_store =
+                  SSL_CTX_get_cert_store(impl->ssl_contexts[i]);
+              X509_STORE_set_flags(cert_store, X509_V_FLAG_PARTIAL_CHAIN |
+                                                   X509_V_FLAG_TRUSTED_FIRST);
+              const void* p = &spiffe_bundle_map;
+              void* map = const_cast<void*>(p);
+              SSL_CTX_set_ex_data(impl->ssl_contexts[i],
+                                  g_ssl_ctx_ex_spiffe_bundle_map_index, map);
             });
         if (result != TSI_OK) {
           break;
