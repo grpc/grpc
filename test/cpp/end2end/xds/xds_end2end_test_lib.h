@@ -203,6 +203,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   static const char kCaCertPath[];
   static const char kServerCertPath[];
   static const char kServerKeyPath[];
+  static const char kSpiffeCaCertPath[];
+  static const char kSpiffeServerCertPath[];
+  static const char kSpiffeServerKeyPath[];
 
   // Message used in EchoRequest to the backend.
   static const char kRequestMessage[];
@@ -1029,14 +1032,24 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   static std::vector<experimental::IdentityKeyCertPair>
   MakeIdentityKeyCertPairForTlsCreds();
 
+  // Internal helper function for creating TLS and mTLS creds.
+  // Not intended to be used by tests.
+  static std::vector<experimental::IdentityKeyCertPair>
+  MakeIdentityKeyCertPairForSpiffeMtlsCreds();
+
   // Returns XdsCredentials with mTLS fallback creds.
   static std::shared_ptr<ChannelCredentials> CreateXdsChannelCredentials();
   static std::shared_ptr<ChannelCredentials> CreateTlsChannelCredentials();
+  static std::shared_ptr<ChannelCredentials>
+  CreateSpiffeXdsChannelCredentials();
+  static std::shared_ptr<ChannelCredentials>
+  CreateSpiffeTlsChannelCredentials();
 
   // Creates various types of server credentials.
   static std::shared_ptr<ServerCredentials> CreateFakeServerCredentials();
   static std::shared_ptr<ServerCredentials> CreateMtlsServerCredentials();
   static std::shared_ptr<ServerCredentials> CreateTlsServerCredentials();
+  static std::shared_ptr<ServerCredentials> CreateMtlsSpiffeServerCredentials();
 
   // event_engine_scope_ always has to be at the top of the list to make sure
   // that all other objects are destroyed before this and other event engine
