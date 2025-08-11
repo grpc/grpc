@@ -681,17 +681,19 @@ class Http2ClientTransport final : public ClientTransport {
 
   auto MaybeAddStreamToWritableStreamList(const uint32_t stream_id,
                                           const bool became_writable) {
-    return If(
-        became_writable,
-        [self = RefAsSubclass<Http2ClientTransport>(), stream_id]() {
-          GRPC_HTTP2_CLIENT_DLOG
-              << "Http2ClientTransport MaybeAddStreamToWritableStreamList "
-                 " Stream id: "
-              << stream_id << " became writable";
-          return self->writable_stream_list_.Enqueue(
-              stream_id, WritableStreams::StreamPriority::kDefault);
-        },
-        []() { return absl::OkStatus(); });
+    if (became_writable) {
+      GRPC_HTTP2_CLIENT_DLOG
+          << "Http2ClientTransport MaybeAddStreamToWritableStreamList "
+             " Stream id: "
+          << stream_id << " became writable";
+      absl::Status status = writable_stream_list_.Enqueue(
+          stream_id, WritableStreams::StreamPriority::kDefault);
+      if (!status.ok()) {
+        return HandleError(Http2Status::Http2ConnectionError(
+            Http2ErrorCode::kProtocolError, "Failed to enqueue stream"));
+      }
+    }
+    return absl::OkStatus();
   }
 };
 
