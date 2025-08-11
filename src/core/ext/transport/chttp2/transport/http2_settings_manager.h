@@ -100,7 +100,7 @@ class Http2SettingsManager {
   Http2Settings sent_;
   Http2Settings acked_;
 
-  bool did_previous_settings_promise_resolve_ = false;
+  bool did_previous_settings_promise_resolve_ = true;
 };
 
 // Timeout for getting an ack back on settings changes
