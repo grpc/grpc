@@ -184,14 +184,12 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    # flaky = True,  # TODO(b/144705388)
     linkstatic = True,  # Fixes dyld error on MacOS
-    # shard_count = 25,
     tags = [
         "no_test_ios",
         "no_windows",
         "xds_end2end_test",
-    ],  # TODO(jtattermusch): fix test on windows
+    ],
     deps = [
         ":xds_end2end_test_lib",
         "//:gpr",

@@ -168,13 +168,11 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
   }
 
   grpc_core::UniqueTypeName type() const override {
-    static grpc_core::UniqueTypeName::Factory kFactory("fake");
-    return kFactory.Create();
+    GRPC_UNIQUE_TYPE_NAME_HERE("fake");
   }
 
  private:
   int CompareImpl(const grpc_tls_certificate_provider* other) const override {
-    // TODO(yashykt): Maybe do something better here.
     return grpc_core::QsortCompare(
         static_cast<const grpc_tls_certificate_provider*>(this), other);
   }
@@ -264,8 +262,6 @@ class XdsSecurityTest : public XdsEnd2endTest {
     bad_root_cert_ = grpc_core::testing::GetFileContents(kBadClientCertPath);
     identity_pair_ = ReadTlsIdentityPair(kClientKeyPath, kClientCertPath);
 
-    // TODO(yashykt): Use different client certs here instead of reusing
-    // server certs after https://github.com/grpc/grpc/pull/24876 is merged
     fallback_identity_pair_ =
         ReadTlsIdentityPair(kServerKeyPath, kServerCertPath);
     bad_identity_pair_ =
@@ -334,8 +330,6 @@ class XdsSecurityTest : public XdsEnd2endTest {
   // after propagation, this new configuration is used for connections. If \a
   // identity_instance_name and \a root_instance_name are both empty,
   // connections are expected to use fallback credentials.
-  // TODO(yashykt): The core of this logic should be inlined into the
-  // individual tests instead of being in this helper function.
   void UpdateAndVerifyXdsSecurityConfiguration(
       absl::string_view root_instance_name,
       absl::string_view root_certificate_name,
@@ -364,10 +358,8 @@ class XdsSecurityTest : public XdsEnd2endTest {
     balancer_->ads_service()->SetCdsResource(cluster);
     // The updates might take time to have an effect, so use a retry loop.
     if (test_expects_failure) {
-      SendRpcsUntilFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                           // TODO(yashkt): Change individual test cases to
-                           // expect the exact error message here.
-                           ".*", /*timeout_ms=*/20 * 1000,
+      SendRpcsUntilFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE, ".*",
+                           /*timeout_ms=*/20 * 1000,
                            RpcOptions().set_timeout_ms(5000));
     } else {
       backends_[backend_index_]->backend_service()->ResetCounters();
@@ -375,9 +367,6 @@ class XdsSecurityTest : public XdsEnd2endTest {
           DEBUG_LOCATION,
           [&](const RpcResult& result) {
             // Make sure that we are hitting the correct backend.
-            // TODO(yashykt): Even if we haven't moved to the correct backend
-            // and are still using the previous update, we should still check
-            // for the status and make sure that it fits our expectations.
             if (backends_[backend_index_]->backend_service()->request_count() ==
                 0) {
               return true;
