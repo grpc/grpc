@@ -65,10 +65,6 @@ bazel_dep(name = "rules_proto", version = "7.1.0")
 bazel_dep(name = "xds", version = "0.0.0-20240423-555b57e", repo_name = "com_github_cncf_xds")  # mismatched 20231116
 bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
 
-# Not used directly. Necessary so the fuzztest would not pull a version
-# incompatible with new ABSL.
-bazel_dep(name = "riegeli", version = "0.0.0-20240927-cdfb25a")
-
 switched_rules = use_extension(
     "@com_google_googleapis//:extensions.bzl",
     "switched_rules",
@@ -88,6 +84,14 @@ bazel_dep(
     dev_dependency = True,
     repo_name = "com_google_fuzztest",
 )  # mistmached 2023-05-16
+
+# Not used directly. Necessary so the fuzztest would not pull a version
+# incompatible with new ABSL.
+bazel_dep(
+    name = "riegeli",
+    version = "0.0.0-20240927-cdfb25a",
+    dev_dependency = True,
+)
 
 bazel_dep(
     name = "google_benchmark",
