@@ -177,6 +177,9 @@ class PythonDistribTest(object):
         if presubmit:
             self.labels.append("presubmit")
 
+        if platform == "linux" and arch == "aarch64":
+            self.labels.append("linux_aarch64")
+
     def pre_build_jobspecs(self):
         return []
 
