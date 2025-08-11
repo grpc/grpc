@@ -497,6 +497,7 @@ grpc_cc_library(
         "absl/log:log",
     ],
     deps = [
+        "//:chttp2_frame",
         "//src/core:http2_status",
     ],
 )
@@ -767,6 +768,7 @@ grpc_cc_test(
         "//src/core:loop",
         "//src/core:sleep",
         "//src/core:stream_data_queue",
+        "//test/core/transport/chttp2:http2_common_test_inputs",
         "//test/core/transport/util:transport_test",
     ],
 )
@@ -784,5 +786,18 @@ grpc_fuzz_test(
         "//src/core:sleep",
         "//src/core:stream_data_queue",
         "//test/core/call/yodel:yodel_test",
+    ],
+)
+
+grpc_cc_test(
+    name = "writable_streams_test",
+    srcs = ["writable_streams_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//src/core:loop",
+        "//src/core:writable_streams",
+        "//test/core/transport/util:transport_test",
     ],
 )

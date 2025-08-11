@@ -105,6 +105,7 @@ class BaseNode : public DualRefCounted<BaseNode> {
     kListenSocket,
     kSocket,
     kCall,
+    kResourceQuota,
   };
 
   static absl::string_view EntityTypeString(EntityType type) {
@@ -123,6 +124,8 @@ class BaseNode : public DualRefCounted<BaseNode> {
         return "socket";
       case EntityType::kCall:
         return "call";
+      case EntityType::kResourceQuota:
+        return "resource_quota";
     }
     return "unknown";
   }
@@ -143,6 +146,8 @@ class BaseNode : public DualRefCounted<BaseNode> {
         return "socket";
       case EntityType::kCall:
         return "call";
+      case EntityType::kResourceQuota:
+        return "resource_quota";
     }
   }
 
@@ -154,6 +159,7 @@ class BaseNode : public DualRefCounted<BaseNode> {
     if (kind == "listen_socket") return EntityType::kListenSocket;
     if (kind == "socket") return EntityType::kSocket;
     if (kind == "call") return EntityType::kCall;
+    if (kind == "resource_quota") return EntityType::kResourceQuota;
     return std::nullopt;
   }
 
@@ -371,6 +377,7 @@ class DataSource {
  protected:
   ~DataSource();
   RefCountedPtr<BaseNode> channelz_node() { return node_; }
+  const BaseNode* channelz_node() const { return node_.get(); }
 
   // This method must be called in the most derived class's constructor.
   // It adds this data source to the node's list of data sources.
@@ -771,6 +778,16 @@ class CallNode final : public BaseNode {
   }
 
   Json RenderJson() override;
+};
+
+class ResourceQuotaNode final : public BaseNode {
+ public:
+  explicit ResourceQuotaNode(std::string name)
+      : BaseNode(EntityType::kResourceQuota, 0, std::move(name)) {
+    NodeConstructed();
+  }
+
+  Json RenderJson() override { return Json::FromString("ResourceQuota"); }
 };
 
 }  // namespace channelz

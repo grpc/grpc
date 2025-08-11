@@ -530,8 +530,8 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
           "s");
     }
     // Store optional label keys for per call metrics
-    CHECK(static_cast<size_t>(grpc_core::ClientCallTracer::CallAttemptTracer::
-                                  OptionalLabelKey::kSize) <=
+    CHECK(static_cast<size_t>(grpc_core::ClientCallTracerInterface::
+                                  CallAttemptTracer::OptionalLabelKey::kSize) <=
           kOptionalLabelsSizeLimit);
     for (const auto& key : optional_label_keys) {
       auto optional_key = OptionalLabelStringToKey(key);
@@ -686,21 +686,23 @@ constexpr absl::string_view kLocality = "grpc.lb.locality";
 }
 
 absl::string_view OpenTelemetryPluginImpl::OptionalLabelKeyToString(
-    grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey key) {
+    grpc_core::ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey
+        key) {
   switch (key) {
-    case grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey::
-        kLocality:
+    case grpc_core::ClientCallTracerInterface::CallAttemptTracer::
+        OptionalLabelKey::kLocality:
       return kLocality;
     default:
       grpc_core::Crash("Illegal OptionalLabelKey index");
   }
 }
 
-std::optional<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey>
+std::optional<
+    grpc_core::ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey>
 OpenTelemetryPluginImpl::OptionalLabelStringToKey(absl::string_view key) {
   if (key == kLocality) {
-    return grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey::
-        kLocality;
+    return grpc_core::ClientCallTracerInterface::CallAttemptTracer::
+        OptionalLabelKey::kLocality;
   }
   return std::nullopt;
 }
@@ -1066,22 +1068,24 @@ void OpenTelemetryPluginImpl::CallbackGaugeState<ValueType>::
   }
 }
 
-grpc_core::ClientCallTracer* OpenTelemetryPluginImpl::GetClientCallTracer(
+grpc_core::ClientCallTracerInterface*
+OpenTelemetryPluginImpl::GetClientCallTracer(
     const grpc_core::Slice& path, bool registered_method,
     std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig> scope_config) {
   return grpc_core::GetContext<grpc_core::Arena>()
-      ->ManagedNew<ClientCallTracer>(
+      ->ManagedNew<ClientCallTracerInterface>(
           path, grpc_core::GetContext<grpc_core::Arena>(), registered_method,
           this,
           std::static_pointer_cast<OpenTelemetryPluginImpl::ClientScopeConfig>(
               scope_config));
 }
 
-grpc_core::ServerCallTracer* OpenTelemetryPluginImpl::GetServerCallTracer(
+grpc_core::ServerCallTracerInterface*
+OpenTelemetryPluginImpl::GetServerCallTracer(
     std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig> scope_config) {
   auto arena = grpc_core::GetContext<grpc_core::Arena>();
   return arena
-      ->MakeRefCounted<ServerCallTracer>(
+      ->MakeRefCounted<ServerCallTracerInterface>(
           this, arena,
           std::static_pointer_cast<OpenTelemetryPluginImpl::ServerScopeConfig>(
               scope_config))

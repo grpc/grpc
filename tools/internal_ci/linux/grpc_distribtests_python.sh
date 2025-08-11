@@ -52,7 +52,7 @@ cp -r artifacts/* input_artifacts/ || true
 
 # PythonPackage targets do not support the `presubmit` label.
 # For this reason we remove `presubmit` label selector from TASK_RUNNER_EXTRA_FILTERS,
-# which looks like TASK_RUNNER_EXTRA_FILTERS="presubmit -e aarch64 musllinux_1_1"
+# which looks like TASK_RUNNER_EXTRA_FILTERS="presubmit -e aarch64 musllinux_1_2"
 # for a presubmit with an exclude filter.
 PACKAGE_TASK_RUNNER_EXTRA_FILTERS="${TASK_RUNNER_EXTRA_FILTERS//presubmit /}"
 

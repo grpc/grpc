@@ -137,7 +137,7 @@ std::string ShapeSignature(const Shape& shape) {
 
 // Determines how much of a value table can be compressed with a given bit
 // shift.
-size_t ShitfWorksUntil(const std::vector<uint64_t>& mapped_bounds,
+size_t ShiftWorksUntil(const std::vector<uint64_t>& mapped_bounds,
                        int shift_bits) {
   for (size_t i = 0; i < mapped_bounds.size() - 1; ++i) {
     if ((mapped_bounds[i] >> shift_bits) ==
@@ -153,7 +153,7 @@ std::optional<std::tuple<int, size_t, uint64_t>> FindIdealShift(
     const std::vector<uint64_t>& mapped_bounds, size_t max_size) {
   std::optional<std::tuple<int, size_t, uint64_t>> best;
   for (int shift_bits = 63; shift_bits >= 0; --shift_bits) {
-    size_t n = ShitfWorksUntil(mapped_bounds, shift_bits);
+    size_t n = ShiftWorksUntil(mapped_bounds, shift_bits);
     if (n == 0) {
       continue;
     }

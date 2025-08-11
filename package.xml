@@ -1335,6 +1335,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/ares_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/cf_engine/cf_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/cf_engine/cf_engine.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/cf_engine/cfsocket_listener.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/cf_engine/cfsocket_listener.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/cf_engine/cfstream_endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/cf_engine/cftype_unique_ref.h" role="src" />
@@ -1783,6 +1785,8 @@
     <file baseinstalldir="/" name="src/core/load_balancing/xds/xds_override_host.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/xds/xds_override_host.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/xds/xds_wrr_locality.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/net/socket_mutator.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/net/socket_mutator.h" role="src" />
     <file baseinstalldir="/" name="src/core/plugin_registry/grpc_plugin_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/plugin_registry/grpc_plugin_registry_extra.cc" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/dns_resolver_ares.cc" role="src" />

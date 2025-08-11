@@ -564,6 +564,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/debug/trace_flags.cc \
     src/core/lib/event_engine/ares_resolver.cc \
     src/core/lib/event_engine/cf_engine/cf_engine.cc \
+    src/core/lib/event_engine/cf_engine/cfsocket_listener.cc \
     src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc \
     src/core/lib/event_engine/cf_engine/dns_service_resolver.cc \
     src/core/lib/event_engine/channel_args_endpoint_config.cc \
@@ -768,6 +769,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/load_balancing/xds/xds_cluster_manager.cc \
     src/core/load_balancing/xds/xds_override_host.cc \
     src/core/load_balancing/xds/xds_wrr_locality.cc \
+    src/core/net/socket_mutator.cc \
     src/core/plugin_registry/grpc_plugin_registry.cc \
     src/core/plugin_registry/grpc_plugin_registry_extra.cc \
     src/core/resolver/dns/c_ares/dns_resolver_ares.cc \
@@ -1649,6 +1651,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/weighted_round_robin)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/weighted_target)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/xds)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/net)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/plugin_registry)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/dns)
