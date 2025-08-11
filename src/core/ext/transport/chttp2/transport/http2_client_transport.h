@@ -269,7 +269,8 @@ class Http2ClientTransport final : public ClientTransport {
     auto EnqueueMessage(MessageHandle&& message) {
       GRPC_HTTP2_CLIENT_DLOG
           << "Http2ClientTransport::Stream::EnqueueMessage stream_id="
-          << stream_id;
+          << stream_id
+          << " with payload size = " << message->payload()->Length();
       return data_queue->EnqueueMessage(std::move(message));
     }
 
@@ -280,14 +281,15 @@ class Http2ClientTransport final : public ClientTransport {
       return data_queue->EnqueueHalfClosed();
     }
 
-    auto EnqueueResetStream(uint32_t error_code) {
+    auto EnqueueResetStream(const uint32_t error_code) {
       GRPC_HTTP2_CLIENT_DLOG
           << "Http2ClientTransport::Stream::EnqueueResetStream stream_id="
-          << stream_id;
+          << stream_id << " with error_code = " << error_code;
       return data_queue->EnqueueResetStream(error_code);
     }
 
-    auto DequeueFrames(uint32_t transport_tokens, uint32_t max_frame_length,
+    auto DequeueFrames(const uint32_t transport_tokens,
+                       const uint32_t max_frame_length,
                        HPackCompressor& encoder) {
       return data_queue->DequeueFrames(transport_tokens, max_frame_length,
                                        encoder);

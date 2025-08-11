@@ -688,18 +688,30 @@ auto Http2ClientTransport::OnWriteLoopEnded() {
 auto Http2ClientTransport::StreamMultiplexerLoop() {
   GRPC_HTTP2_CLIENT_DLOG
       << "Http2ClientTransport StreamMultiplexerLoop Factory";
+  // This loop iterates over all the writable streams and drains them. If
+  // there are no writable streams, StreamMultiplexerLoop blocks until there
+  // is a writable stream.
   return Loop([self = RefAsSubclass<Http2ClientTransport>()]() mutable {
+    // Overview:
+    // 1. Get the next writable stream.
+    // 2. Dequeue frames from the stream queue based on available transport
+    //    tokens.
+    // 3. If the stream is still writable, enqueue the stream back to the
+    //    writable stream list.
+    // 4. Enqueue the dequeued frames to the MPSC queue.
     return TrySeq(
         self->writable_stream_list_.Next(/*transport_tokens_available*/ true),
         [self](const uint32_t stream_id) mutable
             -> absl::StatusOr<std::vector<Http2Frame>> {
           RefCountedPtr<Stream> stream = self->LookupStream(stream_id);
           if (GPR_UNLIKELY(stream == nullptr)) {
-            // TODO(akshitpatel) : [PH2][P2] : Race condition. Stream was
-            // closed before we could dequeue. Determine should we have a
-            // DCHECK here based on how ResetStream/Aborts are handled.
+            // Stream was closed before we could dequeue.
+            // TODO(akshitpatel) : [PH2][P2] : Race condition. Determine should
+            // we have a DCHECK here based on how ResetStream/Aborts are
+            // handled.
             return std::vector<Http2Frame>();
           }
+
           // TODO(akshitpatel) : [PH2][P2] : Plug max_frame_length when
           // when settings code is landed.
           // TODO(akshitpatel) : [PH2][P3] : Plug transport_tokens when
@@ -710,19 +722,29 @@ auto Http2ClientTransport::StreamMultiplexerLoop() {
                   /*max_frame_length*/ std::numeric_limits<uint32_t>::max(),
                   self->encoder_);
           if (result.ok() && result->is_writable) {
+            // Stream is still writable. Enqueue it back to the writable stream
+            // list.
             // TODO(akshitpatel) : [PH2][P3] : Plug transport_tokens when
             // transport flow control is implemented.
             absl::Status status = self->writable_stream_list_.Enqueue(
                 stream_id, WritableStreams::StreamPriority::kDefault);
 
-            if (!status.ok()) {
+            if (GPR_UNLIKELY(!status.ok())) {
               LOG(ERROR) << "Failed to enqueue stream " << stream_id
                          << " with status: " << status;
+              // Close transport if we fail to enqueue stream.
               return absl::InternalError("Failed to enqueue stream");
             }
           }
-          if (!result.ok()) {
-            return absl::InternalError("Failed to dequeue frames");
+          if (GPR_UNLIKELY(!result.ok())) {
+            // Close the corresponding stream if we fail to dequeue frames from
+            // the stream queue.
+            LOG(ERROR) << "Failed to dequeue frames for stream " << stream_id
+                       << " with status: " << result.status();
+            absl::Status status =
+                self->HandleError(Http2Status::AbslStreamError(
+                    absl::StatusCode::kInternal, "Failed to dequeue frames"));
+            return std::vector<Http2Frame>();
           }
           GRPC_HTTP2_CLIENT_DLOG
               << "Http2ClientTransport StreamMultiplexerLoop. Dequeued "
@@ -733,11 +755,16 @@ auto Http2ClientTransport::StreamMultiplexerLoop() {
           return std::move(result->frames);
         },
         [self](std::vector<Http2Frame> frames) {
+          // Enqueue the frames to the MPSC queue.
           return Loop([self, frames = std::move(frames), idx = 0u]() mutable {
             return If(
                 idx < frames.size(),
                 [self, &frames, &idx]() {
                   return Map(
+                      // Enqueue to the MPSC queue could return pending. This
+                      // induces backpressure for the sender. Only after writing
+                      // to the MPSC queue we will loop back to read more
+                      // streams.
                       self->EnqueueOutgoingFrame(std::move(frames[idx++])),
                       [](auto) -> LoopCtl<absl::Status> { return Continue{}; });
                 },
