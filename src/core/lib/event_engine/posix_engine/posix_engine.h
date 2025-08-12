@@ -173,7 +173,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
 #ifdef GRPC_POSIX_SOCKET_TCP
 
 #ifdef GRPC_ENABLE_FORK_SUPPORT
-  enum class OnForkRole{kChild, kParent};
+  enum class OnForkRole { kChild, kParent };
   void AfterFork(OnForkRole on_fork_role);
   void BeforeFork();
 #endif  // GRPC_ENABLE_FORK_SUPPORT
