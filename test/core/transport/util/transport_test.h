@@ -28,6 +28,8 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 
+// DO NOT SUBMIT
+
 namespace grpc_core {
 namespace util {
 namespace testing {
