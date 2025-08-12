@@ -70,13 +70,6 @@
 
 // IWYU pragma: no_include <ratio>
 
-#if defined(GRPC_POSIX_SOCKET_TCP) && \
-    !defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
-#define GRPC_PLATFORM_SUPPORTS_POSIX_POLLING true
-#else
-#define GRPC_PLATFORM_SUPPORTS_POSIX_POLLING false
-#endif
-
 using namespace std::chrono_literals;
 
 namespace grpc_event_engine::experimental {
