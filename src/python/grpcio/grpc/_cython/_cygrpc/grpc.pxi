@@ -60,13 +60,13 @@ cdef extern from "<condition_variable>" namespace "std" nogil:
 # gRPC Core Declarations
 
 cdef extern from "src/core/telemetry/call_tracer.h" namespace "grpc_core":
-    cdef cppclass ClientCallTracer:
+    cdef cppclass ClientCallTracerInterface:
         pass
 
     cdef cppclass CallTracerAnnotationInterface:
         pass
 
-    cdef cppclass ServerCallTracer:
+    cdef cppclass ServerCallTracerInterface:
         string TraceId() nogil
         string SpanId() nogil
         bint IsSampled() nogil

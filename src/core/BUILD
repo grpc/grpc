@@ -79,13 +79,8 @@ config_setting(
 selects.config_setting_group(
     name = "grpc_no_filter_fusion",
     match_any = [
-        ":grpc_no_filter_fusion_define",
-        # In addition to disabling filter fusion support when
-        # --define=grpc_no_filter_fusion=true is specified, we also disable it
-        # on mobile platforms where it is not likely to be needed and where
-        # reducing the binary size is more important.
-        "//:android",
-        "//:ios",
+        ":grpc_no_filter_fusion_define",  # --define=grpc_no_filter_fusion=true
+        "//:grpc_small_clients",
     ],
 )
 
@@ -3336,11 +3331,13 @@ grpc_cc_library(
     name = "socket_mutator",
     srcs = [
         "lib/iomgr/socket_mutator.cc",
+        "net/socket_mutator.cc",
     ],
     hdrs = [
         "lib/iomgr/socket_mutator.h",
+        "net/socket_mutator.h",
     ],
-    visibility = ["//bazel:alt_grpc_base_legacy"],
+    visibility = ["//bazel:socket_mutator"],
     deps = [
         "channel_args",
         "useful",
@@ -8065,13 +8062,20 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:function_ref",
+        "absl/log:check",
         "absl/log",
         "absl/strings",
     ],
     deps = [
+        "channel_args",
         "channelz_property_list",
         "http2_settings",
         "http2_status",
+        "poll",
+        "race",
+        "sleep",
+        "time",
+        "try_seq",
         "useful",
         "//:chttp2_frame",
         "//:gpr_platform",
@@ -10184,6 +10188,38 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "instrument",
+    srcs = [
+        "telemetry/instrument.cc",
+    ],
+    hdrs = [
+        "telemetry/instrument.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
+        "absl/functional:function_ref",
+        "absl/log:check",
+        "absl/log",
+        "absl/strings",
+        "absl/types:span",
+        "absl/container:flat_hash_set",
+        "absl/container:flat_hash_map",
+        "absl/container:node_hash_map",
+        "absl/hash",
+    ],
+    deps = [
+        "avl",
+        "match",
+        "per_cpu",
+        "ref_counted",
+        "sync",
+        "//:gpr",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "wait_for_single_owner",
     srcs = ["util/wait_for_single_owner.cc"],
     hdrs = ["util/wait_for_single_owner.h"],
@@ -10654,6 +10690,21 @@ grpc_cc_library(
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "writable_streams",
+    hdrs = ["ext/transport/chttp2/transport/writable_streams.h"],
+    external_deps = [
+        "absl/log",
+        "absl/log:check",
+    ],
+    deps = [
+        "if",
+        "mpsc",
+        "race",
+        "try_seq",
     ],
 )
 

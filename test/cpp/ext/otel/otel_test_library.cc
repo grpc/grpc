@@ -146,24 +146,26 @@ class AddLabelsFilter : public grpc_core::ChannelFilter {
 
   static absl::string_view TypeName() { return "add_service_labels_filter"; }
 
-  explicit AddLabelsFilter(
-      std::map<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
-               grpc_core::RefCountedStringValue>
-          labels_to_inject)
+  explicit AddLabelsFilter(std::map<grpc_core::ClientCallTracerInterface::
+                                        CallAttemptTracer::OptionalLabelKey,
+                                    grpc_core::RefCountedStringValue>
+                               labels_to_inject)
       : labels_to_inject_(std::move(labels_to_inject)) {}
 
   static absl::StatusOr<std::unique_ptr<AddLabelsFilter>> Create(
       const grpc_core::ChannelArgs& args, ChannelFilter::Args /*filter_args*/) {
     return absl::make_unique<AddLabelsFilter>(
-        *args.GetPointer<std::map<
-             grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
-             grpc_core::RefCountedStringValue>>(GRPC_ARG_LABELS_TO_INJECT));
+        *args.GetPointer<std::map<grpc_core::ClientCallTracerInterface::
+                                      CallAttemptTracer::OptionalLabelKey,
+                                  grpc_core::RefCountedStringValue>>(
+            GRPC_ARG_LABELS_TO_INJECT));
   }
 
   grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> MakeCallPromise(
       grpc_core::CallArgs call_args,
       grpc_core::NextPromiseFactory next_promise_factory) override {
-    using CallAttemptTracer = grpc_core::ClientCallTracer::CallAttemptTracer;
+    using CallAttemptTracer =
+        grpc_core::ClientCallTracerInterface::CallAttemptTracer;
     auto* call_tracer = grpc_core::GetContext<CallAttemptTracer>();
     EXPECT_NE(call_tracer, nullptr);
     for (const auto& pair : labels_to_inject_) {
@@ -174,7 +176,7 @@ class AddLabelsFilter : public grpc_core::ChannelFilter {
 
  private:
   const std::map<
-      grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
+      grpc_core::ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey,
       grpc_core::RefCountedStringValue>
       labels_to_inject_;
 };

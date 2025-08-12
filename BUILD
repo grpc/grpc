@@ -48,6 +48,26 @@ exports_files(
     visibility = ["//:__subpackages__"],
 )
 
+bool_flag(
+    name = "small_client",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "small_client_flag",
+    flag_values = {":small_client": "true"},
+)
+
+bool_flag(
+    name = "exclude_small_client",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "not_exclude_small_client_flag",  # Negative so it can be used with match_all.
+    flag_values = {":exclude_small_client": "false"},
+)
+
 config_setting(
     name = "grpc_no_ares",
     values = {"define": "grpc_no_ares=true"},
@@ -122,54 +142,81 @@ config_setting(
     values = {"define": "use_systemd=true"},
 )
 
+config_setting(
+    name = "fuchsia",
+    constraint_values = ["@platforms//os:fuchsia"],
+)
+
+# Opt-ins for small clients, before the opt-out flag is applied.
+selects.config_setting_group(
+    name = "grpc_small_clients_enable",
+    match_any = [
+        ":small_client_flag",
+        ":android",
+        ":ios",
+        ":fuchsia",
+    ],
+    visibility = ["//visibility:private"],
+)
+
+# Automatically disable certain deps for space-constrained clients where
+# optional features may not be needed and binary size is more important.
+# This includes Android, iOS, Fuchsia, and builds which request it explicitly with
+# --//:small_client.
+#
+# A build can opt out of this behavior by setting --//:exclude_small_client.
+selects.config_setting_group(
+    name = "grpc_small_clients",
+    match_all = [
+        ":grpc_small_clients_enable",
+        ":not_exclude_small_client_flag",
+    ],
+)
+
 selects.config_setting_group(
     name = "grpc_no_xds",
     match_any = [
-        ":grpc_no_xds_define",
-        # In addition to disabling XDS support when --define=grpc_no_xds=true is
-        # specified, we also disable it on mobile platforms where it is not
-        # likely to be needed and where reducing the binary size is more
-        # important.
-        ":android",
-        ":ios",
+        ":grpc_no_xds_define",  # --define=grpc_no_xds=true
+        ":grpc_small_clients",
     ],
 )
 
 selects.config_setting_group(
     name = "grpc_no_ztrace",
     match_any = [
-        ":grpc_no_ztrace_define",
-        # In addition to disabling ztrace support when --define=grpc_no_ztrace=true is
-        # specified, we also disable it on mobile platforms where it is not
-        # likely to be needed and where reducing the binary size is more
-        # important.
-        ":android",
-        ":ios",
+        ":grpc_no_ztrace_define",  # --define=grpc_no_ztrace=true
+        ":grpc_small_clients",
     ],
 )
 
 selects.config_setting_group(
     name = "grpc_no_rls",
     match_any = [
-        ":grpc_no_rls_flag",
-        # Disable RLS support on mobile platforms where it is not likely to be
-        # needed and where reducing the binary size is more important.
-        ":android",
-        ":ios",
+        ":grpc_no_rls_flag",  # --//:disable_grpc_rls
+        ":grpc_small_clients",
     ],
 )
 
 selects.config_setting_group(
     name = "grpc_experiments_are_final",
     match_any = [
-        ":grpc_experiments_are_final_define",
-        # In addition to disabling experiments when
-        # --define=grpc_experiments_are_final=true is specified, we also disable
-        # them on mobile platforms where runtime configuration of experiments is unlikely to be needed and where
-        # reducing the binary size is more important.
-        ":android",
-        ":ios",
+        ":grpc_experiments_are_final_define",  # --define=grpc_experiments_are_final=true
+        ":grpc_small_clients",
     ],
+)
+
+bool_flag(
+    name = "minimal_lb_policy",
+    build_setting_default = False,
+)
+
+# Disable all load balancer policies except pick_first (the default).
+# This saves binary size. However, this can be influenced by service config. So it should only be
+# set by clients that know that none of their services are relying on load balancing. Thus this flag
+# is not enabled by default even for grpc_small_clients.
+config_setting(
+    name = "grpc_minimal_lb_policy_flag",
+    flag_values = {":minimal_lb_policy": "true"},
 )
 
 # Fuzzers can be built as fuzzers or as tests
@@ -637,6 +684,11 @@ grpc_cc_library(
     ],
     defines = select({
         ":grpc_no_xds": ["GRPC_NO_XDS"],
+        "//conditions:default": [],
+    }) + select({
+        # The registration is the only place where the plugins are referenced directly, so by
+        # excluding them from BuildCoreConfiguration, they will be stripped by the linker.
+        ":grpc_minimal_lb_policy_flag": ["GRPC_MINIMAL_LB_POLICY"],
         "//conditions:default": [],
     }),
     external_deps = [
