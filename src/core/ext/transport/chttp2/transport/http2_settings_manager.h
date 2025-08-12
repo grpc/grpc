@@ -59,11 +59,61 @@ class Http2SettingsManager {
   // This function is not idempotent.
   std::optional<Http2SettingsFrame> MaybeSendUpdate();
 
+  // To be called from a promise based HTTP2 transport only
+  http2::Http2ErrorCode ApplyIncomingSettings(
+      std::vector<Http2SettingsFrame::Setting>& settings) {
+    for (const auto& setting : settings) {
+      http2::Http2ErrorCode error1 =
+          count_updates_.IsUpdatePermitted(setting.id, setting.value, peer_);
+      if (GPR_UNLIKELY(error1 != http2::Http2ErrorCode::kNoError)) {
+        return error1;
+      }
+      http2::Http2ErrorCode error = peer_.Apply(setting.id, setting.value);
+      if (GPR_UNLIKELY(error != http2::Http2ErrorCode::kNoError)) {
+        return error;
+      }
+    }
+    return http2::Http2ErrorCode::kNoError;
+  }
+
   // Call when we receive an ACK from our peer.
   // This function is not idempotent.
   GRPC_MUST_USE_RESULT bool AckLastSend();
 
  private:
+  struct CountUpdates {
+    http2::Http2ErrorCode IsUpdatePermitted(const uint16_t setting_id,
+                                            const uint32_t value,
+                                            const Http2Settings& peer) {
+      switch (setting_id) {
+        case Http2Settings::kGrpcAllowTrueBinaryMetadataWireId:
+          // These settings must not change more than once. This is a gRPC
+          // defined settings.
+          if (allow_true_binary_metadata_update &&
+              peer.allow_true_binary_metadata() != static_cast<bool>(value)) {
+            return http2::Http2ErrorCode::kConnectError;
+          }
+          allow_true_binary_metadata_update = true;
+          break;
+        case Http2Settings::kGrpcAllowSecurityFrameWireId:
+          // These settings must not change more than once. This is a gRPC
+          // defined settings.
+          if (allow_security_frame_update &&
+              peer.allow_security_frame() != static_cast<bool>(value)) {
+            return http2::Http2ErrorCode::kConnectError;
+          }
+          allow_security_frame_update = true;
+          break;
+        default:
+          break;
+      }
+      return http2::Http2ErrorCode::kNoError;
+    }
+    bool allow_true_binary_metadata_update = false;
+    bool allow_security_frame_update = false;
+  };
+  CountUpdates count_updates_;
+
   enum class UpdateState : uint8_t {
     kFirst,
     kSending,
