@@ -95,7 +95,8 @@ MATCHER_P(HasNumberField, field, "") {
 namespace grpc_core {
 namespace {
 
-Json::Array RunAndReportJson(absl::FunctionRef<void()> fn) {
+Json::Array RunAndReportJson(absl::FunctionRef<void()> fn,
+                             bool wait_for_appender_to_start = true) {
   Notification finish_scopes;
   std::string json;
   std::thread t([&]() {
@@ -108,7 +109,9 @@ Json::Array RunAndReportJson(absl::FunctionRef<void()> fn) {
     json = out.str();
   });
   // wait for the collection to start
-  absl::SleepFor(absl::Seconds(2));
+  if (wait_for_appender_to_start) {
+    absl::SleepFor(absl::Seconds(2));
+  }
   fn();
   latent_see::Flush();
   // let the collection thread catch up
@@ -181,6 +184,22 @@ TEST(LatentSeeTest, FlowWorks) {
   EXPECT_THAT(obj2, HasNumberFieldWithValue("tid", 2));
   EXPECT_THAT(obj2, HasNumberFieldWithValue("pid", 0));
   EXPECT_THAT(obj2, HasNumberField("ts"));
+}
+
+TEST(LatentSeeTest, FlowWorksAppenderStartsLate) {
+  auto elems = RunAndReportJson(
+      []() {
+        std::thread([f = std::make_unique<latent_see::Flow>(latent_see::Flow(
+                         GRPC_LATENT_SEE_METADATA("foo")))]() mutable {
+          absl::SleepFor(absl::Seconds(2));
+          f->Begin();
+          f->End();
+          f.reset();
+          latent_see::Flush();
+        }).join();
+      },
+      /*wait_for_appender_to_start=*/false);
+  ASSERT_EQ(elems.size(), 2);
 }
 
 }  // namespace
