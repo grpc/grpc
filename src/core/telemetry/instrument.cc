@@ -106,18 +106,18 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names, Fn fn,
     }
 
    private:
-    std::tuple<std::vector<std::string>, absl::string_view> ConstructKey(
+    std::tuple<std::vector<std::string>, std::string> ConstructKey(
         absl::Span<const std::string> label, absl::string_view name) const {
       std::vector<std::string> key;
       key.reserve(include_labels_.size());
       for (auto i : include_labels_) {
         key.push_back(label[i]);
       }
-      return std::tuple(std::move(key), name);
+      return std::tuple(std::move(key), std::string(name));
     }
 
     absl::Span<const size_t> include_labels_;
-    absl::flat_hash_map<std::tuple<std::vector<std::string>, absl::string_view>,
+    absl::flat_hash_map<std::tuple<std::vector<std::string>, std::string>,
                         uint64_t>
         uint64_counters_;
   };
