@@ -1720,6 +1720,7 @@ grpc_cc_library(
         "periodic_update",
         "poll",
         "race",
+        "resource_quota_telemetry",
         "seq",
         "slice_refcount",
         "sync",
@@ -1813,6 +1814,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "resource_quota_telemetry",
+    hdrs = [
+        "lib/resource_quota/telemetry.h",
+    ],
+    deps = [
+        "instrument",
+    ],
+)
+
+grpc_cc_library(
     name = "resource_quota",
     srcs = [
         "lib/resource_quota/resource_quota.cc",
@@ -1828,6 +1839,7 @@ grpc_cc_library(
         "memory_quota",
         "no_destruct",
         "ref_counted",
+        "resource_quota_telemetry",
         "single_set_ptr",
         "thread_quota",
         "useful",
@@ -10218,6 +10230,7 @@ grpc_cc_library(
     ],
     deps = [
         "avl",
+        "dual_ref_counted",
         "histogram",
         "match",
         "per_cpu",

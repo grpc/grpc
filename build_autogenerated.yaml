@@ -1065,6 +1065,7 @@ libs:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/security/authorization/audit_logging.h
   - src/core/lib/security/authorization/authorization_engine.h
@@ -1167,7 +1168,9 @@ libs:
   - src/core/telemetry/call_tracer.h
   - src/core/telemetry/context_list_entry.h
   - src/core/telemetry/default_tcp_tracer.h
+  - src/core/telemetry/histogram.h
   - src/core/telemetry/histogram_view.h
+  - src/core/telemetry/instrument.h
   - src/core/telemetry/metrics.h
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
@@ -2074,6 +2077,7 @@ libs:
   - src/core/telemetry/context_list_entry.cc
   - src/core/telemetry/default_tcp_tracer.cc
   - src/core/telemetry/histogram_view.cc
+  - src/core/telemetry/instrument.cc
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
@@ -2189,6 +2193,7 @@ libs:
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
+  - absl/container:node_hash_map
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
@@ -2738,6 +2743,7 @@ libs:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/authorization_policy_provider.h
@@ -2827,7 +2833,9 @@ libs:
   - src/core/telemetry/call_tracer.h
   - src/core/telemetry/context_list_entry.h
   - src/core/telemetry/default_tcp_tracer.h
+  - src/core/telemetry/histogram.h
   - src/core/telemetry/histogram_view.h
+  - src/core/telemetry/instrument.h
   - src/core/telemetry/metrics.h
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
@@ -3300,6 +3308,7 @@ libs:
   - src/core/telemetry/context_list_entry.cc
   - src/core/telemetry/default_tcp_tracer.cc
   - src/core/telemetry/histogram_view.cc
+  - src/core/telemetry/instrument.cc
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
@@ -3349,6 +3358,7 @@ libs:
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
+  - absl/container:node_hash_map
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
@@ -4780,6 +4790,7 @@ libs:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/security/authorization/audit_logging.h
   - src/core/lib/security/authorization/authorization_engine.h
@@ -4837,7 +4848,9 @@ libs:
   - src/core/service_config/service_config_parser.h
   - src/core/telemetry/call_tracer.h
   - src/core/telemetry/context_list_entry.h
+  - src/core/telemetry/histogram.h
   - src/core/telemetry/histogram_view.h
+  - src/core/telemetry/instrument.h
   - src/core/telemetry/metrics.h
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
@@ -5160,6 +5173,7 @@ libs:
   - src/core/telemetry/call_tracer.cc
   - src/core/telemetry/context_list_entry.cc
   - src/core/telemetry/histogram_view.cc
+  - src/core/telemetry/instrument.cc
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
@@ -5201,6 +5215,7 @@ libs:
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
+  - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -6449,6 +6464,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -6462,7 +6478,9 @@ targets:
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
+  - src/core/telemetry/histogram.h
   - src/core/telemetry/histogram_view.h
+  - src/core/telemetry/instrument.h
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
   - src/core/util/atomic_utils.h
@@ -6564,6 +6582,7 @@ targets:
   - src/core/lib/transport/status_conversion.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/telemetry/histogram_view.cc
+  - src/core/telemetry/instrument.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
   - src/core/util/backoff.cc
@@ -6589,6 +6608,7 @@ targets:
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
+  - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -6968,6 +6988,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -7013,7 +7034,9 @@ targets:
   - src/core/service_config/service_config_parser.h
   - src/core/telemetry/call_tracer.h
   - src/core/telemetry/context_list_entry.h
+  - src/core/telemetry/histogram.h
   - src/core/telemetry/histogram_view.h
+  - src/core/telemetry/instrument.h
   - src/core/telemetry/metrics.h
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
@@ -7300,6 +7323,7 @@ targets:
   - src/core/telemetry/call_tracer.cc
   - src/core/telemetry/context_list_entry.cc
   - src/core/telemetry/histogram_view.cc
+  - src/core/telemetry/instrument.cc
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
@@ -7337,6 +7361,7 @@ targets:
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
+  - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -7434,6 +7459,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -7443,7 +7469,9 @@ targets:
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/status_conversion.h
+  - src/core/telemetry/histogram.h
   - src/core/telemetry/histogram_view.h
+  - src/core/telemetry/instrument.h
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
   - src/core/util/atomic_utils.h
@@ -7526,6 +7554,7 @@ targets:
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/telemetry/histogram_view.cc
+  - src/core/telemetry/instrument.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
   - src/core/util/backoff.cc
@@ -7550,6 +7579,7 @@ targets:
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
+  - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -8183,6 +8213,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -8192,7 +8223,9 @@ targets:
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/status_conversion.h
+  - src/core/telemetry/histogram.h
   - src/core/telemetry/histogram_view.h
+  - src/core/telemetry/instrument.h
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
   - src/core/util/atomic_utils.h
@@ -8276,6 +8309,7 @@ targets:
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/telemetry/histogram_view.cc
+  - src/core/telemetry/instrument.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
   - src/core/util/backoff.cc
@@ -8300,6 +8334,7 @@ targets:
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
+  - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -11652,6 +11687,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -11697,7 +11733,9 @@ targets:
   - src/core/service_config/service_config_parser.h
   - src/core/telemetry/call_tracer.h
   - src/core/telemetry/context_list_entry.h
+  - src/core/telemetry/histogram.h
   - src/core/telemetry/histogram_view.h
+  - src/core/telemetry/instrument.h
   - src/core/telemetry/metrics.h
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
@@ -11984,6 +12022,7 @@ targets:
   - src/core/telemetry/call_tracer.cc
   - src/core/telemetry/context_list_entry.cc
   - src/core/telemetry/histogram_view.cc
+  - src/core/telemetry/instrument.cc
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
@@ -12021,6 +12060,7 @@ targets:
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
+  - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -12149,6 +12189,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -12160,7 +12201,9 @@ targets:
   - src/core/lib/transport/bdp_estimator.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/status_conversion.h
+  - src/core/telemetry/histogram.h
   - src/core/telemetry/histogram_view.h
+  - src/core/telemetry/instrument.h
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
   - src/core/util/atomic_utils.h
@@ -12250,6 +12293,7 @@ targets:
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/telemetry/histogram_view.cc
+  - src/core/telemetry/instrument.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
   - src/core/util/backoff.cc
@@ -12274,6 +12318,7 @@ targets:
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
+  - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -12361,6 +12406,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -12370,7 +12416,9 @@ targets:
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/status_conversion.h
+  - src/core/telemetry/histogram.h
   - src/core/telemetry/histogram_view.h
+  - src/core/telemetry/instrument.h
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
   - src/core/util/atomic_utils.h
@@ -12454,6 +12502,7 @@ targets:
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/telemetry/histogram_view.cc
+  - src/core/telemetry/instrument.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
   - src/core/util/backoff.cc
@@ -12478,6 +12527,7 @@ targets:
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
+  - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -13754,16 +13804,12 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/telemetry/histogram.h
-  - src/core/telemetry/instrument.h
+  headers: []
   src:
-  - src/core/telemetry/instrument.cc
   - test/core/telemetry/instrument_test.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
-  - absl/container:node_hash_map
   - grpc_test_util
   uses_polling: false
 - name: inter_activity_latch_test
@@ -13973,6 +14019,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -13982,7 +14029,9 @@ targets:
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/status_conversion.h
+  - src/core/telemetry/histogram.h
   - src/core/telemetry/histogram_view.h
+  - src/core/telemetry/instrument.h
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
   - src/core/util/atomic_utils.h
@@ -14066,6 +14115,7 @@ targets:
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/telemetry/histogram_view.cc
+  - src/core/telemetry/instrument.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
   - src/core/util/backoff.cc
@@ -14090,6 +14140,7 @@ targets:
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
+  - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -14876,6 +14927,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -14885,7 +14937,9 @@ targets:
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/status_conversion.h
+  - src/core/telemetry/histogram.h
   - src/core/telemetry/histogram_view.h
+  - src/core/telemetry/instrument.h
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
   - src/core/util/atomic_utils.h
@@ -14969,6 +15023,7 @@ targets:
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/telemetry/histogram_view.cc
+  - src/core/telemetry/instrument.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
   - src/core/util/backoff.cc
@@ -14993,6 +15048,7 @@ targets:
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
+  - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -17272,6 +17328,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
@@ -17285,7 +17342,9 @@ targets:
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
+  - src/core/telemetry/histogram.h
   - src/core/telemetry/histogram_view.h
+  - src/core/telemetry/instrument.h
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
   - src/core/util/atomic_utils.h
@@ -17392,6 +17451,7 @@ targets:
   - src/core/lib/transport/status_conversion.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/telemetry/histogram_view.cc
+  - src/core/telemetry/instrument.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
   - src/core/util/backoff.cc
@@ -17417,6 +17477,7 @@ targets:
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
+  - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
