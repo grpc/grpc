@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <absl/strings/str_cat.h>
 #include <grpc/support/port_platform.h>
 #include <signal.h>
 #include <string.h>
 
 #include <optional>
+
+#include "absl/strings/str_cat.h"
 
 #ifndef GPR_WINDOWS
 #include <unistd.h>
