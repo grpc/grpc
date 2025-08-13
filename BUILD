@@ -816,6 +816,18 @@ grpc_cc_library(
         # All usage should be via gpr_platform
         "include/grpc/impl/codegen/port_platform.h",
         "include/grpc/support/port_platform.h",
+        "include/grpc/grpc.h",
+        "include/grpc/byte_buffer.h",
+        "include/grpc/impl/grpc_types.h",
+        "include/grpc/impl/connectivity_state.h",
+        "include/grpc/impl/propagation_bits.h",
+        "include/grpc/slice.h",
+        "include/grpc/status.h",
+        "include/grpc/impl/channel_arg_names.h",
+        "include/grpc/impl/compression_types.h",
+        "include/grpc/impl/slice_type.h",
+        "include/grpc/slice_buffer.h",
+        "include/grpc/event_engine/endpoint_config.h",
     ],
     external_deps = [
         "absl/base",
@@ -833,6 +845,8 @@ grpc_cc_library(
         "absl/strings:str_format",
         "absl/synchronization",
         "absl/time:time",
+        "absl/functional:bind_front",
+        "absl/flags:flag",
     ],
     public_hdrs = GPR_PUBLIC_HDRS,
     tags = [
