@@ -177,7 +177,6 @@ class PythonDistribTest(object):
         if presubmit:
             self.labels.append("presubmit")
 
-
     def pre_build_jobspecs(self):
         return []
 
