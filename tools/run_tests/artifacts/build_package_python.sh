@@ -22,6 +22,8 @@ mkdir -p artifacts/
 # All the python packages have been built in the artifact phase already
 # and we only collect them here to deliver them to the distribtest phase.
 
+set -f
+
 find_cmd=(
     find "${EXTERNAL_GIT_ROOT}/input_artifacts/"
     -maxdepth 1
@@ -50,3 +52,5 @@ else
         | xargs -0 -I% find % -type f \( -name "*.tar.gz" -o \
         -name "*py3-none-any.whl" \) -maxdepth 1 -exec cp -v {} ./artifacts \;
 fi
+
+set +f
