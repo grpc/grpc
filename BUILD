@@ -927,11 +927,16 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_public_hdrs",
-    hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
+    hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS + [
+        "include/grpc/credentials.h",
+    ],
     external_deps = [
         "absl/status:statusor",
         "absl/strings",
         "absl/types:span",
+        "absl/utility",
+        "absl/functional:any_invocable",
+        "absl/status",
     ],
     tags = [
         "avoid_dep",
