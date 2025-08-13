@@ -24,7 +24,7 @@ cd $(dirname $0)/../../..
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
 IS_AARCH64=""
-if [[ "${TASK_RUNNER_EXTRA_FILTERS}" == "linux_aarch64" || "${TASK_RUNNER_EXTRA_FILTERS}" == "presubmit linux_aarch64" ]]; then
+if [[ "${TASK_RUNNER_EXTRA_FILTERS}" == "aarch64" || "${TASK_RUNNER_EXTRA_FILTERS}" == "presubmit aarch64" ]]; then
   IS_AARCH64="True"
 fi
 

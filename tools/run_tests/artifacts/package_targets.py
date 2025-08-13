@@ -154,9 +154,6 @@ class PythonPackage:
             self.labels.append(arch)
             self.name += "_" + arch
 
-            if self.arch == "aarch64":
-                self.labels.append("linux_aarch64")
-
     def pre_build_jobspecs(self):
         return []
 
