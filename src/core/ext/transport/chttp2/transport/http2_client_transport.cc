@@ -763,7 +763,12 @@ auto Http2ClientTransport::StreamMultiplexerLoop() {
                       // to the MPSC queue we will loop back to read more
                       // streams.
                       self->EnqueueOutgoingFrame(std::move(frames[idx++])),
-                      [](auto) -> LoopCtl<absl::Status> { return Continue{}; });
+                      [](absl::Status status) -> LoopCtl<absl::Status> {
+                        if (GPR_UNLIKELY(!status.ok())) {
+                          return status;
+                        }
+                        return Continue{};
+                      });
                 },
                 []() -> LoopCtl<absl::Status> { return absl::OkStatus(); });
           });
