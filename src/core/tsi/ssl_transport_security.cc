@@ -1320,7 +1320,11 @@ absl::Status ConfigureSpiffeRoots(
     return absl::InvalidArgumentError(
         "cannot configure spiffe roots with a nullptr spiffe_bundle_map.");
   }
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
   X509* leaf_cert = X509_STORE_CTX_get0_cert(ctx);
+#else
+  X509* leaf_cert = ctx->cert;
+#endif
   if (leaf_cert == nullptr) {
     return absl::InvalidArgumentError(
         "A SPIFFE bundle map was configured but the leaf cert is null");
@@ -1334,7 +1338,11 @@ absl::Status ConfigureSpiffeRoots(
     return absl::InvalidArgumentError(
         "spiffe: root stack in the SPIFFE Bundle Map is nullptr.");
   }
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
   X509_STORE_CTX_set0_trusted_stack(ctx, *root_stack);
+#else
+  X509_STORE_CTX_trusted_stack(ctx, *root_stack);
+#endif
   return absl::OkStatus();
 }
 
