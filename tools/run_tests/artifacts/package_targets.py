@@ -142,17 +142,25 @@ class RubyPackage:
 class PythonPackage:
     """Collects python eggs and wheels created in the artifact phase"""
 
-    def __init__(self, platform="", arch=""):
+    def __init__(self, platform="", arch="", copy_common_files=False):
         self.name = "python_package"
         self.labels = ["package", "python", "linux"]
         self.platform = platform
         self.arch = arch
+        self.copy_common_files = copy_common_files
+
         if self.platform:
             self.labels.append(platform)
             self.name += "_" + platform
         if self.arch:
             self.labels.append(arch)
             self.name += "_" + arch
+
+            if arch == "aarch64" and copy_common_files:
+                self.labels.append("exclude_in_collect_all_packages")
+        if copy_common_files:
+            self.name += "_copy_common_files"
+            self.labels.append("copy_common_files_python")
 
     def pre_build_jobspecs(self):
         return []
@@ -169,6 +177,7 @@ class PythonPackage:
             "PYTHON": "/opt/python/cp39-cp39/bin/python",
             "ARTIFACT_PREFIX": "python_",
             "EXCLUDE_PATTERN": "python_*_aarch64_*",
+            "ONLY_COPY_COMMON_FILES": ""
         }
         if "musllinux_1_2" in self.platform and "aarch64" in self.arch:
             dockerfile_dir = (
@@ -183,6 +192,9 @@ class PythonPackage:
             )
             environ["ARTIFACT_PREFIX"] = "python_manylinux2014_aarch64_"
             environ["EXCLUDE_PATTERN"] = ""
+
+        if self.copy_common_files:
+            environ["ONLY_COPY_COMMON_FILES"] = "1"
 
         return create_docker_jobspec(
             self.name,
@@ -221,5 +233,7 @@ def targets():
         PythonPackage(),
         PythonPackage("musllinux_1_2", "aarch64"),
         PythonPackage("manylinux2014", "aarch64"),
+        PythonPackage(copy_common_files=True),
+        PythonPackage(arch="aarch64", copy_common_files=True),
         PHPPackage(),
     ]
