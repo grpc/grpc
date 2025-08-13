@@ -52,12 +52,12 @@ find "${EXTERNAL_GIT_ROOT}"/input_artifacts/ \
 #     | xargs -0 -I% find % -type f -not -name "*.tar.gz" \
 #     -not -name "*py3-none-any.whl" -maxdepth 1 -exec cp -v {} ./artifacts \;
 
-# all the artifact builder configurations generate an equivalent 
-# grpcio-VERSION.tar.gz source distribution package and 
-# grpcio-VERSION-py3-none-any.whl file. Only one of them will end up in the 
-# artifacts/ directory. However when this script is executed by the different 
-# package targets independently, the copy will fail due to copy conflicts 
-# with the same name. Hence use a -f flag. 
+# all the artifact builder configurations generate an equivalent
+# grpcio-VERSION.tar.gz source distribution package and
+# grpcio-VERSION-py3-none-any.whl file. Only one of them will end up in the
+# artifacts/ directory. However when this script is executed by the different
+# package targets independently, the copy will fail due to copy conflicts
+# with the same name. Hence use a -f flag.
 "${find_cmd[@]}" -print0 \
     | xargs -0 -I% find % -type f \( -name "*.tar.gz" -o \
     -name "*py3-none-any.whl" \) -maxdepth 1 -exec cp -vf {} ./artifacts \;
