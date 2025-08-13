@@ -1,3 +1,6 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+
 package(default_applicable_licenses = ["//:license"])
 
 cc_library(
@@ -5,7 +8,7 @@ cc_library(
     hdrs = ["string.h"],
     deps = [
         "//upb/mem",
-        "//upb:port",
+        "//upb/port",
     ],
 )
 
@@ -17,9 +20,9 @@ cc_library(
         ":string",
         ":zero_copy_stream",
         "//upb/base",
-        "//upb/mem",
-        "//upb:port",
         "//upb/lex",
+        "//upb/mem",
+        "//upb/port",
     ],
 )
 
@@ -32,7 +35,7 @@ cc_library(
     deps = [
         "//upb/base",
         "//upb/mem",
-        "//upb:port",
+        "//upb/port",
     ],
 )
 
@@ -52,7 +55,7 @@ cc_library(
     deps = [
         ":zero_copy_stream",
         "//upb/mem",
-        "//upb:port",
+        "//upb/port",
     ],
 )
 
@@ -77,9 +80,9 @@ cc_test(
         ":string",
         ":tokenizer",
         ":zero_copy_stream",
-        "//upb/mem",
-        "//upb:port",
         "//upb/lex",
+        "//upb/mem",
+        "//upb/port",
         "@abseil-cpp//absl/strings",
         "@abseil-cpp//absl/strings:str_format",
         "@googletest//:gtest",

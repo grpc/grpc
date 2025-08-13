@@ -110,7 +110,7 @@ RUN mkdir -p $ANDROID_HOME && \
     ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'tools' && \
     ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'build-tools;30.0.2' && \
     ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'platforms;android-26' && \
-    ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'ndk;25.1.8937393' && \
+    ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'ndk;27.3.13750724' && \
     ./cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_HOME 'cmake;3.22.1'
 
 # Install gcloud
