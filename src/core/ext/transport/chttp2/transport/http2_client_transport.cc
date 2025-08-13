@@ -712,15 +712,12 @@ auto Http2ClientTransport::StreamMultiplexerLoop() {
             return std::vector<Http2Frame>();
           }
 
-          // TODO(akshitpatel) : [PH2][P2] : Plug max_frame_length when
-          // when settings code is landed.
           // TODO(akshitpatel) : [PH2][P3] : Plug transport_tokens when
           // transport flow control is implemented.
           absl::StatusOr<StreamDataQueue<ClientMetadataHandle>::DequeueResult>
               result = stream->DequeueFrames(
                   /*transport_tokens*/ std::numeric_limits<uint32_t>::max(),
-                  /*max_frame_length*/ std::numeric_limits<uint32_t>::max(),
-                  self->encoder_);
+                  self->settings_.peer().max_frame_size(), self->encoder_);
           if (result.ok() && result->is_writable) {
             // Stream is still writable. Enqueue it back to the writable stream
             // list.
@@ -1082,7 +1079,7 @@ auto Http2ClientTransport::CallOutboundLoop(
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop";
 
   auto send_message = [self = RefAsSubclass<Http2ClientTransport>(),
-                       stream_id](MessageHandle message) mutable {
+                       stream_id](MessageHandle&& message) mutable {
     RefCountedPtr<Stream> stream = self->LookupStream(stream_id);
     return If(
         stream != nullptr,
