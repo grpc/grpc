@@ -178,8 +178,8 @@ class PythonArtifact:
                 # it at link time.
                 environ["LDFLAGS"] = "-s"
 
-            # currently all manylinux architectures (including aarch64) do not
-            # require cross-compiling, hence the below values can be set for all
+            # currently no manylinux architectures (including aarch64)
+            # require cross-compiling, hence the below values are set for all
             # manylinux targets
 
             # only run auditwheel if we're not crosscompiling
