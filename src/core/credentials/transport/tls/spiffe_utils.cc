@@ -276,9 +276,9 @@ SpiffeBundle& SpiffeBundle::operator=(const SpiffeBundle& other) {
       for (size_t i = 0; i < sk_X509_num(*root_stack_); i++) {
         X509* x = sk_X509_value(*root_stack_, i);
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
-      CHECK(X509_up_ref(x));
+        CHECK(X509_up_ref(x));
 #else
-      CRYPTO_add(&x->references, 1, CRYPTO_LOCK_X509);
+        CRYPTO_add(&x->references, 1, CRYPTO_LOCK_X509);
 #endif
       }
     }
