@@ -168,21 +168,21 @@ class PythonPackage:
         environ = {
             "PYTHON": "/opt/python/cp39-cp39/bin/python",
             "ARTIFACT_PREFIX": "python_",
-            "EXCLUDE_PATTERNS": "python_musllinux_1_2_aarch64_* python_manylinux2014_aarch64_*",
+            "EXCLUDE_PATTERN": "python_*_aarch64_*",
         }
         if "musllinux_1_2" in self.platform and "aarch64" in self.arch:
             dockerfile_dir = (
                 "tools/dockerfile/grpc_artifact_python_musllinux_1_2_aarch64"
             )
             environ["ARTIFACT_PREFIX"] = "python_musllinux_1_2_aarch64_"
-            environ["EXCLUDE_PATTERNS"] = ""
+            environ["EXCLUDE_PATTERN"] = ""
 
         if "manylinux2014" in self.platform and "aarch64" in self.arch:
             dockerfile_dir = (
                 "tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64"
             )
             environ["ARTIFACT_PREFIX"] = "python_manylinux2014_aarch64_"
-            environ["EXCLUDE_PATTERNS"] = ""
+            environ["EXCLUDE_PATTERN"] = ""
 
         return create_docker_jobspec(
             self.name,
