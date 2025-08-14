@@ -192,6 +192,7 @@ else:
             ' REPL by running python -m asyncio.'
         )
         _LOGGER.error(msg)
+        warnings.simplefilter('default')
         warnings.warn(
             msg,
             DeprecationWarning,
