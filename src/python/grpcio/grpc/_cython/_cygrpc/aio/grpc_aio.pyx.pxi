@@ -84,6 +84,7 @@ cdef _actual_aio_shutdown():
 
 
 cdef _initialize_per_loop():
+    _LOGGER.info("init_grpc_aio() -> _initialize_per_loop()")
     cdef object loop = get_working_loop()
     if _global_aio_state.engine is AsyncIOEngine.POLLER:
         _global_aio_state.cq.bind_loop(loop)

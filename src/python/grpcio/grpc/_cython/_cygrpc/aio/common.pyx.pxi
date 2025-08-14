@@ -173,19 +173,26 @@ async def generator_to_async_generator(object gen, object loop, object thread_po
     await future
 
 
+
 if PY_MINOR_VERSION < 12:
 
     def _get_or_create_default_loop():
-        _LOGGER.error("pre-12")
         return asyncio.get_event_loop_policy().get_event_loop()
 
 else:
+    _global_loop = None
+    _loop_lock = threading.Lock()
 
     def _get_or_create_default_loop():
-        _LOGGER.error("_get_or_create_default_loop")
-        import threading
-        warnings.warn(
-            (
+        global _global_loop, _loop_lock
+        with _loop_lock:
+            if _global_loop is not None:
+                _LOGGER.info("reusing existing loop")
+                return _global_loop
+
+            import threading
+
+            msg = (
                 "There is no current event loop running in thread"
                 f" {threading.current_thread().name}."
                 " gRPC will create one for you, but this behavior may change"
@@ -194,15 +201,17 @@ else:
                 " of desired loop implementation."
                 " If you see this in Python REPL, use the dedicated asyncio"
                 " REPL by running python -m asyncio."
-            ),
-            DeprecationWarning,
-            stacklevel=3,  # indicate users's call that resulted in the warning.
-        )
-        # stacklevel=1: show the caller of get_working_loop(),
-        # only works with warnings.simplefilter('default')
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        return loop
+            )
+            warnings.warn(
+                msg,
+                DeprecationWarning,
+                # Point to users's call that caused the warning.
+                stacklevel=3,
+            )
+
+            _global_loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(_global_loop)
+            return _global_loop
 
 
 def get_working_loop():
@@ -211,11 +220,9 @@ def get_working_loop():
     Due to a defect of asyncio.get_event_loop, its returned event loop might
     not be set as the default event loop for the main thread.
     """
-    _LOGGER.error("get_working_loop")
     try:
         return asyncio.get_running_loop()
     except RuntimeError:
-        _LOGGER.error("RuntimeError")
         return _get_or_create_default_loop()
 
 
