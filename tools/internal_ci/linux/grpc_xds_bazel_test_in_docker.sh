@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-trap 'date' DEBUG
+PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
 set -ex
 
 mkdir -p /var/local/git
@@ -32,6 +32,8 @@ set -x
 
 python -VV
 pip install --upgrade pip==25.2
+# Note that these are only test driver's dependencies. gRPC version
+# shouldn't matter, as it's only used for getting the LB stats from the client.
 pip install --upgrade \
     grpcio-tools==1.74.0 \
     grpcio==1.74.0 \
@@ -74,13 +76,10 @@ python -m grpc_tools.protoc \
 cd /var/local/jenkins/grpc/
 bazel build test/cpp/interop:xds_interop_client
 
-# Test cases "path_matching" and "header_matching" are not included in "all",
-# because not all interop clients in all languages support these new tests.
-#
-# TODO: remove "path_matching" and "header_matching" from --test_case after
-# they are added into "all".
-GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb python \
-   /var/local/git/grpc/tools/run_tests/run_xds_tests.py \
+# Run legacy ping_pong test. All tests are migrated to
+# https://github.com/grpc/psm-interop
+GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb \
+  python /var/local/git/grpc/tools/run_tests/run_xds_tests.py \
     --halt_after_fail \
     --test_case="ping_pong" \
     --project_id=grpc-testing \
@@ -90,6 +89,4 @@ GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,c
     --gcp_suffix=$(date '+%s') \
     --verbose \
     ${XDS_V3_OPT-} \
-    --client_cmd='bazel-bin/test/cpp/interop/xds_interop_client --server=xds:///{server_uri} --stats_port={stats_port} --qps={qps} {fail_on_failed_rpc} \
-      {rpcs_to_send} \
-      {metadata_to_send}'
+    --client_cmd='bazel-bin/test/cpp/interop/xds_interop_client --server=xds:///{server_uri} --stats_port={stats_port} --qps={qps} {fail_on_failed_rpc} {rpcs_to_send} {metadata_to_send}'
