@@ -80,6 +80,10 @@ WindowsEventEngine::ConnectionState::ConnectionState(
                                         engine_->aba_token_.fetch_add(1)};
 }
 
+WindowsEventEngine::ConnectionState::~ConnectionState() {
+  socket_->Shutdown();
+}
+
 void WindowsEventEngine::ConnectionState::Start(Duration timeout) {
   on_connected_cb_ =
       std::make_unique<OnConnectedCallback>(engine_.get(), shared_from_this());

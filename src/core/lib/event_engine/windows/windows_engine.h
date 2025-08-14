@@ -117,6 +117,7 @@ class WindowsEventEngine
                     EventEngine::ResolvedAddress address,
                     MemoryAllocator allocator,
                     EventEngine::OnConnectCallback on_connect_user_callback);
+    ~ConnectionState() override;
 
     // Starts the deadline timer, and sets up the socket to notify on writes.
     //
