@@ -410,8 +410,7 @@ PosixEventEngine::CreateEndpointFromUnconnectedFdInternal(
   int connect_errno;
   PosixEventPoller* poller = GetPollerChecked();
   do {
-    err = poller->posix_interface().Connect(fd, addr.address(),
-                                                        addr.size());
+    err = poller->posix_interface().Connect(fd, addr.address(), addr.size());
   } while (err.IsPosixError(EINTR));
   if (err.IsWrongGenerationError()) {
     Run([on_connect = std::move(on_connect),
@@ -856,8 +855,7 @@ PosixEventEngine::CreatePosixListener(
     std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
   return std::make_unique<PosixEngineListener>(
       std::move(on_accept), std::move(on_shutdown), config,
-      std::move(memory_allocator_factory), poller_.get(),
-      shared_from_this());
+      std::move(memory_allocator_factory), poller_.get(), shared_from_this());
 }
 
 void PosixEventEngine::SchedulePoller() {
