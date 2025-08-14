@@ -142,13 +142,11 @@ class RubyPackage:
 class PythonPackage:
     """Collects python eggs and wheels created in the artifact phase"""
 
-    def __init__(self, platform="", arch="", copy_common_files=False):
+    def __init__(self, platform="", arch=""):
         self.name = "python_package"
         self.labels = ["package", "python", "linux"]
         self.platform = platform
         self.arch = arch
-        self.copy_common_files = copy_common_files
-
         if self.platform:
             self.labels.append(platform)
             self.name += "_" + platform
@@ -156,11 +154,8 @@ class PythonPackage:
             self.labels.append(arch)
             self.name += "_" + arch
 
-            if arch == "aarch64" and copy_common_files:
-                self.labels.append("exclude_in_collect_all_packages")
-        if copy_common_files:
-            self.name += "_copy_common_files"
-            self.labels.append("copy_common_files_python")
+            # if arch == "aarch64" and copy_common_files:
+            #     self.labels.append("exclude_in_collect_all_packages")
 
     def pre_build_jobspecs(self):
         return []
@@ -173,11 +168,12 @@ class PythonPackage:
         dockerfile_dir = (
             "tools/dockerfile/grpc_artifact_python_manylinux2014_x64"
         )
+        shell_command = "tools/run_tests/artifacts/package_python.sh",
         environ = {
             "PYTHON": "/opt/python/cp39-cp39/bin/python",
             "ARTIFACT_PREFIX": "python_",
             "EXCLUDE_PATTERNS": "python_musllinux_1_2_aarch64_* python_manylinux2014_aarch64_*",
-            "ONLY_COPY_COMMON_FILES": ""
+            # "ONLY_COPY_COMMON_FILES": ""
         }
         if "musllinux_1_2" in self.platform and "aarch64" in self.arch:
             dockerfile_dir = (
@@ -186,20 +182,25 @@ class PythonPackage:
             environ["ARTIFACT_PREFIX"] = "python_musllinux_1_2_aarch64_"
             environ["EXCLUDE_PATTERNS"] = ""
 
-        if "manylinux2014" in self.platform and "aarch64" in self.arch:
+        elif "manylinux2014" in self.platform and "aarch64" in self.arch:
             dockerfile_dir = (
                 "tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64"
             )
             environ["ARTIFACT_PREFIX"] = "python_manylinux2014_aarch64_"
             environ["EXCLUDE_PATTERNS"] = ""
 
-        if self.copy_common_files:
-            environ["ONLY_COPY_COMMON_FILES"] = "1"
+        elif "noarch" in self.arch:
+            shell_command = "tools/run_tests/artifacts/package_python_noarch.sh"
+
+            # noarch files in all platform-arch combinations are going to be
+            # the same, so specify any one prefix
+            environ["ARTIFACT_PREFIX"] = "python_manylinux2014_x64_"
+
 
         return create_docker_jobspec(
             self.name,
             dockerfile_dir,
-            "tools/run_tests/artifacts/build_package_python.sh",
+            shell_command,
             environ=environ,
         )
 
@@ -233,7 +234,15 @@ def targets():
         PythonPackage(),
         PythonPackage("musllinux_1_2", "aarch64"),
         PythonPackage("manylinux2014", "aarch64"),
-        PythonPackage(copy_common_files=True),
-        PythonPackage(arch="aarch64", copy_common_files=True),
+
+        # all the artifact builder configurations generate an equivalent
+        # grpcio-VERSION.tar.gz source distribution package and
+        # grpcio-VERSION-py3-none-any.whl file. Only one of them is needed in
+        # the artifacts/ directory. Hence copy it separately exactly once using
+        # a separate package target
+        # Note: Source installation using *tar.gz file is not tested for
+        # aarch64 jobs, so these files will not be copied in the
+        # 'Distribution Tests Arm64' job
+        PythonPackage(arch="noarch"),
         PHPPackage(),
     ]

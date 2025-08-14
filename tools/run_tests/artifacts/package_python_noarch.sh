@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2023 The gRPC Authors
+# Copyright 2016 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,15 +13,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+set -eux
 
-mkdir -p artifacts
+cd "$(dirname "$0")/../../.."
 
-# List all input artifacts we obtained for easier troubleshooting.
-ls -lR input_artifacts
+mkdir -p artifacts/
 
 # All the python packages have been built in the artifact phase already
 # and we only collect them here to deliver them to the distribtest phase.
-# This is the same logic as in "tools/run_tests/artifacts/package_python.sh",
-# but expects different layout under input_artifacts.
-cp -r input_artifacts/artifact_python_*/* artifacts/ || true
+
+tree "${EXTERNAL_GIT_ROOT}/input_artifacts/"
+
+# Build the find command to include all files which start with ARTIFACT_PREFIX
+find_cmd=(
+    find "${EXTERNAL_GIT_ROOT}/input_artifacts/"
+    -maxdepth 1
+    -type d
+    -name "${ARTIFACT_PREFIX}*"
+)
+
+
+# Copy only the '*.tar.gz' and '*py3-none-any.whl' files.
+"${find_cmd[@]}" -print0 \
+    | xargs -0 -I% find % -type f \( -name "*.tar.gz" -o \
+    -name "*py3-none-any.whl" \) -maxdepth 1 -exec cp -v {} ./artifacts \;

@@ -22,8 +22,10 @@ mkdir -p artifacts/
 # All the python packages have been built in the artifact phase already
 # and we only collect them here to deliver them to the distribtest phase.
 
-# Build the find command to include all files which start with ARTIFACT_PREFIX
-# but does not match any of the EXCLUDE_PATTERNS
+tree "${EXTERNAL_GIT_ROOT}/input_artifacts/"
+
+# 1. Build the find command to include all files which start with
+# ARTIFACT_PREFIX but does not match any of the EXCLUDE_PATTERNS
 find_cmd=(
     find "${EXTERNAL_GIT_ROOT}/input_artifacts/"
     -maxdepth 1
@@ -39,24 +41,6 @@ if [[ -n "$EXCLUDE_PATTERNS" ]]; then
 fi
 
 
-# all the artifact builder configurations generate an equivalent
-# grpcio-VERSION.tar.gz source distribution package and
-# grpcio-VERSION-py3-none-any.whl file. Only one of them will end up in the
-# artifacts/ directory. However when this script is executed by the different
-# package targets independently, the copy will fail due to copy conflicts
-# with the same name. Hence copy it separately exactly once in a separe docker
-# container job where ONLY_COPY_COMMON_FILES is set.
-
-if [[ "$ONLY_COPY_COMMON_FILES" == "" ]]; then
-
-    # Copy all files except '*.tar.gz' and '*py3-none-any.whl' files.
-    "${find_cmd[@]}"-print0 \
-        | xargs -0 -I% find % -type f -maxdepth 1 \
-        -not -name "*.tar.gz" -not -name "*py3-none-any.whl" \
-        -exec cp -v {} ./artifacts \;
-
-else
-    "${find_cmd[@]}" -print0 \
-        | xargs -0 -I% find % -type f \( -name "*.tar.gz" -o \
-        -name "*py3-none-any.whl" \) -maxdepth 1 -exec cp -v {} ./artifacts \;
-fi
+"${find_cmd[@]}" -print0 \
+    | xargs -0 -I% find % -type f \( -name "*.tar.gz" -o \
+    -name "*py3-none-any.whl" \) -maxdepth 1 -exec cp -v {} ./artifacts \;
