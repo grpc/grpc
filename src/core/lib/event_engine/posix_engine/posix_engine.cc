@@ -24,6 +24,7 @@
 #include <cstdint>
 #include <cstring>
 #include <memory>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -75,6 +76,14 @@ using namespace std::chrono_literals;
 namespace grpc_event_engine::experimental {
 
 namespace {
+
+bool ShouldUsePosixPoller() {
+#if defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
+  return grpc_core::IsEventEnginePollerForPythonEnabled();
+#else
+  return true;
+#endif
+}
 
 #if GRPC_ENABLE_FORK_SUPPORT && GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 
@@ -399,9 +408,10 @@ PosixEventEngine::CreateEndpointFromUnconnectedFdInternal(
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   PosixError err;
   int connect_errno;
-  PosixEventPoller* poller = poller_.get();
+  PosixEventPoller* poller = GetPollerChecked();
   do {
-    err = poller->posix_interface().Connect(fd, addr.address(), addr.size());
+    err = poller->posix_interface().Connect(fd, addr.address(),
+                                                        addr.size());
   } while (err.IsPosixError(EINTR));
   if (err.IsWrongGenerationError()) {
     Run([on_connect = std::move(on_connect),
@@ -490,6 +500,7 @@ std::shared_ptr<PosixEventEngine>
 PosixEventEngine::MakeTestOnlyPosixEventEngine(
     std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
         test_only_poller) {
+  // Calling a private PosixEventEngine constructor - can't do make_shared
   std::shared_ptr<PosixEventEngine> engine(
       new PosixEventEngine(std::move(test_only_poller)));
   RegisterEventEngineForFork(engine, engine->executor_, engine->timer_manager_);
@@ -675,7 +686,9 @@ PosixEventEngine::GetDNSResolver(
   if (!ares_resolver.ok()) {
     return ares_resolver.status();
   }
+#if GRPC_ENABLE_FORK_SUPPORT && GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
   RegisterAresResolverForFork(ares_resolver->get());
+#endif  // GRPC_ENABLE_FORK_SUPPORT && GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
   return std::make_unique<PosixEventEngine::PosixDNSResolver>(
       std::move(*ares_resolver));
 #else   // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
@@ -843,15 +856,17 @@ PosixEventEngine::CreatePosixListener(
     std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) {
   return std::make_unique<PosixEngineListener>(
       std::move(on_accept), std::move(on_shutdown), config,
-      std::move(memory_allocator_factory), poller_.get(), shared_from_this());
+      std::move(memory_allocator_factory), poller_.get(),
+      shared_from_this());
 }
 
 void PosixEventEngine::SchedulePoller() {
-  if (poller_ != nullptr) {
-    grpc_core::MutexLock lock(&mu_);
-    CHECK(!polling_cycle_.has_value());
-    polling_cycle_.emplace(executor_, poller_);
+  if (poller_ == nullptr) {
+    return;
   }
+  grpc_core::MutexLock lock(&mu_);
+  CHECK(!polling_cycle_.has_value());
+  polling_cycle_.emplace(executor_, poller_);
 }
 
 void PosixEventEngine::ResetPollCycle() {
@@ -925,13 +940,17 @@ void PosixEventEngine::AfterFork(OnForkRole on_fork_role) {
       AfterForkInChild();
     } else {
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-      poller->HandleForkInChild();
+      if (poller_ != nullptr) {
+        poller_->HandleForkInChild();
+      }
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
     }
   }
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  poller->ResetKickState();
-  SchedulePoller();
+  if (poller_ != nullptr) {
+    poller_->ResetKickState();
+    SchedulePoller();
+  }
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 }
 
@@ -952,7 +971,9 @@ void PosixEventEngine::AfterForkInChild() {
   }
 #endif
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  GetPollerChecked()->HandleForkInChild();
+  if (poller_ != nullptr) {
+    poller_->HandleForkInChild();
+  }
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
   for (const auto& cb : resolver_handles_) {
