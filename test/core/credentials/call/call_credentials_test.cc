@@ -730,6 +730,16 @@ void validate_compute_engine_http_request(const grpc_http_request* request,
   EXPECT_EQ(absl::string_view(request->hdrs[0].value), "Google");
 }
 
+void assert_query_parameters(const URI& uri, absl::string_view expected_key,
+                             absl::string_view expected_val) {
+  const auto it = uri.query_parameter_map().find(expected_key);
+  CHECK(it != uri.query_parameter_map().end());
+  if (it->second != expected_val) {
+    LOG(ERROR) << it->second << "!=" << expected_val;
+  }
+  CHECK(it->second == expected_val);
+}
+
 int compute_engine_httpcli_get_success_override(
     const grpc_http_request* request, const URI& uri, Timestamp /*deadline*/,
     grpc_closure* on_done, grpc_http_response* response) {
@@ -739,6 +749,14 @@ int compute_engine_httpcli_get_success_override(
   return 1;
 }
 
+int compute_engine_httpcli_get_success_alts_override(
+    const grpc_http_request* request, const URI& uri, Timestamp deadline,
+    grpc_closure* on_done, grpc_http_response* response) {
+  assert_query_parameters(uri, "transport", "alts");
+  return compute_engine_httpcli_get_success_override(request, uri, deadline,
+                                                     on_done, response);
+}
+
 int compute_engine_httpcli_get_failure_override(
     const grpc_http_request* request, const URI& uri, Timestamp /*deadline*/,
     grpc_closure* on_done, grpc_http_response* response) {
@@ -746,6 +764,14 @@ int compute_engine_httpcli_get_failure_override(
   *response = http_response(403, "Not Authorized.");
   ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
   return 1;
+}
+
+int compute_engine_httpcli_get_failure_alts_override(
+    const grpc_http_request* request, const URI& uri, Timestamp deadline,
+    grpc_closure* on_done, grpc_http_response* response) {
+  assert_query_parameters(uri, "transport", "alts");
+  return compute_engine_httpcli_get_failure_override(request, uri, deadline,
+                                                     on_done, response);
 }
 
 int httpcli_post_should_not_be_called(const grpc_http_request* /*request*/,
@@ -811,6 +837,46 @@ TEST_F(CredentialsTest, TestComputeEngineCredsSuccess) {
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
+TEST_F(CredentialsTest, TestComputeEngineCredsWithAltsSuccess) {
+  ExecCtx exec_ctx;
+  std::string emd = "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_";
+  const char expected_creds_debug_string[] =
+      "GoogleComputeEngineTokenFetcherCredentials{"
+      "OAuth2TokenFetcherCredentials}";
+  grpc_google_compute_engine_credentials_options* options =
+      static_cast<grpc_google_compute_engine_credentials_options*>(
+          gpr_malloc(sizeof(grpc_google_compute_engine_credentials_options)));
+  options->query_params = "transport=alts";
+  grpc_call_credentials* creds =
+      grpc_google_compute_engine_credentials_create(options);
+  gpr_free(options);
+  // Check security level.
+  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+
+  // First request: http get should be called.
+  auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
+  HttpRequest::SetOverride(compute_engine_httpcli_get_success_alts_override,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+
+  // Second request: the cached token should be served directly.
+  state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
+  HttpRequest::SetOverride(httpcli_get_should_not_be_called,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  ExecCtx::Get()->Flush();
+
+  CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
+           0);
+  creds->Unref();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
 TEST_F(CredentialsTest, TestComputeEngineCredsFailure) {
   ExecCtx exec_ctx;
   const char expected_creds_debug_string[] =
@@ -822,6 +888,32 @@ TEST_F(CredentialsTest, TestComputeEngineCredsFailure) {
   grpc_call_credentials* creds =
       grpc_google_compute_engine_credentials_create(nullptr);
   HttpRequest::SetOverride(compute_engine_httpcli_get_failure_override,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
+                                kTestPath);
+  CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
+           0);
+  creds->Unref();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
+TEST_F(CredentialsTest, TestComputeEngineCredsWithAltsFailure) {
+  ExecCtx exec_ctx;
+  const char expected_creds_debug_string[] =
+      "GoogleComputeEngineTokenFetcherCredentials{"
+      "OAuth2TokenFetcherCredentials}";
+  auto state = RequestMetadataState::NewInstance(
+      // TODO(roth): This should return UNAUTHENTICATED.
+      absl::UnavailableError("error parsing oauth2 token"), {});
+  grpc_google_compute_engine_credentials_options* options =
+      static_cast<grpc_google_compute_engine_credentials_options*>(
+          gpr_malloc(sizeof(grpc_google_compute_engine_credentials_options)));
+  options->query_params = "transport=alts";
+  grpc_call_credentials* creds =
+      grpc_google_compute_engine_credentials_create(options);
+  gpr_free(options);
+  HttpRequest::SetOverride(compute_engine_httpcli_get_failure_alts_override,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
@@ -1019,16 +1111,6 @@ TEST_F(CredentialsTest, TestInvalidStsCredsOptions) {
   };
   url_should_be_invalid = ValidateStsCredentialsOptions(&invalid_options);
   CHECK(!url_should_be_invalid.ok());
-}
-
-void assert_query_parameters(const URI& uri, absl::string_view expected_key,
-                             absl::string_view expected_val) {
-  const auto it = uri.query_parameter_map().find(expected_key);
-  CHECK(it != uri.query_parameter_map().end());
-  if (it->second != expected_val) {
-    LOG(ERROR) << it->second << "!=" << expected_val;
-  }
-  CHECK(it->second == expected_val);
 }
 
 void validate_sts_token_http_request(const grpc_http_request* request,
@@ -1761,6 +1843,44 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsCallCredsSpecified) {
   grpc_composite_channel_credentials* channel_creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
           grpc_google_default_credentials_create(call_creds, nullptr));
+  CHECK_EQ(g_test_gce_tenancy_checker_called, false);
+  CHECK_NE(channel_creds, nullptr);
+  CHECK_NE(channel_creds->call_creds(), nullptr);
+  HttpRequest::SetOverride(compute_engine_httpcli_get_success_override,
+                           httpcli_post_should_not_be_called,
+                           httpcli_put_should_not_be_called);
+  state->RunRequestMetadataTest(channel_creds->mutable_call_creds(),
+                                kTestUrlScheme, kTestAuthority, kTestPath);
+  ExecCtx::Get()->Flush();
+  channel_creds->Unref();
+  HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
+TEST_F(CredentialsTest, TestGoogleDefaultCredsWithAltsCallCredsSpecified) {
+  auto state = RequestMetadataState::NewInstance(
+      absl::OkStatus(),
+      "authorization: Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_");
+  ExecCtx exec_ctx;
+  grpc_flush_cached_google_default_credentials();
+  grpc_call_credentials* call_creds_for_tls =
+      grpc_google_compute_engine_credentials_create(nullptr);
+  grpc_google_compute_engine_credentials_options* options =
+      static_cast<grpc_google_compute_engine_credentials_options*>(
+          gpr_malloc(sizeof(grpc_google_compute_engine_credentials_options)));
+  options->query_params = "transport=alts";
+  grpc_call_credentials* call_creds_for_alts =
+      grpc_google_compute_engine_credentials_create(options);
+  gpr_free(options);
+  set_gce_tenancy_checker_for_testing(test_gce_tenancy_checker);
+  g_test_gce_tenancy_checker_called = false;
+  g_test_is_on_gce = true;
+  HttpRequest::SetOverride(
+      default_creds_metadata_server_detection_httpcli_get_success_override,
+      httpcli_post_should_not_be_called, httpcli_put_should_not_be_called);
+  grpc_composite_channel_credentials* channel_creds =
+      reinterpret_cast<grpc_composite_channel_credentials*>(
+          grpc_google_default_credentials_create(call_creds_for_tls,
+                                                 call_creds_for_alts));
   CHECK_EQ(g_test_gce_tenancy_checker_called, false);
   CHECK_NE(channel_creds, nullptr);
   CHECK_NE(channel_creds->call_creds(), nullptr);
