@@ -14,20 +14,32 @@
 # limitations under the License.
 
 trap 'date' DEBUG
-set -ex -o igncr || set -ex
+set -ex
 
 mkdir -p /var/local/git
 git clone -b master --single-branch --depth=1 https://github.com/grpc/grpc.git /var/local/git/grpc
 cd /var/local/git/grpc
 
 python3 -m pip install virtualenv
-VIRTUAL_ENV=$(mktemp -d)
-python3 -m virtualenv "$VIRTUAL_ENV" -p python3
-PYTHON="$VIRTUAL_ENV"/bin/python
-"$PYTHON" -m pip install --upgrade pip==19.3.1
-# TODO(sergiitk): Unpin grpcio-tools when a version of xds-protos
-#   compatible with protobuf 4.X is uploaded to PyPi.
-"$PYTHON" -m pip install --upgrade grpcio grpcio-tools==1.48.1 google-api-python-client google-auth-httplib2 oauth2client xds-protos
+VIRTUAL_ENV="$(mktemp -d)"
+python3 -m virtualenv "${VIRTUAL_ENV}"
+
+# Activate venv without printing garbage.
+{ set +x; } 2>/dev/null
+echo "Activating Python venv"
+source "${VIRTUAL_ENV}/bin/activate"
+set -x
+
+python -VV
+pip install --upgrade pip==25.2
+pip install --upgrade \
+    grpcio-tools==1.74.0 \
+    grpcio==1.74.0 \
+    xds-protos==1.74.0 \
+    google-api-python-client==2.179.0 \
+    google-auth-httplib2==0.2.0 \
+    oauth2client==4.1.3
+pip list
 
 # Prepare generated Python code.
 TOOLS_DIR=tools/run_tests
@@ -39,7 +51,7 @@ touch "$TOOLS_DIR"/src/proto/__init__.py
 touch "$TOOLS_DIR"/src/proto/grpc/__init__.py
 touch "$TOOLS_DIR"/src/proto/grpc/testing/__init__.py
 
-"$PYTHON" -m grpc_tools.protoc \
+python -m grpc_tools.protoc \
     --proto_path=. \
     --python_out="$TOOLS_DIR" \
     --grpc_python_out="$TOOLS_DIR" \
@@ -53,7 +65,7 @@ mkdir -p ${HEALTH_PROTO_DEST_DIR}
 touch "$TOOLS_DIR"/src/proto/grpc/health/__init__.py
 touch "$TOOLS_DIR"/src/proto/grpc/health/v1/__init__.py
 
-"$PYTHON" -m grpc_tools.protoc \
+python -m grpc_tools.protoc \
     --proto_path=. \
     --python_out=${TOOLS_DIR} \
     --grpc_python_out=${TOOLS_DIR} \
@@ -67,7 +79,7 @@ bazel build test/cpp/interop:xds_interop_client
 #
 # TODO: remove "path_matching" and "header_matching" from --test_case after
 # they are added into "all".
-GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb "$PYTHON" \
+GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb python \
    /var/local/git/grpc/tools/run_tests/run_xds_tests.py \
     --halt_after_fail \
     --test_case="ping_pong" \
