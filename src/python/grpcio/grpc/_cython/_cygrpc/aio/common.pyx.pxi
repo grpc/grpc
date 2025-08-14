@@ -187,7 +187,7 @@ else:
         global _global_loop, _loop_lock
         with _loop_lock:
             if _global_loop is not None:
-                _LOGGER.info("reusing existing loop")
+                _LOGGER.info(f"reusing existing loop: {id(_global_loop)=}")
                 return _global_loop
 
             import threading
@@ -210,6 +210,7 @@ else:
             )
 
             _global_loop = asyncio.new_event_loop()
+            _LOGGER.info(f"created new loop: {id(_global_loop)=}")
             asyncio.set_event_loop(_global_loop)
             return _global_loop
 
