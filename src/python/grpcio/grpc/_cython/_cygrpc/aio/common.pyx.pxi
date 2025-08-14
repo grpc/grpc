@@ -32,23 +32,46 @@ cdef grpc_status_code get_status_code(object code) except *:
         except (KeyError, AttributeError):
             return StatusCode.unknown
 
+async def async_deserialize(object deserializer, bytes raw_message, object loop=None):
+    """Perform async deserialization on raw bytes.
 
-cdef object deserialize(object deserializer, bytes raw_message):
+    Failure to deserialize is a fatal error.
+    """
+    if deserializer:
+        async_deserializer = make_async_deserializer(deserializer)
+        return await async_deserializer(raw_message)
+    else:
+        return raw_message
+
+
+async def async_serialize(object serializer, object message, object loop=None):
+    """Perform async serialization on a message.
+
+    Failure to serialize is a fatal error.
+    """
+    if isinstance(message, str):
+        message = message.encode('utf-8')
+    
+    if serializer:
+        # Convert sync serializer to async if needed
+        async_serializer = make_async_serializer(serializer)
+        return await async_serializer(message)
+    else:
+        return message
+
+
+async def deserialize(object deserializer, bytes raw_message):
     """Perform deserialization on raw bytes.
 
     Failure to deserialize is a fatal error.
     """
     if deserializer:
-        if asyncio.iscoroutinefunction(deserializer):
-            # For async deserializers, we need to handle this differently
-            # since we can't await in a cdef function
-            raise RuntimeError("Async deserializers must use async_deserialize function")
-        return deserializer(raw_message)
+        return await async_deserialize(deserializer, raw_message)
     else:
         return raw_message
 
 
-cdef bytes serialize(object serializer, object message):
+async def serialize(object serializer, object message):
     """Perform serialization on a message.
 
     Failure to serialize is a fatal error.
@@ -56,11 +79,7 @@ cdef bytes serialize(object serializer, object message):
     if isinstance(message, str):
         message = message.encode('utf-8')
     if serializer:
-        if asyncio.iscoroutinefunction(serializer):
-            # For async serializers, we need to handle this differently
-            # since we can't await in a cdef function
-            raise RuntimeError("Async serializers must be handled in async context")
-        return serializer(message)
+        return await async_serialize(serializer, message)
     else:
         return message
 
@@ -100,34 +119,6 @@ def make_async_serializer(object sync_serializer):
     
     return async_wrapper
 
-
-async def async_deserialize(object deserializer, bytes raw_message, object loop=None):
-    """Perform async deserialization on raw bytes.
-
-    Failure to deserialize is a fatal error.
-    """
-    if deserializer:
-        # Convert sync deserializer to async if needed
-        async_deserializer = make_async_deserializer(deserializer)
-        return await async_deserializer(raw_message)
-    else:
-        return raw_message
-
-
-async def async_serialize(object serializer, object message, object loop=None):
-    """Perform async serialization on a message.
-
-    Failure to serialize is a fatal error.
-    """
-    if isinstance(message, str):
-        message = message.encode('utf-8')
-    
-    if serializer:
-        # Convert sync serializer to async if needed
-        async_serializer = make_async_serializer(serializer)
-        return await async_serializer(message)
-    else:
-        return message
 
 
 class _EOF:

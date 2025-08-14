@@ -134,14 +134,14 @@ cdef class _ServicerContext:
         if raw_message is None:
             return EOF
         else:
-            return deserialize(self._request_deserializer,
+            return await deserialize(self._request_deserializer,
                             raw_message)
 
     async def write(self, object message):
         self._rpc_state.raise_for_termination()
 
         await _send_message(self._rpc_state,
-                            serialize(self._response_serializer, message),
+                            await serialize(self._response_serializer, message),
                             self._rpc_state.create_send_initial_metadata_op_if_not_sent(),
                             self._rpc_state.get_write_flag(),
                             self._loop)
@@ -428,7 +428,7 @@ async def _finish_handler_with_unary_response(RPCState rpc_state,
     # Serializes the response message
     cdef bytes response_raw
     if rpc_state.status_code == StatusCode.ok:
-        response_raw = serialize(
+        response_raw = await serialize(
             response_serializer,
             response_message,
         )
@@ -537,7 +537,7 @@ async def _handle_unary_unary_rpc(object method_handler,
         return
 
     # Deserializes the request message
-    cdef object request_message = deserialize(
+    cdef object request_message = await deserialize(
         method_handler.request_deserializer,
         request_raw,
     )
@@ -570,7 +570,7 @@ async def _handle_unary_stream_rpc(object method_handler,
         return
 
     # Deserializes the request message
-    cdef object request_message = deserialize(
+    cdef object request_message = await deserialize(
         method_handler.request_deserializer,
         request_raw,
     )
