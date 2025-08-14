@@ -173,8 +173,8 @@ class PythonPackage:
             "PYTHON": "/opt/python/cp39-cp39/bin/python",
             "ARTIFACT_PREFIX": "python_",
             "EXCLUDE_PATTERNS": "python_musllinux_1_2_aarch64_* python_manylinux2014_aarch64_*",
-            # "ONLY_COPY_COMMON_FILES": ""
         }
+
         if "musllinux_1_2" in self.platform and "aarch64" in self.arch:
             dockerfile_dir = (
                 "tools/dockerfile/grpc_artifact_python_musllinux_1_2_aarch64"
@@ -190,6 +190,14 @@ class PythonPackage:
             environ["EXCLUDE_PATTERNS"] = ""
 
         elif "noarch" in self.arch:
+            # all the artifact builder configurations generate an equivalent
+            # grpcio-VERSION.tar.gz source distribution package and
+            # grpcio-VERSION-py3-none-any.whl file. Only one of them is needed in
+            # the artifacts/ directory. Hence copy it separately exactly once using
+            # a separate package target
+            # Note: Source installation using *tar.gz file is not tested for
+            # aarch64 jobs, so these files will not be copied in the
+            # 'Distribution Tests Arm64' job
             shell_command = "tools/run_tests/artifacts/package_python_noarch.sh"
 
             # noarch files in all platform-arch combinations are going to be
@@ -234,15 +242,6 @@ def targets():
         PythonPackage(),
         PythonPackage("musllinux_1_2", "aarch64"),
         PythonPackage("manylinux2014", "aarch64"),
-
-        # all the artifact builder configurations generate an equivalent
-        # grpcio-VERSION.tar.gz source distribution package and
-        # grpcio-VERSION-py3-none-any.whl file. Only one of them is needed in
-        # the artifacts/ directory. Hence copy it separately exactly once using
-        # a separate package target
-        # Note: Source installation using *tar.gz file is not tested for
-        # aarch64 jobs, so these files will not be copied in the
-        # 'Distribution Tests Arm64' job
         PythonPackage(arch="noarch"),
         PHPPackage(),
     ]
