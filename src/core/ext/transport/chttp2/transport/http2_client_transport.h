@@ -72,10 +72,11 @@ namespace http2 {
 // |---------------------|--------------|-----------------------|------------|
 // | Endpoint Read Loop  | Infinite     | On transport close    | One        |
 // | Endpoint Write Loop | Infinite     | On transport close    | One        |
+// | Stream Multiplexer  | Infinite     | On transport close    | One        |
 // | Close Transport     | CloseTimeout | On transport close    | One        |
 
-// Max Party Slots (Always): 2
-// Max Promise Slots (Worst Case): 3
+// Max Party Slots (Always): 3
+// Max Promise Slots (Worst Case): 4
 
 // Experimental : This is just the initial skeleton of class
 // and it is functions. The code will be written iteratively.

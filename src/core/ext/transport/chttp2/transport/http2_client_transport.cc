@@ -732,8 +732,7 @@ auto Http2ClientTransport::StreamMultiplexerLoop() {
               // Close transport if we fail to enqueue stream.
               return absl::InternalError("Failed to enqueue stream");
             }
-          }
-          if (GPR_UNLIKELY(!result.ok())) {
+          } else if (GPR_UNLIKELY(!result.ok())) {
             // Close the corresponding stream if we fail to dequeue frames from
             // the stream queue.
             LOG(ERROR) << "Failed to dequeue frames for stream " << stream_id
