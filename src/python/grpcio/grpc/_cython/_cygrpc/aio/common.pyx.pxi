@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import warnings
+import asyncio
 
 from cpython.version cimport PY_MAJOR_VERSION, PY_MINOR_VERSION
 
@@ -38,6 +39,10 @@ cdef object deserialize(object deserializer, bytes raw_message):
     Failure to deserialize is a fatal error.
     """
     if deserializer:
+        if asyncio.iscoroutinefunction(deserializer):
+            # For async deserializers, we need to handle this differently
+            # since we can't await in a cdef function
+            raise RuntimeError("Async deserializers must use async_deserialize function")
         return deserializer(raw_message)
     else:
         return raw_message
@@ -51,7 +56,76 @@ cdef bytes serialize(object serializer, object message):
     if isinstance(message, str):
         message = message.encode('utf-8')
     if serializer:
+        if asyncio.iscoroutinefunction(serializer):
+            # For async serializers, we need to handle this differently
+            # since we can't await in a cdef function
+            raise RuntimeError("Async serializers must be handled in async context")
         return serializer(message)
+    else:
+        return message
+
+
+def make_async_deserializer(object sync_deserializer):
+    """Convert a synchronous deserializer to an async function.
+    
+    This wraps the sync deserializer in an async function that runs it
+    in a thread pool to avoid blocking the event loop.
+    """
+    if asyncio.iscoroutinefunction(sync_deserializer):
+        # Already async, return as-is
+        return sync_deserializer
+    
+    async def async_wrapper(raw_message):
+        """Async wrapper for sync deserializer."""
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, sync_deserializer, raw_message)
+    
+    return async_wrapper
+
+
+def make_async_serializer(object sync_serializer):
+    """Convert a synchronous serializer to an async function.
+    
+    This wraps the sync serializer in an async function that runs it
+    in a thread pool to avoid blocking the event loop.
+    """
+    if asyncio.iscoroutinefunction(sync_serializer):
+        # Already async, return as-is
+        return sync_serializer
+    
+    async def async_wrapper(message):
+        """Async wrapper for sync serializer."""
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, sync_serializer, message)
+    
+    return async_wrapper
+
+
+async def async_deserialize(object deserializer, bytes raw_message, object loop=None):
+    """Perform async deserialization on raw bytes.
+
+    Failure to deserialize is a fatal error.
+    """
+    if deserializer:
+        # Convert sync deserializer to async if needed
+        async_deserializer = make_async_deserializer(deserializer)
+        return await async_deserializer(raw_message)
+    else:
+        return raw_message
+
+
+async def async_serialize(object serializer, object message, object loop=None):
+    """Perform async serialization on a message.
+
+    Failure to serialize is a fatal error.
+    """
+    if isinstance(message, str):
+        message = message.encode('utf-8')
+    
+    if serializer:
+        # Convert sync serializer to async if needed
+        async_serializer = make_async_serializer(serializer)
+        return await async_serializer(message)
     else:
         return message
 
