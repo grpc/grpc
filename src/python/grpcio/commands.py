@@ -127,6 +127,8 @@ class BuildProjectMetadata(setuptools.Command):
         module_file_path = os.path.join(PYTHON_STEM, "grpc/_grpcio_metadata.py")
         version = self.distribution.get_version()
 
+        # TODO(sergiitk): sometime in Nov 2025 - consider removing the env var
+        # and making this the default behavior.
         skip_metadata_update_on_match = os.environ.get(
             "GRPC_PYTHON_BUILD_SKIP_METADATA_ON_VERSION_MATCH", "0"
         )
