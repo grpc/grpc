@@ -166,8 +166,8 @@ class Http2SettingsManager {
 class SettingsTimeoutManager {
  public:
   // Assumption : This would be set only once in the life of the transport.
-  void SetSettingsTimeout(const ChannelArgs& channel_args,
-                          const Duration keepalive_timeout) {
+  inline void SetSettingsTimeout(const ChannelArgs& channel_args,
+                                 const Duration keepalive_timeout) {
     timeout_ =
         channel_args.GetDurationFromIntMillis(GRPC_ARG_SETTINGS_TIMEOUT)
             .value_or(std::max(keepalive_timeout * 2, Duration::Minutes(1)));
@@ -175,7 +175,7 @@ class SettingsTimeoutManager {
 
   // To be called when a promise based Transport receives an a SETTINGS ACK
   // frame.
-  void OnSettingsAckReceived() { RecordReceivedAck(); }
+  inline void OnSettingsAckReceived() { RecordReceivedAck(); }
 
   // This returns a promise which must be spawned on transports general party.
   // This must be spawned soon after the transport sends a SETTINGS frame on the
@@ -185,6 +185,8 @@ class SettingsTimeoutManager {
     GRPC_SETTINGS_TIMEOUT_DLOG
         << "SettingsTimeoutManager::WaitForSettingsTimeout Factory";
     StartSettingsTimeoutTimer();
+    // TODO(tjagtap) : [PH2][P1] : Make this a ref counted class and manage the
+    // lifetime
     return AssertResultType<absl::Status>(
         Race(
             [this]() -> Poll<absl::Status> {
@@ -221,7 +223,7 @@ class SettingsTimeoutManager {
   }
 
  private:
-  void StartSettingsTimeoutTimer() {
+  inline void StartSettingsTimeoutTimer() {
     GRPC_SETTINGS_TIMEOUT_DLOG
         << "SettingsTimeoutManager::StartSettingsTimeoutTimer "
            "did_register_waker_ "
@@ -231,14 +233,14 @@ class SettingsTimeoutManager {
     DCHECK(!did_register_waker_);
     sent_time_ = Timestamp::Now();
   }
-  bool DidReceiveAck() {
+  inline bool DidReceiveAck() {
     GRPC_SETTINGS_TIMEOUT_DLOG
         << "SettingsTimeoutManager::DidReceiveAck did_register_waker_ "
         << did_register_waker_
         << " number_of_acks_unprocessed_ : " << number_of_acks_unprocessed_;
     return number_of_acks_unprocessed_ > 0;
   }
-  void AddWaitingForAck() {
+  inline void AddWaitingForAck() {
     GRPC_SETTINGS_TIMEOUT_DLOG
         << "SettingsTimeoutManager::AddWaitingForAck did_register_waker_ "
         << did_register_waker_
@@ -250,7 +252,7 @@ class SettingsTimeoutManager {
     }
     DCHECK(did_register_waker_);
   }
-  void RecordReceivedAck() {
+  inline void RecordReceivedAck() {
     GRPC_SETTINGS_TIMEOUT_DLOG
         << "SettingsTimeoutManager::RecordReceivedAck did_register_waker_ "
         << did_register_waker_
@@ -265,7 +267,7 @@ class SettingsTimeoutManager {
     }
     DCHECK(!did_register_waker_);
   }
-  void RemoveReceivedAck() {
+  inline void RemoveReceivedAck() {
     GRPC_SETTINGS_TIMEOUT_DLOG
         << "SettingsTimeoutManager::RemoveReceivedAck did_register_waker_ "
         << did_register_waker_
@@ -274,7 +276,7 @@ class SettingsTimeoutManager {
     DCHECK_EQ(number_of_acks_unprocessed_, 0);
     DCHECK(!did_register_waker_);
   }
-  void CleanUpForTransportClosure() {
+  inline void CleanUpForTransportClosure() {
     GRPC_SETTINGS_TIMEOUT_DLOG
         << "SettingsTimeoutManager::CleanUpForTransportClosure "
            "did_register_waker_ "
