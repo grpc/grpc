@@ -45,6 +45,7 @@ class _ServerStoppedError(BaseError):
 cdef class RPCState:
 
     def __cinit__(self, AioServer server):
+        _LOGGER.info("(server) RPCState.__cinit__()")
         init_grpc_aio()
         self.call = NULL
         self.server = server
@@ -895,6 +896,7 @@ cdef class AioServer:
 
     def __init__(self, loop, thread_pool, generic_handlers, interceptors,
                  options, maximum_concurrent_rpcs):
+        _LOGGER.info("AioServer.__cinit__()")
         init_grpc_aio()
         # NOTE(lidiz) Core objects won't be deallocated automatically.
         # If AioServer.shutdown is not called, those objects will leak.
