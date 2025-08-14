@@ -284,14 +284,17 @@ class BuildExt(build_ext.build_ext):
         old_compile = self.compiler._compile
 
         def new_compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
+            cpp_only_flags = ("-std=c++17", "-stdlib=libc++", "/std:c++17")
+            c_only_flags = ("-std=c11", "/std:c11")
             if src.endswith(".c"):
                 extra_postargs = [
-                    arg for arg in extra_postargs if arg != "-std=c++17"
+                    arg for arg in extra_postargs if arg not in cpp_only_flags
                 ]
             elif src.endswith((".cc", ".cpp")):
                 extra_postargs = [
-                    arg for arg in extra_postargs if arg != "-std=c11"
+                    arg for arg in extra_postargs if arg not in c_only_flags
                 ]
+
             return old_compile(obj, src, ext, cc_args, extra_postargs, pp_opts)
 
         self.compiler._compile = new_compile
