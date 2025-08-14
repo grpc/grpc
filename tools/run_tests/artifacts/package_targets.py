@@ -176,7 +176,7 @@ class PythonPackage:
         environ = {
             "PYTHON": "/opt/python/cp39-cp39/bin/python",
             "ARTIFACT_PREFIX": "python_",
-            "EXCLUDE_PATTERN": "python_*_aarch64_*",
+            "EXCLUDE_PATTERNS": "python_musllinux_1_2_aarch64_* python_manylinux2014_aarch64_*",
             "ONLY_COPY_COMMON_FILES": ""
         }
         if "musllinux_1_2" in self.platform and "aarch64" in self.arch:
@@ -184,14 +184,14 @@ class PythonPackage:
                 "tools/dockerfile/grpc_artifact_python_musllinux_1_2_aarch64"
             )
             environ["ARTIFACT_PREFIX"] = "python_musllinux_1_2_aarch64_"
-            environ["EXCLUDE_PATTERN"] = ""
+            environ["EXCLUDE_PATTERNS"] = ""
 
         if "manylinux2014" in self.platform and "aarch64" in self.arch:
             dockerfile_dir = (
                 "tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64"
             )
             environ["ARTIFACT_PREFIX"] = "python_manylinux2014_aarch64_"
-            environ["EXCLUDE_PATTERN"] = ""
+            environ["EXCLUDE_PATTERNS"] = ""
 
         if self.copy_common_files:
             environ["ONLY_COPY_COMMON_FILES"] = "1"
