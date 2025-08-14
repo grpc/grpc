@@ -180,8 +180,28 @@ class Http2ClientTransport final : public ClientTransport {
 
   // Writing to the endpoint.
 
-  // Read from the MPSC queue and write it.
-  auto WriteFromQueue();
+  // Write the frames from MPSC queue to the endpoint. Frames sent from here
+  // will be:
+  // 1. Data
+  // 2. Header
+  // 3. Continuation
+  // 4. Settings Ack
+  auto WriteFromQueue(std::vector<Http2Frame> frames);
+
+  // Write time sensitive control frames to the endpoint. Frames sent from here
+  // will be:
+  // 1. Ping and ping acks.
+  // 2. Settings
+  // 3. Goaway
+  // 4. Window update
+  // 5. Custom security
+  // These frames are written to the endpoint in a single endpoint write. If any
+  // module needs to take action after the write (for cases like spawning
+  // timeout promises), they MUST plug the call in the NotifyEndpointWriteDone.
+  auto WriteControlFrames();
+
+  // Notify the control frames modules that the endpoint write is done.
+  void NotifyEndpointWriteDone();
 
   // Returns a promise to keep writing in a Loop till a fail/close is
   // received.
