@@ -96,7 +96,7 @@ def make_async_deserializer(object sync_deserializer):
     
     async def async_wrapper(raw_message):
         """Async wrapper for sync deserializer."""
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
         return await loop.run_in_executor(None, sync_deserializer, raw_message)
     
     return async_wrapper
@@ -114,7 +114,7 @@ def make_async_serializer(object sync_serializer):
     
     async def async_wrapper(message):
         """Async wrapper for sync serializer."""
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
         return await loop.run_in_executor(None, sync_serializer, message)
     
     return async_wrapper
