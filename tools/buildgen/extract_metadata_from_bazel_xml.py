@@ -612,6 +612,7 @@ def _expand_upb_proto_library_rules(bazel_rules):
         ("@com_envoyproxy_protoc_gen_validate//", ""),
         ("@envoy_api//", ""),
         ("@opencensus_proto//", ""),
+        ("@cel-spec//", ""),
     ]
     for name, bazel_rule in bazel_rules.items():
         gen_func = bazel_rule.get("generator_function", None)
@@ -657,7 +658,11 @@ def _expand_upb_proto_library_rules(bazel_rules):
                         proto_src = proto_src[len(prefix_to_strip) :]
                         break
                 if proto_src.startswith("@"):
-                    raise Exception('"{0}" is unknown workspace.'.format(name))
+                    raise Exception(
+                        '"{0}" is unknown workspace. proto_src: {1}'.format(
+                            name, proto_src
+                        )
+                    )
                 proto_src_file = _try_extract_source_file_path(proto_src)
                 if not proto_src_file:
                     raise Exception(
