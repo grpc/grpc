@@ -1355,8 +1355,8 @@ absl::Status ClientChannelFilter::CreateOrUpdateLbPolicyLocked(
   // Construct update.
   LoadBalancingPolicy::UpdateArgs update_args;
   if (!result.addresses.ok()) {
-    update_args.addresses = std::make_shared<StatusEndpointIterator>(
-        result.addresses.status());
+    update_args.addresses =
+        std::make_shared<StatusEndpointIterator>(result.addresses.status());
   } else {
     update_args.addresses = std::make_shared<EndpointAddressesListIterator>(
         std::move(*result.addresses));

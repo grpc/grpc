@@ -738,8 +738,8 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
     }
   };
   std::set<EndpointAddresses, EndpointAddressesLessThan> ordered_addresses;
-  absl::Status status = args.addresses->ForEach(
-      [&](const EndpointAddresses& endpoint) {
+  absl::Status status =
+      args.addresses->ForEach([&](const EndpointAddresses& endpoint) {
         ordered_addresses.insert(endpoint);
       });
   if (status.ok()) {
@@ -748,8 +748,8 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
         << ordered_addresses.size() << " endpoints";
   } else {
     GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
-        << "[WRR " << this << "] received update with address error: "
-        << status;
+        << "[WRR " << this
+        << "] received update with address error: " << status;
     // If we already have an endpoint list, then keep using the existing
     // list, but still report back that the update was not accepted.
     if (endpoint_list_ != nullptr) return status;

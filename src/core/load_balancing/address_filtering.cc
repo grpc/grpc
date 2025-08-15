@@ -89,8 +89,8 @@ class HierarchicalAddressIterator final : public EndpointAddressesIterator {
 absl::StatusOr<HierarchicalAddressMap> MakeHierarchicalAddressMap(
     std::shared_ptr<EndpointAddressesIterator> addresses) {
   HierarchicalAddressMap result;
-  absl::Status status = addresses->ForEach(
-      [&](const EndpointAddresses& endpoint) {
+  absl::Status status =
+      addresses->ForEach([&](const EndpointAddresses& endpoint) {
         const auto* path_arg = endpoint.args().GetObject<HierarchicalPathArg>();
         if (path_arg == nullptr) return;
         const std::vector<RefCountedStringValue>& path = path_arg->path();

@@ -238,8 +238,7 @@ absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
         << " endpoints";
   } else {
     GRPC_TRACE_LOG(round_robin, INFO)
-        << "[RR " << this << "] received update with address error: "
-        << status;
+        << "[RR " << this << "] received update with address error: " << status;
     // If we already have a child list, then keep using the existing
     // list, but still report back that the update was not accepted.
     if (endpoint_list_ != nullptr) return status;

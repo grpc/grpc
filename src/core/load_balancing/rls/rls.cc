@@ -1873,10 +1873,8 @@ bool EndpointsChanged(const EndpointAddressesIterator* old_endpoints,
   if (old_endpoints == nullptr) return true;
   CHECK_NE(new_endpoints, nullptr);
   std::vector<EndpointAddresses> old_list;
-  absl::Status old_status =
-      old_endpoints->ForEach([&](const EndpointAddresses& endpoint) {
-        old_list.push_back(endpoint);
-      });
+  absl::Status old_status = old_endpoints->ForEach(
+      [&](const EndpointAddresses& endpoint) { old_list.push_back(endpoint); });
   size_t i = 0;
   bool different = false;
   absl::Status new_status =

@@ -1527,8 +1527,8 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
   CHECK(config_ != nullptr);
   args_ = std::move(args.args);
   // Update fallback address list.
-  fallback_backend_addresses_ = std::make_shared<NullLbTokenEndpointIterator>(
-      std::move(args.addresses));
+  fallback_backend_addresses_ =
+      std::make_shared<NullLbTokenEndpointIterator>(std::move(args.addresses));
   resolution_note_ = std::move(args.resolution_note);
   // Update balancer channel.
   absl::Status status = UpdateBalancerChannelLocked();

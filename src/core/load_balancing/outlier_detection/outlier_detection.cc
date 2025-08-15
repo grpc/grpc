@@ -642,8 +642,8 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
   // Update subchannel and endpoint maps.
   std::set<EndpointAddressSet> current_endpoints;
   std::set<grpc_resolved_address, ResolvedAddressLessThan> current_addresses;
-  absl::Status status = args.addresses->ForEach(
-      [&](const EndpointAddresses& endpoint) {
+  absl::Status status =
+      args.addresses->ForEach([&](const EndpointAddresses& endpoint) {
         EndpointAddressSet key(endpoint.addresses());
         current_endpoints.emplace(key);
         for (const grpc_resolved_address& address : endpoint.addresses()) {

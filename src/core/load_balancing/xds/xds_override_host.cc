@@ -724,8 +724,7 @@ absl::Status XdsOverrideHostLb::UpdateLocked(UpdateArgs args) {
         std::make_shared<ChildEndpointIterator>(std::move(args.addresses));
   } else {
     GRPC_TRACE_LOG(xds_override_host_lb, INFO)
-        << "[xds_override_host_lb " << this
-        << "] address error: " << status;
+        << "[xds_override_host_lb " << this << "] address error: " << status;
   }
   // Create child policy if needed.
   if (child_policy_ == nullptr) {
@@ -792,8 +791,8 @@ absl::Status XdsOverrideHostLb::UpdateAddressMap(
           per_endpoint_args(std::move(args)) {}
   };
   std::map<const std::string, AddressInfo> addresses_for_map;
-  absl::Status status = endpoints.ForEach(
-      [&](const EndpointAddresses& endpoint) {
+  absl::Status status =
+      endpoints.ForEach([&](const EndpointAddresses& endpoint) {
         XdsHealthStatus status = GetEndpointHealthStatus(endpoint);
         // Skip draining hosts if not in the override status set.
         if (status.status() == XdsHealthStatus::kDraining &&
