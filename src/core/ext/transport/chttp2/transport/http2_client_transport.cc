@@ -268,7 +268,11 @@ Http2Status Http2ClientTransport::ProcessMetadata(
   if (assembler.IsReady()) {
     ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> read_result =
         assembler.ReadMetadata(parser_, !incoming_header_end_stream_,
-                               /*is_client=*/true);
+                               /*is_client=*/true,
+                               /*max_header_list_size_soft_limit=*/
+                               max_header_list_size_soft_limit_,
+                               /*max_header_list_size_hard_limit=*/
+                               settings_.acked().max_header_list_size());
     if (read_result.IsOk()) {
       Arena::PoolPtr<grpc_metadata_batch> metadata =
           TakeValue(std::move(read_result));
@@ -707,6 +711,8 @@ Http2ClientTransport::Http2ClientTransport(
       is_first_write_(true),
       incoming_header_stream_id_(0),
       on_receive_settings_(on_receive_settings),
+      max_header_list_size_soft_limit_(
+          GetSoftLimitFromChannelArgs(channel_args)),
       keepalive_time_(std::max(
           Duration::Seconds(10),
           channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIME_MS)

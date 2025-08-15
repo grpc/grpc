@@ -199,14 +199,14 @@ class Worker : public grpc_core::DualRefCounted<Worker> {
 class PosixEndpointTest : public ::testing::TestWithParam<bool> {
   void SetUp() override {
     oracle_ee_ = std::make_shared<PosixOracleEventEngine>();
-    scheduler_ =
-        std::make_unique<grpc_event_engine::experimental::TestScheduler>(
+    thread_pool_ =
+        std::make_shared<grpc_event_engine::experimental::TestThreadPool>(
             posix_ee_.get());
-    EXPECT_NE(scheduler_, nullptr);
-    poller_ = MakeDefaultPoller(scheduler_.get());
+    EXPECT_NE(thread_pool_, nullptr);
+    poller_ = MakeDefaultPoller(thread_pool_);
     posix_ee_ = PosixEventEngine::MakeTestOnlyPosixEventEngine(poller_);
     EXPECT_NE(posix_ee_, nullptr);
-    scheduler_->ChangeCurrentEventEngine(posix_ee_.get());
+    thread_pool_->ChangeCurrentEventEngine(posix_ee_.get());
     if (poller_ != nullptr) {
       LOG(INFO) << "Using poller: " << poller_->Name();
     }
@@ -218,7 +218,7 @@ class PosixEndpointTest : public ::testing::TestWithParam<bool> {
   }
 
  public:
-  TestScheduler* Scheduler() { return scheduler_.get(); }
+  TestThreadPool* thread_pool() const { return thread_pool_.get(); }
 
   std::shared_ptr<EventEngine> GetPosixEE() { return posix_ee_; }
 
@@ -228,7 +228,7 @@ class PosixEndpointTest : public ::testing::TestWithParam<bool> {
 
  private:
   std::shared_ptr<PosixEventPoller> poller_;
-  std::unique_ptr<TestScheduler> scheduler_;
+  std::shared_ptr<TestThreadPool> thread_pool_;
   std::shared_ptr<EventEngine> posix_ee_;
   std::shared_ptr<EventEngine> oracle_ee_;
 };
