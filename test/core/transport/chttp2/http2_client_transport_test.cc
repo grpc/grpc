@@ -706,7 +706,7 @@ TEST(Http2CommonTransportTest, TestReadChannelArgs) {
   EXPECT_EQ(settings.allow_security_frame(), true);
   // Default settings
   EXPECT_EQ(settings.max_concurrent_streams(), 4294967295u);
-  EXPECT_EQ(settings.max_header_list_size(), 16384u);  // TODO(TJ)
+  EXPECT_EQ(settings.max_header_list_size(), 16384u);
   EXPECT_EQ(settings.enable_push(), true);
 
   // If ChannelArgs don't have a value for the setting, the default must be

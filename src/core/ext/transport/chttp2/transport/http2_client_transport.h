@@ -435,6 +435,8 @@ class Http2ClientTransport final : public ClientTransport {
   uint32_t incoming_header_stream_id_;
   grpc_closure* on_receive_settings_;
 
+  uint32_t max_header_list_size_soft_limit_;
+
   // Ping related members
   // TODO(akshitpatel) : [PH2][P2] : Consider removing the timeout related
   // members.

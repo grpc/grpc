@@ -146,9 +146,14 @@ void ValidateOneHeader(const uint32_t stream_id, HPackParser& parser,
 
   if (end_headers) {
     EXPECT_EQ(assembler.IsReady(), true);
+    Http2Settings default_settings;
     ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> result =
         assembler.ReadMetadata(parser, /*is_initial_metadata=*/true,
-                               /*is_client=*/true);
+                               /*is_client=*/true,
+                               /*max_header_list_size_soft_limit=*/
+                               default_settings.max_header_list_size(),
+                               /*max_header_list_size_hard_limit=*/
+                               default_settings.max_header_list_size());
     EXPECT_TRUE(result.IsOk());
     Arena::PoolPtr<grpc_metadata_batch> metadata = TakeValue(std::move(result));
     EXPECT_STREQ(metadata->DebugString().c_str(),
@@ -188,10 +193,15 @@ TEST(HeaderAssemblerTest, InvalidAssemblerNotReady1) {
 #ifndef NDEBUG
   ASSERT_DEATH(
       {
+        Http2Settings default_settings;
         GRPC_UNUSED ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>>
             result =
                 assembler.ReadMetadata(parser, /*is_initial_metadata=*/true,
-                                       /*is_client=*/true);
+                                       /*is_client=*/true,
+                                       /*max_header_list_size_soft_limit=*/
+                                       default_settings.max_header_list_size(),
+                                       /*max_header_list_size_hard_limit=*/
+                                       default_settings.max_header_list_size());
       },
       "");
 #endif
@@ -234,9 +244,14 @@ void ValidateOneHeaderTwoContinuation(const uint32_t stream_id,
   EXPECT_EQ(assembler.GetBufferedHeadersLength(), expected_size);
   EXPECT_EQ(assembler.IsReady(), true);
 
+  Http2Settings default_settings;
   ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> result =
       assembler.ReadMetadata(parser, /*is_initial_metadata=*/true,
-                             /*is_client=*/true);
+                             /*is_client=*/true,
+                             /*max_header_list_size_soft_limit=*/
+                             default_settings.max_header_list_size(),
+                             /*max_header_list_size_hard_limit=*/
+                             default_settings.max_header_list_size());
 
   EXPECT_TRUE(result.IsOk());
   Arena::PoolPtr<grpc_metadata_batch> metadata = TakeValue(std::move(result));
@@ -282,14 +297,18 @@ TEST(HeaderAssemblerTest, InvalidAssemblerNotReady2) {
   EXPECT_EQ(assembler.GetBufferedHeadersLength(),
             kSimpleRequestEncodedPart1Len + kSimpleRequestEncodedPart2Len);
   EXPECT_EQ(assembler.IsReady(), false);
-
 #ifndef NDEBUG
   ASSERT_DEATH(
       {
+        Http2Settings default_settings;
         GRPC_UNUSED ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>>
             result =
                 assembler.ReadMetadata(parser, /*is_initial_metadata=*/true,
-                                       /*is_client=*/true);
+                                       /*is_client=*/true,
+                                       /*max_header_list_size_soft_limit=*/
+                                       default_settings.max_header_list_size(),
+                                       /*max_header_list_size_hard_limit=*/
+                                       default_settings.max_header_list_size());
       },
       "");
 #endif
@@ -351,9 +370,14 @@ Arena::PoolPtr<grpc_metadata_batch> GenerateMetadata(const uint32_t stream_id,
   EXPECT_EQ(header.payload.Length(), kSimpleRequestEncodedLen);
 
   Http2Status status = assembler.AppendHeaderFrame(std::move(header));
+  Http2Settings default_settings;
   ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> result =
       assembler.ReadMetadata(parser, /*is_initial_metadata=*/true,
-                             /*is_client=*/true);
+                             /*is_client=*/true,
+                             /*max_header_list_size_soft_limit=*/
+                             default_settings.max_header_list_size(),
+                             /*max_header_list_size_hard_limit=*/
+                             default_settings.max_header_list_size());
   Arena::PoolPtr<grpc_metadata_batch> metadata = TakeValue(std::move(result));
   EXPECT_EQ(metadata->DebugString().c_str(), kSimpleRequestDecoded);
   return metadata;
@@ -552,9 +576,14 @@ TEST(HeaderDisassemblerTest, Reversibility) {
     HeaderAssembler assembler(stream_id);
     Http2HeaderFrame& header = std::get<Http2HeaderFrame>(frame);
     Http2Status status = assembler.AppendHeaderFrame(std::move(header));
+    Http2Settings default_settings;
     ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> result =
         assembler.ReadMetadata(parser, /*is_initial_metadata=*/true,
-                               /*is_client=*/true);
+                               /*is_client=*/true,
+                               /*max_header_list_size_soft_limit=*/
+                               default_settings.max_header_list_size(),
+                               /*max_header_list_size_hard_limit=*/
+                               default_settings.max_header_list_size());
     EXPECT_TRUE(result.IsOk());
     Arena::PoolPtr<grpc_metadata_batch> metadata_new =
         TakeValue(std::move(result));
