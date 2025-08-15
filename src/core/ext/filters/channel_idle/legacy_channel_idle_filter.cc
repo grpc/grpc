@@ -304,8 +304,10 @@ void RegisterLegacyChannelIdleFilters(CoreConfiguration::Builder* builder) {
       .If([](const ChannelArgs& channel_args) {
         return GetClientIdleTimeout(channel_args) != Duration::Infinity();
       });
+
   builder->channel_init()
       ->RegisterV2Filter<LegacyMaxAgeFilter>(GRPC_SERVER_CHANNEL)
+      .FloatToTopIf(IsMaxAgeFilterFloatToTopEnabled())
       .ExcludeFromMinimalStack()
       .If([](const ChannelArgs& channel_args) {
         return LegacyMaxAgeFilter::Config::FromChannelArgs(channel_args)

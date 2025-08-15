@@ -262,6 +262,16 @@ class ChannelInit {
       ordering_ = Ordering::kTop;
       return *this;
     }
+    // Request this filter be placed as high as possible in the stack (given
+    // before/after constraints).
+    FilterRegistration& FloatToTopIf(bool predicate) {
+      if (!predicate) {
+        return *this;
+      }
+      CHECK_EQ(ordering_, Ordering::kDefault);
+      ordering_ = Ordering::kTop;
+      return *this;
+    }
     // Request this filter be placed as low as possible in the stack (given
     // before/after constraints).
     FilterRegistration& SinkToBottom() {
