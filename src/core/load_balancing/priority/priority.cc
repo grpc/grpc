@@ -224,7 +224,10 @@ class PriorityLb final : public LoadBalancingPolicy {
     absl::Status connectivity_status_;
     RefCountedPtr<SubchannelPicker> picker_;
 
-    bool seen_ready_or_idle_since_transient_failure_ = true;
+    // Initialize to false, since we start the timer when the child is
+    // created.  We don't want to start it again unless the child sees
+    // READY or IDLE without seeing TF before seeing CONNECTING.
+    bool can_start_failover_timer_ = false;
 
     OrphanablePtr<DeactivationTimer> deactivation_timer_;
     OrphanablePtr<FailoverTimer> failover_timer_;
@@ -583,10 +586,10 @@ void PriorityLb::ChildPriority::FailoverTimer::OnTimerLocked() {
         << "[priority_lb " << child_priority_->priority_policy_.get()
         << "] child " << child_priority_->name_ << " (" << child_priority_.get()
         << "): failover timer fired, reporting TRANSIENT_FAILURE";
-    child_priority_->OnConnectivityStateUpdateLocked(
-        GRPC_CHANNEL_TRANSIENT_FAILURE,
-        absl::Status(absl::StatusCode::kUnavailable, "failover timer fired"),
-        nullptr);
+    child_priority_->failover_timer_.reset();
+    // Call the LB policy's ChoosePriorityLocked() to choose a priority to
+    // use based on the updated state of this child.
+    child_priority_->priority_policy_->ChoosePriorityLocked();
   }
 }
 
@@ -706,27 +709,23 @@ void PriorityLb::ChildPriority::OnConnectivityStateUpdateLocked(
   // Store the state and picker.
   connectivity_state_ = state;
   connectivity_status_ = status;
-  // When the failover timer fires, this method will be called with picker
-  // set to null, because we want to consider the child to be in
-  // TRANSIENT_FAILURE, but we have no new picker to report.  In that case,
-  // just keep using the old picker, in case we wind up delegating to this
-  // child when all priorities are failing.
-  if (picker != nullptr) picker_ = std::move(picker);
-  // If we transition to state CONNECTING and we've not seen
-  // TRANSIENT_FAILURE more recently than READY or IDLE, start failover
-  // timer if not already pending.
-  // In any other state, update seen_ready_or_idle_since_transient_failure_
-  // and cancel failover timer.
+  picker_ = std::move(picker);
+  // If we transition to state CONNECTING and we've seen READY or IDLE
+  // more recently than TRANSIENT_FAILURE, start failover timer if not
+  // already pending.  In any other state, cancel the timer.
   if (state == GRPC_CHANNEL_CONNECTING) {
-    if (seen_ready_or_idle_since_transient_failure_ &&
-        failover_timer_ == nullptr) {
+    if (can_start_failover_timer_ && failover_timer_ == nullptr) {
+      // Can't start timer again until after we see READY or IDLE.
+      can_start_failover_timer_ = false;
       failover_timer_ = MakeOrphanable<FailoverTimer>(Ref());
     }
   } else if (state == GRPC_CHANNEL_READY || state == GRPC_CHANNEL_IDLE) {
-    seen_ready_or_idle_since_transient_failure_ = true;
+    // Can start the timer again the next time we see CONNECTING.
+    can_start_failover_timer_ = true;
     failover_timer_.reset();
   } else if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    seen_ready_or_idle_since_transient_failure_ = false;
+    // Can't start timer again until after we see READY or IDLE.
+    can_start_failover_timer_ = false;
     failover_timer_.reset();
   }
   // Call the LB policy's ChoosePriorityLocked() to choose a priority to
