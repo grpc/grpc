@@ -369,8 +369,10 @@ class HPackCompressor {
   }
 
   template <typename HeaderSet>
-  bool EncodeRawHeaders(const HeaderSet& headers, SliceBuffer& output) {
-    hpack_encoder_detail::Encoder encoder(this, true, output);
+  bool EncodeRawHeaders(const HeaderSet& headers, SliceBuffer& output,
+                        bool allow_true_binary_metadata) {
+    hpack_encoder_detail::Encoder encoder(this, allow_true_binary_metadata,
+                                          output);
     headers.Encode(&encoder);
     return !encoder.saw_encoding_errors();
   }
