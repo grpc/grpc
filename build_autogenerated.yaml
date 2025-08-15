@@ -14371,6 +14371,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/telemetry/histogram.h
   - src/core/telemetry/instrument.h
   src:
   - src/core/telemetry/instrument.cc

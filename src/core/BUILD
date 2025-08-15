@@ -10215,12 +10215,26 @@ grpc_cc_library(
     ],
     deps = [
         "avl",
+        "histogram",
         "match",
         "per_cpu",
         "ref_counted",
         "sync",
         "//:gpr",
         "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "histogram",
+    hdrs = [
+        "telemetry/histogram.h",
+    ],
+    external_deps = [
+        "absl/log:check",
+        "absl/log",
+        "absl/strings",
+        "absl/types:span",
     ],
 )
 

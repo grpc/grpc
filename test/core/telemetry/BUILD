@@ -83,6 +83,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
         "gtest_main",
+        "absl/random",
     ],
     uses_event_engine = False,
     uses_polling = False,
@@ -101,5 +102,30 @@ grpc_cc_benchmark(
         "//:grpc",
         "//src/core:instrument",
         "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "histogram_fuzzer",
+    srcs = ["histogram_fuzzer.cc"],
+    external_deps = [
+        "gtest",
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    deps = [
+        "//src/core:histogram",
+    ],
+)
+
+grpc_cc_benchmark(
+    name = "bm_histogram",
+    srcs = ["bm_histogram.cc"],
+    external_deps = [
+        "absl/random",
+    ],
+    monitoring = HISTORY,
+    deps = [
+        "//src/core:histogram",
     ],
 )

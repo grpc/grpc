@@ -16,6 +16,7 @@
 
 #include <thread>
 
+#include "absl/random/random.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -28,6 +29,10 @@ class MockMetricsSink : public MetricsSink {
   MOCK_METHOD(void, Counter,
               (absl::Span<const std::string> label, absl::string_view name,
                uint64_t value),
+              (override));
+  MOCK_METHOD(void, Histogram,
+              (absl::Span<const std::string> label, absl::string_view name,
+               HistogramBuckets bounds, absl::Span<const uint64_t> counts),
               (override));
 };
 
@@ -47,6 +52,9 @@ auto kHighContentionCounter =
 auto kLowContentionCounter =
     kLowContentionDomain->RegisterCounter("low_contention", "Desc", "unit");
 auto kFanOutCounter = kFanOutDomain->RegisterCounter("fan_out", "Desc", "unit");
+auto kLowContentionExponentialHistogram =
+    kLowContentionDomain->RegisterHistogram<ExponentialHistogramShape>(
+        "exponential_histogram", "Desc", "unit", 1024, 20);
 
 using InstrumentIndexTest = InstrumentTest;
 
@@ -113,6 +121,35 @@ TEST_F(MetricsQueryTest, LowContention) {
   EXPECT_CALL(
       sink, Counter(absl::Span<const std::string>(label), "low_contention", 1));
   MetricsQuery().OnlyMetrics({"low_contention"}).Run(sink);
+}
+
+TEST_F(MetricsQueryTest, LowContentionHistogram) {
+  std::vector<uint64_t> value_before;
+  auto storage = kLowContentionDomain->GetStorage("example.com");
+  testing::StrictMock<MockMetricsSink> sink;
+  std::vector<std::string> label = {"example.com"};
+  EXPECT_CALL(sink, Histogram(absl::Span<const std::string>(label),
+                              "exponential_histogram", testing::_, testing::_))
+      .WillOnce([&value_before](auto, auto, auto, auto counts) {
+        value_before.assign(counts.begin(), counts.end());
+      });
+  MetricsQuery()
+      .OnlyMetrics({"exponential_histogram"})
+      .WithLabelEq("grpc.target", "example.com")
+      .Run(sink);
+  testing::Mock::VerifyAndClearExpectations(&sink);
+  std::vector<uint64_t> expect_value = value_before;
+  expect_value[0] += 1;
+  storage->Increment(kLowContentionExponentialHistogram, 0);
+  EXPECT_CALL(sink, Histogram(absl::Span<const std::string>(label),
+                              "exponential_histogram", testing::_,
+                              absl::MakeConstSpan(expect_value)))
+      .Times(1);
+  MetricsQuery()
+      .OnlyMetrics({"exponential_histogram"})
+      .WithLabelEq("grpc.target", "example.com")
+      .Run(sink);
+  testing::Mock::VerifyAndClearExpectations(&sink);
 }
 
 TEST_F(MetricsQueryTest, FanOut) {
@@ -202,10 +239,21 @@ TEST_F(MetricsQueryTest, ThreadStressTest) {
       }
     });
     threads.emplace_back([&done]() {
+      auto storage = kLowContentionDomain->GetStorage("example.com");
+      absl::BitGen gen;
+      while (!done.load(std::memory_order_relaxed)) {
+        storage->Increment(kLowContentionExponentialHistogram,
+                           absl::Uniform(gen, 0, 1024));
+      }
+    });
+    threads.emplace_back([&done]() {
       class NoopSink final : public MetricsSink {
        public:
         void Counter(absl::Span<const std::string> label,
                      absl::string_view name, uint64_t value) override {}
+        void Histogram(absl::Span<const std::string> label,
+                       absl::string_view name, HistogramBuckets bounds,
+                       absl::Span<const uint64_t> counts) override {}
       };
       NoopSink sink;
       while (!done.load(std::memory_order_relaxed)) {
