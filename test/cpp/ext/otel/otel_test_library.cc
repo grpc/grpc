@@ -164,9 +164,7 @@ class AddLabelsFilter : public grpc_core::ChannelFilter {
   grpc_core::ArenaPromise<grpc_core::ServerMetadataHandle> MakeCallPromise(
       grpc_core::CallArgs call_args,
       grpc_core::NextPromiseFactory next_promise_factory) override {
-    using CallAttemptTracer =
-        grpc_core::ClientCallTracerInterface::CallAttemptTracer;
-    auto* call_tracer = grpc_core::GetContext<CallAttemptTracer>();
+    auto* call_tracer = grpc_core::GetContext<grpc_core::CallAttemptTracer>();
     EXPECT_NE(call_tracer, nullptr);
     for (const auto& pair : labels_to_inject_) {
       call_tracer->SetOptionalLabel(pair.first, pair.second);
