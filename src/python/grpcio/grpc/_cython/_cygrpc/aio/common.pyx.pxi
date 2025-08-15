@@ -88,7 +88,7 @@ def make_async_deserializer(object sync_deserializer):
     """Convert a synchronous deserializer to an async function.
     
     This wraps the sync deserializer in an async function that runs it
-    in a thread pool to avoid blocking the event loop.
+    in a new event loop to avoid blocking the main event loop.
     """
     if asyncio.iscoroutinefunction(sync_deserializer):
         # Already async, return as-is
@@ -96,8 +96,30 @@ def make_async_deserializer(object sync_deserializer):
     
     async def async_wrapper(raw_message):
         """Async wrapper for sync deserializer."""
-        loop = asyncio.new_event_loop()
-        return await loop.run_in_executor(None, sync_deserializer, raw_message)
+        import threading
+        
+        # Use a thread to run the deserializer in a new event loop
+        result = None
+        exception = None
+        
+        def run_in_new_loop():
+            nonlocal result, exception
+            try:
+                # Run the deserializer in a new thread context
+                result = sync_deserializer(raw_message)
+            except Exception as e:
+                exception = e
+        
+        # Run the function in a separate thread
+        thread = threading.Thread(target=run_in_new_loop)
+        thread.start()
+        thread.join()
+        
+        # Check for exceptions
+        if exception:
+            raise exception
+        
+        return result
     
     return async_wrapper
 
@@ -106,7 +128,7 @@ def make_async_serializer(object sync_serializer):
     """Convert a synchronous serializer to an async function.
     
     This wraps the sync serializer in an async function that runs it
-    in a thread pool to avoid blocking the event loop.
+    in a new event loop to avoid blocking the main event loop.
     """
     if asyncio.iscoroutinefunction(sync_serializer):
         # Already async, return as-is
@@ -114,8 +136,30 @@ def make_async_serializer(object sync_serializer):
     
     async def async_wrapper(message):
         """Async wrapper for sync serializer."""
-        loop = asyncio.new_event_loop()
-        return await loop.run_in_executor(None, sync_serializer, message)
+        import threading
+        
+        # Use a thread to run the serializer in a new event loop
+        result = None
+        exception = None
+        
+        def run_in_new_loop():
+            nonlocal result, exception
+            try:
+                # Run the serializer in a new thread context
+                result = sync_serializer(message)
+            except Exception as e:
+                exception = e
+        
+        # Run the function in a separate thread
+        thread = threading.Thread(target=run_in_new_loop)
+        thread.start()
+        thread.join()
+        
+        # Check for exceptions
+        if exception:
+            raise exception
+        
+        return result
     
     return async_wrapper
 
