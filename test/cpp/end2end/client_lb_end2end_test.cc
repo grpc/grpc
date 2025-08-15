@@ -376,7 +376,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
       StatusCode expected_status, absl::string_view expected_message_regex) {
     Status status = SendRpc(stub);
-    EXPECT_FALSE(status.ok());
+    EXPECT_FALSE(status.ok()) << location.file() << ":" << location.line();
     EXPECT_EQ(expected_status, status.error_code())
         << location.file() << ":" << location.line();
     EXPECT_THAT(status.error_message(),
@@ -1386,7 +1386,7 @@ TEST_F(PickFirstTest, FailsEmptyResolverUpdate) {
   result.result_health_callback = [&](absl::Status status) {
     LOG(INFO) << "****** RESULT HEALTH CALLBACK *******";
     EXPECT_EQ(absl::StatusCode::kUnavailable, status.code());
-    EXPECT_EQ("address list must not be empty", status.message()) << status;
+    EXPECT_EQ("endpoint list empty", status.message()) << status;
     notification.Notify();
   };
   response_generator.SetResponse(std::move(result));
@@ -1630,24 +1630,6 @@ TEST_F(RoundRobinTest, Updates) {
   EXPECT_EQ(1, servers_[0]->service_.request_count());
   EXPECT_EQ(1, servers_[1]->service_.request_count());
   EXPECT_EQ(1, servers_[2]->service_.request_count());
-  ResetCounters();
-  // An empty update will result in the channel going into TRANSIENT_FAILURE.
-  LOG(INFO) << "*** NO BACKENDS ***";
-  ports.clear();
-  response_generator.SetNextResolution(ports);
-  WaitForChannelNotReady(channel.get());
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
-      "empty address list \\(fake resolver empty address list\\)");
-  servers_[0]->service_.ResetCounters();
-  // Next update introduces servers_[1], making the channel recover.
-  LOG(INFO) << "*** BACK TO SECOND BACKEND ***";
-  ports.clear();
-  ports.emplace_back(servers_[1]->port_);
-  response_generator.SetNextResolution(ports);
-  WaitForChannelReady(channel.get());
-  WaitForServer(DEBUG_LOCATION, stub, 1);
-  EXPECT_EQ(GRPC_CHANNEL_READY, channel->GetState(/*try_to_connect=*/false));
   // Check LB policy name for the channel.
   EXPECT_EQ("round_robin", channel->GetLoadBalancingPolicyName());
 }
@@ -1751,7 +1733,7 @@ TEST_F(RoundRobinTest, FailsEmptyResolverUpdate) {
   result.addresses.emplace();
   result.resolution_note = "injected error";
   result.result_health_callback = [&](absl::Status status) {
-    EXPECT_EQ(status, absl::UnavailableError("empty address list"));
+    EXPECT_EQ(status, absl::UnavailableError("endpoint list empty"));
     notification.Notify();
   };
   response_generator.SetResponse(std::move(result));
@@ -1766,7 +1748,7 @@ TEST_F(RoundRobinTest, FailsEmptyResolverUpdate) {
   notification.WaitForNotification();
   // Make sure RPCs fail with the right status.
   CheckRpcSendFailure(DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
-                      "empty address list \\(injected error\\)");
+                      "endpoint list empty \\(injected error\\)");
   // Return a valid address.
   LOG(INFO) << "****** SENDING NEXT RESOLVER RESULT *******";
   StartServers(1);

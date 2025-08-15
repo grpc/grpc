@@ -147,7 +147,7 @@ TEST_P(XdsFallbackTest, PrimarySecondaryNotAvailable) {
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
       absl::StrFormat(
-          "empty address list \\(LDS resource server.example.com: "
+          "endpoint list empty \\(LDS resource server.example.com: "
           "xDS channel for server localhost:%d: "
           "xDS call failed with no responses received; "
           "status: RESOURCE_EXHAUSTED: test forced ADS stream failure "

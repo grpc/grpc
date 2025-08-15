@@ -149,7 +149,7 @@ absl::Status EndpointAddressesIterator::ForEach(
     endpoint_seen = true;
     callback(endpoint);
   });
-  if (!endpoint_seen) return absl::InvalidArgumentError("endpoint list empty");
+  if (!endpoint_seen) return absl::UnavailableError("endpoint list empty");
   return absl::OkStatus();
 }
 

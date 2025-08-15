@@ -88,6 +88,9 @@ class HierarchicalAddressIterator final : public EndpointAddressesIterator {
 
 absl::StatusOr<HierarchicalAddressMap> MakeHierarchicalAddressMap(
     std::shared_ptr<EndpointAddressesIterator> addresses) {
+  if (addresses == nullptr) {
+    return absl::UnavailableError("unset endpoint list");
+  }
   HierarchicalAddressMap result;
   absl::Status status =
       addresses->ForEach([&](const EndpointAddresses& endpoint) {

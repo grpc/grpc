@@ -1721,6 +1721,24 @@ ChannelArgs GrpcLb::CreateChildPolicyArgsLocked(
   return r;
 }
 
+// Overrides the graceful switch policy such that we create a new child
+// policy whenever the address list is empty.  This ensures that we
+// drop connections whenever the balancer tells us to drop everything.
+// If we just sent the update to the existing child policy, the child
+// policy would ignore the error and would stick with its previous
+// address list.
+class GrpclbChildPolicyHandler : public ChildPolicyHandler {
+ public:
+  using ChildPolicyHandler::ChildPolicyHandler;
+
+  bool UpdateRequiresNewPolicyInstance(
+      const LoadBalancingPolicy::UpdateArgs& update) const override {
+    absl::Status status = update.addresses->ForEach(
+        [&](const EndpointAddresses& /*endpoint*/) {});
+    return !status.ok();
+  }
+};
+
 OrphanablePtr<LoadBalancingPolicy> GrpcLb::CreateChildPolicyLocked(
     const ChannelArgs& args) {
   LoadBalancingPolicy::Args lb_policy_args;
@@ -1729,7 +1747,8 @@ OrphanablePtr<LoadBalancingPolicy> GrpcLb::CreateChildPolicyLocked(
   lb_policy_args.channel_control_helper =
       std::make_unique<Helper>(RefAsSubclass<GrpcLb>(DEBUG_LOCATION, "Helper"));
   OrphanablePtr<LoadBalancingPolicy> lb_policy =
-      MakeOrphanable<ChildPolicyHandler>(std::move(lb_policy_args), &glb_trace);
+      MakeOrphanable<GrpclbChildPolicyHandler>(std::move(lb_policy_args),
+                                               &glb_trace);
   GRPC_TRACE_LOG(glb, INFO)
       << "[grpclb " << this << "] Created new child policy handler ("
       << lb_policy.get() << ")";

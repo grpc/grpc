@@ -764,10 +764,9 @@ absl::Status RingHash::UpdateLocked(UpdateArgs args) {
   resolution_note_ = std::move(args.resolution_note);
   // If the address list is empty, report TRANSIENT_FAILURE.
   if (endpoints_.empty()) {
-    if (status.ok()) {
-      status = absl::UnavailableError(
-          absl::StrCat("empty address list: ", resolution_note_));
-    }
+    if (status.ok()) status = absl::UnavailableError("empty address list");
+    status = absl::Status(status.code(), absl::StrCat(status.message(), " (",
+                                                      resolution_note_, ")"));
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, status,
         MakeRefCounted<TransientFailurePicker>(status));
