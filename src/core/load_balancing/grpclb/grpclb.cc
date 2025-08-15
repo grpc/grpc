@@ -1501,9 +1501,11 @@ class GrpcLb::NullLbTokenEndpointIterator final
       : parent_it_(std::move(parent_it)) {}
 
  private:
+  absl::Status Status() const override { return parent_it_->Status(); }
+
   void ForEachImpl(absl::FunctionRef<void(const EndpointAddresses&)> callback)
       const override {
-    parent_it_->ForEach([&](const EndpointAddresses& endpoint) {
+    (void)parent_it_->ForEach([&](const EndpointAddresses& endpoint) {
       GRPC_TRACE_LOG(glb, INFO)
           << "[grpclb " << this
           << "] fallback address: " << endpoint.ToString();

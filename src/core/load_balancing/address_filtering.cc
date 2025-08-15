@@ -53,10 +53,12 @@ class HierarchicalAddressIterator final : public EndpointAddressesIterator {
       : parent_it_(std::move(parent_it)), child_name_(std::move(child_name)) {}
 
  private:
+  absl::Status Status() const override { return parent_it_->Status(); }
+
   void ForEachImpl(absl::FunctionRef<void(const EndpointAddresses&)> callback)
       const override {
     RefCountedPtr<HierarchicalPathArg> remaining_path_attr;
-    return parent_it_->ForEach([&](const EndpointAddresses& endpoint) {
+    (void)parent_it_->ForEach([&](const EndpointAddresses& endpoint) {
       const auto* path_arg = endpoint.args().GetObject<HierarchicalPathArg>();
       if (path_arg == nullptr) return;
       const std::vector<RefCountedStringValue>& path = path_arg->path();
@@ -87,7 +89,7 @@ class HierarchicalAddressIterator final : public EndpointAddressesIterator {
 absl::StatusOr<HierarchicalAddressMap> MakeHierarchicalAddressMap(
     std::shared_ptr<EndpointAddressesIterator> addresses) {
   HierarchicalAddressMap result;
-  absl::Status status = addresses.ForEach(
+  absl::Status status = addresses->ForEach(
       [&](const EndpointAddresses& endpoint) {
         const auto* path_arg = endpoint.args().GetObject<HierarchicalPathArg>();
         if (path_arg == nullptr) return;

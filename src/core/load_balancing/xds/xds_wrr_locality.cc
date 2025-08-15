@@ -162,23 +162,21 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
   auto config = args.config.TakeAsSubclass<XdsWrrLocalityLbConfig>();
   // Scan the addresses to find the weight for each locality.
   std::map<RefCountedStringValue, uint32_t> locality_weights;
-  if (args.addresses.ok()) {
-    (*args.addresses)->ForEach([&](const EndpointAddresses& endpoint) {
-      auto* locality_name = endpoint.args().GetObject<XdsLocalityName>();
-      uint32_t weight =
-          endpoint.args().GetInt(GRPC_ARG_XDS_LOCALITY_WEIGHT).value_or(0);
-      if (locality_name != nullptr && weight > 0) {
-        auto [it, inserted] = locality_weights.emplace(
-            locality_name->human_readable_string(), weight);
-        if (!inserted && it->second != weight) {
-          LOG(ERROR) << "INTERNAL ERROR: xds_wrr_locality found different "
-                        "weights for locality "
-                     << it->first.as_string_view() << " (" << it->second
-                     << " vs " << weight << "); using first value";
-        }
+  (void)args.addresses->ForEach([&](const EndpointAddresses& endpoint) {
+    auto* locality_name = endpoint.args().GetObject<XdsLocalityName>();
+    uint32_t weight =
+        endpoint.args().GetInt(GRPC_ARG_XDS_LOCALITY_WEIGHT).value_or(0);
+    if (locality_name != nullptr && weight > 0) {
+      auto [it, inserted] = locality_weights.emplace(
+          locality_name->human_readable_string(), weight);
+      if (!inserted && it->second != weight) {
+        LOG(ERROR) << "INTERNAL ERROR: xds_wrr_locality found different "
+                      "weights for locality "
+                   << it->first.as_string_view() << " (" << it->second
+                   << " vs " << weight << "); using first value";
       }
-    });
-  }
+    }
+  });
   // Construct the config for the weighted_target policy.
   Json::Object weighted_targets;
   for (const auto& [locality_name, weight] : locality_weights) {

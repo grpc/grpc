@@ -194,7 +194,7 @@ class EndpointList : public InternallyRefCounted<EndpointList> {
         resolution_note_(std::move(resolution_note)),
         tracer_(tracer) {}
 
-  void Init(EndpointAddressesIterator* endpoints, const ChannelArgs& args,
+  void Init(const EndpointAddressesList& endpoints, const ChannelArgs& args,
             absl::FunctionRef<OrphanablePtr<Endpoint>(
                 RefCountedPtr<EndpointList>, const EndpointAddresses&,
                 const ChannelArgs&)>

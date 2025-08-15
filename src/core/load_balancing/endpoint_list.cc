@@ -165,17 +165,16 @@ RefCountedPtr<SubchannelInterface> EndpointList::Endpoint::CreateSubchannel(
 //
 
 void EndpointList::Init(
-    EndpointAddressesIterator* endpoints, const ChannelArgs& args,
+    const EndpointAddressesList& endpoints, const ChannelArgs& args,
     absl::FunctionRef<OrphanablePtr<Endpoint>(RefCountedPtr<EndpointList>,
                                               const EndpointAddresses&,
                                               const ChannelArgs&)>
         create_endpoint) {
-  if (endpoints == nullptr) return;
   if (!IsRrWrrConnectFromRandomIndexEnabled()) {
-    endpoints->ForEach([&](const EndpointAddresses& endpoint) {
+    for (const EndpointAddresses& endpoint : endpoints) {
       endpoints_.push_back(
           create_endpoint(Ref(DEBUG_LOCATION, "Endpoint"), endpoint, args));
-    });
+    }
     return;
   }
   // If all clients get the same endpoint list in the same order, and they
@@ -187,15 +186,11 @@ void EndpointList::Init(
   // other endpoints to become connected.  This can result in sending a
   // potentially large burst of traffic to the first endpoint in the list.
   // To avoid that, we start connecting from a random index into the list.
-  std::vector<EndpointAddresses> endpoint_list;
-  endpoints->ForEach([&](const EndpointAddresses& endpoint) {
-    endpoint_list.push_back(endpoint);
-  });
-  endpoints_.resize(endpoint_list.size());
-  size_t start_index = absl::Uniform(SharedBitGen(), 0UL, endpoint_list.size());
-  for (size_t i = 0; i < endpoint_list.size(); ++i) {
-    size_t index = (start_index + i) % endpoint_list.size();
-    EndpointAddresses& endpoint = endpoint_list[index];
+  endpoints_.resize(endpoints.size());
+  size_t start_index = absl::Uniform(SharedBitGen(), 0UL, endpoints.size());
+  for (size_t i = 0; i < endpoints.size(); ++i) {
+    size_t index = (start_index + i) % endpoints.size();
+    const EndpointAddresses& endpoint = endpoints[index];
     endpoints_[index] =
         create_endpoint(Ref(DEBUG_LOCATION, "Endpoint"), endpoint, args);
   }

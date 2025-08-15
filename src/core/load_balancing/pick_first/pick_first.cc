@@ -248,7 +248,8 @@ class PickFirst final : public LoadBalancingPolicy {
 
     SubchannelList(RefCountedPtr<PickFirst> policy,
                    EndpointAddressesIterator* addresses,
-                   const ChannelArgs& args, absl::string_view resolution_note);
+                   const ChannelArgs& args, absl::string_view resolution_note,
+                   absl::Status* status);
 
     ~SubchannelList() override;
 
@@ -453,26 +454,21 @@ void PickFirst::ResetBackoffLocked() {
 
 void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
   // Create a subchannel list from latest_update_args_.
-  EndpointAddressesIterator* addresses = nullptr;
-  if (latest_update_args_.addresses.ok()) {
-    addresses = latest_update_args_.addresses->get();
-  }
-  // Replace subchannel_list_.
   if (GRPC_TRACE_FLAG_ENABLED(pick_first) && subchannel_list_ != nullptr) {
     LOG(INFO) << "[PF " << this << "] Shutting down previous subchannel list "
               << subchannel_list_.get();
   }
+  absl::Status status;
   subchannel_list_ = MakeOrphanable<SubchannelList>(
-      RefAsSubclass<PickFirst>(DEBUG_LOCATION, "SubchannelList"), addresses,
-      latest_update_args_.args, latest_update_args_.resolution_note);
+      RefAsSubclass<PickFirst>(DEBUG_LOCATION, "SubchannelList"),
+      latest_update_args_.addresses.get(), latest_update_args_.args,
+      latest_update_args_.resolution_note, &status);
   // Empty update or no valid subchannels.  Put the channel in
   // TRANSIENT_FAILURE and request re-resolution.  Also unset the
   // current selected subchannel.
   if (subchannel_list_->size() == 0) {
     channel_control_helper()->RequestReresolution();
-    absl::Status status = latest_update_args_.addresses.ok()
-                              ? absl::UnavailableError("empty address list")
-                              : latest_update_args_.addresses.status();
+    if (status.ok()) status = absl::UnavailableError("empty address list");
     subchannel_list_->ReportTransientFailure(std::move(status));
     UnsetSelectedSubchannel();
   }
@@ -979,7 +975,8 @@ void PickFirst::SubchannelList::SubchannelData::RequestConnectionWithTimer() {
 PickFirst::SubchannelList::SubchannelList(RefCountedPtr<PickFirst> policy,
                                           EndpointAddressesIterator* addresses,
                                           const ChannelArgs& args,
-                                          absl::string_view resolution_note)
+                                          absl::string_view resolution_note,
+                                          absl::Status* status)
     : InternallyRefCounted<SubchannelList>(
           GRPC_TRACE_FLAG_ENABLED(pick_first) ? "SubchannelList" : nullptr),
       policy_(std::move(policy)),
@@ -992,7 +989,7 @@ PickFirst::SubchannelList::SubchannelList(RefCountedPtr<PickFirst> policy,
       << " - channel args: " << args_.ToString();
   if (addresses == nullptr) return;
   // Create a subchannel for each address.
-  addresses->ForEach([&](const EndpointAddresses& address) {
+  *status = addresses->ForEach([&](const EndpointAddresses& address) {
     CHECK_EQ(address.addresses().size(), 1u);
     RefCountedPtr<SubchannelInterface> subchannel =
         policy_->channel_control_helper()->CreateSubchannel(

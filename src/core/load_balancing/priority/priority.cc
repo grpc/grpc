@@ -654,7 +654,8 @@ absl::Status PriorityLb::ChildPriority::UpdateLocked(
       update_args.addresses = it->second;
     }
   } else {
-    update_args.addresses = priority_policy_->addresses_.status();
+    update_args.addresses = std::make_shared<StatusEndpointIterator>(
+        priority_policy_->addresses_.status());
   }
   update_args.resolution_note = priority_policy_->resolution_note_;
   update_args.args = priority_policy_->args_;

@@ -129,11 +129,11 @@ class EndpointAddressesIterator {
   absl::Status ForEach(
       absl::FunctionRef<void(const EndpointAddresses&)> callback) const;
 
- private:
   // If this method returns non-OK status, ForEach() will immediately
   // return this status without invoking the callback.
   virtual absl::Status Status() const { return absl::OkStatus(); }
 
+ private:
   virtual void ForEachImpl(
       absl::FunctionRef<void(const EndpointAddresses&)> callback) const = 0;
 };
@@ -176,9 +176,9 @@ class StatusEndpointIterator final : public EndpointAddressesIterator {
   explicit StatusEndpointIterator(absl::Status status)
       : status_(std::move(status)) {}
 
- private:
   absl::Status Status() const override { return status_; }
 
+ private:
   void ForEachImpl(
       absl::FunctionRef<void(const EndpointAddresses&)> /*callback*/)
       const override {}
