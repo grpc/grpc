@@ -208,8 +208,8 @@ absl::Status ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
       // case 1
       child_policy_ == nullptr ||
       // cases 2b and 3b
-      ConfigChangeRequiresNewPolicyInstance(current_config_.get(),
-                                            args.config.get());
+      current_config_->name() != args.config->name() ||
+      UpdateRequiresNewPolicyInstance(args);
   current_config_ = args.config;
   LoadBalancingPolicy* policy_to_update = nullptr;
   if (create_policy) {
@@ -292,12 +292,6 @@ OrphanablePtr<LoadBalancingPolicy> ChildPolicyHandler::CreateChildPolicy(
   grpc_pollset_set_add_pollset_set(lb_policy->interested_parties(),
                                    interested_parties());
   return lb_policy;
-}
-
-bool ChildPolicyHandler::ConfigChangeRequiresNewPolicyInstance(
-    LoadBalancingPolicy::Config* old_config,
-    LoadBalancingPolicy::Config* new_config) const {
-  return old_config->name() != new_config->name();
 }
 
 OrphanablePtr<LoadBalancingPolicy>

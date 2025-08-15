@@ -153,7 +153,7 @@ class WeightedTargetLb final : public LoadBalancingPolicy {
 
     absl::Status UpdateLocked(
         const WeightedTargetLbConfig::ChildConfig& config,
-        absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>> addresses,
+        std::shared_ptr<EndpointAddressesIterator> addresses,
         const std::string& resolution_note, ChannelArgs args);
     void ResetBackoffLocked();
     void DeactivateLocked();
@@ -322,7 +322,7 @@ absl::Status WeightedTargetLb::UpdateLocked(UpdateArgs args) {
           RefAsSubclass<WeightedTargetLb>(DEBUG_LOCATION, "WeightedChild"),
           name);
     }
-    absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>> addresses;
+    std::shared_ptr<EndpointAddressesIterator> addresses;
     if (address_map.ok()) {
       auto it = address_map->find(name);
       if (it == address_map->end()) {
@@ -332,7 +332,8 @@ absl::Status WeightedTargetLb::UpdateLocked(UpdateArgs args) {
         addresses = std::move(it->second);
       }
     } else {
-      addresses = address_map.status();
+      addresses =
+          std::make_shared<StatusEndpointIterator>(address_map.status());
     }
     absl::Status status = target->UpdateLocked(config, std::move(addresses),
                                                args.resolution_note, args.args);
@@ -553,7 +554,7 @@ WeightedTargetLb::WeightedChild::CreateChildPolicyLocked(
 
 absl::Status WeightedTargetLb::WeightedChild::UpdateLocked(
     const WeightedTargetLbConfig::ChildConfig& config,
-    absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>> addresses,
+    std::shared_ptr<EndpointAddressesIterator> addresses,
     const std::string& resolution_note, ChannelArgs args) {
   if (weighted_target_policy_->shutting_down_) return absl::OkStatus();
   // Update child weight.

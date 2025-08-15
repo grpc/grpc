@@ -69,7 +69,7 @@ class RoundRobin final : public LoadBalancingPolicy {
   class RoundRobinEndpointList final : public EndpointList {
    public:
     RoundRobinEndpointList(RefCountedPtr<RoundRobin> round_robin,
-                           EndpointAddressesIterator* endpoints,
+                           const EndpointAddressesList& endpoints,
                            const ChannelArgs& args, std::string resolution_note,
                            std::vector<std::string>* errors)
         : EndpointList(std::move(round_robin), std::move(resolution_note),
@@ -227,17 +227,21 @@ void RoundRobin::ResetBackoffLocked() {
 }
 
 absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
-  EndpointAddressesIterator* addresses = nullptr;
-  if (args.addresses.ok()) {
-    GRPC_TRACE_LOG(round_robin, INFO) << "[RR " << this << "] received update";
-    addresses = args.addresses->get();
+  EndpointAddressesList endpoints;
+  absl::Status status =
+      args.addresses->ForEach([&](const EndpointAddresses& endpoint) {
+        endpoints.push_back(endpoint);
+      });
+  if (status.ok()) {
+    GRPC_TRACE_LOG(round_robin, INFO)
+        << "[RR " << this << "] received update with " << endpoints.size()
+        << " endpoints";
   } else {
     GRPC_TRACE_LOG(round_robin, INFO)
-        << "[RR " << this
-        << "] received update with address error: " << args.addresses.status();
+        << "[RR " << this << "] received update with address error: " << status;
     // If we already have a child list, then keep using the existing
     // list, but still report back that the update was not accepted.
-    if (endpoint_list_ != nullptr) return args.addresses.status();
+    if (endpoint_list_ != nullptr) return status;
   }
   // Create new child list, replacing the previous pending list, if any.
   if (GRPC_TRACE_FLAG_ENABLED(round_robin) &&
@@ -248,7 +252,7 @@ absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
   std::vector<std::string> errors;
   latest_pending_endpoint_list_ = MakeOrphanable<RoundRobinEndpointList>(
       RefAsSubclass<RoundRobin>(DEBUG_LOCATION, "RoundRobinEndpointList"),
-      addresses, args.args, std::move(args.resolution_note), &errors);
+      endpoints, args.args, std::move(args.resolution_note), &errors);
   // If the new list is empty, immediately promote it to
   // endpoint_list_ and report TRANSIENT_FAILURE.
   if (latest_pending_endpoint_list_->size() == 0) {
@@ -257,9 +261,7 @@ absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
                 << endpoint_list_.get();
     }
     endpoint_list_ = std::move(latest_pending_endpoint_list_);
-    absl::Status status = args.addresses.ok()
-                              ? absl::UnavailableError("empty address list")
-                              : args.addresses.status();
+    if (status.ok()) status = absl::UnavailableError("empty address list");
     endpoint_list_->ReportTransientFailure(status);
     return status;
   }

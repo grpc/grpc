@@ -102,9 +102,6 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
-const char* const description_pick_first_ignore_empty_updates =
-    "Ignore empty resolutions in pick_first";
-const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
 const char* const description_pipelined_read_secure_endpoint =
     "Enable pipelined reads for EventEngine secure endpoints";
 const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
@@ -253,10 +250,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
-    {"pick_first_ignore_empty_updates",
-     description_pick_first_ignore_empty_updates,
-     additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
-     true},
     {"pipelined_read_secure_endpoint",
      description_pipelined_read_secure_endpoint,
      additional_constraints_pipelined_read_secure_endpoint,
@@ -405,9 +398,6 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
-const char* const description_pick_first_ignore_empty_updates =
-    "Ignore empty resolutions in pick_first";
-const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
 const char* const description_pipelined_read_secure_endpoint =
     "Enable pipelined reads for EventEngine secure endpoints";
 const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
@@ -556,10 +546,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
-    {"pick_first_ignore_empty_updates",
-     description_pick_first_ignore_empty_updates,
-     additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
-     true},
     {"pipelined_read_secure_endpoint",
      description_pipelined_read_secure_endpoint,
      additional_constraints_pipelined_read_secure_endpoint,
@@ -708,9 +694,6 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
-const char* const description_pick_first_ignore_empty_updates =
-    "Ignore empty resolutions in pick_first";
-const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
 const char* const description_pipelined_read_secure_endpoint =
     "Enable pipelined reads for EventEngine secure endpoints";
 const char* const additional_constraints_pipelined_read_secure_endpoint = "{}";
@@ -859,10 +842,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
-    {"pick_first_ignore_empty_updates",
-     description_pick_first_ignore_empty_updates,
-     additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
-     true},
     {"pipelined_read_secure_endpoint",
      description_pipelined_read_secure_endpoint,
      additional_constraints_pipelined_read_secure_endpoint,

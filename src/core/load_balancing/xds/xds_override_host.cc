@@ -376,7 +376,7 @@ class XdsOverrideHostLb final : public LoadBalancingPolicy {
 
   void MaybeUpdatePickerLocked();
 
-  void UpdateAddressMap(const EndpointAddressesIterator& endpoints);
+  absl::Status UpdateAddressMap(const EndpointAddressesIterator& endpoints);
 
   RefCountedPtr<SubchannelWrapper> AdoptSubchannel(
       const grpc_resolved_address& address,
@@ -665,9 +665,12 @@ class ChildEndpointIterator final : public EndpointAddressesIterator {
       std::shared_ptr<EndpointAddressesIterator> parent_it)
       : parent_it_(std::move(parent_it)) {}
 
-  void ForEach(absl::FunctionRef<void(const EndpointAddresses&)> callback)
+ private:
+  absl::Status Status() const override { return parent_it_->Status(); }
+
+  void ForEachImpl(absl::FunctionRef<void(const EndpointAddresses&)> callback)
       const override {
-    parent_it_->ForEach([&](const EndpointAddresses& endpoint) {
+    (void)parent_it_->ForEach([&](const EndpointAddresses& endpoint) {
       XdsHealthStatus status = GetEndpointHealthStatus(endpoint);
       if (status.status() != XdsHealthStatus::kDraining) {
         GRPC_TRACE_LOG(xds_override_host_lb, INFO)
@@ -678,7 +681,6 @@ class ChildEndpointIterator final : public EndpointAddressesIterator {
     });
   }
 
- private:
   std::shared_ptr<EndpointAddressesIterator> parent_it_;
 };
 
@@ -716,14 +718,13 @@ absl::Status XdsOverrideHostLb::UpdateLocked(UpdateArgs args) {
       << "] override host status set: " << override_host_status_set_.ToString()
       << " connection idle timeout: " << connection_idle_timeout_.ToString();
   // Update address map and wrap endpoint iterator for child policy.
-  if (args.addresses.ok()) {
-    UpdateAddressMap(**args.addresses);
+  absl::Status status = UpdateAddressMap(*args.addresses);
+  if (status.ok()) {
     args.addresses =
-        std::make_shared<ChildEndpointIterator>(std::move(*args.addresses));
+        std::make_shared<ChildEndpointIterator>(std::move(args.addresses));
   } else {
     GRPC_TRACE_LOG(xds_override_host_lb, INFO)
-        << "[xds_override_host_lb " << this
-        << "] address error: " << args.addresses.status();
+        << "[xds_override_host_lb " << this << "] address error: " << status;
   }
   // Create child policy if needed.
   if (child_policy_ == nullptr) {
@@ -776,7 +777,7 @@ OrphanablePtr<LoadBalancingPolicy> XdsOverrideHostLb::CreateChildPolicyLocked(
   return lb_policy;
 }
 
-void XdsOverrideHostLb::UpdateAddressMap(
+absl::Status XdsOverrideHostLb::UpdateAddressMap(
     const EndpointAddressesIterator& endpoints) {
   // Construct a map of address info from which to update subchannel_map_.
   struct AddressInfo {
@@ -790,43 +791,45 @@ void XdsOverrideHostLb::UpdateAddressMap(
           per_endpoint_args(std::move(args)) {}
   };
   std::map<const std::string, AddressInfo> addresses_for_map;
-  endpoints.ForEach([&](const EndpointAddresses& endpoint) {
-    XdsHealthStatus status = GetEndpointHealthStatus(endpoint);
-    // Skip draining hosts if not in the override status set.
-    if (status.status() == XdsHealthStatus::kDraining &&
-        !override_host_status_set_.Contains(status)) {
-      GRPC_TRACE_LOG(xds_override_host_lb, INFO)
-          << "[xds_override_host_lb " << this << "] endpoint "
-          << endpoint.ToString()
-          << ": draining but not in override_host_status set -- "
-             "ignoring";
-      return;
-    }
-    std::vector<std::string> addresses;
-    addresses.reserve(endpoint.addresses().size());
-    for (const auto& address : endpoint.addresses()) {
-      auto key = grpc_sockaddr_to_string(&address, /*normalize=*/false);
-      if (!key.ok()) {
-        GRPC_TRACE_LOG(xds_override_host_lb, INFO)
-            << "[xds_override_host_lb " << this
-            << "] no key for endpoint address; not adding to map";
-      } else {
-        addresses.push_back(*std::move(key));
-      }
-    }
-    absl::Span<const std::string> addresses_span = addresses;
-    for (size_t i = 0; i < addresses.size(); ++i) {
-      std::string start = absl::StrJoin(addresses_span.subspan(0, i), ",");
-      std::string end = absl::StrJoin(addresses_span.subspan(i + 1), ",");
-      RefCountedStringValue address_list(
-          absl::StrCat(addresses[i], (start.empty() ? "" : ","), start,
-                       (end.empty() ? "" : ","), end));
-      addresses_for_map.emplace(
-          std::piecewise_construct, std::forward_as_tuple(addresses[i]),
-          std::forward_as_tuple(status, std::move(address_list),
-                                endpoint.args()));
-    }
-  });
+  absl::Status status =
+      endpoints.ForEach([&](const EndpointAddresses& endpoint) {
+        XdsHealthStatus status = GetEndpointHealthStatus(endpoint);
+        // Skip draining hosts if not in the override status set.
+        if (status.status() == XdsHealthStatus::kDraining &&
+            !override_host_status_set_.Contains(status)) {
+          GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+              << "[xds_override_host_lb " << this << "] endpoint "
+              << endpoint.ToString()
+              << ": draining but not in override_host_status set -- "
+                 "ignoring";
+          return;
+        }
+        std::vector<std::string> addresses;
+        addresses.reserve(endpoint.addresses().size());
+        for (const auto& address : endpoint.addresses()) {
+          auto key = grpc_sockaddr_to_string(&address, /*normalize=*/false);
+          if (!key.ok()) {
+            GRPC_TRACE_LOG(xds_override_host_lb, INFO)
+                << "[xds_override_host_lb " << this
+                << "] no key for endpoint address; not adding to map";
+          } else {
+            addresses.push_back(*std::move(key));
+          }
+        }
+        absl::Span<const std::string> addresses_span = addresses;
+        for (size_t i = 0; i < addresses.size(); ++i) {
+          std::string start = absl::StrJoin(addresses_span.subspan(0, i), ",");
+          std::string end = absl::StrJoin(addresses_span.subspan(i + 1), ",");
+          RefCountedStringValue address_list(
+              absl::StrCat(addresses[i], (start.empty() ? "" : ","), start,
+                           (end.empty() ? "" : ","), end));
+          addresses_for_map.emplace(
+              std::piecewise_construct, std::forward_as_tuple(addresses[i]),
+              std::forward_as_tuple(status, std::move(address_list),
+                                    endpoint.args()));
+        }
+      });
+  if (!status.ok()) return status;
   // Now grab the lock and update subchannel_map_ from addresses_for_map.
   const Timestamp now = Timestamp::Now();
   const Timestamp idle_threshold = now - connection_idle_timeout_;
@@ -876,6 +879,7 @@ void XdsOverrideHostLb::UpdateAddressMap(
   }
   idle_timer_ =
       MakeOrphanable<IdleTimer>(RefAsSubclass<XdsOverrideHostLb>(), next_time);
+  return absl::OkStatus();
 }
 
 RefCountedPtr<XdsOverrideHostLb::SubchannelWrapper>

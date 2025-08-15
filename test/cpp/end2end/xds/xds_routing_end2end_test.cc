@@ -65,7 +65,7 @@ TEST_P(LdsTest, NotAnApiListener) {
   balancer_->ads_service()->SetLdsResource(listener);
   // RPCs should fail.
   CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      absl::StrCat("empty address list \\(LDS resource ",
+                      absl::StrCat("endpoint list empty \\(LDS resource ",
                                    kServerName, ": not an API listener\\)"));
   // We should have ACKed the LDS resource.
   const auto deadline =
@@ -103,7 +103,7 @@ TEST_P(LdsDeletionTest, ListenerDeletedFailsByDefault) {
   // Wait for RPCs to start failing.
   SendRpcsUntilFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("empty address list \\(LDS resource ", kServerName,
+      absl::StrCat("endpoint list empty \\(LDS resource ", kServerName,
                    ": does not exist \\(node ID:xds_end2end_test\\)\\)"));
   // Make sure we ACK'ed the update.
   auto response_state = balancer_->ads_service()->lds_response_state();
@@ -225,7 +225,7 @@ TEST_P(LdsDeletionTest, ListenerDeletedFailsWithFailOnDataErrors) {
   // Wait for RPCs to start failing.
   SendRpcsUntilFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat("empty address list \\(LDS resource ", kServerName,
+      absl::StrCat("endpoint list empty \\(LDS resource ", kServerName,
                    ": does not exist \\(node ID:xds_end2end_test\\)\\)"));
   // Make sure we ACK'ed the update.
   auto response_state = balancer_->ads_service()->lds_response_state();
@@ -486,7 +486,7 @@ TEST_P(LdsRdsTest, NoMatchedDomain) {
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
       absl::StrCat(
-          "empty address list \\(",
+          "endpoint list empty \\(",
           (GetParam().enable_rds_testing() ? "RDS" : "LDS"), " resource ",
           (GetParam().enable_rds_testing() ? kDefaultRouteConfigurationName
                                            : kServerName),

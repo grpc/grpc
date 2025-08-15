@@ -47,11 +47,12 @@ class ChildPolicyHandler : public LoadBalancingPolicy {
   void ExitIdleLocked() override;
   void ResetBackoffLocked() override;
 
-  // Returns true if transitioning from the old config to the new config
-  // requires instantiating a new policy object.
-  virtual bool ConfigChangeRequiresNewPolicyInstance(
-      LoadBalancingPolicy::Config* old_config,
-      LoadBalancingPolicy::Config* new_config) const;
+  // Returns true if applying the update requires instantiating a new policy
+  // object.
+  virtual bool UpdateRequiresNewPolicyInstance(
+      const LoadBalancingPolicy::UpdateArgs& /*update*/) const {
+    return false;
+  }
 
   // Instantiates a new policy of the specified name.
   // May be overridden by subclasses to avoid recursion when an LB

@@ -626,7 +626,8 @@ class Fuzzer {
     if (update.has_endpoint_error()) {
       absl::Status status = ToAbslStatus(update.endpoint_error());
       if (status.ok()) return std::nullopt;
-      update_args.addresses = std::move(status);
+      update_args.addresses =
+          std::make_shared<StatusEndpointIterator>(std::move(status));
     } else {
       auto endpoint_addresses_list = MakeEndpointList(update.endpoint_list());
       last_update_num_endpoints_ = endpoint_addresses_list.size();

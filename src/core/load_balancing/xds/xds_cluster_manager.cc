@@ -144,8 +144,7 @@ class XdsClusterManagerLb final : public LoadBalancingPolicy {
 
     absl::Status UpdateLocked(
         RefCountedPtr<LoadBalancingPolicy::Config> config,
-        const absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>>&
-            addresses,
+        std::shared_ptr<EndpointAddressesIterator> addresses,
         const ChannelArgs& args);
     void ExitIdleLocked();
     void ResetBackoffLocked();
@@ -452,7 +451,7 @@ XdsClusterManagerLb::ClusterChild::CreateChildPolicyLocked(
 
 absl::Status XdsClusterManagerLb::ClusterChild::UpdateLocked(
     RefCountedPtr<LoadBalancingPolicy::Config> config,
-    const absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>>& addresses,
+    std::shared_ptr<EndpointAddressesIterator> addresses,
     const ChannelArgs& args) {
   if (xds_cluster_manager_policy_->shutting_down_) return absl::OkStatus();
   // Update child weight.
@@ -470,7 +469,7 @@ absl::Status XdsClusterManagerLb::ClusterChild::UpdateLocked(
   // Construct update args.
   UpdateArgs update_args;
   update_args.config = std::move(config);
-  update_args.addresses = addresses;
+  update_args.addresses = std::move(addresses);
   update_args.args = args;
   // Update the policy.
   GRPC_TRACE_LOG(xds_cluster_manager_lb, INFO)
