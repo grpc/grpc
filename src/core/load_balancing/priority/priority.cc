@@ -583,10 +583,10 @@ void PriorityLb::ChildPriority::FailoverTimer::OnTimerLocked() {
         << "[priority_lb " << child_priority_->priority_policy_.get()
         << "] child " << child_priority_->name_ << " (" << child_priority_.get()
         << "): failover timer fired, reporting TRANSIENT_FAILURE";
-    child_priority_->OnConnectivityStateUpdateLocked(
-        GRPC_CHANNEL_TRANSIENT_FAILURE,
-        absl::Status(absl::StatusCode::kUnavailable, "failover timer fired"),
-        nullptr);
+    child_priority_->failover_timer_.reset();
+    // Call the LB policy's ChoosePriorityLocked() to choose a priority to
+    // use based on the updated state of this child.
+    child_priority_->priority_policy_->ChoosePriorityLocked();
   }
 }
 
@@ -706,12 +706,7 @@ void PriorityLb::ChildPriority::OnConnectivityStateUpdateLocked(
   // Store the state and picker.
   connectivity_state_ = state;
   connectivity_status_ = status;
-  // When the failover timer fires, this method will be called with picker
-  // set to null, because we want to consider the child to be in
-  // TRANSIENT_FAILURE, but we have no new picker to report.  In that case,
-  // just keep using the old picker, in case we wind up delegating to this
-  // child when all priorities are failing.
-  if (picker != nullptr) picker_ = std::move(picker);
+  picker_ = std::move(picker);
   // If we transition to state CONNECTING and we've not seen
   // TRANSIENT_FAILURE more recently than READY or IDLE, start failover
   // timer if not already pending.
