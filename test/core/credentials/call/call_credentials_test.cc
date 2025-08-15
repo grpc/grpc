@@ -1360,7 +1360,7 @@ char* encode_and_sign_jwt_failure(const grpc_auth_json_key* json_key,
 char* encode_and_sign_jwt_should_not_be_called(
     const grpc_auth_json_key* /*json_key*/, const char* /*audience*/,
     gpr_timespec /*token_lifetime*/, const char* /*scope*/) {
-  CHECK_EQ("grpc_jwt_encode_and_sign should not be called", nullptr);
+  LOG(FATAL) << "grpc_jwt_encode_and_sign should not be called";
   return nullptr;
 }
 

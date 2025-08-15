@@ -14,6 +14,7 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 grpc_package(name = "test/core/telemetry")
 
@@ -72,6 +73,33 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//src/core:useful",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "instrument_test",
+    srcs = ["instrument_test.cc"],
+    external_deps = [
+        "gtest",
+        "gtest_main",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//:grpc",
+        "//src/core:instrument",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_benchmark(
+    name = "bm_instrument",
+    srcs = ["bm_instrument.cc"],
+    monitoring = HISTORY,
+    deps = [
+        "//:grpc",
+        "//src/core:instrument",
         "//test/core/test_util:grpc_test_util",
     ],
 )

@@ -246,7 +246,7 @@ def _event_handler(
             except Exception as e:  # pylint: disable=broad-except
                 # NOTE(rbellevi): We suppress but log errors here so as not to
                 # kill the channel spin thread.
-                logging.error(
+                _LOGGER.error(
                     "Exception in callback %s: %s", repr(callback.func), repr(e)
                 )
         return done and state.fork_epoch >= cygrpc.get_fork_epoch()
@@ -615,10 +615,11 @@ class _SingleThreadedRendezvous(
         del timeout
         with self._state.condition:
             if not self._is_complete():
-                raise grpc.experimental.UsageError(
-                    "_SingleThreadedRendezvous only supports result() when the"
-                    " RPC is complete."
+                error_msg = (
+                    "_SingleThreadedRendezvous only supports "
+                    "result() when the RPC is complete."
                 )
+                raise grpc.experimental.UsageError(error_msg)
             if self._state.code is grpc.StatusCode.OK:
                 return self._state.response
             elif self._state.cancelled:
@@ -638,10 +639,11 @@ class _SingleThreadedRendezvous(
         del timeout
         with self._state.condition:
             if not self._is_complete():
-                raise grpc.experimental.UsageError(
-                    "_SingleThreadedRendezvous only supports exception() when"
-                    " the RPC is complete."
+                error_msg = (
+                    "_SingleThreadedRendezvous only supports "
+                    "exception() when the RPC is complete."
                 )
+                raise grpc.experimental.UsageError(error_msg)
             if self._state.code is grpc.StatusCode.OK:
                 return None
             elif self._state.cancelled:
@@ -663,10 +665,11 @@ class _SingleThreadedRendezvous(
         del timeout
         with self._state.condition:
             if not self._is_complete():
-                raise grpc.experimental.UsageError(
-                    "_SingleThreadedRendezvous only supports traceback() when"
-                    " the RPC is complete."
+                msg = (
+                    "_SingleThreadedRendezvous only supports "
+                    "traceback() when the RPC is complete."
                 )
+                raise grpc.experimental.UsageError(msg)
             if self._state.code is grpc.StatusCode.OK:
                 return None
             elif self._state.cancelled:
@@ -698,27 +701,26 @@ class _SingleThreadedRendezvous(
         """See grpc.Call.trailing_metadata"""
         with self._state.condition:
             if self._state.trailing_metadata is None:
-                raise grpc.experimental.UsageError(
+                error_msg = (
                     "Cannot get trailing metadata until RPC is completed."
                 )
+                raise grpc.experimental.UsageError(error_msg)
             return self._state.trailing_metadata
 
     def code(self) -> Optional[grpc.StatusCode]:
         """See grpc.Call.code"""
         with self._state.condition:
             if self._state.code is None:
-                raise grpc.experimental.UsageError(
-                    "Cannot get code until RPC is completed."
-                )
+                error_msg = "Cannot get code until RPC is completed."
+                raise grpc.experimental.UsageError(error_msg)
             return self._state.code
 
     def details(self) -> Optional[str]:
         """See grpc.Call.details"""
         with self._state.condition:
             if self._state.details is None:
-                raise grpc.experimental.UsageError(
-                    "Cannot get details until RPC is completed."
-                )
+                error_msg = "Cannot get details until RPC is completed."
+                raise grpc.experimental.UsageError(error_msg)
             return _common.decode(self._state.details)
 
     def _consume_next_event(self) -> Optional[cygrpc.BaseEvent]:
@@ -778,9 +780,10 @@ class _SingleThreadedRendezvous(
     def debug_error_string(self) -> Optional[str]:
         with self._state.condition:
             if self._state.debug_error_string is None:
-                raise grpc.experimental.UsageError(
+                error_msg = (
                     "Cannot get debug error string until RPC is completed."
                 )
+                raise grpc.experimental.UsageError(error_msg)
             return _common.decode(self._state.debug_error_string)
 
 
@@ -1782,6 +1785,7 @@ def _channel_managed_call_management(state: _ChannelCallState):
           context: Context object for distributed tracing.
           _registered_call_handle: An int representing the call handle of the
             method, or None if the method is not registered.
+
         Returns:
           A cygrpc.IntegratedCall with which to conduct an RPC.
         """
@@ -1983,7 +1987,7 @@ def _unsubscribe(
     callback: Callable[[grpc.ChannelConnectivity], None],
 ) -> None:
     with state.lock:
-        for index, (subscribed_callback, unused_connectivity) in enumerate(
+        for index, (subscribed_callback, _unused_connectivity) in enumerate(
             state.callbacks_and_connectivities
         ):
             if callback == subscribed_callback:
@@ -2246,7 +2250,7 @@ class Channel(grpc.Channel):
         # effect closure of the underlying cygrpc.Channel instance.
         try:
             self._unsubscribe_all()
-        except:  # pylint: disable=bare-except
+        except:  # pylint: disable=bare-except # noqa: E722
             # Exceptions in __del__ are ignored by Python anyway, but they can
             # keep spamming logs.  Just silence them.
             pass

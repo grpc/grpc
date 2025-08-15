@@ -74,11 +74,7 @@ class SpiffeBundleKey final {
 // https://github.com/grpc/proposal/blob/master/A87-mtls-spiffe-support.md
 class SpiffeBundle final {
  public:
-  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
-    static const auto* kLoader = JsonObjectLoader<SpiffeBundle>().Finish();
-    return kLoader;
-  }
-
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
   void JsonPostLoad(const Json& json, const JsonArgs&,
                     ValidationErrors* errors);
 
@@ -105,14 +101,7 @@ class SpiffeBundle final {
 // Only configuring X509 roots is supported.
 class SpiffeBundleMap final {
  public:
-  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
-    static const auto* kLoader =
-        JsonObjectLoader<SpiffeBundleMap>()
-            .Field("trust_domains", &SpiffeBundleMap::bundles_)
-            .Finish();
-    return kLoader;
-  }
-
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
   void JsonPostLoad(const Json& json, const JsonArgs&,
                     ValidationErrors* errors);
 

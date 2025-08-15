@@ -19,7 +19,6 @@
 #ifndef GRPC_SRC_CORE_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H
 #define GRPC_SRC_CORE_RESOLVER_DNS_C_ARES_GRPC_ARES_WRAPPER_H
 
-#include <ares.h>
 #include <grpc/support/port_platform.h>
 #include <stddef.h>
 
@@ -35,6 +34,8 @@
 #include "src/core/util/sync.h"
 
 #if GRPC_ARES == 1
+
+#include <ares.h>
 
 #define GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS 120000
 

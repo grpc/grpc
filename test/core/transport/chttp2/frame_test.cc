@@ -1128,6 +1128,108 @@ TEST(Frame, GrpcHeaderTest) {
   EXPECT_EQ(header.length, kLength);
 }
 
+TEST(Frame, ValidateSettingsValuesInvalidInitialWindowSize) {
+  std::vector<Http2SettingsFrame::Setting> settings;
+  settings.push_back(
+      {Http2Settings::kInitialWindowSizeWireId, RFC9113::kMaxSize31Bit + 1});
+  EXPECT_THAT(
+      ValidateSettingsValues(settings),
+      Http2StatusIs(
+          Http2Status::Http2ErrorType::kConnectionError,
+          Http2ErrorCode::kFlowControlError,
+          absl::StrCat(RFC9113::kIncorrectWindowSizeSetting,
+                       "Invalid Setting:{setting.id:kInitialWindowSizeWireId, "
+                       "setting.value: ",
+                       RFC9113::kMaxSize31Bit + 1)));
+}
+
+TEST(Frame, ValidateSettingsValuesInvalidMaxFrameSize) {
+  std::vector<Http2SettingsFrame::Setting> settings;
+  settings.push_back(
+      {Http2Settings::kMaxFrameSizeWireId, RFC9113::kMinimumFrameSize - 1});
+  EXPECT_THAT(
+      ValidateSettingsValues(settings),
+      Http2StatusIs(
+          Http2Status::Http2ErrorType::kConnectionError,
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(RFC9113::kIncorrectFrameSizeSetting,
+                       "Invalid Setting:{setting.id:kMaxFrameSizeWireId, "
+                       "setting.value: ",
+                       RFC9113::kMinimumFrameSize - 1)));
+
+  settings.clear();
+  settings.push_back(
+      {Http2Settings::kMaxFrameSizeWireId, RFC9113::kMaximumFrameSize + 1});
+  EXPECT_THAT(
+      ValidateSettingsValues(settings),
+      Http2StatusIs(
+          Http2Status::Http2ErrorType::kConnectionError,
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(RFC9113::kIncorrectFrameSizeSetting,
+                       "Invalid Setting:{setting.id:kMaxFrameSizeWireId, "
+                       "setting.value: ",
+                       RFC9113::kMaximumFrameSize + 1)));
+}
+
+TEST(Frame, ValidateSettingsValuesValidSettings) {
+  std::vector<Http2SettingsFrame::Setting> settings;
+  settings.push_back(
+      {Http2Settings::kInitialWindowSizeWireId, RFC9113::kMaxSize31Bit});
+  settings.push_back(
+      {Http2Settings::kMaxFrameSizeWireId, RFC9113::kMinimumFrameSize});
+  settings.push_back(
+      {Http2Settings::kMaxFrameSizeWireId, RFC9113::kMaximumFrameSize});
+  EXPECT_TRUE(ValidateSettingsValues(settings).IsOk());
+}
+
+TEST(Frame, ValidateFrameHeaderTest) {
+  // Valid frame header
+  Http2FrameHeader header{/*length=*/10, /*type=kData */ 0, /*flags=*/0,
+                          /*stream_id=*/1};
+  EXPECT_TRUE(ValidateFrameHeader(/*max_frame_size_setting=*/100,
+                                  /*incoming_header_in_progress=*/false,
+                                  /*incoming_header_stream_id=*/0, header)
+                  .IsOk());
+
+  // Frame size larger than max frame size setting
+  header = {/*length=*/101, /*type=kData */ 0, /*flags=*/0, /*stream_id=*/1};
+  EXPECT_THAT(ValidateFrameHeader(/*max_frame_size_setting=*/100,
+                                  /*incoming_header_in_progress=*/false,
+                                  /*incoming_header_stream_id=*/0, header),
+              Http2StatusIs(
+                  Http2Status::Http2ErrorType::kConnectionError,
+                  Http2ErrorCode::kFrameSizeError,
+                  absl::StrCat(RFC9113::kFrameSizeLargerThanMaxFrameSizeSetting,
+                               ", Current Size = 101, Max Size = 100")));
+
+  // Header in progress, but current frame is not continuation
+  header = {/*length=*/10, /*type=kData */ 0, /*flags=*/0, /*stream_id=*/1};
+  EXPECT_THAT(ValidateFrameHeader(/*max_frame_size_setting=*/100,
+                                  /*incoming_header_in_progress=*/true,
+                                  /*incoming_header_stream_id=*/1, header),
+              Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                            Http2ErrorCode::kProtocolError,
+                            RFC9113::kAssemblerContiguousSequenceError));
+
+  // Header in progress, current frame is continuation, but stream id mismatch
+  header = {/*length=*/10, /*type=kContinuation */ 9, /*flags=*/0,
+            /*stream_id=*/3};
+  EXPECT_THAT(ValidateFrameHeader(/*max_frame_size_setting=*/100,
+                                  /*incoming_header_in_progress=*/true,
+                                  /*incoming_header_stream_id=*/1, header),
+              Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                            Http2ErrorCode::kProtocolError,
+                            RFC9113::kAssemblerContiguousSequenceError));
+
+  // Header in progress, current frame is continuation, stream id matches
+  header = {/*length=*/100, /*type=kContinuation */ 9, /*flags=*/0,
+            /*stream_id=*/1};
+  EXPECT_TRUE(ValidateFrameHeader(/*max_frame_size_setting=*/100,
+                                  /*incoming_header_in_progress=*/true,
+                                  /*incoming_header_stream_id=*/1, header)
+                  .IsOk());
+}
+
 }  // namespace
 }  // namespace grpc_core
 

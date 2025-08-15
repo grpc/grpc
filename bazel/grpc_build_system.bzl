@@ -816,6 +816,18 @@ def grpc_upb_proto_library(name, deps):
 def grpc_upb_proto_reflection_library(name, deps):
     upb_proto_reflection_library(name = name, deps = deps)
 
+def grpc_add_well_known_proto_upb_targets(targets):
+    """Adds well-known proto upb targets to the given targets."""
+    for target in targets:
+        grpc_upb_proto_library(
+            name = "protobuf_" + target + "_upb",
+            deps = ["@com_google_protobuf//:" + target + "_proto"],
+        )
+        grpc_upb_proto_reflection_library(
+            name = "protobuf_" + target + "_upbdefs",
+            deps = ["@com_google_protobuf//:" + target + "_proto"],
+        )
+
 # buildifier: disable=unnamed-macro
 def python_config_settings():
     native.config_setting(

@@ -152,6 +152,12 @@
     <file baseinstalldir="/" name="src/core/channelz/channelz_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/property_list.cc" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/property_list.h" role="src" />
+    <file baseinstalldir="/" name="src/core/channelz/v2tov1/convert.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/channelz/v2tov1/convert.h" role="src" />
+    <file baseinstalldir="/" name="src/core/channelz/v2tov1/legacy_api.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/channelz/v2tov1/legacy_api.h" role="src" />
+    <file baseinstalldir="/" name="src/core/channelz/v2tov1/property_list.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/channelz/v2tov1/property_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/ztrace_collector.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/backup_poller.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/backup_poller.h" role="src" />
@@ -425,12 +431,14 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_promise.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_rate_policy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_rate_policy.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_data_queue.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_lists.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_lists.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/transport_common.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/transport_common.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/varint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/varint.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/writable_streams.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/write_size_policy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/write_size_policy.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/writing.cc" role="src" />
@@ -822,6 +830,9 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/rpc/status.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/rpc/status.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/rpc/status.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h" role="src" />
@@ -1194,6 +1205,8 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c" role="src" />
@@ -1324,6 +1337,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/ares_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/cf_engine/cf_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/cf_engine/cf_engine.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/cf_engine/cfsocket_listener.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/cf_engine/cfsocket_listener.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/cf_engine/cfstream_endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/cf_engine/cftype_unique_ref.h" role="src" />
@@ -1772,6 +1787,8 @@
     <file baseinstalldir="/" name="src/core/load_balancing/xds/xds_override_host.cc" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/xds/xds_override_host.h" role="src" />
     <file baseinstalldir="/" name="src/core/load_balancing/xds/xds_wrr_locality.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/net/socket_mutator.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/net/socket_mutator.h" role="src" />
     <file baseinstalldir="/" name="src/core/plugin_registry/grpc_plugin_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/plugin_registry/grpc_plugin_registry_extra.cc" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/dns/c_ares/dns_resolver_ares.cc" role="src" />
@@ -2012,7 +2029,6 @@
     <file baseinstalldir="/" name="src/core/util/ref_counted_ptr.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/ref_counted_string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/ref_counted_string.h" role="src" />
-    <file baseinstalldir="/" name="src/core/util/ring_buffer.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/shared_bit_gen.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/shared_bit_gen.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/single_set_ptr.h" role="src" />

@@ -33,7 +33,10 @@
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
+#include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
+#include "src/core/ext/transport/chttp2/transport/writable_streams.h"
 #include "src/core/lib/promise/inter_activity_mutex.h"
+#include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -69,10 +72,11 @@ namespace http2 {
 // |---------------------|--------------|-----------------------|------------|
 // | Endpoint Read Loop  | Infinite     | On transport close    | One        |
 // | Endpoint Write Loop | Infinite     | On transport close    | One        |
+// | Stream Multiplexer  | Infinite     | On transport close    | One        |
 // | Close Transport     | CloseTimeout | On transport close    | One        |
 
-// Max Party Slots (Always): 2
-// Max Promise Slots (Worst Case): 3
+// Max Party Slots (Always): 3
+// Max Promise Slots (Worst Case): 4
 
 // Experimental : This is just the initial skeleton of class
 // and it is functions. The code will be written iteratively.
@@ -190,6 +194,15 @@ class Http2ClientTransport final : public ClientTransport {
   // Returns a promise that will do the cleanup after the WriteLoop ends.
   auto OnWriteLoopEnded();
 
+  // Returns a promise to keep draining data and control frames from all the
+  // active streams. This includes all stream specific frames like data, header,
+  // continuation and reset stream frames.
+  auto StreamMultiplexerLoop();
+
+  // Returns a promise that will do the cleanup after the StreamMultiplexerLoop
+  // ends.
+  auto OnStreamMultiplexerLoopEnded();
+
   // Returns a promise to fetch data from the callhandler and pass it further
   // down towards the endpoint.
   auto CallOutboundLoop(CallHandler call_handler, uint32_t stream_id,
@@ -220,6 +233,7 @@ class Http2ClientTransport final : public ClientTransport {
 
   PromiseEndpoint endpoint_;
   Http2SettingsManager settings_;
+  Duration settings_timeout_;
 
   Http2FrameHeader current_frame_header_;
 
@@ -231,7 +245,59 @@ class Http2ClientTransport final : public ClientTransport {
           stream_id(stream_id1),
           header_assembler(stream_id1),
           did_push_initial_metadata(false),
-          did_push_trailing_metadata(false) {}
+          did_push_trailing_metadata(false),
+          data_queue(MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
+              /*is_client*/ true, /*stream_id*/ stream_id1,
+              /*queue_size*/ kStreamQueueSize)) {}
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Data Queue Helpers
+
+    auto EnqueueInitialMetadata(ClientMetadataHandle&& metadata) {
+      GRPC_HTTP2_CLIENT_DLOG
+          << "Http2ClientTransport::Stream::EnqueueInitialMetadata stream_id="
+          << stream_id;
+      return data_queue->EnqueueInitialMetadata(std::move(metadata));
+    }
+
+    auto EnqueueTrailingMetadata(ClientMetadataHandle&& metadata) {
+      GRPC_HTTP2_CLIENT_DLOG
+          << "Http2ClientTransport::Stream::EnqueueTrailingMetadata stream_id="
+          << stream_id;
+      return data_queue->EnqueueTrailingMetadata(std::move(metadata));
+    }
+
+    auto EnqueueMessage(MessageHandle&& message) {
+      GRPC_HTTP2_CLIENT_DLOG
+          << "Http2ClientTransport::Stream::EnqueueMessage stream_id="
+          << stream_id
+          << " with payload size = " << message->payload()->Length();
+      return data_queue->EnqueueMessage(std::move(message));
+    }
+
+    auto EnqueueHalfClosed() {
+      GRPC_HTTP2_CLIENT_DLOG
+          << "Http2ClientTransport::Stream::EnqueueHalfClosed stream_id="
+          << stream_id;
+      return data_queue->EnqueueHalfClosed();
+    }
+
+    auto EnqueueResetStream(const uint32_t error_code) {
+      GRPC_HTTP2_CLIENT_DLOG
+          << "Http2ClientTransport::Stream::EnqueueResetStream stream_id="
+          << stream_id << " with error_code = " << error_code;
+      return data_queue->EnqueueResetStream(error_code);
+    }
+
+    auto DequeueFrames(const uint32_t transport_tokens,
+                       const uint32_t max_frame_length,
+                       HPackCompressor& encoder) {
+      return data_queue->DequeueFrames(transport_tokens, max_frame_length,
+                                       encoder);
+    }
+
+    ////////////////////////////////////////////////////////////////////////////
+    // Stream State Management
 
     // Modify the stream state
     // The possible stream transitions are as follows:
@@ -258,6 +324,7 @@ class Http2ClientTransport final : public ClientTransport {
         case HttpStreamState::kHalfClosedLocal:
           break;
         case HttpStreamState::kClosed:
+          DCHECK(false) << "MarkHalfClosedLocal called for a closed stream";
           break;
       }
     }
@@ -276,9 +343,12 @@ class Http2ClientTransport final : public ClientTransport {
         case HttpStreamState::kHalfClosedRemote:
           break;
         case HttpStreamState::kClosed:
+          DCHECK(false) << "MarkHalfClosedRemote called for a closed stream";
           break;
       }
     }
+
+    HttpStreamState GetStreamState() const { return stream_state; }
 
     inline bool IsClosed() const {
       return stream_state == HttpStreamState::kClosed;
@@ -288,7 +358,6 @@ class Http2ClientTransport final : public ClientTransport {
     // TODO(akshitpatel) : [PH2][P3] : Investigate if this needs to be atomic.
     HttpStreamState stream_state;
     const uint32_t stream_id;
-    TransportSendQeueue send_queue;
     GrpcMessageAssembler assembler;
     HeaderAssembler header_assembler;
     // TODO(akshitpatel) : [PH2][P2] : StreamQ should maintain a flag that
@@ -301,6 +370,7 @@ class Http2ClientTransport final : public ClientTransport {
     // transition to HalfClosedLocal till the end_stream frame is sent.
     bool did_push_initial_metadata;
     bool did_push_trailing_metadata;
+    RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> data_queue;
   };
 
   uint32_t NextStreamId(
@@ -430,6 +500,8 @@ class Http2ClientTransport final : public ClientTransport {
   bool is_first_write_;
   uint32_t incoming_header_stream_id_;
   grpc_closure* on_receive_settings_;
+
+  uint32_t max_header_list_size_soft_limit_;
 
   // Ping related members
   // TODO(akshitpatel) : [PH2][P2] : Consider removing the timeout related
@@ -607,6 +679,25 @@ class Http2ClientTransport final : public ClientTransport {
     // transport and greatly simpilfy the cleanup path.
     Http2ClientTransport* transport_;
   };
+
+  WritableStreams writable_stream_list_;
+
+  auto MaybeAddStreamToWritableStreamList(const uint32_t stream_id,
+                                          const bool became_writable) {
+    if (became_writable) {
+      GRPC_HTTP2_CLIENT_DLOG
+          << "Http2ClientTransport MaybeAddStreamToWritableStreamList "
+             " Stream id: "
+          << stream_id << " became writable";
+      absl::Status status = writable_stream_list_.Enqueue(
+          stream_id, WritableStreams::StreamPriority::kDefault);
+      if (!status.ok()) {
+        return HandleError(Http2Status::Http2ConnectionError(
+            Http2ErrorCode::kProtocolError, "Failed to enqueue stream"));
+      }
+    }
+    return absl::OkStatus();
+  }
 };
 
 // Since the corresponding class in CHTTP2 is about 3.9KB, our goal is to

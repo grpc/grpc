@@ -224,3 +224,14 @@ package_group(
     packages = [
     ],
 )
+
+package_group(
+    name = "end2end_test_utils",
+    packages = [
+    ],
+)
+
+package_group(
+    name = "socket_mutator",
+    packages = [],
+)

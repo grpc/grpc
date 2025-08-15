@@ -47,15 +47,6 @@ namespace http2 {
 
 #define ASSEMBLER_LOG DVLOG(3)
 
-constexpr absl::string_view kAssemblerContiguousSequenceError =
-    "RFC9113 : Field blocks MUST be transmitted as a contiguous sequence "
-    "of frames, with no interleaved frames of any other type or from any "
-    "other stream.";
-
-constexpr absl::string_view kAssemblerMismatchedStreamId =
-    "CONTINUATION frame has a different Stream Identifier than the preceeding "
-    "HEADERS frame.";
-
 constexpr absl::string_view kAssemblerHpackError =
     "RFC9113 : A decoding error in a field block MUST be treated as a "
     "connection error of type COMPRESSION_ERROR.";
@@ -148,7 +139,9 @@ class HeaderAssembler {
 
   // The caller MUST check using IsReady() before calling this function
   ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> ReadMetadata(
-      HPackParser& parser, bool is_initial_metadata, bool is_client) {
+      HPackParser& parser, bool is_initial_metadata, bool is_client,
+      const uint32_t max_header_list_size_soft_limit,
+      const uint32_t max_header_list_size_hard_limit) {
     ASSEMBLER_LOG << "ReadMetadata " << buffer_.Length() << " Bytes.";
 
     // Validate
@@ -162,10 +155,8 @@ class HeaderAssembler {
     Arena::PoolPtr<grpc_metadata_batch> metadata =
         Arena::MakePooledForOverwrite<grpc_metadata_batch>();
     parser.BeginFrame(
-        /*grpc_metadata_batch*/ metadata.get(),
-        // TODO(tjagtap) : [PH2][P2] : Manage limits
-        /*metadata_size_soft_limit*/ std::numeric_limits<uint32_t>::max(),
-        /*metadata_size_hard_limit*/ std::numeric_limits<uint32_t>::max(),
+        /*grpc_metadata_batch*/ metadata.get(), max_header_list_size_soft_limit,
+        max_header_list_size_hard_limit,
         is_initial_metadata ? HPackParser::Boundary::EndOfHeaders
                             : HPackParser::Boundary::EndOfStream,
         HPackParser::Priority::None,
