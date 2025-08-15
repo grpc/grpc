@@ -10571,6 +10571,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "zviz_property_list",
+    srcs = [
+        "channelz/zviz/property_list.cc",
+    ],
+    hdrs = ["channelz/zviz/property_list.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/time",
+    ],
+    deps = [
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+        "//src/proto/grpc/channelz/v2:property_list_cc_proto",
+    ],
+)
+
+grpc_cc_library(
     name = "zviz_style",
     srcs = [
         "channelz/zviz/style.cc",
@@ -10636,6 +10652,28 @@ grpc_cc_library(
         "zviz_environment",
         "zviz_html",
         "zviz_layout",
+    ],
+)
+
+grpc_cc_library(
+    name = "zviz_format_entity_list",
+    srcs = [
+        "channelz/zviz/format_entity_list.cc",
+    ],
+    hdrs = ["channelz/zviz/format_entity_list.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+        "absl/types:span",
+    ],
+    deps = [
+        "time",
+        "zviz_environment",
+        "zviz_layout",
+        "zviz_property_list",
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+        "//src/proto/grpc/channelz/v2:property_list_cc_proto",
+        "@com_google_protobuf//:any_cc_proto",
     ],
 )
 
