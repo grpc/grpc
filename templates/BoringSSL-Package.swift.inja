@@ -1,0 +1,52 @@
+// swift-tools-version:5.5
+// The swift-tools-version declares the minimum version of Swift required to build this package.
+import PackageDescription
+import Foundation
+
+let basePath = "third_party/boringssl-with-bazel"
+let privacyInfoPath = "../../src/objective-c/PrivacyInfo.xcprivacy"
+let testPath = "test/boringssl_spm_build"
+
+
+
+let package = Package(
+  name: "BoringSSL-GRPC",
+  products: [
+    .library(
+      name: "openssl_grpc",
+      targets: ["openssl_grpc"]
+    )
+  ],
+
+  targets: [
+    .target(
+      name: "openssl_grpc",
+      path: basePath,
+      exclude: [
+      ],
+      sources: [
+## for file in swift_boringssl_package.all_files
+        "{{ file }}",
+## endfor
+      ],
+      resources: [
+        .copy(privacyInfoPath),
+      ],
+      publicHeadersPath: "src/include",
+
+      cSettings: [
+        .define("OPENSSL_NO_ASM", to: "1"),
+        .headerSearchPath("./"),
+        .headerSearchPath("include/"),
+      ]
+    ),
+    .testTarget(
+      name: "build-test",
+      dependencies: [
+        "openssl_grpc",
+      ],
+      path: testPath
+    ),
+  ],
+  cxxLanguageStandard: .cxx14
+) 
