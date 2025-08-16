@@ -279,9 +279,13 @@ if EXTRA_ENV_COMPILE_ARGS is None:
         )
     elif "darwin" in sys.platform:
         # AppleClang by defaults uses C17 so only C++17 needs to be specified.
+        # Note: apple python has -fno-strict-overflow by default
+        # (see sysconfig.get_config_var('CFLAGS')), which implies -fwrapv.
+        # When -fno-wrapv is set, -fno-strict-overflow is reported as unused.
+        # https://github.com/llvm/llvm-project/blob/llvmorg-19.1.7/clang/lib/Driver/ToolChains/Clang.cpp#L6838-L6839
         EXTRA_ENV_COMPILE_ARGS += " -std=c++17"
         EXTRA_ENV_COMPILE_ARGS += (
-            " -stdlib=libc++ -fvisibility=hidden -fno-wrapv -fno-exceptions"
+            " -stdlib=libc++ -fvisibility=hidden -fno-exceptions"
             " -DHAVE_UNISTD_H"
         )
 

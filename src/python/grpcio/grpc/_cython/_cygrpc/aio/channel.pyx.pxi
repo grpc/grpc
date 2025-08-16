@@ -27,6 +27,7 @@ cdef CallbackFailureHandler _WATCH_CONNECTIVITY_FAILURE_HANDLER = CallbackFailur
 
 cdef class AioChannel:
     def __cinit__(self, bytes target, tuple options, ChannelCredentials credentials, object loop):
+        _LOGGER.info("AioChannel.__cinit__()")
         init_grpc_aio()
         if options is None:
             options = ()
