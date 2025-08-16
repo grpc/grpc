@@ -24,6 +24,7 @@
 #include <cstdint>
 #include <cstring>
 #include <memory>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -75,6 +76,14 @@ using namespace std::chrono_literals;
 namespace grpc_event_engine::experimental {
 
 namespace {
+
+bool ShouldUsePosixPoller() {
+#if defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
+  return grpc_core::IsEventEnginePollerForPythonEnabled();
+#else
+  return true;
+#endif
+}
 
 #if GRPC_ENABLE_FORK_SUPPORT && GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 
@@ -399,7 +408,7 @@ PosixEventEngine::CreateEndpointFromUnconnectedFdInternal(
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   PosixError err;
   int connect_errno;
-  PosixEventPoller* poller = poller_.get();
+  PosixEventPoller* poller = GetPollerChecked();
   do {
     err = poller->posix_interface().Connect(fd, addr.address(), addr.size());
   } while (err.IsPosixError(EINTR));
@@ -490,6 +499,7 @@ std::shared_ptr<PosixEventEngine>
 PosixEventEngine::MakeTestOnlyPosixEventEngine(
     std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
         test_only_poller) {
+  // Calling a private PosixEventEngine constructor - can't do make_shared
   std::shared_ptr<PosixEventEngine> engine(
       new PosixEventEngine(std::move(test_only_poller)));
   RegisterEventEngineForFork(engine, engine->executor_, engine->timer_manager_);
@@ -506,8 +516,10 @@ PosixEventEngine::PosixEventEngine()
     : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
       executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
       timer_manager_(std::make_shared<TimerManager>(executor_)) {
-  poller_ = grpc_event_engine::experimental::MakeDefaultPoller(executor_);
-  SchedulePoller();
+  if (ShouldUsePosixPoller()) {
+    poller_ = grpc_event_engine::experimental::MakeDefaultPoller(executor_);
+    SchedulePoller();
+  }
 }
 
 #else  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
@@ -847,11 +859,12 @@ PosixEventEngine::CreatePosixListener(
 }
 
 void PosixEventEngine::SchedulePoller() {
-  if (poller_ != nullptr) {
-    grpc_core::MutexLock lock(&mu_);
-    CHECK(!polling_cycle_.has_value());
-    polling_cycle_.emplace(executor_, poller_);
+  if (poller_ == nullptr) {
+    return;
   }
+  grpc_core::MutexLock lock(&mu_);
+  CHECK(!polling_cycle_.has_value());
+  polling_cycle_.emplace(executor_, poller_);
 }
 
 void PosixEventEngine::ResetPollCycle() {
@@ -918,20 +931,23 @@ PosixEventEngine::CreatePosixListener(
 
 void PosixEventEngine::AfterFork(OnForkRole on_fork_role) {
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  PosixEventPoller* poller = GetPollerChecked();
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   if (on_fork_role == OnForkRole::kChild) {
     if (grpc_core::IsEventEngineForkEnabled()) {
       AfterForkInChild();
     } else {
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-      poller->HandleForkInChild();
+      if (poller_ != nullptr) {
+        poller_->HandleForkInChild();
+      }
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
     }
   }
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  poller->ResetKickState();
-  SchedulePoller();
+  if (poller_ != nullptr) {
+    poller_->ResetKickState();
+    SchedulePoller();
+  }
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 }
 
@@ -952,7 +968,9 @@ void PosixEventEngine::AfterForkInChild() {
   }
 #endif
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  GetPollerChecked()->HandleForkInChild();
+  if (poller_ != nullptr) {
+    poller_->HandleForkInChild();
+  }
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
   for (const auto& cb : resolver_handles_) {

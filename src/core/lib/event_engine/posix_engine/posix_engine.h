@@ -48,8 +48,7 @@
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #endif  // GRPC_POSIX_SOCKET_TCP
 
-#if defined(GRPC_POSIX_SOCKET_TCP) && \
-    !defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
+#if defined(GRPC_POSIX_SOCKET_TCP)
 #define GRPC_PLATFORM_SUPPORTS_POSIX_POLLING true
 #else
 #define GRPC_PLATFORM_SUPPORTS_POSIX_POLLING false
