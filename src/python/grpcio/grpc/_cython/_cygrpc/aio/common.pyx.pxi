@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import warnings
+import asyncio
 
 from cpython.version cimport PY_MAJOR_VERSION, PY_MINOR_VERSION
 
@@ -31,19 +32,46 @@ cdef grpc_status_code get_status_code(object code) except *:
         except (KeyError, AttributeError):
             return StatusCode.unknown
 
+async def async_deserialize(object deserializer, bytes raw_message, object loop=None):
+    """Perform async deserialization on raw bytes.
 
-cdef object deserialize(object deserializer, bytes raw_message):
+    Failure to deserialize is a fatal error.
+    """
+    if deserializer:
+        async_deserializer = make_async_deserializer(deserializer)
+        return await async_deserializer(raw_message)
+    else:
+        return raw_message
+
+
+async def async_serialize(object serializer, object message, object loop=None):
+    """Perform async serialization on a message.
+
+    Failure to serialize is a fatal error.
+    """
+    if isinstance(message, str):
+        message = message.encode('utf-8')
+    
+    if serializer:
+        # Convert sync serializer to async if needed
+        async_serializer = make_async_serializer(serializer)
+        return await async_serializer(message)
+    else:
+        return message
+
+
+async def deserialize(object deserializer, bytes raw_message):
     """Perform deserialization on raw bytes.
 
     Failure to deserialize is a fatal error.
     """
     if deserializer:
-        return deserializer(raw_message)
+        return await async_deserialize(deserializer, raw_message)
     else:
         return raw_message
 
 
-cdef bytes serialize(object serializer, object message):
+async def serialize(object serializer, object message):
     """Perform serialization on a message.
 
     Failure to serialize is a fatal error.
@@ -51,9 +79,90 @@ cdef bytes serialize(object serializer, object message):
     if isinstance(message, str):
         message = message.encode('utf-8')
     if serializer:
-        return serializer(message)
+        return await async_serialize(serializer, message)
     else:
         return message
+
+
+def make_async_deserializer(object sync_deserializer):
+    """Convert a synchronous deserializer to an async function.
+    
+    This wraps the sync deserializer in an async function that runs it
+    in a new event loop to avoid blocking the main event loop.
+    """
+    if asyncio.iscoroutinefunction(sync_deserializer):
+        # Already async, return as-is
+        return sync_deserializer
+    
+    async def async_wrapper(raw_message):
+        """Async wrapper for sync deserializer."""
+        import threading
+        
+        # Use a thread to run the deserializer in a new event loop
+        result = None
+        exception = None
+        
+        def run_in_new_loop():
+            nonlocal result, exception
+            try:
+                # Run the deserializer in a new thread context
+                result = sync_deserializer(raw_message)
+            except Exception as e:
+                exception = e
+        
+        # Run the function in a separate thread
+        thread = threading.Thread(target=run_in_new_loop)
+        thread.start()
+        thread.join()
+        
+        # Check for exceptions
+        if exception:
+            raise exception
+        
+        return result
+    
+    return async_wrapper
+
+
+def make_async_serializer(object sync_serializer):
+    """Convert a synchronous serializer to an async function.
+    
+    This wraps the sync serializer in an async function that runs it
+    in a new event loop to avoid blocking the main event loop.
+    """
+    if asyncio.iscoroutinefunction(sync_serializer):
+        # Already async, return as-is
+        return sync_serializer
+    
+    async def async_wrapper(message):
+        """Async wrapper for sync serializer."""
+        import threading
+        
+        # Use a thread to run the serializer in a new event loop
+        result = None
+        exception = None
+        
+        def run_in_new_loop():
+            nonlocal result, exception
+            try:
+                # Run the serializer in a new thread context
+                result = sync_serializer(message)
+            except Exception as e:
+                exception = e
+        
+        # Run the function in a separate thread
+        thread = threading.Thread(target=run_in_new_loop)
+        thread.start()
+        thread.join()
+        
+        # Check for exceptions
+        if exception:
+            raise exception
+        
+        return result
+    
+    return async_wrapper
+
 
 
 class _EOF:
