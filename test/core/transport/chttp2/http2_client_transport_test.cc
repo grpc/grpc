@@ -100,6 +100,10 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
       {
           EventEngineSlice(
               grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+      },
+      event_engine().get());
+  mock_endpoint.ExpectWrite(
+      {
           helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
       },
       event_engine().get());
@@ -142,6 +146,10 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromQueue) {
       {
           EventEngineSlice(
               grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+      },
+      event_engine().get());
+  mock_endpoint.ExpectWrite(
+      {
           helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
       },
       event_engine().get());
@@ -189,6 +197,10 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromCall) {
       {
           EventEngineSlice(
               grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+      },
+      event_engine().get());
+  mock_endpoint.ExpectWrite(
+      {
           helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
 
       },
@@ -255,6 +267,10 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportAbortTest) {
       {
           EventEngineSlice(
               grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+      },
+      event_engine().get());
+  mock_endpoint.ExpectWrite(
+      {
           helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
       },
       event_engine().get());
@@ -310,6 +326,10 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingRead) {
       {
           EventEngineSlice(
               grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+      },
+      event_engine().get());
+  mock_endpoint.ExpectWrite(
+      {
           helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
       },
       event_engine().get());
@@ -362,6 +382,10 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingWrite) {
       {
           EventEngineSlice(
               grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+      },
+      event_engine().get());
+  mock_endpoint.ExpectWrite(
+      {
           helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
       },
       event_engine().get());
@@ -435,6 +459,10 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingTimeout) {
       {
           EventEngineSlice(
               grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+      },
+      event_engine().get());
+  mock_endpoint.ExpectWrite(
+      {
           helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
       },
       event_engine().get());
@@ -493,6 +521,10 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
       {
           EventEngineSlice(
               grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+      },
+      event_engine().get());
+  mock_endpoint.ExpectWrite(
+      {
           helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
       },
       event_engine().get());
@@ -592,6 +624,10 @@ TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
       {
           EventEngineSlice(
               grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+      },
+      event_engine().get());
+  mock_endpoint.ExpectWrite(
+      {
           helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
       },
       event_engine().get());
@@ -608,27 +644,15 @@ TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
   // 1. A HEADER frame that contains our initial metadata
   // 2. A DATA frame with END_STREAM flag false.
   // 3. A HEADER frame that contains our trailing metadata.
-  mock_endpoint.ExpectRead(
+  auto read_cb = mock_endpoint.ExpectDelayedRead(
       {helper_.EventEngineSliceFromHttp2HeaderFrame(
            std::string(kPathDemoServiceStep.begin(),
                        kPathDemoServiceStep.end()),
            /*stream_id=*/1,
            /*end_headers=*/true, /*end_stream=*/false),
        helper_.EventEngineSliceFromHttp2DataFrame(
-           /*payload=*/"Hello", /*stream_id=*/1, /*end_stream=*/false),
-       helper_.EventEngineSliceFromHttp2HeaderFrame(
-           // Warning(tjagtap) : This is a hardcoded made up header. This is not
-           // what HPack compression would have given. This may break sometime
-           // in the future, not sure.
-           std::string(kPathDemoServiceStep.begin(),
-                       kPathDemoServiceStep.end()),
-           /*stream_id=*/1,
-           /*end_headers=*/true, /*end_stream=*/true)},
+           /*payload=*/"Hello", /*stream_id=*/1, /*end_stream=*/false)},
       event_engine().get());
-
-  // We need this to break the ReadLoop
-  mock_endpoint.ExpectReadClose(absl::UnavailableError("Connection closed"),
-                                event_engine().get());
 
   LOG(INFO) << "Creating Http2ClientTransport";
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
@@ -641,11 +665,31 @@ TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
   client_transport->StartCall(call.handler.StartCall());
 
   LOG(INFO) << "Client sends HalfClose using FinishSends";
-  call.initiator.SpawnGuarded("test-send", [initiator =
-                                                call.initiator]() mutable {
+  call.initiator.SpawnGuarded("test-send", [this, initiator = call.initiator,
+                                            read_cb = std::move(read_cb),
+                                            &mock_endpoint]() mutable {
     return Seq(
         [initiator = initiator]() mutable { return initiator.FinishSends(); },
-        []() { return absl::OkStatus(); });
+        [this, read_cb = std::move(read_cb), &mock_endpoint]() mutable {
+          read_cb();
+          mock_endpoint.ExpectRead(
+              {
+                  helper_.EventEngineSliceFromHttp2HeaderFrame(
+                      // Warning(tjagtap) : This is a hardcoded made up header.
+                      // This is not what HPack compression would have given.
+                      // This may break sometime in the future, not sure.
+                      std::string(kPathDemoServiceStep.begin(),
+                                  kPathDemoServiceStep.end()),
+                      /*stream_id=*/1,
+                      /*end_headers=*/true, /*end_stream=*/true),
+              },
+              event_engine().get());
+          // We need this to break the ReadLoop
+          mock_endpoint.ExpectReadClose(
+              absl::UnavailableError("Connection closed"),
+              event_engine().get());
+          return absl::OkStatus();
+        });
   });
 
   StrictMock<MockFunction<void()>> on_done;
