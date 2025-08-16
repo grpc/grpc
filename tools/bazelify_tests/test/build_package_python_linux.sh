@@ -22,6 +22,6 @@ ls -lR input_artifacts
 
 # All the python packages have been built in the artifact phase already
 # and we only collect them here to deliver them to the distribtest phase.
-# This is the same logic as in "tools/run_tests/artifacts/build_package_python.sh",
+# This is the same logic as in "tools/run_tests/artifacts/package_python.sh",
 # but expects different layout under input_artifacts.
 cp -r input_artifacts/artifact_python_*/* artifacts/ || true
