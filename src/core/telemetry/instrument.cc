@@ -24,6 +24,7 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 
@@ -99,9 +100,34 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names, Fn fn,
       uint64_counters_[ConstructKey(label, name)] += value;
     }
 
+    void Histogram(absl::Span<const std::string> label, absl::string_view name,
+                   HistogramBuckets bounds,
+                   absl::Span<const uint64_t> counts) override {
+      CHECK_EQ(counts.size(), bounds.size());
+      auto it = histograms_.find(ConstructKey(label, name));
+      if (it == histograms_.end()) {
+        histograms_.emplace(std::piecewise_construct,
+                            std::tuple(ConstructKey(label, name)),
+                            std::tuple(bounds, counts));
+      } else {
+        if (it->second.bounds != bounds) {
+          LOG(FATAL) << "Histogram bounds mismatch for metric '" << name
+                     << "': {" << absl::StrJoin(it->second.bounds, ",")
+                     << "} vs {" << absl::StrJoin(bounds, ",") << "}";
+        }
+        for (size_t i = 0; i < counts.size(); ++i) {
+          it->second.counts[i] += counts[i];
+        }
+      }
+    }
+
     void Publish(MetricsSink& sink) const {
       for (const auto& [key, value] : uint64_counters_) {
         sink.Counter(std::get<0>(key), std::get<1>(key), value);
+      }
+      for (const auto& [key, value] : histograms_) {
+        sink.Histogram(std::get<0>(key), std::get<1>(key), value.bounds,
+                       value.counts);
       }
     }
 
@@ -120,6 +146,15 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names, Fn fn,
     absl::flat_hash_map<std::tuple<std::vector<std::string>, absl::string_view>,
                         uint64_t>
         uint64_counters_;
+    struct HistogramValue {
+      HistogramValue(HistogramBuckets bounds, absl::Span<const uint64_t> counts)
+          : bounds(bounds), counts(counts.begin(), counts.end()) {}
+      HistogramBuckets bounds;
+      std::vector<uint64_t> counts;
+    };
+    absl::flat_hash_map<std::tuple<std::vector<std::string>, absl::string_view>,
+                        HistogramValue>
+        histograms_;
   };
   Filter filter(include_labels);
   ApplyLabelChecks(label_names, std::move(fn), filter);
@@ -155,6 +190,13 @@ void MetricsQuery::ApplyLabelChecks(absl::Span<const std::string> label_names,
                  uint64_t value) override {
       if (!Matches(label)) return;
       sink_.Counter(label, name, value);
+    }
+
+    void Histogram(absl::Span<const std::string> label, absl::string_view name,
+                   HistogramBuckets bounds,
+                   absl::Span<const uint64_t> counts) override {
+      if (!Matches(label)) return;
+      sink_.Histogram(label, name, bounds, counts);
     }
 
    private:
@@ -219,6 +261,16 @@ uint64_t QueryableDomain::AllocateCounter(absl::string_view name,
   const size_t offset = Allocate(1);
   metrics_.push_back(InstrumentIndex::Get().Register(
       this, offset, name, description, unit, InstrumentIndex::Counter{}));
+  return offset;
+}
+
+uint64_t QueryableDomain::AllocateHistogram(absl::string_view name,
+                                            absl::string_view description,
+                                            absl::string_view unit,
+                                            HistogramBuckets bounds) {
+  const size_t offset = Allocate(bounds.size());
+  metrics_.push_back(InstrumentIndex::Get().Register(
+      this, offset, name, description, unit, bounds));
   return offset;
 }
 

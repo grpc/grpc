@@ -695,6 +695,110 @@ auto Http2ClientTransport::OnWriteLoopEnded() {
       };
 }
 
+auto Http2ClientTransport::StreamMultiplexerLoop() {
+  GRPC_HTTP2_CLIENT_DLOG
+      << "Http2ClientTransport StreamMultiplexerLoop Factory";
+  // This loop iterates over all the writable streams and drains them. If
+  // there are no writable streams, StreamMultiplexerLoop blocks until there
+  // is a writable stream.
+  return Loop([self = RefAsSubclass<Http2ClientTransport>()]() mutable {
+    // Overview:
+    // 1. Get the next writable stream.
+    // 2. Dequeue frames from the stream queue based on available transport
+    //    tokens.
+    // 3. If the stream is still writable, enqueue the stream back to the
+    //    writable stream list.
+    // 4. Enqueue the dequeued frames to the MPSC queue.
+    return TrySeq(
+        self->writable_stream_list_.Next(/*transport_tokens_available*/ true),
+        [self](const uint32_t stream_id) mutable
+            -> absl::StatusOr<std::vector<Http2Frame>> {
+          RefCountedPtr<Stream> stream = self->LookupStream(stream_id);
+          if (GPR_UNLIKELY(stream == nullptr)) {
+            // Stream was closed before we could dequeue.
+            // TODO(akshitpatel) : [PH2][P2] : Race condition. Determine should
+            // we have a DCHECK here based on how ResetStream/Aborts are
+            // handled.
+            return std::vector<Http2Frame>();
+          }
+
+          // TODO(akshitpatel) : [PH2][P3] : Plug transport_tokens when
+          // transport flow control is implemented.
+          absl::StatusOr<StreamDataQueue<ClientMetadataHandle>::DequeueResult>
+              result = stream->DequeueFrames(
+                  /*transport_tokens*/ std::numeric_limits<uint32_t>::max(),
+                  self->settings_.peer().max_frame_size(), self->encoder_);
+          if (result.ok() && result->is_writable) {
+            // Stream is still writable. Enqueue it back to the writable stream
+            // list.
+            // TODO(akshitpatel) : [PH2][P3] : Plug transport_tokens when
+            // transport flow control is implemented.
+            absl::Status status = self->writable_stream_list_.Enqueue(
+                stream_id, WritableStreams::StreamPriority::kDefault);
+
+            if (GPR_UNLIKELY(!status.ok())) {
+              LOG(ERROR) << "Failed to enqueue stream " << stream_id
+                         << " with status: " << status;
+              // Close transport if we fail to enqueue stream.
+              return absl::InternalError("Failed to enqueue stream");
+            }
+          } else if (GPR_UNLIKELY(!result.ok())) {
+            // Close the corresponding stream if we fail to dequeue frames from
+            // the stream queue.
+            LOG(ERROR) << "Failed to dequeue frames for stream " << stream_id
+                       << " with status: " << result.status();
+            absl::Status status =
+                self->HandleError(Http2Status::AbslStreamError(
+                    absl::StatusCode::kInternal, "Failed to dequeue frames"));
+            return std::vector<Http2Frame>();
+          }
+          GRPC_HTTP2_CLIENT_DLOG
+              << "Http2ClientTransport StreamMultiplexerLoop. Dequeued "
+              << result->frames.size()
+              << " frames for "
+                 "stream: "
+              << stream_id;
+          return std::move(result->frames);
+        },
+        [self](std::vector<Http2Frame> frames) {
+          // Enqueue the frames to the MPSC queue.
+          return Loop([self, frames = std::move(frames), idx = 0u]() mutable {
+            return If(
+                idx < frames.size(),
+                [self, &frames, &idx]() {
+                  return Map(
+                      // Enqueue to the MPSC queue could return pending. This
+                      // induces backpressure for the sender. Only after writing
+                      // to the MPSC queue we will loop back to read more
+                      // streams.
+                      self->EnqueueOutgoingFrame(std::move(frames[idx++])),
+                      [](absl::Status status) -> LoopCtl<absl::Status> {
+                        if (GPR_UNLIKELY(!status.ok())) {
+                          return status;
+                        }
+                        return Continue{};
+                      });
+                },
+                []() -> LoopCtl<absl::Status> { return absl::OkStatus(); });
+          });
+        },
+        []() -> LoopCtl<absl::Status> { return Continue{}; });
+  });
+}
+
+auto Http2ClientTransport::OnStreamMultiplexerLoopEnded() {
+  GRPC_HTTP2_CLIENT_DLOG
+      << "Http2ClientTransport OnStreamMultiplexerLoopEnded Factory";
+  return [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
+    GRPC_HTTP2_CLIENT_DLOG
+        << "Http2ClientTransport OnStreamMultiplexerLoopEnded Promise Status="
+        << status;
+    GRPC_UNUSED absl::Status error =
+        self->HandleError(Http2Status::AbslConnectionError(
+            status.code(), std::string(status.message())));
+  };
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Constructor Destructor
 
@@ -755,6 +859,8 @@ Http2ClientTransport::Http2ClientTransport(
   general_party_->Spawn("ReadLoop", ReadLoop(), OnReadLoopEnded());
   // TODO(tjagtap) : [PH2][P2] Fix when needed.
   general_party_->Spawn("WriteLoop", WriteLoop(), OnWriteLoopEnded());
+  general_party_->Spawn("StreamMultiplexerLoop", StreamMultiplexerLoop(),
+                        OnStreamMultiplexerLoopEnded());
 
   // The keepalive loop is only spawned if the keepalive time is not infinity.
   keepalive_manager_.Spawn(general_party_.get());
@@ -986,60 +1092,91 @@ auto Http2ClientTransport::CallOutboundLoop(
     ClientMetadataHandle metadata) {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop";
 
-  // Convert a message to a Http2DataFrame and send the frame out.
-  auto send_message =
-      [self = RefAsSubclass<Http2ClientTransport>(),
-       stream_id](MessageHandle message) mutable {
-        // TODO(akshitpatel) : [PH2][P2] : Assuming one message per frame.
-        // This will eventually change as more logic is added.
-        SliceBuffer frame_payload;
-        size_t payload_size = message->payload()->Length();
-        AppendGrpcHeaderToSliceBuffer(frame_payload, message->flags(),
-                                      payload_size);
-        frame_payload.TakeAndAppend(*message->payload());
-        Http2DataFrame frame{stream_id, /*end_stream*/ false,
-                             std::move(frame_payload)};
-        GRPC_HTTP2_CLIENT_DLOG
-            << "Http2ClientTransport CallOutboundLoop send_message";
-        return self->EnqueueOutgoingFrame(std::move(frame));
-      };
+  auto send_message = [self = RefAsSubclass<Http2ClientTransport>(),
+                       stream_id](MessageHandle&& message) mutable {
+    RefCountedPtr<Stream> stream = self->LookupStream(stream_id);
+    return If(
+        stream != nullptr,
+        [self, stream, message = std::move(message), stream_id]() mutable {
+          return TrySeq(stream->EnqueueMessage(std::move(message)),
+                        [self, stream_id](bool became_writable) {
+                          GRPC_HTTP2_CLIENT_DLOG
+                              << "Http2ClientTransport CallOutboundLoop "
+                                 "Enqueued Message";
+                          return self->MaybeAddStreamToWritableStreamList(
+                              stream_id, became_writable);
+                        });
+        },
+        []() {
+          // This will trigger Call stack cleanup.
+          return absl::InternalError("Stream not found while sending message");
+        });
+  };
 
-  SliceBuffer buf;
-  encoder_.EncodeRawHeaders(*metadata.get(), buf);
-  Http2Frame frame = Http2HeaderFrame{stream_id, /*end_headers*/ true,
-                                      /*end_stream*/ false, std::move(buf)};
+  auto send_initial_metadata = [self = RefAsSubclass<Http2ClientTransport>(),
+                                stream_id,
+                                metadata = std::move(metadata)]() mutable {
+    RefCountedPtr<Stream> stream = self->LookupStream(stream_id);
+    return If(
+        stream != nullptr,
+        [self, stream, metadata = std::move(metadata), stream_id]() mutable {
+          return TrySeq(
+              stream->EnqueueInitialMetadata(std::move(metadata)),
+              [self, stream_id](bool became_writable) {
+                GRPC_HTTP2_CLIENT_DLOG
+                    << "Http2ClientTransport CallOutboundLoop "
+                       "Enqueued Initial Metadata";
+                return self->MaybeAddStreamToWritableStreamList(
+                    stream_id, became_writable);
+              },
+              [stream] {
+                // TODO(akshitpatel) : [PH2][P2] : Think how to handle stream
+                // states.
+                stream->SentInitialMetadata();
+                return absl::OkStatus();
+              });
+        },
+        []() {
+          // This will trigger Call stack cleanup.
+          return absl::InternalError(
+              "Stream not found while sending initial metadata");
+        });
+  };
+
+  auto send_half_closed = [self = RefAsSubclass<Http2ClientTransport>(),
+                           stream_id]() mutable {
+    RefCountedPtr<Stream> stream = self->LookupStream(stream_id);
+    return If(
+        stream != nullptr,
+        [self, stream, stream_id]() mutable {
+          return TrySeq(stream->EnqueueHalfClosed(),
+                        [self, stream_id](bool became_writable) {
+                          GRPC_HTTP2_CLIENT_DLOG
+                              << "Http2ClientTransport CallOutboundLoop "
+                                 "Enqueued Half Closed";
+                          return self->MaybeAddStreamToWritableStreamList(
+                              stream_id, became_writable);
+                        });
+        },
+        []() {
+          // This will trigger Call stack cleanup.
+          return absl::InternalError(
+              "Stream not found while sending half closed");
+        });
+  };
   return GRPC_LATENT_SEE_PROMISE(
       "Ph2CallOutboundLoop",
       TrySeq(
-          Map(EnqueueOutgoingFrame(std::move(frame)),
-              [self = RefAsSubclass<Http2ClientTransport>(),
-               stream_id](absl::Status status) {
-                if (status.ok()) {
-                  // TODO(akshitpatel) : [PH2][P3] : Investigate if stream
-                  // lookup can be done once outside the promise and all the
-                  // promises can hold a reference to the stream.
-                  auto stream = self->LookupStream(stream_id);
-                  if (GPR_UNLIKELY(stream == nullptr)) {
-                    LOG(ERROR)
-                        << "Stream not found while sending initial metadata";
-                    return absl::InternalError(
-                        "Stream not found while sending initial metadata");
-                  }
-                  stream->SentInitialMetadata();
-                }
-                return status;
-              }),
+          send_initial_metadata(),
           [call_handler, send_message, lock = std::move(lock)]() {
             // The lock will be released once the promise is constructed from
             // this factory. ForEach will be polled after the lock is
             // released.
             return ForEach(MessagesFrom(call_handler), send_message);
           },
-          [self = RefAsSubclass<Http2ClientTransport>(), stream_id]() mutable {
-            // TODO(akshitpatel): [PH2][P2] : Figure out a way to send the end
-            // of stream frame in the same frame as the last message.
-            Http2DataFrame frame{stream_id, /*end_stream*/ true, SliceBuffer()};
-            return self->EnqueueOutgoingFrame(std::move(frame));
+          [self = RefAsSubclass<Http2ClientTransport>(),
+           send_half_closed = std::move(send_half_closed)]() mutable {
+            return send_half_closed();
           },
           [call_handler]() mutable {
             return Map(call_handler.WasCancelled(), [](bool cancelled) {

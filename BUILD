@@ -265,7 +265,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "gemini"  # @unused
 
-core_version = "49.0.0"  # @unused
+core_version = "50.0.0"  # @unused
 
 version = "1.75.0-dev"  # @unused
 
