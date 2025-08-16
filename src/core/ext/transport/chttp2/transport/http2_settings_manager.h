@@ -209,14 +209,13 @@ class SettingsTimeoutManager {
             },
             // This promise will "Win" the Race if timeout is crossed and we did
             // not receive the ACK. The transport must close when this happens.
-            TrySeq(Sleep(timeout_), [this, sent_time = sent_time_,
+            TrySeq(Sleep(timeout_), [sent_time = sent_time_,
                                      timeout = timeout_]() {
               GRPC_SETTINGS_TIMEOUT_DLOG
                   << "SettingsTimeoutManager::WaitForSettingsTimeout Timeout"
                      " triggered. Transport will close. Sent Time : "
                   << sent_time << " Timeout Time : " << (sent_time + timeout)
                   << " Current Time " << Timestamp::Now();
-              this->CleanUpForTransportClosure();
               return absl::CancelledError(
                   std::string(RFC9113::kSettingsTimeout));
             })));
@@ -275,15 +274,6 @@ class SettingsTimeoutManager {
     --number_of_acks_unprocessed_;
     DCHECK_EQ(number_of_acks_unprocessed_, 0);
     DCHECK(!did_register_waker_);
-  }
-  inline void CleanUpForTransportClosure() {
-    GRPC_SETTINGS_TIMEOUT_DLOG
-        << "SettingsTimeoutManager::CleanUpForTransportClosure "
-           "did_register_waker_ "
-        << did_register_waker_
-        << " number_of_acks_unprocessed_ : " << number_of_acks_unprocessed_;
-    did_register_waker_ = false;
-    number_of_acks_unprocessed_ = 0;
   }
 
   Duration timeout_;
