@@ -25,10 +25,12 @@
 #include <thread>
 #include <vector>
 
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_tracker/resource_tracker.h"
 #include "test/core/resource_quota/call_checker.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "test/core/resource_tracker/test_resource_tracker.h"
 
 namespace grpc_core {
 namespace testing {
@@ -197,12 +199,17 @@ TEST(MemoryQuotaTest, ContainerMemoryAccountedFor) {
   const double original_memory_pressure =
       owner.GetPressureInfo().instantaneous_pressure;
   EXPECT_LT(original_memory_pressure, 0.01);
-  SetContainerMemoryPressure(1.0);
+
+  TestResourceTracker test_tracker;
+  grpc_core::ResourceTracker::Set(&test_tracker);
+
+  test_tracker.SetMetricValue("memory", 1.0);
   EXPECT_EQ(owner.GetPressureInfo().instantaneous_pressure, 1.0);
-  SetContainerMemoryPressure(0.0);
+  test_tracker.SetMetricValue("memory", 0.0);
   EXPECT_EQ(owner.GetPressureInfo().instantaneous_pressure,
             original_memory_pressure);
-  SetContainerMemoryPressure(0.0);
+
+  grpc_core::ResourceTracker::Set(nullptr);
 }
 
 }  // namespace testing

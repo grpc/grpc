@@ -63,7 +63,9 @@ grpc_cc_test(
         "call_checker",
         "//:exec_ctx",
         "//src/core:memory_quota",
+        "//src/core:resource_tracker",
         "//src/core:slice_refcount",
+        "//test/core/resource_tracker:test_resource_tracker",
         "//test/core/test_util:grpc_test_util_unsecure",
     ],
 )
