@@ -25,7 +25,7 @@
 #include "absl/strings/string_view.h"
 
 #if defined(GPR_LINUX) || defined(GPR_ANDROID) || defined(GPR_FREEBSD) || \
-    defined(GPR_APPLE) || defined(GPR_NETBSD)
+    defined(GPR_APPLE) || defined(GPR_NETBSD) || defined(GPR_OPENBSD)
 
 #include <dirent.h>
 
