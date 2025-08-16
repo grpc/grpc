@@ -83,8 +83,7 @@ void* UnaryDeserializeHelper(grpc_byte_buffer* req, grpc::Status* status,
                              RequestType* request) {
   grpc::ByteBuffer buf;
   buf.set_buffer(req);
-  *status = grpc::SerializationTraits<RequestType>::Deserialize(
-      &buf, static_cast<RequestType*>(request));
+  *status = grpc::Deserialize(&buf, static_cast<RequestType*>(request));
   buf.Release();
   if (status->ok()) {
     return request;
@@ -233,8 +232,7 @@ class ServerStreamingHandler : public grpc::internal::MethodHandler {
     buf.set_buffer(req);
     auto* request =
         new (grpc_call_arena_alloc(call, sizeof(RequestType))) RequestType();
-    *status =
-        grpc::SerializationTraits<RequestType>::Deserialize(&buf, request);
+    *status = grpc::Deserialize(&buf, request);
     buf.Release();
     if (status->ok()) {
       return request;
