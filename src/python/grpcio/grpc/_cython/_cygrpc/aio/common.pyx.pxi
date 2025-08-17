@@ -277,7 +277,7 @@ def make_multiprocessing_deserializer(object sync_deserializer, bint use_chunkin
         """Multiprocessing wrapper for sync deserializer."""
         if use_chunking and len(raw_message) > chunk_size:
             # Use multiprocessing for large messages
-            return multiprocessing_deserialize_cy(raw_message, "custom", chunk_size=chunk_size)
+            return multiprocessing_deserialize_cy(raw_message, sync_deserializer, chunk_size=chunk_size)
         else:
             # Use original deserializer for small messages
             return sync_deserializer(raw_message)
