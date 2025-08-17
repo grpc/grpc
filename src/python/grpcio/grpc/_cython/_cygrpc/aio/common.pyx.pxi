@@ -132,16 +132,9 @@ def multiprocessing_deserialize_cy(bytes raw_message, object deserializer=None,
     if num_processes is None:
         num_processes = mp.cpu_count()
     
-    # For very small messages, use single process to avoid overhead
-    if len(raw_message) < chunk_size:
-        return deserialize_chunk_cy(raw_message, deserializer)
-    
+    # Always use multiprocessing, even for small messages
     # Divide message into chunks
     chunks = chunk_message_cy(raw_message, chunk_size)
-    
-    if len(chunks) == 1:
-        # Single chunk, no need for multiprocessing
-        return deserialize_chunk_cy(chunks[0], deserializer)
     
     # Process chunks in parallel
     with Pool(processes=num_processes) as pool:
