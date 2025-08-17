@@ -613,7 +613,7 @@ auto Http2ClientTransport::OnReadLoopEnded() {
 ///////////////////////////////////////////////////////////////////////////////
 // Write Related Promises and Promise Factories
 
-auto Http2ClientTransport::WriteFromQueue(std::vector<Http2Frame> frames) {
+auto Http2ClientTransport::WriteFromQueue(std::vector<Http2Frame>&& frames) {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteFromQueue Factory";
   SliceBuffer output_buf;
   Serialize(absl::Span<Http2Frame>(frames), output_buf);
@@ -640,6 +640,7 @@ auto Http2ClientTransport::WriteControlFrames() {
         grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)));
     is_first_write_ = false;
   }
+  MaybeGetSettingsFrame(output_buf);
   const uint64_t buffer_length = output_buf.Length();
   return If(
       buffer_length > 0,
@@ -651,7 +652,7 @@ auto Http2ClientTransport::WriteControlFrames() {
       [] { return absl::OkStatus(); });
 }
 
-void Http2ClientTransport::NotifyEndpointWriteDone() {
+void Http2ClientTransport::NotifyControlFramesWriteDone() {
   // Notify Control modules that we have sent the frames.
   // All notifications are expected to be synchronous.
 }
@@ -671,9 +672,10 @@ auto Http2ClientTransport::WriteLoop() {
               [self, frames = std::move(frames)](absl::Status status) mutable
                   -> absl::StatusOr<std::vector<Http2Frame>> {
                 if (!status.ok()) {
+                  LOG(ERROR) << "Endpoint write failed with status: " << status;
                   return status;
                 }
-                self->NotifyEndpointWriteDone();
+                self->NotifyControlFramesWriteDone();
                 return std::move(frames);
               });
         },
@@ -804,25 +806,19 @@ Http2ClientTransport::Http2ClientTransport(
       channel_args.GetDurationFromIntMillis(GRPC_ARG_SETTINGS_TIMEOUT)
           .value_or(std::max(keepalive_timeout_ * 2, Duration::Minutes(1)));
 
-  std::optional<Http2SettingsFrame> settings_frame =
-      settings_.MaybeSendUpdate();
-  if (settings_frame.has_value()) {
-    GRPC_HTTP2_CLIENT_DLOG
-        << "Http2ClientTransport Constructor Spawn SendFirstSettingsFrame";
-    general_party_->Spawn(
-        "SendFirstSettingsFrame",
-        [self = RefAsSubclass<Http2ClientTransport>(),
-         frame = std::move(*settings_frame)]() mutable {
-          return self->EnqueueOutgoingFrame(std::move(frame));
-        },
-        [](GRPC_UNUSED absl::Status status) {});
-  }
   if (settings_.local().allow_security_frame()) {
     // TODO(tjagtap) : [PH2][P3] : Setup the plumbing to pass the security frame
     // to the endpoing via TransportFramingEndpointExtension.
     // Also decide if this plumbing is done here, or when the peer sends
     // allow_security_frame too.
   }
+
+  // Spawn a promise to flush the gRPC initial connection string and settings
+  // frames.
+  general_party_->Spawn("SpawnFlushInitialFrames",
+                        EnqueueOutgoingFrame(Http2EmptyFrame{}),
+                        [](GRPC_UNUSED absl::Status status) {});
+
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor End";
 }
 
