@@ -49,17 +49,18 @@ def deserialize(object deserializer, bytes raw_message, int chunk_size=1024*1024
     return multiprocessing_deserialize_cy(raw_message, deserializer, chunk_size=chunk_size)
 
 
-cdef bytes serialize(object serializer, object message):
-    """Perform serialization on a message.
+def serialize(object serializer, object message, int chunk_size=1024*1024):
+    """Perform serialization on a message using multiprocessing.
 
     Failure to serialize is a fatal error.
+    
+    Args:
+        serializer: The serializer function to use
+        message: The message to serialize
+        chunk_size: Size of chunks for multiprocessing (in bytes)
     """
-    if isinstance(message, str):
-        message = message.encode('utf-8')
-    if serializer:
-        return serializer(message)
-    else:
-        return message
+    # Always use multiprocessing for serialization
+    return multiprocessing_serialize_cy(message, serializer, chunk_size=chunk_size)
 
 
 # ============================================================================
@@ -231,6 +232,154 @@ def combine_chunk_results(list results, object deserializer=None):
     # For other types, return as list (fallback)
     else:
         return valid_results
+
+
+# ============================================================================
+# Multiprocessing Serialization Functions
+# ============================================================================
+
+def serialize_chunk_cy(object chunk, object serializer=None):
+    """
+    Serialize a single chunk of data.
+    This function will run in a separate process.
+    
+    Args:
+        chunk: The chunk of data to serialize
+        serializer: The serializer function to use (or None for raw bytes)
+    
+    Returns:
+        Serialized chunk data
+    """
+    try:
+        if serializer:
+            # Use the provided serializer function
+            return serializer(chunk)
+        else:
+            # Return raw bytes if no serializer provided
+            if isinstance(chunk, str):
+                return chunk.encode('utf-8')
+            elif isinstance(chunk, bytes):
+                return chunk
+            else:
+                return str(chunk).encode('utf-8')
+    except Exception as e:
+        logging.error(f"Error serializing chunk: {e}")
+        return None
+
+
+def chunk_data_cy(object data, int chunk_size):
+    """
+    Divide data into chunks for parallel processing.
+    
+    Args:
+        data: The data to chunk
+        chunk_size: Size of each chunk in bytes
+    
+    Returns:
+        List of data chunks
+    """
+    cdef:
+        int total_size, num_chunks, i, start, end
+        list chunks = []
+    
+    # Convert data to string/bytes for chunking
+    if isinstance(data, str):
+        data_str = data
+    elif isinstance(data, bytes):
+        data_str = data.decode('utf-8', errors='ignore')
+    else:
+        data_str = str(data)
+    
+    total_size = len(data_str.encode('utf-8'))
+    num_chunks = (total_size + chunk_size - 1) // chunk_size
+    
+    for i in range(num_chunks):
+        start = i * chunk_size
+        end = min(start + chunk_size, total_size)
+        # Extract substring and convert back to original type
+        chunk_str = data_str[start:end]
+        if isinstance(data, str):
+            chunks.append(chunk_str)
+        elif isinstance(data, bytes):
+            chunks.append(chunk_str.encode('utf-8'))
+        else:
+            chunks.append(chunk_str)
+    
+    return chunks
+
+
+def multiprocessing_serialize_cy(object message, object serializer=None,
+                                int num_processes=0, int chunk_size=1024*1024):
+    """
+    Serialize a message using multiprocessing and chunking.
+    
+    Args:
+        message: The message to serialize
+        serializer: The serializer function to use (or None for raw bytes)
+        num_processes: Number of processes to use (default: CPU count)
+        chunk_size: Size of each chunk in bytes
+    
+    Returns:
+        Serialized message
+    """
+    if num_processes == 0:
+        num_processes = mp.cpu_count()
+    
+    # Always use multiprocessing, even for small messages
+    # Divide message into chunks
+    chunks = chunk_data_cy(message, chunk_size)
+    
+    # Process chunks in parallel
+    with Pool(processes=num_processes) as pool:
+        # Create arguments for each chunk
+        chunk_args = [(chunk, serializer) for chunk in chunks]
+        
+        # Process chunks in parallel
+        results = pool.starmap(serialize_chunk_cy, chunk_args)
+    
+    # Combine results from chunks
+    return combine_serialized_chunks(results)
+
+
+def combine_serialized_chunks(list results):
+    """
+    Combine the serialized chunks into a single result.
+    
+    Args:
+        results: List of serialized chunk results
+    
+    Returns:
+        Combined serialized result
+    """
+    if not results:
+        return b''
+    
+    # If only one result, return it directly
+    if len(results) == 1:
+        return results[0] if results[0] is not None else b''
+    
+    # Filter out None results
+    valid_results = [r for r in results if r is not None]
+    
+    if not valid_results:
+        return b''
+    
+    # Try to combine based on data types
+    first_result = valid_results[0]
+    
+    # For bytes, concatenate them
+    if isinstance(first_result, bytes):
+        return b''.join(r for r in valid_results if isinstance(r, bytes))
+    
+    # For strings, concatenate and encode
+    elif isinstance(first_result, str):
+        combined_str = ''.join(str(r) for r in valid_results)
+        return combined_str.encode('utf-8')
+    
+    # For other types, convert to string and encode
+    else:
+        combined_str = ''.join(str(r) for r in valid_results)
+        return combined_str.encode('utf-8')
 
 
 # ============================================================================
