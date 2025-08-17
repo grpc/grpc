@@ -622,8 +622,11 @@ auto Http2ClientTransport::WriteFromQueue(std::vector<Http2Frame>&& frames) {
   return If(
       buffer_length > 0,
       [self = RefAsSubclass<Http2ClientTransport>(),
-       output_buffer = std::move(output_buf)]() mutable {
+       output_buffer = std::move(output_buf), buffer_length]() mutable {
         self->bytes_sent_in_last_write_ = true;
+        GRPC_HTTP2_CLIENT_DLOG
+            << "Http2ClientTransport WriteFromQueue Writing buffer of size "
+            << buffer_length << " to endpoint";
         return self->endpoint_.Write(std::move(output_buffer),
                                      PromiseEndpoint::WriteArgs{});
       },
@@ -645,7 +648,10 @@ auto Http2ClientTransport::WriteControlFrames() {
   return If(
       buffer_length > 0,
       [self = RefAsSubclass<Http2ClientTransport>(),
-       output_buf = std::move(output_buf)]() mutable {
+       output_buf = std::move(output_buf), buffer_length]() mutable {
+        GRPC_HTTP2_CLIENT_DLOG
+            << "Http2ClientTransport WriteControlFrames Writing buffer of size "
+            << buffer_length << " to endpoint";
         return self->endpoint_.Write(std::move(output_buf),
                                      PromiseEndpoint::WriteArgs{});
       },
@@ -701,6 +707,8 @@ auto Http2ClientTransport::WriteLoop() {
           // If any Header/Data/WindowUpdate frame was sent in the last
           // write, reset the ping clock.
           if (self->bytes_sent_in_last_write_) {
+            GRPC_HTTP2_CLIENT_DLOG
+                << "Http2ClientTransport WriteLoop ResetPingClock";
             self->ping_manager_.ResetPingClock(/*is_client=*/true);
             self->bytes_sent_in_last_write_ = false;
           }
