@@ -26,8 +26,8 @@ cmake_minimum_required(VERSION 3.16)
 
 set(PACKAGE_NAME          "grpc")
 set(PACKAGE_VERSION       "1.75.0-dev")
-set(gRPC_CORE_VERSION     "49.0.0")
-set(gRPC_CORE_SOVERSION   "49")
+set(gRPC_CORE_VERSION     "50.0.0")
+set(gRPC_CORE_SOVERSION   "50")
 set(gRPC_CPP_VERSION      "1.75.0-dev")
 set(gRPC_CPP_SOVERSION    "1.75")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
@@ -1567,6 +1567,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx initial_settings_frame_bad_client_test)
   add_dependencies(buildtests_cxx insecure_credentials_test)
   add_dependencies(buildtests_cxx insecure_security_connector_test)
+  add_dependencies(buildtests_cxx instrument_test)
   add_dependencies(buildtests_cxx inter_activity_latch_test)
   add_dependencies(buildtests_cxx inter_activity_mutex_test)
   add_dependencies(buildtests_cxx inter_activity_pipe_test)
@@ -1881,6 +1882,7 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx work_serializer_test)
   endif()
+  add_dependencies(buildtests_cxx writable_streams_test)
   add_dependencies(buildtests_cxx write_size_policy_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx writes_per_rpc_test)
@@ -2907,6 +2909,7 @@ add_library(grpc
   src/core/load_balancing/xds/xds_cluster_manager.cc
   src/core/load_balancing/xds/xds_override_host.cc
   src/core/load_balancing/xds/xds_wrr_locality.cc
+  src/core/net/socket_mutator.cc
   src/core/plugin_registry/grpc_plugin_registry.cc
   src/core/plugin_registry/grpc_plugin_registry_extra.cc
   src/core/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -3703,6 +3706,7 @@ add_library(grpc_unsecure
   src/core/load_balancing/weighted_round_robin/static_stride_scheduler.cc
   src/core/load_balancing/weighted_round_robin/weighted_round_robin.cc
   src/core/load_balancing/weighted_target/weighted_target.cc
+  src/core/net/socket_mutator.cc
   src/core/plugin_registry/grpc_plugin_registry.cc
   src/core/plugin_registry/grpc_plugin_registry_noextra.cc
   src/core/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -6065,6 +6069,7 @@ add_library(grpc_authorization_provider
   src/core/lib/transport/transport_op_string.cc
   src/core/load_balancing/lb_policy.cc
   src/core/load_balancing/lb_policy_registry.cc
+  src/core/net/socket_mutator.cc
   src/core/resolver/endpoint_addresses.cc
   src/core/resolver/resolver.cc
   src/core/resolver/resolver_registry.cc
@@ -9882,6 +9887,7 @@ add_executable(call_utils_test
   src/core/lib/transport/transport_op_string.cc
   src/core/load_balancing/lb_policy.cc
   src/core/load_balancing/lb_policy_registry.cc
+  src/core/net/socket_mutator.cc
   src/core/resolver/endpoint_addresses.cc
   src/core/resolver/resolver.cc
   src/core/resolver/resolver_registry.cc
@@ -16495,6 +16501,7 @@ add_executable(filter_fusion_test
   src/core/lib/transport/transport_op_string.cc
   src/core/load_balancing/lb_policy.cc
   src/core/load_balancing/lb_policy_registry.cc
+  src/core/net/socket_mutator.cc
   src/core/resolver/endpoint_addresses.cc
   src/core/resolver/resolver.cc
   src/core/resolver/resolver_registry.cc
@@ -16751,6 +16758,8 @@ add_executable(flow_control_test
   src/core/lib/iomgr/sockaddr_utils_posix.cc
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/promise/activity.cc
+  src/core/lib/promise/sleep.cc
+  src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
@@ -19485,6 +19494,7 @@ add_executable(header_assembler_test
   src/core/lib/transport/transport_op_string.cc
   src/core/load_balancing/lb_policy.cc
   src/core/load_balancing/lb_policy_registry.cc
+  src/core/net/socket_mutator.cc
   src/core/resolver/endpoint_addresses.cc
   src/core/resolver/resolver.cc
   src/core/resolver/resolver_registry.cc
@@ -20682,6 +20692,51 @@ target_include_directories(insecure_security_connector_test
 target_link_libraries(insecure_security_connector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(instrument_test
+  src/core/telemetry/instrument.cc
+  test/core/telemetry/instrument_test.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(instrument_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(instrument_test PUBLIC cxx_std_17)
+target_include_directories(instrument_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(instrument_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  absl::node_hash_map
   grpc_test_util
 )
 
@@ -33511,6 +33566,55 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 
 endif()
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(writable_streams_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/transport/chttp2/writable_streams_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(writable_streams_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(writable_streams_test PUBLIC cxx_std_17)
+target_include_directories(writable_streams_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(writable_streams_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  grpc_test_util
+)
+
+
 endif()
 if(gRPC_BUILD_TESTS)
 

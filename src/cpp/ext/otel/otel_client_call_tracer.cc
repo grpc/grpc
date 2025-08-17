@@ -187,10 +187,12 @@ void OpenTelemetryPluginImpl::ClientCallTracerInterface::CallAttemptTracer<
       },
       parent_->otel_plugin_);
   if (span_ != nullptr) {
-    GrpcTextMapCarrier carrier(send_initial_metadata);
-    opentelemetry::context::Context context;
-    context = opentelemetry::trace::SetSpan(context, span_);
-    parent_->otel_plugin_->text_map_propagator_->Inject(carrier, context);
+    if (parent_->otel_plugin_->text_map_propagator_ != nullptr) {
+      GrpcTextMapCarrier carrier(send_initial_metadata);
+      opentelemetry::context::Context context;
+      context = opentelemetry::trace::SetSpan(context, span_);
+      parent_->otel_plugin_->text_map_propagator_->Inject(carrier, context);
+    }
     if (IsSampled()) {
       parent_->arena_->GetContext<grpc_core::Call>()->set_traced(true);
     }

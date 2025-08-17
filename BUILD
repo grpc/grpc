@@ -58,6 +58,16 @@ config_setting(
     flag_values = {":small_client": "true"},
 )
 
+bool_flag(
+    name = "exclude_small_client",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "not_exclude_small_client_flag",  # Negative so it can be used with match_all.
+    flag_values = {":exclude_small_client": "false"},
+)
+
 config_setting(
     name = "grpc_no_ares",
     values = {"define": "grpc_no_ares=true"},
@@ -137,15 +147,29 @@ config_setting(
     constraint_values = ["@platforms//os:fuchsia"],
 )
 
-# Automatically disable certain deps for space-constrained clients where
-# optional features may not be needed and binary size is more important.
-# This includes mobile clients, and builds which request it explicitly.
+# Opt-ins for small clients, before the opt-out flag is applied.
 selects.config_setting_group(
-    name = "grpc_small_clients",
+    name = "grpc_small_clients_enable",
     match_any = [
-        ":small_client_flag",  # --//:small_client
+        ":small_client_flag",
         ":android",
         ":ios",
+        ":fuchsia",
+    ],
+    visibility = ["//visibility:private"],
+)
+
+# Automatically disable certain deps for space-constrained clients where
+# optional features may not be needed and binary size is more important.
+# This includes Android, iOS, Fuchsia, and builds which request it explicitly with
+# --//:small_client.
+#
+# A build can opt out of this behavior by setting --//:exclude_small_client.
+selects.config_setting_group(
+    name = "grpc_small_clients",
+    match_all = [
+        ":grpc_small_clients_enable",
+        ":not_exclude_small_client_flag",
     ],
 )
 
@@ -179,6 +203,20 @@ selects.config_setting_group(
         ":grpc_experiments_are_final_define",  # --define=grpc_experiments_are_final=true
         ":grpc_small_clients",
     ],
+)
+
+bool_flag(
+    name = "minimal_lb_policy",
+    build_setting_default = False,
+)
+
+# Disable all load balancer policies except pick_first (the default).
+# This saves binary size. However, this can be influenced by service config. So it should only be
+# set by clients that know that none of their services are relying on load balancing. Thus this flag
+# is not enabled by default even for grpc_small_clients.
+config_setting(
+    name = "grpc_minimal_lb_policy_flag",
+    flag_values = {":minimal_lb_policy": "true"},
 )
 
 # Fuzzers can be built as fuzzers or as tests
@@ -227,7 +265,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "gemini"  # @unused
 
-core_version = "49.0.0"  # @unused
+core_version = "50.0.0"  # @unused
 
 version = "1.75.0-dev"  # @unused
 
@@ -646,6 +684,11 @@ grpc_cc_library(
     ],
     defines = select({
         ":grpc_no_xds": ["GRPC_NO_XDS"],
+        "//conditions:default": [],
+    }) + select({
+        # The registration is the only place where the plugins are referenced directly, so by
+        # excluding them from BuildCoreConfiguration, they will be stripped by the linker.
+        ":grpc_minimal_lb_policy_flag": ["GRPC_MINIMAL_LB_POLICY"],
         "//conditions:default": [],
     }),
     external_deps = [

@@ -48,6 +48,13 @@
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #endif  // GRPC_POSIX_SOCKET_TCP
 
+#if defined(GRPC_POSIX_SOCKET_TCP) && \
+    !defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
+#define GRPC_PLATFORM_SUPPORTS_POSIX_POLLING true
+#else
+#define GRPC_PLATFORM_SUPPORTS_POSIX_POLLING false
+#endif
+
 namespace grpc_event_engine::experimental {
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -92,28 +99,6 @@ class AsyncConnect {
   std::string resolved_addr_str_;
   int64_t connection_handle_;
   bool connect_cancelled_;
-};
-
-// A helper class to manager lifetime of the poller associated with the
-// posix EventEngine.
-class PosixEnginePollerManager
-    : public grpc_event_engine::experimental::Scheduler {
- public:
-  explicit PosixEnginePollerManager(std::shared_ptr<ThreadPool> executor);
-  explicit PosixEnginePollerManager(
-      std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
-          poller);
-
-  grpc_event_engine::experimental::PosixEventPoller* Poller() const {
-    return poller_.get();
-  }
-
-  void Run(experimental::EventEngine::Closure* closure) override;
-  void Run(absl::AnyInvocable<void()>) override;
-
- private:
-  std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller> poller_;
-  std::shared_ptr<ThreadPool> executor_;
 };
 
 #endif  // GRPC_POSIX_SOCKET_TCP
@@ -209,14 +194,14 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
 
   PosixEventEngine();
 
-#ifdef GRPC_POSIX_SOCKET_TCP
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   // Constructs an EventEngine which has a shared ownership of the poller. Use
   // the MakeTestOnlyPosixEventEngine static method to call this. Its expected
   // to be used only in tests.
   explicit PosixEventEngine(
       std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
           poller);
-#endif  // GRPC_POSIX_SOCKET_TCP
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 
   EventEngine::TaskHandle RunAfterInternal(Duration when,
                                            absl::AnyInvocable<void()> cb);
@@ -261,20 +246,23 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
   std::shared_ptr<ThreadPool> executor_;
 
-#if defined(GRPC_POSIX_SOCKET_TCP) && \
-    !defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 
   // RAII wrapper for a polling cycle. Starts a new one in ctor and stops
   // in dtor.
   class PollingCycle {
    public:
-    explicit PollingCycle(PosixEnginePollerManager* poller_manager);
+    explicit PollingCycle(
+        std::shared_ptr<ThreadPool> executor,
+        std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
+            poller);
     ~PollingCycle();
 
    private:
     void PollerWorkInternal();
 
-    PosixEnginePollerManager* poller_manager_;
+    std::shared_ptr<ThreadPool> executor_;
+    std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller> poller_;
     grpc_core::Mutex mu_;
     std::atomic_bool done_{false};
     int is_scheduled_ ABSL_GUARDED_BY(&mu_) = 0;
@@ -284,13 +272,17 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
   void SchedulePoller();
   void ResetPollCycle();
 
-  PosixEnginePollerManager poller_manager_;
+  PosixEventPoller* GetPollerChecked() const {
+    CHECK_NE(poller_, nullptr);
+    return poller_.get();
+  }
+
+  std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller> poller_;
 
   // Ensures there's ever only one of these.
   std::optional<PollingCycle> polling_cycle_ ABSL_GUARDED_BY(&mu_);
 
-#endif  // defined(GRPC_POSIX_SOCKET_TCP) &&
-        // !defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 
   std::shared_ptr<TimerManager> timer_manager_;
 };

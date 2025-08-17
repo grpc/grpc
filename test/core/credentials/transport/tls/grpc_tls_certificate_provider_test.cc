@@ -18,7 +18,6 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-#include <gtest/gtest.h>
 
 #include <deque>
 #include <list>
@@ -27,6 +26,7 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/match.h"
