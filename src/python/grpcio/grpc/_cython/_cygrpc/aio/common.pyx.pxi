@@ -151,9 +151,8 @@ def multiprocessing_deserialize_cy(bytes raw_message, object deserializer=None,
         # Process chunks in parallel
         results = pool.starmap(deserialize_chunk_cy, chunk_args)
     
-    # Combine results - for now, just return the list of results
-    # The combining logic depends on the specific deserializer and data structure
-    return results
+    # Combine results from chunks
+    return combine_chunk_results(results, deserializer)
 
 
 
@@ -179,6 +178,66 @@ def optimize_chunk_size(int message_size, int num_processes):
     optimal_chunk_size = max(optimal_chunk_size // num_processes, 64 * 1024)  # Min 64KB
     
     return optimal_chunk_size
+
+
+def combine_chunk_results(list results, object deserializer=None):
+    """
+    Combine the results from multiple chunks into a single result.
+    
+    Args:
+        results: List of deserialized chunk results
+        deserializer: The original deserializer function (for context)
+    
+    Returns:
+        Combined result
+    """
+    if not results:
+        return None
+    
+    # If only one result, return it directly
+    if len(results) == 1:
+        return results[0]
+    
+    # Filter out None results
+    valid_results = [r for r in results if r is not None]
+    
+    if not valid_results:
+        return None
+    
+    # Try to combine based on data types
+    first_result = valid_results[0]
+    
+    # For dictionaries (JSON objects), merge them
+    if isinstance(first_result, dict):
+        combined = {}
+        for result in valid_results:
+            if isinstance(result, dict):
+                combined.update(result)
+        return combined
+    
+    # For lists/arrays, concatenate them
+    elif isinstance(first_result, list):
+        combined = []
+        for result in valid_results:
+            if isinstance(result, list):
+                combined.extend(result)
+        return combined
+    
+    # For strings, concatenate them
+    elif isinstance(first_result, str):
+        return ''.join(str(r) for r in valid_results)
+    
+    # For bytes, concatenate them
+    elif isinstance(first_result, bytes):
+        return b''.join(r for r in valid_results if isinstance(r, bytes))
+    
+    # For numeric types, sum them (or handle as needed)
+    elif isinstance(first_result, (int, float)):
+        return sum(valid_results)
+    
+    # For other types, return as list (fallback)
+    else:
+        return valid_results
 
 
 # ============================================================================
