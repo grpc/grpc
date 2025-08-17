@@ -32,8 +32,6 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/time.h"
 
-#define GRPC_MAX_SOCKADDR_SIZE 128
-
 namespace grpc_core {
 extern const char* kDefaultSecurePort;
 constexpr int kDefaultSecurePortInt = 443;

@@ -891,4 +891,10 @@ extern void gpr_unreachable_code(const char* reason, const char* file,
 #endif
 #endif
 
+#ifdef GPR_OPENBSD
+#define GRPC_MAX_SOCKADDR_SIZE 256
+#else
+#define GRPC_MAX_SOCKADDR_SIZE 128
+#endif
+
 #endif /* GRPC_SUPPORT_PORT_PLATFORM_H */
