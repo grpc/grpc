@@ -116,7 +116,7 @@ def deserialize_chunk_cy(bytes chunk, object deserializer=None):
 
 
 def multiprocessing_deserialize_cy(bytes raw_message, object deserializer=None,
-                                  int num_processes=None, int chunk_size=1024*1024):
+                                  int num_processes=0, int chunk_size=1024*1024):
     """
     Deserialize a message using multiprocessing and chunking.
     
@@ -129,7 +129,7 @@ def multiprocessing_deserialize_cy(bytes raw_message, object deserializer=None,
     Returns:
         Deserialized message
     """
-    if num_processes is None:
+    if num_processes == 0:
         num_processes = mp.cpu_count()
     
     # Always use multiprocessing, even for small messages
@@ -238,7 +238,7 @@ def combine_chunk_results(list results, object deserializer=None):
 # ============================================================================
 
 async def async_multiprocessing_deserialize(bytes raw_message, object deserializer=None,
-                                           int num_processes=None, int chunk_size=1024*1024,
+                                           int num_processes=0, int chunk_size=1024*1024,
                                            object loop=None):
     """
     Async wrapper for multiprocessing deserialization.
@@ -298,22 +298,24 @@ async def make_async_multiprocessing_deserializer(object sync_deserializer,
     
     async def async_multiprocessing_wrapper(raw_message):
         """Async multiprocessing wrapper for sync deserializer."""
+        nonlocal loop
+        if loop is None:
+            loop = asyncio.get_event_loop()
+            
         if use_chunking and len(raw_message) > chunk_size:
             # Use multiprocessing for large messages
             return await async_multiprocessing_deserialize(
-                raw_message, "custom", chunk_size=chunk_size, loop=loop
+                raw_message, sync_deserializer, chunk_size=chunk_size, loop=loop
             )
         else:
             # Use thread pool for small messages
-            if loop is None:
-                loop = asyncio.get_event_loop()
             return await loop.run_in_executor(None, sync_deserializer, raw_message)
     
     return async_multiprocessing_wrapper
 
 
 def batch_multiprocessing_deserialize(list raw_messages, object deserializer=None,
-                                     int num_processes=None, int chunk_size=1024*1024):
+                                     int num_processes=0, int chunk_size=1024*1024):
     """
     Deserialize multiple messages using multiprocessing.
     
@@ -326,7 +328,7 @@ def batch_multiprocessing_deserialize(list raw_messages, object deserializer=Non
     Returns:
         List of deserialized messages
     """
-    if num_processes is None:
+    if num_processes == 0:
         num_processes = mp.cpu_count()
     
     # Determine if we should use chunking based on message sizes
@@ -355,7 +357,7 @@ def batch_multiprocessing_deserialize(list raw_messages, object deserializer=Non
 
 
 async def async_batch_multiprocessing_deserialize(list raw_messages, object deserializer=None,
-                                                 int num_processes=None, int chunk_size=1024*1024,
+                                                 int num_processes=0, int chunk_size=1024*1024,
                                                  object loop=None):
     """
     Async wrapper for batch multiprocessing deserialization.
