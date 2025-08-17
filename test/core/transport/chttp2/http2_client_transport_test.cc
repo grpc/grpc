@@ -583,6 +583,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
 
 TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
   MockPromiseEndpoint mock_endpoint(/*port=*/1000);
+
   // Send
   // 1. Client Initial Metadata
   // 2. Data frame with END_STREAM flag set.
@@ -602,6 +603,7 @@ TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
                                                           /*end_stream=*/true),
       },
       event_engine().get());
+
   // Make our mock_enpoint pretend that the peer sent
   // 1. A HEADER frame that contains our initial metadata
   // 2. A DATA frame with END_STREAM flag false.
@@ -634,6 +636,7 @@ TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
       event_engine(), nullptr);
   LOG(INFO) << "Initiating CallSpine";
   auto call = MakeCall(TestInitialMetadata());
+
   LOG(INFO) << "Create a stream and send client initial metadata";
   client_transport->StartCall(call.handler.StartCall());
 
@@ -647,6 +650,7 @@ TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
 
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
+
   call.initiator.SpawnInfallible(
       "test-wait", [initator = call.initiator, &on_done]() mutable {
         return Seq(
@@ -674,6 +678,7 @@ TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
               return Empty{};
             });
       });
+
   // Wait for Http2ClientTransport's internal activities to finish.
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
