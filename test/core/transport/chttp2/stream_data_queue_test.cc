@@ -41,9 +41,9 @@ auto EnqueueAndCheckSuccess(http2::SimpleQueue<int>& queue, int data,
             << " tokens: " << tokens;
   return Map(
       [&queue, data, tokens]() mutable { return queue.Enqueue(data, tokens); },
-      [data, tokens](auto result) {
+      [data, tokens](absl::StatusOr<bool> result) {
         LOG(INFO) << "Enqueue done for data: " << data << " tokens: " << tokens;
-        EXPECT_EQ(result.status, absl::OkStatus());
+        EXPECT_TRUE(result.ok());
       });
 }
 
@@ -434,7 +434,7 @@ void EnqueueInitialMetadataAndCheckSuccess(
   auto result = promise();
   EXPECT_TRUE(result.ready());
   EXPECT_TRUE(result.value().ok());
-  EXPECT_EQ(result.value().value(), expected_writeable_state);
+  EXPECT_EQ(result.value().value().became_writable, expected_writeable_state);
   LOG(INFO) << "Enqueueing initial metadata success";
 }
 
@@ -447,7 +447,7 @@ void EnqueueTrailingMetadataAndCheckSuccess(
   auto result = promise();
   EXPECT_TRUE(result.ready());
   EXPECT_TRUE(result.value().ok());
-  EXPECT_EQ(result.value().value(), expected_writeable_state);
+  EXPECT_EQ(result.value().value().became_writable, expected_writeable_state);
   LOG(INFO) << "Enqueueing trailing metadata success";
 }
 
@@ -462,7 +462,7 @@ void EnqueueMessageAndCheckSuccess(
   auto result = promise();
   EXPECT_TRUE(result.ready());
   EXPECT_TRUE(result.value().ok());
-  EXPECT_EQ(result.value().value(), expected_writeable_state);
+  EXPECT_EQ(result.value().value().became_writable, expected_writeable_state);
   LOG(INFO) << "Enqueueing message success";
 }
 
@@ -475,7 +475,7 @@ void EnqueueResetStreamAndCheckSuccess(
   auto result = promise();
   EXPECT_TRUE(result.ready());
   EXPECT_TRUE(result.value().ok());
-  EXPECT_EQ(result.value().value(), expected_writeable_state);
+  EXPECT_EQ(result.value().value().became_writable, expected_writeable_state);
   LOG(INFO) << "Enqueueing reset stream success";
 }
 
@@ -487,7 +487,7 @@ void EnqueueHalfClosedAndCheckSuccess(
   auto result = promise();
   EXPECT_TRUE(result.ready());
   EXPECT_TRUE(result.value().ok());
-  EXPECT_EQ(result.value().value(), expected_writeable_state);
+  EXPECT_EQ(result.value().value().became_writable, expected_writeable_state);
   LOG(INFO) << "Enqueueing half closed success";
 }
 

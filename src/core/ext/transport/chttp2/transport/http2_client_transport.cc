@@ -62,6 +62,7 @@ namespace grpc_core {
 namespace http2 {
 
 using grpc_event_engine::experimental::EventEngine;
+using EnqueueResult = StreamDataQueue<ClientMetadataHandle>::EnqueueResult;
 
 // Experimental : This is just the initial skeleton of class
 // and it is functions. The code will be written iteratively.
@@ -734,7 +735,8 @@ auto Http2ClientTransport::StreamMultiplexerLoop() {
               LOG(ERROR) << "Failed to enqueue stream " << stream_id
                          << " with status: " << status;
               // Close transport if we fail to enqueue stream.
-              return absl::InternalError("Failed to enqueue stream");
+              return absl::UnavailableError(
+                  "Failed to enqueue stream to writable stream list");
             }
           } else if (GPR_UNLIKELY(!result.ok())) {
             // Close the corresponding stream if we fail to dequeue frames from
@@ -1095,12 +1097,13 @@ auto Http2ClientTransport::CallOutboundLoop(
         stream != nullptr,
         [self, stream, message = std::move(message), stream_id]() mutable {
           return TrySeq(stream->EnqueueMessage(std::move(message)),
-                        [self, stream_id](bool became_writable) {
+                        [self, stream_id](EnqueueResult result) {
                           GRPC_HTTP2_CLIENT_DLOG
                               << "Http2ClientTransport CallOutboundLoop "
                                  "Enqueued Message";
                           return self->MaybeAddStreamToWritableStreamList(
-                              stream_id, became_writable);
+                              stream_id, result.became_writable,
+                              result.priority);
                         });
         },
         []() {
@@ -1118,12 +1121,12 @@ auto Http2ClientTransport::CallOutboundLoop(
         [self, stream, metadata = std::move(metadata), stream_id]() mutable {
           return TrySeq(
               stream->EnqueueInitialMetadata(std::move(metadata)),
-              [self, stream_id](bool became_writable) {
+              [self, stream_id](EnqueueResult result) {
                 GRPC_HTTP2_CLIENT_DLOG
                     << "Http2ClientTransport CallOutboundLoop "
                        "Enqueued Initial Metadata";
                 return self->MaybeAddStreamToWritableStreamList(
-                    stream_id, became_writable);
+                    stream_id, result.became_writable, result.priority);
               },
               [stream] {
                 // TODO(akshitpatel) : [PH2][P2] : Think how to handle stream
@@ -1145,14 +1148,13 @@ auto Http2ClientTransport::CallOutboundLoop(
     return If(
         stream != nullptr,
         [self, stream, stream_id]() mutable {
-          return TrySeq(stream->EnqueueHalfClosed(),
-                        [self, stream_id](bool became_writable) {
-                          GRPC_HTTP2_CLIENT_DLOG
-                              << "Http2ClientTransport CallOutboundLoop "
-                                 "Enqueued Half Closed";
-                          return self->MaybeAddStreamToWritableStreamList(
-                              stream_id, became_writable);
-                        });
+          return TrySeq(stream->EnqueueHalfClosed(), [self, stream_id](
+                                                         EnqueueResult result) {
+            GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop "
+                                      "Enqueued Half Closed";
+            return self->MaybeAddStreamToWritableStreamList(
+                stream_id, result.became_writable, result.priority);
+          });
         },
         []() {
           // This will trigger Call stack cleanup.
