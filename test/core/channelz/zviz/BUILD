@@ -66,6 +66,7 @@ grpc_cc_test(
         "gtest_main",
     ],
     deps = [
+        "//src/core:zviz_environment",
         "//src/core:zviz_layout",
     ],
 )
@@ -100,6 +101,7 @@ grpc_fuzz_test(
     external_deps = [
         "absl/log:check",
         "absl/container:flat_hash_map",
+        "absl/strings",
         "fuzztest",
         "fuzztest_main",
     ],
@@ -107,6 +109,8 @@ grpc_fuzz_test(
         "environment_fake",
         "layout_log",
         "//src/core:zviz_trace",
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 
@@ -159,6 +163,7 @@ grpc_fuzz_test(
         "absl/log:check",
         "fuzztest",
         "fuzztest_main",
+        "absl/container:flat_hash_map",
     ],
     deps = [
         "environment_fake",
@@ -167,6 +172,7 @@ grpc_fuzz_test(
         "//src/core:zviz_layout",
         "//src/core:zviz_layout_html",
         "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 

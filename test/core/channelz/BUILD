@@ -24,6 +24,7 @@ grpc_cc_test(
     srcs = ["channel_trace_test.cc"],
     external_deps = [
         "gtest",
+        "absl/synchronization",
     ],
     tags = [
         # b/117517566.
@@ -31,10 +32,16 @@ grpc_cc_test(
         "channelz_test",
     ],
     deps = [
+        "//:channelz",
+        "//:channelz_upb",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//:grpc_public_hdrs",
         "//src/core:channel_args",
+        "//src/core:json",
+        "//src/core:json_writer",
+        "//src/core:upb_utils",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:channel_trace_proto_helper",
     ],
