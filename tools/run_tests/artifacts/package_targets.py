@@ -196,17 +196,24 @@ class PythonPackage:
         elif "noarch" in self.arch:
             # all the artifact builder configurations generate an equivalent
             # grpcio-VERSION.tar.gz source distribution package and
-            # grpcio-VERSION-py3-none-any.whl file. Only one of them is needed in
-            # the artifacts/ directory. Hence copy it separately exactly once using
-            # a separate package target
+            # grpcio-VERSION-py3-none-any.whl file. Only one of them is needed
+            # in the artifacts/ directory. Hence copy it separately exactly once
+            # using a separate package target
             # Note: Source installation using *tar.gz file is not tested for
             # aarch64 jobs, so these files will not be copied in the
             # 'Distribution Tests Arm64' job
             shell_command = "tools/run_tests/artifacts/package_python_noarch.sh"
 
-            # noarch files in all platform-arch combinations are going to be
-            # the same, so specify any one platform as prefix
-            environ["ARTIFACT_PREFIX"] = "python_manylinux2014_"
+            if not self.run_in_arm64_job:
+
+                # noarch files in all platform-arch combinations are going to be
+                # the same, so specify any one combination as prefix
+                environ["ARTIFACT_PREFIX"] = "python_manylinux2014_x64_"
+            else:
+                dockerfile_dir = (
+                    "tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64"
+                )
+                environ["ARTIFACT_PREFIX"] = "python_manylinux2014_aarch64_"
 
         return create_docker_jobspec(
             self.name,
