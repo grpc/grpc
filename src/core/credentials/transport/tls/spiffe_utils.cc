@@ -258,7 +258,11 @@ SpiffeBundle::SpiffeBundle(const SpiffeBundle& other) {
         std::make_unique<STACK_OF(X509)*>(sk_X509_dup(*other.root_stack_));
     for (size_t i = 0; i < sk_X509_num(*root_stack_); i++) {
       X509* x = sk_X509_value(*root_stack_, i);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
       CHECK(X509_up_ref(x));
+#else
+      CRYPTO_add(&x->references, 1, CRYPTO_LOCK_X509);
+#endif
     }
   }
 }
@@ -271,7 +275,11 @@ SpiffeBundle& SpiffeBundle::operator=(const SpiffeBundle& other) {
           std::make_unique<STACK_OF(X509)*>(sk_X509_dup(*other.root_stack_));
       for (size_t i = 0; i < sk_X509_num(*root_stack_); i++) {
         X509* x = sk_X509_value(*root_stack_, i);
-        CHECK(X509_up_ref(x));
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+      CHECK(X509_up_ref(x));
+#else
+      CRYPTO_add(&x->references, 1, CRYPTO_LOCK_X509);
+#endif
       }
     }
   }
