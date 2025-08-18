@@ -101,10 +101,23 @@ static grpc_alts_credentials_options* alts_client_options_copy(
     prev = new_node;
     node = node->next;
   }
+  new_client_options->token_fetcher =
+      reinterpret_cast<const grpc_alts_credentials_client_options*>(options)
+          ->token_fetcher;
   // Copy rpc protocol versions.
   grpc_gcp_rpc_protocol_versions_copy(&options->rpc_versions,
                                       &new_options->rpc_versions);
   return new_options;
+}
+
+void grpc_alts_credentials_client_options_set_token_fetcher(
+    grpc_alts_credentials_options* options,
+    grpc::alts::TokenFetcher* token_fetcher) {
+  if (options == nullptr) {
+    return;
+  }
+  reinterpret_cast<grpc_alts_credentials_client_options*>(options)
+      ->token_fetcher = token_fetcher;
 }
 
 static void alts_client_options_destroy(

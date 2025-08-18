@@ -22,6 +22,8 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
+#include <memory>
+
 #include "gtest/gtest.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
@@ -30,6 +32,7 @@
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/env.h"
+#include "src/proto/grpc/gcp/handshaker.upb.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h"
 #include "upb/mem/arena.hpp"
@@ -49,6 +52,7 @@ const size_t kMaxRpcVersionMajor = 3;
 const size_t kMaxRpcVersionMinor = 2;
 const size_t kMinRpcVersionMajor = 2;
 const size_t kMinRpcVersionMinor = 1;
+const char kFakeToken[] = "fake_token";
 
 using grpc_core::internal::alts_handshaker_client_get_closure_for_testing;
 using grpc_core::internal::
@@ -169,7 +173,8 @@ grpc_call_error CheckMustNotBeCalled(grpc_call* /*call*/,
 /// record_protocol and max_frame_size, and op is correctly populated.
 ///
 grpc_call_error CheckClientStartSuccess(grpc_call* /*call*/, const grpc_op* op,
-                                        size_t nops, grpc_closure* closure) {
+                                        size_t nops, grpc_closure* closure,
+                                        bool has_token) {
   // RECV_STATUS ops are asserted to always succeed
   if (IsRecvStatusOp(op, nops)) {
     return GRPC_CALL_OK;
@@ -208,8 +213,26 @@ grpc_call_error CheckClientStartSuccess(grpc_call* /*call*/, const grpc_op* op,
       upb_StringView_FromString(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME)));
   EXPECT_EQ(grpc_gcp_StartClientHandshakeReq_max_frame_size(client_start),
             ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE);
+  if (has_token) {
+    EXPECT_TRUE(upb_StringView_IsEqual(
+        grpc_gcp_StartClientHandshakeReq_access_token(client_start),
+        upb_StringView_FromString(kFakeToken)));
+  }
   EXPECT_TRUE(ValidateOp(client, op, nops, true /* is_start */));
   return GRPC_CALL_OK;
+}
+
+grpc_call_error CheckClientStartSuccessWithToken(grpc_call* call,
+                                                 const grpc_op* op, size_t nops,
+                                                 grpc_closure* closure) {
+  return CheckClientStartSuccess(call, op, nops, closure, /*has_token=*/true);
+}
+
+grpc_call_error CheckClientStartSuccessWithoutToken(grpc_call* call,
+                                                    const grpc_op* op,
+                                                    size_t nops,
+                                                    grpc_closure* closure) {
+  return CheckClientStartSuccess(call, op, nops, closure, /*has_token=*/false);
 }
 
 void VerifyTransportProtocolPreferences(
@@ -253,7 +276,7 @@ grpc_call_error VerifyClientSuccessWithProtocolNegotiation(
       grpc_gcp_StartClientHandshakeReq_transport_protocol_preferences(
           client_start),
       /*is_server=*/false);
-  return CheckClientStartSuccess(nullptr, op, nops, closure);
+  return CheckClientStartSuccessWithoutToken(nullptr, op, nops, closure);
 }
 
 ///
@@ -377,7 +400,8 @@ grpc_alts_credentials_options* CreateCredentialsOptions(bool is_client) {
   return options;
 }
 
-alts_handshaker_client_test_config* CreateConfig() {
+alts_handshaker_client_test_config* CreateConfig(
+    grpc::alts::TokenFetcher* token_fetcher = nullptr) {
   alts_handshaker_client_test_config* config =
       static_cast<alts_handshaker_client_test_config*>(
           gpr_zalloc(sizeof(*config)));
@@ -388,6 +412,10 @@ alts_handshaker_client_test_config* CreateConfig() {
   config->cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_alts_credentials_options* client_options =
       CreateCredentialsOptions(true /* is_client */);
+  if (token_fetcher != nullptr) {
+    grpc_alts_credentials_client_options_set_token_fetcher(client_options,
+                                                           token_fetcher);
+  }
   grpc_alts_credentials_options* server_options =
       CreateCredentialsOptions(false /*  is_client */);
   config->server = alts_grpc_handshaker_client_create(
@@ -424,6 +452,13 @@ void DestroyConfig(alts_handshaker_client_test_config* config) {
   grpc_slice_unref(config->out_frame);
   gpr_free(config);
 }
+
+class FakeTokenFetcher : public grpc::alts::TokenFetcher {
+ public:
+  ~FakeTokenFetcher() override = default;
+
+  absl::StatusOr<std::string> GetToken() override { return kFakeToken; }
+};
 
 }  // namespace
 
@@ -472,7 +507,59 @@ TEST(AltsHandshakerClientTest, ScheduleRequestSuccessTest) {
   alts_handshaker_client_test_config* config = CreateConfig();
   // Check client_start success.
   alts_handshaker_client_set_grpc_caller_for_testing(config->client,
-                                                     CheckClientStartSuccess);
+                                                     CheckClientStartSuccessWithoutToken);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    ASSERT_EQ(alts_handshaker_client_start_client(config->client), TSI_OK);
+  }
+  {
+    grpc_core::ExecCtx exec_ctx;
+    ASSERT_EQ(alts_handshaker_client_next(nullptr, &config->out_frame),
+              TSI_INVALID_ARGUMENT);
+  }
+  // Check server_start success.
+  alts_handshaker_client_set_grpc_caller_for_testing(config->server,
+                                                     CheckServerStartSuccess);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    ASSERT_EQ(
+        alts_handshaker_client_start_server(config->server, &config->out_frame),
+        TSI_OK);
+  }
+  // Check client next success.
+  alts_handshaker_client_set_grpc_caller_for_testing(config->client,
+                                                     CheckNextSuccess);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    ASSERT_EQ(alts_handshaker_client_next(config->client, &config->out_frame),
+              TSI_OK);
+  }
+  // Check server next success.
+  alts_handshaker_client_set_grpc_caller_for_testing(config->server,
+                                                     CheckNextSuccess);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    ASSERT_EQ(alts_handshaker_client_next(config->server, &config->out_frame),
+              TSI_OK);
+  }
+  // Cleanup.
+  {
+    grpc_core::ExecCtx exec_ctx;
+    alts_handshaker_client_on_status_received_for_testing(
+        config->client, GRPC_STATUS_OK, absl::OkStatus());
+    alts_handshaker_client_on_status_received_for_testing(
+        config->server, GRPC_STATUS_OK, absl::OkStatus());
+  }
+  DestroyConfig(config);
+}
+
+TEST(AltsHandshakerClientTest, ScheduleRequestWithTokenSuccessTest) {
+  // Initialization.
+  std::unique_ptr<FakeTokenFetcher> token_fetcher = std::make_unique<FakeTokenFetcher>();
+  alts_handshaker_client_test_config* config = CreateConfig(token_fetcher.get());
+  // Check client_start success.
+  alts_handshaker_client_set_grpc_caller_for_testing(config->client,
+                                                     CheckClientStartSuccessWithToken);
   {
     grpc_core::ExecCtx exec_ctx;
     ASSERT_EQ(alts_handshaker_client_start_client(config->client), TSI_OK);

@@ -23,12 +23,34 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
 
+#include <string>
+
+#include "absl/status/statusor.h"
 #include "src/core/tsi/alts/handshaker/transport_security_common_api.h"
+
+namespace grpc::alts {
+
+// The primary impl of this will fetch the instance identity bound token from
+// MDS.
+class TokenFetcher {
+ public:
+  TokenFetcher() = default;
+
+  TokenFetcher(const TokenFetcher&) = delete;
+  TokenFetcher& operator=(const TokenFetcher&) = delete;
+
+  virtual ~TokenFetcher() = default;
+
+  // This API must be thread-safe. The returned token must be valid for at least 8 hours to outlive
+  // an arbitrary ALTS connection.
+  virtual absl::StatusOr<std::string> GetToken() = 0;
+};
+
+}  // namespace grpc::alts
 
 // V-table for grpc_alts_credentials_options
 typedef struct grpc_alts_credentials_options_vtable {
-  grpc_alts_credentials_options* (*copy)(
-      const grpc_alts_credentials_options* options);
+  grpc_alts_credentials_options* (*copy)(const grpc_alts_credentials_options* options);
   void (*destruct)(grpc_alts_credentials_options* options);
 } grpc_alts_credentials_options_vtable;
 
@@ -50,6 +72,8 @@ typedef struct target_service_account {
 typedef struct grpc_alts_credentials_client_options {
   grpc_alts_credentials_options base;
   target_service_account* target_account_list_head;
+  // Not owned.
+  grpc::alts::TokenFetcher* token_fetcher = nullptr;
 } grpc_alts_credentials_client_options;
 
 ///
@@ -70,5 +94,9 @@ typedef struct grpc_alts_credentials_server_options {
 ///
 grpc_alts_credentials_options* grpc_alts_credentials_options_copy(
     const grpc_alts_credentials_options* options);
+
+// Caller must ensure the token_fetcher outlives the credentials options.
+void grpc_alts_credentials_client_options_set_token_fetcher(
+    grpc_alts_credentials_options* options, grpc::alts::TokenFetcher* token_fetcher);
 
 #endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_ALTS_GRPC_ALTS_CREDENTIALS_OPTIONS_H
