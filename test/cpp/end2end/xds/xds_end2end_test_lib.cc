@@ -377,6 +377,13 @@ const char XdsEnd2endTest::kServerCertPath[] =
 const char XdsEnd2endTest::kServerKeyPath[] =
     "src/core/tsi/test_creds/server1.key";
 
+const char XdsEnd2endTest::kSpiffeCaCertPath[] =
+    "test/core/tsi/test_creds/spiffe_end2end/ca.pem";
+const char XdsEnd2endTest::kSpiffeServerCertPath[] =
+    "test/core/tsi/test_creds/spiffe_end2end/server_spiffe.pem";
+const char XdsEnd2endTest::kSpiffeServerKeyPath[] =
+    "test/core/tsi/test_creds/spiffe_end2end/server.key";
+
 const char XdsEnd2endTest::kRequestMessage[] = "Live long and prosper.";
 
 XdsEnd2endTest::XdsEnd2endTest(
@@ -918,9 +925,23 @@ XdsEnd2endTest::MakeIdentityKeyCertPairForTlsCreds() {
   return {{std::move(private_key), std::move(identity_cert)}};
 }
 
+std::vector<experimental::IdentityKeyCertPair>
+XdsEnd2endTest::MakeIdentityKeyCertPairForSpiffeMtlsCreds() {
+  std::string identity_cert =
+      grpc_core::testing::GetFileContents(kSpiffeServerCertPath);
+  std::string private_key =
+      grpc_core::testing::GetFileContents(kSpiffeServerKeyPath);
+  return {{std::move(private_key), std::move(identity_cert)}};
+}
+
 std::shared_ptr<ChannelCredentials>
 XdsEnd2endTest::CreateXdsChannelCredentials() {
   return XdsCredentials(CreateTlsChannelCredentials());
+}
+
+std::shared_ptr<ChannelCredentials>
+XdsEnd2endTest::CreateSpiffeXdsChannelCredentials() {
+  return XdsCredentials(CreateSpiffeTlsChannelCredentials());
 }
 
 std::shared_ptr<ChannelCredentials>
@@ -928,6 +949,23 @@ XdsEnd2endTest::CreateTlsChannelCredentials() {
   auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
       grpc_core::testing::GetFileContents(kCaCertPath),
       MakeIdentityKeyCertPairForTlsCreds());
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_certificate_provider(std::move(certificate_provider));
+  options.watch_root_certs();
+  options.watch_identity_key_cert_pairs();
+  auto verifier =
+      ExternalCertificateVerifier::Create<SyncCertificateVerifier>(true);
+  options.set_certificate_verifier(std::move(verifier));
+  options.set_verify_server_certs(true);
+  options.set_check_call_host(false);
+  return grpc::experimental::TlsCredentials(options);
+}
+
+std::shared_ptr<ChannelCredentials>
+XdsEnd2endTest::CreateSpiffeTlsChannelCredentials() {
+  auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
+      grpc_core::testing::GetFileContents(kSpiffeCaCertPath),
+      MakeIdentityKeyCertPairForSpiffeMtlsCreds());
   grpc::experimental::TlsChannelCredentialsOptions options;
   options.set_certificate_provider(std::move(certificate_provider));
   options.watch_root_certs();
@@ -968,6 +1006,22 @@ XdsEnd2endTest::CreateTlsServerCredentials() {
   grpc::experimental::TlsServerCredentialsOptions options(
       std::move(certificate_provider));
   options.watch_identity_key_cert_pairs();
+  return grpc::experimental::TlsServerCredentials(options);
+}
+
+std::shared_ptr<ServerCredentials>
+XdsEnd2endTest::CreateMtlsSpiffeServerCredentials() {
+  std::string root_cert =
+      grpc_core::testing::GetFileContents(kSpiffeCaCertPath);
+  auto certificate_provider =
+      std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
+          std::move(root_cert), MakeIdentityKeyCertPairForSpiffeMtlsCreds());
+  grpc::experimental::TlsServerCredentialsOptions options(
+      std::move(certificate_provider));
+  options.watch_root_certs();
+  options.watch_identity_key_cert_pairs();
+  options.set_cert_request_type(
+      GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   return grpc::experimental::TlsServerCredentials(options);
 }
 
