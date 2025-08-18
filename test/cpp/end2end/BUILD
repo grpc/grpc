@@ -1245,12 +1245,6 @@ grpc_cc_test(
     name = "spiffe_bundle_map_end2end_test",
     srcs = ["spiffe_bundle_map_end2end_test.cc"],
     data = [
-        "//test/core/tsi/test_creds/crl_data:ca.pem",
-        "//test/core/tsi/test_creds/crl_data:revoked.key",
-        "//test/core/tsi/test_creds/crl_data:revoked.pem",
-        "//test/core/tsi/test_creds/crl_data:valid.key",
-        "//test/core/tsi/test_creds/crl_data:valid.pem",
-        "//test/core/tsi/test_creds/crl_data/crls:current.crl",
         "//test/core/tsi/test_creds/spiffe_end2end:ca.pem",
         "//test/core/tsi/test_creds/spiffe_end2end:client.key",
         "//test/core/tsi/test_creds/spiffe_end2end:client_spiffe.pem",
