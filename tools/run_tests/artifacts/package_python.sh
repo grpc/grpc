@@ -24,7 +24,7 @@ mkdir -p artifacts/
 
 find "${EXTERNAL_GIT_ROOT}/input_artifacts/" | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
 
-# 1. Build the find command to include all files which start with
+# Build the find command to include all files which start with
 # ARTIFACT_PREFIX but does not match any of the EXCLUDE_PATTERNS
 find_cmd=(
     find "${EXTERNAL_GIT_ROOT}/input_artifacts/"
@@ -33,7 +33,7 @@ find_cmd=(
     -name "${ARTIFACT_PREFIX}*"
 )
 
-# 2. Loop through the exclusion patterns and add them to the command array
+# Loop through the exclusion patterns and add them to the command array
 if [[ -n "$EXCLUDE_PATTERNS" ]]; then
     for pattern in $EXCLUDE_PATTERNS; do
         find_cmd+=(-not -name "$pattern")
@@ -41,6 +41,8 @@ if [[ -n "$EXCLUDE_PATTERNS" ]]; then
 fi
 
 
-"${find_cmd[@]}" -print0 \
-    | xargs -0 -I% find % -type f \( -name "*.tar.gz" -o \
-    -name "*py3-none-any.whl" \) -maxdepth 1 -exec cp -v {} ./artifacts \;
+# Copy all files except '*.tar.gz' and '*py3-none-any.whl' files.
+"${find_cmd[@]}"-print0 \
+    | xargs -0 -I% find % -type f -maxdepth 1 \
+    -not -name "*.tar.gz" -not -name "*py3-none-any.whl" \
+    -exec cp -v {} ./artifacts \;
