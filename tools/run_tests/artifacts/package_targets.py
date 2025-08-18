@@ -142,7 +142,7 @@ class RubyPackage:
 class PythonPackage:
     """Collects python eggs and wheels created in the artifact phase"""
 
-    def __init__(self, platform="", arch=""):
+    def __init__(self, platform="", arch="", run_in_job=""):
         self.name = "python_package"
         self.labels = ["package", "python", "linux"]
         self.platform = platform
@@ -154,8 +154,9 @@ class PythonPackage:
             self.labels.append(arch)
             self.name += "_" + arch
 
-            # if arch == "aarch64" and copy_common_files:
-            #     self.labels.append("exclude_in_collect_all_packages")
+            if arch == "noarch" and run_in_job == "aarch64":
+                self.labels.append("aarch64")
+                self.labels.append("exclude_in_collect_all_packages")
 
     def pre_build_jobspecs(self):
         return []
@@ -240,8 +241,9 @@ def targets():
         CSharpPackage("windows"),
         RubyPackage(),
         PythonPackage(),
-        PythonPackage("musllinux_1_2", "aarch64"),
-        PythonPackage("manylinux2014", "aarch64"),
         PythonPackage(arch="noarch"),
+        PythonPackage("musllinux_1_2", "aarch64", run_in_job="aarch64"),
+        PythonPackage("manylinux2014", "aarch64", run_in_job="aarch64"),
+        PythonPackage(arch="noarch", run_in_job="aarch64"),
         PHPPackage(),
     ]
