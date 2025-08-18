@@ -354,9 +354,15 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
     // Apply the new settings
     // Quickly send the ACK to the peer once the settings are applied
   } else {
-    // TODO(tjagtap) : [PH2][P1]
-    // Stop the setting timeout promise
-    // Update the ACKed setting data structure
+    // Process the SETTINGS ACK Frame
+    if (settings_.AckLastSend()) {
+      transport_settings_.OnSettingsAckReceived();
+    } else {
+      // TODO(tjagtap) [PH2][P4] : The RFC does not say anything about what
+      // should happen if we receive an unsolicited SETTINGS ACK. Decide if we
+      // want to respond with any error or just proceed.
+      LOG(ERROR) << "Settings ack received without sending settings";
+    }
   }
 
   return Http2Status::Ok();
@@ -878,9 +884,7 @@ Http2ClientTransport::Http2ClientTransport(
     encoder_.SetMaxUsableSize(max_hpack_table_size);
   }
 
-  settings_timeout_ =
-      channel_args.GetDurationFromIntMillis(GRPC_ARG_SETTINGS_TIMEOUT)
-          .value_or(std::max(keepalive_timeout_ * 2, Duration::Minutes(1)));
+  transport_settings_.SetSettingsTimeout(channel_args, keepalive_timeout_);
 
   std::optional<Http2SettingsFrame> settings_frame =
       settings_.MaybeSendUpdate();
