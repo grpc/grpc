@@ -17,7 +17,6 @@
 //
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
 
-#include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/party.h"
@@ -29,7 +28,6 @@
 
 namespace grpc_core {
 namespace http2 {
-using SendPingArgs = ::grpc_core::http2::PingInterface::SendPingArgs;
 using Callback = absl::AnyInvocable<void()>;
 using grpc_event_engine::experimental::EventEngine;
 
@@ -119,34 +117,43 @@ void PingManager::SpawnTimeout(Duration ping_timeout,
   GetContext<Party>()->Spawn(
       "PingTimeout",
       [this, ping_timeout, opaque_data]() {
-        return AssertResultType<absl::Status>(Race(
-            TrySeq(ping_callbacks_.PingTimeout(ping_timeout),
-                   [this, opaque_data]() mutable {
-                     VLOG(2) << " Ping ack not received for id=" << opaque_data
-                             << ". Ping timeout triggered.";
-                     return ping_interface_->PingTimeout();
-                   }),
-            ping_callbacks_.WaitForPingAck()));
+        return AssertResultType<absl::Status>(
+            Race(TrySeq(ping_callbacks_.PingTimeout(ping_timeout),
+                        [this, opaque_data](bool trigger_ping_timeout) mutable {
+                          return If(
+                              trigger_ping_timeout,
+                              [this, opaque_data]() {
+                                VLOG(2) << " Ping ack not received for id="
+                                        << opaque_data
+                                        << ". Ping timeout triggered.";
+                                return ping_interface_->PingTimeout();
+                              },
+                              []() { return absl::OkStatus(); });
+                        }),
+                 ping_callbacks_.WaitForPingAck()));
       },
       [](auto) {});
 }
 
-Promise<absl::Status> PingManager::MaybeSendPing(
-    Duration next_allowed_ping_interval, Duration ping_timeout) {
-  return If(
-      NeedToPing(next_allowed_ping_interval),
-      [this, ping_timeout]() mutable {
-        const uint64_t opaque_data = ping_callbacks_.StartPing();
-        return AssertResultType<absl::Status>(
-            TrySeq(ping_interface_->SendPing(SendPingArgs{false, opaque_data}),
-                   [this, ping_timeout, opaque_data]() {
-                     VLOG(2) << "Ping Sent with id: " << opaque_data;
-                     SpawnTimeout(ping_timeout, opaque_data);
-                     SentPing();
-                     return absl::OkStatus();
-                   }));
-      },
-      []() { return Immediate(absl::OkStatus()); });
+void PingManager::MaybeGetSerializedPingFrames(
+    SliceBuffer& output_buffer, Duration next_allowed_ping_interval) {
+  DCHECK(!opaque_data_.has_value());
+  if (NeedToPing(next_allowed_ping_interval)) {
+    const uint64_t opaque_data = ping_callbacks_.StartPing();
+    Http2Frame frame = GetHttp2PingFrame(/*ack=*/false, opaque_data);
+    Serialize(absl::Span<Http2Frame>(&frame, 1), output_buffer);
+    opaque_data_ = opaque_data;
+    VLOG(2) << "Sending ping for id=" << opaque_data;
+  }
 }
+
+void PingManager::NotifyPingSent(Duration ping_timeout) {
+  if (opaque_data_.has_value()) {
+    SpawnTimeout(ping_timeout, opaque_data_.value());
+    SentPing();
+    opaque_data_.reset();
+  }
+}
+
 }  // namespace http2
 }  // namespace grpc_core

@@ -654,6 +654,9 @@ auto Http2ClientTransport::WriteControlFrames() {
     is_first_write_ = false;
   }
   MaybeGetSettingsFrame(output_buf);
+  MaybeGetSerializedPingAcks(output_buf);
+  ping_manager_.MaybeGetSerializedPingFrames(output_buf,
+                                             NextAllowedPingInterval());
   const uint64_t buffer_length = output_buf.Length();
   return If(
       buffer_length > 0,
@@ -672,6 +675,7 @@ void Http2ClientTransport::NotifyControlFramesWriteDone() {
   // Notify Control modules that we have sent the frames.
   // All notifications are expected to be synchronous.
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport NotifyControlFramesWriteDone";
+  ping_manager_.NotifyPingSent(ping_timeout_);
 }
 
 auto Http2ClientTransport::WriteLoop() {
@@ -689,13 +693,6 @@ auto Http2ClientTransport::WriteLoop() {
                           self->NotifyControlFramesWriteDone();
                           return self->WriteFromQueue(std::move(frames));
                         });
-        },
-        // TODO(akshitpatel) : [PH2][P2] : These two promises will be removed
-        // in subsequent PRs.
-        [self]() { return self->MaybeSendPingAcks(); },
-        [self]() {
-          return self->ping_manager_.MaybeSendPing(
-              self->NextAllowedPingInterval(), self->ping_timeout_);
         },
         [self]() -> LoopCtl<absl::Status> {
           // TODO(akshitpatel) : [PH2][P0] : WriteFromQueue may write settings

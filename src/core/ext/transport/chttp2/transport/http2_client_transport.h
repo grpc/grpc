@@ -579,15 +579,6 @@ class Http2ClientTransport final : public ClientTransport {
   }
 
   // Ping Helper functions
-  // Returns a promise that resolves once a ping frame is written to the
-  // endpoint.
-  auto CreateAndWritePing(bool ack, uint64_t opaque_data) {
-    Http2Frame frame = Http2PingFrame{ack, opaque_data};
-    SliceBuffer output_buf;
-    Serialize(absl::Span<Http2Frame>(&frame, 1), output_buf);
-    return endpoint_.Write(std::move(output_buf), {});
-  }
-
   Duration NextAllowedPingInterval() {
     MutexLock lock(&transport_mutex_);
     return (!keepalive_permit_without_calls_ && stream_list_.empty())
@@ -595,25 +586,17 @@ class Http2ClientTransport final : public ClientTransport {
                : Duration::Seconds(1);
   }
 
-  auto MaybeSendPing() {
-    return ping_manager_.MaybeSendPing(NextAllowedPingInterval(),
-                                       ping_timeout_);
-  }
-
-  auto MaybeSendPingAcks() {
-    return AssertResultType<absl::Status>(If(
-        pending_ping_acks_.empty(), [] { return absl::OkStatus(); },
-        [this] {
-          std::vector<Http2Frame> frames;
-          frames.reserve(pending_ping_acks_.size());
-          for (auto& opaque_data : pending_ping_acks_) {
-            frames.emplace_back(Http2PingFrame{true, opaque_data});
-          }
-          pending_ping_acks_.clear();
-          SliceBuffer output_buf;
-          Serialize(absl::Span<Http2Frame>(frames), output_buf);
-          return endpoint_.Write(std::move(output_buf), {});
-        }));
+  void MaybeGetSerializedPingAcks(SliceBuffer& output_buf) {
+    GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport GetSerializedPingAcks "
+                              "pending_ping_acks_ size: "
+                           << pending_ping_acks_.size();
+    std::vector<Http2Frame> frames;
+    frames.reserve(pending_ping_acks_.size());
+    for (auto& opaque_data : pending_ping_acks_) {
+      frames.emplace_back(Http2PingFrame{/*ack=*/true, opaque_data});
+    }
+    pending_ping_acks_.clear();
+    Serialize(absl::Span<Http2Frame>(frames), output_buf);
   }
 
   auto AckPing(uint64_t opaque_data) {
@@ -649,12 +632,6 @@ class Http2ClientTransport final : public ClientTransport {
         Http2ClientTransport* transport) {
       return std::make_unique<PingSystemInterfaceImpl>(
           PingSystemInterfaceImpl(transport));
-    }
-
-    // Returns a promise that resolves once a ping frame is written to the
-    // endpoint.
-    Promise<absl::Status> SendPing(SendPingArgs args) override {
-      return transport_->CreateAndWritePing(args.ack, args.opaque_data);
     }
 
     Promise<absl::Status> TriggerWrite() override {
