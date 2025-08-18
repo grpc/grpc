@@ -139,11 +139,13 @@ void OpenTelemetryPluginImpl::ServerCallTracerInterface::
                             /*is_client=*/false, otel_plugin_));
   }
   if (otel_plugin_->tracer_ != nullptr) {
-    GrpcTextMapCarrier carrier(recv_initial_metadata);
-    opentelemetry::context::Context context;
-    context = otel_plugin_->text_map_propagator_->Extract(carrier, context);
     opentelemetry::trace::StartSpanOptions options;
-    options.parent = context;
+    if (otel_plugin_->text_map_propagator_ != nullptr) {
+      GrpcTextMapCarrier carrier(recv_initial_metadata);
+      opentelemetry::context::Context context;
+      context = otel_plugin_->text_map_propagator_->Extract(carrier, context);
+      options.parent = context;
+    }
     span_ = otel_plugin_->tracer_->StartSpan(
         absl::StrCat("Recv.", GetMethodFromPath(path_)), options);
     // We are intentionally reusing census_context to save opentelemetry's Span

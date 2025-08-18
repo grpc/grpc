@@ -2366,6 +2366,7 @@ grpc_cc_library(
         "absl/status",
     ],
     deps = [
+        "event_engine_thread_pool",
         "gpr_atm",
         "posix_event_engine_closure",
         "posix_event_engine_event_poller",
@@ -2474,6 +2475,7 @@ grpc_cc_library(
     ],
     deps = [
         "event_engine_poller",
+        "event_engine_thread_pool",
         "event_engine_time_util",
         "iomgr_port",
         "posix_event_engine_closure",
@@ -2514,6 +2516,7 @@ grpc_cc_library(
     deps = [
         "common_event_engine_closures",
         "event_engine_poller",
+        "event_engine_thread_pool",
         "event_engine_time_util",
         "iomgr_port",
         "posix_event_engine_closure",
@@ -8222,8 +8225,10 @@ grpc_cc_library(
         "metadata_batch",
         "mpsc",
         "ping_promise",
+        "stream_data_queue",
         "sync",
         "transport_common",
+        "writable_streams",
         ":match_promise",
         ":poll",
         ":slice",
@@ -10188,6 +10193,52 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "instrument",
+    srcs = [
+        "telemetry/instrument.cc",
+    ],
+    hdrs = [
+        "telemetry/instrument.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
+        "absl/functional:function_ref",
+        "absl/log:check",
+        "absl/log",
+        "absl/strings",
+        "absl/types:span",
+        "absl/container:flat_hash_set",
+        "absl/container:flat_hash_map",
+        "absl/container:node_hash_map",
+        "absl/hash",
+    ],
+    deps = [
+        "avl",
+        "histogram",
+        "match",
+        "per_cpu",
+        "ref_counted",
+        "sync",
+        "//:gpr",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "histogram",
+    hdrs = [
+        "telemetry/histogram.h",
+    ],
+    external_deps = [
+        "absl/log:check",
+        "absl/log",
+        "absl/strings",
+        "absl/types:span",
+    ],
+)
+
+grpc_cc_library(
     name = "wait_for_single_owner",
     srcs = ["util/wait_for_single_owner.cc"],
     hdrs = ["util/wait_for_single_owner.h"],
@@ -10520,6 +10571,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "zviz_property_list",
+    srcs = [
+        "channelz/zviz/property_list.cc",
+    ],
+    hdrs = ["channelz/zviz/property_list.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/time",
+    ],
+    deps = [
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+        "//src/proto/grpc/channelz/v2:property_list_cc_proto",
+    ],
+)
+
+grpc_cc_library(
     name = "zviz_style",
     srcs = [
         "channelz/zviz/style.cc",
@@ -10585,6 +10652,28 @@ grpc_cc_library(
         "zviz_environment",
         "zviz_html",
         "zviz_layout",
+    ],
+)
+
+grpc_cc_library(
+    name = "zviz_format_entity_list",
+    srcs = [
+        "channelz/zviz/format_entity_list.cc",
+    ],
+    hdrs = ["channelz/zviz/format_entity_list.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/types:optional",
+        "absl/types:span",
+    ],
+    deps = [
+        "time",
+        "zviz_environment",
+        "zviz_layout",
+        "zviz_property_list",
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+        "//src/proto/grpc/channelz/v2:property_list_cc_proto",
+        "@com_google_protobuf//:any_cc_proto",
     ],
 )
 

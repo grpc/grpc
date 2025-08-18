@@ -220,8 +220,13 @@ class StreamDataQueueFuzzTest : public YodelTest {
     ClientMetadataHandle GetMetadata() {
       DCHECK(header_assembler_.IsReady());
       ValueOrHttp2Status<ClientMetadataHandle> status_or_metadata =
-          header_assembler_.ReadMetadata(parser_, /*is_initial_metadata=*/true,
-                                         /*is_client=*/true);
+          header_assembler_.ReadMetadata(
+              parser_, /*is_initial_metadata=*/true,
+              /*is_client=*/true,
+              /*max_header_list_size_soft_limit=*/
+              default_settings_.max_header_list_size(),
+              /*max_header_list_size_hard_limit=*/
+              default_settings_.max_header_list_size());
       EXPECT_TRUE(status_or_metadata.IsOk());
       return TakeValue(std::move(status_or_metadata));
     }
@@ -241,6 +246,7 @@ class StreamDataQueueFuzzTest : public YodelTest {
     http2::HeaderAssembler header_assembler_;
     http2::GrpcMessageAssembler message_assembler_;
     HPackParser parser_;
+    Http2Settings default_settings_;
   };
 
  private:

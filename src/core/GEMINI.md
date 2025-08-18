@@ -12,6 +12,14 @@ The gRPC Core is built around a few key concepts:
 *   **Promises**: **Promises** are a framework for asynchronous programming. They are used extensively throughout the gRPC Core to implement non-blocking I/O and other asynchronous operations. See the [`lib/promise`](./lib/promise/GEMINI.md) directory for more information.
 *   **Event Engine**: The **Event Engine** is an abstraction layer that provides a consistent interface to the underlying operating system's I/O and threading primitives. See the [`lib/event_engine`](./lib/event_engine/GEMINI.md) directory for more information.
 
+## Coding Style
+
+*   **No Exceptions**: gRPC Core code does not use C++ exceptions. Functions should return an error code to indicate failure. Possible error types:
+    - bool - if the error is success or failure for a simple function, this is simple and efficient
+    - absl::Status, absl::StatusOr - a good fallback for cross layer code
+    - StatusFlag (in src/core/lib/promise) - a boolean that is recognizable as an error condition by the promise library; the same library provides ValueOrError that fills the role of StatusOr for this type
+    - It's ok and recommended to write a bespoke error type if your failures don't fit the above mold. It's strongly recommended to provide a mechanism to reduce custom errors to absl::Status for portability between layers.
+
 ## Directory Structure
 
 The gRPC Core is organized into the following directories:
