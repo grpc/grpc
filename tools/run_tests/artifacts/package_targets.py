@@ -155,7 +155,9 @@ class PythonPackage:
             self.name += "_" + arch
 
             if arch == "noarch" and run_in_arm64_job:
-                self.name += "_1" # add a suffix as package names must be unique
+                # add a suffix as package target names must be unique
+                self.name += "_1"
+
                 self.labels.append("aarch64")
                 self.labels.append("exclude_in_collect_all_packages")
 
@@ -205,7 +207,6 @@ class PythonPackage:
             # noarch files in all platform-arch combinations are going to be
             # the same, so specify any one prefix
             environ["ARTIFACT_PREFIX"] = "python_manylinux2014_x64_"
-
 
         return create_docker_jobspec(
             self.name,
