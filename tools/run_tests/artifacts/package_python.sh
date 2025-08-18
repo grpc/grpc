@@ -22,7 +22,7 @@ mkdir -p artifacts/
 # All the python packages have been built in the artifact phase already
 # and we only collect them here to deliver them to the distribtest phase.
 
-tree "${EXTERNAL_GIT_ROOT}/input_artifacts/"
+find "${EXTERNAL_GIT_ROOT}/input_artifacts/" | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
 
 # 1. Build the find command to include all files which start with
 # ARTIFACT_PREFIX but does not match any of the EXCLUDE_PATTERNS
