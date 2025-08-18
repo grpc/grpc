@@ -26,9 +26,9 @@ grpc_internal_proto_library(
     srcs = ["discovery.proto"],
     has_services = True,
     deps = [
+        "//third_party/envoy/src/api/envoy/config/core/v3:pkg",
         "@com_google_protobuf//:any_proto",
         "@com_google_protobuf//:duration_proto",
-        "@envoy_api//envoy/config/core/v3:pkg",
     ],
 )
 
@@ -60,9 +60,9 @@ grpc_internal_proto_library(
     srcs = ["lrs.proto"],
     has_services = True,
     deps = [
+        "//third_party/envoy/src/api/envoy/config/core/v3:pkg",
+        "//third_party/envoy/src/api/envoy/config/endpoint/v3:pkg",
         "@com_google_protobuf//:duration_proto",
-        "@envoy_api//envoy/config/core/v3:pkg",
-        "@envoy_api//envoy/config/endpoint/v3:pkg",
     ],
 )
 
@@ -103,10 +103,10 @@ grpc_internal_proto_library(
     srcs = ["csds.proto"],
     has_services = True,
     deps = [
+        "//third_party/envoy/src/api/envoy/admin/v3:pkg",
+        "//third_party/envoy/src/api/envoy/config/core/v3:pkg",
         "@com_google_protobuf//:any_proto",
         "@com_google_protobuf//:timestamp_proto",
-        "@envoy_api//envoy/admin/v3:pkg",
-        "@envoy_api//envoy/config/core/v3:pkg",
     ],
 )
 

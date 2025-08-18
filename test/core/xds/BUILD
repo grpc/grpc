@@ -194,7 +194,7 @@ grpc_internal_proto_library(
     ],
     deps = [
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_proto",
-        "@envoy_api//envoy/service/discovery/v3:pkg",
+        "//third_party/envoy/src/api/envoy/service/discovery/v3:pkg",
     ],
 )
 

@@ -5023,242 +5023,242 @@ grpc_cc_library(
 
 grpc_upb_proto_library(
     name = "envoy_admin_upb",
-    deps = ["@envoy_api//envoy/admin/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/admin/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "envoy_config_cluster_upb",
-    deps = ["@envoy_api//envoy/config/cluster/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/config/cluster/v3:pkg"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "envoy_config_cluster_upbdefs",
-    deps = ["@envoy_api//envoy/config/cluster/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/config/cluster/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "envoy_config_core_upb",
-    deps = ["@envoy_api//envoy/config/core/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/config/core/v3:pkg"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "envoy_config_core_upbdefs",
-    deps = ["@envoy_api//envoy/config/core/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/config/core/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "envoy_config_endpoint_upb",
-    deps = ["@envoy_api//envoy/config/endpoint/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/config/endpoint/v3:pkg"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "envoy_config_endpoint_upbdefs",
-    deps = ["@envoy_api//envoy/config/endpoint/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/config/endpoint/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "envoy_config_listener_upb",
-    deps = ["@envoy_api//envoy/config/listener/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/config/listener/v3:pkg"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "envoy_config_listener_upbdefs",
-    deps = ["@envoy_api//envoy/config/listener/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/config/listener/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "envoy_config_rbac_upb",
-    deps = ["@envoy_api//envoy/config/rbac/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/config/rbac/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "envoy_config_route_upb",
-    deps = ["@envoy_api//envoy/config/route/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/config/route/v3:pkg"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "envoy_config_route_upbdefs",
-    deps = ["@envoy_api//envoy/config/route/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/config/route/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "envoy_extensions_clusters_aggregate_upb",
-    deps = ["@envoy_api//envoy/extensions/clusters/aggregate/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/extensions/clusters/aggregate/v3:pkg"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_clusters_aggregate_upbdefs",
-    deps = ["@envoy_api//envoy/extensions/clusters/aggregate/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/extensions/clusters/aggregate/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "envoy_extensions_filters_common_fault_upb",
-    deps = ["@envoy_api//envoy/extensions/filters/common/fault/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/extensions/filters/common/fault/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "envoy_extensions_filters_http_fault_upb",
-    deps = ["@envoy_api//envoy/extensions/filters/http/fault/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/extensions/filters/http/fault/v3:pkg"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_filters_http_fault_upbdefs",
-    deps = ["@envoy_api//envoy/extensions/filters/http/fault/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/extensions/filters/http/fault/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "envoy_extensions_filters_http_gcp_authn_upb",
-    deps = ["@envoy_api//envoy/extensions/filters/http/gcp_authn/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/extensions/filters/http/gcp_authn/v3:pkg"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_filters_http_gcp_authn_upbdefs",
-    deps = ["@envoy_api//envoy/extensions/filters/http/gcp_authn/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/extensions/filters/http/gcp_authn/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "envoy_extensions_filters_http_rbac_upb",
-    deps = ["@envoy_api//envoy/extensions/filters/http/rbac/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/extensions/filters/http/rbac/v3:pkg"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_filters_http_rbac_upbdefs",
-    deps = ["@envoy_api//envoy/extensions/filters/http/rbac/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/extensions/filters/http/rbac/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "envoy_extensions_filters_http_router_upb",
-    deps = ["@envoy_api//envoy/extensions/filters/http/router/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/extensions/filters/http/router/v3:pkg"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_filters_http_router_upbdefs",
-    deps = ["@envoy_api//envoy/extensions/filters/http/router/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/extensions/filters/http/router/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "envoy_extensions_filters_http_stateful_session_upb",
-    deps = ["@envoy_api//envoy/extensions/filters/http/stateful_session/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/extensions/filters/http/stateful_session/v3:pkg"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_filters_http_stateful_session_upbdefs",
-    deps = ["@envoy_api//envoy/extensions/filters/http/stateful_session/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/extensions/filters/http/stateful_session/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "envoy_extensions_http_stateful_session_cookie_upb",
-    deps = ["@envoy_api//envoy/extensions/http/stateful_session/cookie/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/extensions/http/stateful_session/cookie/v3:pkg"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_http_stateful_session_cookie_upbdefs",
-    deps = ["@envoy_api//envoy/extensions/http/stateful_session/cookie/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/extensions/http/stateful_session/cookie/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "envoy_type_http_upb",
-    deps = ["@envoy_api//envoy/type/http/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/type/http/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "envoy_extensions_load_balancing_policies_client_side_weighted_round_robin_upb",
-    deps = ["@envoy_api//envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "envoy_extensions_load_balancing_policies_pick_first_upb",
-    deps = ["@envoy_api//envoy/extensions/load_balancing_policies/pick_first/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/extensions/load_balancing_policies/pick_first/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "envoy_extensions_load_balancing_policies_ring_hash_upb",
-    deps = ["@envoy_api//envoy/extensions/load_balancing_policies/ring_hash/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/extensions/load_balancing_policies/ring_hash/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "envoy_extensions_load_balancing_policies_wrr_locality_upb",
-    deps = ["@envoy_api//envoy/extensions/load_balancing_policies/wrr_locality/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/extensions/load_balancing_policies/wrr_locality/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "envoy_extensions_filters_network_http_connection_manager_upb",
-    deps = ["@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/extensions/filters/network/http_connection_manager/v3:pkg"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_filters_network_http_connection_manager_upbdefs",
-    deps = ["@envoy_api//envoy/extensions/filters/network/http_connection_manager/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/extensions/filters/network/http_connection_manager/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "envoy_extensions_transport_sockets_tls_upb",
-    deps = ["@envoy_api//envoy/extensions/transport_sockets/tls/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/extensions/transport_sockets/tls/v3:pkg"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_transport_sockets_tls_upbdefs",
-    deps = ["@envoy_api//envoy/extensions/transport_sockets/tls/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/extensions/transport_sockets/tls/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "envoy_extensions_transport_sockets_http_11_proxy_upb",
-    deps = ["@envoy_api//envoy/extensions/transport_sockets/http_11_proxy/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/extensions/transport_sockets/http_11_proxy/v3:pkg"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_transport_sockets_http_11_proxy_upbdefs",
-    deps = ["@envoy_api//envoy/extensions/transport_sockets/http_11_proxy/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/extensions/transport_sockets/http_11_proxy/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "envoy_extensions_upstreams_http_upb",
-    deps = ["@envoy_api//envoy/extensions/upstreams/http/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/extensions/upstreams/http/v3:pkg"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_upstreams_http_upbdefs",
-    deps = ["@envoy_api//envoy/extensions/upstreams/http/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/extensions/upstreams/http/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "envoy_service_discovery_upb",
-    deps = ["@envoy_api//envoy/service/discovery/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/service/discovery/v3:pkg"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "envoy_service_discovery_upbdefs",
-    deps = ["@envoy_api//envoy/service/discovery/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/service/discovery/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "envoy_service_load_stats_upb",
-    deps = ["@envoy_api//envoy/service/load_stats/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/service/load_stats/v3:pkg"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "envoy_service_load_stats_upbdefs",
-    deps = ["@envoy_api//envoy/service/load_stats/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/service/load_stats/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "envoy_service_status_upb",
-    deps = ["@envoy_api//envoy/service/status/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/service/status/v3:pkg"],
 )
 
 grpc_upb_proto_reflection_library(
     name = "envoy_service_status_upbdefs",
-    deps = ["@envoy_api//envoy/service/status/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/service/status/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "envoy_type_matcher_upb",
-    deps = ["@envoy_api//envoy/type/matcher/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/type/matcher/v3:pkg"],
 )
 
 grpc_upb_proto_library(
     name = "envoy_type_upb",
-    deps = ["@envoy_api//envoy/type/v3:pkg"],
+    deps = ["//third_party/envoy/src/api/envoy/type/v3:pkg"],
 )
 
 grpc_upb_proto_library(
