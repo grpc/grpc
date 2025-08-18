@@ -261,16 +261,19 @@ class Http2ClientTransport final : public ClientTransport {
 
   // Managing the streams
   struct Stream : public RefCounted<Stream> {
-    explicit Stream(CallHandler call, const uint32_t stream_id1)
+    explicit Stream(CallHandler call, const uint32_t stream_id1,
+                    bool allow_true_binary_metadata_peer,
+                    bool allow_true_binary_metadata_acked)
         : call(std::move(call)),
           stream_state(HttpStreamState::kIdle),
           stream_id(stream_id1),
-          header_assembler(stream_id1),
+          header_assembler(stream_id1, allow_true_binary_metadata_acked),
           did_push_initial_metadata(false),
           did_push_trailing_metadata(false),
           data_queue(MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
               /*is_client*/ true, /*stream_id*/ stream_id1,
-              /*queue_size*/ kStreamQueueSize)) {}
+              /*queue_size*/ kStreamQueueSize,
+              allow_true_binary_metadata_peer)) {}
 
     ////////////////////////////////////////////////////////////////////////////
     // Data Queue Helpers

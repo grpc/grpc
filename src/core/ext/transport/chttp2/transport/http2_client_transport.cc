@@ -1111,7 +1111,10 @@ bool Http2ClientTransport::MakeStream(CallHandler call_handler,
       });
   if (!on_done_added) return false;
   stream_list_.emplace(
-      stream_id, MakeRefCounted<Stream>(std::move(call_handler), stream_id));
+      stream_id,
+      MakeRefCounted<Stream>(std::move(call_handler), stream_id,
+                             settings_.peer().allow_true_binary_metadata(),
+                             settings_.acked().allow_true_binary_metadata()));
   return true;
 }
 
