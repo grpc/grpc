@@ -661,6 +661,7 @@ auto Http2ClientTransport::WriteControlFrames() {
 void Http2ClientTransport::NotifyControlFramesWriteDone() {
   // Notify Control modules that we have sent the frames.
   // All notifications are expected to be synchronous.
+  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport NotifyControlFramesWriteDone";
 }
 
 auto Http2ClientTransport::WriteLoop() {
@@ -673,20 +674,11 @@ auto Http2ClientTransport::WriteLoop() {
         // on the available flow control window.
         self->outgoing_frames_.NextBatch(std::numeric_limits<uint32_t>::max()),
         [self](std::vector<Http2Frame> frames) {
-          return Map(
-              self->WriteControlFrames(),
-              [self, frames = std::move(frames)](absl::Status status) mutable
-                  -> absl::StatusOr<std::vector<Http2Frame>> {
-                if (!status.ok()) {
-                  LOG(ERROR) << "Endpoint write failed with status: " << status;
-                  return status;
-                }
-                self->NotifyControlFramesWriteDone();
-                return std::move(frames);
-              });
-        },
-        [self](std::vector<Http2Frame> frames) {
-          return self->WriteFromQueue(std::move(frames));
+          return TrySeq(self->WriteControlFrames(),
+                        [self, frames = std::move(frames)]() mutable {
+                          self->NotifyControlFramesWriteDone();
+                          return self->WriteFromQueue(std::move(frames));
+                        });
         },
         // TODO(akshitpatel) : [PH2][P2] : These two promises will be removed
         // in subsequent PRs.
