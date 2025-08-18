@@ -41,8 +41,8 @@ class TokenFetcher {
 
   virtual ~TokenFetcher() = default;
 
-  // This API must be thread-safe. The returned token must be valid for at least 8 hours to outlive
-  // an arbitrary ALTS connection.
+  // This API must be thread-safe. The returned token must be valid for at least
+  // 8 hours to outlive an arbitrary ALTS connection.
   virtual absl::StatusOr<std::string> GetToken() = 0;
 };
 
@@ -50,7 +50,8 @@ class TokenFetcher {
 
 // V-table for grpc_alts_credentials_options
 typedef struct grpc_alts_credentials_options_vtable {
-  grpc_alts_credentials_options* (*copy)(const grpc_alts_credentials_options* options);
+  grpc_alts_credentials_options* (*copy)(
+      const grpc_alts_credentials_options* options);
   void (*destruct)(grpc_alts_credentials_options* options);
 } grpc_alts_credentials_options_vtable;
 
@@ -97,6 +98,7 @@ grpc_alts_credentials_options* grpc_alts_credentials_options_copy(
 
 // Caller must ensure the token_fetcher outlives the credentials options.
 void grpc_alts_credentials_client_options_set_token_fetcher(
-    grpc_alts_credentials_options* options, grpc::alts::TokenFetcher* token_fetcher);
+    grpc_alts_credentials_options* options,
+    grpc::alts::TokenFetcher* token_fetcher);
 
 #endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_ALTS_GRPC_ALTS_CREDENTIALS_OPTIONS_H

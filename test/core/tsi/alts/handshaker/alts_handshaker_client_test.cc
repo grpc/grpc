@@ -506,8 +506,8 @@ TEST(AltsHandshakerClientTest, ScheduleRequestSuccessTest) {
   // Initialization.
   alts_handshaker_client_test_config* config = CreateConfig();
   // Check client_start success.
-  alts_handshaker_client_set_grpc_caller_for_testing(config->client,
-                                                     CheckClientStartSuccessWithoutToken);
+  alts_handshaker_client_set_grpc_caller_for_testing(
+      config->client, CheckClientStartSuccessWithoutToken);
   {
     grpc_core::ExecCtx exec_ctx;
     ASSERT_EQ(alts_handshaker_client_start_client(config->client), TSI_OK);
@@ -555,11 +555,13 @@ TEST(AltsHandshakerClientTest, ScheduleRequestSuccessTest) {
 
 TEST(AltsHandshakerClientTest, ScheduleRequestWithTokenSuccessTest) {
   // Initialization.
-  std::unique_ptr<FakeTokenFetcher> token_fetcher = std::make_unique<FakeTokenFetcher>();
-  alts_handshaker_client_test_config* config = CreateConfig(token_fetcher.get());
+  std::unique_ptr<FakeTokenFetcher> token_fetcher =
+      std::make_unique<FakeTokenFetcher>();
+  alts_handshaker_client_test_config* config =
+      CreateConfig(token_fetcher.get());
   // Check client_start success.
-  alts_handshaker_client_set_grpc_caller_for_testing(config->client,
-                                                     CheckClientStartSuccessWithToken);
+  alts_handshaker_client_set_grpc_caller_for_testing(
+      config->client, CheckClientStartSuccessWithToken);
   {
     grpc_core::ExecCtx exec_ctx;
     ASSERT_EQ(alts_handshaker_client_start_client(config->client), TSI_OK);
