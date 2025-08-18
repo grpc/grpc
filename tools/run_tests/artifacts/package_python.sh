@@ -46,7 +46,3 @@ fi
     | xargs -0 -I% find % -type f -maxdepth 1 \
     -not -name "*.tar.gz" -not -name "*py3-none-any.whl" \
     -exec cp -v {} ./artifacts \;
-
-echo "Debug print files in ./artifacts/"
-find "./artifacts/" | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
-exit 1
