@@ -593,7 +593,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
 
     GRPC_STREAM_DATA_QUEUE_DEBUG
         << "UpdateWritableStateLocked for stream id: " << stream_id_
-        << " with priority: " << WritableStreams::GetPriorityString(priority_);
+        << " with priority: " << WritableStreams::GetPriorityString(priority_)
+        << " is_writable: " << is_writable_;
     return EnqueueResult{/*became_writable=*/false, priority_};
   }
 

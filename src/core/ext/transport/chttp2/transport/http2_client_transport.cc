@@ -1097,7 +1097,7 @@ auto Http2ClientTransport::CallOutboundLoop(
         stream != nullptr,
         [self, stream, message = std::move(message), stream_id]() mutable {
           return TrySeq(stream->EnqueueMessage(std::move(message)),
-                        [self, stream_id](EnqueueResult result) {
+                        [self, stream_id](const EnqueueResult result) {
                           GRPC_HTTP2_CLIENT_DLOG
                               << "Http2ClientTransport CallOutboundLoop "
                                  "Enqueued Message";
@@ -1121,7 +1121,7 @@ auto Http2ClientTransport::CallOutboundLoop(
         [self, stream, metadata = std::move(metadata), stream_id]() mutable {
           return TrySeq(
               stream->EnqueueInitialMetadata(std::move(metadata)),
-              [self, stream_id](EnqueueResult result) {
+              [self, stream_id](const EnqueueResult result) {
                 GRPC_HTTP2_CLIENT_DLOG
                     << "Http2ClientTransport CallOutboundLoop "
                        "Enqueued Initial Metadata";
@@ -1148,13 +1148,15 @@ auto Http2ClientTransport::CallOutboundLoop(
     return If(
         stream != nullptr,
         [self, stream, stream_id]() mutable {
-          return TrySeq(stream->EnqueueHalfClosed(), [self, stream_id](
-                                                         EnqueueResult result) {
-            GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport CallOutboundLoop "
-                                      "Enqueued Half Closed";
-            return self->MaybeAddStreamToWritableStreamList(
-                stream_id, result.became_writable, result.priority);
-          });
+          return TrySeq(stream->EnqueueHalfClosed(),
+                        [self, stream_id](const EnqueueResult result) {
+                          GRPC_HTTP2_CLIENT_DLOG
+                              << "Http2ClientTransport CallOutboundLoop "
+                                 "Enqueued Half Closed";
+                          return self->MaybeAddStreamToWritableStreamList(
+                              stream_id, result.became_writable,
+                              result.priority);
+                        });
         },
         []() {
           // This will trigger Call stack cleanup.

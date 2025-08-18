@@ -693,7 +693,7 @@ class Http2ClientTransport final : public ClientTransport {
       absl::Status status = writable_stream_list_.Enqueue(stream_id, priority);
       if (!status.ok()) {
         return HandleError(Http2Status::Http2ConnectionError(
-            Http2ErrorCode::kInternalError,
+            Http2ErrorCode::kRefusedStream,
             "Failed to enqueue stream to writable stream list"));
       }
     }
