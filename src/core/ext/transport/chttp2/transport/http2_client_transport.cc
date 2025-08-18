@@ -683,7 +683,7 @@ auto Http2ClientTransport::WriteLoop() {
         // should ideally be fine as frames in the MPSC have been enqueued based
         // on the available flow control window.
         self->outgoing_frames_.NextBatch(std::numeric_limits<uint32_t>::max()),
-        [self](std::vector<Http2Frame> frames) {
+        [self](std::vector<Http2Frame>&& frames) {
           return TrySeq(self->WriteControlFrames(),
                         [self, frames = std::move(frames)]() mutable {
                           self->NotifyControlFramesWriteDone();
