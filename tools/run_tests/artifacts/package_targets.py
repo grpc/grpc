@@ -205,8 +205,8 @@ class PythonPackage:
             shell_command = "tools/run_tests/artifacts/package_python_noarch.sh"
 
             # noarch files in all platform-arch combinations are going to be
-            # the same, so specify any one prefix
-            environ["ARTIFACT_PREFIX"] = "python_manylinux2014_x64_"
+            # the same, so specify any one platform as prefix
+            environ["ARTIFACT_PREFIX"] = "python_manylinux2014_"
 
         return create_docker_jobspec(
             self.name,
