@@ -142,7 +142,7 @@ class RubyPackage:
 class PythonPackage:
     """Collects python eggs and wheels created in the artifact phase"""
 
-    def __init__(self, platform="", arch="", run_in_job=""):
+    def __init__(self, platform="", arch="", run_in_arm64_job=False):
         self.name = "python_package"
         self.labels = ["package", "python", "linux"]
         self.platform = platform
@@ -154,7 +154,8 @@ class PythonPackage:
             self.labels.append(arch)
             self.name += "_" + arch
 
-            if arch == "noarch" and run_in_job == "aarch64":
+            if arch == "noarch" and run_in_arm64_job:
+                self.name += "_1" # add a suffix as package names must be unique
                 self.labels.append("aarch64")
                 self.labels.append("exclude_in_collect_all_packages")
 
@@ -242,8 +243,8 @@ def targets():
         RubyPackage(),
         PythonPackage(),
         PythonPackage(arch="noarch"),
-        PythonPackage("musllinux_1_2", "aarch64", run_in_job="aarch64"),
-        PythonPackage("manylinux2014", "aarch64", run_in_job="aarch64"),
-        PythonPackage(arch="noarch", run_in_job="aarch64"),
+        PythonPackage("musllinux_1_2", "aarch64", run_in_arm64_job=True),
+        PythonPackage("manylinux2014", "aarch64", run_in_arm64_job=True),
+        PythonPackage(arch="noarch", run_in_arm64_job=True),
         PHPPackage(),
     ]
