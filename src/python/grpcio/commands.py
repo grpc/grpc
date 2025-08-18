@@ -256,14 +256,20 @@ class BuildExt(build_ext.build_ext):
             # NOTE: keep in sync with setup.py EXTRA_ENV_COMPILE_ARGS.
             cpp_only_args = {"-std=c++17", "-stdlib=libc++"}
             c_only_args = {"-std=c11"}
+
+            args_to_remove = set()
             if src.endswith(".c"):
-                extra_postargs = [
-                    arg for arg in extra_postargs if arg not in cpp_only_args
-                ]
+                # Remove cpp-specific args when compiling c.
+                args_to_remove = cpp_specific_args
             elif src.endswith((".cc", ".cpp")):
+                # Remove c-specific args when compiling c++.
+                args_to_remove = c_specific_args
+
+            if args_to_remove:
                 extra_postargs = [
-                    arg for arg in extra_postargs if arg not in c_only_args
+                    arg for arg in extra_postargs if arg not in args_to_remove
                 ]
+
             return old_compile(obj, src, ext, cc_args, extra_postargs, pp_opts)
 
         self.compiler._compile = new_compile
