@@ -76,7 +76,8 @@ class PingManager {
               std::shared_ptr<grpc_event_engine::experimental::EventEngine>
                   event_engine);
 
-  // Maybe populate the output buffer with the serialized ping frame.
+  // If a ping frame is needed to be sent, populates the output buffer with the
+  // serialized ping frame.
   void MaybeGetSerializedPingFrames(SliceBuffer& output_buf,
                                     Duration next_allowed_ping_interval);
 
