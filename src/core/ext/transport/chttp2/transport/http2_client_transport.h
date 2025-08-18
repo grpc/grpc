@@ -184,8 +184,29 @@ class Http2ClientTransport final : public ClientTransport {
 
   // Writing to the endpoint.
 
-  // Read from the MPSC queue and write it.
-  auto WriteFromQueue();
+  // Write the frames from MPSC queue to the endpoint. Frames sent from here
+  // will be DATA, HEADER, CONTINUATION and SETTINGS_ACK.  It is essential to
+  // preserve the order of these frames at the time of write.
+  auto WriteFromQueue(std::vector<Http2Frame>&& frames);
+
+  // Write time sensitive control frames to the endpoint. Frames sent from here
+  // will be:
+  // 1. SETTINGS - This is first because for a new connection, SETTINGS MUST be
+  //               the first frame to be written onto a connection as per
+  //               RFC9113.
+  // 2. GOAWAY - This is second because if this is the final GoAway, then we may
+  //             not need to send anything else to the peer.
+  // 3. PING and PING acks.
+  // 4. WINDOW_UPDATE
+  // 5. Custom gRPC security frame
+  // These frames are written to the endpoint in a single endpoint write. If any
+  // module needs to take action after the write (for cases like spawning
+  // timeout promises), they MUST plug the call in the
+  // NotifyControlFramesWriteDone.
+  auto WriteControlFrames();
+
+  // Notify the control frames modules that the endpoint write is done.
+  void NotifyControlFramesWriteDone();
 
   // Returns a promise to keep writing in a Loop till a fail/close is
   // received.
@@ -549,6 +570,13 @@ class Http2ClientTransport final : public ClientTransport {
     return ping_manager_.RequestPing(std::move(on_initiate), important);
   }
   auto WaitForPingAck() { return ping_manager_.WaitForPingAck(); }
+
+  void MaybeGetSettingsFrame(SliceBuffer& output_buf) {
+    std::optional<Http2Frame> settings_frame = settings_.MaybeSendUpdate();
+    if (settings_frame.has_value()) {
+      Serialize(absl::Span<Http2Frame>(&settings_frame.value(), 1), output_buf);
+    }
+  }
 
   // Ping Helper functions
   // Returns a promise that resolves once a ping frame is written to the
