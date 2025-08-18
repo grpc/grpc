@@ -147,6 +147,7 @@ class PythonPackage:
         self.labels = ["package", "python", "linux"]
         self.platform = platform
         self.arch = arch
+        self.run_in_arm64_job = run_in_arm64_job
         if self.platform:
             self.labels.append(platform)
             self.name += "_" + platform
