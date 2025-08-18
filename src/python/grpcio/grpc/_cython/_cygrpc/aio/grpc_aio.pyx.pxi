@@ -44,6 +44,7 @@ cdef class _AioState:
 
 
 cdef _initialize_poller():
+    _LOGGER.info("_initialize_poller()")
     # Initializes gRPC Core, must be called before other Core API
     grpc_init()
 
@@ -76,6 +77,7 @@ def _grpc_shutdown_wrapper(_):
 
 
 cdef _actual_aio_shutdown():
+    print("_actual_aio_shutdown()")
     if _global_aio_state.engine is AsyncIOEngine.POLLER:
         (<PollerCompletionQueue>_global_aio_state.cq).shutdown()
         grpc_shutdown()
@@ -98,6 +100,7 @@ cpdef init_grpc_aio():
     """
     with _global_aio_state.lock:
         _global_aio_state.refcount += 1
+        print(f"{_global_aio_state.refcount=}")
         if _global_aio_state.refcount == 1:
             _actual_aio_initialization()
         _initialize_per_loop()
@@ -109,6 +112,7 @@ cpdef shutdown_grpc_aio():
     Expected to be invoked on critical class destructors.
     E.g., AioChannel, AioServer.
     """
+    print("shutdown_grpc_aio()")
     with _global_aio_state.lock:
         assert _global_aio_state.refcount > 0
         _global_aio_state.refcount -= 1
