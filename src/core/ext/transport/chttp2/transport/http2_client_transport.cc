@@ -1138,8 +1138,7 @@ auto Http2ClientTransport::CallOutboundLoop(
                               << "Http2ClientTransport CallOutboundLoop "
                                  "Enqueued Message";
                           return self->MaybeAddStreamToWritableStreamList(
-                              stream_id, result.became_writable,
-                              result.priority);
+                              stream_id, result);
                         });
         },
         []() {
@@ -1161,8 +1160,8 @@ auto Http2ClientTransport::CallOutboundLoop(
                 GRPC_HTTP2_CLIENT_DLOG
                     << "Http2ClientTransport CallOutboundLoop "
                        "Enqueued Initial Metadata";
-                return self->MaybeAddStreamToWritableStreamList(
-                    stream_id, result.became_writable, result.priority);
+                return self->MaybeAddStreamToWritableStreamList(stream_id,
+                                                                result);
               },
               [stream] {
                 // TODO(akshitpatel) : [PH2][P2] : Think how to handle stream
@@ -1190,8 +1189,7 @@ auto Http2ClientTransport::CallOutboundLoop(
                               << "Http2ClientTransport CallOutboundLoop "
                                  "Enqueued Half Closed";
                           return self->MaybeAddStreamToWritableStreamList(
-                              stream_id, result.became_writable,
-                              result.priority);
+                              stream_id, result);
                         });
         },
         []() {

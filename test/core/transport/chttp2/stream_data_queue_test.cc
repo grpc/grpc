@@ -53,7 +53,8 @@ void DequeueAndCheckPending(http2::SimpleQueue<int>& queue,
   LOG(INFO) << "DequeueAndCheckPending for allow_oversized_dequeue: "
             << allow_oversized_dequeue
             << " allowed_dequeue_tokens: " << allowed_dequeue_tokens;
-  auto result = queue.Dequeue(allowed_dequeue_tokens, allow_oversized_dequeue);
+  std::optional<int> result =
+      queue.Dequeue(allowed_dequeue_tokens, allow_oversized_dequeue);
   EXPECT_FALSE(result.has_value());
 }
 
@@ -63,7 +64,8 @@ void DequeueAndCheckSuccess(http2::SimpleQueue<int>& queue, int data,
   LOG(INFO) << "DequeueAndCheckSuccess for data: " << data
             << " allow_oversized_dequeue: " << allow_oversized_dequeue
             << " allowed_dequeue_tokens: " << allowed_dequeue_tokens;
-  auto result = queue.Dequeue(allowed_dequeue_tokens, allow_oversized_dequeue);
+  std::optional<int> result =
+      queue.Dequeue(allowed_dequeue_tokens, allow_oversized_dequeue);
   EXPECT_TRUE(result.has_value());
 
   LOG(INFO) << "Dequeue successful for data: " << data;
@@ -75,7 +77,8 @@ bool DequeueAndCheck(http2::SimpleQueue<int>& queue, int data,
   LOG(INFO) << "DequeueAndCheck for data: " << data
             << " allow_oversized_dequeue: " << allow_oversized_dequeue
             << " allowed_dequeue_tokens: " << allowed_dequeue_tokens;
-  auto result = queue.Dequeue(allowed_dequeue_tokens, allow_oversized_dequeue);
+  std::optional<int> result =
+      queue.Dequeue(allowed_dequeue_tokens, allow_oversized_dequeue);
   if (!result.has_value()) {
     LOG(INFO) << "Dequeue result is empty";
     return false;
@@ -110,16 +113,15 @@ class SimpleQueueTest : public TransportTest {
 TEST_F(SimpleQueueTest, EnqueueTest) {
   // Simple test that does a single enqueue.
   http2::SimpleQueue<int> queue(/*max_tokens=*/100);
-  auto* party = GetParty();
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
 
-  party->Spawn("EnqueueTest",
-               EnqueueAndCheckSuccess(queue, /*data=*/1, /*tokens=*/10),
-               [&on_done](auto) {
-                 LOG(INFO) << "Reached end of EnqueueTest";
-                 on_done.Call(absl::OkStatus());
-               });
+  GetParty()->Spawn("EnqueueTest",
+                    EnqueueAndCheckSuccess(queue, /*data=*/1, /*tokens=*/10),
+                    [&on_done](auto) {
+                      LOG(INFO) << "Reached end of EnqueueTest";
+                      on_done.Call(absl::OkStatus());
+                    });
 
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
@@ -128,16 +130,15 @@ TEST_F(SimpleQueueTest, EnqueueTest) {
 TEST_F(SimpleQueueTest, EnqueueZeroTokensTest) {
   // Simple test that does a single enqueue with zero tokens.
   http2::SimpleQueue<int> queue(/*max_tokens=*/100);
-  auto* party = GetParty();
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
 
-  party->Spawn("EnqueueTest",
-               EnqueueAndCheckSuccess(queue, /*data=*/1, /*tokens=*/0),
-               [&on_done](auto) {
-                 LOG(INFO) << "Reached end of EnqueueTest";
-                 on_done.Call(absl::OkStatus());
-               });
+  GetParty()->Spawn("EnqueueTest",
+                    EnqueueAndCheckSuccess(queue, /*data=*/1, /*tokens=*/0),
+                    [&on_done](auto) {
+                      LOG(INFO) << "Reached end of EnqueueTest";
+                      on_done.Call(absl::OkStatus());
+                    });
 
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
@@ -146,28 +147,27 @@ TEST_F(SimpleQueueTest, EnqueueZeroTokensTest) {
 TEST_F(SimpleQueueTest, MultipleEnqueueTest) {
   // Test multiple enqueues. All the enqueues for this test are immediate.
   http2::SimpleQueue<int> queue(/*max_tokens=*/100);
-  auto* party = GetParty();
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   int count = 10;
 
-  party->Spawn("EnqueueTest", Loop([&count, &queue, &on_done]() {
-                 return If(
-                     count > 0,
-                     [&queue, &count] {
-                       return Map(EnqueueAndCheckSuccess(queue, /*data=*/1,
-                                                         /*tokens=*/10),
-                                  [&count](auto) -> LoopCtl<StatusFlag> {
-                                    count--;
-                                    return Continue();
-                                  });
-                     },
-                     [&on_done]() -> LoopCtl<StatusFlag> {
-                       on_done.Call(absl::OkStatus());
-                       return Success{};
-                     });
-               }),
-               [](auto) { LOG(INFO) << "Reached end of EnqueueTest"; });
+  GetParty()->Spawn("EnqueueTest", Loop([&count, &queue, &on_done]() {
+                      return If(
+                          count > 0,
+                          [&queue, &count] {
+                            return Map(EnqueueAndCheckSuccess(queue, /*data=*/1,
+                                                              /*tokens=*/10),
+                                       [&count](auto) -> LoopCtl<StatusFlag> {
+                                         count--;
+                                         return Continue();
+                                       });
+                          },
+                          [&on_done]() -> LoopCtl<StatusFlag> {
+                            on_done.Call(absl::OkStatus());
+                            return Success{};
+                          });
+                    }),
+                    [](auto) { LOG(INFO) << "Reached end of EnqueueTest"; });
 
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
@@ -179,8 +179,8 @@ TEST_F(SimpleQueueTest, DequeueEmptyQueueTest) {
   // Test to dequeue from an empty queue.
   http2::SimpleQueue<int> queue(/*max_tokens=*/100);
 
-  auto result = queue.Dequeue(/*allowed_dequeue_tokens=*/10,
-                              /*allow_oversized_dequeue=*/false);
+  std::optional<int> result = queue.Dequeue(/*allowed_dequeue_tokens=*/10,
+                                            /*allow_oversized_dequeue=*/false);
   EXPECT_FALSE(result.has_value());
 }
 
@@ -191,31 +191,31 @@ TEST_F(SimpleQueueTest, DequeueTest) {
   // 2. The dequeue data is the same as the enqueue data.
   http2::SimpleQueue<int> queue(/*max_tokens=*/100);
   Latch<void> enqueue_done;
-  auto* party = GetParty();
   StrictMock<MockFunction<void(absl::Status)>> on_enqueue_done;
   StrictMock<MockFunction<void(absl::Status)>> on_dequeue_done;
   EXPECT_CALL(on_enqueue_done, Call(absl::OkStatus()));
   EXPECT_CALL(on_dequeue_done, Call(absl::OkStatus()));
 
-  party->Spawn("EnqueueTest",
-               EnqueueAndCheckSuccess(queue, /*data=*/1, /*tokens=*/10),
-               [&on_enqueue_done, &enqueue_done](auto) {
-                 LOG(INFO) << "Reached end of EnqueueTest";
-                 on_enqueue_done.Call(absl::OkStatus());
-                 enqueue_done.Set();
-               });
+  GetParty()->Spawn("EnqueueTest",
+                    EnqueueAndCheckSuccess(queue, /*data=*/1, /*tokens=*/10),
+                    [&on_enqueue_done, &enqueue_done](auto) {
+                      LOG(INFO) << "Reached end of EnqueueTest";
+                      on_enqueue_done.Call(absl::OkStatus());
+                      enqueue_done.Set();
+                    });
 
-  party->Spawn("DequeueTest",
-               Map(enqueue_done.Wait(),
-                   [&queue, &on_dequeue_done](auto) {
-                     DequeueAndCheckSuccess(queue, /*data=*/1,
-                                            /*allow_oversized_dequeue=*/false,
-                                            /*allowed_dequeue_tokens=*/10);
-                     on_dequeue_done.Call(absl::OkStatus());
-                     EXPECT_TRUE(queue.TestOnlyIsEmpty());
-                     return absl::OkStatus();
-                   }),
-               [](auto) { LOG(INFO) << "Reached end of DequeueTest"; });
+  GetParty()->Spawn("DequeueTest",
+                    Map(enqueue_done.Wait(),
+                        [&queue, &on_dequeue_done](auto) {
+                          DequeueAndCheckSuccess(
+                              queue, /*data=*/1,
+                              /*allow_oversized_dequeue=*/false,
+                              /*allowed_dequeue_tokens=*/10);
+                          on_dequeue_done.Call(absl::OkStatus());
+                          EXPECT_TRUE(queue.TestOnlyIsEmpty());
+                          return absl::OkStatus();
+                        }),
+                    [](auto) { LOG(INFO) << "Reached end of DequeueTest"; });
 
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
@@ -225,13 +225,12 @@ TEST_F(SimpleQueueTest, DequeuePartialDequeueTest) {
   // Test to assert on different combinations of allow_oversized_dequeue.
   http2::SimpleQueue<int> queue(/*max_tokens=*/200);
   Latch<void> enqueue_done;
-  auto* party = GetParty();
   StrictMock<MockFunction<void(absl::Status)>> on_enqueue_done;
   StrictMock<MockFunction<void(absl::Status)>> on_dequeue_done;
   EXPECT_CALL(on_enqueue_done, Call(absl::OkStatus()));
   EXPECT_CALL(on_dequeue_done, Call(absl::OkStatus()));
 
-  party->Spawn(
+  GetParty()->Spawn(
       "EnqueueTest",
       TrySeq(EnqueueAndCheckSuccess(queue, /*data=*/1, /*tokens=*/99),
              EnqueueAndCheckSuccess(queue, /*data=*/2, /*tokens=*/100)),
@@ -241,7 +240,7 @@ TEST_F(SimpleQueueTest, DequeuePartialDequeueTest) {
         enqueue_done.Set();
       });
 
-  party->Spawn(
+  GetParty()->Spawn(
       "DequeueTest",
       TrySeq(enqueue_done.Wait(),
              [&queue] {
@@ -280,24 +279,23 @@ TEST_F(SimpleQueueTest, DequeueTokensTest) {
   // Test to assert different combinations of allowed_dequeue_tokens.
   http2::SimpleQueue<int> queue(/*max_tokens=*/200);
   Latch<void> enqueue_done;
-  auto* party = GetParty();
   StrictMock<MockFunction<void(absl::Status)>> on_enqueue_done;
   StrictMock<MockFunction<void(absl::Status)>> on_dequeue_done;
   EXPECT_CALL(on_enqueue_done, Call(absl::OkStatus()));
   EXPECT_CALL(on_dequeue_done, Call(absl::OkStatus()));
 
-  party->Spawn("EnqueueTest",
-               TrySeq(EnqueueAndCheckSuccess(queue, /*data=*/1,
-                                             /*tokens=*/100),
-                      EnqueueAndCheckSuccess(queue, /*data=*/2,
-                                             /*tokens=*/99)),
-               [&on_enqueue_done, &enqueue_done](auto) {
-                 LOG(INFO) << "Reached end of EnqueueTest";
-                 on_enqueue_done.Call(absl::OkStatus());
-                 enqueue_done.Set();
-               });
+  GetParty()->Spawn("EnqueueTest",
+                    TrySeq(EnqueueAndCheckSuccess(queue, /*data=*/1,
+                                                  /*tokens=*/100),
+                           EnqueueAndCheckSuccess(queue, /*data=*/2,
+                                                  /*tokens=*/99)),
+                    [&on_enqueue_done, &enqueue_done](auto) {
+                      LOG(INFO) << "Reached end of EnqueueTest";
+                      on_enqueue_done.Call(absl::OkStatus());
+                      enqueue_done.Set();
+                    });
 
-  party->Spawn(
+  GetParty()->Spawn(
       "DequeueTest",
       TrySeq(enqueue_done.Wait(),
              [&queue] {
@@ -337,7 +335,6 @@ TEST_F(SimpleQueueTest, BigMessageEnqueueDequeueTest) {
   // Tests that for a queue with current tokens consumed equal to 0, allows a
   // message to be enqueued even if the tokens are more than the max tokens.
   SimpleQueue<int> queue(/*max_tokens=*/100);
-  auto* party = GetParty();
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   StrictMock<MockFunction<void(absl::Status)>> on_dequeue_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
@@ -347,26 +344,26 @@ TEST_F(SimpleQueueTest, BigMessageEnqueueDequeueTest) {
   std::vector<int> expected_data = {1, 2};
   int expected_data_index = 0;
 
-  party->Spawn("EnqueueTest",
-               TrySeq(
-                   EnqueueAndCheckSuccess(queue, /*data=*/1, /*tokens=*/0),
-                   [&queue, &execution_order] {
-                     execution_order.push_back('1');
-                     return EnqueueAndCheckSuccess(queue, /*data=*/2,
-                                                   /*tokens=*/1000);
-                   },
-                   [&queue, &execution_order] {
-                     execution_order.push_back('2');
-                     return EnqueueAndCheckSuccess(queue, /*data=*/3,
-                                                   /*tokens=*/10);
-                   }),
-               [&on_done, &execution_order](auto) {
-                 LOG(INFO) << "Reached end of EnqueueTest";
-                 on_done.Call(absl::OkStatus());
-                 execution_order.push_back('4');
-               });
+  GetParty()->Spawn("EnqueueTest",
+                    TrySeq(
+                        EnqueueAndCheckSuccess(queue, /*data=*/1, /*tokens=*/0),
+                        [&queue, &execution_order] {
+                          execution_order.push_back('1');
+                          return EnqueueAndCheckSuccess(queue, /*data=*/2,
+                                                        /*tokens=*/1000);
+                        },
+                        [&queue, &execution_order] {
+                          execution_order.push_back('2');
+                          return EnqueueAndCheckSuccess(queue, /*data=*/3,
+                                                        /*tokens=*/10);
+                        }),
+                    [&on_done, &execution_order](auto) {
+                      LOG(INFO) << "Reached end of EnqueueTest";
+                      on_done.Call(absl::OkStatus());
+                      execution_order.push_back('4');
+                    });
 
-  party->Spawn(
+  GetParty()->Spawn(
       "DequeueTest",
       Loop([&dequeue_count, &on_dequeue_done, &queue, &execution_order,
             &expected_data, &expected_data_index] {
@@ -404,19 +401,19 @@ TEST_F(SimpleQueueTest, BigMessageEnqueueDequeueTest) {
 namespace {
 // Helper functions to create test data.
 ClientMetadataHandle TestClientInitialMetadata() {
-  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
+  ClientMetadataHandle md = Arena::MakePooledForOverwrite<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromStaticString("/demo.Service/Step"));
   return md;
 }
 
 ServerMetadataHandle TestServerInitialMetadata() {
-  auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
+  ServerMetadataHandle md = Arena::MakePooledForOverwrite<ServerMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromStaticString("/demo.Service/Step2"));
   return md;
 }
 
 ServerMetadataHandle TestServerTrailingMetadata() {
-  auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
+  ServerMetadataHandle md = Arena::MakePooledForOverwrite<ServerMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromStaticString("/demo.Service/Step3"));
   return md;
 }
@@ -428,7 +425,7 @@ MessageHandle TestMessage(SliceBuffer payload, const uint32_t flags) {
 template <typename MetadataHandle>
 void EnqueueInitialMetadataAndCheckSuccess(
     RefCountedPtr<StreamDataQueue<MetadataHandle>> queue,
-    MetadataHandle metadata, const bool expected_writeable_state,
+    MetadataHandle&& metadata, const bool expected_writeable_state,
     const WritableStreams::StreamPriority expected_priority) {
   LOG(INFO) << "Enqueueing initial metadata";
   auto promise = queue->EnqueueInitialMetadata(std::move(metadata));
@@ -443,7 +440,7 @@ void EnqueueInitialMetadataAndCheckSuccess(
 template <typename MetadataHandle>
 void EnqueueTrailingMetadataAndCheckSuccess(
     RefCountedPtr<StreamDataQueue<MetadataHandle>> queue,
-    MetadataHandle metadata, const bool expected_writeable_state,
+    MetadataHandle&& metadata, const bool expected_writeable_state,
     const WritableStreams::StreamPriority expected_priority) {
   LOG(INFO) << "Enqueueing trailing metadata";
   auto promise = queue->EnqueueTrailingMetadata(std::move(metadata));
@@ -457,8 +454,8 @@ void EnqueueTrailingMetadataAndCheckSuccess(
 
 template <typename MetadataHandle>
 void EnqueueMessageAndCheckSuccess(
-    RefCountedPtr<StreamDataQueue<MetadataHandle>> queue, MessageHandle message,
-    const bool expected_writeable_state,
+    RefCountedPtr<StreamDataQueue<MetadataHandle>> queue,
+    MessageHandle&& message, const bool expected_writeable_state,
     const WritableStreams::StreamPriority expected_priority) {
   LOG(INFO) << "Enqueueing message with tokens: "
             << message->payload()->Length()
@@ -511,7 +508,7 @@ void DequeueAndCheckSuccess(
   EXPECT_TRUE(frames.ok());
   EXPECT_EQ(frames.value().frames.size(), expected_frames.size());
 
-  auto& frames_vector = frames.value().frames;
+  std::vector<Http2Frame>& frames_vector = frames.value().frames;
   for (int count = 0; count < frames_vector.size(); ++count) {
     EXPECT_EQ((frames_vector[count]), (expected_frames[count]));
   }
@@ -526,7 +523,7 @@ void DequeueMessageAndCheckSuccess(
       frames = queue->DequeueFrames(max_tokens, max_frame_length, encoder);
   EXPECT_TRUE(frames.ok());
   EXPECT_EQ(frames.value().frames.size(), expected_frames_length.size());
-  auto& frames_vector = frames.value().frames;
+  std::vector<Http2Frame>& frames_vector = frames.value().frames;
   for (int count = 0; count < frames.value().frames.size(); ++count) {
     EXPECT_EQ(std::get<Http2DataFrame>(frames_vector[count]).payload.Length(),
               expected_frames_length[count]);

@@ -199,7 +199,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // 2. This MUST be called before any messages are enqueued.
   // 3. MUST not be called after trailing metadata is enqueued.
   // 4. This function is thread safe.
-  auto EnqueueInitialMetadata(MetadataHandle metadata) {
+  auto EnqueueInitialMetadata(MetadataHandle&& metadata) {
     DCHECK(!is_initial_metadata_queued_);
     DCHECK(!is_trailing_metadata_or_half_close_queued_);
     DCHECK(metadata != nullptr);
@@ -219,7 +219,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
         if (result.value().ok()) {
           DCHECK(/*became_non_empty*/ result.value().value());
           return self->UpdateWritableStateLocked(
-              *result.value(), WritableStreams::StreamPriority::kDefault);
+              /*became_non_empty*/ result.value().value(),
+              WritableStreams::StreamPriority::kDefault);
         }
         return result.value().status();
       }
@@ -231,7 +232,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // 1. MUST be called at most once.
   // 2. MUST be called only for a server.
   // 3. This function is thread safe.
-  auto EnqueueTrailingMetadata(MetadataHandle metadata) {
+  auto EnqueueTrailingMetadata(MetadataHandle&& metadata) {
     DCHECK(metadata != nullptr);
     DCHECK(!is_reset_stream_queued_);
     DCHECK(!is_client_);
@@ -250,7 +251,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
             << " with status: " << result.value().status();
         if (result.value().ok()) {
           return self->UpdateWritableStateLocked(
-              *result.value(), WritableStreams::StreamPriority::kStreamClosed);
+              /*became_non_empty*/ result.value().value(),
+              WritableStreams::StreamPriority::kStreamClosed);
         }
         return result.value().status();
       }
@@ -263,7 +265,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // 1. MUST be called after initial metadata is enqueued.
   // 2. MUST not be called after trailing metadata is enqueued.
   // 3. This function is thread safe.
-  auto EnqueueMessage(MessageHandle message) {
+  auto EnqueueMessage(MessageHandle&& message) {
     DCHECK(is_initial_metadata_queued_);
     DCHECK(message != nullptr);
     DCHECK(!is_reset_stream_queued_);
@@ -284,7 +286,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
         // TODO(akshitpatel) : [PH2][P2] : Add check for flow control tokens.
         if (result.value().ok()) {
           return self->UpdateWritableStateLocked(
-              result.value().value(),
+              /*became_non_empty*/ result.value().value(),
               WritableStreams::StreamPriority::kDefault);
         }
         return result.value().status();
@@ -315,7 +317,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
             << " with status: " << result.value().status();
         if (result.value().ok()) {
           return self->UpdateWritableStateLocked(
-              *result.value(), WritableStreams::StreamPriority::kStreamClosed);
+              /*became_non_empty*/ result.value().value(),
+              WritableStreams::StreamPriority::kStreamClosed);
         }
         return result.value().status();
       }
@@ -343,7 +346,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
             << " with status: " << result.value().status();
         if (result.value().ok()) {
           return self->UpdateWritableStateLocked(
-              *result.value(), WritableStreams::StreamPriority::kStreamClosed);
+              /*became_non_empty*/ result.value().value(),
+              WritableStreams::StreamPriority::kStreamClosed);
         }
         return result.value().status();
       }
@@ -575,8 +579,10 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     HPackCompressor& encoder_;
   };
 
-  // Returns true if the queue is now writable. It is expected that the caller
-  // will hold the lock on the queue when calling this function.
+  // Updates the stream priority. Also sets the writable state to true if the
+  // stream has become writable. Returns if the stream became writable and
+  // updated priority. It is expected that the caller will hold the lock on the
+  // queue when calling this function.
   EnqueueResult UpdateWritableStateLocked(
       const bool became_non_empty,
       const WritableStreams::StreamPriority priority)
