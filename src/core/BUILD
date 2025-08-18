@@ -8229,6 +8229,7 @@ grpc_cc_library(
         "sync",
         "transport_common",
         "writable_streams",
+        ":chttp2_flow_control",
         ":match_promise",
         ":poll",
         ":slice",
