@@ -254,8 +254,8 @@ class BuildExt(build_ext.build_ext):
 
         def new_compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
             # NOTE: keep in sync with setup.py EXTRA_ENV_COMPILE_ARGS.
-            cpp_only_args = {"-std=c++17", "-stdlib=libc++"}
-            c_only_args = {"-std=c11"}
+            cpp_specific_args = {"-std=c++17", "-stdlib=libc++"}
+            c_specific_args = {"-std=c11"}
 
             args_to_remove = set()
             if src.endswith(".c"):
