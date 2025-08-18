@@ -177,7 +177,7 @@ class PingManager {
 
       return AssertResultType<bool>(If(
           // The scenario where OnPingTimeout returns an invalid id is when
-          // the settings ack is received before spawning the ping timeout.
+          // the ping ack is received before spawning the ping timeout.
           // In such a case, we can just return OkStatus.
           id.has_value(),
           [latch, id, ping_timeout]() {
