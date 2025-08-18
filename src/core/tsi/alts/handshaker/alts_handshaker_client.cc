@@ -111,6 +111,8 @@ typedef struct alts_grpc_handshaker_client {
   // Maximum frame size used by frame protector.
   size_t max_frame_size;
   std::vector<std::string> preferred_transport_protocols;
+  // Only optionally used for talking to GoogleApis.
+  grpc_slice token;
   // If non-null, will be populated with an error string upon error.
   std::string* error;
 } alts_grpc_handshaker_client;
@@ -546,8 +548,14 @@ static grpc_byte_buffer* get_serialized_start_client(
                                   "in client start handshake: "
                                << token.status();
     }
+    // The client needs to own the token to ensure the validity of the string
+    // view in the proto.
+    client->token = grpc_slice_from_cpp_string(std::move(*token));
     grpc_gcp_StartClientHandshakeReq_set_access_token(
-        start_client, upb_StringView_FromString(token->c_str()));
+        start_client,
+        upb_StringView_FromDataAndSize(
+            reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(client->token)),
+            GRPC_SLICE_LENGTH(client->token)));
   }
   grpc_gcp_StartClientHandshakeReq_set_max_frame_size(
       start_client, static_cast<uint32_t>(client->max_frame_size));
