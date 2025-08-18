@@ -34,4 +34,4 @@ else
 fi
 
 # generate upb files from bazel rules
-tools/artifact_gen/gen_upb_api_from_bazel.sh --upb_out=$UPB_OUTPUT_DIR --upbdefs_out=$UPBDEFS_OUTPUT_DIR
+tools/artifact_gen/gen_upb_api_from_bazel.sh --upb_out=$UPB_OUTPUT_DIR --upbdefs_out=$UPBDEFS_OUTPUT_DIR --verbose
