@@ -50,7 +50,7 @@ namespace http2 {
   DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
 
 // TODO(akshitpatel) : [PH2][P2] : Choose appropriate size later.
-constexpr int kMpscSize = 10;
+constexpr uint32_t kMpscSize = /*1 MB*/ 1024u * 1024u;
 constexpr uint32_t kStreamQueueSize = /*1 MB*/ 1024u * 1024u;
 
 enum class HttpStreamState : uint8_t {

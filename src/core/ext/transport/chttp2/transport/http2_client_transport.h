@@ -131,8 +131,9 @@ class Http2ClientTransport final : public ClientTransport {
   auto TestOnlyEnqueueOutgoingFrame(Http2Frame frame) {
     // TODO(tjagtap) : [PH2][P3] : See if making a sender in the constructor
     // and using that always would be more efficient.
+    const uint32_t tokens = GetHttp2FrameSize(frame);
     return AssertResultType<absl::Status>(Map(
-        outgoing_frames_.MakeSender().Send(std::move(frame), 1),
+        outgoing_frames_.MakeSender().Send(std::move(frame), tokens),
         [](StatusFlag status) {
           GRPC_HTTP2_CLIENT_DLOG
               << "Http2ClientTransport::TestOnlyEnqueueOutgoingFrame status="
@@ -235,8 +236,9 @@ class Http2ClientTransport final : public ClientTransport {
   auto EnqueueOutgoingFrame(Http2Frame frame) {
     // TODO(tjagtap) : [PH2][P3] : See if making a sender in the constructor
     // and using that always would be more efficient.
+    const uint32_t tokens = GetHttp2FrameSize(frame);
     return AssertResultType<absl::Status>(Map(
-        outgoing_frames_.MakeSender().Send(std::move(frame), 1),
+        outgoing_frames_.MakeSender().Send(std::move(frame), tokens),
         [self = RefAsSubclass<Http2ClientTransport>()](StatusFlag status) {
           GRPC_HTTP2_CLIENT_DLOG
               << "Http2ClientTransport::EnqueueOutgoingFrame status=" << status;

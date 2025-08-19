@@ -742,4 +742,58 @@ Http2Status ValidateFrameHeader(const uint32_t max_frame_size_setting,
   return Http2Status::Ok();
 }
 
+namespace {
+class GetHttp2FrameSizeVisitor {
+ public:
+  uint32_t operator()(const Http2DataFrame& frame) {
+    return sizeof(Http2DataFrame::stream_id) +
+           sizeof(Http2DataFrame::end_stream) + frame.payload.Length();
+  }
+  uint32_t operator()(const Http2HeaderFrame& frame) {
+    return sizeof(Http2HeaderFrame::stream_id) +
+           sizeof(Http2HeaderFrame::end_headers) +
+           sizeof(Http2HeaderFrame::end_stream) + frame.payload.Length();
+  }
+  uint32_t operator()(const Http2ContinuationFrame& frame) {
+    return sizeof(Http2ContinuationFrame::stream_id) +
+           sizeof(Http2ContinuationFrame::end_headers) + frame.payload.Length();
+  }
+  uint32_t operator()(const Http2RstStreamFrame& /*frame*/) {
+    return sizeof(Http2RstStreamFrame::stream_id) +
+           sizeof(Http2RstStreamFrame::error_code);
+  }
+  uint32_t operator()(const Http2SettingsFrame& frame) {
+    const uint32_t settings_size =
+        (sizeof(Http2SettingsFrame::Setting::id) +
+         sizeof(Http2SettingsFrame::Setting::value)) *
+        frame.settings.size();
+
+    return sizeof(Http2SettingsFrame::ack) + settings_size;
+  }
+  uint32_t operator()(const Http2PingFrame& /*frame*/) {
+    return sizeof(Http2PingFrame::ack) + sizeof(Http2PingFrame::opaque);
+  }
+  uint32_t operator()(const Http2GoawayFrame& frame) {
+    return sizeof(Http2GoawayFrame::last_stream_id) +
+           sizeof(Http2GoawayFrame::error_code) + frame.debug_data.length();
+  }
+  uint32_t operator()(const Http2WindowUpdateFrame& /*frame*/) {
+    return sizeof(Http2WindowUpdateFrame::stream_id) +
+           sizeof(Http2WindowUpdateFrame::increment);
+  }
+  uint32_t operator()(const Http2SecurityFrame& frame) {
+    return frame.payload.Length();
+  }
+  uint32_t operator()(const Http2UnknownFrame& /*frame*/) {
+    Crash("Unreachable");
+  }
+  uint32_t operator()(const Http2EmptyFrame& /*frame*/) { return 0; }
+};
+
+}  // namespace
+
+uint32_t GetHttp2FrameSize(const Http2Frame& frame) {
+  return std::visit(GetHttp2FrameSizeVisitor(), frame);
+}
+
 }  // namespace grpc_core

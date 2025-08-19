@@ -269,6 +269,8 @@ http2::Http2Status ValidateFrameHeader(uint32_t max_frame_size_setting,
                                        uint32_t incoming_header_stream_id,
                                        Http2FrameHeader& current_frame_header);
 
+uint32_t GetHttp2FrameSize(const Http2Frame& frame);
+
 ///////////////////////////////////////////////////////////////////////////////
 // RFC9113 Related Strings and Consts
 
