@@ -211,9 +211,7 @@ class PythonPackage:
                 # the same, so specify any one combination as prefix
                 environ["ARTIFACT_PREFIX"] = "python_manylinux2014_x64_"
             else:
-                dockerfile_dir = (
-                    "tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64"
-                )
+                dockerfile_dir = "tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64"
                 environ["ARTIFACT_PREFIX"] = "python_manylinux2014_aarch64_"
 
         return create_docker_jobspec(
