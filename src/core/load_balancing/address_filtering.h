@@ -110,7 +110,7 @@ using HierarchicalAddressMap =
 
 // Splits up the addresses into a separate list for each child.
 absl::StatusOr<HierarchicalAddressMap> MakeHierarchicalAddressMap(
-    absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>> addresses);
+    std::shared_ptr<EndpointAddressesIterator> addresses);
 
 }  // namespace grpc_core
 

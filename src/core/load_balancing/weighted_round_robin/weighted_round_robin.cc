@@ -276,7 +276,7 @@ class WeightedRoundRobin final : public LoadBalancingPolicy {
     };
 
     WrrEndpointList(RefCountedPtr<WeightedRoundRobin> wrr,
-                    EndpointAddressesIterator* endpoints,
+                    const EndpointAddressesList& endpoints,
                     const ChannelArgs& args, std::string resolution_note,
                     std::vector<std::string>* errors)
         : EndpointList(std::move(wrr), std::move(resolution_note),
@@ -720,42 +720,42 @@ void WeightedRoundRobin::ResetBackoffLocked() {
 absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
   global_stats().IncrementWrrUpdates();
   config_ = args.config.TakeAsSubclass<WeightedRoundRobinConfig>();
-  std::shared_ptr<EndpointAddressesIterator> addresses;
-  if (args.addresses.ok()) {
+  // Weed out duplicate endpoints.  Also sort the endpoints so that if
+  // the set of endpoints doesn't change, their indexes in the endpoint
+  // list don't change, since this avoids unnecessary churn in the
+  // picker.  Note that this does not ensure that if a given endpoint
+  // remains present that it will have the same index; if, for example,
+  // an endpoint at the end of the list is replaced with one that sorts
+  // much earlier in the list, then all of the endpoints in between those
+  // two positions will have changed indexes.
+  struct EndpointAddressesLessThan {
+    bool operator()(const EndpointAddresses& endpoint1,
+                    const EndpointAddresses& endpoint2) const {
+      // Compare unordered addresses only, not channel args.
+      EndpointAddressSet e1(endpoint1.addresses());
+      EndpointAddressSet e2(endpoint2.addresses());
+      return e1 < e2;
+    }
+  };
+  std::set<EndpointAddresses, EndpointAddressesLessThan> ordered_addresses;
+  absl::Status status =
+      args.addresses->ForEach([&](const EndpointAddresses& endpoint) {
+        ordered_addresses.insert(endpoint);
+      });
+  if (status.ok()) {
     GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
-        << "[WRR " << this << "] received update";
-    // Weed out duplicate endpoints.  Also sort the endpoints so that if
-    // the set of endpoints doesn't change, their indexes in the endpoint
-    // list don't change, since this avoids unnecessary churn in the
-    // picker.  Note that this does not ensure that if a given endpoint
-    // remains present that it will have the same index; if, for example,
-    // an endpoint at the end of the list is replaced with one that sorts
-    // much earlier in the list, then all of the endpoints in between those
-    // two positions will have changed indexes.
-    struct EndpointAddressesLessThan {
-      bool operator()(const EndpointAddresses& endpoint1,
-                      const EndpointAddresses& endpoint2) const {
-        // Compare unordered addresses only, not channel args.
-        EndpointAddressSet e1(endpoint1.addresses());
-        EndpointAddressSet e2(endpoint2.addresses());
-        return e1 < e2;
-      }
-    };
-    std::set<EndpointAddresses, EndpointAddressesLessThan> ordered_addresses;
-    (*args.addresses)->ForEach([&](const EndpointAddresses& endpoint) {
-      ordered_addresses.insert(endpoint);
-    });
-    addresses =
-        std::make_shared<EndpointAddressesListIterator>(EndpointAddressesList(
-            ordered_addresses.begin(), ordered_addresses.end()));
+        << "[WRR " << this << "] received update with "
+        << ordered_addresses.size() << " endpoints";
   } else {
     GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
-        << "[WRR " << this << "] received update with address error: "
-        << args.addresses.status().ToString();
+        << "[WRR " << this
+        << "] received update with address error: " << status;
     // If we already have an endpoint list, then keep using the existing
     // list, but still report back that the update was not accepted.
-    if (endpoint_list_ != nullptr) return args.addresses.status();
+    if (endpoint_list_ != nullptr) return status;
   }
+  EndpointAddressesList endpoints(ordered_addresses.begin(),
+                                  ordered_addresses.end());
   // Create new endpoint list, replacing the previous pending list, if any.
   if (GRPC_TRACE_FLAG_ENABLED(weighted_round_robin_lb) &&
       latest_pending_endpoint_list_ != nullptr) {
@@ -765,7 +765,7 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
   }
   std::vector<std::string> errors;
   latest_pending_endpoint_list_ = MakeOrphanable<WrrEndpointList>(
-      RefAsSubclass<WeightedRoundRobin>(), addresses.get(), args.args,
+      RefAsSubclass<WeightedRoundRobin>(), endpoints, args.args,
       std::move(args.resolution_note), &errors);
   // If the new list is empty, immediately promote it to
   // endpoint_list_ and report TRANSIENT_FAILURE.
@@ -776,9 +776,7 @@ absl::Status WeightedRoundRobin::UpdateLocked(UpdateArgs args) {
                 << endpoint_list_.get();
     }
     endpoint_list_ = std::move(latest_pending_endpoint_list_);
-    absl::Status status = args.addresses.ok()
-                              ? absl::UnavailableError("empty address list")
-                              : args.addresses.status();
+    if (status.ok()) status = absl::UnavailableError("empty address list");
     endpoint_list_->ReportTransientFailure(status);
     return status;
   }

@@ -233,7 +233,8 @@ class PriorityEndpointIterator final : public EndpointAddressesIterator {
         endpoints_(std::move(endpoints)),
         priority_child_numbers_(std::move(priority_child_numbers)) {}
 
-  void ForEach(absl::FunctionRef<void(const EndpointAddresses&)> callback)
+ private:
+  void ForEachImpl(absl::FunctionRef<void(const EndpointAddresses&)> callback)
       const override {
     const auto& priority_list = GetUpdatePriorityList(endpoints_.get());
     for (size_t priority = 0; priority < priority_list.size(); ++priority) {
@@ -263,7 +264,6 @@ class PriorityEndpointIterator final : public EndpointAddressesIterator {
     }
   }
 
- private:
   std::string cluster_name_;
   bool use_http_connect_;
   std::shared_ptr<const XdsEndpointResource> endpoints_;

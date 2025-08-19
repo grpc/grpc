@@ -248,7 +248,8 @@ class PickFirst final : public LoadBalancingPolicy {
 
     SubchannelList(RefCountedPtr<PickFirst> policy,
                    EndpointAddressesIterator* addresses,
-                   const ChannelArgs& args, absl::string_view resolution_note);
+                   const ChannelArgs& args, absl::string_view resolution_note,
+                   absl::Status* status);
 
     ~SubchannelList() override;
 
@@ -453,26 +454,21 @@ void PickFirst::ResetBackoffLocked() {
 
 void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
   // Create a subchannel list from latest_update_args_.
-  EndpointAddressesIterator* addresses = nullptr;
-  if (latest_update_args_.addresses.ok()) {
-    addresses = latest_update_args_.addresses->get();
-  }
-  // Replace subchannel_list_.
   if (GRPC_TRACE_FLAG_ENABLED(pick_first) && subchannel_list_ != nullptr) {
     LOG(INFO) << "[PF " << this << "] Shutting down previous subchannel list "
               << subchannel_list_.get();
   }
+  absl::Status status;
   subchannel_list_ = MakeOrphanable<SubchannelList>(
-      RefAsSubclass<PickFirst>(DEBUG_LOCATION, "SubchannelList"), addresses,
-      latest_update_args_.args, latest_update_args_.resolution_note);
+      RefAsSubclass<PickFirst>(DEBUG_LOCATION, "SubchannelList"),
+      latest_update_args_.addresses.get(), latest_update_args_.args,
+      latest_update_args_.resolution_note, &status);
   // Empty update or no valid subchannels.  Put the channel in
   // TRANSIENT_FAILURE and request re-resolution.  Also unset the
   // current selected subchannel.
   if (subchannel_list_->size() == 0) {
     channel_control_helper()->RequestReresolution();
-    absl::Status status = latest_update_args_.addresses.ok()
-                              ? absl::UnavailableError("empty address list")
-                              : latest_update_args_.addresses.status();
+    if (status.ok()) status = absl::UnavailableError("empty address list");
     subchannel_list_->ReportTransientFailure(std::move(status));
     UnsetSelectedSubchannel();
   }
@@ -508,77 +504,61 @@ class AddressFamilyIterator final {
 };
 
 absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
-  if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-    if (args.addresses.ok()) {
-      LOG(INFO) << "Pick First " << this << " received update";
-    } else {
-      LOG(INFO) << "Pick First " << this
-                << " received update with address error: "
-                << args.addresses.status();
-    }
-  }
+  GRPC_TRACE_LOG(pick_first, INFO)
+      << "Pick First " << this << " received update";
   // Set return status based on the address list.
-  absl::Status status;
-  if (!args.addresses.ok()) {
-    status = args.addresses.status();
-  } else {
-    EndpointAddressesList endpoints;
-    (*args.addresses)->ForEach([&](const EndpointAddresses& endpoint) {
-      endpoints.push_back(endpoint);
-    });
-    if (endpoints.empty()) {
-      status = absl::UnavailableError("address list must not be empty");
-      // TODO(roth): Replace this one-off special case with a more
-      // general solution.
-      if (IsPickFirstIgnoreEmptyUpdatesEnabled()) args.addresses = status;
-    } else {
-      // Shuffle the list if needed.
-      auto config = static_cast<PickFirstConfig*>(args.config.get());
-      if (config->shuffle_addresses()) {
-        SharedBitGen g;
-        absl::c_shuffle(endpoints, g);
-      }
-      // Flatten the list so that we have one address per endpoint.
-      // While we're iterating, also determine the desired address family
-      // order and the index of the first element of each family, for use in
-      // the interleaving below.
-      std::set<absl::string_view> address_families;
-      std::vector<AddressFamilyIterator> address_family_order;
-      EndpointAddressesList flattened_endpoints;
-      for (const auto& endpoint : endpoints) {
-        for (const auto& address : endpoint.addresses()) {
-          flattened_endpoints.emplace_back(address, endpoint.args());
-          absl::string_view scheme = GetAddressFamily(address);
-          bool inserted = address_families.insert(scheme).second;
-          if (inserted) {
-            address_family_order.emplace_back(scheme,
-                                              flattened_endpoints.size() - 1);
-          }
+  EndpointAddressesList endpoints;
+  absl::Status status =
+      args.addresses->ForEach([&](const EndpointAddresses& endpoint) {
+        endpoints.push_back(endpoint);
+      });
+  if (status.ok()) {
+    // Shuffle the list if needed.
+    auto config = static_cast<PickFirstConfig*>(args.config.get());
+    if (config->shuffle_addresses()) {
+      SharedBitGen g;
+      absl::c_shuffle(endpoints, g);
+    }
+    // Flatten the list so that we have one address per endpoint.
+    // While we're iterating, also determine the desired address family
+    // order and the index of the first element of each family, for use in
+    // the interleaving below.
+    std::set<absl::string_view> address_families;
+    std::vector<AddressFamilyIterator> address_family_order;
+    EndpointAddressesList flattened_endpoints;
+    for (const auto& endpoint : endpoints) {
+      for (const auto& address : endpoint.addresses()) {
+        flattened_endpoints.emplace_back(address, endpoint.args());
+        absl::string_view scheme = GetAddressFamily(address);
+        bool inserted = address_families.insert(scheme).second;
+        if (inserted) {
+          address_family_order.emplace_back(scheme,
+                                            flattened_endpoints.size() - 1);
         }
       }
-      endpoints = std::move(flattened_endpoints);
-      // Interleave addresses as per RFC-8305 section 4.
-      EndpointAddressesList interleaved_endpoints;
-      interleaved_endpoints.reserve(endpoints.size());
-      std::vector<bool> endpoints_moved(endpoints.size());
-      size_t scheme_index = 0;
-      for (size_t i = 0; i < endpoints.size(); ++i) {
-        EndpointAddresses* endpoint;
-        do {
-          auto& iterator = address_family_order[scheme_index++ %
-                                                address_family_order.size()];
-          endpoint = iterator.Next(endpoints, &endpoints_moved);
-        } while (endpoint == nullptr);
-        interleaved_endpoints.emplace_back(std::move(*endpoint));
-      }
-      endpoints = std::move(interleaved_endpoints);
-      args.addresses =
-          std::make_shared<EndpointAddressesListIterator>(std::move(endpoints));
     }
+    endpoints = std::move(flattened_endpoints);
+    // Interleave addresses as per RFC-8305 section 4.
+    EndpointAddressesList interleaved_endpoints;
+    interleaved_endpoints.reserve(endpoints.size());
+    std::vector<bool> endpoints_moved(endpoints.size());
+    size_t scheme_index = 0;
+    for (size_t i = 0; i < endpoints.size(); ++i) {
+      EndpointAddresses* endpoint;
+      do {
+        auto& iterator =
+            address_family_order[scheme_index++ % address_family_order.size()];
+        endpoint = iterator.Next(endpoints, &endpoints_moved);
+      } while (endpoint == nullptr);
+      interleaved_endpoints.emplace_back(std::move(*endpoint));
+    }
+    endpoints = std::move(interleaved_endpoints);
+    args.addresses =
+        std::make_shared<EndpointAddressesListIterator>(std::move(endpoints));
   }
   // If the update contains a resolver error and we have a previous update
   // that was not a resolver error, keep using the previous addresses.
-  if (!args.addresses.ok() && latest_update_args_.config != nullptr) {
+  if (!status.ok() && latest_update_args_.config != nullptr) {
     args.addresses = std::move(latest_update_args_.addresses);
   }
   // Update latest_update_args_.
@@ -995,7 +975,8 @@ void PickFirst::SubchannelList::SubchannelData::RequestConnectionWithTimer() {
 PickFirst::SubchannelList::SubchannelList(RefCountedPtr<PickFirst> policy,
                                           EndpointAddressesIterator* addresses,
                                           const ChannelArgs& args,
-                                          absl::string_view resolution_note)
+                                          absl::string_view resolution_note,
+                                          absl::Status* status)
     : InternallyRefCounted<SubchannelList>(
           GRPC_TRACE_FLAG_ENABLED(pick_first) ? "SubchannelList" : nullptr),
       policy_(std::move(policy)),
@@ -1008,7 +989,7 @@ PickFirst::SubchannelList::SubchannelList(RefCountedPtr<PickFirst> policy,
       << " - channel args: " << args_.ToString();
   if (addresses == nullptr) return;
   // Create a subchannel for each address.
-  addresses->ForEach([&](const EndpointAddresses& address) {
+  *status = addresses->ForEach([&](const EndpointAddresses& address) {
     CHECK_EQ(address.addresses().size(), 1u);
     RefCountedPtr<SubchannelInterface> subchannel =
         policy_->channel_control_helper()->CreateSubchannel(
