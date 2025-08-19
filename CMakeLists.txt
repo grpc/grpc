@@ -202,8 +202,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_malloc_internal
   absl_memory
   absl_no_destructor
-  absl_node_hash_map
-  absl_node_slot_policy
   absl_non_temporal_arm_intrinsics
   absl_non_temporal_memcpy
   absl_nullability
@@ -2954,7 +2952,6 @@ add_library(grpc
   src/core/telemetry/context_list_entry.cc
   src/core/telemetry/default_tcp_tracer.cc
   src/core/telemetry/histogram_view.cc
-  src/core/telemetry/instrument.cc
   src/core/telemetry/metrics.cc
   src/core/telemetry/stats.cc
   src/core/telemetry/stats_data.cc
@@ -3112,7 +3109,6 @@ target_link_libraries(grpc
   absl::flat_hash_map
   absl::flat_hash_set
   absl::inlined_vector
-  absl::node_hash_map
   absl::bind_front
   absl::function_ref
   absl::hash
@@ -3746,7 +3742,6 @@ add_library(grpc_unsecure
   src/core/telemetry/context_list_entry.cc
   src/core/telemetry/default_tcp_tracer.cc
   src/core/telemetry/histogram_view.cc
-  src/core/telemetry/instrument.cc
   src/core/telemetry/metrics.cc
   src/core/telemetry/stats.cc
   src/core/telemetry/stats_data.cc
@@ -3839,7 +3834,6 @@ target_link_libraries(grpc_unsecure
   absl::flat_hash_map
   absl::flat_hash_set
   absl::inlined_vector
-  absl::node_hash_map
   absl::bind_front
   absl::function_ref
   absl::hash
@@ -6090,7 +6084,6 @@ add_library(grpc_authorization_provider
   src/core/telemetry/call_tracer.cc
   src/core/telemetry/context_list_entry.cc
   src/core/telemetry/histogram_view.cc
-  src/core/telemetry/instrument.cc
   src/core/telemetry/metrics.cc
   src/core/telemetry/stats.cc
   src/core/telemetry/stats_data.cc
@@ -6174,7 +6167,6 @@ target_link_libraries(grpc_authorization_provider
   absl::flat_hash_map
   absl::flat_hash_set
   absl::inlined_vector
-  absl::node_hash_map
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -9450,7 +9442,6 @@ add_executable(call_filters_test
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/telemetry/histogram_view.cc
-  src/core/telemetry/instrument.cc
   src/core/telemetry/stats.cc
   src/core/telemetry/stats_data.cc
   src/core/util/backoff.cc
@@ -9507,7 +9498,6 @@ target_link_libraries(call_filters_test
   absl::btree
   absl::flat_hash_map
   absl::inlined_vector
-  absl::node_hash_map
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -9912,7 +9902,6 @@ add_executable(call_utils_test
   src/core/telemetry/call_tracer.cc
   src/core/telemetry/context_list_entry.cc
   src/core/telemetry/histogram_view.cc
-  src/core/telemetry/instrument.cc
   src/core/telemetry/metrics.cc
   src/core/telemetry/stats.cc
   src/core/telemetry/stats_data.cc
@@ -9981,7 +9970,6 @@ target_link_libraries(call_utils_test
   absl::btree
   absl::flat_hash_map
   absl::inlined_vector
-  absl::node_hash_map
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -10091,7 +10079,6 @@ add_executable(cancel_callback_test
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/status_conversion.cc
   src/core/telemetry/histogram_view.cc
-  src/core/telemetry/instrument.cc
   src/core/telemetry/stats.cc
   src/core/telemetry/stats_data.cc
   src/core/util/backoff.cc
@@ -10147,7 +10134,6 @@ target_link_libraries(cancel_callback_test
   absl::btree
   absl::flat_hash_map
   absl::inlined_vector
-  absl::node_hash_map
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -11274,7 +11260,6 @@ add_executable(chunked_vector_test
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/status_conversion.cc
   src/core/telemetry/histogram_view.cc
-  src/core/telemetry/instrument.cc
   src/core/telemetry/stats.cc
   src/core/telemetry/stats_data.cc
   src/core/util/backoff.cc
@@ -11330,7 +11315,6 @@ target_link_libraries(chunked_vector_test
   absl::btree
   absl::flat_hash_map
   absl::inlined_vector
-  absl::node_hash_map
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -16532,7 +16516,6 @@ add_executable(filter_fusion_test
   src/core/telemetry/call_tracer.cc
   src/core/telemetry/context_list_entry.cc
   src/core/telemetry/histogram_view.cc
-  src/core/telemetry/instrument.cc
   src/core/telemetry/metrics.cc
   src/core/telemetry/stats.cc
   src/core/telemetry/stats_data.cc
@@ -16601,7 +16584,6 @@ target_link_libraries(filter_fusion_test
   absl::btree
   absl::flat_hash_map
   absl::inlined_vector
-  absl::node_hash_map
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -16798,7 +16780,6 @@ add_executable(flow_control_test
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/status_conversion.cc
   src/core/telemetry/histogram_view.cc
-  src/core/telemetry/instrument.cc
   src/core/telemetry/stats.cc
   src/core/telemetry/stats_data.cc
   src/core/util/backoff.cc
@@ -16854,7 +16835,6 @@ target_link_libraries(flow_control_test
   absl::btree
   absl::flat_hash_map
   absl::inlined_vector
-  absl::node_hash_map
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -16914,7 +16894,6 @@ add_executable(for_each_test
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/status_conversion.cc
   src/core/telemetry/histogram_view.cc
-  src/core/telemetry/instrument.cc
   src/core/telemetry/stats.cc
   src/core/telemetry/stats_data.cc
   src/core/util/backoff.cc
@@ -16970,7 +16949,6 @@ target_link_libraries(for_each_test
   absl::btree
   absl::flat_hash_map
   absl::inlined_vector
-  absl::node_hash_map
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -19531,7 +19509,6 @@ add_executable(header_assembler_test
   src/core/telemetry/call_tracer.cc
   src/core/telemetry/context_list_entry.cc
   src/core/telemetry/histogram_view.cc
-  src/core/telemetry/instrument.cc
   src/core/telemetry/metrics.cc
   src/core/telemetry/stats.cc
   src/core/telemetry/stats_data.cc
@@ -19601,7 +19578,6 @@ target_link_libraries(header_assembler_test
   absl::btree
   absl::flat_hash_map
   absl::inlined_vector
-  absl::node_hash_map
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -20731,6 +20707,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(instrument_test
+  src/core/telemetry/instrument.cc
   test/core/telemetry/instrument_test.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -20766,6 +20743,7 @@ target_include_directories(instrument_test
 target_link_libraries(instrument_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::node_hash_map
   grpc_test_util
 )
 
@@ -21020,7 +20998,6 @@ add_executable(interceptor_list_test
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/status_conversion.cc
   src/core/telemetry/histogram_view.cc
-  src/core/telemetry/instrument.cc
   src/core/telemetry/stats.cc
   src/core/telemetry/stats_data.cc
   src/core/util/backoff.cc
@@ -21076,7 +21053,6 @@ target_link_libraries(interceptor_list_test
   absl::btree
   absl::flat_hash_map
   absl::inlined_vector
-  absl::node_hash_map
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -22405,7 +22381,6 @@ add_executable(map_pipe_test
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/status_conversion.cc
   src/core/telemetry/histogram_view.cc
-  src/core/telemetry/instrument.cc
   src/core/telemetry/stats.cc
   src/core/telemetry/stats_data.cc
   src/core/util/backoff.cc
@@ -22461,7 +22436,6 @@ target_link_libraries(map_pipe_test
   absl::btree
   absl::flat_hash_map
   absl::inlined_vector
-  absl::node_hash_map
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -22868,7 +22842,6 @@ add_executable(message_assembler_test
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/status_conversion.cc
   src/core/telemetry/histogram_view.cc
-  src/core/telemetry/instrument.cc
   src/core/telemetry/stats.cc
   src/core/telemetry/stats_data.cc
   src/core/util/backoff.cc
@@ -22924,7 +22897,6 @@ target_link_libraries(message_assembler_test
   absl::btree
   absl::flat_hash_map
   absl::inlined_vector
-  absl::node_hash_map
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -27436,7 +27408,6 @@ add_executable(request_buffer_test
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/telemetry/histogram_view.cc
-  src/core/telemetry/instrument.cc
   src/core/telemetry/stats.cc
   src/core/telemetry/stats_data.cc
   src/core/util/backoff.cc
@@ -27493,7 +27464,6 @@ target_link_libraries(request_buffer_test
   absl::btree
   absl::flat_hash_map
   absl::inlined_vector
-  absl::node_hash_map
   absl::function_ref
   absl::hash
   absl::type_traits
@@ -48882,7 +48852,7 @@ generate_pkgconfig(
   "gRPC"
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
-  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_synchronization absl_time absl_type_traits absl_utility gpr"
+  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_synchronization absl_time absl_type_traits absl_utility gpr"
   "libcares openssl re2 zlib"
   "-lgrpc"
   "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
@@ -48893,7 +48863,7 @@ generate_pkgconfig(
   "gRPC unsecure"
   "high performance general RPC framework without SSL"
   "${gRPC_CORE_VERSION}"
-  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_synchronization absl_time absl_type_traits absl_utility gpr"
+  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_synchronization absl_time absl_type_traits absl_utility gpr"
   "libcares zlib"
   "-lgrpc_unsecure"
   "-laddress_sorting -lupb_textformat_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
@@ -48904,7 +48874,7 @@ generate_pkgconfig(
   "gRPC++"
   "C++ wrapper for gRPC"
   "${gRPC_CPP_VERSION}"
-  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_dynamic_annotations absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_layout absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_prefetch absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_strings_internal absl_synchronization absl_time absl_type_traits absl_utility gpr grpc"
+  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_dynamic_annotations absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_layout absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_prefetch absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_strings_internal absl_synchronization absl_time absl_type_traits absl_utility gpr grpc"
   "libcares openssl re2 zlib"
   "-lgrpc++"
   "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
@@ -48915,7 +48885,7 @@ generate_pkgconfig(
   "gRPC++ unsecure"
   "C++ wrapper for gRPC without SSL"
   "${gRPC_CPP_VERSION}"
-  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_synchronization absl_time absl_type_traits absl_utility gpr grpc_unsecure"
+  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_synchronization absl_time absl_type_traits absl_utility gpr grpc_unsecure"
   "libcares zlib"
   "-lgrpc++_unsecure"
   "-laddress_sorting -lupb_textformat_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
@@ -48926,7 +48896,7 @@ generate_pkgconfig(
   "gRPC++ OpenTelemetry Plugin"
   "OpenTelemetry Plugin for gRPC C++"
   "${gRPC_CPP_VERSION}"
-  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_dynamic_annotations absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_layout absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_prefetch absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_strings_internal absl_synchronization absl_time absl_type_traits absl_utility gpr grpc grpc++ opentelemetry_api"
+  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_dynamic_annotations absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_layout absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_prefetch absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_strings_internal absl_synchronization absl_time absl_type_traits absl_utility gpr grpc grpc++ opentelemetry_api"
   "libcares openssl re2 zlib"
   "-lgrpcpp_otel_plugin"
   "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
