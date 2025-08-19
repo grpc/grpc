@@ -6569,6 +6569,7 @@ grpc_cc_library(
     ],
     deps = [
         "channel_args",
+        "client_channel_internal_header",
         "delegating_helper",
         "env",
         "grpc_lb_address_filtering",

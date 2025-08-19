@@ -81,6 +81,8 @@ namespace {
 constexpr absl::string_view kWeightedRoundRobin = "weighted_round_robin";
 
 constexpr absl::string_view kMetricLabelLocality = "grpc.lb.locality";
+constexpr absl::string_view kMetricLabelBackendService =
+    "grpc.lb.backend_service";
 
 const auto kMetricRrFallback =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
@@ -90,7 +92,7 @@ const auto kMetricRrFallback =
         "fall back to RR behavior.",
         "{update}", false)
         .Labels(kMetricLabelTarget)
-        .OptionalLabels(kMetricLabelLocality)
+        .OptionalLabels(kMetricLabelLocality, kMetricLabelBackendService)
         .Build();
 
 const auto kMetricEndpointWeightNotYetUsable =
@@ -102,7 +104,7 @@ const auto kMetricEndpointWeightNotYetUsable =
         "period).",
         "{endpoint}", false)
         .Labels(kMetricLabelTarget)
-        .OptionalLabels(kMetricLabelLocality)
+        .OptionalLabels(kMetricLabelLocality, kMetricLabelBackendService)
         .Build();
 
 const auto kMetricEndpointWeightStale =
@@ -112,7 +114,7 @@ const auto kMetricEndpointWeightStale =
         "latest weight is older than the expiration period.",
         "{endpoint}", false)
         .Labels(kMetricLabelTarget)
-        .OptionalLabels(kMetricLabelLocality)
+        .OptionalLabels(kMetricLabelLocality, kMetricLabelBackendService)
         .Build();
 
 const auto kMetricEndpointWeights =
@@ -124,7 +126,7 @@ const auto kMetricEndpointWeights =
         "without usable weights will have weight 0.",
         "{weight}", false)
         .Labels(kMetricLabelTarget)
-        .OptionalLabels(kMetricLabelLocality)
+        .OptionalLabels(kMetricLabelLocality, kMetricLabelBackendService)
         .Build();
 
 // Config for WRR policy.
@@ -413,6 +415,7 @@ class WeightedRoundRobin final : public LoadBalancingPolicy {
       ABSL_GUARDED_BY(&endpoint_weight_map_mu_);
 
   const absl::string_view locality_name_;
+  const absl::string_view backend_service_name_;
 
   bool shutdown_ = false;
 
@@ -620,16 +623,18 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
         now, config_->weight_expiration_period(), config_->blackout_period(),
         &num_not_yet_usable, &num_stale);
     weights.push_back(weight);
-    stats_plugins.RecordHistogram(kMetricEndpointWeights, weight,
-                                  {wrr_->channel_control_helper()->GetTarget()},
-                                  {wrr_->locality_name_});
+    stats_plugins.RecordHistogram(
+        kMetricEndpointWeights, weight,
+        {wrr_->channel_control_helper()->GetTarget()},
+        {wrr_->locality_name_, wrr_->backend_service_name_});
   }
-  stats_plugins.AddCounter(
-      kMetricEndpointWeightNotYetUsable, num_not_yet_usable,
-      {wrr_->channel_control_helper()->GetTarget()}, {wrr_->locality_name_});
+  stats_plugins.AddCounter(kMetricEndpointWeightNotYetUsable,
+                           num_not_yet_usable,
+                           {wrr_->channel_control_helper()->GetTarget()},
+                           {wrr_->locality_name_, wrr_->backend_service_name_});
   stats_plugins.AddCounter(kMetricEndpointWeightStale, num_stale,
                            {wrr_->channel_control_helper()->GetTarget()},
-                           {wrr_->locality_name_});
+                           {wrr_->locality_name_, wrr_->backend_service_name_});
   GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
       << "[WRR " << wrr_.get() << " picker " << this
       << "] new weights: " << absl::StrJoin(weights, " ");
@@ -646,9 +651,9 @@ void WeightedRoundRobin::Picker::BuildSchedulerAndStartTimerLocked() {
     GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
         << "[WRR " << wrr_.get() << " picker " << this
         << "] no scheduler, falling back to RR";
-    stats_plugins.AddCounter(kMetricRrFallback, 1,
-                             {wrr_->channel_control_helper()->GetTarget()},
-                             {wrr_->locality_name_});
+    stats_plugins.AddCounter(
+        kMetricRrFallback, 1, {wrr_->channel_control_helper()->GetTarget()},
+        {wrr_->locality_name_, wrr_->backend_service_name_});
   }
   {
     MutexLock lock(&scheduler_mu_);
@@ -689,10 +694,12 @@ WeightedRoundRobin::WeightedRoundRobin(Args args)
     : LoadBalancingPolicy(std::move(args)),
       locality_name_(channel_args()
                          .GetString(GRPC_ARG_LB_WEIGHTED_TARGET_CHILD)
-                         .value_or("")) {
+                         .value_or("")),
+      backend_service_name_(
+          channel_args().GetString(GRPC_ARG_BACKEND_SERVICE).value_or("")) {
   GRPC_TRACE_LOG(weighted_round_robin_lb, INFO)
-      << "[WRR " << this << "] Created -- locality_name=\""
-      << std::string(locality_name_) << "\"";
+      << "[WRR " << this << "] Created -- locality_name=\"" << locality_name_
+      << "\", backend_service_name=\"" << backend_service_name_ << "\"";
 }
 
 WeightedRoundRobin::~WeightedRoundRobin() {
