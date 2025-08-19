@@ -564,7 +564,6 @@ class Http2ClientTransport final : public ClientTransport {
   // Duration to wait for ping ack before triggering timeout
   const Duration ping_timeout_;
   PingManager ping_manager_;
-  std::vector<uint64_t> pending_ping_acks_;
   KeepaliveManager keepalive_manager_;
 
   // Flags
@@ -588,19 +587,6 @@ class Http2ClientTransport final : public ClientTransport {
     return (!keepalive_permit_without_calls_ && stream_list_.empty())
                ? Duration::Hours(2)
                : Duration::Seconds(1);
-  }
-
-  void MaybeGetSerializedPingAcks(SliceBuffer& output_buf) {
-    GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport GetSerializedPingAcks "
-                              "pending_ping_acks_ size: "
-                           << pending_ping_acks_.size();
-    std::vector<Http2Frame> frames;
-    frames.reserve(pending_ping_acks_.size());
-    for (auto& opaque_data : pending_ping_acks_) {
-      frames.emplace_back(Http2PingFrame{/*ack=*/true, opaque_data});
-    }
-    pending_ping_acks_.clear();
-    Serialize(absl::Span<Http2Frame>(frames), output_buf);
   }
 
   auto AckPing(uint64_t opaque_data) {

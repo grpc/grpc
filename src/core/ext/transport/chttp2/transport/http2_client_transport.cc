@@ -384,7 +384,7 @@ auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
         // writes.
         // RFC9113: PING responses SHOULD be given higher priority than any
         // other frame.
-        self->pending_ping_acks_.push_back(opaque);
+        self->ping_manager_.AddPendingPingAck(opaque);
         // TODO(akshitpatel) : [PH2][P2] : This is done assuming that the other
         // ProcessFrame promises may return stream or connection failures. If
         // this does not turn out to be true, consider returning absl::Status
@@ -654,7 +654,7 @@ auto Http2ClientTransport::WriteControlFrames() {
     is_first_write_ = false;
   }
   MaybeGetSettingsFrame(output_buf);
-  MaybeGetSerializedPingAcks(output_buf);
+  ping_manager_.MaybeGetSerializedPingAcks(output_buf);
   ping_manager_.MaybeGetSerializedPingFrames(output_buf,
                                              NextAllowedPingInterval());
   const uint64_t buffer_length = output_buf.Length();

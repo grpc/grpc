@@ -148,12 +148,31 @@ void PingManager::MaybeGetSerializedPingFrames(
   }
 }
 
+void PingManager::MaybeGetSerializedPingAcks(SliceBuffer& output_buf) {
+  GRPC_HTTP2_PING_LOG << "PingManager MaybeGetSerializedPingAcks "
+                         "pending_ping_acks_ size: "
+                      << pending_ping_acks_.size();
+  std::vector<Http2Frame> frames;
+  frames.reserve(pending_ping_acks_.size());
+  for (uint64_t opaque_data : pending_ping_acks_) {
+    frames.emplace_back(Http2PingFrame{/*ack=*/true, opaque_data});
+  }
+  pending_ping_acks_.clear();
+  Serialize(absl::Span<Http2Frame>(frames), output_buf);
+}
+
 void PingManager::NotifyPingSent(const Duration ping_timeout) {
   if (opaque_data_.has_value()) {
     SpawnTimeout(ping_timeout, opaque_data_.value());
     SentPing();
     opaque_data_.reset();
   }
+}
+
+void PingManager::AddPendingPingAck(const uint64_t opaque_data) {
+  GRPC_HTTP2_PING_LOG << "Adding pending ping ack for id=" << opaque_data
+                      << " to the list of pending ping acks.";
+  pending_ping_acks_.push_back(opaque_data);
 }
 
 }  // namespace http2

@@ -81,6 +81,10 @@ class PingManager {
   void MaybeGetSerializedPingFrames(SliceBuffer& output_buf,
                                     Duration next_allowed_ping_interval);
 
+  // If there are any pending ping acks, populates the output buffer with the
+  // serialized ping ack frames.
+  void MaybeGetSerializedPingAcks(SliceBuffer& output_buf);
+
   // Notify the ping system that a ping has been sent. This will spawn a ping
   // timeout promise.
   void NotifyPingSent(Duration ping_timeout);
@@ -144,6 +148,8 @@ class PingManager {
     return std::nullopt;
   }
 
+  void AddPendingPingAck(uint64_t opaque_data);
+
  private:
   class PingPromiseCallbacks {
    public:
@@ -173,13 +179,13 @@ class PingManager {
       std::shared_ptr<InterActivityLatch<void>> latch =
           std::make_shared<InterActivityLatch<void>>();
       auto timeout_cb = [latch]() { latch->Set(); };
-      auto id = ping_callbacks_.OnPingTimeout(ping_timeout, event_engine_.get(),
-                                              std::move(timeout_cb));
+      std::optional<uint64_t> id = ping_callbacks_.OnPingTimeout(
+          ping_timeout, event_engine_.get(), std::move(timeout_cb));
 
       return AssertResultType<bool>(If(
           // The scenario where OnPingTimeout returns an invalid id is when
           // the ping ack is received before spawning the ping timeout.
-          // In such a case, we can just return OkStatus.
+          // In such a case, we don't wait for the ping timeout.
           id.has_value(),
           [latch, id, ping_timeout]() {
             VLOG(2) << "Ping timeout of duration: " << ping_timeout
@@ -189,6 +195,8 @@ class PingManager {
             });
           },
           []() {
+            // This happens if for some reason the ping ack is received before
+            // the timeout timer is spawned.
             VLOG(2) << "Ping ack received. Not waiting for ping timeout.";
             return /*trigger_ping_timeout*/ false;
           }));
@@ -215,6 +223,7 @@ class PingManager {
   bool delayed_ping_spawned_ = false;
   std::optional<uint64_t> opaque_data_;
   std::unique_ptr<PingInterface> ping_interface_;
+  std::vector<uint64_t> pending_ping_acks_;
 
   void TriggerDelayedPing(Duration wait);
   bool NeedToPing(Duration next_allowed_ping_interval);
