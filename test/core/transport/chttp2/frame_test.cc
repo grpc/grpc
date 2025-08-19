@@ -1230,6 +1230,47 @@ TEST(Frame, ValidateFrameHeaderTest) {
                   .IsOk());
 }
 
+TEST(FrameSize, Http2FrameSizeTest) {
+  EXPECT_EQ(GetHttp2FrameSize(
+                Http2DataFrame{1, false, SliceBufferFromString("hello")}),
+            sizeof(Http2DataFrame::stream_id) +
+                sizeof(Http2DataFrame::end_stream) + 5);
+  EXPECT_EQ(GetHttp2FrameSize(Http2HeaderFrame{1, false, false,
+                                               SliceBufferFromString("hello")}),
+            sizeof(Http2HeaderFrame::stream_id) +
+                sizeof(Http2HeaderFrame::end_headers) +
+                sizeof(Http2HeaderFrame::end_stream) + 5);
+  EXPECT_EQ(GetHttp2FrameSize(Http2ContinuationFrame{
+                1, false, SliceBufferFromString("hello")}),
+            sizeof(Http2ContinuationFrame::stream_id) +
+                sizeof(Http2ContinuationFrame::end_headers) + 5);
+  EXPECT_EQ(GetHttp2FrameSize(Http2RstStreamFrame{
+                1, static_cast<uint32_t>(Http2ErrorCode::kConnectError)}),
+            sizeof(Http2RstStreamFrame::stream_id) +
+                sizeof(Http2RstStreamFrame::error_code));
+  EXPECT_EQ(GetHttp2FrameSize(Http2SettingsFrame{}),
+            sizeof(Http2SettingsFrame::ack));
+  EXPECT_EQ(GetHttp2FrameSize(Http2SettingsFrame{
+                false, {{0x1234, 0x9abcdef0}, {0x5678, 0x12345678}}}),
+            sizeof(Http2SettingsFrame::ack) +
+                2 * (sizeof(Http2SettingsFrame::Setting::id) +
+                     sizeof(Http2SettingsFrame::Setting::value)));
+  EXPECT_EQ(GetHttp2FrameSize(Http2PingFrame{false, 0x123456789abcdef0}),
+            sizeof(Http2PingFrame::ack) + sizeof(Http2PingFrame::opaque));
+  EXPECT_EQ(
+      GetHttp2FrameSize(Http2GoawayFrame{
+          0x12345678, static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm),
+          Slice::FromCopiedString("hello")}),
+      sizeof(Http2GoawayFrame::last_stream_id) +
+          sizeof(Http2GoawayFrame::error_code) + 5);
+  EXPECT_EQ(GetHttp2FrameSize(Http2WindowUpdateFrame{1, 12345678}),
+            sizeof(Http2WindowUpdateFrame::stream_id) +
+                sizeof(Http2WindowUpdateFrame::increment));
+  EXPECT_EQ(
+      GetHttp2FrameSize(Http2SecurityFrame{SliceBufferFromString("hello")}), 5);
+  EXPECT_EQ(GetHttp2FrameSize(Http2EmptyFrame{}), 0);
+}
+
 }  // namespace
 }  // namespace grpc_core
 
