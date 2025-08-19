@@ -544,9 +544,14 @@ grpc_cc_library(
         "gtest",
     ],
     deps = [
+        "//:call_tracer",
+        "//:config",
         "//:grpc",
+        "//:grpc_base",
         "//src/core:examine_stack",
         "//src/core:metrics",
+        "//src/core:ref_counted",
+        "//src/core:tcp_tracer",
     ],
 )
 
@@ -558,7 +563,11 @@ grpc_cc_library(
     external_deps = [
     ],
     deps = [
+        "//:event_engine_base_hdrs",
         "//:grpc",
+        "//src/core:default_event_engine",
+        "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:ref_counted",
     ],
 )
 
@@ -568,7 +577,10 @@ grpc_cc_library(
     srcs = ["fail_first_call_filter.cc"],
     hdrs = ["fail_first_call_filter.h"],
     external_deps = [],
-    deps = ["//:grpc"],
+    deps = [
+        "//:grpc",
+        "//:grpc_base",
+    ],
 )
 
 grpc_cc_library(
