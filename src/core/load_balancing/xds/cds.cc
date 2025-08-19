@@ -138,7 +138,7 @@ class CdsLb final : public LoadBalancingPolicy {
                 kBackendService,
             cds_lb_->cluster_name_);
       }
-      return child_picker_->Pick(std::move(args));
+      return child_picker_->Pick(args);
     }
 
    private:
