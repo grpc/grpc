@@ -3349,7 +3349,8 @@ static void benign_reclaimer_locked(
   if (error.ok() && t->stream_map.empty()) {
     // Channel with no active streams: send a goaway to try and make it
     // disconnect cleanly
-    grpc_core::global_stats().IncrementRqConnectionsDropped();
+    t->memory_owner.telemetry_storage()->Increment(
+        grpc_core::ResourceQuotaDomain::kConnectionsDropped);
     GRPC_TRACE_LOG(resource_quota, INFO)
         << "HTTP2: " << t->peer_string.as_string_view()
         << " - send goaway to free memory";
@@ -3380,7 +3381,8 @@ static void destructive_reclaimer_locked(
     GRPC_TRACE_LOG(resource_quota, INFO)
         << "HTTP2: " << t->peer_string.as_string_view()
         << " - abandon stream id " << s->id;
-    grpc_core::global_stats().IncrementRqCallsDropped();
+    t->memory_owner.telemetry_storage()->Increment(
+        grpc_core::ResourceQuotaDomain::kCallsDropped);
     grpc_chttp2_cancel_stream(
         t.get(), s,
         grpc_error_set_int(

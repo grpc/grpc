@@ -448,9 +448,18 @@ class BasicMemoryQuota::WaitForSweepPromise {
 };
 
 BasicMemoryQuota::BasicMemoryQuota(
-    RefCountedPtr<channelz::ResourceQuotaNode> channelz_node)
-    : channelz::DataSource(channelz_node) {
+    RefCountedPtr<channelz::ResourceQuotaNode> channelz_node,
+    InstrumentStorageRefPtr<ResourceQuotaDomain> telemetry_storage)
+    : channelz::DataSource(channelz_node),
+      GaugeProvider(telemetry_storage),
+      telemetry_storage_(std::move(telemetry_storage)) {
+  ProviderConstructed();
   channelz::DataSource::SourceConstructed();
+}
+
+BasicMemoryQuota::~BasicMemoryQuota() {
+  ProviderDestructing();
+  channelz::DataSource::SourceDestructing();
 }
 
 void BasicMemoryQuota::Start() {
@@ -696,6 +705,14 @@ BasicMemoryQuota::PressureInfo BasicMemoryQuota::GetPressureInfo() {
           pressure_info.instantaneous_pressure);
   pressure_info.max_recommended_allocation_size = quota_size / 16;
   return pressure_info;
+}
+
+void BasicMemoryQuota::PopulateGaugeData(GaugeSink<ResourceQuotaDomain>& sink) {
+  auto pressure_info = GetPressureInfo();
+  sink.Set(ResourceQuotaDomain::kInstantaneousMemoryPressure,
+           pressure_info.instantaneous_pressure);
+  sink.Set(ResourceQuotaDomain::kMemoryPressureControlValue,
+           pressure_info.pressure_control_value);
 }
 
 void BasicMemoryQuota::AddData(channelz::DataSink sink) {
