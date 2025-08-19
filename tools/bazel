@@ -60,6 +60,21 @@ case $(uname -sm) in
   "Linux aarch64")
     suffix=linux-arm64
     ;;
+  "Linux s390x")
+    echo "INFO: s390x architecture detected. Prebuilt Bazel not available for s390x." >&2
+    echo "Please build Bazel from source or ensure 'bazel' is in PATH." >&2
+    echo "See: https://bazel.build/install/compile-source" >&2
+    echo "For complete s390x build instructions: src/csharp/BUILD-s390x.md" >&2
+    # Try to use system bazel if available
+    if command -v bazel >/dev/null 2>&1; then
+      echo "INFO: Using system bazel: $(command -v bazel)" >&2
+      exec bazel "$@"
+    else
+      echo "ERROR: No bazel found in PATH. Please install Bazel for s390x." >&2
+      echo "See detailed instructions: src/csharp/BUILD-s390x.md" >&2
+      exit 1
+    fi
+    ;;
   "Darwin x86_64")
     suffix=darwin-x86_64
     ;;

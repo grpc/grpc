@@ -20,8 +20,14 @@ cd "$(dirname "$0")"
 mkdir -p ../../artifacts
 
 # Collect protoc artifacts built by the previous build step
+# On s390x, we build locally instead of using prebuilt artifacts
 mkdir -p protoc_plugins
-cp -r "${EXTERNAL_GIT_ROOT}"/input_artifacts/protoc_* protoc_plugins || true
+if [[ "$(uname -m)" != "s390x" ]]; then
+    cp -r "${EXTERNAL_GIT_ROOT}"/input_artifacts/protoc_* protoc_plugins || true
+else
+    # For s390x, enable single-platform build mode
+    export GRPC_CSHARP_BUILD_SINGLE_PLATFORM_NUGET=1
+fi
 
 # Add current timestamp to dev nugets
 ./nuget_helpers/expand_dev_version.sh
@@ -47,7 +53,36 @@ then
   # add a suffix to the nuget's version
   # to avoid confusing the package with a full nuget package.
   # NOTE: adding the suffix must be done AFTER expand_dev_version.sh has run.
-  sed -ibak "s/<\/GrpcCsharpVersion>/-singleplatform<\/GrpcCsharpVersion>/" build/dependencies.props
+  ARCH_SUFFIX="-singleplatform"
+  if [[ "$(uname -m)" == "s390x" ]]; then
+      ARCH_SUFFIX="-s390x"
+  fi
+  sed -ibak "s/<\/GrpcCsharpVersion>/${ARCH_SUFFIX}<\/GrpcCsharpVersion>/" build/dependencies.props
+fi
+
+# Copy locally built s390x binaries if available
+if [[ "$(uname -m)" == "s390x" ]]; then
+    REPO_ROOT="$(cd ../.. && pwd)"
+    
+    mkdir -p protoc_plugins/protoc_linux_s390x
+    
+    if [[ -f "$REPO_ROOT/bazel-bin/src/compiler/grpc_csharp_plugin" ]]; then
+        cp "$REPO_ROOT/bazel-bin/src/compiler/grpc_csharp_plugin" protoc_plugins/protoc_linux_s390x/
+    elif [[ -f "$REPO_ROOT/bazel-bin/src/compiler/grpc_csharp_plugin_native" ]]; then
+        cp "$REPO_ROOT/bazel-bin/src/compiler/grpc_csharp_plugin_native" protoc_plugins/protoc_linux_s390x/grpc_csharp_plugin
+    else
+        echo "Warning: grpc_csharp_plugin not found in bazel-bin"
+    fi
+    
+    # Copy protoc
+    if [[ -f "$REPO_ROOT/bazel-bin/external/com_google_protobuf/protoc" ]]; then
+        cp "$REPO_ROOT/bazel-bin/external/com_google_protobuf/protoc" protoc_plugins/protoc_linux_s390x/
+    else
+        echo "Warning: protoc not found in bazel-bin"
+    fi
+    
+    # Make binaries executable
+    chmod +x protoc_plugins/protoc_linux_s390x/* 2>/dev/null || true
 fi
 
 dotnet restore Grpc.sln
