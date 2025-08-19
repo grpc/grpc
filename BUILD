@@ -263,11 +263,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gemini"  # @unused
+g_stands_for = "genuine"  # @unused
 
 core_version = "50.0.0"  # @unused
 
-version = "1.75.0-dev"  # @unused
+version = "1.76.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
