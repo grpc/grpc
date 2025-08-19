@@ -343,6 +343,9 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
     on_receive_settings_ = nullptr;
   }
 
+  // TODO(tjagtap) : [PH2][P2] Decide later if we want this only for AckLastSend
+  // or does any other operation also need this lock.
+  MutexLock lock(&transport_mutex_);
   if (!frame.ack) {
     // Check if the received settings have legal values
     Http2Status status = ValidateSettingsValues(frame.settings);

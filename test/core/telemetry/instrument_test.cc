@@ -24,7 +24,6 @@ namespace grpc_core {
 namespace {
 
 using instrument_detail::InstrumentIndex;
-using instrument_detail::QueryableDomain;
 
 class MockMetricsSink : public MetricsSink {
  public:
