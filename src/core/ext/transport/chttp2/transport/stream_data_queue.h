@@ -157,14 +157,17 @@ template <typename MetadataHandle>
 class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
  public:
   explicit StreamDataQueue(const bool is_client, const uint32_t stream_id,
-                           const uint32_t queue_size)
+                           const uint32_t queue_size,
+                           bool allow_true_binary_metadata)
       : stream_id_(stream_id),
         is_client_(is_client),
         queue_(queue_size),
         initial_metadata_disassembler_(stream_id,
-                                       /*is_trailing_metadata=*/false),
+                                       /*is_trailing_metadata=*/false,
+                                       allow_true_binary_metadata),
         trailing_metadata_disassembler_(stream_id,
-                                        /*is_trailing_metadata=*/true) {};
+                                        /*is_trailing_metadata=*/true,
+                                        allow_true_binary_metadata) {};
   ~StreamDataQueue() = default;
 
   StreamDataQueue(StreamDataQueue&& rhs) = delete;

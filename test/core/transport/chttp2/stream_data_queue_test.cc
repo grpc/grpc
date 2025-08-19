@@ -533,6 +533,8 @@ void DequeueMessageAndCheckSuccess(
 }
 }  // namespace
 
+constexpr bool kAllowTrueBinaryMetadataSetting = true;
+
 ////////////////////////////////////////////////////////////////////////////////
 // Client Tests
 TEST(StreamDataQueueTest, ClientEnqueueInitialMetadataTest) {
@@ -542,7 +544,7 @@ TEST(StreamDataQueueTest, ClientEnqueueInitialMetadataTest) {
       MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
           /*is_client=*/true,
           /*stream_id=*/1,
-          /*queue_size=*/10);
+          /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestClientInitialMetadata(),
       /*expected_writeable_state=*/true,
@@ -561,7 +563,7 @@ TEST(StreamDataQueueTest, ClientEnqueueMultipleMessagesTest) {
       MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
           /*is_client=*/true,
           /*stream_id=*/1,
-          /*queue_size=*/queued_size);
+          /*queue_size=*/queued_size, kAllowTrueBinaryMetadataSetting);
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestClientInitialMetadata(),
       /*expected_writeable_state=*/true,
@@ -585,7 +587,7 @@ TEST(StreamDataQueueTest, ClientEnqueueEndStreamTest) {
       MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
           /*is_client=*/true,
           /*stream_id=*/1,
-          /*queue_size=*/10);
+          /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestClientInitialMetadata(),
       /*expected_writeable_state=*/true,
@@ -609,7 +611,7 @@ TEST(StreamDataQueueTest, ClientEnqueueResetStreamTest) {
       MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
           /*is_client=*/true,
           /*stream_id=*/1,
-          /*queue_size=*/10);
+          /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestClientInitialMetadata(),
       /*expected_writeable_state=*/true,
@@ -628,7 +630,7 @@ TEST(StreamDataQueueTest, ClientEmptyDequeueTest) {
       MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
           /*is_client=*/true,
           /*stream_id=*/1,
-          /*queue_size=*/10);
+          /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
   EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
   DequeueAndCheckSuccess(stream_data_queue, std::vector<Http2Frame>(), encoder);
   EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
@@ -643,7 +645,7 @@ TEST(StreamDataQueueTest, ClientDequeueMetadataSingleFrameTest) {
       MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
           /*is_client=*/true,
           /*stream_id=*/1,
-          /*queue_size=*/10);
+          /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestClientInitialMetadata(),
       /*expected_writeable_state=*/true,
@@ -669,7 +671,7 @@ TEST(StreamDataQueueTest, ClientDequeueFramesTest) {
       MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
           /*is_client=*/true,
           /*stream_id=*/1,
-          /*queue_size=*/10);
+          /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestClientInitialMetadata(),
       /*expected_writeable_state=*/true,
@@ -742,7 +744,7 @@ TEST(StreamDataQueueTest, ClientEnqueueDequeueFlowTest) {
       MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
           /*is_client=*/true,
           /*stream_id=*/1,
-          /*queue_size=*/10);
+          /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestClientInitialMetadata(),
       /*expected_writeable_state=*/true,
@@ -784,7 +786,7 @@ TEST(StreamDataQueueTest, ServerEnqueueInitialMetadataTest) {
       MakeRefCounted<StreamDataQueue<ServerMetadataHandle>>(
           /*is_client=*/false,
           /*stream_id=*/1,
-          /*queue_size=*/10);
+          /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestServerInitialMetadata(),
       /*expected_writeable_state=*/true,
@@ -803,7 +805,7 @@ TEST(StreamDataQueueTest, ServerEnqueueMultipleMessagesTest) {
       MakeRefCounted<StreamDataQueue<ServerMetadataHandle>>(
           /*is_client=*/false,
           /*stream_id=*/1,
-          /*queue_size=*/queued_size);
+          /*queue_size=*/queued_size, kAllowTrueBinaryMetadataSetting);
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestServerInitialMetadata(),
       /*expected_writeable_state=*/true,
@@ -828,7 +830,7 @@ TEST(StreamDataQueueTest, ServerEnqueueTrailingMetadataTest) {
       MakeRefCounted<StreamDataQueue<ServerMetadataHandle>>(
           /*is_client=*/false,
           /*stream_id=*/1,
-          /*queue_size=*/10);
+          /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestServerInitialMetadata(),
       /*expected_writeable_state=*/true,
@@ -852,7 +854,7 @@ TEST(StreamDataQueueTest, ServerResetStreamTest) {
       MakeRefCounted<StreamDataQueue<ServerMetadataHandle>>(
           /*is_client=*/false,
           /*stream_id=*/1,
-          /*queue_size=*/10);
+          /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestServerInitialMetadata(),
       /*expected_writeable_state=*/true,
@@ -887,7 +889,7 @@ TEST(StreamDataQueueTest, ServerEnqueueDequeueFlowTest) {
       MakeRefCounted<StreamDataQueue<ServerMetadataHandle>>(
           /*is_client=*/false,
           /*stream_id=*/1,
-          /*queue_size=*/10);
+          /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestServerInitialMetadata(),
       /*expected_writeable_state=*/true,

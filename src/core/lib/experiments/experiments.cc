@@ -93,6 +93,9 @@ const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
 const char* const additional_constraints_local_connector_secure = "{}";
+const char* const description_max_age_filter_float_to_top =
+    "If set, the max age filter is placed at the top of the stack.";
+const char* const additional_constraints_max_age_filter_float_to_top = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
@@ -245,6 +248,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
+    {"max_age_filter_float_to_top", description_max_age_filter_float_to_top,
+     additional_constraints_max_age_filter_float_to_top, nullptr, 0, true,
+     true},
     {"max_inflight_pings_strict_limit",
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
@@ -396,6 +402,9 @@ const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
 const char* const additional_constraints_local_connector_secure = "{}";
+const char* const description_max_age_filter_float_to_top =
+    "If set, the max age filter is placed at the top of the stack.";
+const char* const additional_constraints_max_age_filter_float_to_top = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
@@ -548,6 +557,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
+    {"max_age_filter_float_to_top", description_max_age_filter_float_to_top,
+     additional_constraints_max_age_filter_float_to_top, nullptr, 0, true,
+     true},
     {"max_inflight_pings_strict_limit",
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
@@ -699,6 +711,9 @@ const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
 const char* const additional_constraints_local_connector_secure = "{}";
+const char* const description_max_age_filter_float_to_top =
+    "If set, the max age filter is placed at the top of the stack.";
+const char* const additional_constraints_max_age_filter_float_to_top = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
@@ -851,6 +866,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
+    {"max_age_filter_float_to_top", description_max_age_filter_float_to_top,
+     additional_constraints_max_age_filter_float_to_top, nullptr, 0, true,
+     true},
     {"max_inflight_pings_strict_limit",
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
