@@ -28,6 +28,7 @@ grpc_cc_library(
     external_deps = ["fuzztest"],
     deps = [
         "test",
+        "//:config",
         "//src/core:grpc_transport_inproc",
     ],
     alwayslink = 1,

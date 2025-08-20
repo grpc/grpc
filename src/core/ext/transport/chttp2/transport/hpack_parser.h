@@ -92,7 +92,10 @@ class HPackParser {
   HPackParser& operator=(HPackParser&&) = default;
 
   // Begin parsing a new frame
-  // Sink receives each parsed header,
+  // Sink receives each parsed header.
+  // You can pass metadata_buffer as a nullptr if you need to discard this frame
+  // after processing it. This would be needed if the stream is already closed,
+  // or multiple other cases.
   void BeginFrame(grpc_metadata_batch* metadata_buffer,
                   uint32_t metadata_size_soft_limit,
                   uint32_t metadata_size_hard_limit, Boundary boundary,

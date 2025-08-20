@@ -16,8 +16,10 @@
 #define GRPC_SRC_CORE_CHANNELZ_ZVIZ_ENVIRONMENT_H
 
 #include <string>
+#include <vector>
 
 #include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 #include "src/proto/grpc/channelz/v2/channelz.pb.h"
 
 namespace grpc_zviz {
@@ -29,6 +31,22 @@ class Environment {
   virtual std::string EntityLinkText(int64_t entity_id);
   virtual absl::StatusOr<grpc::channelz::v2::Entity> GetEntity(
       int64_t entity_id) = 0;
+  struct GetChildrenResult {
+    std::vector<grpc::channelz::v2::Entity> entities;
+    bool end;
+  };
+  virtual absl::StatusOr<GetChildrenResult> GetChildrenPaginated(
+      int64_t /*entity_id*/, absl::string_view /*kind*/, int64_t /*start*/,
+      size_t /*max_results*/) {
+    return absl::UnimplementedError("GetChildrenPaginated");
+  }
+  absl::StatusOr<std::vector<grpc::channelz::v2::Entity>> GetChildren(
+      int64_t entity_id, absl::string_view kind) {
+    auto result = GetChildrenPaginated(entity_id, kind, 0,
+                                       std::numeric_limits<size_t>::max());
+    if (!result.ok()) return result.status();
+    return std::move(result->entities);
+  }
 };
 
 }  // namespace grpc_zviz

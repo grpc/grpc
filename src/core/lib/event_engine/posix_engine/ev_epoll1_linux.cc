@@ -60,9 +60,9 @@ class Epoll1EventHandle : public EventHandle {
   Epoll1EventHandle(const FileDescriptor& fd, Epoll1Poller* poller)
       : fd_(fd),
         poller_(poller),
-        read_closure_(poller->GetScheduler()),
-        write_closure_(poller->GetScheduler()),
-        error_closure_(poller->GetScheduler()) {
+        read_closure_(poller->GetThreadPool()),
+        write_closure_(poller->GetThreadPool()),
+        error_closure_(poller->GetThreadPool()) {
     read_closure_.InitEvent();
     write_closure_.InitEvent();
     error_closure_.InitEvent();
@@ -217,7 +217,7 @@ void Epoll1EventHandle::OrphanHandle(PosixEngineClosure* on_done,
   }
   if (on_done != nullptr) {
     on_done->SetStatus(absl::OkStatus());
-    poller_->GetScheduler()->Run(on_done);
+    poller_->GetThreadPool()->Run(on_done);
   }
 }
 
@@ -243,8 +243,8 @@ void Epoll1EventHandle::HandleShutdownInternal(absl::Status why,
   }
 }
 
-Epoll1Poller::Epoll1Poller(Scheduler* scheduler)
-    : scheduler_(scheduler), was_kicked_(false), closed_(false) {
+Epoll1Poller::Epoll1Poller(std::shared_ptr<ThreadPool> thread_pool)
+    : thread_pool_(thread_pool), was_kicked_(false), closed_(false) {
   g_epoll_set_.epfd = posix_interface().EpollCreateAndCloexec().value();
   wakeup_fd_ = CreateWakeupFd(&posix_interface()).value();
   CHECK(wakeup_fd_ != nullptr);
@@ -493,10 +493,11 @@ void Epoll1Poller::ResetKickState() {
   was_kicked_ = false;
 }
 
-std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(Scheduler* scheduler) {
+std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(
+    std::shared_ptr<ThreadPool> thread_pool) {
   static bool kEpoll1PollerSupported = InitEpoll1PollerLinux();
   if (kEpoll1PollerSupported) {
-    return std::make_shared<Epoll1Poller>(scheduler);
+    return std::make_shared<Epoll1Poller>(std::move(thread_pool));
   }
   return nullptr;
 }
@@ -511,7 +512,7 @@ namespace grpc_event_engine::experimental {
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::Poller;
 
-Epoll1Poller::Epoll1Poller(Scheduler* /* engine */) {
+Epoll1Poller::Epoll1Poller(std::shared_ptr<ThreadPool> /* thread_pool */) {
   grpc_core::Crash("unimplemented");
 }
 
@@ -548,7 +549,8 @@ void Epoll1Poller::ResetKickState() { grpc_core::Crash("unimplemented"); }
 
 // If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
 // nullptr.
-std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(Scheduler* /*scheduler*/) {
+std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(
+    std::shared_ptr<ThreadPool> /*thread_pool*/) {
   return nullptr;
 }
 

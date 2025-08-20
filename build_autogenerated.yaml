@@ -119,6 +119,7 @@ libs:
   - src/core/util/windows/tmpfile.cc
   deps:
   - absl/base:base
+  - absl/base:config
   - absl/base:core_headers
   - absl/base:log_severity
   - absl/cleanup:cleanup
@@ -351,9 +352,11 @@ libs:
   - src/core/ext/transport/chttp2/transport/ping_callbacks.h
   - src/core/ext/transport/chttp2/transport/ping_promise.h
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.h
+  - src/core/ext/transport/chttp2/transport/stream_data_queue.h
   - src/core/ext/transport/chttp2/transport/stream_lists.h
   - src/core/ext/transport/chttp2/transport/transport_common.h
   - src/core/ext/transport/chttp2/transport/varint.h
+  - src/core/ext/transport/chttp2/transport/writable_streams.h
   - src/core/ext/transport/chttp2/transport/write_size_policy.h
   - src/core/ext/transport/inproc/inproc_transport.h
   - src/core/ext/transport/inproc/legacy_inproc_transport.h
@@ -2181,7 +2184,6 @@ libs:
   - re2
   - z
   - absl/algorithm:container
-  - absl/base:config
   - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -2473,9 +2475,11 @@ libs:
   - src/core/ext/transport/chttp2/transport/ping_callbacks.h
   - src/core/ext/transport/chttp2/transport/ping_promise.h
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.h
+  - src/core/ext/transport/chttp2/transport/stream_data_queue.h
   - src/core/ext/transport/chttp2/transport/stream_lists.h
   - src/core/ext/transport/chttp2/transport/transport_common.h
   - src/core/ext/transport/chttp2/transport/varint.h
+  - src/core/ext/transport/chttp2/transport/writable_streams.h
   - src/core/ext/transport/chttp2/transport/write_size_policy.h
   - src/core/ext/transport/inproc/inproc_transport.h
   - src/core/ext/transport/inproc/legacy_inproc_transport.h
@@ -3340,7 +3344,6 @@ libs:
   - upb_textformat_lib
   - z
   - absl/algorithm:container
-  - absl/base:config
   - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -5193,7 +5196,6 @@ libs:
   - upb_textformat_lib
   - re2
   - z
-  - absl/base:config
   - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -5415,7 +5417,6 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/base:config
   - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
@@ -5990,7 +5991,6 @@ targets:
   - test/core/util/avl_test.cc
   deps:
   - gtest
-  - absl/base:config
   - absl/hash:hash
   - gpr
   uses_polling: false
@@ -6170,6 +6170,8 @@ targets:
   - test/core/util/bitset_test.cc
   deps:
   - gtest
+  - absl/base:config
+  - absl/base:core_headers
   - absl/log:check
   - absl/numeric:bits
   uses_polling: false
@@ -6240,7 +6242,6 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/base:config
   - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
@@ -6546,7 +6547,6 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/base:config
   - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -6660,7 +6660,6 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/base:config
   - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
@@ -7295,7 +7294,6 @@ targets:
   - gtest
   - upb_textformat_lib
   - z
-  - absl/base:config
   - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -7510,7 +7508,6 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/base:config
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -8260,7 +8257,6 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/base:config
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -8669,7 +8665,6 @@ targets:
   - test/core/promise/context_test.cc
   deps:
   - gtest
-  - absl/base:config
   - absl/meta:type_traits
   - gpr
   uses_polling: false
@@ -8832,7 +8827,6 @@ targets:
   - test/core/util/down_cast_test.cc
   deps:
   - gtest
-  - absl/base:config
   - gpr
   uses_polling: false
 - name: dual_ref_counted_test
@@ -10977,7 +10971,6 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/base:config
   - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/meta:type_traits
@@ -11248,7 +11241,6 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/base:config
   - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
@@ -11981,7 +11973,6 @@ targets:
   - gtest
   - upb_textformat_lib
   - z
-  - absl/base:config
   - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -12236,7 +12227,6 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/base:config
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -12440,7 +12430,6 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/base:config
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -13915,7 +13904,6 @@ targets:
   - gtest
   - upb_textformat_lib
   - z
-  - absl/base:config
   - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -14242,6 +14230,8 @@ targets:
   - test/core/client_idle/idle_filter_state_test.cc
   deps:
   - gtest
+  - absl/base:config
+  - absl/base:core_headers
   uses_polling: false
 - name: if_list_test
   gtest: true
@@ -14253,6 +14243,8 @@ targets:
   - test/core/util/if_list_test.cc
   deps:
   - gtest
+  - absl/base:config
+  - absl/base:core_headers
   uses_polling: false
 - name: if_test
   gtest: true
@@ -14362,6 +14354,22 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: instrument_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/telemetry/histogram.h
+  - src/core/telemetry/instrument.h
+  src:
+  - src/core/telemetry/instrument.cc
+  - test/core/telemetry/instrument_test.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
+  deps:
+  - gtest
+  - absl/container:node_hash_map
+  - grpc_test_util
+  uses_polling: false
 - name: inter_activity_latch_test
   gtest: true
   build: test
@@ -14478,7 +14486,6 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/base:config
   - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
@@ -14683,7 +14690,6 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/base:config
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -15016,7 +15022,6 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/base:config
   - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
@@ -15256,7 +15261,6 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/base:config
   - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
@@ -15369,7 +15373,6 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/base:config
   - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
@@ -15584,7 +15587,6 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/base:config
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -15673,6 +15675,8 @@ targets:
   - test/core/util/match_test.cc
   deps:
   - gtest
+  - absl/base:config
+  - absl/base:core_headers
   uses_polling: false
 - name: matchers_test
   gtest: true
@@ -15939,7 +15943,6 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/base:config
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
@@ -16014,6 +16017,8 @@ targets:
   - test/core/compiler_bugs/miscompile_with_no_unique_address_test.cc
   deps:
   - gtest
+  - absl/base:config
+  - absl/base:core_headers
   uses_polling: false
 - name: mock_stream_test
   gtest: true
@@ -16078,6 +16083,8 @@ targets:
   - test/core/util/no_destruct_test.cc
   deps:
   - gtest
+  - absl/base:config
+  - absl/base:core_headers
   uses_polling: false
 - name: no_server_test
   gtest: true
@@ -16224,7 +16231,6 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/base:config
   - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
@@ -16508,6 +16514,8 @@ targets:
   - test/core/util/overload_test.cc
   deps:
   - gtest
+  - absl/base:config
+  - absl/base:core_headers
   uses_polling: false
 - name: parse_address_test
   gtest: true
@@ -16765,6 +16773,8 @@ targets:
   - test/core/promise/poll_test.cc
   deps:
   - gtest
+  - absl/base:config
+  - absl/base:core_headers
   - absl/log:check
   - absl/strings:str_format
   uses_polling: false
@@ -17390,7 +17400,6 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/base:config
   - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
@@ -17865,6 +17874,8 @@ targets:
   - test/core/util/random_early_detection_test.cc
   deps:
   - gtest
+  - absl/base:config
+  - absl/base:core_headers
   - absl/random:bit_gen_ref
   - absl/random:distributions
   - absl/random:random
@@ -18179,7 +18190,6 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/base:config
   - absl/base:no_destructor
   - absl/container:btree
   - absl/container:flat_hash_map
@@ -18311,6 +18321,8 @@ targets:
   - test/core/util/ring_buffer_test.cc
   deps:
   - gtest
+  - absl/base:config
+  - absl/base:core_headers
   uses_polling: false
 - name: ring_hash_test
   gtest: true
@@ -18839,7 +18851,6 @@ targets:
   - test/core/util/single_set_ptr_test.cc
   deps:
   - gtest
-  - absl/base:config
   - absl/hash:hash
   - gpr
   uses_polling: false
@@ -18929,6 +18940,8 @@ targets:
   - test/core/util/sorted_pack_test.cc
   deps:
   - gtest
+  - absl/base:config
+  - absl/base:core_headers
   uses_polling: false
 - name: spiffe_bundle_map_end2end_test
   gtest: true
@@ -19081,6 +19094,8 @@ targets:
   - test/core/promise/status_flag_test.cc
   deps:
   - gtest
+  - absl/base:config
+  - absl/base:core_headers
   - absl/log:check
   - absl/status:status
   - absl/status:statusor
@@ -19112,7 +19127,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/transport/chttp2/transport/stream_data_queue.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/transport/chttp2/http2_common_test_inputs.h
@@ -19303,6 +19317,8 @@ targets:
   - test/core/util/table_test.cc
   deps:
   - gtest
+  - absl/base:config
+  - absl/base:core_headers
   - absl/log:check
   - absl/meta:type_traits
   - absl/numeric:bits
@@ -19669,7 +19685,6 @@ targets:
   - test/core/resource_quota/thread_quota_test.cc
   deps:
   - gtest
-  - absl/base:config
   - absl/hash:hash
   - gpr
   uses_polling: false
@@ -20082,6 +20097,8 @@ targets:
   - test/core/util/unique_ptr_with_bitset_test.cc
   deps:
   - gtest
+  - absl/base:config
+  - absl/base:core_headers
   - absl/log:check
   - absl/numeric:bits
   uses_polling: false
@@ -20096,6 +20113,8 @@ targets:
   - test/core/util/unique_type_name_test.cc
   deps:
   - gtest
+  - absl/base:config
+  - absl/base:core_headers
   - absl/container:flat_hash_map
   - absl/log:check
   - absl/numeric:bits
@@ -20135,6 +20154,8 @@ targets:
   - test/core/util/useful_test.cc
   deps:
   - gtest
+  - absl/base:config
+  - absl/base:core_headers
   - absl/log:check
   - absl/numeric:bits
   uses_polling: false
@@ -20258,7 +20279,6 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/base:config
   - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
@@ -20395,7 +20415,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/transport/chttp2/transport/writable_streams.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/transport/util/transport_test.h

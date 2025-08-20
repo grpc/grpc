@@ -29,8 +29,12 @@ grpc_fuzz_test(
     ],
     tags = ["no_windows"],
     deps = [
+        "//:alts_util",
         "//:gpr",
         "//:grpc",
+        "//:grpc_alts_credentials",
+        "//:grpc_core_credentials_header",
+        "//src/core:env",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
