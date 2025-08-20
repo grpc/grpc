@@ -34,6 +34,6 @@ find_cmd=(
 
 
 # Copy only the '*.tar.gz' and '*py3-none-any.whl' files.
-"${find_cmd[@]}" -print0 \
-    | xargs -0 -I% find % -type f \( -name "*.tar.gz" -o \
-    -name "*py3-none-any.whl" \) -maxdepth 1 -exec cp -v {} ./artifacts \;
+"${find_cmd[@]}" -print0 | xargs -0 -I% \
+    find % \( -name "*.tar.gz" -o -name "*py3-none-any.whl" \) \
+    -exec cp -v {} ./artifacts \;
