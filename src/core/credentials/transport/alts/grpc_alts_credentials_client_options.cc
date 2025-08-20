@@ -135,4 +135,7 @@ static void alts_client_options_destroy(
     target_service_account_destroy(node);
     node = next_node;
   }
+  if (client_options->token_fetcher != nullptr) {
+    client_options->token_fetcher.reset();
+  }
 }
