@@ -981,8 +981,12 @@ grpc_cc_library(
         "include/grpc/slice.h",
         "include/grpc/slice_buffer.h",
     ],
+    external_deps = [
+        "absl/base:core_headers",
+    ],
     visibility = ["//visibility:public"],
     deps = [
+        "gpr",
         "//src/core:slice",
         "//src/core:slice_buffer",
     ],
