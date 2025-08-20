@@ -1,0 +1,254 @@
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+import "transport_security_common.proto";
+
+package grpc.gcp;
+
+option java_package = "io.grpc.alts.internal";
+
+enum HandshakeProtocol {
+  // Default value.
+  HANDSHAKE_PROTOCOL_UNSPECIFIED = 0;
+
+  // TLS handshake protocol.
+  TLS = 1;
+
+  // Application Layer Transport Security handshake protocol.
+  ALTS = 2;
+}
+
+enum NetworkProtocol {
+  NETWORK_PROTOCOL_UNSPECIFIED = 0;
+  TCP = 1;
+  UDP = 2;
+}
+
+message Endpoint {
+  // IP address. It should contain an IPv4 or IPv6 string literal, e.g.
+  // "192.168.0.1" or "2001:db8::1".
+  string ip_address = 1;
+
+  // Port number.
+  int32 port = 2;
+
+  // Network protocol (e.g., TCP, UDP) associated with this endpoint.
+  NetworkProtocol protocol = 3;
+}
+
+message Identity {
+  oneof identity_oneof {
+    // Service account of a connection endpoint.
+    string service_account = 1;
+
+    // Hostname of a connection endpoint.
+    string hostname = 2;
+  }
+
+  // Additional attributes of the identity.
+  map<string, string> attributes = 3;
+}
+
+message StartClientHandshakeReq {
+  // Handshake security protocol requested by the client.
+  HandshakeProtocol handshake_security_protocol = 1;
+
+  // The application protocols supported by the client, e.g., "h2" (for http2),
+  // "grpc".
+  repeated string application_protocols = 2;
+
+  // The record protocols supported by the client, e.g.,
+  // "ALTSRP_GCM_AES128".
+  repeated string record_protocols = 3;
+
+  // (Optional) Describes which server identities are acceptable by the client.
+  // If target identities are provided and none of them matches the peer
+  // identity of the server, handshake will fail.
+  repeated Identity target_identities = 4;
+
+  // (Optional) Application may specify a local identity. Otherwise, the
+  // handshaker chooses a default local identity.
+  Identity local_identity = 5;
+
+  // (Optional) Local endpoint information of the connection to the server,
+  // such as local IP address, port number, and network protocol.
+  Endpoint local_endpoint = 6;
+
+  // (Optional) Endpoint information of the remote server, such as IP address,
+  // port number, and network protocol.
+  Endpoint remote_endpoint = 7;
+
+  // (Optional) If target name is provided, a secure naming check is performed
+  // to verify that the peer authenticated identity is indeed authorized to run
+  // the target name.
+  string target_name = 8;
+
+  // (Optional) RPC protocol versions supported by the client.
+  RpcProtocolVersions rpc_versions = 9;
+
+  // (Optional) Maximum frame size supported by the client.
+  uint32 max_frame_size = 10;
+
+  // (Optional) Internal use only.
+  string access_token = 11 [(datapol.semantic_type) = ST_ACCOUNT_CREDENTIAL];
+
+  // (Optional) Ordered transport protocol preferences supported by the client.
+  TransportProtocolPreferences transport_protocol_preferences = 12;
+}
+
+message ServerHandshakeParameters {
+  // The record protocols supported by the server, e.g.,
+  // "ALTSRP_GCM_AES128".
+  repeated string record_protocols = 1;
+
+  // (Optional) A list of local identities supported by the server, if
+  // specified. Otherwise, the handshaker chooses a default local identity.
+  repeated Identity local_identities = 2;
+
+  // Internal use only.
+  string token = 3 [features.field_presence = EXPLICIT];
+}
+
+message StartServerHandshakeReq {
+  // The application protocols supported by the server, e.g., "h2" (for http2),
+  // "grpc".
+  repeated string application_protocols = 1;
+
+  // Handshake parameters (record protocols and local identities supported by
+  // the server) mapped by the handshake protocol. Each handshake security
+  // protocol (e.g., TLS or ALTS) has its own set of record protocols and local
+  // identities. Since protobuf does not support enum as key to the map, the key
+  // to handshake_parameters is the integer value of HandshakeProtocol enum.
+  map<int32, ServerHandshakeParameters> handshake_parameters = 2;
+
+  // Bytes in out_frames returned from the peer's HandshakerResp. It is possible
+  // that the peer's out_frames are split into multiple HandshakeReq messages.
+  bytes in_bytes = 3;
+
+  // (Optional) Local endpoint information of the connection to the client,
+  // such as local IP address, port number, and network protocol.
+  Endpoint local_endpoint = 4;
+
+  // (Optional) Endpoint information of the remote client, such as IP address,
+  // port number, and network protocol.
+  Endpoint remote_endpoint = 5;
+
+  // (Optional) RPC protocol versions supported by the server.
+  RpcProtocolVersions rpc_versions = 6;
+
+  // (Optional) Maximum frame size supported by the server.
+  uint32 max_frame_size = 7;
+
+  // (Optional) Transport protocol preferences supported by the server.
+  TransportProtocolPreferences transport_protocol_preferences = 8;
+}
+
+message NextHandshakeMessageReq {
+  // Bytes in out_frames returned from the peer's HandshakerResp. It is possible
+  // that the peer's out_frames are split into multiple NextHandshakerMessageReq
+  // messages.
+  bytes in_bytes = 1;
+
+  // Number of milliseconds between when the application send the last handshake
+  // message to the peer and when the application received the current handshake
+  // message (in the in_bytes field) from the peer.
+  uint32 network_latency_ms = 2;
+}
+
+message HandshakerReq {
+  oneof req_oneof {
+    // The start client handshake request message.
+    StartClientHandshakeReq client_start = 1;
+
+    // The start server handshake request message.
+    StartServerHandshakeReq server_start = 2;
+
+    // The next handshake request message.
+    NextHandshakeMessageReq next = 3;
+  }
+}
+
+message HandshakerResult {
+  // The application protocol negotiated for this connection.
+  string application_protocol = 1;
+
+  // The record protocol negotiated for this connection.
+  string record_protocol = 2;
+
+  // Cryptographic key data. The key data may be more than the key length
+  // required for the record protocol, thus the client of the handshaker
+  // service needs to truncate the key data into the right key length.
+  bytes key_data = 3;
+
+  // The authenticated identity of the peer.
+  Identity peer_identity = 4;
+
+  // The local identity used in the handshake.
+  Identity local_identity = 5;
+
+  // Indicate whether the handshaker service client should keep the channel
+  // between the handshaker service open, e.g., in order to handle
+  // post-handshake messages in the future.
+  bool keep_channel_open = 6;
+
+  // The RPC protocol versions supported by the peer.
+  RpcProtocolVersions peer_rpc_versions = 7;
+
+  // The maximum frame size of the peer.
+  uint32 max_frame_size = 8;
+
+  // (Optional) The transport protocol negotiated for this connection.
+  NegotiatedTransportProtocol transport_protocol = 9;
+}
+
+message HandshakerStatus {
+  // The status code. This could be the gRPC status code.
+  uint32 code = 1;
+
+  // The status details.
+  string details = 2;
+}
+
+message HandshakerResp {
+  // Frames to be given to the peer for the NextHandshakeMessageReq. May be
+  // empty if no out_frames have to be sent to the peer or if in_bytes in the
+  // HandshakerReq are incomplete. All the non-empty out frames must be sent to
+  // the peer even if the handshaker status is not OK as these frames may
+  // contain the alert frames.
+  bytes out_frames = 1;
+
+  // Number of bytes in the in_bytes consumed by the handshaker. It is possible
+  // that part of in_bytes in HandshakerReq was unrelated to the handshake
+  // process.
+  uint32 bytes_consumed = 2;
+
+  // This is set iff the handshake was successful. out_frames may still be set
+  // to frames that needs to be forwarded to the peer.
+  HandshakerResult result = 3;
+
+  // Status of the handshaker.
+  HandshakerStatus status = 4;
+}
+
+service HandshakerService {
+  // Handshaker service accepts a stream of handshaker request, returning a
+  // stream of handshaker response. Client is expected to send exactly one
+  // message with either client_start or server_start followed by one or more
+  // messages with next. Each time client sends a request, the handshaker
+  // service expects to respond. Client does not have to wait for service's
+  // response before sending next request.
+  rpc DoHandshake(stream HandshakerReq) returns (stream HandshakerResp) {}
+}

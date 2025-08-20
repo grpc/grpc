@@ -92,7 +92,6 @@ typedef struct grpc_alts_credentials_server_options {
 grpc_alts_credentials_options* grpc_alts_credentials_options_copy(
     const grpc_alts_credentials_options* options);
 
-// Caller must ensure the token_fetcher outlives the credentials options.
 void grpc_alts_credentials_client_options_set_token_fetcher(
     grpc_alts_credentials_options* options,
     std::shared_ptr<grpc::alts::TokenFetcher> token_fetcher);
