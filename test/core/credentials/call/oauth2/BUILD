@@ -24,7 +24,17 @@ grpc_cc_library(
     hdrs = ["oauth2_utils.h"],
     external_deps = ["absl/log:log"],
     visibility = ["//test/cpp:__subpackages__"],
-    deps = ["//:grpc"],
+    deps = [
+        "//:exec_ctx",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_core_credentials_header",
+        "//:grpc_security_base",
+        "//src/core:exec_ctx_wakeup_scheduler",
+        "//src/core:map",
+        "//src/core:notification",
+        "//src/core:resource_quota",
+    ],
 )
 
 grpc_cc_binary(

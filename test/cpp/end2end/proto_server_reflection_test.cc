@@ -16,7 +16,6 @@
 //
 //
 
-#include <gmock/gmock-matchers.h>
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -31,6 +30,7 @@
 #include <memory>
 #include <vector>
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/proto/grpc/reflection/v1/reflection.grpc.pb.h"
 #include "src/proto/grpc/reflection/v1/reflection.pb.h"

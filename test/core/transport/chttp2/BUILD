@@ -646,6 +646,7 @@ grpc_cc_test(
         "//src/core:http2_server_transport",
         "//src/core:message",
         "//src/core:metadata",
+        "//src/core:notification",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/transport/chttp2:http2_frame_test_helper",
@@ -786,5 +787,18 @@ grpc_fuzz_test(
         "//src/core:sleep",
         "//src/core:stream_data_queue",
         "//test/core/call/yodel:yodel_test",
+    ],
+)
+
+grpc_cc_test(
+    name = "writable_streams_test",
+    srcs = ["writable_streams_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//src/core:loop",
+        "//src/core:writable_streams",
+        "//test/core/transport/util:transport_test",
     ],
 )
