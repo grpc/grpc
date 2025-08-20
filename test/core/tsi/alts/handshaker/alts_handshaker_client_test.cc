@@ -557,8 +557,7 @@ TEST(AltsHandshakerClientTest, ScheduleRequestWithTokenSuccessTest) {
   // Initialization.
   std::shared_ptr<FakeTokenFetcher> token_fetcher =
       std::make_shared<FakeTokenFetcher>();
-  alts_handshaker_client_test_config* config =
-      CreateConfig(token_fetcher);
+  alts_handshaker_client_test_config* config = CreateConfig(token_fetcher);
   // Check client_start success.
   alts_handshaker_client_set_grpc_caller_for_testing(
       config->client, CheckClientStartSuccessWithToken);
