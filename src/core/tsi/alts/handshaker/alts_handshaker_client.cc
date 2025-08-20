@@ -537,8 +537,7 @@ static grpc_byte_buffer* get_serialized_start_client(
   }
   // This ensures the token string is available when the proto gets serialized.
   std::optional<std::string> access_token = std::nullopt;
-  // Set access token if the token fetcher is available. This token is only
-  // effective when talking to Google APIs.
+  // Set access token if the token fetcher is available.
   grpc::alts::TokenFetcher* token_fetcher =
       (reinterpret_cast<grpc_alts_credentials_client_options*>(client->options))
           ->token_fetcher.get();
