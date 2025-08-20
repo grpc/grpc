@@ -1285,6 +1285,11 @@ grpc_cc_library(
 # anything else from gpr can still be portable!
 grpc_cc_library(
     name = "gpr_platform",
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/base:config",
+        "absl/strings",
+    ],
     public_hdrs = [
         "include/grpc/impl/codegen/port_platform.h",
         "include/grpc/support/port_platform.h",
