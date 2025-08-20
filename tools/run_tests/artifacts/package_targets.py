@@ -195,15 +195,11 @@ class PythonPackage:
 
         elif self.arch == "aarch64":
             if "musllinux_1_2" in self.platform:
-                dockerfile_dir = (
-                    "tools/dockerfile/grpc_artifact_python_musllinux_1_2_aarch64"
-                )
+                dockerfile_dir = "tools/dockerfile/grpc_artifact_python_musllinux_1_2_aarch64"
                 environ["ARTIFACT_PREFIX"] = "python_musllinux_1_2_aarch64_"
 
             elif "manylinux2014" in self.platform:
-                dockerfile_dir = (
-                    "tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64"
-                )
+                dockerfile_dir = "tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64"
                 environ["ARTIFACT_PREFIX"] = "python_manylinux2014_aarch64_"
             environ["EXCLUDE_PATTERNS"] = ""
 
