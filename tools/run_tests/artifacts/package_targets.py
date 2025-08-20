@@ -245,6 +245,6 @@ def targets():
         PythonPackage("any"),
         PythonPackage("musllinux_1_2", "aarch64"),
         PythonPackage("manylinux2014", "aarch64"),
-        PythonPackage("any", "noarch"),
+        PythonPackage("any", "aarch64"),
         PHPPackage(),
     ]
