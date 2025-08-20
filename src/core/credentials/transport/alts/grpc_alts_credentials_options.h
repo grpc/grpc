@@ -38,7 +38,7 @@ class TokenFetcher {
 
   // Thread-safe. The returned token must be strongly bound. Failure to
   // comply with this requirement will result in a serious security issue.
-  // The token must also be valid for at least 8 hours to outlive an
+  // The token must also be valid for at least 9 hours to outlive an
   // arbitrary ALTS connection.
   virtual absl::StatusOr<std::string> GetToken() = 0;
 };
