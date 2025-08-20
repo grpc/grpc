@@ -1311,6 +1311,8 @@ grpc_cc_library(
         "absl/time",
         "absl/types:span",
         "absl/functional:any_invocable",
+        "absl/strings",
+        "absl/utility:utility",
     ],
     tags = [
         "nofixdeps",
@@ -1319,6 +1321,7 @@ grpc_cc_library(
     deps = [
         "channel_arg_names",
         "gpr",
+        "grpc_core_credentials_header",
     ],
 )
 
