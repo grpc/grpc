@@ -401,7 +401,7 @@ grpc_alts_credentials_options* CreateCredentialsOptions(bool is_client) {
 }
 
 alts_handshaker_client_test_config* CreateConfig(
-    grpc::alts::TokenFetcher* token_fetcher = nullptr) {
+    std::shared_ptr<grpc::alts::TokenFetcher> token_fetcher = nullptr) {
   alts_handshaker_client_test_config* config =
       static_cast<alts_handshaker_client_test_config*>(
           gpr_zalloc(sizeof(*config)));
@@ -555,10 +555,10 @@ TEST(AltsHandshakerClientTest, ScheduleRequestSuccessTest) {
 
 TEST(AltsHandshakerClientTest, ScheduleRequestWithTokenSuccessTest) {
   // Initialization.
-  std::unique_ptr<FakeTokenFetcher> token_fetcher =
-      std::make_unique<FakeTokenFetcher>();
+  std::shared_ptr<FakeTokenFetcher> token_fetcher =
+      std::make_shared<FakeTokenFetcher>();
   alts_handshaker_client_test_config* config =
-      CreateConfig(token_fetcher.get());
+      CreateConfig(token_fetcher);
   // Check client_start success.
   alts_handshaker_client_set_grpc_caller_for_testing(
       config->client, CheckClientStartSuccessWithToken);

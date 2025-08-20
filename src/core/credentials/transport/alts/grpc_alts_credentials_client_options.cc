@@ -21,6 +21,8 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
+#include <memory>
+
 #include "absl/log/log.h"
 #include "src/core/credentials/transport/alts/grpc_alts_credentials_options.h"
 #include "src/core/tsi/alts/handshaker/transport_security_common_api.h"
@@ -112,7 +114,7 @@ static grpc_alts_credentials_options* alts_client_options_copy(
 
 void grpc_alts_credentials_client_options_set_token_fetcher(
     grpc_alts_credentials_options* options,
-    grpc::alts::TokenFetcher* token_fetcher) {
+    std::shared_ptr<grpc::alts::TokenFetcher> token_fetcher) {
   if (options == nullptr) {
     return;
   }

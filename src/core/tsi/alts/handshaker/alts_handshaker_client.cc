@@ -23,6 +23,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <list>
+#include <memory>
 #include <string>
 
 #include "absl/log/check.h"
@@ -534,13 +535,13 @@ static grpc_byte_buffer* get_serialized_start_client(
                                           upb_StringView_FromString(ptr->data));
     ptr = ptr->next;
   }
-  // This ensures the token string is avaialble when the proto gets serialized.
+  // This ensures the token string is available when the proto gets serialized.
   std::optional<std::string> access_token = std::nullopt;
   // Set access token if the token fetcher is available. This token is only
   // effective when talking to Google APIs.
   grpc::alts::TokenFetcher* token_fetcher =
       (reinterpret_cast<grpc_alts_credentials_client_options*>(client->options))
-          ->token_fetcher;
+          ->token_fetcher.get();
   if (token_fetcher != nullptr) {
     absl::StatusOr<std::string> token = token_fetcher->GetToken();
     if (!token.ok()) {

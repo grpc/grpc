@@ -106,10 +106,10 @@ TEST(GrpcAltsCredentialsOptionsTest, ClientOptionsWithTokenFetcher) {
       grpc_alts_credentials_client_options_create();
 
   // Set the token fetcher and check success.
-  std::unique_ptr<FakeTokenFetcher> token_fetcher =
-      std::make_unique<FakeTokenFetcher>();
+  std::shared_ptr<FakeTokenFetcher> token_fetcher =
+      std::make_shared<FakeTokenFetcher>();
   grpc_alts_credentials_client_options_set_token_fetcher(options,
-                                                         token_fetcher.get());
+                                                         token_fetcher);
   auto client_options =
       reinterpret_cast<grpc_alts_credentials_client_options*>(options);
   ASSERT_NE(client_options->token_fetcher, nullptr);
