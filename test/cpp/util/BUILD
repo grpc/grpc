@@ -148,10 +148,16 @@ grpc_cc_library(
         "absl/log:log",
         "protobuf",
         "protobuf_clib",
+        "absl/strings",
+        "absl/memory",
     ],
     deps = [
         ":grpc++_proto_reflection_desc_db",
+        "//:gpr",
         "//:grpc++",
+        "//:grpc++_config_proto",
+        "//:grpc_slice",
+        "//src/core:load_file",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],
 )
