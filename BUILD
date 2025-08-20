@@ -1027,6 +1027,7 @@ grpc_cc_library(
         "gpr_public_hdrs",
         "grpc++_base",
         "grpc++_config_proto",
+        "grpc_core_credentials_header",
         "grpc_public_hdrs",
         "ref_counted_ptr",
         "transport_auth_context",
@@ -1219,6 +1220,7 @@ grpc_cc_library(
         "transport_auth_context",
         "//src/core:gpr_atm",
         "//src/core:grpc_insecure_credentials",
+        "@com_google_protobuf//:any_cc_proto",
     ],
 )
 
@@ -2595,6 +2597,7 @@ grpc_cc_library(
         "generic_stub_internal",
         "global_callback_hook",
         "gpr",
+        "grpc++_config_proto",
         "grpc_base",
         "grpc_core_credentials_header",
         "grpc_health_upb",
@@ -2635,6 +2638,7 @@ grpc_cc_library(
         "//src/core:thread_quota",
         "//src/core:time",
         "//src/core:useful",
+        "@com_google_protobuf//:any_cc_proto",
     ],
 )
 
