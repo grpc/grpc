@@ -23,20 +23,6 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-IS_AARCH64=""
-if [[ "${TASK_RUNNER_EXTRA_FILTERS}" == "aarch64" || "${TASK_RUNNER_EXTRA_FILTERS}" == "presubmit aarch64" ]]; then
-  IS_AARCH64="True"
-fi
-
-if [[ "${IS_AARCH64}" == "True" ]]; then
-  echo "Skipping prepare_qemu_rc'"
-else
-  # some distribtests use a pre-registered binfmt_misc hook
-  # to automatically execute foreign binaries (such as aarch64)
-  # under qemu emulator.
-  source tools/internal_ci/helper_scripts/prepare_qemu_rc
-fi
-
 # configure ccache
 source tools/internal_ci/helper_scripts/prepare_ccache_rc
 
