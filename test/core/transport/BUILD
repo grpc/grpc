@@ -99,12 +99,17 @@ grpc_cc_test(
     srcs = ["timeout_encoding_test.cc"],
     external_deps = [
         "gtest",
+        "absl/strings:str_format",
+        "absl/strings:string_view",
     ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:time",
+        "//src/core:timeout_encoding",
+        "//src/core:useful",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
