@@ -51,6 +51,7 @@ grpc_cc_test(
         "//src/core:event_engine_thread_count",
         "//src/core:event_engine_thread_pool",
         "//src/core:notification",
+        "//src/core:time",
         "//test/core/test_util:grpc_test_util_unsecure",
     ],
 )
@@ -85,6 +86,7 @@ grpc_cc_test(
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//src/core:default_event_engine",
+        "//src/core:notification",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -187,9 +189,11 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc",
         "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:grpc_sockaddr",
         "//src/core:iomgr_port",
     ],
 )

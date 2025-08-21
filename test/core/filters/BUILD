@@ -72,11 +72,13 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "filter_test",
+        "//:grpc_base",
         "//:grpc_unsecure",
         "//src/core:activity",
         "//src/core:arena_promise",
         "//src/core:channel_args",
         "//src/core:map",
+        "//src/core:metadata_batch",
         "//src/core:pipe",
         "//src/core:poll",
         "//src/core:seq",
@@ -144,19 +146,34 @@ grpc_cc_test(
     deps = [
         "filter_test",
         "//:grpc",
+        "//:grpc_base",
         "//:grpc_security_base",
+        "//:grpc_service_config_impl",
         "//:ref_counted_ptr",
         "//src/core:channel_args",
+        "//src/core:gcp_authentication_filter",
+        "//src/core:gcp_service_account_identity_credentials",
+        "//src/core:grpc_resolver_xds_attributes",
+        "//src/core:grpc_service_config",
+        "//src/core:unique_type_name",
+        "//src/core:xds_config",
     ],
 )
 
 grpc_cc_benchmark(
     name = "bm_http_client_filter",
     srcs = ["bm_http_client_filter.cc"],
+    external_deps = [
+        "absl/strings",
+    ],
     monitoring = HISTORY,
     deps = [
         "//:grpc",
+        "//:grpc_base",
+        "//:grpc_http_filters",
+        "//src/core:connectivity_state",
         "//src/core:default_event_engine",
+        "//src/core:metadata",
         "//test/core/call:call_spine_benchmarks",
     ],
 )

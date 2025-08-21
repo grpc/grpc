@@ -24,14 +24,20 @@ grpc_cc_library(
     testonly = True,
     srcs = ["test_handshake.cc"],
     hdrs = ["test_handshake.h"],
+    external_deps = [
+        "absl/cleanup",
+    ],
     deps = [
+        "//:config",
         "//:handshaker",
         "//:iomgr",
+        "//:iomgr_timer",
         "//src/core:channel_args",
         "//src/core:channel_args_endpoint_config",
         "//src/core:event_engine_memory_allocator_factory",
         "//src/core:event_engine_tcp_socket_utils",
         "//src/core:resource_quota",
+        "//src/core:tcp_connect_handshaker",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
     ],
@@ -46,6 +52,7 @@ grpc_fuzz_test(
     ],
     deps = [
         "test_handshake",
+        "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
         "//test/core/test_util:fuzzing_channel_args",
         "//test/core/test_util:fuzzing_channel_args_cc_proto",
