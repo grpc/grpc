@@ -58,10 +58,10 @@ namespace grpc_core {
 //               VerifyCsmServiceLabels());
 void RegisterFakeStatsPlugin();
 
-class FakeClientCallTracer : public ClientCallTracer {
+class FakeClientCallTracer : public ClientCallTracerInterface {
  public:
   class FakeClientCallAttemptTracer
-      : public ClientCallTracer::CallAttemptTracer,
+      : public ClientCallTracerInterface::CallAttemptTracer,
         public RefCounted<FakeClientCallAttemptTracer> {
    public:
     explicit FakeClientCallAttemptTracer(
@@ -162,7 +162,7 @@ class FakeClientCallTracerFactory {
   std::vector<std::unique_ptr<FakeClientCallTracer>> fake_client_call_tracers_;
 };
 
-class FakeServerCallTracer : public ServerCallTracer {
+class FakeServerCallTracer : public ServerCallTracerInterface {
  public:
   explicit FakeServerCallTracer(std::vector<std::string>* annotation_logger)
       : annotation_logger_(annotation_logger) {}
@@ -358,12 +358,12 @@ class FakeStatsPlugin : public StatsPlugin {
     callbacks_.erase(callback);
   }
 
-  ClientCallTracer* GetClientCallTracer(
+  ClientCallTracerInterface* GetClientCallTracer(
       const Slice& /*path*/, bool /*registered_method*/,
       std::shared_ptr<StatsPlugin::ScopeConfig> /*scope_config*/) override {
     return nullptr;
   }
-  ServerCallTracer* GetServerCallTracer(
+  ServerCallTracerInterface* GetServerCallTracer(
       std::shared_ptr<StatsPlugin::ScopeConfig> /*scope_config*/) override {
     return nullptr;
   }

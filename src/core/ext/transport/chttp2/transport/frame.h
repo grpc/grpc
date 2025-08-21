@@ -269,9 +269,6 @@ http2::Http2Status ValidateFrameHeader(uint32_t max_frame_size_setting,
                                        uint32_t incoming_header_stream_id,
                                        Http2FrameHeader& current_frame_header);
 
-http2::Http2Status IsFrameValidForHalfCloseRemoteStreamState(
-    Http2FrameHeader& current_frame_header);
-
 ///////////////////////////////////////////////////////////////////////////////
 // RFC9113 Related Strings and Consts
 
@@ -360,6 +357,9 @@ inline constexpr absl::string_view kIncorrectFrameSizeSetting =
     "RFC9113: The initial value is 2^14 (16,384) octets. The value advertised"
     " by an endpoint MUST be between this initial value and the maximum allowed"
     " frame size (2^24)-1 or 16,777,215 octets), inclusive. ";
+inline constexpr absl::string_view kSettingsTimeout =
+    "Settings timeout. The HTTP2 settings frame was not ACKed within the "
+    "timeout. Connection will be closed";
 
 inline constexpr uint32_t kMaxStreamId31Bit = 0x7fffffffu;
 inline constexpr uint32_t kMaxSize31Bit = 0x7fffffffu;

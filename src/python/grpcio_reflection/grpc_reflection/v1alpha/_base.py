@@ -35,7 +35,7 @@ def _not_found_error(original_request):
 def _collect_transitive_dependencies(descriptor, seen_files):
     seen_files.update({descriptor.name: descriptor})
     for dependency in descriptor.dependencies:
-        if not dependency.name in seen_files:
+        if dependency.name not in seen_files:
             # descriptors cannot have circular dependencies
             _collect_transitive_dependencies(dependency, seen_files)
 

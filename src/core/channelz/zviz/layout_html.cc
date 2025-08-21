@@ -14,54 +14,33 @@
 
 #include "src/core/channelz/zviz/layout_html.h"
 
+#include "absl/strings/str_cat.h"
+
 namespace grpc_zviz::layout {
 
 namespace {
 
-std::string IntentToStyle(Intent intent) {
-  switch (intent) {
-    case Intent::kBanner:
-      return "zviz-banner";
-    case Intent::kHeading:
-      return "zviz-heading";
-    case Intent::kEntityRef:
-      return "zviz-entity-ref";
-    case Intent::kTrace:
-      return "zviz-trace";
-    case Intent::kTraceDescription:
-      return "zviz-trace-description";
-    case Intent::kData:
-      return "zviz-data";
-    case Intent::kTimestamp:
-      return "zviz-timestamp";
-    case Intent::kNote:
-      return "zviz-note";
-    case Intent::kKey:
-      return "zviz-key";
-    case Intent::kValue:
-      return "zviz-value";
-    case Intent::kDuration:
-      return "zviz-duration";
-  }
+template <typename T>
+std::string Stringify(T V) {
+  return absl::StrCat("zviz-", V);
 }
 
 }  // namespace
 
 Element& HtmlElement::AppendText(Intent intent, absl::string_view text) {
-  container_.TextDiv(IntentToStyle(intent), std::string(text));
+  container_.TextDiv(Stringify(intent), std::string(text));
   return *this;
 }
 
 Element& HtmlElement::AppendLink(Intent intent, absl::string_view text,
                                  absl::string_view href) {
-  container_.LinkDiv(IntentToStyle(intent), std::string(text),
-                     std::string(href));
+  container_.LinkDiv(Stringify(intent), std::string(text), std::string(href));
   return *this;
 }
 
 Element& HtmlElement::AppendGroup(Intent intent) {
   return *children_.emplace_back(
-      std::make_unique<HtmlElement>(container_.NewDiv(IntentToStyle(intent))));
+      std::make_unique<HtmlElement>(container_.NewDiv(Stringify(intent))));
 }
 
 Element& HtmlElement::AppendData(absl::string_view name, absl::string_view) {
@@ -70,13 +49,44 @@ Element& HtmlElement::AppendData(absl::string_view name, absl::string_view) {
   return grp;
 }
 
-Table& HtmlElement::AppendTable(TableIntent) {
-  return *tables_.emplace_back(
-      std::make_unique<HtmlTable>(container_.NewTable()));
+Table& HtmlElement::AppendTable(TableIntent intent) {
+  return *tables_.emplace_back(std::make_unique<HtmlTable>(
+      container_.NewTable(Stringify(intent)), intent));
+}
+
+HtmlTable::HtmlTable(html::Table& table, TableIntent intent) : table_(table) {
+  switch (intent) {
+    case TableIntent::kPropertyList:
+      in_header_ = false;
+      break;
+    case TableIntent::kPropertyGrid:
+      table_.set_num_header_columns(1);
+      in_header_ = true;
+      break;
+    case TableIntent::kPropertyTable:
+    case TableIntent::kTrace:
+      in_header_ = true;
+      break;
+  }
+  if (in_header_) {
+    table_.set_num_header_rows(1);
+  }
 }
 
 Element& HtmlTable::AppendColumn() {
+  if (in_header_) {
+    table_.set_num_header_rows(1);
+  }
   return *elements_.emplace_back(
       std::make_unique<HtmlElement>(table_.Cell(column_++, row_)));
 }
+
+void HtmlTable::NewRow() {
+  if (in_header_) {
+    in_header_ = false;
+  }
+  row_++;
+  column_ = 0;
+}
+
 }  // namespace grpc_zviz::layout

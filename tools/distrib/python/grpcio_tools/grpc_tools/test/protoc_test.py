@@ -126,26 +126,32 @@ def _test_static_dynamic_combo():
 
 @_collect_errors
 def _test_combined_import():
-    from grpc_tools import protoc
+    with _augmented_syspath(
+        ("tools/distrib/python/grpcio_tools/grpc_tools/test/",)
+    ):
+        from grpc_tools import protoc
 
-    protos, services = protoc._protos_and_services("simple.proto")
-    assert protos.SimpleMessage is not None
-    assert services.SimpleMessageServiceStub is not None
+        protos, services = protoc._protos_and_services("simple.proto")
+        assert protos.SimpleMessage is not None
+        assert services.SimpleMessageServiceStub is not None
 
 
 @_collect_errors
 def _test_syntax_errors():
-    from grpc_tools import protoc
+    with _augmented_syspath(
+        ("tools/distrib/python/grpcio_tools/grpc_tools/test/",)
+    ):
+        from grpc_tools import protoc
 
-    try:
-        protos = protoc._protos("flawed.proto")
-    except Exception as e:
-        error_str = str(e)
-        assert "flawed.proto" in error_str
-        assert "17:23" in error_str
-        assert "21:23" in error_str
-    else:
-        assert False, "Compile error expected. None occurred."
+        try:
+            protos = protoc._protos("flawed.proto")
+        except Exception as e:
+            error_str = str(e)
+            assert "flawed.proto" in error_str
+            assert "17:23" in error_str
+            assert "21:23" in error_str
+        else:
+            assert False, "Compile error expected. None occurred."
 
 
 class ProtocTest(unittest.TestCase):

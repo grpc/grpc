@@ -23,7 +23,9 @@
 #include <utility>
 
 #include "src/core/call/call_spine.h"
+#include "src/core/call/metadata_info.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/transport/promise_endpoint.h"
@@ -44,8 +46,12 @@ namespace http2 {
 #define GRPC_HTTP2_CLIENT_DLOG \
   DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
 
+#define GRPC_HTTP2_COMMON_DLOG \
+  DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
+
 // TODO(akshitpatel) : [PH2][P2] : Choose appropriate size later.
 constexpr int kMpscSize = 10;
+constexpr uint32_t kStreamQueueSize = /*1 MB*/ 1024u * 1024u;
 
 enum class HttpStreamState : uint8_t {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-stream-states
@@ -56,7 +62,10 @@ enum class HttpStreamState : uint8_t {
   kClosed,
 };
 
-class TransportSendQeueue {};
+void InitLocalSettings(Http2Settings& settings, const bool is_client);
+
+void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
+                                 Http2Settings& settings, const bool is_client);
 
 }  // namespace http2
 }  // namespace grpc_core

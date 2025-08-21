@@ -64,10 +64,14 @@
   default: true
 - name: free_large_allocator
   default: false
+- name: fuse_filters
+  default: false
 - name: keep_alive_ping_timer_batch
   default: false
 - name: local_connector_secure
   default: false
+- name: max_age_filter_float_to_top
+  default: true
 - name: max_inflight_pings_strict_limit
   default: true
 - name: monitoring_experiment

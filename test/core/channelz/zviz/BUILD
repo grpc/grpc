@@ -169,3 +169,40 @@ grpc_fuzz_test(
         "//src/proto/grpc/channelz/v2:channelz_cc_proto",
     ],
 )
+
+grpc_fuzz_test(
+    name = "property_list_test",
+    srcs = ["property_list_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+        "protobuf",
+    ],
+    deps = [
+        "//src/core:zviz_property_list",
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "format_entity_list_test",
+    srcs = ["format_entity_list_test.cc"],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/log:check",
+        "absl/strings",
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+        "protobuf",
+    ],
+    deps = [
+        "environment_fake",
+        "layout_log",
+        "//src/core:zviz_format_entity_list",
+        "//src/core:zviz_layout_html",
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+    ],
+)

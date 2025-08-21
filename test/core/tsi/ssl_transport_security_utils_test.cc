@@ -835,6 +835,60 @@ TEST(ParsePemPrivateKeyTest, EcSuccess) {
   EXPECT_NE(*pkey, nullptr);
   EVP_PKEY_free(*pkey);
 }
+
+TEST(ParseUriString, ValidUri) {
+  GENERAL_NAME* subject_alt_name = GENERAL_NAME_new();
+  ASN1_IA5STRING* uri = ASN1_IA5STRING_new();
+  ASN1_STRING_set(uri, "spiffe://foo.bar/path", -1);
+  GENERAL_NAME_set0_value(subject_alt_name, GEN_URI, uri);
+  absl::StatusOr<std::string> parsed_uri = ParseUriString(subject_alt_name);
+  ASSERT_EQ(parsed_uri.status(), absl::OkStatus());
+  EXPECT_EQ(*parsed_uri, "spiffe://foo.bar/path");
+  GENERAL_NAME_free(subject_alt_name);
+}
+
+TEST(ParseUriString, EmptyUri) {
+  GENERAL_NAME* subject_alt_name = GENERAL_NAME_new();
+  ASN1_IA5STRING* uri = ASN1_IA5STRING_new();
+  ASN1_STRING_set(uri, "", -1);
+  GENERAL_NAME_set0_value(subject_alt_name, GEN_URI, uri);
+  absl::StatusOr<std::string> parsed_uri = ParseUriString(subject_alt_name);
+  ASSERT_EQ(parsed_uri.status(), absl::OkStatus());
+  EXPECT_EQ(*parsed_uri, "");
+  GENERAL_NAME_free(subject_alt_name);
+}
+
+TEST(ParseUriString, InvalidUtf8) {
+  GENERAL_NAME* subject_alt_name = GENERAL_NAME_new();
+  ASN1_UTF8STRING* uri = ASN1_UTF8STRING_new();
+  // This sequence is invalid UTF8.
+  const unsigned char invalid_utf8[] = {0xc0};
+  ASN1_STRING_set(reinterpret_cast<ASN1_STRING*>(uri), invalid_utf8,
+                  sizeof(invalid_utf8));
+  GENERAL_NAME_set0_value(subject_alt_name, GEN_URI, uri);
+  absl::StatusOr<std::string> parsed_uri = ParseUriString(subject_alt_name);
+  EXPECT_EQ(parsed_uri.status().code(), absl::StatusCode::kInvalidArgument);
+  GENERAL_NAME_free(subject_alt_name);
+}
+
+TEST(ParseUriString, WrongType) {
+  GENERAL_NAME* subject_alt_name = GENERAL_NAME_new();
+  ASN1_UTF8STRING* other = ASN1_UTF8STRING_new();
+  ASN1_STRING_set(other, "foo", -1);
+  GENERAL_NAME_set0_value(subject_alt_name, GEN_DNS, other);
+  absl::StatusOr<std::string> parsed_uri = ParseUriString(subject_alt_name);
+  EXPECT_EQ(parsed_uri.status().code(), absl::StatusCode::kInvalidArgument);
+  GENERAL_NAME_free(subject_alt_name);
+}
+
+TEST(ParseUriString, DontSetASN1String) {
+  GENERAL_NAME* subject_alt_name = GENERAL_NAME_new();
+  ASN1_UTF8STRING* other = ASN1_UTF8STRING_new();
+  GENERAL_NAME_set0_value(subject_alt_name, GEN_DNS, other);
+  absl::StatusOr<std::string> parsed_uri = ParseUriString(subject_alt_name);
+  EXPECT_EQ(parsed_uri.status().code(), absl::StatusCode::kInvalidArgument);
+  GENERAL_NAME_free(subject_alt_name);
+}
 }  // namespace testing
 }  // namespace grpc_core
 
