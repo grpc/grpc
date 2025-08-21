@@ -8182,6 +8182,7 @@ grpc_cc_library(
         "message",
         "message_assembler",
         "metadata_batch",
+        "writable_streams",
     ],
 )
 
