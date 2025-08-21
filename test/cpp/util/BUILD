@@ -189,8 +189,10 @@ grpc_cc_library(
     ],
     external_deps = ["absl/log:log"],
     deps = [
+        "//:gpr",
         "//:grpc++",
         "//src/proto/grpc/testing:metrics_cc_grpc",
+        "//src/proto/grpc/testing:metrics_cc_proto",
     ],
 )
 
@@ -210,6 +212,8 @@ grpc_cc_test(
     external_deps = [
         "absl/flags:flag",
         "gtest",
+        "absl/strings",
+        "absl/log:check",
     ],
     tags = [
         "grpc:internal-test-filter:-GrpcToolTest.CallCommandWithBadMetadata",
@@ -220,9 +224,15 @@ grpc_cc_test(
     ],
     deps = [
         ":grpc_cli_libs",
+        ":grpc_cli_utils",
         ":test_util",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++_base",
         "//:grpc++_reflection",
+        "//src/core:env",
         "//src/proto/grpc/testing:echo_cc_grpc",
+        "//src/proto/grpc/testing:echo_cc_proto",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//src/proto/grpc/testing:simple_messages_cc_proto",
         "//test/core/test_util:grpc_test_util",
@@ -242,6 +252,10 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         ":test_util",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc_slice",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -257,6 +271,10 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         ":test_util",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc_slice",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -287,7 +305,12 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        ":test_config",
         ":test_util",
+        "//:gpr",
+        "//:grpc++",
+        "//:grpc++_base",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -301,7 +324,10 @@ grpc_cc_test(
     ],
     deps = [
         ":grpc_cli_libs",
+        ":grpc_cli_utils",
         ":test_util",
+        "//:grpc",
+        "//:grpc++",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -432,6 +458,8 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         ":test_util",
+        "//:grpc++",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -447,6 +475,8 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         ":test_util",
+        "//:grpc++",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
