@@ -22,34 +22,25 @@
 namespace grpc_core {
 namespace {
 
-class LowContentionDomain : public InstrumentDomain<LowContentionDomain> {
- public:
-  using Backend = LowContentionBackend;
-  static constexpr auto kLabels = std::tuple();
-  static inline const auto kCounter =
-      RegisterCounter("low_contention", "Desc", "unit");
-};
-
-class HighContentionDomain : public InstrumentDomain<HighContentionDomain> {
- public:
-  using Backend = HighContentionBackend;
-  static constexpr auto kLabels = std::tuple();
-  static inline const auto kCounter =
-      RegisterCounter("high_contention", "Desc", "unit");
-};
+auto* kLowContentionDomain = MakeInstrumentDomain<LowContentionBackend>();
+auto kLowContentionCounter =
+    kLowContentionDomain->RegisterCounter("low_contention", "Desc", "unit");
+auto* kHighContentionDomain = MakeInstrumentDomain<HighContentionBackend>();
+auto kHighContentionCounter =
+    kHighContentionDomain->RegisterCounter("high_contention", "Desc", "unit");
 
 void BM_IncrementLowContentionInstrument(benchmark::State& state) {
-  auto storage = LowContentionDomain::GetStorage();
+  auto storage = kLowContentionDomain->GetStorage();
   for (auto _ : state) {
-    storage->Increment(LowContentionDomain::kCounter);
+    storage->Increment(kLowContentionCounter);
   }
 }
 BENCHMARK(BM_IncrementLowContentionInstrument)->ThreadRange(1, 64);
 
 void BM_IncrementHighContentionInstrument(benchmark::State& state) {
-  auto storage = HighContentionDomain::GetStorage();
+  auto storage = kHighContentionDomain->GetStorage();
   for (auto _ : state) {
-    storage->Increment(HighContentionDomain::kCounter);
+    storage->Increment(kHighContentionCounter);
   }
 }
 BENCHMARK(BM_IncrementHighContentionInstrument)->ThreadRange(1, 64);

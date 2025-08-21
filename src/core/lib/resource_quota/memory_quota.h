@@ -41,7 +41,6 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/periodic_update.h"
-#include "src/core/lib/resource_quota/telemetry.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
@@ -285,8 +284,7 @@ static constexpr size_t kSmallAllocatorThreshold = 0.1 * 1024 * 1024;
 
 class BasicMemoryQuota final
     : public std::enable_shared_from_this<BasicMemoryQuota>,
-      public channelz::DataSource,
-      public GaugeProvider<ResourceQuotaDomain> {
+      public channelz::DataSource {
  public:
   // Data about current memory pressure.
   struct PressureInfo {
@@ -300,9 +298,8 @@ class BasicMemoryQuota final
   };
 
   explicit BasicMemoryQuota(
-      RefCountedPtr<channelz::ResourceQuotaNode> channelz_node,
-      InstrumentStorageRefPtr<ResourceQuotaDomain> telemetry_storage);
-  ~BasicMemoryQuota();
+      RefCountedPtr<channelz::ResourceQuotaNode> channelz_node);
+  ~BasicMemoryQuota() { channelz::DataSource::SourceDestructing(); }
 
   // Start the reclamation activity.
   void Start();
@@ -337,12 +334,6 @@ class BasicMemoryQuota final
   absl::string_view name() const { return channelz_node()->name(); }
 
   void AddData(channelz::DataSink sink) override;
-
-  void PopulateGaugeData(GaugeSink<ResourceQuotaDomain>& sink) override;
-
-  InstrumentStorage<ResourceQuotaDomain>* telemetry_storage() const {
-    return telemetry_storage_.get();
-  }
 
  private:
   friend class ReclamationSweep;
@@ -396,7 +387,6 @@ class BasicMemoryQuota final
   std::atomic<uint64_t> reclamation_counter_{0};
   // Memory pressure smoothing
   memory_quota_detail::PressureTracker pressure_tracker_;
-  const InstrumentStorageRefPtr<ResourceQuotaDomain> telemetry_storage_;
 };
 
 // MemoryAllocatorImpl grants the owner the ability to allocate memory from an
@@ -471,10 +461,6 @@ class GrpcMemoryAllocatorImpl final : public EventEngineMemoryAllocatorImpl {
   }
 
   void FillChannelzProperties(channelz::PropertyList& list);
-
-  InstrumentStorage<ResourceQuotaDomain>* telemetry_storage() const {
-    return memory_quota_->telemetry_storage();
-  }
 
  private:
   static constexpr size_t kMaxQuotaBufferSize = 1024 * 1024;
@@ -559,10 +545,6 @@ class MemoryOwner final : public MemoryAllocator {
            memory_pressure_high_threshold();
   }
 
-  InstrumentStorage<ResourceQuotaDomain>* telemetry_storage() const {
-    return impl()->telemetry_storage();
-  }
-
  private:
   const GrpcMemoryAllocatorImpl* impl() const {
     return static_cast<const GrpcMemoryAllocatorImpl*>(get_internal_impl_ptr());
@@ -578,9 +560,8 @@ class MemoryQuota final
     : public grpc_event_engine::experimental::MemoryAllocatorFactory {
  public:
   explicit MemoryQuota(RefCountedPtr<channelz::ResourceQuotaNode> channelz_node)
-      : memory_quota_(std::make_shared<BasicMemoryQuota>(
-            std::move(channelz_node),
-            ResourceQuotaDomain::GetStorage(channelz_node->name()))) {
+      : memory_quota_(
+            std::make_shared<BasicMemoryQuota>(std::move(channelz_node))) {
     memory_quota_->Start();
   }
   ~MemoryQuota() override {

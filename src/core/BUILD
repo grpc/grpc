@@ -1720,7 +1720,6 @@ grpc_cc_library(
         "periodic_update",
         "poll",
         "race",
-        "resource_quota_telemetry",
         "seq",
         "slice_refcount",
         "sync",
@@ -1814,16 +1813,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "resource_quota_telemetry",
-    hdrs = [
-        "lib/resource_quota/telemetry.h",
-    ],
-    deps = [
-        "instrument",
-    ],
-)
-
-grpc_cc_library(
     name = "resource_quota",
     srcs = [
         "lib/resource_quota/resource_quota.cc",
@@ -1839,7 +1828,6 @@ grpc_cc_library(
         "memory_quota",
         "no_destruct",
         "ref_counted",
-        "resource_quota_telemetry",
         "single_set_ptr",
         "thread_quota",
         "useful",
@@ -6581,6 +6569,7 @@ grpc_cc_library(
     ],
     deps = [
         "channel_args",
+        "client_channel_internal_header",
         "delegating_helper",
         "env",
         "grpc_lb_address_filtering",
@@ -8193,6 +8182,7 @@ grpc_cc_library(
         "message",
         "message_assembler",
         "metadata_batch",
+        "writable_streams",
     ],
 )
 

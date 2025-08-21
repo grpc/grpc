@@ -30,14 +30,6 @@
 
 namespace grpc_core {
 
-void InstrumentMetadata::ForEachInstrument(
-    absl::FunctionRef<void(const InstrumentMetadata::Description*)> fn) {
-  instrument_detail::QueryableDomain::ForEachInstrument(fn);
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// MetricsQuery
-
 MetricsQuery& MetricsQuery::WithLabelEq(absl::string_view label,
                                         std::string value) {
   label_eqs_.emplace(label, std::move(value));
@@ -58,7 +50,27 @@ MetricsQuery& MetricsQuery::OnlyMetrics(absl::Span<const std::string> metrics) {
 }
 
 void MetricsQuery::Run(MetricsSink& sink) const {
-  instrument_detail::QueryableDomain::ExportMetrics(*this, sink);
+  QueryableDomain::ExportMetrics(*this, sink);
+}
+
+const InstrumentIndex::Description* InstrumentIndex::Register(
+    QueryableDomain* domain, uint64_t offset, absl::string_view name,
+    absl::string_view description, absl::string_view unit, Shape shape) {
+  auto it = metrics_.emplace(
+      name, Description{domain, offset, name, description, unit, shape});
+  if (!it.second) {
+    LOG(FATAL) << "Metric with name '" << name << "' already registered.";
+  }
+  return &it.first->second;
+}
+
+const InstrumentIndex::Description* InstrumentIndex::Find(
+    absl::string_view name) const {
+  auto it = metrics_.find(name);
+  if (it == metrics_.end()) {
+    return nullptr;
+  }
+  return &it->second;
 }
 
 template <typename Fn>
@@ -107,19 +119,6 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names, Fn fn,
           it->second.counts[i] += counts[i];
         }
       }
-    }
-
-    void DoubleGauge(absl::Span<const std::string>, absl::string_view,
-                     double) override {
-      // Not aggregatable
-    }
-    void IntGauge(absl::Span<const std::string>, absl::string_view,
-                  int64_t) override {
-      // Not aggregatable
-    }
-    void UintGauge(absl::Span<const std::string>, absl::string_view,
-                   uint64_t) override {
-      // Not aggregatable
     }
 
     void Publish(MetricsSink& sink) const {
@@ -200,22 +199,6 @@ void MetricsQuery::ApplyLabelChecks(absl::Span<const std::string> label_names,
       sink_.Histogram(label, name, bounds, counts);
     }
 
-    void DoubleGauge(absl::Span<const std::string> label,
-                     absl::string_view name, double value) override {
-      if (!Matches(label)) return;
-      sink_.DoubleGauge(label, name, value);
-    }
-    void IntGauge(absl::Span<const std::string> label, absl::string_view name,
-                  int64_t value) override {
-      if (!Matches(label)) return;
-      sink_.IntGauge(label, name, value);
-    }
-    void UintGauge(absl::Span<const std::string> label, absl::string_view name,
-                   uint64_t value) override {
-      if (!Matches(label)) return;
-      sink_.UintGauge(label, name, value);
-    }
-
    private:
     bool Matches(absl::Span<const std::string> label) const {
       for (const auto& check : inclusion_checks_) {
@@ -231,49 +214,10 @@ void MetricsQuery::ApplyLabelChecks(absl::Span<const std::string> label_names,
   fn(filter);
 }
 
-namespace instrument_detail {
-
-////////////////////////////////////////////////////////////////////////////////
-// InstrumentIndex
-
-const InstrumentMetadata::Description* InstrumentIndex::Register(
-    QueryableDomain* domain, uint64_t offset, absl::string_view name,
-    absl::string_view description, absl::string_view unit,
-    InstrumentMetadata::Shape shape) {
-  auto it = metrics_.emplace(
-      name, InstrumentMetadata::Description{domain, offset, name, description,
-                                            unit, shape});
-  if (!it.second) {
-    LOG(FATAL) << "Metric with name '" << name << "' already registered.";
-  }
-  return &it.first->second;
-}
-
-const InstrumentMetadata::Description* InstrumentIndex::Find(
-    absl::string_view name) const {
-  auto it = metrics_.find(name);
-  if (it == metrics_.end()) {
-    return nullptr;
-  }
-  return &it->second;
-}
-
-////////////////////////////////////////////////////////////////////////////////
-// QueryableDomain
-
 void QueryableDomain::Constructed() {
   CHECK_EQ(prev_, nullptr);
   prev_ = last_;
   last_ = this;
-}
-
-void QueryableDomain::ForEachInstrument(
-    absl::FunctionRef<void(const InstrumentMetadata::Description*)> fn) {
-  for (auto* domain = last_; domain != nullptr; domain = domain->prev_) {
-    for (const auto* metric : domain->metrics_) {
-      fn(metric);
-    }
-  }
 }
 
 void QueryableDomain::ExportMetrics(const MetricsQuery& query,
@@ -281,7 +225,7 @@ void QueryableDomain::ExportMetrics(const MetricsQuery& query,
   auto selected_metrics = query.selected_metrics();
   if (selected_metrics.has_value()) {
     absl::flat_hash_map<QueryableDomain*,
-                        std::vector<const InstrumentMetadata::Description*>>
+                        std::vector<const InstrumentIndex::Description*>>
         what;
     for (const auto& metric : *selected_metrics) {
       const auto* desc = InstrumentIndex::Get().Find(metric);
@@ -304,7 +248,7 @@ void QueryableDomain::ExportMetrics(const MetricsQuery& query,
       query.Apply(
           domain->label_names(),
           [&](MetricsSink& sink) {
-            domain->ExportMetrics(sink, domain->metrics_);
+            domain->ExportMetrics(sink, domain->all_metrics());
           },
           sink);
     }
@@ -314,10 +258,9 @@ void QueryableDomain::ExportMetrics(const MetricsQuery& query,
 uint64_t QueryableDomain::AllocateCounter(absl::string_view name,
                                           absl::string_view description,
                                           absl::string_view unit) {
-  const size_t offset = allocated_counter_slots_++;
-  metrics_.push_back(
-      InstrumentIndex::Get().Register(this, offset, name, description, unit,
-                                      InstrumentMetadata::CounterShape{}));
+  const size_t offset = Allocate(1);
+  metrics_.push_back(InstrumentIndex::Get().Register(
+      this, offset, name, description, unit, InstrumentIndex::Counter{}));
   return offset;
 }
 
@@ -325,39 +268,9 @@ uint64_t QueryableDomain::AllocateHistogram(absl::string_view name,
                                             absl::string_view description,
                                             absl::string_view unit,
                                             HistogramBuckets bounds) {
-  const size_t offset = AllocateCounterSlots(bounds.size());
+  const size_t offset = Allocate(bounds.size());
   metrics_.push_back(InstrumentIndex::Get().Register(
       this, offset, name, description, unit, bounds));
-  return offset;
-}
-
-uint64_t QueryableDomain::AllocateDoubleGauge(absl::string_view name,
-                                              absl::string_view description,
-                                              absl::string_view unit) {
-  const size_t offset = allocated_double_gauge_slots_++;
-  metrics_.push_back(
-      InstrumentIndex::Get().Register(this, offset, name, description, unit,
-                                      InstrumentMetadata::DoubleGaugeShape{}));
-  return offset;
-}
-
-uint64_t QueryableDomain::AllocateIntGauge(absl::string_view name,
-                                           absl::string_view description,
-                                           absl::string_view unit) {
-  const size_t offset = allocated_int_gauge_slots_++;
-  metrics_.push_back(
-      InstrumentIndex::Get().Register(this, offset, name, description, unit,
-                                      InstrumentMetadata::IntGaugeShape{}));
-  return offset;
-}
-
-uint64_t QueryableDomain::AllocateUintGauge(absl::string_view name,
-                                            absl::string_view description,
-                                            absl::string_view unit) {
-  const size_t offset = allocated_uint_gauge_slots_++;
-  metrics_.push_back(
-      InstrumentIndex::Get().Register(this, offset, name, description, unit,
-                                      InstrumentMetadata::UintGaugeShape{}));
   return offset;
 }
 
@@ -367,10 +280,6 @@ void QueryableDomain::TestOnlyResetAll() {
   }
 }
 
-}  // namespace instrument_detail
-
-void TestOnlyResetInstruments() {
-  instrument_detail::QueryableDomain::TestOnlyResetAll();
-}
+void TestOnlyResetInstruments() { QueryableDomain::TestOnlyResetAll(); }
 
 }  // namespace grpc_core

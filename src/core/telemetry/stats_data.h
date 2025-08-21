@@ -277,6 +277,9 @@ struct GlobalStats {
     kClientSubchannelsCreated,
     kServerChannelsCreated,
     kInsecureConnectionsCreated,
+    kRqConnectionsDropped,
+    kRqCallsDropped,
+    kRqCallsRejected,
     kSyscallWrite,
     kSyscallRead,
     kTcpReadAlloc8k,
@@ -344,6 +347,9 @@ struct GlobalStats {
       uint64_t client_subchannels_created;
       uint64_t server_channels_created;
       uint64_t insecure_connections_created;
+      uint64_t rq_connections_dropped;
+      uint64_t rq_calls_dropped;
+      uint64_t rq_calls_rejected;
       uint64_t syscall_write;
       uint64_t syscall_read;
       uint64_t tcp_read_alloc_8k;
@@ -423,6 +429,16 @@ class GlobalStatsCollector {
   void IncrementInsecureConnectionsCreated() {
     data_.this_cpu().insecure_connections_created.fetch_add(
         1, std::memory_order_relaxed);
+  }
+  void IncrementRqConnectionsDropped() {
+    data_.this_cpu().rq_connections_dropped.fetch_add(
+        1, std::memory_order_relaxed);
+  }
+  void IncrementRqCallsDropped() {
+    data_.this_cpu().rq_calls_dropped.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementRqCallsRejected() {
+    data_.this_cpu().rq_calls_rejected.fetch_add(1, std::memory_order_relaxed);
   }
   void IncrementSyscallWrite() {
     data_.this_cpu().syscall_write.fetch_add(1, std::memory_order_relaxed);
@@ -582,6 +598,9 @@ class GlobalStatsCollector {
     std::atomic<uint64_t> client_subchannels_created{0};
     std::atomic<uint64_t> server_channels_created{0};
     std::atomic<uint64_t> insecure_connections_created{0};
+    std::atomic<uint64_t> rq_connections_dropped{0};
+    std::atomic<uint64_t> rq_calls_dropped{0};
+    std::atomic<uint64_t> rq_calls_rejected{0};
     std::atomic<uint64_t> syscall_write{0};
     std::atomic<uint64_t> syscall_read{0};
     std::atomic<uint64_t> tcp_read_alloc_8k{0};
