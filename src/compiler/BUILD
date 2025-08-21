@@ -111,7 +111,6 @@ grpc_proto_plugin(
     srcs = ["objective_c_plugin.cc"],
     deps = [
         ":grpc_plugin_support",
-        "//third_party/protobuf/compiler/objectivec:objectivec_generator",
         "@com_google_protobuf//:protobuf",
         "@com_google_protobuf//src/google/protobuf/compiler:code_generator",
     ],
