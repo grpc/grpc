@@ -70,7 +70,7 @@ typedef struct target_service_account {
 typedef struct grpc_alts_credentials_client_options {
   grpc_alts_credentials_options base;
   target_service_account* target_account_list_head;
-  std::shared_ptr<grpc::alts::TokenFetcher> token_fetcher = nullptr;
+  std::shared_ptr<grpc::alts::TokenFetcher> token_fetcher;
 } grpc_alts_credentials_client_options;
 
 ///
