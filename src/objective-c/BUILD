@@ -171,6 +171,7 @@ grpc_objc_library(
     deps = [
         ":grpc_objc_interface",
         ":proto_objc_rpc_legacy_header",
+        ":rx_library_headers",
         "@com_google_protobuf//:protobuf_objc",
     ],
 )

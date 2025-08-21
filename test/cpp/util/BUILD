@@ -45,6 +45,7 @@ grpc_cc_library(
     ],
     external_deps = ["absl/log:log"],
     deps = [
+        "//:gpr",
         "//:grpc++",
         "//:grpc++_config_proto",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
