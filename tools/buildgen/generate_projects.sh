@@ -53,7 +53,13 @@ if [[ ! -d generate_projects_virtual_environment ]]; then
   python3 -m virtualenv generate_projects_virtual_environment
 fi
 
-generate_projects_virtual_environment/bin/pip install --upgrade --ignore-installed grpcio-tools==1.74.0
+# For better compatibility, using the last grpcio version before transitioning
+# to the next protobuf.
+# Changelog:
+# - 1.63.0 (Apr 2024): Transitioned to protobuf 5.29.5
+# - 1.71.0 (Mar 2025): Last version to support 5.29.5 (gencode 5.29.0)
+# - 1.72.1 (Jun 2025): Transitioned to protobuf 6.32.0
+generate_projects_virtual_environment/bin/pip install --upgrade --ignore-installed grpcio-tools==1.71.0
 generate_projects_virtual_environment/bin/python tools/distrib/python/xds_protos/build.py
 generate_projects_virtual_environment/bin/python tools/distrib/python/make_grpcio_tools.py
 generate_projects_virtual_environment/bin/python src/python/grpcio_observability/make_grpcio_observability.py
