@@ -38,6 +38,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
+#include "src/core/telemetry/histogram.h"
 #include "src/core/util/avl.h"
 #include "src/core/util/match.h"
 #include "src/core/util/per_cpu.h"
@@ -55,21 +56,30 @@ template <typename Backend, typename... Label>
 class InstrumentDomain;
 
 namespace instrument_detail {
+struct Counter {
+  static constexpr size_t buckets() { return 1; }
+  Counter operator->() const { return *this; }
+  constexpr size_t BucketFor(int64_t /*value*/) const { return 0; }
+};
+
 // An InstrumentHandle is a handle to a single metric in an InstrumentDomain.
 // kType is used in using statements to disambiguate between different
 // InstrumentHandle specializations.
 // Backed, Label... are per InstrumentDomain.
-template <int kType, typename Backend, typename... Label>
+template <typename Shape, typename Backend, typename... Label>
 class InstrumentHandle {
  private:
   friend class InstrumentDomain<Backend, Label...>;
 
   InstrumentHandle(InstrumentDomain<Backend, Label...>* instrument_domain,
-                   uint64_t offset)
-      : instrument_domain_(instrument_domain), offset_(offset) {}
+                   uint64_t offset, Shape shape)
+      : instrument_domain_(instrument_domain),
+        offset_(offset),
+        shape_(std::move(shape)) {}
 
   InstrumentDomain<Backend, Label...>* instrument_domain_;
   uint64_t offset_;
+  GPR_NO_UNIQUE_ADDRESS Shape shape_;
 };
 }  // namespace instrument_detail
 
@@ -137,6 +147,9 @@ class MetricsSink {
   // label.
   virtual void Counter(absl::Span<const std::string> label,
                        absl::string_view name, uint64_t value) = 0;
+  virtual void Histogram(absl::Span<const std::string> label,
+                         absl::string_view name, HistogramBuckets bounds,
+                         absl::Span<const uint64_t> counts) = 0;
 
  protected:
   ~MetricsSink() = default;
@@ -192,7 +205,7 @@ class InstrumentIndex {
   struct Counter {};
   // TODO(ctiller): Add support for other metric types.
 
-  using Shape = std::variant<Counter>;
+  using Shape = std::variant<Counter, HistogramBuckets>;
 
   // A description of a metric.
   struct Description {
@@ -248,6 +261,11 @@ class QueryableDomain {
   // preferred way to export metrics.
   static void ExportMetrics(const MetricsQuery& query, MetricsSink& sink);
 
+  // Reset the internal state of all domains. For test use only.
+  static void TestOnlyResetAll();
+  // Reset the internal state of this domain. For test use only.
+  virtual void TestOnlyReset() = 0;
+
   // Returns the names of the labels in the domain.
   absl::Span<const std::string> label_names() const { return label_names_; }
 
@@ -265,6 +283,9 @@ class QueryableDomain {
   uint64_t AllocateCounter(absl::string_view name,
                            absl::string_view description,
                            absl::string_view unit);
+  uint64_t AllocateHistogram(absl::string_view name,
+                             absl::string_view description,
+                             absl::string_view unit, HistogramBuckets bounds);
 
   // Returns all metrics in the domain.
   absl::Span<const InstrumentIndex::Description* const> all_metrics() const {
@@ -306,7 +327,11 @@ class InstrumentDomain final : public QueryableDomain {
  public:
   using LabelTuple = std::tuple<Label...>;
   using CounterHandle =
-      instrument_detail::InstrumentHandle<1, Backend, Label...>;
+      instrument_detail::InstrumentHandle<instrument_detail::Counter, Backend,
+                                          Label...>;
+  template <typename Shape>
+  using HistogramHandle =
+      instrument_detail::InstrumentHandle<const Shape*, Backend, Label...>;
 
   // Storage is a ref-counted object that holds the backend for an
   // InstrumentDomain for a single set of labels.
@@ -319,6 +344,12 @@ class InstrumentDomain final : public QueryableDomain {
     void Increment(CounterHandle handle) {
       DCHECK_EQ(handle.instrument_domain_, instrument_domain_);
       backend_.Increment(handle.offset_);
+    }
+
+    template <typename Shape>
+    void Increment(const HistogramHandle<Shape>& handle, int64_t value) {
+      DCHECK_EQ(handle.instrument_domain_, instrument_domain_);
+      backend_.Increment(handle.offset_ + handle.shape_->BucketFor(value));
     }
 
    protected:
@@ -355,7 +386,32 @@ class InstrumentDomain final : public QueryableDomain {
   CounterHandle RegisterCounter(absl::string_view name,
                                 absl::string_view description,
                                 absl::string_view unit) {
-    return CounterHandle{this, AllocateCounter(name, description, unit)};
+    return CounterHandle{this, AllocateCounter(name, description, unit),
+                         instrument_detail::Counter{}};
+  }
+
+  template <typename Shape, typename... Args>
+  HistogramHandle<Shape> RegisterHistogram(absl::string_view name,
+                                           absl::string_view description,
+                                           absl::string_view unit,
+                                           Args&&... args) {
+    // Many histograms are created with the same shape, so we try to deduplicate
+    // them.
+    using ShapeCache = absl::node_hash_map<std::tuple<Args...>, const Shape*>;
+    static ShapeCache* shape_cache = new ShapeCache();
+    auto it =
+        shape_cache->find(std::forward_as_tuple(std::forward<Args>(args)...));
+    const Shape* shape;
+    if (it != shape_cache->end()) {
+      shape = it->second;
+    } else {
+      shape = new Shape(std::forward<Args>(args)...);
+      shape_cache->emplace(std::forward_as_tuple(std::forward<Args>(args)...),
+                           shape);
+    }
+    const size_t offset =
+        AllocateHistogram(name, description, unit, shape->bounds());
+    return HistogramHandle<Shape>{this, offset, shape};
   }
 
   // GetStorage: returns a pointer to the storage for the given key, creating
@@ -407,6 +463,10 @@ class InstrumentDomain final : public QueryableDomain {
 
   ~InstrumentDomain() = delete;
 
+  void TestOnlyReset() override {
+    map_shards_.reset(new MapShard[map_shards_size_]);
+  }
+
   // Exports all metrics in `metrics` to `sink`.
   void ExportMetrics(
       MetricsSink& sink,
@@ -425,11 +485,21 @@ class InstrumentDomain final : public QueryableDomain {
             },
             label);
         for (const auto* metric : metrics) {
-          Match(metric->shape, [metric, &sink, storage = storage.get(),
-                                &label_names](InstrumentIndex::Counter) {
-            sink.Counter(label_names, metric->name,
-                         storage->backend_.Sum(metric->offset));
-          });
+          Match(
+              metric->shape,
+              [metric, &sink, storage = storage.get(),
+               &label_names](InstrumentIndex::Counter) {
+                sink.Counter(label_names, metric->name,
+                             storage->backend_.Sum(metric->offset));
+              },
+              [metric, &sink, storage = storage.get(),
+               &label_names](HistogramBuckets bounds) {
+                std::vector<uint64_t> counts(bounds.size());
+                for (size_t i = 0; i < bounds.size(); ++i) {
+                  counts[i] = storage->backend_.Sum(metric->offset + i);
+                }
+                sink.Histogram(label_names, metric->name, bounds, counts);
+              });
         }
       });
     }
@@ -444,6 +514,9 @@ auto* MakeInstrumentDomain(Label... labels) {
   return new InstrumentDomain<Backend, Label...>(
       std::vector<std::string>{absl::StrCat(labels)...});
 }
+
+// Reset all registered instruments. For test use only.
+void TestOnlyResetInstruments();
 
 }  // namespace grpc_core
 

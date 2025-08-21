@@ -27,6 +27,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:grpc_tls_credentials",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -73,9 +74,15 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        "//:config_vars",
         "//:gpr",
         "//:grpc",
+        "//:grpc_core_credentials_header",
+        "//:transport_auth_context",
+        "//:tsi_base",
         "//src/core:channel_args",
+        "//src/core:grpc_tls_credentials",
+        "//src/core:unique_type_name",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/test_util:test_call_creds",
@@ -96,8 +103,11 @@ grpc_cc_test(
     ],
     external_deps = ["gtest"],
     deps = [
+        "//:config_vars",
         "//:gpr",
         "//:grpc",
+        "//:grpc_core_credentials_header",
+        "//src/core:grpc_tls_credentials",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
@@ -129,6 +139,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:grpc_tls_credentials",
         "//src/core:match",
         "//src/core:slice",
         "//test/core/test_util:grpc_test_util",
@@ -154,12 +165,15 @@ grpc_cc_test(
         "//test/core/credentials/transport/tls/test_data:spiffe/test_bundles/spiffebundle_malformed.json",
     ],
     external_deps = [
-        "absl/log:check",
         "gtest",
+        "absl/base:no_destructor",
+        "absl/log:check",
+        "absl/status",
     ],
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:grpc_tls_credentials",
         "//src/core:match",
         "//src/core:slice",
         "//test/core/test_util:grpc_test_util",
@@ -177,6 +191,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:grpc_tls_credentials",
         "//src/core:slice",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",

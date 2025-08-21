@@ -16,6 +16,7 @@
 
 #include <thread>
 
+#include "absl/random/random.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -29,6 +30,16 @@ class MockMetricsSink : public MetricsSink {
               (absl::Span<const std::string> label, absl::string_view name,
                uint64_t value),
               (override));
+  MOCK_METHOD(void, Histogram,
+              (absl::Span<const std::string> label, absl::string_view name,
+               HistogramBuckets bounds, absl::Span<const uint64_t> counts),
+              (override));
+};
+
+class InstrumentTest : public ::testing::Test {
+ protected:
+  void SetUp() override { TestOnlyResetInstruments(); }
+  void TearDown() override { TestOnlyResetInstruments(); }
 };
 
 auto* kHighContentionDomain = MakeInstrumentDomain<HighContentionBackend>();
@@ -41,8 +52,13 @@ auto kHighContentionCounter =
 auto kLowContentionCounter =
     kLowContentionDomain->RegisterCounter("low_contention", "Desc", "unit");
 auto kFanOutCounter = kFanOutDomain->RegisterCounter("fan_out", "Desc", "unit");
+auto kLowContentionExponentialHistogram =
+    kLowContentionDomain->RegisterHistogram<ExponentialHistogramShape>(
+        "exponential_histogram", "Desc", "unit", 1024, 20);
 
-TEST(InstrumentIndexTest, RegisterAndFind) {
+using InstrumentIndexTest = InstrumentTest;
+
+TEST_F(InstrumentIndexTest, RegisterAndFind) {
   InstrumentIndex& index = InstrumentIndex::Get();
   const InstrumentIndex::Description* description = index.Register(
       nullptr, 0, "test_metric", "Test description", "units", {});
@@ -58,7 +74,9 @@ TEST(InstrumentIndexTest, RegisterAndFind) {
   EXPECT_EQ(not_found, nullptr);
 }
 
-TEST(InstrumentIndexDeathTest, RegisterDuplicate) {
+using InstrumentIndexDeathTest = InstrumentTest;
+
+TEST_F(InstrumentIndexDeathTest, RegisterDuplicate) {
   InstrumentIndex& index = InstrumentIndex::Get();
   index.Register(nullptr, 1, "duplicate_metric", "Desc 1", "units", {});
   EXPECT_DEATH(
@@ -66,98 +84,119 @@ TEST(InstrumentIndexDeathTest, RegisterDuplicate) {
       "Metric with name 'duplicate_metric' already registered.");
 }
 
-TEST(MetricsQueryTest, HighContention) {
-  uint64_t value_before;
+using MetricsQueryTest = InstrumentTest;
+
+TEST_F(MetricsQueryTest, HighContention) {
   auto storage = kHighContentionDomain->GetStorage();
   testing::StrictMock<MockMetricsSink> sink;
-  EXPECT_CALL(sink, Counter(absl::Span<const std::string>(), "high_contention",
-                            testing::_))
-      .WillOnce(testing::SaveArg<2>(&value_before));
+  EXPECT_CALL(sink,
+              Counter(absl::Span<const std::string>(), "high_contention", 0));
   MetricsQuery().OnlyMetrics({"high_contention"}).Run(sink);
   testing::Mock::VerifyAndClearExpectations(&sink);
   storage->Increment(kHighContentionCounter);
-  EXPECT_CALL(sink, Counter(absl::Span<const std::string>(), "high_contention",
-                            value_before + 1));
+  EXPECT_CALL(sink,
+              Counter(absl::Span<const std::string>(), "high_contention", 1));
   MetricsQuery().OnlyMetrics({"high_contention"}).Run(sink);
   testing::Mock::VerifyAndClearExpectations(&sink);
   storage.reset();
-  EXPECT_CALL(sink, Counter(absl::Span<const std::string>(), "high_contention",
-                            value_before + 1));
+  EXPECT_CALL(sink,
+              Counter(absl::Span<const std::string>(), "high_contention", 1));
   MetricsQuery().OnlyMetrics({"high_contention"}).Run(sink);
 }
 
-TEST(MetricsQueryTest, LowContention) {
-  uint64_t value_before;
+TEST_F(MetricsQueryTest, LowContention) {
   auto storage = kLowContentionDomain->GetStorage("example.com");
   std::vector<std::string> label = {"example.com"};
   testing::StrictMock<MockMetricsSink> sink;
-  EXPECT_CALL(sink, Counter(absl::Span<const std::string>(label),
-                            "low_contention", testing::_))
-      .WillOnce(testing::SaveArg<2>(&value_before));
+  EXPECT_CALL(
+      sink, Counter(absl::Span<const std::string>(label), "low_contention", 0));
   MetricsQuery().OnlyMetrics({"low_contention"}).Run(sink);
   testing::Mock::VerifyAndClearExpectations(&sink);
   storage->Increment(kLowContentionCounter);
-  EXPECT_CALL(sink, Counter(absl::Span<const std::string>(label),
-                            "low_contention", value_before + 1));
+  EXPECT_CALL(
+      sink, Counter(absl::Span<const std::string>(label), "low_contention", 1));
   MetricsQuery().OnlyMetrics({"low_contention"}).Run(sink);
   testing::Mock::VerifyAndClearExpectations(&sink);
   storage.reset();
-  EXPECT_CALL(sink, Counter(absl::Span<const std::string>(label),
-                            "low_contention", value_before + 1));
+  EXPECT_CALL(
+      sink, Counter(absl::Span<const std::string>(label), "low_contention", 1));
   MetricsQuery().OnlyMetrics({"low_contention"}).Run(sink);
 }
 
-TEST(MetricsQueryTest, FanOut) {
+TEST_F(MetricsQueryTest, LowContentionHistogram) {
+  std::vector<uint64_t> value_before;
+  auto storage = kLowContentionDomain->GetStorage("example.com");
+  testing::StrictMock<MockMetricsSink> sink;
+  std::vector<std::string> label = {"example.com"};
+  EXPECT_CALL(sink, Histogram(absl::Span<const std::string>(label),
+                              "exponential_histogram", testing::_, testing::_))
+      .WillOnce([&value_before](auto, auto, auto, auto counts) {
+        value_before.assign(counts.begin(), counts.end());
+      });
+  MetricsQuery()
+      .OnlyMetrics({"exponential_histogram"})
+      .WithLabelEq("grpc.target", "example.com")
+      .Run(sink);
+  testing::Mock::VerifyAndClearExpectations(&sink);
+  std::vector<uint64_t> expect_value = value_before;
+  expect_value[0] += 1;
+  storage->Increment(kLowContentionExponentialHistogram, 0);
+  EXPECT_CALL(sink, Histogram(absl::Span<const std::string>(label),
+                              "exponential_histogram", testing::_,
+                              absl::MakeConstSpan(expect_value)))
+      .Times(1);
+  MetricsQuery()
+      .OnlyMetrics({"exponential_histogram"})
+      .WithLabelEq("grpc.target", "example.com")
+      .Run(sink);
+  testing::Mock::VerifyAndClearExpectations(&sink);
+}
+
+TEST_F(MetricsQueryTest, FanOut) {
   auto storage_foo = kFanOutDomain->GetStorage("example.com", "foo");
   std::vector<std::string> label_foo = {"example.com", "foo"};
   auto storage_bar = kFanOutDomain->GetStorage("example.com", "bar");
   std::vector<std::string> label_bar = {"example.com", "bar"};
   testing::StrictMock<MockMetricsSink> sink;
-  uint64_t foo_before;
-  uint64_t bar_before;
-  EXPECT_CALL(sink, Counter(absl::Span<const std::string>(label_foo), "fan_out",
-                            testing::_))
-      .WillOnce(testing::SaveArg<2>(&foo_before));
-  EXPECT_CALL(sink, Counter(absl::Span<const std::string>(label_bar), "fan_out",
-                            testing::_))
-      .WillOnce(testing::SaveArg<2>(&bar_before));
+  EXPECT_CALL(sink,
+              Counter(absl::Span<const std::string>(label_foo), "fan_out", 0));
+  EXPECT_CALL(sink,
+              Counter(absl::Span<const std::string>(label_bar), "fan_out", 0));
   MetricsQuery().OnlyMetrics({"fan_out"}).Run(sink);
   testing::Mock::VerifyAndClearExpectations(&sink);
   storage_foo->Increment(kFanOutCounter);
   storage_bar->Increment(kFanOutCounter);
-  EXPECT_CALL(sink, Counter(absl::Span<const std::string>(label_foo), "fan_out",
-                            foo_before + 1));
-  EXPECT_CALL(sink, Counter(absl::Span<const std::string>(label_bar), "fan_out",
-                            bar_before + 1));
+  EXPECT_CALL(sink,
+              Counter(absl::Span<const std::string>(label_foo), "fan_out", 1));
+  EXPECT_CALL(sink,
+              Counter(absl::Span<const std::string>(label_bar), "fan_out", 1));
   MetricsQuery().OnlyMetrics({"fan_out"}).Run(sink);
   testing::Mock::VerifyAndClearExpectations(&sink);
   storage_foo.reset();
   storage_bar.reset();
-  EXPECT_CALL(sink, Counter(absl::Span<const std::string>(label_foo), "fan_out",
-                            foo_before + 1));
-  EXPECT_CALL(sink, Counter(absl::Span<const std::string>(label_bar), "fan_out",
-                            bar_before + 1));
+  EXPECT_CALL(sink,
+              Counter(absl::Span<const std::string>(label_foo), "fan_out", 1));
+  EXPECT_CALL(sink,
+              Counter(absl::Span<const std::string>(label_bar), "fan_out", 1));
   MetricsQuery().OnlyMetrics({"fan_out"}).Run(sink);
   testing::Mock::VerifyAndClearExpectations(&sink);
   std::vector<std::string> label_all = {"example.com"};
-  EXPECT_CALL(sink, Counter(absl::Span<const std::string>(label_all), "fan_out",
-                            foo_before + bar_before + 2));
+  EXPECT_CALL(sink,
+              Counter(absl::Span<const std::string>(label_all), "fan_out", 2));
   MetricsQuery()
       .OnlyMetrics({"fan_out"})
       .CollapseLabels({"grpc.method"})
       .Run(sink);
 }
 
-TEST(MetricsQueryTest, LabelEq) {
+TEST_F(MetricsQueryTest, LabelEq) {
   auto storage_foo = kFanOutDomain->GetStorage("example.com", "foo");
   std::vector<std::string> label_foo = {"example.com", "foo"};
   auto storage_bar = kFanOutDomain->GetStorage("example.com", "bar");
   auto storage_baz = kFanOutDomain->GetStorage("example.org", "baz");
   testing::StrictMock<MockMetricsSink> sink;
-  uint64_t foo_before;
-  EXPECT_CALL(sink, Counter(absl::Span<const std::string>(label_foo), "fan_out",
-                            testing::_))
-      .WillOnce(testing::SaveArg<2>(&foo_before));
+  EXPECT_CALL(sink,
+              Counter(absl::Span<const std::string>(label_foo), "fan_out", 0));
   MetricsQuery()
       .OnlyMetrics({"fan_out"})
       .WithLabelEq("grpc.target", "example.com")
@@ -167,8 +206,8 @@ TEST(MetricsQueryTest, LabelEq) {
   storage_foo->Increment(kFanOutCounter);
   storage_bar->Increment(kFanOutCounter);
   storage_baz->Increment(kFanOutCounter);
-  EXPECT_CALL(sink, Counter(absl::Span<const std::string>(label_foo), "fan_out",
-                            foo_before + 1));
+  EXPECT_CALL(sink,
+              Counter(absl::Span<const std::string>(label_foo), "fan_out", 1));
   MetricsQuery()
       .OnlyMetrics({"fan_out"})
       .WithLabelEq("grpc.target", "example.com")
@@ -177,7 +216,7 @@ TEST(MetricsQueryTest, LabelEq) {
   testing::Mock::VerifyAndClearExpectations(&sink);
 }
 
-TEST(MetricsQueryTest, ThreadStressTest) {
+TEST_F(MetricsQueryTest, ThreadStressTest) {
   std::vector<std::thread> threads;
   std::atomic<bool> done = false;
   for (int i = 0; i < 10; ++i) {
@@ -200,10 +239,21 @@ TEST(MetricsQueryTest, ThreadStressTest) {
       }
     });
     threads.emplace_back([&done]() {
+      auto storage = kLowContentionDomain->GetStorage("example.com");
+      absl::BitGen gen;
+      while (!done.load(std::memory_order_relaxed)) {
+        storage->Increment(kLowContentionExponentialHistogram,
+                           absl::Uniform(gen, 0, 1024));
+      }
+    });
+    threads.emplace_back([&done]() {
       class NoopSink final : public MetricsSink {
        public:
         void Counter(absl::Span<const std::string> label,
                      absl::string_view name, uint64_t value) override {}
+        void Histogram(absl::Span<const std::string> label,
+                       absl::string_view name, HistogramBuckets bounds,
+                       absl::Span<const uint64_t> counts) override {}
       };
       NoopSink sink;
       while (!done.load(std::memory_order_relaxed)) {

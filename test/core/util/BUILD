@@ -75,8 +75,6 @@ grpc_cc_test(
 grpc_cc_benchmark(
     name = "bm_tdigest",
     srcs = ["bm_tdigest.cc"],
-    external_deps = [
-    ],
     monitoring = HISTORY,
     deps = [
         "//src/core:tdigest",
@@ -98,6 +96,7 @@ grpc_cc_test(
     name = "latent_see_test",
     srcs = ["latent_see_test.cc"],
     external_deps = [
+        "absl/functional:function_ref",
         "absl/log:log",
         "gtest",
         "gtest_main",
@@ -108,6 +107,7 @@ grpc_cc_test(
         "//src/core:json",
         "//src/core:json_reader",
         "//src/core:latent_see",
+        "//src/core:notification",
     ],
 )
 
@@ -264,6 +264,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr",
+        "//src/core:useful",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -353,12 +354,19 @@ grpc_cc_test(
     srcs = ["status_helper_test.cc"],
     external_deps = [
         "gtest",
+        "absl/status",
+        "absl/strings",
+        "absl/time",
+        "@com_google_protobuf//upb/mem",
     ],
     tags = ["error_tests"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:google_rpc_status_upb",
         "//:gpr",
+        "//src/core:experiments",
+        "//src/core:status_helper",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -368,11 +376,13 @@ grpc_cc_test(
     srcs = ["time_util_test.cc"],
     external_deps = [
         "gtest",
+        "absl/time",
     ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
+        "//src/core:time_util",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -535,6 +545,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:gpr",
         "//src/core:load_file",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -557,11 +568,15 @@ grpc_cc_test(
 grpc_cc_test(
     name = "glob_test",
     srcs = ["glob_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/strings",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
+        "//src/core:glob",
         "//src/core:useful",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -585,6 +600,7 @@ grpc_fuzz_test(
         "//:gpr",
         "//:grpc",
         "//:uri",
+        "//src/core:dump_args",
     ],
 )
 
@@ -605,10 +621,14 @@ grpc_cc_test(
 grpc_cc_test(
     name = "matchers_test",
     srcs = ["matchers_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/status",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:grpc_matchers",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
@@ -688,6 +708,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr",
+        "//src/core:gpr_spinlock",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -755,7 +776,11 @@ grpc_cc_test(
 grpc_cc_test(
     name = "shared_bit_gen_test",
     srcs = ["shared_bit_gen_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/random",
+        "absl/random:distributions",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -813,7 +838,11 @@ grpc_fuzz_test(
 grpc_cc_test(
     name = "lru_cache_test",
     srcs = ["lru_cache_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/log:check",
+        "absl/strings",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [

@@ -35,6 +35,7 @@ EXPERIMENT_ENABLES = {
     "fuse_filters": "fuse_filters",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
+    "max_age_filter_float_to_top": "max_age_filter_float_to_top",
     "max_inflight_pings_strict_limit": "max_inflight_pings_strict_limit",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",

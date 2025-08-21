@@ -36,6 +36,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:channel_args",
+        "//src/core:useful",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -49,6 +50,7 @@ grpc_fuzz_test(
     ],
     deps = [
         "//:grpc",
+        "//:grpc_base",
         "//test/core/test_util:grpc_test_util",
     ],
 )
