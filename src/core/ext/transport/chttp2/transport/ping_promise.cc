@@ -152,7 +152,7 @@ void PingManager::MaybeGetSerializedPingFrames(
 
   // Get the serialized ping acks if needed.
   for (uint64_t opaque_data : pending_ping_acks_) {
-    frames.emplace_back(Http2PingFrame{/*ack=*/true, opaque_data});
+    frames.emplace_back(GetHttp2PingFrame(/*ack=*/true, opaque_data));
   }
   pending_ping_acks_.clear();
 
