@@ -5242,6 +5242,7 @@ libs:
   - src/compiler/ruby_generator_map-inl.h
   - src/compiler/ruby_generator_string-inl.h
   - src/compiler/schema_interface.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/compiler/cpp_generator.cc
   - src/compiler/csharp_generator.cc
@@ -5252,7 +5253,42 @@ libs:
   - src/compiler/python_generator.cc
   - src/compiler/ruby_generator.cc
   deps:
+  - utf8_range_lib
+  - z
+  - absl/algorithm:container
+  - absl/base:base
+  - absl/base:config
+  - absl/base:core_headers
+  - absl/base:dynamic_annotations
+  - absl/base:prefetch
+  - absl/cleanup:cleanup
+  - absl/container:btree
+  - absl/container:fixed_array
+  - absl/container:flat_hash_map
+  - absl/container:flat_hash_set
+  - absl/container:layout
+  - absl/functional:any_invocable
+  - absl/functional:function_ref
+  - absl/functional:overload
+  - absl/hash:hash
+  - absl/log:absl_check
+  - absl/log:absl_log
+  - absl/memory:memory
+  - absl/meta:type_traits
+  - absl/numeric:bits
   - absl/status:status
+  - absl/status:statusor
+  - absl/strings:charset
+  - absl/strings:cord
+  - absl/strings:internal
+  - absl/strings:str_format
+  - absl/strings:string_view
+  - absl/strings:strings
+  - absl/synchronization:synchronization
+  - absl/time:time
+  - absl/types:optional
+  - absl/types:span
+  - absl/utility:utility
   - protobuf
   - protoc
 - name: grpcpp_channelz
@@ -18827,6 +18863,7 @@ targets:
   - test/cpp/util/time_test.cc
   deps:
   - gtest
+  - grpc++_test_config
   - grpc++_test_util
   uses_polling: false
 - name: thd_test
@@ -20403,6 +20440,158 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/upb-gen/envoy/annotations/deprecation.upb.h
+  - src/core/ext/upb-gen/envoy/annotations/deprecation.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/annotations/resource.upb.h
+  - src/core/ext/upb-gen/envoy/annotations/resource.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/address.upb.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/base.upb.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/event_service_config.upb.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/event_service_config.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/extension.upb.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/extension.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/grpc_method_list.upb.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/grpc_method_list.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/grpc_service.upb.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/grpc_service.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/proxy_protocol.upb.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/proxy_protocol.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/substitution_format_string.upb.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/substitution_format_string.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/udp_socket_config.upb.h
+  - src/core/ext/upb-gen/envoy/config/core/v3/udp_socket_config.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/cert.upb.h
+  - src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/cert.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/common.upb.h
+  - src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/common.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/secret.upb.h
+  - src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/secret.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls.upb.h
+  - src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upb.h
+  - src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb.h
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb.h
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/http_inputs.upb.h
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/http_inputs.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/metadata.upb.h
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/metadata.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/node.upb.h
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/node.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/number.upb.h
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/number.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/path.upb.h
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/path.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/regex.upb.h
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/regex.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/status_code_input.upb.h
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/status_code_input.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/string.upb.h
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/string.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/struct.upb.h
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/struct.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/value.upb.h
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/value.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/type/v3/hash_policy.upb.h
+  - src/core/ext/upb-gen/envoy/type/v3/hash_policy.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/type/v3/http.upb.h
+  - src/core/ext/upb-gen/envoy/type/v3/http.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/type/v3/http_status.upb.h
+  - src/core/ext/upb-gen/envoy/type/v3/http_status.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/type/v3/percent.upb.h
+  - src/core/ext/upb-gen/envoy/type/v3/percent.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/type/v3/range.upb.h
+  - src/core/ext/upb-gen/envoy/type/v3/range.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/type/v3/ratelimit_strategy.upb.h
+  - src/core/ext/upb-gen/envoy/type/v3/ratelimit_strategy.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb.h
+  - src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb.h
+  - src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.h
+  - src/core/ext/upb-gen/envoy/type/v3/token_bucket.upb.h
+  - src/core/ext/upb-gen/envoy/type/v3/token_bucket.upb_minitable.h
+  - src/core/ext/upb-gen/google/api/annotations.upb.h
+  - src/core/ext/upb-gen/google/api/annotations.upb_minitable.h
+  - src/core/ext/upb-gen/google/api/http.upb.h
+  - src/core/ext/upb-gen/google/api/http.upb_minitable.h
+  - src/core/ext/upb-gen/google/api/httpbody.upb.h
+  - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/struct.upb.h
+  - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/wrappers.upb.h
+  - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.h
+  - src/core/ext/upb-gen/google/rpc/status.upb.h
+  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/udpa/annotations/migrate.upb.h
+  - src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.h
+  - src/core/ext/upb-gen/udpa/annotations/security.upb.h
+  - src/core/ext/upb-gen/udpa/annotations/security.upb_minitable.h
+  - src/core/ext/upb-gen/udpa/annotations/sensitive.upb.h
+  - src/core/ext/upb-gen/udpa/annotations/sensitive.upb_minitable.h
+  - src/core/ext/upb-gen/udpa/annotations/status.upb.h
+  - src/core/ext/upb-gen/udpa/annotations/status.upb_minitable.h
+  - src/core/ext/upb-gen/udpa/annotations/versioning.upb.h
+  - src/core/ext/upb-gen/udpa/annotations/versioning.upb_minitable.h
+  - src/core/ext/upb-gen/validate/validate.upb.h
+  - src/core/ext/upb-gen/validate/validate.upb_minitable.h
+  - src/core/ext/upb-gen/xds/annotations/v3/migrate.upb.h
+  - src/core/ext/upb-gen/xds/annotations/v3/migrate.upb_minitable.h
+  - src/core/ext/upb-gen/xds/annotations/v3/security.upb.h
+  - src/core/ext/upb-gen/xds/annotations/v3/security.upb_minitable.h
+  - src/core/ext/upb-gen/xds/annotations/v3/sensitive.upb.h
+  - src/core/ext/upb-gen/xds/annotations/v3/sensitive.upb_minitable.h
+  - src/core/ext/upb-gen/xds/annotations/v3/status.upb.h
+  - src/core/ext/upb-gen/xds/annotations/v3/status.upb_minitable.h
+  - src/core/ext/upb-gen/xds/annotations/v3/versioning.upb.h
+  - src/core/ext/upb-gen/xds/annotations/v3/versioning.upb_minitable.h
+  - src/core/ext/upb-gen/xds/core/v3/authority.upb.h
+  - src/core/ext/upb-gen/xds/core/v3/authority.upb_minitable.h
+  - src/core/ext/upb-gen/xds/core/v3/cidr.upb.h
+  - src/core/ext/upb-gen/xds/core/v3/cidr.upb_minitable.h
+  - src/core/ext/upb-gen/xds/core/v3/collection_entry.upb.h
+  - src/core/ext/upb-gen/xds/core/v3/collection_entry.upb_minitable.h
+  - src/core/ext/upb-gen/xds/core/v3/context_params.upb.h
+  - src/core/ext/upb-gen/xds/core/v3/context_params.upb_minitable.h
+  - src/core/ext/upb-gen/xds/core/v3/extension.upb.h
+  - src/core/ext/upb-gen/xds/core/v3/extension.upb_minitable.h
+  - src/core/ext/upb-gen/xds/core/v3/resource.upb.h
+  - src/core/ext/upb-gen/xds/core/v3/resource.upb_minitable.h
+  - src/core/ext/upb-gen/xds/core/v3/resource_locator.upb.h
+  - src/core/ext/upb-gen/xds/core/v3/resource_locator.upb_minitable.h
+  - src/core/ext/upb-gen/xds/core/v3/resource_name.upb.h
+  - src/core/ext/upb-gen/xds/core/v3/resource_name.upb_minitable.h
   - test/cpp/util/cli_call.h
   - test/cpp/util/cli_credentials.h
   - test/cpp/util/config_grpc_cli.h
@@ -20487,6 +20676,82 @@ targets:
   - third_party/xds/xds/type/v3/cel.proto
   - third_party/xds/xds/type/v3/range.proto
   - third_party/xds/xds/type/v3/typed_struct.proto
+  - src/core/ext/upb-gen/envoy/annotations/deprecation.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/annotations/resource.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/core/v3/address.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/core/v3/backoff.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/core/v3/base.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/core/v3/config_source.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/core/v3/event_service_config.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/core/v3/extension.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/core/v3/grpc_method_list.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/core/v3/grpc_service.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/core/v3/health_check.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/core/v3/http_service.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/core/v3/http_uri.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/core/v3/protocol.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/core/v3/proxy_protocol.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/core/v3/resolver.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/core/v3/socket_cmsg_headers.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/core/v3/socket_option.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/core/v3/substitution_format_string.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/config/core/v3/udp_socket_config.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/cert.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/common.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/secret.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/address.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/filter_state.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/http_inputs.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/metadata.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/node.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/number.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/path.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/regex.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/status_code_input.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/string.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/struct.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/type/matcher/v3/value.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/type/v3/hash_policy.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/type/v3/http.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/type/v3/http_status.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/type/v3/percent.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/type/v3/range.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/type/v3/ratelimit_strategy.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/type/v3/ratelimit_unit.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/type/v3/semantic_version.upb_minitable.c
+  - src/core/ext/upb-gen/envoy/type/v3/token_bucket.upb_minitable.c
+  - src/core/ext/upb-gen/google/api/annotations.upb_minitable.c
+  - src/core/ext/upb-gen/google/api/http.upb_minitable.c
+  - src/core/ext/upb-gen/google/api/httpbody.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
+  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.c
+  - src/core/ext/upb-gen/udpa/annotations/security.upb_minitable.c
+  - src/core/ext/upb-gen/udpa/annotations/sensitive.upb_minitable.c
+  - src/core/ext/upb-gen/udpa/annotations/status.upb_minitable.c
+  - src/core/ext/upb-gen/udpa/annotations/versioning.upb_minitable.c
+  - src/core/ext/upb-gen/validate/validate.upb_minitable.c
+  - src/core/ext/upb-gen/xds/annotations/v3/migrate.upb_minitable.c
+  - src/core/ext/upb-gen/xds/annotations/v3/security.upb_minitable.c
+  - src/core/ext/upb-gen/xds/annotations/v3/sensitive.upb_minitable.c
+  - src/core/ext/upb-gen/xds/annotations/v3/status.upb_minitable.c
+  - src/core/ext/upb-gen/xds/annotations/v3/versioning.upb_minitable.c
+  - src/core/ext/upb-gen/xds/core/v3/authority.upb_minitable.c
+  - src/core/ext/upb-gen/xds/core/v3/cidr.upb_minitable.c
+  - src/core/ext/upb-gen/xds/core/v3/collection_entry.upb_minitable.c
+  - src/core/ext/upb-gen/xds/core/v3/context_params.upb_minitable.c
+  - src/core/ext/upb-gen/xds/core/v3/extension.upb_minitable.c
+  - src/core/ext/upb-gen/xds/core/v3/resource.upb_minitable.c
+  - src/core/ext/upb-gen/xds/core/v3/resource_locator.upb_minitable.c
+  - src/core/ext/upb-gen/xds/core/v3/resource_name.upb_minitable.c
   - test/core/xds/xds_common_types_test.cc
   - test/cpp/util/cli_call.cc
   - test/cpp/util/cli_credentials.cc
