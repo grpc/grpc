@@ -92,7 +92,15 @@ grpc_cc_benchmark(
     monitoring = HISTORY,
     deps = [
         "//:grpc",
+        "//:grpc_base",
+        "//src/core:all_ok",
+        "//src/core:arena",
+        "//src/core:call_arena_allocator",
         "//src/core:default_event_engine",
+        "//src/core:event_engine_context",
+        "//src/core:map",
+        "//src/core:resource_quota",
+        "//src/core:slice",
     ],
 )
 
@@ -201,9 +209,11 @@ grpc_cc_library(
     visibility = ["//test/core:__subpackages__"],
     deps = [
         "//:exec_ctx",
+        "//:grpc_base",
         "//src/core:all_ok",
         "//src/core:call_spine",
         "//src/core:default_event_engine",
+        "//src/core:event_engine_context",
         "//src/core:map",
         "//src/core:notification",
         "//src/core:resource_quota",
@@ -216,8 +226,10 @@ grpc_cc_benchmark(
     monitoring = HISTORY,
     deps = [
         ":call_spine_benchmarks",
+        "//:gpr",
         "//:grpc",
         "//src/core:default_event_engine",
+        "//src/core:resource_quota",
     ],
 )
 
