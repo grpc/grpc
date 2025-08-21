@@ -141,28 +141,33 @@ void PingManager::SpawnTimeout(const Duration ping_timeout,
 
 void PingManager::MaybeGetSerializedPingFrames(
     SliceBuffer& output_buffer, const Duration next_allowed_ping_interval) {
-  DCHECK(!opaque_data_.has_value());
-  if (NeedToPing(next_allowed_ping_interval)) {
-    const uint64_t opaque_data = ping_callbacks_.StartPing();
-    Http2Frame frame = GetHttp2PingFrame(/*ack=*/false, opaque_data);
-    Serialize(absl::Span<Http2Frame>(&frame, 1), output_buffer);
-    opaque_data_ = opaque_data;
-    GRPC_HTTP2_PING_LOG << "Created serialized ping frame for id="
-                        << opaque_data;
-  }
-}
-
-void PingManager::MaybeGetSerializedPingAcks(SliceBuffer& output_buf) {
-  GRPC_HTTP2_PING_LOG << "PingManager MaybeGetSerializedPingAcks "
+  GRPC_HTTP2_PING_LOG << "PingManager MaybeGetSerializedPingFrames "
                          "pending_ping_acks_ size: "
-                      << pending_ping_acks_.size();
+                      << pending_ping_acks_.size()
+                      << " next_allowed_ping_interval: "
+                      << next_allowed_ping_interval;
+  DCHECK(!opaque_data_.has_value());
   std::vector<Http2Frame> frames;
-  frames.reserve(pending_ping_acks_.size());
+  frames.reserve(pending_ping_acks_.size() + 1);  // +1 for the ping frame.
+
+  // Get the serialized ping acks if needed.
   for (uint64_t opaque_data : pending_ping_acks_) {
     frames.emplace_back(Http2PingFrame{/*ack=*/true, opaque_data});
   }
   pending_ping_acks_.clear();
-  Serialize(absl::Span<Http2Frame>(frames), output_buf);
+
+  // Get the serialized ping frame if needed.
+  if (NeedToPing(next_allowed_ping_interval)) {
+    const uint64_t opaque_data = ping_callbacks_.StartPing();
+    frames.emplace_back(GetHttp2PingFrame(/*ack=*/false, opaque_data));
+    opaque_data_ = opaque_data;
+    GRPC_HTTP2_PING_LOG << "Created ping frame for id= " << opaque_data;
+  }
+
+  // Serialize the frames if any.
+  if (!frames.empty()) {
+    Serialize(absl::Span<Http2Frame>(frames), output_buffer);
+  }
 }
 
 void PingManager::NotifyPingSent(const Duration ping_timeout) {

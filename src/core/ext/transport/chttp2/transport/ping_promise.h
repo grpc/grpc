@@ -76,14 +76,10 @@ class PingManager {
               std::shared_ptr<grpc_event_engine::experimental::EventEngine>
                   event_engine);
 
-  // If a ping frame is needed to be sent, populates the output buffer with the
-  // serialized ping frame.
+  // If there are any pending ping requests or ping acks, populates the output
+  // buffer with the serialized ping frames.
   void MaybeGetSerializedPingFrames(SliceBuffer& output_buf,
                                     Duration next_allowed_ping_interval);
-
-  // If there are any pending ping acks, populates the output buffer with the
-  // serialized ping ack frames.
-  void MaybeGetSerializedPingAcks(SliceBuffer& output_buf);
 
   // Notify the ping system that a ping has been sent. This will spawn a ping
   // timeout promise.

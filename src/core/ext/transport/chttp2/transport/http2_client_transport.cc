@@ -658,7 +658,6 @@ auto Http2ClientTransport::WriteControlFrames() {
     is_first_write_ = false;
   }
   MaybeGetSettingsFrame(output_buf);
-  ping_manager_.MaybeGetSerializedPingAcks(output_buf);
   ping_manager_.MaybeGetSerializedPingFrames(output_buf,
                                              NextAllowedPingInterval());
   const uint64_t buffer_length = output_buf.Length();
