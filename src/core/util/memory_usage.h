@@ -263,6 +263,12 @@ size_t MemoryUsageOf(const std::tuple<Args...>& t) {
       [](const auto&... args) { return (MemoryUsageOf(args) + ... + 0); }, t);
 }
 
+// This does not calculate the overhead of the variant itself.
+template <typename... T>
+size_t MemoryUsageOf(const std::variant<T...>& t) {
+  return std::visit([](const auto& x) { return MemoryUsageOf(x); }, t);
+}
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_UTIL_MEMORY_USAGE_H
