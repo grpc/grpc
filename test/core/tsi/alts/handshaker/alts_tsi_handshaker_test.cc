@@ -35,7 +35,7 @@
 #include "test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
-#include "upb/message/internal/map.h"
+#include "upb/message/map.h"
 
 #define ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES "Hello World"
 #define ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME "Hello Google"
