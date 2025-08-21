@@ -30,13 +30,13 @@
 # format entirely or simplify it to a point where it becomes self-explanatory
 # and doesn't need any detailed documentation.
 
-import collections
 import os
 import subprocess
 from typing import Any, Dict, Iterable, List, Optional
 import xml.etree.ElementTree as ET
 
 import build_cleaner
+import extract_repositories
 
 BuildMetadata = Dict[str, Any]
 BuildDict = Dict[str, BuildMetadata]
@@ -63,9 +63,7 @@ class ExternalProtoLibrary:
         http_archive in Bazel.
     """
 
-    def __init__(
-        self, destination, proto_prefix, urls=None, hash="", strip_prefix=""
-    ):
+    def __init__(self, destination, proto_prefix, urls=None, hash="", strip_prefix=""):
         self.destination = destination
         self.proto_prefix = proto_prefix
         if urls is None:
@@ -74,6 +72,17 @@ class ExternalProtoLibrary:
             self.urls = urls
         self.hash = hash
         self.strip_prefix = strip_prefix
+
+    def __repr__(self) -> str:
+        return "\n".join(
+            sorted(
+                [
+                    f"{k} = {getattr(self, k)}"
+                    for k in dir(self)
+                    if not k.startswith("_")
+                ]
+            )
+        )
 
 
 EXTERNAL_PROTO_LIBRARIES = {
@@ -307,9 +316,7 @@ def _extract_sources(bazel_rule: BuildMetadata) -> List[str]:
     return list(sorted(result))
 
 
-def _extract_deps(
-    bazel_rule: BuildMetadata, bazel_rules: BuildDict
-) -> List[str]:
+def _extract_deps(bazel_rule: BuildMetadata, bazel_rules: BuildDict) -> List[str]:
     """Gets list of deps from from a bazel rule"""
     deps = set(bazel_rule["deps"])
     for src in bazel_rule["srcs"]:
@@ -375,10 +382,7 @@ def _external_dep_name_from_bazel_dependency(bazel_dep: str) -> Optional[str]:
         return "opentelemetry-cpp::metrics"
     elif bazel_dep == "@io_opentelemetry_cpp//sdk/src/trace:trace":
         return "opentelemetry-cpp::trace"
-    elif (
-        bazel_dep
-        == "@io_opentelemetry_cpp//exporters/memory:in_memory_span_exporter"
-    ):
+    elif bazel_dep == "@io_opentelemetry_cpp//exporters/memory:in_memory_span_exporter":
         return "opentelemetry-cpp::in_memory_span_exporter"
     else:
         # Two options here:
@@ -447,9 +451,7 @@ def _compute_transitive_metadata(
                     _compute_transitive_metadata(
                         dep, bazel_rules, bazel_label_to_dep_name
                     )
-                transitive_deps.update(
-                    bazel_rules[dep].get("_TRANSITIVE_DEPS", [])
-                )
+                transitive_deps.update(bazel_rules[dep].get("_TRANSITIVE_DEPS", []))
                 collapsed_deps.update(
                     collapsed_deps, bazel_rules[dep].get("_COLLAPSED_DEPS", [])
                 )
@@ -458,9 +460,7 @@ def _compute_transitive_metadata(
         # This dep is a public target, add it as a dependency
         if dep in bazel_label_to_dep_name:
             transitive_deps.update([bazel_label_to_dep_name[dep]])
-            collapsed_deps.update(
-                collapsed_deps, [bazel_label_to_dep_name[dep]]
-            )
+            collapsed_deps.update(collapsed_deps, [bazel_label_to_dep_name[dep]])
             # Add all the transitive deps of our every public dep to exclude
             # list since we want to avoid building sources that are already
             # built by our dependencies
@@ -511,18 +511,14 @@ def _compute_transitive_metadata(
                 collapsed_public_headers.update(
                     _extract_public_headers(bazel_rules[dep])
                 )
-                collapsed_headers.update(
-                    _extract_nonpublic_headers(bazel_rules[dep])
-                )
+                collapsed_headers.update(_extract_nonpublic_headers(bazel_rules[dep]))
     # This item is a "visited" flag
     bazel_rule["_PROCESSING_DONE"] = True
     # Following items are described in the docstinrg.
     bazel_rule["_TRANSITIVE_DEPS"] = list(sorted(transitive_deps))
     bazel_rule["_COLLAPSED_DEPS"] = list(sorted(collapsed_deps))
     bazel_rule["_COLLAPSED_SRCS"] = list(sorted(collapsed_srcs))
-    bazel_rule["_COLLAPSED_PUBLIC_HEADERS"] = list(
-        sorted(collapsed_public_headers)
-    )
+    bazel_rule["_COLLAPSED_PUBLIC_HEADERS"] = list(sorted(collapsed_public_headers))
     bazel_rule["_COLLAPSED_HEADERS"] = list(sorted(collapsed_headers))
     bazel_rule["_EXCLUDE_DEPS"] = list(sorted(exclude_deps))
 
@@ -562,8 +558,7 @@ def update_test_metadata_with_transitive_metadata(
     for lib_name, lib_dict in list(all_extra_metadata.items()):
         # Skip if it isn't not an test
         if (
-            lib_dict.get("build") != "test"
-            and lib_dict.get("build") != "plugin_test"
+            lib_dict.get("build") != "test" and lib_dict.get("build") != "plugin_test"
         ) or lib_dict.get("_TYPE") != "target":
             continue
 
@@ -638,9 +633,7 @@ def _expand_upb_proto_library_rules(bazel_rules):
             protos = _get_transitive_protos(bazel_rules, deps[0])
             if len(protos) == 0:
                 raise Exception(
-                    'upb rule "{0}" should have at least one proto file.'.format(
-                        name
-                    )
+                    'upb rule "{0}" should have at least one proto file.'.format(name)
                 )
             srcs = []
             hdrs = []
@@ -789,26 +782,16 @@ def _convert_to_build_yaml_like(lib_dict: BuildMetadata) -> BuildYaml:
 
     # get rid of temporary private fields prefixed with "_" and some other useless fields
     for lib in lib_list:
-        for field_to_remove in [
-            k for k in list(lib.keys()) if k.startswith("_")
-        ]:
+        for field_to_remove in [k for k in list(lib.keys()) if k.startswith("_")]:
             lib.pop(field_to_remove, None)
     for target in target_list:
-        for field_to_remove in [
-            k for k in list(target.keys()) if k.startswith("_")
-        ]:
+        for field_to_remove in [k for k in list(target.keys()) if k.startswith("_")]:
             target.pop(field_to_remove, None)
-        target.pop(
-            "public_headers", None
-        )  # public headers make no sense for targets
+        target.pop("public_headers", None)  # public headers make no sense for targets
     for test in test_list:
-        for field_to_remove in [
-            k for k in list(test.keys()) if k.startswith("_")
-        ]:
+        for field_to_remove in [k for k in list(test.keys()) if k.startswith("_")]:
             test.pop(field_to_remove, None)
-        test.pop(
-            "public_headers", None
-        )  # public headers make no sense for tests
+        test.pop("public_headers", None)  # public headers make no sense for tests
 
     build_yaml_like = {
         "libs": lib_list,
@@ -837,15 +820,9 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
     # most qps tests are autogenerated, we are fine without them
     tests = [test for test in tests if not test.startswith("test/cpp/qps:")]
     # microbenchmarks aren't needed for checking correctness
+    tests = [test for test in tests if not test.startswith("test/cpp/microbenchmarks:")]
     tests = [
-        test
-        for test in tests
-        if not test.startswith("test/cpp/microbenchmarks:")
-    ]
-    tests = [
-        test
-        for test in tests
-        if not test.startswith("test/core/promise/benchmark:")
+        test for test in tests if not test.startswith("test/core/promise/benchmark:")
     ]
 
     # we have trouble with census dependency outside of bazel
@@ -853,9 +830,7 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
         test
         for test in tests
         if not test.startswith("test/cpp/ext/filters/census:")
-        and not test.startswith(
-            "test/core/server:xds_channel_stack_modifier_test"
-        )
+        and not test.startswith("test/core/server:xds_channel_stack_modifier_test")
         and not test.startswith("test/cpp/ext/gcp:")
         and not test.startswith("test/cpp/ext/filters/logging:")
         and not test.startswith("test/cpp/interop:observability_interop")
@@ -873,16 +848,12 @@ def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
     tests = [
         test
         for test in tests
-        if not test.startswith(
-            "test/cpp/end2end:server_load_reporting_end2end_test"
-        )
+        if not test.startswith("test/cpp/end2end:server_load_reporting_end2end_test")
     ]
     tests = [
         test
         for test in tests
-        if not test.startswith(
-            "test/cpp/server/load_reporter:lb_load_reporter_test"
-        )
+        if not test.startswith("test/cpp/server/load_reporter:lb_load_reporter_test")
     ]
 
     # The test uses --running_under_bazel cmdline argument
@@ -995,9 +966,7 @@ def _generate_build_extra_metadata_for_tests(
             platforms = []
             # assume all tests are compatible with linux and posix
             platforms.append("linux")
-            platforms.append(
-                "posix"
-            )  # there is no posix-specific tag in bazel BUILD
+            platforms.append("posix")  # there is no posix-specific tag in bazel BUILD
             if "no_mac" not in bazel_tags:
                 platforms.append("mac")
             if "no_windows" not in bazel_tags:
@@ -1044,46 +1013,26 @@ def _generate_build_extra_metadata_for_tests(
     return test_metadata
 
 
-def _parse_http_archives(xml_tree: ET.Element) -> "List[ExternalProtoLibrary]":
+def _parse_http_archives() -> "List[ExternalProtoLibrary]":
     """Parse Bazel http_archive rule into ExternalProtoLibrary objects."""
     result = []
-    for xml_http_archive in xml_tree:
-        if (
-            xml_http_archive.tag != "rule"
-            or xml_http_archive.attrib["class"] != "http_archive"
-        ):
-            continue
-        # A distilled Python representation of Bazel http_archive
-        http_archive = dict()
-        for xml_node in xml_http_archive:
-            if xml_node.attrib["name"] == "name":
-                http_archive["name"] = xml_node.attrib["value"]
-            if xml_node.attrib["name"] == "urls":
-                http_archive["urls"] = []
-                for url_node in xml_node:
-                    http_archive["urls"].append(url_node.attrib["value"])
-            if xml_node.attrib["name"] == "url":
-                http_archive["urls"] = [xml_node.attrib["value"]]
-            if xml_node.attrib["name"] == "sha256":
-                http_archive["hash"] = xml_node.attrib["value"]
-            if xml_node.attrib["name"] == "strip_prefix":
-                http_archive["strip_prefix"] = xml_node.attrib["value"]
-        if http_archive["name"] not in EXTERNAL_PROTO_LIBRARIES:
-            # If this http archive is not one of the external proto libraries,
-            # we don't want to include it as a CMake target
-            continue
-        lib = EXTERNAL_PROTO_LIBRARIES[http_archive["name"]]
-        lib.urls = http_archive["urls"]
-        lib.hash = http_archive["hash"]
-        lib.strip_prefix = http_archive["strip_prefix"]
-        result.append(lib)
+    repositories = extract_repositories.get_dependencies_json(
+        set(EXTERNAL_PROTO_LIBRARIES.keys())
+    )
+    for name, library in EXTERNAL_PROTO_LIBRARIES.items():
+        if not name in repositories:
+            raise RuntimeError(f"No repository for {name} library found")
+        repository = repositories[name]
+        library.urls = repository["urls"]
+        library.hash = repository["integrity"]  # type: ignore
+        library.strip_prefix = repository["strip_prefix"]  # type: ignore
+        result.append(library)
     return result
 
 
 def _generate_external_proto_libraries() -> List[Dict[str, Any]]:
     """Generates the build metadata for external proto libraries"""
-    xml_tree = _bazel_query_xml_tree("kind(http_archive, //external:*)")
-    libraries = _parse_http_archives(xml_tree)
+    libraries = _parse_http_archives()
     libraries.sort(key=lambda x: x.destination)
     return list(map(lambda x: x.__dict__, libraries))
 
@@ -1408,9 +1357,7 @@ _BAZEL_DEPS_QUERIES = [
 #               ... }
 bazel_rules = {}
 for query in _BAZEL_DEPS_QUERIES:
-    bazel_rules.update(
-        _extract_rules_from_bazel_xml(_bazel_query_xml_tree(query))
-    )
+    bazel_rules.update(_extract_rules_from_bazel_xml(_bazel_query_xml_tree(query)))
 
 # Step 1.5: The sources for UPB protos are pre-generated, so we want
 # to expand the UPB proto library bazel rules into the generated
@@ -1473,9 +1420,7 @@ tests = _exclude_unwanted_cc_tests(_extract_cc_tests(bazel_rules))
 # only very little "extra metadata" would be needed and/or it would be trivial
 # to generate it automatically.
 all_extra_metadata = {}
-all_extra_metadata.update(
-    _generate_build_extra_metadata_for_tests(tests, bazel_rules)
-)
+all_extra_metadata.update(_generate_build_extra_metadata_for_tests(tests, bazel_rules))
 all_extra_metadata.update(_BUILD_EXTRA_METADATA)
 
 # Step 4: Compute the build metadata that will be used in the final build.yaml.
@@ -1546,9 +1491,7 @@ build_yaml_like = _convert_to_build_yaml_like(all_targets_dict)
 # to download these libraries if not existed. Even if the download failed, it
 # will be a soft error that doesn't block existing target from successfully
 # built.
-build_yaml_like["external_proto_libraries"] = (
-    _generate_external_proto_libraries()
-)
+build_yaml_like["external_proto_libraries"] = _generate_external_proto_libraries()
 
 # detect and report some suspicious situations we've seen before
 _detect_and_print_issues(build_yaml_like)
@@ -1559,8 +1502,6 @@ _detect_and_print_issues(build_yaml_like)
 # https://github.com/grpc/grpc/blob/master/templates/README.md
 # TODO(jtattermusch): The "cleanup" function is taken from the legacy
 # build system (which used build.yaml) and can be eventually removed.
-build_yaml_string = build_cleaner.cleaned_build_yaml_dict_as_string(
-    build_yaml_like
-)
+build_yaml_string = build_cleaner.cleaned_build_yaml_dict_as_string(build_yaml_like)
 with open("build_autogenerated.yaml", "w") as file:
     file.write(build_yaml_string)

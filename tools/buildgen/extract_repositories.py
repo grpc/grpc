@@ -23,55 +23,63 @@ import subprocess
 from typing import List, Set
 
 
-def transitive_deps(dep) -> Set[str]:
-    deps_set = {dep["name"]}
+def _transitive_deps(dep) -> dict[str, str]:
+    deps_set = {dep["apparentName"]: dep["key"]}
     if "dependencies" in dep:
-        deps_set.update(set().union(*(transitive_deps(d) for d in dep["dependencies"])))
+        for d in dep["dependencies"]:
+            deps_set.update(_transitive_deps(d))
     return deps_set
 
 
-def parse_value(value: str) -> str | List[str]:
+def _parse_property_value(value: str) -> str | List[str]:
     # String value - quoted, with optional comma
     if match := re.match(r"^\"(.*)\",?$", value):
         return match[1]
     # Array value - square brackets, possible comma at the end
     if match := re.match(r"^\[(.*)\],?$", value):
-        return [str(parse_value(v)) for v in match[1].split(", ")]
+        return [str(_parse_property_value(v)) for v in match[1].split(", ")]
     raise RuntimeError(f"Unparsable {value}")
 
 
-def get_dependencies_json() -> list[dict[str, str | List[str]]]:
+def get_dependencies_json(
+    dependencies: Set[str],
+) -> dict[str, dict[str, str | List[str]]]:
+    # 1. We need to get list of dependencies with the aliases used in gRPC
     deps = json.loads(
         subprocess.check_output(
             ["tools/bazel", "mod", "deps", "<root>", "--output", "json"]
         )
     )
-    modules = sorted(transitive_deps(deps) - {"<root>", "grpc"})
+    # 2. Find the dependencies we are interested in
+    modules = {v: k for k, v in _transitive_deps(deps).items() if k in dependencies}
+    # 3. Get repositories for the dependencies
+    # Note: even "JSON" output of this command is actually Starlark. Adding
+    # the `--output` switch so we detect if that is ever fixed.
     repositories = subprocess.check_output(
-        ["tools/bazel", "mod", "show_repo", *modules, "--output", "json"]
+        ["tools/bazel", "mod", "show_repo", *modules.keys(), "--output", "json"]
     ).decode("utf-8")
     ignored_attributes: set[str] = set()
-    repos: list[dict[str, str | List[str]]] = []
+    result: dict[str, dict[str, str | List[str]]] = {}
     repo: dict[str, str | List[str]] | None = None
     for line in repositories.split("\n"):
-        if not line or line.startswith("#"):
-            continue
-        if line == "http_archive(":
+        if match := re.match(r"^## (.*):$", line):
             if repo != None:
                 raise RuntimeError("Unterminated repository: " + repositories)
-            repo = {}
+            repo = {"module": match[1], "alias": modules[match[1]]}
+            continue
+        if not line or line.startswith("#") or line == "http_archive(":
             continue
         if repo == None:
             raise RuntimeError(f"Not parsing repository when encountered {line}")
         if line == ")":
-            repos.append(repo)
+            result[str(repo["alias"])] = repo
             repo = None
             continue
         if match := re.match(r"^  (\w*) = (.*)$", line):
             if match[1] in {"integrity", "name", "sha256", "strip_prefix", "urls"}:
-                repo[match[1]] = parse_value(match[2])
+                repo[match[1]] = _parse_property_value(match[2])
             elif match[1] == "url":
-                repo["urls"] = [str(parse_value(match[2]))]
+                repo["urls"] = [str(_parse_property_value(match[2]))]
             else:
                 ignored_attributes.add(match[1])
         else:
@@ -80,15 +88,25 @@ def get_dependencies_json() -> list[dict[str, str | List[str]]]:
     if repo != None:
         raise RuntimeError(f"Unterminated repo {repo}")
     print(f"Ignored attributes: {", ".join(sorted(ignored_attributes))}")
-    return repos
+    return result
 
 
 if __name__ == "__main__":
     print(
         "\n\n".join(
-            [
-                "\n".join([f"{k} = {v}" for k, v in dep.items()])
-                for dep in get_dependencies_json()
-            ]
+            sorted(
+                [
+                    f"{name}:\n" + "\n".join([f"  {k} = {v}" for k, v in dep.items()])
+                    for name, dep in get_dependencies_json(
+                        {
+                            "com_google_googleapis",
+                            "com_github_cncf_xds",
+                            "com_envoyproxy_protoc_gen_validate",
+                            "envoy_api",
+                            "opencensus_proto",
+                        }
+                    ).items()
+                ]
+            )
         )
     )
