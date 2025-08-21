@@ -70,6 +70,8 @@ void PingManager::TriggerDelayedPing(const Duration wait) {
   delayed_ping_spawned_ = true;
   GetContext<Party>()->Spawn(
       "DelayedPing",
+      // TODO(akshitpatel) : [PH2][P2] : Verify if we need a RefCountedPtr for
+      // ping_manager.
       [this, wait]() mutable {
         GRPC_HTTP2_PING_LOG << "Scheduling delayed ping after wait=" << wait;
         return AssertResultType<absl::Status>(TrySeq(
@@ -116,6 +118,8 @@ void PingManager::SpawnTimeout(const Duration ping_timeout,
                                const uint64_t opaque_data) {
   GetContext<Party>()->Spawn(
       "PingTimeout",
+      // TODO(akshitpatel) : [PH2][P2] : Verify if we need a RefCountedPtr for
+      // ping_manager.
       [this, ping_timeout, opaque_data]() {
         return AssertResultType<absl::Status>(Race(
             TrySeq(ping_callbacks_.PingTimeout(ping_timeout),
