@@ -377,6 +377,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc",
         "//:sockaddr_utils",
+        "//src/core:grpc_sockaddr",
         "//src/core:resolved_address",
     ],
 )
