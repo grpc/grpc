@@ -5,7 +5,7 @@ import warnings
 
 from envoy.service.redis_auth.v3 import redis_external_auth_pb2 as envoy_dot_service_dot_redis__auth_dot_v3_dot_redis__external__auth__pb2
 
-GRPC_GENERATED_VERSION = '1.74.0'
+GRPC_GENERATED_VERSION = '1.71.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 

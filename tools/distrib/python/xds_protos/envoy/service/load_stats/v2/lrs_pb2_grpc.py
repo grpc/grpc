@@ -5,7 +5,7 @@ import warnings
 
 from envoy.service.load_stats.v2 import lrs_pb2 as envoy_dot_service_dot_load__stats_dot_v2_dot_lrs__pb2
 
-GRPC_GENERATED_VERSION = '1.74.0'
+GRPC_GENERATED_VERSION = '1.71.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 

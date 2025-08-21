@@ -5,7 +5,7 @@ import warnings
 
 from envoy.service.rate_limit_quota.v3 import rlqs_pb2 as envoy_dot_service_dot_rate__limit__quota_dot_v3_dot_rlqs__pb2
 
-GRPC_GENERATED_VERSION = '1.74.0'
+GRPC_GENERATED_VERSION = '1.71.0'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
