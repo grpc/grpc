@@ -121,8 +121,6 @@ class PythonArtifact:
         if platform == _LATEST_MANYLINUX:
             self.labels.append("latest-manylinux")
         if "manylinux" in platform:
-            if arch == "aarch64":
-                self.labels.append("linux_aarch64")
             self.labels.append("linux")
         if "linux_extra" in platform:
             # linux_extra wheels used to be built by a separate kokoro job.
@@ -130,8 +128,6 @@ class PythonArtifact:
             # in the regular artifact build.
             self.labels.append("linux")
         if "musllinux" in platform:
-            if arch == "aarch64":
-                self.labels.append("linux_aarch64")
             self.labels.append("linux")
 
     def pre_build_jobspecs(self):
@@ -218,7 +214,7 @@ class PythonArtifact:
                 % (self.platform, self.arch),
                 "tools/run_tests/artifacts/build_artifact_python.sh",
                 environ=environ,
-                timeout_seconds=60 * 60 * 4,
+                timeout_seconds=60 * 60 * 2,
             )
         elif self.platform == "windows":
             environ["EXT_COMPILER"] = "msvc"
