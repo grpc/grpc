@@ -62,6 +62,7 @@ namespace grpc_core {
 namespace http2 {
 
 using grpc_event_engine::experimental::EventEngine;
+using EnqueueResult = StreamDataQueue<ClientMetadataHandle>::EnqueueResult;
 
 // Experimental : This is just the initial skeleton of class
 // and it is functions. The code will be written iteratively.
@@ -387,7 +388,7 @@ auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
         // writes.
         // RFC9113: PING responses SHOULD be given higher priority than any
         // other frame.
-        self->pending_ping_acks_.push_back(opaque);
+        self->ping_manager_.AddPendingPingAck(opaque);
         // TODO(akshitpatel) : [PH2][P2] : This is done assuming that the other
         // ProcessFrame promises may return stream or connection failures. If
         // this does not turn out to be true, consider returning absl::Status
@@ -657,6 +658,8 @@ auto Http2ClientTransport::WriteControlFrames() {
     is_first_write_ = false;
   }
   MaybeGetSettingsFrame(output_buf);
+  ping_manager_.MaybeGetSerializedPingFrames(output_buf,
+                                             NextAllowedPingInterval());
   const uint64_t buffer_length = output_buf.Length();
   return If(
       buffer_length > 0,
@@ -675,6 +678,7 @@ void Http2ClientTransport::NotifyControlFramesWriteDone() {
   // Notify Control modules that we have sent the frames.
   // All notifications are expected to be synchronous.
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport NotifyControlFramesWriteDone";
+  ping_manager_.NotifyPingSent(ping_timeout_);
 }
 
 auto Http2ClientTransport::WriteLoop() {
@@ -692,13 +696,6 @@ auto Http2ClientTransport::WriteLoop() {
                           self->NotifyControlFramesWriteDone();
                           return self->WriteFromQueue(std::move(frames));
                         });
-        },
-        // TODO(akshitpatel) : [PH2][P2] : These two promises will be removed
-        // in subsequent PRs.
-        [self]() { return self->MaybeSendPingAcks(); },
-        [self]() {
-          return self->ping_manager_.MaybeSendPing(
-              self->NextAllowedPingInterval(), self->ping_timeout_);
         },
         [self]() -> LoopCtl<absl::Status> {
           // TODO(akshitpatel) : [PH2][P0] : WriteFromQueue may write settings
@@ -781,7 +778,8 @@ auto Http2ClientTransport::StreamMultiplexerLoop() {
               LOG(ERROR) << "Failed to enqueue stream " << stream_id
                          << " with status: " << status;
               // Close transport if we fail to enqueue stream.
-              return absl::InternalError("Failed to enqueue stream");
+              return absl::UnavailableError(
+                  "Failed to enqueue stream to writable stream list");
             }
           } else if (GPR_UNLIKELY(!result.ok())) {
             // Close the corresponding stream if we fail to dequeue frames from
@@ -1137,12 +1135,12 @@ auto Http2ClientTransport::CallOutboundLoop(
         stream != nullptr,
         [self, stream, message = std::move(message), stream_id]() mutable {
           return TrySeq(stream->EnqueueMessage(std::move(message)),
-                        [self, stream_id](bool became_writable) {
+                        [self, stream_id](const EnqueueResult result) {
                           GRPC_HTTP2_CLIENT_DLOG
                               << "Http2ClientTransport CallOutboundLoop "
                                  "Enqueued Message";
                           return self->MaybeAddStreamToWritableStreamList(
-                              stream_id, became_writable);
+                              stream_id, result);
                         });
         },
         []() {
@@ -1160,12 +1158,12 @@ auto Http2ClientTransport::CallOutboundLoop(
         [self, stream, metadata = std::move(metadata), stream_id]() mutable {
           return TrySeq(
               stream->EnqueueInitialMetadata(std::move(metadata)),
-              [self, stream_id](bool became_writable) {
+              [self, stream_id](const EnqueueResult result) {
                 GRPC_HTTP2_CLIENT_DLOG
                     << "Http2ClientTransport CallOutboundLoop "
                        "Enqueued Initial Metadata";
-                return self->MaybeAddStreamToWritableStreamList(
-                    stream_id, became_writable);
+                return self->MaybeAddStreamToWritableStreamList(stream_id,
+                                                                result);
               },
               [stream] {
                 // TODO(akshitpatel) : [PH2][P2] : Think how to handle stream
@@ -1188,12 +1186,12 @@ auto Http2ClientTransport::CallOutboundLoop(
         stream != nullptr,
         [self, stream, stream_id]() mutable {
           return TrySeq(stream->EnqueueHalfClosed(),
-                        [self, stream_id](bool became_writable) {
+                        [self, stream_id](const EnqueueResult result) {
                           GRPC_HTTP2_CLIENT_DLOG
                               << "Http2ClientTransport CallOutboundLoop "
                                  "Enqueued Half Closed";
                           return self->MaybeAddStreamToWritableStreamList(
-                              stream_id, became_writable);
+                              stream_id, result);
                         });
         },
         []() {

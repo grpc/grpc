@@ -177,16 +177,11 @@ class PythonArtifact:
             )
             environ["PIP"] = "/opt/python/{}/bin/pip".format(self.py_version)
             environ["GRPC_SKIP_PIP_CYTHON_UPGRADE"] = "TRUE"
-            if self.arch == "aarch64":
-                # As we won't strip the binary with auditwheel (see below), strip
-                # it at link time.
-                environ["LDFLAGS"] = "-s"
 
-            # currently all manylinux architectures (including aarch64) do not
-            # require cross-compiling, hence the below values can be set for all
+            # currently no manylinux architectures (including aarch64)
+            # require cross-compiling, hence the below values are set for all
             # manylinux targets
 
-            # only run auditwheel if we're not crosscompiling
             environ["GRPC_RUN_AUDITWHEEL_REPAIR"] = "TRUE"
             # only build the packages that depend on grpcio-tools
             # if we're not crosscompiling.
@@ -213,14 +208,9 @@ class PythonArtifact:
             if self.arch in ("x86"):
                 environ["GRPC_SKIP_TWINE_CHECK"] = "TRUE"
 
-            if self.arch == "aarch64":
-                # As we won't strip the binary with auditwheel (see below), strip
-                # it at link time.
-                environ["LDFLAGS"] = "-s"
-                # We're using musllinux aarch64 image to build this artifact so no crosscompiling required.
-                environ["GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS"] = "TRUE"
-            else:
-                environ["GRPC_RUN_AUDITWHEEL_REPAIR"] = "TRUE"
+            # We're using musllinux aarch64 image to build this artifact so no crosscompiling required.
+            environ["GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS"] = "TRUE"
+            environ["GRPC_RUN_AUDITWHEEL_REPAIR"] = "TRUE"
 
             return create_docker_jobspec(
                 self.name,

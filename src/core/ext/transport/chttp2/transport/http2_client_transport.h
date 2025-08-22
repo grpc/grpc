@@ -564,7 +564,6 @@ class Http2ClientTransport final : public ClientTransport {
   // Duration to wait for ping ack before triggering timeout
   const Duration ping_timeout_;
   PingManager ping_manager_;
-  std::vector<uint64_t> pending_ping_acks_;
   KeepaliveManager keepalive_manager_;
 
   // Flags
@@ -583,41 +582,11 @@ class Http2ClientTransport final : public ClientTransport {
   }
 
   // Ping Helper functions
-  // Returns a promise that resolves once a ping frame is written to the
-  // endpoint.
-  auto CreateAndWritePing(bool ack, uint64_t opaque_data) {
-    Http2Frame frame = Http2PingFrame{ack, opaque_data};
-    SliceBuffer output_buf;
-    Serialize(absl::Span<Http2Frame>(&frame, 1), output_buf);
-    return endpoint_.Write(std::move(output_buf), {});
-  }
-
   Duration NextAllowedPingInterval() {
     MutexLock lock(&transport_mutex_);
     return (!keepalive_permit_without_calls_ && stream_list_.empty())
                ? Duration::Hours(2)
                : Duration::Seconds(1);
-  }
-
-  auto MaybeSendPing() {
-    return ping_manager_.MaybeSendPing(NextAllowedPingInterval(),
-                                       ping_timeout_);
-  }
-
-  auto MaybeSendPingAcks() {
-    return AssertResultType<absl::Status>(If(
-        pending_ping_acks_.empty(), [] { return absl::OkStatus(); },
-        [this] {
-          std::vector<Http2Frame> frames;
-          frames.reserve(pending_ping_acks_.size());
-          for (auto& opaque_data : pending_ping_acks_) {
-            frames.emplace_back(Http2PingFrame{true, opaque_data});
-          }
-          pending_ping_acks_.clear();
-          SliceBuffer output_buf;
-          Serialize(absl::Span<Http2Frame>(frames), output_buf);
-          return endpoint_.Write(std::move(output_buf), {});
-        }));
   }
 
   auto AckPing(uint64_t opaque_data) {
@@ -653,12 +622,6 @@ class Http2ClientTransport final : public ClientTransport {
         Http2ClientTransport* transport) {
       return std::make_unique<PingSystemInterfaceImpl>(
           PingSystemInterfaceImpl(transport));
-    }
-
-    // Returns a promise that resolves once a ping frame is written to the
-    // endpoint.
-    Promise<absl::Status> SendPing(SendPingArgs args) override {
-      return transport_->CreateAndWritePing(args.ack, args.opaque_data);
     }
 
     Promise<absl::Status> TriggerWrite() override {
@@ -739,18 +702,20 @@ class Http2ClientTransport final : public ClientTransport {
 
   WritableStreams writable_stream_list_;
 
-  auto MaybeAddStreamToWritableStreamList(const uint32_t stream_id,
-                                          const bool became_writable) {
-    if (became_writable) {
+  absl::Status MaybeAddStreamToWritableStreamList(
+      const uint32_t stream_id,
+      const StreamDataQueue<ClientMetadataHandle>::EnqueueResult result) {
+    if (result.became_writable) {
       GRPC_HTTP2_CLIENT_DLOG
           << "Http2ClientTransport MaybeAddStreamToWritableStreamList "
              " Stream id: "
           << stream_id << " became writable";
-      absl::Status status = writable_stream_list_.Enqueue(
-          stream_id, WritableStreams::StreamPriority::kDefault);
+      absl::Status status =
+          writable_stream_list_.Enqueue(stream_id, result.priority);
       if (!status.ok()) {
         return HandleError(Http2Status::Http2ConnectionError(
-            Http2ErrorCode::kProtocolError, "Failed to enqueue stream"));
+            Http2ErrorCode::kRefusedStream,
+            "Failed to enqueue stream to writable stream list"));
       }
     }
     return absl::OkStatus();

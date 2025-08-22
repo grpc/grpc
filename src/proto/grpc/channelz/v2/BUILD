@@ -18,6 +18,7 @@ load(
     "grpc_cc_proto_library",
     "grpc_internal_proto_library",
     "grpc_package",
+    "grpc_upb_proto_library",
 )
 
 licenses(["notice"])
@@ -56,6 +57,11 @@ grpc_internal_proto_library(
     has_services = True,
 )
 
+grpc_upb_proto_library(
+    name = "property_list_upb_proto",
+    deps = ["property_list_proto"],
+)
+
 grpc_cc_proto_library(
     name = "latent_see_cc_proto",
     deps = [":latent_see_proto"],
@@ -83,6 +89,11 @@ grpc_cc_proto_library(
 grpc_cc_proto_library(
     name = "property_list_cc_proto",
     deps = [":property_list_proto"],
+)
+
+grpc_upb_proto_library(
+    name = "promise_upb_proto",
+    deps = [":promise_proto"],
 )
 
 grpc_internal_proto_library(

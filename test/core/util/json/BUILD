@@ -27,11 +27,17 @@ grpc_fuzz_test(
         "gtest",
         "fuzztest",
         "fuzztest_main",
+        "absl/log:log",
+        "absl/status:statusor",
+        "absl/strings",
     ],
     tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:dump_args",
+        "//src/core:json_reader",
+        "//src/core:json_writer",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -57,10 +63,16 @@ grpc_cc_test(
     srcs = ["json_object_loader_test.cc"],
     external_deps = [
         "gtest",
+        "absl/status",
     ],
     uses_polling = False,
     deps = [
+        "//:gpr",
+        "//:ref_counted_ptr",
         "//src/core:json_object_loader",
+        "//src/core:json_reader",
+        "//src/core:json_writer",
+        "//src/core:ref_counted",
         "//test/core/test_util:grpc_test_util",
     ],
 )

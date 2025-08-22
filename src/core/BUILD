@@ -6569,6 +6569,7 @@ grpc_cc_library(
     ],
     deps = [
         "channel_args",
+        "client_channel_internal_header",
         "delegating_helper",
         "env",
         "grpc_lb_address_filtering",
@@ -8181,6 +8182,7 @@ grpc_cc_library(
         "message",
         "message_assembler",
         "metadata_batch",
+        "writable_streams",
     ],
 )
 
@@ -10281,6 +10283,8 @@ grpc_cc_library(
         "sleep",
         "time",
         "try_seq",
+        ":slice_buffer",
+        "//:chttp2_frame",
         "//:promise",
     ],
 )

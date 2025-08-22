@@ -74,6 +74,7 @@ grpc_cc_test(
     deps = [
         "oracle_event_engine_posix",
         "//:grpc",
+        "//test/core/event_engine/test_suite:event_engine_test_framework",
         "//test/core/event_engine/test_suite/tests:client",
         "//test/core/event_engine/test_suite/tests:server",
         "//test/core/test_util:grpc_test_util",

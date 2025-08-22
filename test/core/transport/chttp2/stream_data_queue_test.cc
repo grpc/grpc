@@ -41,9 +41,9 @@ auto EnqueueAndCheckSuccess(http2::SimpleQueue<int>& queue, int data,
             << " tokens: " << tokens;
   return Map(
       [&queue, data, tokens]() mutable { return queue.Enqueue(data, tokens); },
-      [data, tokens](auto result) {
+      [data, tokens](absl::StatusOr<bool> result) {
         LOG(INFO) << "Enqueue done for data: " << data << " tokens: " << tokens;
-        EXPECT_EQ(result.status, absl::OkStatus());
+        EXPECT_TRUE(result.ok());
       });
 }
 
@@ -53,7 +53,8 @@ void DequeueAndCheckPending(http2::SimpleQueue<int>& queue,
   LOG(INFO) << "DequeueAndCheckPending for allow_oversized_dequeue: "
             << allow_oversized_dequeue
             << " allowed_dequeue_tokens: " << allowed_dequeue_tokens;
-  auto result = queue.Dequeue(allowed_dequeue_tokens, allow_oversized_dequeue);
+  std::optional<int> result =
+      queue.Dequeue(allowed_dequeue_tokens, allow_oversized_dequeue);
   EXPECT_FALSE(result.has_value());
 }
 
@@ -63,7 +64,8 @@ void DequeueAndCheckSuccess(http2::SimpleQueue<int>& queue, int data,
   LOG(INFO) << "DequeueAndCheckSuccess for data: " << data
             << " allow_oversized_dequeue: " << allow_oversized_dequeue
             << " allowed_dequeue_tokens: " << allowed_dequeue_tokens;
-  auto result = queue.Dequeue(allowed_dequeue_tokens, allow_oversized_dequeue);
+  std::optional<int> result =
+      queue.Dequeue(allowed_dequeue_tokens, allow_oversized_dequeue);
   EXPECT_TRUE(result.has_value());
 
   LOG(INFO) << "Dequeue successful for data: " << data;
@@ -75,7 +77,8 @@ bool DequeueAndCheck(http2::SimpleQueue<int>& queue, int data,
   LOG(INFO) << "DequeueAndCheck for data: " << data
             << " allow_oversized_dequeue: " << allow_oversized_dequeue
             << " allowed_dequeue_tokens: " << allowed_dequeue_tokens;
-  auto result = queue.Dequeue(allowed_dequeue_tokens, allow_oversized_dequeue);
+  std::optional<int> result =
+      queue.Dequeue(allowed_dequeue_tokens, allow_oversized_dequeue);
   if (!result.has_value()) {
     LOG(INFO) << "Dequeue result is empty";
     return false;
@@ -110,16 +113,15 @@ class SimpleQueueTest : public TransportTest {
 TEST_F(SimpleQueueTest, EnqueueTest) {
   // Simple test that does a single enqueue.
   http2::SimpleQueue<int> queue(/*max_tokens=*/100);
-  auto* party = GetParty();
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
 
-  party->Spawn("EnqueueTest",
-               EnqueueAndCheckSuccess(queue, /*data=*/1, /*tokens=*/10),
-               [&on_done](auto) {
-                 LOG(INFO) << "Reached end of EnqueueTest";
-                 on_done.Call(absl::OkStatus());
-               });
+  GetParty()->Spawn("EnqueueTest",
+                    EnqueueAndCheckSuccess(queue, /*data=*/1, /*tokens=*/10),
+                    [&on_done](auto) {
+                      LOG(INFO) << "Reached end of EnqueueTest";
+                      on_done.Call(absl::OkStatus());
+                    });
 
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
@@ -128,16 +130,15 @@ TEST_F(SimpleQueueTest, EnqueueTest) {
 TEST_F(SimpleQueueTest, EnqueueZeroTokensTest) {
   // Simple test that does a single enqueue with zero tokens.
   http2::SimpleQueue<int> queue(/*max_tokens=*/100);
-  auto* party = GetParty();
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
 
-  party->Spawn("EnqueueTest",
-               EnqueueAndCheckSuccess(queue, /*data=*/1, /*tokens=*/0),
-               [&on_done](auto) {
-                 LOG(INFO) << "Reached end of EnqueueTest";
-                 on_done.Call(absl::OkStatus());
-               });
+  GetParty()->Spawn("EnqueueTest",
+                    EnqueueAndCheckSuccess(queue, /*data=*/1, /*tokens=*/0),
+                    [&on_done](auto) {
+                      LOG(INFO) << "Reached end of EnqueueTest";
+                      on_done.Call(absl::OkStatus());
+                    });
 
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
@@ -146,28 +147,27 @@ TEST_F(SimpleQueueTest, EnqueueZeroTokensTest) {
 TEST_F(SimpleQueueTest, MultipleEnqueueTest) {
   // Test multiple enqueues. All the enqueues for this test are immediate.
   http2::SimpleQueue<int> queue(/*max_tokens=*/100);
-  auto* party = GetParty();
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   int count = 10;
 
-  party->Spawn("EnqueueTest", Loop([&count, &queue, &on_done]() {
-                 return If(
-                     count > 0,
-                     [&queue, &count] {
-                       return Map(EnqueueAndCheckSuccess(queue, /*data=*/1,
-                                                         /*tokens=*/10),
-                                  [&count](auto) -> LoopCtl<StatusFlag> {
-                                    count--;
-                                    return Continue();
-                                  });
-                     },
-                     [&on_done]() -> LoopCtl<StatusFlag> {
-                       on_done.Call(absl::OkStatus());
-                       return Success{};
-                     });
-               }),
-               [](auto) { LOG(INFO) << "Reached end of EnqueueTest"; });
+  GetParty()->Spawn("EnqueueTest", Loop([&count, &queue, &on_done]() {
+                      return If(
+                          count > 0,
+                          [&queue, &count] {
+                            return Map(EnqueueAndCheckSuccess(queue, /*data=*/1,
+                                                              /*tokens=*/10),
+                                       [&count](auto) -> LoopCtl<StatusFlag> {
+                                         count--;
+                                         return Continue();
+                                       });
+                          },
+                          [&on_done]() -> LoopCtl<StatusFlag> {
+                            on_done.Call(absl::OkStatus());
+                            return Success{};
+                          });
+                    }),
+                    [](auto) { LOG(INFO) << "Reached end of EnqueueTest"; });
 
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
@@ -179,8 +179,8 @@ TEST_F(SimpleQueueTest, DequeueEmptyQueueTest) {
   // Test to dequeue from an empty queue.
   http2::SimpleQueue<int> queue(/*max_tokens=*/100);
 
-  auto result = queue.Dequeue(/*allowed_dequeue_tokens=*/10,
-                              /*allow_oversized_dequeue=*/false);
+  std::optional<int> result = queue.Dequeue(/*allowed_dequeue_tokens=*/10,
+                                            /*allow_oversized_dequeue=*/false);
   EXPECT_FALSE(result.has_value());
 }
 
@@ -191,31 +191,31 @@ TEST_F(SimpleQueueTest, DequeueTest) {
   // 2. The dequeue data is the same as the enqueue data.
   http2::SimpleQueue<int> queue(/*max_tokens=*/100);
   Latch<void> enqueue_done;
-  auto* party = GetParty();
   StrictMock<MockFunction<void(absl::Status)>> on_enqueue_done;
   StrictMock<MockFunction<void(absl::Status)>> on_dequeue_done;
   EXPECT_CALL(on_enqueue_done, Call(absl::OkStatus()));
   EXPECT_CALL(on_dequeue_done, Call(absl::OkStatus()));
 
-  party->Spawn("EnqueueTest",
-               EnqueueAndCheckSuccess(queue, /*data=*/1, /*tokens=*/10),
-               [&on_enqueue_done, &enqueue_done](auto) {
-                 LOG(INFO) << "Reached end of EnqueueTest";
-                 on_enqueue_done.Call(absl::OkStatus());
-                 enqueue_done.Set();
-               });
+  GetParty()->Spawn("EnqueueTest",
+                    EnqueueAndCheckSuccess(queue, /*data=*/1, /*tokens=*/10),
+                    [&on_enqueue_done, &enqueue_done](auto) {
+                      LOG(INFO) << "Reached end of EnqueueTest";
+                      on_enqueue_done.Call(absl::OkStatus());
+                      enqueue_done.Set();
+                    });
 
-  party->Spawn("DequeueTest",
-               Map(enqueue_done.Wait(),
-                   [&queue, &on_dequeue_done](auto) {
-                     DequeueAndCheckSuccess(queue, /*data=*/1,
-                                            /*allow_oversized_dequeue=*/false,
-                                            /*allowed_dequeue_tokens=*/10);
-                     on_dequeue_done.Call(absl::OkStatus());
-                     EXPECT_TRUE(queue.TestOnlyIsEmpty());
-                     return absl::OkStatus();
-                   }),
-               [](auto) { LOG(INFO) << "Reached end of DequeueTest"; });
+  GetParty()->Spawn("DequeueTest",
+                    Map(enqueue_done.Wait(),
+                        [&queue, &on_dequeue_done](auto) {
+                          DequeueAndCheckSuccess(
+                              queue, /*data=*/1,
+                              /*allow_oversized_dequeue=*/false,
+                              /*allowed_dequeue_tokens=*/10);
+                          on_dequeue_done.Call(absl::OkStatus());
+                          EXPECT_TRUE(queue.TestOnlyIsEmpty());
+                          return absl::OkStatus();
+                        }),
+                    [](auto) { LOG(INFO) << "Reached end of DequeueTest"; });
 
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
@@ -225,13 +225,12 @@ TEST_F(SimpleQueueTest, DequeuePartialDequeueTest) {
   // Test to assert on different combinations of allow_oversized_dequeue.
   http2::SimpleQueue<int> queue(/*max_tokens=*/200);
   Latch<void> enqueue_done;
-  auto* party = GetParty();
   StrictMock<MockFunction<void(absl::Status)>> on_enqueue_done;
   StrictMock<MockFunction<void(absl::Status)>> on_dequeue_done;
   EXPECT_CALL(on_enqueue_done, Call(absl::OkStatus()));
   EXPECT_CALL(on_dequeue_done, Call(absl::OkStatus()));
 
-  party->Spawn(
+  GetParty()->Spawn(
       "EnqueueTest",
       TrySeq(EnqueueAndCheckSuccess(queue, /*data=*/1, /*tokens=*/99),
              EnqueueAndCheckSuccess(queue, /*data=*/2, /*tokens=*/100)),
@@ -241,7 +240,7 @@ TEST_F(SimpleQueueTest, DequeuePartialDequeueTest) {
         enqueue_done.Set();
       });
 
-  party->Spawn(
+  GetParty()->Spawn(
       "DequeueTest",
       TrySeq(enqueue_done.Wait(),
              [&queue] {
@@ -280,24 +279,23 @@ TEST_F(SimpleQueueTest, DequeueTokensTest) {
   // Test to assert different combinations of allowed_dequeue_tokens.
   http2::SimpleQueue<int> queue(/*max_tokens=*/200);
   Latch<void> enqueue_done;
-  auto* party = GetParty();
   StrictMock<MockFunction<void(absl::Status)>> on_enqueue_done;
   StrictMock<MockFunction<void(absl::Status)>> on_dequeue_done;
   EXPECT_CALL(on_enqueue_done, Call(absl::OkStatus()));
   EXPECT_CALL(on_dequeue_done, Call(absl::OkStatus()));
 
-  party->Spawn("EnqueueTest",
-               TrySeq(EnqueueAndCheckSuccess(queue, /*data=*/1,
-                                             /*tokens=*/100),
-                      EnqueueAndCheckSuccess(queue, /*data=*/2,
-                                             /*tokens=*/99)),
-               [&on_enqueue_done, &enqueue_done](auto) {
-                 LOG(INFO) << "Reached end of EnqueueTest";
-                 on_enqueue_done.Call(absl::OkStatus());
-                 enqueue_done.Set();
-               });
+  GetParty()->Spawn("EnqueueTest",
+                    TrySeq(EnqueueAndCheckSuccess(queue, /*data=*/1,
+                                                  /*tokens=*/100),
+                           EnqueueAndCheckSuccess(queue, /*data=*/2,
+                                                  /*tokens=*/99)),
+                    [&on_enqueue_done, &enqueue_done](auto) {
+                      LOG(INFO) << "Reached end of EnqueueTest";
+                      on_enqueue_done.Call(absl::OkStatus());
+                      enqueue_done.Set();
+                    });
 
-  party->Spawn(
+  GetParty()->Spawn(
       "DequeueTest",
       TrySeq(enqueue_done.Wait(),
              [&queue] {
@@ -337,7 +335,6 @@ TEST_F(SimpleQueueTest, BigMessageEnqueueDequeueTest) {
   // Tests that for a queue with current tokens consumed equal to 0, allows a
   // message to be enqueued even if the tokens are more than the max tokens.
   SimpleQueue<int> queue(/*max_tokens=*/100);
-  auto* party = GetParty();
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   StrictMock<MockFunction<void(absl::Status)>> on_dequeue_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
@@ -347,26 +344,26 @@ TEST_F(SimpleQueueTest, BigMessageEnqueueDequeueTest) {
   std::vector<int> expected_data = {1, 2};
   int expected_data_index = 0;
 
-  party->Spawn("EnqueueTest",
-               TrySeq(
-                   EnqueueAndCheckSuccess(queue, /*data=*/1, /*tokens=*/0),
-                   [&queue, &execution_order] {
-                     execution_order.push_back('1');
-                     return EnqueueAndCheckSuccess(queue, /*data=*/2,
-                                                   /*tokens=*/1000);
-                   },
-                   [&queue, &execution_order] {
-                     execution_order.push_back('2');
-                     return EnqueueAndCheckSuccess(queue, /*data=*/3,
-                                                   /*tokens=*/10);
-                   }),
-               [&on_done, &execution_order](auto) {
-                 LOG(INFO) << "Reached end of EnqueueTest";
-                 on_done.Call(absl::OkStatus());
-                 execution_order.push_back('4');
-               });
+  GetParty()->Spawn("EnqueueTest",
+                    TrySeq(
+                        EnqueueAndCheckSuccess(queue, /*data=*/1, /*tokens=*/0),
+                        [&queue, &execution_order] {
+                          execution_order.push_back('1');
+                          return EnqueueAndCheckSuccess(queue, /*data=*/2,
+                                                        /*tokens=*/1000);
+                        },
+                        [&queue, &execution_order] {
+                          execution_order.push_back('2');
+                          return EnqueueAndCheckSuccess(queue, /*data=*/3,
+                                                        /*tokens=*/10);
+                        }),
+                    [&on_done, &execution_order](auto) {
+                      LOG(INFO) << "Reached end of EnqueueTest";
+                      on_done.Call(absl::OkStatus());
+                      execution_order.push_back('4');
+                    });
 
-  party->Spawn(
+  GetParty()->Spawn(
       "DequeueTest",
       Loop([&dequeue_count, &on_dequeue_done, &queue, &execution_order,
             &expected_data, &expected_data_index] {
@@ -404,19 +401,19 @@ TEST_F(SimpleQueueTest, BigMessageEnqueueDequeueTest) {
 namespace {
 // Helper functions to create test data.
 ClientMetadataHandle TestClientInitialMetadata() {
-  auto md = Arena::MakePooledForOverwrite<ClientMetadata>();
+  ClientMetadataHandle md = Arena::MakePooledForOverwrite<ClientMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromStaticString("/demo.Service/Step"));
   return md;
 }
 
 ServerMetadataHandle TestServerInitialMetadata() {
-  auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
+  ServerMetadataHandle md = Arena::MakePooledForOverwrite<ServerMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromStaticString("/demo.Service/Step2"));
   return md;
 }
 
 ServerMetadataHandle TestServerTrailingMetadata() {
-  auto md = Arena::MakePooledForOverwrite<ServerMetadata>();
+  ServerMetadataHandle md = Arena::MakePooledForOverwrite<ServerMetadata>();
   md->Set(HttpPathMetadata(), Slice::FromStaticString("/demo.Service/Step3"));
   return md;
 }
@@ -428,66 +425,78 @@ MessageHandle TestMessage(SliceBuffer payload, const uint32_t flags) {
 template <typename MetadataHandle>
 void EnqueueInitialMetadataAndCheckSuccess(
     RefCountedPtr<StreamDataQueue<MetadataHandle>> queue,
-    MetadataHandle metadata, const bool expected_writeable_state) {
+    MetadataHandle&& metadata, const bool expected_writeable_state,
+    const WritableStreams::StreamPriority expected_priority) {
   LOG(INFO) << "Enqueueing initial metadata";
-  auto promise = queue->EnqueueInitialMetadata(std::move(metadata));
+  auto promise =
+      queue->EnqueueInitialMetadata(std::forward<MetadataHandle>(metadata));
   auto result = promise();
   EXPECT_TRUE(result.ready());
   EXPECT_TRUE(result.value().ok());
-  EXPECT_EQ(result.value().value(), expected_writeable_state);
+  EXPECT_EQ(result.value().value().became_writable, expected_writeable_state);
+  EXPECT_EQ(result.value().value().priority, expected_priority);
   LOG(INFO) << "Enqueueing initial metadata success";
 }
 
 template <typename MetadataHandle>
 void EnqueueTrailingMetadataAndCheckSuccess(
     RefCountedPtr<StreamDataQueue<MetadataHandle>> queue,
-    MetadataHandle metadata, const bool expected_writeable_state) {
+    MetadataHandle&& metadata, const bool expected_writeable_state,
+    const WritableStreams::StreamPriority expected_priority) {
   LOG(INFO) << "Enqueueing trailing metadata";
-  auto promise = queue->EnqueueTrailingMetadata(std::move(metadata));
+  auto promise =
+      queue->EnqueueTrailingMetadata(std::forward<MetadataHandle>(metadata));
   auto result = promise();
   EXPECT_TRUE(result.ready());
   EXPECT_TRUE(result.value().ok());
-  EXPECT_EQ(result.value().value(), expected_writeable_state);
+  EXPECT_EQ(result.value().value().became_writable, expected_writeable_state);
+  EXPECT_EQ(result.value().value().priority, expected_priority);
   LOG(INFO) << "Enqueueing trailing metadata success";
 }
 
 template <typename MetadataHandle>
 void EnqueueMessageAndCheckSuccess(
-    RefCountedPtr<StreamDataQueue<MetadataHandle>> queue, MessageHandle message,
-    const bool expected_writeable_state) {
+    RefCountedPtr<StreamDataQueue<MetadataHandle>> queue,
+    MessageHandle&& message, const bool expected_writeable_state,
+    const WritableStreams::StreamPriority expected_priority) {
   LOG(INFO) << "Enqueueing message with tokens: "
             << message->payload()->Length()
             << " and flags: " << message->flags();
-  auto promise = queue->EnqueueMessage(std::move(message));
+  auto promise = queue->EnqueueMessage(std::forward<MessageHandle>(message));
   auto result = promise();
   EXPECT_TRUE(result.ready());
   EXPECT_TRUE(result.value().ok());
-  EXPECT_EQ(result.value().value(), expected_writeable_state);
+  EXPECT_EQ(result.value().value().became_writable, expected_writeable_state);
+  EXPECT_EQ(result.value().value().priority, expected_priority);
   LOG(INFO) << "Enqueueing message success";
 }
 
 template <typename MetadataHandle>
 void EnqueueResetStreamAndCheckSuccess(
     RefCountedPtr<StreamDataQueue<MetadataHandle>> queue,
-    const bool expected_writeable_state) {
+    const bool expected_writeable_state,
+    const WritableStreams::StreamPriority expected_priority) {
   LOG(INFO) << "Enqueueing reset stream";
   auto promise = queue->EnqueueResetStream(/*error_code=*/0);
   auto result = promise();
   EXPECT_TRUE(result.ready());
   EXPECT_TRUE(result.value().ok());
-  EXPECT_EQ(result.value().value(), expected_writeable_state);
+  EXPECT_EQ(result.value().value().became_writable, expected_writeable_state);
+  EXPECT_EQ(result.value().value().priority, expected_priority);
   LOG(INFO) << "Enqueueing reset stream success";
 }
 
 void EnqueueHalfClosedAndCheckSuccess(
     RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> queue,
-    const bool expected_writeable_state) {
+    const bool expected_writeable_state,
+    const WritableStreams::StreamPriority expected_priority) {
   LOG(INFO) << "Enqueueing half closed";
   auto promise = queue->EnqueueHalfClosed();
   auto result = promise();
   EXPECT_TRUE(result.ready());
   EXPECT_TRUE(result.value().ok());
-  EXPECT_EQ(result.value().value(), expected_writeable_state);
+  EXPECT_EQ(result.value().value().became_writable, expected_writeable_state);
+  EXPECT_EQ(result.value().value().priority, expected_priority);
   LOG(INFO) << "Enqueueing half closed success";
 }
 
@@ -501,7 +510,7 @@ void DequeueAndCheckSuccess(
   EXPECT_TRUE(frames.ok());
   EXPECT_EQ(frames.value().frames.size(), expected_frames.size());
 
-  auto& frames_vector = frames.value().frames;
+  std::vector<Http2Frame>& frames_vector = frames.value().frames;
   for (int count = 0; count < frames_vector.size(); ++count) {
     EXPECT_EQ((frames_vector[count]), (expected_frames[count]));
   }
@@ -516,7 +525,7 @@ void DequeueMessageAndCheckSuccess(
       frames = queue->DequeueFrames(max_tokens, max_frame_length, encoder);
   EXPECT_TRUE(frames.ok());
   EXPECT_EQ(frames.value().frames.size(), expected_frames_length.size());
-  auto& frames_vector = frames.value().frames;
+  std::vector<Http2Frame>& frames_vector = frames.value().frames;
   for (int count = 0; count < frames.value().frames.size(); ++count) {
     EXPECT_EQ(std::get<Http2DataFrame>(frames_vector[count]).payload.Length(),
               expected_frames_length[count]);
@@ -536,9 +545,10 @@ TEST(StreamDataQueueTest, ClientEnqueueInitialMetadataTest) {
           /*is_client=*/true,
           /*stream_id=*/1,
           /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
-  EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
-                                        TestClientInitialMetadata(),
-                                        /*expected_writeable_state=*/true);
+  EnqueueInitialMetadataAndCheckSuccess(
+      stream_data_queue, TestClientInitialMetadata(),
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
 }
 
 TEST(StreamDataQueueTest, ClientEnqueueMultipleMessagesTest) {
@@ -554,16 +564,18 @@ TEST(StreamDataQueueTest, ClientEnqueueMultipleMessagesTest) {
           /*is_client=*/true,
           /*stream_id=*/1,
           /*queue_size=*/queued_size, kAllowTrueBinaryMetadataSetting);
-  EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
-                                        TestClientInitialMetadata(),
-                                        /*expected_writeable_state=*/true);
+  EnqueueInitialMetadataAndCheckSuccess(
+      stream_data_queue, TestClientInitialMetadata(),
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
 
   for (int count = 0; count < 10; ++count) {
     EnqueueMessageAndCheckSuccess(
         stream_data_queue,
         TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(message_size)),
                     0),
-        /*expected_writeable_state=*/false);
+        /*expected_writeable_state=*/false,
+        /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
   }
 }
 
@@ -576,15 +588,19 @@ TEST(StreamDataQueueTest, ClientEnqueueEndStreamTest) {
           /*is_client=*/true,
           /*stream_id=*/1,
           /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
-  EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
-                                        TestClientInitialMetadata(),
-                                        /*expected_writeable_state=*/true);
+  EnqueueInitialMetadataAndCheckSuccess(
+      stream_data_queue, TestClientInitialMetadata(),
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
   EnqueueMessageAndCheckSuccess(
       stream_data_queue,
       TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(1)), 0),
-      /*expected_writeable_state=*/false);
-  EnqueueHalfClosedAndCheckSuccess(stream_data_queue,
-                                   /*expected_writeable_state=*/false);
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+  EnqueueHalfClosedAndCheckSuccess(
+      stream_data_queue,
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
 }
 
 TEST(StreamDataQueueTest, ClientEnqueueResetStreamTest) {
@@ -596,11 +612,14 @@ TEST(StreamDataQueueTest, ClientEnqueueResetStreamTest) {
           /*is_client=*/true,
           /*stream_id=*/1,
           /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
-  EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
-                                        TestClientInitialMetadata(),
-                                        /*expected_writeable_state=*/true);
-  EnqueueResetStreamAndCheckSuccess(stream_data_queue,
-                                    /*expected_writeable_state=*/false);
+  EnqueueInitialMetadataAndCheckSuccess(
+      stream_data_queue, TestClientInitialMetadata(),
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+  EnqueueResetStreamAndCheckSuccess(
+      stream_data_queue,
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
 }
 
 TEST(StreamDataQueueTest, ClientEmptyDequeueTest) {
@@ -627,9 +646,10 @@ TEST(StreamDataQueueTest, ClientDequeueMetadataSingleFrameTest) {
           /*is_client=*/true,
           /*stream_id=*/1,
           /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
-  EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
-                                        TestClientInitialMetadata(),
-                                        /*expected_writeable_state=*/true);
+  EnqueueInitialMetadataAndCheckSuccess(
+      stream_data_queue, TestClientInitialMetadata(),
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
   GetExpectedHeaderAndContinuationFrames(max_frame_length, expected_frames,
                                          kPathDemoServiceStep,
                                          /*end_stream=*/false);
@@ -652,9 +672,10 @@ TEST(StreamDataQueueTest, ClientDequeueFramesTest) {
           /*is_client=*/true,
           /*stream_id=*/1,
           /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
-  EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
-                                        TestClientInitialMetadata(),
-                                        /*expected_writeable_state=*/true);
+  EnqueueInitialMetadataAndCheckSuccess(
+      stream_data_queue, TestClientInitialMetadata(),
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
 
   GetExpectedHeaderAndContinuationFrames(max_frame_length, expected_frames,
                                          kPathDemoServiceStep,
@@ -666,7 +687,8 @@ TEST(StreamDataQueueTest, ClientDequeueFramesTest) {
   EnqueueMessageAndCheckSuccess(
       stream_data_queue,
       TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(50)), 0),
-      /*expected_writeable_state=*/true);
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
   DequeueMessageAndCheckSuccess(stream_data_queue,
                                 /*expected_frames_length=*/{10, 10, 10, 10, 10},
                                 encoder,
@@ -681,7 +703,8 @@ TEST(StreamDataQueueTest, ClientDequeueFramesTest) {
   EnqueueMessageAndCheckSuccess(
       stream_data_queue,
       TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(50)), 0),
-      /*expected_writeable_state=*/true);
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
   DequeueMessageAndCheckSuccess(stream_data_queue,
                                 /*expected_frames_length=*/{15, 10}, encoder,
                                 /*max_tokens=*/25,
@@ -722,17 +745,23 @@ TEST(StreamDataQueueTest, ClientEnqueueDequeueFlowTest) {
           /*is_client=*/true,
           /*stream_id=*/1,
           /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
-  EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
-                                        TestClientInitialMetadata(),
-                                        /*expected_writeable_state=*/true);
+  EnqueueInitialMetadataAndCheckSuccess(
+      stream_data_queue, TestClientInitialMetadata(),
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
   EnqueueMessageAndCheckSuccess(
       stream_data_queue,
       TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(1)), 0),
-      /*expected_writeable_state=*/false);
-  EnqueueHalfClosedAndCheckSuccess(stream_data_queue,
-                                   /*expected_writeable_state=*/false);
-  EnqueueResetStreamAndCheckSuccess(stream_data_queue,
-                                    /*expected_writeable_state=*/false);
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+  EnqueueHalfClosedAndCheckSuccess(
+      stream_data_queue,
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+  EnqueueResetStreamAndCheckSuccess(
+      stream_data_queue,
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
 
   // Dequeue Initial Metadata
   GetExpectedHeaderAndContinuationFrames(
@@ -758,9 +787,10 @@ TEST(StreamDataQueueTest, ServerEnqueueInitialMetadataTest) {
           /*is_client=*/false,
           /*stream_id=*/1,
           /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
-  EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
-                                        TestServerInitialMetadata(),
-                                        /*expected_writeable_state=*/true);
+  EnqueueInitialMetadataAndCheckSuccess(
+      stream_data_queue, TestServerInitialMetadata(),
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
 }
 
 TEST(StreamDataQueueTest, ServerEnqueueMultipleMessagesTest) {
@@ -776,16 +806,18 @@ TEST(StreamDataQueueTest, ServerEnqueueMultipleMessagesTest) {
           /*is_client=*/false,
           /*stream_id=*/1,
           /*queue_size=*/queued_size, kAllowTrueBinaryMetadataSetting);
-  EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
-                                        TestServerInitialMetadata(),
-                                        /*expected_writeable_state=*/true);
+  EnqueueInitialMetadataAndCheckSuccess(
+      stream_data_queue, TestServerInitialMetadata(),
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
 
   for (int count = 0; count < 10; ++count) {
     EnqueueMessageAndCheckSuccess(
         stream_data_queue,
         TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(message_size)),
                     0),
-        /*expected_writeable_state=*/false);
+        /*expected_writeable_state=*/false,
+        /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
   }
 }
 
@@ -799,16 +831,19 @@ TEST(StreamDataQueueTest, ServerEnqueueTrailingMetadataTest) {
           /*is_client=*/false,
           /*stream_id=*/1,
           /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
-  EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
-                                        TestServerInitialMetadata(),
-                                        /*expected_writeable_state=*/true);
+  EnqueueInitialMetadataAndCheckSuccess(
+      stream_data_queue, TestServerInitialMetadata(),
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
   EnqueueMessageAndCheckSuccess(
       stream_data_queue,
       TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(1)), 0),
-      /*expected_writeable_state=*/false);
-  EnqueueTrailingMetadataAndCheckSuccess(stream_data_queue,
-                                         TestServerTrailingMetadata(),
-                                         /*expected_writeable_state=*/false);
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+  EnqueueTrailingMetadataAndCheckSuccess(
+      stream_data_queue, TestServerTrailingMetadata(),
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
 }
 
 TEST(StreamDataQueueTest, ServerResetStreamTest) {
@@ -820,11 +855,14 @@ TEST(StreamDataQueueTest, ServerResetStreamTest) {
           /*is_client=*/false,
           /*stream_id=*/1,
           /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
-  EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
-                                        TestServerInitialMetadata(),
-                                        /*expected_writeable_state=*/true);
-  EnqueueResetStreamAndCheckSuccess(stream_data_queue,
-                                    /*expected_writeable_state=*/false);
+  EnqueueInitialMetadataAndCheckSuccess(
+      stream_data_queue, TestServerInitialMetadata(),
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+  EnqueueResetStreamAndCheckSuccess(
+      stream_data_queue,
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
 }
 
 TEST(StreamDataQueueTest, ServerEnqueueDequeueFlowTest) {
@@ -852,18 +890,23 @@ TEST(StreamDataQueueTest, ServerEnqueueDequeueFlowTest) {
           /*is_client=*/false,
           /*stream_id=*/1,
           /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
-  EnqueueInitialMetadataAndCheckSuccess(stream_data_queue,
-                                        TestServerInitialMetadata(),
-                                        /*expected_writeable_state=*/true);
+  EnqueueInitialMetadataAndCheckSuccess(
+      stream_data_queue, TestServerInitialMetadata(),
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
   EnqueueMessageAndCheckSuccess(
       stream_data_queue,
       TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(1)), 0),
-      /*expected_writeable_state=*/false);
-  EnqueueTrailingMetadataAndCheckSuccess(stream_data_queue,
-                                         TestServerTrailingMetadata(),
-                                         /*expected_writeable_state=*/false);
-  EnqueueResetStreamAndCheckSuccess(stream_data_queue,
-                                    /*expected_writeable_state=*/false);
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+  EnqueueTrailingMetadataAndCheckSuccess(
+      stream_data_queue, TestServerTrailingMetadata(),
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+  EnqueueResetStreamAndCheckSuccess(
+      stream_data_queue,
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
 
   // Dequeue Initial Metadata
   GetExpectedHeaderAndContinuationFrames(
