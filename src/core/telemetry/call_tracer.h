@@ -44,9 +44,9 @@ namespace grpc_core {
 // The interface hierarchy is as follows -
 //                 CallTracerAnnotationInterface
 //                    |                  |
-//        ClientCallTracer       CallTracerInterface
+//        ClientCallTracerInterface       CallTracerInterface
 //                                |              |
-//                      CallAttemptTracer    ServerCallTracer
+//                      CallAttemptTracer    ServerCallTracerInterface
 
 // The base class for all tracer implementations.
 class CallTracerAnnotationInterface {
@@ -129,10 +129,13 @@ class CallTracerInterface : public CallTracerAnnotationInterface {
   virtual std::shared_ptr<TcpCallTracer> StartNewTcpTrace() = 0;
 };
 
+class ClientCallTracerInterface;
+class ServerCallTracerInterface;
+
 // Interface for a tracer that records activities on a call. Actual attempts for
 // this call are traced with CallAttemptTracer after invoking RecordNewAttempt()
 // on the ClientCallTracer object.
-class ClientCallTracer : public CallTracerAnnotationInterface {
+class ClientCallTracerInterface : public CallTracerAnnotationInterface {
  public:
   // Interface for a tracer that records activities on a particular call
   // attempt.
@@ -145,6 +148,7 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
       kXdsServiceName,       // not public
       kXdsServiceNamespace,  // not public
       kLocality,
+      kBackendService,
       kSize  // should be last
     };
 
@@ -170,22 +174,22 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
                                   RefCountedStringValue value) = 0;
   };
 
-  ~ClientCallTracer() override {}
+  ~ClientCallTracerInterface() override {}
 
   // Records a new attempt for the associated call. \a transparent denotes
   // whether the attempt is being made as a transparent retry or as a
   // non-transparent retry/hedging attempt. (There will be at least one attempt
-  // even if the call is not being retried.) The `ClientCallTracer` object
-  // retains ownership to the newly created `CallAttemptTracer` object.
+  // even if the call is not being retried.) The `ClientCallTracerInterface`
+  // object retains ownership to the newly created `CallAttemptTracer` object.
   // RecordEnd() serves as an indication that the call stack is done with all
   // API calls, and the tracer library is free to destroy it after that.
   virtual CallAttemptTracer* StartNewAttempt(bool is_transparent_retry) = 0;
 };
 
 // Interface for a tracer that records activities on a server call.
-class ServerCallTracer : public CallTracerInterface {
+class ServerCallTracerInterface : public CallTracerInterface {
  public:
-  ~ServerCallTracer() override {}
+  ~ServerCallTracerInterface() override {}
   // TODO(yashykt): The following two methods `RecordReceivedTrailingMetadata`
   // and `RecordEnd` should be moved into CallTracerInterface.
   virtual void RecordReceivedTrailingMetadata(
@@ -195,15 +199,15 @@ class ServerCallTracer : public CallTracerInterface {
   virtual void RecordEnd(const grpc_call_final_info* final_info) = 0;
 };
 
-// Interface for a factory that can create a ServerCallTracer object per
-// server call.
+// Interface for a factory that can create a ServerCallTracerInterface object
+// per server call.
 class ServerCallTracerFactory {
  public:
   struct RawPointerChannelArgTag {};
 
   virtual ~ServerCallTracerFactory() {}
 
-  virtual ServerCallTracer* CreateNewServerCallTracer(
+  virtual ServerCallTracerInterface* CreateNewServerCallTracer(
       Arena* arena, const ChannelArgs& channel_args) = 0;
 
   // Returns true if a server is to be traced, false otherwise.
@@ -228,11 +232,13 @@ class ServerCallTracerFactory {
 // Convenience functions to add call tracers to a call context. Allows setting
 // multiple call tracers to a single call. It is only valid to add client call
 // tracers before the client_channel filter sees the send_initial_metadata op.
-void AddClientCallTracerToContext(Arena* arena, ClientCallTracer* tracer);
+void AddClientCallTracerToContext(Arena* arena,
+                                  ClientCallTracerInterface* tracer);
 
 // TODO(yashykt): We want server call tracers to be registered through the
 // ServerCallTracerFactory, which has yet to be made into a list.
-void AddServerCallTracerToContext(Arena* arena, ServerCallTracer* tracer);
+void AddServerCallTracerToContext(Arena* arena,
+                                  ServerCallTracerInterface* tracer);
 
 template <>
 struct ArenaContextType<CallTracerInterface> {
@@ -245,17 +251,17 @@ struct ArenaContextType<CallTracerAnnotationInterface> {
 };
 
 template <>
-struct ContextSubclass<ClientCallTracer::CallAttemptTracer> {
+struct ContextSubclass<ClientCallTracerInterface::CallAttemptTracer> {
   using Base = CallTracerInterface;
 };
 
 template <>
-struct ContextSubclass<ServerCallTracer> {
+struct ContextSubclass<ServerCallTracerInterface> {
   using Base = CallTracerInterface;
 };
 
 template <>
-struct ContextSubclass<ClientCallTracer> {
+struct ContextSubclass<ClientCallTracerInterface> {
   using Base = CallTracerAnnotationInterface;
 };
 

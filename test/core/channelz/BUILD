@@ -64,6 +64,8 @@ grpc_cc_test(
     srcs = ["channelz_test.cc"],
     external_deps = [
         "gtest",
+        "absl/status",
+        "absl/status:statusor",
     ],
     tags = [
         # b/117517566.
@@ -71,11 +73,25 @@ grpc_cc_test(
         "channelz_test",
     ],
     deps = [
+        "//:channel",
+        "//:channelz",
+        "//:event_engine_base_hdrs",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//:grpc_core_credentials_header",
+        "//:server",
         "//src/core:channel_args",
         "//src/core:channelz_v2tov1_legacy_api",
+        "//src/core:default_event_engine",
+        "//src/core:json",
+        "//src/core:json_reader",
+        "//src/core:json_writer",
+        "//src/core:notification",
+        "//src/core:upb_utils",
+        "//src/core:useful",
+        "//src/core:wait_for_single_owner",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:channel_trace_proto_helper",
@@ -95,9 +111,13 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:channelz",
+        "//:config_vars",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//src/core:notification",
+        "//src/core:shared_bit_gen",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -133,6 +153,7 @@ grpc_fuzz_test(
     ],
     deps = [
         "//:channelz",
+        "//src/core:match",
     ],
 )
 

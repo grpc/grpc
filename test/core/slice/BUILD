@@ -31,6 +31,8 @@ grpc_fuzz_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:percent_encoding",
+        "//src/core:slice",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -38,12 +40,16 @@ grpc_fuzz_test(
 grpc_cc_test(
     name = "percent_encoding_test",
     srcs = ["percent_encoding_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/log:log",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:percent_encoding",
         "//src/core:slice",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -55,13 +61,16 @@ grpc_cc_test(
     external_deps = [
         "absl/log:log",
         "gtest",
+        "absl/strings",
     ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:no_destruct",
         "//src/core:slice",
+        "//src/core:slice_refcount",
         "//test/core/test_util:build",
     ],
 )
@@ -91,7 +100,11 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:gpr",
+        "//:gpr_platform",
         "//:grpc",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
         "//test/core/test_util:grpc_test_util",
     ],
 )

@@ -25,8 +25,12 @@ grpc_package(
 grpc_cc_test(
     name = "basic_work_queue_test",
     srcs = ["basic_work_queue_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/functional:any_invocable",
+    ],
     deps = [
+        "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr_platform",
         "//src/core:common_event_engine_closures",
@@ -52,12 +56,16 @@ grpc_fuzz_test(
     name = "basic_work_queue_fuzzer",
     srcs = ["basic_work_queue_fuzzer.cc"],
     external_deps = [
+        "absl/functional:any_invocable",
         "gtest",
         "fuzztest",
         "fuzztest_main",
     ],
     deps = [
         "work_queue_fuzzer_cc_proto",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//src/core:common_event_engine_closures",
         "//src/core:event_engine_basic_work_queue",
         "//test/core/test_util:grpc_test_util",
     ],

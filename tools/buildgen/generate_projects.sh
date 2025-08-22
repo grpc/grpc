@@ -49,11 +49,11 @@ if [[ ! -d generate_projects_virtual_environment ]]; then
       fi
       exit 1
     fi
-  fi 
+  fi
   python3 -m virtualenv generate_projects_virtual_environment
 fi
 
-generate_projects_virtual_environment/bin/pip install --upgrade --ignore-installed grpcio-tools==1.59.0
+generate_projects_virtual_environment/bin/pip install --upgrade --ignore-installed grpcio-tools==1.74.0
 generate_projects_virtual_environment/bin/python tools/distrib/python/xds_protos/build.py
 generate_projects_virtual_environment/bin/python tools/distrib/python/make_grpcio_tools.py
 generate_projects_virtual_environment/bin/python src/python/grpcio_observability/make_grpcio_observability.py

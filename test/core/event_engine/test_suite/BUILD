@@ -28,9 +28,11 @@ grpc_cc_library(
     hdrs = ["event_engine_test_framework.h"],
     external_deps = [
         "absl/log:check",
+        "absl/functional:any_invocable",
         "gtest",
     ],
     deps = [
+        "//:event_engine_base_hdrs",
         "//:grpc",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/test_util:grpc_test_util",
@@ -66,6 +68,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "posix_event_engine_native_dns_test",
     srcs = ["posix_event_engine_native_dns_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     tags = [
         "no_mac",
         "no_windows",
@@ -73,31 +78,40 @@ grpc_cc_test(
     uses_event_engine = True,
     uses_polling = True,
     deps = [
+        ":event_engine_test_framework",
         "//:config_vars",
+        "//:grpc",
         "//src/core:posix_event_engine",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/test_suite/posix:oracle_event_engine_posix",
         "//test/core/event_engine/test_suite/tests:dns",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
 grpc_cc_test(
     name = "thready_posix_event_engine_test",
     srcs = ["thready_posix_event_engine_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     tags = [
         "no_windows",
     ],
     uses_event_engine = True,
     uses_polling = True,
     deps = [
+        "//:grpc",
         "//src/core:posix_event_engine",
         "//src/core:thready_event_engine",
         "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/event_engine/test_suite:event_engine_test_framework",
         "//test/core/event_engine/test_suite/posix:oracle_event_engine_posix",
         "//test/core/event_engine/test_suite/tests:client",
         "//test/core/event_engine/test_suite/tests:endpoint",
         "//test/core/event_engine/test_suite/tests:server",
         "//test/core/event_engine/test_suite/tests:timer",
+        "//test/core/test_util:grpc_test_util",
     ],
 )
 
@@ -111,6 +125,7 @@ grpc_cc_test(
     ],
     uses_polling = False,
     deps = [
+        "//:gpr",
         "//src/core:windows_event_engine",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/test_suite/tests:client",
@@ -130,9 +145,11 @@ grpc_cc_test(
     ],
     uses_polling = True,
     deps = [
+        "//:gpr_platform",
         "//src/core:cf_event_engine",
         "//test/core/event_engine/test_suite/posix:oracle_event_engine_posix",
         "//test/core/event_engine/test_suite/tests:client",
+        "//test/core/event_engine/test_suite/tests:server",
         "//test/core/event_engine/test_suite/tests:timer",
     ],
 )
@@ -140,12 +157,16 @@ grpc_cc_test(
 grpc_cc_test(
     name = "fuzzing_event_engine_test",
     srcs = ["fuzzing_event_engine_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     tags = [
         "no_mac",
         "no_windows",
     ],
     uses_polling = False,
     deps = [
+        ":event_engine_test_framework",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/test_suite/tests:client",
         "//test/core/event_engine/test_suite/tests:endpoint",
