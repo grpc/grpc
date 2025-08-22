@@ -25,6 +25,14 @@ export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
 # shellcheck disable=SC1091
 source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 
+# Optimize ccache for aarch64 builds
+if [ "$AUDITWHEEL_ARCH" == "aarch64" ]; then
+  export CCACHE_COMPRESS=1
+  export CCACHE_COMPRESSLEVEL=6
+  export CCACHE_MAXSIZE=10G
+  export CCACHE_SLOPPINESS=file_macro,time_macros,include_file_mtime,include_file_ctime
+fi
+
 # Needed for building binary distribution wheels -- bdist_wheel
 "${PYTHON}" -m pip install --upgrade pip
 # Ping to a single version to make sure we're building the same artifacts
@@ -45,7 +53,12 @@ fi
 # Allow build_ext to build C/C++ files in parallel
 # by enabling a monkeypatch. It speeds up the build a lot.
 # Use externally provided GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS value if set.
-export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=${GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS:-2}
+# For aarch64 builds, use more parallelism to speed up cross-compilation
+if [ "$AUDITWHEEL_ARCH" == "aarch64" ]; then
+  export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=${GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS:-8}
+else
+  export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=${GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS:-2}
+fi
 
 mkdir -p "${ARTIFACTS_OUT}"
 ARTIFACT_DIR="$PWD/${ARTIFACTS_OUT}"
@@ -65,6 +78,11 @@ then
 
   # since we're crosscompiling, we need to explicitly choose the right platform for boringssl assembly optimizations
   export GRPC_BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM="linux-aarch64"
+  
+  # Add optimization flags for aarch64 builds
+  export CFLAGS="${CFLAGS} -O2 -DNDEBUG -march=native"
+  export CXXFLAGS="${CXXFLAGS} -O2 -DNDEBUG -march=native"
+  export LDFLAGS="${LDFLAGS} -Wl,--strip-all"
 fi
 
 # check whether we are crosscompiling. AUDITWHEEL_ARCH is set by the dockcross docker image.
