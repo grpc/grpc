@@ -490,7 +490,8 @@ GRPCAPI grpc_call_credentials* grpc_composite_call_credentials_create(
 /** Context that can be used by the google compute engine create credentials api
    in order to configure the desired credentials. */
 typedef struct {
-  /** Additional query parameters to include in the authentication request */
+  /** Additional query parameters to include in the authentication request.
+     */
   const char* query_params;
 } grpc_google_compute_engine_credentials_options;
 
