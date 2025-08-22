@@ -72,7 +72,7 @@ if [ "$AUDITWHEEL_ARCH" == "armv7l" ]
 then
   # when crosscompiling for arm, --plat-name needs to be set explicitly
   # to end up with correctly named wheel file
-  # our dockcross-based docker image onveniently provides the value in the AUDITWHEEL_PLAT env
+  # our dockcross-based docker image conveniently provides the value in the AUDITWHEEL_PLAT env
   WHEEL_PLAT_NAME_FLAG="--plat-name=$AUDITWHEEL_PLAT"
 
   # override the value of EXT_SUFFIX to make sure the crosscompiled .so files in the wheel have the correct filename suffix

@@ -20,7 +20,7 @@
 
 # This script selects the latest patch release of the two most recent major
 # versions of Bazel. If you want to include other versions in the set of
-# supported versions, then you will need to manually edit the ifle.
+# supported versions, then you will need to manually edit the file.
 
 set -xeuo pipefail
 
