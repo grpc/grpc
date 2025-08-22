@@ -32,6 +32,9 @@ grpc_cc_library(
     external_deps = [
         "absl/flags:parse",
     ],
+    visibility = [
+        "@grpc:test_cli",
+    ],
     deps = ["//:gpr"],
 )
 
@@ -152,6 +155,9 @@ grpc_cc_library(
         "absl/strings",
         "absl/memory",
     ],
+    visibility = [
+        "@grpc:test_cli",
+    ],
     deps = [
         ":grpc++_proto_reflection_desc_db",
         "//:gpr",
@@ -173,6 +179,9 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/flags:flag",
+    ],
+    visibility = [
+        "@grpc:test_cli",
     ],
     deps = [
         ":grpc_cli_utils",
