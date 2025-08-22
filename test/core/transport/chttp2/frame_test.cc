@@ -1230,6 +1230,41 @@ TEST(Frame, ValidateFrameHeaderTest) {
                   .IsOk());
 }
 
+TEST(FrameSize, Http2FrameSizeTest) {
+  size_t kPayloadSize = strlen("hello");
+  EXPECT_EQ(GetFrameMemoryUsage(
+                Http2DataFrame{1, false, SliceBufferFromString("hello")}),
+            sizeof(Http2DataFrame) + kPayloadSize);
+  EXPECT_EQ(GetFrameMemoryUsage(Http2HeaderFrame{
+                1, false, false, SliceBufferFromString("hello")}),
+            sizeof(Http2HeaderFrame) + kPayloadSize);
+  EXPECT_EQ(GetFrameMemoryUsage(Http2ContinuationFrame{
+                1, false, SliceBufferFromString("hello")}),
+            sizeof(Http2ContinuationFrame) + kPayloadSize);
+  EXPECT_EQ(GetFrameMemoryUsage(Http2RstStreamFrame{
+                1, static_cast<uint32_t>(Http2ErrorCode::kConnectError)}),
+            sizeof(Http2RstStreamFrame));
+  EXPECT_EQ(GetFrameMemoryUsage(Http2SettingsFrame{}),
+            sizeof(Http2SettingsFrame));
+  EXPECT_EQ(
+      GetFrameMemoryUsage(Http2SettingsFrame{
+          false, {{0x1234, 0x9abcdef0}, {0x5678, 0x12345678}}}),
+      sizeof(Http2SettingsFrame) + (2 * sizeof(Http2SettingsFrame::Setting)));
+  EXPECT_EQ(GetFrameMemoryUsage(Http2PingFrame{false, 0x123456789abcdef0}),
+            sizeof(Http2PingFrame));
+  EXPECT_EQ(
+      GetFrameMemoryUsage(Http2GoawayFrame{
+          0x12345678, static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm),
+          Slice::FromCopiedString("hello")}),
+      sizeof(Http2GoawayFrame) + kPayloadSize);
+  EXPECT_EQ(GetFrameMemoryUsage(Http2WindowUpdateFrame{1, 12345678}),
+            sizeof(Http2WindowUpdateFrame));
+  EXPECT_EQ(
+      GetFrameMemoryUsage(Http2SecurityFrame{SliceBufferFromString("hello")}),
+      sizeof(Http2SecurityFrame) + kPayloadSize);
+  EXPECT_EQ(GetFrameMemoryUsage(Http2EmptyFrame{}), sizeof(Http2EmptyFrame));
+}
+
 }  // namespace
 }  // namespace grpc_core
 

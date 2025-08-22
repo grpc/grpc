@@ -28,6 +28,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/memory_usage.h"
 
 // TODO(tjagtap) TODO(akshitpatel): [PH2][P3] : Write micro benchmarks for
 // framing code
@@ -696,6 +697,10 @@ http2::Http2ErrorCode Http2ErrorCodeFromRstFrameErrorCode(uint32_t error_code) {
     return http2::Http2ErrorCode::kInternalError;
   }
   return static_cast<http2::Http2ErrorCode>(error_code);
+}
+
+size_t GetFrameMemoryUsage(const Http2Frame& frame) {
+  return MemoryUsageOf(frame);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

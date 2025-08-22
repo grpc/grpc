@@ -49,8 +49,9 @@ namespace http2 {
 #define GRPC_HTTP2_COMMON_DLOG \
   DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
 
-// TODO(akshitpatel) : [PH2][P2] : Choose appropriate size later.
-constexpr int kMpscSize = 10;
+// TODO(akshitpatel) : [PH2][P4] : Choose appropriate size later. Currently this
+// is set to 100 MB assuming 1 MB per stream and 100 streams per connection.
+constexpr uint32_t kMpscSize = /*100 MB*/ 100u * 1024u * 1024u;
 constexpr uint32_t kStreamQueueSize = /*1 MB*/ 1024u * 1024u;
 
 enum class HttpStreamState : uint8_t {
