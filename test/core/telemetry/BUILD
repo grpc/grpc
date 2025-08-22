@@ -60,6 +60,8 @@ grpc_fuzz_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:stats",
+        "//src/core:stats_data",
         "//test/core/test_util:grpc_test_util",
     ],
 )
