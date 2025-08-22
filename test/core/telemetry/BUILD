@@ -27,7 +27,13 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:call_tracer",
+        "//:event_engine_base_hdrs",
         "//:grpc",
+        "//:ref_counted_ptr",
+        "//src/core:context",
+        "//src/core:memory_quota",
+        "//src/core:resource_quota",
         "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -43,6 +49,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//src/core:channel_args_endpoint_config",
         "//src/core:metrics",
         "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
@@ -58,8 +65,11 @@ grpc_fuzz_test(
         "fuzztest_main",
     ],
     deps = [
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:stats",
+        "//src/core:stats_data",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -67,11 +77,15 @@ grpc_fuzz_test(
 grpc_cc_test(
     name = "trace_flags_test",
     srcs = ["trace_flags_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/strings",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
+        "//:grpc_trace",
         "//src/core:useful",
         "//test/core/test_util:grpc_test_util",
     ],

@@ -28,11 +28,17 @@ grpc_cc_library(
     hdrs = ["mock_promise_endpoint.h"],
     external_deps = [
         "absl/log:log",
+        "absl/strings",
+        "absl/types:span",
         "gtest",
     ],
     deps = [
+        "//:event_engine_base_hdrs",
         "//:grpc",
+        "//src/core:event_engine_tcp_socket_utils",
         "//src/core:grpc_promise_endpoint",
+        "//src/core:notification",
+        "//src/core:transport_framing_endpoint_extension",
     ],
 )
 
@@ -45,7 +51,12 @@ grpc_cc_library(
         "gtest",
     ],
     deps = [
+        "//:config",
         "//:iomgr_timer",
+        "//src/core:call_arena_allocator",
+        "//src/core:call_spine",
+        "//src/core:channel_args",
+        "//src/core:event_engine_context",
         "//src/core:memory_quota",
         "//src/core:resource_quota",
         "//test/core/event_engine/fuzzing_event_engine",
