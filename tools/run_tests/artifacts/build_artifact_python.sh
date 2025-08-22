@@ -27,15 +27,15 @@ source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 
 # Optimize ccache for aarch64 builds
 if [ "$AUDITWHEEL_ARCH" == "aarch64" ]; then
-  export CCACHE_COMPRESS=1
+  export CCACHE_COMPRESS=true
   export CCACHE_COMPRESSLEVEL=6
   export CCACHE_MAXSIZE=10G
   export CCACHE_SLOPPINESS=file_macro,time_macros,include_file_mtime,include_file_ctime
   # Aggressive ccache optimization for 15-minute target
-  export CCACHE_DIRECT=1
-  export CCACHE_NOCOMPRESS=1
-  export CCACHE_READONLY=0
-  export CCACHE_SHARED=1
+  export CCACHE_DIRECT=true
+  export CCACHE_NOCOMPRESS=true
+  export CCACHE_READONLY=false
+  export CCACHE_SHARED=true
 fi
 
 # Needed for building binary distribution wheels -- bdist_wheel
