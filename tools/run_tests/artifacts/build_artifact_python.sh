@@ -34,7 +34,7 @@ if [ "$AUDITWHEEL_ARCH" == "aarch64" ]; then
   # Aggressive ccache optimization for 15-minute target
   export CCACHE_DIRECT=true
   export CCACHE_NOCOMPRESS=true
-  export CCACHE_READONLY=false
+  export CCACHE_NOREADONLY=true
   export CCACHE_SHARED=true
 fi
 
