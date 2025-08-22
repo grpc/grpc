@@ -10285,6 +10285,8 @@ grpc_cc_library(
         "sleep",
         "time",
         "try_seq",
+        ":slice_buffer",
+        "//:chttp2_frame",
         "//:promise",
     ],
 )
