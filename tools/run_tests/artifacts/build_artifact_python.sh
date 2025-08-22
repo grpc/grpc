@@ -31,12 +31,38 @@ if [ "$AUDITWHEEL_ARCH" == "aarch64" ]; then
   export CCACHE_COMPRESSLEVEL=6
   export CCACHE_MAXSIZE=10G
   export CCACHE_SLOPPINESS=file_macro,time_macros,include_file_mtime,include_file_ctime
+  # Aggressive ccache optimization for 15-minute target
+  export CCACHE_DIRECT=1
+  export CCACHE_NOCOMPRESS=1
+  export CCACHE_READONLY=0
+  export CCACHE_SHARED=1
 fi
 
 # Needed for building binary distribution wheels -- bdist_wheel
 "${PYTHON}" -m pip install --upgrade pip
 # Ping to a single version to make sure we're building the same artifacts
 "${PYTHON}" -m pip install setuptools==69.5.1 wheel==0.43.0
+
+# Aggressive optimization for 15-minute target - aarch64 builds
+if [ "$AUDITWHEEL_ARCH" == "aarch64" ]; then
+  echo "=== AGGRESSIVE OPTIMIZATION FOR 15-MINUTE TARGET ==="
+  # Force maximum parallelism
+  export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=12
+  export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS_FORCE=12
+  export MAKEFLAGS="-j12"
+  export MAKEOPTS="-j12"
+  # Disable unnecessary checks for speed
+  export GRPC_SKIP_TWINE_CHECK=1
+  export GRPC_SKIP_PIP_CYTHON_UPGRADE=1
+  # Optimize Python build process
+  export PYTHONHASHSEED=0
+  export PYTHONDONTWRITEBYTECODE=1
+  # Aggressive compiler optimizations
+  export CFLAGS="${CFLAGS} -O3 -DNDEBUG -march=native -mtune=native -ffast-math -funroll-loops -flto"
+  export CXXFLAGS="${CXXFLAGS} -O3 -DNDEBUG -march=native -mtune=native -ffast-math -funroll-loops -flto"
+  export LDFLAGS="${LDFLAGS} -Wl,--strip-all -Wl,--as-needed -flto"
+  echo "=== AGGRESSIVE OPTIMIZATION APPLIED ==="
+fi
 
 if [ "$GRPC_SKIP_PIP_CYTHON_UPGRADE" == "" ]
 then
@@ -55,7 +81,10 @@ fi
 # Use externally provided GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS value if set.
 # For aarch64 builds, use more parallelism to speed up cross-compilation
 if [ "$AUDITWHEEL_ARCH" == "aarch64" ]; then
-  export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=${GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS:-8}
+  export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=${GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS:-12}
+  # Aggressive optimization for 15-minute target
+  export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=12
+  export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS_FORCE=12
 else
   export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=${GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS:-2}
 fi
@@ -80,9 +109,12 @@ then
   export GRPC_BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM="linux-aarch64"
   
   # Add optimization flags for aarch64 builds
-  export CFLAGS="${CFLAGS} -O2 -DNDEBUG -march=native"
-  export CXXFLAGS="${CXXFLAGS} -O2 -DNDEBUG -march=native"
-  export LDFLAGS="${LDFLAGS} -Wl,--strip-all"
+  export CFLAGS="${CFLAGS} -O3 -DNDEBUG -march=native -mtune=native -ffast-math -funroll-loops"
+  export CXXFLAGS="${CXXFLAGS} -O3 -DNDEBUG -march=native -mtune=native -ffast-math -funroll-loops"
+  export LDFLAGS="${LDFLAGS} -Wl,--strip-all -Wl,--as-needed"
+  # Aggressive optimization for 15-minute target
+  export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=12
+  export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS_FORCE=12
 fi
 
 # check whether we are crosscompiling. AUDITWHEEL_ARCH is set by the dockcross docker image.
