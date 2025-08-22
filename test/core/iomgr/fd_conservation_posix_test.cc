@@ -17,6 +17,7 @@
 //
 
 #include <grpc/grpc.h>
+#include <gtest/gtest.h>
 #include <sys/resource.h>
 
 #include "absl/log/check.h"
@@ -31,6 +32,7 @@ int main(int argc, char** argv) {
   grpc_endpoint_pair p;
 
   grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;
