@@ -96,12 +96,14 @@ alts_record_protocol_crypter* alts_crypter_create_common(
     grpc_status_code status =
         gsec_aead_crypter_nonce_length(crypter, &counter_size, error_details);
     if (status != GRPC_STATUS_OK) {
+      gpr_free(rp_crypter);
       return nullptr;
     }
     // Create a counter.
     status = alts_counter_create(is_client, counter_size, overflow_size,
                                  &rp_crypter->ctr, error_details);
     if (status != GRPC_STATUS_OK) {
+      gpr_free(rp_crypter);
       return nullptr;
     }
     rp_crypter->crypter = crypter;
