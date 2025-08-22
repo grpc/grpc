@@ -1,7 +1,7 @@
 name: PR Auto Tag
 on:
   pull_request_target:
-    types: [opened, reopened, synchronize, edited]
+    types: [opened, reopened, synchronize, edited, labeled]
 permissions:
   contents: read # to determine modified files (actions/labeler)
 
