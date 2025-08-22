@@ -248,9 +248,9 @@ CFStreamEndpointImpl::CFStreamEndpointImpl(
     std::shared_ptr<CFEventEngine> engine, MemoryAllocator memory_allocator)
     : engine_(std::move(engine)),
       memory_allocator_(std::move(memory_allocator)),
-      open_event_(engine_.get()),
-      read_event_(engine_.get()),
-      write_event_(engine_.get()) {
+      open_event_(engine_->thread_pool()),
+      read_event_(engine_->thread_pool()),
+      write_event_(engine_->thread_pool()) {
   open_event_.InitEvent();
   read_event_.InitEvent();
   write_event_.InitEvent();
@@ -275,9 +275,6 @@ void CFStreamEndpointImpl::Shutdown() {
   open_event_.SetShutdown(shutdownStatus);
   read_event_.SetShutdown(shutdownStatus);
   write_event_.SetShutdown(shutdownStatus);
-
-  CFReadStreamSetClient(cf_read_stream_, 0, nullptr, nullptr);
-  CFWriteStreamSetClient(cf_write_stream_, 0, nullptr, nullptr);
 
   CFReadStreamSetDispatchQueue(cf_read_stream_, nullptr);
   CFWriteStreamSetDispatchQueue(cf_write_stream_, nullptr);

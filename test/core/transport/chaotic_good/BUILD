@@ -115,6 +115,8 @@ grpc_fuzz_test(
         ":test_frame",
         "//:channel_create",
         "//src/core:chaotic_good_frame",
+        "//src/core:memory_quota",
+        "//src/core:resource_quota",
     ],
 )
 
@@ -247,7 +249,9 @@ grpc_fuzz_test(
         "no_windows",
     ],
     deps = [
+        "//:grpc_base",
         "//src/core:chaotic_good_control_endpoint",
+        "//src/core:chaotic_good_tcp_frame_header",
         "//test/core/call/yodel:yodel_test",
         "//test/core/transport/util:mock_promise_endpoint",
     ],

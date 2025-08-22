@@ -48,7 +48,9 @@ class SimpleQueueFuzzTest : public YodelTest {
   auto EnqueueAndCheckSuccess(SimpleQueue<int>& queue, int data, int tokens) {
     return Map([&queue, data,
                 tokens]() mutable { return queue.Enqueue(data, tokens); },
-               [](auto result) { EXPECT_EQ(result.status, absl::OkStatus()); });
+               [](absl::StatusOr<bool> result) {
+                 EXPECT_EQ(result.status(), absl::OkStatus());
+               });
   }
 
   bool DequeueAndCheck(SimpleQueue<int>& queue, int data,
@@ -182,8 +184,9 @@ class StreamDataQueueFuzzTest : public YodelTest {
 
   class AssembleFrames {
    public:
-    explicit AssembleFrames(const uint32_t stream_id)
-        : header_assembler_(stream_id) {}
+    explicit AssembleFrames(const uint32_t stream_id,
+                            const bool allow_true_binary_metadata)
+        : header_assembler_(stream_id, allow_true_binary_metadata) {}
     void operator()(Http2HeaderFrame frame) {
       auto status = header_assembler_.AppendHeaderFrame(std::move(frame));
       EXPECT_TRUE(status.IsOk());
@@ -220,8 +223,13 @@ class StreamDataQueueFuzzTest : public YodelTest {
     ClientMetadataHandle GetMetadata() {
       DCHECK(header_assembler_.IsReady());
       ValueOrHttp2Status<ClientMetadataHandle> status_or_metadata =
-          header_assembler_.ReadMetadata(parser_, /*is_initial_metadata=*/true,
-                                         /*is_client=*/true);
+          header_assembler_.ReadMetadata(
+              parser_, /*is_initial_metadata=*/true,
+              /*is_client=*/true,
+              /*max_header_list_size_soft_limit=*/
+              default_settings_.max_header_list_size(),
+              /*max_header_list_size_hard_limit=*/
+              default_settings_.max_header_list_size());
       EXPECT_TRUE(status_or_metadata.IsOk());
       return TakeValue(std::move(status_or_metadata));
     }
@@ -241,6 +249,7 @@ class StreamDataQueueFuzzTest : public YodelTest {
     http2::HeaderAssembler header_assembler_;
     http2::GrpcMessageAssembler message_assembler_;
     HPackParser parser_;
+    Http2Settings default_settings_;
   };
 
  private:
@@ -279,12 +288,12 @@ YODEL_TEST(StreamDataQueueFuzzTest, EnqueueDequeueMultiParty) {
   StreamDataQueue<ClientMetadataHandle> stream_data_queue(
       /*is_client=*/true,
       /*stream_id=*/stream_id,
-      /*queue_size=*/queue_size);
+      /*queue_size=*/queue_size, /*allow_true_binary_metadata=*/true);
   std::vector<MessageHandle> messages_to_be_sent = TestMessages(num_messages);
   std::vector<MessageHandle> messages_copy = TestMessages(num_messages);
   std::vector<MessageHandle> dequeued_messages;
   uint message_index = 0;
-  AssembleFrames assembler(stream_id);
+  AssembleFrames assembler(stream_id, /*allow_true_binary_metadata=*/true);
 
   auto validate = [this, &messages_copy, &dequeued_messages, &assembler]() {
     auto metadata = assembler.GetMetadata();
