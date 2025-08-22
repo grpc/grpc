@@ -109,7 +109,6 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
-        "//:channelz",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
@@ -118,6 +117,7 @@ grpc_cc_library(
         "//src/core:json",
         "//src/core:json_reader",
         "//src/core:json_writer",
+        "//src/core/channelz",
         "//src/proto/grpc/channelz:channelz_proto",
     ],
 )

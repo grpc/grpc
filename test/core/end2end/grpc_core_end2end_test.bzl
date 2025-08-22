@@ -36,7 +36,7 @@ _DEPS = [
     "//:call_tracer",
     "//:channel_arg_names",
     "//:channel_stack_builder",
-    "//:channelz",
+    "//src/core/channelz",
     "//:channel",
     "//:config",
     "//:config_vars",

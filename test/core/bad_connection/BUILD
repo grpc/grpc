@@ -34,7 +34,6 @@ grpc_cc_binary(
     deps = [
         "//:channel",
         "//:channel_create",
-        "//:channelz",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc",
@@ -48,6 +47,7 @@ grpc_cc_binary(
         "//src/core:channel_stack_type",
         "//src/core:error",
         "//src/core:iomgr_port",
+        "//src/core/channelz",
         "//test/core/test_util:grpc_test_util",
     ],
 )
