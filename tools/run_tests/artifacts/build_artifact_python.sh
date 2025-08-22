@@ -275,32 +275,29 @@ then
   # Build xds_protos source distribution
   # build.py is invoked as part of generate_projects.
   ( ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/xds_protos/setup.py \
-      sdist bdist_wheel install && cp -r tools/distrib/python/xds_protos/dist/* "$ARTIFACT_DIR" ) &
+      sdist bdist_wheel install && cp -r tools/distrib/python/xds_protos/dist/* "$ARTIFACT_DIR" ) > "$ARTIFACT_DIR/build_xds_protos.log" 2>&1 &
   XDS_PROTOS_PID=$!
 
   # Build grpcio_testing source distribution
   ( ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_testing/setup.py preprocess \
-      sdist bdist_wheel && cp -r src/python/grpcio_testing/dist/* "$ARTIFACT_DIR" ) &
+      sdist bdist_wheel && cp -r src/python/grpcio_testing/dist/* "$ARTIFACT_DIR" ) > "$ARTIFACT_DIR/build_grpcio_testing.log" 2>&1 &
 
   # Build grpcio_channelz source distribution
   ( ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_channelz/setup.py \
-      preprocess build_package_protos sdist bdist_wheel && cp -r src/python/grpcio_channelz/dist/* "$ARTIFACT_DIR" ) &
+      preprocess build_package_protos sdist bdist_wheel && cp -r src/python/grpcio_channelz/dist/* "$ARTIFACT_DIR" ) > "$ARTIFACT_DIR/build_grpcio_channelz.log" 2>&1 &
   CHANNELZ_PID=$!
 
   # Build grpcio_health_checking source distribution
   ( ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_health_checking/setup.py \
-      preprocess build_package_protos sdist bdist_wheel && cp -r src/python/grpcio_health_checking/dist/* "$ARTIFACT_DIR" ) &
+      preprocess build_package_protos sdist bdist_wheel && cp -r src/python/grpcio_health_checking/dist/* "$ARTIFACT_DIR" ) > "$ARTIFACT_DIR/build_grpcio_health_checking.log" 2>&1 &
 
   # Build grpcio_reflection source distribution
   ( ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_reflection/setup.py \
-      preprocess build_package_protos sdist bdist_wheel && cp -r src/python/grpcio_reflection/dist/* "$ARTIFACT_DIR" ) &
+      preprocess build_package_protos sdist bdist_wheel && cp -r src/python/grpcio_reflection/dist/* "$ARTIFACT_DIR" ) > "$ARTIFACT_DIR/build_grpcio_reflection.log" 2>&1 &
 
   # Build grpcio_status source distribution
   ( ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_status/setup.py \
-      preprocess sdist bdist_wheel && cp -r src/python/grpcio_status/dist/* "$ARTIFACT_DIR" ) &
-
-  # Wait for independent packages to build
-  wait
+      preprocess sdist bdist_wheel && cp -r src/python/grpcio_status/dist/* "$ARTIFACT_DIR" ) > "$ARTIFACT_DIR/build_grpcio_status.log" 2>&1 &
 
   # Install xds-protos as a dependency of grpcio-csds
   wait $XDS_PROTOS_PID
@@ -308,19 +305,20 @@ then
 
   # Build grpcio_csds source distribution
   ( ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_csds/setup.py \
-      sdist bdist_wheel && cp -r src/python/grpcio_csds/dist/* "$ARTIFACT_DIR" ) &
+      sdist bdist_wheel && cp -r src/python/grpcio_csds/dist/* "$ARTIFACT_DIR" ) > "$ARTIFACT_DIR/build_grpcio_csds.log" 2>&1 &
   CSDS_PID=$!
 
-  # Wait for channelz and csds to build to install them for grpcio_admin
+  # Wait for channelz to build to install it for grpcio_admin
   wait $CHANNELZ_PID
   "${PYTHON}" -m pip install grpcio-channelz --no-index --find-links "file://$ARTIFACT_DIR/"
+  # Wait for csds to build to install it for grpcio_admin
   wait $CSDS_PID
   "${PYTHON}" -m pip install grpcio-csds --no-index --find-links "file://$ARTIFACT_DIR/"
 
   # Build grpcio_admin source distribution
   ( ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_admin/setup.py \
-      sdist bdist_wheel && cp -r src/python/grpcio_admin/dist/* "$ARTIFACT_DIR" ) &
+      sdist bdist_wheel && cp -r src/python/grpcio_admin/dist/* "$ARTIFACT_DIR" ) > "$ARTIFACT_DIR/build_grpcio_admin.log" 2>&1 &
 
-  # Wait for all background jobs to finish
+  # Wait for all remaining background jobs to finish
   wait
 fi
