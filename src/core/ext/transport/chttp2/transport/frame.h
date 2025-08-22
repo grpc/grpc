@@ -225,7 +225,7 @@ struct Http2FrameHeader {
 // Parsing & serialization
 
 struct SerializeReturn {
-  bool reset_ping_clock;
+  bool should_reset_ping_clock;
 };
 
 // Given a frame header and a payload, parse the payload into a frame and

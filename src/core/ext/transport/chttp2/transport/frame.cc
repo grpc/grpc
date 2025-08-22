@@ -221,7 +221,7 @@ class SerializeHeaderAndPayload {
         .Serialize(hdr.begin());
     out_.AppendIndexed(Slice(std::move(hdr)));
     out_.TakeAndAppend(frame.payload);
-    serialize_return_.reset_ping_clock = true;
+    serialize_return_.should_reset_ping_clock = true;
   }
 
   void operator()(Http2HeaderFrame& frame) {
@@ -235,7 +235,7 @@ class SerializeHeaderAndPayload {
         .Serialize(hdr.begin());
     out_.AppendIndexed(Slice(std::move(hdr)));
     out_.TakeAndAppend(frame.payload);
-    serialize_return_.reset_ping_clock = true;
+    serialize_return_.should_reset_ping_clock = true;
   }
 
   void operator()(Http2ContinuationFrame& frame) {
@@ -248,7 +248,7 @@ class SerializeHeaderAndPayload {
         .Serialize(hdr.begin());
     out_.AppendIndexed(Slice(std::move(hdr)));
     out_.TakeAndAppend(frame.payload);
-    serialize_return_.reset_ping_clock = true;
+    serialize_return_.should_reset_ping_clock = true;
   }
 
   void operator()(Http2RstStreamFrame& frame) {
@@ -316,7 +316,7 @@ class SerializeHeaderAndPayload {
     }
     Write31bits(frame.increment, hdr_and_payload.begin() + kFrameHeaderSize);
     out_.AppendIndexed(Slice(std::move(hdr_and_payload)));
-    serialize_return_.reset_ping_clock = true;
+    serialize_return_.should_reset_ping_clock = true;
   }
 
   void operator()(Http2SecurityFrame& frame) {
@@ -651,7 +651,7 @@ std::string Http2FrameHeader::ToString() const {
 
 SerializeReturn Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out) {
   size_t buffer_needed = 0;
-  SerializeReturn serialize_return{/*reset_ping_clock=*/false};
+  SerializeReturn serialize_return{/*should_reset_ping_clock=*/false};
   for (auto& frame : frames) {
     // Bytes needed for framing
     buffer_needed += kFrameHeaderSize;

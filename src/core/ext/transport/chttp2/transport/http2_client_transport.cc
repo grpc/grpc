@@ -630,8 +630,9 @@ auto Http2ClientTransport::OnReadLoopEnded() {
 auto Http2ClientTransport::WriteFromQueue(std::vector<Http2Frame>&& frames) {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteFromQueue Factory";
   SliceBuffer output_buf;
-  reset_ping_clock_ =
-      Serialize(absl::Span<Http2Frame>(frames), output_buf).reset_ping_clock;
+  should_reset_ping_clock_ =
+      Serialize(absl::Span<Http2Frame>(frames), output_buf)
+          .should_reset_ping_clock;
   const uint64_t buffer_length = output_buf.Length();
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteFromQueue Promise";
   return If(
@@ -700,11 +701,11 @@ auto Http2ClientTransport::WriteLoop() {
         [self]() -> LoopCtl<absl::Status> {
           // If any Header/Data/WindowUpdate frame was sent in the last
           // write, reset the ping clock.
-          if (self->reset_ping_clock_) {
+          if (self->should_reset_ping_clock_) {
             GRPC_HTTP2_CLIENT_DLOG
                 << "Http2ClientTransport WriteLoop ResetPingClock";
             self->ping_manager_.ResetPingClock(/*is_client=*/true);
-            self->reset_ping_clock_ = false;
+            self->should_reset_ping_clock_ = false;
           }
           GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteLoop Continue";
           return Continue();
@@ -840,7 +841,7 @@ Http2ClientTransport::Http2ClientTransport(
     : endpoint_(std::move(endpoint)),
       outgoing_frames_(kMpscSize),
       stream_id_mutex_(/*Initial Stream Id*/ 1),
-      reset_ping_clock_(false),
+      should_reset_ping_clock_(false),
       incoming_header_in_progress_(false),
       incoming_header_end_stream_(false),
       is_first_write_(true),
