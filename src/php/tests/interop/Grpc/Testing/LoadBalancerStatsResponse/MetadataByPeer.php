@@ -6,8 +6,8 @@
 namespace Grpc\Testing\LoadBalancerStatsResponse;
 
 use Google\Protobuf\Internal\GPBType;
-use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
+use Google\Protobuf\RepeatedField;
 
 /**
  * Generated from protobuf message <code>grpc.testing.LoadBalancerStatsResponse.MetadataByPeer</code>
@@ -27,7 +27,7 @@ class MetadataByPeer extends \Google\Protobuf\Internal\Message
      * @param array $data {
      *     Optional. Data for populating the Message object.
      *
-     *     @type array<\Grpc\Testing\LoadBalancerStatsResponse\RpcMetadata>|\Google\Protobuf\Internal\RepeatedField $rpc_metadata
+     *     @type \Grpc\Testing\LoadBalancerStatsResponse\RpcMetadata[] $rpc_metadata
      *           List of RpcMetadata in for each RPC with a given peer
      * }
      */
@@ -40,7 +40,7 @@ class MetadataByPeer extends \Google\Protobuf\Internal\Message
      * List of RpcMetadata in for each RPC with a given peer
      *
      * Generated from protobuf field <code>repeated .grpc.testing.LoadBalancerStatsResponse.RpcMetadata rpc_metadata = 1;</code>
-     * @return \Google\Protobuf\Internal\RepeatedField
+     * @return RepeatedField<\Grpc\Testing\LoadBalancerStatsResponse\RpcMetadata>
      */
     public function getRpcMetadata()
     {
@@ -51,7 +51,7 @@ class MetadataByPeer extends \Google\Protobuf\Internal\Message
      * List of RpcMetadata in for each RPC with a given peer
      *
      * Generated from protobuf field <code>repeated .grpc.testing.LoadBalancerStatsResponse.RpcMetadata rpc_metadata = 1;</code>
-     * @param array<\Grpc\Testing\LoadBalancerStatsResponse\RpcMetadata>|\Google\Protobuf\Internal\RepeatedField $var
+     * @param \Grpc\Testing\LoadBalancerStatsResponse\RpcMetadata[] $var
      * @return $this
      */
     public function setRpcMetadata($var)
