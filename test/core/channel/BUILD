@@ -30,9 +30,15 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:grpc_core_credentials_header",
+        "//:ref_counted_ptr",
         "//src/core:channel_args",
+        "//src/core:notification",
+        "//src/core:ref_counted",
+        "//src/core:useful",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -55,13 +61,17 @@ grpc_cc_test(
     name = "channel_stack_builder_test",
     srcs = ["channel_stack_builder_test.cc"],
     external_deps = [
+        "absl/status",
         "gtest",
     ],
     deps = [
         "//:channel_stack_builder",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:grpc_base",
         "//src/core:closure",
+        "//src/core:error",
         "//test/core/test_util:grpc_test_util",
     ],
 )
