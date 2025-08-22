@@ -29,9 +29,13 @@ grpc_cc_library(
         "absl/log:check",
         "libssl",
         "libcrypto",
+        "absl/strings",
     ],
     deps = [
+        "//:gpr",
         "//:grpc",
+        "//:tsi_base",
+        "//src/core:error",
     ],
 )
 

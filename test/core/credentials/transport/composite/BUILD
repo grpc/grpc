@@ -27,6 +27,8 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:grpc_security_base",
+        "//src/core:grpc_fake_credentials",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:test_call_creds",
     ],
