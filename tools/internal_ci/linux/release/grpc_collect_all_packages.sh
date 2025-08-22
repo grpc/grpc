@@ -36,7 +36,7 @@ ls -R input_artifacts || true
 # into a single multi-platform package file:
 # - C#'s Grpc.Tools package requires protoc plugins built on multiple platforms
 # - Ruby's grpc.tools gem also requires protoc plugins build on multiple platforms
-tools/run_tests/task_runner.py -f package linux -j 6 || FAILED="true"
+tools/run_tests/task_runner.py -f package linux -e "exclude_in_collect_all_packages" -j 6 || FAILED="true"
 
 # Fix for https://github.com/grpc/grpc/issues/32179 by avoiding name clash
 # with csharp_nugets_windows_dotnetcli.zip files from previous steps.
