@@ -31,9 +31,9 @@ source tools/internal_ci/helper_scripts/prepare_ccache_rc
 if [[ "${TASK_RUNNER_EXTRA_FILTERS}" == *"-e aarch64"* ]]; then
   # Extract filters without the exclude part
   FILTERS_WITHOUT_EXCLUDE="${TASK_RUNNER_EXTRA_FILTERS//-e aarch64/}"
-  tools/run_tests/task_runner.py -f artifact linux python ${FILTERS_WITHOUT_EXCLUDE} -e aarch64 -j 12 -x build_artifacts/sponge_log.xml || FAILED="true"
+  tools/run_tests/task_runner.py -f artifact -f linux -f python ${FILTERS_WITHOUT_EXCLUDE} -e aarch64 -j 12 -x build_artifacts/sponge_log.xml || FAILED="true"
 else
-  tools/run_tests/task_runner.py -f artifact linux python ${TASK_RUNNER_EXTRA_FILTERS} -j 12 -x build_artifacts/sponge_log.xml || FAILED="true"
+  tools/run_tests/task_runner.py -f artifact -f linux -f python ${TASK_RUNNER_EXTRA_FILTERS} -j 12 -x build_artifacts/sponge_log.xml || FAILED="true"
 fi
 
 # the next step expects to find the artifacts from the previous step in the "input_artifacts" folder.
@@ -67,9 +67,9 @@ cp -r artifacts/* input_artifacts/ || true
 if [[ "${TASK_RUNNER_EXTRA_FILTERS}" == *"-e aarch64"* ]]; then
   # Extract filters without the exclude part
   FILTERS_WITHOUT_EXCLUDE="${TASK_RUNNER_EXTRA_FILTERS//-e aarch64/}"
-  tools/run_tests/task_runner.py -f distribtest linux python ${FILTERS_WITHOUT_EXCLUDE} -e aarch64 -j 12 -x distribtests/sponge_log.xml || FAILED="true"
+  tools/run_tests/task_runner.py -f distribtest -f linux -f python ${FILTERS_WITHOUT_EXCLUDE} -e aarch64 -j 12 -x distribtests/sponge_log.xml || FAILED="true"
 else
-  tools/run_tests/task_runner.py -f distribtest linux python ${TASK_RUNNER_EXTRA_FILTERS} -j 12 -x distribtests/sponge_log.xml || FAILED="true"
+  tools/run_tests/task_runner.py -f distribtest -f linux -f python ${TASK_RUNNER_EXTRA_FILTERS} -j 12 -x distribtests/sponge_log.xml || FAILED="true"
 fi
 
 # This step checks if any of the artifacts exceeds a per-file size limit.
