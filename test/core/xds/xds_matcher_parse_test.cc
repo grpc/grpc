@@ -44,7 +44,6 @@ namespace {
 using ::envoy::type::matcher::v3::HttpRequestHeaderMatchInput;
 using ::google::protobuf::StringValue;
 using ::xds::type::matcher::v3::Matcher;
-using ::xds::type::matcher::v3::StringMatcher;
 using ::xds::type::v3::TypedStruct;
 
 // A simple action that holds a string, used for verification.
