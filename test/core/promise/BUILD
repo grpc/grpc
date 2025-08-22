@@ -105,9 +105,9 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:promise",
-        "//src/core:channelz_property_list",
         "//src/core:json_writer",
         "//src/core:upb_utils",
+        "//src/core/channelz:property_list",
         "//src/proto/grpc/channelz/v2:promise_upb_proto",
         "//src/proto/grpc/channelz/v2:property_list_upb_proto",
     ],
