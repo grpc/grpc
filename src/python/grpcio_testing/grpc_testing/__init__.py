@@ -18,6 +18,12 @@ import abc
 from google.protobuf import descriptor
 import grpc
 
+try:
+    # pylint: disable=ungrouped-imports
+    from grpc_testing._grpcio_metadata import __version__
+except ImportError:
+    __version__ = "dev0"
+
 
 class UnaryUnaryChannelRpc(abc.ABC):
     """Fixture for a unary-unary RPC invoked by a system under test.
