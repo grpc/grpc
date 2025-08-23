@@ -30,6 +30,9 @@ from tests_aio.unit._test_server import start_test_server
 
 _UNARY_CALL_METHOD = "/grpc.testing.TestService/UnaryCall"
 _UNARY_CALL_METHOD_WITH_SLEEP = "/grpc.testing.TestService/UnaryCallWithSleep"
+_STREAMING_INPUT_CALL_METHOD_WITH_UNAVAILABLE = (
+    "/grpc.testing.TestService/StreamingInputCallWithUnavailable"
+)
 _STREAMING_OUTPUT_CALL_METHOD = "/grpc.testing.TestService/StreamingOutputCall"
 
 _INVOCATION_METADATA = (
@@ -197,6 +200,37 @@ class TestChannel(AioTestBase):
 
         self.assertEqual(await call.code(), grpc.StatusCode.OK)
         await channel.close()
+
+    async def test_stream_unary_unavailable_using_async_gen(self):
+        channel = aio.insecure_channel(self._server_target)
+        hi = channel.stream_unary(
+            _STREAMING_INPUT_CALL_METHOD_WITH_UNAVAILABLE,
+            request_serializer=messages_pb2.StreamingInputCallRequest.SerializeToString,
+            response_deserializer=messages_pb2.StreamingInputCallResponse.FromString,
+        )
+        # Prepares the request
+        payload = messages_pb2.Payload(body=b"\0" * _REQUEST_PAYLOAD_SIZE)
+        request = messages_pb2.StreamingInputCallRequest(payload=payload)
+
+        async def gen():
+            for _ in range(_NUM_STREAM_RESPONSES):
+                yield request
+
+        # Invokes the actual RPC
+        call: aio.StreamUnaryCall = hi(gen())
+
+        # Validates the responses
+        with self.assertRaises(aio.AioRpcError) as exception_context:
+            await call
+        self.assertEqual(
+            grpc.StatusCode.UNAVAILABLE,
+            exception_context.exception.code(),
+        )
+        self.assertTrue(call.done())
+        self.assertEqual(grpc.StatusCode.UNAVAILABLE, await call.code())
+
+        # Verify the async request poller task is done
+        self.assertTrue(call._async_request_poller.done())
 
     async def test_stream_stream_using_read_write(self):
         channel = aio.insecure_channel(self._server_target)
