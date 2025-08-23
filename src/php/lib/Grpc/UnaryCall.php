@@ -19,21 +19,23 @@
 
 namespace Grpc;
 
+use Google\Protobuf\Internal\Message;
+
 /**
  * Represents an active call that sends a single message and then gets a
  * single response.
  * 
- * @template T of \Google\Protobuf\Internal\Message
+ * @template T of Message
  */
 class UnaryCall extends AbstractCall
 {
     /**
      * Start the call.
      *
-     * @param mixed $data     The data to send
-     * @param array $metadata Metadata to send with the call, if applicable
+     * @param T $data     The data to send
+     * @param array<string, string[]> $metadata Metadata to send with the call, if applicable
      *                        (optional)
-     * @param array $options  An array of options, possible keys:
+     * @param array<string, mixed> $options  An array of options, possible keys:
      *                        'flags' => a number (optional)
      */
     public function start($data, array $metadata = [], array $options = [])
@@ -52,7 +54,7 @@ class UnaryCall extends AbstractCall
     /**
      * Wait for the server to respond with data and a status.
      *
-     * @return array{0: T|null, 1: \stdClass} [response data, status]
+     * @return array{0: T|null, 1: object{code: int, metadata: array<string, string[]>, details: string}}
      */
     public function wait()
     {
@@ -74,7 +76,7 @@ class UnaryCall extends AbstractCall
     }
 
     /**
-     * @return mixed The metadata sent by the server
+     * @return array<string, string[]> The metadata sent by the server
      */
     public function getMetadata()
     {
