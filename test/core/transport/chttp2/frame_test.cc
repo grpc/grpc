@@ -1231,18 +1231,19 @@ TEST(Frame, ValidateFrameHeaderTest) {
 }
 
 TEST(FrameSize, Http2FrameSizeTest) {
-  size_t kPayloadSize = strlen("hello");
+  constexpr absl::string_view kPayload = "hello";
+  constexpr size_t kPayloadSize = kPayload.size();
   EXPECT_EQ(GetFrameMemoryUsage(
                 Http2DataFrame{/*stream_id=*/1, /*end_stream=*/false,
-                               /*payload=*/SliceBufferFromString("hello")}),
+                               /*payload=*/SliceBufferFromString(kPayload)}),
             sizeof(Http2DataFrame) + kPayloadSize);
   EXPECT_EQ(GetFrameMemoryUsage(Http2HeaderFrame{
                 /*stream_id=*/1, /*end_headers=*/false, /*end_stream=*/false,
-                /*payload=*/SliceBufferFromString("hello")}),
+                /*payload=*/SliceBufferFromString(kPayload)}),
             sizeof(Http2HeaderFrame) + kPayloadSize);
   EXPECT_EQ(GetFrameMemoryUsage(Http2ContinuationFrame{
                 /*stream_id=*/1, /*end_headers=*/false,
-                /*payload=*/SliceBufferFromString("hello")}),
+                /*payload=*/SliceBufferFromString(kPayload)}),
             sizeof(Http2ContinuationFrame) + kPayloadSize);
   EXPECT_EQ(
       GetFrameMemoryUsage(Http2RstStreamFrame{
@@ -1264,13 +1265,13 @@ TEST(FrameSize, Http2FrameSizeTest) {
                 /*last_stream_id=*/0x12345678,
                 /*error_code=*/
                 static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm),
-                /*debug_data=*/Slice::FromCopiedString("hello")}),
+                /*debug_data=*/Slice::FromCopiedString(kPayload)}),
             sizeof(Http2GoawayFrame) + kPayloadSize);
   EXPECT_EQ(GetFrameMemoryUsage(Http2WindowUpdateFrame{/*stream_id=*/1,
                                                        /*increment=*/12345678}),
             sizeof(Http2WindowUpdateFrame));
-  EXPECT_EQ(GetFrameMemoryUsage(
-                Http2SecurityFrame{/*payload=*/SliceBufferFromString("hello")}),
+  EXPECT_EQ(GetFrameMemoryUsage(Http2SecurityFrame{
+                /*payload=*/SliceBufferFromString(kPayload)}),
             sizeof(Http2SecurityFrame) + kPayloadSize);
   EXPECT_EQ(GetFrameMemoryUsage(Http2EmptyFrame{}), sizeof(Http2EmptyFrame));
 }
