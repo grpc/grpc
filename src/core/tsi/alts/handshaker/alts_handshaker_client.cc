@@ -512,9 +512,18 @@ static grpc_byte_buffer* get_serialized_start_client(
   grpc_gcp_StartClientHandshakeReq_add_application_protocols(
       start_client, upb_StringView_FromString(ALTS_APPLICATION_PROTOCOL),
       arena.ptr());
-  grpc_gcp_StartClientHandshakeReq_add_record_protocols(
-      start_client, upb_StringView_FromString(ALTS_RECORD_PROTOCOL),
-      arena.ptr());
+  if (client->options->next_protocols.has_value()) {
+    for (const auto& record_protocol :
+         client->options->next_protocols.value()) {
+      grpc_gcp_StartClientHandshakeReq_add_record_protocols(
+          start_client, upb_StringView_FromString(record_protocol.c_str()),
+          arena.ptr());
+    }
+  } else {
+    grpc_gcp_StartClientHandshakeReq_add_record_protocols(
+        start_client, upb_StringView_FromString(ALTS_RECORD_PROTOCOL),
+        arena.ptr());
+  }
   grpc_gcp_RpcProtocolVersions* client_version =
       grpc_gcp_StartClientHandshakeReq_mutable_rpc_versions(start_client,
                                                             arena.ptr());
@@ -591,8 +600,17 @@ static grpc_byte_buffer* get_serialized_start_server(
       arena.ptr());
   grpc_gcp_ServerHandshakeParameters* value =
       grpc_gcp_ServerHandshakeParameters_new(arena.ptr());
-  grpc_gcp_ServerHandshakeParameters_add_record_protocols(
-      value, upb_StringView_FromString(ALTS_RECORD_PROTOCOL), arena.ptr());
+  if (client->options->next_protocols.has_value()) {
+    for (const auto& record_protocol :
+         client->options->next_protocols.value()) {
+      grpc_gcp_ServerHandshakeParameters_add_record_protocols(
+          value, upb_StringView_FromString(record_protocol.c_str()),
+          arena.ptr());
+    }
+  } else {
+    grpc_gcp_ServerHandshakeParameters_add_record_protocols(
+        value, upb_StringView_FromString(ALTS_RECORD_PROTOCOL), arena.ptr());
+  }
   grpc_gcp_StartServerHandshakeReq_handshake_parameters_set(
       start_server, grpc_gcp_ALTS, value, arena.ptr());
   grpc_gcp_StartServerHandshakeReq_set_in_bytes(
@@ -752,7 +770,13 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
   grpc_metadata_array_init(&client->recv_initial_metadata);
   client->cb = cb;
   client->user_data = user_data;
+  if (options->next_protocols.has_value()) {
+    LOG(ERROR) << options->next_protocols.value()[0];
+  }
   client->options = grpc_alts_credentials_options_copy(options);
+  if (client->options->next_protocols.has_value()) {
+    LOG(ERROR) << client->options->next_protocols.value()[0];
+  }
   client->target_name = grpc_slice_copy(target_name);
   client->is_client = is_client;
   client->recv_bytes = grpc_empty_slice();

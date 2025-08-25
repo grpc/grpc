@@ -20,6 +20,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
+#include <algorithm>
+#include <optional>
 
 #include "absl/log/log.h"
 #include "src/core/credentials/transport/alts/grpc_alts_credentials_options.h"
@@ -73,6 +75,7 @@ grpc_alts_credentials_options* grpc_alts_credentials_client_options_create(
   auto client_options = static_cast<grpc_alts_credentials_client_options*>(
       gpr_zalloc(sizeof(grpc_alts_credentials_client_options)));
   client_options->base.vtable = &vtable;
+  client_options->base.next_protocols = std::nullopt;
   return &client_options->base;
 }
 
@@ -101,6 +104,9 @@ static grpc_alts_credentials_options* alts_client_options_copy(
     prev = new_node;
     node = node->next;
   }
+
+  new_options->next_protocols = options->next_protocols;
+
   // Copy rpc protocol versions.
   grpc_gcp_rpc_protocol_versions_copy(&options->rpc_versions,
                                       &new_options->rpc_versions);

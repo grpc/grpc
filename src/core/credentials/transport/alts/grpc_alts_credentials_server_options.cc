@@ -38,6 +38,7 @@ grpc_alts_credentials_options* grpc_alts_credentials_server_options_create(
       static_cast<grpc_alts_credentials_server_options*>(
           gpr_zalloc(sizeof(*server_options)));
   server_options->base.vtable = &vtable;
+  server_options->base.next_protocols = std::nullopt;
   return &server_options->base;
 }
 
@@ -51,5 +52,6 @@ static grpc_alts_credentials_options* alts_server_options_copy(
   // Copy rpc protocol versions.
   grpc_gcp_rpc_protocol_versions_copy(&options->rpc_versions,
                                       &new_options->rpc_versions);
+  new_options->next_protocols = options->next_protocols;
   return new_options;
 }
