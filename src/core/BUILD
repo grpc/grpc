@@ -127,6 +127,8 @@ grpc_cc_library(
         "absl/log",
     ],
     deps = [
+        "slice",
+        "slice_buffer",
         "//src/core:time",
     ],
 )

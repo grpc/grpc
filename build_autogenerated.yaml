@@ -7437,6 +7437,7 @@ targets:
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
@@ -7521,6 +7522,7 @@ targets:
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/channel_stack_type.cc
   - src/core/lib/transport/connectivity_state.cc
@@ -8186,6 +8188,7 @@ targets:
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
@@ -8271,6 +8274,7 @@ targets:
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/channel_stack_type.cc
   - src/core/lib/transport/connectivity_state.cc
@@ -12364,6 +12368,7 @@ targets:
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
@@ -12449,6 +12454,7 @@ targets:
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/channel_stack_type.cc
   - src/core/lib/transport/connectivity_state.cc
@@ -12561,6 +12567,7 @@ targets:
   - src/core/util/glob.h
   - src/core/util/json/json.h
   - src/core/util/match.h
+  - src/core/util/memory_usage.h
   - src/core/util/overload.h
   - src/core/util/time.h
   - src/core/util/upb_utils.h
@@ -12590,6 +12597,7 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/status:statusor
+  - absl/strings:string_view
   - absl/types:span
   - absl/utility:utility
   - gpr
@@ -13512,6 +13520,7 @@ targets:
   - src/core/util/glob.h
   - src/core/util/json/json.h
   - src/core/util/match.h
+  - src/core/util/memory_usage.h
   - src/core/util/overload.h
   - src/core/util/time.h
   - src/core/util/upb_utils.h
@@ -13542,6 +13551,7 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/status:statusor
+  - absl/strings:string_view
   - absl/types:span
   - absl/utility:utility
   - gpr
@@ -13976,6 +13986,7 @@ targets:
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
@@ -14061,6 +14072,7 @@ targets:
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/channel_stack_type.cc
   - src/core/lib/transport/connectivity_state.cc
@@ -14879,6 +14891,7 @@ targets:
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
@@ -14964,6 +14977,7 @@ targets:
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/channel_stack_type.cc
   - src/core/lib/transport/connectivity_state.cc
@@ -15124,14 +15138,31 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_string_helpers.h
+  - src/core/util/glob.h
   - src/core/util/memory_usage.h
   - src/core/util/time.h
   src:
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/util/glob.cc
   - src/core/util/time.cc
   - test/core/util/memory_usage_test.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
+  - absl/hash:hash
   - absl/status:statusor
   - absl/strings:string_view
   - absl/types:span

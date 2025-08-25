@@ -244,6 +244,9 @@ SerializeReturn Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out);
 
 http2::Http2ErrorCode Http2ErrorCodeFromRstFrameErrorCode(uint32_t error_code);
 
+// Returns approximate memory usage of the frame.
+size_t GetFrameMemoryUsage(const Http2Frame& frame);
+
 ///////////////////////////////////////////////////////////////////////////////
 // GRPC Header
 
