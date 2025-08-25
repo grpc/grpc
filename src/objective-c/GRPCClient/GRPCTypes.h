@@ -180,7 +180,7 @@ typedef const char* _Nonnull GRPCTransportID;
  * This method is called when gRPC is about to start the call. When OAuth token is acquired,
  * \a handler is expected to be called with \a token being the new token to be used for this call.
  */
-- (void)getTokenWithHandler:(void (^_Nonnull)(NSString* _Nullable token))handler;
+- (void)getTokenWithHandler:(void (^NS_SWIFT_SENDABLE _Nonnull)(NSString* _Nullable token))handler;
 
 @end
 
