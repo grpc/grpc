@@ -275,11 +275,6 @@
   expiry: 2025/09/30
   owner: yashkt@google.com
   test_tags: []
-- name: shard_global_connection_pool
-  description: If set, shard the global connection pool to improve parallelism.
-  expiry: 2025/09/09
-  owner: ctiller@google.com
-  test_tags: [core_end2end_test]
 - name: sleep_promise_exec_ctx_removal
   description: If set, polling the sleep promise does not rely on the ExecCtx.
   expiry: 2025/09/01
