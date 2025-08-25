@@ -28,7 +28,7 @@
 
 #include "absl/log/check.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/socket_mutator.h"
+#include "src/core/net/socket_mutator.h"
 
 namespace grpc {
 

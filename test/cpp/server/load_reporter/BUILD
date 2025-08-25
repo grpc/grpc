@@ -25,6 +25,8 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        "//:gpr_platform",
+        "//:grpc",
         "//:lb_load_data_store",
         "//test/core/test_util:grpc_test_util",
     ],

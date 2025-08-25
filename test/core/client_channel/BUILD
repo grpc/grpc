@@ -27,6 +27,9 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:channel_arg_names",
+        "//:endpoint_addresses",
+        "//:gpr_platform",
         "//:grpc_client_channel",
         "//src/core:channel_args",
         "//src/core:subchannel_pool_interface",
@@ -70,8 +73,10 @@ grpc_fuzz_test(
         "fuzztest_main",
         "absl/log:log",
         "gtest",
+        "absl/strings",
     ],
     deps = [
+        "//:grpc",
         "//:grpc_client_channel",
         "//test/core/call/yodel:yodel_test",
     ],
@@ -85,8 +90,11 @@ grpc_fuzz_test(
         "fuzztest_main",
         "absl/log:log",
         "gtest",
+        "absl/strings",
     ],
     deps = [
+        "//:grpc",
+        "//src/core:resource_quota",
         "//src/core:retry_interceptor",
         "//test/core/call/yodel:yodel_test",
     ],
@@ -112,13 +120,21 @@ grpc_cc_test(
     srcs = ["client_channel_service_config_test.cc"],
     external_deps = [
         "gtest",
+        "absl/status",
+        "absl/status:statusor",
     ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:config",
         "//:gpr",
         "//:grpc",
+        "//:grpc_service_config_impl",
         "//src/core:channel_args",
+        "//src/core:client_channel_service_config",
+        "//src/core:grpc_service_config",
+        "//src/core:service_config_parser",
+        "//src/core:time",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -128,13 +144,22 @@ grpc_cc_test(
     srcs = ["retry_service_config_test.cc"],
     external_deps = [
         "gtest",
+        "absl/status",
+        "absl/status:statusor",
     ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:config",
         "//:gpr",
         "//:grpc",
+        "//:grpc_service_config_impl",
+        "//:ref_counted_ptr",
         "//src/core:channel_args",
+        "//src/core:grpc_service_config",
+        "//src/core:retry_service_config",
+        "//src/core:service_config_parser",
+        "//src/core:time",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -142,9 +167,15 @@ grpc_cc_test(
 grpc_cc_benchmark(
     name = "bm_client_channel",
     srcs = ["bm_client_channel.cc"],
+    external_deps = [
+        "absl/memory",
+        "absl/strings",
+    ],
     monitoring = HISTORY,
     deps = [
         "//:grpc",
+        "//:grpc_client_channel",
+        "//:parse_address",
         "//src/core:default_event_engine",
         "//test/core/call:call_spine_benchmarks",
     ],
@@ -164,7 +195,10 @@ grpc_cc_benchmark(
 grpc_cc_test(
     name = "lb_metadata_test",
     srcs = ["lb_metadata_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/strings",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [

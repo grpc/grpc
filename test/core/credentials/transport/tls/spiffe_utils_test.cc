@@ -68,6 +68,37 @@ absl::StatusOr<X509*> ReadCertificateFromFile(absl::string_view filepath) {
   }
   return cert;
 }
+
+bool CompareX509(const X509* a, const X509* b) {
+  if (a == b) return true;  // both null or same ptr
+  if (a == nullptr || b == nullptr) {
+    return false;  // One is null, the other is not, not equal
+  }
+  return X509_cmp(a, b) == 0;  // Uses internal comparison
+}
+
+// Function to compare two STACK_OF(X509)
+bool X509StacksEqual(const STACK_OF(X509) * stack1,
+                     const STACK_OF(X509) * stack2) {
+  if (stack1 == stack2) return true;  // both null or same ptr
+  if (stack1 == nullptr || stack2 == nullptr) return false;
+
+  size_t num1 = sk_X509_num(stack1);
+  size_t num2 = sk_X509_num(stack2);
+
+  if (num1 != num2) {
+    return false;  // Different number of elements
+  }
+
+  for (size_t i = 0; i < num1; ++i) {
+    X509* cert1 = sk_X509_value(stack1, i);
+    X509* cert2 = sk_X509_value(stack2, i);
+    if (!CompareX509(cert1, cert2)) {
+      return false;  // Certificates at this index are not equal
+    }
+  }
+  return true;  // All certificates are equal
+}
 }  // namespace
 
 TEST(SpiffeId, EmptyFails) {
@@ -426,8 +457,13 @@ TEST(SpiffeBundle, MultipleTrustDomainsSuccess) {
         "spiffe_cert.pem");
     ASSERT_TRUE(expected_certificate.ok()) << expected_certificate.status();
     EXPECT_EQ(X509_cmp(*certificate, *expected_certificate), 0);
+    STACK_OF(X509)* expected_stack = sk_X509_new_null();
+    sk_X509_push(expected_stack, *expected_certificate);
+    auto actual_root_stack = bundle_map->GetRootStack("example.com");
+    ASSERT_TRUE(actual_root_stack.ok());
+    EXPECT_TRUE(X509StacksEqual(*actual_root_stack, expected_stack));
+    sk_X509_pop_free(expected_stack, X509_free);
     X509_free(*certificate);
-    X509_free(*expected_certificate);
   }
   {
     // check the test.example.com bundle
@@ -441,8 +477,13 @@ TEST(SpiffeBundle, MultipleTrustDomainsSuccess) {
         "server1_spiffe.pem");
     ASSERT_TRUE(expected_certificate.ok()) << expected_certificate.status();
     EXPECT_EQ(X509_cmp(*certificate, *expected_certificate), 0);
+    STACK_OF(X509)* expected_stack = sk_X509_new_null();
+    sk_X509_push(expected_stack, *expected_certificate);
+    auto actual_root_stack = bundle_map->GetRootStack("test.example.com");
+    ASSERT_TRUE(actual_root_stack.ok());
+    EXPECT_TRUE(X509StacksEqual(*actual_root_stack, expected_stack));
+    sk_X509_pop_free(expected_stack, X509_free);
     X509_free(*certificate);
-    X509_free(*expected_certificate);
   }
 }
 
@@ -459,30 +500,39 @@ TEST(SpiffeBundle, MultipleRootsSuccess) {
   auto roots = bundle_map->GetRoots("example.com");
   ASSERT_TRUE(roots.ok());
   EXPECT_EQ(roots->size(), 2);
-  {
-    // Check the first root
-    auto certificate = ReadCertificate((*roots)[0]);
-    ASSERT_TRUE(certificate.ok()) << certificate.status();
-    auto expected_certificate = ReadCertificateFromFile(
-        "test/core/credentials/transport/tls/test_data/spiffe/"
-        "spiffe_cert.pem");
-    ASSERT_TRUE(expected_certificate.ok()) << expected_certificate.status();
-    EXPECT_EQ(X509_cmp(*certificate, *expected_certificate), 0);
-    X509_free(*certificate);
-    X509_free(*expected_certificate);
-  }
-  {
-    // Check the second root
-    auto certificate = ReadCertificate((*roots)[1]);
-    ASSERT_TRUE(certificate.ok()) << certificate.status();
-    auto expected_certificate = ReadCertificateFromFile(
-        "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
-        "server1_spiffe.pem");
-    ASSERT_TRUE(expected_certificate.ok()) << expected_certificate.status();
-    EXPECT_EQ(X509_cmp(*certificate, *expected_certificate), 0);
-    X509_free(*certificate);
-    X509_free(*expected_certificate);
-  }
+  // Check the first root
+  auto certificate = ReadCertificate((*roots)[0]);
+  ASSERT_TRUE(certificate.ok()) << certificate.status();
+  auto expected_certificate = ReadCertificateFromFile(
+      "test/core/credentials/transport/tls/test_data/spiffe/"
+      "spiffe_cert.pem");
+  ASSERT_TRUE(expected_certificate.ok()) << expected_certificate.status();
+  EXPECT_EQ(X509_cmp(*certificate, *expected_certificate), 0);
+  // Check the second root
+  auto certificate2 = ReadCertificate((*roots)[1]);
+  ASSERT_TRUE(certificate.ok()) << certificate.status();
+  auto expected_certificate2 = ReadCertificateFromFile(
+      "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
+      "server1_spiffe.pem");
+  ASSERT_TRUE(expected_certificate2.ok()) << expected_certificate2.status();
+  EXPECT_EQ(X509_cmp(*certificate2, *expected_certificate2), 0);
+
+  STACK_OF(X509)* expected_stack = sk_X509_new_null();
+  sk_X509_push(expected_stack, *expected_certificate);
+  sk_X509_push(expected_stack, *expected_certificate2);
+  auto actual_root_stack = bundle_map->GetRootStack("example.com");
+  ASSERT_TRUE(actual_root_stack.ok());
+  EXPECT_TRUE(X509StacksEqual(*actual_root_stack, expected_stack));
+  sk_X509_pop_free(expected_stack, X509_free);
+  X509_free(*certificate);
+  X509_free(*certificate2);
+}
+
+TEST(SpiffeBundle, BundleRootToPem) {
+  const absl::string_view base = "foo";
+  EXPECT_EQ(AddPemBlockWrapping(base),
+            absl::StrCat("-----BEGIN CERTIFICATE-----\n", base,
+                         "\n-----END CERTIFICATE-----"));
 }
 
 }  // namespace testing

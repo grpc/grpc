@@ -44,20 +44,6 @@ TEST(PromiseTest, NowOrNever) {
   EXPECT_EQ(NowOrNever(Immediate(42)), std::optional<int>(42));
 }
 
-TEST(PromiseTest, CanConvertToJson) {
-  auto x = []() { return 42; };
-  EXPECT_FALSE(promise_detail::kHasToJsonMethod<decltype(x)>);
-}
-
-TEST(PromiseTest, CanCustomizeJsonConversion) {
-  class FooPromise {
-   public:
-    Json ToJson() const { return Json::FromObject(Json::Object()); }
-  };
-  EXPECT_TRUE(promise_detail::kHasToJsonMethod<FooPromise>);
-  EXPECT_EQ(JsonDump(PromiseAsJson(FooPromise())), "{}");
-}
-
 TEST(PromiseTest, CanConvertToProto) {
   auto x = []() { return 42; };
   EXPECT_FALSE(promise_detail::kHasToProtoMethod<decltype(x)>);
@@ -85,10 +71,15 @@ TEST(PromiseTest, CanCustomizeProtoConversion) {
             grpc_channelz_v2_Promise_promise_custom_promise);
   auto* custom_promise = grpc_channelz_v2_Promise_custom_promise(promise_proto);
   auto* properties = grpc_channelz_v2_Promise_Custom_properties(custom_promise);
-  EXPECT_EQ(grpc_channelz_v2_PropertyList_properties_size(properties), 1);
-  grpc_channelz_v2_PropertyValue* val;
-  ASSERT_TRUE(grpc_channelz_v2_PropertyList_properties_get(
-      properties, StdStringToUpbString("foo"), &val));
+  size_t size;
+  const grpc_channelz_v2_PropertyList_Element* const* elements =
+      grpc_channelz_v2_PropertyList_properties(properties, &size);
+  EXPECT_EQ(size, 1);
+  const auto* element = elements[0];
+  EXPECT_EQ("foo", UpbStringToAbsl(
+                       grpc_channelz_v2_PropertyList_Element_key(element)));
+  const grpc_channelz_v2_PropertyValue* val =
+      grpc_channelz_v2_PropertyList_Element_value(element);
   EXPECT_EQ(UpbStringToAbsl(grpc_channelz_v2_PropertyValue_string_value(val)),
             "bar");
   upb_Arena_Free(arena);

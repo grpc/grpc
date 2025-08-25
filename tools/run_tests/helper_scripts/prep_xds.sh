@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-trap 'date' DEBUG
+PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
 set -ex
 
 # change to grpc repo root
@@ -25,16 +25,24 @@ pushd "${KOKORO_ARTIFACTS_DIR}/github/grpc"
 #   globally here. If this ever breaks, uncomment the following lines, remove
 #   sudo from pip install, and do the backports.
 #
+# sudo DEBIAN_FRONTEND=noninteractive apt-get -qq remove needrestart
 # sudo DEBIAN_FRONTEND=noninteractive apt-get -qq update
-# sudo DEBIAN_FRONTEND=noninteractive apt-get -qq install --auto-remove "python3.10-venv"
-# VIRTUAL_ENV=$(mktemp -d)
+# sudo DEBIAN_FRONTEND=noninteractive apt-get -qq -y install --auto-remove python3-venv
+# VIRTUAL_ENV="$(mktemp -d)"
 # python3 -m venv "${VIRTUAL_ENV}"
-# source "${VIRTUAL_ENV}/bin/activate"
 
-sudo python3 -m pip install --upgrade pip==19.3.1
+python3 -VV
+sudo python3 -m pip install --upgrade pip==25.2
 # TODO(sergiitk): Unpin grpcio-tools when a version of xds-protos
 #   compatible with protobuf 4.X is uploaded to PyPi.
-sudo python3 -m pip install --upgrade grpcio grpcio-tools==1.48.1 google-api-python-client google-auth-httplib2 oauth2client xds-protos
+sudo python3 -m pip install --upgrade \
+    grpcio-tools==1.74.0 \
+    grpcio==1.74.0 \
+    xds-protos==1.74.0 \
+    google-api-python-client==2.179.0 \
+    google-auth-httplib2==0.2.0 \
+    oauth2client==4.1.3
+python3 -m pip list
 
 # Prepare generated Python code.
 TOOLS_DIR=tools/run_tests

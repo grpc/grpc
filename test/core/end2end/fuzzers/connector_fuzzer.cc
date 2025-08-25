@@ -71,7 +71,8 @@ class ConnectorFuzzer {
                   network_inputs_.pop();
                 },
                 [](absl::Status) {}, ChannelArgsEndpointConfig(ChannelArgs{}),
-                std::make_unique<MemoryQuota>("foo"))
+                std::make_unique<MemoryQuota>(
+                    MakeRefCounted<channelz::ResourceQuotaNode>("bar")))
             .value();
     if (msg.has_shutdown_connector() &&
         msg.shutdown_connector().delay_ms() > 0) {

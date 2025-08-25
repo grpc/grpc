@@ -43,10 +43,12 @@ class GcpObservabilityConfig:
         try:
             config_json = json.loads(config_contents)
         except json.decoder.JSONDecodeError:
-            raise ValueError("Failed to load Json configuration.")
+            error_msg = "Failed to load Json configuration."
+            raise ValueError(error_msg)
 
         if config_json and not isinstance(config_json, dict):
-            raise ValueError("Found invalid configuration.")
+            error_msg = "Found invalid configuration."
+            raise ValueError(error_msg)
 
         self.project_id = config_json.get("project_id", "")
         self.labels = config_json.get("labels", {})
@@ -72,10 +74,12 @@ def read_config() -> GcpObservabilityConfig:
     if not config.project_id:
         # Get project ID from GCP environment variables since project ID was not
         # set it in the GCP observability config.
-        config.project_id = _get_gcp_project_id_from_env_var()
-        if not config.project_id:
+        project_id = _get_gcp_project_id_from_env_var()
+        if not project_id:
             # Could not find project ID from GCP environment variables either.
-            raise ValueError("GCP Project ID not found.")
+            error_msg = "GCP Project ID not found."
+            raise ValueError(error_msg)
+        config.project_id = project_id
     return config
 
 
@@ -85,7 +89,6 @@ def _get_gcp_project_id_from_env_var() -> Optional[str]:
     Returns:
         The project ID, or an empty string if the project ID could not be found.
     """
-
     project_id = ""
     project_id = os.getenv("GCP_PROJECT")
     if project_id:
@@ -111,7 +114,6 @@ def _get_gcp_observability_config_contents() -> str:
     Raises:
         ValueError: If no configuration content was found.
     """
-
     contents_str = ""
     # First try get config from GRPC_GCP_OBSERVABILITY_CONFIG_FILE_ENV.
     config_path = os.getenv(GRPC_GCP_OBSERVABILITY_CONFIG_FILE_ENV)
@@ -124,6 +126,7 @@ def _get_gcp_observability_config_contents() -> str:
         contents_str = os.getenv(GRPC_GCP_OBSERVABILITY_CONFIG_ENV)
 
     if not contents_str:
-        raise ValueError("Configuration content not found.")
+        error_msg = "Configuration content not found."
+        raise ValueError(error_msg)
 
     return contents_str

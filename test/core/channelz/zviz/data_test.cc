@@ -69,11 +69,256 @@ TEST(DataTest, ChangeDetectors) {
         }
       )pb",
       R"([0] DATA foo type.googleapis.com/grpc.channelz.v2.PropertyList
-[0] [0] APPEND_TABLE property_list
+[0] [0] APPEND_TABLE property-list
 [0] [0] [0,0] APPEND_COLUMN
 [0] [0] [0,0] APPEND_TEXT key foo
 [0] [0] [1,0] APPEND_COLUMN
 [0] [0] [1,0] APPEND_TEXT value bar
+[0] [0] NEW_ROW)");
+}
+
+TEST(DataTest, NestedPropertyList) {
+  ExpectDataTransformsTo(
+      R"pb(
+        name: "top"
+        value {
+          [type.googleapis.com/grpc.channelz.v2.PropertyList] {
+            properties {
+              key: "outer"
+              value {
+                any_value {
+                  [type.googleapis.com/grpc.channelz.v2.PropertyList] {
+                    properties {
+                      key: "inner"
+                      value { string_value: "value" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      )pb",
+      R"([0] DATA top type.googleapis.com/grpc.channelz.v2.PropertyList
+[0] [0] APPEND_TABLE property-list
+[0] [0] [0,0] APPEND_COLUMN
+[0] [0] [0,0] APPEND_TEXT key outer
+[0] [0] [1,0] APPEND_COLUMN
+[0] [0] [1,0] [0] APPEND_TABLE property-list
+[0] [0] [1,0] [0] [0,0] APPEND_COLUMN
+[0] [0] [1,0] [0] [0,0] APPEND_TEXT key inner
+[0] [0] [1,0] [0] [1,0] APPEND_COLUMN
+[0] [0] [1,0] [0] [1,0] APPEND_TEXT value value
+[0] [0] [1,0] [0] NEW_ROW
+[0] [0] NEW_ROW)");
+}
+
+TEST(DataTest, PingCallbacks) {
+  ExpectDataTransformsTo(
+      R"pb(
+        name: "http2"
+        value {
+          [type.googleapis.com/grpc.channelz.v2.PropertyList] {
+            properties {
+              key: "ping_callbacks"
+              value {
+                any_value {
+                  [type.googleapis.com/grpc.channelz.v2.PropertyList] {
+                    properties {
+                      key: "num_on_start"
+                      value { int64_value: 0 }
+                    }
+                  }
+                }
+              }
+            }
+            properties {
+              key: "settings"
+              value {
+                any_value {
+                  [type.googleapis.com/grpc.channelz.v2.PropertyGrid] {
+                    columns: "local"
+                  }
+                }
+              }
+            }
+          }
+        }
+      )pb",
+      R"([0] DATA http2 type.googleapis.com/grpc.channelz.v2.PropertyList
+[0] [0] APPEND_TABLE property-list
+[0] [0] [0,0] APPEND_COLUMN
+[0] [0] [0,0] APPEND_TEXT key ping_callbacks
+[0] [0] [1,0] APPEND_COLUMN
+[0] [0] [1,0] [0] APPEND_TABLE property-list
+[0] [0] [1,0] [0] [0,0] APPEND_COLUMN
+[0] [0] [1,0] [0] [0,0] APPEND_TEXT key num_on_start
+[0] [0] [1,0] [0] [1,0] APPEND_COLUMN
+[0] [0] [1,0] [0] [1,0] APPEND_TEXT value 0
+[0] [0] [1,0] [0] NEW_ROW
+[0] [0] NEW_ROW
+[0] [0] [0,1] APPEND_COLUMN
+[0] [0] [0,1] APPEND_TEXT key settings
+[0] [0] [1,1] APPEND_COLUMN
+[0] [0] [1,1] [0] APPEND_TABLE property-grid
+[0] [0] [1,1] [0] [0,0] APPEND_COLUMN
+[0] [0] [1,1] [0] [1,0] APPEND_COLUMN
+[0] [0] [1,1] [0] [1,0] APPEND_TEXT key local
+[0] [0] [1,1] [0] NEW_ROW
+[0] [0] NEW_ROW)");
+}
+
+TEST(DataTest, ThreeLevelNestedPropertyList) {
+  ExpectDataTransformsTo(
+      R"pb(
+        name: "http2"
+        value {
+          [type.googleapis.com/grpc.channelz.v2.PropertyList] {
+            properties {
+              key: "ping_callbacks"
+              value {
+                any_value {
+                  [type.googleapis.com/grpc.channelz.v2.PropertyList] {
+                    properties {
+                      key: "inflight"
+                      value {
+                        any_value {
+                          [type.googleapis.com/grpc.channelz.v2.PropertyList] {
+                            properties {
+                              key: "num_on_start"
+                              value { int64_value: 0 }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            properties {
+              key: "ping_on_rst_stream_percent"
+              value { int64_value: 1 }
+            }
+          }
+        }
+      )pb",
+      R"([0] DATA http2 type.googleapis.com/grpc.channelz.v2.PropertyList
+[0] [0] APPEND_TABLE property-list
+[0] [0] [0,0] APPEND_COLUMN
+[0] [0] [0,0] APPEND_TEXT key ping_callbacks
+[0] [0] [1,0] APPEND_COLUMN
+[0] [0] [1,0] [0] APPEND_TABLE property-list
+[0] [0] [1,0] [0] [0,0] APPEND_COLUMN
+[0] [0] [1,0] [0] [0,0] APPEND_TEXT key inflight
+[0] [0] [1,0] [0] [1,0] APPEND_COLUMN
+[0] [0] [1,0] [0] [1,0] [0] APPEND_TABLE property-list
+[0] [0] [1,0] [0] [1,0] [0] [0,0] APPEND_COLUMN
+[0] [0] [1,0] [0] [1,0] [0] [0,0] APPEND_TEXT key num_on_start
+[0] [0] [1,0] [0] [1,0] [0] [1,0] APPEND_COLUMN
+[0] [0] [1,0] [0] [1,0] [0] [1,0] APPEND_TEXT value 0
+[0] [0] [1,0] [0] [1,0] [0] NEW_ROW
+[0] [0] [1,0] [0] NEW_ROW
+[0] [0] NEW_ROW
+[0] [0] [0,1] APPEND_COLUMN
+[0] [0] [0,1] APPEND_TEXT key ping_on_rst_stream_percent
+[0] [0] [1,1] APPEND_COLUMN
+[0] [0] [1,1] APPEND_TEXT value 1
+[0] [0] NEW_ROW)");
+}
+
+TEST(DataTest, ElaborateNestedPropertyList) {
+  ExpectDataTransformsTo(
+      R"pb(
+        name: "http2"
+        value {
+          [type.googleapis.com/grpc.channelz.v2.PropertyList] {
+            properties {
+              key: "ping_callbacks"
+              value {
+                any_value {
+                  [type.googleapis.com/grpc.channelz.v2.PropertyList] {
+                    properties {
+                      key: "inflight"
+                      value { string_value: "some_value" }
+                    }
+                  }
+                }
+              }
+            }
+            properties {
+              key: "ping_on_rst_stream_percent"
+              value { uint64_value: 1 }
+            }
+          }
+        }
+      )pb",
+      R"([0] DATA http2 type.googleapis.com/grpc.channelz.v2.PropertyList
+[0] [0] APPEND_TABLE property-list
+[0] [0] [0,0] APPEND_COLUMN
+[0] [0] [0,0] APPEND_TEXT key ping_callbacks
+[0] [0] [1,0] APPEND_COLUMN
+[0] [0] [1,0] [0] APPEND_TABLE property-list
+[0] [0] [1,0] [0] [0,0] APPEND_COLUMN
+[0] [0] [1,0] [0] [0,0] APPEND_TEXT key inflight
+[0] [0] [1,0] [0] [1,0] APPEND_COLUMN
+[0] [0] [1,0] [0] [1,0] APPEND_TEXT value some_value
+[0] [0] [1,0] [0] NEW_ROW
+[0] [0] NEW_ROW
+[0] [0] [0,1] APPEND_COLUMN
+[0] [0] [0,1] APPEND_TEXT key ping_on_rst_stream_percent
+[0] [0] [1,1] APPEND_COLUMN
+[0] [0] [1,1] APPEND_TEXT value 1
+[0] [0] NEW_ROW)");
+}
+
+TEST(DataTest, NestedPropertyListContainingPropertyTableThenSibling) {
+  ExpectDataTransformsTo(
+      R"pb(
+        name: "http2"
+        value {
+          [type.googleapis.com/grpc.channelz.v2.PropertyList] {
+            properties {
+              key: "ping_callbacks"
+              value {
+                any_value {
+                  [type.googleapis.com/grpc.channelz.v2.PropertyList] {
+                    properties {
+                      key: "inflight"
+                      value {
+                        any_value {
+                          [type.googleapis.com/
+                           grpc.channelz.v2.PropertyTable] {}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            properties {
+              key: "ping_on_rst_stream_percent"
+              value { uint64_value: 1 }
+            }
+          }
+        }
+      )pb",
+      R"([0] DATA http2 type.googleapis.com/grpc.channelz.v2.PropertyList
+[0] [0] APPEND_TABLE property-list
+[0] [0] [0,0] APPEND_COLUMN
+[0] [0] [0,0] APPEND_TEXT key ping_callbacks
+[0] [0] [1,0] APPEND_COLUMN
+[0] [0] [1,0] [0] APPEND_TABLE property-list
+[0] [0] [1,0] [0] [0,0] APPEND_COLUMN
+[0] [0] [1,0] [0] [0,0] APPEND_TEXT key inflight
+[0] [0] [1,0] [0] [1,0] APPEND_COLUMN
+[0] [0] [1,0] [0] [1,0] [0] APPEND_TABLE property-table
+[0] [0] [1,0] [0] NEW_ROW
+[0] [0] NEW_ROW
+[0] [0] [0,1] APPEND_COLUMN
+[0] [0] [0,1] APPEND_TEXT key ping_on_rst_stream_percent
+[0] [0] [1,1] APPEND_COLUMN
+[0] [0] [1,1] APPEND_TEXT value 1
 [0] [0] NEW_ROW)");
 }
 

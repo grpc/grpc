@@ -92,7 +92,7 @@ void FilterInitialMetadata(grpc_metadata_batch* b,
 
 // OpenCensusServerCallTracer implementation
 
-class OpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
+class OpenCensusServerCallTracer : public grpc_core::ServerCallTracerInterface {
  public:
   // Maximum size of server stats that are sent on the wire.
   static constexpr uint32_t kMaxServerStatsLen = 16;
@@ -293,7 +293,7 @@ void OpenCensusServerCallTracer::RecordOutgoingBytes(
 // OpenCensusServerCallTracerFactory
 //
 
-grpc_core::ServerCallTracer*
+grpc_core::ServerCallTracerInterface*
 OpenCensusServerCallTracerFactory::CreateNewServerCallTracer(
     grpc_core::Arena* arena, const grpc_core::ChannelArgs& /*args*/) {
   return arena->ManagedNew<OpenCensusServerCallTracer>();

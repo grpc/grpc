@@ -28,6 +28,7 @@ grpc_cc_library(
     external_deps = ["fuzztest"],
     deps = [
         "test",
+        "//:config",
         "//src/core:grpc_transport_inproc",
     ],
     alwayslink = 1,
@@ -112,8 +113,11 @@ grpc_cc_library(
         "fuzztest",
     ],
     deps = [
+        "//:config",
+        "//:grpc_base",
         "//src/core:chaotic_good_config",
         "//test/core/call/yodel:yodel_test",
+        "//test/core/event_engine/fuzzing_event_engine",
     ],
 )
 
