@@ -106,9 +106,18 @@ grpc_cc_library(
     external_deps = [
         "gtest",
         "protobuf",
+        "absl/strings",
     ],
     deps = [
+        "//:channelz",
+        "//:gpr",
+        "//:grpc",
         "//:grpc++",
+        "//:grpc++_config_proto",
+        "//src/core:error",
+        "//src/core:json",
+        "//src/core:json_reader",
+        "//src/core:json_writer",
         "//src/proto/grpc/channelz:channelz_proto",
     ],
 )

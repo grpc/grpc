@@ -201,10 +201,14 @@ grpc_cc_test(
 grpc_cc_test(
     name = "handle_tests",
     srcs = ["handle_tests.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/strings",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:event_engine_base_hdrs",
         "//:gpr_platform",
         "//:grpc",
     ],
@@ -242,10 +246,16 @@ grpc_cc_library(
 grpc_cc_test(
     name = "query_extensions_test",
     srcs = ["query_extensions_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/status",
+        "absl/functional:any_invocable",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr",
         "//:gpr_platform",
         "//src/core:event_engine_query_extensions",
     ],
@@ -258,10 +268,14 @@ grpc_fuzz_test(
         "absl/log:check",
         "fuzztest",
         "fuzztest_main",
+        "absl/status:statusor",
     ],
     tags = ["no_windows"],
     deps = [
+        "//:event_engine_base_hdrs",
         "//:grpc",
+        "//:uri",
+        "//src/core:event_engine_tcp_socket_utils",
         "//test/core/test_util:grpc_test_util",
     ],
 )

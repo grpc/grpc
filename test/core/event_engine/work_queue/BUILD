@@ -25,8 +25,12 @@ grpc_package(
 grpc_cc_test(
     name = "basic_work_queue_test",
     srcs = ["basic_work_queue_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/functional:any_invocable",
+    ],
     deps = [
+        "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr_platform",
         "//src/core:common_event_engine_closures",
