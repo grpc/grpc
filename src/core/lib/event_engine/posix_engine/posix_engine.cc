@@ -893,7 +893,7 @@ EventEngine::ConnectionHandle PosixEventEngine::CreateEndpointFromUnconnectedFd(
       "platform");
 }
 
-std::unique_ptr<EventEngine::Endpoint>
+absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>>
 PosixEventEngine::CreatePosixEndpointFromFd(int fd,
                                             const EndpointConfig& config,
                                             MemoryAllocator memory_allocator) {
