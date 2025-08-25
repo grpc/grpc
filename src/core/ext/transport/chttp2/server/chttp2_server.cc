@@ -754,7 +754,10 @@ absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {
   }
   auto endpoint =
       supports_fd->CreateEndpointFromFd(fd, ChannelArgsEndpointConfig(args));
-  return AcceptConnectedEndpoint(std::move(endpoint));
+  if (!endpoint.ok()) {
+    return std::move(endpoint).status();
+  }
+  return AcceptConnectedEndpoint(std::move(endpoint).value());
 }
 
 void PassiveListenerImpl::ListenerDestroyed() {
