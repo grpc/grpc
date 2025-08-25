@@ -69,6 +69,7 @@ class KeepaliveManager {
   }
 
   void CloseKeepAliveLoop() {
+    DCHECK(!keepalive_loop_closed_);
     keepalive_loop_closed_ = true;
     Waker close_waker = std::move(close_keepalive_waker_);
     close_waker.Wakeup();
