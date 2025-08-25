@@ -140,7 +140,7 @@
   description: Use EventEngine secure endpoint wrapper instead of iomgr when available
   expiry: 2026/01/22
   owner: alishananda@google.com
-  test_tags: ["core_end2end_test", "secure_endpoint_test"]
+  test_tags: ["core_end2end_test", "secure_endpoint_test", "posix_endpoint_test"]
   uses_polling: true
   allow_in_fuzzing_config: false
 - name: free_large_allocator
@@ -194,7 +194,7 @@
   description: Enable pipelined reads for EventEngine secure endpoints
   expiry: 2025/10/30
   owner: alishananda@google.com
-  test_tags: ["core_end2end_test", "secure_endpoint_test"]
+  test_tags: ["core_end2end_test", "secure_endpoint_test", "posix_endpoint_test"]
   requires: ["event_engine_client", "event_engine_listener", "event_engine_secure_endpoint"]
   uses_polling: true
   allow_in_fuzzing_config: false
