@@ -845,6 +845,13 @@ class PythonLanguage(object):
             bits=bits,
             config_vars=config_vars,
         )
+        python314_config = _python_config_generator(
+            name="py314",
+            major="3",
+            minor="14",
+            bits=bits,
+            config_vars=config_vars,
+        )
         pypy27_config = _pypy_config_generator(
             name="pypy", major="2", config_vars=config_vars
         )
@@ -869,7 +876,7 @@ class PythonLanguage(object):
                 # Default set tested on master. Test oldest and newest.
                 return (
                     python39_config,
-                    python313_config,
+                    python314_config,
                 )
         elif args.compiler == "python3.9":
             return (python39_config,)
@@ -881,6 +888,8 @@ class PythonLanguage(object):
             return (python312_config,)
         elif args.compiler == "python3.13":
             return (python313_config,)
+        elif args.compiler == "python3.14":
+            return (python314_config,)
         elif args.compiler == "pypy":
             return (pypy27_config,)
         elif args.compiler == "pypy3":
@@ -894,6 +903,7 @@ class PythonLanguage(object):
                 python311_config,
                 python312_config,
                 python313_config,
+                python314_config,
             )
         else:
             raise Exception("Compiler %s not supported." % args.compiler)
@@ -1731,6 +1741,7 @@ argp.add_argument(
         "python3.11",
         "python3.12",
         "python3.13",
+        "python3.14",
         "pypy",
         "pypy3",
         "python_alpine",
