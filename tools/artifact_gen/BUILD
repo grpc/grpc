@@ -103,3 +103,15 @@ cc_binary(
         "@pugixml",
     ],
 )
+
+cc_binary(
+    name = "extract_metadata_from_bazel_mod",
+    srcs = ["extract_metadata_from_bazel_mod.cc"],
+    deps = [
+        "@com_google_absl//absl/log",
+        "@com_google_absl//absl/log:globals",
+        "@com_google_absl//absl/log:initialize",
+        "@com_google_absl//absl/status",
+        "@com_googlesource_code_re2//:re2",
+    ],
+)
