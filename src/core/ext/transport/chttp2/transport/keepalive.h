@@ -68,6 +68,12 @@ class KeepaliveManager {
     keepalive_timeout_ = keepalive_timeout;
   }
 
+  void CloseKeepAliveLoop() {
+    keepalive_loop_closed_ = true;
+    Waker close_waker = std::move(close_keepalive_waker_);
+    close_waker.Wakeup();
+  }
+
  private:
   // Returns a promise that sleeps for the keepalive_timeout_ and triggers the
   // keepalive timeout unless data is read within the keepalive timeout.
@@ -120,6 +126,16 @@ class KeepaliveManager {
     return (keepalive_time_ != Duration::Infinity() && !keep_alive_spawned_);
   }
 
+  auto IsKeepAliveLoopClosed() {
+    return [this]() -> Poll<absl::Status> {
+      if (keepalive_loop_closed_) {
+        return absl::CancelledError("KeepAliveLoop closed");
+      }
+      close_keepalive_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+      return Pending{};
+    };
+  }
+
   std::unique_ptr<KeepAliveInterface> keep_alive_interface_;
   // If the keepalive_timeout_ is set to infinity, then the timeout is dictated
   // by the ping timeout. Otherwise, this field can be used to set a specific
@@ -130,6 +146,11 @@ class KeepaliveManager {
   bool keep_alive_timeout_triggered_ = false;
   bool keep_alive_spawned_ = false;
   Waker waker_;
+  // This is needed as Sleep holds a ref on the party during its execution. When
+  // the transport is shutting down, we need a mechanism to not schedule any
+  // more Sleeps.
+  bool keepalive_loop_closed_ = false;
+  Waker close_keepalive_waker_;
 };
 
 }  // namespace http2

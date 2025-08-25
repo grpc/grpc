@@ -642,7 +642,7 @@ class Http2ClientTransport final : public ClientTransport {
       // and update the error code.
       return Immediate(
           transport_->HandleError(Http2Status::Http2ConnectionError(
-              Http2ErrorCode::kRefusedStream, "Ping timeout")));
+              Http2ErrorCode::kRefusedStream, "ping timeout")));
     }
 
    private:

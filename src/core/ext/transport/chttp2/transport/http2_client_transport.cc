@@ -850,7 +850,7 @@ Http2ClientTransport::Http2ClientTransport(
       max_header_list_size_soft_limit_(
           GetSoftLimitFromChannelArgs(channel_args)),
       keepalive_time_(std::max(
-          Duration::Seconds(10),
+          Duration::Milliseconds(1),
           channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIME_MS)
               .value_or(Duration::Infinity()))),
       // Keepalive timeout is only passed to the keepalive manager if it is less
@@ -979,9 +979,12 @@ void Http2ClientTransport::CloseStream(uint32_t stream_id, absl::Status status,
 void Http2ClientTransport::CloseTransport() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseTransport";
 
-  // This is the only place where the general_party_ is
-  // reset.
+  // Free up all the refs to the general_party.
+  keepalive_manager_.CloseKeepAliveLoop();
+  // This is the only place where the general_party_ is reset.
   general_party_.reset();
+
+  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseTransport End";
 }
 
 void Http2ClientTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
