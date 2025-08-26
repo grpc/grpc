@@ -1027,11 +1027,7 @@ RefCountedPtr<SubchannelPoolInterface> GetSubchannelPool(
   if (args.GetBool(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL).value_or(false)) {
     return MakeRefCounted<LocalSubchannelPool>();
   }
-  if (IsShardGlobalConnectionPoolEnabled()) {
-    return GlobalSubchannelPool::instance();
-  } else {
-    return LegacyGlobalSubchannelPool::instance();
-  }
+  return GlobalSubchannelPool::instance();
 }
 
 }  // namespace
