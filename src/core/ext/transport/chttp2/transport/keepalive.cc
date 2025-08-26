@@ -31,7 +31,11 @@ KeepaliveManager::KeepaliveManager(
     Duration keepalive_timeout, const Duration keepalive_time)
     : keep_alive_interface_(std::move(keep_alive_interface)),
       keepalive_timeout_(keepalive_timeout),
-      keepalive_time_(keepalive_time) {}
+      keepalive_time_(keepalive_time) {
+  GRPC_HTTP2_KEEPALIVE_LOG
+      << "KeepaliveManager::KeepaliveManager keepalive_timeout: "
+      << keepalive_timeout << " keepalive_time: " << keepalive_time;
+}
 
 auto KeepaliveManager::WaitForKeepAliveTimeout() {
   return AssertResultType<absl::Status>(
@@ -92,7 +96,7 @@ void KeepaliveManager::Spawn(Party* party) {
 
   party->Spawn("KeepAliveLoop", Loop([this]() {
                  return TrySeq(
-                     Sleep(keepalive_time_),
+                     Race(Sleep(keepalive_time_), IsKeepAliveLoopClosed()),
                      [this]() { return MaybeSendKeepAlivePing(); },
                      []() -> LoopCtl<absl::Status> { return Continue(); });
                }),
