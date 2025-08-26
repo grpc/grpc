@@ -300,7 +300,7 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     labels_from_peer_ =
         parent_->labels_injector_.GetExchangeLabels(recv_trailing_metadata);
   }
-  auto status_code_ = status.code();
+  status_code_ = status.code();
   uint64_t elapsed_time = 0;
   if (recv_trailing_metadata != nullptr) {
     elapsed_time = GetElapsedTimeFromTrailingMetadata(recv_trailing_metadata);
