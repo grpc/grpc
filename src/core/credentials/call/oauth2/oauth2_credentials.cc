@@ -332,7 +332,7 @@ class grpc_compute_engine_token_fetcher_credentials
     return http_request;
   }
 
-  std::vector<grpc_core::URI::QueryParam> query_params_ = {};
+  std::vector<grpc_core::URI::QueryParam> query_params_;
 };
 }  // namespace
 
@@ -340,19 +340,13 @@ grpc_call_credentials* grpc_google_compute_engine_credentials_create(
     grpc_google_compute_engine_credentials_options* options) {
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_compute_engine_credentials_create(options=" << options << ")";
-  std::vector<grpc_core::URI::QueryParam> parsed_query_params;
-  if (options != nullptr && options->query_params != nullptr) {
-    for (absl::string_view query_pair :
-         absl::StrSplit(options->query_params, '&')) {
-      const std::pair<absl::string_view, absl::string_view> possible_kv =
-          absl::StrSplit(query_pair, absl::MaxSplits('=', 1));
-      parsed_query_params.push_back(
-          {grpc_core::URI::PercentDecode(possible_kv.first),
-           grpc_core::URI::PercentDecode(possible_kv.second)});
-    }
+  std::vector<grpc_core::URI::QueryParam> query_params;
+  if (options != nullptr && options->alts_hard_bound) {
+    query_params.push_back({"transport", "alts"});
   }
   return grpc_core::MakeRefCounted<
-             grpc_compute_engine_token_fetcher_credentials>(parsed_query_params)
+             grpc_compute_engine_token_fetcher_credentials>(
+             std::move(query_params))
       .release();
 }
 

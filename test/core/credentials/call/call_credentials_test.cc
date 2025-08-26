@@ -25,6 +25,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
+#include <gtest/gtest.h>
 #include <openssl/rsa.h>
 #include <stdlib.h>
 #include <string.h>
@@ -733,7 +734,7 @@ void validate_compute_engine_http_request(const grpc_http_request* request,
 void assert_query_parameters(const URI& uri, absl::string_view expected_key,
                              absl::string_view expected_val) {
   const auto it = uri.query_parameter_map().find(expected_key);
-  CHECK(it != uri.query_parameter_map().end());
+  ASSERT_NE(it, uri.query_parameter_map().end());
   if (it->second != expected_val) {
     LOG(ERROR) << it->second << "!=" << expected_val;
   }
@@ -843,13 +844,10 @@ TEST_F(CredentialsTest, TestComputeEngineCredsWithAltsSuccess) {
   const char expected_creds_debug_string[] =
       "GoogleComputeEngineTokenFetcherCredentials{"
       "OAuth2TokenFetcherCredentials}";
-  grpc_google_compute_engine_credentials_options* options =
-      static_cast<grpc_google_compute_engine_credentials_options*>(
-          gpr_malloc(sizeof(grpc_google_compute_engine_credentials_options)));
-  options->query_params = "transport=alts";
-  grpc_call_credentials* creds =
+  grpc_google_compute_engine_credentials_options options;
+  options->alts_hard_bound = true;
+  grpc_call_credentials* call_creds_for_alts =
       grpc_google_compute_engine_credentials_create(options);
-  gpr_free(options);
   // Check security level.
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
 
@@ -909,10 +907,9 @@ TEST_F(CredentialsTest, TestComputeEngineCredsWithAltsFailure) {
   grpc_google_compute_engine_credentials_options* options =
       static_cast<grpc_google_compute_engine_credentials_options*>(
           gpr_malloc(sizeof(grpc_google_compute_engine_credentials_options)));
-  options->query_params = "transport=alts";
+  options->alts_hard_bound = true;
   grpc_call_credentials* creds =
       grpc_google_compute_engine_credentials_create(options);
-  gpr_free(options);
   HttpRequest::SetOverride(compute_engine_httpcli_get_failure_alts_override,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
@@ -1864,13 +1861,10 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsWithAltsCallCredsSpecified) {
   grpc_flush_cached_google_default_credentials();
   grpc_call_credentials* call_creds_for_tls =
       grpc_google_compute_engine_credentials_create(nullptr);
-  grpc_google_compute_engine_credentials_options* options =
-      static_cast<grpc_google_compute_engine_credentials_options*>(
-          gpr_malloc(sizeof(grpc_google_compute_engine_credentials_options)));
-  options->query_params = "transport=alts";
+  grpc_google_compute_engine_credentials_options options;
+  options->alts_hard_bound = true;
   grpc_call_credentials* call_creds_for_alts =
       grpc_google_compute_engine_credentials_create(options);
-  gpr_free(options);
   set_gce_tenancy_checker_for_testing(test_gce_tenancy_checker);
   g_test_gce_tenancy_checker_called = false;
   g_test_is_on_gce = true;

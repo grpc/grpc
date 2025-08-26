@@ -61,10 +61,11 @@ using ::grpc::experimental::StaticDataCertificateProvider;
 using ::grpc::experimental::TlsChannelCredentialsOptions;
 using ::grpc::experimental::TlsCredentialsOptions;
 
-int mock_successful_metadata_service_response(
-    const grpc_http_request* /*request*/, const grpc_core::URI& /*uri*/,
-    grpc_core::Timestamp /*deadline*/, grpc_closure* on_done,
-    grpc_http_response* response) {
+int MockSuccessfulMetadataServiceResponse(const grpc_http_request* /*request*/,
+                                          const grpc_core::URI& /*uri*/,
+                                          grpc_core::Timestamp /*deadline*/,
+                                          grpc_closure* on_done,
+                                          grpc_http_response* response) {
   *response = {};
   response->status = 200;
   response->body = gpr_strdup("");
@@ -92,7 +93,7 @@ TEST(CredentialsTest, InvalidGoogleRefreshToken) {
 
 TEST(CredentialsTest, DefaultCredentials) {
   // Simulate a successful detection of metadata server.
-  grpc_core::HttpRequest::SetOverride(mock_successful_metadata_service_response,
+  grpc_core::HttpRequest::SetOverride(MockSuccessfulMetadataServiceResponse,
                                       nullptr, nullptr);
   auto creds = GoogleDefaultCredentials();
   // Reset the override to default.
@@ -101,10 +102,10 @@ TEST(CredentialsTest, DefaultCredentials) {
 
 TEST(CredentialsTest, DefaultCredentialsWithAlts) {
   // Simulate a successful detection of metadata server.
-  grpc_core::HttpRequest::SetOverride(mock_successful_metadata_service_response,
+  grpc_core::HttpRequest::SetOverride(MockSuccessfulMetadataServiceResponse,
                                       nullptr, nullptr);
   GoogleDefaultCredentialsOptions options = {};
-  options.use_alts = true;
+  options.use_alts_call_credentials = true;
   auto creds = GoogleDefaultCredentials(options);
   EXPECT_NE(creds, nullptr);
   // Reset the override to default.

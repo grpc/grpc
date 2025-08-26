@@ -170,7 +170,7 @@ struct SslCredentialsOptions {
 struct GoogleDefaultCredentialsOptions {
   /// Indicates if the created credentials should also contain ALTS specific
   /// credentials. By default, the created credentials will be used for TLS.
-  bool use_alts = false;
+  bool use_alts_call_credentials = false;
 };
 
 // Factories for building different types of Credentials The functions may

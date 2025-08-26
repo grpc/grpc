@@ -89,23 +89,24 @@ std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials(
   grpc::internal::GrpcLibrary init;  // To call grpc_init().
   grpc_core::ExecCtx exec_ctx;
   grpc_call_credentials* alts_call_creds = nullptr;
-  grpc_error_handle error;
-  DefaultCallCredentialsCreationMethod default_credentials_type =
-      DefaultCallCredentialsCreationMethod::kNone;
-  grpc_core::RefCountedPtr<grpc_call_credentials> tls_call_credentials =
-      grpc_core::internal::make_default_call_creds(&error,
-                                                   &default_credentials_type);
+  auto tls_cc_status_or =
+      grpc_core::internal::CreateGoogleDefaultCallCredentials();
 
-  if (tls_call_credentials.get() == nullptr) {
+  if (!tls_cc_status_or.ok()) {
     return WrapChannelCredentials(
         grpc_google_default_credentials_create(nullptr, nullptr));
   }
 
-  if (options.use_alts &&
+  grpc_core::RefCountedPtr<grpc_call_credentials> tls_call_credentials =
+      tls_cc_status_or.value().first;
+  DefaultCallCredentialsCreationMethod default_credentials_type =
+      tls_cc_status_or.value().second;
+
+  if (options.use_alts_call_credentials &&
       default_credentials_type ==
           DefaultCallCredentialsCreationMethod::kFromDefaultGCE) {
     grpc_google_compute_engine_credentials_options options = {};
-    options.query_params = "transport=alts";
+    options.alts_hard_bound = true;
     alts_call_creds = grpc_google_compute_engine_credentials_create(&options);
   }
 
