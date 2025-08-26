@@ -36,9 +36,9 @@ class TokenFetcher {
  public:
   virtual ~TokenFetcher() = default;
 
-  // Thread-safe. The returned token must be strongly bound. Failure to
-  // comply with this requirement will result in a serious security issue.
-  // The token must also be valid for at least 9 hours to outlive an
+  // Thread-safe and non-blocking. The returned token must be strongly bound.
+  // Failure to comply with this requirement will result in a serious security
+  // issue. The token must also be valid for at least 9 hours to outlive an
   // arbitrary ALTS connection.
   virtual absl::StatusOr<std::string> GetToken() = 0;
 };
@@ -47,8 +47,7 @@ class TokenFetcher {
 
 // V-table for grpc_alts_credentials_options
 typedef struct grpc_alts_credentials_options_vtable {
-  grpc_alts_credentials_options* (*copy)(
-      const grpc_alts_credentials_options* options);
+  grpc_alts_credentials_options* (*copy)(const grpc_alts_credentials_options* options);
   void (*destruct)(grpc_alts_credentials_options* options);
 } grpc_alts_credentials_options_vtable;
 
