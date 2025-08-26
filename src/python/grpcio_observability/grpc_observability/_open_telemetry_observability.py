@@ -15,7 +15,7 @@
 import logging
 import threading
 import time
-from typing import Any, AnyStr, Dict, Iterable, List, Optional, Set, Union
+from typing import Any, AnyStr, Dict, Iterable, List, Optional, Set, Tuple, Union
 
 import grpc
 
@@ -26,10 +26,16 @@ from grpc_observability import _open_telemetry_measures
 from grpc_observability._cyobservability import MetricsName
 from grpc_observability._cyobservability import PLUGIN_IDENTIFIER_SEP
 from grpc_observability._observability import OptionalLabelType
+from grpc_observability._observability import TracingData
 from grpc_observability._observability import StatsData
+from opentelemetry import trace
+from opentelemetry.context.context import Context
 from opentelemetry.metrics import Counter
 from opentelemetry.metrics import Histogram
 from opentelemetry.metrics import Meter
+from opentelemetry.sdk.trace import IdGenerator, Tracer
+from opentelemetry.sdk.trace.id_generator import RandomIdGenerator
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -71,9 +77,28 @@ GRPC_STATUS_CODE_TO_STRING = {
 }
 
 
+class _FixedIdGenerator(IdGenerator):
+    """IdGenerator child class to handle correctly span ID propagation.
+
+    Span IDs are generated in C context anyway. In Python we just need to use those.
+    """
+    def __init__(self, trace_id: str, span_id: str):
+        self._trace_id = int(trace_id, 16)
+        self._span_id = int(span_id, 16)
+
+    def generate_span_id(self) -> int:
+        return self._span_id
+      
+    def generate_trace_id(self) -> int:
+        return self._trace_id
+
+
 class _OpenTelemetryPlugin:
     _plugin: OpenTelemetryPlugin
     _metric_to_recorder: Dict[MetricsName, Union[Counter, Histogram]]
+    _tracer: Optional[Tracer]
+    _trace_ctx: Optional[Context]
+    _text_map_propagator: Optional[TraceContextTextMapPropagator]
     _enabled_client_plugin_options: Optional[List[OpenTelemetryPluginOption]]
     _enabled_server_plugin_options: Optional[List[OpenTelemetryPluginOption]]
     identifier: str
@@ -81,6 +106,9 @@ class _OpenTelemetryPlugin:
     def __init__(self, plugin: OpenTelemetryPlugin):
         self._plugin = plugin
         self._metric_to_recorder = {}
+        self._tracer = None
+        self._trace_ctx = None
+        self._text_map_propagator = None
         self.identifier = str(id(self))
         self._enabled_client_plugin_options = None
         self._enabled_server_plugin_options = None
@@ -92,6 +120,12 @@ class _OpenTelemetryPlugin:
             self._metric_to_recorder = self._register_metrics(
                 meter, enabled_metrics
             )
+
+        tracer_provider = self._plugin.tracer_provider
+        text_map_propagator = self._plugin.text_map_propagator
+        if tracer_provider and text_map_propagator:
+            self._tracer = tracer_provider.get_tracer("grpc-python", grpc.__version__)
+            self._text_map_propagator = text_map_propagator
 
     def _should_record(self, stats_data: StatsData) -> bool:
         # Decide if this plugin should record the stats_data.
@@ -146,6 +180,77 @@ class _OpenTelemetryPlugin:
         # Records stats data to MeterProvider.
         if self._should_record(stats_data):
             self._record_stats_data(stats_data)
+
+    def is_tracing_configured(self) -> bool:
+        return self._tracer is not None and self._text_map_propagator is not None
+
+    def save_trace_context(
+        self, trace_id: str, span_id: str, is_sampled: bool, version_id: str = "00"
+    ) -> None:
+        if self.is_tracing_configured():
+            # Header formatting as per https://www.w3.org/TR/trace-context/#traceparent-header
+            traceparent = f"{version_id}-{trace_id}-{span_id}-{is_sampled:02x}"
+            self._trace_ctx = self._text_map_propagator.extract(
+                carrier={"traceparent": traceparent},
+                context=self._trace_ctx
+            )
+
+    def _status_to_otel_status(self, status: str) -> trace.status.Status:
+        return trace.status.Status(
+            status_code=trace.status.StatusCode.OK if status == "OK"
+                                                   else trace.status.StatusCode.ERROR,
+            description=None if status == "OK" else status
+        )
+
+    def _record_tracing_data(self, tracing_data: TracingData) -> None:
+        """Exports tracing data gathered in core library in batches.
+
+        We need to transpose from `TracingData` object to `trace.ReadableSpan` object here. However,
+        instantiating objects of `trace.ReadableSpan` type is restricted in OpenTelemetry framework.
+        Therefore, we need to manually create spans and take care of parent-to-child relationships
+        using custom `trace.IdGenerator`. With this approach IDs are propagated correctly to
+        configured exporter instance.
+        """
+        # this step is needed to propagate parent span ID correctly
+        self.save_trace_context(
+            trace_id=tracing_data.trace_id,
+            span_id=tracing_data.parent_span_id,
+            is_sampled=tracing_data.should_sample
+        )
+
+        # this step is needed to propagate span ID correctly
+        self._tracer.id_generator = _FixedIdGenerator(
+            trace_id=tracing_data.trace_id,
+            span_id=tracing_data.span_id
+        )
+
+        span = self._tracer.start_span(
+            name=tracing_data.name,
+            context=self._trace_ctx,
+            kind=trace.SpanKind.INTERNAL,
+            attributes=tracing_data.span_labels,
+            links=None,
+            start_time=tracing_data.start_time
+        )
+        for event in tracing_data.span_events:
+            span.add_event(
+                name=event["name"],
+                attributes=event["attributes"],
+                timestamp=event["time_stamp"]
+            )
+        span.set_status(self._status_to_otel_status(tracing_data.status))
+        span.end(end_time=tracing_data.end_time)
+
+    def maybe_record_tracing_data(
+        self, tracing_data: List[_observability.TracingData]
+    ) -> None:
+        """Records tracing data to SpanExporter configured for given TracerProvider."""
+        if self.is_tracing_configured():
+            id_generator = self._tracer.id_generator
+            for data in tracing_data:
+                self._record_tracing_data(data)
+            # restore original `id_generator` after data collection
+            self._tracer.id_generator = id_generator
 
     def get_client_exchange_labels(self) -> Dict[str, AnyStr]:
         """Get labels used for client side Metadata Exchange."""
@@ -320,7 +425,8 @@ class _OpenTelemetryExporterDelegator(_observability.Exporter):
     def export_tracing_data(
         self, tracing_data: List[_observability.TracingData]
     ) -> None:
-        pass
+        for plugin in self._plugins:
+            plugin.maybe_record_tracing_data(tracing_data)
 
 
 # pylint: disable=no-self-use
@@ -358,6 +464,14 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             error_msg = f"Activate observability metrics failed with: {e}"
             raise ValueError(error_msg)
 
+        if self._should_enable_tracing():
+            try:
+                _cyobservability.activate_tracing()
+                self.set_tracing(True)
+            except Exception as e:  # pylint: disable=broad-except
+                error_msg = f"Activate observability tracing failed with: {e}"
+                raise ValueError(error_msg)
+
         try:
             _cyobservability.cyobservability_init(self._exporter)
         # TODO(xuanwn): Use specific exceptions
@@ -381,10 +495,36 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         _cyobservability.observability_deinit()
         grpc._observability.observability_deinit()
 
+    def _generate_ids(self) -> Tuple[bytes, bytes]:
+        """ Generates trace ID and parent span ID
+
+        Non empty `parent_span_id` means that:
+        1. We have current thread local span that needs to be used
+        or
+        2. Tracing is enabled for this RPC.
+        """
+        # current span is used to track the trace ID. Since it is preserved across different RPCs,
+        # we can safely use just the context of the first plugin.
+        current_span = trace.get_current_span(
+            context=self._plugins[0]._trace_ctx
+        ).get_span_context()
+        if current_span.is_valid:
+            generator = RandomIdGenerator()
+            trace_id = f"{current_span.trace_id:032x}".encode("utf-8")
+            parent_span_id = f"{generator.generate_span_id():016x}".encode("utf-8")
+        elif self._should_enable_tracing():
+            generator = RandomIdGenerator()
+            trace_id = f"{generator.generate_trace_id():032x}".encode("utf-8")
+            parent_span_id = f"{generator.generate_span_id():016x}".encode("utf-8")
+        else:
+            trace_id = b"TRACE_ID"
+            parent_span_id = b""
+        return (trace_id, parent_span_id)
+
     def create_client_call_tracer(
         self, method_name: bytes, target: bytes
     ) -> ClientCallTracerCapsule:
-        trace_id = b"TRACE_ID"
+        trace_id, parent_span_id = self._generate_ids()
         self._maybe_activate_client_plugin_options(target)
         exchange_labels = self._get_client_exchange_labels()
         enabled_optional_labels = set()
@@ -399,6 +539,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             exchange_labels,
             enabled_optional_labels,
             method_name in self._registered_methods,
+            parent_span_id
         )
         return capsule
 
@@ -418,7 +559,8 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
     def save_trace_context(
         self, trace_id: str, span_id: str, is_sampled: bool
     ) -> None:
-        pass
+        for _plugin in self._plugins:
+            _plugin.save_trace_context(trace_id, span_id, is_sampled)
 
     def record_rpc_latency(
         self,
@@ -470,6 +612,9 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         return PLUGIN_IDENTIFIER_SEP.join(
             _plugin.identifier for _plugin in self._plugins
         )
+
+    def _should_enable_tracing(self) -> bool:
+        return any(_plugin.is_tracing_configured() for _plugin in self._plugins)
 
     def get_enabled_optional_labels(self) -> List[OptionalLabelType]:
         return []
