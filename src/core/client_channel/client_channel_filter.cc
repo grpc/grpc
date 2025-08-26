@@ -538,18 +538,6 @@ class ClientChannelFilter::SubchannelWrapper final
           }
         }
       }
-      // We need to make sure that the internal subchannel gets unreffed
-      // inside of the WorkSerializer, so that updates to the local
-      // subchannel pool are properly synchronized.  To that end, we
-      // drop our ref to the internal subchannel here.  We also cancel
-      // any watchers that were not properly cancelled, in case any of
-      // them are holding a ref to the internal subchannel.
-      for (const auto& [_, watcher] : watcher_map_) {
-        subchannel_->CancelConnectivityStateWatch(watcher);
-      }
-      watcher_map_.clear();
-      data_watchers_.clear();
-      subchannel_.reset();
       WeakUnref(DEBUG_LOCATION, "subchannel map cleanup");
     });
   }
@@ -561,7 +549,7 @@ class ClientChannelFilter::SubchannelWrapper final
     CHECK_EQ(watcher_wrapper, nullptr);
     watcher_wrapper = new WatcherWrapper(
         std::move(watcher),
-        WeakRefAsSubclass<SubchannelWrapper>(DEBUG_LOCATION, "WatcherWrapper"));
+        RefAsSubclass<SubchannelWrapper>(DEBUG_LOCATION, "WatcherWrapper"));
     subchannel_->WatchConnectivityState(
         RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface>(
             watcher_wrapper));
@@ -621,7 +609,7 @@ class ClientChannelFilter::SubchannelWrapper final
     WatcherWrapper(
         std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
             watcher,
-        WeakRefCountedPtr<SubchannelWrapper> parent)
+        RefCountedPtr<SubchannelWrapper> parent)
         : watcher_(std::move(watcher)), parent_(std::move(parent)) {}
 
     ~WatcherWrapper() override {
@@ -694,7 +682,7 @@ class ClientChannelFilter::SubchannelWrapper final
 
     std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
         watcher_;
-    WeakRefCountedPtr<SubchannelWrapper> parent_;
+    RefCountedPtr<SubchannelWrapper> parent_;
   };
 
   // A heterogenous lookup comparator for data watchers that allows
