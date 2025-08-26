@@ -71,11 +71,7 @@ class ChannelzV2Service final : public channelz::v2::Channelz::Service {
                    channelz::v2::GetEntityResponse* response) override;
   Status QueryTrace(
       ServerContext*, const channelz::v2::QueryTraceRequest* request,
-      ServerWriter<channelz::v2::QueryTraceResponse>* writer) override {
-    (void)request;
-    (void)writer;
-    return Status(StatusCode::UNIMPLEMENTED, "Not implemented");
-  }
+      ServerWriter<channelz::v2::QueryTraceResponse>* writer) override;
 };
 
 }  // namespace grpc
