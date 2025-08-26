@@ -116,6 +116,9 @@ def activate_config(object py_config) -> None:
 def activate_stats() -> None:
   EnablePythonCensusStats(True);
 
+def activate_tracing() -> None:
+  EnablePythonCensusTracing(True);
+
 def create_client_call_tracer(bytes method_name, bytes target, bytes trace_id, str identifier,
                               dict exchange_labels, object enabled_optional_labels,
                               bint registered_method, bytes parent_span_id=b'') -> cpython.PyObject:
