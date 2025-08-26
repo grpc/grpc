@@ -1646,6 +1646,7 @@
     <file baseinstalldir="/" name="src/core/lib/resource_quota/periodic_update.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/resource_quota.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/resource_quota.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/telemetry.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/thread_quota.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/thread_quota.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/audit_logging.cc" role="src" />
@@ -1854,8 +1855,11 @@
     <file baseinstalldir="/" name="src/core/telemetry/context_list_entry.h" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/default_tcp_tracer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/default_tcp_tracer.h" role="src" />
+    <file baseinstalldir="/" name="src/core/telemetry/histogram.h" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/histogram_view.cc" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/histogram_view.h" role="src" />
+    <file baseinstalldir="/" name="src/core/telemetry/instrument.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/telemetry/instrument.h" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/metrics.cc" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/metrics.h" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/stats.cc" role="src" />
@@ -2267,10 +2271,12 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/hashtablez_sampler_force_weak_definition.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/inlined_vector.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/layout.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/node_slot_policy.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/raw_hash_map.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/raw_hash_set.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/raw_hash_set.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/internal/raw_hash_set_resize_impl.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/container/node_hash_map.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/crc/crc32c.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/crc/crc32c.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/crc/internal/cpu_detect.cc" role="src" />

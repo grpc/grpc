@@ -2631,6 +2631,7 @@ src/core/lib/resource_quota/periodic_update.cc \
 src/core/lib/resource_quota/periodic_update.h \
 src/core/lib/resource_quota/resource_quota.cc \
 src/core/lib/resource_quota/resource_quota.h \
+src/core/lib/resource_quota/telemetry.h \
 src/core/lib/resource_quota/thread_quota.cc \
 src/core/lib/resource_quota/thread_quota.h \
 src/core/lib/security/authorization/audit_logging.cc \
@@ -2839,8 +2840,11 @@ src/core/telemetry/context_list_entry.cc \
 src/core/telemetry/context_list_entry.h \
 src/core/telemetry/default_tcp_tracer.cc \
 src/core/telemetry/default_tcp_tracer.h \
+src/core/telemetry/histogram.h \
 src/core/telemetry/histogram_view.cc \
 src/core/telemetry/histogram_view.h \
+src/core/telemetry/instrument.cc \
+src/core/telemetry/instrument.h \
 src/core/telemetry/metrics.cc \
 src/core/telemetry/metrics.h \
 src/core/telemetry/stats.cc \
