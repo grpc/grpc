@@ -47,6 +47,9 @@ grpc_cc_test(
     srcs = ["json_test.cc"],
     external_deps = [
         "absl/log:log",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
         "gtest",
     ],
     uses_event_engine = False,
@@ -54,6 +57,9 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:json",
+        "//src/core:json_reader",
+        "//src/core:json_writer",
         "//test/core/test_util:grpc_test_util",
     ],
 )
