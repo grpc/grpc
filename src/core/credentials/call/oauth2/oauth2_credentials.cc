@@ -296,7 +296,7 @@ class grpc_compute_engine_token_fetcher_credentials
   grpc_compute_engine_token_fetcher_credentials() = default;
   explicit grpc_compute_engine_token_fetcher_credentials(
       std::vector<grpc_core::URI::QueryParam> query_params)
-      : query_params_(query_params) {}
+      : query_params_(std::move(query_params)) {}
   ~grpc_compute_engine_token_fetcher_credentials() override = default;
 
   std::string debug_string() override {
