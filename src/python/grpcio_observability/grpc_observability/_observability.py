@@ -95,9 +95,11 @@ class TracingData:
       child_span_count: The number of child span associated with this span.
       span_labels: A dictionary that maps labels tags associated with this
        span to corresponding label value.
-      span_annotations: A dictionary that maps annotation timeStamp with
-       description. The timeStamp have a format which can be converted
-       to Python datetime.datetime, e.g. 2023-05-29 17:07:09.895
+      span_events: A dictionary that maps that contains traced event data. Following keys are used:
+       - "name" - represents event name
+       - "attributes" - represents optional event attibutes in a form of dictionary
+       - "time_stamp" - represents time stamp when event occured. The time stamp have a format which
+         can be converted to Python datetime.datetime, e.g. 2023-05-29 17:07:09.895
     """
 
     name: str
@@ -110,7 +112,7 @@ class TracingData:
     should_sample: bool
     child_span_count: int
     span_labels: Mapping[str, Union[str, bytes]] = field(default_factory=dict)
-    span_annotations: List[Tuple[str, str]] = field(default_factory=list)
+    span_events: List[Dict[str, Union[str, Dict[str, str]]]] = field(default_factory=list)
 
 
 @enum.unique
