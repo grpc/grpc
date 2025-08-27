@@ -7947,7 +7947,7 @@ grpc_cc_library(
     ],
     deps = [
         ":chttp2_flow_control",
-        "//third_party/grpc:chttp2_frame",
+        "//:chttp2_frame",
     ],
 )
 
