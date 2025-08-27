@@ -8085,9 +8085,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "http2_settings_promises",
-    srcs = [
-        "ext/transport/chttp2/transport/http2_settings_promises.cc",
-    ],
     hdrs = [
         "ext/transport/chttp2/transport/http2_settings_promises.h",
     ],

@@ -814,7 +814,6 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/http2_client_transport.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
     src/core/ext/transport/chttp2/transport/http2_settings_manager.cc \
-    src/core/ext/transport/chttp2/transport/http2_settings_promises.cc \
     src/core/ext/transport/chttp2/transport/http2_stats_collector.cc \
     src/core/ext/transport/chttp2/transport/http2_transport.cc \
     src/core/ext/transport/chttp2/transport/huffsyms.cc \
