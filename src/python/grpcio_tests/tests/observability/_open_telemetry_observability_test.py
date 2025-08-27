@@ -460,12 +460,11 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             expected_span_size=3,
             expected_server_events=[
                 ("Outbound message", {"sequence-number": "0", "message-size": "3"}),
-                # TODO(Zgoda): why server does not see incoming requests? Is it expected?
-                # ("Inbound message", {"sequence-number": "0", "message-size": "3"}),
-                # ("Inbound message", {"sequence-number": "1", "message-size": "3"}),
-                # ("Inbound message", {"sequence-number": "2", "message-size": "3"}),
-                # ("Inbound message", {"sequence-number": "3", "message-size": "3"}),
-                # ("Inbound message", {"sequence-number": "4", "message-size": "3"}),
+                ("Inbound message", {"sequence-number": "0", "message-size": "3"}),
+                ("Inbound message", {"sequence-number": "1", "message-size": "3"}),
+                ("Inbound message", {"sequence-number": "2", "message-size": "3"}),
+                ("Inbound message", {"sequence-number": "3", "message-size": "3"}),
+                ("Inbound message", {"sequence-number": "4", "message-size": "3"}),
             ],
             expected_attempt_events=[
                 ("Inbound message", {"sequence-number": "0", "message-size": "3"}),
