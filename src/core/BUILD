@@ -7937,6 +7937,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "flow_control_manager",
+    hdrs = [
+        "ext/transport/chttp2/transport/flow_control_manager.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/log:check",
+    ],
+    deps = [
+        ":chttp2_flow_control",
+        "//third_party/grpc:chttp2_frame",
+    ],
+)
+
+grpc_cc_library(
     name = "ping_abuse_policy",
     srcs = [
         "ext/transport/chttp2/transport/ping_abuse_policy.cc",
@@ -8197,6 +8212,7 @@ grpc_cc_library(
         "channel_args",
         "check_class_size",
         "connectivity_state",
+        "flow_control_manager",
         "for_each",
         "grpc_promise_endpoint",
         "header_assembler",
