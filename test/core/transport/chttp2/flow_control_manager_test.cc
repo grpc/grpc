@@ -21,9 +21,9 @@
 #include <cstdint>
 #include <vector>
 
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
-#include "testing/base/public/gmock.h"
-#include "testing/base/public/gunit.h"
 
 namespace grpc_core {
 namespace chttp2 {
@@ -50,7 +50,7 @@ TEST(FlowControlManagerTest, TransportWindowUpdate) {
   EXPECT_TRUE(manager.HasWindowUpdates());
   EXPECT_THAT(manager.GetWindowUpdates(),
               ElementsAre(VariantWith<Http2WindowUpdateFrame>(
-                  WindowUpdateFrame(0, 100))));
+                  WindowUpdateFrame(0u, 100u))));
   EXPECT_FALSE(manager.HasWindowUpdates());
   EXPECT_THAT(manager.GetWindowUpdates(), IsEmpty());
 }
@@ -61,7 +61,7 @@ TEST(FlowControlManagerTest, StreamWindowUpdate) {
   EXPECT_TRUE(manager.HasWindowUpdates());
   EXPECT_THAT(manager.GetWindowUpdates(),
               ElementsAre(VariantWith<Http2WindowUpdateFrame>(
-                  WindowUpdateFrame(1, 100))));
+                  WindowUpdateFrame(1u, 100u))));
   EXPECT_FALSE(manager.HasWindowUpdates());
   EXPECT_THAT(manager.GetWindowUpdates(), IsEmpty());
 }
@@ -75,8 +75,8 @@ TEST(FlowControlManagerTest, MultipleStreamWindowUpdates) {
   EXPECT_THAT(
       manager.GetWindowUpdates(),
       UnorderedElementsAre(
-          VariantWith<Http2WindowUpdateFrame>(WindowUpdateFrame(1, 150)),
-          VariantWith<Http2WindowUpdateFrame>(WindowUpdateFrame(2, 200))));
+          VariantWith<Http2WindowUpdateFrame>(WindowUpdateFrame(1u, 150u)),
+          VariantWith<Http2WindowUpdateFrame>(WindowUpdateFrame(2u, 200u))));
   EXPECT_FALSE(manager.HasWindowUpdates());
   EXPECT_THAT(manager.GetWindowUpdates(), IsEmpty());
 }
@@ -90,9 +90,9 @@ TEST(FlowControlManagerTest, TransportAndStreamWindowUpdates) {
   EXPECT_THAT(
       manager.GetWindowUpdates(),
       UnorderedElementsAre(
-          VariantWith<Http2WindowUpdateFrame>(WindowUpdateFrame(0, 500)),
-          VariantWith<Http2WindowUpdateFrame>(WindowUpdateFrame(1, 100)),
-          VariantWith<Http2WindowUpdateFrame>(WindowUpdateFrame(2, 200))));
+          VariantWith<Http2WindowUpdateFrame>(WindowUpdateFrame(0u, 500u)),
+          VariantWith<Http2WindowUpdateFrame>(WindowUpdateFrame(1u, 100u)),
+          VariantWith<Http2WindowUpdateFrame>(WindowUpdateFrame(2u, 200u))));
   EXPECT_FALSE(manager.HasWindowUpdates());
   EXPECT_THAT(manager.GetWindowUpdates(), IsEmpty());
 }
@@ -105,10 +105,15 @@ TEST(FlowControlManagerTest, RemoveStream) {
   EXPECT_TRUE(manager.HasWindowUpdates());
   EXPECT_THAT(manager.GetWindowUpdates(),
               ElementsAre(VariantWith<Http2WindowUpdateFrame>(
-                  WindowUpdateFrame(2, 200))));
+                  WindowUpdateFrame(2u, 200u))));
   EXPECT_FALSE(manager.HasWindowUpdates());
 }
 
 }  // namespace
 }  // namespace chttp2
 }  // namespace grpc_core
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

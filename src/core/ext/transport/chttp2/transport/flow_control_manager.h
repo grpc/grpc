@@ -16,8 +16,8 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_HTTP2_TRANSPORT_FLOW_CONTROL_MANAGER_H_
-#define GRPC_SRC_CORE_EXT_TRANSPORT_HTTP2_TRANSPORT_FLOW_CONTROL_MANAGER_H_
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_MANAGER_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_MANAGER_H
 
 #include <grpc/support/port_platform.h>
 
@@ -36,13 +36,13 @@ class FlowControlManager {
  public:
   void IncrementStreamWindow(const uint32_t stream_id,
                              const uint32_t increment) {
-    DCHECK_GT(increment, 0);
+    DCHECK_GT(increment, 0u);
     DCHECK_LE(increment, kMaxWindow - stream_window_updates_[stream_id]);
     stream_window_updates_[stream_id] += increment;
   }
 
   void IncrementTransportWindow(const uint32_t increment) {
-    DCHECK_GT(increment, 0);
+    DCHECK_GT(increment, 0u);
     DCHECK_LE(increment, kMaxWindow - transport_window_update_size_);
     transport_window_update_size_ += increment;
   }
@@ -80,4 +80,4 @@ class FlowControlManager {
 }  // namespace chttp2
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_HTTP2_TRANSPORT_FLOW_CONTROL_MANAGER_H_
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_MANAGER_H

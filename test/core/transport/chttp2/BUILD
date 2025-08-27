@@ -388,6 +388,7 @@ grpc_cc_test(
     ],
     deps = [
         "//:chttp2_frame",
+        "//src/core:chttp2_flow_control",
         "//src/core:flow_control_manager",
     ],
 )
