@@ -2337,6 +2337,7 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/http2_client_transport.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
   src/core/ext/transport/chttp2/transport/http2_settings_manager.cc
+  src/core/ext/transport/chttp2/transport/http2_settings_promises.cc
   src/core/ext/transport/chttp2/transport/http2_stats_collector.cc
   src/core/ext/transport/chttp2/transport/http2_transport.cc
   src/core/ext/transport/chttp2/transport/huffsyms.cc
@@ -3444,6 +3445,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/http2_client_transport.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
   src/core/ext/transport/chttp2/transport/http2_settings_manager.cc
+  src/core/ext/transport/chttp2/transport/http2_settings_promises.cc
   src/core/ext/transport/chttp2/transport/http2_stats_collector.cc
   src/core/ext/transport/chttp2/transport/http2_transport.cc
   src/core/ext/transport/chttp2/transport/huffsyms.cc
@@ -16797,8 +16799,6 @@ add_executable(flow_control_test
   src/core/lib/iomgr/sockaddr_utils_posix.cc
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/sleep.cc
-  src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
