@@ -392,6 +392,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/decode_huff.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/flow_control.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/flow_control.h )
+  s.files += %w( src/core/ext/transport/chttp2/transport/flow_control_manager.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/frame.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/frame.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/frame_data.cc )

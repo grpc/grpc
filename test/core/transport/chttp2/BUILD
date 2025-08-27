@@ -387,8 +387,8 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
-        "//third_party/grpc:chttp2_frame",
-        "//third_party/grpc/src/core:flow_control_manager",
+        "//:chttp2_frame",
+        "//src/core:flow_control_manager",
     ],
 )
 
