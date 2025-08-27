@@ -138,20 +138,27 @@ do
 
   echo "* Visiting ${DOCKERFILE_DIR}"
 
+  is_docker_for_arm=0
+  for ARM_DOCKERFILE_DIR in "${ARM_DOCKERFILE_DIRS[@]}"; do
+    if [ "$DOCKERFILE_DIR" == "$ARM_DOCKERFILE_DIR" ]; then
+      is_docker_for_arm=1
+      break
+    fi
+  done
+
   # if HOST_ARCH_ONLY is set, skip if the docker image's arthiecture doesn't match with the host architecture
   if [ "${HOST_ARCH_ONLY}" != "" ]; then
     [[ "$(uname -m)" == aarch64 ]] && is_host_arm=1 || is_host_arm=0
-    is_docker_for_arm=0
-    for ARM_DOCKERFILE_DIR in "${ARM_DOCKERFILE_DIRS[@]}"; do
-      if [ "$DOCKERFILE_DIR" == "$ARM_DOCKERFILE_DIR" ]; then
-        is_docker_for_arm=1
-        break
-      fi
-    done
     if [ "$is_host_arm" != "$is_docker_for_arm" ]; then
       echo "Skipped due to the different architecture:" ${DOCKER_IMAGE_NAME}
       continue
     fi
+  fi
+
+  docker_build_platform=""
+  if [ "$is_docker_for_arm" == 1 ]
+  then
+    docker_build_platform="--platform=linux/arm64"
   fi
 
   if [[ -z "${LOCAL_ONLY_MODE}" && -z "${ALWAYS_BUILD}" ]]
@@ -241,6 +248,7 @@ do
     ${ALWAYS_BUILD:+--no-cache --pull} \
     -t ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:${DOCKER_IMAGE_TAG} \
     -t ${ARTIFACT_REGISTRY_PREFIX}/${DOCKER_IMAGE_NAME}:infrastructure-public-image-${DOCKER_IMAGE_TAG} \
+    ${docker_build_platform} \
     ${DOCKERFILE_DIR} || docker_exit_code=$?
   if [ "${docker_exit_code}" -ne 0 ]; then
     if [ -z "${KEEP_GOING}" ]; then
