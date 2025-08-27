@@ -722,6 +722,11 @@ class Http2ClientTransport final : public ClientTransport {
     }
     return absl::OkStatus();
   }
+  /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
+  /// the peer
+  // TODO(tjagtap) : [PH2][P1] : Plumb this with the necessary frame size flow
+  // control workflow corresponding to grpc_chttp2_act_on_flowctl_action
+  GRPC_UNUSED bool enable_preferred_rx_crypto_frame_advertisement_;
 };
 
 // Since the corresponding class in CHTTP2 is about 3.9KB, our goal is to
