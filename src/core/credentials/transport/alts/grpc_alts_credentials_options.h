@@ -19,13 +19,13 @@
 #ifndef GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_ALTS_GRPC_ALTS_CREDENTIALS_OPTIONS_H
 #define GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_ALTS_GRPC_ALTS_CREDENTIALS_OPTIONS_H
 
-#include <optional>
-#include <vector>
-#include <string>
-
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
+
+#include <optional>
+#include <string>
+#include <vector>
 
 #include "src/core/tsi/alts/handshaker/transport_security_common_api.h"
 
