@@ -81,6 +81,7 @@ then
   cp -r third_party/protobuf/third_party/utf8_range third_party/utf8_range/
 fi
 
+export GRPC_GENERATE_PROJECTS_SKIP_XDS_PROTOS="${GRPC_GENERATE_PROJECTS_SKIP_XDS_PROTOS:-1}"
 tools/buildgen/generate_projects.sh
 
 # commit so that changes are passed to Docker

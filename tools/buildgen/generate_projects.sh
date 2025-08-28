@@ -62,8 +62,10 @@ fi
 #
 # Note: this version needs to be updated periodically to keep up with mainstream
 # python releases, as older grpcio-tools release may not support them.
-generate_projects_virtual_environment/bin/pip install --upgrade --ignore-installed grpcio-tools==1.74.0
-generate_projects_virtual_environment/bin/python tools/distrib/python/xds_protos/build.py
+if [[ "${GRPC_GENERATE_PROJECTS_SKIP_XDS_PROTOS:-0}" != "1" ]]; then
+  generate_projects_virtual_environment/bin/pip install --upgrade --ignore-installed grpcio-tools==1.74.0
+  generate_projects_virtual_environment/bin/python tools/distrib/python/xds_protos/build.py
+fi
 generate_projects_virtual_environment/bin/python tools/distrib/python/make_grpcio_tools.py
 generate_projects_virtual_environment/bin/python src/python/grpcio_observability/make_grpcio_observability.py
 
