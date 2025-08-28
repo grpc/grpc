@@ -100,6 +100,8 @@ and the underlying endpoint.
 *   Helper classes for PH2 writes:
     *   `stream_data_queue.{h,cc}` Stores gRPC messages and Metadata from the CallV3 stack for each stream in a queue.
     *   `writable_streams.{h,cc}` Track streams that have some data to send to the peer and have available flow control tokens.
+*   Settings Helper : `http2_settings_promises.h`
+*   Flow Control Helper : `flow_control_manager.h`
 
 ## 3. Common Files (Shared by CHTTP2 and PH2)
 
