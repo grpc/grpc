@@ -1143,6 +1143,16 @@ auto Server::MatchRequestAndMaybeReadFirstMessage(CallHandler call_handler,
 }
 
 auto Server::MatchAndPublishCall(CallHandler call_handler) {
+  // Register the decrement to happen when the CallSpine is eventually destroyed.
+  bool added_on_done = call_handler.OnDone([this](bool /*cancelled*/) {
+    stream_quota_->DecrementOutstandingRequests();
+  });
+  if (!added_on_done) {
+    // This case should ideally not happen if OnDone is registered early enough.
+    // If the call was already "done" before even spawning, decrement immediately.
+    stream_quota_->DecrementOutstandingRequests();
+  }
+
   call_handler.SpawnGuarded("request_matcher", [this, call_handler]() mutable {
     return TrySeq(
         call_handler.UntilCallCompletes(TrySeq(
@@ -1181,6 +1191,7 @@ Server::MakeCallDestination(const ChannelArgs& args,
   // TODO(ctiller): find a way to avoid adding a server ref per call
   builder.AddOnClientInitialMetadata([self = Ref()](ClientMetadata& md) {
     self->SetRegisteredMethodOnMetadata(md);
+    self->stream_quota_->IncrementOutstandingRequests();
   });
   CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
       GRPC_SERVER_CHANNEL, builder);
@@ -1372,9 +1383,12 @@ grpc_error_handle Server::SetupTransport(Transport* transport,
       channelz_socket_uuid = socket_node->uuid();
       socket_node->AddParent(channelz_node_.get());
     }
+
     // Initialize chand.
     chand->InitTransport(Ref(), std::move(*channel), cq_idx, transport,
                          channelz_socket_uuid);
+
+    stream_quota_->IncrementOpenChannels();
   }
   return absl::OkStatus();
 }
@@ -1708,6 +1722,7 @@ class Server::ChannelData::ConnectivityWatcher
                                  const absl::Status& /*status*/) override {
     // Don't do anything until we are being shut down.
     if (new_state != GRPC_CHANNEL_SHUTDOWN) return;
+    chand_->server_->stream_quota_->DecrementOpenChannels();
     // Shut down channel.
     MutexLock lock(&chand_->server_->mu_global_);
     chand_->Destroy();
