@@ -25,6 +25,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "testing",
+    features = [
+        "-layering_check",
+        "-parse_headers",
+    ],
     visibility = "public",
 )
 
