@@ -37,14 +37,14 @@ class FlowControlManager {
   void SendStreamFlowControlToPeer(const uint32_t stream_id,
                                    const uint32_t increment) {
     DCHECK(stream_id % 2 == 1);
-    DCHECK_GT(increment, 0);
+    DCHECK_GT(increment, 0u);
     DCHECK_LE(increment,
               chttp2::kMaxWindow - stream_window_updates_[stream_id]);
     stream_window_updates_[stream_id] += increment;
   }
 
   void SendTransportFlowControlToPeer(const uint32_t increment) {
-    DCHECK_GT(increment, 0);
+    DCHECK_GT(increment, 0u);
     DCHECK_LE(increment, chttp2::kMaxWindow - transport_window_update_size_);
     transport_window_update_size_ += increment;
   }
@@ -52,17 +52,17 @@ class FlowControlManager {
   std::vector<Http2Frame> GetFlowControlFramesForPeer() {
     std::vector<Http2Frame> frames;
     const size_t num_frames = stream_window_updates_.size() +
-                              (transport_window_update_size_ > 0 ? 1 : 0);
-    if (num_frames > 0) {
+                              (transport_window_update_size_ > 0u ? 1u : 0u);
+    if (num_frames > 0u) {
       frames.reserve(num_frames);
-      if (transport_window_update_size_ > 0) {
+      if (transport_window_update_size_ > 0u) {
         frames.emplace_back(Http2WindowUpdateFrame{
-            /*stream_id=*/0, /*increment=*/transport_window_update_size_});
-        transport_window_update_size_ = 0;
+            /*stream_id=*/0u, /*increment=*/transport_window_update_size_});
+        transport_window_update_size_ = 0u;
       }
       for (auto& pair : stream_window_updates_) {
-        DCHECK_GT(/*increment=*/pair.second, 0);
-        if (GPR_LIKELY(pair.second > 0)) {
+        DCHECK_GT(/*increment=*/pair.second, 0u);
+        if (GPR_LIKELY(pair.second > 0u)) {
           frames.emplace_back(
               Http2WindowUpdateFrame{/*stream_id=*/pair.first,
                                      /*increment=*/pair.second});
@@ -75,7 +75,8 @@ class FlowControlManager {
   }
 
   bool HasWindowUpdates() const {
-    return transport_window_update_size_ > 0 || !stream_window_updates_.empty();
+    return transport_window_update_size_ > 0u ||
+           !stream_window_updates_.empty();
   }
 
   void RemoveStream(const uint32_t stream_id) {
@@ -83,7 +84,7 @@ class FlowControlManager {
   }
 
  private:
-  uint32_t transport_window_update_size_ = 0;
+  uint32_t transport_window_update_size_ = 0u;
   absl::flat_hash_map<uint32_t, uint32_t> stream_window_updates_;
 };
 
