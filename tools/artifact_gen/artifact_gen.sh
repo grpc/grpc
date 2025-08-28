@@ -19,27 +19,29 @@ set -e
 # PHASE 0: query bazel for information we'll need
 cd $(dirname $0)/../..
 
+# This json is hardcoded here so it is easier to keep it in sync with Bazel
+# queries below
 echo """
 {
-  "envoy_api": {
-    "destination": "third_party/envoy-api",
-    "proto_prefix": "third_party/envoy-api/"
+  \"envoy_api\": {
+    \"destination\": \"third_party/envoy-api\",
+    \"proto_prefix\": \"third_party/envoy-api/\"
   },
-  "com_google_googleapis": {
-    "destination": "third_party/googleapis",
-    "proto_prefix": "third_party/googleapis/"
+  \"com_google_googleapis\": {
+    \"destination\": \"third_party/googleapis\",
+    \"proto_prefix\": \"third_party/googleapis/\"
   },
-  "com_github_cncf_xds": {
-    "destination": "third_party/xds",
-    "proto_prefix": "third_party/xds/"
+  \"com_github_cncf_xds\": {
+    \"destination\": \"third_party/xds\",
+    \"proto_prefix\": \"third_party/xds/\"
   },
-  "com_envoyproxy_protoc_gen_validate": {
-    "destination": "third_party/protoc-gen-validate",
-    "proto_prefix": "third_party/protoc-gen-validate/"
+  \"com_envoyproxy_protoc_gen_validate\": {
+    \"destination\": \"third_party/protoc-gen-validate\",
+    \"proto_prefix\": \"third_party/protoc-gen-validate/\"
   },
-  "opencensus_proto": {
-    "destination": "third_party/opencensus-proto/src",
-    "proto_prefix": "third_party/opencensus-proto/src/"
+  \"opencensus_proto\": {
+    \"destination\": \"third_party/opencensus-proto/src\",
+    \"proto_prefix\": \"third_party/opencensus-proto/src/\"
   }
 }
 """ >tools/artifact_gen/external_proto_libraries.json

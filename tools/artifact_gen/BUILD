@@ -21,6 +21,8 @@ cc_library(
         "@abseil-cpp//absl/flags:flag",
         "@abseil-cpp//absl/log",
         "@abseil-cpp//absl/log:check",
+        "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:statusor",
         "@abseil-cpp//absl/strings",
         "@nlohmann_json//:json",
         "@pugixml",
@@ -104,14 +106,22 @@ cc_binary(
     ],
 )
 
-cc_binary(
+cc_library(
     name = "extract_metadata_from_bazel_mod",
     srcs = ["extract_metadata_from_bazel_mod.cc"],
+    hdrs = ["extract_metadata_from_bazel_mod.h"],
     deps = [
         "@com_google_absl//absl/log",
         "@com_google_absl//absl/log:globals",
         "@com_google_absl//absl/log:initialize",
         "@com_google_absl//absl/status",
+        "@com_google_absl//absl/status:statusor",
         "@com_googlesource_code_re2//:re2",
     ],
+)
+
+cc_binary(
+    name = "boop",
+    srcs = ["boop.cc"],
+    deps = [":extract_metadata_from_bazel_mod"],
 )

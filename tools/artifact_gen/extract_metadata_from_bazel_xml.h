@@ -15,8 +15,9 @@
 #ifndef GRPC_TOOLS_ARTIFACT_GEN_EXTRACT_METADATA_FROM_BAZEL_XML_H
 #define GRPC_TOOLS_ARTIFACT_GEN_EXTRACT_METADATA_FROM_BAZEL_XML_H
 
+#include "absl/status/statusor.h"
 #include "include/nlohmann/json.hpp"
 
-nlohmann::json ExtractMetadataFromBazelXml();
+absl::StatusOr<nlohmann::json> ExtractMetadataFromBazelXml();
 
 #endif  // GRPC_TOOLS_ARTIFACT_GEN_EXTRACT_METADATA_FROM_BAZEL_XML_H

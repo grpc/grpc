@@ -16,6 +16,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/log.h"
 #include "extract_metadata_from_bazel_xml.h"
 #include "metadata_for_wrapped_languages.h"
 #include "render.h"
@@ -28,15 +29,18 @@ ABSL_FLAG(bool, save_json, false, "Save the generated build.yaml to a file");
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
   auto build_yaml = ExtractMetadataFromBazelXml();
+  if (!build_yaml.ok()) {
+    LOG(FATAL) << build_yaml.status();
+  }
   for (const auto& filename : absl::GetFlag(FLAGS_extra_build_yaml)) {
-    build_yaml.update(LoadYaml(filename), true);
+    build_yaml->update(LoadYaml(filename), true);
   }
   // TODO(ctiller): all the special yaml updates
-  AddMetadataForWrappedLanguages(build_yaml);
+  AddMetadataForWrappedLanguages(*build_yaml);
   if (absl::GetFlag(FLAGS_save_json)) {
     std::ofstream ofs("build.json");
-    ofs << build_yaml.dump(4);
+    ofs << build_yaml->dump(4);
   }
-  RenderAllTemplates(build_yaml);
+  RenderAllTemplates(*build_yaml);
   return 0;
 }

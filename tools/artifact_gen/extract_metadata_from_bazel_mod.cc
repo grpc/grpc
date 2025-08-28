@@ -12,67 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "tools/artifact_gen/extract_metadata_from_bazel_mod.h"
+
 #include <algorithm>
 #include <fstream>
-#include <iostream>
-#include <iterator>
 #include <string>
 #include <string_view>
 #include <unordered_set>
+#include <vector>
 
 #include "absl/container/inlined_vector.h"
-#include "absl/log/globals.h"
-#include "absl/log/initialize.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/strings/substitute.h"
 #include "re2/re2.h"
 
 namespace {
-
-class HttpArchive {
- public:
-  explicit HttpArchive(std::string_view alias) : alias_(alias) {}
-
-  std::string alias() const { return alias_; }
-
-  std::string integrity() const { return integrity_; }
-
-  std::string strip_prefix() const { return strip_prefix_; }
-
-  void set_integrity(std::string_view integrity) { integrity_ = integrity; }
-
-  void set_strip_prefix(std::string_view strip_prefix) {
-    strip_prefix_ = strip_prefix;
-  }
-
-  void set_urls(absl::Span<const std::string> urls) {
-    std::copy(urls.begin(), urls.end(), std::back_inserter(urls_));
-  }
-
-  template <typename Sink>
-  friend void AbslStringify(Sink& s, const HttpArchive& archive) {
-    s.Append(absl::StrFormat(
-        "%s = { integrity = \"%s\", strip_prefix = \"%s\", urls = [%s] }",
-        archive.alias_, archive.integrity_, archive.strip_prefix_,
-        absl::StrJoin(archive.urls_, ", ",
-                      [](std::string* dest, const std::string& url) {
-                        absl::StrAppend(dest, "\"", url, "\"");
-                      })));
-  }
-
- private:
-  // if match[1] in {"integrity", "name", "sha256", "strip_prefix", "urls"}:
-  std::string alias_;
-  std::string integrity_;
-  std::string strip_prefix_;
-  absl::InlinedVector<std::string, 3> urls_;
-};
 
 class HttpArchiveParser {
  public:
@@ -138,35 +100,38 @@ class HttpArchiveParser {
         "Unexpected line \"%s\" in rule %s", line, current_->alias()));
   }
 
-  absl::Span<const HttpArchive> archives() const { return archives_; }
+  std::vector<HttpArchive> archives() const { return archives_; }
 
  private:
   std::optional<HttpArchive> current_;
-  absl::InlinedVector<HttpArchive, 10> archives_;
+  std::vector<HttpArchive> archives_;
 };
 
 }  // namespace
 
-int main(int argc, const char* argv[]) {
-  absl::InitializeLog();
-  absl::SetStderrThreshold(absl::LogSeverity::kInfo);
-  if (argc < 2) {
-    std::cerr << "Bazel output file was not specified\n";
-    return 1;
-  }
-  std::ifstream reader(argv[1]);
+std::string HttpArchive::Stringify() const {
+  return absl::StrFormat(
+      "%s = { integrity = \"%s\", strip_prefix = \"%s\", urls = [%s] }", alias_,
+      integrity_, strip_prefix_,
+      absl::StrJoin(urls_, ", ", [](std::string* dest, const std::string& url) {
+        absl::StrAppend(dest, "\"", url, "\"");
+      }));
+}
+
+// static
+absl::StatusOr<std::vector<HttpArchive>> HttpArchive::ParseHttpArchives(
+    const std::string& archives_query_path) {
+  std::ifstream reader(archives_query_path);
   if (!reader.is_open()) {
-    std::cerr << absl::Substitute("Can't open $0\n", argv[1]);
+    return absl::UnavailableError(
+        absl::Substitute("Can't open $0\n", archives_query_path));
   }
   std::string line;
   HttpArchiveParser parser;
-  size_t line_no = 0;
   while (std::getline(reader, line)) {
-    line_no += 1;
-    absl::Status status = parser.Parse(line);
-    LOG_IF(FATAL, !status.ok()) << "[line " << line_no << "] " << status;
+    if (absl::Status status = parser.Parse(line); !status.ok()) {
+      return status;
+    }
   }
-  for (const HttpArchive& archive : parser.archives()) {
-    LOG(INFO) << archive;
-  }
+  return parser.archives();
 }
