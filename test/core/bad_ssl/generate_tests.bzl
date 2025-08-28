@@ -41,13 +41,27 @@ def grpc_bad_ssl_tests():
             "//test/core/test_util:grpc_test_util",
             "//test/core/test_util:grpc_test_util_base",
             "//:grpc",
+            "//:gpr",
         ],
     )
     for t in BAD_SSL_TESTS:
         grpc_cc_binary(
             name = "bad_ssl_%s_server" % t,
             srcs = ["servers/%s.cc" % t],
-            deps = [":bad_ssl_test_server"],
+            external_deps = [
+                "absl/log",
+                "absl/log:check",
+            ],
+            deps = [
+                ":bad_ssl_test_server",
+                "//:alts_util",
+                "//:gpr",
+                "//:grpc_core_credentials_header",
+                "//src/core:error",
+                "//src/core:grpc_transport_chttp2_alpn",
+                "//src/core:useful",
+                "//test/core/test_util:grpc_test_util",
+            ],
         )
         grpc_cc_test(
             name = "bad_ssl_%s_test" % t,

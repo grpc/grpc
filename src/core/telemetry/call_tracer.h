@@ -148,6 +148,7 @@ class ClientCallTracerInterface : public CallTracerAnnotationInterface {
       kXdsServiceName,       // not public
       kXdsServiceNamespace,  // not public
       kLocality,
+      kBackendService,
       kSize  // should be last
     };
 

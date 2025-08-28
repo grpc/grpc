@@ -51,6 +51,7 @@ grpc_cc_test(
         "//src/core:event_engine_thread_count",
         "//src/core:event_engine_thread_pool",
         "//src/core:notification",
+        "//src/core:time",
         "//test/core/test_util:grpc_test_util_unsecure",
     ],
 )
@@ -85,6 +86,7 @@ grpc_cc_test(
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//src/core:default_event_engine",
+        "//src/core:notification",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -187,9 +189,11 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc",
         "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:grpc_sockaddr",
         "//src/core:iomgr_port",
     ],
 )
@@ -197,10 +201,14 @@ grpc_cc_test(
 grpc_cc_test(
     name = "handle_tests",
     srcs = ["handle_tests.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/strings",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:event_engine_base_hdrs",
         "//:gpr_platform",
         "//:grpc",
     ],
@@ -222,12 +230,14 @@ grpc_cc_library(
     deps = [
         "//:event_engine_base_hdrs",
         "//:gpr",
+        "//:ref_counted_ptr",
         "//src/core:channel_args_endpoint_config",
         "//src/core:event_engine_common",
         "//src/core:event_engine_shim",
         "//src/core:event_engine_tcp_socket_utils",
         "//src/core:memory_quota",
         "//src/core:notification",
+        "//src/core:sync",
         "//src/core:time",
         "//test/core/test_util:build",
     ],
@@ -236,10 +246,16 @@ grpc_cc_library(
 grpc_cc_test(
     name = "query_extensions_test",
     srcs = ["query_extensions_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/status",
+        "absl/functional:any_invocable",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr",
         "//:gpr_platform",
         "//src/core:event_engine_query_extensions",
     ],
@@ -252,10 +268,14 @@ grpc_fuzz_test(
         "absl/log:check",
         "fuzztest",
         "fuzztest_main",
+        "absl/status:statusor",
     ],
     tags = ["no_windows"],
     deps = [
+        "//:event_engine_base_hdrs",
         "//:grpc",
+        "//:uri",
+        "//src/core:event_engine_tcp_socket_utils",
         "//test/core/test_util:grpc_test_util",
     ],
 )

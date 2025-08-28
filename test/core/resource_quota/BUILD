@@ -62,6 +62,7 @@ grpc_cc_test(
     deps = [
         "call_checker",
         "//:exec_ctx",
+        "//:gpr",
         "//src/core:memory_quota",
         "//src/core:slice_refcount",
         "//test/core/test_util:grpc_test_util_unsecure",
@@ -129,6 +130,7 @@ grpc_cc_test(
         "//:gpr",
         "//src/core:event_engine_memory_allocator",
         "//src/core:memory_quota",
+        "//src/core:sync",
         "//test/core/test_util:grpc_test_util_unsecure",
     ],
 )

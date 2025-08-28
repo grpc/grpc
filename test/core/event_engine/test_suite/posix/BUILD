@@ -24,8 +24,15 @@ grpc_cc_library(
     srcs = ["oracle_event_engine_posix.cc"],
     hdrs = ["oracle_event_engine_posix.h"],
     external_deps = [
+        "absl/base:core_headers",
+        "absl/functional:any_invocable",
         "absl/log:check",
         "absl/log:log",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/time",
     ],
     tags = [
         "cpu:10",
@@ -36,7 +43,14 @@ grpc_cc_library(
         "//test:__subpackages__",
     ],
     deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr",
         "//:grpc",
+        "//:sockaddr_utils",
+        "//src/core:notification",
+        "//src/core:resolved_address",
+        "//src/core:strerror",
+        "//src/core:sync",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/test_suite:event_engine_test_framework",
         "//test/core/test_util:grpc_test_util",
@@ -60,6 +74,7 @@ grpc_cc_test(
     deps = [
         "oracle_event_engine_posix",
         "//:grpc",
+        "//test/core/event_engine/test_suite:event_engine_test_framework",
         "//test/core/event_engine/test_suite/tests:client",
         "//test/core/event_engine/test_suite/tests:server",
         "//test/core/test_util:grpc_test_util",

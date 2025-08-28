@@ -84,6 +84,8 @@ inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsFuseFiltersEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_MAX_AGE_FILTER_FLOAT_TO_TOP
+inline bool IsMaxAgeFilterFloatToTopEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
@@ -103,8 +105,6 @@ inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_GLOBAL_CALLBACKS_OWNERSHIP
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_GLOBAL_CONNECTION_POOL
-inline bool IsShardGlobalConnectionPoolEnabled() { return true; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
@@ -139,6 +139,8 @@ inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsFuseFiltersEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_MAX_AGE_FILTER_FLOAT_TO_TOP
+inline bool IsMaxAgeFilterFloatToTopEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
@@ -158,8 +160,6 @@ inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_GLOBAL_CALLBACKS_OWNERSHIP
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_GLOBAL_CONNECTION_POOL
-inline bool IsShardGlobalConnectionPoolEnabled() { return true; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
@@ -194,6 +194,8 @@ inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsFuseFiltersEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_MAX_AGE_FILTER_FLOAT_TO_TOP
+inline bool IsMaxAgeFilterFloatToTopEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
@@ -213,8 +215,6 @@ inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_GLOBAL_CALLBACKS_OWNERSHIP
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_GLOBAL_CONNECTION_POOL
-inline bool IsShardGlobalConnectionPoolEnabled() { return true; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
@@ -242,6 +242,7 @@ enum ExperimentIds {
   kExperimentIdFuseFilters,
   kExperimentIdKeepAlivePingTimerBatch,
   kExperimentIdLocalConnectorSecure,
+  kExperimentIdMaxAgeFilterFloatToTop,
   kExperimentIdMaxInflightPingsStrictLimit,
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
@@ -258,7 +259,6 @@ enum ExperimentIds {
   kExperimentIdSecureEndpointOffloadLargeReads,
   kExperimentIdSecureEndpointOffloadLargeWrites,
   kExperimentIdServerGlobalCallbacksOwnership,
-  kExperimentIdShardGlobalConnectionPool,
   kExperimentIdSleepPromiseExecCtxRemoval,
   kExperimentIdTcpFrameSizeTuning,
   kExperimentIdTcpRcvLowat,
@@ -338,6 +338,10 @@ inline bool IsKeepAlivePingTimerBatchEnabled() {
 inline bool IsLocalConnectorSecureEnabled() {
   return IsExperimentEnabled<kExperimentIdLocalConnectorSecure>();
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_MAX_AGE_FILTER_FLOAT_TO_TOP
+inline bool IsMaxAgeFilterFloatToTopEnabled() {
+  return IsExperimentEnabled<kExperimentIdMaxAgeFilterFloatToTop>();
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
 inline bool IsMaxInflightPingsStrictLimitEnabled() {
   return IsExperimentEnabled<kExperimentIdMaxInflightPingsStrictLimit>();
@@ -401,10 +405,6 @@ inline bool IsSecureEndpointOffloadLargeWritesEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_GLOBAL_CALLBACKS_OWNERSHIP
 inline bool IsServerGlobalCallbacksOwnershipEnabled() {
   return IsExperimentEnabled<kExperimentIdServerGlobalCallbacksOwnership>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_GLOBAL_CONNECTION_POOL
-inline bool IsShardGlobalConnectionPoolEnabled() {
-  return IsExperimentEnabled<kExperimentIdShardGlobalConnectionPool>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SLEEP_PROMISE_EXEC_CTX_REMOVAL
 inline bool IsSleepPromiseExecCtxRemovalEnabled() {

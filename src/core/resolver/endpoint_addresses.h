@@ -42,6 +42,9 @@
 // Name associated with individual address, if available (e.g., DNS name).
 #define GRPC_ARG_ADDRESS_NAME "grpc.address_name"
 
+// Backend service name associated with the addresses.
+#define GRPC_ARG_BACKEND_SERVICE "grpc.internal.backend_service"
+
 namespace grpc_core {
 
 // A list of addresses for a given endpoint with an associated set of channel

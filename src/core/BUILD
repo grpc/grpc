@@ -127,6 +127,8 @@ grpc_cc_library(
         "absl/log",
     ],
     deps = [
+        "slice",
+        "slice_buffer",
         "//src/core:time",
     ],
 )
@@ -6569,6 +6571,7 @@ grpc_cc_library(
     ],
     deps = [
         "channel_args",
+        "client_channel_internal_header",
         "delegating_helper",
         "env",
         "grpc_lb_address_filtering",
@@ -7934,6 +7937,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "flow_control_manager",
+    hdrs = [
+        "ext/transport/chttp2/transport/flow_control_manager.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/log:check",
+    ],
+    deps = [
+        ":chttp2_flow_control",
+        "//third_party/grpc:chttp2_frame",
+    ],
+)
+
+grpc_cc_library(
     name = "ping_abuse_policy",
     srcs = [
         "ext/transport/chttp2/transport/ping_abuse_policy.cc",
@@ -8153,19 +8171,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "writable_stream_list",
-    hdrs = [
-        "ext/transport/chttp2/transport/writable_stream_list.h",
-    ],
-    external_deps = [
-        "absl/log",
-        "absl/log:check",
-    ],
-    deps = [
-    ],
-)
-
-grpc_cc_library(
     name = "stream_data_queue",
     hdrs = [
         "ext/transport/chttp2/transport/stream_data_queue.h",
@@ -8181,6 +8186,7 @@ grpc_cc_library(
         "message",
         "message_assembler",
         "metadata_batch",
+        "writable_streams",
     ],
 )
 
@@ -8206,6 +8212,7 @@ grpc_cc_library(
         "channel_args",
         "check_class_size",
         "connectivity_state",
+        "flow_control_manager",
         "for_each",
         "grpc_promise_endpoint",
         "header_assembler",
@@ -8229,6 +8236,7 @@ grpc_cc_library(
         "sync",
         "transport_common",
         "writable_streams",
+        ":chttp2_flow_control",
         ":match_promise",
         ":poll",
         ":slice",
@@ -10280,6 +10288,8 @@ grpc_cc_library(
         "sleep",
         "time",
         "try_seq",
+        ":slice_buffer",
+        "//:chttp2_frame",
         "//:promise",
     ],
 )

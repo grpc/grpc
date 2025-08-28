@@ -91,6 +91,7 @@ grpc_fuzz_test(
         "environment_fake",
         "layout_log",
         "//src/core:zviz_data",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 
@@ -115,6 +116,8 @@ grpc_fuzz_test(
     srcs = ["entity_test.cc"],
     external_deps = [
         "absl/log:check",
+        "absl/container:flat_hash_map",
+        "absl/strings",
         "fuzztest",
         "fuzztest_main",
     ],
@@ -122,6 +125,9 @@ grpc_fuzz_test(
         "environment_fake",
         "layout_log",
         "//src/core:zviz_entity",
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+        "//src/proto/grpc/channelz/v2:property_list_cc_proto",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 

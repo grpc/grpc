@@ -35,6 +35,7 @@ EXPERIMENT_ENABLES = {
     "fuse_filters": "fuse_filters",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
+    "max_age_filter_float_to_top": "max_age_filter_float_to_top",
     "max_inflight_pings_strict_limit": "max_inflight_pings_strict_limit",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
@@ -51,7 +52,6 @@ EXPERIMENT_ENABLES = {
     "secure_endpoint_offload_large_reads": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,secure_endpoint_offload_large_reads",
     "secure_endpoint_offload_large_writes": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,secure_endpoint_offload_large_writes",
     "server_global_callbacks_ownership": "server_global_callbacks_ownership",
-    "shard_global_connection_pool": "shard_global_connection_pool",
     "sleep_promise_exec_ctx_removal": "sleep_promise_exec_ctx_removal",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
@@ -143,7 +143,6 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "event_engine_secure_endpoint",
-                "shard_global_connection_pool",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -231,7 +230,6 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "event_engine_secure_endpoint",
-                "shard_global_connection_pool",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -319,7 +317,6 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "event_engine_secure_endpoint",
-                "shard_global_connection_pool",
             ],
             "event_engine_client_test": [
                 "event_engine_client",

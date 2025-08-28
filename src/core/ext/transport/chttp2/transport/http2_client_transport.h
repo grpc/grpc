@@ -23,6 +23,8 @@
 #include <utility>
 
 #include "src/core/call/call_spine.h"
+#include "src/core/ext/transport/chttp2/transport/flow_control.h"
+#include "src/core/ext/transport/chttp2/transport/flow_control_manager.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
@@ -130,8 +132,9 @@ class Http2ClientTransport final : public ClientTransport {
   auto TestOnlyEnqueueOutgoingFrame(Http2Frame frame) {
     // TODO(tjagtap) : [PH2][P3] : See if making a sender in the constructor
     // and using that always would be more efficient.
+    const size_t tokens = GetFrameMemoryUsage(frame);
     return AssertResultType<absl::Status>(Map(
-        outgoing_frames_.MakeSender().Send(std::move(frame), 1),
+        outgoing_frames_.MakeSender().Send(std::move(frame), tokens),
         [](StatusFlag status) {
           GRPC_HTTP2_CLIENT_DLOG
               << "Http2ClientTransport::TestOnlyEnqueueOutgoingFrame status="
@@ -184,8 +187,29 @@ class Http2ClientTransport final : public ClientTransport {
 
   // Writing to the endpoint.
 
-  // Read from the MPSC queue and write it.
-  auto WriteFromQueue();
+  // Write the frames from MPSC queue to the endpoint. Frames sent from here
+  // will be DATA, HEADER, CONTINUATION and SETTINGS_ACK.  It is essential to
+  // preserve the order of these frames at the time of write.
+  auto WriteFromQueue(std::vector<Http2Frame>&& frames);
+
+  // Write time sensitive control frames to the endpoint. Frames sent from here
+  // will be:
+  // 1. SETTINGS - This is first because for a new connection, SETTINGS MUST be
+  //               the first frame to be written onto a connection as per
+  //               RFC9113.
+  // 2. GOAWAY - This is second because if this is the final GoAway, then we may
+  //             not need to send anything else to the peer.
+  // 3. PING and PING acks.
+  // 4. WINDOW_UPDATE
+  // 5. Custom gRPC security frame
+  // These frames are written to the endpoint in a single endpoint write. If any
+  // module needs to take action after the write (for cases like spawning
+  // timeout promises), they MUST plug the call in the
+  // NotifyControlFramesWriteDone.
+  auto WriteControlFrames();
+
+  // Notify the control frames modules that the endpoint write is done.
+  void NotifyControlFramesWriteDone();
 
   // Returns a promise to keep writing in a Loop till a fail/close is
   // received.
@@ -213,8 +237,9 @@ class Http2ClientTransport final : public ClientTransport {
   auto EnqueueOutgoingFrame(Http2Frame frame) {
     // TODO(tjagtap) : [PH2][P3] : See if making a sender in the constructor
     // and using that always would be more efficient.
+    const size_t tokens = GetFrameMemoryUsage(frame);
     return AssertResultType<absl::Status>(Map(
-        outgoing_frames_.MakeSender().Send(std::move(frame), 1),
+        outgoing_frames_.MakeSender().Send(std::move(frame), tokens),
         [self = RefAsSubclass<Http2ClientTransport>()](StatusFlag status) {
           GRPC_HTTP2_CLIENT_DLOG
               << "Http2ClientTransport::EnqueueOutgoingFrame status=" << status;
@@ -239,16 +264,19 @@ class Http2ClientTransport final : public ClientTransport {
 
   // Managing the streams
   struct Stream : public RefCounted<Stream> {
-    explicit Stream(CallHandler call, const uint32_t stream_id1)
+    explicit Stream(CallHandler call, const uint32_t stream_id1,
+                    bool allow_true_binary_metadata_peer,
+                    bool allow_true_binary_metadata_acked)
         : call(std::move(call)),
           stream_state(HttpStreamState::kIdle),
           stream_id(stream_id1),
-          header_assembler(stream_id1),
+          header_assembler(stream_id1, allow_true_binary_metadata_acked),
           did_push_initial_metadata(false),
           did_push_trailing_metadata(false),
           data_queue(MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
               /*is_client*/ true, /*stream_id*/ stream_id1,
-              /*queue_size*/ kStreamQueueSize)) {}
+              /*queue_size*/ kStreamQueueSize,
+              allow_true_binary_metadata_peer)) {}
 
     ////////////////////////////////////////////////////////////////////////////
     // Data Queue Helpers
@@ -519,7 +547,7 @@ class Http2ClientTransport final : public ClientTransport {
     GPR_UNREACHABLE_CODE(return absl::InternalError("Invalid error type"));
   }
 
-  bool bytes_sent_in_last_write_;
+  bool should_reset_ping_clock_;
   bool incoming_header_in_progress_;
   bool incoming_header_end_stream_;
   bool is_first_write_;
@@ -539,7 +567,6 @@ class Http2ClientTransport final : public ClientTransport {
   // Duration to wait for ping ack before triggering timeout
   const Duration ping_timeout_;
   PingManager ping_manager_;
-  std::vector<uint64_t> pending_ping_acks_;
   KeepaliveManager keepalive_manager_;
 
   // Flags
@@ -550,42 +577,19 @@ class Http2ClientTransport final : public ClientTransport {
   }
   auto WaitForPingAck() { return ping_manager_.WaitForPingAck(); }
 
-  // Ping Helper functions
-  // Returns a promise that resolves once a ping frame is written to the
-  // endpoint.
-  auto CreateAndWritePing(bool ack, uint64_t opaque_data) {
-    Http2Frame frame = Http2PingFrame{ack, opaque_data};
-    SliceBuffer output_buf;
-    Serialize(absl::Span<Http2Frame>(&frame, 1), output_buf);
-    return endpoint_.Write(std::move(output_buf), {});
+  void MaybeGetSettingsFrame(SliceBuffer& output_buf) {
+    std::optional<Http2Frame> settings_frame = settings_.MaybeSendUpdate();
+    if (settings_frame.has_value()) {
+      Serialize(absl::Span<Http2Frame>(&settings_frame.value(), 1), output_buf);
+    }
   }
 
+  // Ping Helper functions
   Duration NextAllowedPingInterval() {
     MutexLock lock(&transport_mutex_);
     return (!keepalive_permit_without_calls_ && stream_list_.empty())
                ? Duration::Hours(2)
                : Duration::Seconds(1);
-  }
-
-  auto MaybeSendPing() {
-    return ping_manager_.MaybeSendPing(NextAllowedPingInterval(),
-                                       ping_timeout_);
-  }
-
-  auto MaybeSendPingAcks() {
-    return AssertResultType<absl::Status>(If(
-        pending_ping_acks_.empty(), [] { return absl::OkStatus(); },
-        [this] {
-          std::vector<Http2Frame> frames;
-          frames.reserve(pending_ping_acks_.size());
-          for (auto& opaque_data : pending_ping_acks_) {
-            frames.emplace_back(Http2PingFrame{true, opaque_data});
-          }
-          pending_ping_acks_.clear();
-          SliceBuffer output_buf;
-          Serialize(absl::Span<Http2Frame>(frames), output_buf);
-          return endpoint_.Write(std::move(output_buf), {});
-        }));
   }
 
   auto AckPing(uint64_t opaque_data) {
@@ -621,12 +625,6 @@ class Http2ClientTransport final : public ClientTransport {
         Http2ClientTransport* transport) {
       return std::make_unique<PingSystemInterfaceImpl>(
           PingSystemInterfaceImpl(transport));
-    }
-
-    // Returns a promise that resolves once a ping frame is written to the
-    // endpoint.
-    Promise<absl::Status> SendPing(SendPingArgs args) override {
-      return transport_->CreateAndWritePing(args.ack, args.opaque_data);
     }
 
     Promise<absl::Status> TriggerWrite() override {
@@ -707,18 +705,20 @@ class Http2ClientTransport final : public ClientTransport {
 
   WritableStreams writable_stream_list_;
 
-  auto MaybeAddStreamToWritableStreamList(const uint32_t stream_id,
-                                          const bool became_writable) {
-    if (became_writable) {
+  absl::Status MaybeAddStreamToWritableStreamList(
+      const uint32_t stream_id,
+      const StreamDataQueue<ClientMetadataHandle>::EnqueueResult result) {
+    if (result.became_writable) {
       GRPC_HTTP2_CLIENT_DLOG
           << "Http2ClientTransport MaybeAddStreamToWritableStreamList "
              " Stream id: "
           << stream_id << " became writable";
-      absl::Status status = writable_stream_list_.Enqueue(
-          stream_id, WritableStreams::StreamPriority::kDefault);
+      absl::Status status =
+          writable_stream_list_.Enqueue(stream_id, result.priority);
       if (!status.ok()) {
         return HandleError(Http2Status::Http2ConnectionError(
-            Http2ErrorCode::kProtocolError, "Failed to enqueue stream"));
+            Http2ErrorCode::kRefusedStream,
+            "Failed to enqueue stream to writable stream list"));
       }
     }
     return absl::OkStatus();
