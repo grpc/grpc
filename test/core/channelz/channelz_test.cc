@@ -302,7 +302,7 @@ TEST_P(ChannelzChannelTest, BasicChannelProto) {
       grpc_channel_get_channelz_node(channel.channel());
   upb_Arena* arena = upb_Arena_New();
   grpc_channelz_v2_Entity* entity = grpc_channelz_v2_Entity_new(arena);
-  channelz_channel->SerializeEntity(entity, arena);
+  channelz_channel->SerializeEntity(entity, arena, absl::Milliseconds(100));
   EXPECT_EQ(grpc_channelz_v2_Entity_id(entity), channelz_channel->uuid());
   EXPECT_EQ(UpbStringToStdString(grpc_channelz_v2_Entity_kind(entity)),
             "channel");
