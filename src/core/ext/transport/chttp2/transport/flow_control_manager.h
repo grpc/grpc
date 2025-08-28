@@ -61,8 +61,8 @@ class FlowControlManager {
         transport_window_update_size_ = 0;
       }
       for (auto& pair : stream_window_updates_) {
-        DCHECK_GT(pair.second, 0);
-        if (pair.second > 0) {
+        DCHECK_GT(/*increment=*/pair.second, 0);
+        if (GPR_LIKELY(pair.second > 0)) {
           frames.emplace_back(
               Http2WindowUpdateFrame{/*stream_id=*/pair.first,
                                      /*increment=*/pair.second});
