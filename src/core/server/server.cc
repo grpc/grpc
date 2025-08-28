@@ -1143,13 +1143,15 @@ auto Server::MatchRequestAndMaybeReadFirstMessage(CallHandler call_handler,
 }
 
 auto Server::MatchAndPublishCall(CallHandler call_handler) {
-  // Register the decrement to happen when the CallSpine is eventually destroyed.
+  // Register the decrement to happen when the CallSpine is eventually
+  // destroyed.
   bool added_on_done = call_handler.OnDone([this](bool /*cancelled*/) {
     stream_quota_->DecrementOutstandingRequests();
   });
   if (!added_on_done) {
     // This case should ideally not happen if OnDone is registered early enough.
-    // If the call was already "done" before even spawning, decrement immediately.
+    // If the call was already "done" before even spawning, decrement
+    // immediately.
     stream_quota_->DecrementOutstandingRequests();
   }
 
