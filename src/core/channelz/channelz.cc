@@ -178,7 +178,7 @@ void BaseNode::RunZTrace(
 }
 
 void BaseNode::SerializeEntity(grpc_channelz_v2_Entity* entity,
-                               upb_Arena* arena) {
+                               upb_Arena* arena, absl::Duration timeout) {
   grpc_channelz_v2_Entity_set_id(entity, uuid());
   grpc_channelz_v2_Entity_set_kind(
       entity, StdStringToUpbString(EntityTypeToKind(type_)));
@@ -208,8 +208,7 @@ void BaseNode::SerializeEntity(grpc_channelz_v2_Entity* entity,
   }
   make_data_sink().AddData("v1_compatibility",
                            PropertyList().Set("name", name()));
-  bool completed =
-      done->WaitForNotificationWithTimeout(absl::Milliseconds(100));
+  bool completed = done->WaitForNotificationWithTimeout(timeout);
   sink_impl->Finalize(!completed, entity, arena);
 
   trace_.Render(entity, arena);
@@ -219,11 +218,11 @@ void BaseNode::AddNodeSpecificData(DataSink) {
   // Default implementation does nothing.
 }
 
-std::string BaseNode::SerializeEntityToString() {
+std::string BaseNode::SerializeEntityToString(absl::Duration timeout) {
   upb_Arena* arena = upb_Arena_New();
   auto cleanup = absl::MakeCleanup([arena]() { upb_Arena_Free(arena); });
   grpc_channelz_v2_Entity* entity = grpc_channelz_v2_Entity_new(arena);
-  SerializeEntity(entity, arena);
+  SerializeEntity(entity, arena, timeout);
   size_t length;
   auto* bytes = grpc_channelz_v2_Entity_serialize(entity, arena, &length);
   return std::string(bytes, length);

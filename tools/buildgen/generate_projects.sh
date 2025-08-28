@@ -53,6 +53,15 @@ if [[ ! -d generate_projects_virtual_environment ]]; then
   python3 -m virtualenv generate_projects_virtual_environment
 fi
 
+# Keep grpcio-tools version in sync with XDS_PROTOS_GENCODE_GRPC_VERSION
+# in tools/distrib/python/xds_protos/setup.py.
+#
+# Explanation: since PR #40518, xds-protos grpc gencode contains a poison pill
+# that enforces grpcio runtime version to be equal or greater
+# to the grpcio-tools version that generated the code.
+#
+# Note: this version needs to be updated periodically to keep up with mainstream
+# python releases, as older grpcio-tools release may not support them.
 generate_projects_virtual_environment/bin/pip install --upgrade --ignore-installed grpcio-tools==1.74.0
 generate_projects_virtual_environment/bin/python tools/distrib/python/xds_protos/build.py
 generate_projects_virtual_environment/bin/python tools/distrib/python/make_grpcio_tools.py

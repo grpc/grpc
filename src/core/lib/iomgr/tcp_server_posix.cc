@@ -56,6 +56,7 @@
 #include "absl/strings/str_format.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/event_engine/extensions/supports_fd.h"
 #include "src/core/lib/event_engine/memory_allocator_factory.h"
 #include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
 #include "src/core/lib/event_engine/query_extensions.h"
@@ -157,10 +158,17 @@ static grpc_error_handle CreateEventEngineListener(
               addr.len =
                   static_cast<socklen_t>(sizeof(struct sockaddr_storage));
               // Get the fd of the socket connected to peer.
-              int fd =
-                  reinterpret_cast<
-                      grpc_event_engine::experimental::PosixEndpoint*>(ep.get())
-                      ->GetWrappedFd();
+              auto* supports_fd =
+                  grpc_event_engine::experimental::QueryExtension<
+                      grpc_event_engine::experimental::
+                          EndpointSupportsFdExtension>(ep.get());
+              if (supports_fd == nullptr) {
+                LOG(ERROR)
+                    << "SERVER_CONNECT ERROR: unsupported endpoint created. "
+                       "Endpoint doesn't support file descriptor extension. ";
+                return;
+              }
+              int fd = supports_fd->GetWrappedFd();
               if (getpeername(fd, reinterpret_cast<struct sockaddr*>(addr.addr),
                               &(addr.len)) < 0) {
                 LOG(ERROR) << "Failed getpeername: "
