@@ -78,9 +78,11 @@ grpc_cc_test(
     srcs = ["fuzzing_event_engine_unittest.cc"],
     external_deps = [
         "gtest",
+        "absl/synchronization",
     ],
     deps = [
         ":fuzzing_event_engine",
         "//:gpr_platform",
+        "//src/core:time",
     ],
 )
