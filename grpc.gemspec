@@ -426,6 +426,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/http2_settings.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/http2_settings_manager.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/http2_settings_manager.h )
+  s.files += %w( src/core/ext/transport/chttp2/transport/http2_settings_promises.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/http2_stats_collector.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/http2_stats_collector.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/http2_status.h )

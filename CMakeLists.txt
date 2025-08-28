@@ -16797,8 +16797,6 @@ add_executable(flow_control_test
   src/core/lib/iomgr/sockaddr_utils_posix.cc
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/sleep.cc
-  src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
