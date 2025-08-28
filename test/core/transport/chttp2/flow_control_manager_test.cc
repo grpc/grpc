@@ -26,7 +26,7 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 
 namespace grpc_core {
-namespace chttp2 {
+namespace http2 {
 namespace {
 
 using ::testing::ElementsAre;
@@ -41,76 +41,84 @@ MATCHER_P2(WindowUpdateFrame, stream_id, increment, "") {
 TEST(FlowControlManagerTest, NoUpdates) {
   FlowControlManager manager;
   EXPECT_FALSE(manager.HasWindowUpdates());
-  EXPECT_THAT(manager.GetWindowUpdates(), IsEmpty());
+  EXPECT_THAT(manager.GetFlowControlFramesForPeer(), IsEmpty());
 }
 
 TEST(FlowControlManagerTest, TransportWindowUpdate) {
   FlowControlManager manager;
-  manager.IncrementTransportWindow(100);
+  manager.SendTransportFlowControlToPeer(100u);
   EXPECT_TRUE(manager.HasWindowUpdates());
-  EXPECT_THAT(manager.GetWindowUpdates(),
+  EXPECT_THAT(manager.GetFlowControlFramesForPeer(),
               ElementsAre(VariantWith<Http2WindowUpdateFrame>(
                   WindowUpdateFrame(0u, 100u))));
   EXPECT_FALSE(manager.HasWindowUpdates());
-  EXPECT_THAT(manager.GetWindowUpdates(), IsEmpty());
+  EXPECT_THAT(manager.GetFlowControlFramesForPeer(), IsEmpty());
 }
 
 TEST(FlowControlManagerTest, StreamWindowUpdate) {
   FlowControlManager manager;
-  manager.IncrementStreamWindow(1, 100);
+  manager.SendStreamFlowControlToPeer(1u, 100u);
   EXPECT_TRUE(manager.HasWindowUpdates());
-  EXPECT_THAT(manager.GetWindowUpdates(),
+  EXPECT_THAT(manager.GetFlowControlFramesForPeer(),
               ElementsAre(VariantWith<Http2WindowUpdateFrame>(
                   WindowUpdateFrame(1u, 100u))));
   EXPECT_FALSE(manager.HasWindowUpdates());
-  EXPECT_THAT(manager.GetWindowUpdates(), IsEmpty());
+  EXPECT_THAT(manager.GetFlowControlFramesForPeer(), IsEmpty());
 }
 
 TEST(FlowControlManagerTest, MultipleStreamWindowUpdates) {
   FlowControlManager manager;
-  manager.IncrementStreamWindow(1, 100);
-  manager.IncrementStreamWindow(2, 200);
-  manager.IncrementStreamWindow(1, 50);
+  manager.SendStreamFlowControlToPeer(1u, 100u);
+  manager.SendStreamFlowControlToPeer(3u, 200u);
+  manager.SendStreamFlowControlToPeer(1u, 50u);
   EXPECT_TRUE(manager.HasWindowUpdates());
   EXPECT_THAT(
-      manager.GetWindowUpdates(),
+      manager.GetFlowControlFramesForPeer(),
       UnorderedElementsAre(
           VariantWith<Http2WindowUpdateFrame>(WindowUpdateFrame(1u, 150u)),
-          VariantWith<Http2WindowUpdateFrame>(WindowUpdateFrame(2u, 200u))));
+          VariantWith<Http2WindowUpdateFrame>(WindowUpdateFrame(3u, 200u))));
   EXPECT_FALSE(manager.HasWindowUpdates());
-  EXPECT_THAT(manager.GetWindowUpdates(), IsEmpty());
+  EXPECT_THAT(manager.GetFlowControlFramesForPeer(), IsEmpty());
 }
 
 TEST(FlowControlManagerTest, TransportAndStreamWindowUpdates) {
   FlowControlManager manager;
-  manager.IncrementTransportWindow(500);
-  manager.IncrementStreamWindow(1, 100);
-  manager.IncrementStreamWindow(2, 200);
+  manager.SendTransportFlowControlToPeer(500u);
+  EXPECT_TRUE(manager.HasWindowUpdates());
+  manager.SendStreamFlowControlToPeer(1u, 100u);
+  EXPECT_TRUE(manager.HasWindowUpdates());
+  manager.SendStreamFlowControlToPeer(3u, 200u);
+  EXPECT_TRUE(manager.HasWindowUpdates());
+  manager.SendStreamFlowControlToPeer(1u, 50u);
+  EXPECT_TRUE(manager.HasWindowUpdates());
+  manager.SendStreamFlowControlToPeer(3u, 100u);
   EXPECT_TRUE(manager.HasWindowUpdates());
   EXPECT_THAT(
-      manager.GetWindowUpdates(),
+      manager.GetFlowControlFramesForPeer(),
       UnorderedElementsAre(
           VariantWith<Http2WindowUpdateFrame>(WindowUpdateFrame(0u, 500u)),
-          VariantWith<Http2WindowUpdateFrame>(WindowUpdateFrame(1u, 100u)),
-          VariantWith<Http2WindowUpdateFrame>(WindowUpdateFrame(2u, 200u))));
+          VariantWith<Http2WindowUpdateFrame>(WindowUpdateFrame(1u, 150u)),
+          VariantWith<Http2WindowUpdateFrame>(WindowUpdateFrame(3u, 300u))));
   EXPECT_FALSE(manager.HasWindowUpdates());
-  EXPECT_THAT(manager.GetWindowUpdates(), IsEmpty());
+  EXPECT_THAT(manager.GetFlowControlFramesForPeer(), IsEmpty());
 }
 
 TEST(FlowControlManagerTest, RemoveStream) {
   FlowControlManager manager;
-  manager.IncrementStreamWindow(1, 100);
-  manager.IncrementStreamWindow(2, 200);
-  manager.RemoveStream(1);
+  manager.SendStreamFlowControlToPeer(1u, 100u);
   EXPECT_TRUE(manager.HasWindowUpdates());
-  EXPECT_THAT(manager.GetWindowUpdates(),
+  manager.SendStreamFlowControlToPeer(3u, 200u);
+  EXPECT_TRUE(manager.HasWindowUpdates());
+  manager.RemoveStream(1u);
+  EXPECT_TRUE(manager.HasWindowUpdates());
+  EXPECT_THAT(manager.GetFlowControlFramesForPeer(),
               ElementsAre(VariantWith<Http2WindowUpdateFrame>(
-                  WindowUpdateFrame(2u, 200u))));
+                  WindowUpdateFrame(3u, 200u))));
   EXPECT_FALSE(manager.HasWindowUpdates());
 }
 
 }  // namespace
-}  // namespace chttp2
+}  // namespace http2
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
