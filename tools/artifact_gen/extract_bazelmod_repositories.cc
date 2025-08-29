@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "extract_metadata_from_bazel_mod.h"
+#include "extract_bazelmod_repositories.h"
 
 #include <absl/strings/match.h>
 
@@ -37,7 +37,7 @@
 
 namespace {
 
-class HttpArchiveParser {
+class BazelModParser {
  public:
   absl::Status Parse(std::string_view line) {
     static const std::unordered_set<std::string_view> kIgnoredAttributes = {
@@ -73,7 +73,7 @@ class HttpArchiveParser {
       return absl::OkStatus();
     }
     if (line == ")") {
-      archives_.emplace_back(std::move(current_).value());
+      repository_.emplace_back(std::move(current_).value());
       current_.reset();
       return absl::OkStatus();
     }
@@ -112,16 +112,16 @@ class HttpArchiveParser {
     return absl::OkStatus();
   }
 
-  std::vector<HttpArchive> archives() const { return archives_; }
+  std::vector<BazelModRepository> repository() const { return repository_; }
 
  private:
-  std::optional<HttpArchive> current_;
-  std::vector<HttpArchive> archives_;
+  std::optional<BazelModRepository> current_;
+  std::vector<BazelModRepository> repository_;
 };
 
 }  // namespace
 
-std::string HttpArchive::Stringify() const {
+std::string BazelModRepository::Stringify() const {
   return absl::StrFormat(
       "%s = { integrity = \"%s\", strip_prefix = \"%s\", urls = [%s] }", alias_,
       integrity_, strip_prefix_,
@@ -131,19 +131,19 @@ std::string HttpArchive::Stringify() const {
 }
 
 // static
-absl::StatusOr<std::vector<HttpArchive>> HttpArchive::ParseHttpArchives(
-    const std::string& archives_query_path) {
+absl::StatusOr<std::vector<BazelModRepository>>
+BazelModRepository::ParseBazelOutput(const std::string& archives_query_path) {
   std::ifstream reader(archives_query_path);
   if (!reader.is_open()) {
     return absl::UnavailableError(
         absl::Substitute("Can't open $0\n", archives_query_path));
   }
   std::string line;
-  HttpArchiveParser parser;
+  BazelModParser parser;
   while (std::getline(reader, line)) {
     if (absl::Status status = parser.Parse(line); !status.ok()) {
       return status;
     }
   }
-  return parser.archives();
+  return parser.repository();
 }

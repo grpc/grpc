@@ -17,7 +17,7 @@ cc_library(
     srcs = ["extract_metadata_from_bazel_xml.cc"],
     hdrs = ["extract_metadata_from_bazel_xml.h"],
     deps = [
-        ":extract_metadata_from_bazel_mod",
+        ":extract_bazelmod_repositories",
         "@abseil-cpp//absl/algorithm:container",
         "@abseil-cpp//absl/flags:flag",
         "@abseil-cpp//absl/log",
@@ -108,9 +108,9 @@ cc_binary(
 )
 
 cc_library(
-    name = "extract_metadata_from_bazel_mod",
-    srcs = ["extract_metadata_from_bazel_mod.cc"],
-    hdrs = ["extract_metadata_from_bazel_mod.h"],
+    name = "extract_bazelmod_repositories",
+    srcs = ["extract_bazelmod_repositories.cc"],
+    hdrs = ["extract_bazelmod_repositories.h"],
     deps = [
         "@abseil-cpp//absl/log",
         "@abseil-cpp//absl/log:globals",
@@ -123,5 +123,5 @@ cc_library(
 cc_binary(
     name = "boop",
     srcs = ["boop.cc"],
-    deps = [":extract_metadata_from_bazel_mod"],
+    deps = [":extract_bazelmod_repositories"],
 )

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TOOLS_ARTIFACT_GEN_EXTRACT_METADATA_FROM_BAZEL_MOD_H
-#define GRPC_TOOLS_ARTIFACT_GEN_EXTRACT_METADATA_FROM_BAZEL_MOD_H
+#ifndef GRPC_TOOLS_ARTIFACT_GEN_EXTRACT_BAZELMOD_REPOSITORIES_H
+#define GRPC_TOOLS_ARTIFACT_GEN_EXTRACT_BAZELMOD_REPOSITORIES_H
 
 #include <string>
 
@@ -22,18 +22,20 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 
-class HttpArchive {
+class BazelModRepository {
  public:
-  static absl::StatusOr<std::vector<HttpArchive>> ParseHttpArchives(
+  static absl::StatusOr<std::vector<BazelModRepository>> ParseBazelOutput(
       const std::string& archives_query_path);
 
-  explicit HttpArchive(absl::string_view alias) : alias_(alias) {}
+  explicit BazelModRepository(absl::string_view alias) : alias_(alias) {}
 
   std::string alias() const { return alias_; }
 
   std::string integrity() const { return integrity_; }
 
   std::string strip_prefix() const { return strip_prefix_; }
+
+  absl::Span<const std::string> urls() const { return urls_; }
 
   void set_integrity(absl::string_view integrity) { integrity_ = integrity; }
 
@@ -46,7 +48,7 @@ class HttpArchive {
   }
 
   template <typename Sink>
-  friend void AbslStringify(Sink& s, const HttpArchive& archive) {
+  friend void AbslStringify(Sink& s, const BazelModRepository& archive) {
     s.Append(archive.Stringify());
   }
 
@@ -59,4 +61,4 @@ class HttpArchive {
   absl::InlinedVector<std::string, 3> urls_;
 };
 
-#endif  // GRPC_TOOLS_ARTIFACT_GEN_EXTRACT_METADATA_FROM_BAZEL_MOD_H
+#endif  // GRPC_TOOLS_ARTIFACT_GEN_EXTRACT_BAZELMOD_REPOSITORIES_H

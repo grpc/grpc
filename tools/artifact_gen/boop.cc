@@ -3,7 +3,7 @@
 #include "absl/log/globals.h"
 #include "absl/log/initialize.h"
 #include "absl/log/log.h"
-#include "extract_metadata_from_bazel_mod.h"
+#include "extract_bazelmod_repositories.h"
 
 int main(int argc, const char* argv[]) {
   absl::InitializeLog();
@@ -12,11 +12,11 @@ int main(int argc, const char* argv[]) {
     std::cerr << "Bazel output file was not specified\n";
     return 1;
   }
-  auto archives = HttpArchive::ParseHttpArchives(argv[1]);
+  auto archives = BazelModRepository::ParseBazelOutput(argv[1]);
   if (!archives.ok()) {
     LOG(FATAL) << archives.status();
   }
-  for (const HttpArchive& archive : *archives) {
+  for (const BazelModRepository& archive : *archives) {
     LOG(INFO) << archive;
   }
 }
