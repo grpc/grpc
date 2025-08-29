@@ -18,8 +18,8 @@ load(":generate_resolver_component_tests.bzl", "generate_resolver_component_test
 package(
     default_visibility = ["//visibility:public"],
     features = [
-        "-layering_check",
-        "-parse_headers",
+        "layering_check",
+        "parse_headers",
     ],
 )
 

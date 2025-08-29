@@ -57,12 +57,17 @@ grpc_cc_test(
         "absl/container:flat_hash_map",
         "absl/log",
         "absl/log:check",
+        "absl/status",
         "absl/strings",
     ],
     deps = [
         "//:channelz_property_list_upb",
         "//src/core:channelz_property_list",
+        "//src/core:json",
         "//src/core:json_writer",
+        "//src/core:upb_utils",
+        "@com_google_protobuf//:duration_upb_proto",
+        "@com_google_protobuf//:timestamp_upb_proto",
     ],
 )
 
