@@ -17,13 +17,13 @@
 namespace grpc_core {
 
 std::optional<absl::string_view> RpcMatchContext::GetHeaderValue(
-    absl::string_view header_name, std::string* concatenated_value) const {
+    absl::string_view header_name) const {
   if (absl::EndsWith(header_name, "-bin")) {
     return std::nullopt;
   } else if (header_name == "content-type") {
     return "application/grpc";
   }
-  return initial_metadata_->GetStringValue(header_name, concatenated_value);
+  return initial_metadata_->GetStringValue(header_name, &buffer_);
 }
 
 }  // namespace grpc_core

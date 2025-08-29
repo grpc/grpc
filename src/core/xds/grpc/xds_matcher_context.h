@@ -34,10 +34,11 @@ class RpcMatchContext : public XdsMatcher::MatchContext {
   // As special cases, binary headers return a value of std::nullopt, and
   // "content-type" header returns "application/grpc".
   std::optional<absl::string_view> GetHeaderValue(
-      absl::string_view header_name, std::string* concatenated_value) const;
+      absl::string_view header_name) const;
 
  private:
   grpc_metadata_batch* initial_metadata_;
+  mutable std::string buffer_;
 };
 
 }  // namespace grpc_core

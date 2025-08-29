@@ -42,7 +42,12 @@ namespace grpc_core {
 class XdsMatcher {
  public:
   // An interface implemented by the caller to provide the context from
-  // which the inputs will extract data.
+  // which the inputs will extract data. There can be different context
+  // implementations for different use cases -- for example, there will
+  // be an implementation that provides data about a data plane RPC for
+  // use in per-RPC matching decisions, but there could also be an
+  // implementation that provides data about incoming TCP connections
+  // for L4 routing decisions.
   class MatchContext {
    public:
     virtual ~MatchContext() = default;
@@ -52,6 +57,8 @@ class XdsMatcher {
   };
 
   // Produces match input from MatchContext.
+  // There will be one subclass for each proto type that we support in
+  // the input fields.
   template <typename T>
   class InputValue {
    public:
@@ -66,6 +73,8 @@ class XdsMatcher {
   };
 
   // An action to be returned if the conditions match.
+  // There will be one subclass for each proto type that we support in
+  // the action field.
   class Action {
    public:
     virtual ~Action() = default;
@@ -79,6 +88,10 @@ class XdsMatcher {
   using Result = absl::InlinedVector<Action*, 1>;
 
   // What to do if a match is successful.
+  // If this contains an action, the action will be added to the set of
+  // actions to return. If keep_matching is false, matching will return
+  // true without evaluating any further matches; otherwise, matching
+  // will continue to find a final match.
   struct OnMatch {
     // Constructor for Action variant
     OnMatch(std::unique_ptr<Action> act_ptr, bool km)
@@ -105,6 +118,11 @@ class XdsMatcher {
   virtual std::string ToString() const = 0;
 
   // Finds matching actions, which are added to result.
+  // Returns true if the match is successful, in which case result will
+  // contain at least one action.
+  // Note that if a match is found but has keep_matching=true, the
+  // action will be added to result, but the match will not be
+  // considered successful.
   virtual bool FindMatches(const MatchContext& context,
                            Result& result) const = 0;
 };
@@ -114,6 +132,7 @@ class XdsMatcher {
 //
 
 // Evaluates a list of predicates and corresponding actions.
+// The first matching predicate wins.
 class XdsMatcherList : public XdsMatcher {
  public:
   // Base class for predicates.
@@ -180,7 +199,9 @@ class XdsMatcherList : public XdsMatcher {
         XdsMatcherList::SinglePredicate<typename InputType::ProducedType>>(
         std::move(input), std::move(matcher));
   }
-
+  
+  // Alternative template specialization to return null in the case where
+  // the input produces a different type than the matcher consumes.
   template <typename InputType, typename MatcherType>
   static absl::enable_if_t<
       !std::is_same<typename InputType::ProducedType,

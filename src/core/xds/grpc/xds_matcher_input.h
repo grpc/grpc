@@ -27,6 +27,7 @@ template <typename T>
 class XdsMatcherInputFactory final {
  public:
   virtual absl::string_view type() const = delete;
+  virtual UniqueTypeName context_type() const = delete;
   virtual std::unique_ptr<XdsMatcher::InputValue<T>> ParseAndCreateInput(
       const XdsResourceType::DecodeContext& context,
       absl::string_view serialized_value,
@@ -82,7 +83,6 @@ class MetadataInput : public XdsMatcher::InputValue<absl::string_view> {
 
  private:
   std::string key_;
-  mutable std::string buffer_;
 };
 
 class MetadataInputFactory : public XdsMatcherInputFactory<absl::string_view> {

@@ -475,6 +475,28 @@ TEST(XdsMatcherPrefixMapTest, PrefixMatch) {
               ::testing::ElementsAre(IsTestAction("prefix_match_action")));
 }
 
+TEST(XdsMatcherPrefixMapTest, BasicMatchNestedMatcher) {
+  TestMatchContext context("/foo");
+  XdsMatcher::Result result;
+  absl::flat_hash_map<std::string, XdsMatcher::OnMatch> map;
+  std::vector<XdsMatcherList::FieldMatcher> nested_matchers;
+  nested_matchers.emplace_back(
+      XdsMatcherList::CreateSinglePredicate(
+          std::make_unique<TestPathInput>(),
+          std::make_unique<XdsMatcherList::StringInputMatcher>(
+              StringMatcher::Create(StringMatcher::Type::kExact, "/foo")
+                  .value())),
+      XdsMatcher::OnMatch(std::make_unique<TestAction>("foo_action"), false));
+  map.emplace("/foo",
+              XdsMatcher::OnMatch(std::make_unique<XdsMatcherList>(
+                                      std::move(nested_matchers), std::nullopt),
+                                  false));
+  XdsMatcherPrefixMap matcher(std::make_unique<TestPathInput>(), std::move(map),
+                              std::nullopt);
+  EXPECT_TRUE(matcher.FindMatches(context, result));
+  EXPECT_THAT(result, ::testing::ElementsAre(IsTestAction("foo_action")));
+}
+
 TEST(XdsMatcherPrefixMapTest, PrefixMatchWithKeepMatching) {
   TestMatchContext context("/foo/bar/baz");
   XdsMatcher::Result result;

@@ -19,6 +19,7 @@
 #include <google/protobuf/wrappers.pb.h>
 
 #include "envoy/type/matcher/v3/http_inputs.pb.h"
+#include "gmock/gmock.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "gtest/gtest.h"
 #include "src/core/util/down_cast.h"
@@ -631,9 +632,7 @@ TEST_F(MatcherTest, MatcherListSinglePredicateEmpty) {
   StringValue string_value;
   string_value.set_value("foobar");
   action->mutable_typed_config()->PackFrom(string_value);
-  // Single Predicate
-  // Alternative : we give error for both nothing is present or custom match
-  // field_matcher->mutable_predicate()->mutable_single_predicate();
+  // Custom single predicate
   field_matcher->mutable_predicate()
       ->mutable_single_predicate()
       ->mutable_custom_match();
@@ -661,15 +660,13 @@ TEST_F(MatcherTest, MatcherListSinglePredicateInvalidValueMatch) {
   // Single Predicate
   HttpRequestHeaderMatchInput http_request_header_match_input;
   http_request_header_match_input.set_header_name("foo");
-  auto* input = field_matcher->mutable_predicate()
-                    ->mutable_single_predicate()
-                    ->mutable_input();
+  auto* single_predicate =
+      field_matcher->mutable_predicate()->mutable_single_predicate();
+  auto* input = single_predicate->mutable_input();
   input->set_name("foo");
   input->mutable_typed_config()->PackFrom(http_request_header_match_input);
   // Invalid string matcher
-  field_matcher->mutable_predicate()
-      ->mutable_single_predicate()
-      ->mutable_value_match();
+  single_predicate->mutable_value_match();
   ValidationErrors errors;
   auto matcher =
       ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
@@ -681,6 +678,36 @@ TEST_F(MatcherTest, MatcherListSinglePredicateInvalidValueMatch) {
             "match error:invalid string matcher]");
 }
 
+TEST_F(MatcherTest, MatcherListSinglePredicateInvalidStringMatcherRegex) {
+  Matcher matcher_proto;
+  auto* field_matcher = matcher_proto.mutable_matcher_list()->add_matchers();
+  auto* action = field_matcher->mutable_on_match()->mutable_action();
+  action->set_name("type.googleapis.com/google.protobuf.StringValue");
+  StringValue string_value;
+  string_value.set_value("foobar");
+  action->mutable_typed_config()->PackFrom(string_value);
+  // Single Predicate
+  HttpRequestHeaderMatchInput http_request_header_match_input;
+  http_request_header_match_input.set_header_name("foo");
+  auto* single_predicate =
+      field_matcher->mutable_predicate()->mutable_single_predicate();
+  auto* input = single_predicate->mutable_input();
+  input->set_name("foo");
+  input->mutable_typed_config()->PackFrom(http_request_header_match_input);
+  // Invalid string matcher (invalid regex)
+  single_predicate->mutable_value_match()->mutable_safe_regex()->set_regex("[");
+  ValidationErrors errors;
+  auto matcher =
+      ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
+                      action_registry_, RpcMatchContext::Type(), &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_THAT(
+      errors.status(absl::StatusCode::kInvalidArgument, "").message(),
+      ::testing::HasSubstr("field:matcher_list.matchers[0].predicate.single_"
+                           "predicate.value_match error:Invalid regex string "
+                           "specified in matcher: missing ]: []"));
+}
+
 TEST_F(MatcherTest, MatcherListSinglePredicateInvalidInput) {
   Matcher matcher_proto;
   auto* field_matcher = matcher_proto.mutable_matcher_list()->add_matchers();
@@ -690,14 +717,11 @@ TEST_F(MatcherTest, MatcherListSinglePredicateInvalidInput) {
   string_value.set_value("foobar");
   action->mutable_typed_config()->PackFrom(string_value);
   // Single Predicate
-  field_matcher->mutable_predicate()
-      ->mutable_single_predicate()
-      ->mutable_value_match()
-      ->set_exact("foo");
+  auto* single_predicate =
+      field_matcher->mutable_predicate()->mutable_single_predicate();
+  single_predicate->mutable_value_match()->set_exact("foo");
   // Invalid input
-  auto* input = field_matcher->mutable_predicate()
-                    ->mutable_single_predicate()
-                    ->mutable_input();
+  auto* input = single_predicate->mutable_input();
   input->set_name("invalid");
   input->mutable_typed_config();
   ValidationErrors errors;
@@ -711,6 +735,36 @@ TEST_F(MatcherTest, MatcherListSinglePredicateInvalidInput) {
             "type_url error:field not present]");
 }
 
+TEST_F(MatcherTest, MatcherListSinglePredicateInputTypeNotInRegistry) {
+  Matcher matcher_proto;
+  auto* field_matcher = matcher_proto.mutable_matcher_list()->add_matchers();
+  auto* action = field_matcher->mutable_on_match()->mutable_action();
+  action->set_name("type.googleapis.com/google.protobuf.StringValue");
+  StringValue string_value;
+  string_value.set_value("foobar");
+  action->mutable_typed_config()->PackFrom(string_value);
+  // Single Predicate
+  auto* single_predicate =
+      field_matcher->mutable_predicate()->mutable_single_predicate();
+  single_predicate->mutable_value_match()->set_exact("foo");
+  // Input with type not in registry
+  auto* input = single_predicate->mutable_input();
+  input->set_name("invalid");
+  google::protobuf::BoolValue bool_value;
+  bool_value.set_value(true);
+  input->mutable_typed_config()->PackFrom(bool_value);
+  ValidationErrors errors;
+  auto matcher =
+      ParseXdsMatcher(decode_context_, ConvertToUpb(matcher_proto),
+                      action_registry_, RpcMatchContext::Type(), &errors);
+  EXPECT_FALSE(errors.ok());
+  EXPECT_EQ(errors.status(absl::StatusCode::kInvalidArgument, "").message(),
+            ": "
+            "[field:matcher_list.matchers[0].predicate.single_predicate.input."
+            "value[google.protobuf.BoolValue] error:Unsupported Input "
+            "type:google.protobuf.BoolValue]");
+}
+
 TEST_F(MatcherTest, MatcherListSinglePredicateInputTypedStruct) {
   Matcher matcher_proto;
   auto* field_matcher = matcher_proto.mutable_matcher_list()->add_matchers();
@@ -720,14 +774,11 @@ TEST_F(MatcherTest, MatcherListSinglePredicateInputTypedStruct) {
   string_value.set_value("foobar");
   action->mutable_typed_config()->PackFrom(string_value);
   // Single Predicate
-  field_matcher->mutable_predicate()
-      ->mutable_single_predicate()
-      ->mutable_value_match()
-      ->set_exact("foo");
+  auto* single_predicate =
+      field_matcher->mutable_predicate()->mutable_single_predicate();
+  single_predicate->mutable_value_match()->set_exact("foo");
   // Invalid input of type typed struct
-  auto* input = field_matcher->mutable_predicate()
-                    ->mutable_single_predicate()
-                    ->mutable_input();
+  auto* input = single_predicate->mutable_input();
   input->set_name("my-typed-struct-input");
   TypedStruct typed_struct;
   typed_struct.set_type_url(
@@ -745,7 +796,7 @@ TEST_F(MatcherTest, MatcherListSinglePredicateInputTypedStruct) {
       ": [field:matcher_list.matchers[0].predicate.single_predicate.input.value"
       "[xds.type.v3.TypedStruct].value[envoy.type.matcher.v3."
       "HttpRequestHeaderMatchInput]"
-      " error:Unsuppored action format (Json found instead of string)]");
+      " error:Unsuppored input format (Json found instead of string)]");
 }
 
 TEST_F(MatcherTest, MatcherListSinglePredicateInputContextDifferent) {
@@ -759,15 +810,12 @@ TEST_F(MatcherTest, MatcherListSinglePredicateInputContextDifferent) {
   // Single Predicate
   HttpRequestHeaderMatchInput http_request_header_match_input;
   http_request_header_match_input.set_header_name("foo");
-  auto* input = field_matcher->mutable_predicate()
-                    ->mutable_single_predicate()
-                    ->mutable_input();
+  auto* single_predicate =
+      field_matcher->mutable_predicate()->mutable_single_predicate();
+  auto* input = single_predicate->mutable_input();
   input->set_name("foo");
   input->mutable_typed_config()->PackFrom(http_request_header_match_input);
-  field_matcher->mutable_predicate()
-      ->mutable_single_predicate()
-      ->mutable_value_match()
-      ->set_exact("foo");
+  single_predicate->mutable_value_match()->set_exact("foo");
   ValidationErrors errors;
   auto matcher = ParseXdsMatcher(
       decode_context_, ConvertToUpb(matcher_proto), action_registry_,
@@ -787,15 +835,12 @@ TEST_F(MatcherTest, MatcherListSinglePredicateActionTypeStruct) {
   // Single Predicate
   HttpRequestHeaderMatchInput http_request_header_match_input;
   http_request_header_match_input.set_header_name("foo");
-  auto* input = field_matcher->mutable_predicate()
-                    ->mutable_single_predicate()
-                    ->mutable_input();
+  auto* single_predicate =
+      field_matcher->mutable_predicate()->mutable_single_predicate();
+  auto* input = single_predicate->mutable_input();
   input->set_name("foo");
   input->mutable_typed_config()->PackFrom(http_request_header_match_input);
-  field_matcher->mutable_predicate()
-      ->mutable_single_predicate()
-      ->mutable_value_match()
-      ->set_exact("foo");
+  single_predicate->mutable_value_match()->set_exact("foo");
   // Action typed struct
   auto* action = field_matcher->mutable_on_match()->mutable_action();
   action->set_name("my-typed-struct-input");
@@ -822,15 +867,12 @@ TEST_F(MatcherTest, MatcherListSinglePredicateActionUnsupported) {
   // Single Predicate
   HttpRequestHeaderMatchInput http_request_header_match_input;
   http_request_header_match_input.set_header_name("foo");
-  auto* input = field_matcher->mutable_predicate()
-                    ->mutable_single_predicate()
-                    ->mutable_input();
+  auto* single_predicate =
+      field_matcher->mutable_predicate()->mutable_single_predicate();
+  auto* input = single_predicate->mutable_input();
   input->set_name("foo");
   input->mutable_typed_config()->PackFrom(http_request_header_match_input);
-  field_matcher->mutable_predicate()
-      ->mutable_single_predicate()
-      ->mutable_value_match()
-      ->set_exact("foo");
+  single_predicate->mutable_value_match()->set_exact("foo");
   // Creating invalid action not in registry,
   // (using header input as action for test)
   auto* action = field_matcher->mutable_on_match()->mutable_action();
@@ -854,15 +896,12 @@ TEST_F(MatcherTest, MatcherListSinglePredicateOnMatchEmpty) {
   // Single Predicate
   HttpRequestHeaderMatchInput http_request_header_match_input;
   http_request_header_match_input.set_header_name("foo");
-  auto* input = field_matcher->mutable_predicate()
-                    ->mutable_single_predicate()
-                    ->mutable_input();
+  auto* single_predicate =
+      field_matcher->mutable_predicate()->mutable_single_predicate();
+  auto* input = single_predicate->mutable_input();
   input->set_name("foo");
   input->mutable_typed_config()->PackFrom(http_request_header_match_input);
-  field_matcher->mutable_predicate()
-      ->mutable_single_predicate()
-      ->mutable_value_match()
-      ->set_exact("foo");
+  single_predicate->mutable_value_match()->set_exact("foo");
   // On Match
   field_matcher->mutable_on_match();
   ValidationErrors errors;
@@ -881,15 +920,12 @@ TEST_F(MatcherTest, MatcherListSinglePredicateOnMatchEmptyMatcher) {
   // Single Predicate
   HttpRequestHeaderMatchInput http_request_header_match_input;
   http_request_header_match_input.set_header_name("foo");
-  auto* input = field_matcher->mutable_predicate()
-                    ->mutable_single_predicate()
-                    ->mutable_input();
+  auto* single_predicate =
+      field_matcher->mutable_predicate()->mutable_single_predicate();
+  auto* input = single_predicate->mutable_input();
   input->set_name("foo");
   input->mutable_typed_config()->PackFrom(http_request_header_match_input);
-  field_matcher->mutable_predicate()
-      ->mutable_single_predicate()
-      ->mutable_value_match()
-      ->set_exact("foo");
+  single_predicate->mutable_value_match()->set_exact("foo");
   // On Match with empty nested matcher
   field_matcher->mutable_on_match()->mutable_matcher();
   ValidationErrors errors;
@@ -908,15 +944,12 @@ TEST_F(MatcherTest, MatcherListSinglePredicateOnMatchEmptyAction) {
   // Single Predicate
   HttpRequestHeaderMatchInput http_request_header_match_input;
   http_request_header_match_input.set_header_name("foo");
-  auto* input = field_matcher->mutable_predicate()
-                    ->mutable_single_predicate()
-                    ->mutable_input();
+  auto* single_predicate =
+      field_matcher->mutable_predicate()->mutable_single_predicate();
+  auto* input = single_predicate->mutable_input();
   input->set_name("foo");
   input->mutable_typed_config()->PackFrom(http_request_header_match_input);
-  field_matcher->mutable_predicate()
-      ->mutable_single_predicate()
-      ->mutable_value_match()
-      ->set_exact("foo");
+  single_predicate->mutable_value_match()->set_exact("foo");
   // On Match
   field_matcher->mutable_on_match()->mutable_action();
   ValidationErrors errors;
@@ -929,23 +962,18 @@ TEST_F(MatcherTest, MatcherListSinglePredicateOnMatchEmptyAction) {
             "present]");
 }
 
-// CHecking only for one ans ParseOnMatch was tested with Matcher List
-// This is just to check label for on_no_match
 TEST_F(MatcherTest, MatcherOnNoMatchError) {
   Matcher matcher_proto;
   auto* field_matcher = matcher_proto.mutable_matcher_list()->add_matchers();
   // Single Predicate
   HttpRequestHeaderMatchInput http_request_header_match_input;
   http_request_header_match_input.set_header_name("foo");
-  auto* input = field_matcher->mutable_predicate()
-                    ->mutable_single_predicate()
-                    ->mutable_input();
+  auto* single_predicate =
+      field_matcher->mutable_predicate()->mutable_single_predicate();
+  auto* input = single_predicate->mutable_input();
   input->set_name("foo");
   input->mutable_typed_config()->PackFrom(http_request_header_match_input);
-  field_matcher->mutable_predicate()
-      ->mutable_single_predicate()
-      ->mutable_value_match()
-      ->set_exact("foo");
+  single_predicate->mutable_value_match()->set_exact("foo");
   auto* action = field_matcher->mutable_on_match()->mutable_action();
   action->set_name("type.googleapis.com/google.protobuf.StringValue");
   StringValue string_value;

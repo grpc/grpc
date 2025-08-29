@@ -27,6 +27,7 @@ namespace grpc_core {
 // Parses the xDS Matcher proto into an `XdsMatcher` object.
 // This is the top-level function expected to be called for parsing the
 // matcher.proto.
+// TODO(bpawan) : Add support for envoy matcher proto as well.
 std::unique_ptr<XdsMatcher> ParseXdsMatcher(
     const XdsResourceType::DecodeContext& context,
     const xds_type_matcher_v3_Matcher* matcher,

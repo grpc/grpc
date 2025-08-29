@@ -23,8 +23,7 @@ namespace grpc_core {
 std::optional<absl::string_view> MetadataInput::GetValue(
     const XdsMatcher::MatchContext& context) const {
   CHECK_EQ(context.type(), RpcMatchContext::Type());
-  return DownCast<const RpcMatchContext&>(context).GetHeaderValue(key_,
-                                                                  &buffer_);
+  return DownCast<const RpcMatchContext&>(context).GetHeaderValue(key_);
 }
 
 std::unique_ptr<XdsMatcher::InputValue<absl::string_view>>
@@ -71,7 +70,7 @@ XdsMatcherInputRegistry<absl::string_view>::ParseAndCreateInput(
   const absl::string_view* serialized_value =
       std::get_if<absl::string_view>(&input.value);
   if (serialized_value == nullptr) {
-    errors->AddError("Unsuppored action format (Json found instead of string)");
+    errors->AddError("Unsuppored input format (Json found instead of string)");
     return nullptr;
   }
   return it->second->ParseAndCreateInput(context, *serialized_value, errors);

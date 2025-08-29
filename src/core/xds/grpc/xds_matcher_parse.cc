@@ -44,6 +44,10 @@ std::unique_ptr<XdsMatcher::InputValue<absl::string_view>> ParseStringInput(
     const XdsResourceType::DecodeContext& context,
     const xds_core_v3_TypedExtensionConfig* input,
     const UniqueTypeName& matcher_context, ValidationErrors* errors) {
+  if (input == nullptr) {
+    errors->AddError("field not present");
+    return nullptr;
+  }
   const google_protobuf_Any* any =
       xds_core_v3_TypedExtensionConfig_typed_config(input);
   auto extension = ExtractXdsExtension(context, any, errors);
@@ -78,6 +82,10 @@ std::unique_ptr<XdsMatcherList::InputMatcher<absl::string_view>>
 ParseStringMatcher(const XdsResourceType::DecodeContext& context,
                    const xds_type_matcher_v3_StringMatcher* string_matcher_upb,
                    ValidationErrors* errors) {
+  if (string_matcher_upb == nullptr) {
+    errors->AddError("field not present");
+    return nullptr;
+  }
   auto string_matcher = StringMatcherParse(context, string_matcher_upb, errors);
   return std::make_unique<XdsMatcherList::StringInputMatcher>(
       std::move(string_matcher));
@@ -90,6 +98,11 @@ XdsMatcher::OnMatch ParseOnMatch(
     const xds_type_matcher_v3_Matcher_OnMatch* on_match,
     const XdsMatcherActionRegistry& action_registry,
     const UniqueTypeName& matcher_context, ValidationErrors* errors) {
+  if (on_match == nullptr) {
+    errors->AddError("field not present");
+    return XdsMatcher::OnMatch(std::unique_ptr<XdsMatcher::Action>(nullptr),
+                               false);
+  }
   // TODO(bpawan): b/431645620 Parse keep matching once we move to latest xds
   // protos
   bool keep_matching = false;
@@ -146,35 +159,25 @@ std::unique_ptr<XdsMatcherList::Predicate> ParseSinglePredicate(
         single_predicate,
     const UniqueTypeName& matcher_context, ValidationErrors* errors) {
   std::unique_ptr<XdsMatcherList::InputMatcher<absl::string_view>>
-      input_string_matcher = [&]() {
-        ValidationErrors::ScopedField field(errors, ".value_match");
-        // Supporting value match now, need to add custom match
-        const auto* value_match_proto =
-            xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate_value_match(
-                single_predicate);
-        if (value_match_proto != nullptr) {
-          return ParseStringMatcher(context, value_match_proto, errors);
-        } else {
-          errors->AddError("field not present");
-          return std::unique_ptr<
-              XdsMatcherList::InputMatcher<absl::string_view>>(nullptr);
-        }
-      }();
-  std::unique_ptr<XdsMatcher::InputValue<absl::string_view>>
-      input_string_value = [&]() {
-        ValidationErrors::ScopedField field(errors, ".input");
-        auto* input_proto =
-            xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate_input(
-                single_predicate);
-        if (input_proto != nullptr) {
-          return ParseStringInput(context, input_proto, matcher_context,
-                                  errors);
-        } else {
-          errors->AddError("field not present");
-          return std::unique_ptr<XdsMatcher::InputValue<absl::string_view>>(
-              nullptr);
-        }
-      }();
+      input_string_matcher;
+  {
+    ValidationErrors::ScopedField field(errors, ".value_match");
+    // Supporting value match now, need to add custom match
+    const auto* value_match_proto =
+        xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate_value_match(
+            single_predicate);
+    input_string_matcher =
+        ParseStringMatcher(context, value_match_proto, errors);
+  }
+  std::unique_ptr<XdsMatcher::InputValue<absl::string_view>> input_string_value;
+  {
+    ValidationErrors::ScopedField field(errors, ".input");
+    auto* input_proto =
+        xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate_input(
+            single_predicate);
+    input_string_value =
+        ParseStringInput(context, input_proto, matcher_context, errors);
+  }
   return XdsMatcherList::CreateSinglePredicate(std::move(input_string_value),
                                                std::move(input_string_matcher));
 }
@@ -207,6 +210,10 @@ std::unique_ptr<XdsMatcherList::Predicate> ParsePredicate(
     const XdsResourceType::DecodeContext& context,
     const xds_type_matcher_v3_Matcher_MatcherList_Predicate* predicate,
     const UniqueTypeName& matcher_context, ValidationErrors* errors) {
+  if (predicate == nullptr) {
+    errors->AddError("field not present");
+    return nullptr;
+  }
   if (xds_type_matcher_v3_Matcher_MatcherList_Predicate_has_single_predicate(
           predicate)) {
     ValidationErrors::ScopedField field(errors, ".single_predicate");
@@ -268,26 +275,15 @@ std::vector<XdsMatcherList::FieldMatcher> ParseFieldMatcherList(
       auto* on_match_upb =
           xds_type_matcher_v3_Matcher_MatcherList_FieldMatcher_on_match(
               field_matchers[i]);
-      if (on_match_upb != nullptr) {
-        return ParseOnMatch(context, on_match_upb, action_registry,
-                            matcher_context, errors);
-      } else {
-        errors->AddError("field not present");
-        return XdsMatcher::OnMatch(std::unique_ptr<XdsMatcher::Action>(nullptr),
-                                   false);
-      }
+      return ParseOnMatch(context, on_match_upb, action_registry,
+                          matcher_context, errors);
     }();
     auto predicate = [&]() {
       ValidationErrors::ScopedField field(errors, ".predicate");
       auto* predicate_upb =
           xds_type_matcher_v3_Matcher_MatcherList_FieldMatcher_predicate(
               field_matchers[i]);
-      if (predicate_upb != nullptr) {
-        return ParsePredicate(context, predicate_upb, matcher_context, errors);
-      } else {
-        errors->AddError("field not present");
-        return std::unique_ptr<XdsMatcherList::Predicate>(nullptr);
-      }
+      return ParsePredicate(context, predicate_upb, matcher_context, errors);
     }();
     field_matcher_list.emplace_back(std::move(predicate), std::move(on_match));
   }
@@ -325,11 +321,7 @@ std::unique_ptr<XdsMatcher> ParseXdsMatcher(
         xds_type_matcher_v3_Matcher_MatcherTree_input(matcher_tree);
     {
       ValidationErrors::ScopedField field(errors, ".input");
-      if (input_upb != nullptr) {
-        input = ParseStringInput(context, input_upb, matcher_context, errors);
-      } else {
-        errors->AddError("field not present");
-      }
+      input = ParseStringInput(context, input_upb, matcher_context, errors);
     }
     if (xds_type_matcher_v3_Matcher_MatcherTree_has_exact_match_map(
             matcher_tree)) {
