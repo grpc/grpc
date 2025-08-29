@@ -41,7 +41,7 @@ from opencensus.trace import tracer
 
 # 60s is the default time for open census to call export.
 CENSUS_UPLOAD_INTERVAL_SECS = int(
-    os.environ.get("GRPC_PYTHON_CENSUS_EXPORT_UPLOAD_INTERVAL_SECS", 20)
+    os.environ.get("GRPC_PYTHON_CENSUS_EXPORT_UPLOAD_INTERVAL_SECS", "20")
 )
 
 
