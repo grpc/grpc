@@ -568,5 +568,24 @@ TEST(MyTestSuite, RunApiFuzzerRegression2) {
       )pb"));
 }
 
+TEST(MyTestSuite, RunApiFuzzerRegression65536) {
+  // Failed on a bad URI (invalid port) when event_engine_dns_non_client_channel
+  // was enabled.
+  RunApiFuzzer(ParseTestProto(
+      R"pb(actions {
+             create_server {
+               http2_ports {
+                 port: 65536
+                 server_creds { insecure_creds {} }
+               }
+             }
+           }
+           actions { create_channel {} }
+           actions { watch_connectivity: 0 }
+           actions { destroy_server_if_ready {} }
+           event_engine_actions { run_delay: 0 }
+      )pb"));
+}
+
 }  // namespace testing
 }  // namespace grpc_core
