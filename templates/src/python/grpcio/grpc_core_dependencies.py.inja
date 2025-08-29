@@ -1,4 +1,4 @@
-# Copyright 2023 gRPC authors.
+# Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/distrib/python/xds_protos/grpc_version.py.template`!!!
+# AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio/grpc_core_dependencies.py.inja`!!!
 
-VERSION = '{{settings.python_version.pep440}}'
-PROTOBUF_VERSION = '{{settings.protobuf_version.string}}'
+CORE_SOURCE_FILES = [
+## for src in python_core_source_files
+    '{{src}}',
+## endfor
+]
+
+ASM_SOURCE_FILES = {
+## for asm_entry in python_asm_source_files
+    '{{asm_entry.asm}}': [
+## for src in asm_entry.asm_src
+        '{{src}}',
+## endfor
+    ],
+## endfor
+} 
