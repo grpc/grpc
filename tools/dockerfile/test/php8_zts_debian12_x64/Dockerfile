@@ -44,17 +44,15 @@ RUN apt-get update && apt-get install -y \
 # Some newer distros that have already implemented PEP 668. Use of
 # --break-system-packages is to workaround that. We should look into using
 # virtualenv in Dockerfile though.
-RUN python3 -m pip install --break-system-packages --upgrade pip==19.3.1
+RUN python3 -m pip install --break-system-packages --upgrade pip==25.1.1
 
 # TODO(jtattermusch): currently six is needed for tools/run_tests scripts
 # but since our python2 usage is deprecated, we should get rid of it.
-RUN python3 -m pip install six==1.16.0
+RUN python3 -m pip install --break-system-packages six==1.16.0
 
 # Google Cloud Platform API libraries
 # These are needed for uploading test results to BigQuery (e.g. by tools/run_tests scripts)
-RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
-
-
+RUN python3 -m pip install --break-system-packages --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 # Install composer
 RUN curl -sS https://getcomposer.org/installer | php
 RUN mv composer.phar /usr/local/bin/composer
@@ -70,7 +68,7 @@ RUN apt-get update && apt-get install -y ccache && apt-get clean
 RUN mkdir /var/local/jenkins
 
 # Required by XDS interop test harness.
-RUN python3 -m pip install virtualenv==16.7.9
+RUN python3 -m pip install --break-system-packages virtualenv==16.7.9
 
 
 # Define the default command.

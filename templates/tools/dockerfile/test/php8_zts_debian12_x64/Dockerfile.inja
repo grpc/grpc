@@ -25,7 +25,9 @@ RUN apt-get update && apt-get install -y \
 {% include "../../cmake.include" %}
 RUN apt-get update && apt-get install -y ccache && apt-get clean
 {% include "../../run_tests_addons.include" %}
-{% include "../../xds_interop_deps.include" %}
+# Required by XDS interop test harness.
+RUN python3 -m pip install --break-system-packages virtualenv==16.7.9
+
 
 # Define the default command.
 CMD ["bash"]

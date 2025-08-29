@@ -16,7 +16,9 @@ FROM debian:12
 
 {% include "../../apt_get_basic.include" %}
 {% include "../../run_tests_python_deps_pep668.include" %}
-{% include "../../cxx_test_deps.include" %}
+# Some cxx tests depend on the twisted package
+RUN python3 -m pip install --break-system-packages twisted
+
 {% include "../../cxx_deps.include" %}
 {% include "../../cmake.include" %}
 {% include "../../ccache.include" %}
