@@ -45,6 +45,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_join.h"
 #include "src/core/credentials/call/json_util.h"
+#include "src/core/credentials/transport/google_default/google_default_credentials.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/env.h"
@@ -83,10 +84,34 @@ std::shared_ptr<WrappedChannelCredentials> WrapChannelCredentials(
 
 }  // namespace
 
-std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials() {
+std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials(
+    const GoogleDefaultCredentialsOptions& options) {
   grpc::internal::GrpcLibrary init;  // To call grpc_init().
-  return WrapChannelCredentials(
-      grpc_google_default_credentials_create(nullptr, nullptr));
+  grpc_core::ExecCtx exec_ctx;
+  grpc_call_credentials* alts_call_creds = nullptr;
+  auto tls_cc_status_or =
+      grpc_core::internal::CreateGoogleDefaultCallCredentials();
+
+  if (!tls_cc_status_or.ok()) {
+    return WrapChannelCredentials(
+        grpc_google_default_credentials_create(nullptr, nullptr));
+  }
+
+  grpc_core::RefCountedPtr<grpc_call_credentials> tls_call_credentials =
+      tls_cc_status_or.value().first;
+  DefaultCallCredentialsCreationMethod default_credentials_type =
+      tls_cc_status_or.value().second;
+
+  if (options.use_alts_call_credentials &&
+      default_credentials_type ==
+          DefaultCallCredentialsCreationMethod::kFromDefaultGCE) {
+    grpc_google_compute_engine_credentials_options options = {};
+    options.alts_hard_bound = true;
+    alts_call_creds = grpc_google_compute_engine_credentials_create(&options);
+  }
+
+  return WrapChannelCredentials(grpc_google_default_credentials_create(
+      tls_call_credentials.release(), alts_call_creds));
 }
 
 std::shared_ptr<CallCredentials> ExternalAccountCredentials(
