@@ -1709,6 +1709,7 @@ grpc_cc_library(
         "absl/log",
         "absl/log:check",
         "absl/status",
+        "absl/status:statusor",
         "absl/strings",
     ],
     deps = [
@@ -1727,6 +1728,7 @@ grpc_cc_library(
         "sync",
         "time",
         "useful",
+        ":resource_tracker",
         "//:channelz",
         "//:gpr",
         "//:grpc_trace",
@@ -1811,6 +1813,18 @@ grpc_cc_library(
         "sync",
         "//:gpr",
         "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "resource_tracker",
+    srcs = ["lib/resource_tracker/resource_tracker.cc"],
+    hdrs = ["lib/resource_tracker/resource_tracker.h"],
+    external_deps = [
+        "absl/status:statusor",
+    ],
+    deps = [
+        "//:gpr_platform",
     ],
 )
 
