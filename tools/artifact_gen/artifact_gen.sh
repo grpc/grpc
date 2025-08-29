@@ -61,7 +61,7 @@ cd tools/artifact_gen
 bazel-bin/artifact_gen \
 	--target_query=`pwd`/test_deps.xml,`pwd`/root_all_deps.xml,`pwd`/compiler_deps.xml,`pwd`/third_party_alias_deps.xml,`pwd`/envoy_api_proto_deps.xml,`pwd`/upb_deps.xml \
 	--external_proto_libraries=`pwd`/external_proto_libraries.json \
-	--external_http_archives=`pwd`/external_http_archives.bzl \
+	--external_http_archives_mod_query=`pwd`/external_http_archives.bzl \
 	--extra_build_yaml=`pwd`/../../build_handwritten.yaml \
 	--templates_dir=`pwd`/../../templates \
 	--output_dir=`pwd`/../.. \

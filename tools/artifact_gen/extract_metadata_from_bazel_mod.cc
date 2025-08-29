@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "tools/artifact_gen/extract_metadata_from_bazel_mod.h"
+#include "extract_metadata_from_bazel_mod.h"
+
+#include <absl/strings/match.h>
 
 #include <algorithm>
 #include <fstream>
@@ -32,7 +34,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "absl/strings/substitute.h"
-#include "re2/re2.h"
 
 namespace {
 
@@ -46,20 +47,22 @@ class HttpArchiveParser {
         "remote_file_integrity",
         "remote_file_urls",
         "remote_patches",
-        "remote_patch_strip"};
-    std::array<std::string, 2> groups;
+        "remote_patch_strip",
+    };
     // Drop comment lines
-    if (RE2::FullMatch(line, "^# .*$") || line == "") {
+    if (absl::StartsWith(line, "# ") || line.empty()) {
       return absl::OkStatus();
     }
     // Module name
-    if (RE2::FullMatch(line, "^## (.*):$", &groups[0])) {
+    std::string_view module_name = line;
+    if (absl::ConsumePrefix(&module_name, "## ") &&
+        absl::ConsumeSuffix(&module_name, ":")) {
       if (current_.has_value()) {
         return absl::FailedPreconditionError(
             absl::StrFormat("Rule %s started before rule %s was closed",
-                            groups[0], current_->alias()));
+                            module_name, current_->alias()));
       }
-      current_.emplace(groups[0]);
+      current_.emplace(module_name);
       return absl::OkStatus();
     }
     if (!current_.has_value()) {
@@ -74,30 +77,39 @@ class HttpArchiveParser {
       current_.reset();
       return absl::OkStatus();
     }
-    if (RE2::FullMatch(line, "^  (\\w+) = (.+),$", &groups[0], &groups[1])) {
-      if (kIgnoredAttributes.find(groups[0]) != kIgnoredAttributes.end()) {
-        // Ignore
-      } else if (groups[0] == "integrity") {
-        current_->set_integrity(
-            absl::StripSuffix(absl::StripPrefix(groups[1], "\""), "\""));
-      } else if (groups[0] == "strip_prefix") {
-        current_->set_strip_prefix(
-            absl::StripSuffix(absl::StripPrefix(groups[1], "\""), "\""));
-      } else if (groups[0] == "urls") {
-        absl::InlinedVector<std::string, 5> urls = absl::StrSplit(
-            absl::StripPrefix(absl::StripSuffix(groups[1], "]"), "["), ", ");
-        std::transform(
-            urls.begin(), urls.end(), urls.begin(), [](std::string_view url) {
-              return absl::StripPrefix(absl::StripSuffix(url, "\""), "\"");
-            });
-        current_->set_urls(urls);
-      } else {
-        LOG(INFO) << groups[0] << " = " << groups[1];
-      }
-      return absl::OkStatus();
+    std::string_view property_name_value = line;
+    if (!absl::ConsumePrefix(&property_name_value, "  ") ||
+        !absl::ConsumeSuffix(&property_name_value, ",")) {
+      return absl::FailedPreconditionError(absl::StrFormat(
+          "Unexpected line \"%s\" in rule %s", line, current_->alias()));
     }
-    return absl::FailedPreconditionError(absl::StrFormat(
-        "Unexpected line \"%s\" in rule %s", line, current_->alias()));
+    std::pair<std::string_view, std::string_view> name_value =
+        absl::StrSplit(property_name_value, " = ");
+    if (name_value.first.empty() || name_value.second.empty()) {
+      return absl::FailedPreconditionError(absl::StrFormat(
+          "Line \"%s\" in rule %s is not a property", line, current_->alias()));
+    }
+    if (kIgnoredAttributes.find(name_value.first) != kIgnoredAttributes.end()) {
+      // Ignore
+    } else if (name_value.first == "integrity") {
+      current_->set_integrity(
+          absl::StripSuffix(absl::StripPrefix(name_value.second, "\""), "\""));
+    } else if (name_value.first == "strip_prefix") {
+      current_->set_strip_prefix(
+          absl::StripSuffix(absl::StripPrefix(name_value.second, "\""), "\""));
+    } else if (name_value.first == "urls") {
+      absl::InlinedVector<std::string, 5> urls = absl::StrSplit(
+          absl::StripPrefix(absl::StripSuffix(name_value.second, "]"), "["),
+          ", ");
+      std::transform(
+          urls.begin(), urls.end(), urls.begin(), [](std::string_view url) {
+            return absl::StripPrefix(absl::StripSuffix(url, "\""), "\"");
+          });
+      current_->set_urls(urls);
+    } else {
+      LOG(INFO) << name_value.first << " = " << name_value.second;
+    }
+    return absl::OkStatus();
   }
 
   std::vector<HttpArchive> archives() const { return archives_; }

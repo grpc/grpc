@@ -3,7 +3,7 @@
 #include "absl/log/globals.h"
 #include "absl/log/initialize.h"
 #include "absl/log/log.h"
-#include "tools/artifact_gen/extract_metadata_from_bazel_mod.h"
+#include "extract_metadata_from_bazel_mod.h"
 
 int main(int argc, const char* argv[]) {
   absl::InitializeLog();

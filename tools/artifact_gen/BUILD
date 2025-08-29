@@ -17,6 +17,7 @@ cc_library(
     srcs = ["extract_metadata_from_bazel_xml.cc"],
     hdrs = ["extract_metadata_from_bazel_xml.h"],
     deps = [
+        ":extract_metadata_from_bazel_mod",
         "@abseil-cpp//absl/algorithm:container",
         "@abseil-cpp//absl/flags:flag",
         "@abseil-cpp//absl/log",
@@ -111,12 +112,11 @@ cc_library(
     srcs = ["extract_metadata_from_bazel_mod.cc"],
     hdrs = ["extract_metadata_from_bazel_mod.h"],
     deps = [
-        "@com_google_absl//absl/log",
-        "@com_google_absl//absl/log:globals",
-        "@com_google_absl//absl/log:initialize",
-        "@com_google_absl//absl/status",
-        "@com_google_absl//absl/status:statusor",
-        "@com_googlesource_code_re2//:re2",
+        "@abseil-cpp//absl/log",
+        "@abseil-cpp//absl/log:globals",
+        "@abseil-cpp//absl/log:initialize",
+        "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:statusor",
     ],
 )
 
