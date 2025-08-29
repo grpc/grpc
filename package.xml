@@ -374,6 +374,7 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/decode_huff.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/flow_control.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/flow_control.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/flow_control_manager.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_data.cc" role="src" />
