@@ -144,6 +144,8 @@ grpc_cc_test(
         "//:grpc",
         "//src/core:notification",
         "//src/core:ztrace_collector",
+        "//src/proto/grpc/channelz/v2:property_list_cc_proto",
+        "//src/proto/grpc/channelz/v2:service_cc_proto",
     ],
 )
 

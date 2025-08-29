@@ -138,20 +138,14 @@ Json::Object BaseNode::AdditionalInfo() {
   return sink_impl->Finalize(!completed);
 }
 
-void BaseNode::RunZTrace(
-    absl::string_view name, Timestamp deadline,
-    std::map<std::string, std::string> args,
+std::unique_ptr<ZTrace> BaseNode::RunZTrace(
+    absl::string_view name, ZTrace::Args args,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
-    absl::AnyInvocable<void(Json)> callback) {
-  // Limit deadline to help contain potential resource exhaustion due to
-  // tracing.
-  deadline = std::min(deadline, Timestamp::Now() + Duration::Minutes(10));
+    ZTrace::Callback callback) {
   auto fail = [&callback, event_engine](absl::Status status) {
     event_engine->Run(
         [callback = std::move(callback), status = std::move(status)]() mutable {
-          Json::Object object;
-          object["status"] = Json::FromString(status.ToString());
-          callback(Json::FromObject(std::move(object)));
+          callback(status);
         });
   };
   std::unique_ptr<ZTrace> ztrace;
@@ -165,16 +159,17 @@ void BaseNode::RunZTrace(
         } else {
           fail(absl::InternalError(
               absl::StrCat("Ambiguous ztrace handler: ", name)));
-          return;
+          return nullptr;
         }
       }
     }
   }
   if (ztrace == nullptr) {
     fail(absl::NotFoundError(absl::StrCat("ztrace not found: ", name)));
-    return;
+    return nullptr;
   }
-  ztrace->Run(deadline, std::move(args), event_engine, std::move(callback));
+  ztrace->Run(std::move(args), event_engine, std::move(callback));
+  return ztrace;
 }
 
 void BaseNode::SerializeEntity(grpc_channelz_v2_Entity* entity,
