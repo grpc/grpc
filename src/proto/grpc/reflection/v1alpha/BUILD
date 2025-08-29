@@ -27,6 +27,10 @@ grpc_package(
 grpc_proto_library(
     name = "reflection_proto",
     srcs = ["reflection.proto"],
+    extra_deps = [
+        "@com_google_protobuf//:protobuf",
+        "@com_google_protobuf//src/google/protobuf/io",
+    ],
 )
 
 filegroup(

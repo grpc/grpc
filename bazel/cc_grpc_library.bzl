@@ -28,6 +28,7 @@ def cc_grpc_library(
         allow_deprecated = False,
         use_external = False,  # @unused
         grpc_only = False,
+        extra_deps = [],
         **kwargs):
     """Generates C++ grpc classes for services defined in a proto file.
 
@@ -70,7 +71,7 @@ def cc_grpc_library(
     if grpc_only and proto_only:
         fail("A mutualy exclusive configuration is specified: grpc_only = True and proto_only = True")
 
-    extra_deps = []
+    extra_deps = list(extra_deps)
     proto_targets = []
 
     if not grpc_only:
