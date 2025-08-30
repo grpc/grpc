@@ -708,6 +708,7 @@ TEST_F(MatcherTest, MatcherListSinglePredicateInvalidStringMatcherRegex) {
                            "specified in matcher: missing ]: []"));
 }
 
+// TODO(bpawan) : Add test for custom input after CEL support
 TEST_F(MatcherTest, MatcherListSinglePredicateInvalidInput) {
   Matcher matcher_proto;
   auto* field_matcher = matcher_proto.mutable_matcher_list()->add_matchers();

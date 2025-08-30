@@ -199,7 +199,7 @@ class XdsMatcherList : public XdsMatcher {
         XdsMatcherList::SinglePredicate<typename InputType::ProducedType>>(
         std::move(input), std::move(matcher));
   }
-  
+
   // Alternative template specialization to return null in the case where
   // the input produces a different type than the matcher consumes.
   template <typename InputType, typename MatcherType>
@@ -301,11 +301,8 @@ class XdsMatcherList::AndPredicate : public XdsMatcherList::Predicate {
  public:
   static std::unique_ptr<AndPredicate> Create(
       std::vector<std::unique_ptr<Predicate>> predicates) {
-    if (std::any_of(predicates.begin(), predicates.end(),
-                    [](const std::unique_ptr<Predicate>& pred) {
-                      return pred == nullptr;
-                    })) {
-      return nullptr;
+    for (const auto& predicate : predicates) {
+      if (predicate == nullptr) return nullptr;
     }
     return std::unique_ptr<AndPredicate>(
         new AndPredicate(std::move(predicates)));
@@ -331,11 +328,8 @@ class XdsMatcherList::OrPredicate : public XdsMatcherList::Predicate {
  public:
   static std::unique_ptr<OrPredicate> Create(
       std::vector<std::unique_ptr<Predicate>> predicates) {
-    if (std::any_of(predicates.begin(), predicates.end(),
-                    [](const std::unique_ptr<Predicate>& pred) {
-                      return pred == nullptr;
-                    })) {
-      return nullptr;
+    for (const auto& predicate : predicates) {
+      if (predicate == nullptr) return nullptr;
     }
     return std::unique_ptr<OrPredicate>(new OrPredicate(std::move(predicates)));
   }
