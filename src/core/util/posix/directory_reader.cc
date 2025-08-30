@@ -25,7 +25,7 @@
 #include "absl/strings/string_view.h"
 
 #if defined(GPR_LINUX) || defined(GPR_ANDROID) || defined(GPR_FREEBSD) || \
-    defined(GPR_APPLE) || defined(GPR_NETBSD)
+    defined(GPR_APPLE) || defined(GPR_NETBSD) || defined(GPR_OPENBSD)
 
 #include <dirent.h>
 
@@ -79,4 +79,5 @@ absl::Status DirectoryReaderImpl::ForEach(
 }
 }  // namespace grpc_core
 
-#endif  // GPR_LINUX || GPR_ANDROID || GPR_FREEBSD || GPR_APPLE
+#endif  // GPR_LINUX || GPR_ANDROID || GPR_FREEBSD || GPR_APPLE ||
+        // GPR_NETBSD || GPR_OPENBSD
