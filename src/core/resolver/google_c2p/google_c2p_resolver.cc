@@ -81,10 +81,7 @@ class GoogleCloud2ProdResolver final : public Resolver {
   bool shutdown_ = false;
 
   OrphanablePtr<GcpMetadataQuery> zone_query_;
-  std::optional<std::string> zone_;
-
-  OrphanablePtr<GcpMetadataQuery> ipv6_query_;
-  std::optional<bool> supports_ipv6_;
+  std::string zone_;
 };
 
 //
@@ -162,22 +159,6 @@ void GoogleCloud2ProdResolver::StartLocked() {
         });
       },
       Duration::Seconds(10));
-  ipv6_query_ = MakeOrphanable<GcpMetadataQuery>(
-      metadata_server_name_, std::string(GcpMetadataQuery::kIPv6Attribute),
-      &pollent_,
-      [resolver = RefAsSubclass<GoogleCloud2ProdResolver>()](
-          std::string /* attribute */,
-          absl::StatusOr<std::string> result) mutable {
-        resolver->work_serializer_->Run(
-            [resolver, result = std::move(result)]() {
-              // Check that the payload is non-empty in order to work around
-              // the fact that there are buggy implementations of metadata
-              // servers in the wild, which can in some cases return 200
-              // plus an empty result when they should have returned 404.
-              resolver->IPv6QueryDone(result.ok() && !result->empty());
-            });
-      },
-      Duration::Seconds(10));
 }
 
 void GoogleCloud2ProdResolver::RequestReresolutionLocked() {
@@ -195,20 +176,13 @@ void GoogleCloud2ProdResolver::ResetBackoffLocked() {
 void GoogleCloud2ProdResolver::ShutdownLocked() {
   shutdown_ = true;
   zone_query_.reset();
-  ipv6_query_.reset();
   child_resolver_.reset();
 }
 
 void GoogleCloud2ProdResolver::ZoneQueryDone(std::string zone) {
   zone_query_.reset();
   zone_ = std::move(zone);
-  if (supports_ipv6_.has_value()) StartXdsResolver();
-}
-
-void GoogleCloud2ProdResolver::IPv6QueryDone(bool ipv6_supported) {
-  ipv6_query_.reset();
-  supports_ipv6_ = ipv6_supported;
-  if (zone_.has_value()) StartXdsResolver();
+  StartXdsResolver();
 }
 
 void GoogleCloud2ProdResolver::StartXdsResolver() {
@@ -222,16 +196,15 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
   Json::Object node = {
       {"id", Json::FromString(absl::StrCat("C2P-", dist(mt)))},
   };
-  if (!zone_->empty()) {
+  if (!zone_.empty()) {
     node["locality"] = Json::FromObject({
-        {"zone", Json::FromString(*zone_)},
+        {"zone", Json::FromString(zone_)},
     });
   };
-  if (*supports_ipv6_) {
-    node["metadata"] = Json::FromObject({
-        {"TRAFFICDIRECTOR_DIRECTPATH_C2P_IPV6_CAPABLE", Json::FromBool(true)},
-    });
-  }
+  // Enable dualstack endpoints from TD
+  node["metadata"] = Json::FromObject({
+      {"TRAFFICDIRECTOR_DIRECTPATH_C2P_IPV6_CAPABLE", Json::FromBool(true)},
+  });
   // Allow the TD server uri to be overridden for testing purposes.
   auto override_server =
       GetEnv("GRPC_TEST_ONLY_GOOGLE_C2P_RESOLVER_TRAFFIC_DIRECTOR_URI");
