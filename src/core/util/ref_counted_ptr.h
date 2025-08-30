@@ -464,6 +464,11 @@ struct WeakRefCountedPtrEq {
   }
 };
 
+template <typename To, typename From>
+RefCountedPtr<To> DownCastRefCountedPtr(RefCountedPtr<From> ptr) {
+  return RefCountedPtr<To>(DownCast<To*>(ptr.release()));
+}
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_UTIL_REF_COUNTED_PTR_H
