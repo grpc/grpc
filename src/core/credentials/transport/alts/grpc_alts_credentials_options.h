@@ -23,6 +23,10 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
 
+#include <optional>
+#include <string>
+#include <vector>
+
 #include "src/core/tsi/alts/handshaker/transport_security_common_api.h"
 
 // V-table for grpc_alts_credentials_options
@@ -35,6 +39,7 @@ typedef struct grpc_alts_credentials_options_vtable {
 struct grpc_alts_credentials_options {
   const struct grpc_alts_credentials_options_vtable* vtable;
   grpc_gcp_rpc_protocol_versions rpc_versions;
+  std::optional<std::vector<std::string>> record_protocols;
 };
 
 typedef struct target_service_account {

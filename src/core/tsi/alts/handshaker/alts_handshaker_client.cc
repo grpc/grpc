@@ -512,9 +512,18 @@ static grpc_byte_buffer* get_serialized_start_client(
   grpc_gcp_StartClientHandshakeReq_add_application_protocols(
       start_client, upb_StringView_FromString(ALTS_APPLICATION_PROTOCOL),
       arena.ptr());
-  grpc_gcp_StartClientHandshakeReq_add_record_protocols(
-      start_client, upb_StringView_FromString(ALTS_RECORD_PROTOCOL),
-      arena.ptr());
+  if (client->options->record_protocols.has_value()) {
+    for (const auto& record_protocol :
+         client->options->record_protocols.value()) {
+      grpc_gcp_StartClientHandshakeReq_add_record_protocols(
+          start_client, upb_StringView_FromString(record_protocol.c_str()),
+          arena.ptr());
+    }
+  } else {
+    grpc_gcp_StartClientHandshakeReq_add_record_protocols(
+        start_client, upb_StringView_FromString(ALTS_RECORD_PROTOCOL),
+        arena.ptr());
+  }
   grpc_gcp_RpcProtocolVersions* client_version =
       grpc_gcp_StartClientHandshakeReq_mutable_rpc_versions(start_client,
                                                             arena.ptr());
@@ -591,8 +600,17 @@ static grpc_byte_buffer* get_serialized_start_server(
       arena.ptr());
   grpc_gcp_ServerHandshakeParameters* value =
       grpc_gcp_ServerHandshakeParameters_new(arena.ptr());
-  grpc_gcp_ServerHandshakeParameters_add_record_protocols(
-      value, upb_StringView_FromString(ALTS_RECORD_PROTOCOL), arena.ptr());
+  if (client->options->record_protocols.has_value()) {
+    for (const auto& record_protocol :
+         client->options->record_protocols.value()) {
+      grpc_gcp_ServerHandshakeParameters_add_record_protocols(
+          value, upb_StringView_FromString(record_protocol.c_str()),
+          arena.ptr());
+    }
+  } else {
+    grpc_gcp_ServerHandshakeParameters_add_record_protocols(
+        value, upb_StringView_FromString(ALTS_RECORD_PROTOCOL), arena.ptr());
+  }
   grpc_gcp_StartServerHandshakeReq_handshake_parameters_set(
       start_server, grpc_gcp_ALTS, value, arena.ptr());
   grpc_gcp_StartServerHandshakeReq_set_in_bytes(
