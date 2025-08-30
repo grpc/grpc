@@ -127,6 +127,8 @@ grpc_cc_library(
         "absl/log",
     ],
     deps = [
+        "slice",
+        "slice_buffer",
         "//src/core:time",
     ],
 )
@@ -8075,6 +8077,29 @@ grpc_cc_library(
         "channelz_property_list",
         "http2_settings",
         "http2_status",
+        "useful",
+        "//:chttp2_frame",
+        "//:gpr_platform",
+    ],
+)
+
+grpc_cc_library(
+    name = "http2_settings_promises",
+    hdrs = [
+        "ext/transport/chttp2/transport/http2_settings_promises.h",
+    ],
+    external_deps = [
+        "absl/functional:function_ref",
+        "absl/log:check",
+        "absl/log",
+        "absl/strings",
+    ],
+    deps = [
+        "channel_args",
+        "channelz_property_list",
+        "http2_settings",
+        "http2_settings_manager",
+        "http2_status",
         "poll",
         "race",
         "sleep",
@@ -8154,19 +8179,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "writable_stream_list",
-    hdrs = [
-        "ext/transport/chttp2/transport/writable_stream_list.h",
-    ],
-    external_deps = [
-        "absl/log",
-        "absl/log:check",
-    ],
-    deps = [
-    ],
-)
-
-grpc_cc_library(
     name = "stream_data_queue",
     hdrs = [
         "ext/transport/chttp2/transport/stream_data_queue.h",
@@ -8182,6 +8194,7 @@ grpc_cc_library(
         "message",
         "message_assembler",
         "metadata_batch",
+        "writable_streams",
     ],
 )
 
@@ -8212,6 +8225,7 @@ grpc_cc_library(
         "header_assembler",
         "http2_settings",
         "http2_settings_manager",
+        "http2_settings_promises",
         "http2_status",
         "http2_transport",
         "inter_activity_mutex",
@@ -10282,6 +10296,8 @@ grpc_cc_library(
         "sleep",
         "time",
         "try_seq",
+        ":slice_buffer",
+        "//:chttp2_frame",
         "//:promise",
     ],
 )
@@ -10738,6 +10754,7 @@ grpc_cc_library(
         "absl/log",
         "absl/status:statusor",
         "absl/strings",
+        "absl/time",
     ],
     deps = [
         ":channelz_v2tov1_convert",

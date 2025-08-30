@@ -21,14 +21,19 @@ mkdir -p artifacts/
 
 # All the python packages have been built in the artifact phase already
 # and we only collect them here to deliver them to the distribtest phase.
-find "${EXTERNAL_GIT_ROOT}"/input_artifacts/ \
-    -maxdepth 1 \
-    -type d \
-    -name "${ARTIFACT_PREFIX}*" \
-    -not -name "${EXCLUDE_PATTERN}" \
-    -print0 \
-        | xargs -0 -I% find % -type f -maxdepth 1 -exec cp -v {} ./artifacts \;
 
-# TODO: all the artifact builder configurations generate a grpcio-VERSION.tar.gz
-# source distribution package, and only one of them will end up
-# in the artifacts/ directory. They should be all equivalent though.
+find "${EXTERNAL_GIT_ROOT}/input_artifacts/" | sed -e "s/[^-][^\/]*\// |/g" -e "s/|\([^ ]\)/|-\1/"
+
+# Build the find command to include all files which start with ARTIFACT_PREFIX
+find_cmd=(
+    find "${EXTERNAL_GIT_ROOT}/input_artifacts/"
+    -maxdepth 1
+    -type d
+    -name "${ARTIFACT_PREFIX}*"
+)
+
+
+# Copy only the '*.tar.gz' and '*py3-none-any.whl' files.
+"${find_cmd[@]}" -print0 | xargs -0 -I% \
+    find % \( -name "*.tar.gz" -o -name "*py3-none-any.whl" \) \
+    -exec cp -v {} ./artifacts \;

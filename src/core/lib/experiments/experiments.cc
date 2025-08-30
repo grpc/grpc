@@ -173,9 +173,6 @@ const char* const description_server_global_callbacks_ownership =
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
-const char* const description_shard_global_connection_pool =
-    "If set, shard the global connection pool to improve parallelism.";
-const char* const additional_constraints_shard_global_connection_pool = "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
@@ -306,9 +303,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"server_global_callbacks_ownership",
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0, true,
-     true},
-    {"shard_global_connection_pool", description_shard_global_connection_pool,
-     additional_constraints_shard_global_connection_pool, nullptr, 0, true,
      true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
@@ -482,9 +476,6 @@ const char* const description_server_global_callbacks_ownership =
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
-const char* const description_shard_global_connection_pool =
-    "If set, shard the global connection pool to improve parallelism.";
-const char* const additional_constraints_shard_global_connection_pool = "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
@@ -615,9 +606,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"server_global_callbacks_ownership",
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0, true,
-     true},
-    {"shard_global_connection_pool", description_shard_global_connection_pool,
-     additional_constraints_shard_global_connection_pool, nullptr, 0, true,
      true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
@@ -791,9 +779,6 @@ const char* const description_server_global_callbacks_ownership =
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
-const char* const description_shard_global_connection_pool =
-    "If set, shard the global connection pool to improve parallelism.";
-const char* const additional_constraints_shard_global_connection_pool = "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
@@ -924,9 +909,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"server_global_callbacks_ownership",
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0, true,
-     true},
-    {"shard_global_connection_pool", description_shard_global_connection_pool,
-     additional_constraints_shard_global_connection_pool, nullptr, 0, true,
      true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,

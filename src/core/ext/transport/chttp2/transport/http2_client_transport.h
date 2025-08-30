@@ -29,6 +29,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
@@ -131,8 +132,9 @@ class Http2ClientTransport final : public ClientTransport {
   auto TestOnlyEnqueueOutgoingFrame(Http2Frame frame) {
     // TODO(tjagtap) : [PH2][P3] : See if making a sender in the constructor
     // and using that always would be more efficient.
+    const size_t tokens = GetFrameMemoryUsage(frame);
     return AssertResultType<absl::Status>(Map(
-        outgoing_frames_.MakeSender().Send(std::move(frame), 1),
+        outgoing_frames_.MakeSender().Send(std::move(frame), tokens),
         [](StatusFlag status) {
           GRPC_HTTP2_CLIENT_DLOG
               << "Http2ClientTransport::TestOnlyEnqueueOutgoingFrame status="
@@ -235,8 +237,9 @@ class Http2ClientTransport final : public ClientTransport {
   auto EnqueueOutgoingFrame(Http2Frame frame) {
     // TODO(tjagtap) : [PH2][P3] : See if making a sender in the constructor
     // and using that always would be more efficient.
+    const size_t tokens = GetFrameMemoryUsage(frame);
     return AssertResultType<absl::Status>(Map(
-        outgoing_frames_.MakeSender().Send(std::move(frame), 1),
+        outgoing_frames_.MakeSender().Send(std::move(frame), tokens),
         [self = RefAsSubclass<Http2ClientTransport>()](StatusFlag status) {
           GRPC_HTTP2_CLIENT_DLOG
               << "Http2ClientTransport::EnqueueOutgoingFrame status=" << status;
@@ -544,7 +547,7 @@ class Http2ClientTransport final : public ClientTransport {
     GPR_UNREACHABLE_CODE(return absl::InternalError("Invalid error type"));
   }
 
-  bool bytes_sent_in_last_write_;
+  bool should_reset_ping_clock_;
   bool incoming_header_in_progress_;
   bool incoming_header_end_stream_;
   bool is_first_write_;
@@ -564,7 +567,6 @@ class Http2ClientTransport final : public ClientTransport {
   // Duration to wait for ping ack before triggering timeout
   const Duration ping_timeout_;
   PingManager ping_manager_;
-  std::vector<uint64_t> pending_ping_acks_;
   KeepaliveManager keepalive_manager_;
 
   // Flags
@@ -583,41 +585,11 @@ class Http2ClientTransport final : public ClientTransport {
   }
 
   // Ping Helper functions
-  // Returns a promise that resolves once a ping frame is written to the
-  // endpoint.
-  auto CreateAndWritePing(bool ack, uint64_t opaque_data) {
-    Http2Frame frame = Http2PingFrame{ack, opaque_data};
-    SliceBuffer output_buf;
-    Serialize(absl::Span<Http2Frame>(&frame, 1), output_buf);
-    return endpoint_.Write(std::move(output_buf), {});
-  }
-
   Duration NextAllowedPingInterval() {
     MutexLock lock(&transport_mutex_);
     return (!keepalive_permit_without_calls_ && stream_list_.empty())
                ? Duration::Hours(2)
                : Duration::Seconds(1);
-  }
-
-  auto MaybeSendPing() {
-    return ping_manager_.MaybeSendPing(NextAllowedPingInterval(),
-                                       ping_timeout_);
-  }
-
-  auto MaybeSendPingAcks() {
-    return AssertResultType<absl::Status>(If(
-        pending_ping_acks_.empty(), [] { return absl::OkStatus(); },
-        [this] {
-          std::vector<Http2Frame> frames;
-          frames.reserve(pending_ping_acks_.size());
-          for (auto& opaque_data : pending_ping_acks_) {
-            frames.emplace_back(Http2PingFrame{true, opaque_data});
-          }
-          pending_ping_acks_.clear();
-          SliceBuffer output_buf;
-          Serialize(absl::Span<Http2Frame>(frames), output_buf);
-          return endpoint_.Write(std::move(output_buf), {});
-        }));
   }
 
   auto AckPing(uint64_t opaque_data) {
@@ -653,12 +625,6 @@ class Http2ClientTransport final : public ClientTransport {
         Http2ClientTransport* transport) {
       return std::make_unique<PingSystemInterfaceImpl>(
           PingSystemInterfaceImpl(transport));
-    }
-
-    // Returns a promise that resolves once a ping frame is written to the
-    // endpoint.
-    Promise<absl::Status> SendPing(SendPingArgs args) override {
-      return transport_->CreateAndWritePing(args.ack, args.opaque_data);
     }
 
     Promise<absl::Status> TriggerWrite() override {
@@ -739,22 +705,29 @@ class Http2ClientTransport final : public ClientTransport {
 
   WritableStreams writable_stream_list_;
 
-  auto MaybeAddStreamToWritableStreamList(const uint32_t stream_id,
-                                          const bool became_writable) {
-    if (became_writable) {
+  absl::Status MaybeAddStreamToWritableStreamList(
+      const uint32_t stream_id,
+      const StreamDataQueue<ClientMetadataHandle>::EnqueueResult result) {
+    if (result.became_writable) {
       GRPC_HTTP2_CLIENT_DLOG
           << "Http2ClientTransport MaybeAddStreamToWritableStreamList "
              " Stream id: "
           << stream_id << " became writable";
-      absl::Status status = writable_stream_list_.Enqueue(
-          stream_id, WritableStreams::StreamPriority::kDefault);
+      absl::Status status =
+          writable_stream_list_.Enqueue(stream_id, result.priority);
       if (!status.ok()) {
         return HandleError(Http2Status::Http2ConnectionError(
-            Http2ErrorCode::kProtocolError, "Failed to enqueue stream"));
+            Http2ErrorCode::kRefusedStream,
+            "Failed to enqueue stream to writable stream list"));
       }
     }
     return absl::OkStatus();
   }
+  /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
+  /// the peer
+  // TODO(tjagtap) : [PH2][P1] : Plumb this with the necessary frame size flow
+  // control workflow corresponding to grpc_chttp2_act_on_flowctl_action
+  GRPC_UNUSED bool enable_preferred_rx_crypto_frame_advertisement_;
 };
 
 // Since the corresponding class in CHTTP2 is about 3.9KB, our goal is to

@@ -263,11 +263,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gemini"  # @unused
+g_stands_for = "genuine"  # @unused
 
 core_version = "50.0.0"  # @unused
 
-version = "1.75.0-dev"  # @unused
+version = "1.76.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -932,6 +932,9 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/types:span",
+        "absl/utility",
+        "absl/functional:any_invocable",
+        "absl/status",
     ],
     tags = [
         "avoid_dep",
@@ -941,6 +944,7 @@ grpc_cc_library(
     deps = [
         "channel_arg_names",
         "gpr_public_hdrs",
+        "grpc_core_credentials_header",
     ],
 )
 
@@ -2562,6 +2566,7 @@ grpc_cc_library(
         "//src/core:thread_quota",
         "//src/core:time",
         "//src/core:useful",
+        "@com_google_protobuf//:any_cc_proto",
     ],
 )
 
@@ -2656,6 +2661,9 @@ grpc_cc_library(
         "absl/strings:cord",
         "protobuf_headers",
         "protobuf",
+        "absl/log:check",
+        "absl/log:absl_check",
+        "absl/strings",
     ],
     public_hdrs = [
         "include/grpc++/impl/codegen/proto_utils.h",
@@ -2669,6 +2677,7 @@ grpc_cc_library(
     deps = [
         "grpc++_config_proto",
         "grpc++_public_hdrs",
+        "grpc_base",
         "grpcpp_status",
     ],
 )
@@ -3087,6 +3096,7 @@ grpc_cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "generic_stub_internal",
+        "grpc++_base",
     ],
 )
 
@@ -4670,6 +4680,7 @@ grpc_cc_library(
         "gpr",
         "//src/core:http2_settings",
         "//src/core:http2_status",
+        "//src/core:memory_usage",
         "//src/core:slice",
         "//src/core:slice_buffer",
     ],
@@ -4994,6 +5005,7 @@ grpc_cc_library(
         "gpr_platform",
         "grpc++_public_hdrs",
         "grpc_public_hdrs",
+        "@com_google_protobuf//:any_cc_proto",
     ],
 )
 

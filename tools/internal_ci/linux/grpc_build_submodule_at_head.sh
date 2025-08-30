@@ -81,6 +81,12 @@ then
   cp -r third_party/protobuf/third_party/utf8_range third_party/utf8_range/
 fi
 
+# TODO(sergiitk): remove this logic once the CI uses python3.9+.
+# Note: we set GRPC_GENERATE_PROJECTS_SKIP_XDS_PROTOS to skip xds-protos
+# generation, which shouldn't bee needed for _at_head jobs.
+# Normally, it doesn't hurt to generate them, but our CI uses python3.8,
+# which grpcio python packages dropped at v1.71.0.
+export GRPC_GENERATE_PROJECTS_SKIP_XDS_PROTOS="${GRPC_GENERATE_PROJECTS_SKIP_XDS_PROTOS:-1}"
 tools/buildgen/generate_projects.sh
 
 # commit so that changes are passed to Docker

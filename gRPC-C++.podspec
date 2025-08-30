@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.75.0-dev'
+  version = '1.76.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -429,6 +429,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/http2_client_transport.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings_manager.h',
+                      'src/core/ext/transport/chttp2/transport/http2_settings_promises.h',
                       'src/core/ext/transport/chttp2/transport/http2_stats_collector.h',
                       'src/core/ext/transport/chttp2/transport/http2_status.h',
                       'src/core/ext/transport/chttp2/transport/http2_transport.h',
@@ -1791,6 +1792,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/http2_client_transport.h',
                               'src/core/ext/transport/chttp2/transport/http2_settings.h',
                               'src/core/ext/transport/chttp2/transport/http2_settings_manager.h',
+                              'src/core/ext/transport/chttp2/transport/http2_settings_promises.h',
                               'src/core/ext/transport/chttp2/transport/http2_stats_collector.h',
                               'src/core/ext/transport/chttp2/transport/http2_status.h',
                               'src/core/ext/transport/chttp2/transport/http2_transport.h',

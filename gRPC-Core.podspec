@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.75.0-dev'
+  version = '1.76.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -542,6 +542,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/http2_settings.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings_manager.cc',
                       'src/core/ext/transport/chttp2/transport/http2_settings_manager.h',
+                      'src/core/ext/transport/chttp2/transport/http2_settings_promises.h',
                       'src/core/ext/transport/chttp2/transport/http2_stats_collector.cc',
                       'src/core/ext/transport/chttp2/transport/http2_stats_collector.h',
                       'src/core/ext/transport/chttp2/transport/http2_status.h',
@@ -2688,6 +2689,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/http2_client_transport.h',
                               'src/core/ext/transport/chttp2/transport/http2_settings.h',
                               'src/core/ext/transport/chttp2/transport/http2_settings_manager.h',
+                              'src/core/ext/transport/chttp2/transport/http2_settings_promises.h',
                               'src/core/ext/transport/chttp2/transport/http2_stats_collector.h',
                               'src/core/ext/transport/chttp2/transport/http2_status.h',
                               'src/core/ext/transport/chttp2/transport/http2_transport.h',

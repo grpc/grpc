@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.75.0-dev
+PROJECT_NUMBER         = 1.76.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1393,6 +1393,7 @@ src/core/ext/transport/chttp2/transport/http2_settings.cc \
 src/core/ext/transport/chttp2/transport/http2_settings.h \
 src/core/ext/transport/chttp2/transport/http2_settings_manager.cc \
 src/core/ext/transport/chttp2/transport/http2_settings_manager.h \
+src/core/ext/transport/chttp2/transport/http2_settings_promises.h \
 src/core/ext/transport/chttp2/transport/http2_stats_collector.cc \
 src/core/ext/transport/chttp2/transport/http2_stats_collector.h \
 src/core/ext/transport/chttp2/transport/http2_status.h \

@@ -52,12 +52,19 @@ def qps_json_driver_batch():
             deps = [
                 ":benchmark_config",
                 ":driver_impl",
+                "//:gpr",
                 "//:grpc++",
+                "//:grpc++_config_proto",
+                "//test/core/test_util:grpc_test_util",
+                "//test/cpp/qps:parse_json",
+                "//test/cpp/qps:qps_worker_impl",
                 "//test/cpp/util:test_config",
                 "//test/cpp/util:test_util",
             ],
             external_deps = [
                 "absl/log:check",
+                "absl/log",
+                "absl/flags:flag",
             ],
             tags = [
                 "qps_json_driver",
@@ -84,10 +91,12 @@ def json_run_localhost_batch():
                 "//test/cpp/qps:qps_worker",
             ],
             external_deps = [
+                "absl/log",
                 "absl/log:check",
             ],
             deps = [
                 "//:gpr",
+                "//src/core:env",
                 "//test/core/test_util:grpc_test_util",
                 "//test/cpp/util:test_config",
                 "//test/cpp/util:test_util",
