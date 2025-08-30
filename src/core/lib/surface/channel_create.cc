@@ -199,10 +199,14 @@ grpc_channel* CreateChannelFromFd(int fd, grpc_channel_credentials* creds,
                                            GRPC_STATUS_INTERNAL,
                                            "Failed to create client channel");
   }
-  std::unique_ptr<EventEngine::Endpoint> endpoint =
-      supports_fd->CreateEndpointFromFd(
-          fd, ChannelArgsEndpointConfig(channel_args));
-  return CreateChannelFromEndpoint(std::move(endpoint), creds,
+  auto endpoint = supports_fd->CreateEndpointFromFd(
+      fd, ChannelArgsEndpointConfig(channel_args));
+  if (!endpoint.ok()) {
+    return grpc_lame_client_channel_create(
+        "fake:created-from-endpoint", GRPC_STATUS_INTERNAL,
+        std::string(endpoint.status().message()).c_str());
+  }
+  return CreateChannelFromEndpoint(std::move(endpoint).value(), creds,
                                    channel_args.ToC().get());
 }
 }  // namespace experimental

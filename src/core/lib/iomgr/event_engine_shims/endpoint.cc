@@ -412,9 +412,10 @@ EventEngineEndpointWrapper::EventEngineEndpointWrapper(
 }  // namespace
 
 grpc_endpoint* grpc_event_engine_endpoint_create(
-    std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
-  DCHECK(ee_endpoint != nullptr);
-  auto wrapper = new EventEngineEndpointWrapper(std::move(ee_endpoint));
+    absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ee_endpoint) {
+  DCHECK(ee_endpoint.ok()) << ee_endpoint.status();
+  DCHECK(ee_endpoint.value() != nullptr);
+  auto wrapper = new EventEngineEndpointWrapper(std::move(ee_endpoint).value());
   return wrapper->GetGrpcEndpoint();
 }
 
