@@ -204,7 +204,7 @@
 - name: prioritize_finished_requests
   description: Prioritize flushing out finished requests over other in-flight
     requests during transport writes.
-  expiry: 2025/09/01
+  expiry: 2025/11/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: promise_based_http2_client_transport
