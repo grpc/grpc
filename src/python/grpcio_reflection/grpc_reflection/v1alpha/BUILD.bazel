@@ -46,3 +46,11 @@ py_library(
         "@com_google_protobuf//:protobuf_python",
     ],
 )
+
+py_test(
+    name = "_reflection_version_test",
+    srcs = ["test/_reflection_version_test.py"],
+    deps = [
+        ":grpc_reflection",
+    ],
+)
