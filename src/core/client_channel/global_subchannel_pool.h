@@ -32,33 +32,6 @@ namespace grpc_core {
 
 // The global subchannel pool. It shares subchannels among channels. There
 // should be only one instance of this class.
-class LegacyGlobalSubchannelPool final : public SubchannelPoolInterface {
- public:
-  // Gets the singleton instance.
-  static RefCountedPtr<LegacyGlobalSubchannelPool> instance();
-
-  // Implements interface methods.
-  RefCountedPtr<Subchannel> RegisterSubchannel(
-      const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) override
-      ABSL_LOCKS_EXCLUDED(mu_);
-  void UnregisterSubchannel(const SubchannelKey& key,
-                            Subchannel* subchannel) override
-      ABSL_LOCKS_EXCLUDED(mu_);
-  RefCountedPtr<Subchannel> FindSubchannel(const SubchannelKey& key) override
-      ABSL_LOCKS_EXCLUDED(mu_);
-
- private:
-  LegacyGlobalSubchannelPool() {}
-  ~LegacyGlobalSubchannelPool() override {}
-
-  // A map from subchannel key to subchannel.
-  std::map<SubchannelKey, Subchannel*> subchannel_map_ ABSL_GUARDED_BY(mu_);
-  // To protect subchannel_map_.
-  Mutex mu_;
-};
-
-// The global subchannel pool. It shares subchannels among channels. There
-// should be only one instance of this class.
 class GlobalSubchannelPool final : public SubchannelPoolInterface {
  public:
   // Gets the singleton instance.

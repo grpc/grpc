@@ -43,23 +43,22 @@ class CallData {
 
   bool ShouldLog() { return config_.ShouldLog(); }
 
-  void LogClientHeader(bool is_client, CallTracerAnnotationInterface* tracer,
+  void LogClientHeader(bool is_client, CallSpan* tracer,
                        const ClientMetadata& metadata);
-  void LogClientHalfClose(bool is_client,
-                          CallTracerAnnotationInterface* tracer);
-  void LogServerHeader(bool is_client, CallTracerAnnotationInterface* tracer,
+  void LogClientHalfClose(bool is_client, CallSpan* tracer);
+  void LogServerHeader(bool is_client, CallSpan* tracer,
                        const ServerMetadata* metadata);
-  void LogServerTrailer(bool is_client, CallTracerAnnotationInterface* tracer,
+  void LogServerTrailer(bool is_client, CallSpan* tracer,
                         const ServerMetadata* metadata);
-  void LogClientMessage(bool is_client, CallTracerAnnotationInterface* tracer,
+  void LogClientMessage(bool is_client, CallSpan* tracer,
                         const SliceBuffer* message);
-  void LogServerMessage(bool is_client, CallTracerAnnotationInterface* tracer,
+  void LogServerMessage(bool is_client, CallSpan* tracer,
                         const SliceBuffer* message);
-  void LogCancel(bool is_client, CallTracerAnnotationInterface* tracer);
+  void LogCancel(bool is_client, CallSpan* tracer);
 
  private:
   void SetCommonEntryFields(LoggingSink::Entry* entry, bool is_client,
-                            CallTracerAnnotationInterface* tracer,
+                            CallSpan* tracer,
                             LoggingSink::Entry::EventType event_type);
   absl::uint128 call_id_;
   uint32_t sequence_id_ = 0;

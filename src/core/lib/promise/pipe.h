@@ -58,9 +58,9 @@ struct Pipe;
 template <typename T>
 class NextResult final {
  public:
-  NextResult() : center_(nullptr) {}
+  NextResult() : center_(nullptr), cancelled_(true) {}
   explicit NextResult(RefCountedPtr<pipe_detail::Center<T>> center)
-      : center_(std::move(center)) {
+      : center_(std::move(center)), cancelled_(false) {
     CHECK(center_ != nullptr);
   }
   explicit NextResult(bool cancelled)

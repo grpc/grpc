@@ -29,6 +29,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
@@ -131,8 +132,9 @@ class Http2ClientTransport final : public ClientTransport {
   auto TestOnlyEnqueueOutgoingFrame(Http2Frame frame) {
     // TODO(tjagtap) : [PH2][P3] : See if making a sender in the constructor
     // and using that always would be more efficient.
+    const size_t tokens = GetFrameMemoryUsage(frame);
     return AssertResultType<absl::Status>(Map(
-        outgoing_frames_.MakeSender().Send(std::move(frame), 1),
+        outgoing_frames_.MakeSender().Send(std::move(frame), tokens),
         [](StatusFlag status) {
           GRPC_HTTP2_CLIENT_DLOG
               << "Http2ClientTransport::TestOnlyEnqueueOutgoingFrame status="
@@ -235,8 +237,9 @@ class Http2ClientTransport final : public ClientTransport {
   auto EnqueueOutgoingFrame(Http2Frame frame) {
     // TODO(tjagtap) : [PH2][P3] : See if making a sender in the constructor
     // and using that always would be more efficient.
+    const size_t tokens = GetFrameMemoryUsage(frame);
     return AssertResultType<absl::Status>(Map(
-        outgoing_frames_.MakeSender().Send(std::move(frame), 1),
+        outgoing_frames_.MakeSender().Send(std::move(frame), tokens),
         [self = RefAsSubclass<Http2ClientTransport>()](StatusFlag status) {
           GRPC_HTTP2_CLIENT_DLOG
               << "Http2ClientTransport::EnqueueOutgoingFrame status=" << status;
@@ -544,7 +547,7 @@ class Http2ClientTransport final : public ClientTransport {
     GPR_UNREACHABLE_CODE(return absl::InternalError("Invalid error type"));
   }
 
-  bool bytes_sent_in_last_write_;
+  bool should_reset_ping_clock_;
   bool incoming_header_in_progress_;
   bool incoming_header_end_stream_;
   bool is_first_write_;
@@ -720,6 +723,11 @@ class Http2ClientTransport final : public ClientTransport {
     }
     return absl::OkStatus();
   }
+  /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
+  /// the peer
+  // TODO(tjagtap) : [PH2][P1] : Plumb this with the necessary frame size flow
+  // control workflow corresponding to grpc_chttp2_act_on_flowctl_action
+  GRPC_UNUSED bool enable_preferred_rx_crypto_frame_advertisement_;
 };
 
 // Since the corresponding class in CHTTP2 is about 3.9KB, our goal is to

@@ -74,4 +74,5 @@
 - 1.72 'g' stands for ['gusto'](https://github.com/grpc/grpc/tree/v1.72.x)
 - 1.73 'g' stands for ['gradient'](https://github.com/grpc/grpc/tree/v1.73.x)
 - 1.74 'g' stands for ['gee'](https://github.com/grpc/grpc/tree/v1.74.x)
-- 1.75 'g' stands for ['gemini'](https://github.com/grpc/grpc/tree/master)
+- 1.75 'g' stands for ['gemini'](https://github.com/grpc/grpc/tree/v1.75.x)
+- 1.76 'g' stands for ['genuine'](https://github.com/grpc/grpc/tree/master)

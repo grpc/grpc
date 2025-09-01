@@ -25,11 +25,11 @@
 cmake_minimum_required(VERSION 3.16)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.75.0-dev")
+set(PACKAGE_VERSION       "1.76.0-dev")
 set(gRPC_CORE_VERSION     "50.0.0")
 set(gRPC_CORE_SOVERSION   "50")
-set(gRPC_CPP_VERSION      "1.75.0-dev")
-set(gRPC_CPP_SOVERSION    "1.75")
+set(gRPC_CPP_VERSION      "1.76.0-dev")
+set(gRPC_CPP_SOVERSION    "1.76")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -10106,6 +10106,7 @@ add_executable(cancel_callback_test
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/channel_stack_type.cc
   src/core/lib/transport/connectivity_state.cc
@@ -11287,6 +11288,7 @@ add_executable(chunked_vector_test
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/channel_stack_type.cc
   src/core/lib/transport/connectivity_state.cc
@@ -16795,8 +16797,6 @@ add_executable(flow_control_test
   src/core/lib/iomgr/sockaddr_utils_posix.cc
   src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/promise/activity.cc
-  src/core/lib/promise/sleep.cc
-  src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
@@ -16919,6 +16919,7 @@ add_executable(for_each_test
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/channel_stack_type.cc
   src/core/lib/transport/connectivity_state.cc
@@ -17180,6 +17181,7 @@ target_link_libraries(frame_test
   absl::function_ref
   absl::hash
   absl::statusor
+  absl::string_view
   absl::span
   absl::utility
   gpr
@@ -19929,6 +19931,7 @@ target_link_libraries(http2_status_test
   absl::function_ref
   absl::hash
   absl::statusor
+  absl::string_view
   absl::span
   absl::utility
   gpr
@@ -20742,6 +20745,7 @@ add_executable(interceptor_list_test
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/channel_stack_type.cc
   src/core/lib/transport/connectivity_state.cc
@@ -22127,6 +22131,7 @@ add_executable(map_pipe_test
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/channel_stack_type.cc
   src/core/lib/transport/connectivity_state.cc
@@ -22425,6 +22430,12 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(memory_usage_test
+  src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
+  src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_string_helpers.cc
+  src/core/util/glob.cc
   src/core/util/time.cc
   test/core/util/memory_usage_test.cc
   third_party/googletest/googlemock/src/gmock_main.cc
@@ -22460,6 +22471,8 @@ target_include_directories(memory_usage_test
 target_link_libraries(memory_usage_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::flat_hash_map
+  absl::hash
   absl::statusor
   absl::string_view
   absl::span

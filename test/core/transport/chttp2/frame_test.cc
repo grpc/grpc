@@ -1230,6 +1230,52 @@ TEST(Frame, ValidateFrameHeaderTest) {
                   .IsOk());
 }
 
+TEST(FrameSize, Http2FrameSizeTest) {
+  constexpr absl::string_view kPayload = "hello";
+  constexpr size_t kPayloadSize = kPayload.size();
+  EXPECT_EQ(GetFrameMemoryUsage(
+                Http2DataFrame{/*stream_id=*/1, /*end_stream=*/false,
+                               /*payload=*/SliceBufferFromString(kPayload)}),
+            sizeof(Http2DataFrame) + kPayloadSize);
+  EXPECT_EQ(GetFrameMemoryUsage(Http2HeaderFrame{
+                /*stream_id=*/1, /*end_headers=*/false, /*end_stream=*/false,
+                /*payload=*/SliceBufferFromString(kPayload)}),
+            sizeof(Http2HeaderFrame) + kPayloadSize);
+  EXPECT_EQ(GetFrameMemoryUsage(Http2ContinuationFrame{
+                /*stream_id=*/1, /*end_headers=*/false,
+                /*payload=*/SliceBufferFromString(kPayload)}),
+            sizeof(Http2ContinuationFrame) + kPayloadSize);
+  EXPECT_EQ(
+      GetFrameMemoryUsage(Http2RstStreamFrame{
+          /*stream_id=*/1,
+          /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kConnectError)}),
+      sizeof(Http2RstStreamFrame));
+  EXPECT_EQ(GetFrameMemoryUsage(Http2SettingsFrame{}),
+            sizeof(Http2SettingsFrame));
+  EXPECT_EQ(
+      GetFrameMemoryUsage(Http2SettingsFrame{
+          /*ack=*/false,
+          /*settings=*/{{/*id=*/0x1234, /*value=*/0x9abcdef0},
+                        {/*id=*/0x5678, /*value=*/0x12345678}}}),
+      sizeof(Http2SettingsFrame) + (2 * sizeof(Http2SettingsFrame::Setting)));
+  EXPECT_EQ(GetFrameMemoryUsage(
+                Http2PingFrame{/*ack=*/false, /*opaque=*/0x123456789abcdef0}),
+            sizeof(Http2PingFrame));
+  EXPECT_EQ(GetFrameMemoryUsage(Http2GoawayFrame{
+                /*last_stream_id=*/0x12345678,
+                /*error_code=*/
+                static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm),
+                /*debug_data=*/Slice::FromCopiedString(kPayload)}),
+            sizeof(Http2GoawayFrame) + kPayloadSize);
+  EXPECT_EQ(GetFrameMemoryUsage(Http2WindowUpdateFrame{/*stream_id=*/1,
+                                                       /*increment=*/12345678}),
+            sizeof(Http2WindowUpdateFrame));
+  EXPECT_EQ(GetFrameMemoryUsage(Http2SecurityFrame{
+                /*payload=*/SliceBufferFromString(kPayload)}),
+            sizeof(Http2SecurityFrame) + kPayloadSize);
+  EXPECT_EQ(GetFrameMemoryUsage(Http2EmptyFrame{}), sizeof(Http2EmptyFrame));
+}
+
 }  // namespace
 }  // namespace grpc_core
 
