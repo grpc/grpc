@@ -37,6 +37,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//:grpc_core_credentials_header",
         "//:grpc_public_hdrs",
         "//src/core:channel_args",
         "//src/core:json",
