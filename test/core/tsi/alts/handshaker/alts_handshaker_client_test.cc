@@ -455,9 +455,17 @@ void DestroyConfig(alts_handshaker_client_test_config* config) {
 
 class FakeTokenFetcher : public grpc::alts::TokenFetcher {
  public:
+  FakeTokenFetcher(bool has_error = false) : has_error_(has_error) {}
   ~FakeTokenFetcher() override = default;
 
-  absl::StatusOr<std::string> GetToken() override { return kFakeToken; }
+  absl::StatusOr<std::string> GetToken() override { 
+    if (has_error_) {
+      return absl::InternalError("failed to get a token");
+    }
+    return kFakeToken;
+  }
+ private:
+  bool has_error_;
 };
 
 }  // namespace
@@ -663,6 +671,26 @@ static void tsi_cb_assert_tsi_internal_error(
     const unsigned char* /*bytes_to_send*/, size_t /*bytes_to_send_size*/,
     tsi_handshaker_result* /*result*/) {
   ASSERT_EQ(status, TSI_INTERNAL_ERROR);
+}
+
+TEST(AltsHandshakerClientTest, ScheduleRequestWithTokenFailureTest) {
+  // Initialization.
+    std::shared_ptr<FakeTokenFetcher> token_fetcher =
+      std::make_shared<FakeTokenFetcher>(/*has_error=*/true);
+  alts_handshaker_client_test_config* config = CreateConfig(token_fetcher);
+  // Check client_start failure.
+  alts_handshaker_client_set_grpc_caller_for_testing(config->client,
+                                                     CheckGrpcCallFailure);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    // TODO(apolcyn): go back to asserting TSI_INTERNAL_ERROR as return
+    // value instead of callback status, after removing the global
+    // queue in https://github.com/grpc/grpc/pull/20722
+    alts_handshaker_client_set_cb_for_testing(config->client,
+                                              tsi_cb_assert_tsi_internal_error);
+    alts_handshaker_client_start_client(config->client);
+  }
+  DestroyConfig(config);
 }
 
 TEST(AltsHandshakerClientTest, ScheduleRequestGrpcCallFailureTest) {
