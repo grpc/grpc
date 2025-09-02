@@ -545,8 +545,8 @@ static grpc_byte_buffer* get_serialized_start_client(
     absl::StatusOr<std::string> token = token_fetcher->GetToken();
     if (!token.ok()) {
       LOG(ERROR) << "Failed to get token from the token fetcher "
-                                  "in client start handshake: "
-                               << token.status();
+                    "in client start handshake: "
+                 << token.status();
       return nullptr;
     }
     access_token = *std::move(token);
