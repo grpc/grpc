@@ -82,6 +82,9 @@ const char* const additional_constraints_event_engine_secure_endpoint = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_fuse_filters =
+    "If set, individual filters are merged into fused filters";
+const char* const additional_constraints_fuse_filters = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -90,6 +93,9 @@ const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
 const char* const additional_constraints_local_connector_secure = "{}";
+const char* const description_max_age_filter_float_to_top =
+    "If set, the max age filter is placed at the top of the stack.";
+const char* const additional_constraints_max_age_filter_float_to_top = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
@@ -167,9 +173,6 @@ const char* const description_server_global_callbacks_ownership =
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
-const char* const description_shard_global_connection_pool =
-    "If set, shard the global connection pool to improve parallelism.";
-const char* const additional_constraints_shard_global_connection_pool = "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
@@ -235,11 +238,16 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"fuse_filters", description_fuse_filters,
+     additional_constraints_fuse_filters, nullptr, 0, false, false},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
+    {"max_age_filter_float_to_top", description_max_age_filter_float_to_top,
+     additional_constraints_max_age_filter_float_to_top, nullptr, 0, true,
+     true},
     {"max_inflight_pings_strict_limit",
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
@@ -295,9 +303,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"server_global_callbacks_ownership",
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0, true,
-     true},
-    {"shard_global_connection_pool", description_shard_global_connection_pool,
-     additional_constraints_shard_global_connection_pool, nullptr, 0, true,
      true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
@@ -380,6 +385,9 @@ const char* const additional_constraints_event_engine_secure_endpoint = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_fuse_filters =
+    "If set, individual filters are merged into fused filters";
+const char* const additional_constraints_fuse_filters = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -388,6 +396,9 @@ const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
 const char* const additional_constraints_local_connector_secure = "{}";
+const char* const description_max_age_filter_float_to_top =
+    "If set, the max age filter is placed at the top of the stack.";
+const char* const additional_constraints_max_age_filter_float_to_top = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
@@ -465,9 +476,6 @@ const char* const description_server_global_callbacks_ownership =
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
-const char* const description_shard_global_connection_pool =
-    "If set, shard the global connection pool to improve parallelism.";
-const char* const additional_constraints_shard_global_connection_pool = "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
@@ -533,11 +541,16 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"fuse_filters", description_fuse_filters,
+     additional_constraints_fuse_filters, nullptr, 0, false, false},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
+    {"max_age_filter_float_to_top", description_max_age_filter_float_to_top,
+     additional_constraints_max_age_filter_float_to_top, nullptr, 0, true,
+     true},
     {"max_inflight_pings_strict_limit",
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
@@ -593,9 +606,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"server_global_callbacks_ownership",
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0, true,
-     true},
-    {"shard_global_connection_pool", description_shard_global_connection_pool,
-     additional_constraints_shard_global_connection_pool, nullptr, 0, true,
      true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
@@ -678,6 +688,9 @@ const char* const additional_constraints_event_engine_secure_endpoint = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_fuse_filters =
+    "If set, individual filters are merged into fused filters";
+const char* const additional_constraints_fuse_filters = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -686,6 +699,9 @@ const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
 const char* const additional_constraints_local_connector_secure = "{}";
+const char* const description_max_age_filter_float_to_top =
+    "If set, the max age filter is placed at the top of the stack.";
+const char* const additional_constraints_max_age_filter_float_to_top = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
@@ -763,9 +779,6 @@ const char* const description_server_global_callbacks_ownership =
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
-const char* const description_shard_global_connection_pool =
-    "If set, shard the global connection pool to improve parallelism.";
-const char* const additional_constraints_shard_global_connection_pool = "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
@@ -831,11 +844,16 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"fuse_filters", description_fuse_filters,
+     additional_constraints_fuse_filters, nullptr, 0, false, false},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
+    {"max_age_filter_float_to_top", description_max_age_filter_float_to_top,
+     additional_constraints_max_age_filter_float_to_top, nullptr, 0, true,
+     true},
     {"max_inflight_pings_strict_limit",
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
@@ -891,9 +909,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"server_global_callbacks_ownership",
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0, true,
-     true},
-    {"shard_global_connection_pool", description_shard_global_connection_pool,
-     additional_constraints_shard_global_connection_pool, nullptr, 0, true,
      true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,

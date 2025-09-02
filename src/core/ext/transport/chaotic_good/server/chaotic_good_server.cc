@@ -178,7 +178,9 @@ ChaoticGoodServerListener::CreateListener(bool must_be_posix) {
     return event_engine_supports_fd->CreatePosixListener(
         std::move(accept_cb), std::move(shutdown_cb),
         grpc_event_engine::experimental::ChannelArgsEndpointConfig(args_),
-        std::make_unique<MemoryQuota>("chaotic_good_server_listener"));
+        std::make_unique<MemoryQuota>(
+            MakeRefCounted<channelz::ResourceQuotaNode>(
+                "chaotic_good_server_listener")));
   }
   EventEngine::Listener::AcceptCallback accept_cb =
       [self = RefAsSubclass<ChaoticGoodServerListener>()](
@@ -197,7 +199,8 @@ ChaoticGoodServerListener::CreateListener(bool must_be_posix) {
   return event_engine_->CreateListener(
       std::move(accept_cb), std::move(shutdown_cb),
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(args_),
-      std::make_unique<MemoryQuota>("chaotic_good_server_listener"));
+      std::make_unique<MemoryQuota>(MakeRefCounted<channelz::ResourceQuotaNode>(
+          "chaotic_good_server_listener")));
 }
 
 absl::StatusOr<int> ChaoticGoodServerListener::Bind(

@@ -535,6 +535,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/filter/auth/client_auth_filter.cc \
     src/core/filter/auth/server_auth_filter.cc \
     src/core/filter/blackboard.cc \
+    src/core/filter/fused_filters.cc \
     src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc \
     src/core/handshaker/handshaker.cc \
     src/core/handshaker/handshaker_registry.cc \
@@ -563,6 +564,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/debug/trace_flags.cc \
     src/core/lib/event_engine/ares_resolver.cc \
     src/core/lib/event_engine/cf_engine/cf_engine.cc \
+    src/core/lib/event_engine/cf_engine/cfsocket_listener.cc \
     src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc \
     src/core/lib/event_engine/cf_engine/dns_service_resolver.cc \
     src/core/lib/event_engine/channel_args_endpoint_config.cc \
@@ -767,6 +769,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/load_balancing/xds/xds_cluster_manager.cc \
     src/core/load_balancing/xds/xds_override_host.cc \
     src/core/load_balancing/xds/xds_wrr_locality.cc \
+    src/core/net/socket_mutator.cc \
     src/core/plugin_registry/grpc_plugin_registry.cc \
     src/core/plugin_registry/grpc_plugin_registry_extra.cc \
     src/core/resolver/dns/c_ares/dns_resolver_ares.cc \
@@ -802,6 +805,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/telemetry/context_list_entry.cc \
     src/core/telemetry/default_tcp_tracer.cc \
     src/core/telemetry/histogram_view.cc \
+    src/core/telemetry/instrument.cc \
     src/core/telemetry/metrics.cc \
     src/core/telemetry/stats.cc \
     src/core/telemetry/stats_data.cc \
@@ -1458,7 +1462,7 @@ if test "$PHP_GRPC" != "no"; then
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
-    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.75.0dev\""')
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.76.0dev\""')
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/call)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz/v2tov1)
@@ -1648,6 +1652,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/weighted_round_robin)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/weighted_target)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/load_balancing/xds)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/net)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/plugin_registry)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/resolver/dns)

@@ -26,16 +26,21 @@
 #include <utility>
 
 #include "absl/log/log.h"
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/lib/promise/try_join.h"
+#include "src/core/util/notification.h"
 #include "src/core/util/orphanable.h"
+#include "src/core/util/time.h"
 #include "test/core/promise/poll_matcher.h"
 #include "test/core/transport/chttp2/http2_frame_test_helper.h"
 #include "test/core/transport/util/mock_promise_endpoint.h"
@@ -100,8 +105,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
       {
           EventEngineSlice(
               grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
-          helper_.EventEngineSliceFromHttp2SettingsFrame(
-              {{4, helper_.GetDefaultInitialWindowSize()}}),
+          helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
       },
       event_engine().get());
   mock_endpoint.ExpectRead(
@@ -143,8 +147,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromQueue) {
       {
           EventEngineSlice(
               grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
-          helper_.EventEngineSliceFromHttp2SettingsFrame(
-              {{4, helper_.GetDefaultInitialWindowSize()}}),
+          helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
       },
       event_engine().get());
   mock_endpoint.ExpectWrite(
@@ -191,8 +194,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromCall) {
       {
           EventEngineSlice(
               grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
-          helper_.EventEngineSliceFromHttp2SettingsFrame(
-              {{4, helper_.GetDefaultInitialWindowSize()}}),
+          helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
 
       },
       event_engine().get());
@@ -258,8 +260,7 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportAbortTest) {
       {
           EventEngineSlice(
               grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
-          helper_.EventEngineSliceFromHttp2SettingsFrame(
-              {{4, helper_.GetDefaultInitialWindowSize()}}),
+          helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
       },
       event_engine().get());
   mock_endpoint.ExpectWrite(
@@ -314,8 +315,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingRead) {
       {
           EventEngineSlice(
               grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
-          helper_.EventEngineSliceFromHttp2SettingsFrame(
-              {{4, helper_.GetDefaultInitialWindowSize()}}),
+          helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
       },
       event_engine().get());
 
@@ -367,8 +367,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingWrite) {
       {
           EventEngineSlice(
               grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
-          helper_.EventEngineSliceFromHttp2SettingsFrame(
-              {{4, helper_.GetDefaultInitialWindowSize()}}),
+          helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
       },
       event_engine().get());
   mock_endpoint.ExpectWriteWithCallback(
@@ -441,8 +440,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingTimeout) {
       {
           EventEngineSlice(
               grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
-          helper_.EventEngineSliceFromHttp2SettingsFrame(
-              {{4, helper_.GetDefaultInitialWindowSize()}}),
+          helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
       },
       event_engine().get());
   mock_endpoint.ExpectWriteWithCallback(
@@ -500,8 +498,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
       {
           EventEngineSlice(
               grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
-          helper_.EventEngineSliceFromHttp2SettingsFrame(
-              {{4, helper_.GetDefaultInitialWindowSize()}}),
+          helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
       },
       event_engine().get());
   mock_endpoint.ExpectWriteWithCallback(
@@ -600,8 +597,7 @@ TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
       {
           EventEngineSlice(
               grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
-          helper_.EventEngineSliceFromHttp2SettingsFrame(
-              {{4, helper_.GetDefaultInitialWindowSize()}}),
+          helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
       },
       event_engine().get());
   mock_endpoint.ExpectWrite(
@@ -691,6 +687,273 @@ TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
   // Wait for Http2ClientTransport's internal activities to finish.
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
+}
+
+TEST(Http2CommonTransportTest, TestReadChannelArgs) {
+  // Test to validate that ReadChannelArgs reads all the channel args
+  // correctly.
+  Http2Settings settings;
+  ChannelArgs channel_args =
+      ChannelArgs()
+          .Set(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER, 2048)
+          .Set(GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES, 1024)
+          .Set(GRPC_ARG_HTTP2_MAX_FRAME_SIZE, 16384)
+          .Set(GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE, true)
+          .Set(GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY, 1)
+          .Set(GRPC_ARG_SECURITY_FRAME_ALLOWED, true);
+  ReadSettingsFromChannelArgs(channel_args, settings, /*is_client=*/true);
+  // Settings read from ChannelArgs.
+  EXPECT_EQ(settings.header_table_size(), 2048u);
+  EXPECT_EQ(settings.initial_window_size(), 1024u);
+  EXPECT_EQ(settings.max_frame_size(), 16384u);
+  EXPECT_EQ(settings.preferred_receive_crypto_message_size(), INT_MAX);
+  EXPECT_EQ(settings.allow_true_binary_metadata(), true);
+  EXPECT_EQ(settings.allow_security_frame(), true);
+  // Default settings
+  EXPECT_EQ(settings.max_concurrent_streams(), 4294967295u);
+  EXPECT_EQ(settings.max_header_list_size(), 16384u);
+  EXPECT_EQ(settings.enable_push(), true);
+
+  // If ChannelArgs don't have a value for the setting, the default must be
+  // loaded into the Settings object
+  Http2Settings settings2;
+  EXPECT_EQ(settings2.header_table_size(), 4096u);
+  EXPECT_EQ(settings2.max_concurrent_streams(), 4294967295u);
+  EXPECT_EQ(settings2.initial_window_size(), 65535u);
+  EXPECT_EQ(settings2.max_frame_size(), 16384u);
+  // TODO(tjagtap) : [PH2][P4] : Investigate why we change it in
+  // ReadSettingsFromChannelArgs . Right now ReadSettingsFromChannelArgs is
+  // functinally similar to the legacy read_channel_args.
+  EXPECT_EQ(settings2.max_header_list_size(), 16777216u);
+  EXPECT_EQ(settings2.preferred_receive_crypto_message_size(), 0u);
+  EXPECT_EQ(settings2.enable_push(), true);
+  EXPECT_EQ(settings2.allow_true_binary_metadata(), false);
+  EXPECT_EQ(settings2.allow_security_frame(), false);
+
+  ReadSettingsFromChannelArgs(ChannelArgs(), settings2, /*is_client=*/true);
+  EXPECT_EQ(settings2.header_table_size(), 4096u);
+  EXPECT_EQ(settings2.max_concurrent_streams(), 4294967295u);
+  EXPECT_EQ(settings2.initial_window_size(), 65535u);
+  EXPECT_EQ(settings2.max_frame_size(), 16384u);
+  // TODO(tjagtap) : [PH2][P4] : Investigate why we change it in
+  // ReadSettingsFromChannelArgs . Right now ReadSettingsFromChannelArgs is
+  // functinally similar to the legacy read_channel_args.
+  EXPECT_EQ(settings2.max_header_list_size(), 16384u);
+  EXPECT_EQ(settings2.preferred_receive_crypto_message_size(), 0u);
+  EXPECT_EQ(settings2.enable_push(), true);
+  EXPECT_EQ(settings2.allow_true_binary_metadata(), false);
+  EXPECT_EQ(settings2.allow_security_frame(), false);
+}
+
+class SettingsTimeoutManagerTest : public ::testing::Test {
+ protected:
+  RefCountedPtr<Party> MakeParty() {
+    auto arena = SimpleArenaAllocator()->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine_.get());
+    return Party::Make(std::move(arena));
+  }
+
+ private:
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_ =
+      grpc_event_engine::experimental::GetDefaultEventEngine();
+};
+
+constexpr uint32_t kSettingsShortTimeout = 300;
+constexpr uint32_t kSettingsLongTimeoutTest = 1400;
+
+auto MockStartSettingsTimeout(SettingsTimeoutManager& manager) {
+  LOG(INFO) << "MockStartSettingsTimeout Factory";
+  return manager.WaitForSettingsTimeout();
+}
+
+auto MockSettingsAckReceived(SettingsTimeoutManager& manager) {
+  LOG(INFO) << "MockSettingsAckReceived Factory";
+  return [&manager]() -> Poll<absl::Status> {
+    LOG(INFO) << "MockSettingsAckReceived OnSettingsAckReceived";
+    manager.OnSettingsAckReceived();
+    return absl::OkStatus();
+  };
+}
+
+auto MockSettingsAckReceivedDelayed(SettingsTimeoutManager& manager) {
+  LOG(INFO) << "MockSettingsAckReceived Factory";
+  return TrySeq(Sleep(Duration::Milliseconds(kSettingsShortTimeout * 0.8)),
+                [&manager]() -> Poll<absl::Status> {
+                  LOG(INFO) << "MockSettingsAckReceived OnSettingsAckReceived";
+                  manager.OnSettingsAckReceived();
+                  return absl::OkStatus();
+                });
+}
+
+TEST_F(SettingsTimeoutManagerTest, NoTimeoutOneSetting) {
+  // First start the timer and then immediately send the ACK
+  // Check that the status must always be OK.
+  auto party = MakeParty();
+  SettingsTimeoutManager manager;
+  ExecCtx exec_ctx;
+  manager.SetSettingsTimeout(ChannelArgs(),
+                             Duration::Milliseconds(kSettingsShortTimeout));
+  Notification notification;
+  party->Spawn(
+      "SettingsTimeoutManagerTest",
+      TryJoin<absl::StatusOr>(MockStartSettingsTimeout(manager),
+                              MockSettingsAckReceived(manager)),
+      [&notification](absl::StatusOr<std::tuple<Empty, Empty>> status) {
+        EXPECT_TRUE(status.ok());
+        notification.Notify();
+      });
+  notification.WaitForNotification();
+}
+
+TEST_F(SettingsTimeoutManagerTest, NoTimeoutThreeSettings) {
+  // Starting the timer and sending the ACK immediately three times in a row.
+  // Check that the status must always be OK.
+  auto party = MakeParty();
+  SettingsTimeoutManager manager;
+  ExecCtx exec_ctx;
+  manager.SetSettingsTimeout(ChannelArgs(),
+                             Duration::Milliseconds(kSettingsShortTimeout));
+  Notification notification;
+  party->Spawn(
+      "SettingsTimeoutManagerTest",
+      TrySeq(TryJoin<absl::StatusOr>(MockStartSettingsTimeout(manager),
+                                     MockSettingsAckReceived(manager)),
+             TryJoin<absl::StatusOr>(MockStartSettingsTimeout(manager),
+                                     MockSettingsAckReceived(manager)),
+             TryJoin<absl::StatusOr>(MockStartSettingsTimeout(manager),
+                                     MockSettingsAckReceived(manager))),
+      [&notification](absl::StatusOr<std::tuple<Empty, Empty>> status) {
+        EXPECT_TRUE(status.ok());
+        notification.Notify();
+      });
+  notification.WaitForNotification();
+}
+
+TEST_F(SettingsTimeoutManagerTest, NoTimeoutThreeSettingsDelayed) {
+  // Starting the timer and sending the ACK immediately three times in a row.
+  // Check that the status must always be OK.
+  auto party = MakeParty();
+  SettingsTimeoutManager manager;
+  ExecCtx exec_ctx;
+  manager.SetSettingsTimeout(ChannelArgs(),
+                             Duration::Milliseconds(kSettingsShortTimeout));
+  Notification notification;
+  party->Spawn(
+      "SettingsTimeoutManagerTest",
+      TrySeq(TryJoin<absl::StatusOr>(MockStartSettingsTimeout(manager),
+                                     MockSettingsAckReceivedDelayed(manager)),
+             TryJoin<absl::StatusOr>(MockStartSettingsTimeout(manager),
+                                     MockSettingsAckReceivedDelayed(manager)),
+             TryJoin<absl::StatusOr>(MockStartSettingsTimeout(manager),
+                                     MockSettingsAckReceivedDelayed(manager))),
+      [&notification](absl::StatusOr<std::tuple<Empty, Empty>> status) {
+        EXPECT_TRUE(status.ok());
+        notification.Notify();
+      });
+  notification.WaitForNotification();
+}
+
+TEST_F(SettingsTimeoutManagerTest, NoTimeoutOneSettingRareOrder) {
+  // Emulating the case where we receive the ACK before we even spawn the timer.
+  // This could happen if our write promise gets blocked on a very large write
+  // and the RTT is low and peer responsiveness is high.
+  //
+  // Check that the status must always be OK.
+  auto party = MakeParty();
+  SettingsTimeoutManager manager;
+  ExecCtx exec_ctx;
+  manager.SetSettingsTimeout(ChannelArgs(),
+                             Duration::Milliseconds(kSettingsShortTimeout));
+  Notification notification;
+  party->Spawn(
+      "SettingsTimeoutManagerTest",
+      TryJoin<absl::StatusOr>(MockSettingsAckReceived(manager),
+                              MockStartSettingsTimeout(manager)),
+      [&notification](absl::StatusOr<std::tuple<Empty, Empty>> status) {
+        EXPECT_TRUE(status.ok());
+        notification.Notify();
+      });
+  notification.WaitForNotification();
+}
+
+TEST_F(SettingsTimeoutManagerTest, NoTimeoutThreeSettingsRareOrder) {
+  // Emulating the case where we receive the ACK before we even spawn the timer.
+  // This could happen if our write promise gets blocked on a very large write
+  // and the RTT is low and peer responsiveness is high.
+  //
+  // Check that the status must always be OK.
+  auto party = MakeParty();
+  SettingsTimeoutManager manager;
+  ExecCtx exec_ctx;
+  manager.SetSettingsTimeout(ChannelArgs(),
+                             Duration::Milliseconds(kSettingsShortTimeout));
+  Notification notification;
+  party->Spawn(
+      "SettingsTimeoutManagerTest",
+      TrySeq(TryJoin<absl::StatusOr>(MockSettingsAckReceived(manager),
+                                     MockStartSettingsTimeout(manager)),
+             TryJoin<absl::StatusOr>(MockSettingsAckReceived(manager),
+                                     MockStartSettingsTimeout(manager)),
+             TryJoin<absl::StatusOr>(MockSettingsAckReceived(manager),
+                                     MockStartSettingsTimeout(manager))),
+      [&notification](absl::StatusOr<std::tuple<Empty, Empty>> status) {
+        EXPECT_TRUE(status.ok());
+        notification.Notify();
+      });
+  notification.WaitForNotification();
+}
+
+TEST_F(SettingsTimeoutManagerTest, NoTimeoutThreeSettingsMixedOrder) {
+  auto party = MakeParty();
+  SettingsTimeoutManager manager;
+  ExecCtx exec_ctx;
+  manager.SetSettingsTimeout(ChannelArgs(),
+                             Duration::Milliseconds(kSettingsShortTimeout));
+  Notification notification;
+  party->Spawn(
+      "SettingsTimeoutManagerTest",
+      TrySeq(TryJoin<absl::StatusOr>(MockStartSettingsTimeout(manager),
+                                     MockSettingsAckReceived(manager)),
+             TryJoin<absl::StatusOr>(MockSettingsAckReceived(manager),
+                                     MockStartSettingsTimeout(manager)),
+             TryJoin<absl::StatusOr>(MockSettingsAckReceived(manager),
+                                     MockStartSettingsTimeout(manager)),
+             TryJoin<absl::StatusOr>(MockStartSettingsTimeout(manager),
+                                     MockSettingsAckReceived(manager))),
+      [&notification](absl::StatusOr<std::tuple<Empty, Empty>> status) {
+        EXPECT_TRUE(status.ok());
+        notification.Notify();
+      });
+  notification.WaitForNotification();
+}
+
+TEST_F(SettingsTimeoutManagerTest, TimeoutOneSetting) {
+  // Testing one timeout test
+  // Also ensuring that receiving the ACK after the timeout does not crash or
+  // leak memory.
+  auto party = MakeParty();
+  SettingsTimeoutManager manager;
+  ExecCtx exec_ctx;
+  manager.SetSettingsTimeout(
+      ChannelArgs().Set(GRPC_ARG_SETTINGS_TIMEOUT, kSettingsShortTimeout),
+      Duration::Milliseconds(kSettingsShortTimeout));
+  Notification notification1;
+  Notification notification2;
+  party->Spawn("SettingsTimeoutManagerTestStart",
+               MockStartSettingsTimeout(manager),
+               [&notification1](absl::Status status) {
+                 EXPECT_TRUE(absl::IsCancelled(status));
+                 EXPECT_EQ(status.message(), RFC9113::kSettingsTimeout);
+                 notification1.Notify();
+               });
+  party->Spawn(
+      "SettingsTimeoutManagerTestAck",
+      TrySeq(Sleep(Duration::Milliseconds(kSettingsLongTimeoutTest)),
+             MockSettingsAckReceived(manager)),
+      [&notification2](absl::Status status) { notification2.Notify(); });
+  notification1.WaitForNotification();
+  notification2.WaitForNotification();
 }
 
 // TODO(tjagtap) : [PH2][P2] Write tests similar to

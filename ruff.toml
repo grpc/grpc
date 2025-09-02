@@ -25,8 +25,6 @@ ignore = [
     "C408",    # Unnecessary {kind}() call (rewrite as a literal)
     "C901",    # {name} is too complex ({complexity} > {max_complexity})
     "COM812",  # Trailing comma missing
-    "D100",    # Missing docstring in public module
-    "D101",    # Missing docstring in public class
     "D102",    # Missing docstring in public method
     "D103",    # Missing docstring in public function
     "D104",    # Missing docstring in public package
@@ -34,29 +32,16 @@ ignore = [
     "D106",    # Missing docstring in public nested class
     "D107",    # Missing docstring in __init__
     "D200",    # One-line docstring should fit on one line
-    "D202",    # No blank lines allowed after function docstring (found {num_lines})
     "D205",    # 1 blank line required between summary line and description
-    "D207",    # Docstring is under-indented
-    "D209",    # Multi-line docstring closing quotes should be on a separate line
     "D212",    # Multi-line docstring summary should start at the first line
     "D213",    # Multi-line docstring summary should start at the second line
     "D400",    # First line should end with a period
     "D401",    # First line of docstring should be in imperative mood: "{first_line}"
-    "D403",    # First word of the docstring should be capitalized: {} -> {}
-    "D404",    # First word of the docstring should not be "This"
-    "D410",    # Missing blank line after section ("{name}")
-    "D411",    # Missing blank line before section ("{name}")
     "D413",    # Missing blank line after last section ("{name}")
     "D415",    # First line should end with a period, question mark, or exclamation point
-    "D417",    # Missing argument description in the docstring for {definition}: {name}
-    "DTZ001",  # datetime.datetime() called without a tzinfo argument
     "DTZ005",  # datetime.datetime.now() called without a tz argument
-    "E402",    # Module level import not at top of cell
     "E501",    # Line too long ({width} > {limit})
-    "E713",    # Test for membership should be not in
-    "E722",    # Do not use bare except
     "E731",    # Do not assign a lambda expression, use a def
-    "EM101",   # Exception must not use a string literal, assign to variable first
     "ERA001",  # Found commented-out code
     "F401",    # {name} imported but unused; consider using importlib.util.find_spec to test for availability
     "F403",    # from {name} import * used; unable to detect undefined names

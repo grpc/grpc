@@ -29,8 +29,11 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:iomgr_timer",
+        "//src/core:bdp_estimator",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -44,6 +47,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:connectivity_state",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
@@ -54,11 +58,16 @@ grpc_cc_test(
     srcs = ["error_utils_test.cc"],
     external_deps = [
         "gtest",
+        "absl/status",
     ],
     tags = ["error_tests"],
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:error",
+        "//src/core:error_utils",
+        "//src/core:experiments",
+        "//src/core:status_helper",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
@@ -69,13 +78,17 @@ grpc_cc_test(
     srcs = ["promise_endpoint_test.cc"],
     external_deps = [
         "gtest",
+        "absl/functional:any_invocable",
     ],
     deps = [
+        "//:event_engine_base_hdrs",
         "//:grpc",
         "//src/core:activity",
         "//src/core:grpc_promise_endpoint",
         "//src/core:join",
         "//src/core:seq",
+        "//src/core:slice",
+        "//src/core:slice_buffer",
         "//test/core/promise:test_wakeup_schedulers",
     ],
 )
@@ -87,8 +100,10 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//src/core:status_conversion",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
@@ -99,12 +114,17 @@ grpc_cc_test(
     srcs = ["timeout_encoding_test.cc"],
     external_deps = [
         "gtest",
+        "absl/strings:str_format",
+        "absl/strings:string_view",
     ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:time",
+        "//src/core:timeout_encoding",
+        "//src/core:useful",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
@@ -117,6 +137,7 @@ grpc_cc_benchmark(
     deps = [
         "//:grpc",
         "//src/core:default_event_engine",
+        "//src/core:metadata",
         "//test/core/call:call_spine_benchmarks",
     ],
 )
@@ -131,8 +152,11 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:config",
         "//:gpr",
         "//:grpc",
+        "//:ref_counted_ptr",
+        "//:transport_auth_context",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],

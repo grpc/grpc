@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.75.0-dev'
+  version = '1.76.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -247,6 +247,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/container/layout', abseil_version
+    ss.dependency 'abseil/container/node_hash_map', abseil_version
     ss.dependency 'abseil/flags/flag', abseil_version
     ss.dependency 'abseil/flags/marshalling', abseil_version
     ss.dependency 'abseil/functional/any_invocable', abseil_version
@@ -285,6 +286,7 @@ Pod::Spec.new do |s|
                       'src/core/call/call_state.h',
                       'src/core/call/client_call.h',
                       'src/core/call/custom_metadata.h',
+                      'src/core/call/filter_fusion.h',
                       'src/core/call/interception_chain.h',
                       'src/core/call/message.h',
                       'src/core/call/metadata.h',
@@ -428,6 +430,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/http2_client_transport.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings_manager.h',
+                      'src/core/ext/transport/chttp2/transport/http2_settings_promises.h',
                       'src/core/ext/transport/chttp2/transport/http2_stats_collector.h',
                       'src/core/ext/transport/chttp2/transport/http2_status.h',
                       'src/core/ext/transport/chttp2/transport/http2_transport.h',
@@ -442,9 +445,11 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/ping_callbacks.h',
                       'src/core/ext/transport/chttp2/transport/ping_promise.h',
                       'src/core/ext/transport/chttp2/transport/ping_rate_policy.h',
+                      'src/core/ext/transport/chttp2/transport/stream_data_queue.h',
                       'src/core/ext/transport/chttp2/transport/stream_lists.h',
                       'src/core/ext/transport/chttp2/transport/transport_common.h',
                       'src/core/ext/transport/chttp2/transport/varint.h',
+                      'src/core/ext/transport/chttp2/transport/writable_streams.h',
                       'src/core/ext/transport/chttp2/transport/write_size_policy.h',
                       'src/core/ext/transport/inproc/inproc_transport.h',
                       'src/core/ext/transport/inproc/legacy_inproc_transport.h',
@@ -979,6 +984,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/debug/trace_impl.h',
                       'src/core/lib/event_engine/ares_resolver.h',
                       'src/core/lib/event_engine/cf_engine/cf_engine.h',
+                      'src/core/lib/event_engine/cf_engine/cfsocket_listener.h',
                       'src/core/lib/event_engine/cf_engine/cfstream_endpoint.h',
                       'src/core/lib/event_engine/cf_engine/cftype_unique_ref.h',
                       'src/core/lib/event_engine/cf_engine/dns_service_resolver.h',
@@ -1153,6 +1159,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/resource_quota/memory_quota.h',
                       'src/core/lib/resource_quota/periodic_update.h',
                       'src/core/lib/resource_quota/resource_quota.h',
+                      'src/core/lib/resource_quota/telemetry.h',
                       'src/core/lib/resource_quota/thread_quota.h',
                       'src/core/lib/security/authorization/audit_logging.h',
                       'src/core/lib/security/authorization/authorization_engine.h',
@@ -1223,6 +1230,7 @@ Pod::Spec.new do |s|
                       'src/core/load_balancing/weighted_target/weighted_target.h',
                       'src/core/load_balancing/xds/xds_channel_args.h',
                       'src/core/load_balancing/xds/xds_override_host.h',
+                      'src/core/net/socket_mutator.h',
                       'src/core/resolver/dns/c_ares/dns_resolver_ares.h',
                       'src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                       'src/core/resolver/dns/c_ares/grpc_ares_wrapper.h',
@@ -1248,12 +1256,15 @@ Pod::Spec.new do |s|
                       'src/core/server/xds_channel_stack_modifier.h',
                       'src/core/service_config/service_config.h',
                       'src/core/service_config/service_config_call_data.h',
+                      'src/core/service_config/service_config_channel_arg_filter.h',
                       'src/core/service_config/service_config_impl.h',
                       'src/core/service_config/service_config_parser.h',
                       'src/core/telemetry/call_tracer.h',
                       'src/core/telemetry/context_list_entry.h',
                       'src/core/telemetry/default_tcp_tracer.h',
+                      'src/core/telemetry/histogram.h',
                       'src/core/telemetry/histogram_view.h',
+                      'src/core/telemetry/instrument.h',
                       'src/core/telemetry/metrics.h',
                       'src/core/telemetry/stats.h',
                       'src/core/telemetry/stats_data.h',
@@ -1641,6 +1652,7 @@ Pod::Spec.new do |s|
                               'src/core/call/call_state.h',
                               'src/core/call/client_call.h',
                               'src/core/call/custom_metadata.h',
+                              'src/core/call/filter_fusion.h',
                               'src/core/call/interception_chain.h',
                               'src/core/call/message.h',
                               'src/core/call/metadata.h',
@@ -1784,6 +1796,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/http2_client_transport.h',
                               'src/core/ext/transport/chttp2/transport/http2_settings.h',
                               'src/core/ext/transport/chttp2/transport/http2_settings_manager.h',
+                              'src/core/ext/transport/chttp2/transport/http2_settings_promises.h',
                               'src/core/ext/transport/chttp2/transport/http2_stats_collector.h',
                               'src/core/ext/transport/chttp2/transport/http2_status.h',
                               'src/core/ext/transport/chttp2/transport/http2_transport.h',
@@ -1798,9 +1811,11 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/ping_callbacks.h',
                               'src/core/ext/transport/chttp2/transport/ping_promise.h',
                               'src/core/ext/transport/chttp2/transport/ping_rate_policy.h',
+                              'src/core/ext/transport/chttp2/transport/stream_data_queue.h',
                               'src/core/ext/transport/chttp2/transport/stream_lists.h',
                               'src/core/ext/transport/chttp2/transport/transport_common.h',
                               'src/core/ext/transport/chttp2/transport/varint.h',
+                              'src/core/ext/transport/chttp2/transport/writable_streams.h',
                               'src/core/ext/transport/chttp2/transport/write_size_policy.h',
                               'src/core/ext/transport/inproc/inproc_transport.h',
                               'src/core/ext/transport/inproc/legacy_inproc_transport.h',
@@ -2335,6 +2350,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/debug/trace_impl.h',
                               'src/core/lib/event_engine/ares_resolver.h',
                               'src/core/lib/event_engine/cf_engine/cf_engine.h',
+                              'src/core/lib/event_engine/cf_engine/cfsocket_listener.h',
                               'src/core/lib/event_engine/cf_engine/cfstream_endpoint.h',
                               'src/core/lib/event_engine/cf_engine/cftype_unique_ref.h',
                               'src/core/lib/event_engine/cf_engine/dns_service_resolver.h',
@@ -2509,6 +2525,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/resource_quota/memory_quota.h',
                               'src/core/lib/resource_quota/periodic_update.h',
                               'src/core/lib/resource_quota/resource_quota.h',
+                              'src/core/lib/resource_quota/telemetry.h',
                               'src/core/lib/resource_quota/thread_quota.h',
                               'src/core/lib/security/authorization/audit_logging.h',
                               'src/core/lib/security/authorization/authorization_engine.h',
@@ -2579,6 +2596,7 @@ Pod::Spec.new do |s|
                               'src/core/load_balancing/weighted_target/weighted_target.h',
                               'src/core/load_balancing/xds/xds_channel_args.h',
                               'src/core/load_balancing/xds/xds_override_host.h',
+                              'src/core/net/socket_mutator.h',
                               'src/core/resolver/dns/c_ares/dns_resolver_ares.h',
                               'src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                               'src/core/resolver/dns/c_ares/grpc_ares_wrapper.h',
@@ -2604,12 +2622,15 @@ Pod::Spec.new do |s|
                               'src/core/server/xds_channel_stack_modifier.h',
                               'src/core/service_config/service_config.h',
                               'src/core/service_config/service_config_call_data.h',
+                              'src/core/service_config/service_config_channel_arg_filter.h',
                               'src/core/service_config/service_config_impl.h',
                               'src/core/service_config/service_config_parser.h',
                               'src/core/telemetry/call_tracer.h',
                               'src/core/telemetry/context_list_entry.h',
                               'src/core/telemetry/default_tcp_tracer.h',
+                              'src/core/telemetry/histogram.h',
                               'src/core/telemetry/histogram_view.h',
+                              'src/core/telemetry/instrument.h',
                               'src/core/telemetry/metrics.h',
                               'src/core/telemetry/stats.h',
                               'src/core/telemetry/stats_data.h',

@@ -263,6 +263,12 @@ if sys.platform == "darwin":
 EXTRA_ENV_COMPILE_ARGS = os.environ.get("GRPC_PYTHON_CFLAGS", None)
 EXTRA_ENV_LINK_ARGS = os.environ.get("GRPC_PYTHON_LDFLAGS", None)
 if EXTRA_ENV_COMPILE_ARGS is None:
+
+    # NOTE: Keep in sync with c- and cpp-specific arg filters!
+    #       For Linux and Darwin args, update
+    #       BuildExt.build_extensions#new_compile() in commands.py
+    #       For Windows, update _commandfile_spawn() in _spawn_patch.py.
+
     EXTRA_ENV_COMPILE_ARGS = ""
     if "win32" in sys.platform:
         # MSVC by defaults uses C++14 and C89 so both needs to be configured.
@@ -542,7 +548,7 @@ PACKAGE_DIRECTORIES = {
     "": PYTHON_STEM,
 }
 
-INSTALL_REQUIRES = ("typing-extensions~=4.13",)
+INSTALL_REQUIRES = ("typing-extensions~=4.12",)
 
 EXTRAS_REQUIRES = {
     "protobuf": "grpcio-tools>={version}".format(version=grpc_version.VERSION),

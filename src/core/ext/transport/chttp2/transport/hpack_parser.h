@@ -92,7 +92,10 @@ class HPackParser {
   HPackParser& operator=(HPackParser&&) = default;
 
   // Begin parsing a new frame
-  // Sink receives each parsed header,
+  // Sink receives each parsed header.
+  // You can pass metadata_buffer as a nullptr if you need to discard this frame
+  // after processing it. This would be needed if the stream is already closed,
+  // or multiple other cases.
   void BeginFrame(grpc_metadata_batch* metadata_buffer,
                   uint32_t metadata_size_soft_limit,
                   uint32_t metadata_size_hard_limit, Boundary boundary,
@@ -101,8 +104,7 @@ class HPackParser {
   void StopBufferingFrame() { metadata_buffer_ = nullptr; }
   // Parse one slice worth of data
   grpc_error_handle Parse(const grpc_slice& slice, bool is_last,
-                          absl::BitGenRef bitsrc,
-                          CallTracerAnnotationInterface* call_tracer);
+                          absl::BitGenRef bitsrc, CallSpan* call_tracer);
   // Reset state ready for the next BeginFrame
   void FinishFrame();
 
@@ -254,7 +256,7 @@ class HPackParser {
   };
 
   grpc_error_handle ParseInput(Input input, bool is_last,
-                               CallTracerAnnotationInterface* call_tracer);
+                               CallSpan* call_tracer);
   void ParseInputInner(Input* input);
   GPR_ATTRIBUTE_NOINLINE
   void HandleMetadataSoftSizeLimitExceeded(Input* input);

@@ -302,7 +302,7 @@ TEST_P(ChannelzChannelTest, BasicChannelProto) {
       grpc_channel_get_channelz_node(channel.channel());
   upb_Arena* arena = upb_Arena_New();
   grpc_channelz_v2_Entity* entity = grpc_channelz_v2_Entity_new(arena);
-  channelz_channel->SerializeEntity(entity, arena);
+  channelz_channel->SerializeEntity(entity, arena, absl::Milliseconds(100));
   EXPECT_EQ(grpc_channelz_v2_Entity_id(entity), channelz_channel->uuid());
   EXPECT_EQ(UpbStringToStdString(grpc_channelz_v2_Entity_kind(entity)),
             "channel");
@@ -475,11 +475,13 @@ class ChannelzRegistryBasedTest : public ::testing::TestWithParam<size_t> {
   // ensure we always have a fresh registry for tests.
   void SetUp() override {
     WaitForSingleOwner(GetDefaultEventEngine());
+    ResourceQuota::TestOnlyResetDefaultResourceQuota();
     ChannelzRegistry::TestOnlyReset();
   }
 
   void TearDown() override {
     WaitForSingleOwner(GetDefaultEventEngine());
+    ResourceQuota::TestOnlyResetDefaultResourceQuota();
     ChannelzRegistry::TestOnlyReset();
   }
 };
@@ -550,29 +552,6 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidCheck) {
   std::vector<intptr_t> uuids = GetUuidListFromArray(channel_json.array());
   for (int i = 0; i < kNumChannels; ++i) {
     EXPECT_EQ(i + 1, uuids[i]);
-  }
-}
-
-TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMiddleUuidCheck) {
-  const intptr_t kNumChannels = 50;
-  const intptr_t kMidQuery = 40;
-  ExecCtx exec_ctx;
-  ChannelFixture channels[kNumChannels];
-  ChannelzRegistry::GetAllEntities();  // Force uuids to be fresh
-  (void)channels;                      // suppress unused variable error
-  // Only query for the end of the channels.
-  char* json_str = grpc_channelz_get_top_channels(kMidQuery);
-  auto parsed_json = JsonParse(json_str);
-  gpr_free(json_str);
-  ASSERT_TRUE(parsed_json.ok()) << parsed_json.status();
-  ASSERT_EQ(parsed_json->type(), Json::Type::kObject);
-  Json channel_json;
-  auto it = parsed_json->object().find("channel");
-  if (it != parsed_json->object().end()) channel_json = it->second;
-  ValidateJsonArraySize(channel_json, kNumChannels - kMidQuery + 1);
-  std::vector<intptr_t> uuids = GetUuidListFromArray(channel_json.array());
-  for (size_t i = 0; i < uuids.size(); ++i) {
-    EXPECT_EQ(static_cast<intptr_t>(kMidQuery + i), uuids[i]);
   }
 }
 
