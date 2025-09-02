@@ -455,15 +455,16 @@ void DestroyConfig(alts_handshaker_client_test_config* config) {
 
 class FakeTokenFetcher : public grpc::alts::TokenFetcher {
  public:
-  FakeTokenFetcher(bool has_error = false) : has_error_(has_error) {}
+  explicit FakeTokenFetcher(bool has_error = false) : has_error_(has_error) {}
   ~FakeTokenFetcher() override = default;
 
-  absl::StatusOr<std::string> GetToken() override { 
+  absl::StatusOr<std::string> GetToken() override {
     if (has_error_) {
       return absl::InternalError("failed to get a token");
     }
     return kFakeToken;
   }
+
  private:
   bool has_error_;
 };
@@ -675,7 +676,7 @@ static void tsi_cb_assert_tsi_internal_error(
 
 TEST(AltsHandshakerClientTest, ScheduleRequestWithTokenFailureTest) {
   // Initialization.
-    std::shared_ptr<FakeTokenFetcher> token_fetcher =
+  std::shared_ptr<FakeTokenFetcher> token_fetcher =
       std::make_shared<FakeTokenFetcher>(/*has_error=*/true);
   alts_handshaker_client_test_config* config = CreateConfig(token_fetcher);
   // Check client_start failure.
