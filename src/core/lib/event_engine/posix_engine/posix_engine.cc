@@ -176,7 +176,7 @@ void RegisterEventEngineForFork(
     const std::shared_ptr<PosixEventEngine>& posix_engine,
     const std::shared_ptr<ThreadPool>& executor,
     const std::shared_ptr<TimerManager>& timer_manager) {
-  if (!grpc_core::Fork::Enabled()) {
+  if (!(grpc_core::Fork::Enabled() && grpc_core::IsEventEngineForkEnabled())) {
     return;
   }
   grpc_core::MutexLock lock(fork_mu.get());
@@ -185,7 +185,8 @@ void RegisterEventEngineForFork(
       std::remove_if(fork_handlers->begin(), fork_handlers->end(),
                      [](const auto& ptr) {
                        return ptr.event_engine.expired() &&
-                              ptr.executor.expired();
+                              ptr.executor.expired() &&
+                              ptr.timer_manager.expired();
                      }),
       fork_handlers->end());
   fork_handlers->emplace_back(posix_engine, executor, timer_manager);
@@ -420,10 +421,7 @@ PosixEventEngine::MakeTestOnlyPosixEventEngine(
   // Calling a private PosixEventEngine constructor - can't do make_shared
   std::shared_ptr<PosixEventEngine> engine(
       new PosixEventEngine(std::move(test_only_poller)));
-  if (grpc_core::IsEventEngineForkEnabled()) {
-    RegisterEventEngineForFork(engine, engine->executor_,
-                               engine->timer_manager_);
-  }
+  RegisterEventEngineForFork(engine, engine->executor_, engine->timer_manager_);
   return engine;
 }
 
