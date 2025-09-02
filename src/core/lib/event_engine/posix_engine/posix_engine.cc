@@ -80,7 +80,7 @@ namespace grpc_event_engine::experimental {
 namespace {
 
 bool ShouldUsePosixPoller() {
-#if defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
+#if defined(GRPC_PYTHON_BUILD)
   return grpc_core::IsEventEnginePollerForPythonEnabled();
 #else
   return true;

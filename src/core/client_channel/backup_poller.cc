@@ -62,12 +62,12 @@ static grpc_core::Duration g_poll_interval =
 static bool g_backup_polling_disabled;
 
 void grpc_client_channel_global_init_backup_polling() {
-#ifdef GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
+#ifdef GRPC_PYTHON_BUILD
   bool event_engine_poller_enabled =
       grpc_core::IsEventEnginePollerForPythonEnabled();
-#else   // GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
+#else   // GRPC_PYTHON_BUILD
   bool event_engine_poller_enabled = true;
-#endif  // GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
+#endif  // GRPC_PYTHON_BUILD
   // Disable backup polling if EventEngine is used everywhere.
   g_backup_polling_disabled = event_engine_poller_enabled &&
                               grpc_core::IsEventEngineClientEnabled() &&
@@ -163,7 +163,7 @@ static void g_poller_init_locked() {
 }
 
 static bool g_can_poll_in_background() {
-#ifndef GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
+#ifndef GRPC_PYTHON_BUILD
   return grpc_iomgr_run_in_background();
 #else
   // No iomgr "event_engines" (not to be confused with the new EventEngine)

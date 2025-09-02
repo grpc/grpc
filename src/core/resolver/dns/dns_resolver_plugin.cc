@@ -36,11 +36,11 @@ void RegisterDnsResolver(CoreConfiguration::Builder* builder) {
       std::make_unique<EventEngineClientChannelDNSResolverFactory>());
   return;
 #endif
-#ifdef GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
+#ifdef GRPC_PYTHON_BUILD
   bool use_ee = IsEventEnginePollerForPythonEnabled();
-#else   // GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
+#else   // GRPC_PYTHON_BUILD
   bool use_ee = true;
-#endif  // GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
+#endif  // GRPC_PYTHON_BUILD
   if (use_ee && IsEventEngineDnsEnabled()) {
     VLOG(2) << "Using EventEngine dns resolver";
     builder->resolver_registry()->RegisterResolverFactory(
