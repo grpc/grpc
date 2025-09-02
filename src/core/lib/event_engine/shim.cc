@@ -36,7 +36,8 @@ bool UsePollsetAlternative() {
          grpc_core::IsPollsetAlternativeEnabled();
 }
 
-// Returns true if GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER is defined.
+// Returns true if the poller is disabled by build configuration or experiment
+// flags.
 bool EventEngineExperimentDisabledForPython() {
 #ifdef GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
   return !grpc_core::IsEventEnginePollerForPythonEnabled();

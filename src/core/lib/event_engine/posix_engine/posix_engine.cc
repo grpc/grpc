@@ -928,6 +928,7 @@ PosixEventEngine::CreatePosixListener(
     GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 
 void PosixEventEngine::AfterFork(OnForkRole on_fork_role) {
+  CHECK(grpc_core::IsEventEngineForkEnabled());
   if (on_fork_role == OnForkRole::kChild) {
     AfterForkInChild();
   }
@@ -937,7 +938,10 @@ void PosixEventEngine::AfterFork(OnForkRole on_fork_role) {
   }
 }
 
-void PosixEventEngine::BeforeFork() { ResetPollCycle(); }
+void PosixEventEngine::BeforeFork() {
+  CHECK(grpc_core::IsEventEngineForkEnabled());
+  ResetPollCycle();
+}
 
 void PosixEventEngine::AfterForkInChild() {
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
