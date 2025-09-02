@@ -23,8 +23,11 @@ readonly KEEP_HOURS="${KEEP_HOURS:-48}"
 
 cleanup::activate_cluster() {
   activate_gke_cluster "$1"
-  gcloud container clusters get-credentials "${GKE_CLUSTER_NAME}" \
-    --zone "${GKE_CLUSTER_ZONE}"
+  if [[ -n "${GKE_CLUSTER_REGION}" ]]; then
+    gcloud container clusters get-credentials "${GKE_CLUSTER_NAME}" --region "${GKE_CLUSTER_REGION}"
+  else
+    gcloud container clusters get-credentials "${GKE_CLUSTER_NAME}" --zone "${GKE_CLUSTER_ZONE}"
+  fi
   CLEANUP_KUBE_CONTEXT="$(kubectl config current-context)"
 }
 

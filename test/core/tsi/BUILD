@@ -29,9 +29,13 @@ grpc_cc_library(
         "absl/log:check",
         "libssl",
         "libcrypto",
+        "absl/strings",
     ],
     deps = [
+        "//:gpr",
         "//:grpc",
+        "//:tsi_base",
+        "//src/core:error",
     ],
 )
 
@@ -43,6 +47,9 @@ grpc_cc_test(
         ":transport_security_test_lib",
         "//:gpr",
         "//:grpc",
+        "//:grpc_security_base",
+        "//:tsi_base",
+        "//:tsi_fake_credentials",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -57,6 +64,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:tsi_ssl_session_cache",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -76,11 +84,22 @@ grpc_cc_test(
         "//test/core/tsi/test_creds/crl_data/crls:current.crl",
         "//test/core/tsi/test_creds/crl_data/crls:intermediate.crl",
     ],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "gtest",
+        "libcrypto",
+        "libssl",
+    ],
     tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:tsi_base",
+        "//src/core:load_file",
+        "//src/core:slice",
+        "//src/core:ssl_transport_security_utils",
         "//test/core/test_util:grpc_test_util",
         "//test/core/tsi:transport_security_test_lib",
     ],
@@ -152,14 +171,21 @@ grpc_cc_test(
     ],
     external_deps = [
         "absl/log:check",
+        "absl/status:statusor",
+        "absl/strings",
         "gtest",
+        "libcrypto",
+        "libssl",
     ],
     tags = ["no_windows"],
     deps = [
         ":transport_security_test_lib",
         "//:gpr",
         "//:grpc",
+        "//:grpc_security_base",
         "//:tsi",
+        "//:tsi_base",
+        "//:tsi_ssl_credentials",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -209,11 +235,17 @@ grpc_cc_test(
     srcs = ["transport_security_test.cc"],
     external_deps = [
         "absl/log:log",
+        "absl/strings:str_format",
         "gtest",
+        "libcrypto",
     ],
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:tsi_base",
+        "//:tsi_fake_credentials",
+        "//:tsi_ssl_credentials",
+        "//src/core:useful",
         "//test/core/test_util:grpc_test_util",
     ],
 )

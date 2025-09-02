@@ -805,6 +805,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/telemetry/context_list_entry.cc \
     src/core/telemetry/default_tcp_tracer.cc \
     src/core/telemetry/histogram_view.cc \
+    src/core/telemetry/instrument.cc \
     src/core/telemetry/metrics.cc \
     src/core/telemetry/stats.cc \
     src/core/telemetry/stats_data.cc \
@@ -1461,7 +1462,7 @@ if test "$PHP_GRPC" != "no"; then
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
-    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.75.0dev\""')
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.76.0dev\""')
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/call)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz/v2tov1)

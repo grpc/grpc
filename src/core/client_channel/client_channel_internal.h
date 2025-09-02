@@ -54,8 +54,7 @@ class ClientChannelLbCallState : public LoadBalancingPolicy::CallState {
 
   virtual ServiceConfigCallData::CallAttributeInterface* GetCallAttribute(
       UniqueTypeName type) const = 0;
-  virtual ClientCallTracerInterface::CallAttemptTracer* GetCallAttemptTracer()
-      const = 0;
+  virtual CallAttemptTracer* GetCallAttemptTracer() const = 0;
 };
 
 // Internal type for ServiceConfigCallData.  Handles call commits.

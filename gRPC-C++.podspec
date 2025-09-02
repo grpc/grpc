@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.75.0-dev'
+  version = '1.76.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -247,6 +247,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/container/layout', abseil_version
+    ss.dependency 'abseil/container/node_hash_map', abseil_version
     ss.dependency 'abseil/flags/flag', abseil_version
     ss.dependency 'abseil/flags/marshalling', abseil_version
     ss.dependency 'abseil/functional/any_invocable', abseil_version
@@ -429,6 +430,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/http2_client_transport.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings_manager.h',
+                      'src/core/ext/transport/chttp2/transport/http2_settings_promises.h',
                       'src/core/ext/transport/chttp2/transport/http2_stats_collector.h',
                       'src/core/ext/transport/chttp2/transport/http2_status.h',
                       'src/core/ext/transport/chttp2/transport/http2_transport.h',
@@ -1157,6 +1159,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/resource_quota/memory_quota.h',
                       'src/core/lib/resource_quota/periodic_update.h',
                       'src/core/lib/resource_quota/resource_quota.h',
+                      'src/core/lib/resource_quota/telemetry.h',
                       'src/core/lib/resource_quota/thread_quota.h',
                       'src/core/lib/security/authorization/audit_logging.h',
                       'src/core/lib/security/authorization/authorization_engine.h',
@@ -1259,7 +1262,9 @@ Pod::Spec.new do |s|
                       'src/core/telemetry/call_tracer.h',
                       'src/core/telemetry/context_list_entry.h',
                       'src/core/telemetry/default_tcp_tracer.h',
+                      'src/core/telemetry/histogram.h',
                       'src/core/telemetry/histogram_view.h',
+                      'src/core/telemetry/instrument.h',
                       'src/core/telemetry/metrics.h',
                       'src/core/telemetry/stats.h',
                       'src/core/telemetry/stats_data.h',
@@ -1791,6 +1796,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/http2_client_transport.h',
                               'src/core/ext/transport/chttp2/transport/http2_settings.h',
                               'src/core/ext/transport/chttp2/transport/http2_settings_manager.h',
+                              'src/core/ext/transport/chttp2/transport/http2_settings_promises.h',
                               'src/core/ext/transport/chttp2/transport/http2_stats_collector.h',
                               'src/core/ext/transport/chttp2/transport/http2_status.h',
                               'src/core/ext/transport/chttp2/transport/http2_transport.h',
@@ -2519,6 +2525,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/resource_quota/memory_quota.h',
                               'src/core/lib/resource_quota/periodic_update.h',
                               'src/core/lib/resource_quota/resource_quota.h',
+                              'src/core/lib/resource_quota/telemetry.h',
                               'src/core/lib/resource_quota/thread_quota.h',
                               'src/core/lib/security/authorization/audit_logging.h',
                               'src/core/lib/security/authorization/authorization_engine.h',
@@ -2621,7 +2628,9 @@ Pod::Spec.new do |s|
                               'src/core/telemetry/call_tracer.h',
                               'src/core/telemetry/context_list_entry.h',
                               'src/core/telemetry/default_tcp_tracer.h',
+                              'src/core/telemetry/histogram.h',
                               'src/core/telemetry/histogram_view.h',
+                              'src/core/telemetry/instrument.h',
                               'src/core/telemetry/metrics.h',
                               'src/core/telemetry/stats.h',
                               'src/core/telemetry/stats_data.h',

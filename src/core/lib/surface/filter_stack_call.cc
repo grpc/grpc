@@ -148,25 +148,15 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
     // collecting from when the call is created at the transport. The idea is
     // that the transport would create the call tracer and pass it in as part of
     // the metadata.
-    // TODO(yijiem): OpenCensus and internal Census is still using this way to
-    // set server call tracer. We need to refactor them to stats plugins
-    // (including removing the client channel filters).
+    ServerCallTracerInterface* server_call_tracer_from_factory = nullptr;
     if (args->server != nullptr &&
         args->server->server_call_tracer_factory() != nullptr) {
-      auto* server_call_tracer =
+      server_call_tracer_from_factory =
           args->server->server_call_tracer_factory()->CreateNewServerCallTracer(
               arena.get(), args->server->channel_args());
-      if (server_call_tracer != nullptr) {
-        // Note that we are setting both
-        // GRPC_CONTEXT_CALL_TRACER_ANNOTATION_INTERFACE and
-        // GRPC_CONTEXT_CALL_TRACER as a matter of convenience. In the future
-        // promise-based world, we would just a single tracer object for each
-        // stack (call, subchannel_call, server_call.)
-        arena->SetContext<CallTracerAnnotationInterface>(server_call_tracer);
-        arena->SetContext<CallTracerInterface>(server_call_tracer);
-      }
     }
-    (*channel_stack->stats_plugin_group)->AddServerCallTracers(arena.get());
+    (*channel_stack->stats_plugin_group)
+        ->AddServerCallTracers(arena.get(), {server_call_tracer_from_factory});
   }
 
   // initial refcount dropped by grpc_call_unref
@@ -542,7 +532,6 @@ FilterStackCall::BatchControl* FilterStackCall::ReuseOrAllocateBatchControl(
     *pslot = bctl;
   }
   bctl->call_ = this;
-  bctl->call_tracer_ = arena()->GetContext<CallTracerAnnotationInterface>();
   bctl->op_.payload = &stream_op_payload_;
   return bctl;
 }

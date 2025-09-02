@@ -102,6 +102,20 @@ template <typename T>
 const uint16_t ArenaContextTraits<T>::id_ =
     BaseArenaContextTraits::MakeId(DestroyArenaContext<T>);
 
+template <typename T, typename SfinaeVoid = void>
+struct GetContextId {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static uint16_t id() {
+    return ArenaContextTraits<T>::id();
+  }
+};
+
+template <typename T>
+struct GetContextId<T, std::void_t<typename ContextSubclass<T>::Base>> {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static uint16_t id() {
+    return GetContextId<typename ContextSubclass<T>::Base>::id();
+  }
+};
+
 template <typename T, typename A, typename B>
 struct IfArray {
   using Result = A;
@@ -292,8 +306,7 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
   // often needs to access these directly.
   template <typename T>
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T* GetContext() {
-    return static_cast<T*>(
-        contexts()[arena_detail::ArenaContextTraits<T>::id()]);
+    return static_cast<T*>(contexts()[arena_detail::GetContextId<T>::id()]);
   }
 
   template <typename T>

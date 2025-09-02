@@ -368,7 +368,7 @@ Q = @
 endif
 
 CORE_VERSION = 50.0.0
-CPP_VERSION = 1.75.0-dev
+CPP_VERSION = 1.76.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -1431,6 +1431,7 @@ LIBGRPC_SRC = \
     src/core/telemetry/context_list_entry.cc \
     src/core/telemetry/default_tcp_tracer.cc \
     src/core/telemetry/histogram_view.cc \
+    src/core/telemetry/instrument.cc \
     src/core/telemetry/metrics.cc \
     src/core/telemetry/stats.cc \
     src/core/telemetry/stats_data.cc \

@@ -516,11 +516,7 @@ RefCountedPtr<SubchannelPoolInterface> GetSubchannelPool(
   if (args.GetBool(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL).value_or(false)) {
     return MakeRefCounted<LocalSubchannelPool>();
   }
-  if (IsShardGlobalConnectionPoolEnabled()) {
-    return GlobalSubchannelPool::instance();
-  } else {
-    return LegacyGlobalSubchannelPool::instance();
-  }
+  return GlobalSubchannelPool::instance();
 }
 
 }  // namespace
@@ -896,8 +892,7 @@ void ClientChannel::StartCall(UnstartedCallHandler unstarted_handler) {
               if (!status.ok()) return status;
               // If the call was queued, add trace annotation.
               if (was_queued) {
-                auto* call_tracer =
-                    MaybeGetContext<CallTracerAnnotationInterface>();
+                auto* call_tracer = MaybeGetContext<CallSpan>();
                 if (call_tracer != nullptr) {
                   call_tracer->RecordAnnotation(
                       "Delayed name resolution complete.");

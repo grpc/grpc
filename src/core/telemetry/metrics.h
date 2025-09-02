@@ -474,7 +474,9 @@ class GlobalStatsPluginRegistry {
                               Arena* arena);
     // Adds all available server call tracers associated with the stats plugins
     // within the group to \a call_context.
-    void AddServerCallTracers(Arena* arena);
+    void AddServerCallTracers(
+        Arena* arena,
+        absl::Span<ServerCallTracerInterface* const> additional_tracers);
 
     static absl::string_view ChannelArgName() {
       return "grpc.internal.stats_plugin_group";

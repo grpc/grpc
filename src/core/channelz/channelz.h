@@ -224,9 +224,10 @@ class BaseNode : public DualRefCounted<BaseNode> {
   }
   ChannelTrace& mutable_trace() { return trace_; }
 
-  void SerializeEntity(grpc_channelz_v2_Entity* entity, upb_Arena* arena);
+  void SerializeEntity(grpc_channelz_v2_Entity* entity, upb_Arena* arena,
+                       absl::Duration timeout);
 
-  std::string SerializeEntityToString();
+  std::string SerializeEntityToString(absl::Duration timeout);
 
  protected:
   void PopulateJsonFromDataSources(Json::Object& json);
