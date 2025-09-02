@@ -75,6 +75,10 @@ if [[ -n "${BUILD_TARGETS}" ]]; then
       --noenable_platform_specific_config \
       --spawn_strategy=local \
       ${BUILD_TARGETS}
+  elif [[ "$GEM_PLATFORM" == *"darwin"* ]]; then
+    tools/bazel build --compiler=clang ${BUILD_TARGETS}
+  elif [[ "$GEM_PLATFORM" == *"mingw"* ]]; then
+    tools/bazel build --compiler=gcc ${BUILD_TARGETS}
   else
     tools/bazel build ${BUILD_TARGETS}
   fi

@@ -34,6 +34,12 @@ fi
 
 cd /var/local/git/grpc
 
+apt-get update && apt-get install -y curl
+
+if [ -f "generate_artifacts.sh" ]; then
+  ./generate_artifacts.sh
+fi
+
 # whatever is written to the reports/ dir will be made available outside of the docker container.
 ln -s "${EXTERNAL_GIT_ROOT}/reports" reports
 # if OUTPUT_DIR is specified, whatever is written to ./${OUTPUT_DIR}/ will be made available outside of the docker container.
