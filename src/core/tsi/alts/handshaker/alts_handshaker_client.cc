@@ -536,22 +536,19 @@ static grpc_byte_buffer* get_serialized_start_client(
     ptr = ptr->next;
   }
   // This ensures the token string is available when the proto gets serialized.
-  std::optional<std::string> access_token = std::nullopt;
+  absl::StatusOr<std::string> access_token = absl::NotFoundError("");
   // Set access token if the token fetcher is available.
   grpc::alts::TokenFetcher* token_fetcher =
       (reinterpret_cast<grpc_alts_credentials_client_options*>(client->options))
           ->token_fetcher.get();
   if (token_fetcher != nullptr) {
-    absl::StatusOr<std::string> token = token_fetcher->GetToken();
-    if (!token.ok()) {
-      LOG(ERROR) << "Failed to get token from the token fetcher "
+    access_token = token_fetcher->GetToken();
+    if (!access_token.ok()) {
+      LOG_EVERY_N_SEC(ERROR, 60) << "Failed to get token from the token fetcher "
                     "in client start handshake: "
-                 << token.status();
+                 << access_token.status();
       return nullptr;
     }
-    access_token = *std::move(token);
-  }
-  if (access_token.has_value()) {
     grpc_gcp_StartClientHandshakeReq_set_access_token(
         start_client, upb_StringView_FromString(access_token->c_str()));
   }
