@@ -544,9 +544,10 @@ static grpc_byte_buffer* get_serialized_start_client(
   if (token_fetcher != nullptr) {
     access_token = token_fetcher->GetToken();
     if (!access_token.ok()) {
-      LOG_EVERY_N_SEC(ERROR, 60) << "Failed to get token from the token fetcher "
-                    "in client start handshake: "
-                 << access_token.status();
+      LOG_EVERY_N_SEC(ERROR, 60)
+          << "Failed to get token from the token fetcher "
+             "in client start handshake: "
+          << access_token.status();
       return nullptr;
     }
     grpc_gcp_StartClientHandshakeReq_set_access_token(
