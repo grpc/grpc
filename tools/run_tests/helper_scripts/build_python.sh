@@ -185,9 +185,9 @@ $VENV_PYTHON "$ROOT/tools/distrib/python/make_grpcio_tools.py"
 pip_install_dir_and_deps "$ROOT/tools/distrib/python/grpcio_tools"
 
 # Build/install Observability
-# Observability does not support Windows and MacOS.
-if [ "$(is_mingw)" ] || [ "$(is_darwin)" ]; then
-  echo "Skip building grpcio_observability for Windows or MacOS"
+# Observability does not support MacOS.
+if [ "$(is_darwin)" ]; then
+  echo "Skip building grpcio_observability for MacOS"
 else
   $VENV_PYTHON "$ROOT/src/python/grpcio_observability/make_grpcio_observability.py"
   pip_install_dir_and_deps "$ROOT/src/python/grpcio_observability"
