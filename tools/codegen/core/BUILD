@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test")
 
 exports_files(
     glob(
@@ -43,4 +43,51 @@ grpc_cc_binary(
 grpc_cc_binary(
     name = "gen_switch",
     srcs = ["gen_switch.cc"],
+)
+
+grpc_cc_library(
+    name = "generate_trace_flags_lib",
+    srcs = ["generate_trace_flags.cc"],
+    hdrs = ["generate_trace_flags.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/log",
+    ],
+    deps = [
+        "//:gpr",
+        "//third_party/absl/container:flat_hash_map",
+        "//third_party/yamlcpp",
+    ],
+)
+
+grpc_cc_binary(
+    name = "generate_trace_flags",
+    srcs = ["generate_trace_flags_main.cc"],
+    external_deps = [
+        "absl/flags:flag",
+        "absl/flags:parse",
+        "absl/strings",
+        "absl/log",
+    ],
+    visibility = [
+        "//src/core:__pkg__",
+    ],
+    deps = [
+        ":generate_trace_flags_lib",
+    ],
+)
+
+grpc_cc_test(
+    name = "generate_trace_flags_test",
+    srcs = ["generate_trace_flags_test.cc"],
+    data = ["generate_trace_flags_test_input.yaml"],
+    external_deps = [
+        "gtest",
+        "gtest_main",
+        "absl/strings",
+    ],
+    deps = [
+        ":generate_trace_flags_lib",
+        "//:gpr",
+    ],
 )

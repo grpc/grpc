@@ -196,7 +196,10 @@ struct CallHasAsyncErrorInterceptor<
 template <typename Derived>
 struct CallHasAsyncErrorInterceptor<
     Derived, std::enable_if_t<IsFusedFilter<Derived>::value>> {
-  static constexpr bool value = Derived::FusedFilterHasAsyncErrorInterceptor();
+  // Fused filter types return a promise, which resolves to a
+  // ServerMetadataHandle type. So we assume that an async error interceptor is
+  // always needed.
+  static constexpr bool value = true;
 };
 
 // Given a boolean X export a type:
@@ -1304,11 +1307,9 @@ class BaseCallData : public Activity, private Wakeable {
     }
   };
 
-  class Flusher : public latent_see::InnerScope {
+  class Flusher {
    public:
-    explicit Flusher(BaseCallData* call,
-                     latent_see::Metadata* desc = GRPC_LATENT_SEE_METADATA(
-                         "PromiseBasedFilter::Flusher"));
+    explicit Flusher(BaseCallData* call);
     // Calls closures, schedules batches, relinquishes call combiner.
     ~Flusher();
 

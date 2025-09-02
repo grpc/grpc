@@ -47,12 +47,12 @@ class SecureFixture : public grpc_core::CoreTestFixture {
   virtual grpc_core::ChannelArgs MutateServerArgs(grpc_core::ChannelArgs args) {
     return args;
   }
-
- private:
   virtual grpc_channel_credentials* MakeClientCreds(
       const grpc_core::ChannelArgs& args) = 0;
   virtual grpc_server_credentials* MakeServerCreds(
       const grpc_core::ChannelArgs& args) = 0;
+
+ private:
   grpc_server* MakeServer(
       const grpc_core::ChannelArgs& in_args, grpc_completion_queue* cq,
       absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
@@ -93,20 +93,6 @@ class InsecureFixture : public SecureFixture {
   grpc_server_credentials* MakeServerCreds(
       const grpc_core::ChannelArgs&) override {
     return grpc_insecure_server_credentials_create();
-  }
-};
-
-// Fixture for PH2 that uses insecure credentials
-class PH2Fixure : public InsecureFixture {
- public:
-  using InsecureFixture::InsecureFixture;
-
- private:
-  grpc_core::ChannelArgs MutateClientArgs(
-      grpc_core::ChannelArgs args) override {
-    LOG(INFO) << args.ToString();
-    CHECK(grpc_core::IsPromiseBasedHttp2ClientTransportEnabled());
-    return args;
   }
 };
 

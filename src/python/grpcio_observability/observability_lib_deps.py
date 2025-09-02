@@ -25,6 +25,7 @@ CC_FILES=[
     'grpc_root/src/core/lib/experiments/experiments.cc',
     'grpc_root/src/core/lib/slice/slice.cc',
     'grpc_root/src/core/lib/slice/slice_string_helpers.cc',
+    'grpc_root/src/core/telemetry/instrument.cc',
     'grpc_root/src/core/util/alloc.cc',
     'grpc_root/src/core/util/crash.cc',
     'grpc_root/src/core/util/examine_stack.cc',
@@ -38,6 +39,7 @@ CC_FILES=[
     'grpc_root/src/core/util/log.cc',
     'grpc_root/src/core/util/mpscq.cc',
     'grpc_root/src/core/util/msys/tmpfile.cc',
+    'grpc_root/src/core/util/per_cpu.cc',
     'grpc_root/src/core/util/posix/cpu.cc',
     'grpc_root/src/core/util/posix/env.cc',
     'grpc_root/src/core/util/posix/stat.cc',
@@ -120,13 +122,12 @@ CC_FILES=[
     'third_party/abseil-cpp/absl/log/internal/proto.cc',
     'third_party/abseil-cpp/absl/log/internal/structured_proto.cc',
     'third_party/abseil-cpp/absl/log/internal/vlog_config.cc',
-    'third_party/abseil-cpp/absl/log/log_entry.cc',
     'third_party/abseil-cpp/absl/log/log_sink.cc',
     'third_party/abseil-cpp/absl/numeric/int128.cc',
     'third_party/abseil-cpp/absl/profiling/internal/exponential_biased.cc',
     'third_party/abseil-cpp/absl/random/discrete_distribution.cc',
     'third_party/abseil-cpp/absl/random/gaussian_distribution.cc',
-    'third_party/abseil-cpp/absl/random/internal/pool_urbg.cc',
+    'third_party/abseil-cpp/absl/random/internal/entropy_pool.cc',
     'third_party/abseil-cpp/absl/random/internal/randen.cc',
     'third_party/abseil-cpp/absl/random/internal/randen_detect.cc',
     'third_party/abseil-cpp/absl/random/internal/randen_hwaes.cc',
@@ -143,7 +144,6 @@ CC_FILES=[
     'third_party/abseil-cpp/absl/strings/charconv.cc',
     'third_party/abseil-cpp/absl/strings/cord.cc',
     'third_party/abseil-cpp/absl/strings/cord_analysis.cc',
-    'third_party/abseil-cpp/absl/strings/cord_buffer.cc',
     'third_party/abseil-cpp/absl/strings/escaping.cc',
     'third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc',
     'third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc',
@@ -203,9 +203,7 @@ CC_FILES=[
     'third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_lookup.cc',
     'third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_posix.cc',
     'third_party/abseil-cpp/absl/time/internal/cctz/src/zone_info_source.cc',
-    'third_party/abseil-cpp/absl/time/time.cc',
-    'third_party/abseil-cpp/absl/types/bad_optional_access.cc',
-    'third_party/abseil-cpp/absl/types/bad_variant_access.cc'
+    'third_party/abseil-cpp/absl/time/time.cc'
 ]
 
 CC_INCLUDES=[

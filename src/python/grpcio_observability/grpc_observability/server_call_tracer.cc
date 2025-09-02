@@ -221,8 +221,8 @@ void PythonOpenCensusServerCallTracer::RecordEnd(
     }
   }
 
-  // After RecordEnd, Core will make no further usage of this ServerCallTracer,
-  // so we are free it here.
+  // After RecordEnd, Core will make no further usage of this
+  // ServerCallTracerInterface, so we are free it here.
   delete this;
 }
 
@@ -284,7 +284,7 @@ bool PythonOpenCensusServerCallTracer::IsSampled() {
 // PythonOpenCensusServerCallTracerFactory
 //
 
-grpc_core::ServerCallTracer*
+grpc_core::ServerCallTracerInterface*
 PythonOpenCensusServerCallTracerFactory::CreateNewServerCallTracer(
     grpc_core::Arena* arena, const grpc_core::ChannelArgs& channel_args) {
   // We don't use arena here to to ensure that memory is allocated and freed in

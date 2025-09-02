@@ -124,12 +124,45 @@ class BuildProjectMetadata(setuptools.Command):
         pass
 
     def run(self):
-        with open(
-            os.path.join(PYTHON_STEM, "grpc/_grpcio_metadata.py"), "w"
-        ) as module_file:
-            module_file.write(
-                '__version__ = """{}"""'.format(self.distribution.get_version())
-            )
+        module_file_path = os.path.join(PYTHON_STEM, "grpc/_grpcio_metadata.py")
+        version = self.distribution.get_version()
+
+        # TODO(sergiitk): sometime in Nov 2025 - consider removing the env var
+        # and making this the default behavior.
+        skip_metadata_update_on_match = os.environ.get(
+            "GRPC_PYTHON_BUILD_SKIP_METADATA_ON_VERSION_MATCH", "0"
+        )
+        if skip_metadata_update_on_match == "1":
+            with open(module_file_path, "r") as module_file:
+                # prevent replacing the copyright header
+                if self._get_version_in_grpcio_metadata(module_file) == version:
+                    print(
+                        f"Version match in _grpcio_metadata.py: {version},"
+                        " skipping the update"
+                    )
+                    return
+
+        with open(module_file_path, "w") as module_file:
+            module_file.write(f'__version__ = """{version}"""')
+
+    def _get_version_in_grpcio_metadata(self, module_file):
+        try:
+            import ast
+
+            tree = ast.parse(module_file.read())
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Assign):
+                    for target in node.targets:
+                        if isinstance(target, ast.Name):
+                            variable_name = target.id
+                            if variable_name != "__version__":
+                                continue
+                            if isinstance(node.value, ast.Constant):
+                                return node.value.value
+        except:
+            raise
+
+        return "-1"
 
 
 class BuildPy(build_py.build_py):
@@ -253,14 +286,23 @@ class BuildExt(build_ext.build_ext):
         old_compile = self.compiler._compile
 
         def new_compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
+            # NOTE: keep in sync with setup.py EXTRA_ENV_COMPILE_ARGS.
+            cpp_specific_args = {"-std=c++17", "-stdlib=libc++"}
+            c_specific_args = {"-std=c11"}
+
+            args_to_remove = set()
             if src.endswith(".c"):
-                extra_postargs = [
-                    arg for arg in extra_postargs if arg != "-std=c++17"
-                ]
+                # Remove cpp-specific args when compiling c.
+                args_to_remove = cpp_specific_args
             elif src.endswith((".cc", ".cpp")):
+                # Remove c-specific args when compiling c++.
+                args_to_remove = c_specific_args
+
+            if args_to_remove:
                 extra_postargs = [
-                    arg for arg in extra_postargs if arg != "-std=c11"
+                    arg for arg in extra_postargs if arg not in args_to_remove
                 ]
+
             return old_compile(obj, src, ext, cc_args, extra_postargs, pp_opts)
 
         self.compiler._compile = new_compile

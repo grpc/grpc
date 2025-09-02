@@ -50,32 +50,22 @@ class Race<Promise, Promises...> {
     return std::move(r.value());
   }
 
-  Json ToJson() const {
-    Json::Object obj;
-    Json::Array array;
-    AddJson(array);
-    obj["race"] = Json::FromArray(std::move(array));
-    return Json::FromObject(std::move(obj));
-  }
-
-  void AddJson(Json::Array& array) const {
-    array.emplace_back(PromiseAsJson(promise_));
-    next_.AddJson(array);
-  }
-
   void ToProto(grpc_channelz_v2_Promise* promise_proto,
                upb_Arena* arena) const {
     auto* race_promise =
         grpc_channelz_v2_Promise_mutable_race_promise(promise_proto, arena);
     auto** children = grpc_channelz_v2_Promise_Race_resize_children(
         race_promise, 1 + sizeof...(Promises), arena);
-    SetChildrenProto(*children, arena);
+    for (size_t i = 0; i < 1 + sizeof...(Promises); ++i) {
+      children[i] = grpc_channelz_v2_Promise_new(arena);
+    }
+    SetChildrenProto(children, 0, arena);
   }
 
-  void SetChildrenProto(grpc_channelz_v2_Promise* promise_proto,
+  void SetChildrenProto(grpc_channelz_v2_Promise** promise_protos, int index,
                         upb_Arena* arena) const {
-    PromiseAsProto(promise_, promise_proto, arena);
-    next_.SetChildrenProto(promise_proto + 1, arena);
+    PromiseAsProto(promise_, promise_protos[index], arena);
+    next_.SetChildrenProto(promise_protos, index + 1, arena);
   }
 
  private:
@@ -95,20 +85,14 @@ class Race<Promise> {
     return promise_();
   }
 
-  Json ToJson() const { return PromiseAsJson(promise_); }
-
-  void AddJson(Json::Array& array) const {
-    array.emplace_back(PromiseAsJson(promise_));
-  }
-
   void ToProto(grpc_channelz_v2_Promise* promise_proto,
                upb_Arena* arena) const {
     PromiseAsProto(promise_, promise_proto, arena);
   }
 
-  void SetChildrenProto(grpc_channelz_v2_Promise* promise_proto,
+  void SetChildrenProto(grpc_channelz_v2_Promise** promise_protos, int index,
                         upb_Arena* arena) const {
-    PromiseAsProto(promise_, promise_proto, arena);
+    PromiseAsProto(promise_, promise_protos[index], arena);
   }
 
  private:

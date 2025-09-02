@@ -31,6 +31,7 @@ grpc_fuzz_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:httpcli",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -121,12 +122,18 @@ grpc_cc_test(
 grpc_cc_test(
     name = "parser_test",
     srcs = ["parser_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "absl/status",
+        "absl/strings:str_format",
+        "gtest",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:httpcli",
+        "//src/core:useful",
         "//test/core/end2end:ssl_test_data",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
@@ -140,6 +147,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:httpcli",
         "//src/core:slice",
         "//test/core/end2end:ssl_test_data",
         "//test/core/test_util:grpc_test_util",

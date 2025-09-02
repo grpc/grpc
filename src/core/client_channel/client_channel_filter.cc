@@ -1015,11 +1015,7 @@ RefCountedPtr<SubchannelPoolInterface> GetSubchannelPool(
   if (args.GetBool(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL).value_or(false)) {
     return MakeRefCounted<LocalSubchannelPool>();
   }
-  if (IsShardGlobalConnectionPoolEnabled()) {
-    return GlobalSubchannelPool::instance();
-  } else {
-    return LegacyGlobalSubchannelPool::instance();
-  }
+  return GlobalSubchannelPool::instance();
 }
 
 }  // namespace
@@ -1871,7 +1867,7 @@ std::optional<absl::Status> ClientChannelFilter::CallData::CheckResolution(
   }
   // If the call was queued, add trace annotation.
   if (was_queued) {
-    auto* call_tracer = arena()->GetContext<CallTracerAnnotationInterface>();
+    auto* call_tracer = arena()->GetContext<CallSpan>();
     if (call_tracer != nullptr) {
       call_tracer->RecordAnnotation("Delayed name resolution complete.");
     }
@@ -2290,7 +2286,7 @@ class ClientChannelFilter::LoadBalancedCall::LbCallState final
   ServiceConfigCallData::CallAttributeInterface* GetCallAttribute(
       UniqueTypeName type) const override;
 
-  ClientCallTracer::CallAttemptTracer* GetCallAttemptTracer() const override;
+  CallAttemptTracer* GetCallAttemptTracer() const override;
 
  private:
   LoadBalancedCall* lb_call_;
@@ -2307,7 +2303,7 @@ ClientChannelFilter::LoadBalancedCall::LbCallState::GetCallAttribute(
   return service_config_call_data->GetCallAttribute(type);
 }
 
-ClientCallTracer::CallAttemptTracer*
+CallAttemptTracer*
 ClientChannelFilter::LoadBalancedCall::LbCallState::GetCallAttemptTracer()
     const {
   return lb_call_->call_attempt_tracer();
@@ -2364,13 +2360,13 @@ class ClientChannelFilter::LoadBalancedCall::BackendMetricAccessor final
 
 namespace {
 
-ClientCallTracer::CallAttemptTracer* CreateCallAttemptTracer(
-    Arena* arena, bool is_transparent_retry) {
-  auto* call_tracer = DownCast<ClientCallTracer*>(
-      arena->GetContext<CallTracerAnnotationInterface>());
+CallAttemptTracer* CreateCallAttemptTracer(Arena* arena,
+                                           bool is_transparent_retry) {
+  auto* call_tracer = arena->GetContext<ClientCallTracer>();
   if (call_tracer == nullptr) return nullptr;
-  auto* tracer = call_tracer->StartNewAttempt(is_transparent_retry);
-  arena->SetContext<CallTracerInterface>(tracer);
+  auto* tracer = WrapCallAttemptTracer(
+      call_tracer->StartNewAttempt(is_transparent_retry), arena);
+  arena->SetContext<CallTracer>(tracer);
   return tracer;
 }
 

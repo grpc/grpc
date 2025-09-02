@@ -187,7 +187,7 @@ void WorkSerializer::WorkSerializerImpl::Run(
 
 // Implementation of EventEngine::Closure::Run - our actual work loop
 void WorkSerializer::WorkSerializerImpl::Run() {
-  GRPC_LATENT_SEE_PARENT_SCOPE("WorkSerializer::Run");
+  GRPC_LATENT_SEE_SCOPE("WorkSerializer::Run");
   flow_.End();
   // TODO(ctiller): remove these when we can deprecate ExecCtx
   ExecCtx exec_ctx;

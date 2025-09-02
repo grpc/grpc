@@ -87,16 +87,20 @@ _DEPS = [
     "//test/core/test_util:grpc_test_util",
     "//test/core/test_util:test_call_creds",
     "//test/core/test_util:test_lb_policies",
+    "//test/core/test_util:passthrough_endpoint",
 ]
 
 _EXTERNAL_DEPS = [
     "absl/base:core_headers",
+    "absl/functional:any_invocable",
     "absl/log",
     "absl/log:check",
     "absl/log:globals",
     "absl/log:log_entry",
     "absl/log:log_sink",
     "absl/log:log_sink_registry",
+    "absl/meta:type_traits",
+    "absl/random",
     "absl/status",
     "absl/status:statusor",
     "absl/strings",

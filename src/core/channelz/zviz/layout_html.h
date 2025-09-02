@@ -15,7 +15,8 @@
 #ifndef GRPC_SRC_CORE_CHANNELZ_ZVIZ_LAYOUT_HTML_H
 #define GRPC_SRC_CORE_CHANNELZ_ZVIZ_LAYOUT_HTML_H
 
-#include "src/core/channelz/zviz/environment.h"
+#include <vector>
+
 #include "src/core/channelz/zviz/html.h"
 #include "src/core/channelz/zviz/layout.h"
 
@@ -23,9 +24,10 @@ namespace grpc_zviz::layout {
 
 class HtmlTable;
 
-class HtmlElement final : public Element {
+class HtmlElement : public Element {
  public:
   explicit HtmlElement(html::Container& container) : container_(container) {}
+
   Element& AppendText(Intent intent, absl::string_view text) override;
   Element& AppendLink(Intent intent, absl::string_view text,
                       absl::string_view href) override;
@@ -39,21 +41,19 @@ class HtmlElement final : public Element {
   std::vector<std::unique_ptr<HtmlTable>> tables_;
 };
 
-class HtmlTable final : public Table {
+class HtmlTable : public Table {
  public:
-  explicit HtmlTable(html::Table& table) : table_(table) {}
-  Element& AppendColumn() override;
+  HtmlTable(html::Table& table, TableIntent intent);
 
-  void NewRow() override {
-    column_ = 0;
-    ++row_;
-  }
+  Element& AppendColumn() override;
+  void NewRow() override;
 
  private:
   html::Table& table_;
-  std::vector<std::unique_ptr<HtmlElement>> elements_;
   int column_ = 0;
   int row_ = 0;
+  bool in_header_;
+  std::vector<std::unique_ptr<Element>> elements_;
 };
 
 }  // namespace grpc_zviz::layout

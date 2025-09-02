@@ -32,8 +32,10 @@
 #include "src/core/call/metadata.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/transport/call_final_info.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/manual_constructor.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/type_list.h"
 
@@ -240,6 +242,9 @@ struct HasStatusMethod<
   static constexpr bool value = true;
 };
 
+template <typename T>
+constexpr bool IsPromise = std::is_invocable_v<T>;
+
 // For types T which are of the form StatusOr<U>. Type TakeValue on Type T
 // must return a value of type U. Further type T must have a method called
 // status() and must return a bool when IsStatusOk is called on an object of
@@ -353,7 +358,7 @@ class AdaptMethod<T, R (Call::*)(), method,
                   absl::enable_if_t<StatusOrType<R, T>::value, void>> {
  public:
   explicit AdaptMethod(Call* call, void* /*filter*/ = nullptr) : call_(call) {}
-  auto operator()(Hdl<T> x) {
+  auto operator()(Hdl<T> /*x*/) {
     R result = (call_->*method)();
     if (IsStatusOk(result)) {
       return Immediate(
@@ -455,6 +460,74 @@ class AdaptMethod<T, R (Call::*)(Hdl<T>, Derived*), method,
   Derived* filter_;
 };
 
+// For methods which return a promise where the result of the promise
+template <typename T, typename R, typename Call, typename Derived,
+          R (Call::*method)(Hdl<T>, Derived*)>
+class AdaptMethod<
+    T, R (Call::*)(Hdl<T>, Derived*), method,
+    std::enable_if_t<IsPromise<R> && std::is_same_v<PromiseResult<R>,
+                                                    absl::StatusOr<Hdl<T>>>,
+                     void>> {
+ public:
+  explicit AdaptMethod(Call* call, Derived* filter)
+      : call_(call), filter_(filter) {}
+  auto operator()(Hdl<T> x) {
+    return Map((call_->*method)(std::move(x), filter_),
+               [](absl::StatusOr<Hdl<T>> result) {
+                 if (result.ok()) {
+                   return ServerMetadataOrHandle<T>::Ok(std::move(*result));
+                 }
+                 return ServerMetadataOrHandle<T>::Failure(
+                     ServerMetadataFromStatus(result.status()));
+               });
+  }
+
+ private:
+  Call* call_;
+  Derived* filter_;
+};
+
+template <typename T, typename R, typename Call, typename Derived,
+          R (Call::*method)(T&, Derived*)>
+class AdaptMethod<
+    T, R (Call::*)(T&, Derived*), method,
+    std::enable_if_t<
+        IsPromise<R> && std::is_same_v<absl::Status, PromiseResult<R>>, void>> {
+ public:
+  explicit AdaptMethod(Call* call, Derived* filter)
+      : call_(call), filter_(filter) {}
+  auto operator()(Hdl<T> x) {
+    return Map((call_->*method)(*x, filter_),
+               [hdl = std::move(x)](absl::Status status) mutable {
+                 if (status.ok()) {
+                   return ServerMetadataOrHandle<T>::Ok(std::move(hdl));
+                 }
+                 return ServerMetadataOrHandle<T>::Failure(
+                     ServerMetadataFromStatus(status));
+               });
+  }
+
+ private:
+  Call* call_;
+  Derived* filter_;
+};
+
+template <typename T, typename Call, typename Derived,
+          Hdl<T> (Call::*method)(Hdl<T>, Derived*)>
+class AdaptMethod<T, Hdl<T> (Call::*)(Hdl<T>, Derived*), method> {
+ public:
+  explicit AdaptMethod(Call* call, Derived* filter)
+      : call_(call), filter_(filter) {}
+  auto operator()(Hdl<T> x) {
+    Hdl<T> result = (call_->*method)(std::move(x), filter_);
+    return Immediate(ServerMetadataOrHandle<T>::Ok(std::move(result)));
+  }
+
+ private:
+  Call* call_;
+  Derived* filter_;
+};
+
 // Overrides for filter methods which return a ServerMetadataHandle type as
 // output.
 template <typename T, typename A, typename Call,
@@ -523,7 +596,7 @@ class AdaptOnServerTrailingMetadataMethod<T, const NoInterceptor*, method> {
  public:
   explicit AdaptOnServerTrailingMetadataMethod(void* /*call*/,
                                                void* /*filter*/ = nullptr) {}
-  auto operator()(T& x) {}
+  auto operator()(T& /*x*/) {}
   void operator()(T* /*x*/) {}
 };
 
@@ -552,7 +625,7 @@ class AdaptOnServerTrailingMetadataMethod<
   void operator()(T& x) {
     absl::Status status = (call_->*method)(x, filter_);
     if (!status.ok()) {
-      x = ServerMetadataFromStatus(status);
+      SetServerMetadataFromStatus(x, status);
     }
   }
 
@@ -583,7 +656,7 @@ class AdaptOnServerTrailingMetadataMethod<T, absl::Status (Call::*)(A), method,
   void operator()(T& x) {
     absl::Status status = (call_->*method)(x);
     if (!status.ok()) {
-      x = ServerMetadataFromStatus(status);
+      SetServerMetadataFromStatus(x, status);
     }
   }
 
@@ -621,6 +694,20 @@ template <typename... Filters>
 struct FilterTypes {
   using Types = Typelist<Filters...>;
   using Idxs = std::make_index_sequence<sizeof...(Filters)>;
+};
+
+template <std::size_t, typename FilterTypeList, typename Ignored = void>
+struct TypesFromIdx;
+
+template <typename... Filters>
+struct TypesFromIdx<0, Typelist<Filters...>> {
+  using Types = Typelist<Filters...>;
+};
+
+template <std::size_t N, typename Filter0, typename... Filters>
+struct TypesFromIdx<N, Typelist<Filter0, Filters...>,
+                    std::enable_if_t<N != 0>> {
+  using Types = typename TypesFromIdx<N - 1, Typelist<Filters...>>::Types;
 };
 
 template <std::size_t, typename>
@@ -702,12 +789,15 @@ auto ExecuteCombinedWithChannelAccess(
     Call* call, Derived* channel, Hdl<T> hdl, Typelist<Filter0, Filters...>,
     Valuelist<filter_method_0, filter_methods...>,
     std::index_sequence<I0, Is...>) {
-  return TrySeq(AdaptMethod<T, decltype(filter_method_0), filter_method_0>(
-                    call->template fused_child<I0>(),
-                    reinterpret_cast<Filter0*>(channel))(std::move(hdl)),
-                AdaptMethod<T, decltype(filter_methods), filter_methods>(
-                    call->template fused_child<Is>(),
-                    reinterpret_cast<Filters*>(channel))...);
+  return TrySeq(
+      AdaptMethod<T, decltype(filter_method_0), filter_method_0>(
+          call->template fused_child<I0>(),
+          reinterpret_cast<Filter0*>(channel->template get_fused_filter<I0>()))(
+          std::move(hdl)),
+      AdaptMethod<T, decltype(filter_methods), filter_methods>(
+          call->template fused_child<Is>(),
+          reinterpret_cast<Filters*>(
+              channel->template get_fused_filter<Is>()))...);
 }
 
 template <typename FilterMethods, typename FilterTypes, typename Call,
@@ -730,7 +820,17 @@ void ExecuteCombinedOnFinalizeWithChannelAccess(Call* call, Derived* channel,
                                                 std::index_sequence<Is...>) {
   (AdaptMethod<T, decltype(filter_methods), filter_methods>(
        call->template fused_child<Is>(),
-       reinterpret_cast<Filters*>(channel))(call_final_info),
+       reinterpret_cast<Filters*>(channel->template get_fused_filter<Is>()))(
+       call_final_info),
+   ...);
+}
+
+template <typename Call, typename T, auto... filter_methods, size_t... Is>
+void ExecuteCombinedOnFinalize(Call* call, T* call_final_info,
+                               Valuelist<filter_methods...>,
+                               std::index_sequence<Is...>) {
+  (AdaptMethod<T, decltype(filter_methods), filter_methods>(
+       call->template fused_child<Is>(), nullptr)(call_final_info),
    ...);
 }
 
@@ -744,7 +844,8 @@ void ExecuteCombinedOnServerTrailingMetadataWithChannelAccess(
   (AdaptOnServerTrailingMetadataMethod<T, decltype(filter_methods),
                                        filter_methods>(
        call->template fused_child<Is>(),
-       reinterpret_cast<Filters*>(channel))(metadata),
+       reinterpret_cast<Filters*>(channel->template get_fused_filter<Is>()))(
+       metadata),
    ...);
 }
 
@@ -800,6 +901,13 @@ void ExecuteCombinedWithChannelAccess(Call* call, Derived* channel,
       typename FilterMethods::Methods(), typename FilterMethods::Idxs());
 }
 
+template <typename FilterMethods, typename Call, typename T>
+void ExecuteCombined(Call* call, T* call_final_info) {
+  ExecuteCombinedOnFinalize(call, call_final_info,
+                            typename FilterMethods::Methods(),
+                            typename FilterMethods::Idxs());
+}
+
 #define GRPC_FUSE_METHOD(name, type, forward)                                 \
   template <MethodVariant variant, typename Derived, typename... Filters>     \
   class FuseImpl##name;                                                       \
@@ -840,7 +948,7 @@ template <typename Derived, typename... Filters>
 class FuseImplOnServerTrailingMetadata<MethodVariant::kNoInterceptor, Derived,
                                        Filters...> {
  public:
-  static inline const NoInterceptor name;
+  static inline const NoInterceptor OnServerTrailingMetadata;
 };
 
 template <typename Derived, typename... Filters>
@@ -879,7 +987,7 @@ class FuseImplOnClientToServerHalfClose;
 template <typename Derived, typename... Filters>
 class FuseImplOnClientToServerHalfClose<true, Derived, Filters...> {
  public:
-  static inline const NoInterceptor name;
+  static inline const NoInterceptor OnClientToServerHalfClose;
 };
 
 template <typename Derived, typename... Filters>
@@ -903,11 +1011,11 @@ GRPC_FUSE_METHOD(OnClientToServerMessage, MessageHandle, true);
 GRPC_FUSE_METHOD(OnServerToClientMessage, MessageHandle, false);
 GRPC_FUSE_METHOD(OnFinalize, const grpc_call_final_info*, true);
 
-template <typename... Filters>
+template <typename FilterTypelist>
 struct FilterWrapper;
 
 template <typename Filter>
-struct FilterWrapper<Filter> {
+struct FilterWrapper<Typelist<Filter>> {
   FilterWrapper(const ChannelArgs& args, ChannelFilter::Args filter_args)
       : filter_(Filter::Create(args, filter_args)) {}
 
@@ -916,6 +1024,8 @@ struct FilterWrapper<Filter> {
     CHECK(filter_.ok());
     return (*filter_)->StartTransportOp(op);
   }
+
+  Filter* get_filter() { return (*filter_).get(); }
 
   bool GetChannelInfo(const grpc_channel_info* info) {
     CHECK(filter_.ok());
@@ -927,65 +1037,130 @@ struct FilterWrapper<Filter> {
 };
 
 template <typename Filter0, typename... Filters>
-struct FilterWrapper<Filter0, Filters...> : public FilterWrapper<Filters...> {
+struct FilterWrapper<Typelist<Filter0, Filters...>>
+    : public FilterWrapper<Typelist<Filters...>> {
   FilterWrapper(const ChannelArgs& args, ChannelFilter::Args filter_args)
-      : filter0_(Filter0::Create(args, filter_args)),
-        FilterWrapper<Filters...>(args, filter_args) {}
+      : FilterWrapper<Typelist<Filters...>>(args, filter_args),
+        filter0_(Filter0::Create(args, filter_args)) {}
 
   absl::Status status() const {
     if (filter0_.ok()) {
-      return FilterWrapper<Filters...>::status();
+      return FilterWrapper<Typelist<Filters...>>::status();
     }
     return filter0_.status();
   }
 
+  Filter0* get_filter() { return (*filter0_).get(); }
+
   bool StartTransportOp(grpc_transport_op* op) {
     CHECK(filter0_.ok());
     return (*filter0_)->StartTransportOp(op) ||
-           FilterWrapper<Filters...>::StartTransportOp(op);
+           FilterWrapper<Typelist<Filters...>>::StartTransportOp(op);
   }
 
   bool GetChannelInfo(const grpc_channel_info* info) {
     CHECK(filter0_.ok());
     return (*filter0_)->GetChannelInfo(info) ||
-           FilterWrapper<Filters...>::GetChannelInfo(info);
+           FilterWrapper<Typelist<Filters...>>::GetChannelInfo(info);
   }
 
  private:
   absl::StatusOr<std::unique_ptr<Filter0>> filter0_;
 };
 
+template <typename Derived, typename SfinaeVoid = void>
+struct ConstructCall;
+
+template <typename Derived>
+struct ConstructCall<Derived, absl::void_t<decltype(typename Derived::Call(
+                                  std::declval<Derived*>()))>> {
+ public:
+  using Call = typename Derived::Call;
+  static void Run(ManualConstructor<Call>& call, Derived* channel) {
+    call.Init(channel);
+  }
+};
+
+template <typename Derived>
+struct ConstructCall<Derived,
+                     absl::void_t<decltype(typename Derived::Call())>> {
+ public:
+  using Call = typename Derived::Call;
+  static void Run(ManualConstructor<Call>& call, Derived* /*channel*/) {
+    call.Init();
+  }
+};
+
+template <typename FilterTypelist>
+struct CallWrapper;
+
+template <typename Filter>
+struct CallWrapper<Typelist<Filter>> {
+  using Call = typename Filter::Call;
+  explicit CallWrapper(FilterWrapper<Typelist<Filter>>* channel) {
+    ConstructCall<Filter>::Run(call_, channel->get_filter());
+  }
+
+  Call* get_call() { return call_.get(); }
+
+  ~CallWrapper() { call_.Destroy(); }
+
+ private:
+  ManualConstructor<Call> call_;
+};
+
+template <typename Filter0, typename... Filters>
+struct CallWrapper<Typelist<Filter0, Filters...>>
+    : public CallWrapper<Typelist<Filters...>> {
+  using Call = typename Filter0::Call;
+  explicit CallWrapper(FilterWrapper<Typelist<Filter0, Filters...>>* channel)
+      : CallWrapper<Typelist<Filters...>>(
+            reinterpret_cast<FilterWrapper<Typelist<Filters...>>*>(channel)) {
+    ConstructCall<Filter0>::Run(call_, channel->get_filter());
+  }
+
+  Call* get_call() { return call_.get(); }
+
+  ~CallWrapper() { call_.Destroy(); }
+
+ private:
+  ManualConstructor<Call> call_;
+};
+
 #undef GRPC_FUSE_METHOD
 
-template <typename... Filters>
-class FusedFilter : public ImplementChannelFilter<FusedFilter<Filters...>>,
-                    public Filters... {
+template <FilterEndpoint ep, uint8_t kFlags, typename... Filters>
+class FusedFilter
+    : public ImplementChannelFilter<FusedFilter<ep, kFlags, Filters...>> {
  public:
   static const grpc_channel_filter kFilter;
 
   static absl::string_view TypeName() {
-    static const std::string kName = absl::StrCat(
-        "Fused_Filter_",
-        absl::StrJoin(std::make_tuple(Filters::TypeName()...), "_"));
+    static const std::string kName =
+        absl::StrCat(absl::StrJoin(std::tuple(Filters::TypeName()...), "+"));
     return kName;
   }
 
-  static absl::StatusOr<std::unique_ptr<FusedFilter<Filters...>>> Create(
-      const ChannelArgs& args, ChannelFilter::Args filter_args) {
+  template <size_t I>
+  auto* get_fused_filter() {
+    return reinterpret_cast<FilterWrapper<
+        typename TypesFromIdx<I, Typelist<Filters...>>::Types>*>(filters_.get())
+        ->get_filter();
+  }
+
+  FilterWrapper<Typelist<Filters...>>* get_wrapper() { return filters_.get(); }
+
+  static absl::StatusOr<std::unique_ptr<FusedFilter<ep, kFlags, Filters...>>>
+  Create(const ChannelArgs& args, ChannelFilter::Args filter_args) {
     auto filters_wrapper =
-        std::make_unique<FilterWrapper<Filters...>>(args, filter_args);
+        std::make_unique<FilterWrapper<Typelist<Filters...>>>(args,
+                                                              filter_args);
     GRPC_RETURN_IF_ERROR(filters_wrapper->status());
-    return absl::WrapUnique<FusedFilter<Filters...>>(
-        new FusedFilter<Filters...>(std::move(filters_wrapper)));
+    return absl::WrapUnique<FusedFilter<ep, kFlags, Filters...>>(
+        new FusedFilter<ep, kFlags, Filters...>(std::move(filters_wrapper)));
   }
 
   static constexpr bool IsFused = true;
-
-  static constexpr bool FusedFilterHasAsyncErrorInterceptor() {
-    return (
-        promise_filter_detail::CallHasAsyncErrorInterceptor<Filters>::value ||
-        ...);
-  }
 
   class Call : public FuseOnClientInitialMetadata<FusedFilter, Filters...>,
                public FuseOnServerInitialMetadata<FusedFilter, Filters...>,
@@ -995,10 +1170,17 @@ class FusedFilter : public ImplementChannelFilter<FusedFilter<Filters...>>,
                public FuseOnClientToServerHalfClose<FusedFilter, Filters...>,
                public FuseOnFinalize<FusedFilter, Filters...> {
    public:
+    using Idxs = std::make_index_sequence<sizeof...(Filters)>;
     template <size_t I>
     auto* fused_child() {
-      return &std::get<I>(filter_calls_);
+      return reinterpret_cast<CallWrapper<
+          typename TypesFromIdx<I, Typelist<Filters...>>::Types>*>(
+                 &filter_calls_)
+          ->get_call();
     }
+
+    explicit Call(FusedFilter<ep, kFlags, Filters...>* filter)
+        : filter_calls_(filter->get_wrapper()) {};
 
     using FuseOnClientInitialMetadata<FusedFilter,
                                       Filters...>::OnClientInitialMetadata;
@@ -1015,7 +1197,7 @@ class FusedFilter : public ImplementChannelFilter<FusedFilter<Filters...>>,
     using FuseOnFinalize<FusedFilter, Filters...>::OnFinalize;
 
    private:
-    std::tuple<typename Filters::Call...> filter_calls_;
+    CallWrapper<Typelist<Filters...>> filter_calls_;
   };
 
   bool StartTransportOp(grpc_transport_op* op) override {
@@ -1027,16 +1209,21 @@ class FusedFilter : public ImplementChannelFilter<FusedFilter<Filters...>>,
   }
 
  private:
-  explicit FusedFilter(std::unique_ptr<FilterWrapper<Filters...>> filters)
+  explicit FusedFilter(
+      std::unique_ptr<FilterWrapper<Typelist<Filters...>>> filters)
       : filters_(std::move(filters)) {};
 
-  std::unique_ptr<FilterWrapper<Filters...>> filters_;
+  std::unique_ptr<FilterWrapper<Typelist<Filters...>>> filters_;
 };
+
+template <FilterEndpoint ep, uint8_t kFlags, typename... Filters>
+const grpc_channel_filter FusedFilter<ep, kFlags, Filters...>::kFilter =
+    MakePromiseBasedFilter<FusedFilter<ep, kFlags, Filters...>, ep, kFlags>();
 
 }  // namespace filters_detail
 
-template <typename... Filters>
-using FusedFilter = filters_detail::FusedFilter<Filters...>;
+template <FilterEndpoint ep, uint8_t kFlags, typename... Filters>
+using FusedFilter = filters_detail::FusedFilter<ep, kFlags, Filters...>;
 
 }  // namespace grpc_core
 

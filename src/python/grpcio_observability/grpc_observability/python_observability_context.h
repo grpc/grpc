@@ -209,11 +209,11 @@ class Span final {
 };
 
 // PythonCensusContext is associated with each clientCallTracer,
-// clientCallAttemptTracer and ServerCallTracer to help manage the span,
-// spanContext and labels for each tracer. Create a new PythonCensusContext will
-// always result in creating a new span (and a new SpanContext for that span).
-// It's created during callTracer initialization and will be destroyed after
-// the destruction of each callTracer.
+// clientCallAttemptTracer and ServerCallTracerInterface to help manage the
+// span, spanContext and labels for each tracer. Create a new
+// PythonCensusContext will always result in creating a new span (and a new
+// SpanContext for that span). It's created during callTracer initialization and
+// will be destroyed after the destruction of each callTracer.
 class PythonCensusContext {
  public:
   PythonCensusContext() : span_(Span::BlankSpan()), labels_({}) {}

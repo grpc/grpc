@@ -49,12 +49,29 @@ if [[ ! -d generate_projects_virtual_environment ]]; then
       fi
       exit 1
     fi
-  fi 
+  fi
   python3 -m virtualenv generate_projects_virtual_environment
 fi
 
-generate_projects_virtual_environment/bin/pip install --upgrade --ignore-installed grpcio-tools==1.59.0
-generate_projects_virtual_environment/bin/python tools/distrib/python/xds_protos/build.py
+# TODO(sergiitk): remove GRPC_GENERATE_PROJECTS_SKIP_XDS_PROTOS when all CIs are
+#                 are upgraded to use Python 3.9+.
+# WARNING! Do not use this variable when running the script directly. This is
+# a temporary measure to allow some other scripts scripts that rely on
+# generate_projects.sh (f.e. _at_head jobs), to skip this step while they're
+# using on older Python versions.
+if [[ "${GRPC_GENERATE_PROJECTS_SKIP_XDS_PROTOS:-0}" != "1" ]]; then
+  # Keep grpcio-tools version in sync with XDS_PROTOS_GENCODE_GRPC_VERSION
+  # in tools/distrib/python/xds_protos/setup.py.
+  #
+  # Explanation: since PR #40518, xds-protos grpc gencode contains a poison pill
+  # that enforces grpcio runtime version to be equal or greater
+  # to the grpcio-tools version that generated the code.
+  #
+  # Note: this version needs to be updated periodically to keep up with mainstream
+  # python releases, as older grpcio-tools release may not support them.
+  generate_projects_virtual_environment/bin/pip install --upgrade --ignore-installed grpcio-tools==1.74.0
+  generate_projects_virtual_environment/bin/python tools/distrib/python/xds_protos/build.py
+fi
 generate_projects_virtual_environment/bin/python tools/distrib/python/make_grpcio_tools.py
 generate_projects_virtual_environment/bin/python src/python/grpcio_observability/make_grpcio_observability.py
 

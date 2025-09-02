@@ -18,13 +18,13 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-#include <gtest/gtest.h>
 
 #include <deque>
 #include <list>
 
 #include "absl/log/log.h"
 #include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/credentials/transport/tls/tls_security_connector.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/crash.h"

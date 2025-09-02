@@ -24,11 +24,17 @@ grpc_package(
 grpc_cc_benchmark(
     name = "bm_chaotic_good",
     srcs = ["bm_chaotic_good.cc"],
+    external_deps = [
+        "absl/memory",
+        "absl/strings",
+    ],
     monitoring = HISTORY,
     deps = [
         "//:grpc",
+        "//:parse_address",
         "//src/core:chaotic_good_client_transport",
         "//src/core:chaotic_good_server_transport",
+        "//src/core:chaotic_good_tcp_frame_transport",
         "//src/core:default_event_engine",
         "//test/core/call:call_spine_benchmarks",
         "//test/core/test_util:passthrough_endpoint",
@@ -38,12 +44,18 @@ grpc_cc_benchmark(
 grpc_cc_benchmark(
     name = "bm_inproc",
     srcs = ["bm_inproc.cc"],
+    external_deps = [
+        "absl/memory",
+        "absl/strings",
+    ],
     monitoring = HISTORY,
     deps = [
         "//:grpc",
+        "//:parse_address",
         "//src/core:chaotic_good_client_transport",
         "//src/core:chaotic_good_server_transport",
         "//src/core:default_event_engine",
+        "//src/core:grpc_transport_inproc",
         "//test/core/call:call_spine_benchmarks",
         "//test/core/test_util:passthrough_endpoint",
     ],

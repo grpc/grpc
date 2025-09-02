@@ -43,7 +43,9 @@ TEST(CFEventEngineTest, TestConnectionTimeout) {
   auto resolved_addr = URIToResolvedAddress("ipv4:8.8.8.8:1234");
   CHECK_OK(resolved_addr);
 
-  grpc_core::MemoryQuota memory_quota("cf_engine_test");
+  grpc_core::MemoryQuota memory_quota(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+          "cf_engine_test"));
   grpc_core::Notification client_signal;
   auto cf_engine = std::make_shared<CFEventEngine>();
 
@@ -66,7 +68,9 @@ TEST(CFEventEngineTest, TestConnectionCancelled) {
   auto resolved_addr = URIToResolvedAddress("ipv4:8.8.8.8:1234");
   CHECK_OK(resolved_addr);
 
-  grpc_core::MemoryQuota memory_quota("cf_engine_test");
+  grpc_core::MemoryQuota memory_quota(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+          "cf_engine_test"));
   grpc_core::Notification client_signal;
   auto cf_engine = std::make_shared<CFEventEngine>();
 
@@ -97,7 +101,9 @@ std::vector<std::string> ResolvedAddressesToStrings(
 }  // namespace
 
 TEST(CFEventEngineTest, TestCreateDNSResolver) {
-  grpc_core::MemoryQuota memory_quota("cf_engine_test");
+  grpc_core::MemoryQuota memory_quota(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+          "cf_engine_test"));
   auto cf_engine = std::make_shared<CFEventEngine>();
 
   EXPECT_TRUE(cf_engine->GetDNSResolver({}).status().ok());

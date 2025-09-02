@@ -130,6 +130,11 @@ absl::Status ValidatePath(absl::string_view path) {
 
 }  // namespace
 
+std::string AddPemBlockWrapping(absl::string_view spiffe_bundle_root) {
+  return absl::StrCat(kCertificatePrefix, spiffe_bundle_root,
+                      kCertificateSuffix);
+}
+
 absl::StatusOr<SpiffeId> SpiffeId::FromString(absl::string_view input) {
   GRPC_RETURN_IF_ERROR(DoInitialUriValidation(input));
   if (!absl::StartsWithIgnoreCase(input, kSpiffePrefix)) {
@@ -202,8 +207,7 @@ void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs& args,
     }
     if (!x5c->empty()) {
       ValidationErrors::ScopedField field(errors, "[0]");
-      std::string pem_cert =
-          absl::StrCat(kCertificatePrefix, (*x5c)[0], kCertificateSuffix);
+      std::string pem_cert = AddPemBlockWrapping((*x5c)[0]);
       auto certs = ParsePemCertificateChain(pem_cert);
       if (!certs.ok()) {
         errors->AddError(certs.status().ToString());
@@ -219,6 +223,11 @@ void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs& args,
 
 absl::string_view SpiffeBundleKey::GetRoot() { return root_; }
 
+const JsonLoaderInterface* SpiffeBundle::JsonLoader(const JsonArgs&) {
+  static const auto* kLoader = JsonObjectLoader<SpiffeBundle>().Finish();
+  return kLoader;
+}
+
 void SpiffeBundle::JsonPostLoad(const Json& json, const JsonArgs& args,
                                 ValidationErrors* errors) {
   auto keys = LoadJsonObjectField<std::vector<SpiffeBundleKey>>(
@@ -229,9 +238,93 @@ void SpiffeBundle::JsonPostLoad(const Json& json, const JsonArgs& args,
   for (size_t i = 0; i < keys->size(); ++i) {
     roots_.emplace_back((*keys)[i].GetRoot());
   }
+  ValidationErrors::ScopedField field(errors, "keys");
+  absl::Status status = CreateX509Stack();
+  if (!status.ok()) {
+    errors->AddError(status.ToString());
+  }
+}
+
+SpiffeBundle::~SpiffeBundle() {
+  if (root_stack_ != nullptr) {
+    sk_X509_pop_free(*root_stack_, X509_free);
+  }
+}
+
+SpiffeBundle::SpiffeBundle(const SpiffeBundle& other) {
+  roots_ = other.roots_;
+  if (other.root_stack_ != nullptr) {
+    root_stack_ =
+        std::make_unique<STACK_OF(X509)*>(sk_X509_dup(*other.root_stack_));
+    for (size_t i = 0; i < sk_X509_num(*root_stack_); i++) {
+      X509* x = sk_X509_value(*root_stack_, i);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+      CHECK(X509_up_ref(x));
+#else
+      CRYPTO_add(&x->references, 1, CRYPTO_LOCK_X509);
+#endif
+    }
+  }
+}
+
+SpiffeBundle& SpiffeBundle::operator=(const SpiffeBundle& other) {
+  if (this != &other) {
+    roots_ = other.roots_;
+    if (other.root_stack_ != nullptr) {
+      root_stack_ =
+          std::make_unique<STACK_OF(X509)*>(sk_X509_dup(*other.root_stack_));
+      for (size_t i = 0; i < sk_X509_num(*root_stack_); i++) {
+        X509* x = sk_X509_value(*root_stack_, i);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+        CHECK(X509_up_ref(x));
+#else
+        CRYPTO_add(&x->references, 1, CRYPTO_LOCK_X509);
+#endif
+      }
+    }
+  }
+  return *this;
+}
+
+const JsonLoaderInterface* SpiffeBundleMap::JsonLoader(const JsonArgs&) {
+  static const auto* kLoader =
+      JsonObjectLoader<SpiffeBundleMap>()
+          .Field("trust_domains", &SpiffeBundleMap::bundles_)
+          .Finish();
+  return kLoader;
 }
 
 absl::Span<const std::string> SpiffeBundle::GetRoots() { return roots_; }
+
+absl::StatusOr<STACK_OF(X509) *> SpiffeBundle::GetRootStack() {
+  if (root_stack_ == nullptr) {
+    return absl::FailedPreconditionError(
+        "root_stack_ has not been initialized");
+  }
+  return *root_stack_;
+}
+
+absl::Status SpiffeBundle::CreateX509Stack() {
+  root_stack_ = std::make_unique<STACK_OF(X509)*>(sk_X509_new_null());
+  absl::Status status = absl::OkStatus();
+  for (const auto& pem_cert : roots_) {
+    auto cert = ParsePemCertificateChain(AddPemBlockWrapping(pem_cert));
+    if (!cert.status().ok()) {
+      status = cert.status();
+      break;
+    }
+    if (cert->size() != 1) {
+      status = absl::InvalidArgumentError("Got a malformed root certificate.");
+      break;
+    }
+    sk_X509_push(*root_stack_, (*cert)[0]);
+  }
+  // If there was an error parsing we don't want a partially filled root stack.
+  if (!status.ok()) {
+    sk_X509_pop_free(*root_stack_, X509_free);
+  }
+  return status;
+}
 
 void SpiffeBundleMap::JsonPostLoad(const Json&, const JsonArgs&,
                                    ValidationErrors* errors) {
@@ -261,6 +354,15 @@ absl::StatusOr<absl::Span<const std::string>> SpiffeBundleMap::GetRoots(
     const absl::string_view trust_domain) {
   if (auto it = bundles_.find(trust_domain); it != bundles_.end()) {
     return it->second.GetRoots();
+  }
+  return absl::NotFoundError(absl::StrFormat(
+      "No spiffe bundle found for trust domain %s", trust_domain));
+}
+
+absl::StatusOr<STACK_OF(X509) *> SpiffeBundleMap::GetRootStack(
+    absl::string_view trust_domain) {
+  if (auto it = bundles_.find(trust_domain); it != bundles_.end()) {
+    return it->second.GetRootStack();
   }
   return absl::NotFoundError(absl::StrFormat(
       "No spiffe bundle found for trust domain %s", trust_domain));

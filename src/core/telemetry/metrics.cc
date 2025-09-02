@@ -101,23 +101,31 @@ RegisteredMetricCallback::~RegisteredMetricCallback() {
 
 void GlobalStatsPluginRegistry::StatsPluginGroup::AddClientCallTracers(
     const Slice& path, bool registered_method, Arena* arena) {
+  absl::InlinedVector<ClientCallTracerInterface*, 3> tracers;
   for (auto& state : plugins_state_) {
     auto* call_tracer = state.plugin->GetClientCallTracer(
         path, registered_method, state.scope_config);
     if (call_tracer != nullptr) {
-      AddClientCallTracerToContext(arena, call_tracer);
+      tracers.push_back(call_tracer);
     }
   }
+  SetClientCallTracer(arena, tracers);
 }
 
 void GlobalStatsPluginRegistry::StatsPluginGroup::AddServerCallTracers(
-    Arena* arena) {
+    Arena* arena,
+    absl::Span<ServerCallTracerInterface* const> additional_tracers) {
+  absl::InlinedVector<ServerCallTracerInterface*, 3> tracers;
+  for (auto* tracer : additional_tracers) {
+    if (tracer != nullptr) tracers.push_back(tracer);
+  }
   for (auto& state : plugins_state_) {
     auto* call_tracer = state.plugin->GetServerCallTracer(state.scope_config);
     if (call_tracer != nullptr) {
-      AddServerCallTracerToContext(arena, call_tracer);
+      tracers.push_back(call_tracer);
     }
   }
+  SetServerCallTracer(arena, tracers);
 }
 
 int GlobalStatsPluginRegistry::StatsPluginGroup::ChannelArgsCompare(

@@ -23,7 +23,7 @@ class FakeStatsClientFilter : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::string_view TypeName() { return "fake_stats_client"; }
+  static absl::string_view TypeName() { return "legacy_fake_stats_client"; }
 
   explicit FakeStatsClientFilter(
       FakeClientCallTracerFactory* fake_client_call_tracer_factory);
@@ -57,7 +57,8 @@ ArenaPromise<ServerMetadataHandle> FakeStatsClientFilter::MakeCallPromise(
   FakeClientCallTracer* client_call_tracer =
       fake_client_call_tracer_factory_->CreateFakeClientCallTracer();
   if (client_call_tracer != nullptr) {
-    SetContext<CallTracerAnnotationInterface>(client_call_tracer);
+    SetContext<CallSpan>(
+        WrapClientCallTracer(client_call_tracer, GetContext<Arena>()));
   }
   return next_promise_factory(std::move(call_args));
 }

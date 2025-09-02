@@ -49,7 +49,12 @@ grpc_cc_test(
     ],
     uses_polling = False,
     deps = [
+        "//:config",
+        "//:gpr",
+        "//src/core:env",
+        "//src/core:json_reader",
         "//src/cpp/ext/gcp:observability_config",
+        "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
 )
@@ -80,9 +85,14 @@ grpc_cc_test(
     ],
     external_deps = [
         "gtest",
+        "absl/strings",
+        "absl/synchronization",
     ],
     linkstatic = True,
     deps = [
+        "//:grpc",
+        "//src/core:env",
+        "//src/core:notification",
         "//src/cpp/ext/gcp:environment_autodetect",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
