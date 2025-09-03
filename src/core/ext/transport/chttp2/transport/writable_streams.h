@@ -178,6 +178,8 @@ class WritableStreams {
         If(
             HasWritableStreams(transport_tokens_available),
             [this]() {
+              // TODO(akshitpatel) : [PH2][P3] - This is temporary. Replace with
+              // native MPSC::ImmediateNextBatch.
               // We already have writable streams in the prioritized queue.
               // Try to get a latest batch from the mpsc queue to take into
               // account the latest enqueue snapshot.
