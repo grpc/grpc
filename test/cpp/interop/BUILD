@@ -341,6 +341,7 @@ grpc_cc_test(
     deps = [
         ":xds_stats_watcher",
         "//:grpc",
+        "//:grpc_base",
         "//test/core/test_util:grpc_test_util",
     ],
 )
