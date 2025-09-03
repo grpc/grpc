@@ -51,9 +51,15 @@ echo "Initial disk usage:"
 df -h
 
 echo "Block devices:"
-lsblk -fa
+lsblk --all --fs --paths
 echo "SCSI devices:"
 lsblk --scsi
+echo "NVMe devices:"
+lsblk --nvme
+echo "Virtio devices:"
+lsblk --virtio
+echo "Detailed:"
+lsblk --output-all --json
 
 # Uncomment the following line to debug "out of disk space" errors by print available disk space every 30seconds in the background
 # bash -c "while true; do echo 'periodic background disk usage check:'; df -h / /tmpfs; sleep 30; done;" &
