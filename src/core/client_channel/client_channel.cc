@@ -220,7 +220,7 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
   WatcherWrapper(
       std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
           watcher,
-      RefCountedPtr<SubchannelWrapper> subchannel_wrapper)
+      WeakRefCountedPtr<SubchannelWrapper> subchannel_wrapper)
       : watcher_(std::move(watcher)),
         subchannel_wrapper_(std::move(subchannel_wrapper)) {}
 
@@ -233,9 +233,7 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
     GRPC_TRACE_LOG(client_channel, INFO)
         << "client_channel=" << subchannel_wrapper_->client_channel_.get()
         << ": connectivity change for subchannel wrapper "
-        << subchannel_wrapper_.get() << " subchannel "
-        << subchannel_wrapper_->subchannel_.get()
-        << "; hopping into work_serializer";
+        << subchannel_wrapper_.get() << "; hopping into work_serializer";
     auto self = RefAsSubclass<WatcherWrapper>();
     subchannel_wrapper_->client_channel_->work_serializer_->Run(
         [self, state, status]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
@@ -298,7 +296,7 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
 
   std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
       watcher_;
-  RefCountedPtr<SubchannelWrapper> subchannel_wrapper_;
+  WeakRefCountedPtr<SubchannelWrapper> subchannel_wrapper_;
 };
 
 ClientChannel::SubchannelWrapper::SubchannelWrapper(
@@ -363,6 +361,20 @@ void ClientChannel::SubchannelWrapper::Orphaned() {
             }
           }
         }
+        if (IsSubchannelWrapperCleanupOnOrphanEnabled()) {
+          // We need to make sure that the internal subchannel gets unreffed
+          // inside of the WorkSerializer, so that updates to the local
+          // subchannel pool are properly synchronized.  To that end, we
+          // drop our ref to the internal subchannel here.  We also cancel
+          // any watchers that were not properly cancelled, in case any of
+          // them are holding a ref to the internal subchannel.
+          for (const auto& [_, watcher] : self->watcher_map_) {
+            self->subchannel_->CancelConnectivityStateWatch(watcher);
+          }
+          self->watcher_map_.clear();
+          self->data_watchers_.clear();
+          self->subchannel_.reset();
+        }
       });
 }
 
@@ -372,7 +384,7 @@ void ClientChannel::SubchannelWrapper::WatchConnectivityState(
   CHECK(watcher_wrapper == nullptr);
   watcher_wrapper = new WatcherWrapper(
       std::move(watcher),
-      RefAsSubclass<SubchannelWrapper>(DEBUG_LOCATION, "WatcherWrapper"));
+      WeakRefAsSubclass<SubchannelWrapper>(DEBUG_LOCATION, "WatcherWrapper"));
   subchannel_->WatchConnectivityState(
       RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface>(
           watcher_wrapper));
