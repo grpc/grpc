@@ -21,6 +21,8 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
+#include <algorithm>
+#include <optional>
 #include <memory>
 
 #include "absl/log/log.h"
@@ -72,8 +74,7 @@ static const grpc_alts_credentials_options_vtable vtable = {
 
 grpc_alts_credentials_options* grpc_alts_credentials_client_options_create(
     void) {
-  auto client_options = static_cast<grpc_alts_credentials_client_options*>(
-      gpr_zalloc(sizeof(grpc_alts_credentials_client_options)));
+  auto client_options = new grpc_alts_credentials_client_options();
   client_options->base.vtable = &vtable;
   return &client_options->base;
 }
@@ -103,6 +104,9 @@ static grpc_alts_credentials_options* alts_client_options_copy(
     prev = new_node;
     node = node->next;
   }
+
+  new_options->record_protocols = options->record_protocols;
+
   new_client_options->token_fetcher =
       reinterpret_cast<const grpc_alts_credentials_client_options*>(options)
           ->token_fetcher;
@@ -135,5 +139,5 @@ static void alts_client_options_destroy(
     target_service_account_destroy(node);
     node = next_node;
   }
-  client_options->token_fetcher.reset();
+  delete client_options;
 }
