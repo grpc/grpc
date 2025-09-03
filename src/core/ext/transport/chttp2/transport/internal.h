@@ -238,7 +238,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
    public:
     explicit ChannelzDataSource(grpc_chttp2_transport* transport)
         : grpc_core::channelz::DataSource(transport->channelz_socket),
-          transport_(transport) {
+          transport_(transport->Ref()) {  // Take a ref
       SourceConstructed();
     }
     ~ChannelzDataSource() { SourceDestructing(); }
@@ -248,7 +248,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
         absl::string_view name) override;
 
    private:
-    grpc_chttp2_transport* transport_;
+    grpc_core::RefCountedPtr<grpc_chttp2_transport> transport_;
   };
 
   void Orphan() override;
