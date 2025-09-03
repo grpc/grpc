@@ -145,6 +145,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc",
         "//:grpc_base",
+        "//:grpc_core_credentials_header",
         "//:grpc_public_hdrs",
         "//:grpc_security_base",
         "//:httpcli",
