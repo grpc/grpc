@@ -1063,6 +1063,7 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        "//src/core:join",
         "//src/core:loop",
         "//src/core:writable_streams",
         "//test/core/transport/util:transport_test",
