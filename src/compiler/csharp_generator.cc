@@ -449,7 +449,8 @@ void GenerateServiceDescriptorProperty(Printer* out,
   out->Print("\n");
 }
 
-void GenerateServerClass(Printer* out, const ServiceDescriptor* service, bool append_async_suffix) {
+void GenerateServerClass(Printer* out, const ServiceDescriptor* service,
+                         bool append_async_suffix) {
   out->Print(
       "/// <summary>Base class for server-side implementations of "
       "$servicename$</summary>\n",
@@ -689,7 +690,8 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
   out->Print("\n");
 }
 
-void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor* service, bool append_async_suffix) {
+void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor* service,
+                               bool append_async_suffix) {
   out->Print(
       "/// <summary>Creates service definition that can be registered with a "
       "server</summary>\n");
@@ -731,7 +733,7 @@ void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor* service, b
 }
 
 void GenerateBindServiceWithBinderMethod(Printer* out,
-                                         const ServiceDescriptor* service, 
+                                         const ServiceDescriptor* service,
                                          bool append_async_suffix) {
   out->Print(
       "/// <summary>Register service method with a service "
@@ -822,7 +824,7 @@ void GenerateService(Printer* out, const ServiceDescriptor* service,
 }  // anonymous namespace
 
 std::string GetServices(const FileDescriptor* file, bool generate_client,
-                        bool generate_server, bool internal_access, 
+                        bool generate_server, bool internal_access,
                         bool append_async_suffix) {
   std::string output;
   {
