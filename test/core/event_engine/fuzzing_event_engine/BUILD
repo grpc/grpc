@@ -41,6 +41,7 @@ grpc_cc_library(
     deps = [
         ":fuzzing_event_engine_cc_proto",
         "//:event_engine_base_hdrs",
+        "//:gpr",
         "//:grpc_slice",
         "//:grpc_trace",
         "//:stats",

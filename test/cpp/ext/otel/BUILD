@@ -142,6 +142,7 @@ grpc_cc_test(
         "//:call_tracer",
         "//:config",
         "//:grpc++",
+        "//:grpc++_base",
         "//:grpc_base",
         "//src/core:channel_args_endpoint_config",
         "//src/cpp/ext/otel:otel_plugin",
