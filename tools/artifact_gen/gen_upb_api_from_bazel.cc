@@ -24,32 +24,21 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
-#include "absl/flags/flag.h"
-#include "absl/flags/parse.h"
-#include "absl/log/log.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_replace.h"
+#include "utils.h"
 #include "pugixml.hpp"
 
 // Command-line flags
-ABSL_FLAG(bool, verbose, false, "Enable verbose output.");
-ABSL_FLAG(std::string, upb_out, "src/core/ext/upb-gen",
-          "Output directory for upb targets");
-ABSL_FLAG(std::string, upbdefs_out, "src/core/ext/upbdefs-gen",
-          "Output directory for upbdefs targets");
-ABSL_FLAG(std::string, mode, "generate_and_copy",
-          "The mode to run in: "
-          "'generate_and_copy', 'list_deps', 'clean' or 'list_build_targets'");
-ABSL_FLAG(std::string, upb_rules_xml, "",
-          "Path to the XML file from `bazel query` on upb rules.");
-ABSL_FLAG(std::string, deps_xml, "",
-          "Path to the XML file from `bazel query` on upb rule deps.");
+bool verbose;
+std::string upb_out;
+std::string upbdefs_out;
+std::string mode;
+std::string upb_rules_xml;
+std::string deps_xml;
 
 // Represents a Bazel rule
 struct Rule {
@@ -63,7 +52,7 @@ struct Rule {
 std::string ReadFile(const std::string& path) {
   std::ifstream file(path);
   if (!file.is_open()) {
-    LOG(FATAL) << "Could not open file: " << path;
+    LOG_FATAL("Could not open file: " + path);
   }
   std::stringstream buffer;
   buffer << file.rdbuf();
@@ -75,7 +64,7 @@ std::map<std::string, Rule> ParseBazelRules(
   std::map<std::string, Rule> rules;
   pugi::xml_document doc;
   if (!doc.load_string(xml_string.c_str())) {
-    LOG(FATAL) << "Failed to parse xml: " << xml_string;
+    LOG_FATAL("Failed to parse xml: " + xml_string);
   }
 
   for (pugi::xml_node rule_node : doc.child("query").children("rule")) {
@@ -151,7 +140,7 @@ std::vector<std::string> GetTransitiveProtos(
         }
       }
       for (const auto& src : rule.srcs) {
-        if (absl::EndsWith(src, ".proto")) {
+        if (src.size() >= 6 && src.compare(src.size() - 6, 6, ".proto") == 0) {
           proto_files_set.insert(src);
         }
       }
@@ -163,8 +152,19 @@ std::vector<std::string> GetTransitiveProtos(
 }
 
 std::string GetUpbPath(std::string proto_path, const std::string& ext) {
-  absl::StrReplaceAll({{":", "/"}}, &proto_path);
-  return absl::StrReplaceAll(proto_path, {{".proto", ext}});
+  // Replace : with /
+  size_t pos = 0;
+  while ((pos = proto_path.find(":", pos)) != std::string::npos) {
+    proto_path.replace(pos, 1, "/");
+    pos += 1;
+  }
+  
+  // Replace .proto with ext
+  pos = proto_path.find(".proto");
+  if (pos != std::string::npos) {
+    proto_path.replace(pos, 6, ext);
+  }
+  return proto_path;
 }
 
 std::pair<std::string, std::string> GetExternalLink(const std::string& file) {
@@ -177,7 +177,7 @@ std::pair<std::string, std::string> GetExternalLink(const std::string& file) {
       {"@opencensus_proto//", ""},
   };
   for (const auto& link : kExternalLinks) {
-    if (absl::StartsWith(file, link.first)) {
+    if (file.compare(0, link.first.length(), link.first) == 0) {
       return link;
     }
   }
@@ -192,18 +192,35 @@ std::string GetBazelBinRootPath(
     // For upb generated files, we need to strip two extensions.
     name_part = std::filesystem::path(name_part).stem().string();
 
-    return absl::StrCat(
-        kBazelBinRoot, "external/",
-        absl::StrReplaceAll(elink.first, {{"@", ""}, {"//", ""}}),
-        "/src/google/protobuf/_virtual_imports/", name_part, "_proto/", file);
+    // Replace @ and // in elink.first
+    std::string cleaned_link = elink.first;
+    size_t pos = 0;
+    while ((pos = cleaned_link.find("@", pos)) != std::string::npos) {
+      cleaned_link.replace(pos, 1, "");
+    }
+    pos = 0;
+    while ((pos = cleaned_link.find("//", pos)) != std::string::npos) {
+      cleaned_link.replace(pos, 2, "");
+    }
+
+    return kBazelBinRoot + "external/" + cleaned_link +
+           "/src/google/protobuf/_virtual_imports/" + name_part + "_proto/" + file;
   }
-  if (absl::StartsWith(elink.first, "@")) {
-    return absl::StrCat(
-        kBazelBinRoot, "external/",
-        absl::StrReplaceAll(elink.first, {{"@", ""}, {"//", ""}}), "/",
-        elink.second, file);
+  if (elink.first.compare(0, 1, "@") == 0) {
+    // Replace @ and // in elink.first
+    std::string cleaned_link = elink.first;
+    size_t pos = 0;
+    while ((pos = cleaned_link.find("@", pos)) != std::string::npos) {
+      cleaned_link.replace(pos, 1, "");
+    }
+    pos = 0;
+    while ((pos = cleaned_link.find("//", pos)) != std::string::npos) {
+      cleaned_link.replace(pos, 2, "");
+    }
+
+    return kBazelBinRoot + "external/" + cleaned_link + "/" + elink.second + file;
   } else {
-    return absl::StrCat(kBazelBinRoot, file);
+    return kBazelBinRoot + file;
   }
 }
 
@@ -264,7 +281,7 @@ void CopyUpbGeneratedFiles(std::vector<Rule>& rules, bool verbose,
     for (const auto& proto_file_raw : rule.proto_files) {
       auto elink = GetExternalLink(proto_file_raw);
       std::string prefix_to_strip = elink.first + elink.second;
-      if (!absl::StartsWith(proto_file_raw, prefix_to_strip)) {
+      if (proto_file_raw.compare(0, prefix_to_strip.length(), prefix_to_strip) != 0) {
         std::cerr << "Source file \"" << proto_file_raw
                   << "\" does not have the expected prefix \""
                   << prefix_to_strip << "\"" << std::endl;
@@ -300,14 +317,16 @@ std::vector<std::string> GetBuildTargets(const std::vector<Rule>& rules,
 }
 
 int main(int argc, char** argv) {
-  absl::ParseCommandLine(argc, argv);
-
-  bool verbose = absl::GetFlag(FLAGS_verbose);
-  std::string upb_out = absl::GetFlag(FLAGS_upb_out);
-  std::string upbdefs_out = absl::GetFlag(FLAGS_upbdefs_out);
-  std::string mode = absl::GetFlag(FLAGS_mode);
-  std::string upb_rules_xml = absl::GetFlag(FLAGS_upb_rules_xml);
-  std::string deps_xml = absl::GetFlag(FLAGS_deps_xml);
+  // Register flags
+  flags::RegisterBoolFlag("verbose", "Enable verbose output.", &verbose, false);
+  flags::RegisterFlag("upb_out", "Output directory for upb targets", &upb_out, "src/core/ext/upb-gen");
+  flags::RegisterFlag("upbdefs_out", "Output directory for upbdefs targets", &upbdefs_out, "src/core/ext/upbdefs-gen");
+  flags::RegisterFlag("mode", "The mode to run in: 'generate_and_copy', 'list_deps', 'clean' or 'list_build_targets'", &mode, "generate_and_copy");
+  flags::RegisterFlag("upb_rules_xml", "Path to the XML file from `bazel query` on upb rules.", &upb_rules_xml, "");
+  flags::RegisterFlag("deps_xml", "Path to the XML file from `bazel query` on upb rule deps.", &deps_xml, "");
+  
+  // Parse command line
+  flags::ParseCommandLine(argc, argv);
 
   if (mode == "clean") {
     std::filesystem::remove_all(upb_out);
@@ -324,10 +343,20 @@ int main(int argc, char** argv) {
         all_deps.insert(dep);
       }
     }
-    std::cout << absl::StrJoin(all_deps, " ");
+    bool first = true;
+    for (const auto& dep : all_deps) {
+      if (!first) std::cout << " ";
+      std::cout << dep;
+      first = false;
+    }
   } else if (mode == "list_build_targets") {
     auto targets = GetBuildTargets(upb_rules, deps_xml);
-    std::cout << absl::StrJoin(targets, " ");
+    bool first = true;
+    for (const auto& target : targets) {
+      if (!first) std::cout << " ";
+      std::cout << target;
+      first = false;
+    }
   } else if (mode == "generate_and_copy") {
     CopyUpbGeneratedFiles(upb_rules, verbose, upb_out, upbdefs_out, deps_xml);
   } else {

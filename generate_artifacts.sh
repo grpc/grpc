@@ -1,4 +1,5 @@
-# Copyright 2019 The gRPC Authors
+#!/bin/bash
+# Copyright 2025 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,19 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+set -ex
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/windows/grpc_run_tests_matrix.bat"
-timeout_mins: 180
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-    regex: "github/grpc/reports/**"
-  }
-}
-
-env_vars {
-  key: "RUN_TESTS_FLAGS"
-  value: "-f basictests windows c -j 1 --inner_jobs 8 --max_time=7200"
-}
+cd $(dirname $0)
+tools/codegen/core/gen_upb_api.sh

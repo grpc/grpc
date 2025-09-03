@@ -18,6 +18,13 @@ set -ex
 # cd to repo root
 cd "$(dirname "$0")/../.."
 
+# Check if clang is available, if not use gcc
+if ! command -v clang &> /dev/null; then
+  if command -v gcc &> /dev/null; then
+    export CC=gcc
+  fi
+fi
+
 # Build the C++ generator. This must be done from within the sub-workspace.
 (cd tools/artifact_gen && ../../tools/bazel build //:gen_upb_api_from_bazel)
 
@@ -59,7 +66,22 @@ BUILD_TARGETS=$(${TMP_DIR}/gen_upb_api_from_bazel \
 
 # Build the upb targets from the root.
 if [[ -n "${BUILD_TARGETS}" ]]; then
-  tools/bazel build ${BUILD_TARGETS}
+  # On Windows CI, we need special handling due to protobuf/MSVC incompatibilities
+  if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || -n "$KOKORO_JOB_NAME" ]]; then
+    # Protobuf v31.1+ expects clang-cl on Windows but our CI uses MSVC.
+    # Disable platform-specific config to avoid protobuf forcing clang-cl,
+    # and use local strategy to avoid sandboxing issues with include paths.
+    tools/bazel build \
+      --noenable_platform_specific_config \
+      --spawn_strategy=local \
+      ${BUILD_TARGETS}
+  elif [[ "$GEM_PLATFORM" == *"darwin"* ]]; then
+    tools/bazel build --compiler=clang ${BUILD_TARGETS}
+  elif [[ "$GEM_PLATFORM" == *"mingw"* ]]; then
+    tools/bazel build --compiler=gcc ${BUILD_TARGETS}
+  else
+    tools/bazel build ${BUILD_TARGETS}
+  fi
 fi
 
 # Run the C++ program to copy the generated files.

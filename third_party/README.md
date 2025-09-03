@@ -138,15 +138,7 @@ src/php/bin/generate_proto_php.sh
 
 After `generate_projects` has finished, run the following updates.
 
-1. Update `third_party/upb`
-
-```
-rm -rf third_party/upb/upb
-cp -r third_party/protobuf/upb third_party/upb
-tools/codegen/core/gen_upb_api.sh
-```
-
-2. Update `third_party/utf8_range`
+1. Update `third_party/utf8_range`
 
 ```
 rm -rf third_party/utf8_range

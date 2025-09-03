@@ -12,6 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+COPTS = select({
+        "@bazel_tools//src/conditions:windows": [
+            "/std:c++17",
+        ],
+        "//conditions:default": [
+            "-std=c++17",
+        ],
+    })
+
 cc_library(
     name = "extract_metadata_from_bazel_xml",
     srcs = ["extract_metadata_from_bazel_xml.cc"],
@@ -56,9 +65,8 @@ cc_library(
     name = "utils",
     srcs = ["utils.cc"],
     hdrs = ["utils.h"],
+    copts = COPTS,
     deps = [
-        "@abseil-cpp//absl/log",
-        "@abseil-cpp//absl/log:check",
         "@nlohmann_json//:json",
         "@yaml-cpp//:yaml-cpp",
     ],
@@ -95,11 +103,9 @@ cc_binary(
 cc_binary(
     name = "gen_upb_api_from_bazel",
     srcs = ["gen_upb_api_from_bazel.cc"],
+    copts = COPTS,
     deps = [
-        "@abseil-cpp//absl/flags:flag",
-        "@abseil-cpp//absl/flags:parse",
-        "@abseil-cpp//absl/log",
-        "@abseil-cpp//absl/strings",
+        ":utils",
         "@pugixml",
     ],
 )

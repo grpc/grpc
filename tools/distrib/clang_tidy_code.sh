@@ -21,6 +21,10 @@ set -ex
 cd $(dirname $0)/../..
 REPO_ROOT=$(pwd)
 
+if [ -f ./generate_artifacts.sh ]; then
+    ./generate_artifacts.sh
+fi
+
 # grep targets with manual tag, which is not included in a result of bazel build using ...
 # let's get a list of them using query command and pass it to gen_compilation_database.py
 export MANUAL_TARGETS=$(bazel query 'attr("tags", "manual", tests(//test/cpp/...))' | grep -v _on_ios)
