@@ -50,5 +50,10 @@ sudo bash -c 'echo "0" > /proc/sys/kernel/yama/ptrace_scope'
 echo "Initial disk usage:"
 df -h
 
+echo "Block devices:"
+lsblk -fa
+echo "SCSI devices:"
+lsblk --scsi
+
 # Uncomment the following line to debug "out of disk space" errors by print available disk space every 30seconds in the background
 # bash -c "while true; do echo 'periodic background disk usage check:'; df -h / /tmpfs; sleep 30; done;" &
