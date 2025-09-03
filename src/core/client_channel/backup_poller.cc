@@ -63,16 +63,16 @@ static bool g_backup_polling_disabled;
 
 void grpc_client_channel_global_init_backup_polling() {
 #ifdef GRPC_PYTHON_BUILD
-  bool event_engine_poller_enabled =
-      grpc_core::IsEventEnginePollerForPythonEnabled();
-#else   // GRPC_PYTHON_BUILD
-  bool event_engine_poller_enabled = true;
-#endif  // GRPC_PYTHON_BUILD
   // Disable backup polling if EventEngine is used everywhere.
-  g_backup_polling_disabled = event_engine_poller_enabled &&
-                              grpc_core::IsEventEngineClientEnabled() &&
-                              grpc_core::IsEventEngineListenerEnabled() &&
-                              grpc_core::IsEventEngineDnsEnabled();
+  g_backup_polling_disabled =
+      !grpc_core::IsEventEnginePollerForPythonEnabled() &&
+      grpc_core::IsEventEngineClientEnabled() &&
+      grpc_core::IsEventEngineListenerEnabled() &&
+      grpc_core::IsEventEngineDnsEnabled();
+#else
+  // EventEngine polling not supported, keep using the backup poller.
+  g_backup_polling_disabled = false;
+#endif
   if (g_backup_polling_disabled) {
     return;
   }

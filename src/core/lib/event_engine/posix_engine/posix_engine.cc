@@ -21,11 +21,9 @@
 
 #include <algorithm>
 #include <atomic>
-#include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <memory>
-#include <optional>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -38,7 +36,6 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/ares_resolver.h"
@@ -52,7 +49,6 @@
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/utils.h"
-#include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/fork.h"
 #include "src/core/util/sync.h"
@@ -176,7 +172,7 @@ void RegisterEventEngineForFork(
     const std::shared_ptr<PosixEventEngine>& posix_engine,
     const std::shared_ptr<ThreadPool>& executor,
     const std::shared_ptr<TimerManager>& timer_manager) {
-  if (!(grpc_core::Fork::Enabled() && grpc_core::IsEventEngineForkEnabled())) {
+  if (!(grpc_core::Fork::Enabled())) {
     return;
   }
   grpc_core::MutexLock lock(fork_mu.get());
@@ -926,7 +922,6 @@ PosixEventEngine::CreatePosixListener(
     GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 
 void PosixEventEngine::AfterFork(OnForkRole on_fork_role) {
-  CHECK(grpc_core::IsEventEngineForkEnabled());
   if (on_fork_role == OnForkRole::kChild) {
     AfterForkInChild();
   }
@@ -936,10 +931,7 @@ void PosixEventEngine::AfterFork(OnForkRole on_fork_role) {
   }
 }
 
-void PosixEventEngine::BeforeFork() {
-  CHECK(grpc_core::IsEventEngineForkEnabled());
-  ResetPollCycle();
-}
+void PosixEventEngine::BeforeFork() { ResetPollCycle(); }
 
 void PosixEventEngine::AfterForkInChild() {
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
