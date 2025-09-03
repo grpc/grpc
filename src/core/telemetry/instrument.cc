@@ -536,6 +536,7 @@ std::unique_ptr<StorageSet> QueryableDomain::CreateStorageSet() {
 
 void QueryableDomain::RegisterStorageSet(StorageSet* storage_set) {
   // Now register the new set.
+  std::vector<RefCountedPtr<DomainStorage>> added_storage;
   MutexLock lock(&active_storage_sets_mu_);
   active_storage_sets_.push_back(storage_set);
   for (size_t i = 0; i < map_shards_size_; ++i) {
@@ -544,6 +545,7 @@ void QueryableDomain::RegisterStorageSet(StorageSet* storage_set) {
         [&](const auto&, const auto& weak_storage) {
           // Only add storage that is not already orphaned.
           if (auto storage = weak_storage->RefIfNonZero(); storage != nullptr) {
+            added_storage.emplace_back(storage);
             storage_set->AddStorage(weak_storage);
           }
         });
