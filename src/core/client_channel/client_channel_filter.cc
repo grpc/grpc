@@ -633,7 +633,6 @@ class ClientChannelFilter::SubchannelWrapper final
       GRPC_TRACE_LOG(client_channel, INFO)
           << "chand=" << parent_->chand_
           << ": connectivity change for subchannel wrapper " << parent_.get()
-          << " subchannel " << parent_->subchannel_.get()
           << "hopping into work_serializer";
       auto self = RefAsSubclass<WatcherWrapper>();
       parent_->chand_->work_serializer_->Run(
