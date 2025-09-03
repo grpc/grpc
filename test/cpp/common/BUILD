@@ -87,6 +87,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:grpc",
         "//:grpc++",
         "//:grpc++_base",
         "//:grpc_base",

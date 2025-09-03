@@ -280,6 +280,11 @@
   expiry: 2026/02/01
   owner: akshitpatel@google.com
   test_tags: ["promise_test"]
+- name: sleep_use_non_owning_waker
+  description: If set, the sleep promise uses a non-owning waker.
+  expiry: 2026/02/01
+  owner: akshitpatel@google.com
+  test_tags: ["promise_test"]
 - name: subchannel_wrapper_cleanup_on_orphan
   description:
     Fixes the subchannel wrapper to drop any non-cancelled watchers when

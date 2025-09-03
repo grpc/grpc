@@ -106,6 +106,7 @@ inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_GLOBAL_CALLBACKS_OWNERSHIP
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return true; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
+inline bool IsSleepUseNonOwningWakerEnabled() { return false; }
 inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
@@ -162,6 +163,7 @@ inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_GLOBAL_CALLBACKS_OWNERSHIP
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return true; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
+inline bool IsSleepUseNonOwningWakerEnabled() { return false; }
 inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
@@ -218,6 +220,7 @@ inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_GLOBAL_CALLBACKS_OWNERSHIP
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return true; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
+inline bool IsSleepUseNonOwningWakerEnabled() { return false; }
 inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
@@ -263,6 +266,7 @@ enum ExperimentIds {
   kExperimentIdSecureEndpointOffloadLargeWrites,
   kExperimentIdServerGlobalCallbacksOwnership,
   kExperimentIdSleepPromiseExecCtxRemoval,
+  kExperimentIdSleepUseNonOwningWaker,
   kExperimentIdSubchannelWrapperCleanupOnOrphan,
   kExperimentIdTcpFrameSizeTuning,
   kExperimentIdTcpRcvLowat,
@@ -413,6 +417,10 @@ inline bool IsServerGlobalCallbacksOwnershipEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_SLEEP_PROMISE_EXEC_CTX_REMOVAL
 inline bool IsSleepPromiseExecCtxRemovalEnabled() {
   return IsExperimentEnabled<kExperimentIdSleepPromiseExecCtxRemoval>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_SLEEP_USE_NON_OWNING_WAKER
+inline bool IsSleepUseNonOwningWakerEnabled() {
+  return IsExperimentEnabled<kExperimentIdSleepUseNonOwningWaker>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SUBCHANNEL_WRAPPER_CLEANUP_ON_ORPHAN
 inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() {

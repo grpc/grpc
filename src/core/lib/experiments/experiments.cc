@@ -176,6 +176,9 @@ const char* const additional_constraints_server_global_callbacks_ownership =
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
+const char* const description_sleep_use_non_owning_waker =
+    "If set, the sleep promise uses a non-owning waker.";
+const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
 const char* const description_subchannel_wrapper_cleanup_on_orphan =
     "Fixes the subchannel wrapper to drop any non-cancelled watchers when it "
     "gets orphaned.";
@@ -312,6 +315,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
+     true},
+    {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
+     additional_constraints_sleep_use_non_owning_waker, nullptr, 0, false,
      true},
     {"subchannel_wrapper_cleanup_on_orphan",
      description_subchannel_wrapper_cleanup_on_orphan,
@@ -488,6 +494,9 @@ const char* const additional_constraints_server_global_callbacks_ownership =
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
+const char* const description_sleep_use_non_owning_waker =
+    "If set, the sleep promise uses a non-owning waker.";
+const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
 const char* const description_subchannel_wrapper_cleanup_on_orphan =
     "Fixes the subchannel wrapper to drop any non-cancelled watchers when it "
     "gets orphaned.";
@@ -624,6 +633,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
+     true},
+    {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
+     additional_constraints_sleep_use_non_owning_waker, nullptr, 0, false,
      true},
     {"subchannel_wrapper_cleanup_on_orphan",
      description_subchannel_wrapper_cleanup_on_orphan,
@@ -800,6 +812,9 @@ const char* const additional_constraints_server_global_callbacks_ownership =
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
+const char* const description_sleep_use_non_owning_waker =
+    "If set, the sleep promise uses a non-owning waker.";
+const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
 const char* const description_subchannel_wrapper_cleanup_on_orphan =
     "Fixes the subchannel wrapper to drop any non-cancelled watchers when it "
     "gets orphaned.";
@@ -936,6 +951,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
+     true},
+    {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
+     additional_constraints_sleep_use_non_owning_waker, nullptr, 0, false,
      true},
     {"subchannel_wrapper_cleanup_on_orphan",
      description_subchannel_wrapper_cleanup_on_orphan,

@@ -104,6 +104,7 @@ grpc_cc_benchmark(
         ":helpers",
         "//:gpr",
         "//:grpc++",
+        "//:grpc++_base",
         "//src/core:common_event_engine_closures",
         "//src/core:event_engine_thread_pool",
         "//src/core:notification",
@@ -232,6 +233,8 @@ grpc_cc_benchmark(
         ":helpers",
         "//:grpc",
         "//:grpc++",
+        "//:grpc++_base",
+        "//:grpc_base",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
     ],
@@ -264,7 +267,14 @@ grpc_cc_benchmark(
         "no_windows",
     ],
     uses_event_engine = False,
-    deps = [":helpers"],
+    deps = [
+        ":helpers",
+        "//:grpc++",
+        "//:grpc++_base",
+        "//:grpc_base",
+        "//test/core/test_util:grpc_test_util",
+        "//test/cpp/util:test_config",
+    ],
 )
 
 grpc_cc_benchmark(
@@ -298,6 +308,7 @@ grpc_cc_benchmark(
         "//:exec_ctx",
         "//:gpr",
         "//:grpc++",
+        "//:grpc++_base",
         "//:grpc_base",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
@@ -425,6 +436,7 @@ grpc_cc_benchmark(
     deps = [
         ":fullstack_unary_ping_pong_h",
         "//:grpc++",
+        "//:grpc++_base",
         "//src/core:chaotic_good",
         "//src/core:endpoint_transport",
         "//test/core/test_util:grpc_test_util",
@@ -494,6 +506,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log:check",
+        "benchmark",
     ],
     deps = [
         ":bm_callback_test_service_impl",

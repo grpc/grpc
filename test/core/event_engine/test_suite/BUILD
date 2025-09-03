@@ -81,6 +81,7 @@ grpc_cc_test(
         ":event_engine_test_framework",
         "//:config_vars",
         "//:grpc",
+        "//:grpc_base",
         "//src/core:posix_event_engine",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/test_suite/posix:oracle_event_engine_posix",
