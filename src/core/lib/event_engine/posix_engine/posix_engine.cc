@@ -923,7 +923,12 @@ PosixEventEngine::CreatePosixListener(
 
 void PosixEventEngine::AfterFork(OnForkRole on_fork_role) {
   if (on_fork_role == OnForkRole::kChild) {
-    AfterForkInChild();
+    if (grpc_core::IsEventEngineForkEnabled()) {
+      AfterForkInChild();
+      if (poller_ != nullptr) {
+        poller_->HandleForkInChild();
+      }
+    }
   }
   if (poller_ != nullptr) {
     poller_->ResetKickState();
@@ -955,9 +960,6 @@ void PosixEventEngine::AfterForkInChild() {
     }
   }
 #endif
-  if (poller_ != nullptr) {
-    poller_->HandleForkInChild();
-  }
 }
 
 #endif  // GRPC_POSIX_SOCKET_TCP && GRPC_ENABLE_FORK_SUPPORT &&
