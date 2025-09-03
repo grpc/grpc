@@ -1,0 +1,18 @@
+matrix:
+  platform:
+  - debian10
+  - ubuntu2004
+  - macos
+  - macos_arm64
+  - windows
+  bazel:
+  - 8.x
+  - 7.x
+  - 6.x
+tasks:
+  verify_targets:
+    name: Verify build targets
+    platform: ${{ platform }}
+    bazel: ${{ bazel }}
+    build_targets:
+    - '@zlib//:zlib'
