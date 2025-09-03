@@ -34,6 +34,7 @@ grpc_cc_library(
     ],
     deps = [
         "//:gpr",
+        "//:grpc",
         "//:grpc++",
         "//:grpc_base",
         "//test/cpp/util:test_util",
@@ -101,7 +102,9 @@ grpc_cc_library(
     deps = [
         ":server_helper_lib",
         "//:gpr",
+        "//:grpc",
         "//:grpc++",
+        "//:grpc_base",
         "//:grpcpp_backend_metric_recorder",
         "//:grpcpp_call_metric_recorder",
         "//:grpcpp_orca_service",
@@ -124,11 +127,11 @@ grpc_cc_library(
         "interop_client.h",
     ],
     external_deps = [
+        "absl/cleanup",
         "absl/flags:flag",
         "absl/log:check",
         "absl/log:log",
         "absl/strings",
-        "absl/cleanup",
         "absl/strings:str_format",
     ],
     deps = [
@@ -157,7 +160,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/flags:flag",
-        "absl/log:log",
+        "absl/log",
     ],
     deps = [
         ":client_helper_lib",
@@ -683,7 +686,7 @@ grpc_cc_library(
     tags = ["nobuilder"],
     deps = [
         "//:config",
-        "//:gpr_platform",
+        "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//:oob_backend_metric",
