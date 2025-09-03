@@ -53,6 +53,7 @@ EXPERIMENT_ENABLES = {
     "secure_endpoint_offload_large_writes": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,secure_endpoint_offload_large_writes",
     "server_global_callbacks_ownership": "server_global_callbacks_ownership",
     "sleep_promise_exec_ctx_removal": "sleep_promise_exec_ctx_removal",
+    "subchannel_wrapper_cleanup_on_orphan": "subchannel_wrapper_cleanup_on_orphan",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
     "tsi_frame_protector_without_locks": "tsi_frame_protector_without_locks",
@@ -93,6 +94,7 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "rr_wrr_connect_from_random_index",
@@ -130,6 +132,7 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
         },
         "on": {
@@ -180,6 +183,7 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "rr_wrr_connect_from_random_index",
@@ -217,6 +221,7 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
         },
         "on": {
@@ -267,6 +272,7 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "rr_wrr_connect_from_random_index",
@@ -304,6 +310,7 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
         },
         "on": {
