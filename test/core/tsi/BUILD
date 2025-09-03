@@ -218,14 +218,20 @@ grpc_cc_test(
     ],
     external_deps = [
         "absl/log:check",
+        "absl/status:statusor",
+        "absl/strings",
         "gtest",
+        "libcrypto",
     ],
     tags = ["no_windows"],
     deps = [
         ":transport_security_test_lib",
         "//:gpr",
         "//:grpc",
+        "//:grpc_security_base",
         "//:tsi",
+        "//:tsi_base",
+        "//:tsi_ssl_credentials",
         "//test/core/test_util:grpc_test_util",
     ],
 )
