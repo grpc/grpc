@@ -49099,6 +49099,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       PRIVATE
         "GPR_DLL_IMPORTS"
         "GRPC_DLL_IMPORTS"
+        "GRPCXX_DLL_IMPORTS"
       )
     endif()
   endif()
@@ -49125,8 +49126,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(ztrace_collector_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
-    grpc
-    ${_gRPC_PROTOBUF_LIBRARIES}
+    grpc++
   )
 
 
