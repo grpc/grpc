@@ -44,23 +44,23 @@ python3 -m pip install six
 # another subprocess of the test driver.
 sudo bash -c 'echo "0" > /proc/sys/kernel/yama/ptrace_scope'
 
-# check whether /tmpfs is mounted correctly
-(mount | grep -q 'on /tmpfs ') || (mount; echo 'BAD KOKORO WORKER WARNING: it seems that /tmpfs volume with scratch disk is not mounted in the kokoro worker. This can result in unexpected "out of disk space" errors.')
-
-echo "Mounts:"
-mount
+# Debug info.
+if [[ -f /GRPC_IMAGE_NAME ]]; then
+  echo "gRPC custom VM image name:"
+  cat /GRPC_IMAGE_NAME
+fi
 echo "Initial disk usage:"
 df -h
 echo "Block devices:"
 lsblk --all --fs --paths
-echo "SCSI devices:"
-lsblk --scsi
-echo "NVMe devices:"
-lsblk --nvme || true
-echo "Virtio devices:"
-lsblk --virtio || true
-echo "Detailed:"
-lsblk --output-all --json
+echo "Disk mounts:"
+mount
+
+# Check whether the secondary disk is mounted on /tmpfs correctly.
+# Refer to the format_tmpfs.sh Kokoro script for details.
+if ! findmnt /tmpfs; then
+  echo 'BAD KOKORO WORKER WARNING: it seems that /tmpfs volume with scratch disk is not mounted in the kokoro worker. This can result in unexpected "out of disk space" errors.'
+fi
 
 # Uncomment the following line to debug "out of disk space" errors by print available disk space every 30seconds in the background
 # bash -c "while true; do echo 'periodic background disk usage check:'; df -h / /tmpfs; sleep 30; done;" &
