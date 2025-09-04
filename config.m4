@@ -805,6 +805,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/telemetry/context_list_entry.cc \
     src/core/telemetry/default_tcp_tracer.cc \
     src/core/telemetry/histogram_view.cc \
+    src/core/telemetry/instrument.cc \
     src/core/telemetry/metrics.cc \
     src/core/telemetry/stats.cc \
     src/core/telemetry/stats_data.cc \
@@ -933,6 +934,11 @@ if test "$PHP_GRPC" != "no"; then
     src/core/xds/grpc/xds_lb_policy_registry.cc \
     src/core/xds/grpc/xds_listener.cc \
     src/core/xds/grpc/xds_listener_parser.cc \
+    src/core/xds/grpc/xds_matcher.cc \
+    src/core/xds/grpc/xds_matcher_action.cc \
+    src/core/xds/grpc/xds_matcher_context.cc \
+    src/core/xds/grpc/xds_matcher_input.cc \
+    src/core/xds/grpc/xds_matcher_parse.cc \
     src/core/xds/grpc/xds_metadata.cc \
     src/core/xds/grpc/xds_metadata_parser.cc \
     src/core/xds/grpc/xds_route_config.cc \

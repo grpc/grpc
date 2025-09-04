@@ -51,10 +51,15 @@ grpc_cc_test(
         "absl/log:log",
         "absl/strings",
         "gtest",
+        "absl/status",
     ],
     deps = [
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:parse_address",
+        "//src/core:grpc_sockaddr",
+        "//src/core:iomgr_port",
         "//test/core/test_util:grpc_test_util",
     ],
 )

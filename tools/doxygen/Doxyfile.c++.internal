@@ -1394,6 +1394,7 @@ src/core/ext/transport/chttp2/transport/http2_settings.cc \
 src/core/ext/transport/chttp2/transport/http2_settings.h \
 src/core/ext/transport/chttp2/transport/http2_settings_manager.cc \
 src/core/ext/transport/chttp2/transport/http2_settings_manager.h \
+src/core/ext/transport/chttp2/transport/http2_settings_promises.h \
 src/core/ext/transport/chttp2/transport/http2_stats_collector.cc \
 src/core/ext/transport/chttp2/transport/http2_stats_collector.h \
 src/core/ext/transport/chttp2/transport/http2_status.h \
@@ -2632,6 +2633,7 @@ src/core/lib/resource_quota/periodic_update.cc \
 src/core/lib/resource_quota/periodic_update.h \
 src/core/lib/resource_quota/resource_quota.cc \
 src/core/lib/resource_quota/resource_quota.h \
+src/core/lib/resource_quota/telemetry.h \
 src/core/lib/resource_quota/thread_quota.cc \
 src/core/lib/resource_quota/thread_quota.h \
 src/core/lib/security/authorization/audit_logging.cc \
@@ -2840,8 +2842,11 @@ src/core/telemetry/context_list_entry.cc \
 src/core/telemetry/context_list_entry.h \
 src/core/telemetry/default_tcp_tracer.cc \
 src/core/telemetry/default_tcp_tracer.h \
+src/core/telemetry/histogram.h \
 src/core/telemetry/histogram_view.cc \
 src/core/telemetry/histogram_view.h \
+src/core/telemetry/instrument.cc \
+src/core/telemetry/instrument.h \
 src/core/telemetry/metrics.cc \
 src/core/telemetry/metrics.h \
 src/core/telemetry/stats.cc \
@@ -3043,6 +3048,7 @@ src/core/util/time_precise.h \
 src/core/util/time_util.cc \
 src/core/util/time_util.h \
 src/core/util/tmpfile.h \
+src/core/util/trie_lookup.h \
 src/core/util/type_list.h \
 src/core/util/unique_ptr_with_bitset.h \
 src/core/util/unique_type_name.h \
@@ -3115,6 +3121,16 @@ src/core/xds/grpc/xds_listener.cc \
 src/core/xds/grpc/xds_listener.h \
 src/core/xds/grpc/xds_listener_parser.cc \
 src/core/xds/grpc/xds_listener_parser.h \
+src/core/xds/grpc/xds_matcher.cc \
+src/core/xds/grpc/xds_matcher.h \
+src/core/xds/grpc/xds_matcher_action.cc \
+src/core/xds/grpc/xds_matcher_action.h \
+src/core/xds/grpc/xds_matcher_context.cc \
+src/core/xds/grpc/xds_matcher_context.h \
+src/core/xds/grpc/xds_matcher_input.cc \
+src/core/xds/grpc/xds_matcher_input.h \
+src/core/xds/grpc/xds_matcher_parse.cc \
+src/core/xds/grpc/xds_matcher_parse.h \
 src/core/xds/grpc/xds_metadata.cc \
 src/core/xds/grpc/xds_metadata.h \
 src/core/xds/grpc/xds_metadata_parser.cc \

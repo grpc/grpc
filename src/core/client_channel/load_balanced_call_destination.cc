@@ -29,10 +29,12 @@ namespace grpc_core {
 namespace {
 
 void MaybeCreateCallAttemptTracer(bool is_transparent_retry) {
-  auto* call_tracer = MaybeGetContext<ClientCallTracerInterface>();
+  auto* arena = MaybeGetContext<Arena>();
+  if (arena == nullptr) return;
+  auto* call_tracer = MaybeGetContext<ClientCallTracer>();
   if (call_tracer == nullptr) return;
   auto* tracer = call_tracer->StartNewAttempt(is_transparent_retry);
-  SetContext<CallTracerInterface>(tracer);
+  SetContext<CallAttemptTracer>(WrapCallAttemptTracer(tracer, arena));
 }
 
 class LbCallState : public ClientChannelLbCallState {
@@ -47,9 +49,8 @@ class LbCallState : public ClientChannelLbCallState {
     return service_config_call_data->GetCallAttribute(type);
   }
 
-  ClientCallTracerInterface::CallAttemptTracer* GetCallAttemptTracer()
-      const override {
-    return GetContext<ClientCallTracerInterface::CallAttemptTracer>();
+  CallAttemptTracer* GetCallAttemptTracer() const override {
+    return GetContext<CallAttemptTracer>();
   }
 };
 
@@ -240,8 +241,7 @@ void LoadBalancedCallDestination::StartCall(
               }
               // If it was queued, add a trace annotation.
               if (was_queued) {
-                auto* tracer = MaybeGetContext<
-                    ClientCallTracerInterface::CallAttemptTracer>();
+                auto* tracer = MaybeGetContext<CallAttemptTracer>();
                 if (tracer != nullptr) {
                   tracer->RecordAnnotation("Delayed LB pick complete.");
                 }

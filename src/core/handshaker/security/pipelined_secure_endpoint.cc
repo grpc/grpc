@@ -597,8 +597,10 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
         // called again once that read completes.
         if (unprotecting_.value()) {
           lock.Release();
-          event_engine_->Run(
-              [impl = Ref()]() mutable { ContinueUnprotect(std::move(impl)); });
+          event_engine_->Run([impl = Ref()]() mutable {
+            grpc_core::ExecCtx exec_ctx;
+            ContinueUnprotect(std::move(impl));
+          });
         }
         return true;
       }
@@ -690,6 +692,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
       args.set_read_hint_bytes(frame_protector_.min_progress_size());
       lock.Release();
       event_engine_->Run([impl = Ref(), args = std::move(args)]() mutable {
+        grpc_core::ExecCtx exec_ctx;
         // If the endpoint closed whilst waiting for this callback, then
         // fail out the read and we're done.
         grpc_core::ReleasableMutexLock lock(impl->frame_protector_.read_mu());
@@ -701,6 +704,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
         }
         const bool read_finished_immediately = impl->wrapped_ep_->Read(
             [impl = impl->Ref()](absl::Status status) mutable {
+              grpc_core::ExecCtx exec_ctx;
               FinishFirstRead(std::move(impl), status);
             },
             impl->staging_protected_data_buffer_.get(), std::move(args));
@@ -810,6 +814,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
         // thread.
         impl->event_engine_->Run(
             [impl = impl->Ref(), args = std::move(args)]() mutable {
+              grpc_core::ExecCtx exec_ctx;
               StartAsyncRead(std::move(impl), std::move(args));
             });
 
@@ -864,6 +869,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
       }
       const bool read_finished_immediately = impl->wrapped_ep_->Read(
           [impl = impl->Ref()](absl::Status status) mutable {
+            grpc_core::ExecCtx exec_ctx;
             FinishAsyncRead(std::move(impl), status);
           },
           impl->staging_protected_data_buffer_.get(), std::move(args));

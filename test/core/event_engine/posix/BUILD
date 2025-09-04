@@ -41,6 +41,7 @@ grpc_cc_library(
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//src/core:event_engine_common",
+        "//src/core:event_engine_thread_pool",
         "//src/core:posix_event_engine_event_poller",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -436,14 +437,22 @@ grpc_cc_library(
     hdrs = ["dns_server.h"],
     external_deps = [
         "absl/status:statusor",
+        "absl/container:flat_hash_map",
+        "absl/container:inlined_vector",
+        "absl/strings",
+        "absl/log",
+        "absl/status",
+        "absl/cleanup",
     ],
     tags = [
         "no_windows",
     ],
     visibility = ["//visibility:private"],
     deps = [
+        "//:event_engine_base_hdrs",
         "//:gpr_platform",
         "//:grpc++",
+        "//src/core:iomgr_port",
         "//src/core:notification",
     ],
 )

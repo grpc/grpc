@@ -290,9 +290,13 @@ grpc_fuzz_test(
         "no_windows",
     ],
     deps = [
+        "//:grpc_base",
         "//src/core:chaotic_good_data_endpoints",
+        "//src/core:race",
+        "//src/core:sleep",
         "//test/core/call/yodel:yodel_test",
         "//test/core/transport/util:mock_promise_endpoint",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 

@@ -68,13 +68,6 @@
     doc: Number of server channels created
   - counter: insecure_connections_created
     doc: Number of insecure connections created
-  # resource quota
-  - counter: rq_connections_dropped
-    doc: Number of connections dropped due to resource quota exceeded
-  - counter: rq_calls_dropped
-    doc: Number of calls dropped due to resource quota exceeded
-  - counter: rq_calls_rejected
-    doc: Number of calls rejected (never started) due to resource quota exceeded
   # tcp
   - counter: syscall_write
     doc: Number of write syscalls (or equivalent - eg sendmsg) made by this process

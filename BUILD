@@ -2430,6 +2430,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log:log",
+        "absl/status:statusor",
         "@com_google_protobuf//upb/base",
         "@com_google_protobuf//upb/mem",
     ],
@@ -5367,6 +5368,16 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "channelz_upbdefs",
     deps = ["//src/proto/grpc/channelz/v2:channelz_proto"],
+)
+
+grpc_upb_proto_library(
+    name = "channelz_service_upb",
+    deps = ["//src/proto/grpc/channelz/v2:service_proto"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "channelz_service_upbdefs",
+    deps = ["//src/proto/grpc/channelz/v2:service_proto"],
 )
 
 grpc_upb_proto_library(

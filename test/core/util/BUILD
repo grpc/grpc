@@ -932,3 +932,14 @@ grpc_cc_test(
         "//src/core:function_signature",
     ],
 )
+
+grpc_cc_test(
+    name = "trie_lookup_test",
+    srcs = ["trie_lookup_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//src/core:trie_lookup",
+    ],
+)
