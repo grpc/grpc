@@ -80,6 +80,7 @@ class OrcaProducer final : public Subchannel::DataProducerInterface {
   void NotifyWatchers(const BackendMetricData& backend_metric_data);
 
   RefCountedPtr<Subchannel> subchannel_;
+  ManualConstructor<WorkSerializer> work_serializer_;
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   ConnectivityWatcher* connectivity_watcher_;
   Mutex mu_;
