@@ -152,6 +152,8 @@
     <file baseinstalldir="/" name="src/core/channelz/channelz_registry.h" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/property_list.cc" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/property_list.h" role="src" />
+    <file baseinstalldir="/" name="src/core/channelz/text_encode.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/channelz/text_encode.h" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/v2tov1/convert.cc" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/v2tov1/convert.h" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/v2tov1/legacy_api.cc" role="src" />
@@ -844,6 +846,9 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h" role="src" />
@@ -1209,10 +1214,14 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.c" role="src" />
