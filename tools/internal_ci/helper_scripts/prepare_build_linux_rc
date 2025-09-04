@@ -47,7 +47,7 @@ sudo bash -c 'echo "0" > /proc/sys/kernel/yama/ptrace_scope'
 # check whether /tmpfs is mounted correctly
 (mount | grep -q 'on /tmpfs ') || (mount; echo 'BAD KOKORO WORKER WARNING: it seems that /tmpfs volume with scratch disk is not mounted in the kokoro worker. This can result in unexpected "out of disk space" errors.')
 
-echo "Mounts"
+echo "Mounts:"
 mount
 echo "Initial disk usage:"
 df -h
