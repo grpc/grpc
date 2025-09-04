@@ -37,4 +37,4 @@ mkdir -p "${GRPC_TEST_REPORT_BASE_DIR}/artifacts"
 time cp -r artifacts/* "${GRPC_TEST_REPORT_BASE_DIR}/artifacts" || true
 
 echo "Final disk usage:"
-df -h / /tmpfs
+df -h / /tmpfs || true
