@@ -36,6 +36,7 @@ enum class Intent {
   kNote,
   kKey,
   kValue,
+  kWarning,
 };
 
 template <typename Sink>
@@ -73,6 +74,9 @@ void AbslStringify(Sink& sink, Intent intent) {
       break;
     case Intent::kValue:
       sink.Append("value");
+      break;
+    case Intent::kWarning:
+      sink.Append("warning");
       break;
   }
 }
