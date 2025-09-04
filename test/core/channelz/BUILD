@@ -148,6 +148,7 @@ grpc_cc_test(
     ],
     deps = [
         "//:grpc",
+        "//:grpc++",
         "//src/core:notification",
         "//src/core:ztrace_collector",
         "//src/proto/grpc/channelz/v2:property_list_cc_proto",
