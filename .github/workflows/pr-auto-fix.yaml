@@ -22,7 +22,7 @@ jobs:
         with:
           format: YYYYWWd
       - name: Cache bazel
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        uses: actions/cache@0400d5f644dc74513175e3cd8d07132dd4860809 # v4.2.4
         env:
           cache-name: bazel-cache
         with:
@@ -74,7 +74,7 @@ jobs:
           pip install pyyaml mako virtualenv absl-py
           pip list
       - name: Check out repository code
-        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
         with:
           submodules: True
       - name: Get the upstream code
