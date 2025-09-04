@@ -66,8 +66,8 @@ if ! findmnt /tmpfs; then
   mount
 fi
 
-# Print the usage after the submodules are updated. Note that if /tmpfs
-# isn't properly output, the output will repeat the root fs usage two times.
+# Print the usage after the submodules are updated. Hint: when /tmpfs
+# isn't properly mounted, the output will repeat the root fs usage two times.
 echo "Initial disk usage:"
 df -h / /tmpfs
 
