@@ -52,12 +52,6 @@ df -h
 
 echo "Block devices:"
 lsblk --all --fs --paths
-echo "SCSI devices:"
-lsblk --scsi
-echo "NVMe devices:"
-lsblk --nvme
-echo "Virtio devices:"
-lsblk --virtio
 echo "Detailed:"
 lsblk --output-all --json
 
