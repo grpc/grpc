@@ -27,6 +27,7 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "src/core/channelz/property_list.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -180,6 +181,8 @@ void grpc_channel_stack::ChannelStackDataSource::AddData(
   grpc_channel_stack* channel_stack = reinterpret_cast<grpc_channel_stack*>(
       reinterpret_cast<char*>(this) -
       offsetof(grpc_channel_stack, channelz_data_source));
+  grpc_core::CoreConfiguration::Get().channel_init().AddData(
+      sink, channel_stack->type);
   sink.AddData(
       "channel_stack",
       grpc_core::channelz::PropertyList()
