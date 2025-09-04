@@ -498,6 +498,7 @@ grpc_cc_test(
     deps = [
         ":test_util",
         "//:grpc++",
+        "//:grpc++_base",
         "//test/core/test_util:grpc_test_util",
     ],
 )

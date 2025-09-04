@@ -233,6 +233,8 @@ grpc_cc_benchmark(
         ":helpers",
         "//:grpc",
         "//:grpc++",
+        "//:grpc++_base",
+        "//:grpc_base",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
     ],
@@ -268,6 +270,7 @@ grpc_cc_benchmark(
     deps = [
         ":helpers",
         "//:grpc++",
+        "//:grpc++_base",
         "//:grpc_base",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",

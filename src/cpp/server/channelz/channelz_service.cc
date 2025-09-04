@@ -26,9 +26,11 @@
 #include <vector>
 
 #include "absl/strings/str_cat.h"
+#include "src/core/channelz/channelz.h"
 #include "src/core/channelz/channelz_registry.h"
 #include "src/core/channelz/v2tov1/convert.h"
 #include "src/core/lib/experiments/experiments.h"
+#include "src/core/util/notification.h"
 
 using grpc_core::channelz::BaseNode;
 
@@ -420,6 +422,66 @@ Status ChannelzV2Service::GetEntity(
   response->mutable_entity()->ParseFromString(
       node->SerializeEntityToString(kChannelzTimeout));
   return Status::OK;
+}
+
+Status ChannelzV2Service::QueryTrace(
+    ServerContext* /*ctx*/, const channelz::v2::QueryTraceRequest* request,
+    ServerWriter<channelz::v2::QueryTraceResponse>* writer) {
+  grpc_core::channelz::ZTrace::Args args;
+  for (const auto& [key, value] : request->args()) {
+    switch (value.value_case()) {
+      case channelz::v2::QueryTraceRequest::QueryArgValue::kIntValue:
+        args[key] = value.int_value();
+        break;
+      case channelz::v2::QueryTraceRequest::QueryArgValue::kStringValue:
+        args[key] = value.string_value();
+        break;
+      case channelz::v2::QueryTraceRequest::QueryArgValue::kBoolValue:
+        args[key] = value.bool_value();
+        break;
+      default:
+        return Status(StatusCode::INVALID_ARGUMENT,
+                      absl::StrCat("Invalid query arg value: ", value));
+    }
+  }
+  auto node = grpc_core::channelz::ChannelzRegistry::GetNode(request->id());
+  if (node == nullptr) {
+    return Status(StatusCode::NOT_FOUND, "No object found for that EntityId");
+  }
+  struct State {
+    grpc_core::Notification done;
+    grpc_core::Mutex mu;
+    grpc::Status status ABSL_GUARDED_BY(mu);
+  };
+  auto state = std::make_shared<State>();
+  auto ztrace = node->RunZTrace(
+      request->name(), std::move(args),
+      grpc_event_engine::experimental::GetDefaultEventEngine(),
+      [&state, writer](absl::StatusOr<std::optional<std::string>> response) {
+        if (state->done.HasBeenNotified()) return;
+        grpc_core::MutexLock lock(&state->mu);
+        if (!response.ok()) {
+          state->status = grpc::Status(
+              static_cast<grpc::StatusCode>(response.status().code()),
+              std::string(response.status().message()));
+          state->done.Notify();
+          return;
+        }
+        if (!response->has_value()) {
+          state->status = grpc::Status::OK;
+          state->done.Notify();
+          return;
+        }
+        channelz::v2::QueryTraceResponse r;
+        r.ParseFromString(**response);
+        if (!writer->Write(r)) {
+          state->status = grpc::Status::CANCELLED;
+          state->done.Notify();
+        }
+      });
+  state->done.WaitForNotification();
+  grpc_core::MutexLock lock(&state->mu);
+  return state->status;
 }
 
 }  // namespace grpc

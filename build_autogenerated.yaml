@@ -213,6 +213,7 @@ libs:
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
+  - src/core/channelz/text_encode.h
   - src/core/channelz/v2tov1/convert.h
   - src/core/channelz/v2tov1/legacy_api.h
   - src/core/channelz/v2tov1/property_list.h
@@ -625,6 +626,8 @@ libs:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h
@@ -827,8 +830,10 @@ libs:
   - src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h
   - src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.h
   - src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.h
   - src/core/ext/upbdefs-gen/udpa/annotations/security.upbdefs.h
@@ -1262,6 +1267,7 @@ libs:
   - src/core/util/table.h
   - src/core/util/time.h
   - src/core/util/time_averaged_stats.h
+  - src/core/util/trie_lookup.h
   - src/core/util/type_list.h
   - src/core/util/unique_ptr_with_bitset.h
   - src/core/util/unique_type_name.h
@@ -1295,6 +1301,11 @@ libs:
   - src/core/xds/grpc/xds_lb_policy_registry.h
   - src/core/xds/grpc/xds_listener.h
   - src/core/xds/grpc/xds_listener_parser.h
+  - src/core/xds/grpc/xds_matcher.h
+  - src/core/xds/grpc/xds_matcher_action.h
+  - src/core/xds/grpc/xds_matcher_context.h
+  - src/core/xds/grpc/xds_matcher_input.h
+  - src/core/xds/grpc/xds_matcher_parse.h
   - src/core/xds/grpc/xds_metadata.h
   - src/core/xds/grpc/xds_metadata_parser.h
   - src/core/xds/grpc/xds_route_config.h
@@ -1336,6 +1347,7 @@ libs:
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
+  - src/core/channelz/text_encode.cc
   - src/core/channelz/v2tov1/convert.cc
   - src/core/channelz/v2tov1/legacy_api.cc
   - src/core/channelz/v2tov1/property_list.cc
@@ -1610,6 +1622,7 @@ libs:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
@@ -1773,8 +1786,10 @@ libs:
   - src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c
   - src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c
   - src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.c
   - src/core/ext/upbdefs-gen/udpa/annotations/security.upbdefs.c
@@ -2171,6 +2186,11 @@ libs:
   - src/core/xds/grpc/xds_lb_policy_registry.cc
   - src/core/xds/grpc/xds_listener.cc
   - src/core/xds/grpc/xds_listener_parser.cc
+  - src/core/xds/grpc/xds_matcher.cc
+  - src/core/xds/grpc/xds_matcher_action.cc
+  - src/core/xds/grpc/xds_matcher_context.cc
+  - src/core/xds/grpc/xds_matcher_input.cc
+  - src/core/xds/grpc/xds_matcher_parse.cc
   - src/core/xds/grpc/xds_metadata.cc
   - src/core/xds/grpc/xds_metadata_parser.cc
   - src/core/xds/grpc/xds_route_config.cc
@@ -2383,6 +2403,7 @@ libs:
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
+  - src/core/channelz/text_encode.h
   - src/core/channelz/ztrace_collector.h
   - src/core/client_channel/backup_poller.h
   - src/core/client_channel/client_channel.h
@@ -2516,6 +2537,8 @@ libs:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h
@@ -2538,8 +2561,10 @@ libs:
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h
   - src/core/filter/auth/auth_filters.h
   - src/core/filter/blackboard.h
   - src/core/filter/filter_args.h
@@ -2931,6 +2956,7 @@ libs:
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
+  - src/core/channelz/text_encode.cc
   - src/core/client_channel/backup_poller.cc
   - src/core/client_channel/client_channel.cc
   - src/core/client_channel/client_channel_factory.cc
@@ -3041,6 +3067,7 @@ libs:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
@@ -3054,8 +3081,10 @@ libs:
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
   - src/core/filter/auth/client_auth_filter.cc
   - src/core/filter/auth/server_auth_filter.cc
   - src/core/filter/blackboard.cc
@@ -4554,6 +4583,7 @@ libs:
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
+  - src/core/channelz/text_encode.h
   - src/core/config/core_configuration.h
   - src/core/credentials/call/call_credentials.h
   - src/core/credentials/call/call_creds_registry.h
@@ -4589,6 +4619,8 @@ libs:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h
@@ -4599,8 +4631,10 @@ libs:
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h
   - src/core/filter/auth/auth_filters.h
   - src/core/filter/blackboard.h
   - src/core/filter/filter_args.h
@@ -4932,6 +4966,7 @@ libs:
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
+  - src/core/channelz/text_encode.cc
   - src/core/config/core_configuration.cc
   - src/core/credentials/call/call_creds_util.cc
   - src/core/credentials/call/composite/composite_call_credentials.cc
@@ -4960,6 +4995,7 @@ libs:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
@@ -4967,8 +5003,10 @@ libs:
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
   - src/core/filter/auth/client_auth_filter.cc
   - src/core/filter/auth/server_auth_filter.cc
   - src/core/filter/blackboard.cc
@@ -6400,6 +6438,7 @@ targets:
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
+  - src/core/channelz/text_encode.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -6417,12 +6456,16 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/channel/channel_args.h
@@ -6537,6 +6580,7 @@ targets:
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
+  - src/core/channelz/text_encode.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -6545,12 +6589,15 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/channel/channel_args.cc
@@ -6768,6 +6815,7 @@ targets:
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
+  - src/core/channelz/text_encode.h
   - src/core/config/core_configuration.h
   - src/core/credentials/call/call_creds_registry.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
@@ -6792,6 +6840,8 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h
@@ -6802,8 +6852,10 @@ targets:
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h
   - src/core/filter/blackboard.h
   - src/core/filter/filter_args.h
   - src/core/handshaker/handshaker_factory.h
@@ -7112,6 +7164,7 @@ targets:
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
+  - src/core/channelz/text_encode.cc
   - src/core/config/core_configuration.cc
   - src/core/credentials/transport/alts/check_gcp_environment.cc
   - src/core/credentials/transport/alts/check_gcp_environment_linux.cc
@@ -7129,6 +7182,7 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
@@ -7136,8 +7190,10 @@ targets:
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
   - src/core/filter/blackboard.cc
   - src/core/handshaker/handshaker_registry.cc
   - src/core/handshaker/proxy_mapper_registry.cc
@@ -7400,6 +7456,7 @@ targets:
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
+  - src/core/channelz/text_encode.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -7417,12 +7474,16 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/channel/channel_args.h
@@ -7516,6 +7577,7 @@ targets:
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
+  - src/core/channelz/text_encode.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -7524,12 +7586,15 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/channel/channel_args.cc
@@ -8157,6 +8222,7 @@ targets:
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
+  - src/core/channelz/text_encode.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -8174,12 +8240,16 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/channel/channel_args.h
@@ -8273,6 +8343,7 @@ targets:
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
+  - src/core/channelz/text_encode.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -8281,12 +8352,15 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/channel/channel_args.cc
@@ -11471,6 +11545,7 @@ targets:
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
+  - src/core/channelz/text_encode.h
   - src/core/config/core_configuration.h
   - src/core/credentials/call/call_creds_registry.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
@@ -11495,6 +11570,8 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h
@@ -11505,8 +11582,10 @@ targets:
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h
   - src/core/filter/blackboard.h
   - src/core/filter/filter_args.h
   - src/core/handshaker/handshaker_factory.h
@@ -11815,6 +11894,7 @@ targets:
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
+  - src/core/channelz/text_encode.cc
   - src/core/config/core_configuration.cc
   - src/core/credentials/transport/alts/check_gcp_environment.cc
   - src/core/credentials/transport/alts/check_gcp_environment_linux.cc
@@ -11832,6 +11912,7 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
@@ -11839,8 +11920,10 @@ targets:
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
   - src/core/filter/blackboard.cc
   - src/core/handshaker/handshaker_registry.cc
   - src/core/handshaker/proxy_mapper_registry.cc
@@ -12127,6 +12210,7 @@ targets:
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
+  - src/core/channelz/text_encode.h
   - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
@@ -12148,12 +12232,16 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/channel/channel_args.h
@@ -12246,6 +12334,7 @@ targets:
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
+  - src/core/channelz/text_encode.cc
   - src/core/ext/transport/chttp2/transport/flow_control.cc
   - src/core/ext/transport/chttp2/transport/frame.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
@@ -12258,12 +12347,15 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/channel/channel_args.cc
@@ -12336,6 +12428,7 @@ targets:
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
+  - src/core/channelz/text_encode.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -12353,12 +12446,16 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/channel/channel_args.h
@@ -12461,6 +12558,7 @@ targets:
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
+  - src/core/channelz/text_encode.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -12469,12 +12567,15 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/channel/channel_args.cc
@@ -13963,6 +14064,7 @@ targets:
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
+  - src/core/channelz/text_encode.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -13980,12 +14082,16 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/channel/channel_args.h
@@ -14080,6 +14186,7 @@ targets:
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
+  - src/core/channelz/text_encode.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -14088,12 +14195,15 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/channel/channel_args.cc
@@ -14865,6 +14975,7 @@ targets:
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
+  - src/core/channelz/text_encode.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -14882,12 +14993,16 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/channel/channel_args.h
@@ -14990,6 +15105,7 @@ targets:
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
+  - src/core/channelz/text_encode.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -14998,12 +15114,15 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/channel/channel_args.cc
@@ -17283,6 +17402,7 @@ targets:
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/property_list.h
+  - src/core/channelz/text_encode.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -17300,12 +17420,16 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h
   - src/core/lib/address_utils/parse_address.h
   - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/channel/channel_args.h
@@ -17429,6 +17553,7 @@ targets:
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
   - src/core/channelz/property_list.cc
+  - src/core/channelz/text_encode.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
@@ -17437,12 +17562,15 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
   - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/channel/channel_args.cc
@@ -19241,6 +19369,17 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: trie_lookup_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/util/trie_lookup.h
+  src:
+  - test/core/util/trie_lookup_test.cc
+  deps:
+  - gtest
+  - absl/container:flat_hash_map
 - name: try_join_test
   gtest: true
   build: test
@@ -22408,6 +22547,113 @@ targets:
   - protoc
   - grpc_test_util
   uses_polling: false
+- name: xds_matcher_parse_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - third_party/protoc-gen-validate/validate/validate.h
+  src:
+  - third_party/envoy-api/envoy/annotations/deprecation.proto
+  - third_party/envoy-api/envoy/annotations/resource.proto
+  - third_party/envoy-api/envoy/config/common/matcher/v3/matcher.proto
+  - third_party/envoy-api/envoy/config/core/v3/address.proto
+  - third_party/envoy-api/envoy/config/core/v3/backoff.proto
+  - third_party/envoy-api/envoy/config/core/v3/base.proto
+  - third_party/envoy-api/envoy/config/core/v3/config_source.proto
+  - third_party/envoy-api/envoy/config/core/v3/event_service_config.proto
+  - third_party/envoy-api/envoy/config/core/v3/extension.proto
+  - third_party/envoy-api/envoy/config/core/v3/grpc_method_list.proto
+  - third_party/envoy-api/envoy/config/core/v3/grpc_service.proto
+  - third_party/envoy-api/envoy/config/core/v3/health_check.proto
+  - third_party/envoy-api/envoy/config/core/v3/http_service.proto
+  - third_party/envoy-api/envoy/config/core/v3/http_uri.proto
+  - third_party/envoy-api/envoy/config/core/v3/protocol.proto
+  - third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto
+  - third_party/envoy-api/envoy/config/core/v3/resolver.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_cmsg_headers.proto
+  - third_party/envoy-api/envoy/config/core/v3/socket_option.proto
+  - third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto
+  - third_party/envoy-api/envoy/config/core/v3/udp_socket_config.proto
+  - third_party/envoy-api/envoy/config/route/v3/route.proto
+  - third_party/envoy-api/envoy/config/route/v3/route_components.proto
+  - third_party/envoy-api/envoy/config/route/v3/scoped_route.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/address.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/metadata.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/node.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/number.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/path.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/regex.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/status_code_input.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/string.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/struct.proto
+  - third_party/envoy-api/envoy/type/matcher/v3/value.proto
+  - third_party/envoy-api/envoy/type/metadata/v3/metadata.proto
+  - third_party/envoy-api/envoy/type/tracing/v3/custom_tag.proto
+  - third_party/envoy-api/envoy/type/v3/hash_policy.proto
+  - third_party/envoy-api/envoy/type/v3/http.proto
+  - third_party/envoy-api/envoy/type/v3/http_status.proto
+  - third_party/envoy-api/envoy/type/v3/percent.proto
+  - third_party/envoy-api/envoy/type/v3/range.proto
+  - third_party/envoy-api/envoy/type/v3/ratelimit_strategy.proto
+  - third_party/envoy-api/envoy/type/v3/ratelimit_unit.proto
+  - third_party/envoy-api/envoy/type/v3/semantic_version.proto
+  - third_party/envoy-api/envoy/type/v3/token_bucket.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/checked.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/syntax.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/api/httpbody.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/udpa/annotations/migrate.proto
+  - third_party/xds/udpa/annotations/security.proto
+  - third_party/xds/udpa/annotations/sensitive.proto
+  - third_party/xds/udpa/annotations/status.proto
+  - third_party/xds/udpa/annotations/versioning.proto
+  - third_party/xds/xds/annotations/v3/migrate.proto
+  - third_party/xds/xds/annotations/v3/security.proto
+  - third_party/xds/xds/annotations/v3/sensitive.proto
+  - third_party/xds/xds/annotations/v3/status.proto
+  - third_party/xds/xds/annotations/v3/versioning.proto
+  - third_party/xds/xds/core/v3/authority.proto
+  - third_party/xds/xds/core/v3/cidr.proto
+  - third_party/xds/xds/core/v3/collection_entry.proto
+  - third_party/xds/xds/core/v3/context_params.proto
+  - third_party/xds/xds/core/v3/extension.proto
+  - third_party/xds/xds/core/v3/resource.proto
+  - third_party/xds/xds/core/v3/resource_locator.proto
+  - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/type/matcher/v3/cel.proto
+  - third_party/xds/xds/type/matcher/v3/domain.proto
+  - third_party/xds/xds/type/matcher/v3/http_inputs.proto
+  - third_party/xds/xds/type/matcher/v3/ip.proto
+  - third_party/xds/xds/type/matcher/v3/matcher.proto
+  - third_party/xds/xds/type/matcher/v3/range.proto
+  - third_party/xds/xds/type/matcher/v3/regex.proto
+  - third_party/xds/xds/type/matcher/v3/string.proto
+  - third_party/xds/xds/type/v3/cel.proto
+  - third_party/xds/xds/type/v3/range.proto
+  - third_party/xds/xds/type/v3/typed_struct.proto
+  - test/core/xds/xds_matcher_parse_test.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  uses_polling: false
+- name: xds_matcher_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/xds/xds_matcher_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
 - name: xds_metadata_test
   gtest: true
   build: test
@@ -24152,11 +24398,15 @@ targets:
   language: c++
   headers: []
   src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
+  - src/proto/grpc/channelz/v2/service.proto
   - test/core/channelz/ztrace_collector_test.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
   - grpc
+  - protobuf
   platforms:
   - linux
   - posix
