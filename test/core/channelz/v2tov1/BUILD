@@ -69,6 +69,7 @@ grpc_fuzz_test(
         "//src/proto/grpc/channelz/v2:channelz_cc_proto",
         "//src/proto/grpc/channelz/v2:property_list_cc_proto",
         "//test/core/test_util:grpc_test_util",
+        "//third_party/grpc_proto:channelz_cc_proto",  # double check this
         "@com_google_protobuf//:protobuf",
     ],
 )

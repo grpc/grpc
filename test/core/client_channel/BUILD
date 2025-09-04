@@ -44,9 +44,16 @@ grpc_fuzz_test(
         "fuzztest",
         "fuzztest_main",
         "gtest",
+        "absl/log",
+        "absl/strings",
     ],
     deps = [
+        "//:config",
+        "//:grpc",
+        "//:grpc_base",
         "//:grpc_client_channel",
+        "//:grpc_service_config_impl",
+        "//:parse_address",
         "//test/core/call/yodel:yodel_test",
     ],
 )
@@ -58,9 +65,14 @@ grpc_fuzz_test(
         "fuzztest",
         "fuzztest_main",
         "gtest",
+        "absl/status",
+        "absl/strings",
     ],
     deps = [
+        "//:config",
+        "//:grpc",
         "//:grpc_client_channel",
+        "//:parse_address",
         "//test/core/call/yodel:yodel_test",
     ],
 )
@@ -111,6 +123,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:retry_throttle",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -184,9 +197,15 @@ grpc_cc_benchmark(
 grpc_cc_benchmark(
     name = "bm_load_balanced_call_destination",
     srcs = ["bm_load_balanced_call_destination.cc"],
+    external_deps = [
+        "absl/memory",
+        "absl/strings",
+    ],
     monitoring = HISTORY,
     deps = [
         "//:grpc",
+        "//:grpc_client_channel",
+        "//:parse_address",
         "//src/core:default_event_engine",
         "//test/core/call:call_spine_benchmarks",
     ],
