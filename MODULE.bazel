@@ -28,9 +28,6 @@ bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "boringssl", version = "0.20241024.0")  # mistmatched 20241211
 bazel_dep(name = "c-ares", version = "1.19.1", repo_name = "com_github_cares_cares")
 bazel_dep(name = "envoy_api", version = "0.0.0-20250128-4de3c74")
-# We need a new version or it will try to pull old Go SDK and
-# fail to compile
-bazel_dep(name = "cel-spec", version = "0.24.0")
 bazel_dep(name = "googleapis", version = "0.0.0-20240819-fe8ba054a", repo_name = "com_google_googleapis")
 
 # This is for google_cloud_cpp. Patch was taken from google_cloud_cpp repository
@@ -195,3 +192,6 @@ archive_override(
     ],
     patch_strip = 0,
 )
+
+go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk")
+go_sdk.download(version = "1.22.0")
