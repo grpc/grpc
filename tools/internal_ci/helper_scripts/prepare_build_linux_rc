@@ -20,12 +20,12 @@
 echo "-- Kokoro worker info --"
 echo "Kokoro pool: ${KOKORO_JOB_POOL:-undefined}"
 if [[ -f /GRPC_IMAGE_NAME ]]; then
-  echo "gRPC custom VM image name: $(cat /GRPC_IMAGE_NAME)"
+  echo "gRPC custom VM image: $(cat /GRPC_IMAGE_NAME)"
 fi
 echo -e "System: $(uname -a)\n"
 echo -e "-- OS --\n$(lsb_release -a 2>/dev/null)\n"
 echo -e "-- CPU --\n$(lscpu)\n"
-echo -e "-- Memory --\n$(lsmem --summary)\b$(free -h --si)\n"
+echo -e "-- Memory --\n$(lsmem --summary)\n$(free -h --si)\n"
 echo -e "-- Block devices --\n$(lsblk --all --fs --paths)\n"
 set -x
 
@@ -58,10 +58,6 @@ python3 -m pip install six
 # another subprocess of the test driver.
 sudo bash -c 'echo "0" > /proc/sys/kernel/yama/ptrace_scope'
 
-# Print the usage after the submodules are updated.
-echo "Initial disk usage:"
-df -h
-
 # Check whether the secondary disk is mounted on /tmpfs correctly.
 # Refer to the format_tmpfs.sh Kokoro script for details.
 if ! findmnt /tmpfs; then
@@ -69,6 +65,11 @@ if ! findmnt /tmpfs; then
   echo "Disk mounts:"
   mount
 fi
+
+# Print the usage after the submodules are updated. Note that if /tmpfs
+# isn't properly output, the output will repeat the root fs usage two times.
+echo "Initial disk usage:"
+df -h / /tmpfs
 
 # Uncomment the following line to debug "out of disk space" errors by print available disk space every 30seconds in the background
 # bash -c "while true; do echo 'periodic background disk usage check:'; df -h / /tmpfs; sleep 30; done;" &
