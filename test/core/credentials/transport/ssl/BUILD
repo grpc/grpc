@@ -38,6 +38,7 @@ grpc_fuzz_test(
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc",
+        "//:grpc_core_credentials_header",
         "//:grpc_security_base",
         "//src/core:default_event_engine",
         "//src/core:notification",

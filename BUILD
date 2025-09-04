@@ -1356,6 +1356,7 @@ grpc_cc_library(
         "@com_google_protobuf//upb/mem",
     ],
     deps = [
+        "channelz_service_upb",
         "channelz_upb",
         "config_vars",
         "exec_ctx",
@@ -1369,6 +1370,7 @@ grpc_cc_library(
         "uri",
         "//src/core:channel_args",
         "//src/core:channelz_property_list",
+        "//src/core:channelz_text_encode",
         "//src/core:connectivity_state",
         "//src/core:dual_ref_counted",
         "//src/core:json",
@@ -2430,6 +2432,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log:log",
+        "absl/status:statusor",
         "@com_google_protobuf//upb/base",
         "@com_google_protobuf//upb/mem",
     ],
@@ -2831,6 +2834,7 @@ grpc_cc_library(
         "grpc++_config_proto",
         "//src/core:channelz_v2tov1_convert",
         "//src/core:experiments",
+        "//src/core:notification",
         "//src/proto/grpc/channelz:channelz_proto",
         "//src/proto/grpc/channelz/v2:service_cc_grpc",
     ],
@@ -5367,6 +5371,16 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "channelz_upbdefs",
     deps = ["//src/proto/grpc/channelz/v2:channelz_proto"],
+)
+
+grpc_upb_proto_library(
+    name = "channelz_service_upb",
+    deps = ["//src/proto/grpc/channelz/v2:service_proto"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "channelz_service_upbdefs",
+    deps = ["//src/proto/grpc/channelz/v2:service_proto"],
 )
 
 grpc_upb_proto_library(

@@ -176,6 +176,9 @@ const char* const additional_constraints_server_global_callbacks_ownership =
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
+const char* const description_sleep_use_non_owning_waker =
+    "If set, the sleep promise uses a non-owning waker.";
+const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -307,6 +310,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
+     true},
+    {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
+     additional_constraints_sleep_use_non_owning_waker, nullptr, 0, false,
      true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
@@ -479,6 +485,9 @@ const char* const additional_constraints_server_global_callbacks_ownership =
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
+const char* const description_sleep_use_non_owning_waker =
+    "If set, the sleep promise uses a non-owning waker.";
+const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -610,6 +619,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
+     true},
+    {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
+     additional_constraints_sleep_use_non_owning_waker, nullptr, 0, false,
      true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
@@ -782,6 +794,9 @@ const char* const additional_constraints_server_global_callbacks_ownership =
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
+const char* const description_sleep_use_non_owning_waker =
+    "If set, the sleep promise uses a non-owning waker.";
+const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -913,6 +928,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
+     true},
+    {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
+     additional_constraints_sleep_use_non_owning_waker, nullptr, 0, false,
      true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},

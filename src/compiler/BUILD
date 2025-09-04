@@ -113,6 +113,7 @@ grpc_proto_plugin(
         ":grpc_plugin_support",
         "@com_google_protobuf//:protobuf",
         "@com_google_protobuf//src/google/protobuf/compiler:code_generator",
+        "@com_google_protobuf//src/google/protobuf/compiler/objectivec:names",
     ],
 )
 

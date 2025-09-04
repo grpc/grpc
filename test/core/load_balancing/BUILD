@@ -215,6 +215,7 @@ grpc_cc_test(
         ":lb_policy_test_lib",
         "//:endpoint_addresses",
         "//:grpc",
+        "//:grpc_base",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//src/core:channel_args",
@@ -284,6 +285,8 @@ grpc_cc_test(
     srcs = ["xds_override_host_lb_config_parser_test.cc"],
     external_deps = [
         "gtest",
+        "absl/status",
+        "absl/status:statusor",
     ],
     tags = [
         "no_test_ios",
@@ -292,7 +295,13 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:grpc",
+        "//:grpc_service_config_impl",
+        "//:ref_counted_ptr",
+        "//src/core:channel_args",
         "//src/core:client_channel_service_config",
+        "//src/core:grpc_lb_policy_xds_override_host",
+        "//src/core:grpc_service_config",
+        "//src/core:xds_health_status",
         "//test/core/test_util:grpc_test_util",
     ],
 )
