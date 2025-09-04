@@ -16835,6 +16835,7 @@ add_executable(flow_control_manager_test
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/status_conversion.cc
   src/core/telemetry/histogram_view.cc
+  src/core/telemetry/instrument.cc
   src/core/telemetry/stats.cc
   src/core/telemetry/stats_data.cc
   src/core/util/backoff.cc
@@ -16889,6 +16890,7 @@ target_link_libraries(flow_control_manager_test
   absl::btree
   absl::flat_hash_map
   absl::inlined_vector
+  absl::node_hash_map
   absl::function_ref
   absl::hash
   absl::type_traits
