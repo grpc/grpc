@@ -22,8 +22,8 @@
 #include <grpc/support/string_util.h>
 
 #include <algorithm>
-#include <optional>
 #include <memory>
+#include <optional>
 
 #include "absl/log/log.h"
 #include "src/core/credentials/transport/alts/grpc_alts_credentials_options.h"
