@@ -55,7 +55,7 @@ class HealthProducer final : public Subchannel::DataProducerInterface {
   HealthProducer() : interested_parties_(grpc_pollset_set_create()) {}
   ~HealthProducer() override { grpc_pollset_set_destroy(interested_parties_); }
 
-  void Start(RefCountedPtr<Subchannel> subchannel);
+  void Start(WeakRefCountedPtr<Subchannel> subchannel);
 
   static UniqueTypeName Type() {
     static UniqueTypeName::Factory kFactory("health_check");
@@ -137,7 +137,7 @@ class HealthProducer final : public Subchannel::DataProducerInterface {
                                  const absl::Status& status);
   void Orphaned() override;
 
-  RefCountedPtr<Subchannel> subchannel_;
+  WeakRefCountedPtr<Subchannel> subchannel_;
   ConnectivityWatcher* connectivity_watcher_;
   grpc_pollset_set* interested_parties_;
 
