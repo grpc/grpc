@@ -53,10 +53,10 @@ grpc_fuzz_test(
     deps = [
         "batch_builder",
         "//:call_tracer",
-        "//:channelz",
         "//:grpc_base",
         "//:promise",
         "//src/core:arena",
+        "//src/core/channelz",
         "//test/core/call/yodel:yodel_test",
     ],
 )

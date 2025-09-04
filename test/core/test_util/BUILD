@@ -630,8 +630,8 @@ grpc_cc_library(
     srcs = ["postmortem_emit.cc"],
     hdrs = ["postmortem_emit.h"],
     deps = [
-        "//:channelz",
         "//:stats",
+        "//src/core/channelz",
     ],
 )
 

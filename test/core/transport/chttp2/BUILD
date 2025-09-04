@@ -393,7 +393,6 @@ grpc_cc_test(
         "absl/base:core_headers",
     ],
     deps = [
-        "//:channelz",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc",
@@ -410,6 +409,7 @@ grpc_cc_test(
         "//src/core:slice",
         "//src/core:sync",
         "//src/core:useful",
+        "//src/core/channelz",
         "//test/core/end2end:cq_verifier",
         "//test/core/test_util:grpc_test_util",
     ],

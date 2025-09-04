@@ -24,7 +24,7 @@ load(
     "grpc_upb_proto_reflection_library",
 )
 
-licenses(["reciprocal"])
+licenses(["notice"])
 
 package(
     default_visibility = ["//:__subpackages__"],
@@ -167,10 +167,10 @@ grpc_cc_library(
     deps = [
         "memory_quota",
         "tcp_tracer",
-        "//:channelz",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
         "//:ref_counted_ptr",
+        "//src/core/channelz",
     ],
 )
 
@@ -798,7 +798,6 @@ grpc_cc_library(
     deps = [
         "activity",
         "arena",
-        "channelz_property_list",
         "check_class_size",
         "construct_destruct",
         "context",
@@ -809,12 +808,13 @@ grpc_cc_library(
         "promise_factory",
         "ref_counted",
         "sync",
-        "//:channelz",
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_trace",
         "//:ref_counted_ptr",
+        "//src/core/channelz",
+        "//src/core/channelz:property_list",
     ],
 )
 
@@ -929,14 +929,14 @@ grpc_cc_library(
         "lib/promise/detail/promise_like.h",
     ],
     deps = [
-        "channelz_property_list",
+        "function_signature",
+        "json",
         "poll",
         "upb_utils",
         "//:gpr_platform",
         "//:promise_upb",
         "//:promise_upbdefs",
-        "//src/core:function_signature",
-        "//src/core:json",
+        "//src/core/channelz:property_list",
     ],
 )
 
@@ -1418,7 +1418,6 @@ grpc_cc_library(
     ],
     deps = [
         "activity",
-        "channelz_property_list",
         "dump_args",
         "map",
         "poll",
@@ -1428,6 +1427,7 @@ grpc_cc_library(
         "wait_set",
         "//:gpr",
         "//:ref_counted_ptr",
+        "//src/core/channelz:property_list",
     ],
 )
 
@@ -1724,7 +1724,6 @@ grpc_cc_library(
     ],
     deps = [
         "activity",
-        "channelz_property_list",
         "event_engine_memory_allocator",
         "exec_ctx_wakeup_scheduler",
         "experiments",
@@ -1739,11 +1738,12 @@ grpc_cc_library(
         "sync",
         "time",
         "useful",
-        "//:channelz",
         "//:gpr",
         "//:grpc_trace",
         "//:orphanable",
         "//:ref_counted_ptr",
+        "//src/core/channelz",
+        "//src/core/channelz:property_list",
     ],
 )
 
@@ -1857,11 +1857,11 @@ grpc_cc_library(
         "thread_quota",
         "useful",
         "//:channel_arg_names",
-        "//:channelz",
         "//:cpp_impl_of",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
         "//:ref_counted_ptr",
+        "//src/core/channelz",
     ],
 )
 
@@ -3518,9 +3518,9 @@ grpc_cc_library(
     ],
     deps = [
         "channel_args",
-        "//:channelz",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
+        "//src/core/channelz",
     ],
 )
 
@@ -3610,7 +3610,6 @@ grpc_cc_library(
     deps = [
         "avl",
         "channel_stack_type",
-        "channelz_property_list",
         "dual_ref_counted",
         "ref_counted",
         "ref_counted_string",
@@ -3621,6 +3620,7 @@ grpc_cc_library(
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:ref_counted_ptr",
+        "//src/core/channelz:property_list",
     ],
 )
 
@@ -3731,11 +3731,11 @@ grpc_cc_library(
         "iomgr_fwd",
         "resolved_address",
         "time",
-        "//:channelz",
         "//:gpr_platform",
         "//:grpc_base",
         "//:orphanable",
         "//:ref_counted_ptr",
+        "//src/core/channelz",
     ],
 )
 
@@ -5612,7 +5612,6 @@ grpc_cc_library(
         "//:backoff",
         "//:channel",
         "//:channel_arg_names",
-        "//:channelz",
         "//:config",
         "//:debug_location",
         "//:endpoint_addresses",
@@ -5635,6 +5634,7 @@ grpc_cc_library(
         "//:sockaddr_utils",
         "//:transport_auth_context",
         "//:work_serializer",
+        "//src/core/channelz",
     ],
 )
 
@@ -5722,7 +5722,6 @@ grpc_cc_library(
         "//:backoff",
         "//:channel",
         "//:channel_arg_names",
-        "//:channelz",
         "//:config",
         "//:debug_location",
         "//:endpoint_addresses",
@@ -5741,6 +5740,7 @@ grpc_cc_library(
         "//:rls_upb",
         "//:transport_auth_context",
         "//:work_serializer",
+        "//src/core/channelz",
     ],
 )
 
@@ -6866,7 +6866,6 @@ grpc_cc_library(
         "sync",
         "unique_type_name",
         "//:channel_arg_names",
-        "//:channelz",
         "//:debug_location",
         "//:exec_ctx",
         "//:gpr",
@@ -6879,6 +6878,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
         "//:work_serializer",
+        "//src/core/channelz",
     ],
 )
 
@@ -7921,6 +7921,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "http2_ztrace_collector",
+    hdrs = ["ext/transport/chttp2/transport/http2_ztrace_collector.h"],
+    external_deps = [
+        "absl/container:flat_hash_set",
+    ],
+    deps = [
+        "//:chttp2_frame",
+        "//src/core/channelz:ztrace_collector",
+    ],
+)
+
+grpc_cc_library(
     name = "hpack_constants",
     hdrs = [
         "ext/transport/chttp2/transport/hpack_constants.h",
@@ -7961,7 +7973,6 @@ grpc_cc_library(
     ],
     deps = [
         "bdp_estimator",
-        "channelz_property_list",
         "experiments",
         "http2_settings",
         "http2_settings_manager",
@@ -7970,6 +7981,7 @@ grpc_cc_library(
         "useful",
         "//:gpr",
         "//:grpc_trace",
+        "//src/core/channelz:property_list",
     ],
 )
 
@@ -8008,11 +8020,11 @@ grpc_cc_library(
         "absl/random:distributions",
     ],
     deps = [
-        "channelz_property_list",
         "time",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
         "//:grpc_trace",
+        "//src/core/channelz:property_list",
     ],
 )
 
@@ -8042,13 +8054,13 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     deps = [
         "channel_args",
-        "channelz_property_list",
         "experiments",
         "match",
         "time",
         "//:channel_arg_names",
         "//:gpr",
         "//:gpr_platform",
+        "//src/core/channelz:property_list",
     ],
 )
 
@@ -8088,10 +8100,10 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
-        "channelz_property_list",
         "http2_status",
         "useful",
         "//:gpr_platform",
+        "//src/core/channelz:property_list",
     ],
 )
 
@@ -8111,12 +8123,12 @@ grpc_cc_library(
     ],
     deps = [
         "channel_args",
-        "channelz_property_list",
         "http2_settings",
         "http2_status",
         "useful",
         "//:chttp2_frame",
         "//:gpr_platform",
+        "//src/core/channelz:property_list",
     ],
 )
 
@@ -8133,7 +8145,6 @@ grpc_cc_library(
     ],
     deps = [
         "channel_args",
-        "channelz_property_list",
         "http2_settings",
         "http2_settings_manager",
         "http2_status",
@@ -8145,6 +8156,7 @@ grpc_cc_library(
         "useful",
         "//:chttp2_frame",
         "//:gpr_platform",
+        "//src/core/channelz:property_list",
     ],
 )
 
@@ -8185,8 +8197,8 @@ grpc_cc_library(
         "http2_status",
         "metadata_batch",
         "shared_bit_gen",
-        ":slice",
-        ":slice_buffer",
+        "slice",
+        "slice_buffer",
         "//:chttp2_frame",
         "//:gpr_platform",
         "//:hpack_encoder",
@@ -8208,8 +8220,8 @@ grpc_cc_library(
         "arena",
         "http2_status",
         "message",
-        ":slice",
-        ":slice_buffer",
+        "slice",
+        "slice_buffer",
         "//:chttp2_frame",
         "//:ref_counted_ptr",
     ],
@@ -8256,6 +8268,7 @@ grpc_cc_library(
         "call_spine",
         "channel_args",
         "check_class_size",
+        "chttp2_flow_control",
         "connectivity_state",
         "for_each",
         "grpc_promise_endpoint",
@@ -8271,22 +8284,21 @@ grpc_cc_library(
         "latent_see",
         "loop",
         "map",
+        "match_promise",
         "message",
         "message_assembler",
         "metadata",
         "metadata_batch",
         "mpsc",
         "ping_promise",
+        "poll",
+        "slice",
+        "slice_buffer",
         "stream_data_queue",
         "sync",
         "transport_common",
+        "try_seq",
         "writable_streams",
-        ":chttp2_flow_control",
-        ":match_promise",
-        ":poll",
-        ":slice",
-        ":slice_buffer",
-        ":try_seq",
         "//:chttp2_frame",
         "//:gpr_platform",
         "//:grpc_base",
@@ -8327,16 +8339,16 @@ grpc_cc_library(
         "http2_status",
         "loop",
         "map",
+        "match_promise",
         "message",
         "metadata",
         "mpsc",
+        "poll",
         "ref_counted",
+        "slice",
+        "slice_buffer",
         "sync",
-        ":match_promise",
-        ":poll",
-        ":slice",
-        ":slice_buffer",
-        ":try_seq",
+        "try_seq",
         "//:chttp2_frame",
         "//:gpr_platform",
         "//:grpc_base",
@@ -8400,14 +8412,14 @@ grpc_cc_library(
         "http2_settings",
         "loop",
         "map",
+        "match_promise",
         "metadata_info",
         "mpsc",
+        "poll",
+        "slice",
+        "slice_buffer",
         "sync",
-        ":match_promise",
-        ":poll",
-        ":slice",
-        ":slice_buffer",
-        ":try_seq",
+        "try_seq",
         "//:chttp2_frame",
         "//:gpr_platform",
         "//:grpc_base",
@@ -8486,7 +8498,6 @@ grpc_cc_library(
         "//:channel",
         "//:channel_arg_names",
         "//:channel_create",
-        "//:channelz",
         "//:config",
         "//:debug_location",
         "//:exec_ctx",
@@ -8504,6 +8515,7 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
         "//:transport_auth_context",
+        "//src/core/channelz",
     ],
 )
 
@@ -8550,7 +8562,6 @@ grpc_cc_library(
         "time",
         "unique_type_name",
         "//:channel_arg_names",
-        "//:channelz",
         "//:chttp2_legacy_frame",
         "//:config",
         "//:debug_location",
@@ -8568,6 +8579,7 @@ grpc_cc_library(
         "//:sockaddr_utils",
         "//:transport_auth_context",
         "//:uri",
+        "//src/core/channelz",
     ],
 )
 
@@ -8610,7 +8622,6 @@ grpc_cc_library(
         "//:channel",
         "//:channel_arg_names",
         "//:channel_create",
-        "//:channelz",
         "//:config",
         "//:debug_location",
         "//:exec_ctx",
@@ -8622,6 +8633,7 @@ grpc_cc_library(
         "//:promise",
         "//:ref_counted_ptr",
         "//:server",
+        "//src/core/channelz",
     ],
 )
 
@@ -8754,8 +8766,8 @@ grpc_cc_library(
         "chaotic_good_frame_header",
         "chaotic_good_tcp_frame_header",
         "event_engine_utils",
-        "ztrace_collector",
         "//:gpr",
+        "//src/core/channelz:ztrace_collector",
     ],
 )
 
@@ -8842,7 +8854,6 @@ grpc_cc_library(
     ],
     deps = [
         "1999",
-        "channelz_property_list",
         "chaotic_good_frame_transport",
         "chaotic_good_pending_connection",
         "chaotic_good_scheduler",
@@ -8872,10 +8883,11 @@ grpc_cc_library(
         "time",
         "transport_framing_endpoint_extension",
         "try_seq",
-        "//:channelz",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:promise",
+        "//src/core/channelz",
+        "//src/core/channelz:property_list",
     ],
 )
 
@@ -8968,9 +8980,9 @@ grpc_cc_library(
         "channel_args",
         "metrics",
         "ref_counted",
-        "//:channelz",
         "//:event_engine_base_hdrs",
         "//:ref_counted_ptr",
+        "//src/core/channelz",
     ],
 )
 
@@ -9054,7 +9066,6 @@ grpc_cc_library(
         "1999",
         "activity",
         "arena",
-        "channelz_property_list",
         "chaotic_good_config",
         "chaotic_good_frame",
         "chaotic_good_frame_header",
@@ -9090,6 +9101,7 @@ grpc_cc_library(
         "//:gpr_platform",
         "//:grpc_base",
         "//:ref_counted_ptr",
+        "//src/core/channelz:property_list",
     ],
 )
 
@@ -9155,7 +9167,6 @@ grpc_cc_library(
         "sync",
         "time",
         "try_seq",
-        "//:channelz",
         "//:config",
         "//:gpr_platform",
         "//:grpc_base",
@@ -9164,6 +9175,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server",
+        "//src/core/channelz",
     ],
 )
 
@@ -9596,7 +9608,6 @@ grpc_cc_library(
         "sync",
         "time",
         "try_seq",
-        "//:channelz",
         "//:config",
         "//:gpr_platform",
         "//:grpc_base",
@@ -9605,6 +9616,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:server",
+        "//src/core/channelz",
     ],
 )
 
@@ -10332,9 +10344,9 @@ grpc_cc_library(
         "race",
         "shared_bit_gen",
         "sleep",
+        "slice_buffer",
         "time",
         "try_seq",
-        ":slice_buffer",
         "//:chttp2_frame",
         "//:promise",
     ],
@@ -10392,64 +10404,6 @@ grpc_cc_library(
         "load_file",
         "ssl_transport_security_utils",
         "status_helper",
-    ],
-)
-
-grpc_cc_library(
-    name = "ztrace_collector",
-    hdrs = ["channelz/ztrace_collector.h"],
-    defines = select({
-        "//:grpc_no_ztrace": ["GRPC_NO_ZTRACE"],
-        "//conditions:default": [],
-    }),
-    external_deps = [
-        "absl/container:flat_hash_set",
-    ],
-    deps = [
-        "json_writer",
-        "memory_usage",
-        "single_set_ptr",
-        "sync",
-        "time",
-        "//:channelz",
-        "//:gpr",
-        "//:grpc_trace",
-    ],
-)
-
-grpc_cc_library(
-    name = "http2_ztrace_collector",
-    hdrs = ["ext/transport/chttp2/transport/http2_ztrace_collector.h"],
-    external_deps = [
-        "absl/container:flat_hash_set",
-    ],
-    deps = [
-        "ztrace_collector",
-        "//:chttp2_frame",
-    ],
-)
-
-grpc_cc_library(
-    name = "channelz_property_list",
-    srcs = ["channelz/property_list.cc"],
-    hdrs = ["channelz/property_list.h"],
-    external_deps = [
-        "absl/strings",
-        "absl/status",
-        "absl/container:flat_hash_map",
-        "@com_google_protobuf//upb/mem",
-        "@com_google_protobuf//upb/text",
-    ],
-    deps = [
-        "json",
-        "match",
-        "time",
-        "upb_utils",
-        "//:channelz_property_list_upb",
-        "//:channelz_upb",
-        "//:gpr",
-        "//:protobuf_any_upb",
-        "//:protobuf_empty_upb",
     ],
 )
 
@@ -10540,270 +10494,6 @@ grpc_cc_library(
         "//:transport_auth_context",
         "//:tsi_base",
         "//:tsi_ssl_session_cache",
-    ],
-)
-
-grpc_cc_library(
-    name = "zviz_strings",
-    srcs = [
-        "channelz/zviz/strings.cc",
-    ],
-    hdrs = ["channelz/zviz/strings.h"],
-    external_deps = [
-        "absl/strings",
-    ],
-)
-
-grpc_cc_library(
-    name = "zviz_environment",
-    srcs = [
-        "channelz/zviz/environment.cc",
-    ],
-    hdrs = ["channelz/zviz/environment.h"],
-    external_deps = [
-        "absl/strings",
-        "absl/status:statusor",
-    ],
-    deps = [
-        "zviz_strings",
-        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
-    ],
-)
-
-grpc_cc_library(
-    name = "zviz_layout",
-    srcs = [
-        "channelz/zviz/layout.cc",
-    ],
-    hdrs = ["channelz/zviz/layout.h"],
-    external_deps = [
-        "absl/strings",
-    ],
-    deps = [
-        "zviz_environment",
-        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
-        "@com_google_protobuf//:duration_cc_proto",
-        "@com_google_protobuf//:timestamp_cc_proto",
-    ],
-)
-
-grpc_cc_library(
-    name = "zviz_data",
-    srcs = [
-        "channelz/zviz/data.cc",
-    ],
-    hdrs = ["channelz/zviz/data.h"],
-    external_deps = [
-        "absl/container:flat_hash_map",
-        "absl/strings",
-        "absl/types:span",
-    ],
-    deps = [
-        "no_destruct",
-        "zviz_environment",
-        "zviz_layout",
-        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
-        "//src/proto/grpc/channelz/v2:property_list_cc_proto",
-    ],
-)
-
-grpc_cc_library(
-    name = "zviz_trace",
-    srcs = [
-        "channelz/zviz/trace.cc",
-    ],
-    hdrs = ["channelz/zviz/trace.h"],
-    external_deps = [
-        "absl/container:flat_hash_map",
-        "absl/strings",
-        "absl/types:span",
-    ],
-    deps = [
-        "zviz_data",
-        "zviz_environment",
-        "zviz_layout",
-        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
-    ],
-)
-
-grpc_cc_library(
-    name = "zviz_property_list",
-    srcs = [
-        "channelz/zviz/property_list.cc",
-    ],
-    hdrs = ["channelz/zviz/property_list.h"],
-    external_deps = [
-        "absl/strings",
-        "absl/time",
-    ],
-    deps = [
-        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
-        "//src/proto/grpc/channelz/v2:property_list_cc_proto",
-    ],
-)
-
-grpc_cc_library(
-    name = "zviz_style",
-    srcs = [
-        "channelz/zviz/style.cc",
-    ],
-    hdrs = ["channelz/zviz/style.h"],
-    external_deps = [
-        "absl/strings:string_view",
-    ],
-)
-
-grpc_cc_library(
-    name = "zviz_entity",
-    srcs = [
-        "channelz/zviz/entity.cc",
-    ],
-    hdrs = ["channelz/zviz/entity.h"],
-    external_deps = [
-        "absl/container:flat_hash_map",
-        "absl/strings",
-        "absl/types:span",
-    ],
-    deps = [
-        "zviz_data",
-        "zviz_environment",
-        "zviz_layout",
-        "zviz_strings",
-        "zviz_style",
-        "zviz_trace",
-        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
-    ],
-)
-
-grpc_cc_library(
-    name = "zviz_html",
-    srcs = [
-        "channelz/zviz/html.cc",
-    ],
-    hdrs = ["channelz/zviz/html.h"],
-    external_deps = [
-        "absl/container:flat_hash_map",
-        "absl/strings",
-        "absl/strings:string_view",
-        "absl/types:span",
-        "absl/functional:function_ref",
-        "absl/log:check",
-    ],
-)
-
-grpc_cc_library(
-    name = "zviz_layout_html",
-    srcs = [
-        "channelz/zviz/layout_html.cc",
-    ],
-    hdrs = ["channelz/zviz/layout_html.h"],
-    external_deps = [
-        "absl/container:flat_hash_map",
-        "absl/strings",
-        "absl/strings:string_view",
-        "absl/types:span",
-        "absl/functional:function_ref",
-    ],
-    deps = [
-        "zviz_environment",
-        "zviz_html",
-        "zviz_layout",
-    ],
-)
-
-grpc_cc_library(
-    name = "zviz_format_entity_list",
-    srcs = [
-        "channelz/zviz/format_entity_list.cc",
-    ],
-    hdrs = ["channelz/zviz/format_entity_list.h"],
-    external_deps = [
-        "absl/strings",
-        "absl/types:optional",
-        "absl/types:span",
-    ],
-    deps = [
-        "time",
-        "zviz_environment",
-        "zviz_layout",
-        "zviz_property_list",
-        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
-        "//src/proto/grpc/channelz/v2:property_list_cc_proto",
-        "@com_google_protobuf//:any_cc_proto",
-    ],
-)
-
-grpc_cc_library(
-    name = "channelz_v2tov1_property_list",
-    srcs = ["channelz/v2tov1/property_list.cc"],
-    hdrs = ["channelz/v2tov1/property_list.h"],
-    external_deps = [
-        "absl/strings:string_view",
-        "@com_google_protobuf//upb/mem",
-    ],
-    deps = [
-        ":upb_utils",
-        "//:channelz_property_list_upb",
-        "//:protobuf_any_upb",
-        "//:protobuf_duration_upb",
-        "//:protobuf_timestamp_upb",
-    ],
-)
-
-grpc_cc_library(
-    name = "channelz_v2tov1_convert",
-    srcs = ["channelz/v2tov1/convert.cc"],
-    hdrs = ["channelz/v2tov1/convert.h"],
-    external_deps = [
-        "absl/cleanup",
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-        "@com_google_protobuf//upb/base",
-        "@com_google_protobuf//upb/mem",
-        "@com_google_protobuf//upb/json",
-        "@com_google_protobuf//upb/reflection",
-    ],
-    deps = [
-        "json",
-        "json_writer",
-        ":channelz_v2tov1_property_list",
-        ":protobuf_wrappers_upb",
-        ":upb_utils",
-        "//:channelz_property_list_upb",
-        "//:channelz_upb",
-        "//:channelz_v1_upb",
-        "//:channelz_v1_upbdefs",
-        "//:parse_address",
-        "//:protobuf_any_upb",
-        "//:protobuf_duration_upb",
-        "//:protobuf_timestamp_upb",
-        "//:protobuf_wrappers_upb",
-        "//:sockaddr_utils",
-        "//:uri",
-    ],
-)
-
-grpc_cc_library(
-    name = "channelz_v2tov1_legacy_api",
-    srcs = ["channelz/v2tov1/legacy_api.cc"],
-    hdrs = ["channelz/v2tov1/legacy_api.h"],
-    external_deps = [
-        "absl/log",
-        "absl/status:statusor",
-        "absl/strings",
-        "absl/time",
-    ],
-    deps = [
-        ":channelz_v2tov1_convert",
-        ":experiments",
-        ":json",
-        ":json_reader",
-        ":json_writer",
-        "//:channelz",
-        "//:exec_ctx",
-        "//:gpr",
-        "//:grpc_public_hdrs",
     ],
 )
 
