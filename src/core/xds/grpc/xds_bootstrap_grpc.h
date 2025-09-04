@@ -30,13 +30,13 @@
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
-#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/certificate_provider_store.h"
 #include "src/core/xds/grpc/xds_audit_logger_registry.h"
 #include "src/core/xds/grpc/xds_cluster_specifier_plugin.h"
 #include "src/core/xds/grpc/xds_http_filter_registry.h"
 #include "src/core/xds/grpc/xds_lb_policy_registry.h"
+#include "src/core/xds/grpc/xds_matcher_input.h"
 #include "src/core/xds/grpc/xds_server_grpc.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 
@@ -148,6 +148,10 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
   const XdsAuditLoggerRegistry& audit_logger_registry() const {
     return audit_logger_registry_;
   }
+  const XdsMatcherInputRegistry<absl::string_view>&
+  matcher_string_input_registry() const {
+    return matcher_string_input_registry_;
+  }
 
   // Exposed for testing purposes only.
   const std::map<std::string, GrpcAuthority>& authorities() const {
@@ -165,6 +169,7 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
   XdsClusterSpecifierPluginRegistry cluster_specifier_plugin_registry_;
   XdsLbPolicyRegistry lb_policy_registry_;
   XdsAuditLoggerRegistry audit_logger_registry_;
+  XdsMatcherInputRegistry<absl::string_view> matcher_string_input_registry_;
 };
 
 }  // namespace grpc_core

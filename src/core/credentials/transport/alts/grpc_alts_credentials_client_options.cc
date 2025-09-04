@@ -21,6 +21,8 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
+#include <memory>
+
 #include "absl/log/log.h"
 #include "src/core/credentials/transport/alts/grpc_alts_credentials_options.h"
 #include "src/core/tsi/alts/handshaker/transport_security_common_api.h"
@@ -101,10 +103,23 @@ static grpc_alts_credentials_options* alts_client_options_copy(
     prev = new_node;
     node = node->next;
   }
+  new_client_options->token_fetcher =
+      reinterpret_cast<const grpc_alts_credentials_client_options*>(options)
+          ->token_fetcher;
   // Copy rpc protocol versions.
   grpc_gcp_rpc_protocol_versions_copy(&options->rpc_versions,
                                       &new_options->rpc_versions);
   return new_options;
+}
+
+void grpc_alts_credentials_client_options_set_token_fetcher(
+    grpc_alts_credentials_options* options,
+    std::shared_ptr<grpc::alts::TokenFetcher> token_fetcher) {
+  if (options == nullptr) {
+    return;
+  }
+  reinterpret_cast<grpc_alts_credentials_client_options*>(options)
+      ->token_fetcher = token_fetcher;
 }
 
 static void alts_client_options_destroy(
@@ -120,4 +135,5 @@ static void alts_client_options_destroy(
     target_service_account_destroy(node);
     node = next_node;
   }
+  client_options->token_fetcher.reset();
 }
