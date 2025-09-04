@@ -153,6 +153,28 @@ RUN cd /tmp && \
 RUN python3.13 -m ensurepip && \
     python3.13 -m pip install coverage
 
+#=================
+# Compile CPython 3.14.0rc1 from source
+
+RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
+RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+
+RUN cd /tmp && \
+    wget -q https://www.python.org/ftp/python/3.14.0/Python-3.14.0rc1.tgz && \
+    tar xzvf Python-3.14.0rc1.tgz && \
+    cd Python-3.14.0rc1 && \
+    ./configure && \
+    make -j4 && \
+    make install
+
+
+RUN cd /tmp && \
+    echo "11fba5eb7576c1889498af3f8555ed2d  Python-3.14.0rc1.tgz" > checksum.md5 && \
+    md5sum -c checksum.md5
+
+RUN python3.14 -m ensurepip && \
+    python3.14 -m pip install coverage
+
 
 # Python test coverage requires libsqlite3, and it have
 # to be installed before Python.
