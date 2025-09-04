@@ -91,6 +91,8 @@ typedef enum {
   SERVER_START,
   CLIENT_NEXT,
   SERVER_NEXT,
+  CLIENT_NEXT_INTEGRITY_ONLY,
+  SERVER_NEXT_INTEGRITY_ONLY,
 } alts_handshaker_response_type;
 
 static alts_handshaker_client* cb_event = nullptr;
@@ -148,6 +150,7 @@ static grpc_byte_buffer* generate_handshaker_response(
           resp, upb_StringView_FromString(ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME));
       break;
     case CLIENT_NEXT:
+    case CLIENT_NEXT_INTEGRITY_ONLY:
       grpc_gcp_HandshakerResp_set_out_frames(
           resp, upb_StringView_FromString(ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME));
       grpc_gcp_HandshakerResp_set_bytes_consumed(
@@ -181,8 +184,10 @@ static grpc_byte_buffer* generate_handshaker_response(
           result, upb_StringView_FromString(
                       ALTS_TSI_HANDSHAKER_TEST_APPLICATION_PROTOCOL));
       grpc_gcp_HandshakerResult_set_record_protocol(
-          result,
-          upb_StringView_FromString(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL));
+          result, upb_StringView_FromString(
+                      type == CLIENT_NEXT_INTEGRITY_ONLY
+                          ? ALTS_RECORD_INTEGRITY_ONLY_PROTOCOL
+                          : ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL));
       grpc_gcp_HandshakerResult_set_max_frame_size(
           result, ALTS_TSI_HANDSHAKER_TEST_MAX_FRAME_SIZE);
       protocol = grpc_gcp_HandshakerResult_mutable_transport_protocol(
@@ -192,6 +197,7 @@ static grpc_byte_buffer* generate_handshaker_response(
                         ALTS_TSI_HANDSHAKER_NEGOTIATED_TRANSPORT_PROTOCOL));
       break;
     case SERVER_NEXT:
+    case SERVER_NEXT_INTEGRITY_ONLY:
       grpc_gcp_HandshakerResp_set_bytes_consumed(
           resp, strlen(ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME));
       result = grpc_gcp_HandshakerResp_mutable_result(resp, arena.ptr());
@@ -223,8 +229,10 @@ static grpc_byte_buffer* generate_handshaker_response(
           result, upb_StringView_FromString(
                       ALTS_TSI_HANDSHAKER_TEST_APPLICATION_PROTOCOL));
       grpc_gcp_HandshakerResult_set_record_protocol(
-          result,
-          upb_StringView_FromString(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL));
+          result, upb_StringView_FromString(
+                      type == SERVER_NEXT_INTEGRITY_ONLY
+                          ? ALTS_RECORD_INTEGRITY_ONLY_PROTOCOL
+                          : ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL));
       protocol = grpc_gcp_HandshakerResult_mutable_transport_protocol(
           result, arena.ptr());
       grpc_gcp_NegotiatedTransportProtocol_set_transport_protocol(
@@ -316,10 +324,11 @@ static void on_server_start_success_cb(tsi_result status, void* user_data,
   signal(&tsi_to_caller_notification);
 }
 
-static void on_client_next_success_cb(tsi_result status, void* user_data,
-                                      const unsigned char* bytes_to_send,
-                                      size_t bytes_to_send_size,
-                                      tsi_handshaker_result* result) {
+static void on_client_next_success_base_cb(tsi_result status, void* user_data,
+                                           const unsigned char* bytes_to_send,
+                                           size_t bytes_to_send_size,
+                                           tsi_handshaker_result* result,
+                                           bool is_integrity_only) {
   ASSERT_EQ(status, TSI_OK);
   ASSERT_EQ(user_data, nullptr);
   ASSERT_EQ(bytes_to_send_size, strlen(ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME));
@@ -365,9 +374,15 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
   ASSERT_EQ(memcmp(ALTS_TSI_HANDSHAKER_TEST_APPLICATION_PROTOCOL,
                    application_protocol.data, application_protocol.size),
             0);
-  ASSERT_EQ(memcmp(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL,
-                   record_protocol.data, record_protocol.size),
-            0);
+  if (is_integrity_only) {
+    ASSERT_EQ(memcmp(ALTS_RECORD_INTEGRITY_ONLY_PROTOCOL, record_protocol.data,
+                     record_protocol.size),
+              0);
+  } else {
+    ASSERT_EQ(memcmp(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL,
+                     record_protocol.data, record_protocol.size),
+              0);
+  }
   ASSERT_EQ(memcmp(ALTS_TSI_HANDSHAKER_TEST_PEER_IDENTITY, peer_account.data,
                    peer_account.size),
             0);
@@ -386,11 +401,20 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
                  ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE)));
   }
 
-  // Validate security level.
-  ASSERT_EQ(
-      memcmp(ALTS_TSI_HANDSHAKER_TEST_SECURITY_LEVEL,
-             peer.properties[4].value.data, peer.properties[4].value.length),
-      0);
+  if (is_integrity_only) {
+    // Validate security level.
+    ASSERT_EQ(
+        memcmp(tsi_security_level_to_string(TSI_INTEGRITY_ONLY),
+               peer.properties[4].value.data, peer.properties[4].value.length),
+        0);
+  } else {
+    // Validate security level.
+    ASSERT_EQ(
+        memcmp(ALTS_TSI_HANDSHAKER_TEST_SECURITY_LEVEL,
+               peer.properties[4].value.data, peer.properties[4].value.length),
+        0);
+  }
+
   tsi_peer_destruct(&peer);
   // Validate unused bytes.
   const unsigned char* bytes = nullptr;
@@ -411,10 +435,26 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
   signal(&tsi_to_caller_notification);
 }
 
-static void on_server_next_success_cb(tsi_result status, void* user_data,
+static void on_client_next_success_cb(tsi_result status, void* user_data,
                                       const unsigned char* bytes_to_send,
                                       size_t bytes_to_send_size,
                                       tsi_handshaker_result* result) {
+  return on_client_next_success_base_cb(status, user_data, bytes_to_send,
+                                        bytes_to_send_size, result, false);
+}
+
+static void on_client_next_success_integrity_only_cb(
+    tsi_result status, void* user_data, const unsigned char* bytes_to_send,
+    size_t bytes_to_send_size, tsi_handshaker_result* result) {
+  return on_client_next_success_base_cb(status, user_data, bytes_to_send,
+                                        bytes_to_send_size, result, true);
+}
+
+static void on_server_next_success_base_cb(tsi_result status, void* user_data,
+                                           const unsigned char* bytes_to_send,
+                                           size_t bytes_to_send_size,
+                                           tsi_handshaker_result* result,
+                                           bool is_integrity_only) {
   ASSERT_EQ(status, TSI_OK);
   ASSERT_EQ(user_data, nullptr);
   ASSERT_EQ(bytes_to_send_size, 0);
@@ -460,9 +500,15 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
   ASSERT_EQ(memcmp(ALTS_TSI_HANDSHAKER_TEST_APPLICATION_PROTOCOL,
                    application_protocol.data, application_protocol.size),
             0);
-  ASSERT_EQ(memcmp(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL,
-                   record_protocol.data, record_protocol.size),
-            0);
+  if (is_integrity_only) {
+    ASSERT_EQ(memcmp(ALTS_RECORD_INTEGRITY_ONLY_PROTOCOL, record_protocol.data,
+                     record_protocol.size),
+              0);
+  } else {
+    ASSERT_EQ(memcmp(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL,
+                     record_protocol.data, record_protocol.size),
+              0);
+  }
   ASSERT_EQ(memcmp(ALTS_TSI_HANDSHAKER_TEST_PEER_IDENTITY, peer_account.data,
                    peer_account.size),
             0);
@@ -481,11 +527,19 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
                  ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE)));
   }
 
-  // Check security level.
-  ASSERT_EQ(
-      memcmp(ALTS_TSI_HANDSHAKER_TEST_SECURITY_LEVEL,
-             peer.properties[4].value.data, peer.properties[4].value.length),
-      0);
+  if (is_integrity_only) {
+    // Validate security level.
+    ASSERT_EQ(
+        memcmp(tsi_security_level_to_string(TSI_INTEGRITY_ONLY),
+               peer.properties[4].value.data, peer.properties[4].value.length),
+        0);
+  } else {
+    // Validate security level.
+    ASSERT_EQ(
+        memcmp(ALTS_TSI_HANDSHAKER_TEST_SECURITY_LEVEL,
+               peer.properties[4].value.data, peer.properties[4].value.length),
+        0);
+  }
 
   tsi_peer_destruct(&peer);
   // Validate unused bytes.
@@ -504,6 +558,21 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
   tsi_frame_protector_destroy(protector);
   tsi_handshaker_result_destroy(result);
   signal(&tsi_to_caller_notification);
+}
+
+static void on_server_next_success_cb(tsi_result status, void* user_data,
+                                      const unsigned char* bytes_to_send,
+                                      size_t bytes_to_send_size,
+                                      tsi_handshaker_result* result) {
+  return on_server_next_success_base_cb(status, user_data, bytes_to_send,
+                                        bytes_to_send_size, result, false);
+}
+
+static void on_server_next_success_integrity_only_cb(
+    tsi_result status, void* user_data, const unsigned char* bytes_to_send,
+    size_t bytes_to_send_size, tsi_handshaker_result* result) {
+  return on_server_next_success_base_cb(status, user_data, bytes_to_send,
+                                        bytes_to_send_size, result, true);
 }
 
 static tsi_result mock_client_start(alts_handshaker_client* client) {
@@ -547,8 +616,9 @@ static tsi_result mock_server_start(alts_handshaker_client* client,
   return TSI_OK;
 }
 
-static tsi_result mock_next(alts_handshaker_client* client,
-                            grpc_slice* bytes_received) {
+static tsi_result mock_next_base(alts_handshaker_client* client,
+                                 grpc_slice* bytes_received,
+                                 bool is_integrity_only) {
   if (!should_handshaker_client_api_succeed) {
     return TSI_INTERNAL_ERROR;
   }
@@ -571,13 +641,27 @@ static tsi_result mock_next(alts_handshaker_client* client,
       grpc_slice_from_static_string(ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME);
   grpc_byte_buffer** recv_buffer_ptr =
       alts_handshaker_client_get_recv_buffer_addr_for_testing(client);
-  *recv_buffer_ptr = is_client ? generate_handshaker_response(CLIENT_NEXT)
-                               : generate_handshaker_response(SERVER_NEXT);
+  *recv_buffer_ptr =
+      is_client
+          ? generate_handshaker_response(
+                is_integrity_only ? CLIENT_NEXT_INTEGRITY_ONLY : CLIENT_NEXT)
+          : generate_handshaker_response(
+                is_integrity_only ? SERVER_NEXT_INTEGRITY_ONLY : SERVER_NEXT);
   alts_handshaker_client_set_recv_bytes_for_testing(client, &out_frame);
   cb_event = client;
   signal(&caller_to_tsi_notification);
   grpc_slice_unref(out_frame);
   return TSI_OK;
+}
+
+static tsi_result mock_next(alts_handshaker_client* client,
+                            grpc_slice* bytes_received) {
+  return mock_next_base(client, bytes_received, /*is_integrity_only=*/false);
+}
+
+static tsi_result mock_next_integrity_only(alts_handshaker_client* client,
+                                           grpc_slice* bytes_received) {
+  return mock_next_base(client, bytes_received, /*is_integrity_only=*/true);
 }
 
 static void mock_destruct(alts_handshaker_client* /*client*/) {}
@@ -586,7 +670,12 @@ static alts_handshaker_client_vtable vtable = {mock_client_start,
                                                mock_server_start, mock_next,
                                                mock_shutdown, mock_destruct};
 
-static tsi_handshaker* create_test_handshaker(bool is_client) {
+static alts_handshaker_client_vtable integrity_only_vtable = {
+    mock_client_start, mock_server_start, mock_next_integrity_only,
+    mock_shutdown, mock_destruct};
+
+static tsi_handshaker* create_test_handshaker(bool is_client,
+                                              bool is_integrity_only = false) {
   tsi_handshaker* handshaker = nullptr;
   grpc_alts_credentials_options* options =
       grpc_alts_credentials_client_options_create();
@@ -596,7 +685,8 @@ static tsi_handshaker* create_test_handshaker(bool is_client) {
                              ALTS_TSI_HANDSHAKER_PREFERRED_TRANSPORT_PROTOCOL);
   alts_tsi_handshaker* alts_handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
-  alts_tsi_handshaker_set_client_vtable_for_testing(alts_handshaker, &vtable);
+  alts_tsi_handshaker_set_client_vtable_for_testing(
+      alts_handshaker, is_integrity_only ? &integrity_only_vtable : &vtable);
   grpc_alts_credentials_options_destroy(options);
   return handshaker;
 }
@@ -669,6 +759,49 @@ static void check_handshaker_next_success() {
                 (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
                 strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
                 nullptr, on_server_next_success_cb, nullptr),
+            TSI_ASYNC);
+  wait(&tsi_to_caller_notification);
+  // Cleanup.
+  run_tsi_handshaker_destroy_with_exec_ctx(server_handshaker);
+  run_tsi_handshaker_destroy_with_exec_ctx(client_handshaker);
+}
+
+static void check_handshaker_next_success_integrity_only() {
+  ///
+  /// Create handshakers for which internal mock client is going to do
+  /// correctness check.
+  ///
+  tsi_handshaker* client_handshaker =
+      create_test_handshaker(true /* is_client */, true);
+  tsi_handshaker* server_handshaker =
+      create_test_handshaker(false /* is_client */, true);
+  // Client start.
+  ASSERT_EQ(tsi_handshaker_next(client_handshaker, nullptr, 0, nullptr, nullptr,
+                                nullptr, on_client_start_success_cb, nullptr),
+            TSI_ASYNC);
+  wait(&tsi_to_caller_notification);
+  // Client next.
+  ASSERT_EQ(tsi_handshaker_next(
+                client_handshaker,
+                (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
+                strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
+                nullptr, on_client_next_success_integrity_only_cb, nullptr),
+            TSI_ASYNC);
+  wait(&tsi_to_caller_notification);
+  // Server start.
+  ASSERT_EQ(tsi_handshaker_next(
+                server_handshaker,
+                (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
+                strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
+                nullptr, on_server_start_success_cb, nullptr),
+            TSI_ASYNC);
+  wait(&tsi_to_caller_notification);
+  // Server next.
+  ASSERT_EQ(tsi_handshaker_next(
+                server_handshaker,
+                (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
+                strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
+                nullptr, on_server_next_success_integrity_only_cb, nullptr),
             TSI_ASYNC);
   wait(&tsi_to_caller_notification);
   // Cleanup.
@@ -1109,6 +1242,22 @@ TEST(AltsTsiHandshakerTest, CheckHandshakerSuccess) {
                         &check_handle_response_success, nullptr);
   thd.Start();
   check_handshaker_next_success();
+  thd.Join();
+  // Cleanup.
+  notification_destroy(&caller_to_tsi_notification);
+  notification_destroy(&tsi_to_caller_notification);
+}
+
+TEST(AltsTsiHandshakerTest, CheckHandshakerIntegrityOnlySecurityLevel) {
+  should_handshaker_client_api_succeed = true;
+  // Initialization.
+  notification_init(&caller_to_tsi_notification);
+  notification_init(&tsi_to_caller_notification);
+  // Tests.
+  grpc_core::Thread thd("alts_tsi_handshaker_test",
+                        &check_handle_response_success, nullptr);
+  thd.Start();
+  check_handshaker_next_success_integrity_only();
   thd.Join();
   // Cleanup.
   notification_destroy(&caller_to_tsi_notification);
