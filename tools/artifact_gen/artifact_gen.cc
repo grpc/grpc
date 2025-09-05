@@ -30,13 +30,11 @@ ABSL_FLAG(bool, save_json, false, "Save the generated build.yaml to a file");
 int main(int argc, char** argv) {
   absl::InitializeSymbolizer(argv[0]);
   absl::ParseCommandLine(argc, argv);
-  LOG(INFO) << "Extracting metadata";
   auto build_yaml = ExtractMetadataFromBazelXml();
   if (!build_yaml.ok()) {
     LOG(FATAL) << build_yaml.status();
   }
   for (const auto& filename : absl::GetFlag(FLAGS_extra_build_yaml)) {
-    LOG(FATAL) << "Updating " << filename;
     build_yaml->update(LoadYaml(filename), true);
   }
   // TODO(ctiller): all the special yaml updates

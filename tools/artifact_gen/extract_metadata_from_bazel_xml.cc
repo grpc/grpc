@@ -446,7 +446,6 @@ class ArtifactGen {
     const std::string kGenUpbdefsRoot = "//:src/core/ext/upbdefs-gen/";
     std::unordered_map<std::string, std::string> kExternalLinks{
         {"@com_google_protobuf//", "src/"},
-        {"@cel-spec//", ""},
     };
     for (const auto& [library, _] : external_proto_libraries_) {
       kExternalLinks.emplace(absl::StrCat("@", library, "//"), "");

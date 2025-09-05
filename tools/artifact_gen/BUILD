@@ -119,9 +119,3 @@ cc_library(
         "@abseil-cpp//absl/status:statusor",
     ],
 )
-
-cc_binary(
-    name = "boop",
-    srcs = ["boop.cc"],
-    deps = [":extract_bazelmod_repositories"],
-)
