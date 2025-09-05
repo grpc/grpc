@@ -177,9 +177,9 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
   const grpc_auth_property* property = grpc_auth_property_iterator_next(&it);
   CHECK_NE(property, nullptr);
   if (expect_session_reuse) {
-    CHECK_EQ(strcmp(property->value, "true"), 0);
+    CHECK_EQ(strcmp(property->value, "true"), 0) << property->value << "\n";
   } else {
-    CHECK_EQ(strcmp(property->value, "false"), 0);
+    CHECK_EQ(strcmp(property->value, "false"), 0) << property->value << "\n";
   }
   grpc_auth_context_release(auth);
 
