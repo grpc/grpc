@@ -276,7 +276,7 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
         }
         std::optional<XdsHttpFilterImpl::FilterConfig> filter_config =
             filter_impl->GenerateFilterConfig(
-                name, context, std::move(*extension),
+                name, context, std::move(*extension), /*recursion_depth=*/0,
                 &http_connection_manager.ecds_resources_needed, errors);
         if (filter_config.has_value()) {
           http_connection_manager.http_filters.emplace_back(

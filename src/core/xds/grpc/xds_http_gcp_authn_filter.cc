@@ -80,10 +80,10 @@ Json::Object ValidateFilterConfig(
 }  // namespace
 
 std::optional<XdsHttpFilterImpl::FilterConfig>
-XdsHttpGcpAuthnFilter::GenerateFilterConfig(
+XdsHttpGcpAuthnFilter::GenerateFilterConfigImpl(
     absl::string_view instance_name,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    std::set<std::string>* /*ecds_resources_needed*/,
+    int /*recursion_depth*/, std::set<std::string>* /*ecds_resources_needed*/,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
       std::get_if<absl::string_view>(&extension.value);
@@ -104,11 +104,11 @@ XdsHttpGcpAuthnFilter::GenerateFilterConfig(
 }
 
 std::optional<XdsHttpFilterImpl::FilterConfig>
-XdsHttpGcpAuthnFilter::GenerateFilterConfigOverride(
+XdsHttpGcpAuthnFilter::GenerateFilterConfigOverrideImpl(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& /*context*/,
     XdsExtension /*extension*/,
-    std::set<std::string>* /*ecds_resources_needed*/,
+    int /*recursion_depth*/, std::set<std::string>* /*ecds_resources_needed*/,
     ValidationErrors* errors) const {
   errors->AddError("GCP auth filter does not support config override");
   return std::nullopt;

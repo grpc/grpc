@@ -84,10 +84,10 @@ void XdsHttpFaultFilter::PopulateSymtab(upb_DefPool* symtab) const {
 }
 
 std::optional<XdsHttpFilterImpl::FilterConfig>
-XdsHttpFaultFilter::GenerateFilterConfig(
+XdsHttpFaultFilter::GenerateFilterConfigImpl(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    std::set<std::string>* /*ecds_resources_needed*/,
+    int /*recursion_depth*/, std::set<std::string>* /*ecds_resources_needed*/,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
       std::get_if<absl::string_view>(&extension.value);
@@ -205,15 +205,16 @@ XdsHttpFaultFilter::GenerateFilterConfig(
 }
 
 std::optional<XdsHttpFilterImpl::FilterConfig>
-XdsHttpFaultFilter::GenerateFilterConfigOverride(
+XdsHttpFaultFilter::GenerateFilterConfigOverrideImpl(
     absl::string_view instance_name,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    std::set<std::string>* ecds_resources_needed,
+    int recursion_depth, std::set<std::string>* ecds_resources_needed,
     ValidationErrors* errors) const {
   // HTTPFault filter has the same message type in HTTP connection manager's
   // filter config and in overriding filter config field.
-  return GenerateFilterConfig(instance_name, context, std::move(extension),
-                              ecds_resources_needed, errors);
+  return GenerateFilterConfigImpl(instance_name, context, std::move(extension),
+                                  recursion_depth, ecds_resources_needed,
+                                  errors);
 }
 
 void XdsHttpFaultFilter::AddFilter(InterceptionChainBuilder& builder) const {
