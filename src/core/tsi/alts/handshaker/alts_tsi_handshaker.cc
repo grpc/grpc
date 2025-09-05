@@ -159,7 +159,8 @@ static tsi_result handshaker_result_extract_peer(
   CHECK_NE(&peer->properties[index], nullptr);
   tsi_security_level security_level =
       result->record_protocol == ALTS_RECORD_INTEGRITY_ONLY_PROTOCOL
-      ? TSI_INTEGRITY_ONLY : TSI_PRIVACY_AND_INTEGRITY;
+          ? TSI_INTEGRITY_ONLY
+          : TSI_PRIVACY_AND_INTEGRITY;
   ok = tsi_construct_string_peer_property_from_cstring(
       TSI_SECURITY_LEVEL_PEER_PROPERTY,
       tsi_security_level_to_string(security_level), &peer->properties[index]);
@@ -368,7 +369,8 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
     }
   }
 
-  sresult->record_protocol = std::string(record_protocol.data, record_protocol.size);
+  sresult->record_protocol =
+      std::string(record_protocol.data, record_protocol.size);
 
   upb::Arena rpc_versions_arena;
   bool serialized = grpc_gcp_rpc_protocol_versions_encode(

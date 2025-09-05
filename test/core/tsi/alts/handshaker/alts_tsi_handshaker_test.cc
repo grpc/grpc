@@ -267,9 +267,9 @@ static void check_must_not_be_called(tsi_result /*status*/, void* /*user_data*/,
 }
 
 void OnClientStartSuccessCb(tsi_result status, void* user_data,
-                                       const unsigned char* bytes_to_send,
-                                       size_t bytes_to_send_size,
-                                       tsi_handshaker_result* result) {
+                            const unsigned char* bytes_to_send,
+                            size_t bytes_to_send_size,
+                            tsi_handshaker_result* result) {
   ASSERT_EQ(status, TSI_OK);
   ASSERT_EQ(user_data, nullptr);
   ASSERT_EQ(bytes_to_send_size, strlen(ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME));
@@ -296,9 +296,9 @@ void OnClientStartSuccessCb(tsi_result status, void* user_data,
 }
 
 void OnServerStartSuccessCb(tsi_result status, void* user_data,
-                                       const unsigned char* bytes_to_send,
-                                       size_t bytes_to_send_size,
-                                       tsi_handshaker_result* result) {
+                            const unsigned char* bytes_to_send,
+                            size_t bytes_to_send_size,
+                            tsi_handshaker_result* result) {
   ASSERT_EQ(status, TSI_OK);
   ASSERT_EQ(user_data, nullptr);
   ASSERT_EQ(bytes_to_send_size, strlen(ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME));
@@ -325,10 +325,10 @@ void OnServerStartSuccessCb(tsi_result status, void* user_data,
 }
 
 void OnClientNextSuccessBase(tsi_result status, void* user_data,
-                                           const unsigned char* bytes_to_send,
-                                           size_t bytes_to_send_size,
-                                           tsi_handshaker_result* result,
-                                           bool is_integrity_only) {
+                             const unsigned char* bytes_to_send,
+                             size_t bytes_to_send_size,
+                             tsi_handshaker_result* result,
+                             bool is_integrity_only) {
   ASSERT_EQ(status, TSI_OK);
   ASSERT_EQ(user_data, nullptr);
   ASSERT_EQ(bytes_to_send_size, strlen(ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME));
@@ -440,25 +440,28 @@ void OnClientNextSuccessBase(tsi_result status, void* user_data,
 }
 
 void OnClientNextSuccessCb(tsi_result status, void* user_data,
-                                      const unsigned char* bytes_to_send,
-                                      size_t bytes_to_send_size,
-                                      tsi_handshaker_result* result) {
+                           const unsigned char* bytes_to_send,
+                           size_t bytes_to_send_size,
+                           tsi_handshaker_result* result) {
   return OnClientNextSuccessBase(status, user_data, bytes_to_send,
-                                        bytes_to_send_size, result, /*is_integrity_only=*/false);
+                                 bytes_to_send_size, result,
+                                 /*is_integrity_only=*/false);
 }
 
-void OnClientNextSuccessIntegrityOnlyCb(
-    tsi_result status, void* user_data, const unsigned char* bytes_to_send,
-    size_t bytes_to_send_size, tsi_handshaker_result* result) {
+void OnClientNextSuccessIntegrityOnlyCb(tsi_result status, void* user_data,
+                                        const unsigned char* bytes_to_send,
+                                        size_t bytes_to_send_size,
+                                        tsi_handshaker_result* result) {
   return OnClientNextSuccessBase(status, user_data, bytes_to_send,
-                                        bytes_to_send_size, result, /*is_integrity_only=*/true);
+                                 bytes_to_send_size, result,
+                                 /*is_integrity_only=*/true);
 }
 
 void OnServerNextSuccessBase(tsi_result status, void* user_data,
-                                           const unsigned char* bytes_to_send,
-                                           size_t bytes_to_send_size,
-                                           tsi_handshaker_result* result,
-                                           bool is_integrity_only) {
+                             const unsigned char* bytes_to_send,
+                             size_t bytes_to_send_size,
+                             tsi_handshaker_result* result,
+                             bool is_integrity_only) {
   ASSERT_EQ(status, TSI_OK);
   ASSERT_EQ(user_data, nullptr);
   ASSERT_EQ(bytes_to_send_size, 0);
@@ -564,18 +567,21 @@ void OnServerNextSuccessBase(tsi_result status, void* user_data,
 }
 
 void OnServerNextSuccessCb(tsi_result status, void* user_data,
-                                      const unsigned char* bytes_to_send,
-                                      size_t bytes_to_send_size,
-                                      tsi_handshaker_result* result) {
+                           const unsigned char* bytes_to_send,
+                           size_t bytes_to_send_size,
+                           tsi_handshaker_result* result) {
   return OnServerNextSuccessBase(status, user_data, bytes_to_send,
-                                        bytes_to_send_size, result, /*is_integrity_only=*/false);
+                                 bytes_to_send_size, result,
+                                 /*is_integrity_only=*/false);
 }
 
-void OnServerNextSuccessIntegrityOnlyCb(
-    tsi_result status, void* user_data, const unsigned char* bytes_to_send,
-    size_t bytes_to_send_size, tsi_handshaker_result* result) {
+void OnServerNextSuccessIntegrityOnlyCb(tsi_result status, void* user_data,
+                                        const unsigned char* bytes_to_send,
+                                        size_t bytes_to_send_size,
+                                        tsi_handshaker_result* result) {
   return OnServerNextSuccessBase(status, user_data, bytes_to_send,
-                                        bytes_to_send_size, result, /*is_integrity_only=*/true);
+                                 bytes_to_send_size, result,
+                                 /*is_integrity_only=*/true);
 }
 
 tsi_result MockClientStart(alts_handshaker_client* client) {
@@ -600,7 +606,7 @@ tsi_result MockClientStart(alts_handshaker_client* client) {
 void MockShutdown(alts_handshaker_client* /*self*/) {}
 
 tsi_result MockServerStart(alts_handshaker_client* client,
-                                    grpc_slice* bytes_received) {
+                           grpc_slice* bytes_received) {
   if (!should_handshaker_client_api_succeed) {
     return TSI_INTERNAL_ERROR;
   }
@@ -620,17 +626,17 @@ tsi_result MockServerStart(alts_handshaker_client* client,
 }
 
 tsi_result MockNextBase(alts_handshaker_client* client,
-                                 grpc_slice* bytes_received,
-                                 bool is_integrity_only) {
+                        grpc_slice* bytes_received, bool is_integrity_only) {
   if (!should_handshaker_client_api_succeed) {
     return TSI_INTERNAL_ERROR;
   }
   alts_tsi_handshaker* handshaker =
       alts_handshaker_client_get_handshaker_for_testing(client);
   bool is_client = alts_tsi_handshaker_get_is_client_for_testing(handshaker);
-  tsi_handshaker_on_next_done_cb cb ;
+  tsi_handshaker_on_next_done_cb cb;
   if (is_integrity_only) {
-    cb = is_client ? OnClientNextSuccessIntegrityOnlyCb : OnServerNextSuccessIntegrityOnlyCb;
+    cb = is_client ? OnClientNextSuccessIntegrityOnlyCb
+                   : OnServerNextSuccessIntegrityOnlyCb;
   } else {
     cb = is_client ? OnClientNextSuccessCb : OnServerNextSuccessCb;
   }
@@ -662,27 +668,26 @@ tsi_result MockNextBase(alts_handshaker_client* client,
 }
 
 tsi_result MockNext(alts_handshaker_client* client,
-                            grpc_slice* bytes_received) {
+                    grpc_slice* bytes_received) {
   return MockNextBase(client, bytes_received, /*is_integrity_only=*/false);
 }
 
 tsi_result MockNextIntegrityOnly(alts_handshaker_client* client,
-                                           grpc_slice* bytes_received) {
+                                 grpc_slice* bytes_received) {
   return MockNextBase(client, bytes_received, /*is_integrity_only=*/true);
 }
 
 void MockDestruct(alts_handshaker_client* /*client*/) {}
 
-static alts_handshaker_client_vtable vtable = {MockClientStart,
-                                               MockServerStart, MockNext,
-                                               MockShutdown, MockDestruct};
+static alts_handshaker_client_vtable vtable = {
+    MockClientStart, MockServerStart, MockNext, MockShutdown, MockDestruct};
 
 static alts_handshaker_client_vtable integrity_only_vtable = {
-    MockClientStart, MockServerStart, MockNextIntegrityOnly,
-    MockShutdown, MockDestruct};
+    MockClientStart, MockServerStart, MockNextIntegrityOnly, MockShutdown,
+    MockDestruct};
 
 tsi_handshaker* CreateTestHandshaker(bool is_client,
-                                              bool is_integrity_only = false) {
+                                     bool is_integrity_only = false) {
   tsi_handshaker* handshaker = nullptr;
   grpc_alts_credentials_options* options =
       grpc_alts_credentials_client_options_create();
@@ -779,9 +784,9 @@ void CheckHandshakerNextSuccessIntegrityOnly() {
   /// correctness check.
   ///
   tsi_handshaker* client_handshaker =
-      CreateTestHandshaker(/*is_client=*/ true, /*is_integrity_only=*/true);
-  tsi_handshaker* server_handshaker =
-      CreateTestHandshaker(/*is_client=*/false /* is_client */, /*is_integrity_only=*/true);
+      CreateTestHandshaker(/*is_client=*/true, /*is_integrity_only=*/true);
+  tsi_handshaker* server_handshaker = CreateTestHandshaker(
+      /*is_client=*/false /* is_client */, /*is_integrity_only=*/true);
   // Client start.
   ASSERT_EQ(tsi_handshaker_next(client_handshaker, nullptr, 0, nullptr, nullptr,
                                 nullptr, OnClientStartSuccessCb, nullptr),
