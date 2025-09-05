@@ -107,8 +107,8 @@ std::optional<XdsHttpFilterImpl::FilterConfig>
 XdsHttpGcpAuthnFilter::GenerateFilterConfigOverrideImpl(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& /*context*/,
-    XdsExtension /*extension*/,
-    int /*recursion_depth*/, std::set<std::string>* /*ecds_resources_needed*/,
+    XdsExtension /*extension*/, int /*recursion_depth*/,
+    std::set<std::string>* /*ecds_resources_needed*/,
     ValidationErrors* errors) const {
   errors->AddError("GCP auth filter does not support config override");
   return std::nullopt;

@@ -50,9 +50,9 @@ std::string XdsListenerResource::HttpConnectionManager::ToString() const {
                                     absl::StrJoin(filter_strings, ", "), "]"));
   }
   if (!ecds_resources_needed.empty()) {
-    contents.push_back(
-        absl::StrCat("ecds_resources_needed=[",
-                     absl::StrJoin(ecds_resources_needed, ", "), "]"));
+    contents.push_back(absl::StrCat("ecds_resources_needed=[",
+                                    absl::StrJoin(ecds_resources_needed, ", "),
+                                    "]"));
   }
   return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }

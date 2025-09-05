@@ -62,8 +62,7 @@ XdsResourceType::DecodeResult XdsEcdsResourceType::Decode(
   auto* resource = envoy_config_core_v3_TypedExtensionConfig_parse(
       serialized_resource.data(), serialized_resource.size(), context.arena);
   if (resource == nullptr) {
-    result.resource =
-        absl::InvalidArgumentError("Can't parse ECDS resource.");
+    result.resource = absl::InvalidArgumentError("Can't parse ECDS resource.");
     return result;
   }
   MaybeLogEcds(context, resource);

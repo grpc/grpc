@@ -42,9 +42,7 @@ const XdsHttpFilterImpl::FilterConfig& GetHttpFilterConfig(
   return Match(
       http_filter.config,
       [&](const XdsHttpFilterImpl::FilterConfig& config)
-          -> const XdsHttpFilterImpl::FilterConfig& {
-        return config;
-      },
+          -> const XdsHttpFilterImpl::FilterConfig& { return config; },
       [&](const HttpFilter::UseEcds&)
           -> const XdsHttpFilterImpl::FilterConfig& {
         // Lookup the ECDS resource.  This is guaranteed to succeed,

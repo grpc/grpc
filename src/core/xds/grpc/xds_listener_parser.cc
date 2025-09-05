@@ -250,8 +250,8 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
         ValidationErrors::ScopedField field(errors, ".config_discovery");
         http_connection_manager.http_filters.emplace_back(
             XdsListenerResource::HttpConnectionManager::HttpFilter{
-                std::string(name),
-                XdsListenerResource::HttpConnectionManager::HttpFilter::UseEcds{}});
+                std::string(name), XdsListenerResource::HttpConnectionManager::
+                                       HttpFilter::UseEcds{}});
         http_connection_manager.ecds_resources_needed.insert(std::string(name));
       } else {
         ValidationErrors::ScopedField field(errors, ".typed_config");

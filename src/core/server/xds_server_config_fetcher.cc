@@ -1158,8 +1158,7 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
           std::get_if<XdsRouteConfigResource::Route::NonForwardingAction>(
               &route.action) == nullptr;
       auto result = XdsRouting::GeneratePerHTTPFilterConfigsForMethodConfig(
-          http_filter_registry, http_filters,
-          {}, // FIXME: add ECDS resources
+          http_filter_registry, http_filters, {},  // FIXME: add ECDS resources
           vhost, route, nullptr, ChannelArgs());
       if (!result.ok()) return result.status();
       std::vector<std::string> fields;

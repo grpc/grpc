@@ -143,8 +143,7 @@ class XdsHttpFilterImpl {
   virtual std::optional<FilterConfig> GenerateFilterConfigImpl(
       absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
-      int recursion_depth,
-      std::set<std::string>* ecds_resources_needed,
+      int recursion_depth, std::set<std::string>* ecds_resources_needed,
       ValidationErrors* errors) const = 0;
 
   // Generates a Config from the xDS filter config proto.
@@ -152,8 +151,7 @@ class XdsHttpFilterImpl {
   virtual std::optional<FilterConfig> GenerateFilterConfigOverrideImpl(
       absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
-      int recursion_depth,
-      std::set<std::string>* ecds_resources_needed,
+      int recursion_depth, std::set<std::string>* ecds_resources_needed,
       ValidationErrors* errors) const = 0;
 };
 
