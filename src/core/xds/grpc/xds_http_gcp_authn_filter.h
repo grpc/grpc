@@ -39,10 +39,12 @@ class XdsHttpGcpAuthnFilter final : public XdsHttpFilterImpl {
   std::optional<FilterConfig> GenerateFilterConfig(
       absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
+      std::set<std::string>* /*ecds_resources_needed*/,
       ValidationErrors* errors) const override;
   std::optional<FilterConfig> GenerateFilterConfigOverride(
       absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
+      std::set<std::string>* /*ecds_resources_needed*/,
       ValidationErrors* errors) const override;
   void AddFilter(InterceptionChainBuilder& builder) const override;
   const grpc_channel_filter* channel_filter() const override;

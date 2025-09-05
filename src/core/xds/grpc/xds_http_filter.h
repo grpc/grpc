@@ -83,6 +83,7 @@ class XdsHttpFilterImpl {
   virtual std::optional<FilterConfig> GenerateFilterConfig(
       absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
+      std::set<std::string>* ecds_resources_needed,
       ValidationErrors* errors) const = 0;
 
   // Generates a Config from the xDS filter config proto.
@@ -90,6 +91,7 @@ class XdsHttpFilterImpl {
   virtual std::optional<FilterConfig> GenerateFilterConfigOverride(
       absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
+      std::set<std::string>* ecds_resources_needed,
       ValidationErrors* errors) const = 0;
 
   // C-core channel filter implementation.

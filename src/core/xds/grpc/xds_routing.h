@@ -31,6 +31,7 @@
 #include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/xds/grpc/xds_ecds.h"
 #include "src/core/xds/grpc/xds_http_filter_registry.h"
 #include "src/core/xds/grpc/xds_listener.h"
 #include "src/core/xds/grpc/xds_route_config.h"
@@ -92,6 +93,8 @@ class XdsRouting final {
       const XdsHttpFilterRegistry& http_filter_registry,
       const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
           http_filters,
+      const std::map<absl::string_view, std::shared_ptr<const XdsEcdsResource>>&
+          ecds_resources,
       const XdsRouteConfigResource::VirtualHost& vhost,
       const XdsRouteConfigResource::Route& route,
       const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
@@ -104,6 +107,8 @@ class XdsRouting final {
       const XdsHttpFilterRegistry& http_filter_registry,
       const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
           http_filters,
+      const std::map<absl::string_view, std::shared_ptr<const XdsEcdsResource>>&
+          ecds_resources,
       const ChannelArgs& args);
 };
 

@@ -49,6 +49,11 @@ std::string XdsListenerResource::HttpConnectionManager::ToString() const {
     contents.push_back(absl::StrCat("http_filters=[",
                                     absl::StrJoin(filter_strings, ", "), "]"));
   }
+  if (!ecds_resources_needed.empty()) {
+    contents.push_back(
+        absl::StrCat("ecds_resources_needed=[",
+                     absl::StrJoin(ecds_resources_needed, ", "), "]"));
+  }
   return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
 
@@ -58,7 +63,13 @@ std::string XdsListenerResource::HttpConnectionManager::ToString() const {
 
 std::string XdsListenerResource::HttpConnectionManager::HttpFilter::ToString()
     const {
-  return absl::StrCat("{name=", name, ", config=", config.ToString(), "}");
+  std::string details = Match(
+      config,
+      [&](const XdsHttpFilterImpl::FilterConfig& config) {
+        return absl::StrCat("config=", config.ToString());
+      },
+      [&](const UseEcds&) -> std::string { return "use_ecds"; });
+  return absl::StrCat("{name=", name, ", ", details, "}");
 }
 
 //

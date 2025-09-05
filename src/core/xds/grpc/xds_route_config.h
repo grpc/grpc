@@ -207,10 +207,12 @@ struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
 
   std::vector<VirtualHost> virtual_hosts;
   ClusterSpecifierPluginMap cluster_specifier_plugin_map;
+  std::set<std::string> ecds_resources_needed;
 
   bool operator==(const XdsRouteConfigResource& other) const {
     return virtual_hosts == other.virtual_hosts &&
-           cluster_specifier_plugin_map == other.cluster_specifier_plugin_map;
+           cluster_specifier_plugin_map == other.cluster_specifier_plugin_map &&
+           ecds_resources_needed == other.ecds_resources_needed;
   }
   std::string ToString() const;
 };

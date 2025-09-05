@@ -6006,6 +6006,25 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_ecds",
+    srcs = [
+        "xds/grpc/xds_ecds.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_ecds.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "xds_http_filter",
+        "xds_listener",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_health_status",
     srcs = [
         "xds/grpc/xds_health_status.cc",
@@ -6361,6 +6380,7 @@ grpc_cc_library(
         "xds_cluster",
         "xds_common_types",
         "xds_credentials",
+        "xds_ecds",
         "xds_endpoint",
         "xds_extension_upb",
         "xds_file_watcher_certificate_provider_factory",
@@ -6522,6 +6542,7 @@ grpc_cc_library(
         "xds_certificate_provider_store",
         "xds_common_types",
         "xds_credentials",
+        "xds_ecds",
         "xds_http_filter",
         "xds_listener",
         "xds_route_config",
@@ -7789,6 +7810,7 @@ grpc_cc_library(
         "match",
         "ref_counted",
         "xds_cluster",
+        "xds_ecds",
         "xds_endpoint",
         "xds_listener",
         "xds_route_config",
@@ -7866,6 +7888,7 @@ grpc_cc_library(
         "slice",
         "time",
         "xds_dependency_manager",
+        "xds_ecds",
         "xds_http_filter",
         "xds_listener",
         "xds_route_config",

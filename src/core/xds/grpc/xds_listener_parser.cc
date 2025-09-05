@@ -54,6 +54,7 @@
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
+#include "src/core/xds/grpc/xds_ecds.h"
 #include "src/core/xds/grpc/xds_route_config_parser.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "upb/text/encode.h"
@@ -242,8 +243,17 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
       const bool is_optional =
           envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_is_optional(
               http_filter);
-      // typed_config
-      {
+      // config_discovery or typed_config
+      if (XdsEcdsEnabled() &&
+          envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_has_config_discovery(
+              http_filter)) {
+        ValidationErrors::ScopedField field(errors, ".config_discovery");
+        http_connection_manager.http_filters.emplace_back(
+            XdsListenerResource::HttpConnectionManager::HttpFilter{
+                std::string(name),
+                XdsListenerResource::HttpConnectionManager::HttpFilter::UseEcds{}});
+        http_connection_manager.ecds_resources_needed.insert(std::string(name));
+      } else {
         ValidationErrors::ScopedField field(errors, ".typed_config");
         const google_protobuf_Any* typed_config =
             envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_typed_config(
@@ -265,8 +275,9 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
           continue;
         }
         std::optional<XdsHttpFilterImpl::FilterConfig> filter_config =
-            filter_impl->GenerateFilterConfig(name, context,
-                                              std::move(*extension), errors);
+            filter_impl->GenerateFilterConfig(
+                name, context, std::move(*extension),
+                &http_connection_manager.ecds_resources_needed, errors);
         if (filter_config.has_value()) {
           http_connection_manager.http_filters.emplace_back(
               XdsListenerResource::HttpConnectionManager::HttpFilter{
@@ -279,28 +290,44 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
       errors->AddError("expected at least one HTTP filter");
     }
     // Make sure that the last filter is terminal and non-last filters are
-    // non-terminal. Note that this check is being performed in a separate loop
-    // to take care of the case where there are two terminal filters in the list
-    // out of which only one gets added in the final list.
+    // non-terminal. Note that this check is being performed in a separate
+    // loop to take care of the case where there are two terminal filters in
+    // the list, but only one gets added to the list due to the other
+    // being optional and not supported.
     for (const auto& http_filter : http_connection_manager.http_filters) {
-      const XdsHttpFilterImpl* filter_impl =
-          http_filter_registry.GetFilterForType(
-              http_filter.config.config_proto_type_name);
+      const auto* config =
+          std::get_if<XdsHttpFilterImpl::FilterConfig>(&http_filter.config);
+      // For all but the last filter, if the filter config is inlined,
+      // then it must not be terminal.  If the config is in a separate
+      // ECDS resource, we can't validate it here, but we instead take
+      // care of that when we validate the ECDS resource.
       if (&http_filter != &http_connection_manager.http_filters.back()) {
-        // Filters before the last filter must not be terminal.
-        if (filter_impl->IsTerminalFilter()) {
-          errors->AddError(
-              absl::StrCat("terminal filter for config type ",
-                           http_filter.config.config_proto_type_name,
-                           " must be the last filter in the chain"));
+        if (config != nullptr) {
+          const XdsHttpFilterImpl* filter_impl =
+              http_filter_registry.GetFilterForType(
+                  config->config_proto_type_name);
+          if (filter_impl->IsTerminalFilter()) {
+            errors->AddError(
+                absl::StrCat("terminal filter for config type ",
+                             config->config_proto_type_name,
+                             " must be the last filter in the chain"));
+          }
         }
       } else {
-        // The last filter must be terminal.
-        if (!filter_impl->IsTerminalFilter()) {
-          errors->AddError(
-              absl::StrCat("non-terminal filter for config type ",
-                           http_filter.config.config_proto_type_name,
-                           " is the last filter in the chain"));
+        // The last filter in the list must not use ECDS and must be
+        // terminal.
+        if (config == nullptr) {
+          errors->AddError("last filter in the chain must not use ECDS");
+        } else {
+          const XdsHttpFilterImpl* filter_impl =
+              http_filter_registry.GetFilterForType(
+                  config->config_proto_type_name);
+          if (!filter_impl->IsTerminalFilter()) {
+            errors->AddError(
+                absl::StrCat("non-terminal filter for config type ",
+                             config->config_proto_type_name,
+                             " is the last filter in the chain"));
+          }
         }
       }
     }

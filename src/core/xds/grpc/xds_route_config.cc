@@ -270,6 +270,11 @@ std::string XdsRouteConfigResource::ToString() const {
     parts.push_back(absl::StrFormat("%s={%s}\n", name, plugin));
   }
   parts.push_back("}");
+  if (!ecds_resources_needed.empty()) {
+    parts.push_back(absl::StrCat("ecds_resources_needed=[",
+                                 absl::StrJoin(ecds_resources_needed, ", "),
+                                 "]\n"));
+  }
   return absl::StrJoin(parts, "");
 }
 

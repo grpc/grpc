@@ -50,8 +50,12 @@ struct XdsListenerResource : public XdsResourceType::ResourceData {
     Duration http_max_stream_duration;
 
     struct HttpFilter {
+      struct UseEcds {
+        bool operator==(const UseEcds& /*other*/) const { return true; }
+      };
+
       std::string name;
-      XdsHttpFilterImpl::FilterConfig config;
+      std::variant<XdsHttpFilterImpl::FilterConfig, UseEcds> config;
 
       bool operator==(const HttpFilter& other) const {
         return name == other.name && config == other.config;
@@ -60,6 +64,8 @@ struct XdsListenerResource : public XdsResourceType::ResourceData {
       std::string ToString() const;
     };
     std::vector<HttpFilter> http_filters;
+
+    std::set<std::string> ecds_resources_needed;
 
     bool operator==(const HttpConnectionManager& other) const {
       if (std::holds_alternative<std::string>(route_config)) {
@@ -73,7 +79,8 @@ struct XdsListenerResource : public XdsResourceType::ResourceData {
         if (!(*rc1 == **rc2)) return false;
       }
       return http_max_stream_duration == other.http_max_stream_duration &&
-             http_filters == other.http_filters;
+             http_filters == other.http_filters &&
+             ecds_resources_needed == other.ecds_resources_needed;
     }
 
     std::string ToString() const;

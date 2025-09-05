@@ -42,6 +42,8 @@
 
 namespace grpc_core {
 
+bool XdsEcdsEnabled();
+
 class GrpcXdsBootstrap final : public XdsBootstrap {
  public:
   class GrpcNode final : public Node {
