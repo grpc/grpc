@@ -666,6 +666,7 @@ static void test_default_ssl_roots(void) {
   // First let's get the root through the override: override the config to an
   // invalid value.
   overrides.default_ssl_roots_file_path = "";
+  overrides.not_use_system_ssl_roots = true;
   grpc_core::ConfigVars::SetOverrides(overrides);
   grpc_set_ssl_roots_override_callback(override_roots_success);
   grpc_slice roots =

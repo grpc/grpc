@@ -600,6 +600,10 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
       result = std::move(*slice);
     }
   }
+  // Try loading roots from OS trust store if flag is enabled.
+  if (result.empty() && !ConfigVars::Get().NotUseSystemSslRoots()) {
+    result = Slice(LoadSystemRootCerts());
+  }
   // Try overridden roots if needed.
   grpc_ssl_roots_override_result ovrd_res = GRPC_SSL_ROOTS_OVERRIDE_FAIL;
   if (result.empty() && ssl_roots_override_cb != nullptr) {
@@ -612,10 +616,6 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
           strlen(pem_root_certs) + 1);  // nullptr terminator.
     }
     gpr_free(pem_root_certs);
-  }
-  // Try loading roots from OS trust store if flag is enabled.
-  if (result.empty() && !ConfigVars::Get().NotUseSystemSslRoots()) {
-    result = Slice(LoadSystemRootCerts());
   }
   // Fallback to roots manually shipped with gRPC.
   if (result.empty() && ovrd_res != GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY) {
