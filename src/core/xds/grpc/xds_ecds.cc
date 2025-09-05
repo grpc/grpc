@@ -16,14 +16,23 @@
 
 #include "src/core/xds/grpc/xds_ecds.h"
 
+#include <vector>
+
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 
 namespace grpc_core {
 
 using HttpFilter = XdsListenerResource::HttpConnectionManager::HttpFilter;
 
 std::string XdsEcdsResource::ToString() const {
-  return absl::StrCat("{config=", config.ToString(), "}");
+  std::vector<std::string> parts = {absl::StrCat("config=", config.ToString())};
+  if (!ecds_resources_needed.empty()) {
+    parts.push_back(absl::StrCat("ecds_resources_needed=[",
+                                 absl::StrJoin(ecds_resources_needed, ", "),
+                                 "]"));
+  }
+  return absl::StrCat("{", absl::StrJoin(parts, ", "), "}");
 }
 
 const XdsHttpFilterImpl::FilterConfig& GetHttpFilterConfig(

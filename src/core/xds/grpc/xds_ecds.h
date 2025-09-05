@@ -31,9 +31,11 @@ namespace grpc_core {
 
 struct XdsEcdsResource : public XdsResourceType::ResourceData {
   XdsHttpFilterImpl::FilterConfig config;
+  std::set<std::string> ecds_resources_needed;
 
   bool operator==(const XdsEcdsResource& other) const {
-    return config == other.config;
+    return config == other.config &&
+           ecds_resources_needed == other.ecds_resources_needed;
   }
 
   std::string ToString() const;
