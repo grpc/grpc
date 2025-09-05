@@ -192,8 +192,11 @@ const grpc_channel_args* g_channel_args ABSL_GUARDED_BY(*g_mu) = nullptr;
 NoDestruct<std::map<absl::string_view, GrpcXdsClient*>> g_xds_client_map
     ABSL_GUARDED_BY(*g_mu);
 char* g_fallback_bootstrap_config ABSL_GUARDED_BY(*g_mu) = nullptr;
+NoDestruct<std::shared_ptr<GrpcXdsBootstrap>> g_parsed_bootstrap
+    ABSL_GUARDED_BY(*g_mu);
 
-absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
+absl::StatusOr<std::string> FindBootstrapContents()
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(*g_mu) {
   // First, try GRPC_XDS_BOOTSTRAP env var.
   auto path = GetEnv("GRPC_XDS_BOOTSTRAP");
   if (path.has_value()) {
@@ -214,10 +217,10 @@ absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
     return std::move(*env_config);
   }
   // Finally, try fallback config.
-  if (fallback_config != nullptr) {
+  if (g_fallback_bootstrap_config != nullptr) {
     GRPC_TRACE_LOG(xds_client, INFO)
         << "Got bootstrap contents from fallback config";
-    return fallback_config;
+    return g_fallback_bootstrap_config;
   }
   // No bootstrap config found.
   return absl::FailedPreconditionError(
@@ -273,19 +276,23 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
       return xds_client.TakeAsSubclass<GrpcXdsClient>();
     }
   }
-  // It doesn't exist, so we'll create it.
-  // First, find bootstrap contents.
-  auto bootstrap_contents = GetBootstrapContents(g_fallback_bootstrap_config);
-  if (!bootstrap_contents.ok()) return bootstrap_contents.status();
-  GRPC_TRACE_LOG(xds_client, INFO)
-      << "xDS bootstrap contents: " << *bootstrap_contents;
-  // Parse bootstrap.
-  auto bootstrap = GrpcXdsBootstrap::Create(*bootstrap_contents);
-  if (!bootstrap.ok()) return bootstrap.status();
+  // The XdsClient doesn't exist, so we'll create it.
+  // If the bootstrap hasn't already been parsed, do that.
+  if (*g_parsed_bootstrap == nullptr) {
+    // First, find bootstrap contents.
+    auto bootstrap_contents = FindBootstrapContents();
+    if (!bootstrap_contents.ok()) return bootstrap_contents.status();
+    GRPC_TRACE_LOG(xds_client, INFO)
+        << "xDS bootstrap contents: " << *bootstrap_contents;
+    // Parse bootstrap.
+    auto bootstrap = GrpcXdsBootstrap::Create(*bootstrap_contents);
+    if (!bootstrap.ok()) return bootstrap.status();
+    *g_parsed_bootstrap = std::move(*bootstrap);
+  }
   // Instantiate XdsClient.
   auto channel_args = ChannelArgs::FromC(g_channel_args);
   auto xds_client = MakeRefCounted<GrpcXdsClient>(
-      key, std::move(*bootstrap), channel_args,
+      key, *g_parsed_bootstrap, channel_args,
       MakeRefCounted<GrpcXdsTransportFactory>(channel_args),
       GetStatsPluginGroupForKeyAndChannelArgs(key, args));
   g_xds_client_map->emplace(xds_client->key(), xds_client.get());
@@ -347,6 +354,7 @@ void GrpcXdsClient::Orphaned() {
   auto it = g_xds_client_map->find(key_);
   if (it != g_xds_client_map->end() && it->second == this) {
     g_xds_client_map->erase(it);
+    if (g_xds_client_map->empty()) g_parsed_bootstrap->reset();
   }
 }
 
@@ -430,6 +438,7 @@ void SetXdsChannelArgsForTest(grpc_channel_args* args) {
 void UnsetGlobalXdsClientsForTest() {
   MutexLock lock(g_mu);
   g_xds_client_map->clear();
+  g_parsed_bootstrap->reset();
 }
 
 void SetXdsFallbackBootstrapConfig(const char* config) {
