@@ -87,7 +87,7 @@ def get_dependencies_json(
 
     if repo != None:
         raise RuntimeError(f"Unterminated repo {repo}")
-    print(f"Ignored attributes: {", ".join(sorted(ignored_attributes))}")
+    print("Ignored attributes: " + ", ".join(sorted(ignored_attributes)))
     return result
 
 
