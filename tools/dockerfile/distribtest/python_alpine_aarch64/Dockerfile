@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # this an aarch64 image
-FROM arm64v8/python:3.13-alpine
+FROM arm64v8/python:3.14.0rc1-alpine
 
 # Our test infrastructure demands bash
 RUN apk update && apk add bash
