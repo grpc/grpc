@@ -53,6 +53,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/cleanup/cleanup.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
@@ -123,28 +124,8 @@ absl::Status SetRequestDNSServer(absl::string_view dns_server,
                                  ares_channel* channel) {
   GRPC_TRACE_LOG(cares_resolver, INFO)
       << "(EventEngine c-ares resolver) Using DNS server " << dns_server;
-  grpc_resolved_address addr;
-  struct ares_addr_port_node dns_server_addr = {};
-  if (grpc_parse_ipv4_hostport(dns_server, &addr, /*log_errors=*/false)) {
-    dns_server_addr.family = AF_INET;
-    struct sockaddr_in* in = reinterpret_cast<struct sockaddr_in*>(addr.addr);
-    memcpy(&dns_server_addr.addr.addr4, &in->sin_addr, sizeof(struct in_addr));
-    dns_server_addr.tcp_port = grpc_sockaddr_get_port(&addr);
-    dns_server_addr.udp_port = grpc_sockaddr_get_port(&addr);
-  } else if (grpc_parse_ipv6_hostport(dns_server, &addr,
-                                      /*log_errors=*/false)) {
-    dns_server_addr.family = AF_INET6;
-    struct sockaddr_in6* in6 =
-        reinterpret_cast<struct sockaddr_in6*>(addr.addr);
-    memcpy(&dns_server_addr.addr.addr6, &in6->sin6_addr,
-           sizeof(struct in6_addr));
-    dns_server_addr.tcp_port = grpc_sockaddr_get_port(&addr);
-    dns_server_addr.udp_port = grpc_sockaddr_get_port(&addr);
-  } else {
-    return absl::InvalidArgumentError(
-        absl::StrCat("Cannot parse authority: ", dns_server));
-  }
-  int status = ares_set_servers_ports(*channel, &dns_server_addr);
+  int status =
+      ares_set_servers_ports_csv(*channel, std::string(dns_server).c_str());
   if (status != ARES_SUCCESS) {
     return AresStatusToAbslStatus(status, ares_strerror(status));
   }
@@ -368,19 +349,22 @@ void AresResolver::LookupHostname(
   callback_map_.emplace(++id_, std::move(callback));
   auto* resolver_arg = new HostnameQueryArg(this, id_, name, port);
   CHECK_NE(channel_, nullptr);
+  struct ares_addrinfo_hints af_inet = {0, AF_INET, 0, 0};
   if (AresIsIpv6LoopbackAvailable()) {
     // Note that using AF_UNSPEC for both IPv6 and IPv4 queries does not work in
     // all cases, e.g. for localhost:<> it only gets back the IPv6 result (i.e.
     // ::1).
     resolver_arg->pending_requests = 2;
-    ares_gethostbyname(channel_, std::string(host).c_str(), AF_INET,
-                       &AresResolver::OnHostbynameDoneLocked, resolver_arg);
-    ares_gethostbyname(channel_, std::string(host).c_str(), AF_INET6,
-                       &AresResolver::OnHostbynameDoneLocked, resolver_arg);
+    ares_getaddrinfo(channel_, std::string(host).c_str(), nullptr, &af_inet,
+                     &AresResolver::OnHostbynameDoneLocked, resolver_arg);
+    struct ares_addrinfo_hints af_inet6 = af_inet;
+    af_inet6.ai_family = AF_INET6;
+    ares_getaddrinfo(channel_, std::string(host).c_str(), nullptr, &af_inet6,
+                     &AresResolver::OnHostbynameDoneLocked, resolver_arg);
   } else {
     resolver_arg->pending_requests = 1;
-    ares_gethostbyname(channel_, std::string(host).c_str(), AF_INET,
-                       &AresResolver::OnHostbynameDoneLocked, resolver_arg);
+    ares_getaddrinfo(channel_, std::string(host).c_str(), nullptr, &af_inet,
+                     &AresResolver::OnHostbynameDoneLocked, resolver_arg);
   }
   CheckSocketsLocked();
   MaybeStartTimerLocked();
@@ -416,8 +400,9 @@ void AresResolver::LookupSRV(
   callback_map_.emplace(++id_, std::move(callback));
   auto* resolver_arg = new QueryArg(this, id_, host);
   CHECK_NE(channel_, nullptr);
-  ares_query(channel_, std::string(host).c_str(), ns_c_in, ns_t_srv,
-             &AresResolver::OnSRVQueryDoneLocked, resolver_arg);
+  ares_query_dnsrec(channel_, std::string(host).c_str(), ARES_CLASS_IN,
+                    ARES_REC_TYPE_SRV, &AresResolver::OnSRVQueryDoneLocked,
+                    resolver_arg, nullptr);
   CheckSocketsLocked();
   MaybeStartTimerLocked();
 }
@@ -449,11 +434,31 @@ void AresResolver::LookupTXT(
     return;
   }
   grpc_core::MutexLock lock(&mutex_);
+  CHECK_NE(channel_, nullptr);
+  ares_dns_record_t* dns_record;
+  ares_status_t status = ares_dns_record_create(
+      &dns_record, 0, 0, ARES_OPCODE_QUERY, ARES_RCODE_NOERROR);
+  if (status != ARES_SUCCESS) {
+    event_engine_->Run([status, callback = std::move(callback)]() mutable {
+      callback(absl::InternalError(absl::StrFormat(
+          "Unable to create c-ares ares_dns_record structure: %d", status)));
+    });
+    return;
+  }
+  absl::Cleanup cleanup = [=]() { ares_dns_record_destroy(dns_record); };
+  status = ares_dns_record_query_add(dns_record, std::string(host).c_str(),
+                                     ARES_REC_TYPE_TXT, ARES_CLASS_IN);
+  if (status != ARES_SUCCESS) {
+    event_engine_->Run([status, callback = std::move(callback)]() mutable {
+      callback(absl::InternalError(
+          absl::StrFormat("Unable to add query: %d", status)));
+    });
+    return;
+  }
   callback_map_.emplace(++id_, std::move(callback));
   auto* resolver_arg = new QueryArg(this, id_, host);
-  CHECK_NE(channel_, nullptr);
-  ares_search(channel_, std::string(host).c_str(), ns_c_in, ns_t_txt,
-              &AresResolver::OnTXTDoneLocked, resolver_arg);
+  ares_search_dnsrec(channel_, dns_record, &AresResolver::OnTXTDoneLocked,
+                     resolver_arg);
   CheckSocketsLocked();
   MaybeStartTimerLocked();
 }
@@ -648,10 +653,17 @@ void AresResolver::OnAresBackupPollAlarm() {
 
 void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
                                           int /*timeouts*/,
-                                          struct hostent* hostent) {
+                                          struct ares_addrinfo* addrinfo) {
+  absl::Cleanup cleanups = [=]() { ares_freeaddrinfo(addrinfo); };
   auto* hostname_qa = static_cast<HostnameQueryArg*>(arg);
   CHECK_GT(hostname_qa->pending_requests--, 0);
   auto* ares_resolver = hostname_qa->ares_resolver;
+  // Use an inlined vector as a stack-allocated buffer for the sockaddr.
+  // The size is based on `sockaddr_storage`, a standard type guaranteed to be
+  // large enough for any address family's sockaddr. This avoids heap
+  // allocations for typical cases while still allowing the buffer to grow if an
+  // unusually large address is encountered.
+  absl::InlinedVector<std::byte, sizeof(sockaddr_storage)> ss;
   if (status != ARES_SUCCESS) {
     std::string error_msg =
         absl::StrFormat("address lookup failed for %s: %s",
@@ -665,53 +677,52 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
         << "(EventEngine c-ares resolver) resolver:" << ares_resolver
         << " OnHostbynameDoneLocked name=" << hostname_qa->query_name
         << " ARES_SUCCESS";
-    for (size_t i = 0; hostent->h_addr_list[i] != nullptr; i++) {
+    for (struct ares_addrinfo_node* node = addrinfo->nodes; node != nullptr;
+         node = node->ai_next) {
       if (hostname_qa->result.size() == kMaxRecordSize) {
         LOG(ERROR) << "A/AAAA response exceeds maximum record size of 65536";
         break;
       }
-      switch (hostent->h_addrtype) {
+      ss.resize(node->ai_addrlen);
+      memcpy(ss.data(), node->ai_addr, node->ai_addrlen);
+      sockaddr* sa = reinterpret_cast<sockaddr*>(ss.data());
+      // Set the port on the copied struct.
+      if (sa->sa_family == AF_INET) {
+        reinterpret_cast<sockaddr_in*>(sa)->sin_port = htons(hostname_qa->port);
+      } else if (sa->sa_family == AF_INET6) {
+        reinterpret_cast<sockaddr_in6*>(sa)->sin6_port =
+            htons(hostname_qa->port);
+      }
+      hostname_qa->result.emplace_back(sa, node->ai_addrlen);
+      void* addr_ptr = nullptr;
+      if (node->ai_family == AF_INET) {
+        addr_ptr = &reinterpret_cast<sockaddr_in*>(sa)->sin_addr;
+      } else if (node->ai_family == AF_INET6) {
+        addr_ptr = &reinterpret_cast<sockaddr_in6*>(sa)->sin6_addr;
+      }
+      std::array<char, std::max(INET6_ADDRSTRLEN, INET_ADDRSTRLEN)> output;
+      ares_inet_ntop(node->ai_family, addr_ptr, output.data(), output.size());
+      switch (node->ai_family) {
         case AF_INET6: {
-          size_t addr_len = sizeof(struct sockaddr_in6);
-          struct sockaddr_in6 addr;
-          memset(&addr, 0, addr_len);
-          memcpy(&addr.sin6_addr, hostent->h_addr_list[i],
-                 sizeof(struct in6_addr));
-          addr.sin6_family = static_cast<unsigned char>(hostent->h_addrtype);
-          addr.sin6_port = htons(hostname_qa->port);
-          hostname_qa->result.emplace_back(
-              reinterpret_cast<const sockaddr*>(&addr), addr_len);
-          char output[INET6_ADDRSTRLEN];
-          ares_inet_ntop(AF_INET6, &addr.sin6_addr, output, INET6_ADDRSTRLEN);
           GRPC_TRACE_LOG(cares_resolver, INFO)
               << "(EventEngine c-ares resolver) resolver:" << ares_resolver
-              << " c-ares resolver gets a AF_INET6 result: \n  addr: " << output
-              << "\n  port: " << hostname_qa->port
-              << "\n  sin6_scope_id: " << addr.sin6_scope_id;
+              << " c-ares resolver gets a AF_INET6 result: \n  addr: "
+              << output.data() << "\n  port: " << hostname_qa->port
+              << "\n  sin6_scope_id: "
+              << reinterpret_cast<sockaddr_in6*>(node->ai_addr)->sin6_scope_id;
           break;
         }
         case AF_INET: {
-          size_t addr_len = sizeof(struct sockaddr_in);
-          struct sockaddr_in addr;
-          memset(&addr, 0, addr_len);
-          memcpy(&addr.sin_addr, hostent->h_addr_list[i],
-                 sizeof(struct in_addr));
-          addr.sin_family = static_cast<unsigned char>(hostent->h_addrtype);
-          addr.sin_port = htons(hostname_qa->port);
-          hostname_qa->result.emplace_back(
-              reinterpret_cast<const sockaddr*>(&addr), addr_len);
-          char output[INET_ADDRSTRLEN];
-          ares_inet_ntop(AF_INET, &addr.sin_addr, output, INET_ADDRSTRLEN);
           GRPC_TRACE_LOG(cares_resolver, INFO)
               << "(EventEngine c-ares resolver) resolver:" << ares_resolver
-              << " c-ares resolver gets a AF_INET result: \n  addr: " << output
-              << "\n  port: " << hostname_qa->port;
+              << " c-ares resolver gets a AF_INET result: \n  addr: "
+              << output.data() << "\n  port: " << hostname_qa->port;
           break;
         }
         default:
           grpc_core::Crash(
               absl::StrFormat("resolver:%p Received invalid type of address %d",
-                              ares_resolver, hostent->h_addrtype));
+                              ares_resolver, node->ai_family));
       }
     }
   }
@@ -743,8 +754,9 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
   }
 }
 
-void AresResolver::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
-                                        unsigned char* abuf, int alen) {
+void AresResolver::OnSRVQueryDoneLocked(void* arg, ares_status_t status,
+                                        size_t /*timeouts*/,
+                                        const ares_dns_record_t* dnsrec) {
   std::unique_ptr<QueryArg> qa(static_cast<QueryArg*>(arg));
   auto* ares_resolver = qa->ares_resolver;
   auto nh = ares_resolver->callback_map_.extract(qa->callback_map_id);
@@ -774,31 +786,23 @@ void AresResolver::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
   GRPC_TRACE_LOG(cares_resolver, INFO)
       << "(EventEngine c-ares resolver) resolver:" << ares_resolver
       << " OnSRVQueryDoneLocked name=" << qa->query_name << " ARES_SUCCESS";
-  struct ares_srv_reply* reply = nullptr;
-  status = ares_parse_srv_reply(abuf, alen, &reply);
-  GRPC_TRACE_LOG(cares_resolver, INFO)
-      << "(EventEngine c-ares resolver) resolver:" << ares_resolver
-      << " ares_parse_srv_reply: " << status;
-  if (status != ARES_SUCCESS) {
-    fail("Failed to parse SRV reply");
-    return;
-  }
   std::vector<EventEngine::DNSResolver::SRVRecord> result;
-  for (struct ares_srv_reply* srv_it = reply; srv_it != nullptr;
-       srv_it = srv_it->next) {
-    if (result.size() == kMaxRecordSize) {
-      LOG(ERROR) << "SRV response exceeds maximum record size of 65536";
-      break;
+  size_t count = ares_dns_record_rr_cnt(dnsrec, ARES_SECTION_ANSWER);
+  for (size_t i = 0; i < count; ++i) {
+    const ares_dns_rr_t* record =
+        ares_dns_record_rr_get_const(dnsrec, ARES_SECTION_ANSWER, i);
+    if (ares_dns_rr_get_type(record) == ARES_REC_TYPE_SRV) {
+      if (result.size() == kMaxRecordSize) {
+        LOG(ERROR) << "SRV response exceeds maximum record size of 65536";
+        break;
+      }
+      EventEngine::DNSResolver::SRVRecord srv_record;
+      srv_record.host = ares_dns_rr_get_str(record, ARES_RR_SRV_TARGET);
+      srv_record.priority = ares_dns_rr_get_u16(record, ARES_RR_SRV_PRIORITY);
+      srv_record.weight = ares_dns_rr_get_u16(record, ARES_RR_SRV_WEIGHT);
+      srv_record.port = ares_dns_rr_get_u16(record, ARES_RR_SRV_PORT);
+      result.push_back(std::move(srv_record));
     }
-    EventEngine::DNSResolver::SRVRecord record;
-    record.host = srv_it->host;
-    record.port = srv_it->port;
-    record.priority = srv_it->priority;
-    record.weight = srv_it->weight;
-    result.push_back(std::move(record));
-  }
-  if (reply != nullptr) {
-    ares_free_data(reply);
   }
   ares_resolver->event_engine_->Run(
       [callback = std::move(callback), result = std::move(result)]() mutable {
@@ -806,8 +810,9 @@ void AresResolver::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
       });
 }
 
-void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
-                                   unsigned char* buf, int len) {
+void AresResolver::OnTXTDoneLocked(void* arg, ares_status_t status,
+                                   size_t /*timeouts*/,
+                                   const ares_dns_record_t* dnsrec) {
   std::unique_ptr<QueryArg> qa(static_cast<QueryArg*>(arg));
   auto* ares_resolver = qa->ares_resolver;
   auto nh = ares_resolver->callback_map_.extract(qa->callback_map_id);
@@ -837,20 +842,30 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
   GRPC_TRACE_LOG(cares_resolver, INFO)
       << "(EventEngine c-ares resolver) resolver:" << ares_resolver
       << " OnTXTDoneLocked name=" << qa->query_name << " ARES_SUCCESS";
-  struct ares_txt_ext* reply = nullptr;
-  status = ares_parse_txt_reply_ext(buf, len, &reply);
-  if (status != ARES_SUCCESS) {
-    fail("Failed to parse TXT result");
-    return;
-  }
   std::vector<std::string> result;
-  for (struct ares_txt_ext* part = reply; part != nullptr; part = part->next) {
-    if (part->record_start) {
-      result.emplace_back(reinterpret_cast<char*>(part->txt), part->length);
-    } else {
-      absl::StrAppend(
-          &result.back(),
-          std::string(reinterpret_cast<char*>(part->txt), part->length));
+  const size_t an_cnt = ares_dns_record_rr_cnt(dnsrec, ARES_SECTION_ANSWER);
+  for (size_t i = 0; i < an_cnt; ++i) {
+    const ares_dns_rr_t* rr =
+        ares_dns_record_rr_get_const(dnsrec, ARES_SECTION_ANSWER, i);
+    if (!rr || ares_dns_rr_get_type(rr) != ARES_REC_TYPE_TXT) {
+      continue;
+    }
+    std::string* rec = nullptr;
+    const size_t n = ares_dns_rr_get_abin_cnt(rr, ARES_RR_TXT_DATA);
+    for (size_t j = 0; j < n; ++j) {
+      size_t chunk_len = 0;
+      const unsigned char* chunk =
+          ares_dns_rr_get_abin(rr, ARES_RR_TXT_DATA, j, &chunk_len);
+      if (chunk != nullptr && chunk_len > 0) {
+        if (rec == nullptr) {
+          rec = &result.emplace_back(reinterpret_cast<const char*>(chunk),
+                                     chunk_len);
+        } else {
+          absl::StrAppend(
+              rec, absl::string_view(reinterpret_cast<const char*>(chunk),
+                                     chunk_len));
+        }
+      }
     }
   }
   GRPC_TRACE_LOG(cares_resolver, INFO)
@@ -861,8 +876,6 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
       LOG(INFO) << record;
     }
   }
-  // Clean up.
-  ares_free_data(reply);
   ares_resolver->event_engine_->Run(
       [callback = std::move(callback), result = std::move(result)]() mutable {
         callback(std::move(result));
