@@ -14,6 +14,7 @@
 """Invocation-side implementation of gRPC Asyncio Python."""
 
 import asyncio
+import logging
 import sys
 from typing import Any, Iterable, List, Optional, Sequence
 
@@ -366,6 +367,7 @@ class Channel(_base_channel.Channel):
                         + "{}. ".format(StreamStreamClientInterceptor.__name__)
                     )
 
+        logging.info("Channel.init()")
         self._loop = cygrpc.get_working_loop()
         self._channel = cygrpc.AioChannel(
             _common.encode(target),
