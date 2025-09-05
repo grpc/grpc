@@ -129,19 +129,8 @@ class Http2ClientTransport final : public ClientTransport {
     return nullptr;
   }
 
-  auto TestOnlyEnqueueOutgoingFrame(Http2Frame frame) {
-    // TODO(tjagtap) : [PH2][P3] : See if making a sender in the constructor
-    // and using that always would be more efficient.
-    const size_t tokens = GetFrameMemoryUsage(frame);
-    return AssertResultType<absl::Status>(Map(
-        outgoing_frames_.MakeSender().Send(std::move(frame), tokens),
-        [](StatusFlag status) {
-          GRPC_HTTP2_CLIENT_DLOG
-              << "Http2ClientTransport::TestOnlyEnqueueOutgoingFrame status="
-              << status;
-          return (status.ok()) ? absl::OkStatus()
-                               : absl::InternalError("Failed to enqueue frame");
-        }));
+  auto TestOnlyTriggerWriteCycle() {
+    return Immediate(writable_stream_list_.ForceResolve());
   }
 
   auto TestOnlySendPing(absl::AnyInvocable<void()> on_initiate,
@@ -187,11 +176,6 @@ class Http2ClientTransport final : public ClientTransport {
 
   // Writing to the endpoint.
 
-  // Write the frames from MPSC queue to the endpoint. Frames sent from here
-  // will be DATA, HEADER, CONTINUATION and SETTINGS_ACK.  It is essential to
-  // preserve the order of these frames at the time of write.
-  auto WriteFromQueue(std::vector<Http2Frame>&& frames);
-
   // Write time sensitive control frames to the endpoint. Frames sent from here
   // will be:
   // 1. SETTINGS - This is first because for a new connection, SETTINGS MUST be
@@ -211,21 +195,13 @@ class Http2ClientTransport final : public ClientTransport {
   // Notify the control frames modules that the endpoint write is done.
   void NotifyControlFramesWriteDone();
 
-  // Returns a promise to keep writing in a Loop till a fail/close is
-  // received.
-  auto WriteLoop();
+  // Returns a promise to keep draining control frames and data frames from all
+  // the writable streams and write to the endpoint.
+  auto MultiplexerLoop();
 
-  // Returns a promise that will do the cleanup after the WriteLoop ends.
-  auto OnWriteLoopEnded();
-
-  // Returns a promise to keep draining data and control frames from all the
-  // active streams. This includes all stream specific frames like data, header,
-  // continuation and reset stream frames.
-  auto StreamMultiplexerLoop();
-
-  // Returns a promise that will do the cleanup after the StreamMultiplexerLoop
+  // Returns a promise that will do the cleanup after the MultiplexerLoop
   // ends.
-  auto OnStreamMultiplexerLoopEnded();
+  auto OnMultiplexerLoopEnded();
 
   // Returns a promise to fetch data from the callhandler and pass it further
   // down towards the endpoint.
@@ -233,26 +209,10 @@ class Http2ClientTransport final : public ClientTransport {
                         InterActivityMutex<uint32_t>::Lock lock,
                         ClientMetadataHandle metadata);
 
-  // Returns a promise to enqueue a frame to MPSC
-  auto EnqueueOutgoingFrame(Http2Frame frame) {
-    // TODO(tjagtap) : [PH2][P3] : See if making a sender in the constructor
-    // and using that always would be more efficient.
-    const size_t tokens = GetFrameMemoryUsage(frame);
-    return AssertResultType<absl::Status>(Map(
-        outgoing_frames_.MakeSender().Send(std::move(frame), tokens),
-        [self = RefAsSubclass<Http2ClientTransport>()](StatusFlag status) {
-          GRPC_HTTP2_CLIENT_DLOG
-              << "Http2ClientTransport::EnqueueOutgoingFrame status=" << status;
-          return (status.ok())
-                     ? absl::OkStatus()
-                     : self->HandleError(Http2Status::AbslConnectionError(
-                           absl::StatusCode::kInternal,
-                           "Failed to enqueue frame"));
-        }));
-  }
-
   // Force triggers a transport write cycle
-  auto TriggerWriteCycle() { return EnqueueOutgoingFrame(Http2EmptyFrame{}); }
+  auto TriggerWriteCycle() {
+    return Immediate(writable_stream_list_.ForceResolve());
+  }
 
   RefCountedPtr<Party> general_party_;
 
@@ -421,8 +381,6 @@ class Http2ClientTransport final : public ClientTransport {
     return stream_id;
   }
 
-  MpscReceiver<Http2Frame> outgoing_frames_;
-
   Mutex transport_mutex_;
   // TODO(tjagtap) : [PH2][P2] : Add to map in StartCall and clean this
   // mapping up in the on_done of the CallInitiator or CallHandler
@@ -555,6 +513,18 @@ class Http2ClientTransport final : public ClientTransport {
   grpc_closure* on_receive_settings_;
 
   uint32_t max_header_list_size_soft_limit_;
+  size_t target_max_write_size_;
+  size_t max_write_size_;
+
+  void SetTargetMaxWriteSize(const size_t target_max_write_size) {
+    GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport SetTargetMaxWriteSize "
+                           << " target_max_write_size changed: "
+                           << target_max_write_size_ << " -> "
+                           << target_max_write_size;
+    target_max_write_size_ = target_max_write_size;
+  }
+
+  size_t GetTargetMaxWriteSize() const { return target_max_write_size_; }
 
   // Ping related members
   // TODO(akshitpatel) : [PH2][P2] : Consider removing the timeout related
