@@ -538,6 +538,20 @@ class ClientChannelFilter::SubchannelWrapper final
           }
         }
       }
+      if (IsSubchannelWrapperCleanupOnOrphanEnabled()) {
+        // We need to make sure that the internal subchannel gets unreffed
+        // inside of the WorkSerializer, so that updates to the local
+        // subchannel pool are properly synchronized.  To that end, we
+        // drop our ref to the internal subchannel here.  We also cancel
+        // any watchers that were not properly cancelled, in case any of
+        // them are holding a ref to the internal subchannel.
+        for (const auto& [_, watcher] : watcher_map_) {
+          subchannel_->CancelConnectivityStateWatch(watcher);
+        }
+        watcher_map_.clear();
+        data_watchers_.clear();
+        subchannel_.reset();
+      }
       WeakUnref(DEBUG_LOCATION, "subchannel map cleanup");
     });
   }
@@ -549,7 +563,7 @@ class ClientChannelFilter::SubchannelWrapper final
     CHECK_EQ(watcher_wrapper, nullptr);
     watcher_wrapper = new WatcherWrapper(
         std::move(watcher),
-        RefAsSubclass<SubchannelWrapper>(DEBUG_LOCATION, "WatcherWrapper"));
+        WeakRefAsSubclass<SubchannelWrapper>(DEBUG_LOCATION, "WatcherWrapper"));
     subchannel_->WatchConnectivityState(
         RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface>(
             watcher_wrapper));
@@ -609,7 +623,7 @@ class ClientChannelFilter::SubchannelWrapper final
     WatcherWrapper(
         std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
             watcher,
-        RefCountedPtr<SubchannelWrapper> parent)
+        WeakRefCountedPtr<SubchannelWrapper> parent)
         : watcher_(std::move(watcher)), parent_(std::move(parent)) {}
 
     ~WatcherWrapper() override {
@@ -621,7 +635,6 @@ class ClientChannelFilter::SubchannelWrapper final
       GRPC_TRACE_LOG(client_channel, INFO)
           << "chand=" << parent_->chand_
           << ": connectivity change for subchannel wrapper " << parent_.get()
-          << " subchannel " << parent_->subchannel_.get()
           << "hopping into work_serializer";
       auto self = RefAsSubclass<WatcherWrapper>();
       parent_->chand_->work_serializer_->Run(
@@ -682,7 +695,7 @@ class ClientChannelFilter::SubchannelWrapper final
 
     std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
         watcher_;
-    RefCountedPtr<SubchannelWrapper> parent_;
+    WeakRefCountedPtr<SubchannelWrapper> parent_;
   };
 
   // A heterogenous lookup comparator for data watchers that allows
@@ -1015,11 +1028,7 @@ RefCountedPtr<SubchannelPoolInterface> GetSubchannelPool(
   if (args.GetBool(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL).value_or(false)) {
     return MakeRefCounted<LocalSubchannelPool>();
   }
-  if (IsShardGlobalConnectionPoolEnabled()) {
-    return GlobalSubchannelPool::instance();
-  } else {
-    return LegacyGlobalSubchannelPool::instance();
-  }
+  return GlobalSubchannelPool::instance();
 }
 
 }  // namespace
@@ -1871,7 +1880,7 @@ std::optional<absl::Status> ClientChannelFilter::CallData::CheckResolution(
   }
   // If the call was queued, add trace annotation.
   if (was_queued) {
-    auto* call_tracer = arena()->GetContext<CallTracerAnnotationInterface>();
+    auto* call_tracer = arena()->GetContext<CallSpan>();
     if (call_tracer != nullptr) {
       call_tracer->RecordAnnotation("Delayed name resolution complete.");
     }
@@ -2290,8 +2299,7 @@ class ClientChannelFilter::LoadBalancedCall::LbCallState final
   ServiceConfigCallData::CallAttributeInterface* GetCallAttribute(
       UniqueTypeName type) const override;
 
-  ClientCallTracerInterface::CallAttemptTracer* GetCallAttemptTracer()
-      const override;
+  CallAttemptTracer* GetCallAttemptTracer() const override;
 
  private:
   LoadBalancedCall* lb_call_;
@@ -2308,7 +2316,7 @@ ClientChannelFilter::LoadBalancedCall::LbCallState::GetCallAttribute(
   return service_config_call_data->GetCallAttribute(type);
 }
 
-ClientCallTracerInterface::CallAttemptTracer*
+CallAttemptTracer*
 ClientChannelFilter::LoadBalancedCall::LbCallState::GetCallAttemptTracer()
     const {
   return lb_call_->call_attempt_tracer();
@@ -2365,13 +2373,13 @@ class ClientChannelFilter::LoadBalancedCall::BackendMetricAccessor final
 
 namespace {
 
-ClientCallTracerInterface::CallAttemptTracer* CreateCallAttemptTracer(
-    Arena* arena, bool is_transparent_retry) {
-  auto* call_tracer = DownCast<ClientCallTracerInterface*>(
-      arena->GetContext<CallTracerAnnotationInterface>());
+CallAttemptTracer* CreateCallAttemptTracer(Arena* arena,
+                                           bool is_transparent_retry) {
+  auto* call_tracer = arena->GetContext<ClientCallTracer>();
   if (call_tracer == nullptr) return nullptr;
-  auto* tracer = call_tracer->StartNewAttempt(is_transparent_retry);
-  arena->SetContext<CallTracerInterface>(tracer);
+  auto* tracer = WrapCallAttemptTracer(
+      call_tracer->StartNewAttempt(is_transparent_retry), arena);
+  arena->SetContext<CallTracer>(tracer);
   return tracer;
 }
 

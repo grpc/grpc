@@ -124,9 +124,9 @@ class CdsLb final : public LoadBalancingPolicy {
  private:
   class Picker final : public SubchannelPicker {
    public:
-    Picker(RefCountedPtr<CdsLb> cds_lb,
-           RefCountedPtr<SubchannelPicker> child_picker)
-        : cds_lb_(std::move(cds_lb)), child_picker_(std::move(child_picker)) {}
+    Picker(CdsLb* cds_lb, RefCountedPtr<SubchannelPicker> child_picker)
+        : cluster_name_(cds_lb->cluster_name_),
+          child_picker_(std::move(child_picker)) {}
 
     PickResult Pick(PickArgs args) override {
       auto* call_state =
@@ -136,13 +136,13 @@ class CdsLb final : public LoadBalancingPolicy {
         call_attempt_tracer->SetOptionalLabel(
             ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey::
                 kBackendService,
-            cds_lb_->cluster_name_);
+            cluster_name_);
       }
       return child_picker_->Pick(args);
     }
 
    private:
-    RefCountedPtr<CdsLb> cds_lb_;
+    RefCountedStringValue cluster_name_;
     RefCountedPtr<SubchannelPicker> child_picker_;
   };
 
@@ -156,9 +156,7 @@ class CdsLb final : public LoadBalancingPolicy {
     void UpdateState(grpc_connectivity_state state, const absl::Status& status,
                      RefCountedPtr<SubchannelPicker> picker) override {
       parent_helper()->UpdateState(
-          state, status,
-          MakeRefCounted<Picker>(parent()->RefAsSubclass<CdsLb>(),
-                                 std::move(picker)));
+          state, status, MakeRefCounted<Picker>(parent(), std::move(picker)));
     }
   };
 

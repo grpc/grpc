@@ -101,9 +101,9 @@ OpenCensusClientFilter::MakeCallPromise(
       path != nullptr ? path->Ref() : grpc_core::Slice(),
       grpc_core::GetContext<grpc_core::Arena>(),
       OpenCensusTracingEnabled() && tracing_enabled_);
-  DCHECK_EQ(arena->GetContext<grpc_core::CallTracerAnnotationInterface>(),
-            nullptr);
-  grpc_core::SetContext<grpc_core::CallTracerAnnotationInterface>(tracer);
+  DCHECK_EQ(arena->GetContext<grpc_core::CallSpan>(), nullptr);
+  grpc_core::SetContext<grpc_core::CallSpan>(
+      grpc_core::WrapClientCallTracer(tracer, arena));
   return next_promise_factory(std::move(call_args));
 }
 
@@ -430,7 +430,8 @@ class OpenCensusClientInterceptor : public grpc::experimental::Interceptor {
             grpc::experimental::InterceptionHookPoints::POST_RECV_STATUS)) {
       auto* tracer = grpc_core::DownCast<OpenCensusCallTracer*>(
           grpc_call_get_arena(info_->client_context()->c_call())
-              ->GetContext<grpc_core::CallTracerAnnotationInterface>());
+              ->GetContext<grpc_core::CallSpan>()
+              ->span_impl());
       if (tracer != nullptr) {
         tracer->RecordApiLatency(absl::Now() - start_time_,
                                  static_cast<absl::StatusCode>(

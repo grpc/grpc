@@ -295,7 +295,7 @@ class HealthProducer::ConnectivityWatcher final
 // HealthProducer
 //
 
-void HealthProducer::Start(RefCountedPtr<Subchannel> subchannel) {
+void HealthProducer::Start(WeakRefCountedPtr<Subchannel> subchannel) {
   GRPC_TRACE_LOG(health_check_client, INFO)
       << "HealthProducer " << this << ": starting with subchannel "
       << subchannel.get();
@@ -419,7 +419,7 @@ void HealthWatcher::SetSubchannel(Subchannel* subchannel) {
   // This needs to be done outside of the lambda passed to
   // GetOrAddDataProducer() to avoid deadlocking by re-acquiring the
   // subchannel lock while already holding it.
-  if (created) producer_->Start(subchannel->Ref());
+  if (created) producer_->Start(subchannel->WeakRef());
   // Register ourself with the producer.
   producer_->AddWatcher(this, health_check_service_name_);
   GRPC_TRACE_LOG(health_check_client, INFO)

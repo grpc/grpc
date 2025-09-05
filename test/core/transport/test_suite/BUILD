@@ -113,8 +113,11 @@ grpc_cc_library(
         "fuzztest",
     ],
     deps = [
+        "//:config",
+        "//:grpc_base",
         "//src/core:chaotic_good_config",
         "//test/core/call/yodel:yodel_test",
+        "//test/core/event_engine/fuzzing_event_engine",
     ],
 )
 

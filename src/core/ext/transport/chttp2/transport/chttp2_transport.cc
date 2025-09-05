@@ -954,7 +954,7 @@ grpc_chttp2_stream::grpc_chttp2_stream(grpc_chttp2_transport* t,
       arena(arena),
       flow_control(&t->flow_control),
       call_tracer_wrapper(this),
-      call_tracer(arena->GetContext<grpc_core::CallTracerInterface>()) {
+      call_tracer(arena->GetContext<grpc_core::CallTracer>()) {
   t->streams_allocated.fetch_add(1, std::memory_order_relaxed);
   if (server_data) {
     id = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(server_data));
@@ -1776,7 +1776,7 @@ static void perform_stream_op_locked(void* stream_op,
   // client_channel filter.)
   if (!t->is_client && !grpc_core::IsCallTracerInTransportEnabled() &&
       op->send_initial_metadata) {
-    s->call_tracer = s->arena->GetContext<grpc_core::CallTracerInterface>();
+    s->call_tracer = s->arena->GetContext<grpc_core::CallTracer>();
   }
   if (GRPC_TRACE_FLAG_ENABLED(http)) {
     LOG(INFO) << "perform_stream_op_locked[s=" << s << "; op=" << op
@@ -2830,28 +2830,33 @@ static void WithUrgency(grpc_chttp2_transport* t,
 void grpc_chttp2_act_on_flowctl_action(
     const grpc_core::chttp2::FlowControlAction& action,
     grpc_chttp2_transport* t, grpc_chttp2_stream* s) {
-  WithUrgency(t, action.send_stream_update(),
-              GRPC_CHTTP2_INITIATE_WRITE_STREAM_FLOW_CONTROL, [t, s]() {
+  WithUrgency(/*t=*/t, /*urgency=*/action.send_stream_update(),
+              /*reason=*/GRPC_CHTTP2_INITIATE_WRITE_STREAM_FLOW_CONTROL,
+              /*action=*/[t, s]() {
                 if (s->id != 0 && !s->read_closed) {
                   grpc_chttp2_mark_stream_writable(t, s);
                 }
               });
-  WithUrgency(t, action.send_transport_update(),
-              GRPC_CHTTP2_INITIATE_WRITE_TRANSPORT_FLOW_CONTROL, []() {});
-  WithUrgency(t, action.send_initial_window_update(),
-              GRPC_CHTTP2_INITIATE_WRITE_SEND_SETTINGS, [t, &action]() {
+  WithUrgency(/*t=*/t, /*urgency=*/action.send_transport_update(),
+              /*reason=*/GRPC_CHTTP2_INITIATE_WRITE_TRANSPORT_FLOW_CONTROL,
+              /*action=*/[]() {});
+  WithUrgency(/*t=*/t, /*urgency=*/action.send_initial_window_update(),
+              /*reason=*/GRPC_CHTTP2_INITIATE_WRITE_SEND_SETTINGS,
+              /*action=*/[t, &action]() {
                 t->settings.mutable_local().SetInitialWindowSize(
                     action.initial_window_size());
               });
   WithUrgency(
-      t, action.send_max_frame_size_update(),
-      GRPC_CHTTP2_INITIATE_WRITE_SEND_SETTINGS, [t, &action]() {
+      /*t=*/t, /*urgency=*/action.send_max_frame_size_update(),
+      /*reason=*/GRPC_CHTTP2_INITIATE_WRITE_SEND_SETTINGS,
+      /*action=*/[t, &action]() {
         t->settings.mutable_local().SetMaxFrameSize(action.max_frame_size());
       });
   if (t->enable_preferred_rx_crypto_frame_advertisement) {
     WithUrgency(
-        t, action.preferred_rx_crypto_frame_size_update(),
-        GRPC_CHTTP2_INITIATE_WRITE_SEND_SETTINGS, [t, &action]() {
+        /*t=*/t, /*urgency=*/action.preferred_rx_crypto_frame_size_update(),
+        /*reason=*/GRPC_CHTTP2_INITIATE_WRITE_SEND_SETTINGS,
+        /*action=*/[t, &action]() {
           t->settings.mutable_local().SetPreferredReceiveCryptoMessageSize(
               action.preferred_rx_crypto_frame_size());
         });
@@ -3349,7 +3354,8 @@ static void benign_reclaimer_locked(
   if (error.ok() && t->stream_map.empty()) {
     // Channel with no active streams: send a goaway to try and make it
     // disconnect cleanly
-    grpc_core::global_stats().IncrementRqConnectionsDropped();
+    t->memory_owner.telemetry_storage()->Increment(
+        grpc_core::ResourceQuotaDomain::kConnectionsDropped);
     GRPC_TRACE_LOG(resource_quota, INFO)
         << "HTTP2: " << t->peer_string.as_string_view()
         << " - send goaway to free memory";
@@ -3380,7 +3386,8 @@ static void destructive_reclaimer_locked(
     GRPC_TRACE_LOG(resource_quota, INFO)
         << "HTTP2: " << t->peer_string.as_string_view()
         << " - abandon stream id " << s->id;
-    grpc_core::global_stats().IncrementRqCallsDropped();
+    t->memory_owner.telemetry_storage()->Increment(
+        grpc_core::ResourceQuotaDomain::kCallsDropped);
     grpc_chttp2_cancel_stream(
         t.get(), s,
         grpc_error_set_int(

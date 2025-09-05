@@ -23,6 +23,7 @@
 #include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "absl/time/time.h"
 #include "src/core/channelz/channelz_registry.h"
 #include "src/core/channelz/v2tov1/convert.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -46,7 +47,7 @@ class RegistryEntityFetcher : public EntityFetcher {
     if (node == nullptr) {
       return absl::NotFoundError(absl::StrCat("Entity not found: ", id));
     }
-    return node->SerializeEntityToString();
+    return node->SerializeEntityToString(absl::ZeroDuration());
   }
 
   absl::StatusOr<std::vector<std::string>> GetEntitiesWithParent(
@@ -62,7 +63,8 @@ class RegistryEntityFetcher : public EntityFetcher {
     std::vector<std::string> children_str;
     for (const auto& child_node : nodes) {
       if (child_node == nullptr) continue;
-      children_str.push_back(child_node->SerializeEntityToString());
+      children_str.push_back(
+          child_node->SerializeEntityToString(absl::ZeroDuration()));
     }
     return children_str;
   }
@@ -138,7 +140,8 @@ char* grpc_channelz_get_top_channels(intptr_t start_channel_id) {
     grpc_core::Json::Array array;
     for (const auto& channel_node : channels) {
       if (channel_node == nullptr) continue;
-      auto serialized_v2 = channel_node->SerializeEntityToString();
+      auto serialized_v2 =
+          channel_node->SerializeEntityToString(absl::ZeroDuration());
       auto serialized_v1 = grpc_core::channelz::v2tov1::ConvertChannel(
           serialized_v2, fetcher, true);
       if (!serialized_v1.ok()) {
@@ -176,7 +179,8 @@ char* grpc_channelz_get_servers(intptr_t start_server_id) {
     grpc_core::Json::Array array;
     for (const auto& server_node : servers) {
       if (server_node == nullptr) continue;
-      auto serialized_v2 = server_node->SerializeEntityToString();
+      auto serialized_v2 =
+          server_node->SerializeEntityToString(absl::ZeroDuration());
       auto serialized_v1 = grpc_core::channelz::v2tov1::ConvertServer(
           serialized_v2, fetcher, true);
       if (!serialized_v1.ok()) {
@@ -211,7 +215,8 @@ char* grpc_channelz_get_server(intptr_t server_id) {
     auto server_node = ChannelzRegistry::GetServer(server_id);
     if (server_node == nullptr) return nullptr;
     RegistryEntityFetcher fetcher;
-    auto serialized_v2 = server_node->SerializeEntityToString();
+    auto serialized_v2 =
+        server_node->SerializeEntityToString(absl::ZeroDuration());
     auto serialized_v1 = grpc_core::channelz::v2tov1::ConvertServer(
         serialized_v2, fetcher, true);
     if (!serialized_v1.ok()) {
@@ -296,7 +301,8 @@ char* grpc_channelz_get_channel(intptr_t channel_id) {
     auto channel_node = ChannelzRegistry::GetChannel(channel_id);
     if (channel_node == nullptr) return nullptr;
     RegistryEntityFetcher fetcher;
-    auto serialized_v2 = channel_node->SerializeEntityToString();
+    auto serialized_v2 =
+        channel_node->SerializeEntityToString(absl::ZeroDuration());
     auto serialized_v1 = grpc_core::channelz::v2tov1::ConvertChannel(
         serialized_v2, fetcher, true);
     if (!serialized_v1.ok()) {
@@ -337,7 +343,8 @@ char* grpc_channelz_get_subchannel(intptr_t subchannel_id) {
     auto subchannel_node = ChannelzRegistry::GetSubchannel(subchannel_id);
     if (subchannel_node == nullptr) return nullptr;
     RegistryEntityFetcher fetcher;
-    auto serialized_v2 = subchannel_node->SerializeEntityToString();
+    auto serialized_v2 =
+        subchannel_node->SerializeEntityToString(absl::ZeroDuration());
     auto serialized_v1 = grpc_core::channelz::v2tov1::ConvertSubchannel(
         serialized_v2, fetcher, true);
     if (!serialized_v1.ok()) {
@@ -378,7 +385,7 @@ char* grpc_channelz_get_socket(intptr_t socket_id) {
     auto node = ChannelzRegistry::GetNode(socket_id);
     if (node == nullptr) return nullptr;
     RegistryEntityFetcher fetcher;
-    auto serialized_v2 = node->SerializeEntityToString();
+    auto serialized_v2 = node->SerializeEntityToString(absl::ZeroDuration());
     absl::StatusOr<std::string> serialized_v1;
     if (node->type() == grpc_core::channelz::BaseNode::EntityType::kSocket) {
       serialized_v1 = grpc_core::channelz::v2tov1::ConvertSocket(serialized_v2,

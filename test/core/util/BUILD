@@ -34,6 +34,7 @@ grpc_cc_test(
         "//test/core/tsi/test_creds/crl_data/crls:intermediate.crl",
     ],
     external_deps = [
+        "absl/strings",
         "gtest",
     ],
     uses_event_engine = False,
@@ -126,6 +127,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr",
+        "//src/core:examine_stack",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -302,6 +304,8 @@ grpc_cc_test(
     ],
     deps = [
         "//src/core:dual_ref_counted",
+        "//src/core:gpr_manual_constructor",
+        "//src/core:ref_counted",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -409,7 +413,10 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr",
+        "//:ref_counted_ptr",
         "//src/core:chunked_vector",
+        "//src/core:event_engine_memory_allocator",
+        "//src/core:memory_quota",
         "//src/core:resource_quota",
     ],
 )
@@ -434,7 +441,11 @@ grpc_fuzz_test(
     ],
     deps = [
         "chunked_vector_fuzzer_cc_proto",
+        "//:ref_counted_ptr",
+        "//src/core:arena",
         "//src/core:chunked_vector",
+        "//src/core:event_engine_memory_allocator",
+        "//src/core:memory_quota",
         "//src/core:resource_quota",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -498,6 +509,9 @@ grpc_cc_test(
     srcs = ["work_serializer_test.cc"],
     exec_properties = LARGE_MACHINE,
     external_deps = [
+        "absl/functional:any_invocable",
+        "absl/synchronization",
+        "absl/time",
         "gtest",
     ],
     flaky = True,
@@ -506,8 +520,17 @@ grpc_cc_test(
         "no_windows",  # LARGE_MACHINE is not configured for windows RBE
     ],
     deps = [
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:stats",
+        "//:work_serializer",
+        "//src/core:default_event_engine",
+        "//src/core:experiments",
+        "//src/core:histogram_view",
+        "//src/core:notification",
+        "//src/core:stats_data",
+        "//src/core:wait_for_single_owner",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -644,6 +667,7 @@ grpc_cc_test(
         "//:backoff",
         "//:exec_ctx",
         "//:grpc",
+        "//src/core:experiments",
         "//src/core:time",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -696,6 +720,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr",
+        "//src/core:env",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -905,5 +930,16 @@ grpc_cc_test(
     ],
     deps = [
         "//src/core:function_signature",
+    ],
+)
+
+grpc_cc_test(
+    name = "trie_lookup_test",
+    srcs = ["trie_lookup_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//src/core:trie_lookup",
     ],
 )

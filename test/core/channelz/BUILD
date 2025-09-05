@@ -24,6 +24,7 @@ grpc_cc_test(
     srcs = ["channel_trace_test.cc"],
     external_deps = [
         "gtest",
+        "absl/synchronization",
     ],
     tags = [
         # b/117517566.
@@ -31,10 +32,16 @@ grpc_cc_test(
         "channelz_test",
     ],
     deps = [
+        "//:channelz",
+        "//:channelz_upb",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//:grpc_public_hdrs",
         "//src/core:channel_args",
+        "//src/core:json",
+        "//src/core:json_writer",
+        "//src/core:upb_utils",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:channel_trace_proto_helper",
     ],
@@ -50,12 +57,18 @@ grpc_cc_test(
         "absl/container:flat_hash_map",
         "absl/log",
         "absl/log:check",
+        "absl/status",
         "absl/strings",
     ],
     deps = [
+        "@com_google_protobuf//:duration_upb_proto",
+        # TODO(rishesh): Re-enable this once the proto is available in OSS.
+        # "//google/protobuf:timestamp_upb_proto",
         "//:channelz_property_list_upb",
         "//src/core:channelz_property_list",
+        "//src/core:json",
         "//src/core:json_writer",
+        "//src/core:upb_utils",
     ],
 )
 
@@ -64,6 +77,8 @@ grpc_cc_test(
     srcs = ["channelz_test.cc"],
     external_deps = [
         "gtest",
+        "absl/status",
+        "absl/status:statusor",
     ],
     tags = [
         # b/117517566.
@@ -71,11 +86,25 @@ grpc_cc_test(
         "channelz_test",
     ],
     deps = [
+        "//:channel",
+        "//:channelz",
+        "//:event_engine_base_hdrs",
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//:grpc_core_credentials_header",
+        "//:server",
         "//src/core:channel_args",
         "//src/core:channelz_v2tov1_legacy_api",
+        "//src/core:default_event_engine",
+        "//src/core:json",
+        "//src/core:json_reader",
+        "//src/core:json_writer",
+        "//src/core:notification",
+        "//src/core:upb_utils",
+        "//src/core:useful",
+        "//src/core:wait_for_single_owner",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:channel_trace_proto_helper",
@@ -95,9 +124,13 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:channelz",
+        "//:config_vars",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//src/core:notification",
+        "//src/core:shared_bit_gen",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -115,8 +148,11 @@ grpc_cc_test(
     ],
     deps = [
         "//:grpc",
+        "//:grpc++",
         "//src/core:notification",
         "//src/core:ztrace_collector",
+        "//src/proto/grpc/channelz/v2:property_list_cc_proto",
+        "//src/proto/grpc/channelz/v2:service_cc_proto",
     ],
 )
 
@@ -133,6 +169,7 @@ grpc_fuzz_test(
     ],
     deps = [
         "//:channelz",
+        "//src/core:match",
     ],
 )
 

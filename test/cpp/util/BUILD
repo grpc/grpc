@@ -106,9 +106,18 @@ grpc_cc_library(
     external_deps = [
         "gtest",
         "protobuf",
+        "absl/strings",
     ],
     deps = [
+        "//:channelz",
+        "//:gpr",
+        "//:grpc",
         "//:grpc++",
+        "//:grpc++_config_proto",
+        "//src/core:error",
+        "//src/core:json",
+        "//src/core:json_reader",
+        "//src/core:json_writer",
         "//src/proto/grpc/channelz:channelz_proto",
     ],
 )
@@ -173,9 +182,14 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/flags:flag",
+        "absl/strings",
     ],
     deps = [
+        ":grpc++_proto_reflection_desc_db",
         ":grpc_cli_utils",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
     ],
 )
 
@@ -254,6 +268,8 @@ grpc_cc_test(
         ":test_util",
         "//:grpc",
         "//:grpc++",
+        "//:grpc++_base",
+        "//:grpc_base",
         "//:grpc_slice",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -273,6 +289,8 @@ grpc_cc_test(
         ":test_util",
         "//:grpc",
         "//:grpc++",
+        "//:grpc++_base",
+        "//:grpc_base",
         "//:grpc_slice",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -328,6 +346,8 @@ grpc_cc_test(
         ":test_util",
         "//:grpc",
         "//:grpc++",
+        "//:grpc++_base",
+        "//:grpc_base",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -367,6 +387,7 @@ grpc_cc_binary(
     deps = [
         ":grpc++_proto_reflection_desc_db",
         ":grpc_cli_libs",
+        ":grpc_cli_utils",
         ":test_config",
         "//:grpc++",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
@@ -459,6 +480,7 @@ grpc_cc_test(
     deps = [
         ":test_util",
         "//:grpc++",
+        "//:grpc++_base",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -476,6 +498,7 @@ grpc_cc_test(
     deps = [
         ":test_util",
         "//:grpc++",
+        "//:grpc++_base",
         "//test/core/test_util:grpc_test_util",
     ],
 )

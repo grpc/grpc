@@ -798,6 +798,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       args.set_read_hint_bytes(frame_protector_.min_progress_size());
       bool read_completed_immediately = wrapped_ep_->Read(
           [impl = Ref()](absl::Status status) mutable {
+            grpc_core::ExecCtx exec_ctx;
             FinishAsyncRead(std::move(impl), std::move(status));
           },
           frame_protector_.source_buffer(), std::move(args));
@@ -844,6 +845,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
           if (!*writing_) {
             writing_ = true;
             event_engine_->Run([impl = Ref()]() mutable {
+              grpc_core::ExecCtx exec_ctx;
               FinishAsyncWrite(std::move(impl));
             });
           }
@@ -917,6 +919,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       if (grpc_core::IsSecureEndpointOffloadLargeReadsEnabled() &&
           frame_protector_.source_buffer()->Length() > large_read_threshold_) {
         event_engine_->Run([impl = Ref()]() mutable {
+          grpc_core::ExecCtx exec_ctx;
           FinishAsyncRead(std::move(impl), absl::OkStatus());
         });
         return false;
@@ -1022,6 +1025,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
         // immediately, in which case we'll loop.
         const bool write_finished_immediately = impl->wrapped_ep_->Write(
             [impl](absl::Status status) mutable {
+              grpc_core::ExecCtx exec_ctx;
               // Async completion path: if we completed successfully then loop
               // back into FinishAsyncWrite to see if there's more writing to
               // do.

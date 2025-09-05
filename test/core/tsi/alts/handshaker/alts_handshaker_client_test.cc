@@ -22,6 +22,8 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
+#include <memory>
+
 #include "gtest/gtest.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
@@ -30,6 +32,7 @@
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/env.h"
+#include "src/proto/grpc/gcp/handshaker.upb.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h"
 #include "upb/mem/arena.hpp"
@@ -49,6 +52,7 @@ const size_t kMaxRpcVersionMajor = 3;
 const size_t kMaxRpcVersionMinor = 2;
 const size_t kMinRpcVersionMajor = 2;
 const size_t kMinRpcVersionMinor = 1;
+const char kFakeToken[] = "fake_token";
 
 using grpc_core::internal::alts_handshaker_client_get_closure_for_testing;
 using grpc_core::internal::
@@ -162,26 +166,9 @@ grpc_call_error CheckMustNotBeCalled(grpc_call* /*call*/,
   abort();
 }
 
-///
-/// A mock grpc_caller used to check correct execution of client_start
-/// operation. It checks if the client_start handshaker request is populated
-/// with correct handshake_security_protocol, application_protocol,
-/// record_protocol and max_frame_size, and op is correctly populated.
-///
-grpc_call_error CheckClientStartSuccess(grpc_call* /*call*/, const grpc_op* op,
-                                        size_t nops, grpc_closure* closure) {
-  // RECV_STATUS ops are asserted to always succeed
-  if (IsRecvStatusOp(op, nops)) {
-    return GRPC_CALL_OK;
-  }
-  upb::Arena arena;
-  alts_handshaker_client* client =
-      static_cast<alts_handshaker_client*>(closure->cb_arg);
-  EXPECT_EQ(alts_handshaker_client_get_closure_for_testing(client), closure);
-  grpc_gcp_HandshakerReq* req = DeserializeHandshakerReq(
-      alts_handshaker_client_get_send_buffer_for_testing(client), arena.ptr());
-  const grpc_gcp_StartClientHandshakeReq* client_start =
-      grpc_gcp_HandshakerReq_client_start(req);
+void CheckClientHandshakerRequestCommonData(
+    const grpc_gcp_StartClientHandshakeReq* client_start, bool has_token) {
+  ASSERT_NE(client_start, nullptr);
   EXPECT_EQ(grpc_gcp_StartClientHandshakeReq_handshake_security_protocol(
                 client_start),
             grpc_gcp_ALTS);
@@ -191,10 +178,6 @@ grpc_call_error CheckClientStartSuccess(grpc_call* /*call*/, const grpc_op* op,
   EXPECT_TRUE(upb_StringView_IsEqual(
       application_protocols[0],
       upb_StringView_FromString(ALTS_APPLICATION_PROTOCOL)));
-  upb_StringView const* record_protocols =
-      grpc_gcp_StartClientHandshakeReq_record_protocols(client_start, nullptr);
-  EXPECT_TRUE(upb_StringView_IsEqual(
-      record_protocols[0], upb_StringView_FromString(ALTS_RECORD_PROTOCOL)));
   const grpc_gcp_RpcProtocolVersions* rpc_protocol_versions =
       grpc_gcp_StartClientHandshakeReq_rpc_versions(client_start);
   ValidateRpcProtocolVersions(rpc_protocol_versions);
@@ -208,8 +191,11 @@ grpc_call_error CheckClientStartSuccess(grpc_call* /*call*/, const grpc_op* op,
       upb_StringView_FromString(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME)));
   EXPECT_EQ(grpc_gcp_StartClientHandshakeReq_max_frame_size(client_start),
             ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE);
-  EXPECT_TRUE(ValidateOp(client, op, nops, true /* is_start */));
-  return GRPC_CALL_OK;
+  if (has_token) {
+    EXPECT_TRUE(upb_StringView_IsEqual(
+        grpc_gcp_StartClientHandshakeReq_access_token(client_start),
+        upb_StringView_FromString(kFakeToken)));
+  }
 }
 
 void VerifyTransportProtocolPreferences(
@@ -234,9 +220,35 @@ void VerifyTransportProtocolPreferences(
                                      upb_StringView_FromString("foo")));
 }
 
-grpc_call_error VerifyClientSuccessWithProtocolNegotiation(
-    grpc_call* /*call*/, const grpc_op* op, size_t nops,
-    grpc_closure* closure) {
+void VerifyCustomRecordProtocolPreferences(
+    upb_StringView const* record_protocols, size_t record_protocol_count) {
+  ASSERT_EQ(record_protocol_count, 2);
+
+  ASSERT_TRUE(upb_StringView_IsEqual(record_protocols[0],
+                                     upb_StringView_FromString("bar")));
+  ASSERT_TRUE(upb_StringView_IsEqual(record_protocols[1],
+                                     upb_StringView_FromString("foo")));
+}
+
+void VerifyDefaultRecordProtocolPreferences(
+    upb_StringView const* record_protocols, size_t record_protocol_count) {
+  ASSERT_EQ(record_protocol_count, 1);
+
+  ASSERT_TRUE(upb_StringView_IsEqual(
+      record_protocols[0], upb_StringView_FromString(ALTS_RECORD_PROTOCOL)));
+}
+
+///
+/// A mock grpc_caller used to check correct execution of client_start
+/// operation. It checks if the client_start handshaker request is populated
+/// with correct handshake_security_protocol, application_protocol,
+/// record_protocol and max_frame_size, and op is correctly populated.
+///
+grpc_call_error CheckClientStartSuccess(grpc_call* /*call*/, const grpc_op* op,
+                                        size_t nops, grpc_closure* closure,
+                                        bool has_token,
+                                        bool has_transport_negotiation = false,
+                                        bool has_record_negotiation = false) {
   // RECV_STATUS ops are asserted to always succeed
   if (IsRecvStatusOp(op, nops)) {
     return GRPC_CALL_OK;
@@ -249,33 +261,60 @@ grpc_call_error VerifyClientSuccessWithProtocolNegotiation(
       alts_handshaker_client_get_send_buffer_for_testing(client), arena.ptr());
   const grpc_gcp_StartClientHandshakeReq* client_start =
       grpc_gcp_HandshakerReq_client_start(req);
-  VerifyTransportProtocolPreferences(
-      grpc_gcp_StartClientHandshakeReq_transport_protocol_preferences(
-          client_start),
-      /*is_server=*/false);
-  return CheckClientStartSuccess(nullptr, op, nops, closure);
+  CheckClientHandshakerRequestCommonData(client_start, has_token);
+  EXPECT_TRUE(ValidateOp(client, op, nops, true /* is_start */));
+  if (has_transport_negotiation) {
+    VerifyTransportProtocolPreferences(
+        grpc_gcp_StartClientHandshakeReq_transport_protocol_preferences(
+            client_start),
+        /*is_server=*/false);
+  }
+  size_t record_protocol_count;
+  upb_StringView const* record_protocols =
+      grpc_gcp_StartClientHandshakeReq_record_protocols(client_start,
+                                                        &record_protocol_count);
+  if (has_record_negotiation) {
+    VerifyCustomRecordProtocolPreferences(record_protocols,
+                                          record_protocol_count);
+  } else {
+    VerifyDefaultRecordProtocolPreferences(record_protocols,
+                                           record_protocol_count);
+  }
+  return GRPC_CALL_OK;
 }
 
-///
-/// A mock grpc_caller used to check correct execution of server_start
-/// operation. It checks if the server_start handshaker request is populated
-/// with correct handshake_security_protocol, application_protocol,
-/// record_protocol and max_frame_size, and op is correctly populated.
-///
-grpc_call_error CheckServerStartSuccess(grpc_call* /*call*/, const grpc_op* op,
-                                        size_t nops, grpc_closure* closure) {
-  // RECV_STATUS ops are asserted to always succeed
-  if (IsRecvStatusOp(op, nops)) {
-    return GRPC_CALL_OK;
-  }
-  upb::Arena arena;
-  alts_handshaker_client* client =
-      static_cast<alts_handshaker_client*>(closure->cb_arg);
-  EXPECT_EQ(alts_handshaker_client_get_closure_for_testing(client), closure);
-  grpc_gcp_HandshakerReq* req = DeserializeHandshakerReq(
-      alts_handshaker_client_get_send_buffer_for_testing(client), arena.ptr());
-  const grpc_gcp_StartServerHandshakeReq* server_start =
-      grpc_gcp_HandshakerReq_server_start(req);
+grpc_call_error CheckClientStartSuccessWithToken(grpc_call* call,
+                                                 const grpc_op* op, size_t nops,
+                                                 grpc_closure* closure) {
+  return CheckClientStartSuccess(call, op, nops, closure, /*has_token=*/true);
+}
+
+grpc_call_error CheckClientStartSuccessWithoutToken(grpc_call* call,
+                                                    const grpc_op* op,
+                                                    size_t nops,
+                                                    grpc_closure* closure) {
+  return CheckClientStartSuccess(call, op, nops, closure, /*has_token=*/false);
+}
+
+grpc_call_error VerifyClientStartSuccessWithTransportProtocolNegotiation(
+    grpc_call* call, const grpc_op* op, size_t nops, grpc_closure* closure) {
+  return CheckClientStartSuccess(call, op, nops, closure,
+                                 /*has_token=*/false,
+                                 /*has_transport_negotiation= */ true,
+                                 /*has_record_negotiation= */ false);
+}
+
+grpc_call_error VerifyClientStartSuccessWithRecordProtocolNegotiation(
+    grpc_call* call, const grpc_op* op, size_t nops, grpc_closure* closure) {
+  return CheckClientStartSuccess(call, op, nops, closure,
+                                 /*has_token=*/false,
+                                 /*has_transport_negotiation= */ false,
+                                 /*has_record_negotiation= */ true);
+}
+
+void CheckServerHandshakerRequestCommonData(
+    const grpc_gcp_StartServerHandshakeReq* server_start) {
+  ASSERT_NE(server_start, nullptr);
   upb_StringView const* application_protocols =
       grpc_gcp_StartServerHandshakeReq_application_protocols(server_start,
                                                              nullptr);
@@ -285,25 +324,22 @@ grpc_call_error CheckServerStartSuccess(grpc_call* /*call*/, const grpc_op* op,
   EXPECT_EQ(
       grpc_gcp_StartServerHandshakeReq_handshake_parameters_size(server_start),
       1);
-  grpc_gcp_ServerHandshakeParameters* value;
-  EXPECT_TRUE(grpc_gcp_StartServerHandshakeReq_handshake_parameters_get(
-      server_start, grpc_gcp_ALTS, &value));
-  upb_StringView const* record_protocols =
-      grpc_gcp_ServerHandshakeParameters_record_protocols(value, nullptr);
-  EXPECT_TRUE(upb_StringView_IsEqual(
-      record_protocols[0], upb_StringView_FromString(ALTS_RECORD_PROTOCOL)));
   ValidateRpcProtocolVersions(
       grpc_gcp_StartServerHandshakeReq_rpc_versions(server_start));
   EXPECT_EQ(grpc_gcp_StartServerHandshakeReq_max_frame_size(server_start),
             ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE);
-  EXPECT_TRUE(ValidateOp(client, op, nops, true /* is_start */));
-  return GRPC_CALL_OK;
 }
 
-grpc_call_error CheckServerStartSuccessWithNegotiation(grpc_call* /*call*/,
-                                                       const grpc_op* op,
-                                                       size_t nops,
-                                                       grpc_closure* closure) {
+///
+/// A mock grpc_caller used to check correct execution of server_start
+/// operation. It checks if the server_start handshaker request is populated
+/// with correct handshake_security_protocol, application_protocol,
+/// record_protocol and max_frame_size, and op is correctly populated.
+///
+grpc_call_error CheckServerStartSuccess(grpc_call* /*call*/, const grpc_op* op,
+                                        size_t nops, grpc_closure* closure,
+                                        bool has_transport_negotiation = false,
+                                        bool has_record_negotiation = false) {
   // RECV_STATUS ops are asserted to always succeed
   if (IsRecvStatusOp(op, nops)) {
     return GRPC_CALL_OK;
@@ -316,11 +352,48 @@ grpc_call_error CheckServerStartSuccessWithNegotiation(grpc_call* /*call*/,
       alts_handshaker_client_get_send_buffer_for_testing(client), arena.ptr());
   const grpc_gcp_StartServerHandshakeReq* server_start =
       grpc_gcp_HandshakerReq_server_start(req);
-  VerifyTransportProtocolPreferences(
-      grpc_gcp_StartServerHandshakeReq_transport_protocol_preferences(
-          server_start),
-      /*is_server=*/true);
-  return CheckServerStartSuccess(nullptr, op, nops, closure);
+  CheckServerHandshakerRequestCommonData(server_start);
+  grpc_gcp_ServerHandshakeParameters* value;
+  EXPECT_TRUE(grpc_gcp_StartServerHandshakeReq_handshake_parameters_get(
+      server_start, grpc_gcp_ALTS, &value));
+  EXPECT_TRUE(ValidateOp(client, op, nops, true /* is_start */));
+  if (has_transport_negotiation) {
+    VerifyTransportProtocolPreferences(
+        grpc_gcp_StartServerHandshakeReq_transport_protocol_preferences(
+            server_start),
+        /*is_server=*/true);
+  }
+  size_t record_protocol_count;
+  upb_StringView const* record_protocols =
+      grpc_gcp_ServerHandshakeParameters_record_protocols(
+          value, &record_protocol_count);
+  if (has_record_negotiation) {
+    VerifyCustomRecordProtocolPreferences(record_protocols,
+                                          record_protocol_count);
+  } else {
+    VerifyDefaultRecordProtocolPreferences(record_protocols,
+                                           record_protocol_count);
+  }
+  return GRPC_CALL_OK;
+}
+
+grpc_call_error CheckServerStartSuccessDefault(grpc_call* call,
+                                               const grpc_op* op, size_t nops,
+                                               grpc_closure* closure) {
+  return CheckServerStartSuccess(call, op, nops, closure);
+}
+
+grpc_call_error CheckServerStartSuccessWithTransportProtocolNegotiation(
+    grpc_call* call, const grpc_op* op, size_t nops, grpc_closure* closure) {
+  return CheckServerStartSuccess(call, op, nops, closure,
+                                 /*has_transport_negotiation=*/true);
+}
+
+grpc_call_error VerifyServerStartSuccessWithRecordProtocolNegotiation(
+    grpc_call* call, const grpc_op* op, size_t nops, grpc_closure* closure) {
+  return CheckServerStartSuccess(call, op, nops, closure,
+                                 /*has_transport_negotiation=*/false,
+                                 /*has_record_negotiation=*/true);
 }
 
 ///
@@ -359,7 +432,8 @@ grpc_call_error CheckGrpcCallFailure(grpc_call* /*call*/, const grpc_op* op,
   return GRPC_CALL_ERROR;
 }
 
-grpc_alts_credentials_options* CreateCredentialsOptions(bool is_client) {
+grpc_alts_credentials_options* CreateCredentialsOptions(
+    bool is_client, bool add_custom_record_protocol) {
   grpc_alts_credentials_options* options =
       is_client ? grpc_alts_credentials_client_options_create()
                 : grpc_alts_credentials_server_options_create();
@@ -374,10 +448,16 @@ grpc_alts_credentials_options* CreateCredentialsOptions(bool is_client) {
       versions, kMaxRpcVersionMajor, kMaxRpcVersionMinor));
   EXPECT_TRUE(grpc_gcp_rpc_protocol_versions_set_min(
       versions, kMinRpcVersionMajor, kMinRpcVersionMinor));
+
+  if (add_custom_record_protocol) {
+    options->record_protocols = {"bar", "foo"};
+  }
   return options;
 }
 
-alts_handshaker_client_test_config* CreateConfig() {
+alts_handshaker_client_test_config* CreateConfig(
+    bool add_custom_record_protocol = false,
+    std::shared_ptr<grpc::alts::TokenFetcher> token_fetcher = nullptr) {
   alts_handshaker_client_test_config* config =
       static_cast<alts_handshaker_client_test_config*>(
           gpr_zalloc(sizeof(*config)));
@@ -386,10 +466,14 @@ alts_handshaker_client_test_config* CreateConfig() {
                                         creds, nullptr);
   grpc_channel_credentials_release(creds);
   config->cq = grpc_completion_queue_create_for_next(nullptr);
-  grpc_alts_credentials_options* client_options =
-      CreateCredentialsOptions(true /* is_client */);
-  grpc_alts_credentials_options* server_options =
-      CreateCredentialsOptions(false /*  is_client */);
+  grpc_alts_credentials_options* client_options = CreateCredentialsOptions(
+      true /* is_client */, add_custom_record_protocol);
+  grpc_alts_credentials_options* server_options = CreateCredentialsOptions(
+      false /*  is_client */, add_custom_record_protocol);
+  if (token_fetcher != nullptr) {
+    grpc_alts_credentials_client_options_set_token_fetcher(client_options,
+                                                           token_fetcher);
+  }
   config->server = alts_grpc_handshaker_client_create(
       nullptr, config->channel, ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING,
       nullptr, server_options,
@@ -424,6 +508,23 @@ void DestroyConfig(alts_handshaker_client_test_config* config) {
   grpc_slice_unref(config->out_frame);
   gpr_free(config);
 }
+
+class FakeTokenFetcher : public grpc::alts::TokenFetcher {
+ public:
+  explicit FakeTokenFetcher(absl::Status error = absl::OkStatus())
+      : error_(std::move(error)) {}
+  ~FakeTokenFetcher() override = default;
+
+  absl::StatusOr<std::string> GetToken() override {
+    if (!error_.ok()) {
+      return error_;
+    }
+    return kFakeToken;
+  }
+
+ private:
+  absl::Status error_;
+};
 
 }  // namespace
 
@@ -471,8 +572,8 @@ TEST(AltsHandshakerClientTest, ScheduleRequestSuccessTest) {
   // Initialization.
   alts_handshaker_client_test_config* config = CreateConfig();
   // Check client_start success.
-  alts_handshaker_client_set_grpc_caller_for_testing(config->client,
-                                                     CheckClientStartSuccess);
+  alts_handshaker_client_set_grpc_caller_for_testing(
+      config->client, CheckClientStartSuccessWithoutToken);
   {
     grpc_core::ExecCtx exec_ctx;
     ASSERT_EQ(alts_handshaker_client_start_client(config->client), TSI_OK);
@@ -483,8 +584,62 @@ TEST(AltsHandshakerClientTest, ScheduleRequestSuccessTest) {
               TSI_INVALID_ARGUMENT);
   }
   // Check server_start success.
+  alts_handshaker_client_set_grpc_caller_for_testing(
+      config->server, CheckServerStartSuccessDefault);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    ASSERT_EQ(
+        alts_handshaker_client_start_server(config->server, &config->out_frame),
+        TSI_OK);
+  }
+  // Check client next success.
+  alts_handshaker_client_set_grpc_caller_for_testing(config->client,
+                                                     CheckNextSuccess);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    ASSERT_EQ(alts_handshaker_client_next(config->client, &config->out_frame),
+              TSI_OK);
+  }
+  // Check server next success.
   alts_handshaker_client_set_grpc_caller_for_testing(config->server,
-                                                     CheckServerStartSuccess);
+                                                     CheckNextSuccess);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    ASSERT_EQ(alts_handshaker_client_next(config->server, &config->out_frame),
+              TSI_OK);
+  }
+  // Cleanup.
+  {
+    grpc_core::ExecCtx exec_ctx;
+    alts_handshaker_client_on_status_received_for_testing(
+        config->client, GRPC_STATUS_OK, absl::OkStatus());
+    alts_handshaker_client_on_status_received_for_testing(
+        config->server, GRPC_STATUS_OK, absl::OkStatus());
+  }
+  DestroyConfig(config);
+}
+
+TEST(AltsHandshakerClientTest, ScheduleRequestWithTokenSuccessTest) {
+  // Initialization.
+  std::shared_ptr<FakeTokenFetcher> token_fetcher =
+      std::make_shared<FakeTokenFetcher>();
+  alts_handshaker_client_test_config* config =
+      CreateConfig(/*add_custom_record_protocol=*/false, token_fetcher);
+  // Check client_start success.
+  alts_handshaker_client_set_grpc_caller_for_testing(
+      config->client, CheckClientStartSuccessWithToken);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    ASSERT_EQ(alts_handshaker_client_start_client(config->client), TSI_OK);
+  }
+  {
+    grpc_core::ExecCtx exec_ctx;
+    ASSERT_EQ(alts_handshaker_client_next(nullptr, &config->out_frame),
+              TSI_INVALID_ARGUMENT);
+  }
+  // Check server_start success.
+  alts_handshaker_client_set_grpc_caller_for_testing(
+      config->server, CheckServerStartSuccessDefault);
   {
     grpc_core::ExecCtx exec_ctx;
     ASSERT_EQ(
@@ -519,12 +674,12 @@ TEST(AltsHandshakerClientTest, ScheduleRequestSuccessTest) {
 }
 
 TEST(AltsHandshakerClientTest,
-     ScheduleRequestSuccessWithProtocolNegotiationTest) {
+     ScheduleRequestSuccessWithTransportProtocolNegotiationTest) {
   // Initialization.
   alts_handshaker_client_test_config* config = CreateConfig();
   // Check client_start success.
   alts_handshaker_client_set_grpc_caller_for_testing(
-      config->client, VerifyClientSuccessWithProtocolNegotiation);
+      config->client, VerifyClientStartSuccessWithTransportProtocolNegotiation);
   {
     grpc_core::ExecCtx exec_ctx;
     ASSERT_EQ(alts_handshaker_client_start_client(config->client), TSI_OK);
@@ -536,7 +691,60 @@ TEST(AltsHandshakerClientTest,
   }
   // Check server_start success.
   alts_handshaker_client_set_grpc_caller_for_testing(
-      config->server, CheckServerStartSuccessWithNegotiation);
+      config->server, CheckServerStartSuccessWithTransportProtocolNegotiation);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    ASSERT_EQ(
+        alts_handshaker_client_start_server(config->server, &config->out_frame),
+        TSI_OK);
+  }
+  // Check client next success.
+  alts_handshaker_client_set_grpc_caller_for_testing(config->client,
+                                                     CheckNextSuccess);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    ASSERT_EQ(alts_handshaker_client_next(config->client, &config->out_frame),
+              TSI_OK);
+  }
+  // Check server next success.
+  alts_handshaker_client_set_grpc_caller_for_testing(config->server,
+                                                     CheckNextSuccess);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    ASSERT_EQ(alts_handshaker_client_next(config->server, &config->out_frame),
+              TSI_OK);
+  }
+  // Cleanup.
+  {
+    grpc_core::ExecCtx exec_ctx;
+    alts_handshaker_client_on_status_received_for_testing(
+        config->client, GRPC_STATUS_OK, absl::OkStatus());
+    alts_handshaker_client_on_status_received_for_testing(
+        config->server, GRPC_STATUS_OK, absl::OkStatus());
+  }
+  DestroyConfig(config);
+}
+
+TEST(AltsHandshakerClientTest,
+     ScheduleRequestSuccessWithRecordProtocolNegotiationTest) {
+  // Initialization.
+  alts_handshaker_client_test_config* config =
+      CreateConfig(true /* add_custom_record_protocol */);
+  // Check client_start success.
+  alts_handshaker_client_set_grpc_caller_for_testing(
+      config->client, VerifyClientStartSuccessWithRecordProtocolNegotiation);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    ASSERT_EQ(alts_handshaker_client_start_client(config->client), TSI_OK);
+  }
+  {
+    grpc_core::ExecCtx exec_ctx;
+    ASSERT_EQ(alts_handshaker_client_next(nullptr, &config->out_frame),
+              TSI_INVALID_ARGUMENT);
+  }
+  // Check server_start success.
+  alts_handshaker_client_set_grpc_caller_for_testing(
+      config->server, VerifyServerStartSuccessWithRecordProtocolNegotiation);
   {
     grpc_core::ExecCtx exec_ctx;
     ASSERT_EQ(
@@ -575,6 +783,28 @@ static void tsi_cb_assert_tsi_internal_error(
     const unsigned char* /*bytes_to_send*/, size_t /*bytes_to_send_size*/,
     tsi_handshaker_result* /*result*/) {
   ASSERT_EQ(status, TSI_INTERNAL_ERROR);
+}
+
+TEST(AltsHandshakerClientTest, ScheduleRequestWithTokenFailureTest) {
+  // Initialization.
+  std::shared_ptr<FakeTokenFetcher> token_fetcher =
+      std::make_shared<FakeTokenFetcher>(
+          absl::InternalError("failed to get a token"));
+  alts_handshaker_client_test_config* config =
+      CreateConfig(/*add_custom_record_protocol=*/false, token_fetcher);
+  // Check client_start failure.
+  alts_handshaker_client_set_grpc_caller_for_testing(config->client,
+                                                     CheckGrpcCallFailure);
+  {
+    grpc_core::ExecCtx exec_ctx;
+    // TODO(apolcyn): go back to asserting TSI_INTERNAL_ERROR as return
+    // value instead of callback status, after removing the global
+    // queue in https://github.com/grpc/grpc/pull/20722
+    alts_handshaker_client_set_cb_for_testing(config->client,
+                                              tsi_cb_assert_tsi_internal_error);
+    alts_handshaker_client_start_client(config->client);
+  }
+  DestroyConfig(config);
 }
 
 TEST(AltsHandshakerClientTest, ScheduleRequestGrpcCallFailureTest) {

@@ -173,12 +173,17 @@ const char* const description_server_global_callbacks_ownership =
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
-const char* const description_shard_global_connection_pool =
-    "If set, shard the global connection pool to improve parallelism.";
-const char* const additional_constraints_shard_global_connection_pool = "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
+const char* const description_sleep_use_non_owning_waker =
+    "If set, the sleep promise uses a non-owning waker.";
+const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
+const char* const description_subchannel_wrapper_cleanup_on_orphan =
+    "Fixes the subchannel wrapper to drop any non-cancelled watchers when it "
+    "gets orphaned.";
+const char* const additional_constraints_subchannel_wrapper_cleanup_on_orphan =
+    "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -307,13 +312,17 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0, true,
      true},
-    {"shard_global_connection_pool", description_shard_global_connection_pool,
-     additional_constraints_shard_global_connection_pool, nullptr, 0, true,
-     true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
      true},
+    {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
+     additional_constraints_sleep_use_non_owning_waker, nullptr, 0, false,
+     true},
+    {"subchannel_wrapper_cleanup_on_orphan",
+     description_subchannel_wrapper_cleanup_on_orphan,
+     additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
+     false, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -482,12 +491,17 @@ const char* const description_server_global_callbacks_ownership =
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
-const char* const description_shard_global_connection_pool =
-    "If set, shard the global connection pool to improve parallelism.";
-const char* const additional_constraints_shard_global_connection_pool = "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
+const char* const description_sleep_use_non_owning_waker =
+    "If set, the sleep promise uses a non-owning waker.";
+const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
+const char* const description_subchannel_wrapper_cleanup_on_orphan =
+    "Fixes the subchannel wrapper to drop any non-cancelled watchers when it "
+    "gets orphaned.";
+const char* const additional_constraints_subchannel_wrapper_cleanup_on_orphan =
+    "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -616,13 +630,17 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0, true,
      true},
-    {"shard_global_connection_pool", description_shard_global_connection_pool,
-     additional_constraints_shard_global_connection_pool, nullptr, 0, true,
-     true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
      true},
+    {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
+     additional_constraints_sleep_use_non_owning_waker, nullptr, 0, false,
+     true},
+    {"subchannel_wrapper_cleanup_on_orphan",
+     description_subchannel_wrapper_cleanup_on_orphan,
+     additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
+     false, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -791,12 +809,17 @@ const char* const description_server_global_callbacks_ownership =
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
-const char* const description_shard_global_connection_pool =
-    "If set, shard the global connection pool to improve parallelism.";
-const char* const additional_constraints_shard_global_connection_pool = "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
+const char* const description_sleep_use_non_owning_waker =
+    "If set, the sleep promise uses a non-owning waker.";
+const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
+const char* const description_subchannel_wrapper_cleanup_on_orphan =
+    "Fixes the subchannel wrapper to drop any non-cancelled watchers when it "
+    "gets orphaned.";
+const char* const additional_constraints_subchannel_wrapper_cleanup_on_orphan =
+    "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -925,13 +948,17 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0, true,
      true},
-    {"shard_global_connection_pool", description_shard_global_connection_pool,
-     additional_constraints_shard_global_connection_pool, nullptr, 0, true,
-     true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
      true},
+    {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
+     additional_constraints_sleep_use_non_owning_waker, nullptr, 0, false,
+     true},
+    {"subchannel_wrapper_cleanup_on_orphan",
+     description_subchannel_wrapper_cleanup_on_orphan,
+     additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
+     false, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,

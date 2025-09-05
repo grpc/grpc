@@ -35,6 +35,11 @@ grpc_cc_binary(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:iomgr",
+        "//src/core:error",
+        "//src/core:grpc_sockaddr",
+        "//src/core:strerror",
+        "//src/core:useful",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],

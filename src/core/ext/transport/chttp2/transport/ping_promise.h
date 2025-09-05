@@ -20,12 +20,15 @@
 
 #include <memory>
 
+#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
+#include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/inter_activity_latch.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/time.h"
 
@@ -55,17 +58,6 @@ namespace http2 {
 
 class PingInterface {
  public:
-  struct SendPingArgs {
-    bool ack = false;
-    // RFC9113: PING frames MUST contain 8 octets of opaque data in the frame
-    // payload. A sender can include any value it chooses and use those octets
-    // in any fashion.
-    uint64_t opaque_data = 0;
-  };
-
-  // Returns a promise that creates and sends a ping frame to the peer.
-  virtual Promise<absl::Status> SendPing(SendPingArgs args) = 0;
-
   // Returns a promise that triggers a write cycle on the transport.
   virtual Promise<absl::Status> TriggerWrite() = 0;
 
@@ -84,11 +76,14 @@ class PingManager {
               std::shared_ptr<grpc_event_engine::experimental::EventEngine>
                   event_engine);
 
-  // Returns a promise that determines if a ping frame should be sent to the
-  // peer. If a ping frame is sent, it also spawns a timeout promise that
-  // handles the ping timeout.
-  Promise<absl::Status> MaybeSendPing(Duration next_allowed_ping_interval,
-                                      Duration ping_timeout);
+  // If there are any pending ping requests or ping acks, populates the output
+  // buffer with the serialized ping frames.
+  void MaybeGetSerializedPingFrames(SliceBuffer& output_buf,
+                                    Duration next_allowed_ping_interval);
+
+  // Notify the ping system that a ping has been sent. This will spawn a ping
+  // timeout promise.
+  void NotifyPingSent(Duration ping_timeout);
 
   // Ping Rate policy wrapper
   void ReceivedDataFrame() { ping_rate_policy_.ReceivedDataFrame(); }
@@ -131,6 +126,26 @@ class PingManager {
   bool AckPing(uint64_t id) { return ping_callbacks_.AckPing(id); }
   size_t CountPingInflight() { return ping_callbacks_.CountPingInflight(); }
 
+  Http2Frame GetHttp2PingFrame(uint64_t opaque_data) {
+    return Http2PingFrame{/*ack=*/false, opaque_data};
+  }
+
+  std::optional<uint64_t> TestOnlyMaybeGetSerializedPingFrames(
+      SliceBuffer& output_buffer, Duration next_allowed_ping_interval) {
+    DCHECK(!opaque_data_.has_value());
+    if (NeedToPing(next_allowed_ping_interval)) {
+      uint64_t opaque_data = ping_callbacks_.StartPing();
+      Http2Frame frame = GetHttp2PingFrame(/*ack*/ false, opaque_data);
+      Serialize(absl::Span<Http2Frame>(&frame, 1), output_buffer);
+      opaque_data_ = opaque_data;
+      return opaque_data;
+    }
+
+    return std::nullopt;
+  }
+
+  void AddPendingPingAck(uint64_t opaque_data);
+
  private:
   class PingPromiseCallbacks {
    public:
@@ -160,12 +175,27 @@ class PingManager {
       std::shared_ptr<InterActivityLatch<void>> latch =
           std::make_shared<InterActivityLatch<void>>();
       auto timeout_cb = [latch]() { latch->Set(); };
-      auto id = ping_callbacks_.OnPingTimeout(ping_timeout, event_engine_.get(),
-                                              std::move(timeout_cb));
-      DCHECK(id.has_value());
-      VLOG(2) << "Ping timeout of duration: " << ping_timeout
-              << " initiated for ping id: " << *id;
-      return Map(latch->Wait(), [latch](Empty) { return absl::OkStatus(); });
+      std::optional<uint64_t> id = ping_callbacks_.OnPingTimeout(
+          ping_timeout, event_engine_.get(), std::move(timeout_cb));
+
+      return AssertResultType<bool>(If(
+          // The scenario where OnPingTimeout returns an invalid id is when
+          // the ping ack is received before spawning the ping timeout.
+          // In such a case, we don't wait for the ping timeout.
+          id.has_value(),
+          [latch, id, ping_timeout]() {
+            VLOG(2) << "Ping timeout of duration: " << ping_timeout
+                    << " initiated for ping id: " << *id;
+            return Map(latch->Wait(), [latch](Empty) {
+              return /*trigger_ping_timeout*/ true;
+            });
+          },
+          []() {
+            // This happens if for some reason the ping ack is received before
+            // the timeout timer is spawned.
+            VLOG(2) << "Ping ack received. Not waiting for ping timeout.";
+            return /*trigger_ping_timeout*/ false;
+          }));
     }
 
    private:
@@ -179,11 +209,17 @@ class PingManager {
     bool important_ping_requested_ = false;
   };
 
+  Http2Frame GetHttp2PingFrame(bool ack, uint64_t opaque_data) {
+    return Http2PingFrame{ack, opaque_data};
+  }
+
   PingPromiseCallbacks ping_callbacks_;
   Chttp2PingAbusePolicy ping_abuse_policy_;
   Chttp2PingRatePolicy ping_rate_policy_;
   bool delayed_ping_spawned_ = false;
+  std::optional<uint64_t> opaque_data_;
   std::unique_ptr<PingInterface> ping_interface_;
+  std::vector<uint64_t> pending_ping_acks_;
 
   void TriggerDelayedPing(Duration wait);
   bool NeedToPing(Duration next_allowed_ping_interval);

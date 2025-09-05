@@ -263,11 +263,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gemini"  # @unused
+g_stands_for = "genuine"  # @unused
 
 core_version = "50.0.0"  # @unused
 
-version = "1.75.0-dev"  # @unused
+version = "1.76.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -932,6 +932,9 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/types:span",
+        "absl/utility",
+        "absl/functional:any_invocable",
+        "absl/status",
     ],
     tags = [
         "avoid_dep",
@@ -941,6 +944,7 @@ grpc_cc_library(
     deps = [
         "channel_arg_names",
         "gpr_public_hdrs",
+        "grpc_core_credentials_header",
     ],
 )
 
@@ -1352,6 +1356,7 @@ grpc_cc_library(
         "@com_google_protobuf//upb/mem",
     ],
     deps = [
+        "channelz_service_upb",
         "channelz_upb",
         "config_vars",
         "exec_ctx",
@@ -1365,6 +1370,7 @@ grpc_cc_library(
         "uri",
         "//src/core:channel_args",
         "//src/core:channelz_property_list",
+        "//src/core:channelz_text_encode",
         "//src/core:connectivity_state",
         "//src/core:dual_ref_counted",
         "//src/core:json",
@@ -2426,6 +2432,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log:log",
+        "absl/status:statusor",
         "@com_google_protobuf//upb/base",
         "@com_google_protobuf//upb/mem",
     ],
@@ -2827,6 +2834,7 @@ grpc_cc_library(
         "grpc++_config_proto",
         "//src/core:channelz_v2tov1_convert",
         "//src/core:experiments",
+        "//src/core:notification",
         "//src/proto/grpc/channelz:channelz_proto",
         "//src/proto/grpc/channelz/v2:service_cc_grpc",
     ],
@@ -4676,6 +4684,7 @@ grpc_cc_library(
         "gpr",
         "//src/core:http2_settings",
         "//src/core:http2_status",
+        "//src/core:memory_usage",
         "//src/core:slice",
         "//src/core:slice_buffer",
     ],
@@ -5362,6 +5371,16 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "channelz_upbdefs",
     deps = ["//src/proto/grpc/channelz/v2:channelz_proto"],
+)
+
+grpc_upb_proto_library(
+    name = "channelz_service_upb",
+    deps = ["//src/proto/grpc/channelz/v2:service_proto"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "channelz_service_upbdefs",
+    deps = ["//src/proto/grpc/channelz/v2:service_proto"],
 )
 
 grpc_upb_proto_library(

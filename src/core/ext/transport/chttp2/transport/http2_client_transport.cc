@@ -388,7 +388,7 @@ auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
         // writes.
         // RFC9113: PING responses SHOULD be given higher priority than any
         // other frame.
-        self->pending_ping_acks_.push_back(opaque);
+        self->ping_manager_.AddPendingPingAck(opaque);
         // TODO(akshitpatel) : [PH2][P2] : This is done assuming that the other
         // ProcessFrame promises may return stream or connection failures. If
         // this does not turn out to be true, consider returning absl::Status
@@ -630,14 +630,15 @@ auto Http2ClientTransport::OnReadLoopEnded() {
 auto Http2ClientTransport::WriteFromQueue(std::vector<Http2Frame>&& frames) {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteFromQueue Factory";
   SliceBuffer output_buf;
-  Serialize(absl::Span<Http2Frame>(frames), output_buf);
+  should_reset_ping_clock_ =
+      Serialize(absl::Span<Http2Frame>(frames), output_buf)
+          .should_reset_ping_clock;
   const uint64_t buffer_length = output_buf.Length();
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteFromQueue Promise";
   return If(
       buffer_length > 0,
       [self = RefAsSubclass<Http2ClientTransport>(),
        output_buffer = std::move(output_buf), buffer_length]() mutable {
-        self->bytes_sent_in_last_write_ = true;
         GRPC_HTTP2_CLIENT_DLOG
             << "Http2ClientTransport WriteFromQueue Writing buffer of size "
             << buffer_length << " to endpoint";
@@ -658,6 +659,8 @@ auto Http2ClientTransport::WriteControlFrames() {
     is_first_write_ = false;
   }
   MaybeGetSettingsFrame(output_buf);
+  ping_manager_.MaybeGetSerializedPingFrames(output_buf,
+                                             NextAllowedPingInterval());
   const uint64_t buffer_length = output_buf.Length();
   return If(
       buffer_length > 0,
@@ -676,6 +679,7 @@ void Http2ClientTransport::NotifyControlFramesWriteDone() {
   // Notify Control modules that we have sent the frames.
   // All notifications are expected to be synchronous.
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport NotifyControlFramesWriteDone";
+  ping_manager_.NotifyPingSent(ping_timeout_);
 }
 
 auto Http2ClientTransport::WriteLoop() {
@@ -694,29 +698,14 @@ auto Http2ClientTransport::WriteLoop() {
                           return self->WriteFromQueue(std::move(frames));
                         });
         },
-        // TODO(akshitpatel) : [PH2][P2] : These two promises will be removed
-        // in subsequent PRs.
-        [self]() { return self->MaybeSendPingAcks(); },
-        [self]() {
-          return self->ping_manager_.MaybeSendPing(
-              self->NextAllowedPingInterval(), self->ping_timeout_);
-        },
         [self]() -> LoopCtl<absl::Status> {
-          // TODO(akshitpatel) : [PH2][P0] : WriteFromQueue may write settings
-          // acks as well. This will break the call to ResetPingClock as it
-          // only needs to be called on writing Data/Header/WindowUpdate
-          // frames. Possible fixes: Either WriteFromQueue iterates over all
-          // the frames and figures out the types of frames needed (this may
-          // anyways be needed to check that we do not send frames for closed
-          // streams) or we have flags to indicate the types of frame that are
-          // enqueued.
           // If any Header/Data/WindowUpdate frame was sent in the last
           // write, reset the ping clock.
-          if (self->bytes_sent_in_last_write_) {
+          if (self->should_reset_ping_clock_) {
             GRPC_HTTP2_CLIENT_DLOG
                 << "Http2ClientTransport WriteLoop ResetPingClock";
             self->ping_manager_.ResetPingClock(/*is_client=*/true);
-            self->bytes_sent_in_last_write_ = false;
+            self->should_reset_ping_clock_ = false;
           }
           GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteLoop Continue";
           return Continue();
@@ -852,7 +841,7 @@ Http2ClientTransport::Http2ClientTransport(
     : endpoint_(std::move(endpoint)),
       outgoing_frames_(kMpscSize),
       stream_id_mutex_(/*Initial Stream Id*/ 1),
-      bytes_sent_in_last_write_(false),
+      should_reset_ping_clock_(false),
       incoming_header_in_progress_(false),
       incoming_header_end_stream_(false),
       is_first_write_(true),
@@ -887,7 +876,11 @@ Http2ClientTransport::Http2ClientTransport(
           ((keepalive_timeout_ < ping_timeout_) ? keepalive_timeout_
                                                 : Duration::Infinity()),
           keepalive_time_),
-      keepalive_permit_without_calls_(false) {
+      keepalive_permit_without_calls_(false),
+      enable_preferred_rx_crypto_frame_advertisement_(
+          channel_args
+              .GetBool(GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE)
+              .value_or(false)) {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor Begin";
 
   InitLocalSettings(settings_.mutable_local(), /*is_client=*/true);

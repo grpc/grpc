@@ -61,7 +61,8 @@ RUN /opt/python/cp39-cp39/bin/pip install --upgrade 'cython==3.1.1' && \
   /opt/python/cp310-cp310/bin/pip install --upgrade 'cython==3.1.1' && \
   /opt/python/cp311-cp311/bin/pip install --upgrade 'cython==3.1.1' && \
   /opt/python/cp312-cp312/bin/pip install --upgrade 'cython==3.1.1' && \
-  /opt/python/cp313-cp313/bin/pip install --upgrade 'cython==3.1.1'
+  /opt/python/cp313-cp313/bin/pip install --upgrade 'cython==3.1.1' && \
+  /opt/python/cp314-cp314/bin/pip install --upgrade 'cython==3.1.1'
 
 
 # TODO(jtattermusch): revisit which of the deps are really required

@@ -46,7 +46,7 @@ class OrcaWatcher;
 // registered watchers.
 class OrcaProducer final : public Subchannel::DataProducerInterface {
  public:
-  void Start(RefCountedPtr<Subchannel> subchannel);
+  void Start(WeakRefCountedPtr<Subchannel> subchannel);
 
   static UniqueTypeName Type() {
     static UniqueTypeName::Factory kFactory("orca");
@@ -79,7 +79,7 @@ class OrcaProducer final : public Subchannel::DataProducerInterface {
   // Called to notify watchers of a new backend metric report.
   void NotifyWatchers(const BackendMetricData& backend_metric_data);
 
-  RefCountedPtr<Subchannel> subchannel_;
+  WeakRefCountedPtr<Subchannel> subchannel_;
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   ConnectivityWatcher* connectivity_watcher_;
   Mutex mu_;
