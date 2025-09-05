@@ -367,6 +367,9 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     std::vector<Http2Frame> frames;
     bool is_writable;
     WritableStreams::StreamPriority priority;
+    // Maybe not be extremely accurate but should be good enough for our
+    // purposes.
+    size_t total_bytes_consumed;
   };
 
   // TODO(akshitpatel) : [PH2][P4] : Measure the performance of this function
@@ -421,7 +424,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     GRPC_STREAM_DATA_QUEUE_DEBUG << "Stream id: " << stream_id_
                                  << " writable state changed to "
                                  << is_writable_;
-    return DequeueResult{handle_dequeue.GetFrames(), is_writable_, priority_};
+    return DequeueResult{handle_dequeue.GetFrames(), is_writable_, priority_,
+                         handle_dequeue.GetTotalBytesConsumed()};
   }
 
   // Returns true if the queue is empty. This function is thread safe.
@@ -500,6 +504,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
       return std::move(frames_);
     }
 
+    size_t GetTotalBytesConsumed() const { return total_bytes_consumed_; }
+
    private:
     inline void MaybeAppendInitialMetadataFrames() {
       while (queue_.initial_metadata_disassembler_.HasMoreData()) {
@@ -508,7 +514,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
         // TODO(akshitpatel) : [PH2][P2] : I do not think we need this.
         // HasMoreData() should be enough.
         bool is_end_headers = false;
-        frames_.emplace_back(queue_.initial_metadata_disassembler_.GetNextFrame(
+        AppendFrame(queue_.initial_metadata_disassembler_.GetNextFrame(
             max_frame_length_, is_end_headers));
       }
     }
@@ -522,9 +528,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
         // TODO(akshitpatel) : [PH2][P2] : I do not think we need this.
         // HasMoreData() should be enough.
         bool is_end_headers = false;
-        frames_.emplace_back(
-            queue_.trailing_metadata_disassembler_.GetNextFrame(
-                max_frame_length_, is_end_headers));
+        AppendFrame(queue_.trailing_metadata_disassembler_.GetNextFrame(
+            max_frame_length_, is_end_headers));
       }
     }
 
@@ -535,9 +540,9 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
                   0u);
         DCHECK_EQ(queue_.trailing_metadata_disassembler_.GetBufferedLength(),
                   0u);
-        frames_.emplace_back(Http2DataFrame{/*stream_id=*/queue_.stream_id_,
-                                            /*end_stream=*/true,
-                                            /*payload=*/SliceBuffer()});
+        AppendFrame(Http2DataFrame{/*stream_id=*/queue_.stream_id_,
+                                   /*end_stream=*/true,
+                                   /*payload=*/SliceBuffer()});
       }
     }
 
@@ -553,7 +558,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
         GRPC_STREAM_DATA_QUEUE_DEBUG
             << "Appending message frame with length " << frame.payload.Length()
             << "Available tokens: " << fc_tokens_available_;
-        frames_.emplace_back(std::move(frame));
+        AppendFrame(std::move(frame));
       }
     }
 
@@ -566,9 +571,13 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
                   0u);
         DCHECK_EQ(queue_.trailing_metadata_disassembler_.GetBufferedLength(),
                   0u);
-        frames_.emplace_back(
-            Http2RstStreamFrame{queue_.stream_id_, error_code_});
+        AppendFrame(Http2RstStreamFrame{queue_.stream_id_, error_code_});
       }
+    }
+
+    inline void AppendFrame(Http2Frame&& frame) {
+      total_bytes_consumed_ += GetFrameMemoryUsage(frame);
+      frames_.emplace_back(std::move(frame));
     }
 
     StreamDataQueue& queue_;
@@ -580,6 +589,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     uint32_t error_code_ = static_cast<uint32_t>(Http2ErrorCode::kNoError);
     std::vector<Http2Frame> frames_;
     HPackCompressor& encoder_;
+    size_t total_bytes_consumed_ = 0u;
   };
 
   // Updates the stream priority. Also sets the writable state to true if the
