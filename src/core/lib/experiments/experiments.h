@@ -107,6 +107,7 @@ inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return true; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
 inline bool IsSleepUseNonOwningWakerEnabled() { return false; }
+inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
@@ -163,6 +164,7 @@ inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return true; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
 inline bool IsSleepUseNonOwningWakerEnabled() { return false; }
+inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
@@ -219,6 +221,7 @@ inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return true; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
 inline bool IsSleepUseNonOwningWakerEnabled() { return false; }
+inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
@@ -264,6 +267,7 @@ enum ExperimentIds {
   kExperimentIdServerGlobalCallbacksOwnership,
   kExperimentIdSleepPromiseExecCtxRemoval,
   kExperimentIdSleepUseNonOwningWaker,
+  kExperimentIdSubchannelWrapperCleanupOnOrphan,
   kExperimentIdTcpFrameSizeTuning,
   kExperimentIdTcpRcvLowat,
   kExperimentIdTsiFrameProtectorWithoutLocks,
@@ -417,6 +421,10 @@ inline bool IsSleepPromiseExecCtxRemovalEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_SLEEP_USE_NON_OWNING_WAKER
 inline bool IsSleepUseNonOwningWakerEnabled() {
   return IsExperimentEnabled<kExperimentIdSleepUseNonOwningWaker>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_SUBCHANNEL_WRAPPER_CLEANUP_ON_ORPHAN
+inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() {
+  return IsExperimentEnabled<kExperimentIdSubchannelWrapperCleanupOnOrphan>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_FRAME_SIZE_TUNING
 inline bool IsTcpFrameSizeTuningEnabled() {

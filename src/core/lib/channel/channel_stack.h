@@ -57,6 +57,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/call_final_info.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/metrics.h"
@@ -186,6 +187,8 @@ struct grpc_channel_stack {
   // promise conversion continues, we'll reconsider what grpc_channel_stack
   // should look like and this can go.
   grpc_core::ManualConstructor<std::function<void()>> on_destroy;
+
+  grpc_channel_stack_type type;
 
   class ChannelStackDataSource final : public grpc_core::channelz::DataSource {
    public:

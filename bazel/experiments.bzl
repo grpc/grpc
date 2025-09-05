@@ -54,6 +54,7 @@ EXPERIMENT_ENABLES = {
     "server_global_callbacks_ownership": "server_global_callbacks_ownership",
     "sleep_promise_exec_ctx_removal": "sleep_promise_exec_ctx_removal",
     "sleep_use_non_owning_waker": "sleep_use_non_owning_waker",
+    "subchannel_wrapper_cleanup_on_orphan": "subchannel_wrapper_cleanup_on_orphan",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
     "tsi_frame_protector_without_locks": "tsi_frame_protector_without_locks",
@@ -94,6 +95,7 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "rr_wrr_connect_from_random_index",
@@ -132,6 +134,7 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
         },
         "on": {
@@ -182,6 +185,7 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "rr_wrr_connect_from_random_index",
@@ -220,6 +224,7 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
         },
         "on": {
@@ -270,6 +275,7 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "rr_wrr_connect_from_random_index",
@@ -308,6 +314,7 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
         },
         "on": {

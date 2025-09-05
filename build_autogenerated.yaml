@@ -24611,8 +24611,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
-  - grpc
-  - protobuf
+  - grpc++
   platforms:
   - linux
   - posix
