@@ -107,16 +107,16 @@ class EventEngineSupportsFdExtension {
   /// file descriptor. \a config - Additional configuration to applied to the
   /// endpoint. \a memory_allocator - The endpoint may use the provided memory
   /// allocator to track memory allocations.
-  virtual std::unique_ptr<EventEngine::Endpoint> CreatePosixEndpointFromFd(
-      int fd, const EndpointConfig& config,
-      MemoryAllocator memory_allocator) = 0;
+  virtual absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>>
+  CreatePosixEndpointFromFd(int fd, const EndpointConfig& config,
+                            MemoryAllocator memory_allocator) = 0;
 
   /// Creates an EventEngine::Endpoint from an fd which is already assumed to be
   /// connected to a remote peer. See \a CreatePosixEndpointFromFd for details.
   /// This has the same behavior, but the \a memory_allocator is taken from the
   /// EndpointConfig's resource quota.
-  virtual std::unique_ptr<EventEngine::Endpoint> CreateEndpointFromFd(
-      int fd, const EndpointConfig& config) = 0;
+  virtual absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>>
+  CreateEndpointFromFd(int fd, const EndpointConfig& config) = 0;
 
   /// Creates an EventEngine::Endpoint from a file descriptor that is configured
   /// and bound locally but not yet connected to a remote peer. Returns a
