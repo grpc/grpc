@@ -2212,9 +2212,6 @@ libs:
   - absl/algorithm:container
   - absl/base:no_destructor
   - absl/container:btree
-  - absl/container:flat_hash_map
-  - absl/container:flat_hash_set
-  - absl/container:inlined_vector
   - absl/container:node_hash_map
   - absl/functional:bind_front
   - absl/functional:function_ref
@@ -5253,9 +5250,6 @@ libs:
   - z
   - absl/base:no_destructor
   - absl/container:btree
-  - absl/container:flat_hash_map
-  - absl/container:flat_hash_set
-  - absl/container:inlined_vector
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/meta:type_traits
@@ -5507,11 +5501,9 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -6079,7 +6071,6 @@ targets:
   - test/core/util/avl_test.cc
   deps:
   - gtest
-  - absl/hash:hash
   - gpr
   uses_polling: false
 - name: aws_request_signer_test
@@ -6259,7 +6250,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   - absl/log:check
   - absl/numeric:bits
   uses_polling: false
@@ -6330,11 +6320,9 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -6641,8 +6629,6 @@ targets:
   - upb_textformat_lib
   - absl/base:no_destructor
   - absl/container:btree
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/meta:type_traits
@@ -6751,11 +6737,9 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -7391,8 +7375,6 @@ targets:
   - z
   - absl/base:no_destructor
   - absl/container:btree
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/meta:type_traits
@@ -7609,14 +7591,11 @@ targets:
   - gtest
   - upb_textformat_lib
   - absl/container:btree
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -8371,14 +8350,11 @@ targets:
   - gtest
   - upb_textformat_lib
   - absl/container:btree
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -8655,7 +8631,6 @@ targets:
   deps:
   - gtest
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -11085,11 +11060,8 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
-  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -11356,11 +11328,9 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -12094,8 +12064,6 @@ targets:
   - z
   - absl/base:no_destructor
   - absl/container:btree
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/meta:type_traits
@@ -12343,14 +12311,11 @@ targets:
   - gtest
   - upb_textformat_lib
   - absl/container:btree
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -12553,14 +12518,11 @@ targets:
   - gtest
   - upb_textformat_lib
   - absl/container:btree
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -12667,7 +12629,6 @@ targets:
   - absl/functional:function_ref
   - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -13619,7 +13580,6 @@ targets:
   - absl/functional:function_ref
   - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - gpr
 - name: http_proxy_mapper_test
@@ -13703,7 +13663,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   uses_polling: false
 - name: if_list_test
   gtest: true
@@ -13716,7 +13675,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   uses_polling: false
 - name: if_test
   gtest: true
@@ -13777,7 +13735,6 @@ targets:
   - upb_textformat_lib
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -13954,11 +13911,9 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -14165,14 +14120,11 @@ targets:
   - gtest
   - upb_textformat_lib
   - absl/container:btree
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -14331,7 +14283,6 @@ targets:
   - upb_textformat_lib
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -14497,11 +14448,9 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -14550,7 +14499,6 @@ targets:
   - gtest
   - absl/functional:function_ref
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -14736,11 +14684,9 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
 - name: log_too_many_open_files_test
@@ -14848,11 +14794,9 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -15068,14 +15012,11 @@ targets:
   - gtest
   - upb_textformat_lib
   - absl/container:btree
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -15141,7 +15082,6 @@ targets:
   - upb_textformat_lib
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -15157,7 +15097,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   uses_polling: false
 - name: matchers_test
   gtest: true
@@ -15223,11 +15162,8 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
-  - absl/container:flat_hash_map
-  - absl/hash:hash
   - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - gpr
 - name: message_allocator_end2end_test
@@ -15326,7 +15262,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   uses_polling: false
 - name: mock_stream_test
   gtest: true
@@ -15392,7 +15327,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   uses_polling: false
 - name: no_server_test
   gtest: true
@@ -15539,11 +15473,9 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -15823,7 +15755,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   uses_polling: false
 - name: parse_address_test
   gtest: true
@@ -15986,7 +15917,6 @@ targets:
   - upb_wire_lib
   - absl/functional:function_ref
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -16081,7 +16011,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   - absl/log:check
   uses_polling: false
 - name: poller_fork_test
@@ -16468,7 +16397,6 @@ targets:
   - upb_textformat_lib
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -16543,7 +16471,6 @@ targets:
   - absl/functional:bind_front
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -16607,7 +16534,6 @@ targets:
   - upb_textformat_lib
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -16706,11 +16632,9 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
 - name: promise_test
@@ -16773,7 +16697,6 @@ targets:
   - upb_textformat_lib
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -16818,7 +16741,6 @@ targets:
   - gtest
   - upb_textformat_lib
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
 - name: proto_buffer_reader_test
@@ -17178,7 +17100,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   - absl/random:bit_gen_ref
   - absl/random:distributions
   - absl/random:random
@@ -17499,8 +17420,6 @@ targets:
   - upb_textformat_lib
   - absl/base:no_destructor
   - absl/container:btree
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
   - absl/container:node_hash_map
   - absl/functional:function_ref
   - absl/meta:type_traits
@@ -17628,7 +17547,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   uses_polling: false
 - name: ring_hash_test
   gtest: true
@@ -17827,7 +17745,6 @@ targets:
   - upb_textformat_lib
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -18158,7 +18075,6 @@ targets:
   - test/core/util/single_set_ptr_test.cc
   deps:
   - gtest
-  - absl/hash:hash
   - gpr
   uses_polling: false
 - name: sleep_test
@@ -18197,7 +18113,6 @@ targets:
   deps:
   - gtest
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -18247,7 +18162,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   uses_polling: false
 - name: spiffe_bundle_map_end2end_test
   gtest: true
@@ -18400,7 +18314,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   - absl/log:check
   - absl/status:status
   - absl/status:statusor
@@ -18585,7 +18498,6 @@ targets:
   - upb_textformat_lib
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -18623,7 +18535,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   - absl/log:check
   - absl/meta:type_traits
   - absl/numeric:bits
@@ -18756,7 +18667,6 @@ targets:
   deps:
   - gtest
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -18846,7 +18756,6 @@ targets:
   deps:
   - gtest
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -18989,7 +18898,6 @@ targets:
   - test/core/resource_quota/thread_quota_test.cc
   deps:
   - gtest
-  - absl/hash:hash
   - gpr
   uses_polling: false
 - name: thread_stress_test
@@ -19098,7 +19006,6 @@ targets:
   deps:
   - gtest
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -19238,7 +19145,6 @@ targets:
   - test/core/util/trie_lookup_test.cc
   deps:
   - gtest
-  - absl/container:flat_hash_map
 - name: try_join_test
   gtest: true
   build: test
@@ -19397,7 +19303,6 @@ targets:
   - upb_textformat_lib
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -19412,7 +19317,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   - absl/log:check
   - absl/numeric:bits
   uses_polling: false
@@ -19428,8 +19332,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
-  - absl/container:flat_hash_map
   - absl/log:check
   - absl/numeric:bits
   uses_polling: false
@@ -19468,7 +19370,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   - absl/log:check
   - absl/numeric:bits
   uses_polling: false
@@ -19592,11 +19493,9 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -19754,7 +19653,6 @@ targets:
   deps:
   - gtest
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
