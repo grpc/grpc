@@ -16826,6 +16826,7 @@ add_executable(flow_control_manager_test
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
   src/core/channelz/property_list.cc
+  src/core/channelz/text_encode.cc
   src/core/ext/transport/chttp2/transport/flow_control.cc
   src/core/ext/transport/chttp2/transport/frame.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
@@ -16838,12 +16839,15 @@ add_executable(flow_control_manager_test
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
   src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/channel/channel_args.cc
