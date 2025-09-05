@@ -48,13 +48,6 @@
   "/" GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE
 #endif
 
-enum class DefaultCallCredentialsCreationMethod {
-  kNone,
-  kFromEnviromentPathValue,
-  kFromWellKnownFile,
-  kFromDefaultGCE,
-};
-
 class grpc_google_default_channel_credentials
     : public grpc_channel_credentials {
  public:

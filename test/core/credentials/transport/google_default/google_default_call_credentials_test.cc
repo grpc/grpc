@@ -42,8 +42,8 @@ class GoogleDefaultCallCredentialsTest : public ::testing::Test {
   void SetUp() override {
     grpc_google_default_credentials_options alts_options = {};
     alts_options.call_creds_for_alts = grpc_md_only_test_credentials_create(
-                GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
-                GRPC_ALTS_TRANSPORT_SECURITY_TYPE);
+        GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
+        GRPC_ALTS_TRANSPORT_SECURITY_TYPE);
     auto* creds = reinterpret_cast<grpc_composite_channel_credentials*>(
         grpc_google_default_credentials_create(
             grpc_md_only_test_credentials_create(

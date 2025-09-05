@@ -845,9 +845,9 @@ TEST_F(CredentialsTest, TestComputeEngineCredsWithAltsSuccess) {
       "GoogleComputeEngineTokenFetcherCredentials{"
       "OAuth2TokenFetcherCredentials}";
   grpc_google_compute_engine_credentials_options options;
-  options->alts_hard_bound = true;
-  grpc_call_credentials* call_creds_for_alts =
-      grpc_google_compute_engine_credentials_create(options);
+  options.alts_hard_bound = true;
+  grpc_call_credentials* creds =
+      grpc_google_compute_engine_credentials_create(&options);
   // Check security level.
   CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
 
@@ -904,12 +904,10 @@ TEST_F(CredentialsTest, TestComputeEngineCredsWithAltsFailure) {
   auto state = RequestMetadataState::NewInstance(
       // TODO(roth): This should return UNAUTHENTICATED.
       absl::UnavailableError("error parsing oauth2 token"), {});
-  grpc_google_compute_engine_credentials_options* options =
-      static_cast<grpc_google_compute_engine_credentials_options*>(
-          gpr_malloc(sizeof(grpc_google_compute_engine_credentials_options)));
-  options->alts_hard_bound = true;
+  grpc_google_compute_engine_credentials_options options;
+  options.alts_hard_bound = true;
   grpc_call_credentials* creds =
-      grpc_google_compute_engine_credentials_create(options);
+      grpc_google_compute_engine_credentials_create(&options);
   HttpRequest::SetOverride(compute_engine_httpcli_get_failure_alts_override,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
@@ -1862,10 +1860,12 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsWithAltsCallCredsSpecified) {
   grpc_call_credentials* call_creds_for_tls =
       grpc_google_compute_engine_credentials_create(nullptr);
   grpc_google_compute_engine_credentials_options options;
-  options->alts_hard_bound = true;
+  options.alts_hard_bound = true;
   grpc_call_credentials* call_creds_for_alts =
-      grpc_google_compute_engine_credentials_create(options);
+      grpc_google_compute_engine_credentials_create(&options);
   set_gce_tenancy_checker_for_testing(test_gce_tenancy_checker);
+  grpc_google_default_credentials_options default_credentials_options;
+  default_credentials_options.call_creds_for_alts = call_creds_for_alts;
   g_test_gce_tenancy_checker_called = false;
   g_test_is_on_gce = true;
   HttpRequest::SetOverride(
@@ -1874,7 +1874,7 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsWithAltsCallCredsSpecified) {
   grpc_composite_channel_credentials* channel_creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
           grpc_google_default_credentials_create(call_creds_for_tls,
-                                                 call_creds_for_alts));
+                                                 &default_credentials_options));
   CHECK_EQ(g_test_gce_tenancy_checker_called, false);
   CHECK_NE(channel_creds, nullptr);
   CHECK_NE(channel_creds->call_creds(), nullptr);
