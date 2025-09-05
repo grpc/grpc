@@ -99,10 +99,6 @@ typedef bool (*grpc_gce_tenancy_checker)(void);
 
 void set_gce_tenancy_checker_for_testing(grpc_gce_tenancy_checker checker);
 
-absl::StatusOr<std::pair<RefCountedPtr<grpc_call_credentials>,
-                         DefaultCallCredentialsCreationMethod>>
-CreateGoogleDefaultCallCredentials();
-
 // TEST-ONLY. Reset the internal global state.
 void grpc_flush_cached_google_default_credentials(void);
 
