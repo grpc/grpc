@@ -959,6 +959,8 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c \
     src/core/ext/upb-gen/google/rpc/status.upb_minitable.c \
+    src/core/ext/upb-gen/proto/cel/expr/checked.upb_minitable.c \
+    src/core/ext/upb-gen/proto/cel/expr/syntax.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c \
@@ -1126,6 +1128,8 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c \
     src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c \
     src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c \
+    src/core/ext/upbdefs-gen/proto/cel/expr/checked.upbdefs.c \
+    src/core/ext/upbdefs-gen/proto/cel/expr/syntax.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c \
@@ -1723,6 +1727,7 @@ LIBGRPC_SRC = \
     third_party/address_sorting/address_sorting.c \
     third_party/address_sorting/address_sorting_posix.c \
     third_party/address_sorting/address_sorting_windows.c \
+    third_party/re2/re2/bitmap256.cc \
     third_party/re2/re2/bitstate.cc \
     third_party/re2/re2/compile.cc \
     third_party/re2/re2/dfa.cc \
@@ -1739,7 +1744,6 @@ LIBGRPC_SRC = \
     third_party/re2/re2/regexp.cc \
     third_party/re2/re2/set.cc \
     third_party/re2/re2/simplify.cc \
-    third_party/re2/re2/stringpiece.cc \
     third_party/re2/re2/tostring.cc \
     third_party/re2/re2/unicode_casefold.cc \
     third_party/re2/re2/unicode_groups.cc \
@@ -2339,6 +2343,10 @@ LIBZ_SRC = \
     third_party/zlib/compress.c \
     third_party/zlib/crc32.c \
     third_party/zlib/deflate.c \
+    third_party/zlib/gzclose.c \
+    third_party/zlib/gzlib.c \
+    third_party/zlib/gzread.c \
+    third_party/zlib/gzwrite.c \
     third_party/zlib/infback.c \
     third_party/zlib/inffast.c \
     third_party/zlib/inflate.c \

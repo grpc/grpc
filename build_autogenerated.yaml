@@ -618,6 +618,10 @@ libs:
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/proto/cel/expr/checked.upb.h
+  - src/core/ext/upb-gen/proto/cel/expr/checked.upb_minitable.h
+  - src/core/ext/upb-gen/proto/cel/expr/syntax.upb.h
+  - src/core/ext/upb-gen/proto/cel/expr/syntax.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
@@ -829,6 +833,8 @@ libs:
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
   - src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h
   - src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h
+  - src/core/ext/upbdefs-gen/proto/cel/expr/checked.upbdefs.h
+  - src/core/ext/upbdefs-gen/proto/cel/expr/syntax.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
@@ -1618,6 +1624,8 @@ libs:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/proto/cel/expr/checked.upb_minitable.c
+  - src/core/ext/upb-gen/proto/cel/expr/syntax.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
@@ -1785,6 +1793,8 @@ libs:
   - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
   - src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c
   - src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c
+  - src/core/ext/upbdefs-gen/proto/cel/expr/checked.upbdefs.c
+  - src/core/ext/upbdefs-gen/proto/cel/expr/syntax.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
   - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
@@ -2211,19 +2221,14 @@ libs:
   - absl/algorithm:container
   - absl/base:no_destructor
   - absl/container:btree
-  - absl/container:flat_hash_map
-  - absl/container:flat_hash_set
-  - absl/container:inlined_vector
   - absl/container:node_hash_map
   - absl/functional:bind_front
   - absl/functional:function_ref
-  - absl/hash:hash
   - absl/meta:type_traits
   - absl/random:bit_gen_ref
   - absl/random:distributions
   - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - cares
   - gpr
@@ -3466,7 +3471,6 @@ libs:
   - third_party/googletest/googletest/src/gtest.cc
   deps:
   - re2
-  - absl/container:flat_hash_set
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
   - absl/debugging:symbolize
@@ -3474,9 +3478,7 @@ libs:
   - absl/flags:parse
   - absl/flags:reflection
   - absl/flags:usage
-  - absl/strings:strings
   - absl/types:any
-  - absl/types:optional
   - absl/types:variant
 - name: re2
   build: all
@@ -3498,13 +3500,10 @@ libs:
   - third_party/re2/re2/unicode_casefold.h
   - third_party/re2/re2/unicode_groups.h
   - third_party/re2/re2/walker-inl.h
-  - third_party/re2/util/logging.h
-  - third_party/re2/util/mix.h
-  - third_party/re2/util/mutex.h
   - third_party/re2/util/strutil.h
   - third_party/re2/util/utf.h
-  - third_party/re2/util/util.h
   src:
+  - third_party/re2/re2/bitmap256.cc
   - third_party/re2/re2/bitstate.cc
   - third_party/re2/re2/compile.cc
   - third_party/re2/re2/dfa.cc
@@ -3521,13 +3520,26 @@ libs:
   - third_party/re2/re2/regexp.cc
   - third_party/re2/re2/set.cc
   - third_party/re2/re2/simplify.cc
-  - third_party/re2/re2/stringpiece.cc
   - third_party/re2/re2/tostring.cc
   - third_party/re2/re2/unicode_casefold.cc
   - third_party/re2/re2/unicode_groups.cc
   - third_party/re2/util/rune.cc
   - third_party/re2/util/strutil.cc
-  deps: []
+  deps:
+  - absl/base:base
+  - absl/base:core_headers
+  - absl/container:fixed_array
+  - absl/container:flat_hash_map
+  - absl/container:flat_hash_set
+  - absl/container:inlined_vector
+  - absl/hash:hash
+  - absl/log:absl_check
+  - absl/log:absl_log
+  - absl/strings:str_format
+  - absl/strings:strings
+  - absl/synchronization:synchronization
+  - absl/types:optional
+  - absl/types:span
 - name: upb_base_lib
   build: all
   language: c
@@ -3821,12 +3833,27 @@ libs:
   - third_party/zlib/trees.h
   - third_party/zlib/zconf.h
   - third_party/zlib/zlib.h
+  - third_party/zlib/zlib/include/crc32.h
+  - third_party/zlib/zlib/include/deflate.h
+  - third_party/zlib/zlib/include/gzguts.h
+  - third_party/zlib/zlib/include/inffast.h
+  - third_party/zlib/zlib/include/inffixed.h
+  - third_party/zlib/zlib/include/inflate.h
+  - third_party/zlib/zlib/include/inftrees.h
+  - third_party/zlib/zlib/include/trees.h
+  - third_party/zlib/zlib/include/zconf.h
+  - third_party/zlib/zlib/include/zlib.h
+  - third_party/zlib/zlib/include/zutil.h
   - third_party/zlib/zutil.h
   src:
   - third_party/zlib/adler32.c
   - third_party/zlib/compress.c
   - third_party/zlib/crc32.c
   - third_party/zlib/deflate.c
+  - third_party/zlib/gzclose.c
+  - third_party/zlib/gzlib.c
+  - third_party/zlib/gzread.c
+  - third_party/zlib/gzwrite.c
   - third_party/zlib/infback.c
   - third_party/zlib/inffast.c
   - third_party/zlib/inflate.c
@@ -4143,8 +4170,6 @@ libs:
   - absl/base:dynamic_annotations
   - absl/base:prefetch
   - absl/container:layout
-  - absl/log:absl_check
-  - absl/log:absl_log
   - absl/strings:internal
   - grpc
   - protobuf
@@ -5252,16 +5277,11 @@ libs:
   - z
   - absl/base:no_destructor
   - absl/container:btree
-  - absl/container:flat_hash_map
-  - absl/container:flat_hash_set
-  - absl/container:inlined_vector
   - absl/container:node_hash_map
   - absl/functional:function_ref
-  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - cares
   - gpr
@@ -5508,12 +5528,9 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/functional:function_ref
-  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -5787,10 +5804,8 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -6083,7 +6098,6 @@ targets:
   - test/core/util/avl_test.cc
   deps:
   - gtest
-  - absl/hash:hash
   - gpr
   uses_polling: false
 - name: aws_request_signer_test
@@ -6263,7 +6277,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   - absl/log:check
   - absl/numeric:bits
   uses_polling: false
@@ -6334,12 +6347,9 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/functional:function_ref
-  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -6655,15 +6665,11 @@ targets:
   - upb_textformat_lib
   - absl/base:no_destructor
   - absl/container:btree
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
   - absl/container:node_hash_map
   - absl/functional:function_ref
-  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -6767,12 +6773,9 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/functional:function_ref
-  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -7417,15 +7420,11 @@ targets:
   - z
   - absl/base:no_destructor
   - absl/container:btree
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
   - absl/container:node_hash_map
   - absl/functional:function_ref
-  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - cares
   - gpr
@@ -7646,15 +7645,11 @@ targets:
   - gtest
   - upb_textformat_lib
   - absl/container:btree
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
   - absl/container:node_hash_map
   - absl/functional:function_ref
-  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -7783,6 +7778,10 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/proto/cel/expr/checked.upb.h
+  - src/core/ext/upb-gen/proto/cel/expr/checked.upb_minitable.h
+  - src/core/ext/upb-gen/proto/cel/expr/syntax.upb.h
+  - src/core/ext/upb-gen/proto/cel/expr/syntax.upb_minitable.h
   - src/core/ext/upb-gen/udpa/annotations/migrate.upb.h
   - src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.h
   - src/core/ext/upb-gen/udpa/annotations/security.upb.h
@@ -7911,6 +7910,8 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/proto/cel/expr/checked.upb_minitable.c
+  - src/core/ext/upb-gen/proto/cel/expr/syntax.upb_minitable.c
   - src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.c
   - src/core/ext/upb-gen/udpa/annotations/security.upb_minitable.c
   - src/core/ext/upb-gen/udpa/annotations/sensitive.upb_minitable.c
@@ -8412,15 +8413,11 @@ targets:
   - gtest
   - upb_textformat_lib
   - absl/container:btree
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
   - absl/container:node_hash_map
   - absl/functional:function_ref
-  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -8697,7 +8694,6 @@ targets:
   deps:
   - gtest
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -9025,7 +9021,6 @@ targets:
   - gtest
   - absl/functional:any_invocable
   - absl/log:check
-  - absl/strings:str_format
   uses_polling: false
 - name: duplicate_header_bad_client_test
   gtest: true
@@ -11128,11 +11123,8 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
-  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -11399,12 +11391,9 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/functional:function_ref
-  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -12147,15 +12136,11 @@ targets:
   - z
   - absl/base:no_destructor
   - absl/container:btree
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
   - absl/container:node_hash_map
   - absl/functional:function_ref
-  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - cares
   - gpr
@@ -12407,15 +12392,11 @@ targets:
   - gtest
   - upb_textformat_lib
   - absl/container:btree
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
   - absl/container:node_hash_map
   - absl/functional:function_ref
-  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -12627,15 +12608,11 @@ targets:
   - gtest
   - upb_textformat_lib
   - absl/container:btree
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
   - absl/container:node_hash_map
   - absl/functional:function_ref
-  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -12739,12 +12716,9 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/functional:function_ref
-  - absl/hash:hash
   - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -13693,12 +13667,9 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/functional:function_ref
-  - absl/hash:hash
   - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - gpr
 - name: http_proxy_mapper_test
@@ -13782,7 +13753,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   uses_polling: false
 - name: if_list_test
   gtest: true
@@ -13795,7 +13765,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   uses_polling: false
 - name: if_test
   gtest: true
@@ -13854,10 +13823,8 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -14034,12 +14001,9 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/functional:function_ref
-  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -14255,15 +14219,11 @@ targets:
   - gtest
   - upb_textformat_lib
   - absl/container:btree
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
   - absl/container:node_hash_map
   - absl/functional:function_ref
-  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -14420,10 +14380,8 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -14589,12 +14547,9 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/functional:function_ref
-  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -14641,10 +14596,8 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
-  - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -14830,12 +14783,9 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/functional:function_ref
-  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
 - name: log_too_many_open_files_test
@@ -14943,12 +14893,9 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/functional:function_ref
-  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -14962,7 +14909,6 @@ targets:
   - test/core/util/lru_cache_test.cc
   deps:
   - gtest
-  - absl/container:flat_hash_map
   - absl/functional:any_invocable
   - absl/log:check
   uses_polling: false
@@ -15174,15 +15120,11 @@ targets:
   - gtest
   - upb_textformat_lib
   - absl/container:btree
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
   - absl/container:node_hash_map
   - absl/functional:function_ref
-  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -15246,10 +15188,8 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -15265,7 +15205,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   uses_polling: false
 - name: matchers_test
   gtest: true
@@ -15331,11 +15270,8 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
-  - absl/container:flat_hash_map
-  - absl/hash:hash
   - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - gpr
 - name: message_allocator_end2end_test
@@ -15434,7 +15370,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   uses_polling: false
 - name: mock_stream_test
   gtest: true
@@ -15500,7 +15435,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   uses_polling: false
 - name: no_server_test
   gtest: true
@@ -15647,12 +15581,9 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/functional:function_ref
-  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -15932,7 +15863,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   uses_polling: false
 - name: parse_address_test
   gtest: true
@@ -16093,11 +16023,8 @@ targets:
   - gtest
   - upb_mini_descriptor_lib
   - upb_wire_lib
-  - absl/container:flat_hash_map
   - absl/functional:function_ref
-  - absl/hash:hash
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -16192,9 +16119,7 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   - absl/log:check
-  - absl/strings:str_format
   uses_polling: false
 - name: poller_fork_test
   gtest: true
@@ -16578,10 +16503,8 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -16653,11 +16576,9 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/functional:bind_front
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -16719,10 +16640,8 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -16821,12 +16740,9 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/functional:function_ref
-  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
 - name: promise_test
@@ -16887,10 +16803,8 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -16934,9 +16848,7 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
 - name: proto_buffer_reader_test
@@ -17242,10 +17154,7 @@ targets:
   - test/core/event_engine/query_extensions_test.cc
   deps:
   - gtest
-  - absl/container:flat_hash_map
-  - absl/hash:hash
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -17299,7 +17208,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   - absl/random:bit_gen_ref
   - absl/random:distributions
   - absl/random:random
@@ -17629,15 +17537,11 @@ targets:
   - upb_textformat_lib
   - absl/base:no_destructor
   - absl/container:btree
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
   - absl/container:node_hash_map
   - absl/functional:function_ref
-  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - gpr
 - name: resolve_address_using_ares_resolver_posix_test
@@ -17760,7 +17664,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   uses_polling: false
 - name: ring_hash_test
   gtest: true
@@ -17957,10 +17860,8 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -18291,7 +18192,6 @@ targets:
   - test/core/util/single_set_ptr_test.cc
   deps:
   - gtest
-  - absl/hash:hash
   - gpr
   uses_polling: false
 - name: sleep_test
@@ -18329,10 +18229,7 @@ targets:
   - test/core/slice/slice_string_helpers_test.cc
   deps:
   - gtest
-  - absl/container:flat_hash_map
-  - absl/hash:hash
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -18382,7 +18279,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   uses_polling: false
 - name: spiffe_bundle_map_end2end_test
   gtest: true
@@ -18510,7 +18406,6 @@ targets:
   - test/core/load_balancing/static_stride_scheduler_test.cc
   deps:
   - gtest
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: status_conversion_test
@@ -18536,7 +18431,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   - absl/log:check
   - absl/status:status
   - absl/status:statusor
@@ -18719,10 +18613,8 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -18760,7 +18652,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   - absl/log:check
   - absl/meta:type_traits
   - absl/numeric:bits
@@ -18846,7 +18737,6 @@ targets:
   - test/core/util/tdigest_test.cc
   deps:
   - gtest
-  - absl/container:flat_hash_map
   - absl/log:check
   - absl/log:log
   - absl/random:random
@@ -18894,7 +18784,6 @@ targets:
   deps:
   - gtest
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -18933,10 +18822,7 @@ targets:
   - test/core/event_engine/slice_buffer_test.cc
   deps:
   - gtest
-  - absl/container:flat_hash_map
-  - absl/hash:hash
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -18987,7 +18873,6 @@ targets:
   deps:
   - gtest
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -19130,7 +19015,6 @@ targets:
   - test/core/resource_quota/thread_quota_test.cc
   deps:
   - gtest
-  - absl/hash:hash
   - gpr
   uses_polling: false
 - name: thread_stress_test
@@ -19239,7 +19123,6 @@ targets:
   deps:
   - gtest
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -19379,7 +19262,6 @@ targets:
   - test/core/util/trie_lookup_test.cc
   deps:
   - gtest
-  - absl/container:flat_hash_map
 - name: try_join_test
   gtest: true
   build: test
@@ -19448,10 +19330,8 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -19538,10 +19418,8 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -19556,7 +19434,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   - absl/log:check
   - absl/numeric:bits
   uses_polling: false
@@ -19572,11 +19449,8 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
-  - absl/container:flat_hash_map
   - absl/log:check
   - absl/numeric:bits
-  - absl/strings:str_format
   uses_polling: false
 - name: unknown_frame_bad_client_test
   gtest: true
@@ -19613,7 +19487,6 @@ targets:
   deps:
   - gtest
   - absl/base:config
-  - absl/base:core_headers
   - absl/log:check
   - absl/numeric:bits
   uses_polling: false
@@ -19737,12 +19610,9 @@ targets:
   deps:
   - gtest
   - upb_textformat_lib
-  - absl/container:flat_hash_map
   - absl/functional:function_ref
-  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -19900,7 +19770,6 @@ targets:
   deps:
   - gtest
   - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -20219,8 +20088,6 @@ targets:
   - test/core/xds/xds_transport_fake.cc
   deps:
   - gtest
-  - absl/log:absl_check
-  - absl/log:absl_log
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -20505,8 +20372,6 @@ targets:
   - test/core/xds/xds_cluster_resource_type_test.cc
   deps:
   - gtest
-  - absl/log:absl_check
-  - absl/log:absl_log
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -21569,8 +21434,6 @@ targets:
   - test/core/xds/xds_endpoint_resource_type_test.cc
   deps:
   - gtest
-  - absl/log:absl_check
-  - absl/log:absl_log
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -24412,38 +24275,33 @@ targets:
   - mac
 external_proto_libraries:
 - destination: third_party/envoy-api
-  hash: cd8b49614408b43bd45d90e3e98d69e24eea632ff42ac3bfb8bca68bc31e377f
+  hash: sha256-zYtJYUQItDvUXZDj6Y1p4k7qYy/0KsO/uLymi8MeN38=
   proto_prefix: third_party/envoy-api/
   strip_prefix: data-plane-api-4de3c74cf21a9958c1cf26d8993c55c6e0d28b49
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/4de3c74cf21a9958c1cf26d8993c55c6e0d28b49.tar.gz
   - https://github.com/envoyproxy/data-plane-api/archive/4de3c74cf21a9958c1cf26d8993c55c6e0d28b49.tar.gz
 - destination: third_party/googleapis
-  hash: 0513f0f40af63bd05dc789cacc334ab6cec27cc89db596557cb2dfe8919463e4
+  hash: sha256-WpRQzxrRGHyCorXN/1Pk1YS21FKStfcbUECDrLA619A=
   proto_prefix: third_party/googleapis/
-  strip_prefix: googleapis-fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0
+  strip_prefix: googleapis-280725e991516d4a0f136268faf5aa6d32d21b54
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/googleapis/archive/fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0.tar.gz
-  - https://github.com/googleapis/googleapis/archive/fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0.tar.gz
+  - https://github.com/googleapis/googleapis/archive/280725e991516d4a0f136268faf5aa6d32d21b54.tar.gz
 - destination: third_party/opencensus-proto/src
-  hash: b7e13f0b4259e80c3070b583c2f39e53153085a6918718b1c710caf7037572b0
+  hash: sha256-49iff57YTJtu7oGMLpMGlQUZQCv4A2mLFcMQt3yi8PM=
   proto_prefix: third_party/opencensus-proto/src/
-  strip_prefix: opencensus-proto-0.3.0/src
+  strip_prefix: opencensus-proto-0.4.1/src
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
-  - https://github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
+  - https://github.com/census-instrumentation/opencensus-proto/archive/refs/tags/v0.4.1.tar.gz
 - destination: third_party/protoc-gen-validate
-  hash: ab51e978326b87e06be7a12fc6496f3ff6586339043557dbbd31f622332a5d45
+  hash: sha256-5HGDUnVN8Tk7h5K2MTOKqFYvOQ6BYHg+NlRUvBHZYyg=
   proto_prefix: third_party/protoc-gen-validate/
   strip_prefix: protoc-gen-validate-1.2.1
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.zip
-  - https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.zip
+  - https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.tar.gz
 - destination: third_party/xds
-  hash: dc305e20c9fa80822322271b50aa2ffa917bf4fd3973bcec52bfc28dc32c5927
+  hash: sha256-DIxPD2f+2We1EEn31eLKepvUM5cKKciOJyyGZTKBcvU=
   proto_prefix: third_party/xds/
-  strip_prefix: xds-3a472e524827f72d1ad621c4983dd5af54c46776
+  strip_prefix: xds-555b57ec207be86f811fb0c04752db6f85e3d7e2
   urls:
-  - https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/3a472e524827f72d1ad621c4983dd5af54c46776.tar.gz
-  - https://github.com/cncf/xds/archive/3a472e524827f72d1ad621c4983dd5af54c46776.tar.gz
+  - https://github.com/cncf/xds/archive/555b57ec207be86f811fb0c04752db6f85e3d7e2.tar.gz
 tests: []
