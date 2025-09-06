@@ -155,6 +155,17 @@ grpc_channelz_v1_ChannelConnectivityState_State ConnectivityStateFromString(
 void PopulateV1Trace(const grpc_channelz_v2_TraceEvent* const* trace_events,
                      size_t num_events, upb_Arena* arena,
                      grpc_channelz_v1_ChannelTrace* trace) {
+  if (num_events > 0) {
+    const auto* ts = grpc_channelz_v2_TraceEvent_timestamp(trace_events[0]);
+    if (ts != nullptr) {
+      auto* v1_ts = grpc_channelz_v1_ChannelTrace_mutable_creation_timestamp(
+          trace, arena);
+      google_protobuf_Timestamp_set_seconds(
+          v1_ts, google_protobuf_Timestamp_seconds(ts));
+      google_protobuf_Timestamp_set_nanos(v1_ts,
+                                          google_protobuf_Timestamp_nanos(ts));
+    }
+  }
   for (size_t i = 0; i < num_events; ++i) {
     auto* v1_event = grpc_channelz_v1_ChannelTrace_add_events(trace, arena);
     upb_StringView description =
