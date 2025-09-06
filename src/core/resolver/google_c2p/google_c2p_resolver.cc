@@ -71,6 +71,7 @@ class GoogleCloud2ProdResolver final : public Resolver {
   void ZoneQueryDone(std::string zone);
   void IPv6QueryDone(bool ipv6_supported);
   void StartXdsResolver();
+  std::shared_ptr<GrpcXdsBootstrap> ConstructBootstrap() const;
 
   ResourceQuotaRefPtr resource_quota_;
   std::shared_ptr<WorkSerializer> work_serializer_;
@@ -78,6 +79,7 @@ class GoogleCloud2ProdResolver final : public Resolver {
   bool using_dns_ = false;
   OrphanablePtr<Resolver> child_resolver_;
   std::string metadata_server_name_ = "metadata.google.internal.";
+  std::string xds_uri_;
   bool shutdown_ = false;
 
   OrphanablePtr<GcpMetadataQuery> zone_query_;
@@ -131,12 +133,11 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
     metadata_server_name_ = std::move(*test_only_metadata_server_override);
   }
   // Create xds resolver.
-  std::string xds_uri =
-      federation_enabled
-          ? absl::StrCat("xds://", kC2PAuthority, "/", name_to_resolve)
-          : absl::StrCat("xds:", name_to_resolve);
+  xds_uri_ = federation_enabled
+                 ? absl::StrCat("xds://", kC2PAuthority, "/", name_to_resolve)
+                 : absl::StrCat("xds:", name_to_resolve);
   child_resolver_ = CoreConfiguration::Get().resolver_registry().CreateResolver(
-      xds_uri, args.args, args.pollset_set, work_serializer_,
+      xds_uri_, args.args, args.pollset_set, work_serializer_,
       std::move(args.result_handler));
   CHECK(child_resolver_ != nullptr);
 }
@@ -185,10 +186,8 @@ void GoogleCloud2ProdResolver::ZoneQueryDone(std::string zone) {
   StartXdsResolver();
 }
 
-void GoogleCloud2ProdResolver::StartXdsResolver() {
-  if (shutdown_) {
-    return;
-  }
+std::shared_ptr<GrpcXdsBootstrap> GoogleCloud2ProdResolver::ConstructBootstrap()
+    const {
   // Construct bootstrap JSON.
   std::random_device rd;
   std::mt19937 mt(rd());
@@ -235,8 +234,19 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
        })},
       {"node", Json::FromObject(std::move(node))},
   });
-  // Inject bootstrap JSON as fallback config.
-  internal::SetXdsFallbackBootstrapConfig(JsonDump(bootstrap).c_str());
+  return GrpcXdsBootstrap::Create(JsonDump(bootstrap)).value();
+}
+
+void GoogleCloud2ProdResolver::StartXdsResolver() {
+  if (shutdown_) return;
+  // Create XdsClient here with a custom bootstrap for C2P.  When the
+  // xds resolver calls GrpcXdsClient::GetOrCreate(), it will get back
+  // the same instance rather than creating one with the normal
+  // bootstrap config from env vars.
+  static NoDestruct<std::shared_ptr<GrpcXdsBootstrap>> bootstrap(
+      ConstructBootstrap());
+  auto xds_client = GrpcXdsClient::GetOrCreate(
+      xds_uri_, ChannelArgs(), "google-c2p resolver", *bootstrap);
   // Now start xDS resolver.
   child_resolver_->StartLocked();
 }
