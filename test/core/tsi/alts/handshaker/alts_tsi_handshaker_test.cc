@@ -375,12 +375,10 @@ void OnClientNextSuccessBase(tsi_result status, void* user_data,
                    application_protocol.data, application_protocol.size),
             0);
   if (is_integrity_only) {
-    LOG(ERROR) << "inonly";
     ASSERT_EQ(memcmp(ALTS_RECORD_INTEGRITY_ONLY_PROTOCOL, record_protocol.data,
                      record_protocol.size),
               0);
   } else {
-    LOG(ERROR) << "ninonly";
     ASSERT_EQ(memcmp(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL,
                      record_protocol.data, record_protocol.size),
               0);
@@ -405,14 +403,11 @@ void OnClientNextSuccessBase(tsi_result status, void* user_data,
 
   // Validate security level.
   if (is_integrity_only) {
-    LOG(ERROR) << "inonly";
-    LOG(ERROR) << tsi_security_level_to_string(TSI_INTEGRITY_ONLY);
     ASSERT_EQ(
         memcmp(tsi_security_level_to_string(TSI_INTEGRITY_ONLY),
                peer.properties[4].value.data, peer.properties[4].value.length),
         0);
   } else {
-    LOG(ERROR) << "ninonly";
     ASSERT_EQ(
         memcmp(ALTS_TSI_HANDSHAKER_TEST_SECURITY_LEVEL,
                peer.properties[4].value.data, peer.properties[4].value.length),

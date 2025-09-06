@@ -225,6 +225,7 @@ static tsi_result handshaker_result_create_zero_copy_grpc_protector(
                                  kAltsAes128GcmRekeyKeyLength},
                                 /*is_rekey=*/true),
       result->is_client,
+      /*is_integrity_only=*/
       (result->record_protocol == ALTS_RECORD_INTEGRITY_ONLY_PROTOCOL),
       /*enable_extra_copy=*/false, max_output_protected_frame_size, protector);
   if (ok != TSI_OK) {
