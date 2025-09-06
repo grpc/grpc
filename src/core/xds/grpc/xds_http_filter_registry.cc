@@ -52,9 +52,10 @@ void XdsHttpRouterFilter::PopulateSymtab(upb_DefPool* symtab) const {
 }
 
 std::optional<XdsHttpFilterImpl::FilterConfig>
-XdsHttpRouterFilter::GenerateFilterConfig(
+XdsHttpRouterFilter::GenerateFilterConfigImpl(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
+    int /*recursion_depth*/, std::set<std::string>* /*ecds_resources_needed*/,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
       std::get_if<absl::string_view>(&extension.value);
@@ -72,10 +73,12 @@ XdsHttpRouterFilter::GenerateFilterConfig(
 }
 
 std::optional<XdsHttpFilterImpl::FilterConfig>
-XdsHttpRouterFilter::GenerateFilterConfigOverride(
+XdsHttpRouterFilter::GenerateFilterConfigOverrideImpl(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& /*context*/,
-    XdsExtension /*extension*/, ValidationErrors* errors) const {
+    XdsExtension /*extension*/, int /*recursion_depth*/,
+    std::set<std::string>* /*ecds_resources_needed*/,
+    ValidationErrors* errors) const {
   errors->AddError("router filter does not support config override");
   return std::nullopt;
 }

@@ -927,10 +927,13 @@ if test "$PHP_GRPC" != "no"; then
     src/core/xds/grpc/xds_cluster_specifier_plugin.cc \
     src/core/xds/grpc/xds_common_types.cc \
     src/core/xds/grpc/xds_common_types_parser.cc \
+    src/core/xds/grpc/xds_ecds.cc \
+    src/core/xds/grpc/xds_ecds_parser.cc \
     src/core/xds/grpc/xds_endpoint.cc \
     src/core/xds/grpc/xds_endpoint_parser.cc \
     src/core/xds/grpc/xds_health_status.cc \
     src/core/xds/grpc/xds_http_fault_filter.cc \
+    src/core/xds/grpc/xds_http_filter.cc \
     src/core/xds/grpc/xds_http_filter_registry.cc \
     src/core/xds/grpc/xds_http_gcp_authn_filter.cc \
     src/core/xds/grpc/xds_http_rbac_filter.cc \

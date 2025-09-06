@@ -82,6 +82,7 @@
 #include "src/core/xds/grpc/xds_certificate_provider.h"
 #include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/grpc/xds_common_types.h"
+#include "src/core/xds/grpc/xds_ecds.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
 #include "src/core/xds/grpc/xds_http_filter_registry.h"
 #include "src/core/xds/grpc/xds_listener.h"
@@ -1048,11 +1049,12 @@ absl::StatusOr<ChannelArgs> XdsServerConfigFetcher::ListenerWatcher::
           .http_filter_registry();
   for (const auto& http_filter :
        filter_chain->http_connection_manager.http_filters) {
+    // FIXME: support ECDS resources
+    const auto& config = GetHttpFilterConfig(http_filter, {});
     // Find filter.  This is guaranteed to succeed, because it's checked
     // at config validation time in the XdsApi code.
     const XdsHttpFilterImpl* filter_impl =
-        http_filter_registry.GetFilterForType(
-            http_filter.config.config_proto_type_name);
+        http_filter_registry.GetFilterForType(config.config_proto_type_name);
     CHECK_NE(filter_impl, nullptr);
     // Some filters like the router filter are no-op filters and do not have
     // an implementation.
@@ -1118,12 +1120,13 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
       [&](XdsListenerResource::FilterChainData& filter_chain_data) {
         auto& hcm = filter_chain_data.http_connection_manager;
         for (const auto& http_filter : hcm.http_filters) {
+          // FIXME: support ECDS resources
+          const auto& config = GetHttpFilterConfig(http_filter, {});
           const XdsHttpFilterImpl* filter_impl =
               http_filter_registry.GetFilterForType(
-                  http_filter.config.config_proto_type_name);
+                  config.config_proto_type_name);
           CHECK_NE(filter_impl, nullptr);  // Enforced in config validation.
-          filter_impl->UpdateBlackboard(http_filter.config, old_blackboard,
-                                        new_blackboard);
+          filter_impl->UpdateBlackboard(config, old_blackboard, new_blackboard);
         }
       });
 }
@@ -1155,8 +1158,8 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
           std::get_if<XdsRouteConfigResource::Route::NonForwardingAction>(
               &route.action) == nullptr;
       auto result = XdsRouting::GeneratePerHTTPFilterConfigsForMethodConfig(
-          http_filter_registry, http_filters, vhost, route, nullptr,
-          ChannelArgs());
+          http_filter_registry, http_filters, {},  // FIXME: add ECDS resources
+          vhost, route, nullptr, ChannelArgs());
       if (!result.ok()) return result.status();
       std::vector<std::string> fields;
       fields.reserve(result->per_filter_configs.size());

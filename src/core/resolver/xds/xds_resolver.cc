@@ -86,6 +86,7 @@
 #include "src/core/util/xxhash_inline.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_client_grpc.h"
+#include "src/core/xds/grpc/xds_ecds.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
 #include "src/core/xds/grpc/xds_listener.h"
 #include "src/core/xds/grpc/xds_route_config.h"
@@ -494,8 +495,9 @@ XdsResolver::RouteConfigData::CreateMethodConfig(
   auto result = XdsRouting::GeneratePerHTTPFilterConfigsForMethodConfig(
       DownCast<const GrpcXdsBootstrap&>(resolver->xds_client_->bootstrap())
           .http_filter_registry(),
-      hcm.http_filters, *resolver->current_config_->virtual_host, route,
-      cluster_weight, resolver->args_);
+      hcm.http_filters, resolver->current_config_->ecds_resources,
+      *resolver->current_config_->virtual_host, route, cluster_weight,
+      resolver->args_);
   if (!result.ok()) return result.status();
   for (const auto& [name, config] : result->per_filter_configs) {
     fields.emplace_back(absl::StrCat("    \"", name, "\": [\n",
@@ -622,11 +624,12 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
   const auto& hcm =
       std::get<XdsListenerResource::HttpConnectionManager>(listener_->listener);
   for (const auto& http_filter : hcm.http_filters) {
+    const auto& config = GetHttpFilterConfig(
+        http_filter, resolver_->current_config_->ecds_resources);
     // Find filter.  This is guaranteed to succeed, because it's checked
     // at config validation time.
     const XdsHttpFilterImpl* filter_impl =
-        http_filter_registry.GetFilterForType(
-            http_filter.config.config_proto_type_name);
+        http_filter_registry.GetFilterForType(config.config_proto_type_name);
     CHECK_NE(filter_impl, nullptr);
     // Add filter to list.
     filters_.push_back(filter_impl);
@@ -785,8 +788,9 @@ void XdsResolver::XdsConfigSelector::AddFilters(
   for (size_t i = 0; i < filters_.size(); ++i) {
     auto* filter = filters_[i];
     filter->AddFilter(builder);
-    filter->UpdateBlackboard(hcm.http_filters[i].config, old_blackboard,
-                             new_blackboard);
+    const auto& config = GetHttpFilterConfig(
+        hcm.http_filters[i], resolver_->current_config_->ecds_resources);
+    filter->UpdateBlackboard(config, old_blackboard, new_blackboard);
   }
   builder.Add<ClusterSelectionFilter>();
 }
@@ -803,8 +807,9 @@ XdsResolver::XdsConfigSelector::GetFilters(const Blackboard* old_blackboard,
     if (filter->channel_filter() != nullptr) {
       filters.push_back(filter->channel_filter());
     }
-    filter->UpdateBlackboard(hcm.http_filters[i].config, old_blackboard,
-                             new_blackboard);
+    const auto& config = GetHttpFilterConfig(
+        hcm.http_filters[i], resolver_->current_config_->ecds_resources);
+    filter->UpdateBlackboard(config, old_blackboard, new_blackboard);
   }
   filters.push_back(&ClusterSelectionFilter::kFilter);
   return filters;
@@ -1022,7 +1027,7 @@ XdsResolver::CreateServiceConfig() {
       XdsRouting::GeneratePerHTTPFilterConfigsForServiceConfig(
           static_cast<const GrpcXdsBootstrap&>(xds_client_->bootstrap())
               .http_filter_registry(),
-          hcm.http_filters, args_);
+          hcm.http_filters, current_config_->ecds_resources, args_);
   if (!filter_configs.ok()) return filter_configs.status();
   for (const auto& [name, config] : filter_configs->per_filter_configs) {
     config_parts.emplace_back(absl::StrCat(

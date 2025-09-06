@@ -359,7 +359,7 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
     const XdsResourceType::DecodeContext& context, const ParentType* parent,
     bool (*upb_next_func)(const ParentType*, upb_StringView*,
                           const struct google_protobuf_Any**, size_t* iter),
-    ValidationErrors* errors) {
+    std::set<std::string>* ecds_resources_needed, ValidationErrors* errors) {
   XdsRouteConfigResource::TypedPerFilterConfig typed_per_filter_config;
   size_t filter_it = kUpb_Map_Begin;
   upb_StringView key_view;
@@ -405,7 +405,8 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
     }
     std::optional<XdsHttpFilterImpl::FilterConfig> filter_config =
         filter_impl->GenerateFilterConfigOverride(
-            key, context, std::move(*extension_to_use), errors);
+            key, context, std::move(*extension_to_use), /*recursion_depth=*/0,
+            ecds_resources_needed, errors);
     if (filter_config.has_value()) {
       typed_per_filter_config[std::string(key)] = std::move(*filter_config);
     }
@@ -486,7 +487,7 @@ std::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
     const std::map<std::string /*cluster_specifier_plugin_name*/,
                    std::string /*LB policy config*/>&
         cluster_specifier_plugin_map,
-    ValidationErrors* errors) {
+    std::set<std::string>* ecds_resources_needed, ValidationErrors* errors) {
   XdsRouteConfigResource::Route::RouteAction route_action;
   // grpc_timeout_header_max or max_stream_duration
   const auto* max_stream_duration =
@@ -634,7 +635,7 @@ std::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
             envoy_config_route_v3_WeightedCluster_ClusterWeight>(
             context, cluster_proto,
             envoy_config_route_v3_WeightedCluster_ClusterWeight_typed_per_filter_config_next,
-            errors);
+            ecds_resources_needed, errors);
       }
       // name
       cluster.name = UpbStringToStdString(
@@ -704,7 +705,7 @@ std::optional<XdsRouteConfigResource::Route> ParseRoute(
     const XdsRouteConfigResource::ClusterSpecifierPluginMap&
         cluster_specifier_plugin_map,
     std::set<absl::string_view>* cluster_specifier_plugins_not_seen,
-    ValidationErrors* errors) {
+    std::set<std::string>* ecds_resources_needed, ValidationErrors* errors) {
   XdsRouteConfigResource::Route route;
   // Parse route match.
   {
@@ -732,7 +733,8 @@ std::optional<XdsRouteConfigResource::Route> ParseRoute(
   if (route_action_proto != nullptr) {
     ValidationErrors::ScopedField field(errors, ".route");
     auto route_action = RouteActionParse(context, route_action_proto,
-                                         cluster_specifier_plugin_map, errors);
+                                         cluster_specifier_plugin_map,
+                                         ecds_resources_needed, errors);
     if (!route_action.has_value()) return std::nullopt;
     // If the route does not have a retry policy but the vhost does,
     // use the vhost retry policy for this route.
@@ -760,7 +762,8 @@ std::optional<XdsRouteConfigResource::Route> ParseRoute(
     route.typed_per_filter_config =
         ParseTypedPerFilterConfig<envoy_config_route_v3_Route>(
             context, route_proto,
-            envoy_config_route_v3_Route_typed_per_filter_config_next, errors);
+            envoy_config_route_v3_Route_typed_per_filter_config_next,
+            ecds_resources_needed, errors);
   }
   return route;
 }
@@ -819,7 +822,7 @@ std::shared_ptr<const XdsRouteConfigResource> XdsRouteConfigResourceParse(
           ParseTypedPerFilterConfig<envoy_config_route_v3_VirtualHost>(
               context, virtual_hosts[i],
               envoy_config_route_v3_VirtualHost_typed_per_filter_config_next,
-              errors);
+              &rds_update->ecds_resources_needed, errors);
     }
     // Parse retry policy.
     std::optional<XdsRouteConfigResource::RetryPolicy>
@@ -839,7 +842,8 @@ std::shared_ptr<const XdsRouteConfigResource> XdsRouteConfigResourceParse(
       ValidationErrors::ScopedField field(errors, absl::StrCat("[", j, "]"));
       auto route = ParseRoute(context, routes[j], virtual_host_retry_policy,
                               rds_update->cluster_specifier_plugin_map,
-                              &cluster_specifier_plugins_not_seen, errors);
+                              &cluster_specifier_plugins_not_seen,
+                              &rds_update->ecds_resources_needed, errors);
       if (route.has_value()) vhost.routes.emplace_back(std::move(*route));
     }
   }

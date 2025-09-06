@@ -80,17 +80,19 @@ class XdsHttpFilterImpl {
 
   // Generates a Config from the xDS filter config proto.
   // Used for the top-level config in the HCM HTTP filter list.
-  virtual std::optional<FilterConfig> GenerateFilterConfig(
+  std::optional<FilterConfig> GenerateFilterConfig(
       absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
-      ValidationErrors* errors) const = 0;
+      int recursion_depth, std::set<std::string>* ecds_resources_needed,
+      ValidationErrors* errors) const;
 
   // Generates a Config from the xDS filter config proto.
   // Used for the typed_per_filter_config override in VirtualHost and Route.
-  virtual std::optional<FilterConfig> GenerateFilterConfigOverride(
+  std::optional<FilterConfig> GenerateFilterConfigOverride(
       absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
-      ValidationErrors* errors) const = 0;
+      int recursion_depth, std::set<std::string>* ecds_resources_needed,
+      ValidationErrors* errors) const;
 
   // C-core channel filter implementation.
   virtual void AddFilter(InterceptionChainBuilder& builder) const = 0;
@@ -134,6 +136,23 @@ class XdsHttpFilterImpl {
 
   // Returns true if the filter must be the last filter in the chain.
   virtual bool IsTerminalFilter() const { return false; }
+
+ private:
+  // Generates a Config from the xDS filter config proto.
+  // Used for the top-level config in the HCM HTTP filter list.
+  virtual std::optional<FilterConfig> GenerateFilterConfigImpl(
+      absl::string_view instance_name,
+      const XdsResourceType::DecodeContext& context, XdsExtension extension,
+      int recursion_depth, std::set<std::string>* ecds_resources_needed,
+      ValidationErrors* errors) const = 0;
+
+  // Generates a Config from the xDS filter config proto.
+  // Used for the typed_per_filter_config override in VirtualHost and Route.
+  virtual std::optional<FilterConfig> GenerateFilterConfigOverrideImpl(
+      absl::string_view instance_name,
+      const XdsResourceType::DecodeContext& context, XdsExtension extension,
+      int recursion_depth, std::set<std::string>* ecds_resources_needed,
+      ValidationErrors* errors) const = 0;
 };
 
 }  // namespace grpc_core

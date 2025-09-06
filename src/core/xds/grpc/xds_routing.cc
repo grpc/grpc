@@ -218,19 +218,21 @@ GeneratePerHTTPFilterConfigs(
     const XdsHttpFilterRegistry& http_filter_registry,
     const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
         http_filters,
+    const std::map<absl::string_view, std::shared_ptr<const XdsEcdsResource>>&
+        ecds_resources,
     const ChannelArgs& args,
     absl::FunctionRef<absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>(
-        const XdsHttpFilterImpl&,
-        const XdsListenerResource::HttpConnectionManager::HttpFilter&)>
+        const XdsHttpFilterImpl&, const std::string&,
+        const XdsHttpFilterImpl::FilterConfig&)>
         generate_service_config) {
   XdsRouting::GeneratePerHttpFilterConfigsResult result;
   result.args = args;
   for (const auto& http_filter : http_filters) {
+    const auto& config = GetHttpFilterConfig(http_filter, ecds_resources);
     // Find filter.  This is guaranteed to succeed, because it's checked
     // at config validation time in the listener parsing code.
     const XdsHttpFilterImpl* filter_impl =
-        http_filter_registry.GetFilterForType(
-            http_filter.config.config_proto_type_name);
+        http_filter_registry.GetFilterForType(config.config_proto_type_name);
     CHECK_NE(filter_impl, nullptr);
     // If there is not actually any C-core filter associated with this
     // xDS filter, then it won't need any config, so skip it.
@@ -240,7 +242,7 @@ GeneratePerHTTPFilterConfigs(
     result.args = filter_impl->ModifyChannelArgs(result.args);
     // Generate service config for filter.
     auto service_config_field =
-        generate_service_config(*filter_impl, http_filter);
+        generate_service_config(*filter_impl, http_filter.name, config);
     if (!service_config_field.ok()) {
       return absl::FailedPreconditionError(absl::StrCat(
           "failed to generate service config for HTTP filter ",
@@ -260,22 +262,21 @@ XdsRouting::GeneratePerHTTPFilterConfigsForMethodConfig(
     const XdsHttpFilterRegistry& http_filter_registry,
     const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
         http_filters,
+    const std::map<absl::string_view, std::shared_ptr<const XdsEcdsResource>>&
+        ecds_resources,
     const XdsRouteConfigResource::VirtualHost& vhost,
     const XdsRouteConfigResource::Route& route,
     const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
         cluster_weight,
     const ChannelArgs& args) {
   return GeneratePerHTTPFilterConfigs(
-      http_filter_registry, http_filters, args,
-      [&](const XdsHttpFilterImpl& filter_impl,
-          const XdsListenerResource::HttpConnectionManager::HttpFilter&
-              http_filter) {
+      http_filter_registry, http_filters, ecds_resources, args,
+      [&](const XdsHttpFilterImpl& filter_impl, const std::string& name,
+          const XdsHttpFilterImpl::FilterConfig& config) {
         const XdsHttpFilterImpl::FilterConfig* config_override =
-            FindFilterConfigOverride(http_filter.name, vhost, route,
-                                     cluster_weight);
+            FindFilterConfigOverride(name, vhost, route, cluster_weight);
         // Generate service config for filter.
-        return filter_impl.GenerateMethodConfig(http_filter.config,
-                                                config_override);
+        return filter_impl.GenerateMethodConfig(config, config_override);
       });
 }
 
@@ -284,13 +285,14 @@ XdsRouting::GeneratePerHTTPFilterConfigsForServiceConfig(
     const XdsHttpFilterRegistry& http_filter_registry,
     const std::vector<XdsListenerResource::HttpConnectionManager::HttpFilter>&
         http_filters,
+    const std::map<absl::string_view, std::shared_ptr<const XdsEcdsResource>>&
+        ecds_resources,
     const ChannelArgs& args) {
   return GeneratePerHTTPFilterConfigs(
-      http_filter_registry, http_filters, args,
-      [&](const XdsHttpFilterImpl& filter_impl,
-          const XdsListenerResource::HttpConnectionManager::HttpFilter&
-              http_filter) {
-        return filter_impl.GenerateServiceConfig(http_filter.config);
+      http_filter_registry, http_filters, ecds_resources, args,
+      [&](const XdsHttpFilterImpl& filter_impl, const std::string& /*name*/,
+          const XdsHttpFilterImpl::FilterConfig& config) {
+        return filter_impl.GenerateServiceConfig(config);
       });
 }
 

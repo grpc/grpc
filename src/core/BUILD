@@ -5934,6 +5934,9 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "xds_http_filter",
+    srcs = [
+        "xds/grpc/xds_http_filter.cc",
+    ],
     hdrs = [
         "xds/grpc/xds_http_filter.h",
     ],
@@ -6001,6 +6004,25 @@ grpc_cc_library(
         "xds_http_filter",
         "xds_route_config",
         "//:sockaddr_utils",
+        "//:xds_client",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_ecds",
+    srcs = [
+        "xds/grpc/xds_ecds.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_ecds.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "xds_http_filter",
+        "xds_listener",
         "//:xds_client",
     ],
 )
@@ -6174,6 +6196,7 @@ grpc_cc_library(
         "xds/grpc/xds_cluster_parser.cc",
         "xds/grpc/xds_cluster_specifier_plugin.cc",
         "xds/grpc/xds_common_types_parser.cc",
+        "xds/grpc/xds_ecds_parser.cc",
         "xds/grpc/xds_endpoint_parser.cc",
         "xds/grpc/xds_http_fault_filter.cc",
         "xds/grpc/xds_http_filter_registry.cc",
@@ -6198,6 +6221,7 @@ grpc_cc_library(
         "xds/grpc/xds_cluster_parser.h",
         "xds/grpc/xds_cluster_specifier_plugin.h",
         "xds/grpc/xds_common_types_parser.h",
+        "xds/grpc/xds_ecds_parser.h",
         "xds/grpc/xds_endpoint_parser.h",
         "xds/grpc/xds_http_fault_filter.h",
         "xds/grpc/xds_http_filter_registry.h",
@@ -6361,6 +6385,7 @@ grpc_cc_library(
         "xds_cluster",
         "xds_common_types",
         "xds_credentials",
+        "xds_ecds",
         "xds_endpoint",
         "xds_extension_upb",
         "xds_file_watcher_certificate_provider_factory",
@@ -6522,6 +6547,7 @@ grpc_cc_library(
         "xds_certificate_provider_store",
         "xds_common_types",
         "xds_credentials",
+        "xds_ecds",
         "xds_http_filter",
         "xds_listener",
         "xds_route_config",
@@ -7789,6 +7815,7 @@ grpc_cc_library(
         "match",
         "ref_counted",
         "xds_cluster",
+        "xds_ecds",
         "xds_endpoint",
         "xds_listener",
         "xds_route_config",
@@ -7866,6 +7893,7 @@ grpc_cc_library(
         "slice",
         "time",
         "xds_dependency_manager",
+        "xds_ecds",
         "xds_http_filter",
         "xds_listener",
         "xds_route_config",

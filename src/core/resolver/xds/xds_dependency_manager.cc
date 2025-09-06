@@ -313,6 +313,7 @@ void XdsDependencyManager::OnListenerUpdate(
     current_listener_.reset();
     return ReportError("LDS", listener_resource_name_, "not an API listener");
   }
+  // FIXME: handle ECDS subscriptions
   current_listener_ = *std::move(listener);
   lds_resolution_note_.clear();
   Match(
@@ -475,6 +476,7 @@ void XdsDependencyManager::OnRouteConfigUpdate(
   clusters_from_route_config_ =
       GetClustersFromVirtualHost(*current_virtual_host_);
   rds_resolution_note_.clear();
+  // FIXME: handle ECDS subscriptions
   MaybeReportUpdate();
 }
 

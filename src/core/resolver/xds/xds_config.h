@@ -28,6 +28,7 @@
 #include "absl/strings/string_view.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/xds/grpc/xds_cluster.h"
+#include "src/core/xds/grpc/xds_ecds.h"
 #include "src/core/xds/grpc/xds_endpoint.h"
 #include "src/core/xds/grpc/xds_listener.h"
 #include "src/core/xds/grpc/xds_route_config.h"
@@ -44,6 +45,11 @@ struct XdsConfig : public RefCounted<XdsConfig> {
   std::shared_ptr<const XdsRouteConfigResource> route_config;
   // Virtual host.  Points into route_config.  Will always be non-null.
   const XdsRouteConfigResource::VirtualHost* virtual_host;
+
+  // ECDS resources referenced in HTTP filter configs in the Listener or
+  // RouteConfiguration resources.
+  std::map<absl::string_view, std::shared_ptr<const XdsEcdsResource>>
+      ecds_resources;
 
   struct ClusterConfig {
     // Cluster resource.  Always non-null.
