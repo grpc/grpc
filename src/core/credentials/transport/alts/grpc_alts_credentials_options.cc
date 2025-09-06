@@ -42,3 +42,12 @@ void grpc_alts_credentials_options_destroy(
     }
   }
 }
+
+void grpc_alts_credentials_client_options_set_record_protocols(
+    grpc_alts_credentials_options* options,
+    const std::vector<std::string>& record_protocols) {
+  if (options == nullptr) {
+    return;
+  }
+  options->record_protocols = record_protocols;
+}
