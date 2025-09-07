@@ -28,65 +28,7 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 
 namespace grpc_core {
-namespace http2 {
-
-class FlowControlManager {
- public:
-  void SendStreamFlowControlToPeer(const uint32_t stream_id,
-                                   const uint32_t increment) {
-    DCHECK(stream_id % 2 == 1);
-    DCHECK_GT(increment, 0u);
-    DCHECK_LE(increment,
-              chttp2::kMaxWindow - stream_window_updates_[stream_id]);
-    stream_window_updates_[stream_id] += increment;
-  }
-
-  void SendTransportFlowControlToPeer(const uint32_t increment) {
-    DCHECK_GT(increment, 0u);
-    DCHECK_LE(increment, chttp2::kMaxWindow - transport_window_update_size_);
-    transport_window_update_size_ += increment;
-  }
-
-  std::vector<Http2Frame> GetFlowControlFramesForPeer() {
-    std::vector<Http2Frame> frames;
-    const size_t num_frames = stream_window_updates_.size() +
-                              (transport_window_update_size_ > 0u ? 1u : 0u);
-    if (num_frames > 0u) {
-      frames.reserve(num_frames);
-      if (transport_window_update_size_ > 0u) {
-        frames.emplace_back(Http2WindowUpdateFrame{
-            /*stream_id=*/0u, /*increment=*/transport_window_update_size_});
-        transport_window_update_size_ = 0u;
-      }
-      for (auto& pair : stream_window_updates_) {
-        DCHECK_GT(/*increment=*/pair.second, 0u);
-        if (GPR_LIKELY(pair.second > 0u)) {
-          frames.emplace_back(
-              Http2WindowUpdateFrame{/*stream_id=*/pair.first,
-                                     /*increment=*/pair.second});
-        }
-      }
-      stream_window_updates_.clear();
-    }
-    DCHECK(!HasWindowUpdates());
-    return frames;
-  }
-
-  bool HasWindowUpdates() const {
-    return transport_window_update_size_ > 0u ||
-           !stream_window_updates_.empty();
-  }
-
-  void RemoveStream(const uint32_t stream_id) {
-    stream_window_updates_.erase(stream_id);
-  }
-
- private:
-  uint32_t transport_window_update_size_ = 0u;
-  absl::flat_hash_map<uint32_t, uint32_t> stream_window_updates_;
-};
-
-}  // namespace http2
+namespace http2 {}  // namespace http2
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_MANAGER_H
