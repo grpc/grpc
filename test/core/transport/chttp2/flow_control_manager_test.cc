@@ -28,3 +28,8 @@
 namespace grpc_core {
 namespace http2 {}  // namespace http2
 }  // namespace grpc_core
+
+int main(int argc, char** argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
