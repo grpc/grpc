@@ -70,6 +70,8 @@ ABSL_FLAG(absl::optional<std::string>, grpc_system_ssl_roots_dir, {},
           "Custom directory to SSL Roots");
 ABSL_FLAG(absl::optional<std::string>, grpc_default_ssl_roots_file_path, {},
           "Path to the default SSL roots file.");
+ABSL_FLAG(absl::optional<bool>, grpc_use_system_roots_over_language_callback, {},
+          "Prefer loading system root certificates over language callback.");
 ABSL_FLAG(absl::optional<bool>, grpc_not_use_system_ssl_roots, {},
           "Disable loading system root certificates.");
 ABSL_FLAG(absl::optional<std::string>, grpc_ssl_cipher_suites, {},
@@ -101,6 +103,10 @@ ConfigVars::ConfigVars(const Overrides& overrides)
       abort_on_leaks_(LoadConfig(FLAGS_grpc_abort_on_leaks,
                                  "GRPC_ABORT_ON_LEAKS",
                                  overrides.abort_on_leaks, false)),
+      use_system_roots_over_language_callback_(
+          LoadConfig(FLAGS_grpc_use_system_roots_over_language_callback,
+                     "GRPC_USE_SYSTEM_ROOTS_OVER_LANGUAGE_CALLBACK",
+                     overrides.use_system_roots_over_language_callback, false)),
       not_use_system_ssl_roots_(LoadConfig(
           FLAGS_grpc_not_use_system_ssl_roots, "GRPC_NOT_USE_SYSTEM_SSL_ROOTS",
           overrides.not_use_system_ssl_roots, false)),
