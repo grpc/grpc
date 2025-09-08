@@ -875,6 +875,14 @@ void alts_handshaker_client_set_fields_for_testing(
   client->inject_read_failure = inject_read_failure;
 }
 
+void alts_handshaker_client_set_user_data_for_testing(alts_handshaker_client* c,
+                                                      void* user_data) {
+  CHECK_NE(c, nullptr);
+  alts_grpc_handshaker_client* client =
+      reinterpret_cast<alts_grpc_handshaker_client*>(c);
+  client->user_data = user_data;
+}
+
 void alts_handshaker_client_check_fields_for_testing(
     alts_handshaker_client* c, tsi_handshaker_on_next_done_cb cb,
     void* user_data, bool has_sent_start_message, grpc_slice* recv_bytes) {
