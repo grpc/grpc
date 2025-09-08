@@ -23,7 +23,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "absl/functional/bind_front.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
