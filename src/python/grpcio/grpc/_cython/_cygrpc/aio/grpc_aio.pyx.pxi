@@ -121,11 +121,12 @@ cpdef shutdown_grpc_aio():
         # poller thread to finish gracefully. In py3.14, PythonFinalizationError
         # is raised when Thread.join() is called during finalization.
         #
-        # Why `sys is not None` check:
-        # Python 3.14.0rc1 interpreter in some cases unloads top-level symbols
-        # (sys, _LOGGER), earlier than AioChannel.__dealloc__ triggers shutdown.
-        # TODO(sergiitk): verify if this needed after Python 3.14.0.
-        if sys is not None and not sys.is_finalizing():
+        # Why `sys is None` check:
+        # Python interpreter in some cases unloads top-level symbols (sys,
+        # _LOGGER), earlier than AioChannel.__dealloc__ triggers shutdown.
+        # If sys is unloaded, we assume the interpreter is finalizing, otherwise
+        # we check sys.is_finalizing().
+        if sys is None or sys.is_finalizing():
             return
 
         # Only call the shutdown when refcount down to 0.
