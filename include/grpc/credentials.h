@@ -225,7 +225,7 @@ GRPCAPI void grpc_call_credentials_release(grpc_call_credentials* creds);
    credentials object to attach to the channel for ALTS connections. If
    credentials options are specified, it will be used to configure an underlying
    channel which type is ALTS. If the field create_hard_bound_credentials is
-   true, the call_creds_for_alts field will be ignored
+   true, the call_creds_for_alts field will be ignored.
 */
 typedef struct {
   bool create_hard_bound_credentials = false;
