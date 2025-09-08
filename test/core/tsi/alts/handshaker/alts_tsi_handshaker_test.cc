@@ -772,7 +772,7 @@ void CheckHandshakerNextSuccessIntegrityOnly() {
   tsi_handshaker* client_handshaker =
       CreateTestHandshaker(/*is_client=*/true, /*is_integrity_only=*/true);
   tsi_handshaker* server_handshaker = CreateTestHandshaker(
-      /*is_client=*/false /* is_client */, /*is_integrity_only=*/true);
+      /*is_client=*/false, /*is_integrity_only=*/true);
   // Client start.
   ASSERT_EQ(tsi_handshaker_next(client_handshaker, nullptr, 0, nullptr, nullptr,
                                 nullptr, OnClientStartSuccessCb, nullptr),
