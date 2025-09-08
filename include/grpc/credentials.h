@@ -228,7 +228,7 @@ GRPCAPI void grpc_call_credentials_release(grpc_call_credentials* creds);
    true, the call_creds_for_alts field will be ignored.
 */
 typedef struct {
-  bool create_hard_bound_credentials = false;
+  bool create_hard_bound_credentials;
   grpc_call_credentials* call_creds_for_alts;
 } grpc_google_default_credentials_options;
 
@@ -498,7 +498,7 @@ GRPCAPI grpc_call_credentials* grpc_composite_call_credentials_create(
 typedef struct {
   /// Indicates if the created credentials should be ALTS with hard bound
   /// tokens.
-  bool alts_hard_bound = false;
+  bool alts_hard_bound;
 } grpc_google_compute_engine_credentials_options;
 
 /** Creates a compute engine credentials object for connecting to Google.
