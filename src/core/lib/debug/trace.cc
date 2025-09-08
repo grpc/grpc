@@ -17,8 +17,6 @@
 //
 
 #include "src/core/lib/debug/trace.h"
-
-#include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
 #include <string>
