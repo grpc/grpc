@@ -381,6 +381,19 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "flow_control_manager_test",
+    srcs = ["flow_control_manager_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:chttp2_frame",
+        "//src/core:chttp2_flow_control",
+        "//src/core:flow_control_manager",
+    ],
+)
+
+grpc_cc_test(
     name = "graceful_shutdown_test",
     srcs = ["graceful_shutdown_test.cc"],
     external_deps = [
