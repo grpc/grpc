@@ -452,11 +452,11 @@ void OnClientNextSuccessIntegrityOnlyCb(tsi_result status, void* user_data,
                                  /*is_integrity_only=*/true);
 }
 
-void OnServerNextSuccessBase(tsi_result status, void* user_data,
+void OnServerNextSuccess(tsi_result status, void* user_data,
                              const unsigned char* bytes_to_send,
                              size_t bytes_to_send_size,
                              tsi_handshaker_result* result,
-                             bool is_integrity_only) {
+                             bool is_integrity_only = false) {
   ASSERT_EQ(status, TSI_OK);
   ASSERT_EQ(user_data, nullptr);
   ASSERT_EQ(bytes_to_send_size, 0);
@@ -561,20 +561,11 @@ void OnServerNextSuccessBase(tsi_result status, void* user_data,
   signal(&tsi_to_caller_notification);
 }
 
-void OnServerNextSuccessCb(tsi_result status, void* user_data,
-                           const unsigned char* bytes_to_send,
-                           size_t bytes_to_send_size,
-                           tsi_handshaker_result* result) {
-  return OnServerNextSuccessBase(status, user_data, bytes_to_send,
-                                 bytes_to_send_size, result,
-                                 /*is_integrity_only=*/false);
-}
-
 void OnServerNextSuccessIntegrityOnlyCb(tsi_result status, void* user_data,
                                         const unsigned char* bytes_to_send,
                                         size_t bytes_to_send_size,
                                         tsi_handshaker_result* result) {
-  return OnServerNextSuccessBase(status, user_data, bytes_to_send,
+  return OnServerNextSuccess(status, user_data, bytes_to_send,
                                  bytes_to_send_size, result,
                                  /*is_integrity_only=*/true);
 }
@@ -633,7 +624,7 @@ tsi_result MockNextBase(alts_handshaker_client* client,
     cb = is_client ? OnClientNextSuccessIntegrityOnlyCb
                    : OnServerNextSuccessIntegrityOnlyCb;
   } else {
-    cb = is_client ? OnClientNextSuccessCb : OnServerNextSuccessCb;
+    cb = is_client ? OnClientNextSuccessCb : OnServerNextSuccess;
   }
   alts_handshaker_client_set_cb_for_testing(client, cb);
   alts_handshaker_client_set_recv_bytes_for_testing(client, bytes_received);
@@ -765,7 +756,7 @@ static void check_handshaker_next_success() {
                 server_handshaker,
                 (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
                 strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
-                nullptr, OnServerNextSuccessCb, nullptr),
+                nullptr, OnServerNextSuccess, nullptr),
             TSI_ASYNC);
   wait(&tsi_to_caller_notification);
   // Cleanup.

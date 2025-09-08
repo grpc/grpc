@@ -100,6 +100,6 @@ void grpc_alts_credentials_client_options_set_token_fetcher(
 
 void grpc_alts_credentials_client_options_set_record_protocols(
     grpc_alts_credentials_options* options,
-    const std::vector<std::string>& record_protocols);
+    const absl::Span<std::string> record_protocols);
 
 #endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_ALTS_GRPC_ALTS_CREDENTIALS_OPTIONS_H

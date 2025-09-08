@@ -158,7 +158,7 @@ static tsi_result handshaker_result_extract_peer(
   index++;
   CHECK_NE(&peer->properties[index], nullptr);
   tsi_security_level security_level =
-      result->record_protocol == ALTS_RECORD_INTEGRITY_ONLY_PROTOCOL
+      result->record_protocol == ALTS_INTEGRITY_ONLY_RECORD_PROTOCOL
           ? TSI_INTEGRITY_ONLY
           : TSI_PRIVACY_AND_INTEGRITY;
   ok = tsi_construct_string_peer_property_from_cstring(
@@ -226,7 +226,7 @@ static tsi_result handshaker_result_create_zero_copy_grpc_protector(
                                 /*is_rekey=*/true),
       result->is_client,
       /*is_integrity_only=*/
-      (result->record_protocol == ALTS_RECORD_INTEGRITY_ONLY_PROTOCOL),
+      (result->record_protocol == ALTS_INTEGRITY_ONLY_RECORD_PROTOCOL),
       /*enable_extra_copy=*/false, max_output_protected_frame_size, protector);
   if (ok != TSI_OK) {
     LOG(ERROR) << "Failed to create zero-copy grpc protector";
@@ -385,7 +385,7 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
   grpc_gcp_AltsContext_set_application_protocol(context, application_protocol);
   grpc_gcp_AltsContext_set_record_protocol(context, record_protocol);
   grpc_gcp_AltsContext_set_security_level(
-      context, sresult->record_protocol == ALTS_RECORD_INTEGRITY_ONLY_PROTOCOL
+      context, sresult->record_protocol == ALTS_INTEGRITY_ONLY_RECORD_PROTOCOL
                    ? TSI_INTEGRITY_ONLY
                    : TSI_PRIVACY_AND_INTEGRITY);
   grpc_gcp_AltsContext_set_peer_service_account(context, peer_service_account);
