@@ -48,6 +48,13 @@
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #endif  // GRPC_POSIX_SOCKET_TCP
 
+#if defined(GRPC_POSIX_SOCKET_TCP) && \
+    !defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
+#define GRPC_PLATFORM_SUPPORTS_POSIX_POLLING true
+#else
+#define GRPC_PLATFORM_SUPPORTS_POSIX_POLLING false
+#endif
+
 namespace grpc_event_engine::experimental {
 
 #ifdef GRPC_POSIX_SOCKET_TCP
@@ -120,10 +127,10 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
 
   ~PosixEventEngine() override;
 
-  absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>>
-  CreatePosixEndpointFromFd(int fd, const EndpointConfig& config,
-                            MemoryAllocator memory_allocator) override;
-  absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> CreateEndpointFromFd(
+  std::unique_ptr<EventEngine::Endpoint> CreatePosixEndpointFromFd(
+      int fd, const EndpointConfig& config,
+      MemoryAllocator memory_allocator) override;
+  std::unique_ptr<EventEngine::Endpoint> CreateEndpointFromFd(
       int fd, const EndpointConfig& config) override;
 
   ConnectionHandle CreateEndpointFromUnconnectedFd(
@@ -187,14 +194,19 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
 
   PosixEventEngine();
 
-#ifdef GRPC_POSIX_SOCKET_TCP
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   // Constructs an EventEngine which has a shared ownership of the poller. Use
   // the MakeTestOnlyPosixEventEngine static method to call this. Its expected
   // to be used only in tests.
   explicit PosixEventEngine(
       std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
           poller);
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 
+  EventEngine::TaskHandle RunAfterInternal(Duration when,
+                                           absl::AnyInvocable<void()> cb);
+
+#ifdef GRPC_POSIX_SOCKET_TCP
   friend class AsyncConnect;
   struct ConnectionShard {
     grpc_core::Mutex mu;
@@ -202,7 +214,39 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
         ABSL_GUARDED_BY(&mu);
   };
 
+  ConnectionHandle CreateEndpointFromUnconnectedFdInternal(
+      const FileDescriptor& fd, EventEngine::OnConnectCallback on_connect,
+      const EventEngine::ResolvedAddress& addr, const PosixTcpOptions& options,
+      MemoryAllocator memory_allocator, EventEngine::Duration timeout);
+
   void OnConnectFinishInternal(int connection_handle);
+
+  std::vector<ConnectionShard> connection_shards_;
+  std::atomic<int64_t> last_connection_id_{1};
+
+#endif  // GRPC_POSIX_SOCKET_TCP
+
+#if GRPC_ENABLE_FORK_SUPPORT
+  void AfterForkInChild();
+#endif
+
+  grpc_core::Mutex mu_;
+  TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);
+  std::atomic<intptr_t> aba_token_{0};
+#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
+
+  void RegisterAresResolverForFork(AresResolver* resolver);
+
+#if GRPC_ENABLE_FORK_SUPPORT
+  // A separate mutex to avoid deadlocks.
+  grpc_core::Mutex resolver_handles_mu_;
+  absl::InlinedVector<std::weak_ptr<AresResolver::ReinitHandle>, 16>
+      resolver_handles_ ABSL_GUARDED_BY(resolver_handles_mu_);
+#endif  // GRPC_ENABLE_FORK_SUPPORT
+#endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
+  std::shared_ptr<ThreadPool> executor_;
+
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 
   // RAII wrapper for a polling cycle. Starts a new one in ctor and stops
   // in dtor.
@@ -228,41 +272,18 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
   void SchedulePoller();
   void ResetPollCycle();
 
-  ConnectionHandle CreateEndpointFromUnconnectedFdInternal(
-      const FileDescriptor& fd, EventEngine::OnConnectCallback on_connect,
-      const EventEngine::ResolvedAddress& addr, const PosixTcpOptions& options,
-      MemoryAllocator memory_allocator, EventEngine::Duration timeout);
+  PosixEventPoller* GetPollerChecked() const {
+    CHECK_NE(poller_, nullptr);
+    return poller_.get();
+  }
 
-  std::vector<ConnectionShard> connection_shards_;
-  std::atomic<int64_t> last_connection_id_{1};
   std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller> poller_;
 
   // Ensures there's ever only one of these.
   std::optional<PollingCycle> polling_cycle_ ABSL_GUARDED_BY(&mu_);
-#endif  // GRPC_POSIX_SOCKET_TCP
 
-  EventEngine::TaskHandle RunAfterInternal(Duration when,
-                                           absl::AnyInvocable<void()> cb);
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 
-#if GRPC_ENABLE_FORK_SUPPORT
-  void AfterForkInChild();
-#endif
-
-  grpc_core::Mutex mu_;
-  TaskHandleSet known_handles_ ABSL_GUARDED_BY(mu_);
-  std::atomic<intptr_t> aba_token_{0};
-#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
-
-  void RegisterAresResolverForFork(AresResolver* resolver);
-
-#if GRPC_ENABLE_FORK_SUPPORT
-  // A separate mutex to avoid deadlocks.
-  grpc_core::Mutex resolver_handles_mu_;
-  absl::InlinedVector<std::weak_ptr<AresResolver::ReinitHandle>, 16>
-      resolver_handles_ ABSL_GUARDED_BY(resolver_handles_mu_);
-#endif  // GRPC_ENABLE_FORK_SUPPORT
-#endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
-  std::shared_ptr<ThreadPool> executor_;
   std::shared_ptr<TimerManager> timer_manager_;
 };
 
