@@ -20089,6 +20089,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/promise/join.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/transport/util/transport_test.h

@@ -1076,8 +1076,24 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        "//src/core:join",
         "//src/core:loop",
         "//src/core:writable_streams",
         "//test/core/transport/util:transport_test",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "writable_streams_fuzz_test",
+    srcs = ["writable_streams_fuzz_test.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        "//src/core:loop",
+        "//src/core:sleep",
+        "//test/core/call/yodel:yodel_test",
     ],
 )
