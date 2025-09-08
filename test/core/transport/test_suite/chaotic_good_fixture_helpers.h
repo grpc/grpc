@@ -61,7 +61,8 @@ class FakeClientConnectionFactory final
 class FakeServerConnectionFactory final
     : public chaotic_good::ServerConnectionFactory {
  public:
-  chaotic_good::PendingConnection RequestDataConnection() override {
+  chaotic_good::PendingConnection RequestDataConnection(
+      const ChannelArgs&) override {
     Crash("RequestDataConnection not implemented");
   }
   void Orphaned() override {}
