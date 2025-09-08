@@ -423,7 +423,7 @@ CreateGoogleDefaultCallCredentials() {
     if (child_error.ok()) {
       default_credentials_type =
           DefaultCallCredentialsCreationMethod::kFromEnviromentPathValue;
-      return std::make_pair(call_creds, default_credentials_type);
+      return std::pair(call_creds, default_credentials_type);
     }
     return_status = grpc_error_add_child(return_status, child_error);
   }
@@ -434,7 +434,7 @@ CreateGoogleDefaultCallCredentials() {
   if (child_error.ok()) {
     default_credentials_type =
         DefaultCallCredentialsCreationMethod::kFromWellKnownFile;
-    return std::make_pair(call_creds, default_credentials_type);
+    return std::pair(call_creds, default_credentials_type);
   }
   return_status = grpc_error_add_child(return_status, child_error);
 
@@ -454,7 +454,7 @@ CreateGoogleDefaultCallCredentials() {
         DefaultCallCredentialsCreationMethod::kFromDefaultGCE;
   }
 
-  return std::make_pair(call_creds, default_credentials_type);
+  return std::pair(call_creds, default_credentials_type);
 }
 
 }  // namespace
