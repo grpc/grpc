@@ -35,8 +35,7 @@ bool UseEventEngineListener();
 // may disable the poller in some builds.
 bool UsePollsetAlternative();
 
-// Returns true if the poller is disabled by build configuration or experiment
-// flags.
+// Returns true if GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER is defined.
 bool EventEngineExperimentDisabledForPython();
 
 }  // namespace grpc_event_engine::experimental
