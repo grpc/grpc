@@ -1866,6 +1866,7 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsWithAltsCallCredsSpecified) {
   set_gce_tenancy_checker_for_testing(test_gce_tenancy_checker);
   grpc_google_default_credentials_options default_credentials_options;
   default_credentials_options.call_creds_for_alts = call_creds_for_alts;
+  default_credentials_options.create_hard_bound_credentials = false;
   g_test_gce_tenancy_checker_called = false;
   g_test_is_on_gce = true;
   HttpRequest::SetOverride(
