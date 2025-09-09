@@ -70,7 +70,8 @@ ABSL_FLAG(absl::optional<std::string>, grpc_system_ssl_roots_dir, {},
           "Custom directory to SSL Roots");
 ABSL_FLAG(absl::optional<std::string>, grpc_default_ssl_roots_file_path, {},
           "Path to the default SSL roots file.");
-ABSL_FLAG(absl::optional<bool>, grpc_use_system_roots_over_language_callback, {},
+ABSL_FLAG(absl::optional<bool>, grpc_use_system_roots_over_language_callback,
+          {},
           "Prefer loading system root certificates over language callback.");
 ABSL_FLAG(absl::optional<bool>, grpc_not_use_system_ssl_roots, {},
           "Disable loading system root certificates.");

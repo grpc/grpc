@@ -601,7 +601,8 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
     }
   }
   // Try loading roots from OS trust store if preferred over callback.
-  if (result.empty() && ConfigVars::Get().UseSystemRootsOverLanguageCallback()) {
+  if (result.empty() &&
+      ConfigVars::Get().UseSystemRootsOverLanguageCallback()) {
     result = Slice(LoadSystemRootCerts());
   }
   // Try overridden roots if needed.
