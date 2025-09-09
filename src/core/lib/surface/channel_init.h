@@ -458,8 +458,8 @@ class ChannelInit {
   static std::vector<FilterNode> SelectFiltersByPredicate(
       const std::vector<Filter>& filters, ChannelStackBuilder* builder);
 
-  static void MergeFilters(std::vector<FilterNode>& filter_list,
-                           const std::vector<Filter>& fused_filters);
+  static void MergeFusedFilters(ChannelStackBuilder* builder,
+                                const std::vector<Filter>& fused_filters);
 
   static void AppendFiltersToBuilder(const std::vector<FilterNode>& filter_list,
                                      ChannelStackBuilder* builder);

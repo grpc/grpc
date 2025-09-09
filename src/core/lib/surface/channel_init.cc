@@ -28,6 +28,7 @@
 #include <set>
 #include <string>
 #include <type_traits>
+#include <vector>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
@@ -69,6 +70,11 @@ struct CompareFusedChannelFiltersByName {
     }
     return num_filters_a > num_filters_b;
   }
+};
+
+struct Node {
+  const grpc_channel_filter* filter;
+  int next;
 };
 
 }  // namespace
@@ -276,21 +282,29 @@ std::vector<ChannelInit::FilterNode> ChannelInit::SelectFiltersByPredicate(
   return filter_list;
 }
 
-void ChannelInit::MergeFilters(std::vector<FilterNode>& filter_list,
-                               const std::vector<Filter>& fused_filters) {
+void ChannelInit::MergeFusedFilters(ChannelStackBuilder* builder,
+                                    const std::vector<Filter>& fused_filters) {
   int i = 0;
   int j = 0;
+  auto& stack = *builder->mutable_stack();
+  std::vector<Node> filter_list;
+  for (const auto filter : stack) {
+    filter_list.push_back({filter, ++i});
+  }
+  filter_list.back().next = -1;
   // Iterate through fused filters (by size) and check if a given fused filter
   // can replace one of the existing sequence of filters.
   for (auto& curr_fused_filter : fused_filters) {
     i = 0;
     while (i != -1 && filter_list[i].next != -1) {
-      std::string fused_prefix(filter_list[i].curr->name.name());
+      std::string fused_prefix(
+          NameFromChannelFilter(filter_list[i].filter).name());
       j = filter_list[i].next;
       do {
-        absl::StrAppend(&fused_prefix, "+", filter_list[j].curr->name.name());
+        absl::StrAppend(&fused_prefix, "+",
+                        NameFromChannelFilter(filter_list[j].filter).name());
         if (fused_prefix == curr_fused_filter.name.name()) {
-          filter_list[i].curr = &curr_fused_filter;
+          filter_list[i].filter = curr_fused_filter.filter;
           filter_list[i].next = filter_list[j].next;
         }
         j = filter_list[j].next;
@@ -298,6 +312,13 @@ void ChannelInit::MergeFilters(std::vector<FilterNode>& filter_list,
       i = filter_list[i].next;
     }
   }
+  // Replace the stack with the new filter list.
+  stack.clear();
+  i = 0;
+  while (i != -1 && !filter_list.empty()) {
+    builder->AppendFilter(filter_list[i].filter);
+    i = filter_list[i].next;
+  };
 }
 
 void ChannelInit::AppendFiltersToBuilder(
@@ -590,13 +611,17 @@ bool ChannelInit::CreateStack(ChannelStackBuilder* builder) const {
     return false;
   }
 
-  MergeFilters(filter_list, stack_config.fused_filters);
   AppendFiltersToBuilder(filter_list, builder);
   AppendFiltersToBuilder(terminal_filter_list, builder);
 
   for (const auto& post_processor : stack_config.post_processors) {
     post_processor(*builder);
   }
+
+  // Only perform the merge with fused filters operation after running
+  // through all the post processors. This ensures that modifications made by
+  // post processors are taken into account before finding fusions to match.
+  MergeFusedFilters(builder, stack_config.fused_filters);
   return true;
 }
 
