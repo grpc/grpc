@@ -593,7 +593,7 @@ tsi_result MockNextBase(alts_handshaker_client* client,
   bool is_client = alts_tsi_handshaker_get_is_client_for_testing(handshaker);
   tsi_handshaker_on_next_done_cb cb =
       is_client ? OnClientNextSuccessCb : OnServerNextSuccessCb;
-  void* user_data = is_integrity_only ? (void*)1 : (void*)0;
+  void* user_data = is_integrity_only ? (void*)1 : (void*)nullptr;
   alts_handshaker_client_set_cb_for_testing(client, cb);
   alts_handshaker_client_set_recv_bytes_for_testing(client, bytes_received);
   alts_handshaker_client_set_user_data_for_testing(client, user_data);
@@ -709,7 +709,7 @@ static void check_handshaker_next_success() {
                 client_handshaker,
                 (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
                 strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
-                nullptr, OnClientNextSuccessCb, /*user_data=*/(void*)0),
+                nullptr, OnClientNextSuccessCb, /*user_data=*/(void*)nullptr),
             TSI_ASYNC);
   wait(&tsi_to_caller_notification);
   // Server start.
@@ -725,7 +725,7 @@ static void check_handshaker_next_success() {
                 server_handshaker,
                 (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
                 strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
-                nullptr, OnServerNextSuccessCb, /*user_data=*/(void*)0),
+                nullptr, OnServerNextSuccessCb, /*user_data=*/(void*)nullptr),
             TSI_ASYNC);
   wait(&tsi_to_caller_notification);
   // Cleanup.
@@ -788,7 +788,7 @@ static void check_handshaker_next_with_shutdown() {
       tsi_handshaker_next(
           handshaker, (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
           strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
-          nullptr, OnClientNextSuccessCb, /*user_data=*/(void*)0),
+          nullptr, OnClientNextSuccessCb, /*user_data=*/(void*)nullptr),
       TSI_HANDSHAKE_SHUTDOWN);
   // Cleanup.
   run_tsi_handshaker_destroy_with_exec_ctx(handshaker);
