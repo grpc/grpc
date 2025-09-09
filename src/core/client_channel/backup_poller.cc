@@ -62,17 +62,14 @@ static grpc_core::Duration g_poll_interval =
 static bool g_backup_polling_disabled;
 
 void grpc_client_channel_global_init_backup_polling() {
-#ifdef GRPC_PYTHON_BUILD
-  bool python_poller_experiment_enabled =
-      grpc_core::IsEventEnginePollerForPythonEnabled();
-#else
-  // Always on when not Python
-  bool python_poller_experiment_enabled = true;
-#endif
-  g_backup_polling_disabled = python_poller_experiment_enabled &&
-                              grpc_core::IsEventEngineClientEnabled() &&
+  g_backup_polling_disabled = grpc_core::IsEventEngineClientEnabled() &&
                               grpc_core::IsEventEngineListenerEnabled() &&
                               grpc_core::IsEventEngineDnsEnabled();
+#ifdef GRPC_PYTHON_BUILD
+  if (!grpc_core::IsEventEnginePollerForPythonEnabled()) {
+    g_backup_polling_disabled = false;
+  }
+#endif
   if (g_backup_polling_disabled) {
     return;
   }
