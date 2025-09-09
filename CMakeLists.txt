@@ -406,99 +406,54 @@ if(gRPC_BUILD_GRPCPP_OTEL_PLUGIN)
   include(cmake/opentelemetry-cpp.cmake)
 endif()
 
-# Setup external proto library at third_party/envoy-api with 2 download URLs
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api AND gRPC_DOWNLOAD_ARCHIVES)
-  # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
-  download_archive(
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/data-plane-api/archive/4de3c74cf21a9958c1cf26d8993c55c6e0d28b49.tar.gz
-    cd8b49614408b43bd45d90e3e98d69e24eea632ff42ac3bfb8bca68bc31e377f
-    data-plane-api-4de3c74cf21a9958c1cf26d8993c55c6e0d28b49
-  )
-endif()
+# Setup external proto library at third_party/envoy-api if it doesn't exist
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/envoy-api.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/envoy-api
     https://github.com/envoyproxy/data-plane-api/archive/4de3c74cf21a9958c1cf26d8993c55c6e0d28b49.tar.gz
-    cd8b49614408b43bd45d90e3e98d69e24eea632ff42ac3bfb8bca68bc31e377f
+    sha256-zYtJYUQItDvUXZDj6Y1p4k7qYy/0KsO/uLymi8MeN38=
     data-plane-api-4de3c74cf21a9958c1cf26d8993c55c6e0d28b49
   )
 endif()
-# Setup external proto library at third_party/googleapis with 2 download URLs
+# Setup external proto library at third_party/googleapis if it doesn't exist
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/googleapis.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/googleapis/archive/fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0.tar.gz
-    0513f0f40af63bd05dc789cacc334ab6cec27cc89db596557cb2dfe8919463e4
-    googleapis-fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0
+    https://github.com/googleapis/googleapis/archive/280725e991516d4a0f136268faf5aa6d32d21b54.tar.gz
+    sha256-WpRQzxrRGHyCorXN/1Pk1YS21FKStfcbUECDrLA619A=
+    googleapis-280725e991516d4a0f136268faf5aa6d32d21b54
   )
 endif()
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis AND gRPC_DOWNLOAD_ARCHIVES)
-  # Download the archive via HTTP, validate the checksum, and extract to third_party/googleapis.
-  download_archive(
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/googleapis
-    https://github.com/googleapis/googleapis/archive/fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0.tar.gz
-    0513f0f40af63bd05dc789cacc334ab6cec27cc89db596557cb2dfe8919463e4
-    googleapis-fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0
-  )
-endif()
-# Setup external proto library at third_party/opencensus-proto/src with 2 download URLs
+# Setup external proto library at third_party/opencensus-proto/src if it doesn't exist
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/opencensus-proto/src.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
-    b7e13f0b4259e80c3070b583c2f39e53153085a6918718b1c710caf7037572b0
-    opencensus-proto-0.3.0/src
+    https://github.com/census-instrumentation/opencensus-proto/archive/refs/tags/v0.4.1.tar.gz
+    sha256-49iff57YTJtu7oGMLpMGlQUZQCv4A2mLFcMQt3yi8PM=
+    opencensus-proto-0.4.1/src
   )
 endif()
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src AND gRPC_DOWNLOAD_ARCHIVES)
-  # Download the archive via HTTP, validate the checksum, and extract to third_party/opencensus-proto/src.
-  download_archive(
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/opencensus-proto/src
-    https://github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz
-    b7e13f0b4259e80c3070b583c2f39e53153085a6918718b1c710caf7037572b0
-    opencensus-proto-0.3.0/src
-  )
-endif()
-# Setup external proto library at third_party/protoc-gen-validate with 2 download URLs
+# Setup external proto library at third_party/protoc-gen-validate if it doesn't exist
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/protoc-gen-validate.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.zip
-    ab51e978326b87e06be7a12fc6496f3ff6586339043557dbbd31f622332a5d45
+    https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.tar.gz
+    sha256-5HGDUnVN8Tk7h5K2MTOKqFYvOQ6BYHg+NlRUvBHZYyg=
     protoc-gen-validate-1.2.1
   )
 endif()
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate AND gRPC_DOWNLOAD_ARCHIVES)
-  # Download the archive via HTTP, validate the checksum, and extract to third_party/protoc-gen-validate.
-  download_archive(
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/protoc-gen-validate
-    https://github.com/bufbuild/protoc-gen-validate/archive/refs/tags/v1.2.1.zip
-    ab51e978326b87e06be7a12fc6496f3ff6586339043557dbbd31f622332a5d45
-    protoc-gen-validate-1.2.1
-  )
-endif()
-# Setup external proto library at third_party/xds with 2 download URLs
+# Setup external proto library at third_party/xds if it doesn't exist
 if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds AND gRPC_DOWNLOAD_ARCHIVES)
   # Download the archive via HTTP, validate the checksum, and extract to third_party/xds.
   download_archive(
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds
-    https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/xds/archive/3a472e524827f72d1ad621c4983dd5af54c46776.tar.gz
-    dc305e20c9fa80822322271b50aa2ffa917bf4fd3973bcec52bfc28dc32c5927
-    xds-3a472e524827f72d1ad621c4983dd5af54c46776
-  )
-endif()
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds AND gRPC_DOWNLOAD_ARCHIVES)
-  # Download the archive via HTTP, validate the checksum, and extract to third_party/xds.
-  download_archive(
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xds
-    https://github.com/cncf/xds/archive/3a472e524827f72d1ad621c4983dd5af54c46776.tar.gz
-    dc305e20c9fa80822322271b50aa2ffa917bf4fd3973bcec52bfc28dc32c5927
-    xds-3a472e524827f72d1ad621c4983dd5af54c46776
+    https://github.com/cncf/xds/archive/555b57ec207be86f811fb0c04752db6f85e3d7e2.tar.gz
+    sha256-DIxPD2f+2We1EEn31eLKepvUM5cKKciOJyyGZTKBcvU=
+    xds-555b57ec207be86f811fb0c04752db6f85e3d7e2
   )
 endif()
 
@@ -2491,6 +2446,8 @@ add_library(grpc
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/proto/cel/expr/checked.upb_minitable.c
+  src/core/ext/upb-gen/proto/cel/expr/syntax.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
@@ -2658,6 +2615,8 @@ add_library(grpc
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c
   src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c
+  src/core/ext/upbdefs-gen/proto/cel/expr/checked.upbdefs.c
+  src/core/ext/upbdefs-gen/proto/cel/expr/syntax.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
@@ -3125,19 +3084,14 @@ target_link_libraries(grpc
   absl::algorithm_container
   absl::no_destructor
   absl::btree
-  absl::flat_hash_map
-  absl::flat_hash_set
-  absl::inlined_vector
   absl::node_hash_map
   absl::bind_front
   absl::function_ref
-  absl::hash
   absl::type_traits
   absl::random_bit_gen_ref
   absl::random_distributions
   absl::statusor
   absl::string_view
-  absl::span
   absl::utility
   ${_gRPC_CARES_LIBRARIES}
   gpr
@@ -3997,7 +3951,6 @@ target_include_directories(gtest
 target_link_libraries(gtest
   ${_gRPC_ALLTARGETS_LIBRARIES}
   ${_gRPC_RE2_LIBRARIES}
-  absl::flat_hash_set
   absl::failure_signal_handler
   absl::stacktrace
   absl::symbolize
@@ -4005,9 +3958,7 @@ target_link_libraries(gtest
   absl::flags_parse
   absl::flags_reflection
   absl::flags_usage
-  absl::strings
   absl::any
-  absl::optional
   absl::variant
 )
 
@@ -4872,8 +4823,6 @@ target_link_libraries(grpc++
   absl::dynamic_annotations
   absl::prefetch
   absl::layout
-  absl::absl_check
-  absl::absl_log
   absl::strings_internal
   grpc
   ${_gRPC_PROTOBUF_LIBRARIES}
@@ -6193,16 +6142,11 @@ target_link_libraries(grpc_authorization_provider
   ${_gRPC_ZLIB_LIBRARIES}
   absl::no_destructor
   absl::btree
-  absl::flat_hash_map
-  absl::flat_hash_set
-  absl::inlined_vector
   absl::node_hash_map
   absl::function_ref
-  absl::hash
   absl::type_traits
   absl::statusor
   absl::string_view
-  absl::span
   absl::utility
   ${_gRPC_CARES_LIBRARIES}
   gpr
@@ -6720,12 +6664,9 @@ target_link_libraries(activity_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  absl::flat_hash_map
   absl::function_ref
-  absl::hash
   absl::type_traits
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -7494,10 +7435,8 @@ target_link_libraries(all_ok_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  absl::flat_hash_map
   absl::type_traits
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -8538,7 +8477,6 @@ target_include_directories(avl_test
 target_link_libraries(avl_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::hash
   gpr
 )
 
@@ -9111,7 +9049,6 @@ target_link_libraries(bitset_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
-  absl::core_headers
   absl::check
   absl::bits
 )
@@ -9172,12 +9109,9 @@ target_link_libraries(blackboard_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  absl::flat_hash_map
   absl::function_ref
-  absl::hash
   absl::type_traits
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -9566,15 +9500,11 @@ target_link_libraries(call_filters_test
   upb_textformat_lib
   absl::no_destructor
   absl::btree
-  absl::flat_hash_map
-  absl::inlined_vector
   absl::node_hash_map
   absl::function_ref
-  absl::hash
   absl::type_traits
   absl::statusor
   absl::string_view
-  absl::span
   absl::utility
   gpr
 )
@@ -9686,12 +9616,9 @@ target_link_libraries(call_state_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  absl::flat_hash_map
   absl::function_ref
-  absl::hash
   absl::type_traits
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -10043,15 +9970,11 @@ target_link_libraries(call_utils_test
   ${_gRPC_ZLIB_LIBRARIES}
   absl::no_destructor
   absl::btree
-  absl::flat_hash_map
-  absl::inlined_vector
   absl::node_hash_map
   absl::function_ref
-  absl::hash
   absl::type_traits
   absl::statusor
   absl::string_view
-  absl::span
   absl::utility
   ${_gRPC_CARES_LIBRARIES}
   gpr
@@ -10213,15 +10136,11 @@ target_link_libraries(cancel_callback_test
   gtest
   upb_textformat_lib
   absl::btree
-  absl::flat_hash_map
-  absl::inlined_vector
   absl::node_hash_map
   absl::function_ref
-  absl::hash
   absl::type_traits
   absl::statusor
   absl::string_view
-  absl::span
   absl::utility
   gpr
 )
@@ -10291,6 +10210,8 @@ add_executable(cel_authorization_engine_test
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/proto/cel/expr/checked.upb_minitable.c
+  src/core/ext/upb-gen/proto/cel/expr/syntax.upb_minitable.c
   src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.c
   src/core/ext/upb-gen/udpa/annotations/security.upb_minitable.c
   src/core/ext/upb-gen/udpa/annotations/sensitive.upb_minitable.c
@@ -11401,15 +11322,11 @@ target_link_libraries(chunked_vector_test
   gtest
   upb_textformat_lib
   absl::btree
-  absl::flat_hash_map
-  absl::inlined_vector
   absl::node_hash_map
   absl::function_ref
-  absl::hash
   absl::type_traits
   absl::statusor
   absl::string_view
-  absl::span
   absl::utility
   gpr
 )
@@ -12272,7 +12189,6 @@ target_link_libraries(common_closures_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -13424,7 +13340,6 @@ target_link_libraries(dump_args_test
   gtest
   absl::any_invocable
   absl::check
-  absl::str_format
 )
 
 
@@ -15401,11 +15316,8 @@ target_link_libraries(endpoint_config_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  absl::flat_hash_map
-  absl::hash
   absl::type_traits
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -16015,12 +15927,9 @@ target_link_libraries(exec_ctx_wakeup_scheduler_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  absl::flat_hash_map
   absl::function_ref
-  absl::hash
   absl::type_traits
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -16675,15 +16584,11 @@ target_link_libraries(filter_fusion_test
   ${_gRPC_ZLIB_LIBRARIES}
   absl::no_destructor
   absl::btree
-  absl::flat_hash_map
-  absl::inlined_vector
   absl::node_hash_map
   absl::function_ref
-  absl::hash
   absl::type_traits
   absl::statusor
   absl::string_view
-  absl::span
   absl::utility
   ${_gRPC_CARES_LIBRARIES}
   gpr
@@ -17052,15 +16957,11 @@ target_link_libraries(flow_control_test
   gtest
   upb_textformat_lib
   absl::btree
-  absl::flat_hash_map
-  absl::inlined_vector
   absl::node_hash_map
   absl::function_ref
-  absl::hash
   absl::type_traits
   absl::statusor
   absl::string_view
-  absl::span
   absl::utility
   gpr
 )
@@ -17173,15 +17074,11 @@ target_link_libraries(for_each_test
   gtest
   upb_textformat_lib
   absl::btree
-  absl::flat_hash_map
-  absl::inlined_vector
   absl::node_hash_map
   absl::function_ref
-  absl::hash
   absl::type_traits
   absl::statusor
   absl::string_view
-  absl::span
   absl::utility
   gpr
 )
@@ -17374,12 +17271,9 @@ target_link_libraries(frame_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  absl::flat_hash_map
   absl::function_ref
-  absl::hash
   absl::statusor
   absl::string_view
-  absl::span
   absl::utility
   gpr
 )
@@ -20124,12 +20018,9 @@ target_link_libraries(http2_status_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  absl::flat_hash_map
   absl::function_ref
-  absl::hash
   absl::statusor
   absl::string_view
-  absl::span
   absl::utility
   gpr
 )
@@ -20382,7 +20273,6 @@ target_link_libraries(idle_filter_state_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
-  absl::core_headers
 )
 
 
@@ -20416,7 +20306,6 @@ target_link_libraries(if_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
-  absl::core_headers
 )
 
 
@@ -20473,10 +20362,8 @@ target_link_libraries(if_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  absl::flat_hash_map
   absl::type_traits
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -20843,12 +20730,9 @@ target_link_libraries(inter_activity_pipe_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  absl::flat_hash_map
   absl::function_ref
-  absl::hash
   absl::type_traits
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -21003,15 +20887,11 @@ target_link_libraries(interceptor_list_test
   gtest
   upb_textformat_lib
   absl::btree
-  absl::flat_hash_map
-  absl::inlined_vector
   absl::node_hash_map
   absl::function_ref
-  absl::hash
   absl::type_traits
   absl::statusor
   absl::string_view
-  absl::span
   absl::utility
   gpr
 )
@@ -21320,10 +21200,8 @@ target_link_libraries(join_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  absl::flat_hash_map
   absl::type_traits
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -21645,12 +21523,9 @@ target_link_libraries(latch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  absl::flat_hash_map
   absl::function_ref
-  absl::hash
   absl::type_traits
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -21750,10 +21625,8 @@ target_include_directories(latent_see_test
 target_link_libraries(latent_see_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::flat_hash_map
   absl::function_ref
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -22124,12 +21997,9 @@ target_link_libraries(lock_based_mpsc_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  absl::flat_hash_map
   absl::function_ref
-  absl::hash
   absl::type_traits
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -22242,12 +22112,9 @@ target_link_libraries(loop_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  absl::flat_hash_map
   absl::function_ref
-  absl::hash
   absl::type_traits
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -22282,7 +22149,6 @@ target_include_directories(lru_cache_test
 target_link_libraries(lru_cache_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::flat_hash_map
   absl::any_invocable
   absl::check
 )
@@ -22395,15 +22261,11 @@ target_link_libraries(map_pipe_test
   gtest
   upb_textformat_lib
   absl::btree
-  absl::flat_hash_map
-  absl::inlined_vector
   absl::node_hash_map
   absl::function_ref
-  absl::hash
   absl::type_traits
   absl::statusor
   absl::string_view
-  absl::span
   absl::utility
   gpr
 )
@@ -22462,10 +22324,8 @@ target_link_libraries(match_promise_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  absl::flat_hash_map
   absl::type_traits
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -22501,7 +22361,6 @@ target_link_libraries(match_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
-  absl::core_headers
 )
 
 
@@ -22678,11 +22537,8 @@ target_include_directories(memory_usage_test
 target_link_libraries(memory_usage_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::flat_hash_map
-  absl::hash
   absl::statusor
   absl::string_view
-  absl::span
   absl::utility
   gpr
 )
@@ -23047,7 +22903,6 @@ target_link_libraries(miscompile_with_no_unique_address_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
-  absl::core_headers
 )
 
 
@@ -23279,7 +23134,6 @@ target_link_libraries(no_destruct_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
-  absl::core_headers
 )
 
 
@@ -23547,12 +23401,9 @@ target_link_libraries(observable_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  absl::flat_hash_map
   absl::function_ref
-  absl::hash
   absl::type_traits
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -24295,7 +24146,6 @@ target_link_libraries(overload_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
-  absl::core_headers
 )
 
 
@@ -24663,11 +24513,8 @@ target_link_libraries(periodic_update_test
   gtest
   upb_mini_descriptor_lib
   upb_wire_lib
-  absl::flat_hash_map
   absl::function_ref
-  absl::hash
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -24963,9 +24810,7 @@ target_link_libraries(poll_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
-  absl::core_headers
   absl::check
-  absl::str_format
 )
 
 
@@ -26024,10 +25869,8 @@ target_link_libraries(prioritized_race_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  absl::flat_hash_map
   absl::type_traits
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -26128,11 +25971,9 @@ target_link_libraries(promise_factory_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  absl::flat_hash_map
   absl::bind_front
   absl::type_traits
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -26191,10 +26032,8 @@ target_link_libraries(promise_map_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  absl::flat_hash_map
   absl::type_traits
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -26263,12 +26102,9 @@ target_link_libraries(promise_mutex_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  absl::flat_hash_map
   absl::function_ref
-  absl::hash
   absl::type_traits
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -26328,10 +26164,8 @@ target_link_libraries(promise_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  absl::flat_hash_map
   absl::type_traits
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -26385,9 +26219,7 @@ target_link_libraries(property_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  absl::flat_hash_map
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -26868,10 +26700,7 @@ target_include_directories(query_extensions_test
 target_link_libraries(query_extensions_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::flat_hash_map
-  absl::hash
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -26958,7 +26787,6 @@ target_link_libraries(random_early_detection_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
-  absl::core_headers
   absl::random_bit_gen_ref
   absl::random_distributions
   absl::random_random
@@ -27381,15 +27209,11 @@ target_link_libraries(request_buffer_test
   upb_textformat_lib
   absl::no_destructor
   absl::btree
-  absl::flat_hash_map
-  absl::inlined_vector
   absl::node_hash_map
   absl::function_ref
-  absl::hash
   absl::type_traits
   absl::statusor
   absl::string_view
-  absl::span
   absl::utility
   gpr
 )
@@ -27802,7 +27626,6 @@ target_link_libraries(ring_buffer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
-  absl::core_headers
 )
 
 
@@ -28263,10 +28086,8 @@ target_link_libraries(seq_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  absl::flat_hash_map
   absl::type_traits
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -29440,7 +29261,6 @@ target_include_directories(single_set_ptr_test
 target_link_libraries(single_set_ptr_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::hash
   gpr
 )
 
@@ -29529,10 +29349,7 @@ target_include_directories(slice_string_helpers_test
 target_link_libraries(slice_string_helpers_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::flat_hash_map
-  absl::hash
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -29696,7 +29513,6 @@ target_link_libraries(sorted_pack_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
-  absl::core_headers
 )
 
 
@@ -30119,7 +29935,6 @@ target_include_directories(static_stride_scheduler_test
 target_link_libraries(static_stride_scheduler_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::span
   gpr
 )
 
@@ -30196,7 +30011,6 @@ target_link_libraries(status_flag_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
-  absl::core_headers
   absl::check
   absl::status
   absl::statusor
@@ -30683,10 +30497,8 @@ target_link_libraries(switch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  absl::flat_hash_map
   absl::type_traits
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -30806,7 +30618,6 @@ target_link_libraries(table_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
-  absl::core_headers
   absl::check
   absl::type_traits
   absl::bits
@@ -31063,7 +30874,6 @@ target_include_directories(tdigest_test
 target_link_libraries(tdigest_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::flat_hash_map
   absl::check
   absl::log
   absl::random_random
@@ -31198,7 +31008,6 @@ target_link_libraries(test_core_event_engine_posix_timer_heap_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -31252,10 +31061,7 @@ target_include_directories(test_core_event_engine_slice_buffer_test
 target_link_libraries(test_core_event_engine_slice_buffer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::flat_hash_map
-  absl::hash
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -31427,7 +31233,6 @@ target_link_libraries(test_core_util_time_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -31929,7 +31734,6 @@ target_include_directories(thread_quota_test
 target_link_libraries(thread_quota_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::hash
   gpr
 )
 
@@ -32238,7 +32042,6 @@ target_link_libraries(timer_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -32737,7 +32540,6 @@ target_include_directories(trie_lookup_test
 target_link_libraries(trie_lookup_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::flat_hash_map
 )
 
 
@@ -32797,10 +32599,8 @@ target_link_libraries(try_join_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  absl::flat_hash_map
   absl::type_traits
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -32905,10 +32705,8 @@ target_link_libraries(try_seq_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  absl::flat_hash_map
   absl::type_traits
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -32944,7 +32742,6 @@ target_link_libraries(unique_ptr_with_bitset_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
-  absl::core_headers
   absl::check
   absl::bits
 )
@@ -32980,11 +32777,8 @@ target_link_libraries(unique_type_name_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
-  absl::core_headers
-  absl::flat_hash_map
   absl::check
   absl::bits
-  absl::str_format
 )
 
 
@@ -33104,7 +32898,6 @@ target_link_libraries(useful_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
-  absl::core_headers
   absl::check
   absl::bits
 )
@@ -33299,12 +33092,9 @@ target_link_libraries(wait_for_callback_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   upb_textformat_lib
-  absl::flat_hash_map
   absl::function_ref
-  absl::hash
   absl::type_traits
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -33757,7 +33547,6 @@ target_link_libraries(write_size_policy_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::statusor
-  absl::span
   absl::utility
   gpr
 )
@@ -34897,8 +34686,6 @@ target_include_directories(xds_client_test
 target_link_libraries(xds_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::absl_check
-  absl::absl_log
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -35940,8 +35727,6 @@ target_include_directories(xds_cluster_resource_type_test
 target_link_libraries(xds_cluster_resource_type_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::absl_check
-  absl::absl_log
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -39022,8 +38807,6 @@ target_include_directories(xds_endpoint_resource_type_test
 target_link_libraries(xds_endpoint_resource_type_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::absl_check
-  absl::absl_log
   ${_gRPC_PROTOBUF_LIBRARIES}
   grpc_test_util
 )
@@ -49333,7 +49116,7 @@ generate_pkgconfig(
   "gRPC"
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
-  "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_synchronization absl_time absl_type_traits absl_utility gpr"
+  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_fixed_array absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_synchronization absl_time absl_type_traits absl_utility gpr"
   "libcares openssl re2 zlib"
   "-lgrpc"
   "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
@@ -49355,7 +49138,7 @@ generate_pkgconfig(
   "gRPC++"
   "C++ wrapper for gRPC"
   "${gRPC_CPP_VERSION}"
-  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_dynamic_annotations absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_layout absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_prefetch absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_strings_internal absl_synchronization absl_time absl_type_traits absl_utility gpr grpc"
+  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_dynamic_annotations absl_fixed_array absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_layout absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_prefetch absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_strings_internal absl_synchronization absl_time absl_type_traits absl_utility gpr grpc"
   "libcares openssl re2 zlib"
   "-lgrpc++"
   "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
@@ -49377,7 +49160,7 @@ generate_pkgconfig(
   "gRPC++ OpenTelemetry Plugin"
   "OpenTelemetry Plugin for gRPC C++"
   "${gRPC_CPP_VERSION}"
-  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_dynamic_annotations absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_layout absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_prefetch absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_strings_internal absl_synchronization absl_time absl_type_traits absl_utility gpr grpc grpc++ opentelemetry_api"
+  "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_dynamic_annotations absl_fixed_array absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_layout absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_node_hash_map absl_optional absl_prefetch absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_strings_internal absl_synchronization absl_time absl_type_traits absl_utility gpr grpc grpc++ opentelemetry_api"
   "libcares openssl re2 zlib"
   "-lgrpcpp_otel_plugin"
   "-laddress_sorting -lupb_textformat_lib -lupb_json_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"

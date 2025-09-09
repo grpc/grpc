@@ -1,0 +1,121 @@
+diff --git a/BUILD.bazel b/BUILD.bazel
+index 95e4c12e5..a901fd573 100644
+--- a/BUILD.bazel
++++ b/BUILD.bazel
+@@ -1,3 +1,7 @@
++package(default_visibility = ["//visibility:public"])
++
++licenses(["notice"])  # Apache 2.0
++
+ genrule(
+   name = "build_gen",
+   outs = ["build_gen.sh"],
+@@ -16,3 +20,15 @@ EOD
+     fi
+   """,
+ )
++
++# This build file overlays on top of the BUILD files for the googleapis repo,
++# and it adds a target that lets us include their header files using
++# angle-brackets, thus treating their headers as system includes. This allows
++# us to dial-up the warnings in our own code, without seeing compiler warnings
++# from their headers, which we do not own.
++cc_library(
++    name = "googleapis_system_includes",
++    includes = [
++        ".",
++    ],
++)
+diff --git a/MODULE.bazel b/MODULE.bazel
+new file mode 100644
+index 000000000..169133e43
+--- /dev/null
++++ b/MODULE.bazel
+@@ -0,0 +1,14 @@
++module(
++    name = "googleapis",
++    version = "0.0.0-20240326-1c8d509c5",
++    repo_name = "com_google_googleapis",
++)
++
++bazel_dep(name = "grpc", version = "1.63.1.bcr.1", repo_name = "com_github_grpc_grpc")
++bazel_dep(name = "protobuf", version = "21.7", repo_name = "com_google_protobuf")
++bazel_dep(name = "rules_proto", version = "5.3.0-21.7")
++
++switched_rules = use_extension("//:extensions.bzl", "switched_rules")
++
++switched_rules.use_languages()
++use_repo(switched_rules, "com_google_googleapis_imports")
+diff --git a/WORKSPACE.bzlmod b/WORKSPACE.bzlmod
+new file mode 100644
+index 000000000..8cf3fe396
+--- /dev/null
++++ b/WORKSPACE.bzlmod
+@@ -0,0 +1,2 @@
++workspace(name = "com_google_googleapis")
++
+diff --git a/extensions.bzl b/extensions.bzl
+new file mode 100644
+index 000000000..9aa161841
+--- /dev/null
++++ b/extensions.bzl
+@@ -0,0 +1,59 @@
++load(":repository_rules.bzl", "switched_rules_by_language")
++
++_use_languages_tag = tag_class(
++    attrs = {
++        "cc": attr.bool(default = False),
++        "csharp": attr.bool(default = False),
++        "gapic": attr.bool(default = False),
++        "go": attr.bool(default = False),
++        "go_test": attr.bool(default = False),
++        "grpc": attr.bool(default = False),
++        "java": attr.bool(default = False),
++        "nodejs": attr.bool(default = False),
++        "php": attr.bool(default = False),
++        "python": attr.bool(default = False),
++        "ruby": attr.bool(default = False),
++    },
++)
++
++def _switched_rules_impl(ctx):
++    attrs = {}
++    for module in ctx.modules:
++        if not module.is_root:
++            continue
++
++        is_tag_set = False
++        set_tag_name = ""
++
++        for t in module.tags.use_languages:
++            if is_tag_set:
++                fail("Multiple use_language tags are set in the root module: '{}' and '{}'. Only one is allowed.".format(set_tag_name, module.name))
++
++            is_tag_set = True
++            set_tag_name = module.name
++
++            attrs = {
++                "cc": t.cc,
++                "csharp": t.csharp,
++                "gapic": t.gapic,
++                "go": t.go,
++                "go_test": t.go_test,
++                "grpc": t.grpc,
++                "java": t.java,
++                "nodejs": t.nodejs,
++                "php": t.php,
++                "python": t.python,
++                "ruby": t.ruby,
++            }
++
++    switched_rules_by_language(
++        name = "com_google_googleapis_imports",
++        **attrs
++    )
++
++switched_rules = module_extension(
++    implementation = _switched_rules_impl,
++    tag_classes = {
++        "use_languages": _use_languages_tag,
++    },
++)

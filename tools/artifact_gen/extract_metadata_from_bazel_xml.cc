@@ -12,12 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <absl/status/status.h>
+#include <absl/status/statusor.h>
+#include <absl/strings/str_cat.h>
+#include <absl/strings/strip.h>
+
 #include <fstream>
 #include <map>
 #include <optional>
 #include <queue>
 #include <set>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "absl/algorithm/container.h"
@@ -30,13 +36,16 @@
 #include "absl/strings/str_replace.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
+#include "extract_bazelmod_repositories.h"
 #include "include/nlohmann/json.hpp"
 #include "pugixml.hpp"
 
 ABSL_FLAG(std::vector<std::string>, target_query, {},
           "Filename containing bazel query results for some set of targets");
-ABSL_FLAG(std::string, external_http_archive_query, "",
-          "Filename containing bazel query results for external http archives");
+ABSL_FLAG(std::string, external_http_archives_mod_query, "",
+          "Bazel mod output describing http archives");
+ABSL_FLAG(std::string, external_proto_libraries, "",
+          "JSON file with external proto libraries");
 
 struct ExternalProtoLibrary {
   std::string destination;
@@ -405,6 +414,10 @@ static const char* kBuildExtraMetadata = R"json({
 
 class ArtifactGen {
  public:
+  explicit ArtifactGen(std::unordered_map<std::string, ExternalProtoLibrary>
+                           external_proto_libraries)
+      : external_proto_libraries_(std::move(external_proto_libraries)){};
+
   void LoadRulesXml(const std::string& source) {
     pugi::xml_document doc;
     pugi::xml_parse_result result = doc.load_file(source.c_str());
@@ -431,14 +444,13 @@ class ArtifactGen {
   void ExpandUpbProtoLibraryRules() {
     const std::string kGenUpbRoot = "//:src/core/ext/upb-gen/";
     const std::string kGenUpbdefsRoot = "//:src/core/ext/upbdefs-gen/";
-    const std::map<std::string, std::string> kExternalLinks{
+    std::unordered_map<std::string, std::string> kExternalLinks{
         {"@com_google_protobuf//", "src/"},
-        {"@com_google_googleapis//", ""},
-        {"@com_github_cncf_xds//", ""},
-        {"@com_envoyproxy_protoc_gen_validate//", ""},
-        {"@envoy_api//", ""},
-        {"@opencensus_proto//", ""},
+        {"@cel-spec//", ""},
     };
+    for (const auto& [library, _] : external_proto_libraries_) {
+      kExternalLinks.emplace(absl::StrCat("@", library, "//"), "");
+    }
     for (auto& [name, bazel_rule] : rules_) {
       if (bazel_rule.generator_function != "grpc_upb_proto_library" &&
           bazel_rule.generator_function !=
@@ -676,57 +688,27 @@ class ArtifactGen {
   }
 
   void GenerateExternalProtoLibraries() {
-    pugi::xml_document doc;
-    std::string filename = absl::GetFlag(FLAGS_external_http_archive_query);
-    CHECK(!filename.empty()) << "external_http_archive_query is not set";
-    pugi::xml_parse_result result = doc.load_file(filename.c_str());
-    CHECK(result) << filename;
-
+    std::string filename =
+        absl::GetFlag(FLAGS_external_http_archives_mod_query);
+    CHECK(!filename.empty()) << "external_http_archives_mod_query is not set";
+    auto repositories = BazelModRepository::ParseBazelOutput(filename);
+    CHECK(repositories.ok()) << repositories.status();
     std::vector<nlohmann::json> external_proto_libraries;
-    for (const auto& query : doc.children("query")) {
-      for (const auto& child : query.children("rule")) {
-        if (child.attribute("class").as_string() !=
-            absl::string_view("http_archive")) {
-          continue;
-        }
-        HttpArchive http_archive;
-        for (const auto& node : child.children()) {
-          if (node.attribute("name").as_string() == absl::string_view("name")) {
-            http_archive.name = node.attribute("value").as_string();
-          } else if (node.attribute("name").as_string() ==
-                     absl::string_view("urls")) {
-            for (const auto& url_node : node.children()) {
-              http_archive.urls.push_back(
-                  url_node.attribute("value").as_string());
-            }
-          } else if (node.attribute("name").as_string() ==
-                     absl::string_view("url")) {
-            http_archive.urls.push_back(node.attribute("value").as_string());
-          } else if (node.attribute("name").as_string() ==
-                     absl::string_view("sha256")) {
-            http_archive.sha256 = node.attribute("value").as_string();
-          } else if (node.attribute("name").as_string() ==
-                     absl::string_view("strip_prefix")) {
-            http_archive.strip_prefix = node.attribute("value").as_string();
-          }
-        }
-        if (external_proto_libraries_.count(http_archive.name) == 0) {
-          // If this http archive is not one of the external proto libraries,
-          // we don't want to include it as a CMake target
-          continue;
-        }
-
-        const auto& extlib =
-            external_proto_libraries_.find(http_archive.name)->second;
-        auto lib = nlohmann::json{
-            {"destination", extlib.destination},
-            {"proto_prefix", extlib.proto_prefix},
-            {"urls", http_archive.urls},
-            {"hash", http_archive.sha256},
-            {"strip_prefix", http_archive.strip_prefix},
-        };
-        external_proto_libraries.push_back(lib);
+    for (const auto& repository : *repositories) {
+      const auto& extlib = external_proto_libraries_.find(
+          std::string(absl::StripPrefix(repository.alias(), "@")));
+      if (extlib == external_proto_libraries_.end()) {
+        LOG(ERROR) << repository.alias();
+        continue;
       }
+      auto lib = nlohmann::json{
+          {"destination", extlib->second.destination},
+          {"proto_prefix", extlib->second.proto_prefix},
+          {"urls", repository.urls()},
+          {"hash", repository.integrity()},
+          {"strip_prefix", repository.strip_prefix()},
+      };
+      external_proto_libraries.emplace_back(std::move(lib));
     }
     build_yaml_like_["external_proto_libraries"] = external_proto_libraries;
   }
@@ -1153,46 +1135,62 @@ class ArtifactGen {
   nlohmann::json build_yaml_like_ = nlohmann::json::object();
   std::map<std::string, std::string> bazel_label_to_dep_name_;
 
-  const std::map<std::string, std::string> external_source_prefixes_ = {
-      {"@com_googlesource_code_re2//", "third_party/re2"},
-      {"@com_google_googletest//", "third_party/googletest"},
-      {"@googletest//", "third_party/googletest"},
-      {"@com_google_protobuf//upb", "third_party/upb/upb"},
-      {"@com_google_protobuf//third_party/utf8_range",
-       "third_party/utf8_range"},
+  const std::unordered_map<std::string, std::string> external_source_prefixes_ =
       {
-          "@zlib//",
-          "third_party/zlib",
-      },
+          {"@com_googlesource_code_re2//", "third_party/re2"},
+          {"@com_google_googletest//", "third_party/googletest"},
+          {"@googletest//", "third_party/googletest"},
+          {"@com_google_protobuf//upb", "third_party/upb/upb"},
+          {"@com_google_protobuf//third_party/utf8_range",
+           "third_party/utf8_range"},
+          {
+              "@zlib//",
+              "third_party/zlib",
+          },
   };
-  const std::map<std::string, ExternalProtoLibrary> external_proto_libraries_ =
-      {{"envoy_api",
-        {
-            "third_party/envoy-api",
-            "third_party/envoy-api/",
-        }},
-       {"com_google_googleapis",
-        {
-            "third_party/googleapis",
-            "third_party/googleapis/",
-        }},
-       {"com_github_cncf_xds", {"third_party/xds", "third_party/xds/"}},
-       {"com_envoyproxy_protoc_gen_validate",
-        {
-            "third_party/protoc-gen-validate",
-            "third_party/protoc-gen-validate/",
-        }},
-       {
-           "opencensus_proto",
-           {
-               "third_party/opencensus-proto/src",
-               "third_party/opencensus-proto/src/",
-           },
-       }};
+  std::unordered_map<std::string, ExternalProtoLibrary>
+      external_proto_libraries_;
 };
 
-nlohmann::json ExtractMetadataFromBazelXml() {
-  ArtifactGen generator;
+absl::StatusOr<std::unordered_map<std::string, ExternalProtoLibrary>>
+ParseExternalProtoLibraries() {
+  std::string path = absl::GetFlag(FLAGS_external_proto_libraries);
+  if (path.empty()) {
+    return absl::InvalidArgumentError(
+        "external_proto_libraries path was not specified");
+  }
+  std::ifstream libraries_json(path);
+  if (!libraries_json.is_open()) {
+    return absl::FailedPreconditionError(absl::StrCat("Unable to open ", path));
+  }
+  auto json_data = nlohmann::json::parse(libraries_json, nullptr, false);
+  if (json_data.is_discarded()) {
+    return absl::FailedPreconditionError(
+        absl::StrCat("Unable to parse ", path));
+  }
+  std::unordered_map<std::string, ExternalProtoLibrary> libraries;
+  for (const auto& [name, paths] : json_data.items()) {
+    if (!paths.is_object() ||
+        !(paths.contains("destination") && paths["destination"].is_string() &&
+          paths.contains("proto_prefix") &&
+          paths["proto_prefix"].is_string())) {
+      return absl::FailedPreconditionError(
+          absl::StrCat("Malformed JSON: ", paths.dump()));
+    }
+    libraries.emplace(
+        name, ExternalProtoLibrary{
+                  std::string(paths["destination"].get<std::string>()),
+                  std::string(paths["proto_prefix"].get<std::string>())});
+  }
+  return libraries;
+}
+
+absl::StatusOr<nlohmann::json> ExtractMetadataFromBazelXml() {
+  auto external_proto_libraries = ParseExternalProtoLibraries();
+  if (!external_proto_libraries.ok()) {
+    return std::move(external_proto_libraries).status();
+  }
+  ArtifactGen generator{std::move(external_proto_libraries).value()};
   for (auto target_query : absl::GetFlag(FLAGS_target_query)) {
     generator.LoadRulesXml(target_query);
   }
