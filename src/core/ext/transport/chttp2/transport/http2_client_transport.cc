@@ -32,6 +32,8 @@
 #include "src/core/call/call_spine.h"
 #include "src/core/call/message.h"
 #include "src/core/call/metadata_batch.h"
+#include "src/core/ext/transport/chttp2/transport/flow_control.h"
+#include "src/core/ext/transport/chttp2/transport/flow_control_manager.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
@@ -622,6 +624,44 @@ auto Http2ClientTransport::OnReadLoopEnded() {
             self->HandleError(Http2Status::AbslConnectionError(
                 status.code(), std::string(status.message())));
       };
+}
+
+// Equivalent to grpc_chttp2_act_on_flowctl_action in chttp2_transport.cc
+// TODO(tjagtap) : [PH2][P4] : grpc_chttp2_act_on_flowctl_action has a "reason"
+// parameter which looks like it would be really helpful for debugging. Add that
+void Http2ClientTransport::ActOnFlowControlAction(
+    const chttp2::FlowControlAction& action, const uint32_t stream_id) {
+  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::ActOnFlowControlAction";
+  if (action.send_stream_update() != kNoActionNeeded) {
+    DCHECK_GT(stream_id, 0u);
+    RefCountedPtr<Stream> stream = LookupStream(stream_id);
+    if (GPR_LIKELY(stream != nullptr)) {
+      const HttpStreamState state = stream->GetStreamState();
+      if (state != HttpStreamState::kHalfClosedRemote &&
+          state != HttpStreamState::kClosed) {
+        // Stream is not remotely closed, so sending a WINDOW_UPDATE is
+        // potentially useful.
+        // TODO(tjagtap) : [PH2][P1] Plumb with flow control
+      }
+    } else {
+      GRPC_HTTP2_CLIENT_DLOG
+          << "Http2ClientTransport ActOnFlowControlAction stream is null";
+    }
+  }
+
+  if (action.send_transport_update() != kNoActionNeeded) {
+    // TODO(tjagtap) : [PH2][P1] Plumb with flow control
+  }
+
+  // TODO(tjagtap) : [PH2][P1] Plumb
+  // enable_preferred_rx_crypto_frame_advertisement with settings
+  ActOnFlowControlActionSettings(
+      action, settings_.mutable_local(),
+      /*enable_preferred_rx_crypto_frame_advertisement=*/true);
+
+  if (action.AnyUpdateImmediately()) {
+    TriggerWriteCycle();
+  }
 }
 
 ///////////////////////////////////////////////////////////////////////////////

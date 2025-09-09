@@ -255,6 +255,10 @@ class Http2ClientTransport final : public ClientTransport {
   // Force triggers a transport write cycle
   auto TriggerWriteCycle() { return EnqueueOutgoingFrame(Http2EmptyFrame{}); }
 
+  // Processes the flow control action and take necessary steps.
+  void ActOnFlowControlAction(const chttp2::FlowControlAction& action,
+                              uint32_t stream_id);
+
   RefCountedPtr<Party> general_party_;
 
   PromiseEndpoint endpoint_;

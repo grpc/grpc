@@ -7987,6 +7987,7 @@ grpc_cc_library(
     ],
     deps = [
         ":chttp2_flow_control",
+        ":http2_settings",
         "//:chttp2_frame",
     ],
 )
