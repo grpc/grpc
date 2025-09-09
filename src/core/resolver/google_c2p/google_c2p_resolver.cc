@@ -79,8 +79,11 @@ class GoogleCloud2ProdResolver final : public Resolver {
   bool using_dns_ = false;
   OrphanablePtr<Resolver> child_resolver_;
   std::string metadata_server_name_ = "metadata.google.internal.";
-  std::string xds_uri_;
   bool shutdown_ = false;
+
+  // Used to hold state between ctor and StartLocked().
+  std::string xds_uri_;
+  ChannelArgs args_;
 
   OrphanablePtr<GcpMetadataQuery> zone_query_;
   std::string zone_;
@@ -98,13 +101,13 @@ bool XdsBootstrapConfigured() {
 GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
     : resource_quota_(args.args.GetObjectRef<ResourceQuota>()),
       work_serializer_(std::move(args.work_serializer)),
-      pollent_(grpc_polling_entity_create_from_pollset_set(args.pollset_set)) {
+      pollent_(grpc_polling_entity_create_from_pollset_set(args.pollset_set)),
+      args_(std::move(args.args)) {
   absl::string_view name_to_resolve = absl::StripPrefix(args.uri.path(), "/");
   // If we're not running on GCP, we can't use DirectPath, so delegate
   // to the DNS resolver.
   const bool test_only_pretend_running_on_gcp =
-      args.args
-          .GetBool("grpc.testing.google_c2p_resolver_pretend_running_on_gcp")
+      args_.GetBool("grpc.testing.google_c2p_resolver_pretend_running_on_gcp")
           .value_or(false);
   const bool running_on_gcp =
       test_only_pretend_running_on_gcp || grpc_alts_is_running_on_gcp();
@@ -119,14 +122,14 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
     using_dns_ = true;
     child_resolver_ =
         CoreConfiguration::Get().resolver_registry().CreateResolver(
-            absl::StrCat("dns:", name_to_resolve), args.args, args.pollset_set,
+            absl::StrCat("dns:", name_to_resolve), args_, args.pollset_set,
             work_serializer_, std::move(args.result_handler));
     CHECK(child_resolver_ != nullptr);
     return;
   }
   // Maybe override metadata server name for testing
   std::optional<std::string> test_only_metadata_server_override =
-      args.args.GetOwnedString(
+      args_.GetOwnedString(
           "grpc.testing.google_c2p_resolver_metadata_server_override");
   if (test_only_metadata_server_override.has_value() &&
       !test_only_metadata_server_override->empty()) {
@@ -137,7 +140,7 @@ GoogleCloud2ProdResolver::GoogleCloud2ProdResolver(ResolverArgs args)
                  ? absl::StrCat("xds://", kC2PAuthority, "/", name_to_resolve)
                  : absl::StrCat("xds:", name_to_resolve);
   child_resolver_ = CoreConfiguration::Get().resolver_registry().CreateResolver(
-      xds_uri_, args.args, args.pollset_set, work_serializer_,
+      xds_uri_, args_, args.pollset_set, work_serializer_,
       std::move(args.result_handler));
   CHECK(child_resolver_ != nullptr);
 }
@@ -246,7 +249,8 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
   static NoDestruct<std::shared_ptr<GrpcXdsBootstrap>> bootstrap(
       ConstructBootstrap());
   auto xds_client = GrpcXdsClient::GetOrCreate(
-      xds_uri_, ChannelArgs(), "google-c2p resolver", *bootstrap);
+      xds_uri_, args_, "google-c2p resolver", *bootstrap);
+  args_ = ChannelArgs();  // Don't need the args anymore.
   // Now start xDS resolver.
   child_resolver_->StartLocked();
 }
