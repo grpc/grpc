@@ -187,14 +187,16 @@ grpc_fuzz_test(
     srcs = ["property_list_test.cc"],
     external_deps = [
         "absl/log:check",
+        "absl/strings",
         "fuzztest",
         "fuzztest_main",
         "gtest",
-        "protobuf",
     ],
     deps = [
         "//src/core:zviz_property_list",
         "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+        "//src/proto/grpc/channelz/v2:property_list_cc_proto",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 
@@ -208,7 +210,6 @@ grpc_fuzz_test(
         "fuzztest",
         "fuzztest_main",
         "gtest",
-        "protobuf",
     ],
     deps = [
         "environment_fake",
@@ -216,5 +217,6 @@ grpc_fuzz_test(
         "//src/core:zviz_format_entity_list",
         "//src/core:zviz_layout_html",
         "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+        "@com_google_protobuf//:protobuf",
     ],
 )
