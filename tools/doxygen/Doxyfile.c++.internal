@@ -3106,6 +3106,10 @@ src/core/xds/grpc/xds_common_types.cc \
 src/core/xds/grpc/xds_common_types.h \
 src/core/xds/grpc/xds_common_types_parser.cc \
 src/core/xds/grpc/xds_common_types_parser.h \
+src/core/xds/grpc/xds_ecds.cc \
+src/core/xds/grpc/xds_ecds.h \
+src/core/xds/grpc/xds_ecds_parser.cc \
+src/core/xds/grpc/xds_ecds_parser.h \
 src/core/xds/grpc/xds_enabled_server.h \
 src/core/xds/grpc/xds_endpoint.cc \
 src/core/xds/grpc/xds_endpoint.h \
@@ -3115,6 +3119,7 @@ src/core/xds/grpc/xds_health_status.cc \
 src/core/xds/grpc/xds_health_status.h \
 src/core/xds/grpc/xds_http_fault_filter.cc \
 src/core/xds/grpc/xds_http_fault_filter.h \
+src/core/xds/grpc/xds_http_filter.cc \
 src/core/xds/grpc/xds_http_filter.h \
 src/core/xds/grpc/xds_http_filter_registry.cc \
 src/core/xds/grpc/xds_http_filter_registry.h \

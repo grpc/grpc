@@ -38,13 +38,15 @@ class XdsHttpRbacFilter final : public XdsHttpFilterImpl {
   absl::string_view ConfigProtoName() const override;
   absl::string_view OverrideConfigProtoName() const override;
   void PopulateSymtab(upb_DefPool* symtab) const override;
-  std::optional<FilterConfig> GenerateFilterConfig(
+  std::optional<FilterConfig> GenerateFilterConfigImpl(
       absl::string_view /*instance_name*/,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
+      int /*recursion_depth*/, std::set<std::string>* /*ecds_resources_needed*/,
       ValidationErrors* errors) const override;
-  std::optional<FilterConfig> GenerateFilterConfigOverride(
+  std::optional<FilterConfig> GenerateFilterConfigOverrideImpl(
       absl::string_view /*instance_name*/,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
+      int /*recursion_depth*/, std::set<std::string>* /*ecds_resources_needed*/,
       ValidationErrors* errors) const override;
   void AddFilter(InterceptionChainBuilder& builder) const override;
   const grpc_channel_filter* channel_filter() const override;

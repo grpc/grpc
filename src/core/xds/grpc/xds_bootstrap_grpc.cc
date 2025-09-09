@@ -32,6 +32,7 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "src/core/util/down_cast.h"
+#include "src/core/util/env.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/json/json_reader.h"
@@ -40,6 +41,15 @@
 #include "src/core/util/string.h"
 
 namespace grpc_core {
+
+// TODO(roth): Remove this once this feature passes interop tests.
+bool XdsEcdsEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_ECDS");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
 
 //
 // GrpcXdsBootstrap::GrpcNode::Locality

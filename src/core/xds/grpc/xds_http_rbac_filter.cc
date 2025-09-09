@@ -517,9 +517,10 @@ void XdsHttpRbacFilter::PopulateSymtab(upb_DefPool* symtab) const {
 }
 
 std::optional<XdsHttpFilterImpl::FilterConfig>
-XdsHttpRbacFilter::GenerateFilterConfig(
+XdsHttpRbacFilter::GenerateFilterConfigImpl(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
+    int /*recursion_depth*/, std::set<std::string>* /*ecds_resources_needed*/,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
       std::get_if<absl::string_view>(&extension.value);
@@ -539,9 +540,10 @@ XdsHttpRbacFilter::GenerateFilterConfig(
 }
 
 std::optional<XdsHttpFilterImpl::FilterConfig>
-XdsHttpRbacFilter::GenerateFilterConfigOverride(
+XdsHttpRbacFilter::GenerateFilterConfigOverrideImpl(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
+    int /*recursion_depth*/, std::set<std::string>* /*ecds_resources_needed*/,
     ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
       std::get_if<absl::string_view>(&extension.value);
