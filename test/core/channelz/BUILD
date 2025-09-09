@@ -57,12 +57,18 @@ grpc_cc_test(
         "absl/container:flat_hash_map",
         "absl/log",
         "absl/log:check",
+        "absl/status",
         "absl/strings",
     ],
     deps = [
+        "@com_google_protobuf//:duration_upb_proto",
+        # TODO(rishesh): Re-enable this once the proto is available in OSS.
+        # "//google/protobuf:timestamp_upb_proto",
         "//:channelz_property_list_upb",
         "//src/core:channelz_property_list",
+        "//src/core:json",
         "//src/core:json_writer",
+        "//src/core:upb_utils",
     ],
 )
 
@@ -142,8 +148,11 @@ grpc_cc_test(
     ],
     deps = [
         "//:grpc",
+        "//:grpc++",
         "//src/core:notification",
         "//src/core:ztrace_collector",
+        "//src/proto/grpc/channelz/v2:property_list_cc_proto",
+        "//src/proto/grpc/channelz/v2:service_cc_proto",
     ],
 )
 

@@ -30,6 +30,7 @@ EXPERIMENT_ENABLES = {
     "event_engine_listener": "event_engine_listener",
     "event_engine_callback_cq": "event_engine_callback_cq,event_engine_client,event_engine_listener",
     "event_engine_for_all_other_endpoints": "event_engine_client,event_engine_dns,event_engine_dns_non_client_channel,event_engine_for_all_other_endpoints,event_engine_listener",
+    "event_engine_poller_for_python": "event_engine_poller_for_python",
     "event_engine_secure_endpoint": "event_engine_secure_endpoint",
     "free_large_allocator": "free_large_allocator",
     "fuse_filters": "fuse_filters",
@@ -54,6 +55,7 @@ EXPERIMENT_ENABLES = {
     "server_global_callbacks_ownership": "server_global_callbacks_ownership",
     "sleep_promise_exec_ctx_removal": "sleep_promise_exec_ctx_removal",
     "sleep_use_non_owning_waker": "sleep_use_non_owning_waker",
+    "subchannel_wrapper_cleanup_on_orphan": "subchannel_wrapper_cleanup_on_orphan",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
     "tsi_frame_protector_without_locks": "tsi_frame_protector_without_locks",
@@ -67,6 +69,7 @@ EXPERIMENT_POLLERS = [
     "event_engine_fork",
     "event_engine_listener",
     "event_engine_for_all_other_endpoints",
+    "event_engine_poller_for_python",
     "event_engine_secure_endpoint",
     "pipelined_read_secure_endpoint",
 ]
@@ -94,6 +97,7 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "rr_wrr_connect_from_random_index",
@@ -132,6 +136,7 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
         },
         "on": {
@@ -182,6 +187,7 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "rr_wrr_connect_from_random_index",
@@ -220,6 +226,7 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
         },
         "on": {
@@ -270,6 +277,7 @@ EXPERIMENTS = {
             ],
             "cpp_end2end_test": [
                 "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
             "cpp_lb_end2end_test": [
                 "rr_wrr_connect_from_random_index",
@@ -308,6 +316,7 @@ EXPERIMENTS = {
             ],
             "xds_end2end_test": [
                 "error_flatten",
+                "subchannel_wrapper_cleanup_on_orphan",
             ],
         },
         "on": {

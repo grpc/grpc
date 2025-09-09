@@ -68,6 +68,13 @@ def _python3_check(fn):
 
 
 def _run_in_subprocess(test_case):
+    # The default start method of multiprocessing in linux has changed to
+    # `forkserver` instead of `fork` from Python 3.14. This causes problems
+    # with pickling target methods that use decorators.
+    # Hence manually set to use the `fork` start method.
+    if sys.version_info >= (3, 14) and ("linux" in sys.platform):
+        multiprocessing.set_start_method("fork", force=True)
+
     sys.path.insert(
         0, os.path.join(os.path.realpath(os.path.dirname(__file__)), "..")
     )

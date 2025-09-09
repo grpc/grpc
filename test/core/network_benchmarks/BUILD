@@ -16,10 +16,6 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_package")
 
 grpc_package(
     name = "test/core/network_benchmarks",
-    features = [
-        "-layering_check",
-        "-parse_headers",
-    ],
 )
 
 licenses(["notice"])

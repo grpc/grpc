@@ -21,6 +21,7 @@ load(
     "grpc_package",
 )
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 grpc_package(name = "test/core/xds")
 
@@ -416,6 +417,44 @@ grpc_cc_test(
         "@com_google_protobuf//:struct_cc_proto",
         "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/gcp_authn/v3:pkg_cc_proto",
+    ],
+)
+
+grpc_cc_benchmark(
+    name = "bm_xds_matcher_test",
+    srcs = ["bm_xds_matcher_test.cc"],
+    monitoring = HISTORY,
+    deps = [
+        "//src/core:grpc_xds_client",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_matcher_test",
+    srcs = ["xds_matcher_test.cc"],
+    external_deps = ["gtest"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:grpc_xds_client",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_matcher_parse_test",
+    srcs = ["xds_matcher_parse_test.cc"],
+    external_deps = ["gtest"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:down_cast",
+        "//src/core:grpc_xds_client",
+        "//test/core/test_util:grpc_test_util",
+        "@com_github_cncf_xds//xds/type/matcher/v3:pkg_cc_proto",
+        "@envoy_api//envoy/config/common/matcher/v3:pkg_cc_proto",
+        "@envoy_api//envoy/type/matcher/v3:pkg_cc_proto",
     ],
 )
 

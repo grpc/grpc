@@ -78,6 +78,7 @@ inline bool IsEventEngineListenerEnabled() { return true; }
 inline bool IsEventEngineCallbackCqEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
 inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
+inline bool IsEventEnginePollerForPythonEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_SECURE_ENDPOINT
 inline bool IsEventEngineSecureEndpointEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
@@ -107,6 +108,7 @@ inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return true; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
 inline bool IsSleepUseNonOwningWakerEnabled() { return false; }
+inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
@@ -134,6 +136,7 @@ inline bool IsEventEngineListenerEnabled() { return true; }
 inline bool IsEventEngineCallbackCqEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
 inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
+inline bool IsEventEnginePollerForPythonEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_SECURE_ENDPOINT
 inline bool IsEventEngineSecureEndpointEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
@@ -163,6 +166,7 @@ inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return true; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
 inline bool IsSleepUseNonOwningWakerEnabled() { return false; }
+inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
@@ -190,6 +194,7 @@ inline bool IsEventEngineListenerEnabled() { return true; }
 inline bool IsEventEngineCallbackCqEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
 inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
+inline bool IsEventEnginePollerForPythonEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_SECURE_ENDPOINT
 inline bool IsEventEngineSecureEndpointEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
@@ -219,6 +224,7 @@ inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return true; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
 inline bool IsSleepUseNonOwningWakerEnabled() { return false; }
+inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
@@ -240,6 +246,7 @@ enum ExperimentIds {
   kExperimentIdEventEngineListener,
   kExperimentIdEventEngineCallbackCq,
   kExperimentIdEventEngineForAllOtherEndpoints,
+  kExperimentIdEventEnginePollerForPython,
   kExperimentIdEventEngineSecureEndpoint,
   kExperimentIdFreeLargeAllocator,
   kExperimentIdFuseFilters,
@@ -264,6 +271,7 @@ enum ExperimentIds {
   kExperimentIdServerGlobalCallbacksOwnership,
   kExperimentIdSleepPromiseExecCtxRemoval,
   kExperimentIdSleepUseNonOwningWaker,
+  kExperimentIdSubchannelWrapperCleanupOnOrphan,
   kExperimentIdTcpFrameSizeTuning,
   kExperimentIdTcpRcvLowat,
   kExperimentIdTsiFrameProtectorWithoutLocks,
@@ -321,6 +329,10 @@ inline bool IsEventEngineCallbackCqEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
 inline bool IsEventEngineForAllOtherEndpointsEnabled() {
   return IsExperimentEnabled<kExperimentIdEventEngineForAllOtherEndpoints>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_POLLER_FOR_PYTHON
+inline bool IsEventEnginePollerForPythonEnabled() {
+  return IsExperimentEnabled<kExperimentIdEventEnginePollerForPython>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_SECURE_ENDPOINT
 inline bool IsEventEngineSecureEndpointEnabled() {
@@ -417,6 +429,10 @@ inline bool IsSleepPromiseExecCtxRemovalEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_SLEEP_USE_NON_OWNING_WAKER
 inline bool IsSleepUseNonOwningWakerEnabled() {
   return IsExperimentEnabled<kExperimentIdSleepUseNonOwningWaker>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_SUBCHANNEL_WRAPPER_CLEANUP_ON_ORPHAN
+inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() {
+  return IsExperimentEnabled<kExperimentIdSubchannelWrapperCleanupOnOrphan>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_FRAME_SIZE_TUNING
 inline bool IsTcpFrameSizeTuningEnabled() {

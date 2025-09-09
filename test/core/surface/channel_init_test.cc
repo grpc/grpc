@@ -14,9 +14,11 @@
 
 #include "src/core/lib/surface/channel_init.h"
 
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <string>
+#include <utility>
 
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
@@ -46,6 +48,17 @@ const grpc_channel_filter* FilterNamed(const char* name) {
                                         nullptr, 0, nullptr, nullptr, nullptr,
                                         nullptr, unique_type_name})
       .first->second;
+}
+
+auto RemoveFilterNamed(std::string name) {
+  return [name](ChannelStackBuilder& builder) {
+    auto* stk = builder.mutable_stack();
+    stk->erase(std::remove_if(stk->begin(), stk->end(),
+                              [name](const grpc_channel_filter* filter) {
+                                return filter->name.name() == name;
+                              }),
+               stk->end());
+  };
 }
 
 std::vector<std::string> GetFilterNames(const ChannelInit& init,
@@ -299,6 +312,43 @@ TEST(ChannelInitTest, CanRegisterFusedFilters) {
             std::vector<std::string>({"Filter1", "Filter2+Filter3",
                                       "Filter4+Filter5+Filter6+Filter7",
                                       "Filter8", "Filter9", "terminal1"}));
+}
+
+TEST(ChannelInitTest, CanRegisterFusedFiltersWithPostProcessors) {
+  ChannelInit::Builder b;
+  // Register 2 post processors to remove filter 2 and filter 5.
+  b.RegisterPostProcessor(GRPC_CLIENT_CHANNEL,
+                          ChannelInit::PostProcessorSlot::kAuthSubstitution,
+                          RemoveFilterNamed("Filter2"));
+  b.RegisterPostProcessor(
+      GRPC_CLIENT_CHANNEL,
+      ChannelInit::PostProcessorSlot::kXdsChannelStackModifier,
+      RemoveFilterNamed("Filter5"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter1"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter2"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter3"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter4"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter5"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter6"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter7"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter8"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter9"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminal1")).Terminal();
+  b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL,
+                        FilterNamed("Filter4+Filter5+Filter6+Filter7"));
+  b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL,
+                        FilterNamed("Filter4+Filter6+Filter7"));
+  b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL,
+                        FilterNamed("Filter2+Filter3+Filter4"));
+  b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter2+Filter3"));
+  // Filter2 is removed by the post processor, so it should not be present in
+  // the fused filters. Filter5 is removed by the post processor, so the fused
+  // filter that contains it should not be present but the fusion
+  // "Filter4+Filter6+Filter7" should be included.
+  EXPECT_EQ(
+      GetFilterNames(b.Build(), GRPC_CLIENT_CHANNEL, ChannelArgs()),
+      std::vector<std::string>({"Filter1", "Filter3", "Filter4+Filter6+Filter7",
+                                "Filter8", "Filter9", "terminal1"}));
 }
 
 TEST(ChannelInitTest, PredicateMatchingWithFusedFilters) {
