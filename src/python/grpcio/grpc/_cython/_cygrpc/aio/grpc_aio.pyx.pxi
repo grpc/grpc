@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import enum
+import sys
 
 cdef str _GRPC_ASYNCIO_ENGINE = os.environ.get('GRPC_ASYNCIO_ENGINE', 'poller').upper()
 cdef _AioState _global_aio_state = _AioState()
@@ -43,6 +44,7 @@ cdef class _AioState:
 
 
 cdef _initialize_poller():
+    _LOGGER.info("_initialize_poller()")
     # Initializes gRPC Core, must be called before other Core API
     grpc_init()
 
@@ -75,6 +77,7 @@ def _grpc_shutdown_wrapper(_):
 
 
 cdef _actual_aio_shutdown():
+    print("_actual_aio_shutdown()")
     if _global_aio_state.engine is AsyncIOEngine.POLLER:
         (<PollerCompletionQueue>_global_aio_state.cq).shutdown()
         grpc_shutdown()
@@ -83,6 +86,7 @@ cdef _actual_aio_shutdown():
 
 
 cdef _initialize_per_loop():
+    _LOGGER.info("init_grpc_aio() -> _initialize_per_loop()")
     cdef object loop = get_working_loop()
     if _global_aio_state.engine is AsyncIOEngine.POLLER:
         _global_aio_state.cq.bind_loop(loop)
@@ -96,6 +100,7 @@ cpdef init_grpc_aio():
     """
     with _global_aio_state.lock:
         _global_aio_state.refcount += 1
+        print(f"{_global_aio_state.refcount=}")
         if _global_aio_state.refcount == 1:
             _actual_aio_initialization()
         _initialize_per_loop()
@@ -107,8 +112,34 @@ cpdef shutdown_grpc_aio():
     Expected to be invoked on critical class destructors.
     E.g., AioChannel, AioServer.
     """
+    print("shutdown_grpc_aio()")
     with _global_aio_state.lock:
         assert _global_aio_state.refcount > 0
         _global_aio_state.refcount -= 1
+
+        # Do not manually shutdown when python interpreter already being
+        # finalized (cleaning up resources, destroying objects, preparing
+        # for program exit, etc).
+        # First, some of the resources we'll try to access may already be
+        # freed, and the order is not deterministic.
+        # Second, PollerCompletionQueue.shutdown() will try to wait on its
+        # poller thread to finish gracefully. In py3.14, PythonFinalizationError
+        # is raised when Thread.join() is called during finalization.
+        #
+        # Why `sys is not None` check:
+        # Python 3.14.0rc1 interpreter in some cases unloads top-level symbols
+        # (sys, _LOGGER), earlier than AioChannel.__dealloc__ triggers shutdown.
+        # TODO(sergiitk): verify if this needed after Python 3.14.0.
+        if sys is not None and not sys.is_finalizing():
+            return
+
+        # Only call the shutdown when refcount down to 0.
+        # Note that we expose `init_grpc_aio` which, will result in an incorrect
+        # positive refcount when called manually.
+        # Before the above finalization check was added, init_grpc_aio's
+        # side-effect was sometimes misused to aviod deadlock on finialization.
+        # a positive refcount when called manually.
+        # See https://github.com/grpc/grpc/issues/22365
+        # TODO(sergiitk): consider deprecating init_grpc_aio from public APIs.
         if not _global_aio_state.refcount:
             _actual_aio_shutdown()

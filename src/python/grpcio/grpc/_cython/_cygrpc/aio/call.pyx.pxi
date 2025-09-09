@@ -46,6 +46,7 @@ cdef class _AioCall(GrpcCallWrapper):
 
     def __cinit__(self, AioChannel channel, object deadline,
                   bytes method, CallCredentials call_credentials, object wait_for_ready):
+        _LOGGER.info("_AioCall.__cinit__()")
         init_grpc_aio()
         self.call = NULL
         self._channel = channel

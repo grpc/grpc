@@ -14,6 +14,7 @@
 """Server-side implementation of gRPC Asyncio Python."""
 
 from concurrent.futures import Executor
+import logging
 from typing import Any, Dict, Optional, Sequence
 
 import grpc
@@ -45,6 +46,7 @@ class Server(_base_server.Server):
         maximum_concurrent_rpcs: Optional[int],
         compression: Optional[grpc.Compression],
     ):
+        logging.info("Server.init()")
         self._loop = cygrpc.get_working_loop()
         if interceptors:
             invalid_interceptors = [
