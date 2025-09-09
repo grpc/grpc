@@ -76,6 +76,9 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(
         grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_event_engine_poller_for_python =
+    "Enable event engine poller in gRPC Python";
+const char* const additional_constraints_event_engine_poller_for_python = "{}";
 const char* const description_event_engine_secure_endpoint =
     "Use EventEngine secure endpoint wrapper instead of iomgr when available";
 const char* const additional_constraints_event_engine_secure_endpoint = "{}";
@@ -179,6 +182,11 @@ const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
 const char* const description_sleep_use_non_owning_waker =
     "If set, the sleep promise uses a non-owning waker.";
 const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
+const char* const description_subchannel_wrapper_cleanup_on_orphan =
+    "Fixes the subchannel wrapper to drop any non-cancelled watchers when it "
+    "gets orphaned.";
+const char* const additional_constraints_subchannel_wrapper_cleanup_on_orphan =
+    "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -236,6 +244,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
+    {"event_engine_poller_for_python",
+     description_event_engine_poller_for_python,
+     additional_constraints_event_engine_poller_for_python, nullptr, 0, false,
+     true},
     {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
      additional_constraints_event_engine_secure_endpoint, nullptr, 0, true,
      false},
@@ -314,6 +326,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
      additional_constraints_sleep_use_non_owning_waker, nullptr, 0, false,
      true},
+    {"subchannel_wrapper_cleanup_on_orphan",
+     description_subchannel_wrapper_cleanup_on_orphan,
+     additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
+     false, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -385,6 +401,9 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(
         grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_event_engine_poller_for_python =
+    "Enable event engine poller in gRPC Python";
+const char* const additional_constraints_event_engine_poller_for_python = "{}";
 const char* const description_event_engine_secure_endpoint =
     "Use EventEngine secure endpoint wrapper instead of iomgr when available";
 const char* const additional_constraints_event_engine_secure_endpoint = "{}";
@@ -488,6 +507,11 @@ const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
 const char* const description_sleep_use_non_owning_waker =
     "If set, the sleep promise uses a non-owning waker.";
 const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
+const char* const description_subchannel_wrapper_cleanup_on_orphan =
+    "Fixes the subchannel wrapper to drop any non-cancelled watchers when it "
+    "gets orphaned.";
+const char* const additional_constraints_subchannel_wrapper_cleanup_on_orphan =
+    "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -545,6 +569,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
+    {"event_engine_poller_for_python",
+     description_event_engine_poller_for_python,
+     additional_constraints_event_engine_poller_for_python, nullptr, 0, false,
+     true},
     {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
      additional_constraints_event_engine_secure_endpoint, nullptr, 0, true,
      false},
@@ -623,6 +651,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
      additional_constraints_sleep_use_non_owning_waker, nullptr, 0, false,
      true},
+    {"subchannel_wrapper_cleanup_on_orphan",
+     description_subchannel_wrapper_cleanup_on_orphan,
+     additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
+     false, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -694,6 +726,9 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(
         grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_event_engine_poller_for_python =
+    "Enable event engine poller in gRPC Python";
+const char* const additional_constraints_event_engine_poller_for_python = "{}";
 const char* const description_event_engine_secure_endpoint =
     "Use EventEngine secure endpoint wrapper instead of iomgr when available";
 const char* const additional_constraints_event_engine_secure_endpoint = "{}";
@@ -797,6 +832,11 @@ const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
 const char* const description_sleep_use_non_owning_waker =
     "If set, the sleep promise uses a non-owning waker.";
 const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
+const char* const description_subchannel_wrapper_cleanup_on_orphan =
+    "Fixes the subchannel wrapper to drop any non-cancelled watchers when it "
+    "gets orphaned.";
+const char* const additional_constraints_subchannel_wrapper_cleanup_on_orphan =
+    "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -854,6 +894,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
+    {"event_engine_poller_for_python",
+     description_event_engine_poller_for_python,
+     additional_constraints_event_engine_poller_for_python, nullptr, 0, false,
+     true},
     {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
      additional_constraints_event_engine_secure_endpoint, nullptr, 0, true,
      false},
@@ -932,6 +976,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
      additional_constraints_sleep_use_non_owning_waker, nullptr, 0, false,
      true},
+    {"subchannel_wrapper_cleanup_on_orphan",
+     description_subchannel_wrapper_cleanup_on_orphan,
+     additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
+     false, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,

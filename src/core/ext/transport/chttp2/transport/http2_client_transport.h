@@ -24,6 +24,7 @@
 
 #include "src/core/call/call_spine.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
+#include "src/core/ext/transport/chttp2/transport/flow_control_manager.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
@@ -253,6 +254,10 @@ class Http2ClientTransport final : public ClientTransport {
 
   // Force triggers a transport write cycle
   auto TriggerWriteCycle() { return EnqueueOutgoingFrame(Http2EmptyFrame{}); }
+
+  // Processes the flow control action and take necessary steps.
+  void ActOnFlowControlAction(const chttp2::FlowControlAction& action,
+                              uint32_t stream_id);
 
   RefCountedPtr<Party> general_party_;
 

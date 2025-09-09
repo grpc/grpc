@@ -94,6 +94,15 @@ class GRPC_MUST_USE_RESULT FlowControlAction {
   Urgency preferred_rx_crypto_frame_size_update() const {
     return preferred_rx_crypto_frame_size_update_;
   }
+  bool AnyUpdateImmediately() const {
+    return send_stream_update_ == Urgency::UPDATE_IMMEDIATELY ||
+           send_transport_update_ == Urgency::UPDATE_IMMEDIATELY ||
+           send_initial_window_update_ == Urgency::UPDATE_IMMEDIATELY ||
+           send_max_frame_size_update_ == Urgency::UPDATE_IMMEDIATELY ||
+           preferred_rx_crypto_frame_size_update_ ==
+               Urgency::UPDATE_IMMEDIATELY;
+  }
+
   uint32_t initial_window_size() const { return initial_window_size_; }
   uint32_t max_frame_size() const { return max_frame_size_; }
   uint32_t preferred_rx_crypto_frame_size() const {

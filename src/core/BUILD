@@ -3500,10 +3500,12 @@ grpc_cc_library(
         "channel_args",
         "channel_fwd",
         "channel_stack_type",
+        "channelz_property_list",
         "interception_chain",
         "sync",
         "unique_type_name",
         "//:channel_stack_builder",
+        "//:channelz",
         "//:debug_location",
         "//:gpr",
         "//:gpr_platform",
@@ -7974,6 +7976,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "flow_control_manager",
+    hdrs = [
+        "ext/transport/chttp2/transport/flow_control_manager.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/log",
+        "absl/log:check",
+    ],
+    deps = [
+        ":chttp2_flow_control",
+        ":http2_settings",
+        "//:chttp2_frame",
+    ],
+)
+
+grpc_cc_library(
     name = "ping_abuse_policy",
     srcs = [
         "ext/transport/chttp2/transport/ping_abuse_policy.cc",
@@ -8257,6 +8276,7 @@ grpc_cc_library(
         "channel_args",
         "check_class_size",
         "connectivity_state",
+        "flow_control_manager",
         "for_each",
         "grpc_promise_endpoint",
         "header_assembler",

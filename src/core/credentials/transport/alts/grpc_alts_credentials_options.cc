@@ -40,6 +40,5 @@ void grpc_alts_credentials_options_destroy(
     if (options->vtable != nullptr && options->vtable->destruct != nullptr) {
       options->vtable->destruct(options);
     }
-    gpr_free(options);
   }
 }
