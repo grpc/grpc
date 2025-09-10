@@ -391,9 +391,9 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   //    the partial first message (sum of payload of all returned frames <=
   //    max_fc_tokens).
   // This function is thread safe.
-  absl::StatusOr<DequeueResult> DequeueFrames(const uint32_t max_fc_tokens,
-                                              const uint32_t max_frame_length,
-                                              HPackCompressor& encoder) {
+  DequeueResult DequeueFrames(const uint32_t max_fc_tokens,
+                              const uint32_t max_frame_length,
+                              HPackCompressor& encoder) {
     MutexLock lock(&mu_);
     GRPC_STREAM_DATA_QUEUE_DEBUG << "Dequeueing frames for stream "
                                  << stream_id_
@@ -450,7 +450,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
 
   class HandleDequeue {
    public:
-    HandleDequeue(uint32_t max_tokens, uint32_t max_frame_length,
+    HandleDequeue(const uint32_t max_tokens, const uint32_t max_frame_length,
                   HPackCompressor& encoder, StreamDataQueue& queue)
         : queue_(queue),
           max_frame_length_(max_frame_length),

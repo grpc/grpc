@@ -99,8 +99,9 @@ void DequeueAndCheckSuccess(WritableStreams& writable_streams,
   EXPECT_EQ(result.value(), expected_stream_id);
 }
 
-absl::Status ForceResolveAndCheckSuccess(WritableStreams& writable_streams) {
-  absl::Status status = writable_streams.ForceResolve();
+absl::Status ForceReadyForWriteAndCheckSuccess(
+    WritableStreams& writable_streams) {
+  absl::Status status = writable_streams.ForceReadyForWrite();
   EXPECT_TRUE(status.ok()) << status;
   return status;
 }
@@ -371,36 +372,38 @@ TEST_F(WritableStreamsTest, EnqueueDequeueFlowTest) {
   event_engine()->UnsetGlobalHooks();
 }
 
-TEST_F(WritableStreamsTest, TestForceResolve) {
-  // Test to ensure that ForceResolve unblocks the pending waiter on
-  // WaitForReady. This test also asserts that ForceResolve can be called with
-  // no waiters on WaitForReady.
+TEST_F(WritableStreamsTest, TestForceReadyForWrite) {
+  // Test to ensure that ForceReadyForWrite unblocks the pending waiter on
+  // WaitForReady. This test also asserts that ForceReadyForWrite can be called
+  // with no waiters on WaitForReady.
   WritableStreams writable_streams(/*max_queue_size=*/2);
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call()).Times(2);
 
   GetParty()->Spawn(
-      "ForceResolveAndDequeue",
+      "ForceReadyForWriteAndDequeue",
       TrySeq(
           [&writable_streams]() {
-            return ForceResolveAndCheckSuccess(writable_streams);
+            return ForceReadyForWriteAndCheckSuccess(writable_streams);
           },
           [&writable_streams]() {
-            return Join(DequeuePromise(writable_streams,
-                                       /*transport_tokens_available=*/true,
-                                       /*expect_result=*/false),
-                        [&writable_streams]() {
-                          return ForceResolveAndCheckSuccess(writable_streams);
-                        });
+            return Join(
+                DequeuePromise(writable_streams,
+                               /*transport_tokens_available=*/true,
+                               /*expect_result=*/false),
+                [&writable_streams]() {
+                  return ForceReadyForWriteAndCheckSuccess(writable_streams);
+                });
           },
           [&writable_streams, &on_done]() {
             on_done.Call();
-            return Join(DequeuePromise(writable_streams,
-                                       /*transport_tokens_available=*/true,
-                                       /*expect_result=*/false),
-                        [&writable_streams]() {
-                          return ForceResolveAndCheckSuccess(writable_streams);
-                        });
+            return Join(
+                DequeuePromise(writable_streams,
+                               /*transport_tokens_available=*/true,
+                               /*expect_result=*/false),
+                [&writable_streams]() {
+                  return ForceReadyForWriteAndCheckSuccess(writable_streams);
+                });
           },
           [&on_done]() {
             on_done.Call();
