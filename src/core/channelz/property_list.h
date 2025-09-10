@@ -23,6 +23,7 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 #include "google/protobuf/any.upb.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/string.h"
@@ -44,7 +45,7 @@ class OtherPropertyValue {
 
 using PropertyValue =
     std::variant<absl::string_view, std::string, int64_t, uint64_t, double,
-                 bool, Duration, Timestamp, absl::Status,
+                 bool, Duration, Timestamp, absl::Status, absl::Time,
                  std::shared_ptr<OtherPropertyValue>>;
 
 namespace property_list_detail {

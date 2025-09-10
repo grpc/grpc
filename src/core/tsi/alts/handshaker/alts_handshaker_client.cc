@@ -23,18 +23,17 @@
 #include <grpc/support/port_platform.h>
 
 #include <list>
+#include <memory>
+#include <string>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_split.h"
-#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_utils.h"
-#include "src/core/util/crash.h"
 #include "src/core/util/env.h"
 #include "src/core/util/sync.h"
 #include "upb/mem/arena.hpp"
@@ -512,9 +511,17 @@ static grpc_byte_buffer* get_serialized_start_client(
   grpc_gcp_StartClientHandshakeReq_add_application_protocols(
       start_client, upb_StringView_FromString(ALTS_APPLICATION_PROTOCOL),
       arena.ptr());
-  grpc_gcp_StartClientHandshakeReq_add_record_protocols(
-      start_client, upb_StringView_FromString(ALTS_RECORD_PROTOCOL),
-      arena.ptr());
+  if (client->options->record_protocols.empty()) {
+    grpc_gcp_StartClientHandshakeReq_add_record_protocols(
+        start_client, upb_StringView_FromString(ALTS_RECORD_PROTOCOL),
+        arena.ptr());
+  } else {
+    for (const auto& record_protocol : client->options->record_protocols) {
+      grpc_gcp_StartClientHandshakeReq_add_record_protocols(
+          start_client, upb_StringView_FromString(record_protocol.c_str()),
+          arena.ptr());
+    }
+  }
   grpc_gcp_RpcProtocolVersions* client_version =
       grpc_gcp_StartClientHandshakeReq_mutable_rpc_versions(start_client,
                                                             arena.ptr());
@@ -535,6 +542,24 @@ static grpc_byte_buffer* get_serialized_start_client(
     grpc_gcp_Identity_set_service_account(target_identity,
                                           upb_StringView_FromString(ptr->data));
     ptr = ptr->next;
+  }
+  // This ensures the token string is available when the proto gets serialized.
+  absl::StatusOr<std::string> access_token = absl::NotFoundError("");
+  // Set access token if the token fetcher is available.
+  grpc::alts::TokenFetcher* token_fetcher =
+      (reinterpret_cast<grpc_alts_credentials_client_options*>(client->options))
+          ->token_fetcher.get();
+  if (token_fetcher != nullptr) {
+    access_token = token_fetcher->GetToken();
+    if (!access_token.ok()) {
+      LOG_EVERY_N_SEC(ERROR, 60)
+          << "Failed to get token from the token fetcher "
+             "in client start handshake: "
+          << access_token.status();
+      return nullptr;
+    }
+    grpc_gcp_StartClientHandshakeReq_set_access_token(
+        start_client, upb_StringView_FromString(access_token->c_str()));
   }
   grpc_gcp_StartClientHandshakeReq_set_max_frame_size(
       start_client, static_cast<uint32_t>(client->max_frame_size));
@@ -591,8 +616,16 @@ static grpc_byte_buffer* get_serialized_start_server(
       arena.ptr());
   grpc_gcp_ServerHandshakeParameters* value =
       grpc_gcp_ServerHandshakeParameters_new(arena.ptr());
-  grpc_gcp_ServerHandshakeParameters_add_record_protocols(
-      value, upb_StringView_FromString(ALTS_RECORD_PROTOCOL), arena.ptr());
+  if (client->options->record_protocols.empty()) {
+    grpc_gcp_ServerHandshakeParameters_add_record_protocols(
+        value, upb_StringView_FromString(ALTS_RECORD_PROTOCOL), arena.ptr());
+  } else {
+    for (const auto& record_protocol : client->options->record_protocols) {
+      grpc_gcp_ServerHandshakeParameters_add_record_protocols(
+          value, upb_StringView_FromString(record_protocol.c_str()),
+          arena.ptr());
+    }
+  }
   grpc_gcp_StartServerHandshakeReq_handshake_parameters_set(
       start_server, grpc_gcp_ALTS, value, arena.ptr());
   grpc_gcp_StartServerHandshakeReq_set_in_bytes(

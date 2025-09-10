@@ -104,8 +104,7 @@ class HPackParser {
   void StopBufferingFrame() { metadata_buffer_ = nullptr; }
   // Parse one slice worth of data
   grpc_error_handle Parse(const grpc_slice& slice, bool is_last,
-                          absl::BitGenRef bitsrc,
-                          CallTracerAnnotationInterface* call_tracer);
+                          absl::BitGenRef bitsrc, CallSpan* call_tracer);
   // Reset state ready for the next BeginFrame
   void FinishFrame();
 
@@ -257,7 +256,7 @@ class HPackParser {
   };
 
   grpc_error_handle ParseInput(Input input, bool is_last,
-                               CallTracerAnnotationInterface* call_tracer);
+                               CallSpan* call_tracer);
   void ParseInputInner(Input* input);
   GPR_ATTRIBUTE_NOINLINE
   void HandleMetadataSoftSizeLimitExceeded(Input* input);

@@ -100,6 +100,8 @@ class WritableStreams {
   //    prioritized queue.
   // 6. Return the stream id with the highest priority.
   // If this returns error, transport MUST be closed.
+  // TODO(akshitpatel) : [PH2][P2] - This will be deprecated in favor of
+  // WaitForReady.
   auto Next(const bool transport_tokens_available) {
     // TODO(akshitpatel) : [PH2][P2] - Need to add an immediate dequeue option
     // for the mpsc queue in favor of the race.
@@ -168,6 +170,56 @@ class WritableStreams {
     }
   }
 
+  // Wait for a stream to be ready to be dequeued. This is a blocking call.
+  // This returns a promise that resolves when there is a writeable stream ready
+  // to be dequeued or ForceReadyForWrite() is called.
+  auto WaitForReady(const bool transport_tokens_available) {
+    return TrySeq(
+        If(
+            PrioritizedQueueHasWritableStreams(transport_tokens_available),
+            [this]() {
+              // TODO(akshitpatel) : [PH2][P3] - This is temporary. Replace with
+              // native MPSC::ImmediateNextBatch.
+              // We already have writable streams in the prioritized queue.
+              // We check for any newly added streams to the un-prioritised
+              // queue. We dequeue to honor the priority of any newly enqueued
+              // streams.
+              return Race(
+                  queue_.NextBatch(kMaxBatchSize),
+                  Immediate(ValueOrFailure<std::vector<StreamIDAndPriority>>(
+                      std::vector<StreamIDAndPriority>())));
+            },
+            // The prioritised queue is empty. So we wait for something to
+            // enter the un-prioritised queue and then dequeue it.
+            [this]() { return queue_.NextBatch(kMaxBatchSize); }),
+        [this](std::vector<StreamIDAndPriority> batch) {
+          AddToPrioritizedQueue(batch);
+          return Empty{};
+        });
+  }
+
+  // Synchronously drain the prioritized queue.
+  std::optional<uint32_t> ImmediateNext(const bool transport_tokens_available) {
+    return prioritized_queue_.Pop(transport_tokens_available);
+  }
+
+  // Force resolve WaitForReady. This is used to induce a write cycle on the
+  // transport.
+  absl::Status ForceReadyForWrite() {
+    StatusFlag status = sender_.UnbufferedImmediateSend(
+        StreamIDAndPriority{kInvalidStreamID, StreamPriority::kStreamClosed},
+        /*tokens*/ 1);
+    GRPC_WRITABLE_STREAMS_DEBUG << "ForceReadyForWrite status " << status;
+    return (status.ok()) ? absl::OkStatus()
+                         : absl::InternalError(
+                               "Failed to enqueue to list of writable streams");
+  }
+
+  bool TestOnlyPriorityQueueHasWritableStreams(
+      const bool transport_tokens_available) const {
+    return !prioritized_queue_.HasNoWritableStreams(transport_tokens_available);
+  }
+
  private:
   class PrioritizedQueue {
    public:
@@ -181,9 +233,11 @@ class WritableStreams {
         priority = StreamPriority::kDefault;
       }
 
-      GRPC_WRITABLE_STREAMS_DEBUG << "Pushing stream id " << stream_id
-                                  << " with priority "
-                                  << GetPriorityString(priority);
+      total_streams_++;
+      GRPC_WRITABLE_STREAMS_DEBUG
+          << "Pushing stream id " << stream_id << " with priority "
+          << GetPriorityString(priority) << " with total streams "
+          << total_streams_;
       buckets_[static_cast<uint8_t>(priority)].push(stream_id);
     }
 
@@ -191,6 +245,9 @@ class WritableStreams {
     // kWaitForTransportFlowControl, transport_tokens_available is checked to
     // see if the stream id can be popped.
     std::optional<uint32_t> Pop(const bool transport_tokens_available) {
+      if (HasNoWritableStreams(transport_tokens_available)) {
+        return std::nullopt;
+      }
       for (uint8_t i = 0; i < buckets_.size(); ++i) {
         auto& bucket = buckets_[i];
         if (!bucket.empty()) {
@@ -204,13 +261,27 @@ class WritableStreams {
 
           uint32_t stream_id = bucket.front();
           bucket.pop();
+          total_streams_--;
           GRPC_WRITABLE_STREAMS_DEBUG
               << "Popping stream id " << stream_id << " from priority "
-              << GetPriorityString(static_cast<StreamPriority>(i));
+              << GetPriorityString(static_cast<StreamPriority>(i)) << " with "
+              << total_streams_ << " streams remaining";
           return stream_id;
         }
       }
       return std::nullopt;
+    }
+
+    // Returns true if the queue does not have any stream that can be popped.
+    // If transport_tokens_available is false, streams with priority of
+    // kWaitForTransportFlowControl are not considered.
+    inline bool HasNoWritableStreams(
+        const bool transport_tokens_available) const {
+      return (transport_tokens_available)
+                 ? (total_streams_ == 0)
+                 : (total_streams_ -
+                        buckets_[kWaitForTransportFlowControlIndex].size() ==
+                    0);
     }
 
     static constexpr uint8_t kLastPriority =
@@ -218,6 +289,7 @@ class WritableStreams {
     static constexpr uint8_t kWaitForTransportFlowControlIndex =
         static_cast<uint8_t>(StreamPriority::kWaitForTransportFlowControl);
     std::vector<std::queue<uint32_t>> buckets_;
+    uint32_t total_streams_ = 0u;
   };
 
   struct StreamIDAndPriority {
@@ -226,10 +298,29 @@ class WritableStreams {
   };
 
   void AddToPrioritizedQueue(const std::vector<StreamIDAndPriority>& batch) {
+    GRPC_WRITABLE_STREAMS_DEBUG << "AddToPrioritizedQueue batch size "
+                                << batch.size();
     for (auto stream_id_priority : batch) {
+      // Ignore stream id kInvalidStreamID. These are used to force resolve
+      // WaitForReady().
+      if (stream_id_priority.stream_id == kInvalidStreamID) {
+        GRPC_WRITABLE_STREAMS_DEBUG << "Skipping stream id " << kInvalidStreamID
+                                    << " from batch";
+        continue;
+      }
       prioritized_queue_.Push(stream_id_priority.stream_id,
                               stream_id_priority.priority);
     }
+  }
+
+  // Returns true if the prioritized queue has any stream that can be popped.
+  bool PrioritizedQueueHasWritableStreams(
+      const bool transport_tokens_available) const {
+    GRPC_WRITABLE_STREAMS_DEBUG
+        << "PrioritizedQueueHasWritableStreams "
+        << !prioritized_queue_.HasNoWritableStreams(transport_tokens_available)
+        << " transport_tokens_available " << transport_tokens_available;
+    return !prioritized_queue_.HasNoWritableStreams(transport_tokens_available);
   }
 
   // TODO(akshitpatel) : [PH2][P4] - Verify if this works for large number of
@@ -242,6 +333,7 @@ class WritableStreams {
   // a more recent enqueue snapshot.
   static constexpr uint32_t kMaxBatchSize =
       std::numeric_limits<uint32_t>::max();
+  static constexpr uint32_t kInvalidStreamID = 0;
 
   MpscReceiver<StreamIDAndPriority> queue_;
   MpscSender<StreamIDAndPriority> sender_;

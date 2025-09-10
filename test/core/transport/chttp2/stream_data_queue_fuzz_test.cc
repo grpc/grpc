@@ -48,7 +48,9 @@ class SimpleQueueFuzzTest : public YodelTest {
   auto EnqueueAndCheckSuccess(SimpleQueue<int>& queue, int data, int tokens) {
     return Map([&queue, data,
                 tokens]() mutable { return queue.Enqueue(data, tokens); },
-               [](auto result) { EXPECT_EQ(result.status, absl::OkStatus()); });
+               [](absl::StatusOr<bool> result) {
+                 EXPECT_EQ(result.status(), absl::OkStatus());
+               });
   }
 
   bool DequeueAndCheck(SimpleQueue<int>& queue, int data,
@@ -345,10 +347,11 @@ YODEL_TEST(StreamDataQueueFuzzTest, EnqueueDequeueMultiParty) {
               return absl::OkStatus();
             },
             [this, &stream_data_queue, &assembler, &dequeued_messages] {
-              auto frames = stream_data_queue.DequeueFrames(
-                  max_tokens, max_frame_length, GetEncoder());
-              EXPECT_TRUE(frames.ok());
-              for (auto& frame : frames.value().frames) {
+              typename StreamDataQueue<ClientMetadataHandle>::DequeueResult
+                  frames = stream_data_queue.DequeueFrames(
+                      max_tokens, max_frame_length, GetEncoder());
+
+              for (auto& frame : frames.frames) {
                 std::visit(assembler, std::move(frame));
               }
               assembler.GetMessages(dequeued_messages);

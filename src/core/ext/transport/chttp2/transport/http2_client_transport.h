@@ -24,11 +24,13 @@
 
 #include "src/core/call/call_spine.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
+#include "src/core/ext/transport/chttp2/transport/flow_control_manager.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
@@ -128,18 +130,8 @@ class Http2ClientTransport final : public ClientTransport {
     return nullptr;
   }
 
-  auto TestOnlyEnqueueOutgoingFrame(Http2Frame frame) {
-    // TODO(tjagtap) : [PH2][P3] : See if making a sender in the constructor
-    // and using that always would be more efficient.
-    return AssertResultType<absl::Status>(Map(
-        outgoing_frames_.MakeSender().Send(std::move(frame), 1),
-        [](StatusFlag status) {
-          GRPC_HTTP2_CLIENT_DLOG
-              << "Http2ClientTransport::TestOnlyEnqueueOutgoingFrame status="
-              << status;
-          return (status.ok()) ? absl::OkStatus()
-                               : absl::InternalError("Failed to enqueue frame");
-        }));
+  auto TestOnlyTriggerWriteCycle() {
+    return Immediate(writable_stream_list_.ForceReadyForWrite());
   }
 
   auto TestOnlySendPing(absl::AnyInvocable<void()> on_initiate,
@@ -185,11 +177,6 @@ class Http2ClientTransport final : public ClientTransport {
 
   // Writing to the endpoint.
 
-  // Write the frames from MPSC queue to the endpoint. Frames sent from here
-  // will be DATA, HEADER, CONTINUATION and SETTINGS_ACK.  It is essential to
-  // preserve the order of these frames at the time of write.
-  auto WriteFromQueue(std::vector<Http2Frame>&& frames);
-
   // Write time sensitive control frames to the endpoint. Frames sent from here
   // will be:
   // 1. SETTINGS - This is first because for a new connection, SETTINGS MUST be
@@ -209,21 +196,13 @@ class Http2ClientTransport final : public ClientTransport {
   // Notify the control frames modules that the endpoint write is done.
   void NotifyControlFramesWriteDone();
 
-  // Returns a promise to keep writing in a Loop till a fail/close is
-  // received.
-  auto WriteLoop();
+  // Returns a promise to keep draining control frames and data frames from all
+  // the writable streams and write to the endpoint.
+  auto MultiplexerLoop();
 
-  // Returns a promise that will do the cleanup after the WriteLoop ends.
-  auto OnWriteLoopEnded();
-
-  // Returns a promise to keep draining data and control frames from all the
-  // active streams. This includes all stream specific frames like data, header,
-  // continuation and reset stream frames.
-  auto StreamMultiplexerLoop();
-
-  // Returns a promise that will do the cleanup after the StreamMultiplexerLoop
+  // Returns a promise that will do the cleanup after the MultiplexerLoop
   // ends.
-  auto OnStreamMultiplexerLoopEnded();
+  auto OnMultiplexerLoopEnded();
 
   // Returns a promise to fetch data from the callhandler and pass it further
   // down towards the endpoint.
@@ -231,25 +210,14 @@ class Http2ClientTransport final : public ClientTransport {
                         InterActivityMutex<uint32_t>::Lock lock,
                         ClientMetadataHandle metadata);
 
-  // Returns a promise to enqueue a frame to MPSC
-  auto EnqueueOutgoingFrame(Http2Frame frame) {
-    // TODO(tjagtap) : [PH2][P3] : See if making a sender in the constructor
-    // and using that always would be more efficient.
-    return AssertResultType<absl::Status>(Map(
-        outgoing_frames_.MakeSender().Send(std::move(frame), 1),
-        [self = RefAsSubclass<Http2ClientTransport>()](StatusFlag status) {
-          GRPC_HTTP2_CLIENT_DLOG
-              << "Http2ClientTransport::EnqueueOutgoingFrame status=" << status;
-          return (status.ok())
-                     ? absl::OkStatus()
-                     : self->HandleError(Http2Status::AbslConnectionError(
-                           absl::StatusCode::kInternal,
-                           "Failed to enqueue frame"));
-        }));
+  // Force triggers a transport write cycle
+  auto TriggerWriteCycle() {
+    return Immediate(writable_stream_list_.ForceReadyForWrite());
   }
 
-  // Force triggers a transport write cycle
-  auto TriggerWriteCycle() { return EnqueueOutgoingFrame(Http2EmptyFrame{}); }
+  // Processes the flow control action and take necessary steps.
+  void ActOnFlowControlAction(const chttp2::FlowControlAction& action,
+                              uint32_t stream_id);
 
   RefCountedPtr<Party> general_party_;
 
@@ -418,8 +386,6 @@ class Http2ClientTransport final : public ClientTransport {
     return stream_id;
   }
 
-  MpscReceiver<Http2Frame> outgoing_frames_;
-
   Mutex transport_mutex_;
   // TODO(tjagtap) : [PH2][P2] : Add to map in StartCall and clean this
   // mapping up in the on_done of the CallInitiator or CallHandler
@@ -544,7 +510,7 @@ class Http2ClientTransport final : public ClientTransport {
     GPR_UNREACHABLE_CODE(return absl::InternalError("Invalid error type"));
   }
 
-  bool bytes_sent_in_last_write_;
+  bool should_reset_ping_clock_;
   bool incoming_header_in_progress_;
   bool incoming_header_end_stream_;
   bool is_first_write_;
@@ -552,6 +518,27 @@ class Http2ClientTransport final : public ClientTransport {
   grpc_closure* on_receive_settings_;
 
   uint32_t max_header_list_size_soft_limit_;
+
+  // The target number of bytes to write in a single write cycle. We may not
+  // always honour this max_write_size. We MAY overshoot it at most once per
+  // write cycle.
+  size_t max_write_size_;
+  // The number of bytes remaining to be written in the current write cycle.
+  size_t write_bytes_remaining_;
+
+  // The max_write_size will be decided dynamically based on the available
+  // bandwidth on the wire. We aim to keep the time spent in the write loop to
+  // about 100ms.
+  void SetMaxWriteSize(const size_t max_write_size) {
+    GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport SetMaxWriteSize "
+                           << " max_write_size changed: " << max_write_size_
+                           << " -> " << max_write_size;
+    max_write_size_ = max_write_size;
+  }
+
+  size_t GetMaxWriteSize() const { return max_write_size_; }
+
+  auto SerializeAndWrite(std::vector<Http2Frame>&& frames);
 
   // Ping related members
   // TODO(akshitpatel) : [PH2][P2] : Consider removing the timeout related
@@ -564,7 +551,6 @@ class Http2ClientTransport final : public ClientTransport {
   // Duration to wait for ping ack before triggering timeout
   const Duration ping_timeout_;
   PingManager ping_manager_;
-  std::vector<uint64_t> pending_ping_acks_;
   KeepaliveManager keepalive_manager_;
 
   // Flags
@@ -583,41 +569,11 @@ class Http2ClientTransport final : public ClientTransport {
   }
 
   // Ping Helper functions
-  // Returns a promise that resolves once a ping frame is written to the
-  // endpoint.
-  auto CreateAndWritePing(bool ack, uint64_t opaque_data) {
-    Http2Frame frame = Http2PingFrame{ack, opaque_data};
-    SliceBuffer output_buf;
-    Serialize(absl::Span<Http2Frame>(&frame, 1), output_buf);
-    return endpoint_.Write(std::move(output_buf), {});
-  }
-
   Duration NextAllowedPingInterval() {
     MutexLock lock(&transport_mutex_);
     return (!keepalive_permit_without_calls_ && stream_list_.empty())
                ? Duration::Hours(2)
                : Duration::Seconds(1);
-  }
-
-  auto MaybeSendPing() {
-    return ping_manager_.MaybeSendPing(NextAllowedPingInterval(),
-                                       ping_timeout_);
-  }
-
-  auto MaybeSendPingAcks() {
-    return AssertResultType<absl::Status>(If(
-        pending_ping_acks_.empty(), [] { return absl::OkStatus(); },
-        [this] {
-          std::vector<Http2Frame> frames;
-          frames.reserve(pending_ping_acks_.size());
-          for (auto& opaque_data : pending_ping_acks_) {
-            frames.emplace_back(Http2PingFrame{true, opaque_data});
-          }
-          pending_ping_acks_.clear();
-          SliceBuffer output_buf;
-          Serialize(absl::Span<Http2Frame>(frames), output_buf);
-          return endpoint_.Write(std::move(output_buf), {});
-        }));
   }
 
   auto AckPing(uint64_t opaque_data) {
@@ -653,12 +609,6 @@ class Http2ClientTransport final : public ClientTransport {
         Http2ClientTransport* transport) {
       return std::make_unique<PingSystemInterfaceImpl>(
           PingSystemInterfaceImpl(transport));
-    }
-
-    // Returns a promise that resolves once a ping frame is written to the
-    // endpoint.
-    Promise<absl::Status> SendPing(SendPingArgs args) override {
-      return transport_->CreateAndWritePing(args.ack, args.opaque_data);
     }
 
     Promise<absl::Status> TriggerWrite() override {
@@ -739,22 +689,29 @@ class Http2ClientTransport final : public ClientTransport {
 
   WritableStreams writable_stream_list_;
 
-  auto MaybeAddStreamToWritableStreamList(const uint32_t stream_id,
-                                          const bool became_writable) {
-    if (became_writable) {
+  absl::Status MaybeAddStreamToWritableStreamList(
+      const uint32_t stream_id,
+      const StreamDataQueue<ClientMetadataHandle>::EnqueueResult result) {
+    if (result.became_writable) {
       GRPC_HTTP2_CLIENT_DLOG
           << "Http2ClientTransport MaybeAddStreamToWritableStreamList "
              " Stream id: "
           << stream_id << " became writable";
-      absl::Status status = writable_stream_list_.Enqueue(
-          stream_id, WritableStreams::StreamPriority::kDefault);
+      absl::Status status =
+          writable_stream_list_.Enqueue(stream_id, result.priority);
       if (!status.ok()) {
         return HandleError(Http2Status::Http2ConnectionError(
-            Http2ErrorCode::kProtocolError, "Failed to enqueue stream"));
+            Http2ErrorCode::kRefusedStream,
+            "Failed to enqueue stream to writable stream list"));
       }
     }
     return absl::OkStatus();
   }
+  /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
+  /// the peer
+  // TODO(tjagtap) : [PH2][P1] : Plumb this with the necessary frame size flow
+  // control workflow corresponding to grpc_chttp2_act_on_flowctl_action
+  GRPC_UNUSED bool enable_preferred_rx_crypto_frame_advertisement_;
 };
 
 // Since the corresponding class in CHTTP2 is about 3.9KB, our goal is to

@@ -263,11 +263,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gemini"  # @unused
+g_stands_for = "genuine"  # @unused
 
 core_version = "50.0.0"  # @unused
 
-version = "1.75.0-dev"  # @unused
+version = "1.76.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -932,6 +932,9 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/types:span",
+        "absl/utility",
+        "absl/functional:any_invocable",
+        "absl/status",
     ],
     tags = [
         "avoid_dep",
@@ -941,6 +944,7 @@ grpc_cc_library(
     deps = [
         "channel_arg_names",
         "gpr_public_hdrs",
+        "grpc_core_credentials_header",
     ],
 )
 
@@ -981,8 +985,12 @@ grpc_cc_library(
         "include/grpc/slice.h",
         "include/grpc/slice_buffer.h",
     ],
+    external_deps = [
+        "absl/base:core_headers",
+    ],
     visibility = ["//visibility:public"],
     deps = [
+        "gpr",
         "//src/core:slice",
         "//src/core:slice_buffer",
     ],
@@ -1027,6 +1035,7 @@ grpc_cc_library(
         "gpr_public_hdrs",
         "grpc++_base",
         "grpc++_config_proto",
+        "grpc_core_credentials_header",
         "grpc_public_hdrs",
         "ref_counted_ptr",
         "transport_auth_context",
@@ -1219,6 +1228,7 @@ grpc_cc_library(
         "transport_auth_context",
         "//src/core:gpr_atm",
         "//src/core:grpc_insecure_credentials",
+        "@com_google_protobuf//:any_cc_proto",
     ],
 )
 
@@ -1285,6 +1295,11 @@ grpc_cc_library(
 # anything else from gpr can still be portable!
 grpc_cc_library(
     name = "gpr_platform",
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/base:config",
+        "absl/strings",
+    ],
     public_hdrs = [
         "include/grpc/impl/codegen/port_platform.h",
         "include/grpc/support/port_platform.h",
@@ -1300,6 +1315,8 @@ grpc_cc_library(
         "absl/time",
         "absl/types:span",
         "absl/functional:any_invocable",
+        "absl/strings",
+        "absl/utility:utility",
     ],
     tags = [
         "nofixdeps",
@@ -1308,6 +1325,7 @@ grpc_cc_library(
     deps = [
         "channel_arg_names",
         "gpr",
+        "grpc_core_credentials_header",
     ],
 )
 
@@ -1338,6 +1356,7 @@ grpc_cc_library(
         "@com_google_protobuf//upb/mem",
     ],
     deps = [
+        "channelz_service_upb",
         "channelz_upb",
         "config_vars",
         "exec_ctx",
@@ -1351,6 +1370,7 @@ grpc_cc_library(
         "uri",
         "//src/core:channel_args",
         "//src/core:channelz_property_list",
+        "//src/core:channelz_text_encode",
         "//src/core:connectivity_state",
         "//src/core:dual_ref_counted",
         "//src/core:json",
@@ -2412,6 +2432,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log:log",
+        "absl/status:statusor",
         "@com_google_protobuf//upb/base",
         "@com_google_protobuf//upb/mem",
     ],
@@ -2548,6 +2569,7 @@ grpc_cc_library(
         "//src/core:thread_quota",
         "//src/core:time",
         "//src/core:useful",
+        "@com_google_protobuf//:any_cc_proto",
     ],
 )
 
@@ -2590,6 +2612,7 @@ grpc_cc_library(
         "generic_stub_internal",
         "global_callback_hook",
         "gpr",
+        "grpc++_config_proto",
         "grpc_base",
         "grpc_core_credentials_header",
         "grpc_health_upb",
@@ -2630,6 +2653,7 @@ grpc_cc_library(
         "//src/core:thread_quota",
         "//src/core:time",
         "//src/core:useful",
+        "@com_google_protobuf//:any_cc_proto",
     ],
 )
 
@@ -2640,6 +2664,9 @@ grpc_cc_library(
         "absl/strings:cord",
         "protobuf_headers",
         "protobuf",
+        "absl/log:check",
+        "absl/log:absl_check",
+        "absl/strings",
     ],
     public_hdrs = [
         "include/grpc++/impl/codegen/proto_utils.h",
@@ -2653,6 +2680,7 @@ grpc_cc_library(
     deps = [
         "grpc++_config_proto",
         "grpc++_public_hdrs",
+        "grpc_base",
         "grpcpp_status",
     ],
 )
@@ -2806,6 +2834,7 @@ grpc_cc_library(
         "grpc++_config_proto",
         "//src/core:channelz_v2tov1_convert",
         "//src/core:experiments",
+        "//src/core:notification",
         "//src/proto/grpc/channelz:channelz_proto",
         "//src/proto/grpc/channelz/v2:service_cc_grpc",
     ],
@@ -3071,6 +3100,7 @@ grpc_cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "generic_stub_internal",
+        "grpc++_base",
     ],
 )
 
@@ -4654,6 +4684,7 @@ grpc_cc_library(
         "gpr",
         "//src/core:http2_settings",
         "//src/core:http2_status",
+        "//src/core:memory_usage",
         "//src/core:slice",
         "//src/core:slice_buffer",
     ],
@@ -4978,6 +5009,7 @@ grpc_cc_library(
         "gpr_platform",
         "grpc++_public_hdrs",
         "grpc_public_hdrs",
+        "@com_google_protobuf//:any_cc_proto",
     ],
 )
 
@@ -5339,6 +5371,16 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "channelz_upbdefs",
     deps = ["//src/proto/grpc/channelz/v2:channelz_proto"],
+)
+
+grpc_upb_proto_library(
+    name = "channelz_service_upb",
+    deps = ["//src/proto/grpc/channelz/v2:service_proto"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "channelz_service_upbdefs",
+    deps = ["//src/proto/grpc/channelz/v2:service_proto"],
 )
 
 grpc_upb_proto_library(

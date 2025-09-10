@@ -675,7 +675,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       // We have more streams allocated than we'd like, so apply some pushback
       // by refusing this stream.
       t->memory_owner.telemetry_storage()->Increment(
-          grpc_core::ResourceQuotaDomain::kCallsDropped);
+          grpc_core::ResourceQuotaDomain::kCallsRejected);
       ++t->num_pending_induced_frames;
       grpc_slice_buffer_add(
           &t->qbuf, grpc_chttp2_rst_stream_create(
@@ -977,7 +977,7 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
                                                   const grpc_slice& slice,
                                                   int is_last) {
   auto* parser = static_cast<grpc_core::HPackParser*>(hpack_parser);
-  grpc_core::CallTracerAnnotationInterface* call_tracer = nullptr;
+  grpc_core::CallSpan* call_tracer = nullptr;
   if (s != nullptr) {
     s->call_tracer_wrapper.RecordIncomingBytes(
         {0, 0, GRPC_SLICE_LENGTH(slice)});

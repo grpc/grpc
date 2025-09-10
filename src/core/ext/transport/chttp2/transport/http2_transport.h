@@ -49,9 +49,9 @@ namespace http2 {
 #define GRPC_HTTP2_COMMON_DLOG \
   DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
 
-// TODO(akshitpatel) : [PH2][P2] : Choose appropriate size later.
-constexpr int kMpscSize = 10;
+// TODO(akshitpatel) : [PH2][P4] : Choose appropriate size later.
 constexpr uint32_t kStreamQueueSize = /*1 MB*/ 1024u * 1024u;
+constexpr uint32_t kMaxWriteSize = /*10 MB*/ 10u * 1024u * 1024u;
 
 enum class HttpStreamState : uint8_t {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-stream-states

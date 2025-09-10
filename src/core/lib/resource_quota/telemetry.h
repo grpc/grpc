@@ -22,7 +22,7 @@ namespace grpc_core {
 class ResourceQuotaDomain final : public InstrumentDomain<ResourceQuotaDomain> {
  public:
   using Backend = HighContentionBackend;
-  static constexpr auto kLabels = std::tuple("grpc.resource_quota");
+  static constexpr auto kLabels = Labels("grpc.resource_quota");
 
   static inline const auto kCallsDropped = RegisterCounter(
       "grpc.resource_quota.calls_dropped",

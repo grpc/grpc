@@ -20,6 +20,7 @@
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/loop.h"
 #include "test/core/transport/util/transport_test.h"
 
@@ -63,15 +64,46 @@ void EnqueueAndCheckSuccess(WritableStreams& writable_streams,
   EXPECT_TRUE(status.ok());
 }
 
+auto DequeuePromise(WritableStreams& writable_streams,
+                    const bool transport_tokens_available = true,
+                    const bool expect_result = true) {
+  return AssertResultType<uint32_t>(
+      Map(writable_streams.WaitForReady(transport_tokens_available),
+          [&writable_streams, transport_tokens_available,
+           expect_result](absl::StatusOr<Empty> result) {
+            EXPECT_TRUE(result.ok()) << result.status();
+
+            std::optional<uint32_t> stream_id =
+                writable_streams.ImmediateNext(transport_tokens_available);
+            LOG(INFO) << "DequeuePromise result returned with"
+                      << " stream id "
+                      << (stream_id.has_value()
+                              ? stream_id.value()
+                              : std::numeric_limits<uint32_t>::max());
+            if (expect_result) {
+              EXPECT_TRUE(stream_id.has_value());
+              return stream_id.value();
+            }
+            return std::numeric_limits<uint32_t>::max();
+          }));
+}
+
 void DequeueAndCheckSuccess(WritableStreams& writable_streams,
                             const uint32_t expected_stream_id) {
-  auto promise = writable_streams.Next(/*transport_tokens_available=*/true);
-  auto result = promise();
+  auto promise =
+      DequeuePromise(writable_streams, /*transport_tokens_available=*/true);
+  Poll<uint32_t> result = promise();
   EXPECT_TRUE(result.ready());
-  EXPECT_TRUE(result.value().ok());
-  LOG(INFO) << "DequeueAndCheckSuccess result " << result.value()
-            << " stream id " << *(result.value());
-  EXPECT_EQ(*result.value(), expected_stream_id);
+  LOG(INFO) << "DequeueAndCheckSuccess result returned with"
+            << " stream id " << (result.value());
+  EXPECT_EQ(result.value(), expected_stream_id);
+}
+
+absl::Status ForceReadyForWriteAndCheckSuccess(
+    WritableStreams& writable_streams) {
+  absl::Status status = writable_streams.ForceReadyForWrite();
+  EXPECT_TRUE(status.ok()) << status;
+  return status;
 }
 
 }  // namespace
@@ -145,17 +177,17 @@ TEST_F(WritableStreamsTest, MultipleEnqueueDequeueTest) {
               dequeue_count < expected_stream_ids.size(),
               [&writable_streams, &dequeue_count, &expected_stream_ids,
                &on_done]() {
-                return Map(
-                    writable_streams.Next(/*transport_tokens_available=*/true),
-                    [&dequeue_count, &expected_stream_ids,
-                     &on_done](absl::StatusOr<uint32_t> result)
-                        -> LoopCtl<absl::Status> {
-                      EXPECT_TRUE(result.ok());
-                      EXPECT_EQ(result.value(),
-                                expected_stream_ids[dequeue_count++]);
-                      on_done.Call();
-                      return Continue();
-                    });
+                return Map(DequeuePromise(writable_streams,
+                                          /*transport_tokens_available=*/true),
+                           [&dequeue_count, &expected_stream_ids,
+                            &on_done](absl::StatusOr<uint32_t> result)
+                               -> LoopCtl<absl::Status> {
+                             EXPECT_TRUE(result.ok());
+                             EXPECT_EQ(result.value(),
+                                       expected_stream_ids[dequeue_count++]);
+                             on_done.Call();
+                             return Continue();
+                           });
               },
               []() -> LoopCtl<absl::Status> { return absl::OkStatus(); });
         });
@@ -193,17 +225,17 @@ TEST_F(WritableStreamsTest, EnqueueDequeueDifferentPriorityTest) {
               dequeue_count < expected_stream_ids.size(),
               [&writable_streams, &dequeue_count, &expected_stream_ids,
                &on_done]() {
-                return Map(
-                    writable_streams.Next(/*transport_tokens_available=*/true),
-                    [&dequeue_count, &expected_stream_ids,
-                     &on_done](absl::StatusOr<uint32_t> result)
-                        -> LoopCtl<absl::Status> {
-                      EXPECT_TRUE(result.ok());
-                      EXPECT_EQ(result.value(),
-                                expected_stream_ids[dequeue_count++]);
-                      on_done.Call();
-                      return Continue();
-                    });
+                return Map(DequeuePromise(writable_streams,
+                                          /*transport_tokens_available=*/true),
+                           [&dequeue_count, &expected_stream_ids,
+                            &on_done](absl::StatusOr<uint32_t> result)
+                               -> LoopCtl<absl::Status> {
+                             EXPECT_TRUE(result.ok());
+                             EXPECT_EQ(result.value(),
+                                       expected_stream_ids[dequeue_count++]);
+                             on_done.Call();
+                             return Continue();
+                           });
               },
               []() -> LoopCtl<absl::Status> { return absl::OkStatus(); });
         });
@@ -242,18 +274,19 @@ TEST_F(WritableStreamsTest, DequeueWithTransportTokensUnavailableTest) {
               dequeue_count < expected_stream_ids.size(),
               [&writable_streams, &dequeue_count, &expected_stream_ids,
                &transport_tokens_available, &on_done]() {
-                return Map(writable_streams.Next(
-                               /*transport_tokens_available=*/
-                               transport_tokens_available[dequeue_count]),
-                           [&dequeue_count, &expected_stream_ids,
-                            &on_done](absl::StatusOr<uint32_t> result)
-                               -> LoopCtl<absl::Status> {
-                             EXPECT_TRUE(result.ok());
-                             EXPECT_EQ(result.value(),
-                                       expected_stream_ids[dequeue_count++]);
-                             on_done.Call();
-                             return Continue();
-                           });
+                return Map(
+                    DequeuePromise(writable_streams,
+                                   /*transport_tokens_available=*/
+                                   transport_tokens_available[dequeue_count]),
+                    [&dequeue_count, &expected_stream_ids,
+                     &on_done](absl::StatusOr<uint32_t> result)
+                        -> LoopCtl<absl::Status> {
+                      EXPECT_TRUE(result.ok());
+                      EXPECT_EQ(result.value(),
+                                expected_stream_ids[dequeue_count++]);
+                      on_done.Call();
+                      return Continue();
+                    });
               },
               []() -> LoopCtl<absl::Status> { return absl::OkStatus(); });
         });
@@ -292,8 +325,8 @@ TEST_F(WritableStreamsTest, EnqueueDequeueFlowTest) {
                   WritableStreams::StreamPriority::kStreamClosed);
             },
             [&writable_streams, &transport_tokens_available, &dequeue_count] {
-              return writable_streams.Next(
-                  transport_tokens_available[dequeue_count]);
+              return DequeuePromise(writable_streams,
+                                    transport_tokens_available[dequeue_count]);
             },
             [&writable_streams, &dequeue_count, &expected_stream_ids,
              &on_done](uint32_t stream_id) {
@@ -303,8 +336,8 @@ TEST_F(WritableStreamsTest, EnqueueDequeueFlowTest) {
                   /*stream_id=*/5);
             },
             [&writable_streams, &transport_tokens_available, &dequeue_count] {
-              return writable_streams.Next(
-                  transport_tokens_available[dequeue_count]);
+              return DequeuePromise(writable_streams,
+                                    transport_tokens_available[dequeue_count]);
             },
             [&writable_streams, &dequeue_count, &expected_stream_ids,
              &on_done](uint32_t stream_id) {
@@ -314,25 +347,68 @@ TEST_F(WritableStreamsTest, EnqueueDequeueFlowTest) {
                   /*stream_id=*/7, WritableStreams::StreamPriority::kDefault);
             },
             [&writable_streams, &transport_tokens_available, &dequeue_count] {
-              return writable_streams.Next(
-                  transport_tokens_available[dequeue_count]);
+              return DequeuePromise(writable_streams,
+                                    transport_tokens_available[dequeue_count]);
             },
             [&writable_streams, &dequeue_count, &expected_stream_ids,
              &transport_tokens_available, &on_done](uint32_t stream_id) {
               EXPECT_EQ(stream_id, expected_stream_ids[dequeue_count++]);
               on_done.Call();
-              return Map(writable_streams.Next(
-                             transport_tokens_available[dequeue_count]),
-                         [&expected_stream_ids, &dequeue_count,
-                          &on_done](absl::StatusOr<uint32_t> stream_id) {
-                           EXPECT_TRUE(stream_id.ok());
-                           EXPECT_EQ(*stream_id,
-                                     expected_stream_ids[dequeue_count++]);
-                           on_done.Call();
-                           return absl::OkStatus();
-                         });
+              return Map(
+                  DequeuePromise(writable_streams,
+                                 transport_tokens_available[dequeue_count]),
+                  [&expected_stream_ids, &dequeue_count,
+                   &on_done](absl::StatusOr<uint32_t> stream_id) {
+                    EXPECT_TRUE(stream_id.ok());
+                    EXPECT_EQ(*stream_id, expected_stream_ids[dequeue_count++]);
+                    on_done.Call();
+                    return absl::OkStatus();
+                  });
             });
       },
+      [](auto) {});
+
+  event_engine()->TickUntilIdle();
+  event_engine()->UnsetGlobalHooks();
+}
+
+TEST_F(WritableStreamsTest, TestForceReadyForWrite) {
+  // Test to ensure that ForceReadyForWrite unblocks the pending waiter on
+  // WaitForReady. This test also asserts that ForceReadyForWrite can be called
+  // with no waiters on WaitForReady.
+  WritableStreams writable_streams(/*max_queue_size=*/2);
+  StrictMock<MockFunction<void()>> on_done;
+  EXPECT_CALL(on_done, Call()).Times(2);
+
+  GetParty()->Spawn(
+      "ForceReadyForWriteAndDequeue",
+      TrySeq(
+          [&writable_streams]() {
+            return ForceReadyForWriteAndCheckSuccess(writable_streams);
+          },
+          [&writable_streams]() {
+            return Join(
+                DequeuePromise(writable_streams,
+                               /*transport_tokens_available=*/true,
+                               /*expect_result=*/false),
+                [&writable_streams]() {
+                  return ForceReadyForWriteAndCheckSuccess(writable_streams);
+                });
+          },
+          [&writable_streams, &on_done]() {
+            on_done.Call();
+            return Join(
+                DequeuePromise(writable_streams,
+                               /*transport_tokens_available=*/true,
+                               /*expect_result=*/false),
+                [&writable_streams]() {
+                  return ForceReadyForWriteAndCheckSuccess(writable_streams);
+                });
+          },
+          [&on_done]() {
+            on_done.Call();
+            return absl::OkStatus();
+          }),
       [](auto) {});
 
   event_engine()->TickUntilIdle();

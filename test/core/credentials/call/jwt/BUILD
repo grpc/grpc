@@ -24,6 +24,8 @@ grpc_cc_test(
     external_deps = [
         "absl/log:log",
         "gtest",
+        "libssl",
+        "absl/strings",
     ],
     tags = ["credential_token_tests"],
     uses_event_engine = False,
@@ -31,6 +33,11 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:grpc_core_credentials_header",
+        "//:grpc_jwt_credentials",
+        "//src/core:grpc_oauth2_credentials",
+        "//src/core:json",
+        "//src/core:json_reader",
         "//src/core:slice",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
@@ -40,13 +47,19 @@ grpc_cc_test(
 grpc_cc_test(
     name = "jwt_verifier_test",
     srcs = ["jwt_verifier_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/strings",
+    ],
     tags = ["credential_token_tests"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:grpc_jwt_credentials",
+        "//:httpcli",
+        "//src/core:json_reader",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
@@ -58,6 +71,8 @@ grpc_cc_binary(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:grpc_core_credentials_header",
+        "//:grpc_jwt_credentials",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
@@ -68,8 +83,12 @@ grpc_cc_binary(
     srcs = ["verify_jwt.cc"],
     external_deps = ["absl/log:check"],
     deps = [
+        "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:grpc_jwt_credentials",
+        "//:iomgr",
+        "//src/core:json_writer",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],

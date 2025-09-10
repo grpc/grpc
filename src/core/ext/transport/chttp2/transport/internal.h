@@ -238,7 +238,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
    public:
     explicit ChannelzDataSource(grpc_chttp2_transport* transport)
         : grpc_core::channelz::DataSource(transport->channelz_socket),
-          transport_(transport) {
+          transport_(transport->Ref()) {  // Take a ref
       SourceConstructed();
     }
     ~ChannelzDataSource() { SourceDestructing(); }
@@ -248,7 +248,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
         absl::string_view name) override;
 
    private:
-    grpc_chttp2_transport* transport_;
+    grpc_core::RefCountedPtr<grpc_chttp2_transport> transport_;
   };
 
   void Orphan() override;
@@ -714,7 +714,7 @@ struct grpc_chttp2_stream {
   // annotations as soon as we have parsed initial metadata, but in our legacy
   // stack, we create the stream before parsing headers. In the new v3 stack,
   // that won't be an issue.
-  grpc_core::CallTracerInterface* call_tracer = nullptr;
+  grpc_core::CallTracer* call_tracer = nullptr;
   // TODO(yashykt): Remove this once call_tracer_transport_fix is rolled out
   grpc_core::CallTracerAnnotationInterface* parent_call_tracer = nullptr;
 
