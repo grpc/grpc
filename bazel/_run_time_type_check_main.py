@@ -14,6 +14,7 @@
 
 from typing import Sequence
 
+import importlib.util
 import unittest
 import sys
 import os
@@ -44,7 +45,9 @@ class SingleLoader(object):
         current_dir = os.getcwd()
         for importer, module_name, is_package in pkgutil.walk_packages([current_dir]):
             if pattern in module_name:
-                module = importer.find_module(module_name).load_module(module_name)
+                spec = importlib.util.find_spec(module_name)
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
                 tests.append(loader.loadTestsFromModule(module))
 
         if len(tests) != 1:
