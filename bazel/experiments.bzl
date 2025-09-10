@@ -123,6 +123,9 @@ EXPERIMENTS = {
             "minimal_stack_test": [
                 "fuse_filters",
             ],
+            "posix_endpoint_test": [
+                "pipelined_read_secure_endpoint",
+            ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
                 "sleep_use_non_owning_waker",
@@ -156,6 +159,9 @@ EXPERIMENTS = {
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
+            ],
+            "posix_endpoint_test": [
+                "event_engine_secure_endpoint",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
@@ -213,6 +219,9 @@ EXPERIMENTS = {
             "minimal_stack_test": [
                 "fuse_filters",
             ],
+            "posix_endpoint_test": [
+                "pipelined_read_secure_endpoint",
+            ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
                 "sleep_use_non_owning_waker",
@@ -246,6 +255,9 @@ EXPERIMENTS = {
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
+            ],
+            "posix_endpoint_test": [
+                "event_engine_secure_endpoint",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
@@ -303,6 +315,9 @@ EXPERIMENTS = {
             "minimal_stack_test": [
                 "fuse_filters",
             ],
+            "posix_endpoint_test": [
+                "pipelined_read_secure_endpoint",
+            ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
                 "sleep_use_non_owning_waker",
@@ -336,6 +351,9 @@ EXPERIMENTS = {
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
+            ],
+            "posix_endpoint_test": [
+                "event_engine_secure_endpoint",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
