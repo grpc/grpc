@@ -26,6 +26,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/instrument.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
@@ -302,6 +303,9 @@ class StatsPlugin {
   virtual std::shared_ptr<StatsPlugin::ScopeConfig> GetServerScopeConfig(
       const ChannelArgs& args) const = 0;
 
+  // Gets the list of labels that this stats plugin is interested in.
+  virtual RefCountedPtr<CollectionScope> GetCollectionScope() const = 0;
+
   // Adds \a value to the uint64 counter specified by \a handle. \a label_values
   // and \a optional_label_values specify attributes that are associated with
   // this measurement and must match with their corresponding keys in
@@ -384,6 +388,18 @@ class GlobalStatsPluginRegistry {
       plugin_state.plugin = std::move(plugin);
       plugin_state.scope_config = std::move(config);
       plugins_state_.push_back(std::move(plugin_state));
+    }
+    // Finish construction: must be called after all plugins have been added.
+    void Finish() {
+      std::vector<RefCountedPtr<CollectionScope>> collection_scopes;
+      collection_scopes.reserve(plugins_state_.size());
+      for (auto& state : plugins_state_) {
+        if (auto scope = state.plugin->GetCollectionScope(); scope != nullptr) {
+          collection_scopes.push_back(scope);
+        }
+      }
+      collection_scope_ =
+          CreateCollectionScope(std::move(collection_scopes), {});
     }
     // Adds a counter in all stats plugins within the group. See the StatsPlugin
     // interface for more documentation and valid types.
@@ -484,6 +500,11 @@ class GlobalStatsPluginRegistry {
     static int ChannelArgsCompare(const StatsPluginGroup* a,
                                   const StatsPluginGroup* b);
 
+    RefCountedPtr<CollectionScope> GetCollectionScope() const {
+      CHECK_NE(collection_scope_.get(), nullptr);
+      return collection_scope_;
+    }
+
    private:
     friend class RegisteredMetricCallback;
 
@@ -505,6 +526,7 @@ class GlobalStatsPluginRegistry {
     }
 
     std::vector<PluginState> plugins_state_;
+    RefCountedPtr<CollectionScope> collection_scope_;
   };
 
   // Registers a stats plugin with the global stats plugin registry.

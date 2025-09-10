@@ -29,8 +29,10 @@
 #include "src/core/channelz/property_list.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/no_destruct.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/single_set_ptr.h"
 #include "absl/container/flat_hash_map.h"
+#include "absl/hash/hash.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
@@ -87,32 +89,37 @@ std::vector<std::string> FilterLabels(
 }
 }  // namespace
 
-CollectionScope::CollectionScope(RefCountedPtr<CollectionScope> parent,
-                                 absl::Span<const std::string> labels,
-                                 size_t child_shards_count,
-                                 size_t storage_shards_count)
-    : parent_(std::move(parent)),
+CollectionScope::CollectionScope(
+    std::vector<RefCountedPtr<CollectionScope>> parents,
+    absl::Span<const std::string> labels, size_t child_shards_count,
+    size_t storage_shards_count)
+    : parents_(std::move(parents)),
       labels_of_interest_(labels.begin(), labels.end()),
       child_shards_(child_shards_count),
       storage_shards_(storage_shards_count) {
-  if (parent_ != nullptr) {
-    labels_of_interest_.insert(parent_->labels_of_interest_.begin(),
-                               parent_->labels_of_interest_.end());
-    auto& shard =
-        parent_
-            ->child_shards_[absl::HashOf(this) % parent_->child_shards_.size()];
-    MutexLock lock(&shard.mu);
-    shard.children.insert(this);
+  // Sort parents (by address) and then remove any duplicates.
+  std::sort(parents_.begin(), parents_.end());
+  parents_.erase(std::unique(parents_.begin(), parents_.end()), parents_.end());
+  const size_t child_shard = absl::HashOf(this) % child_shards_.size();
+  for (const auto& parent : parents_) {
+    if (parent != nullptr) {
+      labels_of_interest_.insert(parent->labels_of_interest_.begin(),
+                                 parent->labels_of_interest_.end());
+      auto& shard = parent->child_shards_[child_shard];
+      MutexLock lock(&shard.mu);
+      shard.children.insert(this);
+    }
   }
 }
 
 CollectionScope::~CollectionScope() {
-  if (parent_ != nullptr) {
-    auto& shard =
-        parent_
-            ->child_shards_[absl::HashOf(this) % parent_->child_shards_.size()];
-    MutexLock lock(&shard.mu);
-    shard.children.erase(this);
+  for (const auto& parent : parents_) {
+    if (parent != nullptr) {
+      auto& shard = parent->child_shards_[absl::HashOf(this) %
+                                          parent->child_shards_.size()];
+      MutexLock lock(&shard.mu);
+      shard.children.erase(this);
+    }
   }
   for (auto& shard : storage_shards_) {
     // TODO(ctiller): Consider a different entry point than GetDomainStorage
@@ -120,10 +127,12 @@ CollectionScope::~CollectionScope() {
     // accessing full_labels.
     MutexLock lock(&shard.mu);
     for (auto& storage_pair : shard.storage) {
-      if (parent_ != nullptr) {
-        storage_pair.second->domain()
-            ->GetDomainStorage(parent_, storage_pair.second->label())
-            ->Add(storage_pair.second.get());
+      for (const auto& parent : parents_) {
+        if (parent != nullptr) {
+          storage_pair.second->domain()
+              ->GetDomainStorage(parent, storage_pair.second->label())
+              ->Add(storage_pair.second.get());
+        }
       }
     }
   }
@@ -163,71 +172,12 @@ void CollectionScope::ForEachUniqueStorage(
   }
 }
 
-struct GlobalScopeHolder {
-  Mutex mu;
-  SingleSetRefCountedPtr<CollectionScope> scope;
-  std::atomic<bool> frozen{false};
-
-  RefCountedPtr<CollectionScope> Get(absl::Span<const std::string> labels);
-  void Reset() {
-    MutexLock lock(&mu);
-    scope.Reset();
-    frozen.store(false, std::memory_order_relaxed);
-  }
-};
-
-namespace {
-GlobalScopeHolder* GetGlobalScopeHolderImpl() {
-  static NoDestruct<GlobalScopeHolder> g_scope_holder;
-  return g_scope_holder.get();
-}
-}  // namespace
-
-RefCountedPtr<CollectionScope> GlobalScopeHolder::Get(
-    absl::Span<const std::string> labels) {
-  if (labels.empty() && scope.is_set()) return scope.Get()->Ref();
-  MutexLock lock(&mu);
-  if (!scope.is_set()) {
-    scope.Set(MakeRefCounted<CollectionScope>(nullptr, labels, 1, 16));
-  } else if (!frozen.load(std::memory_order_relaxed)) {
-    bool has_storage = false;
-    for (size_t i = 0; i < scope.Get()->storage_shards_.size(); ++i) {
-      MutexLock lock(&scope.Get()->storage_shards_[i].mu);
-      if (!scope.Get()->storage_shards_[i].storage.empty()) {
-        has_storage = true;
-        break;
-      }
-    }
-    if (has_storage) {
-      frozen.store(true, std::memory_order_release);
-    } else {
-      for (const auto& label : labels) {
-        scope.Get()->labels_of_interest_.insert(label);
-      }
-    }
-  }
-  if (frozen.load(std::memory_order_relaxed)) {
-    for (const auto& label : labels) {
-      if (!scope.Get()->labels_of_interest_.contains(label)) {
-        LOG(WARNING)
-            << "Attempt to add label '" << label
-            << "' to global collection scope after labels were frozen.";
-      }
-    }
-  }
-  return scope.Get()->Ref();
-}
-
-RefCountedPtr<CollectionScope> GetGlobalCollectionScope(
-    absl::Span<const std::string> labels) {
-  return GetGlobalScopeHolderImpl()->Get(labels);
-}
-
 RefCountedPtr<CollectionScope> CreateCollectionScope(
-    RefCountedPtr<CollectionScope> parent, absl::Span<const std::string> labels,
-    size_t child_shards_count, size_t storage_shards_count) {
+    std::vector<RefCountedPtr<CollectionScope>> parents,
+    absl::Span<const std::string> labels, size_t child_shards_count,
+    size_t storage_shards_count) {
   return MakeRefCounted<CollectionScope>(
-      std::move(parent), labels, child_shards_count, storage_shards_count);
+      std::move(parents), labels, child_shards_count, storage_shards_count);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -267,8 +217,8 @@ MetricsQuery& MetricsQuery::CollapseLabels(
   return *this;
 }
 
-MetricsQuery& MetricsQuery::OnlyMetrics(absl::Span<const std::string> metrics) {
-  only_metrics_.emplace(metrics.begin(), metrics.end());
+MetricsQuery& MetricsQuery::OnlyMetrics(std::vector<std::string> metrics) {
+  only_metrics_.emplace(std::move(metrics));
   return *this;
 }
 
@@ -313,43 +263,45 @@ void MetricsQuery::Run(RefCountedPtr<CollectionScope> scope,
         [&](MetricsSink& sink) {
           for (auto* storage : storages) {
             const auto label = storage->label();
+            const auto label_keys = domain->label_names();
             instrument_detail::GaugeStorage gauge_storage(storage->domain());
             storage->FillGaugeStorage(gauge_storage);
             for (const auto* metric : metrics) {
               Match(
                   metric->shape,
-                  [metric, &sink, storage,
-                   &label](InstrumentMetadata::CounterShape) {
-                    sink.Counter(label, metric->name,
+                  [metric, &sink, storage, &label,
+                   &label_keys](InstrumentMetadata::CounterShape) {
+                    sink.Counter(label_keys, label, metric->name,
                                  storage->SumCounter(metric->offset));
                   },
-                  [metric, &sink, storage,
-                   &label](InstrumentMetadata::HistogramShape bounds) {
+                  [metric, &sink, storage, &label,
+                   &label_keys](InstrumentMetadata::HistogramShape bounds) {
                     std::vector<uint64_t> counts(bounds.size());
                     for (size_t i = 0; i < bounds.size(); ++i) {
                       counts[i] = storage->SumCounter(metric->offset + i);
                     }
-                    sink.Histogram(label, metric->name, bounds, counts);
+                    sink.Histogram(label_keys, label, metric->name, bounds,
+                                   counts);
                   },
-                  [metric, &sink, &gauge_storage,
-                   &label](InstrumentMetadata::DoubleGaugeShape) {
+                  [metric, &sink, &gauge_storage, &label,
+                   &label_keys](InstrumentMetadata::DoubleGaugeShape) {
                     if (auto value = gauge_storage.GetDouble(metric->offset);
                         value.has_value()) {
-                      sink.DoubleGauge(label, metric->name, *value);
+                      sink.DoubleGauge(label_keys, label, metric->name, *value);
                     }
                   },
-                  [metric, &sink, &gauge_storage,
-                   &label](InstrumentMetadata::IntGaugeShape) {
+                  [metric, &sink, &gauge_storage, &label,
+                   &label_keys](InstrumentMetadata::IntGaugeShape) {
                     if (auto value = gauge_storage.GetInt(metric->offset);
                         value.has_value()) {
-                      sink.IntGauge(label, metric->name, *value);
+                      sink.IntGauge(label_keys, label, metric->name, *value);
                     }
                   },
-                  [metric, &sink, &gauge_storage,
-                   &label](InstrumentMetadata::UintGaugeShape) {
+                  [metric, &sink, &gauge_storage, &label,
+                   &label_keys](InstrumentMetadata::UintGaugeShape) {
                     if (auto value = gauge_storage.GetUint(metric->offset);
                         value.has_value()) {
-                      sink.UintGauge(label, metric->name, *value);
+                      sink.UintGauge(label_keys, label, metric->name, *value);
                     }
                   });
             }
@@ -367,9 +319,11 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names,
     return;
   }
   std::vector<size_t> include_labels;
+  std::vector<std::string> label_keys;
   for (size_t i = 0; i < label_names.size(); ++i) {
     if (!collapsed_labels_.contains(label_names[i])) {
       include_labels.push_back(i);
+      label_keys.push_back(label_names[i]);
     }
   }
   if (include_labels.size() == label_names.size()) {
@@ -378,15 +332,18 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names,
   }
   class Filter final : public MetricsSink {
    public:
-    explicit Filter(absl::Span<const size_t> include_labels)
-        : include_labels_(include_labels) {}
+    explicit Filter(absl::Span<const size_t> include_labels,
+                    absl::Span<const std::string> label_keys)
+        : include_labels_(include_labels), label_keys_(label_keys) {}
 
-    void Counter(absl::Span<const std::string> label, absl::string_view name,
+    void Counter(absl::Span<const std::string> /* label_keys */,
+                 absl::Span<const std::string> label, absl::string_view name,
                  uint64_t value) override {
       uint64_counters_[ConstructKey(label, name)] += value;
     }
 
-    void Histogram(absl::Span<const std::string> label, absl::string_view name,
+    void Histogram(absl::Span<const std::string> /* label_keys */,
+                   absl::Span<const std::string> label, absl::string_view name,
                    HistogramBuckets bounds,
                    absl::Span<const uint64_t> counts) override {
       GRPC_CHECK_EQ(counts.size(), bounds.size());
@@ -407,26 +364,29 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names,
       }
     }
 
-    void DoubleGauge(absl::Span<const std::string>, absl::string_view,
+    void DoubleGauge(absl::Span<const std::string> /* label_keys */,
+                     absl::Span<const std::string>, absl::string_view,
                      double) override {
       // Not aggregatable
     }
-    void IntGauge(absl::Span<const std::string>, absl::string_view,
+    void IntGauge(absl::Span<const std::string> /* label_keys */,
+                  absl::Span<const std::string>, absl::string_view,
                   int64_t) override {
       // Not aggregatable
     }
-    void UintGauge(absl::Span<const std::string>, absl::string_view,
+    void UintGauge(absl::Span<const std::string> /* label_keys */,
+                   absl::Span<const std::string>, absl::string_view,
                    uint64_t) override {
       // Not aggregatable
     }
 
     void Publish(MetricsSink& sink) const {
       for (const auto& [key, value] : uint64_counters_) {
-        sink.Counter(std::get<0>(key), std::get<1>(key), value);
+        sink.Counter(label_keys_, std::get<0>(key), std::get<1>(key), value);
       }
       for (const auto& [key, value] : histograms_) {
-        sink.Histogram(std::get<0>(key), std::get<1>(key), value.bounds,
-                       value.counts);
+        sink.Histogram(label_keys_, std::get<0>(key), std::get<1>(key),
+                       value.bounds, value.counts);
       }
     }
 
@@ -442,6 +402,7 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names,
     }
 
     absl::Span<const size_t> include_labels_;
+    absl::Span<const std::string> label_keys_;
     absl::flat_hash_map<std::tuple<std::vector<std::string>, absl::string_view>,
                         uint64_t>
         uint64_counters_;
@@ -455,7 +416,7 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names,
                         HistogramValue>
         histograms_;
   };
-  Filter filter(include_labels);
+  Filter filter(include_labels, label_keys);
   ApplyLabelChecks(label_names, fn, filter);
   filter.Publish(sink);
 }
@@ -486,33 +447,38 @@ void MetricsQuery::ApplyLabelChecks(absl::Span<const std::string> label_names,
                     absl::Span<const LabelEq> inclusion_checks)
         : inclusion_checks_(inclusion_checks), sink_(sink) {}
 
-    void Counter(absl::Span<const std::string> label, absl::string_view name,
+    void Counter(absl::Span<const std::string> label_keys,
+                 absl::Span<const std::string> label, absl::string_view name,
                  uint64_t value) override {
       if (!Matches(label)) return;
-      sink_.Counter(label, name, value);
+      sink_.Counter(label_keys, label, name, value);
     }
 
-    void Histogram(absl::Span<const std::string> label, absl::string_view name,
+    void Histogram(absl::Span<const std::string> label_keys,
+                   absl::Span<const std::string> label, absl::string_view name,
                    HistogramBuckets bounds,
                    absl::Span<const uint64_t> counts) override {
       if (!Matches(label)) return;
-      sink_.Histogram(label, name, bounds, counts);
+      sink_.Histogram(label_keys, label, name, bounds, counts);
     }
 
-    void DoubleGauge(absl::Span<const std::string> label,
+    void DoubleGauge(absl::Span<const std::string> label_keys,
+                     absl::Span<const std::string> label,
                      absl::string_view name, double value) override {
       if (!Matches(label)) return;
-      sink_.DoubleGauge(label, name, value);
+      sink_.DoubleGauge(label_keys, label, name, value);
     }
-    void IntGauge(absl::Span<const std::string> label, absl::string_view name,
+    void IntGauge(absl::Span<const std::string> label_keys,
+                  absl::Span<const std::string> label, absl::string_view name,
                   int64_t value) override {
       if (!Matches(label)) return;
-      sink_.IntGauge(label, name, value);
+      sink_.IntGauge(label_keys, label, name, value);
     }
-    void UintGauge(absl::Span<const std::string> label, absl::string_view name,
+    void UintGauge(absl::Span<const std::string> label_keys,
+                   absl::Span<const std::string> label, absl::string_view name,
                    uint64_t value) override {
       if (!Matches(label)) return;
-      sink_.UintGauge(label, name, value);
+      sink_.UintGauge(label_keys, label, name, value);
     }
 
    private:
@@ -792,11 +758,11 @@ RefCountedPtr<DomainStorage> QueryableDomain::GetDomainStorage(
     absl::Span<const std::string> label_values) {
   auto key_labels =
       FilterLabels(label_names_, scope->labels_of_interest_, label_values);
-  if (scope->parent_ != nullptr) {
+  if (scope->parents_.size() == 1 && scope->parents_[0] != nullptr) {
     auto parent_key_labels = FilterLabels(
-        label_names_, scope->parent_->labels_of_interest_, label_values);
+        label_names_, scope->parents_[0]->labels_of_interest_, label_values);
     if (key_labels == parent_key_labels) {
-      return GetDomainStorage(scope->parent_, label_values);
+      return GetDomainStorage(scope->parents_[0], label_values);
     }
   }
   size_t shard_idx = absl::HashOf(key_labels) % scope->storage_shards_.size();
@@ -814,7 +780,6 @@ RefCountedPtr<DomainStorage> QueryableDomain::GetDomainStorage(
 }  // namespace instrument_detail
 
 void TestOnlyResetInstruments() {
-  GetGlobalScopeHolderImpl()->Reset();
   Hook* hook = hooks.load(std::memory_order_acquire);
   while (hook != nullptr) {
     Hook* next = hook->next;

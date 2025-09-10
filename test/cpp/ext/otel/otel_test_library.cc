@@ -244,6 +244,7 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
     channel_args.SetString(GRPC_ARG_SERVICE_CONFIG, config.service_config);
   }
   grpc_init();
+  initialized_ = true;
   grpc::ServerBuilder builder;
   int port;
   // Use IPv4 here because it's less flaky than IPv6 ("[::]:0") on Travis.
@@ -270,8 +271,10 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
 }
 
 void OpenTelemetryPluginEnd2EndTest::TearDown() {
-  server_->Shutdown();
-  grpc_shutdown_blocking();
+  if (initialized_) {
+    server_->Shutdown();
+    grpc_shutdown_blocking();
+  }
   grpc_core::ServerCallTracerFactory::TestOnlyReset();
   grpc_core::GlobalStatsPluginRegistryTestPeer::
       ResetGlobalStatsPluginRegistry();

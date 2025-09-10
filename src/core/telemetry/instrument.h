@@ -114,7 +114,7 @@
 //   };
 //
 // To increment the counter:
-//   auto scope = GetGlobalCollectionScope({}); // Or some other scope
+//   auto scope = CreateCollectionScope({}, {}); // Or some other scope
 //   auto storage = MyDomain::GetStorage(scope, "label_val1", "label_val2");
 //   storage->Increment(MyDomain::kMyCounter);
 //
@@ -241,7 +241,7 @@ void RegisterHistogramCollectionHook(HistogramCollectionHook hook);
 // metrics collected in this scope are aggregated into the parent scope.
 class CollectionScope : public RefCounted<CollectionScope> {
  public:
-  CollectionScope(RefCountedPtr<CollectionScope> parent,
+  CollectionScope(std::vector<RefCountedPtr<CollectionScope>> parents,
                   absl::Span<const std::string> labels,
                   size_t child_shards_count, size_t storage_shards_count);
   ~CollectionScope() override;
@@ -254,7 +254,6 @@ class CollectionScope : public RefCounted<CollectionScope> {
  private:
   friend class MetricsQuery;
   friend class instrument_detail::QueryableDomain;
-  friend struct GlobalScopeHolder;
 
   struct StorageShard {
     mutable Mutex mu;
@@ -269,7 +268,7 @@ class CollectionScope : public RefCounted<CollectionScope> {
     absl::flat_hash_set<CollectionScope*> children ABSL_GUARDED_BY(mu);
   };
 
-  RefCountedPtr<CollectionScope> parent_;
+  std::vector<RefCountedPtr<CollectionScope>> parents_;
   absl::flat_hash_set<std::string> labels_of_interest_;
   std::vector<ChildShard> child_shards_;
   std::vector<StorageShard> storage_shards_;
@@ -529,11 +528,14 @@ struct Counter {
 };
 
 // An InstrumentHandle is a handle to a single metric in an
-// InstrumentDomainImpl. kType is used in using statements to disambiguate
-// between different InstrumentHandle specializations. Backed, Label... are
-// per InstrumentDomainImpl.
+// instrument domain. It has a Shape (how the metric behaves).
 template <typename Shape, typename Domain>
 class InstrumentHandle {
+ public:
+  absl::string_view name() const { return description_->name; }
+  absl::string_view description() const { return description_->description; }
+  absl::string_view unit() const { return description_->unit; }
+
  private:
   friend Domain;
 
@@ -555,7 +557,7 @@ template <typename T>
 using StdString = std::string;
 
 template <typename T>
-using ConstCharPtr = const char*;
+using AbslStringView = absl::string_view;
 
 }  // namespace instrument_detail
 
@@ -603,16 +605,21 @@ class MetricsSink {
  public:
   // Called once per label per metric, with the value of that metric for that
   // label.
-  virtual void Counter(absl::Span<const std::string> label,
+  virtual void Counter(absl::Span<const std::string> label_keys,
+                       absl::Span<const std::string> label,
                        absl::string_view name, uint64_t value) = 0;
-  virtual void Histogram(absl::Span<const std::string> label,
+  virtual void Histogram(absl::Span<const std::string> label_keys,
+                         absl::Span<const std::string> label,
                          absl::string_view name, HistogramBuckets bounds,
                          absl::Span<const uint64_t> counts) = 0;
-  virtual void DoubleGauge(absl::Span<const std::string> labels,
+  virtual void DoubleGauge(absl::Span<const std::string> label_keys,
+                           absl::Span<const std::string> labels,
                            absl::string_view name, double value) = 0;
-  virtual void IntGauge(absl::Span<const std::string> labels,
+  virtual void IntGauge(absl::Span<const std::string> label_keys,
+                        absl::Span<const std::string> labels,
                         absl::string_view name, int64_t value) = 0;
-  virtual void UintGauge(absl::Span<const std::string> labels,
+  virtual void UintGauge(absl::Span<const std::string> label_keys,
+                         absl::Span<const std::string> labels,
                          absl::string_view name, uint64_t value) = 0;
 
  protected:
@@ -634,7 +641,7 @@ class MetricsQuery {
   // remaining dimensions, etc.
   MetricsQuery& CollapseLabels(absl::Span<const std::string> labels);
   // Only include metrics that are in `metrics`.
-  MetricsQuery& OnlyMetrics(absl::Span<const std::string> metrics);
+  MetricsQuery& OnlyMetrics(std::vector<std::string> metrics);
 
   // Returns the metrics that are selected by this query.
   std::optional<absl::Span<const std::string>> selected_metrics() const {
@@ -753,9 +760,9 @@ class InstrumentDomainImpl final : public QueryableDomain {
 
     // Increments the counter specified by `handle` by 1 for this storages
     // labels.
-    void Increment(CounterHandle handle) {
+    void Increment(CounterHandle handle, uint64_t amount = 1) {
       DCHECK_EQ(handle.instrument_domain_, domain());
-      backend_.Add(handle.offset_, 1);
+      backend_.Add(handle.offset_, amount);
     }
     void Add(DomainStorage* other) override {
       DCHECK_EQ(domain(), other->domain());
@@ -922,7 +929,7 @@ class InstrumentDomain {
  protected:
   template <typename... Label>
   static constexpr auto Labels(Label... labels) {
-    return std::tuple<instrument_detail::ConstCharPtr<Label>...>{labels...};
+    return std::tuple<instrument_detail::AbslStringView<Label>...>{labels...};
   }
 
   static auto RegisterCounter(absl::string_view name,
@@ -988,16 +995,9 @@ void TestOnlyResetInstruments();
 // `child_shards_count` and `storage_shards_count` are performance tuning
 // parameters for sharding internal data structures.
 RefCountedPtr<CollectionScope> CreateCollectionScope(
-    RefCountedPtr<CollectionScope> parent, absl::Span<const std::string> labels,
-    size_t child_shards_count = 1, size_t storage_shards_count = 1);
-// Gets the global collection scope.
-// The global collection scope is a root scope that can be used for metrics
-// that do not belong to a specific sub-scope.
-// The labels of interest for the global scope are the union of all labels
-// passed to this function *until* the first storage is created in the global
-// scope, at which point the labels become fixed.
-RefCountedPtr<CollectionScope> GetGlobalCollectionScope(
-    absl::Span<const std::string> labels);
+    std::vector<RefCountedPtr<CollectionScope>> parents,
+    absl::Span<const std::string> labels, size_t child_shards_count = 1,
+    size_t storage_shards_count = 1);
 
 }  // namespace grpc_core
 
