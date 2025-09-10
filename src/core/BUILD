@@ -1889,10 +1889,10 @@ grpc_cc_library(
     ],
     public_hdrs = [
         "//:include/grpc/slice.h",
+        "//:include/grpc/impl/slice_type.h",
     ],
     deps = [
         "//:debug_location",
-        "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc_trace",
     ],
@@ -1920,8 +1920,8 @@ grpc_cc_library(
         "slice_cast",
         "slice_refcount",
         "//:debug_location",
-        "//:event_engine_base_hdrs",
         "//:gpr",
+        "//:grpc_event_engine_slice",
     ],
 )
 
@@ -1937,8 +1937,9 @@ grpc_cc_library(
     external_deps = ["absl/log:check"],
     deps = [
         "slice",
-        "slice_refcount",
         "//:gpr",
+        "//:gpr_platform",
+        "//:grpc_slice",
     ],
 )
 
@@ -3048,6 +3049,7 @@ grpc_cc_library(
         "useful",
         "//:event_engine_base_hdrs",
         "//:gpr",
+        "//:grpc_trace",
         "//:parse_address",
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
