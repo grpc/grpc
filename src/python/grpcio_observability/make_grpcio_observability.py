@@ -103,7 +103,7 @@ BAZEL_DEPS_QUERIES = [
     "//src/core:slice",
     "//src/core:ref_counted_string",
     "//src/core:resource_quota_telemetry",
-    "//src/core:instrument",
+    # "//src/core:instrument",
 ]
 
 
