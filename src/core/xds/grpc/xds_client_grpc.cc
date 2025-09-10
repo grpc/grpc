@@ -228,6 +228,22 @@ absl::StatusOr<std::string> FindBootstrapContents()
       "not defined");
 }
 
+absl::StatusOr<std::shared_ptr<GrpcXdsBootstrap>> GetOrCreateGlobalBootstrap()
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(*g_mu) {
+  if (*g_parsed_bootstrap == nullptr) {
+    // First, find bootstrap contents.
+    auto bootstrap_contents = FindBootstrapContents();
+    if (!bootstrap_contents.ok()) return bootstrap_contents.status();
+    GRPC_TRACE_LOG(xds_client, INFO)
+        << "xDS bootstrap contents: " << *bootstrap_contents;
+    // Parse bootstrap.
+    auto bootstrap = GrpcXdsBootstrap::Create(*bootstrap_contents);
+    if (!bootstrap.ok()) return bootstrap.status();
+    *g_parsed_bootstrap = std::move(*bootstrap);
+  }
+  return *g_parsed_bootstrap;
+}
+
 std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
 GetStatsPluginGroupForKeyAndChannelArgs(absl::string_view key,
                                         const ChannelArgs& channel_args) {
@@ -248,7 +264,8 @@ GetStatsPluginGroupForKeyAndChannelArgs(absl::string_view key,
 }  // namespace
 
 absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
-    absl::string_view key, const ChannelArgs& args, const char* reason) {
+    absl::string_view key, const ChannelArgs& args, const char* reason,
+    std::shared_ptr<GrpcXdsBootstrap> bootstrap_override) {
   // If getting bootstrap from channel args, create a local XdsClient
   // instance for the channel or server instead of using the global instance.
   std::optional<absl::string_view> bootstrap_config = args.GetString(
@@ -277,22 +294,15 @@ absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GrpcXdsClient::GetOrCreate(
     }
   }
   // The XdsClient doesn't exist, so we'll create it.
-  // If the bootstrap hasn't already been parsed, do that.
-  if (*g_parsed_bootstrap == nullptr) {
-    // First, find bootstrap contents.
-    auto bootstrap_contents = FindBootstrapContents();
-    if (!bootstrap_contents.ok()) return bootstrap_contents.status();
-    GRPC_TRACE_LOG(xds_client, INFO)
-        << "xDS bootstrap contents: " << *bootstrap_contents;
-    // Parse bootstrap.
-    auto bootstrap = GrpcXdsBootstrap::Create(*bootstrap_contents);
-    if (!bootstrap.ok()) return bootstrap.status();
-    *g_parsed_bootstrap = std::move(*bootstrap);
+  std::shared_ptr<GrpcXdsBootstrap> bootstrap = std::move(bootstrap_override);
+  if (bootstrap == nullptr) {
+    auto global_bootstrap = GetOrCreateGlobalBootstrap();
+    if (!global_bootstrap.ok()) return global_bootstrap.status();
+    bootstrap = std::move(*global_bootstrap);
   }
-  // Instantiate XdsClient.
   auto channel_args = ChannelArgs::FromC(g_channel_args);
   auto xds_client = MakeRefCounted<GrpcXdsClient>(
-      key, *g_parsed_bootstrap, channel_args,
+      key, std::move(bootstrap), channel_args,
       MakeRefCounted<GrpcXdsTransportFactory>(channel_args),
       GetStatsPluginGroupForKeyAndChannelArgs(key, args));
   g_xds_client_map->emplace(xds_client->key(), xds_client.get());
