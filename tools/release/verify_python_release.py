@@ -71,7 +71,7 @@ def _get_local_artifacts():
 def _get_remote_artifacts_for_package(package, version):
     """Get a list of artifacts based on PyPi's json metadata.
 
-    Note that this data will not updated immediately after upload. In my
+    Note that this data will not be updated immediately after upload. In my
     experience, it has taken a minute on average to be fresh.
     """
     artifacts = set()
