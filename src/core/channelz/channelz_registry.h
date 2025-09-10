@@ -125,6 +125,11 @@ class ChannelzRegistry final {
     return Default()->InternalGetNodesOfType(start_node, type, max_results);
   }
 
+  static std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool> GetNodes(
+      intptr_t start_node, size_t max_results) {
+    return Default()->InternalGetNodes(start_node, max_results);
+  }
+
   // Test only helper function to dump the JSON representation to std out.
   // This can aid in debugging channelz code.
   static void LogAllEntities() { Default()->InternalLogAllEntities(); }
@@ -243,6 +248,12 @@ class ChannelzRegistry final {
     return QueryNodes(
         start_node, [type](const BaseNode* n) { return n->type() == type; },
         max_results);
+  }
+
+  std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool> InternalGetNodes(
+      intptr_t start_node, size_t max_results) {
+    return QueryNodes(
+        start_node, [](const BaseNode*) { return true; }, max_results);
   }
 
   template <typename T, BaseNode::EntityType entity_type>
