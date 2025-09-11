@@ -84,6 +84,10 @@ ZLIB_INCLUDE = (os.path.join("third_party", "zlib"),)
 # Ensure we're in the proper directory whether or not we're being used by pip.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.abspath(PYTHON_STEM))
+# Get the absolute path of the directory containing the current script
+current_dir = os.path.dirname(os.path.abspath(__file__))
+# Insert this path at the beginning of sys.path
+sys.path.insert(0, current_dir)
 
 # Break import-style to ensure we can actually find our in-repo dependencies.
 import _metadata
