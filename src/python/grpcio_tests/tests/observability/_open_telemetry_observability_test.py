@@ -177,6 +177,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics.keys())
 
+        # for each unary unary server call, 3 spans are created, which must be validated separately
         first_rpc_spans = self._span_exporter.get_finished_spans()[0:3]
         second_rpc_spans = self._span_exporter.get_finished_spans()[3:]
 

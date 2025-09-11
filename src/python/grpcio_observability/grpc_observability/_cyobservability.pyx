@@ -37,6 +37,7 @@ PLUGIN_IDENTIFIER_SEP = ","
 
 _LOGGER = logging.getLogger(__name__)
 
+_PyEvent = Dict[str, Union[str, Dict[str, str]]]
 
 class _CyMetricsName:
   CY_CLIENT_API_LATENCY = kRpcClientApiLatencyMeasureName
@@ -207,7 +208,7 @@ def _c_measurement_to_measurement(object measurement
   return py_measurement
 
 
-def _c_event_to_events(vector[Event] c_events) -> List[Dict[str, Union[str, Dict[str, str]]]]:
+def _c_event_to_events(vector[Event] c_events) -> List[_PyEvent]:
   py_events = []
 
   for event in c_events:

@@ -142,7 +142,7 @@ void PythonOpenCensusServerCallTracer::RecordSendTrailingMetadata(
 
 void PythonOpenCensusServerCallTracer::RecordSendMessage(
     const grpc_core::Message& send_message) {
-  if (PythonCensusTracingEnabled()) {
+  if (context_.GetSpanContext().IsSampled()) {
     std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
     attributes.reserve(2);
     const auto sent_message_count_str = absl::StrCat(sent_message_count_++);
@@ -156,7 +156,7 @@ void PythonOpenCensusServerCallTracer::RecordSendMessage(
 
 void PythonOpenCensusServerCallTracer::RecordSendCompressedMessage(
     const grpc_core::Message& send_compressed_message) {
-  if (PythonCensusTracingEnabled()) {
+  if (context_.GetSpanContext().IsSampled()) {
     std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
     attributes.reserve(2);
     const auto sent_message_count_str = absl::StrCat(sent_message_count_ - 1);
@@ -170,7 +170,7 @@ void PythonOpenCensusServerCallTracer::RecordSendCompressedMessage(
 
 void PythonOpenCensusServerCallTracer::RecordReceivedMessage(
     const grpc_core::Message& recv_message) {
-  if (PythonCensusTracingEnabled()) {
+  if (context_.GetSpanContext().IsSampled()) {
     std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
     attributes.reserve(2);
     const auto recv_message_count_str = absl::StrCat(recv_message_count_++);
@@ -191,7 +191,7 @@ void PythonOpenCensusServerCallTracer::RecordReceivedMessage(
 
 void PythonOpenCensusServerCallTracer::RecordReceivedDecompressedMessage(
     const grpc_core::Message& recv_decompressed_message) {
-  if (PythonCensusTracingEnabled()) {
+  if (context_.GetSpanContext().IsSampled()) {
     std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
     attributes.reserve(2);
     const auto recv_message_count_str = absl::StrCat(recv_message_count_ - 1);
@@ -274,14 +274,14 @@ void PythonOpenCensusServerCallTracer::RecordOutgoingBytes(
 
 void PythonOpenCensusServerCallTracer::RecordAnnotation(
     absl::string_view annotation) {
-  if (PythonCensusTracingEnabled()) {
+  if (context_.GetSpanContext().IsSampled()) {
     context_.AddSpanEvent(annotation);
   }
 }
 
 void PythonOpenCensusServerCallTracer::RecordAnnotation(
     const Annotation& annotation) {
-  if (PythonCensusTracingEnabled()) {
+  if (context_.GetSpanContext().IsSampled()) {
     const auto annotation_str = annotation.ToString();
     context_.AddSpanEvent(annotation_str);
   }

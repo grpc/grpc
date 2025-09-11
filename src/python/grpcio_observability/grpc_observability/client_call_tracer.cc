@@ -61,14 +61,14 @@ void PythonOpenCensusCallTracer::GenerateContext() {}
 
 void PythonOpenCensusCallTracer::RecordAnnotation(
     absl::string_view annotation) {
-  if (PythonCensusTracingEnabled()) {
+  if (context_.GetSpanContext().IsSampled()) {
     context_.AddSpanEvent(annotation);
   }
 }
 
 void PythonOpenCensusCallTracer::RecordAnnotation(
     const Annotation& annotation) {
-  if (PythonCensusTracingEnabled()) {
+  if (context_.GetSpanContext().IsSampled()) {
     const auto annotation_str = annotation.ToString();
     context_.AddSpanEvent(annotation_str);
   }
@@ -192,7 +192,7 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     RecordSendMessage(const grpc_core::Message& send_message) {
-  if (PythonCensusTracingEnabled()) {
+  if (context_.GetSpanContext().IsSampled()) {
     std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
     attributes.reserve(2);
     const auto sent_message_count_str = absl::StrCat(sent_message_count_++);
@@ -207,7 +207,7 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     RecordSendCompressedMessage(
         const grpc_core::Message& send_compressed_message) {
-  if (PythonCensusTracingEnabled()) {
+  if (context_.GetSpanContext().IsSampled()) {
     std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
     attributes.reserve(2);
     const auto sent_message_count_str = absl::StrCat(sent_message_count_ - 1);
@@ -221,7 +221,7 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     RecordReceivedMessage(const grpc_core::Message& recv_message) {
-  if (PythonCensusTracingEnabled()) {
+  if (context_.GetSpanContext().IsSampled()) {
     std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
     attributes.reserve(2);
     const auto recv_message_count_str = absl::StrCat(recv_message_count_++);
@@ -243,7 +243,7 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     RecordReceivedDecompressedMessage(
         const grpc_core::Message& recv_decompressed_message) {
-  if (PythonCensusTracingEnabled()) {
+  if (context_.GetSpanContext().IsSampled()) {
     std::vector<std::pair<absl::string_view, absl::string_view>> attributes{};
     attributes.reserve(2);
     const auto recv_message_count_str = absl::StrCat(recv_message_count_ - 1);
@@ -398,14 +398,14 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     RecordAnnotation(absl::string_view annotation) {
-  if (PythonCensusTracingEnabled()) {
+  if (context_.GetSpanContext().IsSampled()) {
     context_.AddSpanEvent(annotation);
   }
 }
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     RecordAnnotation(const Annotation& annotation) {
-  if (PythonCensusTracingEnabled()) {
+  if (context_.GetSpanContext().IsSampled()) {
     const auto annotation_str = annotation.ToString();
     context_.AddSpanEvent(annotation_str);
   }

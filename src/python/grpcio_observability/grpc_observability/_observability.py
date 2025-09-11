@@ -95,7 +95,7 @@ class TracingData:
       child_span_count: The number of child span associated with this span.
       span_labels: A dictionary that maps labels tags associated with this
        span to corresponding label value.
-      span_events: A dictionary that maps that contains traced event data. Following keys are used:
+      span_events: A dictionary that contains traced event data. Following keys are used:
        - "name" - represents event name
        - "attributes" - represents optional event attibutes in a form of dictionary
        - "time_stamp" - represents time stamp when event occured. The time stamp have a format which
