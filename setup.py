@@ -36,7 +36,6 @@ from subprocess import PIPE
 import sys
 import sysconfig
 
-import _metadata
 from setuptools import Extension
 from setuptools.command import egg_info
 
@@ -87,6 +86,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.abspath(PYTHON_STEM))
 
 # Break import-style to ensure we can actually find our in-repo dependencies.
+import _metadata
 import _parallel_compile_patch
 import _spawn_patch
 import grpc_core_dependencies
@@ -571,6 +571,9 @@ shutil.copyfile(
 setuptools.setup(
     # Static metadata is now in pyproject.toml
     license="Apache License 2.0",
+    extras_require={
+        "protobuf": "grpcio-tools>={version}".format(version=grpc_version.VERSION),
+    },
     ext_modules=CYTHON_EXTENSION_MODULES,
     cmdclass=COMMAND_CLASS,
 )

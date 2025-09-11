@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "grpcio"
-dynamic = ["version", "license"]
+dynamic = ["version", "license", "optional-dependencies"]
 description = "HTTP/2-based RPC framework"
 readme = "src/python/grpcio/README.rst"
 authors = [
@@ -32,8 +32,6 @@ requires-python = ">=3.9"
 dependencies = [
     "typing-extensions~=4.12",
 ]
-[project.optional-dependencies]
-protobuf = ["grpcio-tools>=1.75.0.dev0"]
 
 [project.urls]
 Homepage = "https://grpc.io"
