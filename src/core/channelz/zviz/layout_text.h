@@ -45,18 +45,18 @@ class TextElement : public Element {
 
   void Render(std::string* out) const;
 
-  struct Text {
+  struct TextContent {
     Intent intent;
     std::string text;
   };
-  struct Group {
+  struct GroupContent {
     std::unique_ptr<TextElement> element;
   };
-  struct Table {
+  struct TableContent {
     std::unique_ptr<TextTable> table;
   };
 
-  using Content = std::variant<Text, Group, Table>;
+  using Content = std::variant<TextContent, GroupContent, TableContent>;
 
   const int indent_;
   std::vector<Content> contents_;
