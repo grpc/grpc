@@ -22,7 +22,7 @@ cd "$BASEDIR";
 TEST_MODULE="tests.unit.test_all_modules_installed" 
 
 # TODO(sergiitk): DO NOT MERGE: only for an adhoc CI test
-export GRPC_EXPERIMENTS="event_engine_client,event_engine_listener,event_engine_dns,event_engine_fork"
+export GRPC_EXPERIMENTS="event_engine_client,event_engine_listener,event_engine_dns,event_engine_fork,event_engine_poller_for_python"
 
 # Run the specific test module
 pushd src/python/grpcio_tests;
