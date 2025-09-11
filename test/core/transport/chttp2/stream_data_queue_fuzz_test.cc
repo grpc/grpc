@@ -347,10 +347,11 @@ YODEL_TEST(StreamDataQueueFuzzTest, EnqueueDequeueMultiParty) {
               return absl::OkStatus();
             },
             [this, &stream_data_queue, &assembler, &dequeued_messages] {
-              auto frames = stream_data_queue.DequeueFrames(
-                  max_tokens, max_frame_length, GetEncoder());
-              EXPECT_TRUE(frames.ok());
-              for (auto& frame : frames.value().frames) {
+              typename StreamDataQueue<ClientMetadataHandle>::DequeueResult
+                  frames = stream_data_queue.DequeueFrames(
+                      max_tokens, max_frame_length, GetEncoder());
+
+              for (auto& frame : frames.frames) {
                 std::visit(assembler, std::move(frame));
               }
               assembler.GetMessages(dequeued_messages);

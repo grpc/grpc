@@ -618,6 +618,7 @@ grpc_cc_library(
     ],
     public_hdrs = GRPC_PUBLIC_HDRS,
     tags = [
+        "avoid_dep",
         "nofixdeps",
     ],
     visibility = ["//visibility:public"],

@@ -94,6 +94,7 @@ typedef struct alts_tsi_handshaker_result {
   grpc_slice serialized_context;
   // Peer's maximum frame size.
   size_t max_frame_size;
+  std::string record_protocol;
   std::optional<std::string> negotiated_transport_protocol;
 } alts_tsi_handshaker_result;
 
@@ -156,10 +157,13 @@ static tsi_result handshaker_result_extract_peer(
   }
   index++;
   CHECK_NE(&peer->properties[index], nullptr);
+  tsi_security_level security_level =
+      result->record_protocol == ALTS_INTEGRITY_ONLY_RECORD_PROTOCOL
+          ? TSI_INTEGRITY_ONLY
+          : TSI_PRIVACY_AND_INTEGRITY;
   ok = tsi_construct_string_peer_property_from_cstring(
       TSI_SECURITY_LEVEL_PEER_PROPERTY,
-      tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY),
-      &peer->properties[index]);
+      tsi_security_level_to_string(security_level), &peer->properties[index]);
   if (ok != TSI_OK) {
     tsi_peer_destruct(peer);
     LOG(ERROR) << "Failed to set tsi peer property";
@@ -221,8 +225,9 @@ static tsi_result handshaker_result_create_zero_copy_grpc_protector(
                                  kAltsAes128GcmRekeyKeyLength},
                                 /*is_rekey=*/true),
       result->is_client,
-      /*is_integrity_only=*/false, /*enable_extra_copy=*/false,
-      max_output_protected_frame_size, protector);
+      /*is_integrity_only=*/
+      (result->record_protocol == ALTS_INTEGRITY_ONLY_RECORD_PROTOCOL),
+      /*enable_extra_copy=*/false, max_output_protected_frame_size, protector);
   if (ok != TSI_OK) {
     LOG(ERROR) << "Failed to create zero-copy grpc protector";
   }
@@ -277,7 +282,7 @@ static void handshaker_result_destroy(tsi_handshaker_result* self) {
   gpr_free(result->unused_bytes);
   grpc_core::CSliceUnref(result->rpc_versions);
   grpc_core::CSliceUnref(result->serialized_context);
-  gpr_free(result);
+  delete result;
 }
 
 static const tsi_handshaker_result_vtable result_vtable = {
@@ -342,9 +347,7 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
       grpc_gcp_Identity_service_account(local_identity);
   // We don't check if local service account is empty here
   // because local identity could be empty in certain situations.
-  alts_tsi_handshaker_result* sresult =
-      static_cast<alts_tsi_handshaker_result*>(
-          gpr_zalloc(sizeof(alts_tsi_handshaker_result)));
+  alts_tsi_handshaker_result* sresult = new alts_tsi_handshaker_result();
   sresult->key_data =
       static_cast<char*>(gpr_zalloc(kAltsAes128GcmRekeyKeyLength));
   memcpy(sresult->key_data, key_data.data, kAltsAes128GcmRekeyKeyLength);
@@ -366,6 +369,10 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
           std::string(transport_protocol.data, transport_protocol.size);
     }
   }
+
+  sresult->record_protocol =
+      std::string(record_protocol.data, record_protocol.size);
+
   upb::Arena rpc_versions_arena;
   bool serialized = grpc_gcp_rpc_protocol_versions_encode(
       peer_rpc_version, rpc_versions_arena.ptr(), &sresult->rpc_versions);
@@ -377,9 +384,10 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
   grpc_gcp_AltsContext* context = grpc_gcp_AltsContext_new(context_arena.ptr());
   grpc_gcp_AltsContext_set_application_protocol(context, application_protocol);
   grpc_gcp_AltsContext_set_record_protocol(context, record_protocol);
-  // ALTS currently only supports the security level of 2,
-  // which is "grpc_gcp_INTEGRITY_AND_PRIVACY".
-  grpc_gcp_AltsContext_set_security_level(context, 2);
+  grpc_gcp_AltsContext_set_security_level(
+      context, sresult->record_protocol == ALTS_INTEGRITY_ONLY_RECORD_PROTOCOL
+                   ? TSI_INTEGRITY_ONLY
+                   : TSI_PRIVACY_AND_INTEGRITY);
   grpc_gcp_AltsContext_set_peer_service_account(context, peer_service_account);
   grpc_gcp_AltsContext_set_local_service_account(context,
                                                  local_service_account);

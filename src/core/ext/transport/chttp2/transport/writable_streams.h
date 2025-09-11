@@ -172,7 +172,7 @@ class WritableStreams {
 
   // Wait for a stream to be ready to be dequeued. This is a blocking call.
   // This returns a promise that resolves when there is a writeable stream ready
-  // to be dequeued or ForceResolve is called.
+  // to be dequeued or ForceReadyForWrite() is called.
   auto WaitForReady(const bool transport_tokens_available) {
     return TrySeq(
         If(
@@ -205,11 +205,11 @@ class WritableStreams {
 
   // Force resolve WaitForReady. This is used to induce a write cycle on the
   // transport.
-  absl::Status ForceResolve() {
+  absl::Status ForceReadyForWrite() {
     StatusFlag status = sender_.UnbufferedImmediateSend(
         StreamIDAndPriority{kInvalidStreamID, StreamPriority::kStreamClosed},
         /*tokens*/ 1);
-    GRPC_WRITABLE_STREAMS_DEBUG << "ForceResolve status " << status;
+    GRPC_WRITABLE_STREAMS_DEBUG << "ForceReadyForWrite status " << status;
     return (status.ok()) ? absl::OkStatus()
                          : absl::InternalError(
                                "Failed to enqueue to list of writable streams");

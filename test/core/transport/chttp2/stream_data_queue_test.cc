@@ -505,12 +505,11 @@ void DequeueAndCheckSuccess(
     RefCountedPtr<StreamDataQueue<MetadataHandle>> queue,
     std::vector<Http2Frame> expected_frames, HPackCompressor& encoder,
     const uint32_t max_tokens = 10, const uint32_t max_frame_length = 10) {
-  absl::StatusOr<typename StreamDataQueue<MetadataHandle>::DequeueResult>
-      frames = queue->DequeueFrames(max_tokens, max_frame_length, encoder);
-  EXPECT_TRUE(frames.ok());
-  EXPECT_EQ(frames.value().frames.size(), expected_frames.size());
+  typename StreamDataQueue<MetadataHandle>::DequeueResult frames =
+      queue->DequeueFrames(max_tokens, max_frame_length, encoder);
+  EXPECT_EQ(frames.frames.size(), expected_frames.size());
 
-  std::vector<Http2Frame>& frames_vector = frames.value().frames;
+  std::vector<Http2Frame>& frames_vector = frames.frames;
   for (int count = 0; count < frames_vector.size(); ++count) {
     EXPECT_EQ((frames_vector[count]), (expected_frames[count]));
   }
@@ -521,12 +520,12 @@ void DequeueMessageAndCheckSuccess(
     RefCountedPtr<StreamDataQueue<MetadataHandle>> queue,
     std::vector<int> expected_frames_length, HPackCompressor& encoder,
     const uint32_t max_tokens = 10, const uint32_t max_frame_length = 10) {
-  absl::StatusOr<typename StreamDataQueue<MetadataHandle>::DequeueResult>
-      frames = queue->DequeueFrames(max_tokens, max_frame_length, encoder);
-  EXPECT_TRUE(frames.ok());
-  EXPECT_EQ(frames.value().frames.size(), expected_frames_length.size());
-  std::vector<Http2Frame>& frames_vector = frames.value().frames;
-  for (int count = 0; count < frames.value().frames.size(); ++count) {
+  typename StreamDataQueue<MetadataHandle>::DequeueResult frames =
+      queue->DequeueFrames(max_tokens, max_frame_length, encoder);
+
+  EXPECT_EQ(frames.frames.size(), expected_frames_length.size());
+  std::vector<Http2Frame>& frames_vector = frames.frames;
+  for (int count = 0; count < frames.frames.size(); ++count) {
     EXPECT_EQ(std::get<Http2DataFrame>(frames_vector[count]).payload.Length(),
               expected_frames_length[count]);
   }
