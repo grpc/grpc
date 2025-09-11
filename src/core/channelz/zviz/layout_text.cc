@@ -46,7 +46,7 @@ void TextElement::Render(std::string* out) const {
     std::visit(
         [&](auto& c) {
           using T = std::decay_t<decltype(c)>;
-          if constexpr (std::is_same_v<T, Text>) {
+          if constexpr (std::is_same_v<T, TextContent>) {
             if (c.intent == Intent::kBanner) {
               if (!buffer.empty()) {
                 absl::StrAppend(out, Indent(indent_), buffer, "\n");
@@ -62,7 +62,7 @@ void TextElement::Render(std::string* out) const {
               absl::StrAppend(out, Indent(indent_), buffer, "\n");
               buffer.clear();
             }
-            if constexpr (std::is_same_v<T, Group>) {
+            if constexpr (std::is_same_v<T, GroupContent>) {
               out->append("\n");
               c.element->Render(out);
             } else {  // Table
@@ -80,14 +80,14 @@ void TextElement::Render(std::string* out) const {
 
 Element& TextElement::AppendText(Intent intent, absl::string_view text) {
   if (!contents_.empty()) {
-    if (auto* t = std::get_if<Text>(&contents_.back())) {
+    if (auto* t = std::get_if<TextContent>(&contents_.back())) {
       if (t->intent == intent) {
         absl::StrAppend(&t->text, text);
         return *this;
       }
     }
   }
-  contents_.emplace_back(Text{intent, std::string(text)});
+  contents_.emplace_back(TextContent{intent, std::string(text)});
   return *this;
 }
 
@@ -99,7 +99,7 @@ Element& TextElement::AppendLink(Intent, absl::string_view text,
 Element& TextElement::AppendGroup(Intent) {
   auto element = std::make_unique<TextElement>(indent_ + 1);
   auto* ptr = element.get();
-  contents_.emplace_back(Group{std::move(element)});
+  contents_.emplace_back(GroupContent{std::move(element)});
   return *ptr;
 }
 
@@ -112,7 +112,7 @@ Element& TextElement::AppendData(absl::string_view name, absl::string_view) {
 Table& TextElement::AppendTable(TableIntent intent) {
   auto table = std::make_unique<TextTable>(intent, indent_ + 1);
   auto* ptr = table.get();
-  contents_.emplace_back(Table{std::move(table)});
+  contents_.emplace_back(TableContent{std::move(table)});
   return *ptr;
 }
 
