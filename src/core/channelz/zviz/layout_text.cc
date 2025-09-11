@@ -21,7 +21,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
-#include "layout_text.h"
 
 namespace grpc_zviz::layout {
 
