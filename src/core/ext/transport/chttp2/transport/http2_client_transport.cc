@@ -918,7 +918,9 @@ Http2ClientTransport::Http2ClientTransport(
           ((keepalive_timeout_ < ping_timeout_) ? keepalive_timeout_
                                                 : Duration::Infinity()),
           keepalive_time_),
-      keepalive_permit_without_calls_(false),
+      keepalive_permit_without_calls_(
+          channel_args.GetBool(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS)
+              .value_or(false)),
       enable_preferred_rx_crypto_frame_advertisement_(
           channel_args
               .GetBool(GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE)
