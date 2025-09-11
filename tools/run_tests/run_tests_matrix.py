@@ -38,6 +38,17 @@ _OBJC_RUNTESTS_TIMEOUT = 4 * 60 * 60
 
 # Set higher timeout for python_windows_opt_native test
 _PYTHON_WINDOWS_RUNTESTS_TIMEOUT = 1.5 * 60 * 60
+# TODO(sergiitk): DO NOT MERGE: only for an adhoc CI test
+_PYTHON_EXTRA_ENV = {
+    "GRPC_EXPERIMENTS": ",".join(
+        [
+            "event_engine_client",
+            "event_engine_listener",
+            "event_engine_dns",
+            "event_engine_fork",
+        ]
+    )
+}
 
 # Set timeout high for Ruby for MacOS for slow xcodebuild
 _RUBY_RUNTESTS_TIMEOUT = 2 * 60 * 60
@@ -283,6 +294,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         iomgr_platforms=["native"],
         labels=["basictests", "multilang"],
         extra_args=extra_args + ["--report_multi_target"],
+        extra_envs=_PYTHON_EXTRA_ENV,
         inner_jobs=inner_jobs,
     )
 
@@ -296,6 +308,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         iomgr_platforms=["native"],
         labels=["basictests_arm64"],
         extra_args=extra_args + ["--report_multi_target"],
+        extra_envs=_PYTHON_EXTRA_ENV,
         inner_jobs=inner_jobs,
     )
 
@@ -433,6 +446,7 @@ def _create_portability_test_jobs(
         compiler="python_alpine",
         labels=["portability", "multilang"],
         extra_args=extra_args + ["--report_multi_target"],
+        extra_envs=_PYTHON_EXTRA_ENV,
         inner_jobs=inner_jobs,
     )
 
