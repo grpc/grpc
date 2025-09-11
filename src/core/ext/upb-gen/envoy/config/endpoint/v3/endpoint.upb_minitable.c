@@ -37,16 +37,10 @@ static const upb_MiniTableField envoy_config_endpoint_v3_ClusterLoadAssignment__
 const upb_MiniTable envoy__config__endpoint__v3__ClusterLoadAssignment_msg_init = {
   &envoy_config_endpoint_v3_ClusterLoadAssignment__submsgs[0],
   &envoy_config_endpoint_v3_ClusterLoadAssignment__fields[0],
-  UPB_SIZE(32, 56), 4, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(32, 56), 4, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.endpoint.v3.ClusterLoadAssignment",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x002000003f000012, &upb_prm_1bt_maxmaxb},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__config__endpoint__v3__ClusterLoadAssignment_msg_init_ptr = &envoy__config__endpoint__v3__ClusterLoadAssignment_msg_init;
@@ -66,20 +60,10 @@ static const upb_MiniTableField envoy_config_endpoint_v3_ClusterLoadAssignment_P
 const upb_MiniTable envoy__config__endpoint__v3__ClusterLoadAssignment__Policy_msg_init = {
   &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy__submsgs[0],
   &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy__fields[0],
-  UPB_SIZE(24, 40), 4, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(24, 40), 4, kUpb_ExtMode_NonExtendable, 0, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.endpoint.v3.ClusterLoadAssignment.Policy",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f000012, &upb_prm_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000900003f000030, &upb_psb1_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__config__endpoint__v3__ClusterLoadAssignment__Policy_msg_init_ptr = &envoy__config__endpoint__v3__ClusterLoadAssignment__Policy_msg_init;
@@ -95,14 +79,10 @@ static const upb_MiniTableField envoy_config_endpoint_v3_ClusterLoadAssignment_P
 const upb_MiniTable envoy__config__endpoint__v3__ClusterLoadAssignment__Policy__DropOverload_msg_init = {
   &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload__submsgs[0],
   &envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload__fields[0],
-  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.endpoint.v3.ClusterLoadAssignment.Policy.DropOverload",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__config__endpoint__v3__ClusterLoadAssignment__Policy__DropOverload_msg_init_ptr = &envoy__config__endpoint__v3__ClusterLoadAssignment__Policy__DropOverload_msg_init;
@@ -118,14 +98,10 @@ static const upb_MiniTableField envoy_config_endpoint_v3_ClusterLoadAssignment_N
 const upb_MiniTable envoy__config__endpoint__v3__ClusterLoadAssignment__NamedEndpointsEntry_msg_init = {
   &envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry__submsgs[0],
   &envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry__fields[0],
-  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.endpoint.v3.ClusterLoadAssignment.NamedEndpointsEntry",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__config__endpoint__v3__ClusterLoadAssignment__NamedEndpointsEntry_msg_init_ptr = &envoy__config__endpoint__v3__ClusterLoadAssignment__NamedEndpointsEntry_msg_init;

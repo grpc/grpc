@@ -131,7 +131,6 @@ Before running `generate_projects`, you need to complete the following preparati
 
 ```
 tools/distrib/python/make_grpcio_tools.py --cleanup_third_party
-tools/bazel build @com_google_protobuf//:protoc //src/compiler:all
 src/ruby/pb/generate_proto_ruby.sh
 src/php/bin/generate_proto_php.sh
 ```

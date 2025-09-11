@@ -41,16 +41,10 @@ static const upb_MiniTableField xds_core_v3_ContextParams_ParamsEntry__fields[2]
 const upb_MiniTable xds__core__v3__ContextParams__ParamsEntry_msg_init = {
   NULL,
   &xds_core_v3_ContextParams_ParamsEntry__fields[0],
-  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "xds.core.v3.ContextParams.ParamsEntry",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x002000003f000012, &upb_pss_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* xds__core__v3__ContextParams__ParamsEntry_msg_init_ptr = &xds__core__v3__ContextParams__ParamsEntry_msg_init;
