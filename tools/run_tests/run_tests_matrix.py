@@ -49,7 +49,7 @@ _PYTHON_EXTRA_ENV = {
         ]
     )
 }
-_PYTHON_EXTRA_ENV_PROFILE_NAME = "event_engine_with_fork"
+_PYTHON_EXTRA_ENV_PROFILE_NAME = "ee_py_fork"
 
 # Set timeout high for Ruby for MacOS for slow xcodebuild
 _RUBY_RUNTESTS_TIMEOUT = 2 * 60 * 60
