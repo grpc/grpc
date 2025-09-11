@@ -83,6 +83,9 @@ grpc_internal_proto_library(
 
 grpc_cc_proto_library(
     name = "channelz_cc_proto",
+    visibility = [
+        "//bazel:channelz",
+    ],
     deps = [":channelz_proto"],
 )
 
@@ -108,12 +111,18 @@ grpc_internal_proto_library(
 
 grpc_cc_proto_library(
     name = "service_cc_proto",
+    visibility = [
+        "//bazel:channelz",
+    ],
     deps = [":service_proto"],
 )
 
 grpc_cc_grpc_library(
     name = "service_cc_grpc",
     srcs = [":service_proto"],
+    visibility = [
+        "//bazel:channelz",
+    ],
     deps = [
         ":service_cc_proto",
     ],
