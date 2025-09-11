@@ -46,6 +46,7 @@ _PYTHON_EXTRA_ENV = {
             "event_engine_listener",
             "event_engine_dns",
             "event_engine_fork",
+            "event_engine_poller_for_python",
         ]
     )
 }
