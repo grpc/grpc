@@ -8291,12 +8291,14 @@ grpc_cc_library(
         "latent_see",
         "loop",
         "map",
+        "memory_quota",
         "message",
         "message_assembler",
         "metadata",
         "metadata_batch",
         "mpsc",
         "ping_promise",
+        "resource_quota",
         "stream_data_queue",
         "sync",
         "transport_common",
@@ -8416,6 +8418,7 @@ grpc_cc_library(
         "arena",
         "call_spine",
         "channel_args",
+        "chttp2_flow_control",
         "grpc_promise_endpoint",
         "http2_settings",
         "loop",
@@ -10756,6 +10759,21 @@ grpc_cc_library(
     deps = [
         "zviz_environment",
         "zviz_html",
+        "zviz_layout",
+    ],
+)
+
+grpc_cc_library(
+    name = "zviz_layout_text",
+    srcs = [
+        "channelz/zviz/layout_text.cc",
+    ],
+    hdrs = ["channelz/zviz/layout_text.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    deps = [
         "zviz_layout",
     ],
 )

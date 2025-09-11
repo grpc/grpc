@@ -131,6 +131,8 @@ grpc_cc_library(
         ":tool",
         ":tool_credentials",
         "//:grpc_base",
+        "//src/core:zviz_entity",
+        "//src/core:zviz_layout_text",
         "//test/cpp/util:grpc_cli_utils",
     ],
     alwayslink = True,

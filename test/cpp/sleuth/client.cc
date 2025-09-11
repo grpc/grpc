@@ -53,4 +53,29 @@ Client::QueryAllChannelzEntities() {
   return entities;
 }
 
+absl::Status Client::QueryTrace(
+    int64_t entity_id, absl::string_view trace_name,
+    absl::FunctionRef<
+        void(size_t, absl::Span<const grpc::channelz::v2::TraceEvent* const>)>
+        callback) {
+  grpc::ClientContext context;
+  grpc::channelz::v2::QueryTraceRequest request;
+  request.set_id(entity_id);
+  request.set_name(trace_name);
+  grpc::channelz::v2::QueryTraceResponse response;
+  std::unique_ptr<grpc::ClientReader<grpc::channelz::v2::QueryTraceResponse>>
+      reader = stub_->QueryTrace(&context, request);
+  while (reader->Read(&response)) {
+    callback(response.events().size() - response.num_events_matched(),
+             response.events());
+  }
+  grpc::Status status = reader->Finish();
+  if (!status.ok()) {
+    // Manual conversion
+    return absl::Status(static_cast<absl::StatusCode>(status.error_code()),
+                        status.error_message());
+  }
+  return absl::OkStatus();
+}
+
 }  // namespace grpc_sleuth

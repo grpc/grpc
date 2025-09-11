@@ -23,6 +23,7 @@
 
 #include "src/core/call/call_spine.h"
 #include "src/core/call/metadata_info.h"
+#include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
@@ -53,6 +54,7 @@ void InitLocalSettings(Http2Settings& settings, const bool is_client) {
 
 void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
                                  Http2Settings& local_settings,
+                                 chttp2::TransportFlowControl& flow_control,
                                  const bool is_client) {
   if (channel_args.Contains(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER)) {
     local_settings.SetHeaderTableSize(
@@ -74,11 +76,12 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
   }
 
   if (channel_args.Contains(GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES)) {
-    local_settings.SetInitialWindowSize(
-        channel_args.GetInt(GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES)
-            .value_or(-1));
-    // TODO(tjagtap) [PH2][P2] : Also set this for flow control.
-    // Refer to read_channel_args() in chttp2_transport.cc for more details.
+    int value =
+        channel_args.GetInt(GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES).value_or(-1);
+    if (value >= 0) {
+      local_settings.SetInitialWindowSize(value);
+      flow_control.set_target_initial_window_size(value);
+    }
   }
 
   local_settings.SetMaxHeaderListSize(

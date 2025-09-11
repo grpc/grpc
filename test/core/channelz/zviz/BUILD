@@ -163,6 +163,18 @@ grpc_fuzz_test(
 )
 
 grpc_fuzz_test(
+    name = "layout_text_test",
+    srcs = ["layout_text_test.cc"],
+    external_deps = [
+        "gtest",
+        "gtest_main",
+    ],
+    deps = [
+        "//src/core:zviz_layout_text",
+    ],
+)
+
+grpc_fuzz_test(
     name = "html_integration_test",
     srcs = ["html_integration_test.cc"],
     external_deps = [

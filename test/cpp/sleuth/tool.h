@@ -72,12 +72,13 @@ class ToolRegistry {
 
 }  // namespace grpc_sleuth
 
-#define SLEUTH_TOOL(name, args_description, description)                      \
-  absl::Status name(std::vector<std::string> args);                           \
-  namespace {                                                                 \
-  int r = grpc_sleuth::ToolRegistry::Get()->Register(#name, args_description, \
-                                                     description, name);      \
-  }                                                                           \
+#define SLEUTH_TOOL(name, args_description, description)                  \
+  absl::Status name(std::vector<std::string> args);                       \
+  namespace {                                                             \
+  int registration_for_tool_##name =                                      \
+      grpc_sleuth::ToolRegistry::Get()->Register(#name, args_description, \
+                                                 description, name);      \
+  }                                                                       \
   absl::Status name(GRPC_UNUSED std::vector<std::string> args)
 
 #endif  // GRPC_TEST_CPP_SLEUTH_TOOL_H
