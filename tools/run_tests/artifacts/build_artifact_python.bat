@@ -49,10 +49,10 @@ python setup.py build_ext -c %EXT_COMPILER% || goto :error
 popd
 
 @rem Build gRPC Python distributions
-python setup.py bdist_wheel || goto :error
+python -m build || goto :error
 
 pushd tools\distrib\python\grpcio_tools
-python setup.py bdist_wheel || goto :error
+python -m build || goto :error
 popd
 
 @rem Ensure the generate artifacts are valid.
