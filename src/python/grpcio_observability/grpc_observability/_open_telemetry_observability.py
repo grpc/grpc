@@ -53,6 +53,7 @@ GRPC_METHOD_LABEL = "grpc.method"
 GRPC_TARGET_LABEL = "grpc.target"
 GRPC_CLIENT_METRIC_PREFIX = "grpc.client"
 GRPC_OTHER_LABEL_VALUE = "other"
+TRACEPARENT_VERSION_ID = "00"
 _observability_lock: threading.RLock = threading.RLock()
 _OPEN_TELEMETRY_OBSERVABILITY: Optional["OpenTelemetryObservability"] = None
 
@@ -182,14 +183,12 @@ class _OpenTelemetryPlugin:
             self._record_stats_data(stats_data)
 
     def is_tracing_configured(self) -> bool:
-        return self._tracer is not None and self._text_map_propagator is not None
+        return self._tracer and self._text_map_propagator
 
-    def save_trace_context(
-        self, trace_id: str, span_id: str, is_sampled: bool, version_id: str = "00"
-    ) -> None:
+    def save_trace_context(self, trace_id: str, span_id: str, is_sampled: bool) -> None:
         if self.is_tracing_configured():
             # Header formatting as per https://www.w3.org/TR/trace-context/#traceparent-header
-            traceparent = f"{version_id}-{trace_id}-{span_id}-{is_sampled:02x}"
+            traceparent = f"{TRACEPARENT_VERSION_ID}-{trace_id}-{span_id}-{is_sampled:02x}"
             self._trace_ctx = self._text_map_propagator.extract(
                 carrier={"traceparent": traceparent},
                 context=self._trace_ctx
