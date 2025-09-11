@@ -11096,10 +11096,22 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(channelz_tool_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+  src/core/channelz/zviz/data.cc
+  src/core/channelz/zviz/entity.cc
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/strings.cc
+  src/core/channelz/zviz/style.cc
+  src/core/channelz/zviz/trace.cc
   test/cpp/sleuth/channelz_tool.cc
   test/cpp/sleuth/channelz_tool_test.cc
   test/cpp/sleuth/client.cc

@@ -10761,6 +10761,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "zviz_layout_text",
+    srcs = [
+        "channelz/zviz/layout_text.cc",
+    ],
+    hdrs = ["channelz/zviz/layout_text.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/strings:str_format",
+    ],
+    deps = [
+        "zviz_layout",
+    ],
+)
+
+grpc_cc_library(
     name = "zviz_format_entity_list",
     srcs = [
         "channelz/zviz/format_entity_list.cc",
