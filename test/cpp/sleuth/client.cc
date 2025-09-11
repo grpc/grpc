@@ -69,7 +69,13 @@ absl::Status Client::QueryTrace(
     callback(response.events().size() - response.num_events_matched(),
              response.events());
   }
-  return reader->Finish();
+  grpc::Status status = reader->Finish();
+  if (!status.ok()) {
+    // Manual conversion
+    return absl::Status(static_cast<absl::StatusCode>(status.error_code()),
+                        status.error_message());
+  }
+  return absl::OkStatus();
 }
 
 }  // namespace grpc_sleuth
