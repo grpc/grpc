@@ -11,7 +11,7 @@ name = "grpcio"
 dynamic = ["version"]
 description = "HTTP/2-based RPC framework"
 readme = "src/python/grpcio/README.rst"
-license = "Apache-2.0"
+license-files = ["LICENSE"]
 authors = [
     {name = "The gRPC Authors", email = "grpc-io@googlegroups.com"}
 ]
