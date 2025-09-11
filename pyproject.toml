@@ -8,10 +8,9 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "grpcio"
-dynamic = ["version"]
+dynamic = ["version", "license"]
 description = "HTTP/2-based RPC framework"
 readme = "src/python/grpcio/README.rst"
-license-files = ["LICENSE"]
 authors = [
     {name = "The gRPC Authors", email = "grpc-io@googlegroups.com"}
 ]

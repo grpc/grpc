@@ -570,6 +570,7 @@ shutil.copyfile(
 
 setuptools.setup(
     # Static metadata is now in pyproject.toml
+    license="Apache License 2.0",
     ext_modules=CYTHON_EXTENSION_MODULES,
     cmdclass=COMMAND_CLASS,
 )
