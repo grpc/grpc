@@ -516,7 +516,9 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
 
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint),
-      GetChannelArgs().Set(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS, 2),
+      GetChannelArgs()
+          .Set(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS, 2)
+          .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, true),
       event_engine(), nullptr);
 
   client_transport->TestOnlySpawnPromise(
@@ -534,14 +536,11 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
       });
   client_transport->TestOnlySpawnPromise(
       "PingRequest", [&client_transport, ping_complete] {
-        return Map(TrySeq(
-                       ping_complete->Wait(),
-                       [&client_transport] {
-                         return client_transport->TestOnlyTriggerWriteCycle();
-                       },
-                       [&client_transport] {
-                         return client_transport->TestOnlySendPing([] {});
-                       }),
+        return Map(TrySeq(ping_complete->Wait(), Sleep(Duration::Seconds(5)),
+                          [&client_transport] {
+                            client_transport->TestOnlyTriggerWriteCycle();
+                            return client_transport->TestOnlySendPing([] {});
+                          }),
                    [](auto) { Crash("Unreachable"); });
       });
   event_engine()->TickUntilIdle();
