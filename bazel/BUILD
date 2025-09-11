@@ -66,7 +66,9 @@ package_group(
 
 package_group(
     name = "channelz",
-    packages = [],
+    packages = [
+        "//...",
+    ],
 )
 
 package_group(

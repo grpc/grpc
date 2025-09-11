@@ -470,7 +470,7 @@ Status ChannelzV2Service::QueryTrace(
   auto ztrace = node->RunZTrace(
       request->name(), std::move(args),
       grpc_event_engine::experimental::GetDefaultEventEngine(),
-      [&state, writer](absl::StatusOr<std::optional<std::string>> response) {
+      [state, writer](absl::StatusOr<std::optional<std::string>> response) {
         if (state->done.HasBeenNotified()) return;
         grpc_core::MutexLock lock(&state->mu);
         if (!response.ok()) {

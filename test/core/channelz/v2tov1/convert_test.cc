@@ -617,6 +617,36 @@ TEST(ConvertTest, ChannelBasicJson) {
   EXPECT_EQ(state.at("state").string(), "READY");
 }
 
+TEST(ConvertTest, ChannelTraceHasCreationTimestamp) {
+  const auto v2 = ParseEntity(R"pb(
+    id: 4
+    kind: "channel"
+    trace {
+      description: "Channel created"
+      timestamp { seconds: 123, nanos: 456 }
+    }
+    trace {
+      description: "Something else"
+      timestamp { seconds: 789, nanos: 101 }
+    }
+  )pb");
+  FakeEntityFetcher fetcher({});
+  auto v1_str = ConvertChannel(v2, fetcher, false);
+  ASSERT_TRUE(v1_str.ok());
+  grpc::channelz::v1::Channel v1;
+  ASSERT_TRUE(v1.ParseFromString(*v1_str));
+  EXPECT_EQ(v1.ref().channel_id(), 4);
+  EXPECT_EQ(v1.data().trace().creation_timestamp().seconds(), 123);
+  EXPECT_EQ(v1.data().trace().creation_timestamp().nanos(), 456);
+  ASSERT_EQ(v1.data().trace().events().size(), 2);
+  EXPECT_EQ(v1.data().trace().events(0).description(), "Channel created");
+  EXPECT_EQ(v1.data().trace().events(0).timestamp().seconds(), 123);
+  EXPECT_EQ(v1.data().trace().events(0).timestamp().nanos(), 456);
+  EXPECT_EQ(v1.data().trace().events(1).description(), "Something else");
+  EXPECT_EQ(v1.data().trace().events(1).timestamp().seconds(), 789);
+  EXPECT_EQ(v1.data().trace().events(1).timestamp().nanos(), 101);
+}
+
 void FuzzConvertChannel(
     const grpc::channelz::v2::Entity& entity_proto,
     const absl::flat_hash_map<int64_t, grpc::channelz::v2::Entity>&
