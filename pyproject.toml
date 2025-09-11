@@ -1,0 +1,57 @@
+[build-system]
+requires = [
+    "setuptools",
+    "wheel",
+    "cython>=3.1.1",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "grpcio"
+dynamic = ["version"]
+description = "HTTP/2-based RPC framework"
+readme = "src/python/grpcio/README.rst"
+license = "Apache-2.0"
+authors = [
+    {name = "The gRPC Authors", email = "grpc-io@googlegroups.com"}
+]
+maintainers = [
+    {name = "The gRPC Authors", email = "grpc-io@googlegroups.com"}
+]
+keywords = ["grpc", "rpc", "http2", "protobuf"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "typing-extensions~=4.12",
+]
+[project.optional-dependencies]
+protobuf = ["grpcio-tools>=1.75.0.dev0"]
+
+[project.urls]
+Homepage = "https://grpc.io"
+Documentation = "https://grpc.github.io/grpc/python"
+Repository = "https://github.com/grpc/grpc"
+"Bug Tracker" = "https://github.com/grpc/grpc/issues"
+
+[tool.setuptools]
+package-dir = {"" = "src/python/grpcio"}
+packages = {find = {where = ["src/python/grpcio"]}}
+
+[tool.setuptools.package-data]
+"grpc._cython" = [
+    "_credentials/roots.pem",
+    "_windows/grpc_c.32.python",
+    "_windows/grpc_c.64.python",
+]
+
+[tool.setuptools.dynamic]
+version = {attr = "grpc_version.VERSION"}

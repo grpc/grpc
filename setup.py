@@ -80,7 +80,7 @@ UPBDEFS_GRPC_GENERATED_INCLUDE = (
 UTF8_RANGE_INCLUDE = (os.path.join("third_party", "utf8_range"),)
 XXHASH_INCLUDE = (os.path.join("third_party", "xxhash"),)
 ZLIB_INCLUDE = (os.path.join("third_party", "zlib"),)
-README = os.path.join(PYTHON_STEM, "README.rst")
+# README path moved to pyproject.toml
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
@@ -90,7 +90,6 @@ sys.path.insert(0, os.path.abspath(PYTHON_STEM))
 import _parallel_compile_patch
 import _spawn_patch
 import grpc_core_dependencies
-import python_version
 
 import commands
 import grpc_version
@@ -99,20 +98,7 @@ _parallel_compile_patch.monkeypatch_compile_maybe()
 _spawn_patch.monkeypatch_spawn()
 
 
-LICENSE = "Apache License 2.0"
-
-CLASSIFIERS = (
-    [
-        "Development Status :: 5 - Production/Stable",
-        "Programming Language :: Python",
-        "Programming Language :: Python :: 3",
-    ]
-    + [
-        f"Programming Language :: Python :: {x}"
-        for x in python_version.SUPPORTED_PYTHON_VERSIONS
-    ]
-    + ["License :: OSI Approved :: Apache Software License"]
-)
+# Static metadata moved to pyproject.toml
 
 
 def _env_bool_value(env_name, default):
@@ -544,19 +530,7 @@ def cython_extensions_and_necessity():
 
 CYTHON_EXTENSION_MODULES, need_cython = cython_extensions_and_necessity()
 
-PACKAGE_DIRECTORIES = {
-    "": PYTHON_STEM,
-}
-
-INSTALL_REQUIRES = ("typing-extensions~=4.12",)
-
-EXTRAS_REQUIRES = {
-    "protobuf": "grpcio-tools>={version}".format(version=grpc_version.VERSION),
-}
-
-SETUP_REQUIRES = (
-    INSTALL_REQUIRES + ("Sphinx~=1.8.1",) if ENABLE_DOCUMENTATION_BUILD else ()
-)
+# Dependencies moved to pyproject.toml
 
 try:
     import Cython
@@ -571,7 +545,7 @@ except ImportError:
         sys.stderr.write(
             "We could not find Cython. Setup may take 10-20 minutes.\n"
         )
-        SETUP_REQUIRES += ("cython==3.1.1",)
+        # Cython is now specified in pyproject.toml build-system.requires
 
 COMMAND_CLASS = {
     "doc": commands.SphinxDocumentation,
@@ -592,40 +566,10 @@ shutil.copyfile(
     os.path.join("etc", "roots.pem"), os.path.join(credentials_dir, "roots.pem")
 )
 
-PACKAGE_DATA = {
-    # Binaries that may or may not be present in the final installation, but are
-    # mentioned here for completeness.
-    "grpc._cython": [
-        "_credentials/roots.pem",
-        "_windows/grpc_c.32.python",
-        "_windows/grpc_c.64.python",
-    ],
-}
-PACKAGES = setuptools.find_packages(PYTHON_STEM)
+# Package data moved to pyproject.toml
 
 setuptools.setup(
-    name="grpcio",
-    version=grpc_version.VERSION,
-    description="HTTP/2-based RPC framework",
-    author="The gRPC Authors",
-    author_email="grpc-io@googlegroups.com",
-    url="https://grpc.io",
-    project_urls={
-        "Source Code": "https://github.com/grpc/grpc",
-        "Bug Tracker": "https://github.com/grpc/grpc/issues",
-        "Documentation": "https://grpc.github.io/grpc/python",
-    },
-    license=LICENSE,
-    classifiers=CLASSIFIERS,
-    long_description_content_type="text/x-rst",
-    long_description=open(README).read(),
+    # Static metadata is now in pyproject.toml
     ext_modules=CYTHON_EXTENSION_MODULES,
-    packages=list(PACKAGES),
-    package_dir=PACKAGE_DIRECTORIES,
-    package_data=PACKAGE_DATA,
-    python_requires=f">={python_version.MIN_PYTHON_VERSION}",
-    install_requires=INSTALL_REQUIRES,
-    extras_require=EXTRAS_REQUIRES,
-    setup_requires=SETUP_REQUIRES,
     cmdclass=COMMAND_CLASS,
 )
