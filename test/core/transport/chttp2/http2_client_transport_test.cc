@@ -31,6 +31,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
@@ -516,7 +517,9 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
 
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint),
-      GetChannelArgs().Set(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS, 2),
+      GetChannelArgs()
+          .Set(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS, 2)
+          .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, true),
       event_engine(), nullptr);
 
   client_transport->TestOnlySpawnPromise(
@@ -534,14 +537,11 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
       });
   client_transport->TestOnlySpawnPromise(
       "PingRequest", [&client_transport, ping_complete] {
-        return Map(TrySeq(
-                       ping_complete->Wait(),
-                       [&client_transport] {
-                         return client_transport->TestOnlyTriggerWriteCycle();
-                       },
-                       [&client_transport] {
-                         return client_transport->TestOnlySendPing([] {});
-                       }),
+        return Map(TrySeq(ping_complete->Wait(), Sleep(Duration::Seconds(5)),
+                          [&client_transport] {
+                            client_transport->TestOnlyTriggerWriteCycle();
+                            return client_transport->TestOnlySendPing([] {});
+                          }),
                    [](auto) { Crash("Unreachable"); });
       });
   event_engine()->TickUntilIdle();
@@ -667,6 +667,9 @@ TEST(Http2CommonTransportTest, TestReadChannelArgs) {
   // Test to validate that ReadChannelArgs reads all the channel args
   // correctly.
   Http2Settings settings;
+  chttp2::TransportFlowControl transport_flow_control(
+      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*memory_owner=*/nullptr);
   ChannelArgs channel_args =
       ChannelArgs()
           .Set(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER, 2048)
@@ -675,7 +678,8 @@ TEST(Http2CommonTransportTest, TestReadChannelArgs) {
           .Set(GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE, true)
           .Set(GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY, 1)
           .Set(GRPC_ARG_SECURITY_FRAME_ALLOWED, true);
-  ReadSettingsFromChannelArgs(channel_args, settings, /*is_client=*/true);
+  ReadSettingsFromChannelArgs(channel_args, settings, transport_flow_control,
+                              /*is_client=*/true);
   // Settings read from ChannelArgs.
   EXPECT_EQ(settings.header_table_size(), 2048u);
   EXPECT_EQ(settings.initial_window_size(), 1024u);
@@ -704,7 +708,8 @@ TEST(Http2CommonTransportTest, TestReadChannelArgs) {
   EXPECT_EQ(settings2.allow_true_binary_metadata(), false);
   EXPECT_EQ(settings2.allow_security_frame(), false);
 
-  ReadSettingsFromChannelArgs(ChannelArgs(), settings2, /*is_client=*/true);
+  ReadSettingsFromChannelArgs(ChannelArgs(), settings2, transport_flow_control,
+                              /*is_client=*/true);
   EXPECT_EQ(settings2.header_table_size(), 4096u);
   EXPECT_EQ(settings2.max_concurrent_streams(), 4294967295u);
   EXPECT_EQ(settings2.initial_window_size(), 65535u);

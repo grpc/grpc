@@ -315,7 +315,10 @@ YODEL_TEST(StreamDataQueueFuzzTest, EnqueueDequeueMultiParty) {
   GetParty()->Spawn(
       "EnqueuePromise",
       TrySeq(
-          stream_data_queue.EnqueueInitialMetadata(TestClientInitialMetadata()),
+          [&stream_data_queue, this]() {
+            return stream_data_queue.EnqueueInitialMetadata(
+                TestClientInitialMetadata());
+          },
           [&stream_data_queue, &messages_to_be_sent, &message_index] {
             return Loop([&stream_data_queue, &messages_to_be_sent,
                          &message_index] {

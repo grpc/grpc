@@ -42,6 +42,7 @@
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
@@ -231,7 +232,8 @@ class Http2ClientTransport final : public ClientTransport {
   struct Stream : public RefCounted<Stream> {
     explicit Stream(CallHandler call, const uint32_t stream_id1,
                     bool allow_true_binary_metadata_peer,
-                    bool allow_true_binary_metadata_acked)
+                    bool allow_true_binary_metadata_acked,
+                    chttp2::TransportFlowControl& transport_flow_control)
         : call(std::move(call)),
           stream_state(HttpStreamState::kIdle),
           stream_id(stream_id1),
@@ -241,7 +243,8 @@ class Http2ClientTransport final : public ClientTransport {
           data_queue(MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
               /*is_client*/ true, /*stream_id*/ stream_id1,
               /*queue_size*/ kStreamQueueSize,
-              allow_true_binary_metadata_peer)) {}
+              allow_true_binary_metadata_peer)),
+          flow_control(&transport_flow_control) {}
 
     ////////////////////////////////////////////////////////////////////////////
     // Data Queue Helpers
@@ -364,6 +367,7 @@ class Http2ClientTransport final : public ClientTransport {
     bool did_push_initial_metadata;
     bool did_push_trailing_metadata;
     RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> data_queue;
+    chttp2::StreamFlowControl flow_control;
   };
 
   uint32_t NextStreamId(
@@ -712,6 +716,8 @@ class Http2ClientTransport final : public ClientTransport {
   // TODO(tjagtap) : [PH2][P1] : Plumb this with the necessary frame size flow
   // control workflow corresponding to grpc_chttp2_act_on_flowctl_action
   GRPC_UNUSED bool enable_preferred_rx_crypto_frame_advertisement_;
+  MemoryOwner memory_owner_;
+  chttp2::TransportFlowControl flow_control_;
 };
 
 // Since the corresponding class in CHTTP2 is about 3.9KB, our goal is to

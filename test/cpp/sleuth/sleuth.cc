@@ -28,7 +28,7 @@ void UsageThenDie() {
 }
 
 int main(int argc, char** argv) {
-  CHECK_GT(grpc_sleuth::ToolRegistry::Get()->GetMetadata().size(), 0);
+  CHECK_GT(grpc_sleuth::ToolRegistry::Get()->GetMetadata().size(), 0u);
   grpc::testing::InitTest(&argc, &argv, /*remove_flags=*/true);
   if (argc < 2) UsageThenDie();
   auto tool_name = argv[1];
