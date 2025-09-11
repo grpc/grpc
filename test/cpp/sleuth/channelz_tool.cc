@@ -16,6 +16,7 @@
 #include "absl/status/status.h"
 #include "src/core/channelz/zviz/entity.h"
 #include "src/core/channelz/zviz/layout_text.h"
+#include "src/core/channelz/zviz/trace.h"
 #include "test/cpp/sleuth/client.h"
 #include "test/cpp/sleuth/tool.h"
 #include "test/cpp/sleuth/tool_credentials.h"
@@ -79,6 +80,46 @@ SLEUTH_TOOL(dump_channelz, "[destination]",
   std::cout << root.Render();
 
   return absl::OkStatus();
+}
+
+SLEUTH_TOOL(ztrace, "entity [trace_name]",
+            "Dumps a ztrace. If trace_name is not specified, defaults to "
+            "'transport_frames'.") {
+  if (args.size() > 2) {
+    return absl::InvalidArgumentError("Too many arguments");
+  }
+  if (args.empty()) {
+    return absl::InvalidArgumentError("No entity id provided");
+  }
+  int64_t entity_id;
+  if (!absl::SimpleAtoi(args[0], &entity_id)) {
+    return absl::InvalidArgumentError("Invalid entity id");
+  }
+  std::string trace_name = args.size() == 2 ? args[1] : "transport_frames";
+
+  auto target = absl::GetFlag(FLAGS_channelz_target);
+  if (!target.has_value()) {
+    return absl::InvalidArgumentError("--channelz_target is required");
+  }
+  auto client = Client(*target, ToolCredentials());
+  SleuthEnvironment env({});
+  return client.QueryTrace(
+      entity_id, trace_name, [&](size_t missed, const auto& events) {
+        grpc_zviz::layout::TextElement root;
+        root.AppendText(grpc_zviz::layout::Intent::kNote,
+                        absl::StrCat(missed, " events not displayed"));
+        auto& table = root.AppendTable(grpc_zviz::layout::TableIntent::kTrace);
+        table.AppendColumn().AppendText(grpc_zviz::layout::Intent::kKey,
+                                        "Timestamp");
+        table.AppendColumn().AppendText(grpc_zviz::layout::Intent::kValue,
+                                        "Details");
+        table.NewRow();
+        for (const auto& event : events) {
+          grpc_zviz::Format(env, *event, table);
+          table.NewRow();
+        }
+        std::cout << root.Render();
+      });
 }
 
 }  // namespace grpc_sleuth

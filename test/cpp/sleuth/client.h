@@ -33,6 +33,12 @@ class Client {
   absl::StatusOr<std::vector<grpc::channelz::v2::Entity>>
   QueryAllChannelzEntities();
 
+  absl::Status QueryTrace(
+      int64_t entity_id, absl::string_view trace_name,
+      absl::FunctionRef<
+          void(size_t, absl::Span<const grpc::channelz::v2::TraceEvent* const>)>
+          callback);
+
  private:
   std::shared_ptr<grpc::Channel> channel_;
   std::unique_ptr<grpc::channelz::v2::Channelz::Stub> stub_;
