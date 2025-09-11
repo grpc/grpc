@@ -24,6 +24,7 @@
 
 #include "src/core/call/call_spine.h"
 #include "src/core/call/metadata_info.h"
+#include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/promise/mpsc.h"
@@ -65,7 +66,9 @@ enum class HttpStreamState : uint8_t {
 void InitLocalSettings(Http2Settings& settings, const bool is_client);
 
 void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
-                                 Http2Settings& settings, const bool is_client);
+                                 Http2Settings& local_settings,
+                                 chttp2::TransportFlowControl& flow_control,
+                                 const bool is_client);
 
 }  // namespace http2
 }  // namespace grpc_core
