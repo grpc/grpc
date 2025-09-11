@@ -29,7 +29,7 @@ class TextTable;
 class TextElement : public Element {
  public:
   explicit TextElement(int indent = 0);
-  ~TextElement() override = default;
+  ~TextElement() override;
 
   Element& AppendText(Intent intent, absl::string_view text) override;
   Element& AppendLink(Intent intent, absl::string_view text,

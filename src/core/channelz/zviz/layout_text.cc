@@ -21,6 +21,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
+#include "layout_text.h"
 
 namespace grpc_zviz::layout {
 
@@ -33,6 +34,8 @@ std::string Indent(int indent) { return std::string(indent * 2, ' '); }
 //
 
 TextElement::TextElement(int indent) : indent_(indent) {}
+
+TextElement::~TextElement() = default;
 
 std::string TextElement::Render() const {
   std::string out;
