@@ -428,13 +428,12 @@ void EnqueueInitialMetadataAndCheckSuccess(
     MetadataHandle&& metadata, const bool expected_writeable_state,
     const WritableStreams::StreamPriority expected_priority) {
   LOG(INFO) << "Enqueueing initial metadata";
-  auto promise =
+  auto result =
       queue->EnqueueInitialMetadata(std::forward<MetadataHandle>(metadata));
-  auto result = promise();
-  EXPECT_TRUE(result.ready());
-  EXPECT_TRUE(result.value().ok());
-  EXPECT_EQ(result.value().value().became_writable, expected_writeable_state);
-  EXPECT_EQ(result.value().value().priority, expected_priority);
+
+  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(result.value().became_writable, expected_writeable_state);
+  EXPECT_EQ(result.value().priority, expected_priority);
   LOG(INFO) << "Enqueueing initial metadata success";
 }
 
@@ -444,13 +443,12 @@ void EnqueueTrailingMetadataAndCheckSuccess(
     MetadataHandle&& metadata, const bool expected_writeable_state,
     const WritableStreams::StreamPriority expected_priority) {
   LOG(INFO) << "Enqueueing trailing metadata";
-  auto promise =
+  auto result =
       queue->EnqueueTrailingMetadata(std::forward<MetadataHandle>(metadata));
-  auto result = promise();
-  EXPECT_TRUE(result.ready());
-  EXPECT_TRUE(result.value().ok());
-  EXPECT_EQ(result.value().value().became_writable, expected_writeable_state);
-  EXPECT_EQ(result.value().value().priority, expected_priority);
+
+  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(result.value().became_writable, expected_writeable_state);
+  EXPECT_EQ(result.value().priority, expected_priority);
   LOG(INFO) << "Enqueueing trailing metadata success";
 }
 
@@ -477,12 +475,10 @@ void EnqueueResetStreamAndCheckSuccess(
     const bool expected_writeable_state,
     const WritableStreams::StreamPriority expected_priority) {
   LOG(INFO) << "Enqueueing reset stream";
-  auto promise = queue->EnqueueResetStream(/*error_code=*/0);
-  auto result = promise();
-  EXPECT_TRUE(result.ready());
-  EXPECT_TRUE(result.value().ok());
-  EXPECT_EQ(result.value().value().became_writable, expected_writeable_state);
-  EXPECT_EQ(result.value().value().priority, expected_priority);
+  auto result = queue->EnqueueResetStream(/*error_code=*/0);
+  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(result.value().became_writable, expected_writeable_state);
+  EXPECT_EQ(result.value().priority, expected_priority);
   LOG(INFO) << "Enqueueing reset stream success";
 }
 
@@ -491,12 +487,11 @@ void EnqueueHalfClosedAndCheckSuccess(
     const bool expected_writeable_state,
     const WritableStreams::StreamPriority expected_priority) {
   LOG(INFO) << "Enqueueing half closed";
-  auto promise = queue->EnqueueHalfClosed();
-  auto result = promise();
-  EXPECT_TRUE(result.ready());
-  EXPECT_TRUE(result.value().ok());
-  EXPECT_EQ(result.value().value().became_writable, expected_writeable_state);
-  EXPECT_EQ(result.value().value().priority, expected_priority);
+  auto result = queue->EnqueueHalfClosed();
+
+  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(result.value().became_writable, expected_writeable_state);
+  EXPECT_EQ(result.value().priority, expected_priority);
   LOG(INFO) << "Enqueueing half closed success";
 }
 

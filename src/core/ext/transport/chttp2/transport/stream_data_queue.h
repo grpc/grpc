@@ -54,6 +54,10 @@ class SimpleQueue {
     return PollEnqueue(data, tokens);
   }
 
+  absl::StatusOr<bool> ImmediateEnqueue(T data, const uint32_t tokens) {
+    return ImmediateEnqueueInternal(std::move(data), tokens);
+  }
+
   // Sync function to dequeue the next entry. Returns nullopt if the queue is
   // empty or if the front of the queue has more tokens than
   // allowed_dequeue_tokens. When allow_oversized_dequeue parameter is set to
@@ -96,6 +100,16 @@ class SimpleQueue {
         << " Max tokens: " << max_tokens_;
     waker_ = GetContext<Activity>()->MakeNonOwningWaker();
     return Pending{};
+  }
+
+  inline absl::StatusOr<bool> ImmediateEnqueueInternal(T data,
+                                                       const uint32_t tokens) {
+    tokens_consumed_ += tokens;
+    queue_.emplace(Entry{std::move(data), tokens});
+    GRPC_STREAM_DATA_QUEUE_DEBUG
+        << "Immediate enqueue successful. Data tokens: " << tokens
+        << " Current tokens consumed: " << tokens_consumed_;
+    return /*became_non_empty*/ (queue_.size() == 1);
   }
 
   std::optional<T> DequeueInternal(const uint32_t allowed_dequeue_tokens,
@@ -202,65 +216,52 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // 2. This MUST be called before any messages are enqueued.
   // 3. MUST not be called after trailing metadata is enqueued.
   // 4. This function is thread safe.
-  auto EnqueueInitialMetadata(MetadataHandle&& metadata) {
+  absl::StatusOr<EnqueueResult> EnqueueInitialMetadata(
+      MetadataHandle&& metadata) {
+    MutexLock lock(&mu_);
     DCHECK(!is_initial_metadata_queued_);
     DCHECK(!is_trailing_metadata_or_half_close_queued_);
     DCHECK(metadata != nullptr);
     DCHECK(!is_reset_stream_queued_);
 
     is_initial_metadata_queued_ = true;
-    return [self = this->Ref(),
-            entry = QueueEntry{InitialMetadataType{std::move(
-                metadata)}}]() mutable -> Poll<absl::StatusOr<EnqueueResult>> {
-      MutexLock lock(&self->mu_);
-      Poll<absl::StatusOr<bool>> result =
-          self->queue_.Enqueue(entry, /*tokens=*/0);
-      if (result.ready()) {
-        GRPC_STREAM_DATA_QUEUE_DEBUG
-            << "Enqueued initial metadata for stream " << self->stream_id_
-            << " with status: " << result.value().status();
-        if (result.value().ok()) {
-          DCHECK(/*became_non_empty*/ result.value().value());
-          return self->UpdateWritableStateLocked(
-              /*became_non_empty*/ result.value().value(),
-              WritableStreams::StreamPriority::kDefault);
-        }
-        return result.value().status();
-      }
-      return Pending{};
-    };
+    absl::StatusOr<bool> result = queue_.ImmediateEnqueue(
+        QueueEntry{InitialMetadataType{std::move(metadata)}}, /*tokens=*/0);
+    if (GPR_UNLIKELY(!result.ok())) {
+      GRPC_STREAM_DATA_QUEUE_DEBUG
+          << "Immediate enqueueing initial metadata for stream " << stream_id_
+          << " failed with status: " << result.status();
+      return result.status();
+    }
+    return UpdateWritableStateLocked(
+        /*became_non_empty*/ result.value(),
+        WritableStreams::StreamPriority::kDefault);
   }
 
   // Enqueue Trailing Metadata.
   // 1. MUST be called at most once.
   // 2. MUST be called only for a server.
   // 3. This function is thread safe.
-  auto EnqueueTrailingMetadata(MetadataHandle&& metadata) {
+  absl::StatusOr<EnqueueResult> EnqueueTrailingMetadata(
+      MetadataHandle&& metadata) {
+    MutexLock lock(&mu_);
     DCHECK(metadata != nullptr);
     DCHECK(!is_reset_stream_queued_);
     DCHECK(!is_client_);
     DCHECK(!is_trailing_metadata_or_half_close_queued_);
 
     is_trailing_metadata_or_half_close_queued_ = true;
-    return [self = this->Ref(),
-            entry = QueueEntry{TrailingMetadataType{std::move(
-                metadata)}}]() mutable -> Poll<absl::StatusOr<EnqueueResult>> {
-      MutexLock lock(&self->mu_);
-      Poll<absl::StatusOr<bool>> result =
-          self->queue_.Enqueue(entry, /*tokens=*/0);
-      if (result.ready()) {
-        GRPC_STREAM_DATA_QUEUE_DEBUG
-            << "Enqueued trailing metadata for stream " << self->stream_id_
-            << " with status: " << result.value().status();
-        if (result.value().ok()) {
-          return self->UpdateWritableStateLocked(
-              /*became_non_empty*/ result.value().value(),
-              WritableStreams::StreamPriority::kStreamClosed);
-        }
-        return result.value().status();
-      }
-      return Pending{};
-    };
+    absl::StatusOr<bool> result = queue_.ImmediateEnqueue(
+        QueueEntry{TrailingMetadataType{std::move(metadata)}}, /*tokens=*/0);
+    if (GPR_UNLIKELY(!result.ok())) {
+      GRPC_STREAM_DATA_QUEUE_DEBUG
+          << "Immediate enqueueing trailing metadata for stream " << stream_id_
+          << " failed with status: " << result.status();
+      return result.status();
+    }
+    return UpdateWritableStateLocked(
+        /*became_non_empty*/ result.value(),
+        WritableStreams::StreamPriority::kStreamClosed);
   }
 
   // Returns a promise that resolves when the message is enqueued. There may be
@@ -287,7 +288,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
             << "Enqueued message for stream " << self->stream_id_
             << " with status: " << result.value().status();
         // TODO(akshitpatel) : [PH2][P2] : Add check for flow control tokens.
-        if (result.value().ok()) {
+        if (GPR_LIKELY(result.value().ok())) {
           return self->UpdateWritableStateLocked(
               /*became_non_empty*/ result.value().value(),
               WritableStreams::StreamPriority::kDefault);
@@ -302,60 +303,51 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // 1. MUST be called at most once.
   // 2. MUST be called only for a client.
   // 3. This function is thread safe.
-  auto EnqueueHalfClosed() {
+  absl::StatusOr<EnqueueResult> EnqueueHalfClosed() {
+    MutexLock lock(&mu_);
     DCHECK(is_initial_metadata_queued_);
     DCHECK(is_client_);
     DCHECK(!is_reset_stream_queued_);
     DCHECK(!is_trailing_metadata_or_half_close_queued_);
 
     is_trailing_metadata_or_half_close_queued_ = true;
-    return [self = this->Ref(), entry = QueueEntry{HalfClosed{}}]() mutable
-               -> Poll<absl::StatusOr<EnqueueResult>> {
-      MutexLock lock(&self->mu_);
-      Poll<absl::StatusOr<bool>> result =
-          self->queue_.Enqueue(entry, /*tokens=*/0);
-      if (result.ready()) {
-        GRPC_STREAM_DATA_QUEUE_DEBUG
-            << "Marking stream " << self->stream_id_ << " as half closed"
-            << " with status: " << result.value().status();
-        if (result.value().ok()) {
-          return self->UpdateWritableStateLocked(
-              /*became_non_empty*/ result.value().value(),
-              WritableStreams::StreamPriority::kStreamClosed);
-        }
-        return result.value().status();
-      }
-      return Pending{};
-    };
+    absl::StatusOr<bool> result =
+        queue_.ImmediateEnqueue(QueueEntry{HalfClosed{}}, /*tokens=*/0);
+    if (GPR_UNLIKELY(!result.ok())) {
+      GRPC_STREAM_DATA_QUEUE_DEBUG
+          << "Immediate enqueueing half closed for stream " << stream_id_
+          << " failed with status: " << result.status();
+      return result.status();
+    }
+    return UpdateWritableStateLocked(
+        /*became_non_empty*/ result.value(),
+        WritableStreams::StreamPriority::kStreamClosed);
   }
 
   // Enqueue Reset Stream.
   // 1. MUST be called at most once.
   // 3. This function is thread safe.
-  auto EnqueueResetStream(uint32_t error_code) {
+  absl::StatusOr<EnqueueResult> EnqueueResetStream(uint32_t error_code) {
+    MutexLock lock(&mu_);
     DCHECK(is_initial_metadata_queued_);
     DCHECK(!is_reset_stream_queued_);
 
+    GRPC_STREAM_DATA_QUEUE_DEBUG
+        << "Immediate enqueueing reset stream for stream " << stream_id_
+        << " with error code: " << error_code;
     is_reset_stream_queued_ = true;
-    return [self = this->Ref(),
-            entry = QueueEntry{ResetStream{
-                error_code}}]() mutable -> Poll<absl::StatusOr<EnqueueResult>> {
-      MutexLock lock(&self->mu_);
-      Poll<absl::StatusOr<bool>> result =
-          self->queue_.Enqueue(entry, /*tokens=*/0);
-      if (result.ready()) {
-        GRPC_STREAM_DATA_QUEUE_DEBUG
-            << "Enqueueing reset stream for stream " << self->stream_id_
-            << " with status: " << result.value().status();
-        if (result.value().ok()) {
-          return self->UpdateWritableStateLocked(
-              /*became_non_empty*/ result.value().value(),
-              WritableStreams::StreamPriority::kStreamClosed);
-        }
-        return result.value().status();
-      }
-      return Pending{};
-    };
+    absl::StatusOr<bool> result = queue_.ImmediateEnqueue(
+        QueueEntry{ResetStream{error_code}}, /*tokens=*/0);
+    if (GPR_UNLIKELY(!result.ok())) {
+      GRPC_STREAM_DATA_QUEUE_DEBUG
+          << "Immediate enqueueing reset stream for stream " << stream_id_
+          << " failed with status: " << result.status();
+      return result.status();
+    }
+
+    return UpdateWritableStateLocked(
+        /*became_non_empty*/ result.value(),
+        WritableStreams::StreamPriority::kStreamClosed);
   }
 
   //////////////////////////////////////////////////////////////////////////////

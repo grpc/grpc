@@ -1201,7 +1201,9 @@ auto Http2ClientTransport::CallOutboundLoop(
         stream != nullptr,
         [self, stream, metadata = std::move(metadata), stream_id]() mutable {
           return TrySeq(
-              stream->EnqueueInitialMetadata(std::move(metadata)),
+              [stream, metadata = std::move(metadata)]() mutable {
+                return stream->EnqueueInitialMetadata(std::move(metadata));
+              },
               [self, stream_id](const EnqueueResult result) {
                 GRPC_HTTP2_CLIENT_DLOG
                     << "Http2ClientTransport CallOutboundLoop "
@@ -1229,7 +1231,7 @@ auto Http2ClientTransport::CallOutboundLoop(
     return If(
         stream != nullptr,
         [self, stream, stream_id]() mutable {
-          return TrySeq(stream->EnqueueHalfClosed(),
+          return TrySeq([stream]() { return stream->EnqueueHalfClosed(); },
                         [self, stream_id](const EnqueueResult result) {
                           GRPC_HTTP2_CLIENT_DLOG
                               << "Http2ClientTransport CallOutboundLoop "
