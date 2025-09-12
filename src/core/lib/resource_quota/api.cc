@@ -100,3 +100,10 @@ extern "C" void grpc_resource_quota_set_max_threads(
       ->thread_quota()
       ->SetMax(new_max_threads);
 }
+
+extern "C" void grpc_resource_quota_set_max_outstanding_streams(
+    grpc_resource_quota* resource_quota, int new_max_outstanding_streams) {
+  grpc_core::ResourceQuota::FromC(resource_quota)
+      ->stream_quota()
+      ->SetMaxOutstandingStreams(new_max_outstanding_streams);
+}

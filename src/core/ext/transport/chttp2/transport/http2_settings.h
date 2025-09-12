@@ -67,7 +67,13 @@ class Http2Settings {
   bool allow_security_frame() const { return allow_security_frame_; }
 
   void SetHeaderTableSize(uint32_t x) { header_table_size_ = x; }
-  void SetMaxConcurrentStreams(uint32_t x) { max_concurrent_streams_ = x; }
+  void SetMaxConcurrentStreams(uint32_t x) {
+    initial_max_concurrent_streams_ = x;
+    max_concurrent_streams_ = x;
+  }
+  void UpdateMaxConcurrentStreams(uint32_t x) {
+    max_concurrent_streams_ = std::min(x, initial_max_concurrent_streams_);
+  }
   void SetInitialWindowSize(uint32_t x) {
     initial_window_size_ = std::min(x, max_initial_window_size());
   }
@@ -154,6 +160,7 @@ class Http2Settings {
   // Currently this is set only once in the lifetime of a transport.
   // We plan to change that in the future.
   uint32_t header_table_size_ = 4096u;
+  uint32_t initial_max_concurrent_streams_ = 4294967295u;
 
   // TODO(tjagtap) [PH2][P4] : Get the history of why this default was decided
   // and write it here.
