@@ -498,6 +498,7 @@ grpc_cc_library(
     deps = [
         "//:gpr_platform",
         "//:gpr_public_hdrs",
+        "//src/core:gpr_time",
     ],
 )
 
