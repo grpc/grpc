@@ -499,9 +499,11 @@ template <typename MetadataHandle>
 void DequeueAndCheckSuccess(
     RefCountedPtr<StreamDataQueue<MetadataHandle>> queue,
     std::vector<Http2Frame> expected_frames, HPackCompressor& encoder,
-    const uint32_t max_tokens = 10, const uint32_t max_frame_length = 10) {
+    const uint8_t expected_flags, const uint32_t max_tokens = 10,
+    const uint32_t max_frame_length = 10) {
   typename StreamDataQueue<MetadataHandle>::DequeueResult frames =
       queue->DequeueFrames(max_tokens, max_frame_length, encoder);
+  EXPECT_EQ(frames.flags, expected_flags);
   EXPECT_EQ(frames.frames.size(), expected_frames.size());
 
   std::vector<Http2Frame>& frames_vector = frames.frames;
@@ -514,10 +516,12 @@ template <typename MetadataHandle>
 void DequeueMessageAndCheckSuccess(
     RefCountedPtr<StreamDataQueue<MetadataHandle>> queue,
     std::vector<int> expected_frames_length, HPackCompressor& encoder,
-    const uint32_t max_tokens = 10, const uint32_t max_frame_length = 10) {
+    const uint8_t expected_flags, const uint32_t max_tokens = 10,
+    const uint32_t max_frame_length = 10) {
   typename StreamDataQueue<MetadataHandle>::DequeueResult frames =
       queue->DequeueFrames(max_tokens, max_frame_length, encoder);
 
+  EXPECT_EQ(frames.flags, expected_flags);
   EXPECT_EQ(frames.frames.size(), expected_frames_length.size());
   std::vector<Http2Frame>& frames_vector = frames.frames;
   for (int count = 0; count < frames.frames.size(); ++count) {
@@ -626,7 +630,8 @@ TEST(StreamDataQueueTest, ClientEmptyDequeueTest) {
           /*stream_id=*/1,
           /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
   EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
-  DequeueAndCheckSuccess(stream_data_queue, std::vector<Http2Frame>(), encoder);
+  DequeueAndCheckSuccess(stream_data_queue, std::vector<Http2Frame>(), encoder,
+                         /*expected_flags=*/0);
   EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
 }
 
@@ -647,8 +652,11 @@ TEST(StreamDataQueueTest, ClientDequeueMetadataSingleFrameTest) {
   GetExpectedHeaderAndContinuationFrames(max_frame_length, expected_frames,
                                          kPathDemoServiceStep,
                                          /*end_stream=*/false);
-  DequeueAndCheckSuccess(stream_data_queue, std::move(expected_frames), encoder,
-                         /*max_tokens=*/10, max_frame_length);
+  DequeueAndCheckSuccess(
+      stream_data_queue, std::move(expected_frames), encoder,
+      /*expected_flags=*/
+      StreamDataQueue<ClientMetadataHandle>::kInitialMetadataDequeued,
+      /*max_tokens=*/10, max_frame_length);
   EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
 }
 
@@ -674,9 +682,12 @@ TEST(StreamDataQueueTest, ClientDequeueFramesTest) {
   GetExpectedHeaderAndContinuationFrames(max_frame_length, expected_frames,
                                          kPathDemoServiceStep,
                                          /*end_stream=*/false);
-  DequeueAndCheckSuccess(stream_data_queue, std::move(expected_frames), encoder,
-                         /*max_tokens=*/10,
-                         /*max_frame_length=*/max_frame_length);
+  DequeueAndCheckSuccess(
+      stream_data_queue, std::move(expected_frames), encoder,
+      /*expected_flags=*/
+      StreamDataQueue<ClientMetadataHandle>::kInitialMetadataDequeued,
+      /*max_tokens=*/10,
+      /*max_frame_length=*/max_frame_length);
 
   EnqueueMessageAndCheckSuccess(
       stream_data_queue,
@@ -685,11 +696,12 @@ TEST(StreamDataQueueTest, ClientDequeueFramesTest) {
       /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
   DequeueMessageAndCheckSuccess(stream_data_queue,
                                 /*expected_frames_length=*/{10, 10, 10, 10, 10},
-                                encoder,
+                                encoder, /*expected_flags=*/0,
                                 /*max_tokens=*/50,
                                 /*max_frame_length=*/10);
   DequeueMessageAndCheckSuccess(stream_data_queue,
                                 /*expected_frames_length=*/{5}, encoder,
+                                /*expected_flags=*/0,
                                 /*max_tokens=*/50,
                                 /*max_frame_length=*/10);
   EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
@@ -701,14 +713,17 @@ TEST(StreamDataQueueTest, ClientDequeueFramesTest) {
       /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
   DequeueMessageAndCheckSuccess(stream_data_queue,
                                 /*expected_frames_length=*/{15, 10}, encoder,
+                                /*expected_flags=*/0,
                                 /*max_tokens=*/25,
                                 /*max_frame_length=*/15);
   DequeueMessageAndCheckSuccess(stream_data_queue,
                                 /*expected_frames_length=*/{15, 10}, encoder,
+                                /*expected_flags=*/0,
                                 /*max_tokens=*/25,
                                 /*max_frame_length=*/15);
   DequeueMessageAndCheckSuccess(stream_data_queue,
                                 /*expected_frames_length=*/{5}, encoder,
+                                /*expected_flags=*/0,
                                 /*max_tokens=*/25,
                                 /*max_frame_length=*/15);
   EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
@@ -761,13 +776,19 @@ TEST(StreamDataQueueTest, ClientEnqueueDequeueFlowTest) {
   GetExpectedHeaderAndContinuationFrames(
       max_frame_length, expected_initial_metadata_frames, kPathDemoServiceStep,
       /*end_stream=*/false);
-  DequeueAndCheckSuccess(stream_data_queue,
-                         std::move(expected_initial_metadata_frames), encoder,
-                         /*max_tokens=*/0, max_frame_length);
+  DequeueAndCheckSuccess(
+      stream_data_queue, std::move(expected_initial_metadata_frames), encoder,
+      /*expected_flags=*/
+      StreamDataQueue<ClientMetadataHandle>::kInitialMetadataDequeued,
+      /*max_tokens=*/0, max_frame_length);
 
   // Dequeue Message, Half Close and Reset Stream
-  DequeueAndCheckSuccess(stream_data_queue, std::move(expected_close_frames),
-                         encoder, /*max_tokens=*/6, max_frame_length);
+  DequeueAndCheckSuccess(
+      stream_data_queue, std::move(expected_close_frames),
+      encoder, /*expected_flags=*/
+      (StreamDataQueue<ClientMetadataHandle>::kHalfCloseDequeued |
+       StreamDataQueue<ClientMetadataHandle>::kResetStreamDequeued),
+      /*max_tokens=*/6, max_frame_length);
   EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
 }
 
@@ -906,13 +927,18 @@ TEST(StreamDataQueueTest, ServerEnqueueDequeueFlowTest) {
   GetExpectedHeaderAndContinuationFrames(
       max_frame_length, expected_initial_metadata_frames, kPathDemoServiceStep2,
       /*end_stream=*/false);
-  DequeueAndCheckSuccess(stream_data_queue,
-                         std::move(expected_initial_metadata_frames), encoder,
-                         /*max_tokens=*/0, max_frame_length);
+  DequeueAndCheckSuccess(
+      stream_data_queue, std::move(expected_initial_metadata_frames), encoder,
+      /*expected_flags=*/
+      StreamDataQueue<ServerMetadataHandle>::kInitialMetadataDequeued,
+      /*max_tokens=*/0, max_frame_length);
 
   // Dequeue Message, Trailing Metadata and Reset Stream
-  DequeueAndCheckSuccess(stream_data_queue, std::move(expected_close_frames),
-                         encoder, /*max_tokens=*/6, max_frame_length);
+  DequeueAndCheckSuccess(
+      stream_data_queue, std::move(expected_close_frames),
+      encoder, /*expected_flags=*/
+      StreamDataQueue<ServerMetadataHandle>::kResetStreamDequeued,
+      /*max_tokens=*/6, max_frame_length);
   EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
 }
 
