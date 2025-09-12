@@ -254,7 +254,7 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport>,
     return std::move(s);
   }
 
-  std::unique_ptr<channelz::ZTrace> GetZTrace(absl::string_view name) {
+  std::unique_ptr<channelz::ZTrace> GetZTrace(absl::string_view name) override {
     if (name == "transport_frames") return ztrace_collector_->MakeZTrace();
     return nullptr;
   }

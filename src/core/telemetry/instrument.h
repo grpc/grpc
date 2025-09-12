@@ -145,15 +145,6 @@
 #include <variant>
 #include <vector>
 
-#include "src/core/channelz/channelz.h"
-#include "src/core/telemetry/histogram.h"
-#include "src/core/util/avl.h"
-#include "src/core/util/dual_ref_counted.h"
-#include "src/core/util/match.h"
-#include "src/core/util/per_cpu.h"
-#include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/single_set_ptr.h"
-#include "src/core/util/sync.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
@@ -164,6 +155,15 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
+#include "src/core/channelz/channelz.h"
+#include "src/core/telemetry/histogram.h"
+#include "src/core/util/avl.h"
+#include "src/core/util/dual_ref_counted.h"
+#include "src/core/util/match.h"
+#include "src/core/util/per_cpu.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/single_set_ptr.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 
