@@ -60,9 +60,6 @@ ignore = [
     "PLC0415", # import should be at the top-level of a file
     "PYI006",  # Use < or >= for sys.version_info comparisons
     "PYI024",  # Use typing.NamedTuple instead of collections.namedtuple
-    "PYI056",  # Calling .{name}() on __all__ may not be supported by all type checkers (use += instead)
-    "PLE0604", # Invalid object in __all__, must contain only strings
-    "PLR0911", # Too many return statements ({returns} > {max_returns})
     "PLR0912", # Too many branches ({branches} > {max_branches})
     "PLR0913", # Too many arguments in function definition ({c_args} > {max_args})
     "PLR1714", # Consider merging multiple comparisons: {expression}. Use a set if the elements are hashable.
