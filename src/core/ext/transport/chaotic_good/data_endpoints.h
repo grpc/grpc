@@ -230,7 +230,7 @@ class OutputBuffers final
 
   void DestroyReader(uint32_t id) ABSL_LOCKS_EXCLUDED(mu_reader_data_);
 
-  void WakeupScheduler();
+  void WakeupScheduler(bool async = false);
   Poll<Empty> SchedulerPollForWork();
   void Schedule() ABSL_LOCKS_EXCLUDED(mu_reader_data_);
 
