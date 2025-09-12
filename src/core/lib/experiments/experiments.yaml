@@ -132,7 +132,7 @@
   allow_in_fuzzing_config: false
 - name: event_engine_poller_for_python
   description: "Enable event engine poller in gRPC Python"
-  expiry: 2025/01/16
+  expiry: 2026/01/16
   owner: eostroukhov@google.com
   test_tags: []
   uses_polling: true
