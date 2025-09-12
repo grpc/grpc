@@ -25,9 +25,10 @@ ls "$EXTERNAL_GIT_ROOT"/input_artifacts
 if [[ "$1" == "binary" ]]
 then
   echo "Testing Python binary distribution"
-  ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[-_0-9a-z.]*.whl)
-  TOOLS_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*tools[-_0-9a-z.]*.whl)
-  OBSERVABILITY_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*observability[-_0-9a-z.]*.whl)
+  # Look for wheel files in both the root input_artifacts directory and subdirectories
+  ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[-_0-9a-z.]*.whl "$EXTERNAL_GIT_ROOT"/input_artifacts/*/grpcio[-_0-9a-z.]*.whl)
+  TOOLS_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*tools[-_0-9a-z.]*.whl "$EXTERNAL_GIT_ROOT"/input_artifacts/*/grpcio[_-]*tools[-_0-9a-z.]*.whl)
+  OBSERVABILITY_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*observability[-_0-9a-z.]*.whl "$EXTERNAL_GIT_ROOT"/input_artifacts/*/grpcio[_-]*observability[-_0-9a-z.]*.whl)
 else
   echo "Testing Python source distribution"
   ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[-_0-9a-z.]*.tar.gz)
