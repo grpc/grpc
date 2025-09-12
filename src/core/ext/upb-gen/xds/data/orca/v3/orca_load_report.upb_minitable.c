@@ -42,15 +42,15 @@ const upb_MiniTable xds__data__orca__v3__OrcaLoadReport_msg_init = {
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f000009, &upb_psf8_1bt},
-    {0x001000003f000011, &upb_psf8_1bt},
-    {0x001800003f000018, &upb_psv8_1bt},
+    {0x000800003f000009, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x001000003f000011, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x003000003f000031, &upb_psf8_1bt},
-    {0x003800003f000039, &upb_psf8_1bt},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x004800003f000049, &upb_psf8_1bt},
+    {0x003000003f000031, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x003800003f000039, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x004800003f000049, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
@@ -75,8 +75,8 @@ const upb_MiniTable xds__data__orca__v3__OrcaLoadReport__RequestCostEntry_msg_in
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x002000003f000011, &upb_psf8_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x002000003f000011, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
@@ -96,8 +96,8 @@ const upb_MiniTable xds__data__orca__v3__OrcaLoadReport__UtilizationEntry_msg_in
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x002000003f000011, &upb_psf8_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x002000003f000011, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
@@ -117,8 +117,8 @@ const upb_MiniTable xds__data__orca__v3__OrcaLoadReport__NamedMetricsEntry_msg_i
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x002000003f000011, &upb_psf8_1bt},
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x002000003f000011, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
   })
 };
