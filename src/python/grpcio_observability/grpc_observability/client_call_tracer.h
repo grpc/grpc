@@ -36,48 +36,37 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracerInterface {
  public:
   class PythonOpenCensusCallAttemptTracer : public CallAttemptTracer {
    public:
-    PythonOpenCensusCallAttemptTracer(PythonOpenCensusCallTracer* parent,
-                                      uint64_t attempt_num,
+    PythonOpenCensusCallAttemptTracer(PythonOpenCensusCallTracer* parent, uint64_t attempt_num,
                                       bool is_transparent_retry);
     std::string TraceId() override {
-      return absl::BytesToHexString(
-          absl::string_view(context_.GetSpanContext().TraceId()));
+      return absl::BytesToHexString(absl::string_view(context_.GetSpanContext().TraceId()));
     }
 
     std::string SpanId() override {
-      return absl::BytesToHexString(
-          absl::string_view(context_.GetSpanContext().SpanId()));
+      return absl::BytesToHexString(absl::string_view(context_.GetSpanContext().SpanId()));
     }
 
     bool IsSampled() override { return context_.GetSpanContext().IsSampled(); }
 
-    void RecordSendInitialMetadata(
-        grpc_metadata_batch* send_initial_metadata) override;
-    void RecordSendTrailingMetadata(
-        grpc_metadata_batch* /*send_trailing_metadata*/) override {}
-    void RecordSendMessage(const grpc_core::Message& /*send_message*/) override;
-    void RecordSendCompressedMessage(
-        const grpc_core::Message& /*send_compressed_message*/) override {}
-    void RecordReceivedInitialMetadata(
-        grpc_metadata_batch* /*recv_initial_metadata*/) override;
-    void RecordReceivedMessage(
-        const grpc_core::Message& /*recv_message*/) override;
+    void RecordSendInitialMetadata(grpc_metadata_batch* send_initial_metadata) override;
+    void RecordSendTrailingMetadata(grpc_metadata_batch* /*send_trailing_metadata*/) override {}
+    void RecordSendMessage(const grpc_core::Message& send_message) override;
+    void RecordSendCompressedMessage(const grpc_core::Message& send_compressed_message) override;
+    void RecordReceivedInitialMetadata(grpc_metadata_batch* /*recv_initial_metadata*/) override;
+    void RecordReceivedMessage(const grpc_core::Message& /*recv_message*/) override;
     void RecordReceivedDecompressedMessage(
-        const grpc_core::Message& /*recv_decompressed_message*/) override {}
+        const grpc_core::Message& recv_decompressed_message) override;
     void RecordReceivedTrailingMetadata(
         absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
         const grpc_transport_stream_stats* transport_stream_stats) override;
-    void RecordIncomingBytes(
-        const TransportByteSize& transport_byte_size) override;
-    void RecordOutgoingBytes(
-        const TransportByteSize& transport_byte_size) override;
+    void RecordIncomingBytes(const TransportByteSize& transport_byte_size) override;
+    void RecordOutgoingBytes(const TransportByteSize& transport_byte_size) override;
     void RecordCancel(grpc_error_handle cancel_error) override;
     void RecordEnd() override;
     void RecordAnnotation(absl::string_view annotation) override;
     void RecordAnnotation(const Annotation& annotation) override;
     std::shared_ptr<grpc_core::TcpCallTracer> StartNewTcpTrace() override;
-    void SetOptionalLabel(OptionalLabelKey key,
-                          grpc_core::RefCountedStringValue value) override;
+    void SetOptionalLabel(OptionalLabelKey key, grpc_core::RefCountedStringValue value) override;
 
    private:
     // Maximum size of trace context is sent on the wire.
@@ -94,8 +83,7 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracerInterface {
     // End status code
     absl::StatusCode status_code_;
     // Avoid std::map to avoid per-call allocations.
-    std::array<grpc_core::RefCountedStringValue,
-               static_cast<size_t>(OptionalLabelKey::kSize)>
+    std::array<grpc_core::RefCountedStringValue, static_cast<size_t>(OptionalLabelKey::kSize)>
         optional_labels_array_;
     std::vector<Label> labels_from_peer_;
     bool is_trailers_only_ = false;
@@ -107,30 +95,28 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracerInterface {
     std::atomic<uint64_t> outgoing_bytes_{0};
   };
 
-  explicit PythonOpenCensusCallTracer(
-      const char* method, const char* target, const char* trace_id,
-      const char* parent_span_id, const char* identifier,
-      const std::vector<Label>& exchange_labels, bool tracing_enabled,
-      bool add_csm_optional_labels, bool registered_method);
+  explicit PythonOpenCensusCallTracer(const char* method, const char* target, const char* trace_id,
+                                      const char* parent_span_id, const char* identifier,
+                                      const std::vector<Label>& exchange_labels,
+                                      bool tracing_enabled, bool add_csm_optional_labels,
+                                      bool registered_method);
   ~PythonOpenCensusCallTracer() override;
 
   std::string TraceId() override {
-    return absl::BytesToHexString(
-        absl::string_view(context_.GetSpanContext().TraceId()));
+    return absl::BytesToHexString(absl::string_view(context_.GetSpanContext().TraceId()));
   }
 
   std::string SpanId() override {
-    return absl::BytesToHexString(
-        absl::string_view(context_.GetSpanContext().SpanId()));
+    return absl::BytesToHexString(absl::string_view(context_.GetSpanContext().SpanId()));
   }
 
   bool IsSampled() override { return context_.GetSpanContext().IsSampled(); }
 
   void GenerateContext();
-  PythonOpenCensusCallAttemptTracer* StartNewAttempt(
-      bool is_transparent_retry) override;
+  PythonOpenCensusCallAttemptTracer* StartNewAttempt(bool is_transparent_retry) override;
 
   void RecordAnnotation(absl::string_view annotation) override;
+
   void RecordAnnotation(const Annotation& annotation) override;
 
  private:
