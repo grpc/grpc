@@ -204,9 +204,14 @@ then
     "${AUDITWHEEL}" repair "$wheel" --strip --wheel-dir "$ARTIFACT_DIR"
     rm "$wheel"
   done
+  # Copy repaired wheels to parent directory for distribtest compatibility
+  cp -r "$ARTIFACT_DIR"/*.whl "$(dirname "$ARTIFACT_DIR")/" 2>/dev/null || true
 else
   cp -r dist/*.whl "$ARTIFACT_DIR"
   cp -r tools/distrib/python/grpcio_tools/dist/*.whl "$ARTIFACT_DIR"
+  # Also copy wheel files to parent directory for distribtest compatibility
+  cp -r dist/*.whl "$(dirname "$ARTIFACT_DIR")/"
+  cp -r tools/distrib/python/grpcio_tools/dist/*.whl "$(dirname "$ARTIFACT_DIR")/"
 fi
 
 # grpcio and grpcio-tools have already been copied to artifact_dir
@@ -223,8 +228,12 @@ if [ "$GRPC_BUILD_MAC" == "" ]; then
       "${AUDITWHEEL}" repair "$wheel" --strip --wheel-dir "$ARTIFACT_DIR"
       rm "$wheel"
     done
+    # Copy repaired observability wheels to parent directory for distribtest compatibility
+    cp -r "$ARTIFACT_DIR"/*observability*.whl "$(dirname "$ARTIFACT_DIR")/" 2>/dev/null || true
   else
     cp -r src/python/grpcio_observability/dist/*.whl "$ARTIFACT_DIR"
+    # Also copy observability wheel files to parent directory for distribtest compatibility
+    cp -r src/python/grpcio_observability/dist/*.whl "$(dirname "$ARTIFACT_DIR")/"
   fi
   cp -r src/python/grpcio_observability/dist/*.tar.gz "$ARTIFACT_DIR"
 
