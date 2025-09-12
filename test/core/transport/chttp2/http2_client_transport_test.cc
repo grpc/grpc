@@ -453,6 +453,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
   StrictMock<MockFunction<void()>> ping_ack_received;
   EXPECT_CALL(ping_ack_received, Call());
   auto ping_complete = std::make_shared<Latch<void>>();
+  absl::AnyInvocable<void()> read_cb_transport_close;
 
   // Redundant ping ack
   auto read_cb = mock_endpoint.ExpectDelayedRead(
@@ -475,7 +476,8 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
                                                      /*opaque=*/0),
       },
       event_engine().get(),
-      [&mock_endpoint, &read_cb, this](SliceBuffer& out, SliceBuffer& expect) {
+      [&mock_endpoint, &read_cb, this, &read_cb_transport_close](
+          SliceBuffer& out, SliceBuffer& expect) {
         char out_buffer[kFrameHeaderSize + 1] = {};
         char expect_buffer[kFrameHeaderSize + 1] = {};
         out.CopyFirstNBytesIntoBuffer(kFrameHeaderSize, out_buffer);
@@ -495,7 +497,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
             },
             event_engine().get());
         // Break the read loop
-        mock_endpoint.ExpectReadClose(
+        read_cb_transport_close = mock_endpoint.ExpectDelayedReadClose(
             absl::UnavailableError("Connection closed"), event_engine().get());
       });
 
@@ -505,14 +507,15 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
                                                      /*opaque=*/0),
       },
       event_engine().get(),
-      [event_engine = event_engine().get()](SliceBuffer& out,
-                                            SliceBuffer& expect) {
+      [event_engine = event_engine().get(), &read_cb_transport_close](
+          SliceBuffer& out, SliceBuffer& expect) {
         char out_buffer[kFrameHeaderSize];
         out.CopyFirstNBytesIntoBuffer(kFrameHeaderSize, out_buffer);
         char expect_buffer[kFrameHeaderSize];
         expect.CopyFirstNBytesIntoBuffer(kFrameHeaderSize, expect_buffer);
 
         EXPECT_STREQ(out_buffer, expect_buffer);
+        read_cb_transport_close();
       });
 
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
