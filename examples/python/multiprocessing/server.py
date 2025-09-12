@@ -101,17 +101,21 @@ def main():
     # Check if we're on macOS and warn about SO_REUSEPORT limitations
     if platform.system() == "Darwin":
         _LOGGER.warning(
-            "⚠️  WARNING: Running on macOS (Darwin). SO_REUSEPORT behavior on macOS is different from Linux."
+            "⚠️  WARNING: Running on macOS (Darwin). SO_REUSEPORT behavior "
+            "on macOS is different from Linux."
         )
         _LOGGER.warning(
-            "   On macOS, SO_REUSEPORT does not provide true load balancing - all requests from the same"
+            "   On macOS, SO_REUSEPORT does not provide true "
+            "load balancing - all requests from the same"
         )
         _LOGGER.warning(
-            "   connection will be handled by the same process, defeating the purpose of multiprocessing."
+            "   connection will be handled by the same process, "
+            "defeating the purpose of multiprocessing."
         )
         _LOGGER.warning("   This is the issue described in GitHub #40444.")
         _LOGGER.warning(
-            "   For true multiprocessing on macOS, consider using multiple worker processes on different ports."
+            "   For true multiprocessing on macOS, "
+            "consider using multiple worker processes on different ports."
         )
         sys.stdout.flush()
     with _reserve_port() as port:
