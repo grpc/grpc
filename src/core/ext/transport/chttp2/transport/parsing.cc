@@ -749,6 +749,11 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
     t->last_new_stream_id = t->incoming_stream_id;
     s = t->incoming_stream =
         grpc_chttp2_parsing_accept_stream(t, t->incoming_stream_id);
+    ++requests_started;
+    if (GPR_UNLIKELY(s == nullptr)) {
+      GRPC_CHTTP2_IF_TRACING(ERROR) << "grpc_chttp2_stream not accepted";
+      return init_header_skip_frame_parser(t, priority_type, is_eoh);
+    }
 
     uint32_t current_open_streams = t->stream_map.size() + t->extra_streams;
     if (t->max_concurrent_streams_overload_protection) {
@@ -760,11 +765,6 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
         t->stream_quota->GetConnectionMaxConcurrentRequests(
             current_open_streams));
 
-    ++requests_started;
-    if (GPR_UNLIKELY(s == nullptr)) {
-      GRPC_CHTTP2_IF_TRACING(ERROR) << "grpc_chttp2_stream not accepted";
-      return init_header_skip_frame_parser(t, priority_type, is_eoh);
-    }
     if (GRPC_TRACE_FLAG_ENABLED(http) ||
         GRPC_TRACE_FLAG_ENABLED(chttp2_new_stream)) {
       LOG(INFO) << "[t:" << t << " fd:" << grpc_endpoint_get_fd(t->ep.get())
