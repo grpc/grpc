@@ -145,6 +145,15 @@
 #include <variant>
 #include <vector>
 
+#include "src/core/channelz/channelz.h"
+#include "src/core/telemetry/histogram.h"
+#include "src/core/util/avl.h"
+#include "src/core/util/dual_ref_counted.h"
+#include "src/core/util/match.h"
+#include "src/core/util/per_cpu.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/single_set_ptr.h"
+#include "src/core/util/sync.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
@@ -155,13 +164,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
-#include "src/core/telemetry/histogram.h"
-#include "src/core/util/avl.h"
-#include "src/core/util/dual_ref_counted.h"
-#include "src/core/util/match.h"
-#include "src/core/util/per_cpu.h"
-#include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/sync.h"
 
 namespace grpc_core {
 
@@ -278,7 +280,8 @@ class GaugeStorage {
   std::vector<std::optional<uint64_t>> uint_gauges_;
 };
 
-class DomainStorage : public DualRefCounted<DomainStorage> {
+class DomainStorage : public DualRefCounted<DomainStorage>,
+                      public channelz::DataSource {
  public:
   DomainStorage(QueryableDomain* domain, std::vector<std::string> label);
 
@@ -290,6 +293,8 @@ class DomainStorage : public DualRefCounted<DomainStorage> {
   QueryableDomain* domain() const { return domain_; }
 
   virtual void FillGaugeStorage(GaugeStorage& gauge_storage) = 0;
+
+  void AddData(channelz::DataSink sink) override;
 
  private:
   QueryableDomain* domain_;
@@ -377,11 +382,22 @@ class QueryableDomain {
   static std::unique_ptr<CollectionScope> CreateCollectionScope();
   size_t TestOnlyCountStorageHeld() const;
 
+  absl::string_view name() const { return name_; }
+
+  RefCountedPtr<channelz::BaseNode> channelz_node() {
+    if (!channelz_.is_set()) {
+      return channelz_.Set(new ChannelzState(this))->channelz_node();
+    }
+    return channelz_->channelz_node();
+  }
+
  protected:
-  QueryableDomain(std::vector<std::string> label_names, size_t map_shards_size)
+  QueryableDomain(std::string name, std::vector<std::string> label_names,
+                  size_t map_shards_size)
       : label_names_(std::move(label_names)),
         map_shards_size_(label_names_.empty() ? 1 : map_shards_size),
-        map_shards_(std::make_unique<MapShard[]>(map_shards_size_)) {}
+        map_shards_(std::make_unique<MapShard[]>(map_shards_size_)),
+        name_(std::move(name)) {}
 
   // QueryableDomain should never be destroyed.
   ~QueryableDomain() { LOG(FATAL) << "QueryableDomain destroyed."; }
@@ -431,6 +447,21 @@ class QueryableDomain {
         storage_map ABSL_GUARDED_BY(mu);
   };
 
+  struct ChannelzState final : public channelz::DataSource {
+    explicit ChannelzState(QueryableDomain* domain)
+        : DataSource(MakeRefCounted<channelz::MetricsDomainNode>(
+              std::string(domain->name()))),
+          domain(domain) {
+      SourceConstructed();
+    }
+    ~ChannelzState() { SourceDestructing(); }
+    QueryableDomain* const domain;
+    void AddData(channelz::DataSink sink) override { domain->AddData(sink); }
+    RefCountedPtr<channelz::BaseNode> channelz_node() {
+      return DataSource::channelz_node();
+    }
+  };
+
   void RegisterStorageSet(StorageSet* storage_set);
   void UnregisterStorageSet(StorageSet* storage_set);
 
@@ -439,6 +470,8 @@ class QueryableDomain {
       std::vector<std::string> label) = 0;
   void DomainStorageOrphaned(DomainStorage* storage);
   MapShard& GetMapShard(absl::Span<const std::string> label);
+
+  void AddData(channelz::DataSink sink);
 
   // Allocate `size` elements in the domain.
   // Counters will allocate one element. Histograms will allocate one per
@@ -461,15 +494,15 @@ class QueryableDomain {
   uint64_t allocated_int_gauge_slots_ = 0;
   uint64_t allocated_uint_gauge_slots_ = 0;
 
-  Mutex storage_sets_mu_;
-  std::vector<StorageSet*> storage_sets_ ABSL_GUARDED_BY(storage_sets_mu_);
-
   const size_t map_shards_size_;
   std::unique_ptr<MapShard[]> map_shards_;
 
   mutable Mutex active_storage_sets_mu_;
   std::vector<StorageSet*> active_storage_sets_
       ABSL_GUARDED_BY(active_storage_sets_mu_);
+
+  std::string name_;
+  SingleSetPtr<ChannelzState> channelz_;
 };
 
 // An InstrumentDomain is a collection of metrics with a common set of labels.
@@ -760,9 +793,9 @@ class InstrumentDomainImpl final : public QueryableDomain {
   };
 
   GPR_ATTRIBUTE_NOINLINE explicit InstrumentDomainImpl(
-      std::vector<std::string> label_names,
+      std::string name, std::vector<std::string> label_names,
       size_t map_shards = std::min(16u, gpr_cpu_num_cores()))
-      : QueryableDomain(std::move(label_names), map_shards) {
+      : QueryableDomain(std::move(name), std::move(label_names), map_shards) {
     CHECK_EQ(this->label_names().size(), N);
     Constructed();
   }
@@ -854,6 +887,7 @@ class InstrumentDomain {
     static auto* domain = new instrument_detail::InstrumentDomainImpl<
         typename Derived::Backend,
         std::tuple_size_v<decltype(Derived::kLabels)>, Derived>(
+        absl::StrCat(Derived::kName),
         instrument_detail::MakeLabelFromTuple(Derived::kLabels));
     return domain;
   }
