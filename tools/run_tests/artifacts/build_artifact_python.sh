@@ -100,7 +100,7 @@ done
 
 # Build the source distribution and wheel using modern python -m build
 # This replaces the deprecated setup.py sdist and bdist_wheel commands
-${SETARCH_CMD} "${PYTHON}" -m build --wheel
+${SETARCH_CMD} "${PYTHON}" -m build
 
 GRPCIO_STRIP_TEMPDIR=$(mktemp -d)
 GRPCIO_TAR_GZ_LIST=( dist/grpcio-*.tar.gz )
