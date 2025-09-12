@@ -360,6 +360,8 @@ TEST_F(RawEnd2EndTest, CompileTest) {
 }  // namespace testing
 }  // namespace grpc
 
+#if !defined(GRPC_CFSTREAM)
+
 int main(int argc, char** argv) {
   // Change the backup poll interval from 5s to 100ms to speed up the
   // ReconnectChannel test
@@ -368,3 +370,5 @@ int main(int argc, char** argv) {
   int ret = RUN_ALL_TESTS();
   return ret;
 }
+
+#endif  // !defined(GRPC_CFSTREAM)
