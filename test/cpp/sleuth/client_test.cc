@@ -55,7 +55,8 @@ class ClientTest : public ::testing::Test {
 };
 
 TEST_F(ClientTest, QueryAllEntities) {
-  Client client(server_address(), grpc::InsecureChannelCredentials());
+  Client client(server_address(),
+                Client::Options{grpc::InsecureChannelCredentials(), "h2"});
   auto entities = client.QueryAllChannelzEntities();
   ASSERT_TRUE(entities.ok());
   EXPECT_FALSE(entities->empty());

@@ -19,7 +19,7 @@
 #include "src/core/channelz/zviz/trace.h"
 #include "test/cpp/sleuth/client.h"
 #include "test/cpp/sleuth/tool.h"
-#include "test/cpp/sleuth/tool_credentials.h"
+#include "test/cpp/sleuth/tool_options.h"
 
 ABSL_FLAG(std::optional<std::string>, channelz_target, std::nullopt,
           "Target to connect to for channelz");
@@ -69,7 +69,8 @@ SLEUTH_TOOL(dump_channelz, "[destination]",
     return absl::InvalidArgumentError("--channelz_target is required");
   }
 
-  auto response = Client(*target, ToolCredentials()).QueryAllChannelzEntities();
+  auto response =
+      Client(*target, ToolClientOptions()).QueryAllChannelzEntities();
   if (!response.ok()) return response.status();
 
   SleuthEnvironment env(*response);
@@ -101,7 +102,7 @@ SLEUTH_TOOL(ztrace, "entity [trace_name]",
   if (!target.has_value()) {
     return absl::InvalidArgumentError("--channelz_target is required");
   }
-  auto client = Client(*target, ToolCredentials());
+  auto client = Client(*target, ToolClientOptions());
   SleuthEnvironment env({});
   return client.QueryTrace(
       entity_id, trace_name, [&](size_t missed, const auto& events) {

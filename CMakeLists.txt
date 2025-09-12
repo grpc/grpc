@@ -11096,6 +11096,10 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(channelz_tool_test
+  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
@@ -11112,10 +11116,33 @@ add_executable(channelz_tool_test
   src/core/channelz/zviz/strings.cc
   src/core/channelz/zviz/style.cc
   src/core/channelz/zviz/trace.cc
+  src/core/ext/transport/chaotic_good/chaotic_good.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/control_endpoint.cc
+  src/core/ext/transport/chaotic_good/data_endpoints.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/scheduler.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/tcp_frame_header.cc
+  src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
+  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
+  src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
+  src/core/ext/transport/chaotic_good_legacy/data_endpoints.cc
+  src/core/ext/transport/chaotic_good_legacy/frame.cc
+  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
+  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  src/core/util/seq_bit_set.cc
   test/cpp/sleuth/channelz_tool.cc
   test/cpp/sleuth/channelz_tool_test.cc
   test/cpp/sleuth/client.cc
   test/cpp/sleuth/tool_credentials.cc
+  test/cpp/sleuth/tool_options.cc
   test/cpp/sleuth/tool_test.cc
   test/cpp/util/cli_call.cc
   test/cpp/util/cli_credentials.cc

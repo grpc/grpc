@@ -66,6 +66,14 @@ struct Wrapper<
 };
 
 template <typename T>
+struct Wrapper<absl::StatusOr<T>> {
+  static std::optional<PropertyValue> Wrap(absl::StatusOr<T> value) {
+    if (value.ok()) return Wrapper<T>::Wrap(*std::move(value));
+    return PropertyValue(std::move(value).status());
+  }
+};
+
+template <typename T>
 struct Wrapper<T,
                std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>>> {
   static std::optional<PropertyValue> Wrap(T value) {

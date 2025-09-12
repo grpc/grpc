@@ -18,12 +18,20 @@
 
 #include <vector>
 
+#include "src/core/transport/endpoint_transport.h"
+
 namespace grpc_sleuth {
 
-Client::Client(std::string target,
-               std::shared_ptr<grpc::ChannelCredentials> creds)
-    : channel_(grpc::CreateChannel(target, creds)),
+Client::Client(std::string target, Options options)
+    : channel_(grpc::CreateCustomChannel(target, options.creds,
+                                         MakeChannelArguments(options))),
       stub_(grpc::channelz::v2::Channelz::NewStub(channel_)) {}
+
+grpc::ChannelArguments Client::MakeChannelArguments(const Options& options) {
+  grpc::ChannelArguments args;
+  args.SetString(GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS, options.protocol);
+  return args;
+}
 
 absl::StatusOr<std::vector<grpc::channelz::v2::Entity>>
 Client::QueryAllChannelzEntities() {

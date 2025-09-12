@@ -57,16 +57,12 @@ Poll<uint32_t> OutputBuffers::PollWrite(SliceBuffer& output_buffer) {
   MutexLock lock(&mu_);
   for (size_t i = 0; i < buffers_.size(); ++i) {
     if (buffers_[i].has_value() && buffers_[i]->Accept(output_buffer)) {
-      GRPC_TRACE_LOG(chaotic_good, INFO)
-          << "CHAOTIC_GOOD: Queue " << length << " data onto endpoint " << i
-          << " queue " << this;
       waker = buffers_[i]->TakeWaker();
+      ztrace_collector_->Append(DataEndpointAcceptWriteTrace{length, i});
       return i;
     }
   }
-  GRPC_TRACE_LOG(chaotic_good, INFO)
-      << "CHAOTIC_GOOD: No data endpoint ready for " << length
-      << " bytes on queue " << this;
+  ztrace_collector_->Append(DataEndpointQueueWriteTrace{length});
   write_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
   return Pending{};
 }
@@ -101,7 +97,11 @@ void OutputBuffers::AddEndpoint(uint32_t connection_id) {
 ///////////////////////////////////////////////////////////////////////////////
 // InputQueues
 
-InputQueues::InputQueues() : read_requests_(), read_request_waker_() {}
+InputQueues::InputQueues(
+    std::shared_ptr<LegacyZTraceCollector> ztrace_collector)
+    : read_requests_(),
+      read_request_waker_(),
+      ztrace_collector_(std::move(ztrace_collector)) {}
 
 absl::StatusOr<uint64_t> InputQueues::CreateTicket(uint32_t connection_id,
                                                    size_t length) {
@@ -129,6 +129,7 @@ Poll<absl::StatusOr<SliceBuffer>> InputQueues::PollRead(uint64_t ticket) {
   CHECK(it != outstanding_reads_.end()) << " ticket=" << ticket;
   if (auto* waker = std::get_if<Waker>(&it->second)) {
     *waker = GetContext<Activity>()->MakeNonOwningWaker();
+    ztrace_collector_->Append(DataEndpointTicketReadPendingTrace{ticket});
     return Pending{};
   }
   auto result = std::move(std::get<absl::StatusOr<SliceBuffer>>(it->second));
@@ -136,6 +137,8 @@ Poll<absl::StatusOr<SliceBuffer>> InputQueues::PollRead(uint64_t ticket) {
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD: Poll for ticket #" << ticket
       << " completes: " << result.status();
+  ztrace_collector_->Append(
+      [&] { return DataEndpointTicketReadTrace{ticket, result.status()}; });
   return result;
 }
 
@@ -160,6 +163,11 @@ void InputQueues::CompleteRead(uint64_t ticket,
   MutexLock lock(&mu_);
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD: Complete ticket #" << ticket << ": " << buffer.status();
+  ztrace_collector_->Append([&] {
+    return DataEndpointCompleteReadTrace{
+        ticket, buffer.ok() ? absl::StatusOr<size_t>(buffer->Length())
+                            : buffer.status()};
+  });
   auto it = outstanding_reads_.find(ticket);
   if (it == outstanding_reads_.end()) return;  // cancelled
   waker = std::move(std::get<Waker>(it->second));
@@ -183,20 +191,42 @@ void InputQueues::AddEndpoint(uint32_t connection_id) {
 ///////////////////////////////////////////////////////////////////////////////
 // Endpoint
 
-auto Endpoint::WriteLoop(uint32_t id,
-                         RefCountedPtr<OutputBuffers> output_buffers,
-                         std::shared_ptr<PromiseEndpoint> endpoint) {
+auto Endpoint::WriteLoop(
+    uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
+    std::shared_ptr<PromiseEndpoint> endpoint,
+    std::shared_ptr<LegacyZTraceCollector> ztrace_collector) {
   output_buffers->AddEndpoint(id);
+  CHECK_NE(ztrace_collector, nullptr);
+  auto telemetry_info = endpoint->GetEventEngineEndpoint()->GetTelemetryInfo();
+  auto all_metrics = telemetry_info->GetFullMetricsSet();
   return Loop([id, endpoint = std::move(endpoint),
-               output_buffers = std::move(output_buffers)]() {
+               output_buffers = std::move(output_buffers),
+               ztrace_collector = std::move(ztrace_collector),
+               telemetry_info = std::move(telemetry_info),
+               all_metrics = std::move(all_metrics)]() {
+    using Endpoint = grpc_event_engine::experimental::EventEngine::Endpoint;
     return TrySeq(
         output_buffers->Next(id),
-        [endpoint, id](SliceBuffer buffer) {
-          GRPC_TRACE_LOG(chaotic_good, INFO)
-              << "CHAOTIC_GOOD: Write " << buffer.Length()
-              << "b to data endpoint #" << id;
-          return endpoint->Write(std::move(buffer),
-                                 PromiseEndpoint::WriteArgs{});
+        [endpoint, id, ztrace_collector, output_buffers, telemetry_info,
+         all_metrics](SliceBuffer buffer) {
+          ztrace_collector->Append(DataEndpointWriteTrace{buffer.Length(), id});
+          PromiseEndpoint::WriteArgs write_args;
+          if (output_buffers->TraceWrite()) {
+            write_args.set_metrics_sink(Endpoint::WriteEventSink(
+                all_metrics,
+                {Endpoint::WriteEvent::kSendMsg,
+                 Endpoint::WriteEvent::kScheduled, Endpoint::WriteEvent::kSent,
+                 Endpoint::WriteEvent::kAcked, Endpoint::WriteEvent::kClosed},
+                [ztrace_collector, telemetry_info, id](
+                    Endpoint::WriteEvent event, absl::Time timestamp,
+                    std::vector<Endpoint::WriteMetric> metrics) {
+                  ztrace_collector->Append([&]() {
+                    return TcpMetricsTrace{id + 1, telemetry_info, event,
+                                           std::move(metrics), timestamp};
+                  });
+                }));
+          }
+          return endpoint->Write(std::move(buffer), std::move(write_args));
         },
         []() -> LoopCtl<absl::Status> { return Continue{}; });
   });
@@ -234,7 +264,10 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
                    PendingConnection pending_connection, bool enable_tracing,
                    grpc_event_engine::experimental::EventEngine* event_engine,
                    std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
-                       stats_plugin_group) {
+                       stats_plugin_group,
+                   std::shared_ptr<LegacyZTraceCollector> ztrace_collector)
+    : id_(id), ztrace_collector_(std::move(ztrace_collector)) {
+  CHECK_NE(ztrace_collector_, nullptr);
   input_queues->AddEndpoint(id);
   auto arena = SimpleArenaAllocator(0)->MakeArena();
   arena->SetContext(event_engine);
@@ -245,13 +278,16 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
        input_queues = std::move(input_queues),
        pending_connection = std::move(pending_connection),
        arena = std::move(arena),
-       stats_plugin_group = std::move(stats_plugin_group)]() mutable {
+       stats_plugin_group = std::move(stats_plugin_group),
+       ztrace_collector = ztrace_collector_]() mutable {
+        CHECK_NE(ztrace_collector, nullptr);
         return TrySeq(
             pending_connection.Await(),
             [id, enable_tracing, output_buffers = std::move(output_buffers),
              input_queues = std::move(input_queues), arena = std::move(arena),
-             stats_plugin_group =
-                 std::move(stats_plugin_group)](PromiseEndpoint ep) mutable {
+             stats_plugin_group = std::move(stats_plugin_group),
+             ztrace_collector =
+                 std::move(ztrace_collector)](PromiseEndpoint ep) mutable {
               GRPC_TRACE_LOG(chaotic_good, INFO)
                   << "CHAOTIC_GOOD: data endpoint " << id << " to "
                   << grpc_event_engine::experimental::ResolvedAddressToString(
@@ -279,9 +315,9 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
                     return ReadLoop(id, input_queues, endpoint);
                   },
                   [](absl::Status) {});
-              return Map(
-                  WriteLoop(id, std::move(output_buffers), std::move(endpoint)),
-                  [read_party](auto x) { return x; });
+              return Map(WriteLoop(id, std::move(output_buffers),
+                                   std::move(endpoint), ztrace_collector),
+                         [read_party](auto x) { return x; });
             });
       },
       [](absl::Status) {});
@@ -297,14 +333,17 @@ DataEndpoints::DataEndpoints(
     grpc_event_engine::experimental::EventEngine* event_engine,
     std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
         stats_plugin_group,
-    bool enable_tracing)
-    : output_buffers_(MakeRefCounted<data_endpoints_detail::OutputBuffers>()),
-      input_queues_(MakeRefCounted<data_endpoints_detail::InputQueues>()) {
+    bool enable_tracing,
+    std::shared_ptr<LegacyZTraceCollector> ztrace_collector)
+    : output_buffers_(MakeRefCounted<data_endpoints_detail::OutputBuffers>(
+          ztrace_collector)),
+      input_queues_(MakeRefCounted<data_endpoints_detail::InputQueues>(
+          ztrace_collector)) {
   CHECK(event_engine != nullptr);
   for (size_t i = 0; i < endpoints_vec.size(); ++i) {
     endpoints_.emplace_back(i, output_buffers_, input_queues_,
                             std::move(endpoints_vec[i]), enable_tracing,
-                            event_engine, stats_plugin_group);
+                            event_engine, stats_plugin_group, ztrace_collector);
   }
 }
 

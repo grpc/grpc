@@ -34,6 +34,8 @@ std::string Indent(int indent) { return std::string(indent * 2, ' '); }
 
 TextElement::TextElement(int indent) : indent_(indent) {}
 
+TextElement::~TextElement() = default;
+
 std::string TextElement::Render() const {
   std::string out;
   Render(&out);

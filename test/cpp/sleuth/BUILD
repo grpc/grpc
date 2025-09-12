@@ -129,7 +129,7 @@ grpc_cc_library(
     deps = [
         ":client",
         ":tool",
-        ":tool_credentials",
+        ":tool_options",
         "//:grpc_base",
         "//src/core:zviz_entity",
         "//src/core:zviz_layout_text",
@@ -148,5 +148,19 @@ grpc_cc_library(
     deps = [
         "//:grpc++",
         "//test/cpp/util:grpc_cli_utils",
+    ],
+)
+
+grpc_cc_library(
+    name = "tool_options",
+    srcs = ["tool_options.cc"],
+    hdrs = ["tool_options.h"],
+    external_deps = [
+        "absl/flags:flag",
+    ],
+    deps = [
+        ":client",
+        ":tool_credentials",
+        "//src/core:chaotic_good",
     ],
 )

@@ -91,6 +91,10 @@ constexpr Category kMemoryUsageCategory<std::shared_ptr<T>> =
     Category::kOwnedPointer;
 
 template <typename T>
+constexpr Category kMemoryUsageCategory<absl::StatusOr<T>> =
+    Category::kAbslStatusOr;
+
+template <typename T>
 constexpr Category kMemoryUsageCategory<std::vector<T>> = Category::kVector;
 
 template <typename C, typename Traits, typename Allocator>

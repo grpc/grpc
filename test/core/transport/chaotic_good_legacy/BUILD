@@ -196,6 +196,7 @@ grpc_cc_test(
         "//src/core:slice_buffer",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
+        "//test/core/transport/util:mock_promise_endpoint",
     ],
 )
 
