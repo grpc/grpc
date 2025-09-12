@@ -28,7 +28,12 @@ namespace grpc_sleuth {
 
 class Client {
  public:
-  Client(std::string target, std::shared_ptr<grpc::ChannelCredentials> creds);
+  struct Options {
+    std::shared_ptr<grpc::ChannelCredentials> creds;
+    std::string protocol = "h2";
+  };
+
+  Client(std::string target, Options options);
 
   absl::StatusOr<std::vector<grpc::channelz::v2::Entity>>
   QueryAllChannelzEntities();
@@ -40,6 +45,8 @@ class Client {
           callback);
 
  private:
+  static grpc::ChannelArguments MakeChannelArguments(const Options& options);
+
   std::shared_ptr<grpc::Channel> channel_;
   std::unique_ptr<grpc::channelz::v2::Channelz::Stub> stub_;
 };

@@ -189,48 +189,8 @@ RefCountedPtr<channelz::SocketNode> MakeTestChannelzSocketNode() {
   return MakeRefCounted<channelz::SocketNode>("from", "to", "test", nullptr);
 }
 
-const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
-GetPeerAddress() {
-  static grpc_event_engine::experimental::EventEngine::ResolvedAddress
-      peer_address = grpc_event_engine::experimental::URIToResolvedAddress(
-                         "ipv4:127.0.0.1:1234")
-                         .value();
-  return peer_address;
-}
-
-const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
-GetLocalAddress() {
-  static grpc_event_engine::experimental::EventEngine::ResolvedAddress
-      peer_address = grpc_event_engine::experimental::URIToResolvedAddress(
-                         "ipv4:127.0.0.1:4321")
-                         .value();
-  return peer_address;
-}
-
-const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
-GetPeerAddress2() {
-  static grpc_event_engine::experimental::EventEngine::ResolvedAddress
-      peer_address = grpc_event_engine::experimental::URIToResolvedAddress(
-                         "ipv4:127.0.0.1:2345")
-                         .value();
-  return peer_address;
-}
-
-const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
-GetLocalAddress2() {
-  static grpc_event_engine::experimental::EventEngine::ResolvedAddress
-      peer_address = grpc_event_engine::experimental::URIToResolvedAddress(
-                         "ipv4:127.0.0.1:5432")
-                         .value();
-  return peer_address;
-}
-
 DATA_ENDPOINTS_TEST(CanWrite) {
   util::testing::MockPromiseEndpoint ep(1234);
-  EXPECT_CALL(*ep.endpoint, GetPeerAddress())
-      .WillRepeatedly(::testing::ReturnRef(GetPeerAddress()));
-  EXPECT_CALL(*ep.endpoint, GetLocalAddress())
-      .WillRepeatedly(::testing::ReturnRef(GetLocalAddress()));
   ExportMockTelemetryInfo(ep);
   auto close_ep = ep.ExpectDelayedReadClose(absl::UnavailableError("test done"),
                                             event_engine().get());
@@ -252,16 +212,8 @@ DATA_ENDPOINTS_TEST(CanWrite) {
 }
 
 DATA_ENDPOINTS_TEST(CanMultiWrite) {
-  util::testing::MockPromiseEndpoint ep1(1234);
-  util::testing::MockPromiseEndpoint ep2(1235);
-  EXPECT_CALL(*ep1.endpoint, GetPeerAddress())
-      .WillRepeatedly(::testing::ReturnRef(GetPeerAddress()));
-  EXPECT_CALL(*ep1.endpoint, GetLocalAddress())
-      .WillRepeatedly(::testing::ReturnRef(GetLocalAddress()));
-  EXPECT_CALL(*ep2.endpoint, GetPeerAddress())
-      .WillRepeatedly(::testing::ReturnRef(GetPeerAddress2()));
-  EXPECT_CALL(*ep2.endpoint, GetLocalAddress())
-      .WillRepeatedly(::testing::ReturnRef(GetLocalAddress2()));
+  util::testing::MockPromiseEndpoint ep1(1234, 4321);
+  util::testing::MockPromiseEndpoint ep2(1235, 5321);
   ExportMockTelemetryInfo(ep1);
   ExportMockTelemetryInfo(ep2);
   auto close_ep1 = ep1.ExpectDelayedReadClose(
@@ -309,10 +261,6 @@ DATA_ENDPOINTS_TEST(CanMultiWrite) {
 
 DATA_ENDPOINTS_TEST(CanRead) {
   util::testing::MockPromiseEndpoint ep(1234);
-  EXPECT_CALL(*ep.endpoint, GetPeerAddress())
-      .WillRepeatedly(::testing::ReturnRef(GetPeerAddress()));
-  EXPECT_CALL(*ep.endpoint, GetLocalAddress())
-      .WillRepeatedly(::testing::ReturnRef(GetLocalAddress()));
   ExportMockTelemetryInfo(ep);
   ep.ExpectRead({DataFrameHeader(64, 5, 1, 5)}, event_engine().get());
   ep.ExpectRead(
@@ -339,10 +287,6 @@ DATA_ENDPOINTS_TEST(CanRead) {
 
 DATA_ENDPOINTS_TEST(CanWriteSecurityFrame) {
   util::testing::MockPromiseEndpoint ep(1234);
-  EXPECT_CALL(*ep.endpoint, GetPeerAddress())
-      .WillRepeatedly(::testing::ReturnRef(GetPeerAddress()));
-  EXPECT_CALL(*ep.endpoint, GetLocalAddress())
-      .WillRepeatedly(::testing::ReturnRef(GetLocalAddress()));
   auto* transport_framing_endpoint_extension = ep.endpoint->AddExtension<
       util::testing::MockTransportFramingEndpointExtension>();
   absl::AnyInvocable<void(SliceBuffer*)> send_frame_callback;
@@ -374,10 +318,6 @@ DATA_ENDPOINTS_TEST(CanWriteSecurityFrame) {
 
 DATA_ENDPOINTS_TEST(CanReadSecurityFrame) {
   util::testing::MockPromiseEndpoint ep(1234);
-  EXPECT_CALL(*ep.endpoint, GetPeerAddress())
-      .WillRepeatedly(::testing::ReturnRef(GetPeerAddress()));
-  EXPECT_CALL(*ep.endpoint, GetLocalAddress())
-      .WillRepeatedly(::testing::ReturnRef(GetLocalAddress()));
   auto* transport_framing_endpoint_extension =
       ep.endpoint->AddExtension<::testing::StrictMock<
           util::testing::MockTransportFramingEndpointExtension>>();

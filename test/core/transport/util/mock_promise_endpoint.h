@@ -128,19 +128,27 @@ struct MockTransportFramingEndpointExtension
 };
 
 struct MockPromiseEndpoint {
-  explicit MockPromiseEndpoint(int port) {
-    if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
-      EXPECT_CALL(*endpoint, GetPeerAddress)
-          .WillRepeatedly(
-              [peer_address =
-                   std::make_shared<grpc_event_engine::experimental::
-                                        EventEngine::ResolvedAddress>(
-                       grpc_event_engine::experimental::URIToResolvedAddress(
-                           absl::StrCat("ipv4:127.0.0.1:", port))
-                           .value())]()
-                  -> const grpc_event_engine::experimental::EventEngine::
-                      ResolvedAddress& { return *peer_address; });
-    }
+  explicit MockPromiseEndpoint(int port, int local_port = 6148) {
+    EXPECT_CALL(*endpoint, GetPeerAddress)
+        .WillRepeatedly(
+            [peer_address = std::make_shared<
+                 grpc_event_engine::experimental::EventEngine::ResolvedAddress>(
+                 grpc_event_engine::experimental::URIToResolvedAddress(
+                     absl::StrCat("ipv4:127.0.0.1:", port))
+                     .value())]() -> const grpc_event_engine::experimental::
+                                      EventEngine::ResolvedAddress& {
+                                        return *peer_address;
+                                      });
+    EXPECT_CALL(*endpoint, GetLocalAddress)
+        .WillRepeatedly(
+            [local_address = std::make_shared<
+                 grpc_event_engine::experimental::EventEngine::ResolvedAddress>(
+                 grpc_event_engine::experimental::URIToResolvedAddress(
+                     absl::StrCat("ipv4:127.0.0.1:", local_port))
+                     .value())]() -> const grpc_event_engine::experimental::
+                                      EventEngine::ResolvedAddress& {
+                                        return *local_address;
+                                      });
   }
   ::testing::StrictMock<MockEndpoint>* endpoint =
       new ::testing::StrictMock<MockEndpoint>();
