@@ -333,6 +333,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c \
     src/core/ext/upb-gen/google/rpc/status.upb_minitable.c \
+    src/core/ext/upb-gen/proto/cel/expr/checked.upb_minitable.c \
+    src/core/ext/upb-gen/proto/cel/expr/syntax.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c \
@@ -500,6 +502,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c \
     src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c \
     src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c \
+    src/core/ext/upbdefs-gen/proto/cel/expr/checked.upbdefs.c \
+    src/core/ext/upbdefs-gen/proto/cel/expr/syntax.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c \
@@ -1390,6 +1394,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl-with-bazel/src/ssl/tls13_server.cc \
     third_party/boringssl-with-bazel/src/ssl/tls_method.cc \
     third_party/boringssl-with-bazel/src/ssl/tls_record.cc \
+    third_party/re2/re2/bitmap256.cc \
     third_party/re2/re2/bitstate.cc \
     third_party/re2/re2/compile.cc \
     third_party/re2/re2/dfa.cc \
@@ -1406,7 +1411,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/re2/re2/regexp.cc \
     third_party/re2/re2/set.cc \
     third_party/re2/re2/simplify.cc \
-    third_party/re2/re2/stringpiece.cc \
     third_party/re2/re2/tostring.cc \
     third_party/re2/re2/unicode_casefold.cc \
     third_party/re2/re2/unicode_groups.cc \
@@ -1560,6 +1564,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/google/api/expr/v1alpha1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/google/protobuf)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/google/rpc)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/proto/cel/expr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/src/proto/grpc/channelz)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/src/proto/grpc/channelz/v2)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/src/proto/grpc/gcp)
@@ -1614,6 +1619,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/google/api/expr/v1alpha1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/google/protobuf)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/google/rpc)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/proto/cel/expr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/src/proto/grpc/channelz)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1)

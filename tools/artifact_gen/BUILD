@@ -17,10 +17,13 @@ cc_library(
     srcs = ["extract_metadata_from_bazel_xml.cc"],
     hdrs = ["extract_metadata_from_bazel_xml.h"],
     deps = [
+        ":extract_bazelmod_repositories",
         "@abseil-cpp//absl/algorithm:container",
         "@abseil-cpp//absl/flags:flag",
         "@abseil-cpp//absl/log",
         "@abseil-cpp//absl/log:check",
+        "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:statusor",
         "@abseil-cpp//absl/strings",
         "@nlohmann_json//:json",
         "@pugixml",
@@ -101,5 +104,18 @@ cc_binary(
         "@abseil-cpp//absl/log",
         "@abseil-cpp//absl/strings",
         "@pugixml",
+    ],
+)
+
+cc_library(
+    name = "extract_bazelmod_repositories",
+    srcs = ["extract_bazelmod_repositories.cc"],
+    hdrs = ["extract_bazelmod_repositories.h"],
+    deps = [
+        "@abseil-cpp//absl/log",
+        "@abseil-cpp//absl/log:globals",
+        "@abseil-cpp//absl/log:initialize",
+        "@abseil-cpp//absl/status",
+        "@abseil-cpp//absl/status:statusor",
     ],
 )

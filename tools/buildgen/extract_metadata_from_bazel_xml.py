@@ -30,13 +30,13 @@
 # format entirely or simplify it to a point where it becomes self-explanatory
 # and doesn't need any detailed documentation.
 
-import collections
 import os
 import subprocess
 from typing import Any, Dict, Iterable, List, Optional
 import xml.etree.ElementTree as ET
 
 import build_cleaner
+import extract_repositories
 
 BuildMetadata = Dict[str, Any]
 BuildDict = Dict[str, BuildMetadata]
@@ -74,6 +74,17 @@ class ExternalProtoLibrary:
             self.urls = urls
         self.hash = hash
         self.strip_prefix = strip_prefix
+
+    def __repr__(self) -> str:
+        return "\n".join(
+            sorted(
+                [
+                    f"{k} = {getattr(self, k)}"
+                    for k in dir(self)
+                    if not k.startswith("_")
+                ]
+            )
+        )
 
 
 EXTERNAL_PROTO_LIBRARIES = {
@@ -612,6 +623,7 @@ def _expand_upb_proto_library_rules(bazel_rules):
         ("@com_envoyproxy_protoc_gen_validate//", ""),
         ("@envoy_api//", ""),
         ("@opencensus_proto//", ""),
+        ("@cel-spec//", ""),
     ]
     for name, bazel_rule in bazel_rules.items():
         gen_func = bazel_rule.get("generator_function", None)
@@ -657,7 +669,11 @@ def _expand_upb_proto_library_rules(bazel_rules):
                         proto_src = proto_src[len(prefix_to_strip) :]
                         break
                 if proto_src.startswith("@"):
-                    raise Exception('"{0}" is unknown workspace.'.format(name))
+                    raise Exception(
+                        '"{0}" is unknown workspace. proto_src: {1}'.format(
+                            name, proto_src
+                        )
+                    )
                 proto_src_file = _try_extract_source_file_path(proto_src)
                 if not proto_src_file:
                     raise Exception(
@@ -1039,46 +1055,26 @@ def _generate_build_extra_metadata_for_tests(
     return test_metadata
 
 
-def _parse_http_archives(xml_tree: ET.Element) -> "List[ExternalProtoLibrary]":
+def _parse_http_archives() -> "List[ExternalProtoLibrary]":
     """Parse Bazel http_archive rule into ExternalProtoLibrary objects."""
     result = []
-    for xml_http_archive in xml_tree:
-        if (
-            xml_http_archive.tag != "rule"
-            or xml_http_archive.attrib["class"] != "http_archive"
-        ):
-            continue
-        # A distilled Python representation of Bazel http_archive
-        http_archive = dict()
-        for xml_node in xml_http_archive:
-            if xml_node.attrib["name"] == "name":
-                http_archive["name"] = xml_node.attrib["value"]
-            if xml_node.attrib["name"] == "urls":
-                http_archive["urls"] = []
-                for url_node in xml_node:
-                    http_archive["urls"].append(url_node.attrib["value"])
-            if xml_node.attrib["name"] == "url":
-                http_archive["urls"] = [xml_node.attrib["value"]]
-            if xml_node.attrib["name"] == "sha256":
-                http_archive["hash"] = xml_node.attrib["value"]
-            if xml_node.attrib["name"] == "strip_prefix":
-                http_archive["strip_prefix"] = xml_node.attrib["value"]
-        if http_archive["name"] not in EXTERNAL_PROTO_LIBRARIES:
-            # If this http archive is not one of the external proto libraries,
-            # we don't want to include it as a CMake target
-            continue
-        lib = EXTERNAL_PROTO_LIBRARIES[http_archive["name"]]
-        lib.urls = http_archive["urls"]
-        lib.hash = http_archive["hash"]
-        lib.strip_prefix = http_archive["strip_prefix"]
-        result.append(lib)
+    repositories = extract_repositories.get_dependencies_json(
+        set(EXTERNAL_PROTO_LIBRARIES.keys())
+    )
+    for name, library in EXTERNAL_PROTO_LIBRARIES.items():
+        if not name in repositories:
+            raise RuntimeError(f"No repository for {name} library found")
+        repository = repositories[name]
+        library.urls = repository["urls"]
+        library.hash = repository["integrity"]  # type: ignore
+        library.strip_prefix = repository["strip_prefix"]  # type: ignore
+        result.append(library)
     return result
 
 
 def _generate_external_proto_libraries() -> List[Dict[str, Any]]:
     """Generates the build metadata for external proto libraries"""
-    xml_tree = _bazel_query_xml_tree("kind(http_archive, //external:*)")
-    libraries = _parse_http_archives(xml_tree)
+    libraries = _parse_http_archives()
     libraries.sort(key=lambda x: x.destination)
     return list(map(lambda x: x.__dict__, libraries))
 
