@@ -46,3 +46,10 @@ fi
     | xargs -0 -I% find % -type f -maxdepth 1 \
     -not -name "*.tar.gz" -not -name "*py3-none-any.whl" \
     -exec cp -v {} ./artifacts \;
+
+# Also copy wheel files directly to input_artifacts for distribtest compatibility
+# This ensures the test script can find the wheel files in the expected location
+"${find_cmd[@]}" -print0 \
+    | xargs -0 -I% find % -type f -maxdepth 1 \
+    -name "*.whl" \
+    -exec cp -v {} "${EXTERNAL_GIT_ROOT}/input_artifacts/" \;
