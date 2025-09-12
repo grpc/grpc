@@ -53,11 +53,10 @@ ARTIFACT_DIR="$PWD/${ARTIFACTS_OUT}"
 # check whether we are crosscompiling. AUDITWHEEL_ARCH is set by the dockcross docker image.
 if [ "$AUDITWHEEL_ARCH" == "aarch64" ]
 then
-  # when crosscompiling for aarch64, --plat-name needs to be set explicitly
-  # to end up with correctly named wheel file
+  # when crosscompiling for aarch64, set _PYTHON_HOST_PLATFORM for modern build system
   # the value should be manylinuxABC_ARCH and dockcross docker image
   # conveniently provides the value in the AUDITWHEEL_PLAT env
-  WHEEL_PLAT_NAME_FLAG="--plat-name=$AUDITWHEEL_PLAT"
+  export _PYTHON_HOST_PLATFORM="$AUDITWHEEL_PLAT"
 
   # override the value of EXT_SUFFIX to make sure the crosscompiled .so files in the wheel have the correct filename suffix
   GRPC_PYTHON_OVERRIDE_EXT_SUFFIX="$(${PYTHON} -c 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX").replace("-x86_64-linux-gnu.so", "-aarch64-linux-gnu.so"))')"
@@ -70,10 +69,9 @@ fi
 # check whether we are crosscompiling. AUDITWHEEL_ARCH is set by the dockcross docker image.
 if [ "$AUDITWHEEL_ARCH" == "armv7l" ]
 then
-  # when crosscompiling for arm, --plat-name needs to be set explicitly
-  # to end up with correctly named wheel file
-  # our dockcross-based docker image onveniently provides the value in the AUDITWHEEL_PLAT env
-  WHEEL_PLAT_NAME_FLAG="--plat-name=$AUDITWHEEL_PLAT"
+  # when crosscompiling for arm, set _PYTHON_HOST_PLATFORM for modern build system
+  # our dockcross-based docker image conveniently provides the value in the AUDITWHEEL_PLAT env
+  export _PYTHON_HOST_PLATFORM="$AUDITWHEEL_PLAT"
 
   # override the value of EXT_SUFFIX to make sure the crosscompiled .so files in the wheel have the correct filename suffix
   GRPC_PYTHON_OVERRIDE_EXT_SUFFIX="$(${PYTHON} -c 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX").replace("-x86_64-linux-gnu.so", "-arm-linux-gnueabihf.so"))')"
@@ -102,8 +100,7 @@ done
 
 # Build the source distribution and wheel using modern python -m build
 # This replaces the deprecated setup.py sdist and bdist_wheel commands
-# shellcheck disable=SC2086
-${SETARCH_CMD} "${PYTHON}" -m build $WHEEL_PLAT_NAME_FLAG
+${SETARCH_CMD} "${PYTHON}" -m build --wheel
 
 GRPCIO_STRIP_TEMPDIR=$(mktemp -d)
 GRPCIO_TAR_GZ_LIST=( dist/grpcio-*.tar.gz )
@@ -139,13 +136,11 @@ mv "${GRPCIO_STRIPPED_TAR_GZ}" "${GRPCIO_TAR_GZ}"
 "${PYTHON}" tools/distrib/python/make_grpcio_tools.py
 
 # Build gRPC tools package using modern python -m build
-# shellcheck disable=SC2086
-cd tools/distrib/python/grpcio_tools && ${SETARCH_CMD} "${PYTHON}" -m build $WHEEL_PLAT_NAME_FLAG && cd -
+cd tools/distrib/python/grpcio_tools && ${SETARCH_CMD} "${PYTHON}" -m build --wheel && cd -
 
 if [ "$GRPC_BUILD_MAC" == "" ]; then
   "${PYTHON}" src/python/grpcio_observability/make_grpcio_observability.py
-  # shellcheck disable=SC2086
-  cd src/python/grpcio_observability && ${SETARCH_CMD} "${PYTHON}" -m build $WHEEL_PLAT_NAME_FLAG && cd -
+  cd src/python/grpcio_observability && ${SETARCH_CMD} "${PYTHON}" -m build --wheel && cd -
 fi
 
 
@@ -235,7 +230,7 @@ if [ "$GRPC_BUILD_MAC" == "" ]; then
 
   # Build grpcio_csm_observability distribution
   if [ "$GRPC_BUILD_MAC" == "" ]; then
-    cd src/python/grpcio_csm_observability && ${SETARCH_CMD} "${PYTHON}" -m build && cd -
+    cd src/python/grpcio_csm_observability && ${SETARCH_CMD} "${PYTHON}" -m build --wheel && cd -
     cp -r src/python/grpcio_csm_observability/dist/* "$ARTIFACT_DIR"
   fi
 fi
@@ -264,41 +259,41 @@ then
 
   # Build xds_protos source distribution
   # build.py is invoked as part of generate_projects.
-  cd tools/distrib/python/xds_protos && ${SETARCH_CMD} "${PYTHON}" -m build && cd -
+  cd tools/distrib/python/xds_protos && ${SETARCH_CMD} "${PYTHON}" -m build --wheel && cd -
   cp -r tools/distrib/python/xds_protos/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_testing source distribution
-  cd src/python/grpcio_testing && ${SETARCH_CMD} "${PYTHON}" setup.py preprocess && ${SETARCH_CMD} "${PYTHON}" -m build && cd -
+  cd src/python/grpcio_testing && ${SETARCH_CMD} "${PYTHON}" setup.py preprocess && ${SETARCH_CMD} "${PYTHON}" -m build --wheel && cd -
   cp -r src/python/grpcio_testing/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_channelz source distribution
-  cd src/python/grpcio_channelz && ${SETARCH_CMD} "${PYTHON}" setup.py preprocess build_package_protos && ${SETARCH_CMD} "${PYTHON}" -m build && cd -
+  cd src/python/grpcio_channelz && ${SETARCH_CMD} "${PYTHON}" setup.py preprocess build_package_protos && ${SETARCH_CMD} "${PYTHON}" -m build --wheel && cd -
   cp -r src/python/grpcio_channelz/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_health_checking source distribution
-  cd src/python/grpcio_health_checking && ${SETARCH_CMD} "${PYTHON}" setup.py preprocess build_package_protos && ${SETARCH_CMD} "${PYTHON}" -m build && cd -
+  cd src/python/grpcio_health_checking && ${SETARCH_CMD} "${PYTHON}" setup.py preprocess build_package_protos && ${SETARCH_CMD} "${PYTHON}" -m build --wheel && cd -
   cp -r src/python/grpcio_health_checking/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_reflection source distribution
-  cd src/python/grpcio_reflection && ${SETARCH_CMD} "${PYTHON}" setup.py preprocess build_package_protos && ${SETARCH_CMD} "${PYTHON}" -m build && cd -
+  cd src/python/grpcio_reflection && ${SETARCH_CMD} "${PYTHON}" setup.py preprocess build_package_protos && ${SETARCH_CMD} "${PYTHON}" -m build --wheel && cd -
   cp -r src/python/grpcio_reflection/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_status source distribution
-  cd src/python/grpcio_status && ${SETARCH_CMD} "${PYTHON}" setup.py preprocess && ${SETARCH_CMD} "${PYTHON}" -m build && cd -
+  cd src/python/grpcio_status && ${SETARCH_CMD} "${PYTHON}" setup.py preprocess && ${SETARCH_CMD} "${PYTHON}" -m build --wheel && cd -
   cp -r src/python/grpcio_status/dist/* "$ARTIFACT_DIR"
 
   # Install xds-protos as a dependency of grpcio-csds
   "${PYTHON}" -m pip install xds-protos --no-index --find-links "file://$ARTIFACT_DIR/"
 
   # Build grpcio_csds source distribution
-  cd src/python/grpcio_csds && ${SETARCH_CMD} "${PYTHON}" -m build && cd -
+  cd src/python/grpcio_csds && ${SETARCH_CMD} "${PYTHON}" -m build --wheel && cd -
   cp -r src/python/grpcio_csds/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_admin source distribution and it needs the cutting-edge version
   # of Channelz and CSDS to be installed.
   "${PYTHON}" -m pip install grpcio-channelz --no-index --find-links "file://$ARTIFACT_DIR/"
   "${PYTHON}" -m pip install grpcio-csds --no-index --find-links "file://$ARTIFACT_DIR/"
-  cd src/python/grpcio_admin && ${SETARCH_CMD} "${PYTHON}" -m build && cd -
+  cd src/python/grpcio_admin && ${SETARCH_CMD} "${PYTHON}" -m build --wheel && cd -
   cp -r src/python/grpcio_admin/dist/* "$ARTIFACT_DIR"
 
 fi
