@@ -197,15 +197,36 @@ auto Endpoint::WriteLoop(
     std::shared_ptr<LegacyZTraceCollector> ztrace_collector) {
   output_buffers->AddEndpoint(id);
   CHECK_NE(ztrace_collector, nullptr);
+  auto telemetry_info = endpoint->GetEventEngineEndpoint()->GetTelemetryInfo();
+  auto all_metrics = telemetry_info->GetFullMetricsSet();
   return Loop([id, endpoint = std::move(endpoint),
                output_buffers = std::move(output_buffers),
-               ztrace_collector = std::move(ztrace_collector)]() {
+               ztrace_collector = std::move(ztrace_collector),
+               telemetry_info = std::move(telemetry_info),
+               all_metrics = std::move(all_metrics)]() {
+    using Endpoint = grpc_event_engine::experimental::EventEngine::Endpoint;
     return TrySeq(
         output_buffers->Next(id),
-        [endpoint, id, ztrace_collector](SliceBuffer buffer) {
+        [endpoint, id, ztrace_collector, output_buffers, telemetry_info,
+         all_metrics](SliceBuffer buffer) {
           ztrace_collector->Append(DataEndpointWriteTrace{buffer.Length(), id});
-          return endpoint->Write(std::move(buffer),
-                                 PromiseEndpoint::WriteArgs{});
+          PromiseEndpoint::WriteArgs write_args;
+          if (output_buffers->TraceWrite()) {
+            write_args.set_metrics_sink(Endpoint::WriteEventSink(
+                all_metrics,
+                {Endpoint::WriteEvent::kSendMsg,
+                 Endpoint::WriteEvent::kScheduled, Endpoint::WriteEvent::kSent,
+                 Endpoint::WriteEvent::kAcked, Endpoint::WriteEvent::kClosed},
+                [ztrace_collector, telemetry_info, id](
+                    Endpoint::WriteEvent event, absl::Time timestamp,
+                    std::vector<Endpoint::WriteMetric> metrics) {
+                  ztrace_collector->Append([&]() {
+                    return TcpMetricsTrace{id + 1, telemetry_info, event,
+                                           std::move(metrics), timestamp};
+                  });
+                }));
+          }
+          return endpoint->Write(std::move(buffer), std::move(write_args));
         },
         []() -> LoopCtl<absl::Status> { return Continue{}; });
   });

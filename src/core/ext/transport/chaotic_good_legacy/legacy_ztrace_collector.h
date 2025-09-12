@@ -138,13 +138,72 @@ struct DataEndpointCompleteReadTrace {
   }
 };
 
+struct TcpMetricsTrace {
+  uint32_t connection_id;
+  std::shared_ptr<
+      grpc_event_engine::experimental::EventEngine::Endpoint::TelemetryInfo>
+      telemetry_info;
+  grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent event;
+  std::vector<
+      grpc_event_engine::experimental::EventEngine::Endpoint::WriteMetric>
+      metrics;
+  absl::Time timestamp;
+
+  size_t MemoryUsage() const {
+    return sizeof(TcpMetricsTrace) + metrics.capacity() * sizeof(metrics[0]);
+  }
+
+  channelz::PropertyList ChannelzProperties() const {
+    absl::string_view event_string = "unknown";
+    switch (event) {
+      case grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent::
+          kSendMsg:
+        event_string = "send_msg";
+        break;
+      case grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent::
+          kScheduled:
+        event_string = "scheduled";
+        break;
+      case grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent::
+          kSent:
+        event_string = "sent";
+        break;
+      case grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent::
+          kAcked:
+        event_string = "acked";
+        break;
+      case grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent::
+          kClosed:
+        event_string = "closed";
+        break;
+      default:
+        break;
+    }
+    return channelz::PropertyList()
+        .Set("connection_id", connection_id)
+        .Set("event", event_string)
+        .Set("tcp_event_timestamp", timestamp)
+        .Merge([this]() {
+          channelz::PropertyList props;
+          for (const auto& metric : metrics) {
+            if (auto key = telemetry_info->GetMetricName(metric.key);
+                key.has_value()) {
+              props.Set(*key, metric.value);
+            }
+          }
+          return props;
+        }());
+  }
+};
+
 using LegacyZTraceCollector = channelz::ZTraceCollector<
     legacy_ztrace_collector_detail::Config, ReadFrameTrace, WriteFrameTrace,
     ControlEndpointWriteTrace, ControlEndpointQueueWriteTrace,
     ControlEndpointReadRequestTrace, ControlEndpointReadTrace,
     DataEndpointQueueWriteTrace, DataEndpointAcceptWriteTrace,
     DataEndpointWriteTrace, DataEndpointTicketReadPendingTrace,
-    DataEndpointTicketReadTrace, DataEndpointCompleteReadTrace>;
+    DataEndpointTicketReadTrace, DataEndpointCompleteReadTrace,
+    TcpMetricsTrace>;
 
 }  // namespace chaotic_good_legacy
 }  // namespace grpc_core

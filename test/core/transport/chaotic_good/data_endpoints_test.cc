@@ -171,27 +171,12 @@ MpscQueued<chaotic_good::OutgoingFrame> TestFrame(absl::string_view payload) {
   return std::move(*frames->Next()().value());
 }
 
-void ExportMockTelemetryInfo(util::testing::MockPromiseEndpoint& ep) {
-  auto telemetry_info = std::make_shared<util::testing::MockTelemetryInfo>();
-  EXPECT_CALL(*ep.endpoint, GetTelemetryInfo())
-      .WillOnce(::testing::Return(telemetry_info));
-  EXPECT_CALL(*telemetry_info, GetMetricKey("delivery_rate"))
-      .WillOnce(::testing::Return(1));
-  EXPECT_CALL(*telemetry_info, GetMetricKey("net_rtt_usec"))
-      .WillOnce(::testing::Return(2));
-  EXPECT_CALL(*telemetry_info, GetMetricKey("data_notsent"))
-      .WillOnce(::testing::Return(3));
-  EXPECT_CALL(*telemetry_info, GetMetricKey("byte_offset"))
-      .WillOnce(::testing::Return(4));
-}
-
 RefCountedPtr<channelz::SocketNode> MakeTestChannelzSocketNode() {
   return MakeRefCounted<channelz::SocketNode>("from", "to", "test", nullptr);
 }
 
 DATA_ENDPOINTS_TEST(CanWrite) {
   util::testing::MockPromiseEndpoint ep(1234);
-  ExportMockTelemetryInfo(ep);
   auto close_ep = ep.ExpectDelayedReadClose(absl::UnavailableError("test done"),
                                             event_engine().get());
   chaotic_good::DataEndpoints data_endpoints(
@@ -214,8 +199,6 @@ DATA_ENDPOINTS_TEST(CanWrite) {
 DATA_ENDPOINTS_TEST(CanMultiWrite) {
   util::testing::MockPromiseEndpoint ep1(1234, 4321);
   util::testing::MockPromiseEndpoint ep2(1235, 5321);
-  ExportMockTelemetryInfo(ep1);
-  ExportMockTelemetryInfo(ep2);
   auto close_ep1 = ep1.ExpectDelayedReadClose(
       absl::UnavailableError("test done"), event_engine().get());
   auto close_ep2 = ep2.ExpectDelayedReadClose(
@@ -261,7 +244,6 @@ DATA_ENDPOINTS_TEST(CanMultiWrite) {
 
 DATA_ENDPOINTS_TEST(CanRead) {
   util::testing::MockPromiseEndpoint ep(1234);
-  ExportMockTelemetryInfo(ep);
   ep.ExpectRead({DataFrameHeader(64, 5, 1, 5)}, event_engine().get());
   ep.ExpectRead(
       {grpc_event_engine::experimental::Slice::FromCopiedString("hello"),
@@ -292,7 +274,6 @@ DATA_ENDPOINTS_TEST(CanWriteSecurityFrame) {
   absl::AnyInvocable<void(SliceBuffer*)> send_frame_callback;
   EXPECT_CALL(*transport_framing_endpoint_extension, SetSendFrameCallback)
       .WillOnce(::testing::SaveArgByMove<0>(&send_frame_callback));
-  ExportMockTelemetryInfo(ep);
   auto close_ep = ep.ExpectDelayedReadClose(absl::UnavailableError("test done"),
                                             event_engine().get());
   chaotic_good::DataEndpoints data_endpoints(
@@ -321,7 +302,6 @@ DATA_ENDPOINTS_TEST(CanReadSecurityFrame) {
   auto* transport_framing_endpoint_extension =
       ep.endpoint->AddExtension<::testing::StrictMock<
           util::testing::MockTransportFramingEndpointExtension>>();
-  ExportMockTelemetryInfo(ep);
   EXPECT_CALL(*transport_framing_endpoint_extension, SetSendFrameCallback)
       .WillOnce(::testing::Return());
   EXPECT_CALL(*transport_framing_endpoint_extension, ReceiveFrame)

@@ -97,6 +97,17 @@ class OutputBuffers : public RefCounted<OutputBuffers> {
                      }()));
   }
 
+  bool TraceWrite() {
+    auto now = Timestamp::Now();
+    if (now - last_traced_write_ > Duration::Milliseconds(100)) {
+      last_traced_write_ = now;
+      // We still only trace if there's a sink for the trace, but we only check
+      // that every 100ms because the check can be expensive itself.
+      return ztrace_collector_->IsActive();
+    }
+    return false;
+  }
+
  private:
   Poll<uint32_t> PollWrite(SliceBuffer& output_buffer);
   Poll<SliceBuffer> PollNext(uint32_t connection_id);
@@ -106,6 +117,7 @@ class OutputBuffers : public RefCounted<OutputBuffers> {
   Waker write_waker_ ABSL_GUARDED_BY(mu_);
   std::atomic<uint32_t> ready_endpoints_{0};
   std::shared_ptr<LegacyZTraceCollector> ztrace_collector_;
+  Timestamp last_traced_write_ = Timestamp::InfPast();
 };
 
 class InputQueues : public RefCounted<InputQueues> {
