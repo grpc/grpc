@@ -170,6 +170,10 @@ def _generate_deps_file_content():
             filepath = _bazel_name_to_file_path(name)
             if filepath:
                 cc_files.add(filepath)
+    # setuptools build env has trouble with all of upb, so we hardcode the subset we need
+    cc_files.add("third_party/protobuf/upb/wire/encode.c")
+    cc_files.add("third_party/protobuf/upb/mem/alloc.c")
+    cc_files.add("third_party/protobuf/upb/mini_table/internal/message.c")
 
     deps_file_content = DEPS_FILE_CONTENT.format(
         cc_files=_pretty_print_list(sorted(list(cc_files))),
