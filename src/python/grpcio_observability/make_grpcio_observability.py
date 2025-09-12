@@ -53,7 +53,10 @@ BAZEL_REFERENCE_LINK = [
 # maps bazel reference to a proto to actual path
 BAZEL_PROTO_REFERENCE_LINK = [
     ("//src", "grpc_root/src/core/ext/upb-gen/src"),
-    ("@com_google_protobuf//src/google/", "grpc_root/src/core/ext/upb-gen/google/"),
+    (
+        "@com_google_protobuf//src/google/",
+        "grpc_root/src/core/ext/upb-gen/google/",
+    ),
 ]
 
 ABSL_INCLUDE = (os.path.join("third_party", "abseil-cpp"),)
@@ -143,7 +146,9 @@ def _bazel_proto_name_to_file_path(name):
     """Transform bazel reference to source file name."""
     for link in BAZEL_PROTO_REFERENCE_LINK:
         if name.startswith(link[0]):
-            filepath = link[1] + name[len(link[0]) :].replace(":", "/").replace(".proto", ".upb_minitable.c")
+            filepath = link[1] + name[len(link[0]) :].replace(":", "/").replace(
+                ".proto", ".upb_minitable.c"
+            )
             return filepath
     return None
 
