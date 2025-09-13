@@ -40,6 +40,14 @@ then
   # so we are trying to perform as few download-and-install operations
   # as possible.
   "${PYTHON}" -m pip install --upgrade 'cython==3.1.1'
+  
+  # Install Rust compiler for cryptography package
+  echo "Installing Rust compiler for cryptography package"
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+  source ~/.cargo/env
+  
+  # Also upgrade pip to ensure we can use prebuilt wheels when available
+  "${PYTHON}" -m pip install --upgrade pip
 fi
 
 # Allow build_ext to build C/C++ files in parallel
@@ -106,6 +114,7 @@ echo "DEBUG: SETARCH_CMD=$SETARCH_CMD"
 echo "DEBUG: Current directory: $(pwd)"
 echo "DEBUG: Contents of current directory:"
 ls -la
+echo "DEBUG: Using --no-isolation flag to prevent Cython import issues"
 ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
 echo "DEBUG: Build completed, checking dist/ directory:"
 ls -la dist/ 2>/dev/null || echo "DEBUG: dist/ directory not found"
@@ -146,6 +155,7 @@ echo "DEBUG: Building gRPC tools package"
 
 # Build gRPC tools package using modern python -m build
 echo "DEBUG: Building gRPC tools wheel"
+echo "DEBUG: Using --no-isolation flag to prevent Cython import issues"
 cd tools/distrib/python/grpcio_tools && ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation && cd -
 echo "DEBUG: gRPC tools build completed, checking tools/distrib/python/grpcio_tools/dist/:"
 ls -la tools/distrib/python/grpcio_tools/dist/ 2>/dev/null || echo "DEBUG: tools/distrib/python/grpcio_tools/dist/ not found"
