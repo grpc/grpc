@@ -100,7 +100,15 @@ done
 
 # Build the source distribution and wheel using modern python -m build
 # This replaces the deprecated setup.py sdist and bdist_wheel commands
+echo "DEBUG: Starting Python build process"
+echo "DEBUG: PYTHON=$PYTHON"
+echo "DEBUG: SETARCH_CMD=$SETARCH_CMD"
+echo "DEBUG: Current directory: $(pwd)"
+echo "DEBUG: Contents of current directory:"
+ls -la
 ${SETARCH_CMD} "${PYTHON}" -m build
+echo "DEBUG: Build completed, checking dist/ directory:"
+ls -la dist/ 2>/dev/null || echo "DEBUG: dist/ directory not found"
 
 GRPCIO_STRIP_TEMPDIR=$(mktemp -d)
 GRPCIO_TAR_GZ_LIST=( dist/grpcio-*.tar.gz )
@@ -133,10 +141,14 @@ tar xzf "${GRPCIO_TAR_GZ}" -C "${GRPCIO_STRIP_TEMPDIR}"
 mv "${GRPCIO_STRIPPED_TAR_GZ}" "${GRPCIO_TAR_GZ}"
 
 # Build gRPC tools package distribution
+echo "DEBUG: Building gRPC tools package"
 "${PYTHON}" tools/distrib/python/make_grpcio_tools.py
 
 # Build gRPC tools package using modern python -m build
+echo "DEBUG: Building gRPC tools wheel"
 cd tools/distrib/python/grpcio_tools && ${SETARCH_CMD} "${PYTHON}" -m build && cd -
+echo "DEBUG: gRPC tools build completed, checking tools/distrib/python/grpcio_tools/dist/:"
+ls -la tools/distrib/python/grpcio_tools/dist/ 2>/dev/null || echo "DEBUG: tools/distrib/python/grpcio_tools/dist/ not found"
 
 if [ "$GRPC_BUILD_MAC" == "" ]; then
   "${PYTHON}" src/python/grpcio_observability/make_grpcio_observability.py
@@ -238,6 +250,13 @@ fi
 cp -r dist/*.tar.gz "$ARTIFACT_DIR"
 cp -r tools/distrib/python/grpcio_tools/dist/*.tar.gz "$ARTIFACT_DIR"
 
+# Ensure wheel files are copied to ARTIFACT_DIR (fallback for cases where auditwheel repair didn't run)
+if [ ! -f "$ARTIFACT_DIR"/*.whl ] 2>/dev/null; then
+  echo "DEBUG: No wheel files found in ARTIFACT_DIR, copying from dist/"
+  cp -r dist/*.whl "$ARTIFACT_DIR" 2>/dev/null || echo "DEBUG: No wheel files in dist/"
+  cp -r tools/distrib/python/grpcio_tools/dist/*.whl "$ARTIFACT_DIR" 2>/dev/null || echo "DEBUG: No grpcio-tools wheel files"
+fi
+
 
 if [ "$GRPC_BUILD_MAC" == "" ]; then
   if [ "$GRPC_RUN_AUDITWHEEL_REPAIR" != "" ]
@@ -324,4 +343,24 @@ then
   cd src/python/grpcio_admin && ${SETARCH_CMD} "${PYTHON}" -m build && cd -
   cp -r src/python/grpcio_admin/dist/* "$ARTIFACT_DIR"
 
+fi
+
+# Final fallback: Ensure wheel files are copied to ARTIFACT_DIR
+# This handles cases where the wheel copying logic above didn't work
+echo "DEBUG: Final fallback - ensuring wheel files are in ARTIFACT_DIR"
+if [ -d "$ARTIFACT_DIR" ]; then
+  echo "DEBUG: ARTIFACT_DIR exists: $ARTIFACT_DIR"
+  echo "DEBUG: Current contents of ARTIFACT_DIR:"
+  ls -la "$ARTIFACT_DIR" 2>/dev/null || echo "DEBUG: Failed to list ARTIFACT_DIR"
+  
+  # Check if wheel files exist in dist/ and copy them if ARTIFACT_DIR is empty of wheels
+  if [ -d "dist" ] && [ ! -f "$ARTIFACT_DIR"/*.whl ] 2>/dev/null; then
+    echo "DEBUG: No wheel files in ARTIFACT_DIR, copying from dist/"
+    cp -r dist/*.whl "$ARTIFACT_DIR" 2>/dev/null || echo "DEBUG: No wheel files in dist/"
+    cp -r tools/distrib/python/grpcio_tools/dist/*.whl "$ARTIFACT_DIR" 2>/dev/null || echo "DEBUG: No grpcio-tools wheel files"
+    echo "DEBUG: Contents of ARTIFACT_DIR after final copy:"
+    ls -la "$ARTIFACT_DIR" 2>/dev/null || echo "DEBUG: Failed to list ARTIFACT_DIR"
+  fi
+else
+  echo "DEBUG: ARTIFACT_DIR does not exist: $ARTIFACT_DIR"
 fi
