@@ -96,13 +96,7 @@ VIRTUAL_ENV=$(mktemp -d)
 python3 -m virtualenv "$VIRTUAL_ENV"
 PYTHON=$VIRTUAL_ENV/bin/python
 
-# Use uv for faster package installation if available
-if command -v uv >/dev/null 2>&1; then
-  echo "Using uv for faster package installation in tests"
-  uv pip install --upgrade six pip wheel setuptools
-else
-  "$PYTHON" -m pip install --upgrade six pip wheel setuptools
-fi
+"$PYTHON" -m pip install --upgrade six pip wheel setuptools
 
 function validate_wheel_hashes() {
   for file in "$@"; do
@@ -117,22 +111,11 @@ function at_least_one_installs() {
     echo "DEBUG: Attempting to install: $file"
     # Use --no-index --find-links to install from local artifacts instead of PyPI
     # This prevents dependency resolution issues with development versions
-    if command -v uv >/dev/null 2>&1; then
-      # Use uv for faster installation
-      if uv pip install --no-index --find-links "$EXTERNAL_GIT_ROOT"/input_artifacts/ --find-links "$EXTERNAL_GIT_ROOT"/artifacts/ "$file"; then
-        echo "DEBUG: Successfully installed: $file"
-        return 0
-      else
-        echo "DEBUG: Failed to install: $file"
-      fi
+    if "$PYTHON" -m pip install --no-index --find-links "$EXTERNAL_GIT_ROOT"/input_artifacts/ --find-links "$EXTERNAL_GIT_ROOT"/artifacts/ "$file"; then
+      echo "DEBUG: Successfully installed: $file"
+      return 0
     else
-      # Fallback to pip
-      if "$PYTHON" -m pip install --no-index --find-links "$EXTERNAL_GIT_ROOT"/input_artifacts/ --find-links "$EXTERNAL_GIT_ROOT"/artifacts/ "$file"; then
-        echo "DEBUG: Successfully installed: $file"
-        return 0
-      else
-        echo "DEBUG: Failed to install: $file"
-      fi
+      echo "DEBUG: Failed to install: $file"
     fi
   done
   echo "DEBUG: All installations failed"
