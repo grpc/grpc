@@ -42,27 +42,28 @@ else
     echo "Failed to install uv via pip as well"
   fi
 fi
-  
-  # Add multiple possible uv installation paths to PATH
-  export PATH="$HOME/.local/bin:$HOME/.cargo/bin:/usr/local/bin:/opt/homebrew/bin:$PATH"
-  
-  # Also try to source cargo env as fallback
-  source $HOME/.cargo/env 2>/dev/null || true
-  
-  # Check common installation locations for uv
-  UV_PATHS=("$HOME/.local/bin/uv" "$HOME/.cargo/bin/uv" "/usr/local/bin/uv" "/opt/homebrew/bin/uv")
-  UV_FOUND=""
-  
-  for uv_path in "${UV_PATHS[@]}"; do
-    if [ -f "$uv_path" ]; then
-      echo "Found uv at: $uv_path"
-      export PATH="$(dirname "$uv_path"):$PATH"
-      UV_FOUND="$uv_path"
-      break
-    fi
-  done
-  
-  if command -v uv >/dev/null 2>&1; then
+
+# Add multiple possible uv installation paths to PATH
+export PATH="$HOME/.local/bin:$HOME/.cargo/bin:/usr/local/bin:/opt/homebrew/bin:$PATH"
+
+# Also try to source cargo env as fallback
+source $HOME/.cargo/env 2>/dev/null || true
+
+# Check common installation locations for uv
+UV_PATHS=("$HOME/.local/bin/uv" "$HOME/.cargo/bin/uv" "/usr/local/bin/uv" "/opt/homebrew/bin/uv")
+UV_FOUND=""
+
+echo "Checking for uv in common installation locations..."
+for uv_path in "${UV_PATHS[@]}"; do
+  if [ -f "$uv_path" ]; then
+    echo "Found uv at: $uv_path"
+    export PATH="$(dirname "$uv_path"):$PATH"
+    UV_FOUND="$uv_path"
+    break
+  fi
+done
+
+if command -v uv >/dev/null 2>&1; then
     echo "Successfully installed/updated uv to latest version for Mac distribtests"
     echo "uv version: $(uv --version)"
     # Install for all Python versions using uv
