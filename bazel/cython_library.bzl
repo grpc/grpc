@@ -13,6 +13,8 @@
 # limitations under the License.
 """Custom rules for gRPC Python"""
 
+load("@rules_python//python:defs.bzl", "py_library")
+
 # Adapted with modifications from
 # tensorflow/tensorflow/core/platform/default/build_config.bzl
 # Native Bazel rules don't exist yet to compile Cython code, but rules have
@@ -82,7 +84,7 @@ def pyx_library(name, deps = [], py_deps = [], srcs = [], **kwargs):
     data += kwargs.pop("data", [])
 
     # Now create a py_library with these shared objects as data.
-    native.py_library(
+    py_library(
         name = name,
         srcs = py_srcs,
         deps = py_deps,

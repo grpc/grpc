@@ -15,6 +15,8 @@
 Houses py_grpc_logging_threshold_test.
 """
 
+load("@rules_python//python:defs.bzl", "py_library", "py_test")
+
 _COPIED_MAIN_SUFFIX = ".logging_threshold.main"
 
 def py_grpc_logging_threshold_test(
@@ -42,7 +44,7 @@ def py_grpc_logging_threshold_test(
     data = [] if data == None else data
 
     lib_name = name + ".logging_threshold.lib"
-    native.py_library(
+    py_library(
         name = lib_name,
         srcs = srcs,
     )
@@ -59,8 +61,7 @@ def py_grpc_logging_threshold_test(
         outs = [copied_main_filename],
         cmd = "cp $< $@",
     )
-
-    native.py_test(
+    py_test(
         name = name + ".logging_threshold",
         args = ["$(location //bazel:_single_module_tester)", name],
         data = data + ["//bazel:_single_module_tester"],
