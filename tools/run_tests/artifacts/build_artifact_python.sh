@@ -206,12 +206,21 @@ then
   done
   # Copy repaired wheels to parent directory for distribtest compatibility
   cp -r "$ARTIFACT_DIR"/*.whl "$(dirname "$ARTIFACT_DIR")/" 2>/dev/null || true
+  # Also copy to input_artifacts if it exists (for distribtest compatibility)
+  if [ -d "${EXTERNAL_GIT_ROOT}/input_artifacts" ]; then
+    cp -r "$ARTIFACT_DIR"/*.whl "${EXTERNAL_GIT_ROOT}/input_artifacts/" 2>/dev/null || true
+  fi
 else
   cp -r dist/*.whl "$ARTIFACT_DIR"
   cp -r tools/distrib/python/grpcio_tools/dist/*.whl "$ARTIFACT_DIR"
   # Also copy wheel files to parent directory for distribtest compatibility
   cp -r dist/*.whl "$(dirname "$ARTIFACT_DIR")/"
   cp -r tools/distrib/python/grpcio_tools/dist/*.whl "$(dirname "$ARTIFACT_DIR")/"
+  # Also copy to input_artifacts if it exists (for distribtest compatibility)
+  if [ -d "${EXTERNAL_GIT_ROOT}/input_artifacts" ]; then
+    cp -r dist/*.whl "${EXTERNAL_GIT_ROOT}/input_artifacts/" 2>/dev/null || true
+    cp -r tools/distrib/python/grpcio_tools/dist/*.whl "${EXTERNAL_GIT_ROOT}/input_artifacts/" 2>/dev/null || true
+  fi
 fi
 
 # grpcio and grpcio-tools have already been copied to artifact_dir

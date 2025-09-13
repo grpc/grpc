@@ -53,3 +53,13 @@ fi
     | xargs -0 -I% find % -type f -maxdepth 1 \
     -name "*.whl" \
     -exec cp -v {} "${EXTERNAL_GIT_ROOT}/input_artifacts/" \;
+
+# Fallback: If no files were found with the filtered command, try without exclusions
+# This handles cases where EXCLUDE_PATTERNS might be too restrictive
+if [ "$(find "${EXTERNAL_GIT_ROOT}/input_artifacts/" -maxdepth 1 -type d -name "python_*" | wc -l)" -gt 0 ]; then
+  echo "DEBUG: Fallback - copying from all python_* directories"
+  find "${EXTERNAL_GIT_ROOT}/input_artifacts/" -maxdepth 1 -type d -name "python_*" -print0 \
+    | xargs -0 -I% find % -type f -maxdepth 1 \
+    -name "*.whl" \
+    -exec cp -v {} "${EXTERNAL_GIT_ROOT}/input_artifacts/" \;
+fi
