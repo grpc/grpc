@@ -194,7 +194,11 @@ fi
 
 if [ "$GRPC_RUN_AUDITWHEEL_REPAIR" != "" ]
 then
+  echo "DEBUG: Running auditwheel repair, ARTIFACT_DIR=$ARTIFACT_DIR"
+  echo "DEBUG: Wheel files in dist/:"
+  ls -la dist/*.whl 2>/dev/null || echo "DEBUG: No wheel files found in dist/"
   for wheel in dist/*.whl; do
+    echo "DEBUG: Processing wheel: $wheel"
     "${AUDITWHEEL}" show "$wheel" | tee /dev/stderr |  grep -E -w "$AUDITWHEEL_PLAT"
     "${AUDITWHEEL}" repair "$wheel" --strip --wheel-dir "$ARTIFACT_DIR"
     rm "$wheel"
@@ -211,8 +215,14 @@ then
     cp -r "$ARTIFACT_DIR"/*.whl "${EXTERNAL_GIT_ROOT}/input_artifacts/" 2>/dev/null || true
   fi
 else
+  echo "DEBUG: Not running auditwheel repair, ARTIFACT_DIR=$ARTIFACT_DIR"
+  echo "DEBUG: Wheel files in dist/:"
+  ls -la dist/*.whl 2>/dev/null || echo "DEBUG: No wheel files found in dist/"
+  echo "DEBUG: Copying wheel files to ARTIFACT_DIR"
   cp -r dist/*.whl "$ARTIFACT_DIR"
   cp -r tools/distrib/python/grpcio_tools/dist/*.whl "$ARTIFACT_DIR"
+  echo "DEBUG: Contents of ARTIFACT_DIR after copying:"
+  ls -la "$ARTIFACT_DIR" 2>/dev/null || echo "DEBUG: Failed to list ARTIFACT_DIR"
   # Also copy wheel files to parent directory for distribtest compatibility
   cp -r dist/*.whl "$(dirname "$ARTIFACT_DIR")/"
   cp -r tools/distrib/python/grpcio_tools/dist/*.whl "$(dirname "$ARTIFACT_DIR")/"
