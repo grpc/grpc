@@ -227,42 +227,6 @@ then
     "${AUDITWHEEL}" repair "$wheel" --strip --wheel-dir "$ARTIFACT_DIR"
     rm "$wheel"
   done
-  # Copy repaired wheels to parent directory for distribtest compatibility
-  cp -r "$ARTIFACT_DIR"/*.whl "$(dirname "$ARTIFACT_DIR")/" 2>/dev/null || true
-  # Also copy to input_artifacts if it exists (for distribtest compatibility)
-  if [ -d "${EXTERNAL_GIT_ROOT}/input_artifacts" ]; then
-    cp -r "$ARTIFACT_DIR"/*.whl "${EXTERNAL_GIT_ROOT}/input_artifacts/" 2>/dev/null || true
-  fi
-else
-  echo "DEBUG: Not running auditwheel repair, ARTIFACT_DIR=$ARTIFACT_DIR"
-  echo "DEBUG: Wheel files in dist/:"
-  ls -la dist/*.whl 2>/dev/null || echo "DEBUG: No wheel files found in dist/"
-  echo "DEBUG: Copying wheel files to ARTIFACT_DIR"
-  cp -r dist/*.whl "$ARTIFACT_DIR"
-  cp -r tools/distrib/python/grpcio_tools/dist/*.whl "$ARTIFACT_DIR"
-  echo "DEBUG: Contents of ARTIFACT_DIR after copying:"
-  ls -la "$ARTIFACT_DIR" 2>/dev/null || echo "DEBUG: Failed to list ARTIFACT_DIR"
-  # Also copy wheel files to parent directory for distribtest compatibility
-  cp -r dist/*.whl "$(dirname "$ARTIFACT_DIR")/"
-  cp -r tools/distrib/python/grpcio_tools/dist/*.whl "$(dirname "$ARTIFACT_DIR")/"
-  # Also copy to input_artifacts if it exists (for distribtest compatibility)
-  if [ -d "${EXTERNAL_GIT_ROOT}/input_artifacts" ]; then
-    cp -r dist/*.whl "${EXTERNAL_GIT_ROOT}/input_artifacts/" 2>/dev/null || true
-    cp -r tools/distrib/python/grpcio_tools/dist/*.whl "${EXTERNAL_GIT_ROOT}/input_artifacts/" 2>/dev/null || true
-  fi
-fi
-
-# grpcio and grpcio-tools have already been copied to artifact_dir
-# by "auditwheel repair", now copy the .tar.gz source archives as well.
-cp -r dist/*.tar.gz "$ARTIFACT_DIR"
-cp -r tools/distrib/python/grpcio_tools/dist/*.tar.gz "$ARTIFACT_DIR"
-
-# Ensure wheel files are copied to ARTIFACT_DIR (fallback for cases where auditwheel repair didn't run)
-if [ ! -f "$ARTIFACT_DIR"/*.whl ] 2>/dev/null; then
-  echo "DEBUG: No wheel files found in ARTIFACT_DIR, copying from dist/"
-  cp -r dist/*.whl "$ARTIFACT_DIR" 2>/dev/null || echo "DEBUG: No wheel files in dist/"
-  cp -r tools/distrib/python/grpcio_tools/dist/*.whl "$ARTIFACT_DIR" 2>/dev/null || echo "DEBUG: No grpcio-tools wheel files"
-fi
 
 
 if [ "$GRPC_BUILD_MAC" == "" ]; then
