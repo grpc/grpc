@@ -25,10 +25,35 @@ export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
 # shellcheck disable=SC1091
 source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 
-# Needed for building binary distribution wheels -- bdist_wheel
-"${PYTHON}" -m pip install --upgrade pip
-# Ping to a single version to make sure we're building the same artifacts
-"${PYTHON}" -m pip install setuptools==69.5.1 wheel==0.43.0 build
+# Install uv for faster package management (if available)
+if command -v uv >/dev/null 2>&1; then
+  echo "Using uv for faster package installation"
+  UV_CMD="uv"
+else
+  echo "uv not available, attempting to install it for faster builds"
+  if curl -LsSf https://astral.sh/uv/install.sh | sh; then
+    source $HOME/.cargo/env 2>/dev/null || true
+    if command -v uv >/dev/null 2>&1; then
+      echo "Successfully installed uv"
+      UV_CMD="uv"
+    else
+      echo "Failed to install uv, falling back to pip"
+      UV_CMD="pip"
+      "${PYTHON}" -m pip install --upgrade pip
+    fi
+  else
+    echo "Failed to install uv, falling back to pip"
+    UV_CMD="pip"
+    "${PYTHON}" -m pip install --upgrade pip
+  fi
+fi
+
+# Install build dependencies using uv or pip
+if [ "$UV_CMD" = "uv" ]; then
+  uv pip install setuptools==69.5.1 wheel==0.43.0 build
+else
+  "${PYTHON}" -m pip install setuptools==69.5.1 wheel==0.43.0 build
+fi
 
 if [ "$GRPC_SKIP_PIP_CYTHON_UPGRADE" == "" ]
 then
@@ -39,7 +64,11 @@ then
   # Any installation step is a potential source of breakages,
   # so we are trying to perform as few download-and-install operations
   # as possible.
-  "${PYTHON}" -m pip install --upgrade 'cython==3.1.1'
+  if [ "$UV_CMD" = "uv" ]; then
+    uv pip install --upgrade 'cython==3.1.1'
+  else
+    "${PYTHON}" -m pip install --upgrade 'cython==3.1.1'
+  fi
   
   # Install Rust compiler for cryptography package
   echo "Installing Rust compiler for cryptography package"
@@ -47,7 +76,9 @@ then
   source ~/.cargo/env
   
   # Also upgrade pip to ensure we can use prebuilt wheels when available
-  "${PYTHON}" -m pip install --upgrade pip
+  if [ "$UV_CMD" = "pip" ]; then
+    "${PYTHON}" -m pip install --upgrade pip
+  fi
 fi
 
 # Allow build_ext to build C/C++ files in parallel
@@ -172,10 +203,17 @@ if [ "$GRPC_SKIP_TWINE_CHECK" == "" ]
 then
   # Install virtualenv if it isn't already available.
   # TODO(jtattermusch): cleanup the virtualenv version fallback logic.
-  "${PYTHON}" -m pip install virtualenv
-  "${PYTHON}" -m virtualenv venv || { "${PYTHON}" -m pip install virtualenv==20.0.23 && "${PYTHON}" -m virtualenv venv; }
-  # Ensure the generated artifacts are valid using "twine check"
-  venv/bin/python -m pip install "cryptography==40.0.0" "twine==5.0.0" "readme_renderer<40.0"
+  if [ "$UV_CMD" = "uv" ]; then
+    uv pip install virtualenv
+    "${PYTHON}" -m virtualenv venv || { uv pip install virtualenv==20.0.23 && "${PYTHON}" -m virtualenv venv; }
+    # Ensure the generated artifacts are valid using "twine check"
+    venv/bin/python -m pip install "cryptography==40.0.0" "twine==5.0.0" "readme_renderer<40.0"
+  else
+    "${PYTHON}" -m pip install virtualenv
+    "${PYTHON}" -m virtualenv venv || { "${PYTHON}" -m pip install virtualenv==20.0.23 && "${PYTHON}" -m virtualenv venv; }
+    # Ensure the generated artifacts are valid using "twine check"
+    venv/bin/python -m pip install "cryptography==40.0.0" "twine==5.0.0" "readme_renderer<40.0"
+  fi
   venv/bin/python -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
   if [ "$GRPC_BUILD_MAC" == "" ]; then
     venv/bin/python -m twine check src/python/grpcio_observability/dist/*

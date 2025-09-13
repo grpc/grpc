@@ -27,6 +27,10 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 source tools/internal_ci/helper_scripts/prepare_ccache_rc
 
 # Build all python linux artifacts (this step actually builds all the binary wheels and source archives)
+# Override TASK_RUNNER_EXTRA_FILTERS to exclude aarch64 if it's set to include only aarch64
+if [ "${TASK_RUNNER_EXTRA_FILTERS}" = "aarch64" ]; then
+  TASK_RUNNER_EXTRA_FILTERS="-e aarch64"
+fi
 tools/run_tests/task_runner.py -f artifact linux python ${TASK_RUNNER_EXTRA_FILTERS} -j 12 -x build_artifacts/sponge_log.xml || FAILED="true"
 
 # the next step expects to find the artifacts from the previous step in the "input_artifacts" folder.
@@ -60,6 +64,7 @@ find artifacts/ -name "*.whl" -exec cp {} input_artifacts/ \; || true
 # a better signal about which distribtest are affected by the currently broken artifact builds.
 
 
+# Use the same filter logic for distribtests
 tools/run_tests/task_runner.py -f distribtest linux python ${TASK_RUNNER_EXTRA_FILTERS} -j 12 -x distribtests/sponge_log.xml || FAILED="true"
 
 # This step checks if any of the artifacts exceeds a per-file size limit.
