@@ -152,11 +152,31 @@ echo "DEBUG: Current directory: $(pwd)"
 echo "DEBUG: Contents of current directory:"
 ls -la
 echo "DEBUG: Using --no-build-isolation flag to prevent Cython import issues"
-if [ "$UV_CMD" = "uv" ]; then
-  ${SETARCH_CMD} uv build --no-build-isolation
-else
-  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
-fi
+
+# Function to build with fallback mechanism
+build_with_fallback() {
+  if [ "$UV_CMD" = "uv" ]; then
+    echo "DEBUG: Attempting to build with uv build"
+    if ${SETARCH_CMD} uv build --no-build-isolation 2>&1 | tee /tmp/uv_build.log; then
+      echo "DEBUG: uv build succeeded"
+      return 0
+    else
+      echo "DEBUG: uv build failed, checking if it's due to platform detection issues"
+      if grep -q "Unknown operating system\|Failed to inspect Python interpreter" /tmp/uv_build.log; then
+        echo "DEBUG: uv build failed due to platform detection issues, falling back to python -m build"
+        ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
+      else
+        echo "DEBUG: uv build failed for other reasons, not falling back"
+        return 1
+      fi
+    fi
+  else
+    echo "DEBUG: Using python -m build (uv not available)"
+    ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
+  fi
+}
+
+build_with_fallback
 echo "DEBUG: Build completed, checking dist/ directory:"
 ls -la dist/ 2>/dev/null || echo "DEBUG: dist/ directory not found"
 
@@ -198,11 +218,7 @@ echo "DEBUG: Building gRPC tools package"
 echo "DEBUG: Building gRPC tools wheel"
 echo "DEBUG: Using --no-build-isolation flag to prevent Cython import issues"
 cd tools/distrib/python/grpcio_tools
-if [ "$UV_CMD" = "uv" ]; then
-  ${SETARCH_CMD} uv build --no-build-isolation
-else
-  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
-fi
+build_with_fallback
 cd -
 echo "DEBUG: gRPC tools build completed, checking tools/distrib/python/grpcio_tools/dist/:"
 ls -la tools/distrib/python/grpcio_tools/dist/ 2>/dev/null || echo "DEBUG: tools/distrib/python/grpcio_tools/dist/ not found"
@@ -210,11 +226,7 @@ ls -la tools/distrib/python/grpcio_tools/dist/ 2>/dev/null || echo "DEBUG: tools
 if [ "$GRPC_BUILD_MAC" == "" ]; then
   "${PYTHON}" src/python/grpcio_observability/make_grpcio_observability.py
   cd src/python/grpcio_observability
-  if [ "$UV_CMD" = "uv" ]; then
-    ${SETARCH_CMD} uv build --no-build-isolation
-  else
-    ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
-  fi
+  build_with_fallback
   cd -
 fi
 
@@ -348,11 +360,7 @@ if [ "$GRPC_BUILD_MAC" == "" ]; then
   # Build grpcio_csm_observability distribution
   if [ "$GRPC_BUILD_MAC" == "" ]; then
     cd src/python/grpcio_csm_observability
-    if [ "$UV_CMD" = "uv" ]; then
-      ${SETARCH_CMD} uv build --no-build-isolation
-    else
-      ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
-    fi
+    build_with_fallback
     cd -
     cp -r src/python/grpcio_csm_observability/dist/* "$ARTIFACT_DIR"
   fi
@@ -397,66 +405,42 @@ then
   # Build xds_protos source distribution
   # build.py is invoked as part of generate_projects.
   cd tools/distrib/python/xds_protos
-  if [ "$UV_CMD" = "uv" ]; then
-    ${SETARCH_CMD} uv build --no-build-isolation
-  else
-    ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
-  fi
+  build_with_fallback
   cd -
   cp -r tools/distrib/python/xds_protos/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_testing source distribution
   cd src/python/grpcio_testing
   ${SETARCH_CMD} "${PYTHON}" setup.py preprocess
-  if [ "$UV_CMD" = "uv" ]; then
-    ${SETARCH_CMD} uv build --no-build-isolation
-  else
-    ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
-  fi
+  build_with_fallback
   cd -
   cp -r src/python/grpcio_testing/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_channelz source distribution
   cd src/python/grpcio_channelz
   ${SETARCH_CMD} "${PYTHON}" setup.py preprocess build_package_protos
-  if [ "$UV_CMD" = "uv" ]; then
-    ${SETARCH_CMD} uv build --no-build-isolation
-  else
-    ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
-  fi
+  build_with_fallback
   cd -
   cp -r src/python/grpcio_channelz/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_health_checking source distribution
   cd src/python/grpcio_health_checking
   ${SETARCH_CMD} "${PYTHON}" setup.py preprocess build_package_protos
-  if [ "$UV_CMD" = "uv" ]; then
-    ${SETARCH_CMD} uv build --no-build-isolation
-  else
-    ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
-  fi
+  build_with_fallback
   cd -
   cp -r src/python/grpcio_health_checking/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_reflection source distribution
   cd src/python/grpcio_reflection
   ${SETARCH_CMD} "${PYTHON}" setup.py preprocess build_package_protos
-  if [ "$UV_CMD" = "uv" ]; then
-    ${SETARCH_CMD} uv build --no-build-isolation
-  else
-    ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
-  fi
+  build_with_fallback
   cd -
   cp -r src/python/grpcio_reflection/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_status source distribution
   cd src/python/grpcio_status
   ${SETARCH_CMD} "${PYTHON}" setup.py preprocess
-  if [ "$UV_CMD" = "uv" ]; then
-    ${SETARCH_CMD} uv build --no-build-isolation
-  else
-    ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
-  fi
+  build_with_fallback
   cd -
   cp -r src/python/grpcio_status/dist/* "$ARTIFACT_DIR"
 
@@ -469,11 +453,7 @@ then
 
   # Build grpcio_csds source distribution
   cd src/python/grpcio_csds
-  if [ "$UV_CMD" = "uv" ]; then
-    ${SETARCH_CMD} uv build --no-build-isolation
-  else
-    ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
-  fi
+  build_with_fallback
   cd -
   cp -r src/python/grpcio_csds/dist/* "$ARTIFACT_DIR"
 
@@ -487,11 +467,7 @@ then
     "${PYTHON}" -m pip install grpcio-csds --no-index --find-links "file://$ARTIFACT_DIR/"
   fi
   cd src/python/grpcio_admin
-  if [ "$UV_CMD" = "uv" ]; then
-    ${SETARCH_CMD} uv build --no-build-isolation
-  else
-    ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
-  fi
+  build_with_fallback
   cd -
   cp -r src/python/grpcio_admin/dist/* "$ARTIFACT_DIR"
 
