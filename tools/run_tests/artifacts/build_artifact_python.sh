@@ -53,9 +53,11 @@ ARTIFACT_DIR="$PWD/${ARTIFACTS_OUT}"
 # check whether we are crosscompiling. AUDITWHEEL_ARCH is set by the dockcross docker image.
 if [ "$AUDITWHEEL_ARCH" == "aarch64" ]
 then
-  # when crosscompiling for aarch64, set _PYTHON_HOST_PLATFORM for modern build system
+  # when crosscompiling for aarch64, --plat-name needs to be set explicitly
+  # to end up with correctly named wheel file
   # the value should be manylinuxABC_ARCH and dockcross docker image
   # conveniently provides the value in the AUDITWHEEL_PLAT env
+  WHEEL_PLAT_NAME_FLAG="--plat-name=$AUDITWHEEL_PLAT"
   export _PYTHON_HOST_PLATFORM="$AUDITWHEEL_PLAT"
 
   # override the value of EXT_SUFFIX to make sure the crosscompiled .so files in the wheel have the correct filename suffix
@@ -69,9 +71,10 @@ fi
 # check whether we are crosscompiling. AUDITWHEEL_ARCH is set by the dockcross docker image.
 if [ "$AUDITWHEEL_ARCH" == "armv7l" ]
 then
-  # when crosscompiling for arm, set _PYTHON_HOST_PLATFORM for modern build system
-  # our dockcross-based docker image conveniently provides the value in the AUDITWHEEL_PLAT env
-  export _PYTHON_HOST_PLATFORM="$AUDITWHEEL_PLAT"
+  # when crosscompiling for arm, --plat-name needs to be set explicitly
+  # to end up with correctly named wheel file
+  # our dockcross-based docker image onveniently provides the value in the AUDITWHEEL_PLAT env
+  WHEEL_PLAT_NAME_FLAG="--plat-name=$AUDITWHEEL_PLAT"
 
   # override the value of EXT_SUFFIX to make sure the crosscompiled .so files in the wheel have the correct filename suffix
   GRPC_PYTHON_OVERRIDE_EXT_SUFFIX="$(${PYTHON} -c 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX").replace("-x86_64-linux-gnu.so", "-arm-linux-gnueabihf.so"))')"
@@ -79,6 +82,7 @@ then
 
   # since we're crosscompiling, we need to explicitly choose the right platform for boringssl assembly optimizations
   export GRPC_BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM="linux-arm"
+  export _PYTHON_HOST_PLATFORM="$AUDITWHEEL_PLAT"
 fi
 
 ancillary_package_dir=(
@@ -98,19 +102,15 @@ for directory in "${ancillary_package_dir[@]}"; do
   cp "LICENSE" "${directory}"
 done
 
-# Build the source distribution and wheel using modern build system
-# This replaces the deprecated setup.py sdist and bdist_wheel commands
-echo "DEBUG: Starting Python build process"
-echo "DEBUG: PYTHON=$PYTHON"
-echo "DEBUG: SETARCH_CMD=$SETARCH_CMD"
-echo "DEBUG: Current directory: $(pwd)"
-echo "DEBUG: Contents of current directory:"
-ls -la
-echo "DEBUG: Using --no-build-isolation flag to prevent Cython import issues"
+# Build the source distribution first because MANIFEST.in cannot override
+# exclusion of built shared objects among package resources (for some
+# inexplicable reason).
+${SETARCH_CMD} "${PYTHON}" setup.py sdist
 
-${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
-echo "DEBUG: Build completed, checking dist/ directory:"
-ls -la dist/ 2>/dev/null || echo "DEBUG: dist/ directory not found"
+# Wheel has a bug where directories don't get excluded.
+# https://bitbucket.org/pypa/wheel/issues/99/cannot-exclude-directory
+# shellcheck disable=SC2086
+${SETARCH_CMD} "${PYTHON}" -m build
 
 GRPCIO_STRIP_TEMPDIR=$(mktemp -d)
 GRPCIO_TAR_GZ_LIST=( dist/grpcio-*.tar.gz )
@@ -143,22 +143,21 @@ tar xzf "${GRPCIO_TAR_GZ}" -C "${GRPCIO_STRIP_TEMPDIR}"
 mv "${GRPCIO_STRIPPED_TAR_GZ}" "${GRPCIO_TAR_GZ}"
 
 # Build gRPC tools package distribution
-echo "DEBUG: Building gRPC tools package"
 "${PYTHON}" tools/distrib/python/make_grpcio_tools.py
 
-# Build gRPC tools package using modern build system
-echo "DEBUG: Building gRPC tools wheel"
-echo "DEBUG: Using --no-build-isolation flag to prevent Cython import issues"
+# Build gRPC tools package source distribution
+${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py sdist
+
+# Build gRPC tools package binary distribution
+# shellcheck disable=SC2086
 cd tools/distrib/python/grpcio_tools
-${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
+${SETARCH_CMD} "${PYTHON}" -m build
 cd -
-echo "DEBUG: gRPC tools build completed, checking tools/distrib/python/grpcio_tools/dist/:"
-ls -la tools/distrib/python/grpcio_tools/dist/ 2>/dev/null || echo "DEBUG: tools/distrib/python/grpcio_tools/dist/ not found"
 
 if [ "$GRPC_BUILD_MAC" == "" ]; then
   "${PYTHON}" src/python/grpcio_observability/make_grpcio_observability.py
   cd src/python/grpcio_observability
-  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
+  ${SETARCH_CMD} "${PYTHON}" -m build
   cd -
 fi
 
@@ -213,11 +212,7 @@ fi
 
 if [ "$GRPC_RUN_AUDITWHEEL_REPAIR" != "" ]
 then
-  echo "DEBUG: Running auditwheel repair, ARTIFACT_DIR=$ARTIFACT_DIR"
-  echo "DEBUG: Wheel files in dist/:"
-  ls -la dist/*.whl 2>/dev/null || echo "DEBUG: No wheel files found in dist/"
   for wheel in dist/*.whl; do
-    echo "DEBUG: Processing wheel: $wheel"
     "${AUDITWHEEL}" show "$wheel" | tee /dev/stderr |  grep -E -w "$AUDITWHEEL_PLAT"
     "${AUDITWHEEL}" repair "$wheel" --strip --wheel-dir "$ARTIFACT_DIR"
     rm "$wheel"
@@ -227,6 +222,15 @@ then
     "${AUDITWHEEL}" repair "$wheel" --strip --wheel-dir "$ARTIFACT_DIR"
     rm "$wheel"
   done
+else
+  cp -r dist/*.whl "$ARTIFACT_DIR"
+  cp -r tools/distrib/python/grpcio_tools/dist/*.whl "$ARTIFACT_DIR"
+fi
+
+# grpcio and grpcio-tools have already been copied to artifact_dir
+# by "auditwheel repair", now copy the .tar.gz source archives as well.
+cp -r dist/*.tar.gz "$ARTIFACT_DIR"
+cp -r tools/distrib/python/grpcio_tools/dist/*.tar.gz "$ARTIFACT_DIR"
 
 
 if [ "$GRPC_BUILD_MAC" == "" ]; then
@@ -237,12 +241,8 @@ if [ "$GRPC_BUILD_MAC" == "" ]; then
       "${AUDITWHEEL}" repair "$wheel" --strip --wheel-dir "$ARTIFACT_DIR"
       rm "$wheel"
     done
-    # Copy repaired observability wheels to parent directory for distribtest compatibility
-    cp -r "$ARTIFACT_DIR"/*observability*.whl "$(dirname "$ARTIFACT_DIR")/" 2>/dev/null || true
   else
     cp -r src/python/grpcio_observability/dist/*.whl "$ARTIFACT_DIR"
-    # Also copy observability wheel files to parent directory for distribtest compatibility
-    cp -r src/python/grpcio_observability/dist/*.whl "$(dirname "$ARTIFACT_DIR")/"
   fi
   cp -r src/python/grpcio_observability/dist/*.tar.gz "$ARTIFACT_DIR"
 
@@ -280,42 +280,43 @@ then
   # Build xds_protos source distribution
   # build.py is invoked as part of generate_projects.
   cd tools/distrib/python/xds_protos
-  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
+  ${SETARCH_CMD} "${PYTHON}" -m build
+  ${SETARCH_CMD} "${PYTHON}" -m pip install .
   cd -
   cp -r tools/distrib/python/xds_protos/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_testing source distribution
   cd src/python/grpcio_testing
   ${SETARCH_CMD} "${PYTHON}" setup.py preprocess
-  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
+  ${SETARCH_CMD} "${PYTHON}" -m build
   cd -
   cp -r src/python/grpcio_testing/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_channelz source distribution
   cd src/python/grpcio_channelz
   ${SETARCH_CMD} "${PYTHON}" setup.py preprocess build_package_protos
-  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
+  ${SETARCH_CMD} "${PYTHON}" -m build
   cd -
   cp -r src/python/grpcio_channelz/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_health_checking source distribution
   cd src/python/grpcio_health_checking
   ${SETARCH_CMD} "${PYTHON}" setup.py preprocess build_package_protos
-  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
+  ${SETARCH_CMD} "${PYTHON}" -m build
   cd -
   cp -r src/python/grpcio_health_checking/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_reflection source distribution
   cd src/python/grpcio_reflection
   ${SETARCH_CMD} "${PYTHON}" setup.py preprocess build_package_protos
-  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
+  ${SETARCH_CMD} "${PYTHON}" -m build
   cd -
   cp -r src/python/grpcio_reflection/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_status source distribution
   cd src/python/grpcio_status
   ${SETARCH_CMD} "${PYTHON}" setup.py preprocess
-  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
+  ${SETARCH_CMD} "${PYTHON}" -m build
   cd -
   cp -r src/python/grpcio_status/dist/* "$ARTIFACT_DIR"
 
@@ -324,7 +325,7 @@ then
 
   # Build grpcio_csds source distribution
   cd src/python/grpcio_csds
-  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
+  ${SETARCH_CMD} "${PYTHON}" -m build
   cd -
   cp -r src/python/grpcio_csds/dist/* "$ARTIFACT_DIR"
 
@@ -333,28 +334,8 @@ then
   "${PYTHON}" -m pip install grpcio-channelz --no-index --find-links "file://$ARTIFACT_DIR/"
   "${PYTHON}" -m pip install grpcio-csds --no-index --find-links "file://$ARTIFACT_DIR/"
   cd src/python/grpcio_admin
-  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
+  ${SETARCH_CMD} "${PYTHON}" -m build
   cd -
   cp -r src/python/grpcio_admin/dist/* "$ARTIFACT_DIR"
 
-fi
-
-# Final fallback: Ensure wheel files are copied to ARTIFACT_DIR
-# This handles cases where the wheel copying logic above didn't work
-echo "DEBUG: Final fallback - ensuring wheel files are in ARTIFACT_DIR"
-if [ -d "$ARTIFACT_DIR" ]; then
-  echo "DEBUG: ARTIFACT_DIR exists: $ARTIFACT_DIR"
-  echo "DEBUG: Current contents of ARTIFACT_DIR:"
-  ls -la "$ARTIFACT_DIR" 2>/dev/null || echo "DEBUG: Failed to list ARTIFACT_DIR"
-  
-  # Check if wheel files exist in dist/ and copy them if ARTIFACT_DIR is empty of wheels
-  if [ -d "dist" ] && [ ! -f "$ARTIFACT_DIR"/*.whl ] 2>/dev/null; then
-    echo "DEBUG: No wheel files in ARTIFACT_DIR, copying from dist/"
-    cp -r dist/*.whl "$ARTIFACT_DIR" 2>/dev/null || echo "DEBUG: No wheel files in dist/"
-    cp -r tools/distrib/python/grpcio_tools/dist/*.whl "$ARTIFACT_DIR" 2>/dev/null || echo "DEBUG: No grpcio-tools wheel files"
-    echo "DEBUG: Contents of ARTIFACT_DIR after final copy:"
-    ls -la "$ARTIFACT_DIR" 2>/dev/null || echo "DEBUG: Failed to list ARTIFACT_DIR"
-  fi
-else
-  echo "DEBUG: ARTIFACT_DIR does not exist: $ARTIFACT_DIR"
 fi

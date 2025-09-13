@@ -19,7 +19,6 @@ set PATH=C:\%1;C:\%1\scripts;%PATH%
 set PATH=C:\msys64\mingw%2\bin;C:\tools\msys64\mingw%2\bin;%PATH%
 :end_mingw64_installation
 
-
 python -m pip install --upgrade pip six
 @rem Ping to a single version to make sure we're building the same artifacts
 python -m pip install setuptools==69.5.1 wheel==0.43.0
@@ -49,12 +48,14 @@ pushd tools\distrib\python\grpcio_tools
 python setup.py build_ext -c %EXT_COMPILER% || goto :error
 popd
 
+@rem Build gRPC Python distributions
 python -m build || goto :error
 
 pushd tools\distrib\python\grpcio_tools
-python -m build || goto :error
+ppython -m build || goto :error
 popd
 
+@rem Ensure the generate artifacts are valid.
 python -m pip install packaging==21.3 twine==5.0.0
 python -m twine check dist\* tools\distrib\python\grpcio_tools\dist\* || goto :error
 
