@@ -43,11 +43,27 @@ else
   fi
 fi
 
+echo "DEBUG: UV installation phase completed, continuing with PATH setup..."
+
 # Add multiple possible uv installation paths to PATH
 export PATH="$HOME/.local/bin:$HOME/.cargo/bin:/usr/local/bin:/opt/homebrew/bin:$PATH"
 
-# Also try to source cargo env as fallback
-source $HOME/.cargo/env 2>/dev/null || true
+# Also try to source cargo env as fallback (but don't fail if it doesn't exist)
+if [ -f "$HOME/.cargo/env" ]; then
+  echo "DEBUG: Sourcing cargo env from $HOME/.cargo/env"
+  source "$HOME/.cargo/env" 2>/dev/null || echo "DEBUG: Failed to source cargo env, continuing anyway"
+else
+  echo "DEBUG: Cargo env file not found at $HOME/.cargo/env, skipping"
+fi
+
+# Debug: Check if uv is available immediately after PATH update
+echo "DEBUG: Checking if uv is available after PATH update..."
+if command -v uv >/dev/null 2>&1; then
+  echo "DEBUG: uv is available immediately after PATH update"
+  echo "DEBUG: uv version: $(uv --version)"
+else
+  echo "DEBUG: uv not available immediately after PATH update, will check installation locations"
+fi
 
 # Check common installation locations for uv
 UV_PATHS=("$HOME/.local/bin/uv" "$HOME/.cargo/bin/uv" "/usr/local/bin/uv" "/opt/homebrew/bin/uv")
@@ -89,6 +105,7 @@ if command -v uv >/dev/null 2>&1; then
       ls -la "$uv_path" 2>/dev/null || echo "  Not found"
     done
     echo "Falling back to pip for package installation"
+    echo "DEBUG: Using pip for all Python package installations"
     python3.9 -m pip install -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user
     python3.10 -m pip install -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user
     python3.11 -m pip install -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user

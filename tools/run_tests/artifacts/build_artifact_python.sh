@@ -42,11 +42,18 @@ else
   fi
 fi
 
+echo "DEBUG: UV installation phase completed, continuing with PATH setup..."
+
 # Add multiple possible uv installation paths to PATH
 export PATH="$HOME/.local/bin:$HOME/.cargo/bin:/usr/local/bin:/opt/homebrew/bin:$PATH"
 
-# Also try to source cargo env as fallback
-source $HOME/.cargo/env 2>/dev/null || true
+# Also try to source cargo env as fallback (but don't fail if it doesn't exist)
+if [ -f "$HOME/.cargo/env" ]; then
+  echo "DEBUG: Sourcing cargo env from $HOME/.cargo/env"
+  source "$HOME/.cargo/env" 2>/dev/null || echo "DEBUG: Failed to source cargo env, continuing anyway"
+else
+  echo "DEBUG: Cargo env file not found at $HOME/.cargo/env, skipping"
+fi
 
 # Check common installation locations for uv
 UV_PATHS=("$HOME/.local/bin/uv" "$HOME/.cargo/bin/uv" "/usr/local/bin/uv" "/opt/homebrew/bin/uv")
@@ -79,6 +86,8 @@ else
   UV_CMD="pip"
   "${PYTHON}" -m pip install --upgrade pip
 fi
+
+echo "DEBUG: UV_CMD is set to: $UV_CMD"
 
 # Install build dependencies using uv or pip
 if [ "$UV_CMD" = "uv" ]; then
