@@ -31,6 +31,19 @@ for dir in "$EXTERNAL_GIT_ROOT"/input_artifacts/*/; do
   fi
 done
 
+# Debug: Show what's in the artifacts directory
+echo "DEBUG: Contents of artifacts directory:"
+ls -la "$EXTERNAL_GIT_ROOT"/artifacts/ || echo "DEBUG: Failed to list artifacts directory"
+
+# Debug: Show what's in each artifacts subdirectory
+echo "DEBUG: Contents of artifacts subdirectories:"
+for dir in "$EXTERNAL_GIT_ROOT"/artifacts/*/; do
+  if [ -d "$dir" ]; then
+    echo "DEBUG: Artifacts Directory: $dir"
+    ls -la "$dir" || echo "DEBUG: Failed to list $dir"
+  fi
+done
+
 if [[ "$1" == "binary" ]]
 then
   echo "Testing Python binary distribution"
@@ -39,9 +52,9 @@ then
   echo "DEBUG: Pattern 1: $EXTERNAL_GIT_ROOT/input_artifacts/grpcio[-_0-9a-z.]*.whl"
   echo "DEBUG: Pattern 2: $EXTERNAL_GIT_ROOT/input_artifacts/*/grpcio[-_0-9a-z.]*.whl"
   
-  ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[-_0-9a-z.]*.whl "$EXTERNAL_GIT_ROOT"/input_artifacts/*/grpcio[-_0-9a-z.]*.whl)
-  TOOLS_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*tools[-_0-9a-z.]*.whl "$EXTERNAL_GIT_ROOT"/input_artifacts/*/grpcio[_-]*tools[-_0-9a-z.]*.whl)
-  OBSERVABILITY_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*observability[-_0-9a-z.]*.whl "$EXTERNAL_GIT_ROOT"/input_artifacts/*/grpcio[_-]*observability[-_0-9a-z.]*.whl)
+  ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[-_0-9a-z.]*.whl "$EXTERNAL_GIT_ROOT"/input_artifacts/*/grpcio[-_0-9a-z.]*.whl "$EXTERNAL_GIT_ROOT"/artifacts/*/grpcio[-_0-9a-z.]*.whl)
+  TOOLS_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*tools[-_0-9a-z.]*.whl "$EXTERNAL_GIT_ROOT"/input_artifacts/*/grpcio[_-]*tools[-_0-9a-z.]*.whl "$EXTERNAL_GIT_ROOT"/artifacts/*/grpcio[_-]*tools[-_0-9a-z.]*.whl)
+  OBSERVABILITY_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*observability[-_0-9a-z.]*.whl "$EXTERNAL_GIT_ROOT"/input_artifacts/*/grpcio[_-]*observability[-_0-9a-z.]*.whl "$EXTERNAL_GIT_ROOT"/artifacts/*/grpcio[_-]*observability[-_0-9a-z.]*.whl)
   
   # Debug: Show what files were found
   echo "DEBUG: ARCHIVES array contains: ${#ARCHIVES[@]} files"
@@ -53,6 +66,20 @@ then
   for file in "${TOOLS_ARCHIVES[@]}"; do
     echo "DEBUG: Found tools archive: $file"
   done
+  
+  echo "DEBUG: OBSERVABILITY_ARCHIVES array contains: ${#OBSERVABILITY_ARCHIVES[@]} files"
+  for file in "${OBSERVABILITY_ARCHIVES[@]}"; do
+    echo "DEBUG: Found observability archive: $file"
+  done
+  
+  # Debug: Test the glob patterns directly
+  echo "DEBUG: Testing glob patterns directly:"
+  echo "DEBUG: Pattern 1 results:"
+  ls "$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[-_0-9a-z.]*.whl 2>/dev/null || echo "DEBUG: Pattern 1 found no files"
+  echo "DEBUG: Pattern 2 results:"
+  ls "$EXTERNAL_GIT_ROOT"/input_artifacts/*/grpcio[-_0-9a-z.]*.whl 2>/dev/null || echo "DEBUG: Pattern 2 found no files"
+  echo "DEBUG: Pattern 3 results:"
+  ls "$EXTERNAL_GIT_ROOT"/artifacts/*/grpcio[-_0-9a-z.]*.whl 2>/dev/null || echo "DEBUG: Pattern 3 found no files"
 else
   echo "Testing Python source distribution"
   # Look for source files in both the root input_artifacts directory and subdirectories

@@ -51,6 +51,10 @@ rm -rf input_artifacts
 mkdir -p input_artifacts
 cp -r artifacts/* input_artifacts/ || true
 
+# Copy wheel files directly to input_artifacts for distribtest compatibility
+# This ensures the test script can find the wheel files in the expected location
+find artifacts/ -name "*.whl" -exec cp {} input_artifacts/ \; || true
+
 # Run all python linux distribtests
 # We run the distribtests even if some of the artifacts have failed to build, since that gives
 # a better signal about which distribtest are affected by the currently broken artifact builds.
