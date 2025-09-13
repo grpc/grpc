@@ -108,7 +108,9 @@ function at_least_one_installs() {
   echo "DEBUG: at_least_one_installs called with $# arguments"
   for file in "$@"; do
     echo "DEBUG: Attempting to install: $file"
-    if "$PYTHON" -m pip install "$file"; then
+    # Use --no-index --find-links to install from local artifacts instead of PyPI
+    # This prevents dependency resolution issues with development versions
+    if "$PYTHON" -m pip install --no-index --find-links "$EXTERNAL_GIT_ROOT"/input_artifacts/ --find-links "$EXTERNAL_GIT_ROOT"/artifacts/ "$file"; then
       echo "DEBUG: Successfully installed: $file"
       return 0
     else
