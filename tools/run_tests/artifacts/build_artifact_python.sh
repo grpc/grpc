@@ -54,7 +54,7 @@ fi
 # Install build dependencies using uv or pip
 if [ "$UV_CMD" = "uv" ]; then
   # Use --no-deps to avoid dependency conflicts with existing packages
-  uv pip install --no-deps setuptools==69.5.1 wheel==0.43.0 build
+  uv pip install --system --no-deps setuptools==69.5.1 wheel==0.43.0 build
 else
   "${PYTHON}" -m pip install setuptools==69.5.1 wheel==0.43.0 build
 fi
@@ -69,7 +69,7 @@ then
   # so we are trying to perform as few download-and-install operations
   # as possible.
   if [ "$UV_CMD" = "uv" ]; then
-    uv pip install --no-deps --upgrade 'cython==3.1.1'
+    uv pip install --system --no-deps --upgrade 'cython==3.1.1'
   else
     "${PYTHON}" -m pip install --upgrade 'cython==3.1.1'
   fi
@@ -224,8 +224,8 @@ then
   # Install virtualenv if it isn't already available.
   # TODO(jtattermusch): cleanup the virtualenv version fallback logic.
   if [ "$UV_CMD" = "uv" ]; then
-    uv pip install --no-deps virtualenv
-    "${PYTHON}" -m virtualenv venv || { uv pip install --no-deps virtualenv==20.0.23 && "${PYTHON}" -m virtualenv venv; }
+    uv pip install --system --no-deps virtualenv
+    "${PYTHON}" -m virtualenv venv || { uv pip install --system --no-deps virtualenv==20.0.23 && "${PYTHON}" -m virtualenv venv; }
     # Ensure the generated artifacts are valid using "twine check"
     venv/bin/python -m pip install "cryptography==40.0.0" "twine==5.0.0" "readme_renderer<40.0"
   else
@@ -363,7 +363,7 @@ fi
 if [ "$GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS" != "" ]
 then
   if [ "$UV_CMD" = "uv" ]; then
-    uv pip install --no-deps -rrequirements.txt
+    uv pip install --system --no-deps -rrequirements.txt
   else
     "${PYTHON}" -m pip install -rrequirements.txt
   fi
@@ -372,15 +372,15 @@ then
   then
     # shellcheck disable=SC2261
     if [ "$UV_CMD" = "uv" ]; then
-      uv pip install --no-deps futures>=2.2.0 enum34>=1.0.4
+      uv pip install --system --no-deps futures>=2.2.0 enum34>=1.0.4
     else
       "${PYTHON}" -m pip install futures>=2.2.0 enum34>=1.0.4
     fi
   fi
 
   if [ "$UV_CMD" = "uv" ]; then
-    uv pip install --no-deps grpcio --no-index --find-links "file://$ARTIFACT_DIR/"
-    uv pip install --no-deps grpcio-tools --no-index --find-links "file://$ARTIFACT_DIR/"
+    uv pip install --system --no-deps grpcio --no-index --find-links "file://$ARTIFACT_DIR/"
+    uv pip install --system --no-deps grpcio-tools --no-index --find-links "file://$ARTIFACT_DIR/"
   else
     "${PYTHON}" -m pip install grpcio --no-index --find-links "file://$ARTIFACT_DIR/"
     "${PYTHON}" -m pip install grpcio-tools --no-index --find-links "file://$ARTIFACT_DIR/"
@@ -459,7 +459,7 @@ then
 
   # Install xds-protos as a dependency of grpcio-csds
   if [ "$UV_CMD" = "uv" ]; then
-    uv pip install --no-deps xds-protos --no-index --find-links "file://$ARTIFACT_DIR/"
+    uv pip install --system --no-deps xds-protos --no-index --find-links "file://$ARTIFACT_DIR/"
   else
     "${PYTHON}" -m pip install xds-protos --no-index --find-links "file://$ARTIFACT_DIR/"
   fi
@@ -477,8 +477,8 @@ then
   # Build grpcio_admin source distribution and it needs the cutting-edge version
   # of Channelz and CSDS to be installed.
   if [ "$UV_CMD" = "uv" ]; then
-    uv pip install --no-deps grpcio-channelz --no-index --find-links "file://$ARTIFACT_DIR/"
-    uv pip install --no-deps grpcio-csds --no-index --find-links "file://$ARTIFACT_DIR/"
+    uv pip install --system --no-deps grpcio-channelz --no-index --find-links "file://$ARTIFACT_DIR/"
+    uv pip install --system --no-deps grpcio-csds --no-index --find-links "file://$ARTIFACT_DIR/"
   else
     "${PYTHON}" -m pip install grpcio-channelz --no-index --find-links "file://$ARTIFACT_DIR/"
     "${PYTHON}" -m pip install grpcio-csds --no-index --find-links "file://$ARTIFACT_DIR/"

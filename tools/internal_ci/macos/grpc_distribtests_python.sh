@@ -35,9 +35,9 @@ if command -v uv >/dev/null 2>&1; then
       echo "Installing packages for $py_version using uv"
       if [[ "$py_version" == "python3.12" || "$py_version" == "python3.13" || "$py_version" == "python3.14" ]]; then
         # Use --break-system-packages for newer Python versions
-        uv pip install --python "$py_version" -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user --break-system-packages
+        uv pip install --system --python "$py_version" -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user --break-system-packages
       else
-        uv pip install --python "$py_version" -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user
+        uv pip install --system --python "$py_version" -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user
       fi
     else
       echo "Warning: $py_version not found, skipping"

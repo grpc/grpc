@@ -158,7 +158,7 @@ fi
 
 pip_install() {
   if [ "$UV_CMD" = "uv" ]; then
-    uv pip install "$@"
+    uv pip install --python "$VENV_PYTHON" "$@"
   else
     $VENV_PYTHON -m pip install "$@"
   fi
@@ -175,7 +175,7 @@ pip_install_dir() {
   cd "$1"
   ($VENV_PYTHON setup.py build_ext -c "$TOOLCHAIN" || true)
   if [ "$UV_CMD" = "uv" ]; then
-    uv pip install --no-deps .
+    uv pip install --python "$VENV_PYTHON" --no-deps .
   else
     $VENV_PYTHON -m pip install --no-deps .
   fi
@@ -187,7 +187,7 @@ pip_install_dir_and_deps() {
   cd "$1"
   ($VENV_PYTHON setup.py build_ext -c "$TOOLCHAIN" || true)
   if [ "$UV_CMD" = "uv" ]; then
-    uv pip install .
+    uv pip install --python "$VENV_PYTHON" .
   else
     $VENV_PYTHON -m pip install .
   fi
