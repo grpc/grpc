@@ -52,10 +52,10 @@ then
   echo "DEBUG: Pattern 1: $EXTERNAL_GIT_ROOT/input_artifacts/grpcio[-_0-9a-z.]*.whl"
   echo "DEBUG: Pattern 2: $EXTERNAL_GIT_ROOT/input_artifacts/*/grpcio[-_0-9a-z.]*.whl"
   
-  ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[-_0-9a-z.]*.whl "$EXTERNAL_GIT_ROOT"/input_artifacts/*/grpcio[-_0-9a-z.]*.whl "$EXTERNAL_GIT_ROOT"/artifacts/*/grpcio[-_0-9a-z.]*.whl)
-  TOOLS_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*tools[-_0-9a-z.]*.whl "$EXTERNAL_GIT_ROOT"/input_artifacts/*/grpcio[_-]*tools[-_0-9a-z.]*.whl "$EXTERNAL_GIT_ROOT"/artifacts/*/grpcio[_-]*tools[-_0-9a-z.]*.whl)
-  OBSERVABILITY_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*observability[-_0-9a-z.]*.whl "$EXTERNAL_GIT_ROOT"/input_artifacts/*/grpcio[_-]*observability[-_0-9a-z.]*.whl "$EXTERNAL_GIT_ROOT"/artifacts/*/grpcio[_-]*observability[-_0-9a-z.]*.whl)
-  
+  ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[-_0-9a-z.]*.whl)
+  TOOLS_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*tools[-_0-9a-z.]*.whl)
+  OBSERVABILITY_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*observability[-_0-9a-z.]*.whl)
+
   # Debug: Show what files were found
   echo "DEBUG: ARCHIVES array contains: ${#ARCHIVES[@]} files"
   for file in "${ARCHIVES[@]}"; do
@@ -83,14 +83,14 @@ then
 else
   echo "Testing Python source distribution"
   # Look for source files in both the root input_artifacts directory and subdirectories
-  ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[-_0-9a-z.]*.tar.gz "$EXTERNAL_GIT_ROOT"/input_artifacts/*/grpcio[-_0-9a-z.]*.tar.gz)
-  TOOLS_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*tools[-_0-9a-z.]*.tar.gz "$EXTERNAL_GIT_ROOT"/input_artifacts/*/grpcio[_-]*tools[-_0-9a-z.]*.tar.gz)
-  OBSERVABILITY_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*observability[-_0-9a-z.]*.tar.gz "$EXTERNAL_GIT_ROOT"/input_artifacts/*/grpcio[_-]*observability[-_0-9a-z.]*.tar.gz)
+  ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[-_0-9a-z.]*.tar.gz)
+  TOOLS_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*tools[-_0-9a-z.]*.tar.gz)
+  OBSERVABILITY_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*observability[-_0-9a-z.]*.tar.gz)
 fi
 
-HEALTH_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*health[_-]*checking[-_0-9a-z.]*.tar.gz "$EXTERNAL_GIT_ROOT"/input_artifacts/*/grpcio[_-]*health[_-]*checking[-_0-9a-z.]*.tar.gz)
-REFLECTION_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*reflection[-_0-9a-z.]*.tar.gz "$EXTERNAL_GIT_ROOT"/input_artifacts/*/grpcio[_-]*reflection[-_0-9a-z.]*.tar.gz)
-TESTING_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*testing[-_0-9a-z.]*.tar.gz "$EXTERNAL_GIT_ROOT"/input_artifacts/*/grpcio[_-]*testing[-_0-9a-z.]*.tar.gz)
+HEALTH_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*health[_-]*checking[-_0-9a-z.]*.tar.gz)
+REFLECTION_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*reflection[-_0-9a-z.]*.tar.gz)
+TESTING_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*testing[-_0-9a-z.]*.tar.gz)
 
 VIRTUAL_ENV=$(mktemp -d)
 python3 -m virtualenv "$VIRTUAL_ENV"

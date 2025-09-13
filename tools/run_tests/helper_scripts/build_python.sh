@@ -132,7 +132,6 @@ source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 # Perform build operations #
 ############################
 
-
 if [[ "$(inside_venv)" ]]; then
   VENV_PYTHON="$PYTHON"
 else
