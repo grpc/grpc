@@ -186,14 +186,18 @@ echo "DEBUG: Using --no-build-isolation flag to prevent Cython import issues"
 build_with_fallback() {
   if [ "$UV_CMD" = "uv" ]; then
     echo "DEBUG: Attempting to build with uv build"
-    if ${SETARCH_CMD} uv build --no-build-isolation 2>&1 | tee /tmp/uv_build.log; then
+    ${SETARCH_CMD} uv build --no-build-isolation 2>&1 | tee /tmp/uv_build.log
+    UV_BUILD_EXIT_CODE=${PIPESTATUS[0]}
+    
+    if [ $UV_BUILD_EXIT_CODE -eq 0 ]; then
       echo "DEBUG: uv build succeeded"
       return 0
     else
-      echo "DEBUG: uv build failed, checking if it's due to platform detection issues"
-      if grep -q "Unknown operating system\|Failed to inspect Python interpreter" /tmp/uv_build.log; then
+      echo "DEBUG: uv build failed with exit code $UV_BUILD_EXIT_CODE, checking if it's due to platform detection issues"
+      if grep -q "Unknown operating system\|Failed to inspect Python interpreter\|Can't use Python at" /tmp/uv_build.log; then
         echo "DEBUG: uv build failed due to platform detection issues, falling back to python -m build"
         ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
+        return $?
       else
         echo "DEBUG: uv build failed for other reasons, not falling back"
         return 1

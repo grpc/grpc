@@ -72,9 +72,11 @@ popd
 
 @rem Build gRPC Python distributions
 if "%UV_CMD%"=="uv" (
-  uv build --no-build-isolation >uv_build.log 2>&1 || (
-    echo uv build failed, checking if it's due to platform issues
-    findstr /C:"Unknown operating system" /C:"Failed to inspect Python interpreter" uv_build.log >nul
+  uv build --no-build-isolation >uv_build.log 2>&1
+  set UV_BUILD_EXIT_CODE=%errorlevel%
+  if %UV_BUILD_EXIT_CODE% neq 0 (
+    echo uv build failed with exit code %UV_BUILD_EXIT_CODE%, checking if it's due to platform issues
+    findstr /C:"Unknown operating system" /C:"Failed to inspect Python interpreter" /C:"Can't use Python at" uv_build.log >nul
     if %errorlevel% equ 0 (
       echo Falling back to python -m build due to platform detection issues
       python -m build --no-isolation || goto :error
@@ -82,6 +84,8 @@ if "%UV_CMD%"=="uv" (
       echo uv build failed for other reasons
       goto :error
     )
+  ) else (
+    echo uv build succeeded
   )
 ) else (
   python -m build --no-isolation || goto :error
@@ -89,16 +93,20 @@ if "%UV_CMD%"=="uv" (
 
 pushd tools\distrib\python\grpcio_tools
 if "%UV_CMD%"=="uv" (
-  uv build --no-build-isolation >uv_build_tools.log 2>&1 || (
-    echo uv build failed for grpcio_tools, checking if it's due to platform issues
-    findstr /C:"Unknown operating system" /C:"Failed to inspect Python interpreter" uv_build_tools.log >nul
+  uv build --no-build-isolation >uv_build_tools.log 2>&1
+  set UV_BUILD_TOOLS_EXIT_CODE=%errorlevel%
+  if %UV_BUILD_TOOLS_EXIT_CODE% neq 0 (
+    echo uv build failed for grpcio_tools with exit code %UV_BUILD_TOOLS_EXIT_CODE%, checking if it's due to platform issues
+    findstr /C:"Unknown operating system" /C:"Failed to inspect Python interpreter" /C:"Can't use Python at" uv_build_tools.log >nul
     if %errorlevel% equ 0 (
-      echo Falling back to python -m build due to platform detection issues
+      echo Falling back to python -m build for grpcio_tools due to platform detection issues
       python -m build --no-isolation || goto :error
     ) else (
-      echo uv build failed for other reasons
+      echo uv build failed for grpcio_tools for other reasons
       goto :error
     )
+  ) else (
+    echo uv build succeeded for grpcio_tools
   )
 ) else (
   python -m build --no-isolation || goto :error
