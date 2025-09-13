@@ -96,25 +96,16 @@ if command -v uv >/dev/null 2>&1; then
         echo "Warning: $py_version not found, skipping"
       fi
     done
-  else
-    echo "uv installation failed - command not found after installation"
-    echo "PATH: $PATH"
-    echo "Checking common installation locations:"
-    for uv_path in "${UV_PATHS[@]}"; do
-      echo "Checking $uv_path:"
-      ls -la "$uv_path" 2>/dev/null || echo "  Not found"
-    done
-    echo "Falling back to pip for package installation"
-    echo "DEBUG: Using pip for all Python package installations"
-    python3.9 -m pip install -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user
-    python3.10 -m pip install -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user
-    python3.11 -m pip install -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user
-    python3.12 -m pip install -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user --break-system-packages
-    python3.13 -m pip install -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user --break-system-packages
-    python3.14 -m pip install -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user --break-system-packages
-  fi
 else
-  echo "Failed to install uv, using pip for package installation"
+  echo "uv installation failed - command not found after installation"
+  echo "PATH: $PATH"
+  echo "Checking common installation locations:"
+  for uv_path in "${UV_PATHS[@]}"; do
+    echo "Checking $uv_path:"
+    ls -la "$uv_path" 2>/dev/null || echo "  Not found"
+  done
+  echo "Falling back to pip for package installation"
+  echo "DEBUG: Using pip for all Python package installations"
   python3.9 -m pip install -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user
   python3.10 -m pip install -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user
   python3.11 -m pip install -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user
