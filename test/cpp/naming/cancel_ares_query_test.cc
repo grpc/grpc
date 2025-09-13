@@ -420,6 +420,8 @@ TEST_F(
       rpc_deadline, dns_query_timeout_ms, fake_dns_server.port());
 }
 
+#if GRPC_ARES == 1
+
 TEST_F(CancelDuringAresQuery, TestQueryFailsBecauseTcpServerClosesSocket) {
   grpc_core::testing::SocketUseAfterCloseDetector
       socket_use_after_close_detector;
@@ -521,6 +523,8 @@ TEST_F(CancelDuringAresQuery, TestQueryFailsWithDataRemainingInReadBuffer) {
     g_grpc_ares_test_only_force_tcp = false;
   }
 }
+
+#endif  // GRPC_ARES == 1
 
 }  // namespace
 
