@@ -32,18 +32,19 @@ and the underlying endpoint.
 *   **`client`**: Contains the client-side implementation of the CHTTP2 transport.
 *   **`server`**: Contains the server-side implementation of the CHTTP2 transport.
 *   **`transport`**: Contains the core implementation of the CHTTP2 and PH2 transport.
+*   Code in directories [`alpn`](./alpn), [`client`](./client) and [`server`](./server) is shared by PH2 and CHTTP2.
 
 ## 1. CHTTP2 (Legacy)
 
-*   This is compatible with the Call V1 Stack.
+*   CHTTP2 is compatible with the Call V1 Stack.
 *   Uses [`combiner`](../../lib/iomgr/combiner.h) for concurrency.
-*   This was the original default transport.
+*   CHTTP2 was the original default transport.
 *   **Status:** Active and default, but planned for deprecation and removal after PH2 is fully rolled out and stable.
 
 ### CHTTP2 File Structure
 
 *   General Transport Files:
-    *   `chttp2_transport.{h,cc}`: Core transport logic.
+    *   `chttp2_transport.{h,cc}`: Core transport logic for both client and server.
     *   `internal.h`: Internal declarations for CHTTP2.
     *   `parsing.cc`: HTTP/2 incoming frame parsing and processing.
     *   `stream_lists.{h,cc}`: Manages stream lists.
@@ -60,8 +61,8 @@ and the underlying endpoint.
 
 ## 2. PH2 (Promise-Based HTTP/2)
 
-*   This is compatible with the Call V3 Stack.
-*   Utilizes the gRPC promise framework (`src/core/lib/promise`) for asynchronous operations.
+*   PH2 is compatible with the Call V3 Stack.
+*   PH2 utilizes the gRPC promise framework (`src/core/lib/promise`) for asynchronous operations.
 *   **Status:** Under Development.
 *   **Rollout:** Expected to begin in January 2026.
 
@@ -86,7 +87,7 @@ and the underlying endpoint.
 *   PH2 Server Code:
     *   `http2_server_transport.{h,cc}`
 *   Code common to PH2 Client and PH2 Server:
-    *   `http2_transport.{h,cc}`: Base class and common logic.
+    *   `http2_transport.{h,cc}`: Common logic.
 *   Frame Parsers and Validators for PH2:
     *   `frame.{h,cc}`: Newer frame parsing/serialization.
 *   Assemblers:
@@ -106,8 +107,8 @@ and the underlying endpoint.
 ## 3. Common Files (Shared by CHTTP2 and PH2)
 
 *   **`alpn`**: Contains code for ALPN (Application-Layer Protocol Negotiation), which is used to select the HTTP/2 protocol during the TLS handshake.
-*   **`client/chttp2_connector.h`, `client/chttp2_connector.cc`**: These files define the client-side connector, which is responsible for creating a new CHTTP2 transport.
-*   **`server/chttp2_server.h`, `server/chttp2_server.cc`**: These files define the server-side listener, which is responsible for accepting new connections and creating new CHTTP2 transports.
+*   **`client/chttp2_connector.h`, `client/chttp2_connector.cc`**: These files define the client-side connector, which is responsible for creating a new HTTP2 transport.
+*   **`server/chttp2_server.h`, `server/chttp2_server.cc`**: These files define the server-side listener, which is responsible for accepting new connections and creating new HTTP2 transports.
 *   HPACK implementation: `hpack_*.{h,cc}` (e.g., `hpack_encoder.cc`, `hpack_parser.cc`)
 *   Flow Control: `flow_control.{h,cc}`
 *   Settings: `http2_settings*.{h,cc}` (e.g., `http2_settings.cc`, `http2_settings_manager.cc`)
@@ -115,6 +116,7 @@ and the underlying endpoint.
 *   Other utilities: `bin_encoder.{h,cc}`, `decode_huff.{h,cc}`, `huffsyms.{h,cc}`, `varint.{h,cc}`
 *   `transport_common.{h,cc}`
 *   `internal_channel_arg_names.h`
+*   `http2_ztrace_collector.h`: Collects events for z-trace debugging.
 
 ## 4. Unused or TBD Files
 
@@ -123,7 +125,6 @@ and the underlying endpoint.
     *   `call_tracer_wrapper.{h,cc}`
     *   `http2_stats_collector.{h,cc}`
     *   `http2_stats_collector.github.cc`
-    *   `http2_ztrace_collector.h`
     *   `write_size_policy.{h,cc}`
 
 ## Key classes in CHTTP2 and their PH2 equivalents
@@ -156,7 +157,8 @@ transport to their counterparts in the newer Promise-based PH2 transport.
 Key test files include:
 
 *   **PH2 Specific Tests:**
-    *   `test/core/transport/chttp2/http2_client_transport_test.cc`
+    *   `test/core/transport/chttp2/http2_client_transport_test.cc`: Main test suite for the PH2 client transport.
+    *   `test/core/transport/chttp2/http2_server_transport_test.cc`: Main test suite for the PH2 server transport.
     *   `test/core/transport/chttp2/frame_test.cc`
     *   `test/core/transport/chttp2/ping_promise_test.cc`
     *   `test/core/transport/chttp2/stream_data_queue_test.cc`
