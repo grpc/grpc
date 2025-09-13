@@ -176,7 +176,8 @@ def _generate_deps_file_content():
             and ("stage0" not in name)
             and ("stage1" not in name)
             and ("upb/text" not in name)
-            and ("decode" not in name)
+            and ("upb/wire:internal/decode_fast.c" not in name)
+            and ("upb/wire:decode.c" not in name)
         ):
             cc_files.add(
                 name.replace(

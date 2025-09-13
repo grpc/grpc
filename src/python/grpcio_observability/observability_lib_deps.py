@@ -268,6 +268,7 @@ CC_FILES=[
     'third_party/protobuf/upb/message/merge.c',
     'third_party/protobuf/upb/message/message.c',
     'third_party/protobuf/upb/mini_descriptor/build_enum.c',
+    'third_party/protobuf/upb/mini_descriptor/decode.c',
     'third_party/protobuf/upb/mini_descriptor/internal/base92.c',
     'third_party/protobuf/upb/mini_descriptor/internal/encode.c',
     'third_party/protobuf/upb/mini_descriptor/link.c',
