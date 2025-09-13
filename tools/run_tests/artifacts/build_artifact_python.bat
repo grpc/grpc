@@ -49,10 +49,10 @@ pushd tools\distrib\python\grpcio_tools
 python setup.py build_ext -c %EXT_COMPILER% || goto :error
 popd
 
-python -m build --no-isolation || goto :error
+python -m build || goto :error
 
 pushd tools\distrib\python\grpcio_tools
-python -m build --no-isolation || goto :error
+python -m build || goto :error
 popd
 
 python -m pip install packaging==21.3 twine==5.0.0
