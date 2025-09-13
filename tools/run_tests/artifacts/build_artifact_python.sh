@@ -54,9 +54,9 @@ fi
 # Install build dependencies using uv or pip
 if [ "$UV_CMD" = "uv" ]; then
   # Use --no-deps to avoid dependency conflicts with existing packages
-  uv pip install --system --no-deps setuptools==69.5.1 wheel==0.43.0 build
+  uv pip install --system --no-deps --no-warn-script-location setuptools==69.5.1 wheel==0.43.0 build
 else
-  "${PYTHON}" -m pip install setuptools==69.5.1 wheel==0.43.0 build
+  "${PYTHON}" -m pip install --no-warn-script-location setuptools==69.5.1 wheel==0.43.0 build
 fi
 
 if [ "$GRPC_SKIP_PIP_CYTHON_UPGRADE" == "" ]
@@ -69,7 +69,7 @@ then
   # so we are trying to perform as few download-and-install operations
   # as possible.
   if [ "$UV_CMD" = "uv" ]; then
-    uv pip install --system --no-deps --upgrade 'cython==3.1.1'
+    uv pip install --system --no-deps --no-warn-script-location --upgrade 'cython==3.1.1'
   else
     "${PYTHON}" -m pip install --upgrade 'cython==3.1.1'
   fi
@@ -224,8 +224,8 @@ then
   # Install virtualenv if it isn't already available.
   # TODO(jtattermusch): cleanup the virtualenv version fallback logic.
   if [ "$UV_CMD" = "uv" ]; then
-    uv pip install --system --no-deps virtualenv
-    "${PYTHON}" -m virtualenv venv || { uv pip install --system --no-deps virtualenv==20.0.23 && "${PYTHON}" -m virtualenv venv; }
+    uv pip install --system --no-deps --no-warn-script-location virtualenv
+    "${PYTHON}" -m virtualenv venv || { uv pip install --system --no-deps --no-warn-script-location virtualenv==20.0.23 && "${PYTHON}" -m virtualenv venv; }
     # Ensure the generated artifacts are valid using "twine check"
     venv/bin/python -m pip install "cryptography==40.0.0" "twine==5.0.0" "readme_renderer<40.0"
   else
@@ -363,7 +363,8 @@ fi
 if [ "$GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS" != "" ]
 then
   if [ "$UV_CMD" = "uv" ]; then
-    uv pip install --system --no-deps -rrequirements.txt
+    echo "Skipping requirements.txt installation with uv to avoid dependency conflicts"
+    # uv pip install --system --no-deps -rrequirements.txt
   else
     "${PYTHON}" -m pip install -rrequirements.txt
   fi

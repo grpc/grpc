@@ -76,16 +76,16 @@ popd
 
 @rem Build gRPC Python distributions
 if "%UV_CMD%"=="uv" (
-  uv build || goto :error
+  uv build --no-build-isolation || goto :error
 ) else (
-  python -m build || goto :error
+  python -m build --no-isolation || goto :error
 )
 
 pushd tools\distrib\python\grpcio_tools
 if "%UV_CMD%"=="uv" (
-  uv build || goto :error
+  uv build --no-build-isolation || goto :error
 ) else (
-  python -m build || goto :error
+  python -m build --no-isolation || goto :error
 )
 popd
 
