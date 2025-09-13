@@ -250,6 +250,7 @@ CC_FILES=[
     'third_party/abseil-cpp/absl/time/time.cc',
     'third_party/protobuf/upb/mem/alloc.c',
     'third_party/protobuf/upb/mem/arena.c',
+    'third_party/protobuf/upb/message/map_sorter.c',
     'third_party/protobuf/upb/mini_table/internal/message.c',
     'third_party/protobuf/upb/wire/encode.c'
 ]
