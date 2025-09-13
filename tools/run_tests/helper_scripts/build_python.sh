@@ -132,37 +132,20 @@ source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 # Perform build operations #
 ############################
 
-# Check if uv is available for faster package management
-if command -v uv >/dev/null 2>&1; then
-  echo "Using uv for faster package installation"
-  UV_CMD="uv"
-else
-  echo "uv not available, using pip"
-  UV_CMD="pip"
-fi
 
 if [[ "$(inside_venv)" ]]; then
   VENV_PYTHON="$PYTHON"
 else
   # Instantiate the virtualenv from the Python version passed in.
-  if [ "$UV_CMD" = "uv" ]; then
-    # Use uv venv instead of virtualenv
-    uv venv --python "$PYTHON" "$VENV"
-  else
-    $PYTHON -m pip install --user virtualenv==20.25.0
-    # Skip wheel and setuptools and manually install later. Otherwise we might
-    # not find cython module while building grpcio.
-    $PYTHON -m virtualenv --no-wheel --no-setuptools "$VENV"
-  fi
+  $PYTHON -m pip install --user virtualenv==20.25.0
+  # Skip wheel and setuptools and manually install later. Otherwise we might
+  # not find cython module while building grpcio.
+  $PYTHON -m virtualenv --no-wheel --no-setuptools "$VENV"
   VENV_PYTHON="$(pwd)/$VENV/$VENV_RELATIVE_PYTHON"
 fi
 
 pip_install() {
-  if [ "$UV_CMD" = "uv" ]; then
-    uv pip install --python "$VENV_PYTHON" "$@"
-  else
-    $VENV_PYTHON -m pip install "$@"
-  fi
+  $VENV_PYTHON -m pip install "$@"
 }
 
 pip_install --upgrade pip
@@ -175,11 +158,7 @@ pip_install_dir() {
   PWD=$(pwd)
   cd "$1"
   ($VENV_PYTHON setup.py build_ext -c "$TOOLCHAIN" || true)
-  if [ "$UV_CMD" = "uv" ]; then
-    uv pip install --python "$VENV_PYTHON" --no-deps .
-  else
-    $VENV_PYTHON -m pip install --no-deps .
-  fi
+  $VENV_PYTHON -m pip install --no-deps .
   cd "$PWD"
 }
 
@@ -187,11 +166,7 @@ pip_install_dir_and_deps() {
   PWD=$(pwd)
   cd "$1"
   ($VENV_PYTHON setup.py build_ext -c "$TOOLCHAIN" || true)
-  if [ "$UV_CMD" = "uv" ]; then
-    uv pip install --python "$VENV_PYTHON" .
-  else
-    $VENV_PYTHON -m pip install .
-  fi
+  $VENV_PYTHON -m pip install .
   cd "$PWD"
 }
 

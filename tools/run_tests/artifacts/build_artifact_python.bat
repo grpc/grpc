@@ -19,33 +19,12 @@ set PATH=C:\%1;C:\%1\scripts;%PATH%
 set PATH=C:\msys64\mingw%2\bin;C:\tools\msys64\mingw%2\bin;%PATH%
 :end_mingw64_installation
 
-@rem Install/update uv using standalone script for latest version with aarch64 musl support
-echo Installing/updating uv using standalone script for latest version with aarch64 musl support
-powershell -Command "irm https://astral.sh/uv/install.ps1 | iex"
-where uv >nul 2>nul
-if %errorlevel% neq 0 (
-  echo Failed to install uv, falling back to pip
-  set UV_CMD=pip
-) else (
-  echo Successfully installed/updated uv to latest version
-  set UV_CMD=uv
-  @rem Verify we have the latest version
-  uv --version
-)
 
-@rem Install build dependencies using uv or pip
-if "%UV_CMD%"=="uv" (
-  uv pip install --upgrade pip six
-  uv pip install setuptools==69.5.1 wheel==0.43.0 build
-  uv pip install --upgrade "cython==3.1.1"
-  uv pip install -rrequirements.txt
-) else (
-  python -m pip install --upgrade pip six
-  @rem Ping to a single version to make sure we're building the same artifacts
-  python -m pip install setuptools==69.5.1 wheel==0.43.0
-  python -m pip install --upgrade "cython==3.1.1"
-  python -m pip install -rrequirements.txt --user
-)
+python -m pip install --upgrade pip six
+@rem Ping to a single version to make sure we're building the same artifacts
+python -m pip install setuptools==69.5.1 wheel==0.43.0
+python -m pip install --upgrade "cython==3.1.1"
+python -m pip install -rrequirements.txt --user
 
 @rem set GRPC_PYTHON_OVERRIDE_CYGWIN_DETECTION_FOR_27=1
 set GRPC_PYTHON_BUILD_WITH_CYTHON=1
@@ -70,55 +49,13 @@ pushd tools\distrib\python\grpcio_tools
 python setup.py build_ext -c %EXT_COMPILER% || goto :error
 popd
 
-@rem Build gRPC Python distributions
-if "%UV_CMD%"=="uv" (
-  uv build --no-build-isolation >uv_build.log 2>&1
-  set UV_BUILD_EXIT_CODE=%errorlevel%
-  if %UV_BUILD_EXIT_CODE% neq 0 (
-    echo uv build failed with exit code %UV_BUILD_EXIT_CODE%, checking if it's due to platform issues
-    findstr /C:"Unknown operating system" /C:"Failed to inspect Python interpreter" /C:"Can't use Python at" uv_build.log >nul
-    if %errorlevel% equ 0 (
-      echo Falling back to python -m build due to platform detection issues
-      python -m build --no-isolation || goto :error
-    ) else (
-      echo uv build failed for other reasons
-      goto :error
-    )
-  ) else (
-    echo uv build succeeded
-  )
-) else (
-  python -m build --no-isolation || goto :error
-)
+python -m build --no-isolation || goto :error
 
 pushd tools\distrib\python\grpcio_tools
-if "%UV_CMD%"=="uv" (
-  uv build --no-build-isolation >uv_build_tools.log 2>&1
-  set UV_BUILD_TOOLS_EXIT_CODE=%errorlevel%
-  if %UV_BUILD_TOOLS_EXIT_CODE% neq 0 (
-    echo uv build failed for grpcio_tools with exit code %UV_BUILD_TOOLS_EXIT_CODE%, checking if it's due to platform issues
-    findstr /C:"Unknown operating system" /C:"Failed to inspect Python interpreter" /C:"Can't use Python at" uv_build_tools.log >nul
-    if %errorlevel% equ 0 (
-      echo Falling back to python -m build for grpcio_tools due to platform detection issues
-      python -m build --no-isolation || goto :error
-    ) else (
-      echo uv build failed for grpcio_tools for other reasons
-      goto :error
-    )
-  ) else (
-    echo uv build succeeded for grpcio_tools
-  )
-) else (
-  python -m build --no-isolation || goto :error
-)
+python -m build --no-isolation || goto :error
 popd
 
-@rem Ensure the generate artifacts are valid.
-if "%UV_CMD%"=="uv" (
-  uv pip install packaging==21.3 twine==5.0.0
-) else (
-  python -m pip install packaging==21.3 twine==5.0.0
-)
+python -m pip install packaging==21.3 twine==5.0.0
 python -m twine check dist\* tools\distrib\python\grpcio_tools\dist\* || goto :error
 
 xcopy /Y /I /S dist\* %ARTIFACT_DIR% || goto :error

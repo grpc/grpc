@@ -25,79 +25,10 @@ export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
 # shellcheck disable=SC1091
 source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 
-# Install uv for faster package management (always use standalone script for latest version)
-echo "Installing/updating uv using standalone script for latest version with aarch64 musl support"
+"${PYTHON}" -m pip install --upgrade pip
 
-# First, try to install uv using the standalone script
-echo "Running standalone installation script..."
-if curl -LsSf https://astral.sh/uv/install.sh | sh; then
-  echo "Standalone installation script completed successfully"
-else
-  echo "Standalone installation script failed, trying pip installation as fallback..."
-  # Try to install uv via pip as fallback
-  if "${PYTHON}" -m pip install --user uv; then
-    echo "Successfully installed uv via pip"
-  else
-    echo "Failed to install uv via pip as well"
-  fi
-fi
-
-echo "DEBUG: UV installation phase completed, continuing with PATH setup..."
-
-# Add multiple possible uv installation paths to PATH
-export PATH="$HOME/.local/bin:$HOME/.cargo/bin:/usr/local/bin:/opt/homebrew/bin:$PATH"
-
-# Also try to source cargo env as fallback (but don't fail if it doesn't exist)
-if [ -f "$HOME/.cargo/env" ]; then
-  echo "DEBUG: Sourcing cargo env from $HOME/.cargo/env"
-  source "$HOME/.cargo/env" 2>/dev/null || echo "DEBUG: Failed to source cargo env, continuing anyway"
-else
-  echo "DEBUG: Cargo env file not found at $HOME/.cargo/env, skipping"
-fi
-
-# Check common installation locations for uv
-UV_PATHS=("$HOME/.local/bin/uv" "$HOME/.cargo/bin/uv" "/usr/local/bin/uv" "/opt/homebrew/bin/uv")
-UV_FOUND=""
-
-echo "Checking for uv in common installation locations..."
-for uv_path in "${UV_PATHS[@]}"; do
-  if [ -f "$uv_path" ]; then
-    echo "Found uv at: $uv_path"
-    export PATH="$(dirname "$uv_path"):$PATH"
-    UV_FOUND="$uv_path"
-    break
-  fi
-done
-
-# Check if uv is now available
-if command -v uv >/dev/null 2>&1; then
-  echo "Successfully found uv"
-  UV_CMD="uv"
-  echo "uv version: $(uv --version)"
-else
-  echo "uv not available after installation attempts"
-  echo "PATH: $PATH"
-  echo "Checking common installation locations:"
-  for uv_path in "${UV_PATHS[@]}"; do
-    echo "Checking $uv_path:"
-    ls -la "$uv_path" 2>/dev/null || echo "  Not found"
-  done
-  echo "Falling back to pip for package installation"
-  UV_CMD="pip"
-  "${PYTHON}" -m pip install --upgrade pip
-fi
-
-echo "DEBUG: UV_CMD is set to: $UV_CMD"
-
-# Install build dependencies using uv or pip
-if [ "$UV_CMD" = "uv" ]; then
-  # Install packages individually to avoid dependency conflicts
-  uv pip install --system --no-deps setuptools==69.5.1 || echo "Warning: setuptools install failed, continuing anyway"
-  uv pip install --system --no-deps wheel==0.43.0 || echo "Warning: wheel install failed, continuing anyway"
-  uv pip install --system --no-deps build || echo "Warning: build install failed, continuing anyway"
-else
-  "${PYTHON}" -m pip install --no-warn-script-location setuptools==69.5.1 wheel==0.43.0 build || echo "Warning: pip install failed, continuing anyway"
-fi
+# Install build dependencies
+"${PYTHON}" -m pip install --no-warn-script-location setuptools==69.5.1 wheel==0.43.0 build || echo "Warning: pip install failed, continuing anyway"
 
 if [ "$GRPC_SKIP_PIP_CYTHON_UPGRADE" == "" ]
 then
@@ -108,11 +39,7 @@ then
   # Any installation step is a potential source of breakages,
   # so we are trying to perform as few download-and-install operations
   # as possible.
-  if [ "$UV_CMD" = "uv" ]; then
-    uv pip install --system --no-deps --upgrade 'cython==3.1.1'
-  else
-    "${PYTHON}" -m pip install --upgrade 'cython==3.1.1'
-  fi
+  "${PYTHON}" -m pip install --upgrade 'cython==3.1.1'
   
   # Install Rust compiler for cryptography package
   echo "Installing Rust compiler for cryptography package"
@@ -191,34 +118,7 @@ echo "DEBUG: Contents of current directory:"
 ls -la
 echo "DEBUG: Using --no-build-isolation flag to prevent Cython import issues"
 
-# Function to build with fallback mechanism
-build_with_fallback() {
-  if [ "$UV_CMD" = "uv" ]; then
-    echo "DEBUG: Attempting to build with uv build"
-    ${SETARCH_CMD} uv build --no-build-isolation 2>&1 | tee /tmp/uv_build.log
-    UV_BUILD_EXIT_CODE=${PIPESTATUS[0]}
-    
-    if [ $UV_BUILD_EXIT_CODE -eq 0 ]; then
-      echo "DEBUG: uv build succeeded"
-      return 0
-    else
-      echo "DEBUG: uv build failed with exit code $UV_BUILD_EXIT_CODE, checking if it's due to platform detection issues"
-      if grep -q "Unknown operating system\|Failed to inspect Python interpreter\|Can't use Python at" /tmp/uv_build.log; then
-        echo "DEBUG: uv build failed due to platform detection issues, falling back to python -m build"
-        ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
-        return $?
-      else
-        echo "DEBUG: uv build failed for other reasons, not falling back"
-        return 1
-      fi
-    fi
-  else
-    echo "DEBUG: Using python -m build (uv not available)"
-    ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
-  fi
-}
-
-build_with_fallback
+${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
 echo "DEBUG: Build completed, checking dist/ directory:"
 ls -la dist/ 2>/dev/null || echo "DEBUG: dist/ directory not found"
 
@@ -260,7 +160,7 @@ echo "DEBUG: Building gRPC tools package"
 echo "DEBUG: Building gRPC tools wheel"
 echo "DEBUG: Using --no-build-isolation flag to prevent Cython import issues"
 cd tools/distrib/python/grpcio_tools
-build_with_fallback
+${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
 cd -
 echo "DEBUG: gRPC tools build completed, checking tools/distrib/python/grpcio_tools/dist/:"
 ls -la tools/distrib/python/grpcio_tools/dist/ 2>/dev/null || echo "DEBUG: tools/distrib/python/grpcio_tools/dist/ not found"
@@ -268,7 +168,7 @@ ls -la tools/distrib/python/grpcio_tools/dist/ 2>/dev/null || echo "DEBUG: tools
 if [ "$GRPC_BUILD_MAC" == "" ]; then
   "${PYTHON}" src/python/grpcio_observability/make_grpcio_observability.py
   cd src/python/grpcio_observability
-  build_with_fallback
+  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
   cd -
 fi
 
@@ -279,32 +179,15 @@ if [ "$GRPC_SKIP_TWINE_CHECK" == "" ]
 then
   # Install virtualenv if it isn't already available.
   # TODO(jtattermusch): cleanup the virtualenv version fallback logic.
-  if [ "$UV_CMD" = "uv" ]; then
-    # Use uv venv instead of virtualenv, specifying the Python version
-    PYTHON_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-    uv venv --python "${PYTHON}" "venv_py${PYTHON_VERSION}"
-    # Ensure the generated artifacts are valid using "twine check"
-    "venv_py${PYTHON_VERSION}/bin/python" -m pip install "cryptography==40.0.0" "twine==5.0.0" "readme_renderer<40.0"
-  else
-    "${PYTHON}" -m pip install virtualenv
-    "${PYTHON}" -m virtualenv venv || { "${PYTHON}" -m pip install virtualenv==20.0.23 && "${PYTHON}" -m virtualenv venv; }
-    # Ensure the generated artifacts are valid using "twine check"
-    venv/bin/python -m pip install "cryptography==40.0.0" "twine==5.0.0" "readme_renderer<40.0"
+  "${PYTHON}" -m pip install virtualenv
+  "${PYTHON}" -m virtualenv venv || { "${PYTHON}" -m pip install virtualenv==20.0.23 && "${PYTHON}" -m virtualenv venv; }
+  # Ensure the generated artifacts are valid using "twine check"
+  venv/bin/python -m pip install "cryptography==40.0.0" "twine==5.0.0" "readme_renderer<40.0"
+  venv/bin/python -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
+  if [ "$GRPC_BUILD_MAC" == "" ]; then
+    venv/bin/python -m twine check src/python/grpcio_observability/dist/*
   fi
-  if [ "$UV_CMD" = "uv" ]; then
-    PYTHON_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-    "venv_py${PYTHON_VERSION}/bin/python" -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
-    if [ "$GRPC_BUILD_MAC" == "" ]; then
-      "venv_py${PYTHON_VERSION}/bin/python" -m twine check src/python/grpcio_observability/dist/*
-    fi
-    rm -rf "venv_py${PYTHON_VERSION}/"
-  else
-    venv/bin/python -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
-    if [ "$GRPC_BUILD_MAC" == "" ]; then
-      venv/bin/python -m twine check src/python/grpcio_observability/dist/*
-    fi
-    rm -rf venv/
-  fi
+  rm -rf venv/
 fi
 
 assert_is_universal_wheel()  {
@@ -412,7 +295,7 @@ if [ "$GRPC_BUILD_MAC" == "" ]; then
   # Build grpcio_csm_observability distribution
   if [ "$GRPC_BUILD_MAC" == "" ]; then
     cd src/python/grpcio_csm_observability
-    build_with_fallback
+    ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
     cd -
     cp -r src/python/grpcio_csm_observability/dist/* "$ARTIFACT_DIR"
   fi
@@ -424,30 +307,16 @@ fi
 # are in a docker image or in a virtualenv.
 if [ "$GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS" != "" ]
 then
-  if [ "$UV_CMD" = "uv" ]; then
-    echo "Skipping requirements.txt installation with uv to avoid dependency conflicts"
-    # uv pip install --system --no-deps -rrequirements.txt
-  else
-    "${PYTHON}" -m pip install -rrequirements.txt
-  fi
+  "${PYTHON}" -m pip install -rrequirements.txt
 
   if [ "$("$PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
   then
     # shellcheck disable=SC2261
-    if [ "$UV_CMD" = "uv" ]; then
-      uv pip install --system --no-deps futures>=2.2.0 enum34>=1.0.4
-    else
-      "${PYTHON}" -m pip install futures>=2.2.0 enum34>=1.0.4
-    fi
+    "${PYTHON}" -m pip install futures>=2.2.0 enum34>=1.0.4
   fi
 
-  if [ "$UV_CMD" = "uv" ]; then
-    uv pip install --system --no-deps grpcio --no-index --find-links "file://$ARTIFACT_DIR/"
-    uv pip install --system --no-deps grpcio-tools --no-index --find-links "file://$ARTIFACT_DIR/"
-  else
-    "${PYTHON}" -m pip install grpcio --no-index --find-links "file://$ARTIFACT_DIR/"
-    "${PYTHON}" -m pip install grpcio-tools --no-index --find-links "file://$ARTIFACT_DIR/"
-  fi
+  "${PYTHON}" -m pip install grpcio --no-index --find-links "file://$ARTIFACT_DIR/"
+  "${PYTHON}" -m pip install grpcio-tools --no-index --find-links "file://$ARTIFACT_DIR/"
 
   # Note(lidiz) setuptools's "sdist" command creates a source tarball, which
   # demands an extra step of building the wheel. The building step is merely ran
@@ -457,69 +326,60 @@ then
   # Build xds_protos source distribution
   # build.py is invoked as part of generate_projects.
   cd tools/distrib/python/xds_protos
-  build_with_fallback
+  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
   cd -
   cp -r tools/distrib/python/xds_protos/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_testing source distribution
   cd src/python/grpcio_testing
   ${SETARCH_CMD} "${PYTHON}" setup.py preprocess
-  build_with_fallback
+  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
   cd -
   cp -r src/python/grpcio_testing/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_channelz source distribution
   cd src/python/grpcio_channelz
   ${SETARCH_CMD} "${PYTHON}" setup.py preprocess build_package_protos
-  build_with_fallback
+  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
   cd -
   cp -r src/python/grpcio_channelz/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_health_checking source distribution
   cd src/python/grpcio_health_checking
   ${SETARCH_CMD} "${PYTHON}" setup.py preprocess build_package_protos
-  build_with_fallback
+  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
   cd -
   cp -r src/python/grpcio_health_checking/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_reflection source distribution
   cd src/python/grpcio_reflection
   ${SETARCH_CMD} "${PYTHON}" setup.py preprocess build_package_protos
-  build_with_fallback
+  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
   cd -
   cp -r src/python/grpcio_reflection/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_status source distribution
   cd src/python/grpcio_status
   ${SETARCH_CMD} "${PYTHON}" setup.py preprocess
-  build_with_fallback
+  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
   cd -
   cp -r src/python/grpcio_status/dist/* "$ARTIFACT_DIR"
 
   # Install xds-protos as a dependency of grpcio-csds
-  if [ "$UV_CMD" = "uv" ]; then
-    uv pip install --system --no-deps xds-protos --no-index --find-links "file://$ARTIFACT_DIR/"
-  else
-    "${PYTHON}" -m pip install xds-protos --no-index --find-links "file://$ARTIFACT_DIR/"
-  fi
+  "${PYTHON}" -m pip install xds-protos --no-index --find-links "file://$ARTIFACT_DIR/"
 
   # Build grpcio_csds source distribution
   cd src/python/grpcio_csds
-  build_with_fallback
+  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
   cd -
   cp -r src/python/grpcio_csds/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_admin source distribution and it needs the cutting-edge version
   # of Channelz and CSDS to be installed.
-  if [ "$UV_CMD" = "uv" ]; then
-    uv pip install --system --no-deps grpcio-channelz --no-index --find-links "file://$ARTIFACT_DIR/"
-    uv pip install --system --no-deps grpcio-csds --no-index --find-links "file://$ARTIFACT_DIR/"
-  else
-    "${PYTHON}" -m pip install grpcio-channelz --no-index --find-links "file://$ARTIFACT_DIR/"
-    "${PYTHON}" -m pip install grpcio-csds --no-index --find-links "file://$ARTIFACT_DIR/"
-  fi
+  "${PYTHON}" -m pip install grpcio-channelz --no-index --find-links "file://$ARTIFACT_DIR/"
+  "${PYTHON}" -m pip install grpcio-csds --no-index --find-links "file://$ARTIFACT_DIR/"
   cd src/python/grpcio_admin
-  build_with_fallback
+  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
   cd -
   cp -r src/python/grpcio_admin/dist/* "$ARTIFACT_DIR"
 
