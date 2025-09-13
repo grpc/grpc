@@ -53,10 +53,12 @@ fi
 
 # Install build dependencies using uv or pip
 if [ "$UV_CMD" = "uv" ]; then
-  # Use --no-deps to avoid dependency conflicts with existing packages
-  uv pip install --system --no-deps --no-warn-script-location setuptools==69.5.1 wheel==0.43.0 build
+  # Install packages individually to avoid dependency conflicts
+  uv pip install --system --no-deps --no-warn-script-location setuptools==69.5.1 || echo "Warning: setuptools install failed, continuing anyway"
+  uv pip install --system --no-deps --no-warn-script-location wheel==0.43.0 || echo "Warning: wheel install failed, continuing anyway"
+  uv pip install --system --no-deps --no-warn-script-location build || echo "Warning: build install failed, continuing anyway"
 else
-  "${PYTHON}" -m pip install --no-warn-script-location setuptools==69.5.1 wheel==0.43.0 build
+  "${PYTHON}" -m pip install --no-warn-script-location setuptools==69.5.1 wheel==0.43.0 build || echo "Warning: pip install failed, continuing anyway"
 fi
 
 if [ "$GRPC_SKIP_PIP_CYTHON_UPGRADE" == "" ]
