@@ -170,13 +170,19 @@ def _generate_deps_file_content():
             filepath = _bazel_name_to_file_path(name)
             if filepath:
                 cc_files.add(filepath)
-    # setuptools build env has trouble with all of upb, so we hardcode the subset we need
-    cc_files.add("third_party/protobuf/upb/wire/encode.c")
-    cc_files.add("third_party/protobuf/upb/mem/alloc.c")
-    cc_files.add("third_party/protobuf/upb/mem/arena.c")
-    cc_files.add("third_party/protobuf/upb/message/map_sorter.c")
-    cc_files.add("third_party/protobuf/upb/hash/common.c")
-    cc_files.add("third_party/protobuf/upb/mini_table/internal/message.c")
+        if (
+            name.endswith(".c")
+            and name.startswith("@com_google_protobuf//upb/")
+            and ("stage0" not in name)
+            and ("stage1" not in name)
+            and ("upb/text" not in name)
+            and ("decode" not in name)
+        ):
+            cc_files.add(
+                name.replace(
+                    "@com_google_protobuf//upb/", "third_party/protobuf/upb/"
+                ).replace(":", "/")
+            )
 
     deps_file_content = DEPS_FILE_CONTENT.format(
         cc_files=_pretty_print_list(sorted(list(cc_files))),
