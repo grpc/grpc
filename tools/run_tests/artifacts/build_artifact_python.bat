@@ -38,7 +38,7 @@ if "%UV_CMD%"=="uv" (
   uv pip install --upgrade pip six
   uv pip install setuptools==69.5.1 wheel==0.43.0 build
   uv pip install --upgrade "cython==3.1.1"
-  uv pip install -rrequirements.txt --user
+  uv pip install -rrequirements.txt
 ) else (
   python -m pip install --upgrade pip six
   @rem Ping to a single version to make sure we're building the same artifacts
