@@ -280,21 +280,31 @@ then
   # Install virtualenv if it isn't already available.
   # TODO(jtattermusch): cleanup the virtualenv version fallback logic.
   if [ "$UV_CMD" = "uv" ]; then
-    uv pip install --system --no-deps virtualenv
-    "${PYTHON}" -m virtualenv venv || { uv pip install --system --no-deps virtualenv==20.0.23 && "${PYTHON}" -m virtualenv venv; }
+    # Use uv venv instead of virtualenv, specifying the Python version
+    PYTHON_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+    uv venv --python "${PYTHON}" "venv_py${PYTHON_VERSION}"
     # Ensure the generated artifacts are valid using "twine check"
-    venv/bin/python -m pip install "cryptography==40.0.0" "twine==5.0.0" "readme_renderer<40.0"
+    "venv_py${PYTHON_VERSION}/bin/python" -m pip install "cryptography==40.0.0" "twine==5.0.0" "readme_renderer<40.0"
   else
     "${PYTHON}" -m pip install virtualenv
     "${PYTHON}" -m virtualenv venv || { "${PYTHON}" -m pip install virtualenv==20.0.23 && "${PYTHON}" -m virtualenv venv; }
     # Ensure the generated artifacts are valid using "twine check"
     venv/bin/python -m pip install "cryptography==40.0.0" "twine==5.0.0" "readme_renderer<40.0"
   fi
-  venv/bin/python -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
-  if [ "$GRPC_BUILD_MAC" == "" ]; then
-    venv/bin/python -m twine check src/python/grpcio_observability/dist/*
+  if [ "$UV_CMD" = "uv" ]; then
+    PYTHON_VERSION=$(python3 -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
+    "venv_py${PYTHON_VERSION}/bin/python" -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
+    if [ "$GRPC_BUILD_MAC" == "" ]; then
+      "venv_py${PYTHON_VERSION}/bin/python" -m twine check src/python/grpcio_observability/dist/*
+    fi
+    rm -rf "venv_py${PYTHON_VERSION}/"
+  else
+    venv/bin/python -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
+    if [ "$GRPC_BUILD_MAC" == "" ]; then
+      venv/bin/python -m twine check src/python/grpcio_observability/dist/*
+    fi
+    rm -rf venv/
   fi
-  rm -rf venv/
 fi
 
 assert_is_universal_wheel()  {

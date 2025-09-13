@@ -146,13 +146,14 @@ if [[ "$(inside_venv)" ]]; then
 else
   # Instantiate the virtualenv from the Python version passed in.
   if [ "$UV_CMD" = "uv" ]; then
-    uv pip install --user virtualenv==20.25.0
+    # Use uv venv instead of virtualenv
+    uv venv --python "$PYTHON" "$VENV"
   else
     $PYTHON -m pip install --user virtualenv==20.25.0
+    # Skip wheel and setuptools and manually install later. Otherwise we might
+    # not find cython module while building grpcio.
+    $PYTHON -m virtualenv --no-wheel --no-setuptools "$VENV"
   fi
-  # Skip wheel and setuptools and manually install later. Otherwise we might
-  # not find cython module while building grpcio.
-  $PYTHON -m virtualenv --no-wheel --no-setuptools "$VENV"
   VENV_PYTHON="$(pwd)/$VENV/$VENV_RELATIVE_PYTHON"
 fi
 
