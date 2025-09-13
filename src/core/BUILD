@@ -8395,8 +8395,11 @@ grpc_cc_library(
         "ext/transport/chttp2/transport/transport_common.h",
     ],
     external_deps = [
+        "absl/random",
     ],
     deps = [
+        ":shared_bit_gen",
+        ":time",
     ],
 )
 

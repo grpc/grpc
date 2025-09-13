@@ -78,6 +78,7 @@
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/ext/transport/chttp2/transport/stream_lists.h"
+#include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -148,11 +149,6 @@ static grpc_core::Duration g_default_server_keepalive_timeout =
     grpc_core::Duration::Seconds(20);
 static bool g_default_client_keepalive_permit_without_calls = false;
 static bool g_default_server_keepalive_permit_without_calls = false;
-
-// EXPERIMENTAL: control tarpitting in chttp2
-#define GRPC_ARG_HTTP_ALLOW_TARPIT "grpc.http.tarpit"
-#define GRPC_ARG_HTTP_TARPIT_MIN_DURATION_MS "grpc.http.tarpit_min_duration_ms"
-#define GRPC_ARG_HTTP_TARPIT_MAX_DURATION_MS "grpc.http.tarpit_max_duration_ms"
 
 #define MAX_CLIENT_STREAM_ID 0x7fffffffu
 
@@ -2391,18 +2387,14 @@ static grpc_chttp2_transport::RemovedStreamHandle remove_stream(
 namespace grpc_core {
 namespace {
 
-Duration TarpitDuration(grpc_chttp2_transport* t) {
-  return Duration::Milliseconds(absl::LogUniform<int>(
-      SharedBitGen(), t->min_tarpit_duration_ms, t->max_tarpit_duration_ms));
-}
-
 template <typename F>
 void MaybeTarpit(grpc_chttp2_transport* t, bool tarpit, F fn) {
   if (!tarpit || !t->allow_tarpit || t->is_client) {
     fn(t);
     return;
   }
-  const auto duration = TarpitDuration(t);
+  const auto duration =
+      TarpitDuration(t->min_tarpit_duration_ms, t->max_tarpit_duration_ms);
   t->event_engine->RunAfter(
       duration, [t = t->Ref(), fn = std::move(fn)]() mutable {
         ExecCtx exec_ctx;
