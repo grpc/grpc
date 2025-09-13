@@ -248,6 +248,7 @@ CC_FILES=[
     'third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_posix.cc',
     'third_party/abseil-cpp/absl/time/internal/cctz/src/zone_info_source.cc',
     'third_party/abseil-cpp/absl/time/time.cc',
+    'third_party/protobuf/upb/hash/common.c',
     'third_party/protobuf/upb/mem/alloc.c',
     'third_party/protobuf/upb/mem/arena.c',
     'third_party/protobuf/upb/message/map_sorter.c',

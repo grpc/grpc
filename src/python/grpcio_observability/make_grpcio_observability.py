@@ -175,6 +175,7 @@ def _generate_deps_file_content():
     cc_files.add("third_party/protobuf/upb/mem/alloc.c")
     cc_files.add("third_party/protobuf/upb/mem/arena.c")
     cc_files.add("third_party/protobuf/upb/message/map_sorter.c")
+    cc_files.add("third_party/protobuf/upb/hash/common.c")
     cc_files.add("third_party/protobuf/upb/mini_table/internal/message.c")
 
     deps_file_content = DEPS_FILE_CONTENT.format(
