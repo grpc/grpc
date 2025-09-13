@@ -249,7 +249,7 @@ if [ "$GRPC_BUILD_MAC" == "" ]; then
   # Build grpcio_csm_observability distribution
   if [ "$GRPC_BUILD_MAC" == "" ]; then
     cd src/python/grpcio_csm_observability
-    ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
+    ${SETARCH_CMD} "${PYTHON}" -m build
     cd -
     cp -r src/python/grpcio_csm_observability/dist/* "$ARTIFACT_DIR"
   fi
