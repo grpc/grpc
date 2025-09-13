@@ -23,6 +23,14 @@ CC_FILES=[
     'grpc_root/src/core/config/config_vars.cc',
     'grpc_root/src/core/config/config_vars_non_generated.cc',
     'grpc_root/src/core/config/load_config.cc',
+    'grpc_root/src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c',
+    'grpc_root/src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c',
+    'grpc_root/src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c',
+    'grpc_root/src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c',
+    'grpc_root/src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c',
+    'grpc_root/src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c',
+    'grpc_root/src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c',
+    'grpc_root/src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c',
     'grpc_root/src/core/lib/address_utils/parse_address.cc',
     'grpc_root/src/core/lib/address_utils/sockaddr_utils.cc',
     'grpc_root/src/core/lib/channel/channel_args.cc',
@@ -239,7 +247,12 @@ CC_FILES=[
     'third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_lookup.cc',
     'third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_posix.cc',
     'third_party/abseil-cpp/absl/time/internal/cctz/src/zone_info_source.cc',
-    'third_party/abseil-cpp/absl/time/time.cc'
+    'third_party/abseil-cpp/absl/time/time.cc',
+    'third_party/protobuf/upb/mem/alloc.c',
+    'third_party/protobuf/upb/mem/arena.c',
+    'third_party/protobuf/upb/message/map_sorter.c',
+    'third_party/protobuf/upb/mini_table/internal/message.c',
+    'third_party/protobuf/upb/wire/encode.c'
 ]
 
 CC_INCLUDES=[
