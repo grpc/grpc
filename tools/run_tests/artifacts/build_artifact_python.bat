@@ -19,11 +19,37 @@ set PATH=C:\%1;C:\%1\scripts;%PATH%
 set PATH=C:\msys64\mingw%2\bin;C:\tools\msys64\mingw%2\bin;%PATH%
 :end_mingw64_installation
 
-python -m pip install --upgrade pip six
-@rem Ping to a single version to make sure we're building the same artifacts
-python -m pip install setuptools==69.5.1 wheel==0.43.0
-python -m pip install --upgrade "cython==3.1.1"
-python -m pip install -rrequirements.txt --user
+@rem Check if uv is available and install it if needed
+where uv >nul 2>nul
+if %errorlevel% neq 0 (
+  echo uv not found, attempting to install it for faster builds
+  powershell -Command "irm https://astral.sh/uv/install.ps1 | iex"
+  where uv >nul 2>nul
+  if %errorlevel% neq 0 (
+    echo Failed to install uv, falling back to pip
+    set UV_CMD=pip
+  ) else (
+    echo Successfully installed uv
+    set UV_CMD=uv
+  )
+) else (
+  echo Using uv for faster package installation
+  set UV_CMD=uv
+)
+
+@rem Install build dependencies using uv or pip
+if "%UV_CMD%"=="uv" (
+  uv pip install --upgrade pip six
+  uv pip install setuptools==69.5.1 wheel==0.43.0 build
+  uv pip install --upgrade "cython==3.1.1"
+  uv pip install -rrequirements.txt --user
+) else (
+  python -m pip install --upgrade pip six
+  @rem Ping to a single version to make sure we're building the same artifacts
+  python -m pip install setuptools==69.5.1 wheel==0.43.0
+  python -m pip install --upgrade "cython==3.1.1"
+  python -m pip install -rrequirements.txt --user
+)
 
 @rem set GRPC_PYTHON_OVERRIDE_CYGWIN_DETECTION_FOR_27=1
 set GRPC_PYTHON_BUILD_WITH_CYTHON=1
@@ -49,10 +75,18 @@ python setup.py build_ext -c %EXT_COMPILER% || goto :error
 popd
 
 @rem Build gRPC Python distributions
-python -m build || goto :error
+if "%UV_CMD%"=="uv" (
+  uv build || goto :error
+) else (
+  python -m build || goto :error
+)
 
 pushd tools\distrib\python\grpcio_tools
-python -m build || goto :error
+if "%UV_CMD%"=="uv" (
+  uv build || goto :error
+) else (
+  python -m build || goto :error
+)
 popd
 
 @rem Ensure the generate artifacts are valid.

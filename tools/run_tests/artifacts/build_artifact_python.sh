@@ -137,7 +137,7 @@ for directory in "${ancillary_package_dir[@]}"; do
   cp "LICENSE" "${directory}"
 done
 
-# Build the source distribution and wheel using modern python -m build
+# Build the source distribution and wheel using modern build system
 # This replaces the deprecated setup.py sdist and bdist_wheel commands
 echo "DEBUG: Starting Python build process"
 echo "DEBUG: PYTHON=$PYTHON"
@@ -146,7 +146,11 @@ echo "DEBUG: Current directory: $(pwd)"
 echo "DEBUG: Contents of current directory:"
 ls -la
 echo "DEBUG: Using --no-isolation flag to prevent Cython import issues"
-${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
+if [ "$UV_CMD" = "uv" ]; then
+  ${SETARCH_CMD} uv build --no-isolation
+else
+  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
+fi
 echo "DEBUG: Build completed, checking dist/ directory:"
 ls -la dist/ 2>/dev/null || echo "DEBUG: dist/ directory not found"
 
@@ -184,16 +188,28 @@ mv "${GRPCIO_STRIPPED_TAR_GZ}" "${GRPCIO_TAR_GZ}"
 echo "DEBUG: Building gRPC tools package"
 "${PYTHON}" tools/distrib/python/make_grpcio_tools.py
 
-# Build gRPC tools package using modern python -m build
+# Build gRPC tools package using modern build system
 echo "DEBUG: Building gRPC tools wheel"
 echo "DEBUG: Using --no-isolation flag to prevent Cython import issues"
-cd tools/distrib/python/grpcio_tools && ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation && cd -
+cd tools/distrib/python/grpcio_tools
+if [ "$UV_CMD" = "uv" ]; then
+  ${SETARCH_CMD} uv build --no-isolation
+else
+  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
+fi
+cd -
 echo "DEBUG: gRPC tools build completed, checking tools/distrib/python/grpcio_tools/dist/:"
 ls -la tools/distrib/python/grpcio_tools/dist/ 2>/dev/null || echo "DEBUG: tools/distrib/python/grpcio_tools/dist/ not found"
 
 if [ "$GRPC_BUILD_MAC" == "" ]; then
   "${PYTHON}" src/python/grpcio_observability/make_grpcio_observability.py
-  cd src/python/grpcio_observability && ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation && cd -
+  cd src/python/grpcio_observability
+  if [ "$UV_CMD" = "uv" ]; then
+    ${SETARCH_CMD} uv build --no-isolation
+  else
+    ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
+  fi
+  cd -
 fi
 
 
@@ -325,7 +341,13 @@ if [ "$GRPC_BUILD_MAC" == "" ]; then
 
   # Build grpcio_csm_observability distribution
   if [ "$GRPC_BUILD_MAC" == "" ]; then
-    cd src/python/grpcio_csm_observability && ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation && cd -
+    cd src/python/grpcio_csm_observability
+    if [ "$UV_CMD" = "uv" ]; then
+      ${SETARCH_CMD} uv build --no-isolation
+    else
+      ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
+    fi
+    cd -
     cp -r src/python/grpcio_csm_observability/dist/* "$ARTIFACT_DIR"
   fi
 fi
@@ -354,41 +376,94 @@ then
 
   # Build xds_protos source distribution
   # build.py is invoked as part of generate_projects.
-  cd tools/distrib/python/xds_protos && ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation && cd -
+  cd tools/distrib/python/xds_protos
+  if [ "$UV_CMD" = "uv" ]; then
+    ${SETARCH_CMD} uv build --no-isolation
+  else
+    ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
+  fi
+  cd -
   cp -r tools/distrib/python/xds_protos/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_testing source distribution
-  cd src/python/grpcio_testing && ${SETARCH_CMD} "${PYTHON}" setup.py preprocess && ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation && cd -
+  cd src/python/grpcio_testing
+  ${SETARCH_CMD} "${PYTHON}" setup.py preprocess
+  if [ "$UV_CMD" = "uv" ]; then
+    ${SETARCH_CMD} uv build --no-isolation
+  else
+    ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
+  fi
+  cd -
   cp -r src/python/grpcio_testing/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_channelz source distribution
-  cd src/python/grpcio_channelz && ${SETARCH_CMD} "${PYTHON}" setup.py preprocess build_package_protos && ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation && cd -
+  cd src/python/grpcio_channelz
+  ${SETARCH_CMD} "${PYTHON}" setup.py preprocess build_package_protos
+  if [ "$UV_CMD" = "uv" ]; then
+    ${SETARCH_CMD} uv build --no-isolation
+  else
+    ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
+  fi
+  cd -
   cp -r src/python/grpcio_channelz/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_health_checking source distribution
-  cd src/python/grpcio_health_checking && ${SETARCH_CMD} "${PYTHON}" setup.py preprocess build_package_protos && ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation && cd -
+  cd src/python/grpcio_health_checking
+  ${SETARCH_CMD} "${PYTHON}" setup.py preprocess build_package_protos
+  if [ "$UV_CMD" = "uv" ]; then
+    ${SETARCH_CMD} uv build --no-isolation
+  else
+    ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
+  fi
+  cd -
   cp -r src/python/grpcio_health_checking/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_reflection source distribution
-  cd src/python/grpcio_reflection && ${SETARCH_CMD} "${PYTHON}" setup.py preprocess build_package_protos && ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation && cd -
+  cd src/python/grpcio_reflection
+  ${SETARCH_CMD} "${PYTHON}" setup.py preprocess build_package_protos
+  if [ "$UV_CMD" = "uv" ]; then
+    ${SETARCH_CMD} uv build --no-isolation
+  else
+    ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
+  fi
+  cd -
   cp -r src/python/grpcio_reflection/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_status source distribution
-  cd src/python/grpcio_status && ${SETARCH_CMD} "${PYTHON}" setup.py preprocess && ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation && cd -
+  cd src/python/grpcio_status
+  ${SETARCH_CMD} "${PYTHON}" setup.py preprocess
+  if [ "$UV_CMD" = "uv" ]; then
+    ${SETARCH_CMD} uv build --no-isolation
+  else
+    ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
+  fi
+  cd -
   cp -r src/python/grpcio_status/dist/* "$ARTIFACT_DIR"
 
   # Install xds-protos as a dependency of grpcio-csds
   "${PYTHON}" -m pip install xds-protos --no-index --find-links "file://$ARTIFACT_DIR/"
 
   # Build grpcio_csds source distribution
-  cd src/python/grpcio_csds && ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation && cd -
+  cd src/python/grpcio_csds
+  if [ "$UV_CMD" = "uv" ]; then
+    ${SETARCH_CMD} uv build --no-isolation
+  else
+    ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
+  fi
+  cd -
   cp -r src/python/grpcio_csds/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_admin source distribution and it needs the cutting-edge version
   # of Channelz and CSDS to be installed.
   "${PYTHON}" -m pip install grpcio-channelz --no-index --find-links "file://$ARTIFACT_DIR/"
   "${PYTHON}" -m pip install grpcio-csds --no-index --find-links "file://$ARTIFACT_DIR/"
-  cd src/python/grpcio_admin && ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation && cd -
+  cd src/python/grpcio_admin
+  if [ "$UV_CMD" = "uv" ]; then
+    ${SETARCH_CMD} uv build --no-isolation
+  else
+    ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
+  fi
+  cd -
   cp -r src/python/grpcio_admin/dist/* "$ARTIFACT_DIR"
 
 fi
