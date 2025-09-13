@@ -90,7 +90,11 @@ if "%UV_CMD%"=="uv" (
 popd
 
 @rem Ensure the generate artifacts are valid.
-python -m pip install packaging==21.3 twine==5.0.0
+if "%UV_CMD%"=="uv" (
+  uv pip install packaging==21.3 twine==5.0.0
+) else (
+  python -m pip install packaging==21.3 twine==5.0.0
+)
 python -m twine check dist\* tools\distrib\python\grpcio_tools\dist\* || goto :error
 
 xcopy /Y /I /S dist\* %ARTIFACT_DIR% || goto :error

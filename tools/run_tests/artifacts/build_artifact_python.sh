@@ -358,16 +358,29 @@ fi
 # are in a docker image or in a virtualenv.
 if [ "$GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS" != "" ]
 then
-  "${PYTHON}" -m pip install -rrequirements.txt
+  if [ "$UV_CMD" = "uv" ]; then
+    uv pip install -rrequirements.txt
+  else
+    "${PYTHON}" -m pip install -rrequirements.txt
+  fi
 
   if [ "$("$PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
   then
     # shellcheck disable=SC2261
-    "${PYTHON}" -m pip install futures>=2.2.0 enum34>=1.0.4
+    if [ "$UV_CMD" = "uv" ]; then
+      uv pip install futures>=2.2.0 enum34>=1.0.4
+    else
+      "${PYTHON}" -m pip install futures>=2.2.0 enum34>=1.0.4
+    fi
   fi
 
-  "${PYTHON}" -m pip install grpcio --no-index --find-links "file://$ARTIFACT_DIR/"
-  "${PYTHON}" -m pip install grpcio-tools --no-index --find-links "file://$ARTIFACT_DIR/"
+  if [ "$UV_CMD" = "uv" ]; then
+    uv pip install grpcio --no-index --find-links "file://$ARTIFACT_DIR/"
+    uv pip install grpcio-tools --no-index --find-links "file://$ARTIFACT_DIR/"
+  else
+    "${PYTHON}" -m pip install grpcio --no-index --find-links "file://$ARTIFACT_DIR/"
+    "${PYTHON}" -m pip install grpcio-tools --no-index --find-links "file://$ARTIFACT_DIR/"
+  fi
 
   # Note(lidiz) setuptools's "sdist" command creates a source tarball, which
   # demands an extra step of building the wheel. The building step is merely ran
@@ -441,7 +454,11 @@ then
   cp -r src/python/grpcio_status/dist/* "$ARTIFACT_DIR"
 
   # Install xds-protos as a dependency of grpcio-csds
-  "${PYTHON}" -m pip install xds-protos --no-index --find-links "file://$ARTIFACT_DIR/"
+  if [ "$UV_CMD" = "uv" ]; then
+    uv pip install xds-protos --no-index --find-links "file://$ARTIFACT_DIR/"
+  else
+    "${PYTHON}" -m pip install xds-protos --no-index --find-links "file://$ARTIFACT_DIR/"
+  fi
 
   # Build grpcio_csds source distribution
   cd src/python/grpcio_csds
@@ -455,8 +472,13 @@ then
 
   # Build grpcio_admin source distribution and it needs the cutting-edge version
   # of Channelz and CSDS to be installed.
-  "${PYTHON}" -m pip install grpcio-channelz --no-index --find-links "file://$ARTIFACT_DIR/"
-  "${PYTHON}" -m pip install grpcio-csds --no-index --find-links "file://$ARTIFACT_DIR/"
+  if [ "$UV_CMD" = "uv" ]; then
+    uv pip install grpcio-channelz --no-index --find-links "file://$ARTIFACT_DIR/"
+    uv pip install grpcio-csds --no-index --find-links "file://$ARTIFACT_DIR/"
+  else
+    "${PYTHON}" -m pip install grpcio-channelz --no-index --find-links "file://$ARTIFACT_DIR/"
+    "${PYTHON}" -m pip install grpcio-csds --no-index --find-links "file://$ARTIFACT_DIR/"
+  fi
   cd src/python/grpcio_admin
   if [ "$UV_CMD" = "uv" ]; then
     ${SETARCH_CMD} uv build --no-isolation
