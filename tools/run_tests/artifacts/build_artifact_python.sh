@@ -25,36 +25,59 @@ export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
 # shellcheck disable=SC1091
 source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 
-# Install uv for faster package management (if available)
-if command -v uv >/dev/null 2>&1; then
-  echo "Using uv for faster package installation"
-  UV_CMD="uv"
-  # Update uv to latest version to get aarch64 musl support
-  echo "Updating uv to latest version for better platform support"
-  uv self update || echo "Warning: uv self update failed, continuing with current version"
+# Install uv for faster package management (always use standalone script for latest version)
+echo "Installing/updating uv using standalone script for latest version with aarch64 musl support"
+
+# First, try to install uv using the standalone script
+echo "Running standalone installation script..."
+if curl -LsSf https://astral.sh/uv/install.sh | sh; then
+  echo "Standalone installation script completed successfully"
 else
-  echo "uv not available, attempting to install it for faster builds"
-  if curl -LsSf https://astral.sh/uv/install.sh | sh; then
-    # Add uv to PATH - it installs to $HOME/.local/bin
-    export PATH="$HOME/.local/bin:$PATH"
-    # Also try to source cargo env as fallback
-    source $HOME/.cargo/env 2>/dev/null || true
-    if command -v uv >/dev/null 2>&1; then
-      echo "Successfully installed uv"
-      UV_CMD="uv"
-      # Update uv to latest version to get aarch64 musl support
-      echo "Updating uv to latest version for better platform support"
-      uv self update || echo "Warning: uv self update failed, continuing with current version"
-    else
-      echo "Failed to install uv, falling back to pip"
-      UV_CMD="pip"
-      "${PYTHON}" -m pip install --upgrade pip
-    fi
+  echo "Standalone installation script failed, trying pip installation as fallback..."
+  # Try to install uv via pip as fallback
+  if "${PYTHON}" -m pip install --user uv; then
+    echo "Successfully installed uv via pip"
   else
-    echo "Failed to install uv, falling back to pip"
-    UV_CMD="pip"
-    "${PYTHON}" -m pip install --upgrade pip
+    echo "Failed to install uv via pip as well"
   fi
+fi
+
+# Add multiple possible uv installation paths to PATH
+export PATH="$HOME/.local/bin:$HOME/.cargo/bin:/usr/local/bin:/opt/homebrew/bin:$PATH"
+
+# Also try to source cargo env as fallback
+source $HOME/.cargo/env 2>/dev/null || true
+
+# Check common installation locations for uv
+UV_PATHS=("$HOME/.local/bin/uv" "$HOME/.cargo/bin/uv" "/usr/local/bin/uv" "/opt/homebrew/bin/uv")
+UV_FOUND=""
+
+echo "Checking for uv in common installation locations..."
+for uv_path in "${UV_PATHS[@]}"; do
+  if [ -f "$uv_path" ]; then
+    echo "Found uv at: $uv_path"
+    export PATH="$(dirname "$uv_path"):$PATH"
+    UV_FOUND="$uv_path"
+    break
+  fi
+done
+
+# Check if uv is now available
+if command -v uv >/dev/null 2>&1; then
+  echo "Successfully found uv"
+  UV_CMD="uv"
+  echo "uv version: $(uv --version)"
+else
+  echo "uv not available after installation attempts"
+  echo "PATH: $PATH"
+  echo "Checking common installation locations:"
+  for uv_path in "${UV_PATHS[@]}"; do
+    echo "Checking $uv_path:"
+    ls -la "$uv_path" 2>/dev/null || echo "  Not found"
+  done
+  echo "Falling back to pip for package installation"
+  UV_CMD="pip"
+  "${PYTHON}" -m pip install --upgrade pip
 fi
 
 # Install build dependencies using uv or pip

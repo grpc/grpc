@@ -19,28 +19,18 @@ set PATH=C:\%1;C:\%1\scripts;%PATH%
 set PATH=C:\msys64\mingw%2\bin;C:\tools\msys64\mingw%2\bin;%PATH%
 :end_mingw64_installation
 
-@rem Check if uv is available and install it if needed
+@rem Install/update uv using standalone script for latest version with aarch64 musl support
+echo Installing/updating uv using standalone script for latest version with aarch64 musl support
+powershell -Command "irm https://astral.sh/uv/install.ps1 | iex"
 where uv >nul 2>nul
 if %errorlevel% neq 0 (
-  echo uv not found, attempting to install it for faster builds
-  powershell -Command "irm https://astral.sh/uv/install.ps1 | iex"
-  where uv >nul 2>nul
-  if %errorlevel% neq 0 (
-    echo Failed to install uv, falling back to pip
-    set UV_CMD=pip
-  ) else (
-    echo Successfully installed uv
-    set UV_CMD=uv
-    @rem Update uv to latest version to get aarch64 musl support
-    echo Updating uv to latest version for better platform support
-    uv self update || echo Warning: uv self update failed, continuing with current version
-  )
+  echo Failed to install uv, falling back to pip
+  set UV_CMD=pip
 ) else (
-  echo Using uv for faster package installation
+  echo Successfully installed/updated uv to latest version
   set UV_CMD=uv
-  @rem Update uv to latest version to get aarch64 musl support
-  echo Updating uv to latest version for better platform support
-  uv self update || echo Warning: uv self update failed, continuing with current version
+  @rem Verify we have the latest version
+  uv --version
 )
 
 @rem Install build dependencies using uv or pip

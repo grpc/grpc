@@ -26,28 +26,77 @@ source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
 # TODO(jtattermusch): cleanup this prepare build step (needed for python artifact build)
 # install cython for all python versions
-# Check if uv is available for faster package installation
-if command -v uv >/dev/null 2>&1; then
-  echo "Using uv for faster package installation in Mac distribtests"
-  # Update uv to latest version to get aarch64 musl support
-  echo "Updating uv to latest version for better platform support"
-  uv self update || echo "Warning: uv self update failed, continuing with current version"
-  # Install for all Python versions using uv
-  for py_version in python3.9 python3.10 python3.11 python3.12 python3.13 python3.14; do
-    if command -v "$py_version" >/dev/null 2>&1; then
-      echo "Installing packages for $py_version using uv"
-      if [[ "$py_version" == "python3.12" || "$py_version" == "python3.13" || "$py_version" == "python3.14" ]]; then
-        # Use --break-system-packages for newer Python versions
-        uv pip install --system --python "$py_version" -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user --break-system-packages
-      else
-        uv pip install --system --python "$py_version" -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user
-      fi
-    else
-      echo "Warning: $py_version not found, skipping"
+# Install/update uv using standalone script for latest version with aarch64 musl support
+echo "Installing/updating uv using standalone script for latest version with aarch64 musl support"
+
+# First, try to install uv using the standalone script
+echo "Running standalone installation script..."
+if curl -LsSf https://astral.sh/uv/install.sh | sh; then
+  echo "Standalone installation script completed successfully"
+else
+  echo "Standalone installation script failed, trying pip installation as fallback..."
+  # Try to install uv via pip as fallback
+  if python3 -m pip install --user uv; then
+    echo "Successfully installed uv via pip"
+  else
+    echo "Failed to install uv via pip as well"
+  fi
+fi
+  
+  # Add multiple possible uv installation paths to PATH
+  export PATH="$HOME/.local/bin:$HOME/.cargo/bin:/usr/local/bin:/opt/homebrew/bin:$PATH"
+  
+  # Also try to source cargo env as fallback
+  source $HOME/.cargo/env 2>/dev/null || true
+  
+  # Check common installation locations for uv
+  UV_PATHS=("$HOME/.local/bin/uv" "$HOME/.cargo/bin/uv" "/usr/local/bin/uv" "/opt/homebrew/bin/uv")
+  UV_FOUND=""
+  
+  for uv_path in "${UV_PATHS[@]}"; do
+    if [ -f "$uv_path" ]; then
+      echo "Found uv at: $uv_path"
+      export PATH="$(dirname "$uv_path"):$PATH"
+      UV_FOUND="$uv_path"
+      break
     fi
   done
+  
+  if command -v uv >/dev/null 2>&1; then
+    echo "Successfully installed/updated uv to latest version for Mac distribtests"
+    echo "uv version: $(uv --version)"
+    # Install for all Python versions using uv
+    for py_version in python3.9 python3.10 python3.11 python3.12 python3.13 python3.14; do
+      if command -v "$py_version" >/dev/null 2>&1; then
+        echo "Installing packages for $py_version using uv"
+        if [[ "$py_version" == "python3.12" || "$py_version" == "python3.13" || "$py_version" == "python3.14" ]]; then
+          # Use --break-system-packages for newer Python versions
+          uv pip install --system --python "$py_version" -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user --break-system-packages
+        else
+          uv pip install --system --python "$py_version" -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user
+        fi
+      else
+        echo "Warning: $py_version not found, skipping"
+      fi
+    done
+  else
+    echo "uv installation failed - command not found after installation"
+    echo "PATH: $PATH"
+    echo "Checking common installation locations:"
+    for uv_path in "${UV_PATHS[@]}"; do
+      echo "Checking $uv_path:"
+      ls -la "$uv_path" 2>/dev/null || echo "  Not found"
+    done
+    echo "Falling back to pip for package installation"
+    python3.9 -m pip install -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user
+    python3.10 -m pip install -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user
+    python3.11 -m pip install -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user
+    python3.12 -m pip install -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user --break-system-packages
+    python3.13 -m pip install -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user --break-system-packages
+    python3.14 -m pip install -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user --break-system-packages
+  fi
 else
-  echo "uv not available, using pip for package installation"
+  echo "Failed to install uv, using pip for package installation"
   python3.9 -m pip install -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user
   python3.10 -m pip install -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user
   python3.11 -m pip install -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user
