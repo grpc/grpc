@@ -29,6 +29,9 @@ source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 # Check if uv is available for faster package installation
 if command -v uv >/dev/null 2>&1; then
   echo "Using uv for faster package installation in Mac distribtests"
+  # Update uv to latest version to get aarch64 musl support
+  echo "Updating uv to latest version for better platform support"
+  uv self update || echo "Warning: uv self update failed, continuing with current version"
   # Install for all Python versions using uv
   for py_version in python3.9 python3.10 python3.11 python3.12 python3.13 python3.14; do
     if command -v "$py_version" >/dev/null 2>&1; then

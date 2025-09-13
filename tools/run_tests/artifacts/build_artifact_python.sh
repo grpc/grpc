@@ -29,6 +29,9 @@ source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 if command -v uv >/dev/null 2>&1; then
   echo "Using uv for faster package installation"
   UV_CMD="uv"
+  # Update uv to latest version to get aarch64 musl support
+  echo "Updating uv to latest version for better platform support"
+  uv self update || echo "Warning: uv self update failed, continuing with current version"
 else
   echo "uv not available, attempting to install it for faster builds"
   if curl -LsSf https://astral.sh/uv/install.sh | sh; then
@@ -39,6 +42,9 @@ else
     if command -v uv >/dev/null 2>&1; then
       echo "Successfully installed uv"
       UV_CMD="uv"
+      # Update uv to latest version to get aarch64 musl support
+      echo "Updating uv to latest version for better platform support"
+      uv self update || echo "Warning: uv self update failed, continuing with current version"
     else
       echo "Failed to install uv, falling back to pip"
       UV_CMD="pip"

@@ -31,10 +31,16 @@ if %errorlevel% neq 0 (
   ) else (
     echo Successfully installed uv
     set UV_CMD=uv
+    @rem Update uv to latest version to get aarch64 musl support
+    echo Updating uv to latest version for better platform support
+    uv self update || echo Warning: uv self update failed, continuing with current version
   )
 ) else (
   echo Using uv for faster package installation
   set UV_CMD=uv
+  @rem Update uv to latest version to get aarch64 musl support
+  echo Updating uv to latest version for better platform support
+  uv self update || echo Warning: uv self update failed, continuing with current version
 )
 
 @rem Install build dependencies using uv or pip
@@ -76,14 +82,34 @@ popd
 
 @rem Build gRPC Python distributions
 if "%UV_CMD%"=="uv" (
-  uv build --no-build-isolation || goto :error
+  uv build --no-build-isolation >uv_build.log 2>&1 || (
+    echo uv build failed, checking if it's due to platform issues
+    findstr /C:"Unknown operating system" /C:"Failed to inspect Python interpreter" uv_build.log >nul
+    if %errorlevel% equ 0 (
+      echo Falling back to python -m build due to platform detection issues
+      python -m build --no-isolation || goto :error
+    ) else (
+      echo uv build failed for other reasons
+      goto :error
+    )
+  )
 ) else (
   python -m build --no-isolation || goto :error
 )
 
 pushd tools\distrib\python\grpcio_tools
 if "%UV_CMD%"=="uv" (
-  uv build --no-build-isolation || goto :error
+  uv build --no-build-isolation >uv_build_tools.log 2>&1 || (
+    echo uv build failed for grpcio_tools, checking if it's due to platform issues
+    findstr /C:"Unknown operating system" /C:"Failed to inspect Python interpreter" uv_build_tools.log >nul
+    if %errorlevel% equ 0 (
+      echo Falling back to python -m build due to platform detection issues
+      python -m build --no-isolation || goto :error
+    ) else (
+      echo uv build failed for other reasons
+      goto :error
+    )
+  )
 ) else (
   python -m build --no-isolation || goto :error
 )
