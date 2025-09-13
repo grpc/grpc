@@ -25,10 +25,10 @@ export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
 # shellcheck disable=SC1091
 source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 
+# Needed for building binary distribution wheels -- bdist_wheel
 "${PYTHON}" -m pip install --upgrade pip
-
-# Install build dependencies
-"${PYTHON}" -m pip install --no-warn-script-location setuptools==69.5.1 wheel==0.43.0 build || echo "Warning: pip install failed, continuing anyway"
+# Ping to a single version to make sure we're building the same artifacts
+"${PYTHON}" -m pip install setuptools==69.5.1 wheel==0.43.0
 
 if [ "$GRPC_SKIP_PIP_CYTHON_UPGRADE" == "" ]
 then
@@ -40,14 +40,6 @@ then
   # so we are trying to perform as few download-and-install operations
   # as possible.
   "${PYTHON}" -m pip install --upgrade 'cython==3.1.1'
-  
-  # Install Rust compiler for cryptography package
-  echo "Installing Rust compiler for cryptography package"
-  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-  source ~/.cargo/env
-  
-  # Also upgrade pip to ensure we can use prebuilt wheels when available
-  "${PYTHON}" -m pip install --upgrade pip
 fi
 
 # Allow build_ext to build C/C++ files in parallel
