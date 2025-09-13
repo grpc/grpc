@@ -29,7 +29,20 @@ source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 # Check if uv is available for faster package installation
 if command -v uv >/dev/null 2>&1; then
   echo "Using uv for faster package installation in Mac distribtests"
-  uv pip install -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user
+  # Install for all Python versions using uv
+  for py_version in python3.9 python3.10 python3.11 python3.12 python3.13 python3.14; do
+    if command -v "$py_version" >/dev/null 2>&1; then
+      echo "Installing packages for $py_version using uv"
+      if [[ "$py_version" == "python3.12" || "$py_version" == "python3.13" || "$py_version" == "python3.14" ]]; then
+        # Use --break-system-packages for newer Python versions
+        uv pip install --python "$py_version" -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user --break-system-packages
+      else
+        uv pip install --python "$py_version" -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user
+      fi
+    else
+      echo "Warning: $py_version not found, skipping"
+    fi
+  done
 else
   echo "uv not available, using pip for package installation"
   python3.9 -m pip install -U 'cython==3.1.1' setuptools==65.4.1 six==1.16.0 wheel --user
