@@ -47,9 +47,7 @@ then
   source ~/.cargo/env
   
   # Also upgrade pip to ensure we can use prebuilt wheels when available
-  if [ "$UV_CMD" = "pip" ]; then
-    "${PYTHON}" -m pip install --upgrade pip
-  fi
+  "${PYTHON}" -m pip install --upgrade pip
 fi
 
 # Allow build_ext to build C/C++ files in parallel
