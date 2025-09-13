@@ -1,0 +1,7 @@
+[build-system]
+requires = [
+    "setuptools",
+    "wheel",
+    "build",
+]
+build-backend = "setuptools.build_meta"
