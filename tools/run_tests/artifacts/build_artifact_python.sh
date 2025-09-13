@@ -149,9 +149,9 @@ echo "DEBUG: SETARCH_CMD=$SETARCH_CMD"
 echo "DEBUG: Current directory: $(pwd)"
 echo "DEBUG: Contents of current directory:"
 ls -la
-echo "DEBUG: Using --no-isolation flag to prevent Cython import issues"
+echo "DEBUG: Using --no-build-isolation flag to prevent Cython import issues"
 if [ "$UV_CMD" = "uv" ]; then
-  ${SETARCH_CMD} uv build --no-isolation
+  ${SETARCH_CMD} uv build --no-build-isolation
 else
   ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
 fi
@@ -194,10 +194,10 @@ echo "DEBUG: Building gRPC tools package"
 
 # Build gRPC tools package using modern build system
 echo "DEBUG: Building gRPC tools wheel"
-echo "DEBUG: Using --no-isolation flag to prevent Cython import issues"
+echo "DEBUG: Using --no-build-isolation flag to prevent Cython import issues"
 cd tools/distrib/python/grpcio_tools
 if [ "$UV_CMD" = "uv" ]; then
-  ${SETARCH_CMD} uv build --no-isolation
+  ${SETARCH_CMD} uv build --no-build-isolation
 else
   ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
 fi
@@ -209,7 +209,7 @@ if [ "$GRPC_BUILD_MAC" == "" ]; then
   "${PYTHON}" src/python/grpcio_observability/make_grpcio_observability.py
   cd src/python/grpcio_observability
   if [ "$UV_CMD" = "uv" ]; then
-    ${SETARCH_CMD} uv build --no-isolation
+    ${SETARCH_CMD} uv build --no-build-isolation
   else
     ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
   fi
@@ -347,7 +347,7 @@ if [ "$GRPC_BUILD_MAC" == "" ]; then
   if [ "$GRPC_BUILD_MAC" == "" ]; then
     cd src/python/grpcio_csm_observability
     if [ "$UV_CMD" = "uv" ]; then
-      ${SETARCH_CMD} uv build --no-isolation
+      ${SETARCH_CMD} uv build --no-build-isolation
     else
       ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
     fi
@@ -395,7 +395,7 @@ then
   # build.py is invoked as part of generate_projects.
   cd tools/distrib/python/xds_protos
   if [ "$UV_CMD" = "uv" ]; then
-    ${SETARCH_CMD} uv build --no-isolation
+    ${SETARCH_CMD} uv build --no-build-isolation
   else
     ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
   fi
@@ -406,7 +406,7 @@ then
   cd src/python/grpcio_testing
   ${SETARCH_CMD} "${PYTHON}" setup.py preprocess
   if [ "$UV_CMD" = "uv" ]; then
-    ${SETARCH_CMD} uv build --no-isolation
+    ${SETARCH_CMD} uv build --no-build-isolation
   else
     ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
   fi
@@ -417,7 +417,7 @@ then
   cd src/python/grpcio_channelz
   ${SETARCH_CMD} "${PYTHON}" setup.py preprocess build_package_protos
   if [ "$UV_CMD" = "uv" ]; then
-    ${SETARCH_CMD} uv build --no-isolation
+    ${SETARCH_CMD} uv build --no-build-isolation
   else
     ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
   fi
@@ -428,7 +428,7 @@ then
   cd src/python/grpcio_health_checking
   ${SETARCH_CMD} "${PYTHON}" setup.py preprocess build_package_protos
   if [ "$UV_CMD" = "uv" ]; then
-    ${SETARCH_CMD} uv build --no-isolation
+    ${SETARCH_CMD} uv build --no-build-isolation
   else
     ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
   fi
@@ -439,7 +439,7 @@ then
   cd src/python/grpcio_reflection
   ${SETARCH_CMD} "${PYTHON}" setup.py preprocess build_package_protos
   if [ "$UV_CMD" = "uv" ]; then
-    ${SETARCH_CMD} uv build --no-isolation
+    ${SETARCH_CMD} uv build --no-build-isolation
   else
     ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
   fi
@@ -450,7 +450,7 @@ then
   cd src/python/grpcio_status
   ${SETARCH_CMD} "${PYTHON}" setup.py preprocess
   if [ "$UV_CMD" = "uv" ]; then
-    ${SETARCH_CMD} uv build --no-isolation
+    ${SETARCH_CMD} uv build --no-build-isolation
   else
     ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
   fi
@@ -467,7 +467,7 @@ then
   # Build grpcio_csds source distribution
   cd src/python/grpcio_csds
   if [ "$UV_CMD" = "uv" ]; then
-    ${SETARCH_CMD} uv build --no-isolation
+    ${SETARCH_CMD} uv build --no-build-isolation
   else
     ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
   fi
@@ -485,7 +485,7 @@ then
   fi
   cd src/python/grpcio_admin
   if [ "$UV_CMD" = "uv" ]; then
-    ${SETARCH_CMD} uv build --no-isolation
+    ${SETARCH_CMD} uv build --no-build-isolation
   else
     ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation
   fi
