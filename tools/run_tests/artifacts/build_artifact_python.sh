@@ -226,8 +226,8 @@ then
   # Install virtualenv if it isn't already available.
   # TODO(jtattermusch): cleanup the virtualenv version fallback logic.
   if [ "$UV_CMD" = "uv" ]; then
-    uv pip install --system --no-deps --no-warn-script-location virtualenv
-    "${PYTHON}" -m virtualenv venv || { uv pip install --system --no-deps --no-warn-script-location virtualenv==20.0.23 && "${PYTHON}" -m virtualenv venv; }
+    uv pip install --system --no-deps virtualenv
+    "${PYTHON}" -m virtualenv venv || { uv pip install --system --no-deps virtualenv==20.0.23 && "${PYTHON}" -m virtualenv venv; }
     # Ensure the generated artifacts are valid using "twine check"
     venv/bin/python -m pip install "cryptography==40.0.0" "twine==5.0.0" "readme_renderer<40.0"
   else
