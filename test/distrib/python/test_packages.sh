@@ -22,13 +22,37 @@ shopt -s nullglob
 echo "Testing Python packages with input artifacts:"
 ls "$EXTERNAL_GIT_ROOT"/input_artifacts
 
+# Debug: Show what's in each subdirectory
+echo "DEBUG: Contents of input_artifacts subdirectories:"
+for dir in "$EXTERNAL_GIT_ROOT"/input_artifacts/*/; do
+  if [ -d "$dir" ]; then
+    echo "DEBUG: Directory: $dir"
+    ls -la "$dir" || echo "DEBUG: Failed to list $dir"
+  fi
+done
+
 if [[ "$1" == "binary" ]]
 then
   echo "Testing Python binary distribution"
   # Look for wheel files in both the root input_artifacts directory and subdirectories
+  echo "DEBUG: Looking for wheel files with patterns:"
+  echo "DEBUG: Pattern 1: $EXTERNAL_GIT_ROOT/input_artifacts/grpcio[-_0-9a-z.]*.whl"
+  echo "DEBUG: Pattern 2: $EXTERNAL_GIT_ROOT/input_artifacts/*/grpcio[-_0-9a-z.]*.whl"
+  
   ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[-_0-9a-z.]*.whl "$EXTERNAL_GIT_ROOT"/input_artifacts/*/grpcio[-_0-9a-z.]*.whl)
   TOOLS_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*tools[-_0-9a-z.]*.whl "$EXTERNAL_GIT_ROOT"/input_artifacts/*/grpcio[_-]*tools[-_0-9a-z.]*.whl)
   OBSERVABILITY_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*observability[-_0-9a-z.]*.whl "$EXTERNAL_GIT_ROOT"/input_artifacts/*/grpcio[_-]*observability[-_0-9a-z.]*.whl)
+  
+  # Debug: Show what files were found
+  echo "DEBUG: ARCHIVES array contains: ${#ARCHIVES[@]} files"
+  for file in "${ARCHIVES[@]}"; do
+    echo "DEBUG: Found archive: $file"
+  done
+  
+  echo "DEBUG: TOOLS_ARCHIVES array contains: ${#TOOLS_ARCHIVES[@]} files"
+  for file in "${TOOLS_ARCHIVES[@]}"; do
+    echo "DEBUG: Found tools archive: $file"
+  done
 else
   echo "Testing Python source distribution"
   # Look for source files in both the root input_artifacts directory and subdirectories
@@ -54,11 +78,17 @@ function validate_wheel_hashes() {
 }
 
 function at_least_one_installs() {
+  echo "DEBUG: at_least_one_installs called with $# arguments"
   for file in "$@"; do
+    echo "DEBUG: Attempting to install: $file"
     if "$PYTHON" -m pip install "$file"; then
+      echo "DEBUG: Successfully installed: $file"
       return 0
+    else
+      echo "DEBUG: Failed to install: $file"
     fi
   done
+  echo "DEBUG: All installations failed"
   return 1
 }
 
