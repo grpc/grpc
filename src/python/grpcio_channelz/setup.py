@@ -25,8 +25,16 @@ _README_PATH = os.path.join(_PACKAGE_PATH, "README.rst")
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Break import-style to ensure we can actually find our local modules.
-import python_version
-
+try:
+    import python_version
+    # Check if it has the required attributes (local module vs PyPI package)
+    if not hasattr(python_version, 'MIN_PYTHON_VERSION'):
+        raise ImportError("python_version missing required attributes")
+except ImportError:
+    # Fallback when python_version is not available or doesn't have required attributes
+    class python_version:
+        MIN_PYTHON_VERSION = 3.9
+        MAX_PYTHON_VERSION = 3.14
 try:
     import grpc_version
 except ImportError:
