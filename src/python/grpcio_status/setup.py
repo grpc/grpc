@@ -27,11 +27,12 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 try:
     import python_version
     # Check if it has the required attributes (local module vs PyPI package)
-    if not hasattr(python_version, 'MIN_PYTHON_VERSION'):
+    if not hasattr(python_version, 'MIN_PYTHON_VERSION') or not hasattr(python_version, 'SUPPORTED_PYTHON_VERSIONS'):
         raise ImportError("python_version missing required attributes")
 except ImportError:
     # Fallback when python_version is not available or doesn't have required attributes
     class python_version:
+        SUPPORTED_PYTHON_VERSIONS = ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
         MIN_PYTHON_VERSION = 3.9
         MAX_PYTHON_VERSION = 3.14
 try:

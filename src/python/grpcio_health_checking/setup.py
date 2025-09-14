@@ -33,7 +33,7 @@ except ImportError:
     # Fallback when python_version is not available or doesn't have required attributes
     class python_version:
         MIN_PYTHON_VERSION = 3.9
-        MAX_PYTHON_VERSION = 3.14
+        SUPPORTED_PYTHON_VERSIONS = ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]        MAX_PYTHON_VERSION = 3.14
 try:
     import grpc_version
 except ImportError:

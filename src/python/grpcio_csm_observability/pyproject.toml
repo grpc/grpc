@@ -8,7 +8,7 @@ version = "1.76.0.dev0"
 description = "gRPC Python CSM observability package"
 readme = "README.rst"
 requires-python = ">=3.9"
-license = "Apache-2.0"
+license = {text = "Apache License 2.0"}
 keywords = ["grpc", "observability", "opentelemetry", "csm"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
