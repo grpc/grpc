@@ -103,7 +103,7 @@ done
 # Build the source distribution first because MANIFEST.in cannot override
 # exclusion of built shared objects among package resources (for some
 # inexplicable reason).
-${SETARCH_CMD} "${PYTHON}" setup.py sdist
+${SETARCH_CMD} "${PYTHON}" -m build
 
 # Wheel has a bug where directories don't get excluded.
 # https://bitbucket.org/pypa/wheel/issues/99/cannot-exclude-directory
@@ -143,11 +143,7 @@ mv "${GRPCIO_STRIPPED_TAR_GZ}" "${GRPCIO_TAR_GZ}"
 # Build gRPC tools package distribution
 "${PYTHON}" tools/distrib/python/make_grpcio_tools.py
 
-# Build gRPC tools package source distribution
-${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py sdist
-
-# Build gRPC tools package binary distribution
-# shellcheck disable=SC2086
+# Build gRPC tools package distribution
 cd tools/distrib/python/grpcio_tools
 ${SETARCH_CMD} "${PYTHON}" -m build
 cd -
