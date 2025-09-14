@@ -54,7 +54,7 @@ PACKAGE_DIRECTORIES = {
 
 INSTALL_REQUIRES = (
     "protobuf>=6.31.1,<7.0.0",
-    "grpcio>={version}".format(version=grpc_version.VERSION),
+    # Note: grpcio dependency is handled by the build process
 )
 
 try:

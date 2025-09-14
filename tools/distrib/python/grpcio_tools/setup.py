@@ -361,8 +361,8 @@ setuptools.setup(
     python_requires=f">={python_version.MIN_PYTHON_VERSION}",
     install_requires=[
         "protobuf>=6.31.1,<7.0.0",
-        "grpcio>={version}".format(version=grpc_version.VERSION),
         "setuptools",
+        # Note: grpcio dependency is handled by the build process
     ],
     package_data=package_data(),
     cmdclass={
