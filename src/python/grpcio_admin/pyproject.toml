@@ -25,10 +25,7 @@ authors = [
     { name = "The gRPC Authors", email = "grpc-io@googlegroups.com" }
 ]
 
-dependencies = [
-    "grpcio-channelz>=1.76.0.dev0",
-    "grpcio-csds>=1.76.0.dev0",
-]
+dependencies = []
 
 [project.urls]
 Homepage = "https://grpc.io"
