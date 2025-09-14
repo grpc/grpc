@@ -1,23 +1,15 @@
 [build-system]
-requires = [
-    "setuptools",
-    "wheel",
-    "build",
-    "cython>=3.1.1",
-    "python_version"
-]
+requires = ["setuptools>=61.0.0", "wheel", "cython>=3.1.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "grpcio-observability"
-dynamic = ["version", "dependencies", "requires-python", "readme", "readme-content-type"]
+dynamic = ["version"]
 description = "gRPC Python observability package"
-readme = {file = "README.rst", content-type = "text/x-rst"}
-
-authors = [
-    {name = "The gRPC Authors", email = "grpc-io@googlegroups.com"}
-]
-license = {text = "Apache License 2.0"}
+readme = "README.rst"
+requires-python = ">=3.9"
+license = { text = "Apache License 2.0" }
+keywords = ["grpc", "observability", "opencensus"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
@@ -27,14 +19,25 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: Apache Software License",
+]
+
+authors = [
+    { name = "The gRPC Authors", email = "grpc-io@googlegroups.com" }
+]
+
+dependencies = [
+    "grpcio>=1.76.0.dev0",
+    "opencensus>=0.11.0",
+    "opencensus-ext-azure>=1.0.1",
+    "opencensus-ext-stackdriver>=0.8.0",
 ]
 
 [project.urls]
 Homepage = "https://grpc.io"
+Repository = "https://github.com/grpc/grpc"
 "Source Code" = "https://github.com/grpc/grpc/tree/master/src/python/grpcio_observability"
 "Bug Tracker" = "https://github.com/grpc/grpc/issues"
 
 [tool.setuptools.dynamic]
 version = {attr = "grpc_version.VERSION"}
-dependencies = {attr = "setup.install_requires"}
-requires-python = {attr = "setup.python_requires"}

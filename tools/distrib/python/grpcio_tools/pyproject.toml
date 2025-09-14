@@ -1,20 +1,15 @@
 [build-system]
-requires = [
-    "setuptools>=40.8.0",
-    "wheel",
-    "cython>=3.1.1",
-]
+requires = ["setuptools>=61.0.0", "wheel", "cython>=3.1.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "grpcio-tools"
-dynamic = ["version", "dependencies"]
+dynamic = ["version"]
 description = "Protobuf code generator for gRPC"
-readme = {file = "README.rst", content-type = "text/x-rst"}
-authors = [
-    {name = "The gRPC Authors", email = "grpc-io@googlegroups.com"}
-]
-license = {text = "Apache License 2.0"}
+readme = "README.rst"
+requires-python = ">=3.9"
+license = { text = "Apache License 2.0" }
+keywords = ["grpc", "protobuf", "rpc"]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
@@ -24,17 +19,27 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "License :: OSI Approved :: Apache Software License",
 ]
-requires-python = ">=3.9"
 
-[project.urls]
-Homepage = "https://grpc.io"
-"Source Code" = "https://github.com/grpc/grpc/tree/master/tools/distrib/python/grpcio_tools"
-"Bug Tracker" = "https://github.com/grpc/grpc/issues"
+authors = [
+    { name = "The gRPC Authors", email = "grpc-io@googlegroups.com" }
+]
+
+dependencies = [
+    "protobuf>=6.31.1,<7.0.0",
+    "grpcio>=1.76.0.dev0",
+    "setuptools",
+]
 
 [project.scripts]
 "python-grpc-tools-protoc" = "grpc_tools.protoc:entrypoint"
 
+[project.urls]
+Homepage = "https://grpc.io"
+Repository = "https://github.com/grpc/grpc"
+"Source Code" = "https://github.com/grpc/grpc/tree/master/tools/distrib/python/grpcio_tools"
+"Bug Tracker" = "https://github.com/grpc/grpc/issues"
+
 [tool.setuptools.dynamic]
 version = {attr = "grpc_version.VERSION"}
-dependencies = {attr = "setup.install_requires"}
