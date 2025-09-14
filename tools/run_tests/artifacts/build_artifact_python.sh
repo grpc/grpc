@@ -58,7 +58,6 @@ then
   # the value should be manylinuxABC_ARCH and dockcross docker image
   # conveniently provides the value in the AUDITWHEEL_PLAT env
   WHEEL_PLAT_NAME_FLAG="--plat-name=$AUDITWHEEL_PLAT"
-  export _PYTHON_HOST_PLATFORM="$AUDITWHEEL_PLAT"
 
   # override the value of EXT_SUFFIX to make sure the crosscompiled .so files in the wheel have the correct filename suffix
   GRPC_PYTHON_OVERRIDE_EXT_SUFFIX="$(${PYTHON} -c 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX").replace("-x86_64-linux-gnu.so", "-aarch64-linux-gnu.so"))')"
@@ -82,7 +81,6 @@ then
 
   # since we're crosscompiling, we need to explicitly choose the right platform for boringssl assembly optimizations
   export GRPC_BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM="linux-arm"
-  export _PYTHON_HOST_PLATFORM="$AUDITWHEEL_PLAT"
 fi
 
 ancillary_package_dir=(
