@@ -24,7 +24,12 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 import python_version
 
-import grpc_version
+try:
+    import grpc_version
+except ImportError:
+    # Fallback when grpc_version is not available in build environment
+    class grpc_version:
+        VERSION = "1.76.0.dev0"
 
 CLASSIFIERS = [
     "Development Status :: 5 - Production/Stable",

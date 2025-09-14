@@ -36,8 +36,12 @@ import _parallel_compile_patch
 import observability_lib_deps
 import python_version
 
-import grpc_version
-
+try:
+    import grpc_version
+except ImportError:
+    # Fallback when grpc_version is not available in build environment
+    class grpc_version:
+        VERSION = "1.76.0.dev0"
 _parallel_compile_patch.monkeypatch_compile_maybe()
 
 CLASSIFIERS = [

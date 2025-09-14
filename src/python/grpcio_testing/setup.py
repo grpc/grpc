@@ -25,8 +25,12 @@ _README_PATH = os.path.join(_PACKAGE_PATH, "README.rst")
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Break import style to ensure that we can find same-directory modules.
-import grpc_version
-
+try:
+    import grpc_version
+except ImportError:
+    # Fallback when grpc_version is not available in build environment
+    class grpc_version:
+        VERSION = "1.76.0.dev0"
 
 class _NoOpCommand(setuptools.Command):
     """No-op command."""

@@ -18,8 +18,12 @@ import os
 
 import setuptools
 
-import grpc_version
-import python_version
+try:
+    import grpc_version
+except ImportError:
+    # Fallback when grpc_version is not available in build environment
+    class grpc_version:
+        VERSION = "1.76.0.dev0"import python_version
 
 WORK_DIR = os.path.dirname(os.path.abspath(__file__))
 
