@@ -8,4 +8,35 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "grpcio-tools"
-dynamic = ["version"]
+dynamic = ["version", "dependencies", "readme", "readme-content-type"]
+description = "Protobuf code generator for gRPC"
+authors = [
+    {name = "The gRPC Authors", email = "grpc-io@googlegroups.com"}
+]
+license = {text = "Apache License 2.0"}
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+requires-python = ">=3.9"
+
+[project.urls]
+Homepage = "https://grpc.io"
+"Source Code" = "https://github.com/grpc/grpc/tree/master/tools/distrib/python/grpcio_tools"
+"Bug Tracker" = "https://github.com/grpc/grpc/issues"
+
+[project.scripts]
+grpc_tools.protoc = "grpc_tools.protoc:main"
+grpc_tools.protoc_python_grpc = "grpc_tools.protoc_python_grpc:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "grpc_version.VERSION"}
+dependencies = {attr = "setup.install_requires"}
+readme = {file = "README.rst"}
+readme-content-type = {value = "text/x-rst"}

@@ -8,4 +8,26 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "grpcio-csm-observability"
-dynamic = ["version"]
+dynamic = ["version", "dependencies", "requires-python"]
+description = "gRPC Python CSM observability package"
+authors = [
+    {name = "The gRPC Authors", email = "grpc-io@googlegroups.com"}
+]
+license = {text = "Apache License 2.0"}
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+]
+
+[project.urls]
+Homepage = "https://grpc.io"
+"Source Code" = "https://github.com/grpc/grpc/tree/master/src/python/grpcio_csm_observability"
+"Bug Tracker" = "https://github.com/grpc/grpc/issues"
+
+[tool.setuptools.dynamic]
+version = {attr = "grpc_version.VERSION"}
+dependencies = {attr = "setup.install_requires"}
+readme = {file = "README.rst"}
+readme-content-type = {value = "text/x-rst"}requires-python = {attr = "setup.python_requires"}
