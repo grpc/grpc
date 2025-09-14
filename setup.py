@@ -96,7 +96,13 @@ import _spawn_patch
 import grpc_core_dependencies
 
 import commands
-import grpc_version
+
+try:
+    import grpc_version
+except ImportError:
+    # Fallback when grpc_version is not available in build environment
+    class grpc_version:
+        VERSION = "1.76.0.dev0"
 
 _parallel_compile_patch.monkeypatch_compile_maybe()
 _spawn_patch.monkeypatch_spawn()
