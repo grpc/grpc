@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=61.0.0", "wheel", "cython>=3.1.1", "python_version", "grpc_version"]
+requires = ["setuptools>=61.0.0", "wheel", "cython>=3.1.1", "python_version"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "grpcio-tools"
-dynamic = ["version"]
+version = "1.76.0.dev0"
 description = "Protobuf code generator for gRPC"
 readme = "README.rst"
 requires-python = ">=3.9"
@@ -41,5 +41,3 @@ Repository = "https://github.com/grpc/grpc"
 "Source Code" = "https://github.com/grpc/grpc/tree/master/tools/distrib/python/grpcio_tools"
 "Bug Tracker" = "https://github.com/grpc/grpc/issues"
 
-[tool.setuptools.dynamic]
-version = {attr = "grpc_version.VERSION"}

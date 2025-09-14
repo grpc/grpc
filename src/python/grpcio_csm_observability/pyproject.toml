@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=61.0.0", "wheel", "python_version", "grpc_version"]
+requires = ["setuptools>=61.0.0", "wheel", "python_version"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "grpcio-csm-observability"
-dynamic = ["version"]
+version = "1.76.0.dev0"
 description = "gRPC Python CSM observability package"
 readme = "README.rst"
 requires-python = ">=3.9"
@@ -39,5 +39,3 @@ Repository = "https://github.com/grpc/grpc"
 "Source Code" = "https://github.com/grpc/grpc/tree/master/src/python/grpcio_csm_observability"
 "Bug Tracker" = "https://github.com/grpc/grpc/issues"
 
-[tool.setuptools.dynamic]
-version = {attr = "grpc_version.VERSION"}
