@@ -22,7 +22,13 @@ _README_PATH = os.path.join(_PACKAGE_PATH, "README.rst")
 # Ensure we're in the proper directory whether or not we're being used by pip.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-import python_version
+try:
+    import python_version
+except ImportError:
+    # Fallback when python_version is not available in build environment
+    class python_version:
+        MIN_PYTHON_VERSION = 3.9
+        MAX_PYTHON_VERSION = 3.14
 
 try:
     import grpc_version
