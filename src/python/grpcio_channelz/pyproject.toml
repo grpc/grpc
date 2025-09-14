@@ -26,6 +26,7 @@ authors = [
 ]
 
 dependencies = [
+    "protobuf>=6.31.1,<7.0.0",
     "grpcio>=1.76.0.dev0",
 ]
 

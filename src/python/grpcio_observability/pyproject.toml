@@ -27,9 +27,8 @@ authors = [
 
 dependencies = [
     "grpcio>=1.76.0.dev0",
-    "opencensus>=0.11.0",
-    "opencensus-ext-azure>=1.0.1",
-    "opencensus-ext-stackdriver>=0.8.0",
+    "setuptools>=59.6.0",
+    "opentelemetry-api>=1.21.0",
 ]
 
 [project.urls]
