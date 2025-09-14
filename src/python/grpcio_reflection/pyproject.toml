@@ -5,3 +5,7 @@ requires = [
     "build",
 ]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "grpcio-reflection"
+dynamic = ["version"]

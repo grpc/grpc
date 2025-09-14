@@ -7,3 +7,7 @@ requires = [
     "python_version"
 ]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "grpcio-observability"
+dynamic = ["version"]

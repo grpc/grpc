@@ -5,3 +5,7 @@ requires = [
     "cython>=3.1.1",
 ]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "grpcio-tools"
+dynamic = ["version"]
