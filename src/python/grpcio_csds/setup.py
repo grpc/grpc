@@ -55,8 +55,8 @@ PACKAGE_DIRECTORIES = {
 
 INSTALL_REQUIRES = (
     "protobuf>=6.31.1,<7.0.0",
-    f"xds-protos=={grpc_version.VERSION}",
-    f"grpcio>={grpc_version.VERSION}",
+    # Note: grpcio and xds-protos dependencies are handled by the build process
+    # since they are built together as part of the same project
 )
 SETUP_REQUIRES = INSTALL_REQUIRES
 
