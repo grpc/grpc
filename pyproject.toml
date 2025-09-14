@@ -9,7 +9,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "grpcio"
-dynamic = ["version", "license", "optional-dependencies"]
+version = "1.76.0.dev0"
+dynamic = ["license", "optional-dependencies"]
 description = "HTTP/2-based RPC framework"
 readme = "src/python/grpcio/README.rst"
 authors = [
@@ -50,6 +51,3 @@ packages = {find = {where = ["src/python/grpcio"]}}
     "_windows/grpc_c.32.python",
     "_windows/grpc_c.64.python",
 ]
-
-[tool.setuptools.dynamic]
-version = {attr = "grpc_version.VERSION"}
