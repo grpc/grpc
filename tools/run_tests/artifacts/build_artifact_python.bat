@@ -52,7 +52,7 @@ popd
 python -m build || goto :error
 
 pushd tools\distrib\python\grpcio_tools
-ppython -m build || goto :error
+python -m build || goto :error
 popd
 
 @rem Ensure the generate artifacts are valid.
