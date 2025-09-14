@@ -12,6 +12,8 @@ build-backend = "setuptools.build_meta"
 name = "grpcio-observability"
 dynamic = ["version", "dependencies", "requires-python", "readme", "readme-content-type"]
 description = "gRPC Python observability package"
+readme = {file = "README.rst", content-type = "text/x-rst"}
+
 authors = [
     {name = "The gRPC Authors", email = "grpc-io@googlegroups.com"}
 ]
@@ -36,5 +38,3 @@ Homepage = "https://grpc.io"
 version = {attr = "grpc_version.VERSION"}
 dependencies = {attr = "setup.install_requires"}
 requires-python = {attr = "setup.python_requires"}
-readme = {file = "README.rst"}
-readme-content-type = {value = "text/x-rst"}

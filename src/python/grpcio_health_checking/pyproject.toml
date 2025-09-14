@@ -8,8 +8,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "grpcio-health-checking"
-dynamic = ["version", "dependencies", "readme", "readme-content-type"]
+dynamic = ["version", "dependencies"]
 description = "Health checking service for gRPC Python"
+readme = {file = "README.rst", content-type = "text/x-rst"}
+
 authors = [
     {name = "The gRPC Authors", email = "grpc-io@googlegroups.com"}
 ]
@@ -27,5 +29,3 @@ Homepage = "https://grpc.io"
 [tool.setuptools.dynamic]
 version = {attr = "grpc_version.VERSION"}
 dependencies = {attr = "setup.install_requires"}
-readme = {file = "README.rst"}
-readme-content-type = {value = "text/x-rst"}
