@@ -26,7 +26,6 @@ authors = [
 ]
 
 dependencies = [
-    "grpcio>=1.74.0",
     "protobuf>=6.31.1,<7.0.0",
     "cython>=3.1.1",
 ]
@@ -36,4 +35,7 @@ Homepage = "https://grpc.io"
 Repository = "https://github.com/grpc/grpc"
 "Source Code" = "https://github.com/grpc/grpc/tree/master/tools/distrib/python/xds_protos"
 "Bug Tracker" = "https://github.com/grpc/grpc/issues"
+
+[tool.setuptools]
+packages = {find = {where = ["."], exclude = ["generated_file_import_test.py", "build.py"]}}
 
