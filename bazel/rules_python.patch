@@ -1,0 +1,18 @@
+# Fixes @rules_python//python/bin:repl
+# See https://github.com/bazel-contrib/rules_python/pull/3104
+
+diff --git a/python/private/repl_template.py b/python/private/repl_template.py
+index 37f4529fbe..dd8beb9784 100644
+--- a/python/private/repl_template.py
++++ b/python/private/repl_template.py
+@@ -5,7 +5,9 @@
+
+ from python.runfiles import runfiles
+
+-STUB_PATH = "%stub_path%"
++# runfiles.py will reject paths which aren't normalized, which can happen when the REPL rules are
++# used from a remote module.
++STUB_PATH = os.path.normpath("%stub_path%")
+
+
+ def start_repl():

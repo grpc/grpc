@@ -173,29 +173,86 @@ async def generator_to_async_generator(object gen, object loop, object thread_po
     await future
 
 
-if PY_MAJOR_VERSION >= 3 and PY_MINOR_VERSION >= 7:
-    def get_working_loop():
-        """Returns a running event loop.
+# if PY_MINOR_VERSION < 12:
 
-        Due to a defect of asyncio.get_event_loop, its returned event loop might
-        not be set as the default event loop for the main thread.
-        """
-        try:
-            return asyncio.get_running_loop()
-        except RuntimeError:
-            with warnings.catch_warnings():
-                # Convert DeprecationWarning to errors so we can capture them with except
-                warnings.simplefilter("error", DeprecationWarning)
-                try:
-                    return asyncio.get_event_loop_policy().get_event_loop()
-                # Since version 3.12, DeprecationWarning is emitted if there is no
-                # current event loop.
-                except DeprecationWarning:
-                    return asyncio.get_event_loop_policy().new_event_loop()
-else:
-    def get_working_loop():
-        """Returns a running event loop."""
-        return asyncio.get_event_loop()
+#     def _get_or_create_default_loop():
+#         return asyncio.get_event_loop_policy().get_event_loop()
+
+# else:
+#     import threading
+#     _global_loop = None
+#     _loop_lock = threading.Lock()
+
+#     def _get_or_create_default_loop():
+#         global _global_loop, _loop_lock
+#         with _loop_lock:
+#             if _global_loop is not None:
+#                 _LOGGER.info(
+#                     f"[Thread {threading.current_thread().name}]"
+#                     f" reusing existing loop: {id(_global_loop)=}")
+#                 return _global_loop
+
+
+#             msg = (
+#                 "There is no current event loop running in thread"
+#                 f" {threading.current_thread().name}."
+#                 " gRPC will create one for you, but this behavior may change"
+#                 " in future versions."
+#                 " Use asyncio.run() or asyncio.Runner with loop_factory"
+#                 " of desired loop implementation."
+#                 " If you see this in Python REPL, use the dedicated asyncio"
+#                 " REPL by running python -m asyncio."
+#             )
+#             warnings.warn(
+#                 msg,
+#                 DeprecationWarning,
+#                 # Point to users's call that caused the warning.
+#                 stacklevel=3,
+#             )
+
+#             _global_loop = asyncio.new_event_loop()
+#             _global_loop.set_debug(True)
+#             _LOGGER.info(f"created new loop: {id(_global_loop)=}")
+#             asyncio.set_event_loop(_global_loop)
+#             return _global_loop
+
+
+# def get_working_loop():
+#     """Returns an event loop associated with the current thread.
+
+#     Due to a defect of asyncio.get_event_loop, its returned event loop might
+#     not be set as the default event loop for the main thread.
+#     """
+#     try:
+#         return asyncio.get_running_loop()
+#     except RuntimeError:
+#         return _get_or_create_default_loop()
+
+# def get_working_loop314():
+#     with warnings.
+#     return asyncio.get_event_loop_policy().new_event_loop()
+
+def get_working_loop():
+    """Returns a running event loop.
+
+    Due to a defect of asyncio.get_event_loop, its returned event loop might
+    not be set as the default event loop for the main thread.
+    """
+    try:
+        return asyncio.get_running_loop()
+    except RuntimeError:
+        if PY_MAJOR_VERSION >= 3 and PY_MINOR_VERSION >= 14:
+            return asyncio.get_event_loop_policy().new_event_loop()
+
+        with warnings.catch_warnings():
+            # Convert DeprecationWarning to errors so we can capture them with except
+            warnings.simplefilter("error", DeprecationWarning)
+            try:
+                return asyncio.get_event_loop_policy().get_event_loop()
+            # Since version 3.12, DeprecationWarning is emitted if there is no
+            # current event loop.
+            except DeprecationWarning:
+                return asyncio.get_event_loop_policy().new_event_loop()
 
 
 def raise_if_not_valid_trailing_metadata(object metadata):
