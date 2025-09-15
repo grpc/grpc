@@ -173,6 +173,14 @@ Key test files include:
     *   `test/core/transport/chttp2/hpack_parser_test.cc`
     *   `test/core/transport/chttp2/flow_control_test.cc`
 
+*   **PH2 End-to-end Tests:**
+    *   `test/core/end2end/end2end_ph2_config.cc`: This file defines the test
+    configuration for running end-to-end tests with PH2 transport.
+    It enables/disables specific tests. It tests :
+        1. PH2 client vs CHTTP2 server. (Done)
+        1. CHTTP2 client vs PH2 server. (Coming Soon)
+        1. PH2 client vs PH2 server. (Coming Soon)
+
 ## Dependencies for PH2
 
 *   **gRPC Promise Library:**
