@@ -1338,7 +1338,8 @@ absl::Status ConfigureSpiffeRoots(
     return absl::InvalidArgumentError(
         "spiffe: root stack in the SPIFFE Bundle Map is nullptr.");
   }
-#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+// the boringSSL library objective-C used did not have this function defined
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(OPENSSL_APPLE)
   X509_STORE_CTX_set0_trusted_stack(ctx, *root_stack);
 #else
   X509_STORE_CTX_trusted_stack(ctx, *root_stack);
