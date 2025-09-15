@@ -166,18 +166,27 @@ struct SslCredentialsOptions {
   grpc::string pem_cert_chain;
 };
 
+/// Options used to build GoogleDefaultCredentials.
+struct GoogleDefaultCredentialsOptions {
+  /// Indicates if the created credentials should also contain ALTS specific
+  /// credentials. By default, the created credentials will be used for TLS.
+  bool use_alts_call_credentials = false;
+};
+
 // Factories for building different types of Credentials The functions may
 // return empty shared_ptr when credentials cannot be created. If a
 // Credentials pointer is returned, it can still be invalid when used to create
 // a channel. A lame channel will be created then and all rpcs will fail on it.
 
-/// Builds credentials with reasonable defaults.
+/// Builds google default credentials with the given options.
 ///
 /// \warning Only use these credentials when connecting to a Google endpoint.
 /// Using these credentials to connect to any other service may result in this
 /// service being able to impersonate your client for requests to Google
 /// services.
-std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials();
+std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials(
+    const GoogleDefaultCredentialsOptions& options =
+        GoogleDefaultCredentialsOptions());
 
 /// Builds SSL Credentials given SSL specific options
 std::shared_ptr<ChannelCredentials> SslCredentials(
