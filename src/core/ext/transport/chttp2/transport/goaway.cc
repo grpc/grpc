@@ -27,8 +27,6 @@ GoawayManager::GoawayManager(std::unique_ptr<GoawayInterface> goaway_interface)
 std::optional<Http2Frame> GoawayManager::MaybeGetGoawayFrame() {
   switch (context_->goaway_state) {
     case GoawayState::kIdle:
-      GRPC_DCHECK(false) << "Unexpected state: kIdle";
-      break;
     case GoawayState::kDone:
       break;
     case GoawayState::kInitialGracefulGoawayScheduled: {

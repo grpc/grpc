@@ -56,6 +56,8 @@ namespace http2 {
 
 constexpr uint32_t kMaxWriteSize = /*10 MB*/ 10u * 1024u * 1024u;
 
+constexpr uint32_t kGoawaySendTimeoutSeconds = 5u;
+
 void InitLocalSettings(Http2Settings& settings, const bool is_client);
 
 void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
