@@ -26,9 +26,11 @@
 #include <vector>
 
 #include "absl/strings/str_cat.h"
+#include "src/core/channelz/channelz.h"
 #include "src/core/channelz/channelz_registry.h"
 #include "src/core/channelz/v2tov1/convert.h"
 #include "src/core/lib/experiments/experiments.h"
+#include "src/core/util/notification.h"
 
 using grpc_core::channelz::BaseNode;
 
@@ -37,6 +39,7 @@ namespace grpc {
 namespace {
 
 constexpr size_t kMaxResults = 100;
+constexpr absl::Duration kChannelzTimeout = absl::Milliseconds(100);
 
 class RegistryEntityFetcher
     : public grpc_core::channelz::v2tov1::EntityFetcher {
@@ -46,7 +49,7 @@ class RegistryEntityFetcher
     if (node == nullptr) {
       return absl::NotFoundError(absl::StrCat("Entity not found: ", id));
     }
-    return node->SerializeEntityToString();
+    return node->SerializeEntityToString(kChannelzTimeout);
   }
 
   absl::StatusOr<std::vector<std::string>> GetEntitiesWithParent(
@@ -62,7 +65,7 @@ class RegistryEntityFetcher
     std::vector<std::string> children_str;
     for (const auto& node : nodes) {
       if (node == nullptr) continue;
-      children_str.push_back(node->SerializeEntityToString());
+      children_str.push_back(node->SerializeEntityToString(kChannelzTimeout));
     }
     return children_str;
   }
@@ -95,7 +98,8 @@ Status ChannelzService::GetTopChannels(
     RegistryEntityFetcher fetcher;
     for (const auto& channel_node : channels) {
       if (channel_node == nullptr) continue;
-      auto serialized_v2 = channel_node->SerializeEntityToString();
+      auto serialized_v2 =
+          channel_node->SerializeEntityToString(kChannelzTimeout);
       auto serialized_v1 = grpc_core::channelz::v2tov1::ConvertChannel(
           serialized_v2, fetcher, false);
       if (!serialized_v1.ok()) {
@@ -133,7 +137,8 @@ Status ChannelzService::GetServers(
     RegistryEntityFetcher fetcher;
     for (const auto& server_node : servers) {
       if (server_node == nullptr) continue;
-      auto serialized_v2 = server_node->SerializeEntityToString();
+      auto serialized_v2 =
+          server_node->SerializeEntityToString(kChannelzTimeout);
       auto serialized_v1 = grpc_core::channelz::v2tov1::ConvertServer(
           serialized_v2, fetcher, false);
       if (!serialized_v1.ok()) {
@@ -170,7 +175,7 @@ Status ChannelzService::GetServer(ServerContext* /*unused*/,
       return Status(StatusCode::NOT_FOUND, "No object found for that ServerId");
     }
     RegistryEntityFetcher fetcher;
-    auto serialized_v2 = server_node->SerializeEntityToString();
+    auto serialized_v2 = server_node->SerializeEntityToString(kChannelzTimeout);
     auto serialized_v1 = grpc_core::channelz::v2tov1::ConvertServer(
         serialized_v2, fetcher, false);
     if (!serialized_v1.ok()) {
@@ -215,7 +220,8 @@ Status ChannelzService::GetServerSockets(
             grpc_core::channelz::BaseNode::EntityType::kSocket, max_results);
     for (const auto& socket_node : sockets) {
       if (socket_node == nullptr) continue;
-      auto serialized_v2 = socket_node->SerializeEntityToString();
+      auto serialized_v2 =
+          socket_node->SerializeEntityToString(kChannelzTimeout);
       auto converted = grpc_core::channelz::v2tov1::ConvertSocket(
           serialized_v2, fetcher, false);
       if (!converted.ok()) {
@@ -257,7 +263,8 @@ Status ChannelzService::GetChannel(
                     "No object found for that ChannelId");
     }
     RegistryEntityFetcher fetcher;
-    auto serialized_v2 = channel_node->SerializeEntityToString();
+    auto serialized_v2 =
+        channel_node->SerializeEntityToString(kChannelzTimeout);
     auto serialized_v1 = grpc_core::channelz::v2tov1::ConvertChannel(
         serialized_v2, fetcher, false);
     if (!serialized_v1.ok()) {
@@ -294,7 +301,8 @@ Status ChannelzService::GetSubchannel(
                     "No object found for that SubchannelId");
     }
     RegistryEntityFetcher fetcher;
-    auto serialized_v2 = subchannel_node->SerializeEntityToString();
+    auto serialized_v2 =
+        subchannel_node->SerializeEntityToString(kChannelzTimeout);
     auto serialized_v1 = grpc_core::channelz::v2tov1::ConvertSubchannel(
         serialized_v2, fetcher, false);
     if (!serialized_v1.ok()) {
@@ -331,7 +339,7 @@ Status ChannelzService::GetSocket(ServerContext* /*unused*/,
     }
     RegistryEntityFetcher fetcher;
     if (node->type() == grpc_core::channelz::BaseNode::EntityType::kSocket) {
-      auto serialized_v2 = node->SerializeEntityToString();
+      auto serialized_v2 = node->SerializeEntityToString(kChannelzTimeout);
       auto serialized_v1 = grpc_core::channelz::v2tov1::ConvertSocket(
           serialized_v2, fetcher, false);
       if (!serialized_v1.ok()) {
@@ -343,7 +351,7 @@ Status ChannelzService::GetSocket(ServerContext* /*unused*/,
       }
     } else if (node->type() ==
                grpc_core::channelz::BaseNode::EntityType::kListenSocket) {
-      auto serialized_v2 = node->SerializeEntityToString();
+      auto serialized_v2 = node->SerializeEntityToString(kChannelzTimeout);
       auto serialized_v1 = grpc_core::channelz::v2tov1::ConvertListenSocket(
           serialized_v2, fetcher, false);
       if (!serialized_v1.ok()) {
@@ -378,7 +386,7 @@ Status ChannelzV2Service::QueryEntities(
     channelz::v2::QueryEntitiesResponse* response) {
   std::optional<BaseNode::EntityType> type =
       BaseNode::KindToEntityType(request->kind());
-  if (!type.has_value()) {
+  if (!type.has_value() && !request->kind().empty()) {
     return Status(StatusCode::INVALID_ARGUMENT,
                   absl::StrCat("Invalid entity kind: ", request->kind()));
   }
@@ -390,15 +398,29 @@ Status ChannelzV2Service::QueryEntities(
                     "No object found for parent EntityId");
     }
   }
-  const auto [nodes, end] =
-      parent != nullptr
-          ? grpc_core::channelz::ChannelzRegistry::GetChildrenOfType(
-                request->start_entity_id(), parent.get(), *type, kMaxResults)
-          : grpc_core::channelz::ChannelzRegistry::GetNodesOfType(
-                request->start_entity_id(), *type, kMaxResults);
+  const auto [nodes, end] = [&]() {
+    if (parent != nullptr) {
+      if (type.has_value()) {
+        return grpc_core::channelz::ChannelzRegistry::GetChildrenOfType(
+            request->start_entity_id(), parent.get(), *type, kMaxResults);
+      } else {
+        return grpc_core::channelz::ChannelzRegistry::GetNodes(
+            request->start_entity_id(), kMaxResults);
+      }
+    } else {
+      if (type.has_value()) {
+        return grpc_core::channelz::ChannelzRegistry::GetNodesOfType(
+            request->start_entity_id(), *type, kMaxResults);
+      } else {
+        return grpc_core::channelz::ChannelzRegistry::GetNodes(
+            request->start_entity_id(), kMaxResults);
+      }
+    }
+  }();
   response->set_end(end);
   for (const auto& node : nodes) {
-    response->add_entities()->ParseFromString(node->SerializeEntityToString());
+    response->add_entities()->ParseFromString(
+        node->SerializeEntityToString(kChannelzTimeout));
   }
   return Status::OK;
 }
@@ -410,8 +432,69 @@ Status ChannelzV2Service::GetEntity(
   if (node == nullptr) {
     return Status(StatusCode::NOT_FOUND, "No object found for that EntityId");
   }
-  response->mutable_entity()->ParseFromString(node->SerializeEntityToString());
+  response->mutable_entity()->ParseFromString(
+      node->SerializeEntityToString(kChannelzTimeout));
   return Status::OK;
+}
+
+Status ChannelzV2Service::QueryTrace(
+    ServerContext* /*ctx*/, const channelz::v2::QueryTraceRequest* request,
+    ServerWriter<channelz::v2::QueryTraceResponse>* writer) {
+  grpc_core::channelz::ZTrace::Args args;
+  for (const auto& [key, value] : request->args()) {
+    switch (value.value_case()) {
+      case channelz::v2::QueryTraceRequest::QueryArgValue::kIntValue:
+        args[key] = value.int_value();
+        break;
+      case channelz::v2::QueryTraceRequest::QueryArgValue::kStringValue:
+        args[key] = value.string_value();
+        break;
+      case channelz::v2::QueryTraceRequest::QueryArgValue::kBoolValue:
+        args[key] = value.bool_value();
+        break;
+      default:
+        return Status(StatusCode::INVALID_ARGUMENT,
+                      absl::StrCat("Invalid query arg value: ", value));
+    }
+  }
+  auto node = grpc_core::channelz::ChannelzRegistry::GetNode(request->id());
+  if (node == nullptr) {
+    return Status(StatusCode::NOT_FOUND, "No object found for that EntityId");
+  }
+  struct State {
+    grpc_core::Notification done;
+    grpc_core::Mutex mu;
+    grpc::Status status ABSL_GUARDED_BY(mu);
+  };
+  auto state = std::make_shared<State>();
+  auto ztrace = node->RunZTrace(
+      request->name(), std::move(args),
+      grpc_event_engine::experimental::GetDefaultEventEngine(),
+      [state, writer](absl::StatusOr<std::optional<std::string>> response) {
+        if (state->done.HasBeenNotified()) return;
+        grpc_core::MutexLock lock(&state->mu);
+        if (!response.ok()) {
+          state->status = grpc::Status(
+              static_cast<grpc::StatusCode>(response.status().code()),
+              std::string(response.status().message()));
+          state->done.Notify();
+          return;
+        }
+        if (!response->has_value()) {
+          state->status = grpc::Status::OK;
+          state->done.Notify();
+          return;
+        }
+        channelz::v2::QueryTraceResponse r;
+        r.ParseFromString(**response);
+        if (!writer->Write(r)) {
+          state->status = grpc::Status::CANCELLED;
+          state->done.Notify();
+        }
+      });
+  state->done.WaitForNotification();
+  grpc_core::MutexLock lock(&state->mu);
+  return state->status;
 }
 
 }  // namespace grpc

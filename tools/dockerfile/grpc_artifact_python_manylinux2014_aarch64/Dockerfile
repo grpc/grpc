@@ -14,7 +14,7 @@
 
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64/Dockerfile.inja`!!!
 
-FROM dockcross/manylinux2014-aarch64
+FROM quay.io/pypa/manylinux2014_aarch64:2025.07.14-1
 
 # TODO: simplify the list of third_party modules list
 # NOTE: git>=2.46 allows leading paths like third_party/* to include all subdirectories
@@ -40,19 +40,18 @@ RUN git config --global protocol.file.allow always && \
   git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/zlib
 
 #=================
-# Install ccache 
+# Install ccache
 
 # Install ccache from source since ccache 3.x packaged with most linux distributions
 # does not support Redis backend for caching.
-RUN unset CMAKE_TOOLCHAIN_FILE && unset AS AR CC CPP CXX LD STRIP OBJCOPY \
-    && curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.7.5/ccache-4.7.5.tar.gz \
+RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3.tar.gz \
     && tar -zxf ccache.tar.gz \
-    && cd ccache-4.7.5 \
+    && cd ccache-4.11.3 \
     && mkdir build && cd build \
     && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON .. \
     && make -j4 && make install \
     && cd ../.. \
-    && rm -rf ccache-4.7.5 ccache.tar.gz
+    && rm -rf ccache-4.11.3 ccache.tar.gz
 
 #===================================
 # Install Python build requirements
@@ -60,8 +59,14 @@ RUN /opt/python/cp39-cp39/bin/pip install --upgrade 'cython==3.1.1' && \
   /opt/python/cp310-cp310/bin/pip install --upgrade 'cython==3.1.1' && \
   /opt/python/cp311-cp311/bin/pip install --upgrade 'cython==3.1.1' && \
   /opt/python/cp312-cp312/bin/pip install --upgrade 'cython==3.1.1' && \
-  /opt/python/cp313-cp313/bin/pip install --upgrade 'cython==3.1.1'
+  /opt/python/cp313-cp313/bin/pip install --upgrade 'cython==3.1.1' && \
+  /opt/python/cp314-cp314/bin/pip install --upgrade 'cython==3.1.1'
 
+
+# The `cryptography` package's dependency `cffi` lacks Python 3.14 supported
+# wheels (as of Aug 2025), causing a source install that fails due to a missing
+# `libffi-devel` package in the manylinux docker images. Install it beforehand to fix.
+RUN yum update -y && yum install -y libffi-devel
 
 # manylinux_2_17 is the preferred alias of manylinux2014
 ENV AUDITWHEEL_PLAT manylinux_2_17_$AUDITWHEEL_ARCH

@@ -168,11 +168,13 @@ def _with_extras_unary_response(handler, extras):
 
 
 def _exception(unused_handler):
-    raise NotImplementedError("TODO!")
+    error_msg = "TODO!"
+    raise NotImplementedError(error_msg)
 
 
 def _traceback(unused_handler):
-    raise NotImplementedError("TODO!")
+    error_msg = "TODO!"
+    raise NotImplementedError(error_msg)
 
 
 def _add_done_callback(handler, callback, future):

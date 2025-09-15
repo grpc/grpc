@@ -22,11 +22,15 @@
 #include <chrono>
 #include <random>
 #include <set>
+#include <string>
 #include <thread>
 #include <vector>
 
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/resource_tracker/resource_tracker.h"
 #include "test/core/resource_quota/call_checker.h"
 #include "test/core/test_util/test_config.h"
 
@@ -36,6 +40,24 @@ namespace testing {
 //
 // Helpers
 //
+
+class MockResourceTracker : public ResourceTracker {
+ public:
+  std::vector<std::string> GetMetrics() const override { return {"memory"}; }
+
+  absl::StatusOr<double> GetMetricValue(
+      const std::string& metric_name) const override {
+    if (metric_name == "memory") {
+      return memory_pressure_;
+    }
+    return absl::NotFoundError("Metric not found");
+  }
+
+  void SetMemoryPressure(double pressure) { memory_pressure_ = pressure; }
+
+ private:
+  double memory_pressure_ = 0.0;
+};
 
 template <size_t kSize>
 struct Sized {
@@ -63,16 +85,18 @@ TEST(MemoryRequestTest, MinMax) {
 // MemoryQuotaTest
 //
 
-TEST(MemoryQuotaTest, NoOp) { MemoryQuota("foo"); }
+TEST(MemoryQuotaTest, NoOp) {
+  MemoryQuota(MakeRefCounted<channelz::ResourceQuotaNode>("foo"));
+}
 
 TEST(MemoryQuotaTest, CreateAllocatorNoOp) {
-  MemoryQuota memory_quota("foo");
+  MemoryQuota memory_quota(MakeRefCounted<channelz::ResourceQuotaNode>("foo"));
   auto memory_allocator = memory_quota.CreateMemoryAllocator("bar");
 }
 
 TEST(MemoryQuotaTest, CreateObjectFromAllocator) {
   ExecCtx exec_ctx;
-  MemoryQuota memory_quota("foo");
+  MemoryQuota memory_quota(MakeRefCounted<channelz::ResourceQuotaNode>("foo"));
   auto memory_allocator = memory_quota.CreateMemoryAllocator("bar");
   auto object = memory_allocator.MakeUnique<Sized<4096>>();
 }
@@ -80,7 +104,7 @@ TEST(MemoryQuotaTest, CreateObjectFromAllocator) {
 TEST(MemoryQuotaTest, CreateSomeObjectsAndExpectReclamation) {
   ExecCtx exec_ctx;
 
-  MemoryQuota memory_quota("foo");
+  MemoryQuota memory_quota(MakeRefCounted<channelz::ResourceQuotaNode>("foo"));
   memory_quota.SetSize(4096);
   auto memory_allocator = memory_quota.CreateMemoryOwner();
   auto object = memory_allocator.MakeUnique<Sized<2048>>();
@@ -111,7 +135,7 @@ TEST(MemoryQuotaTest, CreateSomeObjectsAndExpectReclamation) {
 }
 
 TEST(MemoryQuotaTest, ReserveRangeNoPressure) {
-  MemoryQuota memory_quota("foo");
+  MemoryQuota memory_quota(MakeRefCounted<channelz::ResourceQuotaNode>("foo"));
   auto memory_allocator = memory_quota.CreateMemoryAllocator("bar");
   size_t total = 0;
   for (int i = 0; i < 10000; i++) {
@@ -124,7 +148,7 @@ TEST(MemoryQuotaTest, ReserveRangeNoPressure) {
 }
 
 TEST(MemoryQuotaTest, MakeSlice) {
-  MemoryQuota memory_quota("foo");
+  MemoryQuota memory_quota(MakeRefCounted<channelz::ResourceQuotaNode>("foo"));
   auto memory_allocator = memory_quota.CreateMemoryAllocator("bar");
   std::vector<grpc_slice> slices;
   for (int i = 1; i < 1000; i++) {
@@ -141,7 +165,7 @@ TEST(MemoryQuotaTest, MakeSlice) {
 
 TEST(MemoryQuotaTest, ContainerAllocator) {
   ExecCtx exec_ctx;
-  MemoryQuota memory_quota("foo");
+  MemoryQuota memory_quota(MakeRefCounted<channelz::ResourceQuotaNode>("foo"));
   auto memory_allocator = memory_quota.CreateMemoryAllocator("bar");
   Vector<int> vec(&memory_allocator);
   for (int i = 0; i < 100000; i++) {
@@ -152,7 +176,7 @@ TEST(MemoryQuotaTest, ContainerAllocator) {
 TEST(MemoryQuotaTest, NoBunchingIfIdle) {
   // Ensure that we don't queue up useless reclamations even if there are no
   // memory reclamations needed.
-  MemoryQuota memory_quota("foo");
+  MemoryQuota memory_quota(MakeRefCounted<channelz::ResourceQuotaNode>("foo"));
   std::atomic<size_t> count_reclaimers_called{0};
 
   for (size_t i = 0; i < 10000; i++) {
@@ -179,8 +203,8 @@ TEST(MemoryQuotaTest, AllMemoryQuotas) {
     return all_names;
   };
 
-  auto m1 = MakeMemoryQuota("m1");
-  auto m2 = MakeMemoryQuota("m2");
+  auto m1 = MakeMemoryQuota(MakeRefCounted<channelz::ResourceQuotaNode>("m1"));
+  auto m2 = MakeMemoryQuota(MakeRefCounted<channelz::ResourceQuotaNode>("m2"));
 
   EXPECT_EQ(gather(), std::set<std::string>({"m1", "m2"}));
   m1.reset();
@@ -188,19 +212,24 @@ TEST(MemoryQuotaTest, AllMemoryQuotas) {
 }
 
 TEST(MemoryQuotaTest, ContainerMemoryAccountedFor) {
-  MemoryQuota memory_quota("foo");
+  MemoryQuota memory_quota(MakeRefCounted<channelz::ResourceQuotaNode>("foo"));
   memory_quota.SetSize(1000000);
   EXPECT_EQ(ContainerMemoryPressure(), 0.0);
   auto owner = memory_quota.CreateMemoryOwner();
   const double original_memory_pressure =
       owner.GetPressureInfo().instantaneous_pressure;
   EXPECT_LT(original_memory_pressure, 0.01);
-  SetContainerMemoryPressure(1.0);
+
+  MockResourceTracker mock_tracker;
+  ResourceTracker::Set(&mock_tracker);
+
+  mock_tracker.SetMemoryPressure(1.0);
   EXPECT_EQ(owner.GetPressureInfo().instantaneous_pressure, 1.0);
-  SetContainerMemoryPressure(0.0);
+  mock_tracker.SetMemoryPressure(0.0);
   EXPECT_EQ(owner.GetPressureInfo().instantaneous_pressure,
             original_memory_pressure);
-  SetContainerMemoryPressure(0.0);
+
+  ResourceTracker::Set(nullptr);
 }
 
 }  // namespace testing

@@ -14,14 +14,14 @@
 
 #include "src/core/channelz/v2tov1/convert.h"
 
-#include <gmock/gmock.h>
 #include <google/protobuf/text_format.h>
-#include <gtest/gtest.h>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "fuzztest/fuzztest.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/proto/grpc/channelz/channelz.pb.h"
@@ -615,6 +615,36 @@ TEST(ConvertTest, ChannelBasicJson) {
   ASSERT_NE(state_it, data.end());
   const auto& state = state_it->second.object();
   EXPECT_EQ(state.at("state").string(), "READY");
+}
+
+TEST(ConvertTest, ChannelTraceHasCreationTimestamp) {
+  const auto v2 = ParseEntity(R"pb(
+    id: 4
+    kind: "channel"
+    trace {
+      description: "Channel created"
+      timestamp { seconds: 123, nanos: 456 }
+    }
+    trace {
+      description: "Something else"
+      timestamp { seconds: 789, nanos: 101 }
+    }
+  )pb");
+  FakeEntityFetcher fetcher({});
+  auto v1_str = ConvertChannel(v2, fetcher, false);
+  ASSERT_TRUE(v1_str.ok());
+  grpc::channelz::v1::Channel v1;
+  ASSERT_TRUE(v1.ParseFromString(*v1_str));
+  EXPECT_EQ(v1.ref().channel_id(), 4);
+  EXPECT_EQ(v1.data().trace().creation_timestamp().seconds(), 123);
+  EXPECT_EQ(v1.data().trace().creation_timestamp().nanos(), 456);
+  ASSERT_EQ(v1.data().trace().events().size(), 2);
+  EXPECT_EQ(v1.data().trace().events(0).description(), "Channel created");
+  EXPECT_EQ(v1.data().trace().events(0).timestamp().seconds(), 123);
+  EXPECT_EQ(v1.data().trace().events(0).timestamp().nanos(), 456);
+  EXPECT_EQ(v1.data().trace().events(1).description(), "Something else");
+  EXPECT_EQ(v1.data().trace().events(1).timestamp().seconds(), 789);
+  EXPECT_EQ(v1.data().trace().events(1).timestamp().nanos(), 101);
 }
 
 void FuzzConvertChannel(

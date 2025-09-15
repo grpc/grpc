@@ -15,6 +15,7 @@
 
 import asyncio
 import logging
+import sys
 import unittest
 
 import grpc
@@ -27,6 +28,10 @@ from tests_aio.unit._test_server import start_test_server
 _NUM_OF_LOOPS = 50
 
 
+@unittest.skipIf(
+    sys.version_info >= (3, 14),
+    "Skip for Python 3.14+ until https://github.com/grpc/grpc/pull/40293 is merged",
+)
 class TestOutsideInit(unittest.TestCase):
     def test_behavior_outside_asyncio(self):
         # Ensures non-AsyncIO object can be initiated

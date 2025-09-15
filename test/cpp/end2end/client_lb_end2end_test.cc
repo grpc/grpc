@@ -1539,22 +1539,18 @@ TEST_F(RoundRobinTest, Basic) {
   auto stub = BuildStub(channel);
   response_generator.SetNextResolution(GetServersPorts());
   // Wait until all backends are ready.
-  do {
-    CheckRpcSendOk(DEBUG_LOCATION, stub);
-  } while (!SeenAllServers());
-  ResetCounters();
+  WaitForServers(DEBUG_LOCATION, stub);
   // "Sync" to the end of the list. Next sequence of picks will start at the
   // first server (index 0).
   WaitForServer(DEBUG_LOCATION, stub, servers_.size() - 1);
+  // Backends should be iterated over in the order in which the addresses were
+  // given.
   std::vector<int> connection_order;
   for (size_t i = 0; i < servers_.size(); ++i) {
     CheckRpcSendOk(DEBUG_LOCATION, stub);
     UpdateConnectionOrder(servers_, &connection_order);
   }
-  // Backends should be iterated over in the order in which the addresses were
-  // given.
-  const auto expected = std::vector<int>{0, 1, 2};
-  EXPECT_EQ(expected, connection_order);
+  EXPECT_THAT(connection_order, ::testing::ElementsAre(0, 1, 2));
   // Check LB policy name for the channel.
   EXPECT_EQ("round_robin", channel->GetLoadBalancingPolicyName());
 }

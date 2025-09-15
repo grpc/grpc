@@ -154,6 +154,7 @@ grpc_core::UniqueTypeName TlsServerCredentials::Type() {
 grpc_channel_credentials* grpc_tls_credentials_create(
     grpc_tls_credentials_options* options) {
   if (!CredentialOptionSanityCheck(options, true /* is_client */)) {
+    VLOG(1) << "TLS credentials options sanity check failed.";
     return nullptr;
   }
   return new TlsCredentials(
@@ -163,6 +164,7 @@ grpc_channel_credentials* grpc_tls_credentials_create(
 grpc_server_credentials* grpc_tls_server_credentials_create(
     grpc_tls_credentials_options* options) {
   if (!CredentialOptionSanityCheck(options, false /* is_client */)) {
+    VLOG(1) << "TLS server credentials options sanity check failed.";
     return nullptr;
   }
   return new TlsServerCredentials(

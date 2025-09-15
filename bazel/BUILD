@@ -66,7 +66,9 @@ package_group(
 
 package_group(
     name = "channelz",
-    packages = [],
+    packages = [
+        "//...",
+    ],
 )
 
 package_group(
@@ -223,4 +225,15 @@ package_group(
     name = "core_end2end_tests",
     packages = [
     ],
+)
+
+package_group(
+    name = "end2end_test_utils",
+    packages = [
+    ],
+)
+
+package_group(
+    name = "socket_mutator",
+    packages = [],
 )

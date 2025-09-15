@@ -76,6 +76,9 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(
         grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_event_engine_poller_for_python =
+    "Enable event engine poller in gRPC Python";
+const char* const additional_constraints_event_engine_poller_for_python = "{}";
 const char* const description_event_engine_secure_endpoint =
     "Use EventEngine secure endpoint wrapper instead of iomgr when available";
 const char* const additional_constraints_event_engine_secure_endpoint = "{}";
@@ -93,6 +96,9 @@ const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
 const char* const additional_constraints_local_connector_secure = "{}";
+const char* const description_max_age_filter_float_to_top =
+    "If set, the max age filter is placed at the top of the stack.";
+const char* const additional_constraints_max_age_filter_float_to_top = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
@@ -140,6 +146,11 @@ const char* const description_promise_based_inproc_transport =
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
+const char* const description_rr_wrr_connect_from_random_index =
+    "RR and WRR LB policies start connecting from a random index in the "
+    "address list.";
+const char* const additional_constraints_rr_wrr_connect_from_random_index =
+    "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -165,12 +176,17 @@ const char* const description_server_global_callbacks_ownership =
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
-const char* const description_shard_global_connection_pool =
-    "If set, shard the global connection pool to improve parallelism.";
-const char* const additional_constraints_shard_global_connection_pool = "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
+const char* const description_sleep_use_non_owning_waker =
+    "If set, the sleep promise uses a non-owning waker.";
+const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
+const char* const description_subchannel_wrapper_cleanup_on_orphan =
+    "Fixes the subchannel wrapper to drop any non-cancelled watchers when it "
+    "gets orphaned.";
+const char* const additional_constraints_subchannel_wrapper_cleanup_on_orphan =
+    "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -228,6 +244,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
+    {"event_engine_poller_for_python",
+     description_event_engine_poller_for_python,
+     additional_constraints_event_engine_poller_for_python, nullptr, 0, false,
+     true},
     {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
      additional_constraints_event_engine_secure_endpoint, nullptr, 0, true,
      false},
@@ -240,6 +260,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
+    {"max_age_filter_float_to_top", description_max_age_filter_float_to_top,
+     additional_constraints_max_age_filter_float_to_top, nullptr, 0, true,
+     true},
     {"max_inflight_pings_strict_limit",
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
@@ -276,6 +299,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
+    {"rr_wrr_connect_from_random_index",
+     description_rr_wrr_connect_from_random_index,
+     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, false,
+     true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -292,13 +319,17 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0, true,
      true},
-    {"shard_global_connection_pool", description_shard_global_connection_pool,
-     additional_constraints_shard_global_connection_pool, nullptr, 0, true,
-     true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
      true},
+    {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
+     additional_constraints_sleep_use_non_owning_waker, nullptr, 0, false,
+     true},
+    {"subchannel_wrapper_cleanup_on_orphan",
+     description_subchannel_wrapper_cleanup_on_orphan,
+     additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
+     false, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -370,6 +401,9 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(
         grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_event_engine_poller_for_python =
+    "Enable event engine poller in gRPC Python";
+const char* const additional_constraints_event_engine_poller_for_python = "{}";
 const char* const description_event_engine_secure_endpoint =
     "Use EventEngine secure endpoint wrapper instead of iomgr when available";
 const char* const additional_constraints_event_engine_secure_endpoint = "{}";
@@ -387,6 +421,9 @@ const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
 const char* const additional_constraints_local_connector_secure = "{}";
+const char* const description_max_age_filter_float_to_top =
+    "If set, the max age filter is placed at the top of the stack.";
+const char* const additional_constraints_max_age_filter_float_to_top = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
@@ -434,6 +471,11 @@ const char* const description_promise_based_inproc_transport =
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
+const char* const description_rr_wrr_connect_from_random_index =
+    "RR and WRR LB policies start connecting from a random index in the "
+    "address list.";
+const char* const additional_constraints_rr_wrr_connect_from_random_index =
+    "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -459,12 +501,17 @@ const char* const description_server_global_callbacks_ownership =
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
-const char* const description_shard_global_connection_pool =
-    "If set, shard the global connection pool to improve parallelism.";
-const char* const additional_constraints_shard_global_connection_pool = "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
+const char* const description_sleep_use_non_owning_waker =
+    "If set, the sleep promise uses a non-owning waker.";
+const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
+const char* const description_subchannel_wrapper_cleanup_on_orphan =
+    "Fixes the subchannel wrapper to drop any non-cancelled watchers when it "
+    "gets orphaned.";
+const char* const additional_constraints_subchannel_wrapper_cleanup_on_orphan =
+    "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -522,6 +569,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
+    {"event_engine_poller_for_python",
+     description_event_engine_poller_for_python,
+     additional_constraints_event_engine_poller_for_python, nullptr, 0, false,
+     true},
     {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
      additional_constraints_event_engine_secure_endpoint, nullptr, 0, true,
      false},
@@ -534,6 +585,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
+    {"max_age_filter_float_to_top", description_max_age_filter_float_to_top,
+     additional_constraints_max_age_filter_float_to_top, nullptr, 0, true,
+     true},
     {"max_inflight_pings_strict_limit",
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
@@ -570,6 +624,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
+    {"rr_wrr_connect_from_random_index",
+     description_rr_wrr_connect_from_random_index,
+     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, false,
+     true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -586,13 +644,17 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0, true,
      true},
-    {"shard_global_connection_pool", description_shard_global_connection_pool,
-     additional_constraints_shard_global_connection_pool, nullptr, 0, true,
-     true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
      true},
+    {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
+     additional_constraints_sleep_use_non_owning_waker, nullptr, 0, false,
+     true},
+    {"subchannel_wrapper_cleanup_on_orphan",
+     description_subchannel_wrapper_cleanup_on_orphan,
+     additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
+     false, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
@@ -664,6 +726,9 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(
         grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_event_engine_poller_for_python =
+    "Enable event engine poller in gRPC Python";
+const char* const additional_constraints_event_engine_poller_for_python = "{}";
 const char* const description_event_engine_secure_endpoint =
     "Use EventEngine secure endpoint wrapper instead of iomgr when available";
 const char* const additional_constraints_event_engine_secure_endpoint = "{}";
@@ -681,6 +746,9 @@ const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
 const char* const additional_constraints_local_connector_secure = "{}";
+const char* const description_max_age_filter_float_to_top =
+    "If set, the max age filter is placed at the top of the stack.";
+const char* const additional_constraints_max_age_filter_float_to_top = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
@@ -728,6 +796,11 @@ const char* const description_promise_based_inproc_transport =
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
+const char* const description_rr_wrr_connect_from_random_index =
+    "RR and WRR LB policies start connecting from a random index in the "
+    "address list.";
+const char* const additional_constraints_rr_wrr_connect_from_random_index =
+    "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -753,12 +826,17 @@ const char* const description_server_global_callbacks_ownership =
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
-const char* const description_shard_global_connection_pool =
-    "If set, shard the global connection pool to improve parallelism.";
-const char* const additional_constraints_shard_global_connection_pool = "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
+const char* const description_sleep_use_non_owning_waker =
+    "If set, the sleep promise uses a non-owning waker.";
+const char* const additional_constraints_sleep_use_non_owning_waker = "{}";
+const char* const description_subchannel_wrapper_cleanup_on_orphan =
+    "Fixes the subchannel wrapper to drop any non-cancelled watchers when it "
+    "gets orphaned.";
+const char* const additional_constraints_subchannel_wrapper_cleanup_on_orphan =
+    "{}";
 const char* const description_tcp_frame_size_tuning =
     "If set, enables TCP to use RPC size estimation made by higher layers. TCP "
     "would not indicate completion of a read operation until a specified "
@@ -816,6 +894,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
+    {"event_engine_poller_for_python",
+     description_event_engine_poller_for_python,
+     additional_constraints_event_engine_poller_for_python, nullptr, 0, false,
+     true},
     {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
      additional_constraints_event_engine_secure_endpoint, nullptr, 0, true,
      false},
@@ -828,6 +910,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
+    {"max_age_filter_float_to_top", description_max_age_filter_float_to_top,
+     additional_constraints_max_age_filter_float_to_top, nullptr, 0, true,
+     true},
     {"max_inflight_pings_strict_limit",
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
@@ -864,6 +949,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
+    {"rr_wrr_connect_from_random_index",
+     description_rr_wrr_connect_from_random_index,
+     additional_constraints_rr_wrr_connect_from_random_index, nullptr, 0, false,
+     true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -880,13 +969,17 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0, true,
      true},
-    {"shard_global_connection_pool", description_shard_global_connection_pool,
-     additional_constraints_shard_global_connection_pool, nullptr, 0, true,
-     true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
      true},
+    {"sleep_use_non_owning_waker", description_sleep_use_non_owning_waker,
+     additional_constraints_sleep_use_non_owning_waker, nullptr, 0, false,
+     true},
+    {"subchannel_wrapper_cleanup_on_orphan",
+     description_subchannel_wrapper_cleanup_on_orphan,
+     additional_constraints_subchannel_wrapper_cleanup_on_orphan, nullptr, 0,
+     false, true},
     {"tcp_frame_size_tuning", description_tcp_frame_size_tuning,
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,

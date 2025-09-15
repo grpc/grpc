@@ -193,7 +193,7 @@ grpc_security_status grpc_ssl_credentials::InitializeClientHandshakerFactory(
                   "be nullptr";
     return GRPC_SECURITY_ERROR;
   }
-  options.pem_root_certs = pem_root_certs;
+  options.root_cert_info = std::make_shared<RootCertInfo>(pem_root_certs);
   options.root_store = root_store;
   options.alpn_protocols =
       grpc_fill_alpn_protocol_strings(&options.num_alpn_protocols);

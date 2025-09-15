@@ -18,6 +18,8 @@
 #include <atomic>
 #include <cstdint>
 
+#include "src/core/channelz/property_list.h"
+#include "src/core/ext/transport/chaotic_good_legacy/legacy_ztrace_collector.h"
 #include "src/core/ext/transport/chaotic_good_legacy/pending_connection.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/promise.h"
@@ -40,6 +42,9 @@ class OutputBuffer {
   }
   bool HavePending() const { return pending_.Length() > 0; }
   SliceBuffer TakePending() { return std::move(pending_); }
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList().Set("pending", pending_.Length());
+  }
 
  private:
   Waker flush_waker_;
@@ -50,6 +55,10 @@ class OutputBuffer {
 // The set of output buffers for all connected data endpoints
 class OutputBuffers : public RefCounted<OutputBuffers> {
  public:
+  explicit OutputBuffers(
+      std::shared_ptr<LegacyZTraceCollector> ztrace_collector)
+      : ztrace_collector_(std::move(ztrace_collector)) {}
+
   auto Write(SliceBuffer output_buffer) {
     return [output_buffer = std::move(output_buffer), this]() mutable {
       return PollWrite(output_buffer);
@@ -66,6 +75,39 @@ class OutputBuffers : public RefCounted<OutputBuffers> {
     return ready_endpoints_.load(std::memory_order_relaxed);
   }
 
+  void AddData(channelz::DataSink sink) {
+    MutexLock lock(&mu_);
+    sink.AddData("output_buffers",
+                 channelz::PropertyList()
+                     .Set("ready_endpoints",
+                          ready_endpoints_.load(std::memory_order_relaxed))
+                     .Set("buffers", [this]() {
+                       mu_.AssertHeld();
+                       channelz::PropertyTable table;
+                       for (const auto& buffer : buffers_) {
+                         if (buffer.has_value()) {
+                           table.AppendRow(channelz::PropertyList().Set(
+                               "pending", buffer->HavePending()));
+                         } else {
+                           table.AppendRow(channelz::PropertyList().Set(
+                               "pending", "no buffer"));
+                         }
+                       }
+                       return table;
+                     }()));
+  }
+
+  bool TraceWrite() {
+    auto now = Timestamp::Now();
+    if (now - last_traced_write_ > Duration::Milliseconds(100)) {
+      last_traced_write_ = now;
+      // We still only trace if there's a sink for the trace, but we only check
+      // that every 100ms because the check can be expensive itself.
+      return ztrace_collector_->IsActive();
+    }
+    return false;
+  }
+
  private:
   Poll<uint32_t> PollWrite(SliceBuffer& output_buffer);
   Poll<SliceBuffer> PollNext(uint32_t connection_id);
@@ -74,6 +116,8 @@ class OutputBuffers : public RefCounted<OutputBuffers> {
   std::vector<std::optional<OutputBuffer>> buffers_ ABSL_GUARDED_BY(mu_);
   Waker write_waker_ ABSL_GUARDED_BY(mu_);
   std::atomic<uint32_t> ready_endpoints_{0};
+  std::shared_ptr<LegacyZTraceCollector> ztrace_collector_;
+  Timestamp last_traced_write_ = Timestamp::InfPast();
 };
 
 class InputQueues : public RefCounted<InputQueues> {
@@ -137,7 +181,7 @@ class InputQueues : public RefCounted<InputQueues> {
     }
   };
 
-  explicit InputQueues();
+  explicit InputQueues(std::shared_ptr<LegacyZTraceCollector> ztrace_collector);
 
   ReadTicket Read(uint32_t connection_id, size_t length) {
     return ReadTicket(CreateTicket(connection_id, length), Ref());
@@ -153,6 +197,27 @@ class InputQueues : public RefCounted<InputQueues> {
 
   void AddEndpoint(uint32_t connection_id);
 
+  void AddData(channelz::DataSink sink) {
+    MutexLock lock(&mu_);
+    sink.AddData(
+        "input_queues",
+        channelz::PropertyList()
+            .Set("outstanding_reads",
+                 absl::StrJoin(outstanding_reads_, ",",
+                               [](std::string* out, const auto& entry) {
+                                 absl::StrAppend(out, entry.first);
+                               }))
+            .Set("read_requests", [this]() {
+              mu_.AssertHeld();
+              channelz::PropertyTable table;
+              for (const auto& requests : read_requests_) {
+                table.AppendRow(channelz::PropertyList().Set(
+                    "tickets", absl::StrJoin(requests, ",")));
+              }
+              return table;
+            }()));
+  }
+
  private:
   using ReadState = std::variant<absl::StatusOr<SliceBuffer>, Waker>;
 
@@ -166,6 +231,7 @@ class InputQueues : public RefCounted<InputQueues> {
   std::vector<Waker> read_request_waker_;
   absl::flat_hash_map<uint64_t, ReadState> outstanding_reads_
       ABSL_GUARDED_BY(mu_);
+  std::shared_ptr<LegacyZTraceCollector> ztrace_collector_;
 };
 
 class Endpoint final {
@@ -175,16 +241,24 @@ class Endpoint final {
            PendingConnection pending_connection, bool enable_tracing,
            grpc_event_engine::experimental::EventEngine* event_engine,
            std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
-               stats_plugin_group);
+               stats_plugin_group,
+           std::shared_ptr<LegacyZTraceCollector> ztrace_collector);
+
+  void AddData(channelz::DataSink sink) {
+    party_->ExportToChannelz(absl::StrCat("endpoint_party", id_), sink);
+  }
 
  private:
-  static auto WriteLoop(uint32_t id,
-                        RefCountedPtr<OutputBuffers> output_buffers,
-                        std::shared_ptr<PromiseEndpoint> endpoint);
+  static auto WriteLoop(
+      uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
+      std::shared_ptr<PromiseEndpoint> endpoint,
+      std::shared_ptr<LegacyZTraceCollector> ztrace_collector);
   static auto ReadLoop(uint32_t id, RefCountedPtr<InputQueues> input_queues,
                        std::shared_ptr<PromiseEndpoint> endpoint);
 
+  const uint32_t id_;
   RefCountedPtr<Party> party_;
+  std::shared_ptr<LegacyZTraceCollector> ztrace_collector_;
 };
 
 }  // namespace data_endpoints_detail
@@ -199,7 +273,8 @@ class DataEndpoints {
       grpc_event_engine::experimental::EventEngine* event_engine,
       std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
           stats_plugin_group,
-      bool enable_tracing);
+      bool enable_tracing,
+      std::shared_ptr<LegacyZTraceCollector> ztrace_collector);
 
   // Try to queue output_buffer against a data endpoint.
   // Returns a promise that resolves to the data endpoint connection id
@@ -216,6 +291,15 @@ class DataEndpoints {
   }
 
   bool empty() const { return output_buffers_->ReadyEndpoints() == 0; }
+
+  void AddData(channelz::DataSink sink) {
+    output_buffers_->AddData(sink);
+    input_queues_->AddData(sink);
+    MutexLock lock(&mu_);
+    for (auto& endpoint : endpoints_) {
+      endpoint.AddData(sink);
+    }
+  }
 
  private:
   RefCountedPtr<data_endpoints_detail::OutputBuffers> output_buffers_;

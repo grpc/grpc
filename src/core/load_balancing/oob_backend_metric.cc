@@ -201,7 +201,7 @@ class OrcaProducer::OrcaStreamEventHandler final
 // OrcaProducer
 //
 
-void OrcaProducer::Start(RefCountedPtr<Subchannel> subchannel) {
+void OrcaProducer::Start(WeakRefCountedPtr<Subchannel> subchannel) {
   subchannel_ = std::move(subchannel);
   connected_subchannel_ = subchannel_->connected_subchannel();
   auto connectivity_watcher =
@@ -313,7 +313,7 @@ void OrcaWatcher::SetSubchannel(Subchannel* subchannel) {
   // This needs to be done outside of the lambda passed to
   // GetOrAddDataProducer() to avoid deadlocking by re-acquiring the
   // subchannel lock while already holding it.
-  if (created) producer_->Start(subchannel->Ref());
+  if (created) producer_->Start(subchannel->WeakRef());
   // Register ourself with the producer.
   producer_->AddWatcher(this);
 }

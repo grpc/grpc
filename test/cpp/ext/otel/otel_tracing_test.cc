@@ -57,6 +57,16 @@ using ::testing::VariantWith;
 
 class OTelTracingTest : public ::testing::Test {
  protected:
+  virtual absl::Status BuildAndRegisterOpenTelemetryPlugin(
+      std::shared_ptr<opentelemetry::sdk::trace::TracerProvider>
+          tracer_provider) {
+    return OpenTelemetryPluginBuilder()
+        .SetTracerProvider(std::move(tracer_provider))
+        .SetTextMapPropagator(
+            OpenTelemetryPluginBuilder::MakeGrpcTraceBinTextMapPropagator())
+        .BuildAndRegisterGlobal();
+  }
+
   void SetUp() override {
     grpc_init();
     data_ =
@@ -68,13 +78,8 @@ class OTelTracingTest : public ::testing::Test {
                 opentelemetry::exporter::memory::InMemorySpanExporterFactory::
                     Create(data_)));
     tracer_ = tracer_provider->GetTracer("grpc-test");
-    auto status =
-        OpenTelemetryPluginBuilder()
-            .SetTracerProvider(std::move(tracer_provider))
-            .SetTextMapPropagator(
-                OpenTelemetryPluginBuilder::MakeGrpcTraceBinTextMapPropagator())
-            .BuildAndRegisterGlobal();
-    ASSERT_TRUE(status.ok()) << status;
+    ASSERT_TRUE(
+        BuildAndRegisterOpenTelemetryPlugin(std::move(tracer_provider)).ok());
     port_ = grpc_pick_unused_port_or_die();
     server_address_ = absl::StrCat("localhost:", port_);
     RestartServer();
@@ -678,10 +683,111 @@ TEST_F(OTelTracingTest, PropagationParentToChild) {
   EXPECT_EQ((*server_span)->GetTraceId(), (*test_span)->GetTraceId());
 }
 
+class OTelTracingTestNoPropagator : public OTelTracingTest {
+ protected:
+  absl::Status BuildAndRegisterOpenTelemetryPlugin(
+      std::shared_ptr<opentelemetry::sdk::trace::TracerProvider>
+          tracer_provider) override {
+    return OpenTelemetryPluginBuilder()
+        .SetTracerProvider(std::move(tracer_provider))
+        .BuildAndRegisterGlobal();
+  }
+};
+
+// Tests that spans are not propagated from parent call to child call when no
+// propagator is set.
+TEST_F(OTelTracingTestNoPropagator, PropagationParentToChildWithoutPropagator) {
+  {
+    // Start a propagating echo service that propagates the echo request to the
+    // actual server.
+    grpc::ServerBuilder builder;
+    int port = grpc_pick_unused_port_or_die();
+    // Use IPv4 here because it's less flaky than IPv6 ("[::]:0") on Travis.
+    builder.AddListeningPort(grpc_core::JoinHostPort("0.0.0.0", port),
+                             grpc::InsecureServerCredentials(), nullptr);
+    PropagatingEchoTestServiceImpl service(stub_.get());
+    builder.RegisterService(&service);
+    auto server = builder.BuildAndStart();
+    auto channel = grpc::CreateChannel(absl::StrCat("localhost:", port),
+                                       grpc::InsecureChannelCredentials());
+    auto stub = EchoTestService::NewStub(channel);
+    auto span = tracer_->StartSpan("TestSpan");
+    auto scope = opentelemetry::sdk::trace::Tracer::WithActiveSpan(span);
+    SendRPC(stub.get());
+  }
+  auto spans = GetSpans(7);  // test span, client span, attempt span, server
+                             // span at propagating echo service, child client
+                             // span at propagating echo service, attempt span
+                             // at propagating echo service and server span at
+                             // actual echo service.
+  EXPECT_EQ(spans.size(), 7);
+  const auto test_span = std::find_if(
+      spans.begin(), spans.end(), [&](const std::unique_ptr<SpanData>& span) {
+        return span->GetName() == "TestSpan";
+      });
+  ASSERT_NE(test_span, spans.end());
+  const auto client_span = std::find_if(
+      spans.begin(), spans.end(), [&](const std::unique_ptr<SpanData>& span) {
+        return span->GetName() == "Sent.grpc.testing.EchoTestService/Echo" &&
+               span->GetParentSpanId() == (*test_span)->GetSpanId();
+      });
+  ASSERT_NE(client_span, spans.end());
+  EXPECT_EQ((*client_span)->GetTraceId(), (*test_span)->GetTraceId());
+  const auto attempt_span = std::find_if(
+      spans.begin(), spans.end(), [&](const std::unique_ptr<SpanData>& span) {
+        return span->GetName() == "Attempt.grpc.testing.EchoTestService/Echo" &&
+               span->GetParentSpanId() == (*client_span)->GetSpanId();
+      });
+  ASSERT_NE(attempt_span, spans.end());
+  EXPECT_EQ((*attempt_span)->GetTraceId(), (*test_span)->GetTraceId());
+  // Without a propagator, both the propagating server span and the final server
+  // span will have an empty parent span ID, but only the former should have a
+  // child (propagating client span).
+  const auto kZeroSpanId = opentelemetry::trace::SpanId();
+  const auto propagating_client_span = std::find_if(
+      spans.begin(), spans.end(), [&](const std::unique_ptr<SpanData>& span) {
+        return span->GetName() == "Sent.grpc.testing.EchoTestService/Echo" &&
+               span->GetTraceId() != (*client_span)->GetTraceId();
+      });
+  ASSERT_NE(propagating_client_span, spans.end());
+  const auto propagating_server_span = std::find_if(
+      spans.begin(), spans.end(), [&](const std::unique_ptr<SpanData>& span) {
+        return span->GetName() == "Recv.grpc.testing.EchoTestService/Echo" &&
+               span->GetParentSpanId() == kZeroSpanId &&
+               span->GetSpanId() ==
+                   (*propagating_client_span)->GetParentSpanId();
+      });
+  ASSERT_NE(propagating_server_span, spans.end());
+  EXPECT_NE((*propagating_server_span)->GetTraceId(),
+            (*test_span)->GetTraceId());
+  EXPECT_EQ((*propagating_client_span)->GetTraceId(),
+            (*propagating_server_span)->GetTraceId());
+  const auto propagating_attempt_span = std::find_if(
+      spans.begin(), spans.end(), [&](const std::unique_ptr<SpanData>& span) {
+        return span->GetName() == "Attempt.grpc.testing.EchoTestService/Echo" &&
+               span->GetParentSpanId() ==
+                   (*propagating_client_span)->GetSpanId();
+      });
+  ASSERT_NE(propagating_attempt_span, spans.end());
+  EXPECT_EQ((*propagating_attempt_span)->GetTraceId(),
+            (*propagating_client_span)->GetTraceId());
+  // Without a propagator, the final server span will have an empty parent span
+  // ID and a different trace ID.
+  const auto server_span = std::find_if(
+      spans.begin(), spans.end(), [&](const std::unique_ptr<SpanData>& span) {
+        return span->GetName() == "Recv.grpc.testing.EchoTestService/Echo" &&
+               span->GetParentSpanId() == kZeroSpanId &&
+               span->GetTraceId() != (*propagating_server_span)->GetTraceId();
+      });
+  ASSERT_NE(server_span, spans.end());
+  EXPECT_NE((*server_span)->GetTraceId(), (*test_span)->GetTraceId());
+}
+
 #ifdef GRPC_LINUX_ERRQUEUE
 // Test presence of TCP write annotations
 TEST_F(OTelTracingTest, TcpWriteAnnotations) {
-  if (!grpc_event_engine::experimental::MakeDefaultPoller(/*scheduler=*/nullptr)
+  if (!grpc_event_engine::experimental::MakeDefaultPoller(
+           /*thread_pool=*/nullptr)
            ->CanTrackErrors()) {
     GTEST_SKIP() << "Test disabled if poller doesn't support errqueue";
   }

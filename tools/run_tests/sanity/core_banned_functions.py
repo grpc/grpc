@@ -129,6 +129,7 @@ BANNED_EXCEPT = {
         "src/core/lib/iomgr/combiner.cc",
         "src/core/lib/iomgr/exec_ctx.cc",
         "src/core/lib/iomgr/closure.h",
+        "src/core/lib/slice/slice_buffer.cc",
         "src/core/ext/transport/chttp2/transport/http2_status.h",
         "src/core/channelz/channelz.cc",
         "src/core/channelz/channelz_registry.cc",

@@ -135,6 +135,11 @@ grpc_objc_library(
         ":grpc_objc_interface",
         ":grpc_objc_interface_legacy",
         ":rx_library",
+        ":rx_library_headers",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++_public_hdrs",
+        "//:grpc_core_credentials_header",
         "//:grpc_objc",
     ],
 )
@@ -171,6 +176,7 @@ grpc_objc_library(
     deps = [
         ":grpc_objc_interface",
         ":proto_objc_rpc_legacy_header",
+        ":rx_library_headers",
         "@com_google_protobuf//:protobuf_objc",
     ],
 )

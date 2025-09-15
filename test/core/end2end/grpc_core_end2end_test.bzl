@@ -93,11 +93,14 @@ _DEPS = [
 
 _EXTERNAL_DEPS = [
     "absl/base:core_headers",
+    "absl/functional:any_invocable",
     "absl/log",
     "absl/log:globals",
     "absl/log:log_entry",
     "absl/log:log_sink",
     "absl/log:log_sink_registry",
+    "absl/meta:type_traits",
+    "absl/random",
     "absl/status",
     "absl/status:statusor",
     "absl/strings",

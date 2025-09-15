@@ -243,8 +243,10 @@ class grpc_ssl_server_security_connector
           server_credentials->config().pem_key_cert_pairs;
       options.num_key_cert_pairs =
           server_credentials->config().num_key_cert_pairs;
-      options.pem_client_root_certs =
-          server_credentials->config().pem_root_certs;
+      if (server_credentials->config().pem_root_certs != nullptr) {
+        options.root_cert_info = std::make_shared<RootCertInfo>(
+            server_credentials->config().pem_root_certs);
+      }
       options.client_certificate_request =
           grpc_get_tsi_client_certificate_request_type(
               server_credentials->config().client_certificate_request);
@@ -360,7 +362,10 @@ class grpc_ssl_server_security_connector
     options.pem_key_cert_pairs = grpc_convert_grpc_to_tsi_cert_pairs(
         config->pem_key_cert_pairs, config->num_key_cert_pairs);
     options.num_key_cert_pairs = config->num_key_cert_pairs;
-    options.pem_client_root_certs = config->pem_root_certs;
+    if (config->pem_root_certs != nullptr) {
+      options.root_cert_info =
+          std::make_shared<RootCertInfo>(config->pem_root_certs);
+    }
     options.client_certificate_request =
         grpc_get_tsi_client_certificate_request_type(
             server_creds->config().client_certificate_request);

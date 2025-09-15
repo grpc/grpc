@@ -215,13 +215,23 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
                      ->CreateMemoryAllocator("chaotic-good")),
       outgoing_frames_(4),
       message_chunker_(config.MakeMessageChunker()) {
+  std::string peer_string =
+      grpc_event_engine::experimental::ResolvedAddressToString(
+          control_endpoint.GetPeerAddress())
+          .value_or("unknown");
+  socket_node_ = MakeRefCounted<channelz::SocketNode>(
+      grpc_event_engine::experimental::ResolvedAddressToString(
+          control_endpoint.GetLocalAddress())
+          .value_or("unknown"),
+      peer_string, absl::StrCat("chaotic-good client", peer_string),
+      args.GetObjectRef<channelz::SocketNode::Security>());
   auto event_engine =
       args.GetObjectRef<grpc_event_engine::experimental::EventEngine>();
   auto transport = MakeRefCounted<ChaoticGoodTransport>(
       std::move(control_endpoint), config.TakePendingDataEndpoints(),
       event_engine,
       args.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>(),
-      config.MakeTransportOptions(), config.tracing_enabled());
+      config.MakeTransportOptions(), config.tracing_enabled(), socket_node_);
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine.get());
@@ -390,5 +400,14 @@ void ChaoticGoodClientTransport::PerformOp(grpc_transport_op* op) {
   ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
 }
 
+void ChaoticGoodClientTransport::ChannelzDataSource::AddData(
+    channelz::DataSink sink) {
+  transport_->party_->ExportToChannelz("party", sink);
+  MutexLock lock(&transport_->mu_);
+  sink.AddData("client_transport",
+               channelz::PropertyList()
+                   .Set("next_stream_id", transport_->next_stream_id_)
+                   .Set("streams", transport_->stream_map_.size()));
+}
 }  // namespace chaotic_good_legacy
 }  // namespace grpc_core

@@ -19,22 +19,12 @@ ignore = [
     "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed in {name}
     "ARG001",  # Unused function argument: {name}
     "ARG002",  # Unused method argument: {name}
-    "ARG004",  # Unused static method argument: {name}
-    "ARG005",  # Unused lambda argument: {name}
-    "B007",    # Loop control variable {name} not used within loop body
-    "B011",    # Do not assert False (python -O removes these calls), raise AssertionError()
-    "B018",    # Found useless expression. Either assign it to a variable or remove it.
     "B024",    # {name} is an abstract base class, but it has no abstract methods or properties
-    "B027",    # {name} is an empty method in an abstract base class, but has no abstract decorator
     "B904",    # Within an except* clause, raise exceptions with raise ... from err or raise ... from None to distinguish them from errors in exception handling
     "BLE001",  # Do not catch blind exception: {name}
-    "C402",    # Unnecessary generator (rewrite as a dict comprehension)
-    "C405",    # Unnecessary {kind} literal (rewrite as a set literal)
     "C408",    # Unnecessary {kind}() call (rewrite as a literal)
     "C901",    # {name} is too complex ({complexity} > {max_complexity})
     "COM812",  # Trailing comma missing
-    "D100",    # Missing docstring in public module
-    "D101",    # Missing docstring in public class
     "D102",    # Missing docstring in public method
     "D103",    # Missing docstring in public function
     "D104",    # Missing docstring in public package
@@ -42,36 +32,19 @@ ignore = [
     "D106",    # Missing docstring in public nested class
     "D107",    # Missing docstring in __init__
     "D200",    # One-line docstring should fit on one line
-    "D202",    # No blank lines allowed after function docstring (found {num_lines})
     "D205",    # 1 blank line required between summary line and description
-    "D207",    # Docstring is under-indented
-    "D209",    # Multi-line docstring closing quotes should be on a separate line
     "D212",    # Multi-line docstring summary should start at the first line
     "D213",    # Multi-line docstring summary should start at the second line
     "D400",    # First line should end with a period
     "D401",    # First line of docstring should be in imperative mood: "{first_line}"
-    "D403",    # First word of the docstring should be capitalized: {} -> {}
-    "D404",    # First word of the docstring should not be "This"
-    "D410",    # Missing blank line after section ("{name}")
-    "D411",    # Missing blank line before section ("{name}")
     "D413",    # Missing blank line after last section ("{name}")
     "D415",    # First line should end with a period, question mark, or exclamation point
-    "D417",    # Missing argument description in the docstring for {definition}: {name}
-    "DTZ001",  # datetime.datetime() called without a tzinfo argument
     "DTZ005",  # datetime.datetime.now() called without a tz argument
-    "E402",    # Module level import not at top of cell
     "E501",    # Line too long ({width} > {limit})
-    "E713",    # Test for membership should be not in
-    "E722",    # Do not use bare except
     "E731",    # Do not assign a lambda expression, use a def
-    "EM101",   # Exception must not use a string literal, assign to variable first
-    "EM102",   # Exception must not use an f-string literal, assign to variable first
-    "EM103",   # Exception must not use a .format() string directly, assign to variable first
     "ERA001",  # Found commented-out code
     "F401",    # {name} imported but unused; consider using importlib.util.find_spec to test for availability
     "F403",    # from {name} import * used; unable to detect undefined names
-    "F523",    # .format call has unused arguments at position(s): {message}
-    "F541",    # f-string without any placeholders
     "F811",    # Redefinition of unused {name} from {row}
     "F821",    # Undefined name {name}. {tip}
     "F841",    # Local variable {name} is assigned to but never used
@@ -79,17 +52,9 @@ ignore = [
     "FBT002",  # Boolean default positional argument in function definition
     "FBT003",  # Boolean positional value in function call
     "FIX002",  # Line contains TODO, consider resolving the issue
-    "FIX004",  # Line contains HACK, consider resolving the issue
-    "FLY002",  # Consider {expression} instead of string join
-    "FURB188", # Prefer str.removeprefix() over conditionally replacing with slice.
-    "G003",    # Logging statement uses +
     "I001",    # Import block is un-sorted or un-formatted
-    "ICN001",  # {name} should be imported as {asname}
-    "INP001",  # File {filename} is part of an implicit namespace package. Add an __init__.py.
     "ISC003",  # Explicitly concatenated string should be implicitly concatenated
-    "LOG015",  # {}() call on root logger
     "N802",    # Function name {name} should be lowercase
-    "N803",    # Argument name {name} should be lowercase
     "N806",    # Variable {name} in function should be lowercase
     "N818",    # Exception name {name} should be named with an Error suffix
     "PERF102", # When using only the {subset} of a dict use the {subset}() method

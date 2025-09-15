@@ -76,7 +76,8 @@ TEST_F(EventEngineClientTest, ConnectToNonExistentListenerTest) {
   grpc_core::ExecCtx ctx;
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
   grpc_core::Notification signal;
-  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
+  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>("bar"));
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   // Create a test EventEngine client endpoint and connect to a non existent
@@ -102,7 +103,8 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
   grpc_core::ExecCtx ctx;
   std::shared_ptr<EventEngine> oracle_ee(this->NewOracleEventEngine());
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
-  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
+  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>("bar"));
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
@@ -129,7 +131,10 @@ TEST_F(EventEngineClientTest, ConnectExchangeBidiDataTransferTest) {
       [](absl::Status status) {
         ASSERT_TRUE(status.ok()) << status.ToString();
       },
-      config, std::make_unique<grpc_core::MemoryQuota>("foo"));
+      config,
+      std::make_unique<grpc_core::MemoryQuota>(
+          grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+              "bar")));
 
   ASSERT_TRUE(listener->Bind(*resolved_addr).ok());
   ASSERT_TRUE(listener->Start().ok());
@@ -175,7 +180,8 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
   static constexpr int kNumConnections = 10;        // M
   std::shared_ptr<EventEngine> oracle_ee(this->NewOracleEventEngine());
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
-  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
+  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>("bar"));
   std::unique_ptr<EventEngine::Endpoint> server_endpoint;
   // Notifications can only be fired once, so they are newed every loop
   grpc_core::Notification* server_signal = new grpc_core::Notification();
@@ -199,7 +205,10 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
       [](absl::Status status) {
         ASSERT_TRUE(status.ok()) << status.ToString();
       },
-      config, std::make_unique<grpc_core::MemoryQuota>("foo"));
+      config,
+      std::make_unique<grpc_core::MemoryQuota>(
+          grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+              "foo")));
 
   target_addrs.reserve(kNumListenerAddresses);
   for (int i = 0; i < kNumListenerAddresses; i++) {

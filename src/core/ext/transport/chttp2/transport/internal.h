@@ -115,6 +115,7 @@ typedef enum {
   GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE,
 } grpc_chttp2_write_state;
 
+// Not getting used anywhere AFAIK
 typedef enum {
   GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY,
   GRPC_CHTTP2_OPTIMIZE_FOR_THROUGHPUT,
@@ -238,7 +239,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
    public:
     explicit ChannelzDataSource(grpc_chttp2_transport* transport)
         : grpc_core::channelz::DataSource(transport->channelz_socket),
-          transport_(transport) {
+          transport_(transport->Ref()) {  // Take a ref
       SourceConstructed();
     }
     ~ChannelzDataSource() { SourceDestructing(); }
@@ -248,7 +249,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
         absl::string_view name) override;
 
    private:
-    grpc_chttp2_transport* transport_;
+    grpc_core::RefCountedPtr<grpc_chttp2_transport> transport_;
   };
 
   void Orphan() override;
@@ -714,7 +715,7 @@ struct grpc_chttp2_stream {
   // annotations as soon as we have parsed initial metadata, but in our legacy
   // stack, we create the stream before parsing headers. In the new v3 stack,
   // that won't be an issue.
-  grpc_core::CallTracerInterface* call_tracer = nullptr;
+  grpc_core::CallTracer* call_tracer = nullptr;
   // TODO(yashykt): Remove this once call_tracer_transport_fix is rolled out
   grpc_core::CallTracerAnnotationInterface* parent_call_tracer = nullptr;
 
@@ -739,17 +740,6 @@ struct grpc_chttp2_stream {
   grpc_core::Timestamp last_window_update_time =
       grpc_core::Timestamp::InfPast();
 };
-
-// EXPERIMENTAL: provide protection against overloading a server with too many
-// requests: wait for streams to be deallocated before they stop counting
-// against MAX_CONCURRENT_STREAMS
-#define GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION \
-  "grpc.http.overload_protection"
-
-// EXPERIMENTAL: Fail requests at the client if the client is over max
-// concurrent streams, so they may be retried elsewhere.
-#define GRPC_ARG_MAX_CONCURRENT_STREAMS_REJECT_ON_CLIENT \
-  "grpc.http.max_concurrent_streams_reject_on_client"
 
 /// Transport writing call flow:
 /// grpc_chttp2_initiate_write() is called anywhere that we know bytes need to

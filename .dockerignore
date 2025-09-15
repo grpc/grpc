@@ -4,3 +4,5 @@ bazel-out
 build
 .cache
 .git
+# python virtual environments
+*/.venv*

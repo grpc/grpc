@@ -14,7 +14,7 @@
 
 #include "src/core/lib/event_engine/posix_engine/posix_write_event_sink.h"
 
-#include "gmock/gmock-matchers.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 namespace grpc_event_engine::experimental {

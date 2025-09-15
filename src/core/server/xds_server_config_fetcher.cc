@@ -1121,7 +1121,7 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
           const XdsHttpFilterImpl* filter_impl =
               http_filter_registry.GetFilterForType(
                   http_filter.config.config_proto_type_name);
-          CHECK_NE(filter_impl, nullptr);  // Enforced in config validation.
+          GRPC_CHECK_NE(filter_impl, nullptr);  // Enforced in config validation.
           filter_impl->UpdateBlackboard(http_filter.config, old_blackboard,
                                         new_blackboard);
         }

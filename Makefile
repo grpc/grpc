@@ -367,8 +367,8 @@ E = @echo
 Q = @
 endif
 
-CORE_VERSION = 49.0.0
-CPP_VERSION = 1.75.0-dev
+CORE_VERSION = 50.0.0
+CPP_VERSION = 1.76.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -404,7 +404,7 @@ SHARED_EXT_CORE = dll
 SHARED_EXT_CPP = dll
 
 SHARED_PREFIX =
-SHARED_VERSION_CORE = -49
+SHARED_VERSION_CORE = -50
 SHARED_VERSION_CPP = -1
 else ifeq ($(SYSTEM),Darwin)
 EXECUTABLE_SUFFIX =
@@ -685,6 +685,7 @@ LIBGRPC_SRC = \
     src/core/channelz/channelz.cc \
     src/core/channelz/channelz_registry.cc \
     src/core/channelz/property_list.cc \
+    src/core/channelz/text_encode.cc \
     src/core/channelz/v2tov1/convert.cc \
     src/core/channelz/v2tov1/legacy_api.cc \
     src/core/channelz/v2tov1/property_list.cc \
@@ -763,6 +764,7 @@ LIBGRPC_SRC = \
     src/core/credentials/transport/tls/load_system_roots_fallback.cc \
     src/core/credentials/transport/tls/load_system_roots_supported.cc \
     src/core/credentials/transport/tls/load_system_roots_windows.cc \
+    src/core/credentials/transport/tls/spiffe_utils.cc \
     src/core/credentials/transport/tls/ssl_utils.cc \
     src/core/credentials/transport/tls/tls_credentials.cc \
     src/core/credentials/transport/tls/tls_security_connector.cc \
@@ -961,6 +963,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c \
+    src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c \
@@ -1124,8 +1127,10 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c \
     src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.c \
+    src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c \
+    src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c \
     src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.c \
     src/core/ext/upbdefs-gen/udpa/annotations/security.upbdefs.c \
@@ -1160,6 +1165,7 @@ LIBGRPC_SRC = \
     src/core/filter/auth/client_auth_filter.cc \
     src/core/filter/auth/server_auth_filter.cc \
     src/core/filter/blackboard.cc \
+    src/core/filter/fused_filters.cc \
     src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc \
     src/core/handshaker/handshaker.cc \
     src/core/handshaker/handshaker_registry.cc \
@@ -1188,6 +1194,7 @@ LIBGRPC_SRC = \
     src/core/lib/debug/trace_flags.cc \
     src/core/lib/event_engine/ares_resolver.cc \
     src/core/lib/event_engine/cf_engine/cf_engine.cc \
+    src/core/lib/event_engine/cf_engine/cfsocket_listener.cc \
     src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc \
     src/core/lib/event_engine/cf_engine/dns_service_resolver.cc \
     src/core/lib/event_engine/channel_args_endpoint_config.cc \
@@ -1322,6 +1329,7 @@ LIBGRPC_SRC = \
     src/core/lib/resource_quota/periodic_update.cc \
     src/core/lib/resource_quota/resource_quota.cc \
     src/core/lib/resource_quota/thread_quota.cc \
+    src/core/lib/resource_tracker/resource_tracker.cc \
     src/core/lib/security/authorization/audit_logging.cc \
     src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \
     src/core/lib/security/authorization/evaluate_args.cc \
@@ -1392,6 +1400,7 @@ LIBGRPC_SRC = \
     src/core/load_balancing/xds/xds_cluster_manager.cc \
     src/core/load_balancing/xds/xds_override_host.cc \
     src/core/load_balancing/xds/xds_wrr_locality.cc \
+    src/core/net/socket_mutator.cc \
     src/core/plugin_registry/grpc_plugin_registry.cc \
     src/core/plugin_registry/grpc_plugin_registry_extra.cc \
     src/core/resolver/dns/c_ares/dns_resolver_ares.cc \
@@ -1427,6 +1436,7 @@ LIBGRPC_SRC = \
     src/core/telemetry/context_list_entry.cc \
     src/core/telemetry/default_tcp_tracer.cc \
     src/core/telemetry/histogram_view.cc \
+    src/core/telemetry/instrument.cc \
     src/core/telemetry/metrics.cc \
     src/core/telemetry/stats.cc \
     src/core/telemetry/stats_data.cc \
@@ -1557,6 +1567,11 @@ LIBGRPC_SRC = \
     src/core/xds/grpc/xds_lb_policy_registry.cc \
     src/core/xds/grpc/xds_listener.cc \
     src/core/xds/grpc/xds_listener_parser.cc \
+    src/core/xds/grpc/xds_matcher.cc \
+    src/core/xds/grpc/xds_matcher_action.cc \
+    src/core/xds/grpc/xds_matcher_context.cc \
+    src/core/xds/grpc/xds_matcher_input.cc \
+    src/core/xds/grpc/xds_matcher_parse.cc \
     src/core/xds/grpc/xds_metadata.cc \
     src/core/xds/grpc/xds_metadata_parser.cc \
     src/core/xds/grpc/xds_route_config.cc \
@@ -1870,8 +1885,8 @@ $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.49 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.49
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.50 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.50
 	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -2203,23 +2218,15 @@ endif
 # deps: []
 # transitive_deps: []
 LIBCARES_SRC = \
-    third_party/cares/cares/src/lib/ares__addrinfo2hostent.c \
-    third_party/cares/cares/src/lib/ares__addrinfo_localhost.c \
-    third_party/cares/cares/src/lib/ares__close_sockets.c \
-    third_party/cares/cares/src/lib/ares__get_hostent.c \
-    third_party/cares/cares/src/lib/ares__parse_into_addrinfo.c \
-    third_party/cares/cares/src/lib/ares__read_line.c \
-    third_party/cares/cares/src/lib/ares__readaddrinfo.c \
-    third_party/cares/cares/src/lib/ares__sortaddrinfo.c \
-    third_party/cares/cares/src/lib/ares__timeval.c \
+    third_party/cares/cares/src/lib/ares_addrinfo2hostent.c \
+    third_party/cares/cares/src/lib/ares_addrinfo_localhost.c \
     third_party/cares/cares/src/lib/ares_android.c \
     third_party/cares/cares/src/lib/ares_cancel.c \
-    third_party/cares/cares/src/lib/ares_create_query.c \
+    third_party/cares/cares/src/lib/ares_close_sockets.c \
+    third_party/cares/cares/src/lib/ares_conn.c \
+    third_party/cares/cares/src/lib/ares_cookie.c \
     third_party/cares/cares/src/lib/ares_data.c \
     third_party/cares/cares/src/lib/ares_destroy.c \
-    third_party/cares/cares/src/lib/ares_expand_name.c \
-    third_party/cares/cares/src/lib/ares_expand_string.c \
-    third_party/cares/cares/src/lib/ares_fds.c \
     third_party/cares/cares/src/lib/ares_free_hostent.c \
     third_party/cares/cares/src/lib/ares_free_string.c \
     third_party/cares/cares/src/lib/ares_freeaddrinfo.c \
@@ -2228,47 +2235,86 @@ LIBCARES_SRC = \
     third_party/cares/cares/src/lib/ares_gethostbyaddr.c \
     third_party/cares/cares/src/lib/ares_gethostbyname.c \
     third_party/cares/cares/src/lib/ares_getnameinfo.c \
-    third_party/cares/cares/src/lib/ares_getsock.c \
+    third_party/cares/cares/src/lib/ares_hosts_file.c \
     third_party/cares/cares/src/lib/ares_init.c \
     third_party/cares/cares/src/lib/ares_library_init.c \
-    third_party/cares/cares/src/lib/ares_llist.c \
-    third_party/cares/cares/src/lib/ares_mkquery.c \
-    third_party/cares/cares/src/lib/ares_nowarn.c \
+    third_party/cares/cares/src/lib/ares_metrics.c \
     third_party/cares/cares/src/lib/ares_options.c \
-    third_party/cares/cares/src/lib/ares_parse_a_reply.c \
-    third_party/cares/cares/src/lib/ares_parse_aaaa_reply.c \
-    third_party/cares/cares/src/lib/ares_parse_caa_reply.c \
-    third_party/cares/cares/src/lib/ares_parse_mx_reply.c \
-    third_party/cares/cares/src/lib/ares_parse_naptr_reply.c \
-    third_party/cares/cares/src/lib/ares_parse_ns_reply.c \
-    third_party/cares/cares/src/lib/ares_parse_ptr_reply.c \
-    third_party/cares/cares/src/lib/ares_parse_soa_reply.c \
-    third_party/cares/cares/src/lib/ares_parse_srv_reply.c \
-    third_party/cares/cares/src/lib/ares_parse_txt_reply.c \
-    third_party/cares/cares/src/lib/ares_parse_uri_reply.c \
-    third_party/cares/cares/src/lib/ares_platform.c \
+    third_party/cares/cares/src/lib/ares_parse_into_addrinfo.c \
     third_party/cares/cares/src/lib/ares_process.c \
+    third_party/cares/cares/src/lib/ares_qcache.c \
     third_party/cares/cares/src/lib/ares_query.c \
-    third_party/cares/cares/src/lib/ares_rand.c \
     third_party/cares/cares/src/lib/ares_search.c \
     third_party/cares/cares/src/lib/ares_send.c \
-    third_party/cares/cares/src/lib/ares_strcasecmp.c \
-    third_party/cares/cares/src/lib/ares_strdup.c \
+    third_party/cares/cares/src/lib/ares_set_socket_functions.c \
+    third_party/cares/cares/src/lib/ares_socket.c \
+    third_party/cares/cares/src/lib/ares_sortaddrinfo.c \
     third_party/cares/cares/src/lib/ares_strerror.c \
-    third_party/cares/cares/src/lib/ares_strsplit.c \
+    third_party/cares/cares/src/lib/ares_sysconfig.c \
+    third_party/cares/cares/src/lib/ares_sysconfig_files.c \
+    third_party/cares/cares/src/lib/ares_sysconfig_mac.c \
+    third_party/cares/cares/src/lib/ares_sysconfig_win.c \
     third_party/cares/cares/src/lib/ares_timeout.c \
+    third_party/cares/cares/src/lib/ares_update_servers.c \
     third_party/cares/cares/src/lib/ares_version.c \
-    third_party/cares/cares/src/lib/ares_writev.c \
-    third_party/cares/cares/src/lib/bitncmp.c \
+    third_party/cares/cares/src/lib/dsa/ares_array.c \
+    third_party/cares/cares/src/lib/dsa/ares_htable.c \
+    third_party/cares/cares/src/lib/dsa/ares_htable_asvp.c \
+    third_party/cares/cares/src/lib/dsa/ares_htable_dict.c \
+    third_party/cares/cares/src/lib/dsa/ares_htable_strvp.c \
+    third_party/cares/cares/src/lib/dsa/ares_htable_szvp.c \
+    third_party/cares/cares/src/lib/dsa/ares_htable_vpstr.c \
+    third_party/cares/cares/src/lib/dsa/ares_htable_vpvp.c \
+    third_party/cares/cares/src/lib/dsa/ares_llist.c \
+    third_party/cares/cares/src/lib/dsa/ares_slist.c \
+    third_party/cares/cares/src/lib/event/ares_event_configchg.c \
+    third_party/cares/cares/src/lib/event/ares_event_epoll.c \
+    third_party/cares/cares/src/lib/event/ares_event_kqueue.c \
+    third_party/cares/cares/src/lib/event/ares_event_poll.c \
+    third_party/cares/cares/src/lib/event/ares_event_select.c \
+    third_party/cares/cares/src/lib/event/ares_event_thread.c \
+    third_party/cares/cares/src/lib/event/ares_event_wake_pipe.c \
+    third_party/cares/cares/src/lib/event/ares_event_win32.c \
     third_party/cares/cares/src/lib/inet_net_pton.c \
     third_party/cares/cares/src/lib/inet_ntop.c \
+    third_party/cares/cares/src/lib/legacy/ares_create_query.c \
+    third_party/cares/cares/src/lib/legacy/ares_expand_name.c \
+    third_party/cares/cares/src/lib/legacy/ares_expand_string.c \
+    third_party/cares/cares/src/lib/legacy/ares_fds.c \
+    third_party/cares/cares/src/lib/legacy/ares_getsock.c \
+    third_party/cares/cares/src/lib/legacy/ares_parse_a_reply.c \
+    third_party/cares/cares/src/lib/legacy/ares_parse_aaaa_reply.c \
+    third_party/cares/cares/src/lib/legacy/ares_parse_caa_reply.c \
+    third_party/cares/cares/src/lib/legacy/ares_parse_mx_reply.c \
+    third_party/cares/cares/src/lib/legacy/ares_parse_naptr_reply.c \
+    third_party/cares/cares/src/lib/legacy/ares_parse_ns_reply.c \
+    third_party/cares/cares/src/lib/legacy/ares_parse_ptr_reply.c \
+    third_party/cares/cares/src/lib/legacy/ares_parse_soa_reply.c \
+    third_party/cares/cares/src/lib/legacy/ares_parse_srv_reply.c \
+    third_party/cares/cares/src/lib/legacy/ares_parse_txt_reply.c \
+    third_party/cares/cares/src/lib/legacy/ares_parse_uri_reply.c \
+    third_party/cares/cares/src/lib/record/ares_dns_mapping.c \
+    third_party/cares/cares/src/lib/record/ares_dns_multistring.c \
+    third_party/cares/cares/src/lib/record/ares_dns_name.c \
+    third_party/cares/cares/src/lib/record/ares_dns_parse.c \
+    third_party/cares/cares/src/lib/record/ares_dns_record.c \
+    third_party/cares/cares/src/lib/record/ares_dns_write.c \
+    third_party/cares/cares/src/lib/str/ares_buf.c \
+    third_party/cares/cares/src/lib/str/ares_str.c \
+    third_party/cares/cares/src/lib/str/ares_strsplit.c \
+    third_party/cares/cares/src/lib/util/ares_iface_ips.c \
+    third_party/cares/cares/src/lib/util/ares_math.c \
+    third_party/cares/cares/src/lib/util/ares_rand.c \
+    third_party/cares/cares/src/lib/util/ares_threads.c \
+    third_party/cares/cares/src/lib/util/ares_timeval.c \
+    third_party/cares/cares/src/lib/util/ares_uri.c \
     third_party/cares/cares/src/lib/windows_port.c \
 
 
 LIBCARES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBCARES_SRC))))
 
 $(LIBCARES_OBJS): CFLAGS += -g
-$(LIBCARES_OBJS): CPPFLAGS += -Ithird_party/cares/cares/include -Ithird_party/cares -Ithird_party/cares/cares -fvisibility=hidden -D_GNU_SOURCE $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin) $(if $(subst FreeBSD,,$(SYSTEM)),,-Ithird_party/cares/config_freebsd) $(if $(subst Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux) $(if $(subst OpenBSD,,$(SYSTEM)),,-Ithird_party/cares/config_openbsd) -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX $(if $(subst MINGW32,,$(SYSTEM)),-DHAVE_CONFIG_H,)
+$(LIBCARES_OBJS): CPPFLAGS += -Ithird_party/cares/cares/include -Ithird_party/cares -Ithird_party/cares/cares -Ithird_party/cares/cares/src/lib/include -Ithird_party/cares/cares/src/lib -fvisibility=hidden -D_GNU_SOURCE $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin) $(if $(subst FreeBSD,,$(SYSTEM)),,-Ithird_party/cares/config_freebsd) $(if $(subst Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux) $(if $(subst OpenBSD,,$(SYSTEM)),,-Ithird_party/cares/config_openbsd) $(if $(subst MINGW32,,$(SYSTEM)),,-Ithird_party/cares/config_windows) -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DHAVE_CONFIG_H
 
 # static library for "cares"
 $(LIBDIR)/$(CONFIG)/libcares.a: $(LIBCARES_OBJS)

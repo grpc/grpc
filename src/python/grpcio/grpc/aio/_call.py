@@ -38,6 +38,7 @@ from ._metadata import Metadata
 from ._typing import DeserializingFunction
 from ._typing import DoneCallbackType
 from ._typing import EOFType
+from ._typing import MetadataType
 from ._typing import MetadatumType
 from ._typing import RequestIterableType
 from ._typing import RequestType
@@ -94,12 +95,12 @@ class AioRpcError(grpc.RpcError):
 
         Args:
           code: The status code with which the RPC has been finalized.
-          details: Optional details explaining the reason of the error.
           initial_metadata: Optional initial metadata that could be sent by the
             Server.
           trailing_metadata: Optional metadata that could be sent by the Server.
+          details: Optional details explaining the reason of the error.
+          debug_error_string: Optional string
         """
-
         super().__init__()
         self._code = code
         self._details = details
@@ -176,7 +177,8 @@ class AioRpcError(grpc.RpcError):
 
 
 def _create_rpc_error(
-    initial_metadata: Metadata, status: cygrpc.AioRpcStatus
+    initial_metadata: MetadataType,
+    status: cygrpc.AioRpcStatus,
 ) -> AioRpcError:
     return AioRpcError(
         _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[status.code()],
@@ -197,15 +199,15 @@ class Call:
     _code: grpc.StatusCode
     _cython_call: cygrpc._AioCall
     _metadata: Tuple[MetadatumType, ...]
-    _request_serializer: SerializingFunction
-    _response_deserializer: DeserializingFunction
+    _request_serializer: Optional[SerializingFunction]
+    _response_deserializer: Optional[DeserializingFunction]
 
     def __init__(
         self,
         cython_call: cygrpc._AioCall,
         metadata: Metadata,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         self._loop = loop
@@ -270,7 +272,8 @@ class Call:
         code = await self.code()
         if code != grpc.StatusCode.OK:
             raise _create_rpc_error(
-                await self.initial_metadata(), await self._cython_call.status()
+                await self.initial_metadata(),
+                await self._cython_call.status(),
             )
 
     def _repr(self) -> str:
@@ -474,7 +477,7 @@ class _StreamRequestMixin(Call):
                         return
 
             await self._done_writing()
-        except:  # pylint: disable=bare-except
+        except:  # pylint: disable=bare-except # noqa: E722
             # Client iterators can raise exceptions, which we should handle by
             # cancelling the RPC and logging the client's error. No exceptions
             # should escape this function.
@@ -558,8 +561,8 @@ class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall):
         wait_for_ready: Optional[bool],
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         super().__init__(
@@ -622,8 +625,8 @@ class UnaryStreamCall(_StreamResponseMixin, Call, _base_call.UnaryStreamCall):
         wait_for_ready: Optional[bool],
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         super().__init__(
@@ -678,8 +681,8 @@ class StreamUnaryCall(
         wait_for_ready: Optional[bool],
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         super().__init__(
@@ -732,8 +735,8 @@ class StreamStreamCall(
         wait_for_ready: Optional[bool],
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         super().__init__(
@@ -749,7 +752,7 @@ class StreamStreamCall(
         self._init_stream_response_mixin(self._initializer)
 
     async def _prepare_rpc(self):
-        """This method prepares the RPC for receiving/sending messages.
+        """Prepares the RPC for receiving/sending messages.
 
         All other operations around the stream should only happen after the
         completion of this method.

@@ -693,7 +693,7 @@ class StreamWriteContext {
 
 grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     grpc_chttp2_transport* t) {
-  GRPC_LATENT_SEE_INNER_SCOPE("grpc_chttp2_begin_write");
+  GRPC_LATENT_SEE_SCOPE("grpc_chttp2_begin_write");
 
   int64_t outbuf_relative_start_pos = 0;
   WriteContext ctx(t);
@@ -738,8 +738,10 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
                    grpc_event_engine::experimental::
                        grpc_is_event_engine_endpoint(t->ep.get())) {
           // New way of collecting TCP traces
-          ctx.AddTcpCallTracer(s->call_tracer->StartNewTcpTrace(),
-                               s->byte_counter);
+          auto tcp_call_tracer = s->call_tracer->StartNewTcpTrace();
+          if (tcp_call_tracer != nullptr) {
+            ctx.AddTcpCallTracer(std::move(tcp_call_tracer), s->byte_counter);
+          }
         }
       }
       outbuf_relative_start_pos += num_stream_bytes;
@@ -766,7 +768,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
 }
 
 void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
-  GRPC_LATENT_SEE_INNER_SCOPE("grpc_chttp2_end_write");
+  GRPC_LATENT_SEE_SCOPE("grpc_chttp2_end_write");
   grpc_chttp2_stream* s;
 
   t->write_flow.End();

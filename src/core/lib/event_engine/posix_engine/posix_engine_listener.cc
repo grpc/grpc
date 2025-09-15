@@ -44,6 +44,7 @@
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
+#include "src/core/net/socket_mutator.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/strerror.h"

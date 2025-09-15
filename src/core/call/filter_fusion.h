@@ -1162,12 +1162,6 @@ class FusedFilter
 
   static constexpr bool IsFused = true;
 
-  static constexpr bool FusedFilterHasAsyncErrorInterceptor() {
-    return (
-        promise_filter_detail::CallHasAsyncErrorInterceptor<Filters>::value ||
-        ...);
-  }
-
   class Call : public FuseOnClientInitialMetadata<FusedFilter, Filters...>,
                public FuseOnServerInitialMetadata<FusedFilter, Filters...>,
                public FuseOnClientToServerMessage<FusedFilter, Filters...>,

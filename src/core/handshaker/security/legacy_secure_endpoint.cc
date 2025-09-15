@@ -400,7 +400,7 @@ static void on_write(void* user_data, grpc_error_handle error) {
 static void endpoint_write(
     grpc_endpoint* secure_ep, grpc_slice_buffer* slices, grpc_closure* cb,
     grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args) {
-  GRPC_LATENT_SEE_INNER_SCOPE("secure_endpoint write");
+  GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("secure_endpoint write");
   unsigned i;
   tsi_result result = TSI_OK;
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
