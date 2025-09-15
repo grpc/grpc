@@ -275,7 +275,6 @@ then
   # build.py is invoked as part of generate_projects.
   cd tools/distrib/python/xds_protos
   ${SETARCH_CMD} "${PYTHON}" -m build
-  ${SETARCH_CMD} "${PYTHON}" -m pip install .
   cd -
   cp -r tools/distrib/python/xds_protos/dist/* "$ARTIFACT_DIR"
 
