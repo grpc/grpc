@@ -149,7 +149,10 @@ mv "${GRPCIO_STRIPPED_TAR_GZ}" "${GRPCIO_TAR_GZ}"
 # Build gRPC tools package distribution
 "${PYTHON}" tools/distrib/python/make_grpcio_tools.py
 
-# Build gRPC tools package distribution
+# Build gRPC tools package source distribution
+${SETARCH_CMD} "${PYTHON}" -m build --sdist tools/distrib/python/grpcio_tools
+
+# Build gRPC tools package binary distribution
 # shellcheck disable=SC2086
 if [ -n "$WHEEL_PLAT_NAME_FLAG" ]; then
   # Extract the platform name from the flag (e.g., "--plat-name=win_amd64" -> "win_amd64")
@@ -161,6 +164,7 @@ fi
 
 if [ "$GRPC_BUILD_MAC" == "" ]; then
   "${PYTHON}" src/python/grpcio_observability/make_grpcio_observability.py
+  ${SETARCH_CMD} "${PYTHON}" -m build --sdist src/python/grpcio_observability
   # shellcheck disable=SC2086
   if [ -n "$WHEEL_PLAT_NAME_FLAG" ]; then
     # Extract the platform name from the flag (e.g., "--plat-name=win_amd64" -> "win_amd64")
@@ -258,6 +262,7 @@ if [ "$GRPC_BUILD_MAC" == "" ]; then
 
   # Build grpcio_csm_observability distribution
   if [ "$GRPC_BUILD_MAC" == "" ]; then
+    ${SETARCH_CMD} "${PYTHON}" -m build --sdist src/python/grpcio_csm_observability
     # shellcheck disable=SC2086
     if [ -n "$WHEEL_PLAT_NAME_FLAG" ]; then
       # Extract the platform name from the flag (e.g., "--plat-name=win_amd64" -> "win_amd64")
