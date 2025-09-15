@@ -103,13 +103,13 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport>,
           stats_plugin_group,
       Options options, bool enable_tracing,
       RefCountedPtr<channelz::SocketNode> socket_node)
-      : channelz::DataSource(std::move(socket_node)),
+      : channelz::DataSource(socket_node),
         event_engine_(std::move(event_engine)),
         control_endpoint_(std::move(control_endpoint), event_engine_.get(),
-                          ztrace_collector_),
+                          ztrace_collector_, socket_node),
         data_endpoints_(std::move(pending_data_endpoints), event_engine_.get(),
                         std::move(stats_plugin_group), enable_tracing,
-                        ztrace_collector_),
+                        ztrace_collector_, socket_node),
         options_(options) {
     SourceConstructed();
   }

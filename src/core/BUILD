@@ -9389,6 +9389,7 @@ grpc_cc_library(
         "1999",
         "chaotic_good_legacy_ztrace_collector",
         "event_engine_context",
+        "event_engine_extensions",
         "event_engine_tcp_socket_utils",
         "grpc_promise_endpoint",
         "loop",
