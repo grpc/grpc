@@ -12,6 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""
+gRPC is a modern, open source, high-performance remote procedure call (RPC)
+framework that can run anywhere. gRPC enables client and server applications
+to communicate transparently, and simplifies the building of connected systems.
+"""
+
 module(
     name = "grpc",
     version = "1.76.0-dev",
@@ -28,22 +34,56 @@ bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "boringssl", version = "0.20241024.0")  # mistmatched 20241211
 bazel_dep(name = "c-ares", version = "1.19.1", repo_name = "com_github_cares_cares")
 bazel_dep(name = "envoy_api", version = "0.0.0-20250128-4de3c74")
+
+# We need a new version or it will try to pull old Go SDK and
+# fail to compile
+bazel_dep(name = "cel-spec", version = "0.24.0")
 bazel_dep(name = "googleapis", version = "0.0.0-20240819-fe8ba054a", repo_name = "com_google_googleapis")
+
+# This is for google_cloud_cpp. Patch was taken from google_cloud_cpp repository
+archive_override(
+    module_name = "googleapis",
+    integrity = "sha256-WpRQzxrRGHyCorXN/1Pk1YS21FKStfcbUECDrLA619A=",
+    patch_strip = 1,
+    patches = ["//bazel:googleapis.modules.patch"],
+    strip_prefix = "googleapis-280725e991516d4a0f136268faf5aa6d32d21b54",
+    urls = [
+        "https://github.com/googleapis/googleapis/archive/280725e991516d4a0f136268faf5aa6d32d21b54.tar.gz",
+    ],
+)
+
+bazel_dep(name = "google_cloud_cpp", version = "2.35.0")
+archive_override(
+    module_name = "google_cloud_cpp",
+    sha256 = "81ea28cf9e5bb032d356b0187409f30b1035f8ea5b530675ea248c8a6c0070aa",
+    strip_prefix = "google-cloud-cpp-2.35.0",
+    urls = [
+        "https://storage.googleapis.com/grpc-bazel-mirror/github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.35.0.tar.gz",
+        "https://github.com/googleapis/google-cloud-cpp/archive/refs/tags/v2.35.0.tar.gz",
+    ],
+)
+
 bazel_dep(name = "googletest", version = "1.17.0", repo_name = "com_google_googletest")
 bazel_dep(name = "opencensus-cpp", version = "0.0.0-20230502-50eb5de.bcr.2", repo_name = "io_opencensus_cpp")
 bazel_dep(name = "openssl", version = "3.3.1.bcr.1")
 bazel_dep(name = "opentelemetry-cpp", version = "1.19.0", repo_name = "io_opentelemetry_cpp")
-bazel_dep(name = "platforms", version = "0.0.10")
+bazel_dep(name = "platforms", version = "0.0.11")
 bazel_dep(name = "protobuf", version = "31.1", repo_name = "com_google_protobuf")
 bazel_dep(name = "protoc-gen-validate", version = "1.2.1.bcr.1", repo_name = "com_envoyproxy_protoc_gen_validate")  # Not needed directly
-bazel_dep(name = "re2", version = "2024-07-02", repo_name = "com_googlesource_code_re2")  # mistmached 2022-04-01
+bazel_dep(name = "re2", version = "2024-07-02.bcr.1", repo_name = "com_googlesource_code_re2")  # mistmached 2022-04-01
 bazel_dep(name = "rules_apple", version = "3.16.0", repo_name = "build_bazel_rules_apple")
-bazel_dep(name = "rules_cc", version = "0.0.17")
-bazel_dep(name = "rules_proto", version = "7.0.2")
+bazel_dep(name = "rules_cc", version = "0.1.4")
+bazel_dep(name = "rules_proto", version = "7.1.0")
 bazel_dep(name = "xds", version = "0.0.0-20240423-555b57e", repo_name = "com_github_cncf_xds")  # mismatched 20231116
 bazel_dep(name = "zlib", version = "1.3.1.bcr.5")
+bazel_dep(name = "rules_go", version = "0.56.1")
 
-switched_rules = use_extension("@com_google_googleapis//:extensions.bzl", "switched_rules")
+bazel_dep(name = "gazelle", version = "0.45.0", dev_dependency = True)
+
+switched_rules = use_extension(
+    "@com_google_googleapis//:extensions.bzl",
+    "switched_rules",
+)
 switched_rules.use_languages(
     cc = True,
     grpc = True,
@@ -53,7 +93,20 @@ switched_rules.use_languages(
 # Development dependencies
 # ========================
 
-bazel_dep(name = "fuzztest", version = "20241028.0", dev_dependency = True, repo_name = "com_google_fuzztest")  # mistmached 2023-05-16
+bazel_dep(
+    name = "fuzztest",
+    version = "20250214.0",
+    dev_dependency = True,
+    repo_name = "com_google_fuzztest",
+)  # mistmached 2023-05-16
+
+# Not used directly. Necessary so the fuzztest would not pull a version
+# incompatible with new ABSL.
+bazel_dep(
+    name = "riegeli",
+    version = "0.0.0-20240927-cdfb25a",
+    dev_dependency = True,
+)
 bazel_dep(name = "google_benchmark", version = "1.9.0", dev_dependency = True, repo_name = "com_github_google_benchmark")
 bazel_dep(name = "rules_shell", version = "0.4.0", dev_dependency = True)
 
@@ -75,6 +128,7 @@ python = use_extension("@rules_python//python/extensions:python.bzl", "python")
 
 [
     python.toolchain(
+        ignore_root_user_error = True,
         is_default = python_version == PYTHON_VERSIONS[-1],
         python_version = python_version,
     )
@@ -95,3 +149,65 @@ pip = use_extension("@rules_python//python/extensions:pip.bzl", "pip")
 use_repo(pip, "grpc_python_dependencies")
 
 bazel_dep(name = "cython", version = "3.0.11-1")
+
+http_archive = use_repo_rule(
+    "@bazel_tools//tools/build_defs/repo:http.bzl",
+    "http_archive",
+)
+
+http_archive(
+    name = "bazel_toolchains",
+    sha256 = "179ec02f809e86abf56356d8898c8bd74069f1bd7c56044050c2cd3d79d0e024",
+    strip_prefix = "bazel-toolchains-4.1.0",
+    urls = [
+        "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/releases/download/4.1.0/bazel-toolchains-4.1.0.tar.gz",
+        "https://github.com/bazelbuild/bazel-toolchains/releases/download/4.1.0/bazel-toolchains-4.1.0.tar.gz",
+    ],
+)
+
+http_archive(
+    name = "bazel_compdb",
+    sha256 = "79502264d1a3a4b6309d4dae8c822e7349bcfe33e84f3c6d1affb2a40d11a31d",
+    strip_prefix = "bazel-compilation-database-d198303a4319092ab31895c4b98d64174ebe8872",
+    urls = [
+        "https://storage.googleapis.com/grpc-bazel-mirror/github.com/grailbio/bazel-compilation-database/archive/d198303a4319092ab31895c4b98d64174ebe8872.tar.gz",
+        "https://github.com/grailbio/bazel-compilation-database/archive/d198303a4319092ab31895c4b98d64174ebe8872.tar.gz",
+    ],
+)
+
+exec_properties = use_extension("//bazel:extensions.bzl", "exec_properties")
+exec_properties.custom_exec_properties(
+    name = "grpc_custom_exec_properties",
+    constant = "LARGE_MACHINE",
+    rbe_exec_properties_dict = {
+        "os": "ubuntu",
+        "machine_size": "large",
+    },
+)
+use_repo(exec_properties, "grpc_custom_exec_properties")
+
+python_configure = use_repo_rule(
+    "//third_party/py:python_configure.bzl",
+    "python_configure",
+)
+
+python_configure(name = "local_config_python")
+
+# C++ toolchains in local_config_cc - necessary for Windows build
+cc_configure = use_extension("@rules_cc//cc:extensions.bzl", "cc_configure_extension")
+use_repo(cc_configure, "local_config_cc")
+
+archive_override(
+    module_name = "zlib",
+    integrity = "sha256-mpOyt9/ax3zrpaVYpYDnRmfdb+3kWFuR7vtg8Dty3yM=",
+    patch_strip = 0,
+    patches = [
+        "//:third_party/zlib-1.3.1.bcr.5/patches/add_build_file.patch",
+        "//:third_party/zlib-1.3.1.bcr.5/patches/module_dot_bazel.patch",
+    ],
+    strip_prefix = "zlib-1.3.1",
+    url = "https://github.com/madler/zlib/releases/download/v1.3.1/zlib-1.3.1.tar.gz",
+)
+
+go_sdk = use_extension("@rules_go//go:extensions.bzl", "go_sdk")
+go_sdk.download(version = "1.22.0")

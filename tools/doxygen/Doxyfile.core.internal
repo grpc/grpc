@@ -1649,6 +1649,12 @@ src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.h \
 src/core/ext/upb-gen/google/rpc/status.upb.h \
 src/core/ext/upb-gen/google/rpc/status.upb_minitable.c \
 src/core/ext/upb-gen/google/rpc/status.upb_minitable.h \
+src/core/ext/upb-gen/proto/cel/expr/checked.upb.h \
+src/core/ext/upb-gen/proto/cel/expr/checked.upb_minitable.c \
+src/core/ext/upb-gen/proto/cel/expr/checked.upb_minitable.h \
+src/core/ext/upb-gen/proto/cel/expr/syntax.upb.h \
+src/core/ext/upb-gen/proto/cel/expr/syntax.upb_minitable.c \
+src/core/ext/upb-gen/proto/cel/expr/syntax.upb_minitable.h \
 src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb.h \
 src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.c \
 src/core/ext/upb-gen/src/proto/grpc/channelz/channelz.upb_minitable.h \
@@ -2027,6 +2033,10 @@ src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c \
 src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h \
 src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c \
 src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h \
+src/core/ext/upbdefs-gen/proto/cel/expr/checked.upbdefs.c \
+src/core/ext/upbdefs-gen/proto/cel/expr/checked.upbdefs.h \
+src/core/ext/upbdefs-gen/proto/cel/expr/syntax.upbdefs.c \
+src/core/ext/upbdefs-gen/proto/cel/expr/syntax.upbdefs.h \
 src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.c \
 src/core/ext/upbdefs-gen/src/proto/grpc/channelz/channelz.upbdefs.h \
 src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c \
