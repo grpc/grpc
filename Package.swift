@@ -1672,6 +1672,8 @@ let package = Package(
         "src/core/lib/resource_quota/telemetry.h",
         "src/core/lib/resource_quota/thread_quota.cc",
         "src/core/lib/resource_quota/thread_quota.h",
+        "src/core/lib/resource_tracker/resource_tracker.cc",
+        "src/core/lib/resource_tracker/resource_tracker.h",
         "src/core/lib/security/authorization/audit_logging.cc",
         "src/core/lib/security/authorization/audit_logging.h",
         "src/core/lib/security/authorization/authorization_engine.h",

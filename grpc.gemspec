@@ -1678,6 +1678,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/resource_quota/telemetry.h )
   s.files += %w( src/core/lib/resource_quota/thread_quota.cc )
   s.files += %w( src/core/lib/resource_quota/thread_quota.h )
+  s.files += %w( src/core/lib/resource_tracker/resource_tracker.cc )
+  s.files += %w( src/core/lib/resource_tracker/resource_tracker.h )
   s.files += %w( src/core/lib/security/authorization/audit_logging.cc )
   s.files += %w( src/core/lib/security/authorization/audit_logging.h )
   s.files += %w( src/core/lib/security/authorization/authorization_engine.h )

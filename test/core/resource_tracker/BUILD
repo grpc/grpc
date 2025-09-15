@@ -22,11 +22,11 @@ grpc_cc_test(
     name = "resource_tracker_test",
     srcs = ["resource_tracker_test.cc"],
     external_deps = [
+        "absl/status:statusor",
         "gtest",
         "gtest_main",
     ],
     deps = [
         "//src/core:resource_tracker",
-        "//third_party/absl/status:statusor",
     ],
 )
