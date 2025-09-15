@@ -1098,3 +1098,22 @@ grpc_fuzz_test(
         "//test/core/call/yodel:yodel_test",
     ],
 )
+
+grpc_fuzz_test(
+    name = "goaway_fuzz_test",
+    srcs = ["goaway_test.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        "//:config",
+        "//src/core:goaway",
+        "//src/core:http2_status",
+        "//test/core/call/yodel:yodel_test",
+        "//test/core/transport/test_suite:test",
+        "//test/core/transport/util:transport_test",
+        "//third_party/absl/strings:string_view",
+    ],
+)
