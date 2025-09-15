@@ -49,30 +49,34 @@ RUN apt update && apt install -y build-essential zlib1g-dev libncurses5-dev libg
 
 ADD install_python_for_wheel_crosscompilation.sh /scripts/install_python_for_wheel_crosscompilation.sh
 
-RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.8.8" "3.8.8" /opt/python/cp38-cp38
-RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.9.2" "3.9.2" /opt/python/cp39-cp39
-RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.10.0" "3.10.0rc1" /opt/python/cp310-cp310
-RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.11.0" "3.11.0rc1" /opt/python/cp311-cp311
-RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.12.0" "3.12.0rc2" /opt/python/cp312-cp312
-RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.13.0" "3.13.0rc2" /opt/python/cp313-cp313
+# These are synced to the versions in our grpc_artifact_python_ images based pypa/{many,musl}linux.
+# grep grpc_artifact_python_ tools/bazelify_tests/dockerimage_current_versions.bzl | grep -oP '(?<=docker://)[^"]+(?=")'
+# IMG=one_of_the_images_from_the_command_above
+# docker run --rm $IMG bash -c 'ls -l /opt/python/cp3{9,1}*' | sed -E 's#^[^/]+##'
+RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.9.23" "3.9.23" /opt/python/cp39-cp39
+RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.10.18" "3.10.18" /opt/python/cp310-cp310
+RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.11.13" "3.11.13" /opt/python/cp311-cp311
+RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.12.11" "3.12.11" /opt/python/cp312-cp312
+RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.13.5" "3.13.5" /opt/python/cp313-cp313
+RUN /scripts/install_python_for_wheel_crosscompilation.sh "3.14.0" "3.14.0rc1" /opt/python/cp314-cp314
 
 ENV AUDITWHEEL_ARCH armv7l
 ENV AUDITWHEEL_PLAT linux_armv7l
 
 #=================
-# Install ccache 
+# Install ccache
 
 # Install ccache from source since ccache 3.x packaged with most linux distributions
 # does not support Redis backend for caching.
 RUN unset CMAKE_TOOLCHAIN_FILE && unset AS AR CC CPP CXX LD STRIP OBJCOPY \
-    && curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.7.5/ccache-4.7.5.tar.gz \
+    && curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.11.3/ccache-4.11.3.tar.gz \
     && tar -zxf ccache.tar.gz \
-    && cd ccache-4.7.5 \
+    && cd ccache-4.11.3 \
     && mkdir build && cd build \
     && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON .. \
     && make -j4 && make install \
     && cd ../.. \
-    && rm -rf ccache-4.7.5 ccache.tar.gz
+    && rm -rf ccache-4.11.3 ccache.tar.gz
 
 
 # The dockcross base of this image sets CC and CXX to absolute paths, which makes it impossible to redirect their invocations

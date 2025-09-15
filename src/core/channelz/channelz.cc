@@ -138,20 +138,14 @@ Json::Object BaseNode::AdditionalInfo() {
   return sink_impl->Finalize(!completed);
 }
 
-void BaseNode::RunZTrace(
-    absl::string_view name, Timestamp deadline,
-    std::map<std::string, std::string> args,
+std::unique_ptr<ZTrace> BaseNode::RunZTrace(
+    absl::string_view name, ZTrace::Args args,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
-    absl::AnyInvocable<void(Json)> callback) {
-  // Limit deadline to help contain potential resource exhaustion due to
-  // tracing.
-  deadline = std::min(deadline, Timestamp::Now() + Duration::Minutes(10));
+    ZTrace::Callback callback) {
   auto fail = [&callback, event_engine](absl::Status status) {
     event_engine->Run(
         [callback = std::move(callback), status = std::move(status)]() mutable {
-          Json::Object object;
-          object["status"] = Json::FromString(status.ToString());
-          callback(Json::FromObject(std::move(object)));
+          callback(status);
         });
   };
   std::unique_ptr<ZTrace> ztrace;
@@ -165,20 +159,21 @@ void BaseNode::RunZTrace(
         } else {
           fail(absl::InternalError(
               absl::StrCat("Ambiguous ztrace handler: ", name)));
-          return;
+          return nullptr;
         }
       }
     }
   }
   if (ztrace == nullptr) {
     fail(absl::NotFoundError(absl::StrCat("ztrace not found: ", name)));
-    return;
+    return nullptr;
   }
-  ztrace->Run(deadline, std::move(args), event_engine, std::move(callback));
+  ztrace->Run(std::move(args), event_engine, std::move(callback));
+  return ztrace;
 }
 
 void BaseNode::SerializeEntity(grpc_channelz_v2_Entity* entity,
-                               upb_Arena* arena) {
+                               upb_Arena* arena, absl::Duration timeout) {
   grpc_channelz_v2_Entity_set_id(entity, uuid());
   grpc_channelz_v2_Entity_set_kind(
       entity, StdStringToUpbString(EntityTypeToKind(type_)));
@@ -206,8 +201,9 @@ void BaseNode::SerializeEntity(grpc_channelz_v2_Entity* entity,
       data_source->AddData(make_data_sink());
     }
   }
-  bool completed =
-      done->WaitForNotificationWithTimeout(absl::Milliseconds(100));
+  make_data_sink().AddData("v1_compatibility",
+                           PropertyList().Set("name", name()));
+  bool completed = done->WaitForNotificationWithTimeout(timeout);
   sink_impl->Finalize(!completed, entity, arena);
 
   trace_.Render(entity, arena);
@@ -217,11 +213,11 @@ void BaseNode::AddNodeSpecificData(DataSink) {
   // Default implementation does nothing.
 }
 
-std::string BaseNode::SerializeEntityToString() {
+std::string BaseNode::SerializeEntityToString(absl::Duration timeout) {
   upb_Arena* arena = upb_Arena_New();
   auto cleanup = absl::MakeCleanup([arena]() { upb_Arena_Free(arena); });
   grpc_channelz_v2_Entity* entity = grpc_channelz_v2_Entity_new(arena);
-  SerializeEntity(entity, arena);
+  SerializeEntity(entity, arena, timeout);
   size_t length;
   auto* bytes = grpc_channelz_v2_Entity_serialize(entity, arena, &length);
   return std::string(bytes, length);
@@ -442,7 +438,7 @@ void ChannelNode::AddNodeSpecificData(DataSink sink) {
                               .Set("target", target_)
                               .Set("connectivity_state", connectivity_state()));
   sink.AddData("call_counts", call_counter_.GetCallCounts().ToPropertyList());
-  sink.AddData("channel_args", channel_args_.ToPropertyList());
+  sink.AddData("channel_args", channel_args().ToPropertyList());
 }
 
 void ChannelNode::PopulateChildRefs(Json::Object* json) {
@@ -491,12 +487,6 @@ void SubchannelNode::UpdateConnectivityState(grpc_connectivity_state state) {
   connectivity_state_.store(state, std::memory_order_relaxed);
 }
 
-void SubchannelNode::SetChildSocket(RefCountedPtr<SocketNode> socket) {
-  MutexLock lock(&socket_mu_);
-  child_socket_ =
-      socket == nullptr ? nullptr : socket->WeakRefAsSubclass<SocketNode>();
-}
-
 std::string SubchannelNode::connectivity_state() const {
   grpc_connectivity_state state =
       connectivity_state_.load(std::memory_order_relaxed);
@@ -526,16 +516,13 @@ Json SubchannelNode::RenderJson() {
       {"data", Json::FromObject(std::move(data))},
   };
   // Populate the child socket.
-  WeakRefCountedPtr<SocketNode> child_socket;
-  {
-    MutexLock lock(&socket_mu_);
-    child_socket = child_socket_;
-  }
-  if (child_socket != nullptr && child_socket->uuid() != 0) {
+  auto [children, _] = ChannelzRegistry::GetChildrenOfType(
+      0, this, BaseNode::EntityType::kSocket, 1);
+  if (!children.empty()) {
     object["socketRef"] = Json::FromArray({
         Json::FromObject({
-            {"socketId", Json::FromString(absl::StrCat(child_socket->uuid()))},
-            {"name", Json::FromString(child_socket->name())},
+            {"socketId", Json::FromString(absl::StrCat(children[0]->uuid()))},
+            {"name", Json::FromString(children[0]->name())},
         }),
     });
   }
@@ -548,7 +535,7 @@ void SubchannelNode::AddNodeSpecificData(DataSink sink) {
                               .Set("target", target_)
                               .Set("connectivity_state", connectivity_state()));
   sink.AddData("call_counts", call_counter_.GetCallCounts().ToPropertyList());
-  sink.AddData("channel_args", channel_args_.ToPropertyList());
+  sink.AddData("channel_args", channel_args().ToPropertyList());
 }
 
 //
@@ -620,7 +607,7 @@ Json ServerNode::RenderJson() {
 
 void ServerNode::AddNodeSpecificData(DataSink sink) {
   sink.AddData("call_counts", call_counter_.GetCallCounts().ToPropertyList());
-  sink.AddData("channel_args", channel_args_.ToPropertyList());
+  sink.AddData("channel_args", channel_args().ToPropertyList());
 }
 
 std::map<intptr_t, WeakRefCountedPtr<ListenSocketNode>>

@@ -52,6 +52,7 @@
 #include "src/core/util/time_precise.h"
 #include "src/core/util/useful.h"
 #include "src/proto/grpc/channelz/v2/channelz.upb.h"
+#include "src/proto/grpc/channelz/v2/service.upb.h"
 
 // Channel arg key for channelz node.
 #define GRPC_ARG_CHANNELZ_CHANNEL_NODE \
@@ -91,6 +92,29 @@ class CallCountingHelperPeer;
 class SubchannelNodePeer;
 }  // namespace testing
 
+class ZTrace {
+ public:
+  virtual ~ZTrace() = default;
+
+  using Args = std::map<std::string, std::variant<int64_t, std::string, bool>>;
+  // Callback is called periodically with the latest results from the ztrace.
+  // The format is a StatusOr<optional<string>>.
+  // - If the status is not-OK, then the ztrace encountered an error and this
+  //   will be the last callback.
+  // - If the status is OK but the optional<string> is empty, then the ztrace is
+  //   completed (successfully).
+  // - If the status is OK and the optional<string> is non-empty, then the
+  //   ztrace is still running and the string is the latest output - a
+  //   serialized QueryTraceResponse proto.
+  using Callback =
+      absl::AnyInvocable<void(absl::StatusOr<std::optional<std::string>>)>;
+
+  virtual void Run(Args args,
+                   std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+                       event_engine,
+                   Callback callback) = 0;
+};
+
 // base class for all channelz entities
 class BaseNode : public DualRefCounted<BaseNode> {
  public:
@@ -105,6 +129,7 @@ class BaseNode : public DualRefCounted<BaseNode> {
     kListenSocket,
     kSocket,
     kCall,
+    kResourceQuota,
   };
 
   static absl::string_view EntityTypeString(EntityType type) {
@@ -123,6 +148,8 @@ class BaseNode : public DualRefCounted<BaseNode> {
         return "socket";
       case EntityType::kCall:
         return "call";
+      case EntityType::kResourceQuota:
+        return "resource_quota";
     }
     return "unknown";
   }
@@ -143,6 +170,8 @@ class BaseNode : public DualRefCounted<BaseNode> {
         return "socket";
       case EntityType::kCall:
         return "call";
+      case EntityType::kResourceQuota:
+        return "resource_quota";
     }
   }
 
@@ -154,6 +183,7 @@ class BaseNode : public DualRefCounted<BaseNode> {
     if (kind == "listen_socket") return EntityType::kListenSocket;
     if (kind == "socket") return EntityType::kSocket;
     if (kind == "call") return EntityType::kCall;
+    if (kind == "resource_quota") return EntityType::kResourceQuota;
     return std::nullopt;
   }
 
@@ -204,11 +234,11 @@ class BaseNode : public DualRefCounted<BaseNode> {
   }
   const std::string& name() const { return name_; }
 
-  void RunZTrace(absl::string_view name, Timestamp deadline,
-                 std::map<std::string, std::string> args,
-                 std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-                     event_engine,
-                 absl::AnyInvocable<void(Json output)> callback);
+  std::unique_ptr<ZTrace> RunZTrace(
+      absl::string_view name, ZTrace::Args args,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine,
+      ZTrace::Callback callback);
   Json::Object AdditionalInfo();
 
   const ChannelTrace& trace() const { return trace_; }
@@ -218,9 +248,10 @@ class BaseNode : public DualRefCounted<BaseNode> {
   }
   ChannelTrace& mutable_trace() { return trace_; }
 
-  void SerializeEntity(grpc_channelz_v2_Entity* entity, upb_Arena* arena);
+  void SerializeEntity(grpc_channelz_v2_Entity* entity, upb_Arena* arena,
+                       absl::Duration timeout);
 
-  std::string SerializeEntityToString();
+  std::string SerializeEntityToString(absl::Duration timeout);
 
  protected:
   void PopulateJsonFromDataSources(Json::Object& json);
@@ -269,15 +300,6 @@ LogOutputFrom(const RefCountedPtr<N>& n) {
   return LogOutputFrom(n.get());
 }
 }  // namespace detail
-
-class ZTrace {
- public:
-  virtual ~ZTrace() = default;
-  virtual void Run(Timestamp deadline, std::map<std::string, std::string> args,
-                   std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-                       event_engine,
-                   absl::AnyInvocable<void(Json)>) = 0;
-};
 
 // This class is used to collect additional information about the channelz
 // node. It's the backing implementation for DataSink. channelz users should
@@ -371,6 +393,7 @@ class DataSource {
  protected:
   ~DataSource();
   RefCountedPtr<BaseNode> channelz_node() { return node_; }
+  const BaseNode* channelz_node() const { return node_.get(); }
 
   // This method must be called in the most derived class's constructor.
   // It adds this data source to the node's list of data sources.
@@ -462,7 +485,11 @@ class ChannelNode final : public BaseNode {
               bool is_internal_channel);
 
   void Orphaned() override {
-    channel_args_ = ChannelArgs();
+    ChannelArgs to_destroy;
+    {
+      MutexLock lock(&channel_args_mu_);
+      std::swap(channel_args_, to_destroy);
+    }
     BaseNode::Orphaned();
   }
 
@@ -481,6 +508,9 @@ class ChannelNode final : public BaseNode {
 
   // proxy methods to composed classes.
   void SetChannelArgs(const ChannelArgs& channel_args) {
+    ChannelArgs to_destroy;
+    MutexLock lock(&channel_args_mu_);
+    std::swap(channel_args_, to_destroy);
     channel_args_ = channel_args;
   }
   void RecordCallStarted() { call_counter_.RecordCallStarted(); }
@@ -494,7 +524,10 @@ class ChannelNode final : public BaseNode {
   CallCounts GetCallCounts() const { return call_counter_.GetCallCounts(); }
   std::set<intptr_t> child_channels() const;
   std::set<intptr_t> child_subchannels() const;
-  const ChannelArgs& channel_args() const { return channel_args_; }
+  ChannelArgs channel_args() const {
+    MutexLock lock(&channel_args_mu_);
+    return channel_args_;
+  }
 
  private:
   void PopulateChildRefs(Json::Object* json);
@@ -504,7 +537,8 @@ class ChannelNode final : public BaseNode {
   CallCountingHelper call_counter_;
   // TODO(ctiller): keeping channel args here can create odd circular references
   // that are hard to reason about. Consider moving this to a DataSource.
-  ChannelArgs channel_args_;
+  mutable Mutex channel_args_mu_;
+  ChannelArgs channel_args_ ABSL_GUARDED_BY(channel_args_mu_);
 
   // Least significant bit indicates whether the value is set.  Remaining
   // bits are a grpc_connectivity_state value.
@@ -518,22 +552,24 @@ class SubchannelNode final : public BaseNode {
   ~SubchannelNode() override;
 
   void Orphaned() override {
-    channel_args_ = ChannelArgs();
+    ChannelArgs to_destroy;
+    {
+      MutexLock lock(&channel_args_mu_);
+      std::swap(channel_args_, to_destroy);
+    }
     BaseNode::Orphaned();
   }
 
   // Sets the subchannel's connectivity state without health checking.
   void UpdateConnectivityState(grpc_connectivity_state state);
 
-  // Used when the subchannel's child socket changes. This should be set when
-  // the subchannel's transport is created and set to nullptr when the
-  // subchannel unrefs the transport.
-  void SetChildSocket(RefCountedPtr<SocketNode> socket);
-
   Json RenderJson() override;
 
   // proxy methods to composed classes.
   void SetChannelArgs(const ChannelArgs& channel_args) {
+    ChannelArgs to_destroy;
+    MutexLock lock(&channel_args_mu_);
+    std::swap(channel_args_, to_destroy);
     channel_args_ = channel_args;
   }
   void RecordCallStarted() { call_counter_.RecordCallStarted(); }
@@ -543,11 +579,10 @@ class SubchannelNode final : public BaseNode {
   const std::string& target() const { return target_; }
   std::string connectivity_state() const;
   CallCounts GetCallCounts() const { return call_counter_.GetCallCounts(); }
-  WeakRefCountedPtr<SocketNode> child_socket() const {
-    MutexLock lock(&socket_mu_);
-    return child_socket_;
+  ChannelArgs channel_args() const {
+    MutexLock lock(&channel_args_mu_);
+    return channel_args_;
   }
-  const ChannelArgs& channel_args() const { return channel_args_; }
 
  private:
   void AddNodeSpecificData(DataSink sink) override;
@@ -556,13 +591,12 @@ class SubchannelNode final : public BaseNode {
   friend class testing::SubchannelNodePeer;
 
   std::atomic<grpc_connectivity_state> connectivity_state_{GRPC_CHANNEL_IDLE};
-  mutable Mutex socket_mu_;
-  WeakRefCountedPtr<SocketNode> child_socket_ ABSL_GUARDED_BY(socket_mu_);
   std::string target_;
   CallCountingHelper call_counter_;
   // TODO(ctiller): keeping channel args here can create odd circular references
   // that are hard to reason about. Consider moving this to a DataSource.
-  ChannelArgs channel_args_;
+  mutable Mutex channel_args_mu_;
+  ChannelArgs channel_args_ ABSL_GUARDED_BY(channel_args_mu_);
 };
 
 // Handles channelz bookkeeping for servers
@@ -573,7 +607,11 @@ class ServerNode final : public BaseNode {
   ~ServerNode() override;
 
   void Orphaned() override {
-    channel_args_ = ChannelArgs();
+    ChannelArgs to_destroy;
+    {
+      MutexLock lock(&channel_args_mu_);
+      std::swap(channel_args_, to_destroy);
+    }
     BaseNode::Orphaned();
   }
 
@@ -584,6 +622,9 @@ class ServerNode final : public BaseNode {
 
   // proxy methods to composed classes.
   void SetChannelArgs(const ChannelArgs& channel_args) {
+    ChannelArgs to_destroy;
+    MutexLock lock(&channel_args_mu_);
+    std::swap(channel_args_, to_destroy);
     channel_args_ = channel_args;
   }
   void RecordCallStarted() { call_counter_.RecordCallStarted(); }
@@ -596,7 +637,10 @@ class ServerNode final : public BaseNode {
       const;
   std::map<intptr_t, WeakRefCountedPtr<SocketNode>> child_sockets() const;
 
-  const ChannelArgs& channel_args() const { return channel_args_; }
+  ChannelArgs channel_args() const {
+    MutexLock lock(&channel_args_mu_);
+    return channel_args_;
+  }
 
  private:
   void AddNodeSpecificData(DataSink sink) override;
@@ -604,7 +648,8 @@ class ServerNode final : public BaseNode {
   PerCpuCallCountingHelper call_counter_;
   // TODO(ctiller): keeping channel args here can create odd circular references
   // that are hard to reason about. Consider moving this to a DataSource.
-  ChannelArgs channel_args_;
+  mutable Mutex channel_args_mu_;
+  ChannelArgs channel_args_ ABSL_GUARDED_BY(channel_args_mu_);
 };
 
 #define GRPC_ARG_CHANNELZ_SECURITY "grpc.internal.channelz_security"
@@ -749,6 +794,16 @@ class CallNode final : public BaseNode {
   }
 
   Json RenderJson() override;
+};
+
+class ResourceQuotaNode final : public BaseNode {
+ public:
+  explicit ResourceQuotaNode(std::string name)
+      : BaseNode(EntityType::kResourceQuota, 0, std::move(name)) {
+    NodeConstructed();
+  }
+
+  Json RenderJson() override { return Json::FromString("ResourceQuota"); }
 };
 
 }  // namespace channelz

@@ -1,0 +1,38 @@
+[ca]
+default_ca = CA_intermediate
+
+[CA_intermediate]
+dir               = .
+certs             = $dir/certs
+crl_dir           = $dir/crl
+new_certs_dir     = $dir/newcerts
+database          = $dir/index.txt
+serial            = $dir/serial
+RANDFILE          = $dir/private/.rand
+private_key = $dir/intermediate_ca.key
+certificate = $dir/intermediate_ca.pem
+crl = $dir/intermediate.crl
+
+# For certificate revocation lists.
+crlnumber         = $dir/crlnumber
+crl               = $dir/crl/intermediate.crl
+crl_extensions    = crl_ext
+default_crl_days  = 3650
+
+default_md = sha256
+
+[req]
+distinguished_name = req_distinguished_name
+req_extensions = v3_req
+prompt = no
+
+[req_distinguished_name]
+CN = intermediatecert.example.com
+
+[crl_ext]
+authorityKeyIdentifier=keyid:always
+
+[v3_req]
+keyUsage = critical, digitalSignature, keyEncipherment, keyCertSign, cRLSign
+extendedKeyUsage = clientAuth, serverAuth
+basicConstraints = critical, CA:true

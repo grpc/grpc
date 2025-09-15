@@ -18,6 +18,7 @@ load(
     "grpc_cc_proto_library",
     "grpc_internal_proto_library",
     "grpc_package",
+    "grpc_upb_proto_library",
 )
 
 licenses(["notice"])
@@ -47,6 +48,31 @@ grpc_internal_proto_library(
     ],
 )
 
+# TODO(roth): Migrate this to use separate
+# grpc_internal_proto_library/grpc_cc_proto_library/grpc_cc_grpc_library
+# rules when internal build system limitations are resolved.
+grpc_internal_proto_library(
+    name = "latent_see_proto",
+    srcs = ["latent_see.proto"],
+    has_services = True,
+)
+
+grpc_upb_proto_library(
+    name = "property_list_upb_proto",
+    deps = ["property_list_proto"],
+)
+
+grpc_cc_proto_library(
+    name = "latent_see_cc_proto",
+    deps = [":latent_see_proto"],
+)
+
+grpc_cc_grpc_library(
+    name = "latent_see_cc_grpc",
+    srcs = [":latent_see_proto"],
+    deps = [":latent_see_cc_proto"],
+)
+
 grpc_internal_proto_library(
     name = "promise_proto",
     srcs = ["promise.proto"],
@@ -57,12 +83,20 @@ grpc_internal_proto_library(
 
 grpc_cc_proto_library(
     name = "channelz_cc_proto",
+    visibility = [
+        "//bazel:channelz",
+    ],
     deps = [":channelz_proto"],
 )
 
 grpc_cc_proto_library(
     name = "property_list_cc_proto",
     deps = [":property_list_proto"],
+)
+
+grpc_upb_proto_library(
+    name = "promise_upb_proto",
+    deps = [":promise_proto"],
 )
 
 grpc_internal_proto_library(
@@ -77,12 +111,18 @@ grpc_internal_proto_library(
 
 grpc_cc_proto_library(
     name = "service_cc_proto",
+    visibility = [
+        "//bazel:channelz",
+    ],
     deps = [":service_proto"],
 )
 
 grpc_cc_grpc_library(
     name = "service_cc_grpc",
     srcs = [":service_proto"],
+    visibility = [
+        "//bazel:channelz",
+    ],
     deps = [
         ":service_cc_proto",
     ],

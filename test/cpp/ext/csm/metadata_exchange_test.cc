@@ -43,7 +43,7 @@ namespace testing {
 namespace {
 
 using OptionalLabelKey =
-    grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey;
+    grpc_core::ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey;
 using ::testing::ElementsAre;
 using ::testing::Pair;
 

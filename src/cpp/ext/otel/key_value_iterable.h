@@ -100,17 +100,18 @@ class OpenTelemetryPluginImpl::KeyValueIterable
     }
     // Add per-call optional labels
     if (!optional_labels_.empty()) {
-      CHECK(optional_labels_.size() ==
-            static_cast<size_t>(grpc_core::ClientCallTracer::CallAttemptTracer::
-                                    OptionalLabelKey::kSize));
+      CHECK(
+          optional_labels_.size() ==
+          static_cast<size_t>(grpc_core::ClientCallTracerInterface::
+                                  CallAttemptTracer::OptionalLabelKey::kSize));
       for (size_t i = 0; i < optional_labels_.size(); ++i) {
         if (!otel_plugin_->per_call_optional_label_bits_.test(i)) {
           continue;
         }
         if (!callback(
                 AbslStrViewToOpenTelemetryStrView(OptionalLabelKeyToString(
-                    static_cast<grpc_core::ClientCallTracer::CallAttemptTracer::
-                                    OptionalLabelKey>(i))),
+                    static_cast<grpc_core::ClientCallTracerInterface::
+                                    CallAttemptTracer::OptionalLabelKey>(i))),
                 AbslStrViewToOpenTelemetryStrView(
                     optional_labels_[i].as_string_view()))) {
           return false;

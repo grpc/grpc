@@ -38,8 +38,10 @@ auto ControlEndpoint::Buffer::Pull() {
 
 ControlEndpoint::ControlEndpoint(
     PromiseEndpoint endpoint,
-    grpc_event_engine::experimental::EventEngine* event_engine)
-    : endpoint_(std::make_shared<PromiseEndpoint>(std::move(endpoint))) {
+    grpc_event_engine::experimental::EventEngine* event_engine,
+    std::shared_ptr<LegacyZTraceCollector> ztrace_collector)
+    : endpoint_(std::make_shared<PromiseEndpoint>(std::move(endpoint))),
+      ztrace_collector_(std::move(ztrace_collector)) {
   auto arena = SimpleArenaAllocator(0)->MakeArena();
   arena->SetContext(event_engine);
   write_party_ = Party::Make(arena);

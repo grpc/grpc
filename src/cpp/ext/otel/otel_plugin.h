@@ -241,10 +241,10 @@ class OpenTelemetryPluginImpl
   ~OpenTelemetryPluginImpl() override;
 
  private:
-  class ClientCallTracer;
+  class ClientCallTracerInterface;
   class KeyValueIterable;
   class NPCMetricsKeyValueIterable;
-  class ServerCallTracer;
+  class ServerCallTracerInterface;
 
   // Creates a convenience wrapper to help iterate over only those plugin
   // options that are active over a given channel/server.
@@ -356,6 +356,12 @@ class OpenTelemetryPluginImpl
   };
 
   struct ClientMetrics {
+    struct Call {
+      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>> retries;
+      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>
+          transparent_retries;
+      std::unique_ptr<opentelemetry::metrics::Histogram<double>> retry_delay;
+    } call;
     struct Attempt {
       std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>> started;
       std::unique_ptr<opentelemetry::metrics::Histogram<double>> duration;
@@ -416,12 +422,13 @@ class OpenTelemetryPluginImpl
 
   // Returns the string form of \a key
   static absl::string_view OptionalLabelKeyToString(
-      grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey key);
+      grpc_core::ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey
+          key);
 
   // Returns the OptionalLabelKey form of \a key if \a key is recognized and
   // is public, std::nullopt otherwise.
   static std::optional<
-      grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey>
+      grpc_core::ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey>
   OptionalLabelStringToKey(absl::string_view key);
 
   static absl::string_view GetMethodFromPath(const grpc_core::Slice& path);
@@ -460,11 +467,11 @@ class OpenTelemetryPluginImpl
       ABSL_LOCKS_EXCLUDED(mu_) override;
   void RemoveCallback(grpc_core::RegisteredMetricCallback* callback)
       ABSL_LOCKS_EXCLUDED(mu_) override;
-  grpc_core::ClientCallTracer* GetClientCallTracer(
+  grpc_core::ClientCallTracerInterface* GetClientCallTracer(
       const grpc_core::Slice& path, bool registered_method,
       std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig> scope_config)
       override;
-  grpc_core::ServerCallTracer* GetServerCallTracer(
+  grpc_core::ServerCallTracerInterface* GetServerCallTracer(
       std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig> scope_config)
       override;
   bool IsInstrumentEnabled(

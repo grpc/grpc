@@ -45,8 +45,11 @@ class GrpcXdsClient final : public XdsClient {
   static constexpr absl::string_view kServerKey = "#server";
 
   // Factory function to get or create the global XdsClient instance.
+  // If bootstrap_override is null, the default bootstrap is used based
+  // on environment variables, channel args, etc.
   static absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GetOrCreate(
-      absl::string_view key, const ChannelArgs& args, const char* reason);
+      absl::string_view key, const ChannelArgs& args, const char* reason,
+      std::shared_ptr<GrpcXdsBootstrap> bootstrap_override = nullptr);
 
   // Do not instantiate directly -- use GetOrCreate() instead.
   // TODO(roth): The transport factory is injectable here to support

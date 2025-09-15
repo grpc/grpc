@@ -263,8 +263,7 @@ void ChaoticGoodClientTransport::AddData(channelz::DataSink sink) {
 
 auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
                                                   CallHandler call_handler) {
-  CallTracerInterface* const tracer =
-      call_handler.arena()->GetContext<CallTracerInterface>();
+  CallTracer* const tracer = call_handler.arena()->GetContext<CallTracer>();
   std::shared_ptr<TcpCallTracer> call_tracer;
   if (tracer != nullptr && tracer->IsSampled()) {
     call_tracer = tracer->StartNewTcpTrace();

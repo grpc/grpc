@@ -16,6 +16,8 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_LEGACY_CONTROL_ENDPOINT_H
 
 #include "absl/cleanup/cleanup.h"
+#include "src/core/ext/transport/chaotic_good_legacy/legacy_ztrace_collector.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/util/sync.h"
@@ -32,6 +34,9 @@ class ControlEndpoint {
  private:
   class Buffer : public RefCounted<Buffer> {
    public:
+    explicit Buffer(std::shared_ptr<LegacyZTraceCollector> ztrace_collector)
+        : ztrace_collector_(std::move(ztrace_collector)) {}
+
     // Queue some buffer to be written.
     // We cap the queue size so that we don't infinitely buffer on one
     // connection - if the cap is hit, this queue operation will not resolve
@@ -44,17 +49,11 @@ class ControlEndpoint {
         MutexLock lock(&mu_);
         if (queued_output_.Length() != 0 &&
             queued_output_.Length() + buffer.Length() > MaxQueued()) {
-          GRPC_TRACE_LOG(chaotic_good, INFO)
-              << "CHAOTIC_GOOD: Delay control write"
-              << " write_length=" << buffer.Length()
-              << " already_buffered=" << queued_output_.Length()
-              << " queue=" << this;
           write_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+          ztrace_collector_->Append(ControlEndpointQueueWriteTrace{});
           return Pending{};
         }
-        GRPC_TRACE_LOG(chaotic_good, INFO)
-            << "CHAOTIC_GOOD: Queue control write " << buffer.Length()
-            << " bytes on " << this;
+        ztrace_collector_->Append(ControlEndpointWriteTrace{buffer.Length()});
         waker = std::move(flush_waker_);
         queued_output_.Append(buffer);
         return Empty{};
@@ -70,11 +69,13 @@ class ControlEndpoint {
     Waker write_waker_ ABSL_GUARDED_BY(mu_);
     Waker flush_waker_ ABSL_GUARDED_BY(mu_);
     SliceBuffer queued_output_ ABSL_GUARDED_BY(mu_);
+    std::shared_ptr<LegacyZTraceCollector> ztrace_collector_;
   };
 
  public:
   ControlEndpoint(PromiseEndpoint endpoint,
-                  grpc_event_engine::experimental::EventEngine* event_engine);
+                  grpc_event_engine::experimental::EventEngine* event_engine,
+                  std::shared_ptr<LegacyZTraceCollector> ztrace_collector);
 
   // Write some data to the control endpoint; returns a promise that resolves
   // to Empty{} -- it's not possible to see errors from this api.
@@ -82,10 +83,23 @@ class ControlEndpoint {
 
   // Read operations are simply passthroughs to the underlying promise endpoint.
   auto ReadSlice(size_t length) {
-    return AddErrorPrefix("CONTROL_CHANNEL: ", endpoint_->ReadSlice(length));
+    return Map(
+        AddErrorPrefix("CONTROL_CHANNEL: ", endpoint_->ReadSlice(length)),
+        [this](absl::StatusOr<Slice> buffer) -> absl::StatusOr<Slice> {
+          if (!buffer.ok()) return buffer.status();
+          ztrace_collector_->Append(ControlEndpointReadTrace{buffer->size()});
+          return buffer;
+        });
   }
   auto Read(size_t length) {
-    return AddErrorPrefix("CONTROL_CHANNEL: ", endpoint_->Read(length));
+    return Map(
+        AddErrorPrefix("CONTROL_CHANNEL: ", endpoint_->Read(length)),
+        [this](
+            absl::StatusOr<SliceBuffer> buffer) -> absl::StatusOr<SliceBuffer> {
+          if (!buffer.ok()) return buffer.status();
+          ztrace_collector_->Append(ControlEndpointReadTrace{buffer->Length()});
+          return buffer;
+        });
   }
   auto GetPeerAddress() const { return endpoint_->GetPeerAddress(); }
   auto GetLocalAddress() const { return endpoint_->GetLocalAddress(); }
@@ -93,7 +107,8 @@ class ControlEndpoint {
  private:
   std::shared_ptr<PromiseEndpoint> endpoint_;
   RefCountedPtr<Party> write_party_;
-  RefCountedPtr<Buffer> buffer_ = MakeRefCounted<Buffer>();
+  std::shared_ptr<LegacyZTraceCollector> ztrace_collector_;
+  RefCountedPtr<Buffer> buffer_ = MakeRefCounted<Buffer>(ztrace_collector_);
 };
 
 }  // namespace chaotic_good_legacy

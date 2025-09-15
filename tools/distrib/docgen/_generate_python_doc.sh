@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# This script is meant to be ran in Docker instance of python:3.8.
+# This script is meant to be ran in Docker instance of python:3.9.
 
 set -ex
 

@@ -95,15 +95,17 @@ class ChannelzRegistry final {
             start_socket_id);
   }
 
-  static std::string GetTopChannelsJson(intptr_t start_channel_id);
-  static std::string GetServersJson(intptr_t start_server_id);
-
   // Returns the allocated JSON string that represents the proto
   // GetServersResponse as per channelz.proto.
   static auto GetServers(intptr_t start_server_id) {
     return Default()
         ->InternalGetObjects<ServerNode, BaseNode::EntityType::kServer>(
             start_server_id);
+  }
+
+  static std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool> GetChildren(
+      const BaseNode* parent, intptr_t start_node, size_t max_results) {
+    return Default()->InternalGetChildren(parent, start_node, max_results);
   }
 
   static std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool>
@@ -121,6 +123,11 @@ class ChannelzRegistry final {
   GetNodesOfType(intptr_t start_node, BaseNode::EntityType type,
                  size_t max_results) {
     return Default()->InternalGetNodesOfType(start_node, type, max_results);
+  }
+
+  static std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool> GetNodes(
+      intptr_t start_node, size_t max_results) {
+    return Default()->InternalGetNodes(start_node, max_results);
   }
 
   // Test only helper function to dump the JSON representation to std out.
@@ -216,6 +223,15 @@ class ChannelzRegistry final {
       size_t max_results);
 
   std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool>
+  InternalGetChildren(const BaseNode* parent, intptr_t start_node,
+                      size_t max_results) {
+    return QueryNodes(
+        start_node,
+        [parent](const BaseNode* n) { return n->HasParent(parent); },
+        max_results);
+  }
+
+  std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool>
   InternalGetChildrenOfType(intptr_t start_node, const BaseNode* parent,
                             BaseNode::EntityType type, size_t max_results) {
     return QueryNodes(
@@ -232,6 +248,12 @@ class ChannelzRegistry final {
     return QueryNodes(
         start_node, [type](const BaseNode* n) { return n->type() == type; },
         max_results);
+  }
+
+  std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool> InternalGetNodes(
+      intptr_t start_node, size_t max_results) {
+    return QueryNodes(
+        start_node, [](const BaseNode*) { return true; }, max_results);
   }
 
   template <typename T, BaseNode::EntityType entity_type>
@@ -272,10 +294,6 @@ class ChannelzRegistry final {
   absl::btree_map<intptr_t, BaseNode*> index_ ABSL_GUARDED_BY(index_mu_);
   size_t max_orphaned_per_shard_;
 };
-
-// `additionalInfo` section is not yet in the protobuf format, so we
-// provide a utility to strip it for compatibility.
-std::string StripAdditionalInfoFromJson(absl::string_view json);
 
 }  // namespace channelz
 }  // namespace grpc_core

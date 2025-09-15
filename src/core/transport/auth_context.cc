@@ -27,6 +27,7 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -151,6 +152,10 @@ void grpc_auth_context::add_property(const char* name, const char* value,
   prop->value_length = value_length;
 }
 
+void grpc_auth_context::set_protocol(absl::string_view protocol) {
+  protocol_ = protocol;
+}
+
 void grpc_auth_context_add_property(grpc_auth_context* ctx, const char* name,
                                     const char* value, size_t value_length) {
   GRPC_TRACE_LOG(api, INFO) << absl::StrFormat(
@@ -232,4 +237,19 @@ grpc_auth_context* grpc_find_auth_context_in_args(
     if (p != nullptr) return p;
   }
   return nullptr;
+}
+
+std::optional<bool> grpc_auth_context::CompareAuthContext(
+    const grpc_auth_context* other) {
+  if (protocol_.empty() || other->protocol_.empty() ||
+      protocol_ != other->protocol_) {
+    return std::nullopt;
+  }
+  auto* comparator = grpc_core::CoreConfiguration::Get()
+                         .auth_context_comparator_registry()
+                         .GetComparator(protocol_);
+  if (comparator == nullptr) {
+    return std::nullopt;
+  }
+  return (*comparator)(this, other);
 }

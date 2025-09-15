@@ -61,11 +61,15 @@ grpc_cc_test(
     name = "server_request_call_test",
     srcs = ["server_request_call_test.cc"],
     external_deps = [
+        "absl/log",
+        "absl/strings:str_format",
         "gtest",
     ],
     tags = ["no_windows"],
     deps = [
+        "//:gpr",
         "//:grpc++",
+        "//:grpc++_base",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
@@ -125,8 +129,10 @@ grpc_cc_test(
     external_deps = [
         "absl/time",
         "gtest",
+        "absl/strings",
     ],
     deps = [
+        "//:grpc",
         "//:grpc++",
         "//:grpcpp_backend_metric_recorder",
         "//:grpcpp_call_metric_recorder",

@@ -171,67 +171,12 @@ MpscQueued<chaotic_good::OutgoingFrame> TestFrame(absl::string_view payload) {
   return std::move(*frames->Next()().value());
 }
 
-void ExportMockTelemetryInfo(util::testing::MockPromiseEndpoint& ep) {
-  auto telemetry_info = std::make_shared<util::testing::MockTelemetryInfo>();
-  EXPECT_CALL(*ep.endpoint, GetTelemetryInfo())
-      .WillOnce(::testing::Return(telemetry_info));
-  EXPECT_CALL(*telemetry_info, GetMetricKey("delivery_rate"))
-      .WillOnce(::testing::Return(1));
-  EXPECT_CALL(*telemetry_info, GetMetricKey("net_rtt_usec"))
-      .WillOnce(::testing::Return(2));
-  EXPECT_CALL(*telemetry_info, GetMetricKey("data_notsent"))
-      .WillOnce(::testing::Return(3));
-  EXPECT_CALL(*telemetry_info, GetMetricKey("byte_offset"))
-      .WillOnce(::testing::Return(4));
-}
-
 RefCountedPtr<channelz::SocketNode> MakeTestChannelzSocketNode() {
   return MakeRefCounted<channelz::SocketNode>("from", "to", "test", nullptr);
 }
 
-const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
-GetPeerAddress() {
-  static grpc_event_engine::experimental::EventEngine::ResolvedAddress
-      peer_address = grpc_event_engine::experimental::URIToResolvedAddress(
-                         "ipv4:127.0.0.1:1234")
-                         .value();
-  return peer_address;
-}
-
-const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
-GetLocalAddress() {
-  static grpc_event_engine::experimental::EventEngine::ResolvedAddress
-      peer_address = grpc_event_engine::experimental::URIToResolvedAddress(
-                         "ipv4:127.0.0.1:4321")
-                         .value();
-  return peer_address;
-}
-
-const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
-GetPeerAddress2() {
-  static grpc_event_engine::experimental::EventEngine::ResolvedAddress
-      peer_address = grpc_event_engine::experimental::URIToResolvedAddress(
-                         "ipv4:127.0.0.1:2345")
-                         .value();
-  return peer_address;
-}
-
-const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
-GetLocalAddress2() {
-  static grpc_event_engine::experimental::EventEngine::ResolvedAddress
-      peer_address = grpc_event_engine::experimental::URIToResolvedAddress(
-                         "ipv4:127.0.0.1:5432")
-                         .value();
-  return peer_address;
-}
-
 DATA_ENDPOINTS_TEST(CanWrite) {
   util::testing::MockPromiseEndpoint ep(1234);
-  EXPECT_CALL(*ep.endpoint, GetPeerAddress())
-      .WillRepeatedly(::testing::ReturnRef(GetPeerAddress()));
-  EXPECT_CALL(*ep.endpoint, GetLocalAddress())
-      .WillRepeatedly(::testing::ReturnRef(GetLocalAddress()));
-  ExportMockTelemetryInfo(ep);
   auto close_ep = ep.ExpectDelayedReadClose(absl::UnavailableError("test done"),
                                             event_engine().get());
   chaotic_good::DataEndpoints data_endpoints(
@@ -252,18 +197,8 @@ DATA_ENDPOINTS_TEST(CanWrite) {
 }
 
 DATA_ENDPOINTS_TEST(CanMultiWrite) {
-  util::testing::MockPromiseEndpoint ep1(1234);
-  util::testing::MockPromiseEndpoint ep2(1235);
-  EXPECT_CALL(*ep1.endpoint, GetPeerAddress())
-      .WillRepeatedly(::testing::ReturnRef(GetPeerAddress()));
-  EXPECT_CALL(*ep1.endpoint, GetLocalAddress())
-      .WillRepeatedly(::testing::ReturnRef(GetLocalAddress()));
-  EXPECT_CALL(*ep2.endpoint, GetPeerAddress())
-      .WillRepeatedly(::testing::ReturnRef(GetPeerAddress2()));
-  EXPECT_CALL(*ep2.endpoint, GetLocalAddress())
-      .WillRepeatedly(::testing::ReturnRef(GetLocalAddress2()));
-  ExportMockTelemetryInfo(ep1);
-  ExportMockTelemetryInfo(ep2);
+  util::testing::MockPromiseEndpoint ep1(1234, 4321);
+  util::testing::MockPromiseEndpoint ep2(1235, 5321);
   auto close_ep1 = ep1.ExpectDelayedReadClose(
       absl::UnavailableError("test done"), event_engine().get());
   auto close_ep2 = ep2.ExpectDelayedReadClose(
@@ -309,11 +244,6 @@ DATA_ENDPOINTS_TEST(CanMultiWrite) {
 
 DATA_ENDPOINTS_TEST(CanRead) {
   util::testing::MockPromiseEndpoint ep(1234);
-  EXPECT_CALL(*ep.endpoint, GetPeerAddress())
-      .WillRepeatedly(::testing::ReturnRef(GetPeerAddress()));
-  EXPECT_CALL(*ep.endpoint, GetLocalAddress())
-      .WillRepeatedly(::testing::ReturnRef(GetLocalAddress()));
-  ExportMockTelemetryInfo(ep);
   ep.ExpectRead({DataFrameHeader(64, 5, 1, 5)}, event_engine().get());
   ep.ExpectRead(
       {grpc_event_engine::experimental::Slice::FromCopiedString("hello"),
@@ -339,16 +269,11 @@ DATA_ENDPOINTS_TEST(CanRead) {
 
 DATA_ENDPOINTS_TEST(CanWriteSecurityFrame) {
   util::testing::MockPromiseEndpoint ep(1234);
-  EXPECT_CALL(*ep.endpoint, GetPeerAddress())
-      .WillRepeatedly(::testing::ReturnRef(GetPeerAddress()));
-  EXPECT_CALL(*ep.endpoint, GetLocalAddress())
-      .WillRepeatedly(::testing::ReturnRef(GetLocalAddress()));
   auto* transport_framing_endpoint_extension = ep.endpoint->AddExtension<
       util::testing::MockTransportFramingEndpointExtension>();
   absl::AnyInvocable<void(SliceBuffer*)> send_frame_callback;
   EXPECT_CALL(*transport_framing_endpoint_extension, SetSendFrameCallback)
       .WillOnce(::testing::SaveArgByMove<0>(&send_frame_callback));
-  ExportMockTelemetryInfo(ep);
   auto close_ep = ep.ExpectDelayedReadClose(absl::UnavailableError("test done"),
                                             event_engine().get());
   chaotic_good::DataEndpoints data_endpoints(
@@ -374,14 +299,9 @@ DATA_ENDPOINTS_TEST(CanWriteSecurityFrame) {
 
 DATA_ENDPOINTS_TEST(CanReadSecurityFrame) {
   util::testing::MockPromiseEndpoint ep(1234);
-  EXPECT_CALL(*ep.endpoint, GetPeerAddress())
-      .WillRepeatedly(::testing::ReturnRef(GetPeerAddress()));
-  EXPECT_CALL(*ep.endpoint, GetLocalAddress())
-      .WillRepeatedly(::testing::ReturnRef(GetLocalAddress()));
   auto* transport_framing_endpoint_extension =
       ep.endpoint->AddExtension<::testing::StrictMock<
           util::testing::MockTransportFramingEndpointExtension>>();
-  ExportMockTelemetryInfo(ep);
   EXPECT_CALL(*transport_framing_endpoint_extension, SetSendFrameCallback)
       .WillOnce(::testing::Return());
   EXPECT_CALL(*transport_framing_endpoint_extension, ReceiveFrame)

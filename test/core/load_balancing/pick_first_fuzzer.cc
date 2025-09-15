@@ -554,9 +554,7 @@ class Fuzzer {
       return nullptr;
     }
 
-    ClientCallTracer::CallAttemptTracer* GetCallAttemptTracer() const override {
-      return nullptr;
-    }
+    CallAttemptTracer* GetCallAttemptTracer() const override { return nullptr; }
 
     std::vector<void*> allocations_;
   };

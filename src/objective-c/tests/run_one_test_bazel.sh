@@ -48,4 +48,5 @@ trap 'kill -9 `jobs -p` ; echo "EXIT TIME:  $(date)"' EXIT
 time $BAZEL test --ios_multi_cpus=x86_64,sim_arm64 \
     --test_env HOST_PORT_LOCALSSL=localhost:$TLS_PORT \
     --test_env HOST_PORT_LOCAL=localhost:$PLAIN_PORT \
+    --test_env=GRPC_VERBOSITY=debug --test_env=GRPC_TRACE=event_engine*,api \
     $SCHEME

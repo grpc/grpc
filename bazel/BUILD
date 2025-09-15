@@ -35,6 +35,11 @@ filegroup(
     srcs = ["_logging_threshold_test_main.py"],
 )
 
+filegroup(
+    name = "_run_time_type_check_main",
+    srcs = ["_run_time_type_check_main.py"],
+)
+
 ###############################################################################
 # VISIBILITY TARGETS
 #
@@ -61,7 +66,9 @@ package_group(
 
 package_group(
     name = "channelz",
-    packages = [],
+    packages = [
+        "//...",
+    ],
 )
 
 package_group(
@@ -218,4 +225,15 @@ package_group(
     name = "core_end2end_tests",
     packages = [
     ],
+)
+
+package_group(
+    name = "end2end_test_utils",
+    packages = [
+    ],
+)
+
+package_group(
+    name = "socket_mutator",
+    packages = [],
 )

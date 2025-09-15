@@ -33,11 +33,16 @@ grpc_cc_test(
 grpc_cc_test(
     name = "load_config_test",
     srcs = ["load_config_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/flags:flag",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//:config",
         "//:grpc",
+        "//:load_config",
+        "//src/core:env",
     ],
 )

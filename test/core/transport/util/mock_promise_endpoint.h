@@ -128,19 +128,42 @@ struct MockTransportFramingEndpointExtension
 };
 
 struct MockPromiseEndpoint {
-  explicit MockPromiseEndpoint(int port) {
-    if (GRPC_TRACE_FLAG_ENABLED(chaotic_good)) {
-      EXPECT_CALL(*endpoint, GetPeerAddress)
-          .WillRepeatedly(
-              [peer_address =
-                   std::make_shared<grpc_event_engine::experimental::
-                                        EventEngine::ResolvedAddress>(
-                       grpc_event_engine::experimental::URIToResolvedAddress(
-                           absl::StrCat("ipv4:127.0.0.1:", port))
-                           .value())]()
-                  -> const grpc_event_engine::experimental::EventEngine::
-                      ResolvedAddress& { return *peer_address; });
+  explicit MockPromiseEndpoint(
+      int port, int local_port = 6148,
+      std::shared_ptr<MockTelemetryInfo> telemetry_info = nullptr) {
+    if (telemetry_info == nullptr) {
+      telemetry_info = std::make_shared<util::testing::MockTelemetryInfo>();
+      EXPECT_CALL(*telemetry_info, GetMetricKey("delivery_rate"))
+          .WillRepeatedly(::testing::Return(1));
+      EXPECT_CALL(*telemetry_info, GetMetricKey("net_rtt_usec"))
+          .WillRepeatedly(::testing::Return(2));
+      EXPECT_CALL(*telemetry_info, GetMetricKey("data_notsent"))
+          .WillRepeatedly(::testing::Return(3));
+      EXPECT_CALL(*telemetry_info, GetMetricKey("byte_offset"))
+          .WillRepeatedly(::testing::Return(4));
     }
+    EXPECT_CALL(*endpoint, GetTelemetryInfo())
+        .WillRepeatedly(::testing::Return(telemetry_info));
+    EXPECT_CALL(*endpoint, GetPeerAddress)
+        .WillRepeatedly(
+            [peer_address = std::make_shared<
+                 grpc_event_engine::experimental::EventEngine::ResolvedAddress>(
+                 grpc_event_engine::experimental::URIToResolvedAddress(
+                     absl::StrCat("ipv4:127.0.0.1:", port))
+                     .value())]() -> const grpc_event_engine::experimental::
+                                      EventEngine::ResolvedAddress& {
+                                        return *peer_address;
+                                      });
+    EXPECT_CALL(*endpoint, GetLocalAddress)
+        .WillRepeatedly(
+            [local_address = std::make_shared<
+                 grpc_event_engine::experimental::EventEngine::ResolvedAddress>(
+                 grpc_event_engine::experimental::URIToResolvedAddress(
+                     absl::StrCat("ipv4:127.0.0.1:", local_port))
+                     .value())]() -> const grpc_event_engine::experimental::
+                                      EventEngine::ResolvedAddress& {
+                                        return *local_address;
+                                      });
   }
   ::testing::StrictMock<MockEndpoint>* endpoint =
       new ::testing::StrictMock<MockEndpoint>();

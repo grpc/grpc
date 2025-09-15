@@ -18,6 +18,7 @@ load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load(
     "//bazel:grpc_build_system.bzl",
+    "grpc_add_well_known_proto_upb_targets",
     "grpc_cc_library",
     "grpc_clang_cl_settings",
     "grpc_filegroup",
@@ -45,6 +46,26 @@ exports_files([
 exports_files(
     glob(["include/**"]),
     visibility = ["//:__subpackages__"],
+)
+
+bool_flag(
+    name = "small_client",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "small_client_flag",
+    flag_values = {":small_client": "true"},
+)
+
+bool_flag(
+    name = "exclude_small_client",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "not_exclude_small_client_flag",  # Negative so it can be used with match_all.
+    flag_values = {":exclude_small_client": "false"},
 )
 
 config_setting(
@@ -121,54 +142,81 @@ config_setting(
     values = {"define": "use_systemd=true"},
 )
 
+config_setting(
+    name = "fuchsia",
+    constraint_values = ["@platforms//os:fuchsia"],
+)
+
+# Opt-ins for small clients, before the opt-out flag is applied.
+selects.config_setting_group(
+    name = "grpc_small_clients_enable",
+    match_any = [
+        ":small_client_flag",
+        ":android",
+        ":ios",
+        ":fuchsia",
+    ],
+    visibility = ["//visibility:private"],
+)
+
+# Automatically disable certain deps for space-constrained clients where
+# optional features may not be needed and binary size is more important.
+# This includes Android, iOS, Fuchsia, and builds which request it explicitly with
+# --//:small_client.
+#
+# A build can opt out of this behavior by setting --//:exclude_small_client.
+selects.config_setting_group(
+    name = "grpc_small_clients",
+    match_all = [
+        ":grpc_small_clients_enable",
+        ":not_exclude_small_client_flag",
+    ],
+)
+
 selects.config_setting_group(
     name = "grpc_no_xds",
     match_any = [
-        ":grpc_no_xds_define",
-        # In addition to disabling XDS support when --define=grpc_no_xds=true is
-        # specified, we also disable it on mobile platforms where it is not
-        # likely to be needed and where reducing the binary size is more
-        # important.
-        ":android",
-        ":ios",
+        ":grpc_no_xds_define",  # --define=grpc_no_xds=true
+        ":grpc_small_clients",
     ],
 )
 
 selects.config_setting_group(
     name = "grpc_no_ztrace",
     match_any = [
-        ":grpc_no_ztrace_define",
-        # In addition to disabling ztrace support when --define=grpc_no_ztrace=true is
-        # specified, we also disable it on mobile platforms where it is not
-        # likely to be needed and where reducing the binary size is more
-        # important.
-        ":android",
-        ":ios",
+        ":grpc_no_ztrace_define",  # --define=grpc_no_ztrace=true
+        ":grpc_small_clients",
     ],
 )
 
 selects.config_setting_group(
     name = "grpc_no_rls",
     match_any = [
-        ":grpc_no_rls_flag",
-        # Disable RLS support on mobile platforms where it is not likely to be
-        # needed and where reducing the binary size is more important.
-        ":android",
-        ":ios",
+        ":grpc_no_rls_flag",  # --//:disable_grpc_rls
+        ":grpc_small_clients",
     ],
 )
 
 selects.config_setting_group(
     name = "grpc_experiments_are_final",
     match_any = [
-        ":grpc_experiments_are_final_define",
-        # In addition to disabling experiments when
-        # --define=grpc_experiments_are_final=true is specified, we also disable
-        # them on mobile platforms where runtime configuration of experiments is unlikely to be needed and where
-        # reducing the binary size is more important.
-        ":android",
-        ":ios",
+        ":grpc_experiments_are_final_define",  # --define=grpc_experiments_are_final=true
+        ":grpc_small_clients",
     ],
+)
+
+bool_flag(
+    name = "minimal_lb_policy",
+    build_setting_default = False,
+)
+
+# Disable all load balancer policies except pick_first (the default).
+# This saves binary size. However, this can be influenced by service config. So it should only be
+# set by clients that know that none of their services are relying on load balancing. Thus this flag
+# is not enabled by default even for grpc_small_clients.
+config_setting(
+    name = "grpc_minimal_lb_policy_flag",
+    flag_values = {":minimal_lb_policy": "true"},
 )
 
 # Fuzzers can be built as fuzzers or as tests
@@ -215,11 +263,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gee"  # @unused
+g_stands_for = "genuine"  # @unused
 
-core_version = "48.0.0"  # @unused
+core_version = "50.0.0"  # @unused
 
-version = "1.74.0-dev"  # @unused
+version = "1.76.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -570,6 +618,7 @@ grpc_cc_library(
     ],
     public_hdrs = GRPC_PUBLIC_HDRS,
     tags = [
+        "avoid_dep",
         "nofixdeps",
     ],
     visibility = ["//visibility:public"],
@@ -597,6 +646,7 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:endpoint_info_handshaker",
         "//src/core:experiments",
+        "//src/core:fused_filters",
         "//src/core:grpc_authorization_base",
         "//src/core:http_proxy_mapper",
         "//src/core:init_internally",
@@ -635,6 +685,11 @@ grpc_cc_library(
     ],
     defines = select({
         ":grpc_no_xds": ["GRPC_NO_XDS"],
+        "//conditions:default": [],
+    }) + select({
+        # The registration is the only place where the plugins are referenced directly, so by
+        # excluding them from BuildCoreConfiguration, they will be stripped by the linker.
+        ":grpc_minimal_lb_policy_flag": ["GRPC_MINIMAL_LB_POLICY"],
         "//conditions:default": [],
     }),
     external_deps = [
@@ -689,10 +744,12 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
+        "//src/core:channelz_v2tov1_legacy_api",
         "//src/core:client_channel_backup_poller",
         "//src/core:default_event_engine",
         "//src/core:endpoint_info_handshaker",
         "//src/core:experiments",
+        "//src/core:fused_filters",
         "//src/core:grpc_authorization_base",
         "//src/core:grpc_external_account_credentials",
         "//src/core:grpc_fake_credentials",
@@ -876,6 +933,9 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/types:span",
+        "absl/utility",
+        "absl/functional:any_invocable",
+        "absl/status",
     ],
     tags = [
         "avoid_dep",
@@ -885,6 +945,7 @@ grpc_cc_library(
     deps = [
         "channel_arg_names",
         "gpr_public_hdrs",
+        "grpc_core_credentials_header",
     ],
 )
 
@@ -925,8 +986,12 @@ grpc_cc_library(
         "include/grpc/slice.h",
         "include/grpc/slice_buffer.h",
     ],
+    external_deps = [
+        "absl/base:core_headers",
+    ],
     visibility = ["//visibility:public"],
     deps = [
+        "gpr",
         "//src/core:slice",
         "//src/core:slice_buffer",
     ],
@@ -945,6 +1010,13 @@ grpc_cc_library(
         "absl/log:absl_check",
         "absl/log:absl_log",
         "absl/strings:cord",
+        "absl/base:core_headers",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/synchronization:synchronization",
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/types:span",
     ],
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     select_deps = [
@@ -959,10 +1031,20 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["//visibility:public"],
     deps = [
+        "generic_stub_internal",
         "global_callback_hook",
+        "gpr_public_hdrs",
         "grpc++_base",
+        "grpc++_config_proto",
+        "grpc_core_credentials_header",
+        "grpc_public_hdrs",
+        "ref_counted_ptr",
+        "transport_auth_context",
         "//src/core:gpr_atm",
         "//src/core:slice",
+        "@com_google_protobuf//:any_cc_proto",
+        "@com_google_protobuf//:protobuf",
+        "@com_google_protobuf//src/google/protobuf/io",
     ],
 )
 
@@ -1147,6 +1229,7 @@ grpc_cc_library(
         "transport_auth_context",
         "//src/core:gpr_atm",
         "//src/core:grpc_insecure_credentials",
+        "@com_google_protobuf//:any_cc_proto",
     ],
 )
 
@@ -1213,6 +1296,11 @@ grpc_cc_library(
 # anything else from gpr can still be portable!
 grpc_cc_library(
     name = "gpr_platform",
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/base:config",
+        "absl/strings",
+    ],
     public_hdrs = [
         "include/grpc/impl/codegen/port_platform.h",
         "include/grpc/support/port_platform.h",
@@ -1228,6 +1316,8 @@ grpc_cc_library(
         "absl/time",
         "absl/types:span",
         "absl/functional:any_invocable",
+        "absl/strings",
+        "absl/utility:utility",
     ],
     tags = [
         "nofixdeps",
@@ -1236,6 +1326,7 @@ grpc_cc_library(
     deps = [
         "channel_arg_names",
         "gpr",
+        "grpc_core_credentials_header",
     ],
 )
 
@@ -1266,6 +1357,7 @@ grpc_cc_library(
         "@com_google_protobuf//upb/mem",
     ],
     deps = [
+        "channelz_service_upb",
         "channelz_upb",
         "config_vars",
         "exec_ctx",
@@ -1279,6 +1371,7 @@ grpc_cc_library(
         "uri",
         "//src/core:channel_args",
         "//src/core:channelz_property_list",
+        "//src/core:channelz_text_encode",
         "//src/core:connectivity_state",
         "//src/core:dual_ref_counted",
         "//src/core:json",
@@ -2178,6 +2271,7 @@ grpc_cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "config",
         "debug_location",
         "exec_ctx",
         "gpr",
@@ -2208,6 +2302,7 @@ grpc_cc_library(
         "//src/core:filter/auth/client_auth_filter.cc",
         "//src/core:filter/auth/server_auth_filter.cc",
         "//src/core:handshaker/security/legacy_secure_endpoint.cc",
+        "//src/core:handshaker/security/pipelined_secure_endpoint.cc",
         "//src/core:handshaker/security/secure_endpoint.cc",
         "//src/core:handshaker/security/security_handshaker.cc",
     ],
@@ -2272,6 +2367,7 @@ grpc_cc_library(
         "//src/core:handshaker_factory",
         "//src/core:handshaker_registry",
         "//src/core:iomgr_fwd",
+        "//src/core:latent_see",
         "//src/core:memory_quota",
         "//src/core:metadata_batch",
         "//src/core:poll",
@@ -2279,6 +2375,7 @@ grpc_cc_library(
         "//src/core:resource_quota",
         "//src/core:seq",
         "//src/core:slice",
+        "//src/core:slice_buffer",
         "//src/core:slice_refcount",
         "//src/core:stats_data",
         "//src/core:status_helper",
@@ -2336,6 +2433,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log:log",
+        "absl/status:statusor",
         "@com_google_protobuf//upb/base",
         "@com_google_protobuf//upb/mem",
     ],
@@ -2472,6 +2570,7 @@ grpc_cc_library(
         "//src/core:thread_quota",
         "//src/core:time",
         "//src/core:useful",
+        "@com_google_protobuf//:any_cc_proto",
     ],
 )
 
@@ -2514,6 +2613,7 @@ grpc_cc_library(
         "generic_stub_internal",
         "global_callback_hook",
         "gpr",
+        "grpc++_config_proto",
         "grpc_base",
         "grpc_core_credentials_header",
         "grpc_health_upb",
@@ -2554,6 +2654,7 @@ grpc_cc_library(
         "//src/core:thread_quota",
         "//src/core:time",
         "//src/core:useful",
+        "@com_google_protobuf//:any_cc_proto",
     ],
 )
 
@@ -2564,6 +2665,9 @@ grpc_cc_library(
         "absl/strings:cord",
         "protobuf_headers",
         "protobuf",
+        "absl/log:check",
+        "absl/log:absl_check",
+        "absl/strings",
     ],
     public_hdrs = [
         "include/grpc++/impl/codegen/proto_utils.h",
@@ -2577,6 +2681,7 @@ grpc_cc_library(
     deps = [
         "grpc++_config_proto",
         "grpc++_public_hdrs",
+        "grpc_base",
         "grpcpp_status",
     ],
 )
@@ -2713,8 +2818,9 @@ grpc_cc_library(
         "src/cpp/server/channelz/channelz_service.h",
     ],
     external_deps = [
-        "protobuf_headers",
         "absl/log",
+        "absl/strings",
+        "protobuf_headers",
     ],
     public_hdrs = [
         "include/grpcpp/ext/channelz_service_plugin.h",
@@ -2727,8 +2833,61 @@ grpc_cc_library(
         "grpc",
         "grpc++",
         "grpc++_config_proto",
+        "//src/core:channelz_v2tov1_convert",
+        "//src/core:experiments",
+        "//src/core:notification",
         "//src/proto/grpc/channelz:channelz_proto",
         "//src/proto/grpc/channelz/v2:service_cc_grpc",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
+    name = "grpcpp_latent_see_service",
+    srcs = [
+        "src/cpp/latent_see/latent_see_service.cc",
+    ],
+    hdrs = [
+        "src/cpp/latent_see/latent_see_service.h",
+    ],
+    external_deps = [
+        "protobuf_headers",
+        "absl/log",
+    ],
+    tags = ["nofixdeps"],
+    visibility = ["//bazel:latent_see"],
+    deps = [
+        "gpr",
+        "grpc",
+        "grpc++",
+        "grpc++_config_proto",
+        "//src/core:latent_see",
+        "//src/proto/grpc/channelz/v2:latent_see_cc_grpc",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
+    name = "grpcpp_latent_see_client",
+    srcs = [
+        "src/cpp/latent_see/latent_see_client.cc",
+    ],
+    hdrs = [
+        "src/cpp/latent_see/latent_see_client.h",
+    ],
+    external_deps = [
+        "protobuf_headers",
+        "absl/log",
+    ],
+    tags = ["nofixdeps"],
+    visibility = ["//bazel:latent_see"],
+    deps = [
+        "gpr",
+        "grpc",
+        "grpc++",
+        "grpc++_config_proto",
+        "//src/core:latent_see",
+        "//src/proto/grpc/channelz/v2:latent_see_cc_grpc",
     ],
     alwayslink = 1,
 )
@@ -2942,6 +3101,7 @@ grpc_cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "generic_stub_internal",
+        "grpc++_base",
     ],
 )
 
@@ -3097,6 +3257,7 @@ grpc_cc_library(
         "debug_location",
         "gpr",
         "grpc_resolver",
+        "//src/core:auth_context_comparator_registry",
         "//src/core:call_creds_registry",
         "//src/core:certificate_provider_registry",
         "//src/core:channel_args_preconditioning",
@@ -4284,8 +4445,10 @@ grpc_cc_library(
         "//src/core:grpc_crl_provider",
         "//src/core:grpc_transport_chttp2_alpn",
         "//src/core:load_file",
+        "//src/core:match",
         "//src/core:ref_counted",
         "//src/core:slice",
+        "//src/core:spiffe_utils",
         "//src/core:ssl_key_logging",
         "//src/core:ssl_transport_security_utils",
         "//src/core:sync",
@@ -4395,7 +4558,6 @@ grpc_cc_library(
         "absl/cleanup",
         "absl/log:check",
         "absl/log:log",
-        "absl/memory",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4410,7 +4572,6 @@ grpc_cc_library(
     visibility = ["//bazel:xds_client_core"],
     deps = [
         "backoff",
-        "call_tracer",
         "debug_location",
         "endpoint_addresses",
         "envoy_admin_upb",
@@ -4435,7 +4596,6 @@ grpc_cc_library(
         "ref_counted_ptr",
         "uri",
         "work_serializer",
-        "//src/core:default_event_engine",
         "//src/core:down_cast",
         "//src/core:dual_ref_counted",
         "//src/core:env",
@@ -4523,7 +4683,9 @@ grpc_cc_library(
     ],
     deps = [
         "gpr",
+        "//src/core:http2_settings",
         "//src/core:http2_status",
+        "//src/core:memory_usage",
         "//src/core:slice",
         "//src/core:slice_buffer",
     ],
@@ -4795,6 +4957,7 @@ grpc_cc_library(
         "//src/core:experiments",
         "//src/core:gpr_manual_constructor",
         "//src/core:http2_settings",
+        "//src/core:http2_settings_manager",
         "//src/core:http2_stats_collector",
         "//src/core:http2_status",
         "//src/core:http2_ztrace_collector",
@@ -4847,6 +5010,7 @@ grpc_cc_library(
         "gpr_platform",
         "grpc++_public_hdrs",
         "grpc_public_hdrs",
+        "@com_google_protobuf//:any_cc_proto",
     ],
 )
 
@@ -5211,6 +5375,16 @@ grpc_upb_proto_reflection_library(
 )
 
 grpc_upb_proto_library(
+    name = "channelz_service_upb",
+    deps = ["//src/proto/grpc/channelz/v2:service_proto"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "channelz_service_upbdefs",
+    deps = ["//src/proto/grpc/channelz/v2:service_proto"],
+)
+
+grpc_upb_proto_library(
     name = "channelz_property_list_upb",
     deps = ["//src/proto/grpc/channelz/v2:property_list_proto"],
 )
@@ -5230,6 +5404,16 @@ grpc_upb_proto_reflection_library(
     deps = ["//src/proto/grpc/channelz/v2:promise_proto"],
 )
 
+grpc_upb_proto_library(
+    name = "channelz_v1_upb",
+    deps = ["//src/proto/grpc/channelz:channelz_proto_internal"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "channelz_v1_upbdefs",
+    deps = ["//src/proto/grpc/channelz:channelz_proto_internal"],
+)
+
 WELL_KNOWN_PROTO_TARGETS = [
     "any",
     "duration",
@@ -5239,15 +5423,7 @@ WELL_KNOWN_PROTO_TARGETS = [
     "wrappers",
 ]
 
-[grpc_upb_proto_library(
-    name = "protobuf_" + target + "_upb",
-    deps = ["@com_google_protobuf//:" + target + "_proto"],
-) for target in WELL_KNOWN_PROTO_TARGETS]
-
-[grpc_upb_proto_reflection_library(
-    name = "protobuf_" + target + "_upbdefs",
-    deps = ["@com_google_protobuf//:" + target + "_proto"],
-) for target in WELL_KNOWN_PROTO_TARGETS]
+grpc_add_well_known_proto_upb_targets(targets = WELL_KNOWN_PROTO_TARGETS)
 
 grpc_generate_one_off_targets()
 

@@ -44,7 +44,7 @@ using ::envoy::type::v3::FractionalPercent;
 
 using ClientStats = LrsServiceImpl::ClientStats;
 using OptionalLabelKey =
-    grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey;
+    grpc_core::ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey;
 
 constexpr char kLbDropType[] = "lb";
 constexpr char kThrottleDropType[] = "throttle";
@@ -339,7 +339,9 @@ TEST_P(CdsTest, MetricLabels) {
           ::testing::Pair(OptionalLabelKey::kXdsServiceNamespace,
                           "mynamespace"),
           ::testing::Pair(OptionalLabelKey::kLocality,
-                          LocalityNameString("locality0"))));
+                          LocalityNameString("locality0")),
+          ::testing::Pair(OptionalLabelKey::kBackendService,
+                          kDefaultClusterName)));
   // Send an RPC to backend 1.
   WaitForBackend(DEBUG_LOCATION, 1);
   // Verify that the optional labels are recorded in the call
@@ -353,7 +355,9 @@ TEST_P(CdsTest, MetricLabels) {
           ::testing::Pair(OptionalLabelKey::kXdsServiceNamespace,
                           "mynamespace"),
           ::testing::Pair(OptionalLabelKey::kLocality,
-                          LocalityNameString("locality1"))));
+                          LocalityNameString("locality1")),
+          ::testing::Pair(OptionalLabelKey::kBackendService,
+                          kDefaultClusterName)));
 }
 
 //
