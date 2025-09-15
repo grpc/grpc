@@ -108,7 +108,13 @@ ${SETARCH_CMD} "${PYTHON}" -m build
 # Wheel has a bug where directories don't get excluded.
 # https://bitbucket.org/pypa/wheel/issues/99/cannot-exclude-directory
 # shellcheck disable=SC2086
-${SETARCH_CMD} "${PYTHON}" -m build
+if [ -n "$WHEEL_PLAT_NAME_FLAG" ]; then
+  # Extract the platform name from the flag (e.g., "--plat-name=win_amd64" -> "win_amd64")
+  PLAT_NAME=$(echo "$WHEEL_PLAT_NAME_FLAG" | sed 's/--plat-name=//')
+  ${SETARCH_CMD} "${PYTHON}" -m build --wheel --config-setting="--bdist-wheel=--plat-name=$PLAT_NAME"
+else
+  ${SETARCH_CMD} "${PYTHON}" -m build --wheel
+fi
 
 GRPCIO_STRIP_TEMPDIR=$(mktemp -d)
 GRPCIO_TAR_GZ_LIST=( dist/grpcio-*.tar.gz )
@@ -144,11 +150,25 @@ mv "${GRPCIO_STRIPPED_TAR_GZ}" "${GRPCIO_TAR_GZ}"
 "${PYTHON}" tools/distrib/python/make_grpcio_tools.py
 
 # Build gRPC tools package distribution
-${SETARCH_CMD} "${PYTHON}" -m build tools/distrib/python/grpcio_tools
+# shellcheck disable=SC2086
+if [ -n "$WHEEL_PLAT_NAME_FLAG" ]; then
+  # Extract the platform name from the flag (e.g., "--plat-name=win_amd64" -> "win_amd64")
+  PLAT_NAME=$(echo "$WHEEL_PLAT_NAME_FLAG" | sed 's/--plat-name=//')
+  ${SETARCH_CMD} "${PYTHON}" -m build --wheel --config-setting="--bdist-wheel=--plat-name=$PLAT_NAME" tools/distrib/python/grpcio_tools
+else
+  ${SETARCH_CMD} "${PYTHON}" -m build --wheel tools/distrib/python/grpcio_tools
+fi
 
 if [ "$GRPC_BUILD_MAC" == "" ]; then
   "${PYTHON}" src/python/grpcio_observability/make_grpcio_observability.py
-  ${SETARCH_CMD} "${PYTHON}" -m build src/python/grpcio_observability
+  # shellcheck disable=SC2086
+  if [ -n "$WHEEL_PLAT_NAME_FLAG" ]; then
+    # Extract the platform name from the flag (e.g., "--plat-name=win_amd64" -> "win_amd64")
+    PLAT_NAME=$(echo "$WHEEL_PLAT_NAME_FLAG" | sed 's/--plat-name=//')
+    ${SETARCH_CMD} "${PYTHON}" -m build --wheel --config-setting="--bdist-wheel=--plat-name=$PLAT_NAME" src/python/grpcio_observability
+  else
+    ${SETARCH_CMD} "${PYTHON}" -m build --wheel src/python/grpcio_observability
+  fi
 fi
 
 
@@ -238,7 +258,14 @@ if [ "$GRPC_BUILD_MAC" == "" ]; then
 
   # Build grpcio_csm_observability distribution
   if [ "$GRPC_BUILD_MAC" == "" ]; then
-    ${SETARCH_CMD} "${PYTHON}" -m build src/python/grpcio_csm_observability
+    # shellcheck disable=SC2086
+    if [ -n "$WHEEL_PLAT_NAME_FLAG" ]; then
+      # Extract the platform name from the flag (e.g., "--plat-name=win_amd64" -> "win_amd64")
+      PLAT_NAME=$(echo "$WHEEL_PLAT_NAME_FLAG" | sed 's/--plat-name=//')
+      ${SETARCH_CMD} "${PYTHON}" -m build --wheel --config-setting="--bdist-wheel=--plat-name=$PLAT_NAME" src/python/grpcio_csm_observability
+    else
+      ${SETARCH_CMD} "${PYTHON}" -m build --wheel src/python/grpcio_csm_observability
+    fi
     cp -r src/python/grpcio_csm_observability/dist/* "$ARTIFACT_DIR"
   fi
 fi
