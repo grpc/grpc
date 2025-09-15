@@ -115,6 +115,7 @@ typedef enum {
   GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE,
 } grpc_chttp2_write_state;
 
+// Not getting used anywhere AFAIK
 typedef enum {
   GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY,
   GRPC_CHTTP2_OPTIMIZE_FOR_THROUGHPUT,
@@ -739,17 +740,6 @@ struct grpc_chttp2_stream {
   grpc_core::Timestamp last_window_update_time =
       grpc_core::Timestamp::InfPast();
 };
-
-// EXPERIMENTAL: provide protection against overloading a server with too many
-// requests: wait for streams to be deallocated before they stop counting
-// against MAX_CONCURRENT_STREAMS
-#define GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION \
-  "grpc.http.overload_protection"
-
-// EXPERIMENTAL: Fail requests at the client if the client is over max
-// concurrent streams, so they may be retried elsewhere.
-#define GRPC_ARG_MAX_CONCURRENT_STREAMS_REJECT_ON_CLIENT \
-  "grpc.http.max_concurrent_streams_reject_on_client"
 
 /// Transport writing call flow:
 /// grpc_chttp2_initiate_write() is called anywhere that we know bytes need to

@@ -8409,8 +8409,11 @@ grpc_cc_library(
         "ext/transport/chttp2/transport/transport_common.h",
     ],
     external_deps = [
+        "absl/random",
     ],
     deps = [
+        ":shared_bit_gen",
+        ":time",
     ],
 )
 
@@ -10329,15 +10332,12 @@ grpc_cc_library(
     ],
     deps = [
         "avl",
-        "channelz_property_list",
         "dual_ref_counted",
         "histogram",
         "match",
         "per_cpu",
         "ref_counted",
-        "single_set_ptr",
         "sync",
-        "//:channelz",
         "//:gpr",
         "//:ref_counted_ptr",
     ],
