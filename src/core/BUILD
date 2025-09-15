@@ -751,11 +751,9 @@ grpc_cc_library(
 grpc_cc_library(
     name = "poll",
     external_deps = [
+        "absl/status:statusor",
         "absl/strings:str_format",
         "absl/strings",
-    ],
-    external_deps = [
-        "absl/status:statusor",
     ],
     public_hdrs = [
         "lib/promise/poll.h",
