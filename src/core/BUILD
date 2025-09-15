@@ -754,6 +754,9 @@ grpc_cc_library(
         "absl/strings:str_format",
         "absl/strings",
     ],
+    external_deps = [
+        "absl/status:statusor",
+    ],
     public_hdrs = [
         "lib/promise/poll.h",
     ],
@@ -1027,7 +1030,10 @@ grpc_cc_library(
     public_hdrs = [
         "lib/promise/detail/status.h",
     ],
-    deps = ["//:gpr_platform"],
+    deps = [
+        "grpc_check",
+        "//:gpr_platform",
+    ],
 )
 
 grpc_cc_library(
@@ -7025,6 +7031,7 @@ grpc_cc_library(
     hdrs = ["util/down_cast.h"],
     external_deps = [
         "absl/base:config",
+        "absl/log:check",
     ],
     deps = ["//:gpr"],
 )
@@ -8201,6 +8208,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "channelz_property_list",
+        "grpc_check",
         "http2_settings",
         "http2_settings_manager",
         "http2_status",
@@ -10957,6 +10965,7 @@ grpc_cc_library(
         "absl/log:check",
     ],
     deps = [
+        "grpc_check",
         "if",
         "mpsc",
         "race",
