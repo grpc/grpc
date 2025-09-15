@@ -103,7 +103,7 @@ done
 # Build the source distribution first because MANIFEST.in cannot override
 # exclusion of built shared objects among package resources (for some
 # inexplicable reason).
-${SETARCH_CMD} "${PYTHON}" -m build
+${SETARCH_CMD} "${PYTHON}" -m build --sdist
 
 # Wheel has a bug where directories don't get excluded.
 # https://bitbucket.org/pypa/wheel/issues/99/cannot-exclude-directory
