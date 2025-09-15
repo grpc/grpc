@@ -136,7 +136,7 @@ class SliceRefCount : public grpc_slice_refcount {
 }  // namespace
 
 double ContainerMemoryPressure() {
-  auto* tracker = grpc_core::ResourceTracker::Get();
+  auto* tracker = ResourceTracker::Get();
   if (tracker == nullptr) {
     return 0.0;
   }

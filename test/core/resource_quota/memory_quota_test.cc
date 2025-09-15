@@ -41,7 +41,7 @@ namespace testing {
 // Helpers
 //
 
-class MockResourceTracker : public grpc_core::ResourceTracker {
+class MockResourceTracker : public ResourceTracker {
  public:
   std::vector<std::string> GetMetrics() const override { return {"memory"}; }
 
@@ -221,7 +221,7 @@ TEST(MemoryQuotaTest, ContainerMemoryAccountedFor) {
   EXPECT_LT(original_memory_pressure, 0.01);
 
   MockResourceTracker mock_tracker;
-  grpc_core::ResourceTracker::Set(&mock_tracker);
+  ResourceTracker::Set(&mock_tracker);
 
   mock_tracker.SetMemoryPressure(1.0);
   EXPECT_EQ(owner.GetPressureInfo().instantaneous_pressure, 1.0);
@@ -229,7 +229,7 @@ TEST(MemoryQuotaTest, ContainerMemoryAccountedFor) {
   EXPECT_EQ(owner.GetPressureInfo().instantaneous_pressure,
             original_memory_pressure);
 
-  grpc_core::ResourceTracker::Set(nullptr);
+  ResourceTracker::Set(nullptr);
 }
 
 }  // namespace testing
