@@ -8309,6 +8309,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "ph2_stream",
+    hdrs = [
+        "ext/transport/chttp2/transport/stream.h",
+    ],
+    external_deps = [
+        "absl/log",
+    ],
+    deps = [
+        "call_spine",
+        "http2_transport",
+        "ref_counted",
+        "stream_data_queue",
+        ":chttp2_flow_control",
+    ],
+)
+
+grpc_cc_library(
     name = "http2_client_transport",
     srcs = [
         "ext/transport/chttp2/transport/http2_client_transport.cc",
@@ -8351,6 +8368,7 @@ grpc_cc_library(
         "metadata",
         "metadata_batch",
         "mpsc",
+        "ph2_stream",
         "ping_promise",
         "resource_quota",
         "stream_data_queue",
