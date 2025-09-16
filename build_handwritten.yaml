@@ -15,7 +15,7 @@ settings:
   core_version: 50.0.0
   csharp_major_version: 2
   g_stands_for: genuine
-  protobuf_version: 4.31.1
+  protobuf_version: 4.32.1
   supported_python_versions:
   - '3.9'
   - '3.10'

@@ -37,28 +37,10 @@ static const upb_MiniTableField envoy_type_matcher_v3_StringMatcher__fields[7] =
 const upb_MiniTable envoy__type__matcher__v3__StringMatcher_msg_init = {
   &envoy_type_matcher_v3_StringMatcher__submsgs[0],
   &envoy_type_matcher_v3_StringMatcher__fields[0],
-  UPB_SIZE(24, 32), 7, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(120), 0,
+  UPB_SIZE(24, 32), 7, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.type.matcher.v3.StringMatcher",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0010000c0100000a, &upb_pos_1bt},
-    {0x0010000c02000012, &upb_pos_1bt},
-    {0x0010000c0300001a, &upb_pos_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0010000c0500002a, &upb_pom_1bt_maxmaxb},
-    {0x000800003f000030, &upb_psb1_1bt},
-    {0x0010000c0700003a, &upb_pos_1bt},
-    {0x0010000c08010042, &upb_pom_1bt_maxmaxb},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__type__matcher__v3__StringMatcher_msg_init_ptr = &envoy__type__matcher__v3__StringMatcher_msg_init;
@@ -73,14 +55,10 @@ static const upb_MiniTableField envoy_type_matcher_v3_ListStringMatcher__fields[
 const upb_MiniTable envoy__type__matcher__v3__ListStringMatcher_msg_init = {
   &envoy_type_matcher_v3_ListStringMatcher__submsgs[0],
   &envoy_type_matcher_v3_ListStringMatcher__fields[0],
-  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.type.matcher.v3.ListStringMatcher",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000800003f00000a, &upb_prm_1bt_max64b},
-  })
 };
 
 const upb_MiniTable* envoy__type__matcher__v3__ListStringMatcher_msg_init_ptr = &envoy__type__matcher__v3__ListStringMatcher_msg_init;

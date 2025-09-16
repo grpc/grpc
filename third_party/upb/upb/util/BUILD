@@ -1,3 +1,5 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load("//bazel:proto_library.bzl", "proto_library")
 load(
     "//bazel:upb_proto_library.bzl",
@@ -19,8 +21,8 @@ cc_library(
     deps = [
         "//src/google/protobuf:descriptor_upb_c_proto",
         "//upb/base",
-        "//upb:port",
-        "//upb:reflection",
+        "//upb/port",
+        "//upb/reflection",
         "//upb/reflection:internal",
     ],
 )
@@ -48,6 +50,7 @@ cc_library(
     name = "def_to_proto_test_lib",
     testonly = 1,
     hdrs = ["def_to_proto_test.h"],
+    visibility = ["//upb:__pkg__"],
     deps = [
         ":def_to_proto",
         "//src/google/protobuf",
@@ -76,7 +79,7 @@ cc_test(
         "//src/google/protobuf/util:differencer",
         "//upb/base",
         "//upb/mem",
-        "//upb:reflection",
+        "//upb/reflection",
         "//upb/test:parse_text_proto",
         "@abseil-cpp//absl/strings",
         "@googletest//:gtest",
@@ -94,9 +97,9 @@ cc_library(
     deps = [
         "//upb/base",
         "//upb/mem",
-        "//upb:message",
-        "//upb:port",
-        "//upb:reflection",
+        "//upb/message",
+        "//upb/port",
+        "//upb/reflection",
     ],
 )
 
@@ -143,7 +146,7 @@ cc_test(
         "//upb/base",
         "//upb/json",
         "//upb/mem",
-        "//upb:reflection",
+        "//upb/reflection",
         "//upb/reflection:internal",
         "@abseil-cpp//absl/strings",
         "@googletest//:gtest",
@@ -169,16 +172,6 @@ filegroup(
             "**/*test.cc",
         ],
         exclude = ["def_to_proto_fuzz_test.cc"],
-    ),
-    visibility = ["//upb:__pkg__"],
-)
-
-filegroup(
-    name = "test_util",
-    srcs = glob(
-        [
-            "**/*test.h",
-        ],
     ),
     visibility = ["//upb:__pkg__"],
 )
