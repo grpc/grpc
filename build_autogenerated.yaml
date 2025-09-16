@@ -8671,6 +8671,7 @@ targets:
   - test/cpp/util/service_describer.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - src/proto/grpc/channelz/v2/promise.proto
   - src/proto/grpc/channelz/v2/property_list.proto
   - src/proto/grpc/reflection/v1alpha/reflection.proto
   - src/core/channelz/zviz/data.cc

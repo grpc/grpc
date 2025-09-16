@@ -713,6 +713,9 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/channelz/v2/latent_see.proto src/proto/grpc/channelz/v2/latent_see.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
+  src/proto/grpc/channelz/v2/promise.proto src/proto/grpc/channelz/v2/promise.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/channelz/v2/property_list.proto src/proto/grpc/channelz/v2/property_list.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
@@ -11298,6 +11301,10 @@ add_executable(channelz_tool_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/property_list.pb.h
