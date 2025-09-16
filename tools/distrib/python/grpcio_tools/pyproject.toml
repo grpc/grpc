@@ -40,3 +40,6 @@ Repository = "https://github.com/grpc/grpc"
 "Bug Tracker" = "https://github.com/grpc/grpc/issues"
 
 [tool.setuptools]
+ext-modules = [
+    {name = "grpc_tools._protoc_compiler", sources = ["grpc_tools/_protoc_compiler.pyx", "grpc_tools/main.cc"]}
+]
