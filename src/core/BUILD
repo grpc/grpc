@@ -8319,9 +8319,9 @@ grpc_cc_library(
     deps = [
         "call_spine",
         "http2_transport",
-        "ref_counted",
         "stream_data_queue",
         ":chttp2_flow_control",
+        "//:ref_counted_ptr",
     ],
 )
 
