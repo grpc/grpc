@@ -21,7 +21,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -31,6 +30,7 @@
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/status_flag.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 
@@ -208,7 +208,7 @@ struct TrySeqTraitsWithSfinae<
   }
   template <typename R>
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static R ReturnValue(T&& status) {
-    DCHECK(!IsStatusOk(status));
+    GRPC_DCHECK(!IsStatusOk(status));
     return FailureStatusCast<R>(status.status());
   }
   template <typename Result, typename RunNext>

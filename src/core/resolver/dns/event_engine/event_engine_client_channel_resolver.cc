@@ -29,7 +29,6 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/cleanup/cleanup.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -51,6 +50,7 @@
 #include "src/core/service_config/service_config_impl.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
@@ -421,7 +421,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     // Make sure field destroys before cleanup.
     ValidationErrors::ScopedField field(&errors_, "txt lookup");
     if (orphaned_) return;
-    CHECK(is_txt_inflight_);
+    GRPC_CHECK(is_txt_inflight_);
     is_txt_inflight_ = false;
     if (!service_config.ok()) {
       errors_.AddError(service_config.status().message());

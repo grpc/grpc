@@ -19,16 +19,16 @@
 #include <algorithm>
 #include <atomic>
 
-#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 
 std::atomic<EventLog*> EventLog::g_instance_{nullptr};
 
 EventLog::~EventLog() {
-  CHECK(g_instance_.load(std::memory_order_acquire) != this);
+  GRPC_CHECK_NE(g_instance_.load(std::memory_order_acquire), this);
 }
 
 void EventLog::BeginCollection() {

@@ -26,11 +26,11 @@
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 
@@ -201,7 +201,7 @@ void StorageSet::AddStorage(WeakRefCountedPtr<DomainStorage> storage) {
   if (map_shards_size_ == 1) {
     shard = 0;
   } else {
-    CHECK(!label.empty());
+    GRPC_CHECK(!label.empty());
     shard = absl::HashOf(label[0], this) % map_shards_size_;
   }
   MapShard& map_shard = map_shards_[shard];
@@ -235,7 +235,7 @@ MetricsQuery& MetricsQuery::OnlyMetrics(absl::Span<const std::string> metrics) {
 
 void MetricsQuery::Run(std::unique_ptr<CollectionScope> scope,
                        MetricsSink& sink) const {
-  CHECK_NE(scope.get(), nullptr);
+  GRPC_CHECK_NE(scope.get(), nullptr);
   auto selected_metrics = this->selected_metrics();
   absl::flat_hash_map<instrument_detail::QueryableDomain*,
                       std::vector<const InstrumentMetadata::Description*>>
@@ -296,7 +296,7 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names,
     void Histogram(absl::Span<const std::string> label, absl::string_view name,
                    HistogramBuckets bounds,
                    absl::Span<const uint64_t> counts) override {
-      CHECK_EQ(counts.size(), bounds.size());
+      GRPC_CHECK_EQ(counts.size(), bounds.size());
       auto it = histograms_.find(ConstructKey(label, name));
       if (it == histograms_.end()) {
         histograms_.emplace(std::piecewise_construct,
@@ -483,7 +483,7 @@ void DomainStorage::Orphaned() { domain_->DomainStorageOrphaned(this); }
 // QueryableDomain
 
 void QueryableDomain::Constructed() {
-  CHECK_EQ(prev_, nullptr);
+  GRPC_CHECK_EQ(prev_, nullptr);
   prev_ = last_;
   last_ = this;
 }
@@ -523,7 +523,7 @@ QueryableDomain::MapShard& QueryableDomain::GetMapShard(
   if (map_shards_size_ == 1) {
     shard = 0;
   } else {
-    CHECK(!label.empty());
+    GRPC_CHECK(!label.empty());
     // Use the first label to shard, all labels to index.
     shard = absl::HashOf(label[0], this) % map_shards_size_;
   }

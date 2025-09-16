@@ -51,13 +51,13 @@ grpc_cc_test(
     name = "timer_heap_test",
     srcs = ["timer_heap_test.cc"],
     external_deps = [
-        "absl/log:check",
         "gtest",
     ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
         "//src/core:bitset",
+        "//src/core:grpc_check",
         "//src/core:posix_event_engine_timer",
     ],
 )
@@ -184,7 +184,6 @@ grpc_cc_test(
     name = "traced_buffer_list_test",
     srcs = ["traced_buffer_list_test.cc"],
     external_deps = [
-        "absl/log:check",
         "gtest",
     ],
     tags = [
@@ -194,6 +193,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr",
+        "//src/core:grpc_check",
         "//src/core:iomgr_port",
         "//src/core:posix_event_engine_traced_buffer_list",
         "//src/core:time",
@@ -247,7 +247,6 @@ grpc_cc_test(
     name = "posix_endpoint_test",
     srcs = ["posix_endpoint_test.cc"],
     external_deps = [
-        "absl/log:check",
         "absl/log:log",
         "absl/status:statusor",
         "absl/strings",
@@ -270,6 +269,7 @@ grpc_cc_test(
         "//src/core:dual_ref_counted",
         "//src/core:event_engine_poller",
         "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:grpc_check",
         "//src/core:notification",
         "//src/core:posix_event_engine",
         "//src/core:posix_event_engine_closure",
@@ -317,7 +317,6 @@ grpc_cc_test(
     name = "posix_event_engine_connect_test",
     srcs = ["posix_event_engine_connect_test.cc"],
     external_deps = [
-        "absl/log:check",
         "absl/log:log",
         "absl/memory",
         "absl/status",
@@ -340,6 +339,7 @@ grpc_cc_test(
         "//src/core:channel_args_endpoint_config",
         "//src/core:event_engine_poller",
         "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:grpc_check",
         "//src/core:memory_quota",
         "//src/core:notification",
         "//src/core:posix_event_engine",
@@ -382,7 +382,6 @@ grpc_cc_test(
     name = "file_descriptor_collection_test",
     srcs = ["file_descriptor_collection_test.cc"],
     external_deps = [
-        "absl/log:check",
         "absl/log:log",
         "gtest",
     ],
@@ -394,6 +393,7 @@ grpc_cc_test(
     deps = [
         "//:grpc",
         "//src/core:experiments",
+        "//src/core:grpc_check",
         "//src/core:posix_event_engine_file_descriptor_collection",
         "//src/core:posix_event_engine_posix_interface",
         "//test/core/test_util:grpc_test_util",

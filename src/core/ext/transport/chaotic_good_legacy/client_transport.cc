@@ -26,7 +26,6 @@
 #include <tuple>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/random/random.h"
@@ -47,6 +46,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/telemetry/metrics.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
@@ -75,7 +75,7 @@ ChaoticGoodClientTransport::LookupStream(uint32_t stream_id) {
 
 auto ChaoticGoodClientTransport::PushFrameIntoCall(
     ServerInitialMetadataFrame frame, RefCountedPtr<Stream> stream) {
-  DCHECK(stream->message_reassembly.in_message_boundary());
+  GRPC_DCHECK(stream->message_reassembly.in_message_boundary());
   auto headers = ServerMetadataGrpcFromProto(frame.body);
   if (!headers.ok()) {
     LOG_EVERY_N_SEC(INFO, 10) << "Encode headers failed: " << headers.status();

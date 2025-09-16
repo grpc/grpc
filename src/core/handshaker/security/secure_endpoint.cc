@@ -38,7 +38,6 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
@@ -59,6 +58,7 @@
 #include "src/core/tsi/transport_security_grpc.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
@@ -833,7 +833,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
           // in the FinishAsyncWrites path, and EventEngine insists that one
           // write finishes before a second begins, we should never see a Write
           // call here with a non-null pending_writes_.
-          CHECK(pending_writes_ == nullptr);
+          GRPC_CHECK(pending_writes_ == nullptr);
           pending_writes_ = std::make_unique<SliceBuffer>(std::move(*data));
           frame_protector_.TraceOp("Pending",
                                    pending_writes_->c_slice_buffer());
@@ -985,7 +985,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
           grpc_core::ReleasableMutexLock lock(&impl->write_queue_mu_);
           if (impl->pending_writes_ == nullptr) {
             impl->writing_ = false;
-            DCHECK(impl->on_write_ == nullptr);
+            GRPC_DCHECK(impl->on_write_ == nullptr);
             lock.Release();
             return;
           }
@@ -993,7 +993,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
           data = std::move(impl->pending_writes_);
           impl->frame_protector_.TraceOp("data", data->c_slice_buffer());
           args = std::move(impl->last_write_args_);
-          DCHECK(impl->on_write_ != nullptr);
+          GRPC_DCHECK(impl->on_write_ != nullptr);
         }
         impl->event_engine_->Run(
             [on_write = std::move(impl->on_write_)]() mutable {
@@ -1079,7 +1079,7 @@ grpc_core::OrphanablePtr<grpc_endpoint> grpc_secure_endpoint_create(
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         event_engine_endpoint = grpc_event_engine::experimental::
             grpc_take_wrapped_event_engine_endpoint(to_wrap.release());
-    CHECK(event_engine_endpoint != nullptr);
+    GRPC_CHECK(event_engine_endpoint != nullptr);
     if (grpc_core::IsPipelinedReadSecureEndpointEnabled()) {
       return grpc_pipelined_secure_endpoint_create(
           protector, zero_copy_protector, std::move(event_engine_endpoint),

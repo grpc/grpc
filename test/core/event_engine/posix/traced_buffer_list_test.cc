@@ -23,6 +23,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
 
 #ifdef GRPC_LINUX_ERRQUEUE

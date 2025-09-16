@@ -28,7 +28,6 @@
 #include <tuple>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
@@ -42,6 +41,7 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_tracker/resource_tracker.h"
 #include "src/core/lib/slice/slice_refcount.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/mpscq.h"
 #include "src/core/util/useful.h"
 
@@ -277,9 +277,9 @@ GrpcMemoryAllocatorImpl::GrpcMemoryAllocatorImpl(
 }
 
 GrpcMemoryAllocatorImpl::~GrpcMemoryAllocatorImpl() {
-  CHECK_EQ(free_bytes_.load(std::memory_order_acquire) +
-               sizeof(GrpcMemoryAllocatorImpl),
-           taken_bytes_.load(std::memory_order_relaxed));
+  GRPC_CHECK_EQ(free_bytes_.load(std::memory_order_acquire) +
+                    sizeof(GrpcMemoryAllocatorImpl),
+                taken_bytes_.load(std::memory_order_relaxed));
   memory_quota_->Return(taken_bytes_.load(std::memory_order_relaxed));
 }
 
@@ -290,7 +290,7 @@ void GrpcMemoryAllocatorImpl::Shutdown() {
       reclamation_handles[kNumReclamationPasses];
   {
     MutexLock lock(&reclaimer_mu_);
-    CHECK(!shutdown_);
+    GRPC_CHECK(!shutdown_);
     shutdown_ = true;
     memory_quota = memory_quota_;
     for (size_t i = 0; i < kNumReclamationPasses; i++) {
@@ -302,8 +302,8 @@ void GrpcMemoryAllocatorImpl::Shutdown() {
 size_t GrpcMemoryAllocatorImpl::Reserve(MemoryRequest request) {
   // Validate request - performed here so we don't bloat the generated code with
   // inlined asserts.
-  CHECK(request.min() <= request.max());
-  CHECK(request.max() <= MemoryRequest::max_allowed_size());
+  GRPC_CHECK(request.min() <= request.max());
+  GRPC_CHECK(request.max() <= MemoryRequest::max_allowed_size());
   size_t old_free = free_bytes_.load(std::memory_order_relaxed);
 
   while (true) {
@@ -381,7 +381,7 @@ void GrpcMemoryAllocatorImpl::MaybeDonateBack() {
                                           std::memory_order_acquire)) {
       GRPC_TRACE_LOG(resource_quota, INFO)
           << "[" << this << "] Early return " << ret << " bytes";
-      CHECK(taken_bytes_.fetch_sub(ret, std::memory_order_relaxed) >= ret);
+      GRPC_CHECK(taken_bytes_.fetch_sub(ret, std::memory_order_relaxed) >= ret);
       memory_quota_->Return(ret);
       return;
     }
@@ -532,7 +532,7 @@ void BasicMemoryQuota::Start() {
   reclaimer_activity_ =
       MakeActivity(std::move(reclamation_loop), ExecCtxWakeupScheduler(),
                    [](absl::Status status) {
-                     CHECK(status.code() == absl::StatusCode::kCancelled);
+                     GRPC_CHECK(status.code() == absl::StatusCode::kCancelled);
                    });
 }
 
@@ -552,7 +552,7 @@ void BasicMemoryQuota::SetSize(size_t new_size) {
 void BasicMemoryQuota::Take(GrpcMemoryAllocatorImpl* allocator, size_t amount) {
   // If there's a request for nothing, then do nothing!
   if (amount == 0) return;
-  DCHECK(amount <= std::numeric_limits<intptr_t>::max());
+  GRPC_DCHECK(amount <= std::numeric_limits<intptr_t>::max());
   // Grab memory from the quota.
   auto prior = free_bytes_.fetch_sub(amount, std::memory_order_acq_rel);
   // If we push into overcommit, awake the reclaimer.

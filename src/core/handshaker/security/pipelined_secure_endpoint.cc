@@ -36,7 +36,6 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
@@ -56,6 +55,7 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/tsi/transport_security_grpc.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/latent_see.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
@@ -607,7 +607,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
 
       // If we're already unprotecting on another thread, we need to store the
       // buffer until we have some unprotected bytes to give it.
-      CHECK(on_read_ == nullptr);
+      GRPC_CHECK(on_read_ == nullptr);
       pending_output_buffer_ = buffer;
       on_read_ = std::move(on_read);
       last_read_args_ = std::move(args);
@@ -674,8 +674,8 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
     void StartFirstRead() ABSL_LOCKS_EXCLUDED(read_queue_mu_) {
       grpc_core::ReleasableMutexLock lock(&read_queue_mu_);
       unprotecting_ = true;
-      CHECK(protected_data_buffer_ == nullptr);
-      CHECK(unprotected_data_buffer_ == nullptr);
+      GRPC_CHECK(protected_data_buffer_ == nullptr);
+      GRPC_CHECK(unprotected_data_buffer_ == nullptr);
       // First, check if there are any leftover bytes to unprotect. If there
       // are, we can immediately start unprotecting those bytes.
       if (frame_protector_.MaybeReadLeftoverBytes(
@@ -821,7 +821,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
         {
           grpc_core::ReleasableMutexLock lock(impl->frame_protector_.read_mu());
           // Unprotect the bytes.
-          CHECK(read_buffer == nullptr);
+          GRPC_CHECK(read_buffer == nullptr);
           impl->frame_protector_.SetSourceBuffer(std::move(source_buffer));
           read_buffer = std::make_unique<SliceBuffer>();
           impl->frame_protector_.BeginRead(read_buffer->c_slice_buffer());

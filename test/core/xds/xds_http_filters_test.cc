@@ -27,7 +27,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/strip.h"
@@ -60,6 +59,7 @@
 #include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
@@ -193,7 +193,7 @@ class XdsRouterFilterTest : public XdsHttpFilterTest {
   XdsRouterFilterTest() {
     XdsExtension extension = MakeXdsExtension(Router());
     filter_ = GetFilter(extension.type);
-    CHECK_NE(filter_, nullptr);
+    GRPC_CHECK_NE(filter_, nullptr);
   }
 
   const XdsHttpFilterImpl* filter_;
@@ -277,7 +277,7 @@ class XdsFaultInjectionFilterTest : public XdsHttpFilterTest {
   XdsFaultInjectionFilterTest() {
     XdsExtension extension = MakeXdsExtension(HTTPFault());
     filter_ = GetFilter(extension.type);
-    CHECK_NE(filter_, nullptr);
+    GRPC_CHECK_NE(filter_, nullptr);
   }
 
   const XdsHttpFilterImpl* filter_;
@@ -491,7 +491,7 @@ class XdsRbacFilterTest : public XdsHttpFilterTest {
   XdsRbacFilterTest() {
     XdsExtension extension = MakeXdsExtension(RBAC());
     filter_ = GetFilter(extension.type);
-    CHECK_NE(filter_, nullptr);
+    GRPC_CHECK_NE(filter_, nullptr);
   }
 
   const XdsHttpFilterImpl* filter_;
@@ -1127,7 +1127,7 @@ class XdsStatefulSessionFilterTest : public XdsHttpFilterTest {
     registry_ = XdsHttpFilterRegistry();
     XdsExtension extension = MakeXdsExtension(StatefulSession());
     filter_ = GetFilter(extension.type);
-    CHECK_NE(filter_, nullptr);
+    GRPC_CHECK_NE(filter_, nullptr);
   }
 
   const XdsHttpFilterImpl* filter_;
@@ -1484,7 +1484,7 @@ class XdsGcpAuthnFilterTest : public XdsHttpFilterTest {
   XdsGcpAuthnFilterTest() {
     XdsExtension extension = MakeXdsExtension(GcpAuthnFilterConfig());
     filter_ = GetFilter(extension.type);
-    CHECK_NE(filter_, nullptr) << extension.type;
+    GRPC_CHECK_NE(filter_, nullptr) << extension.type;
   }
 
   const XdsHttpFilterImpl* filter_;

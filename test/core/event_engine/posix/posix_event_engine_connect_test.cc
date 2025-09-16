@@ -29,7 +29,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/status/status.h"
@@ -44,6 +43,7 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/wait_for_single_owner.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
@@ -145,7 +145,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectTimeoutOrRstTest) {
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
-  CHECK_OK(resolved_addr);
+  GRPC_CHECK_OK(resolved_addr);
   std::shared_ptr<EventEngine> posix_ee =
       PosixEventEngine::MakePosixEventEngine();
   std::string resolved_addr_str =
@@ -176,7 +176,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
-  CHECK_OK(resolved_addr);
+  GRPC_CHECK_OK(resolved_addr);
   std::shared_ptr<EventEngine> posix_ee =
       PosixEventEngine::MakePosixEventEngine();
   std::string resolved_addr_str =

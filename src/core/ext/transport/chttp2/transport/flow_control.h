@@ -29,7 +29,6 @@
 #include <utility>
 
 #include "absl/functional/function_ref.h"
-#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "src/core/channelz/property_list.h"
@@ -38,6 +37,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/transport/bdp_estimator.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
 
 namespace grpc {
@@ -139,7 +139,7 @@ class GRPC_MUST_USE_RESULT FlowControlAction {
   static const char* UrgencyString(Urgency u);
   std::string DebugString() const;
 
-  void AssertEmpty() { CHECK(*this == FlowControlAction()); }
+  void AssertEmpty() { GRPC_CHECK(*this == FlowControlAction()); }
 
   bool operator==(const FlowControlAction& other) const {
     return send_stream_update_ == other.send_stream_update_ &&
@@ -202,7 +202,7 @@ class TransportFlowControl final {
   class IncomingUpdateContext {
    public:
     explicit IncomingUpdateContext(TransportFlowControl* tfc) : tfc_(tfc) {}
-    ~IncomingUpdateContext() { CHECK_EQ(tfc_, nullptr); }
+    ~IncomingUpdateContext() { GRPC_CHECK_EQ(tfc_, nullptr); }
 
     IncomingUpdateContext(const IncomingUpdateContext&) = delete;
     IncomingUpdateContext& operator=(const IncomingUpdateContext&) = delete;

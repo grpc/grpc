@@ -21,12 +21,12 @@
 
 #include <queue>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -62,7 +62,7 @@ class WritableStreams {
     // BlockedOnTransportFlowControl. The reason being there is no merit in
     // re-adding the stream to mpsc queue while it can be immediately enqueued
     // to the prioritized queue.
-    DCHECK(priority != StreamPriority::kWaitForTransportFlowControl);
+    GRPC_DCHECK(priority != StreamPriority::kWaitForTransportFlowControl);
     StatusFlag status = sender_.UnbufferedImmediateSend(
         StreamIDAndPriority{stream_id, priority}, /*tokens*/ 1);
     GRPC_WRITABLE_STREAMS_DEBUG << "UnbufferedImmediateEnqueue stream id "
@@ -145,7 +145,7 @@ class WritableStreams {
                         // ideally be fine. But in case if queue_.NextBatch
                         // spuriously returns an empty batch, move to a Loop
                         // to avoid this.
-                        DCHECK(stream_id.has_value());
+                        GRPC_DCHECK(stream_id.has_value());
                         GRPC_WRITABLE_STREAMS_DEBUG << "Next stream id "
                                                     << stream_id.value();
                         return stream_id.value();

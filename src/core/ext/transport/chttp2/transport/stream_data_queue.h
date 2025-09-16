@@ -21,11 +21,11 @@
 
 #include <queue>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/writable_streams.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -219,10 +219,10 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   absl::StatusOr<EnqueueResult> EnqueueInitialMetadata(
       MetadataHandle&& metadata) {
     MutexLock lock(&mu_);
-    DCHECK(!is_initial_metadata_queued_);
-    DCHECK(!is_trailing_metadata_or_half_close_queued_);
-    DCHECK(metadata != nullptr);
-    DCHECK(!is_reset_stream_queued_);
+    GRPC_DCHECK(!is_initial_metadata_queued_);
+    GRPC_DCHECK(!is_trailing_metadata_or_half_close_queued_);
+    GRPC_DCHECK(metadata != nullptr);
+    GRPC_DCHECK(!is_reset_stream_queued_);
 
     is_initial_metadata_queued_ = true;
     absl::StatusOr<bool> result = queue_.ImmediateEnqueue(
@@ -245,10 +245,10 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   absl::StatusOr<EnqueueResult> EnqueueTrailingMetadata(
       MetadataHandle&& metadata) {
     MutexLock lock(&mu_);
-    DCHECK(metadata != nullptr);
-    DCHECK(!is_reset_stream_queued_);
-    DCHECK(!is_client_);
-    DCHECK(!is_trailing_metadata_or_half_close_queued_);
+    GRPC_DCHECK(metadata != nullptr);
+    GRPC_DCHECK(!is_reset_stream_queued_);
+    GRPC_DCHECK(!is_client_);
+    GRPC_DCHECK(!is_trailing_metadata_or_half_close_queued_);
 
     is_trailing_metadata_or_half_close_queued_ = true;
     absl::StatusOr<bool> result = queue_.ImmediateEnqueue(
@@ -270,12 +270,13 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // 2. MUST not be called after trailing metadata is enqueued.
   // 3. This function is thread safe.
   auto EnqueueMessage(MessageHandle&& message) {
-    DCHECK(is_initial_metadata_queued_);
-    DCHECK(message != nullptr);
-    DCHECK(!is_reset_stream_queued_);
-    DCHECK_LE(message->payload()->Length(),
-              std::numeric_limits<uint32_t>::max() - kGrpcHeaderSizeInBytes);
-    DCHECK(!is_trailing_metadata_or_half_close_queued_);
+    GRPC_DCHECK(is_initial_metadata_queued_);
+    GRPC_DCHECK(message != nullptr);
+    GRPC_DCHECK(!is_reset_stream_queued_);
+    GRPC_DCHECK_LE(
+        message->payload()->Length(),
+        std::numeric_limits<uint32_t>::max() - kGrpcHeaderSizeInBytes);
+    GRPC_DCHECK(!is_trailing_metadata_or_half_close_queued_);
 
     const uint32_t tokens =
         message->payload()->Length() + kGrpcHeaderSizeInBytes;
@@ -305,10 +306,10 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // 3. This function is thread safe.
   absl::StatusOr<EnqueueResult> EnqueueHalfClosed() {
     MutexLock lock(&mu_);
-    DCHECK(is_initial_metadata_queued_);
-    DCHECK(is_client_);
-    DCHECK(!is_reset_stream_queued_);
-    DCHECK(!is_trailing_metadata_or_half_close_queued_);
+    GRPC_DCHECK(is_initial_metadata_queued_);
+    GRPC_DCHECK(is_client_);
+    GRPC_DCHECK(!is_reset_stream_queued_);
+    GRPC_DCHECK(!is_trailing_metadata_or_half_close_queued_);
 
     is_trailing_metadata_or_half_close_queued_ = true;
     absl::StatusOr<bool> result =
@@ -329,8 +330,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // 3. This function is thread safe.
   absl::StatusOr<EnqueueResult> EnqueueResetStream(const uint32_t error_code) {
     MutexLock lock(&mu_);
-    DCHECK(is_initial_metadata_queued_);
-    DCHECK(!is_reset_stream_queued_);
+    GRPC_DCHECK(is_initial_metadata_queued_);
+    GRPC_DCHECK(!is_reset_stream_queued_);
 
     GRPC_STREAM_DATA_QUEUE_DEBUG
         << "Immediate enqueueing reset stream for stream " << stream_id_
@@ -522,8 +523,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
    private:
     inline void MaybeAppendInitialMetadataFrames() {
       while (queue_.initial_metadata_disassembler_.HasMoreData()) {
-        DCHECK(!(dequeue_flags_ & kHalfCloseDequeued));
-        DCHECK(!(dequeue_flags_ & kResetStreamDequeued));
+        GRPC_DCHECK(!(dequeue_flags_ & kHalfCloseDequeued));
+        GRPC_DCHECK(!(dequeue_flags_ & kResetStreamDequeued));
         // TODO(akshitpatel) : [PH2][P2] : I do not think we need this.
         // HasMoreData() should be enough.
         bool is_end_headers = false;
@@ -534,10 +535,10 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
 
     inline void MaybeAppendTrailingMetadataFrames() {
       while (queue_.trailing_metadata_disassembler_.HasMoreData()) {
-        DCHECK(!(dequeue_flags_ & kHalfCloseDequeued));
-        DCHECK_EQ(queue_.message_disassembler_.GetBufferedLength(), 0u);
-        DCHECK_EQ(queue_.initial_metadata_disassembler_.GetBufferedLength(),
-                  0u);
+        GRPC_DCHECK(!(dequeue_flags_ & kHalfCloseDequeued));
+        GRPC_DCHECK_EQ(queue_.message_disassembler_.GetBufferedLength(), 0u);
+        GRPC_DCHECK_EQ(
+            queue_.initial_metadata_disassembler_.GetBufferedLength(), 0u);
         // TODO(akshitpatel) : [PH2][P2] : I do not think we need this.
         // HasMoreData() should be enough.
         bool is_end_headers = false;
@@ -548,11 +549,11 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
 
     inline void MaybeAppendEndOfStreamFrame() {
       if (dequeue_flags_ & kHalfCloseDequeued) {
-        DCHECK_EQ(queue_.message_disassembler_.GetBufferedLength(), 0u);
-        DCHECK_EQ(queue_.initial_metadata_disassembler_.GetBufferedLength(),
-                  0u);
-        DCHECK_EQ(queue_.trailing_metadata_disassembler_.GetBufferedLength(),
-                  0u);
+        GRPC_DCHECK_EQ(queue_.message_disassembler_.GetBufferedLength(), 0u);
+        GRPC_DCHECK_EQ(
+            queue_.initial_metadata_disassembler_.GetBufferedLength(), 0u);
+        GRPC_DCHECK_EQ(
+            queue_.trailing_metadata_disassembler_.GetBufferedLength(), 0u);
         AppendFrame(Http2DataFrame{/*stream_id=*/queue_.stream_id_,
                                    /*end_stream=*/true,
                                    /*payload=*/SliceBuffer()});
@@ -562,8 +563,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     inline void MaybeAppendMessageFrames() {
       while (queue_.message_disassembler_.GetBufferedLength() > 0 &&
              fc_tokens_available_ > 0) {
-        DCHECK_EQ(queue_.initial_metadata_disassembler_.GetBufferedLength(),
-                  0u);
+        GRPC_DCHECK_EQ(
+            queue_.initial_metadata_disassembler_.GetBufferedLength(), 0u);
         Http2DataFrame frame = queue_.message_disassembler_.GenerateNextFrame(
             queue_.stream_id_,
             std::min(fc_tokens_available_, max_frame_length_));
@@ -579,11 +580,11 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
       if (dequeue_flags_ & kResetStreamDequeued) {
         // TODO(akshitpatel) : [PH2][P2] : Consider if we can send reset stream
         // frame without flushing all the messages enqueued until now.
-        DCHECK_EQ(queue_.message_disassembler_.GetBufferedLength(), 0u);
-        DCHECK_EQ(queue_.initial_metadata_disassembler_.GetBufferedLength(),
-                  0u);
-        DCHECK_EQ(queue_.trailing_metadata_disassembler_.GetBufferedLength(),
-                  0u);
+        GRPC_DCHECK_EQ(queue_.message_disassembler_.GetBufferedLength(), 0u);
+        GRPC_DCHECK_EQ(
+            queue_.initial_metadata_disassembler_.GetBufferedLength(), 0u);
+        GRPC_DCHECK_EQ(
+            queue_.trailing_metadata_disassembler_.GetBufferedLength(), 0u);
         AppendFrame(Http2RstStreamFrame{queue_.stream_id_, error_code_});
       }
     }

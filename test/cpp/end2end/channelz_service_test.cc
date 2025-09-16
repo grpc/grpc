@@ -31,7 +31,6 @@
 
 #include <memory>
 
-#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -40,6 +39,7 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/wait_for_single_owner.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/channelz/channelz.grpc.pb.h"
@@ -98,7 +98,7 @@ class Proxy : public grpc::testing::EchoTestService::Service {
     std::unique_ptr<ClientContext> client_context =
         ClientContext::FromServerContext(*server_context);
     size_t idx = request->param().backend_channel_idx();
-    CHECK_LT(idx, stubs_.size());
+    GRPC_CHECK_LT(idx, stubs_.size());
     return stubs_[idx]->Echo(client_context.get(), *request, response);
   }
 

@@ -23,7 +23,6 @@
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
-#include "absl/log/check.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"

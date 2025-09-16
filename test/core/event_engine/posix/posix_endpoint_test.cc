@@ -27,7 +27,6 @@
 #include <type_traits>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -46,6 +45,7 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/dual_ref_counted.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/wait_for_single_owner.h"
@@ -83,7 +83,7 @@ std::list<Connection> CreateConnectedEndpoints(
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
-  CHECK_OK(resolved_addr);
+  GRPC_CHECK_OK(resolved_addr);
   std::unique_ptr<EventEngine::Endpoint> server_endpoint;
   grpc_core::Notification* server_signal = new grpc_core::Notification();
 
@@ -109,7 +109,7 @@ std::list<Connection> CreateConnectedEndpoints(
       std::make_unique<grpc_core::MemoryQuota>(
           grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
               "bar")));
-  CHECK_OK(listener);
+  GRPC_CHECK_OK(listener);
 
   EXPECT_TRUE((*listener)->Bind(*resolved_addr).ok());
   EXPECT_TRUE((*listener)->Start().ok());

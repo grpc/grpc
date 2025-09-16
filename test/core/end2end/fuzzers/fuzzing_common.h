@@ -29,10 +29,10 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "absl/types/span.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
@@ -62,7 +62,7 @@ inline Validator* MakeValidator(std::function<void(bool)> impl) {
 
 inline Validator* AssertSuccessAndDecrement(int* counter) {
   return MakeValidator([counter](bool success) {
-    CHECK(success);
+    GRPC_CHECK(success);
     --*counter;
   });
 }
@@ -98,7 +98,7 @@ class BasicFuzzer {
   void ShutdownCalls();
   void ResetServerState() {
     server_shutdown_ = false;
-    CHECK_EQ(pending_server_shutdowns_, 0);
+    GRPC_CHECK_EQ(pending_server_shutdowns_, 0);
   }
 
   // Poll any created completion queue to drive the RPC forward.
