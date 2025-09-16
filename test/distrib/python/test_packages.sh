@@ -92,5 +92,6 @@ at_least_one_installs "${OBSERVABILITY_ARCHIVES[@]}"
 # code from it and then use the generated code from distribtest.py
 # Run the test from a different directory to avoid importing from local source
 cd /tmp && "$PYTHON" -m grpc_tools.protoc --help
+cd -
 
 "$PYTHON" distribtest.py
