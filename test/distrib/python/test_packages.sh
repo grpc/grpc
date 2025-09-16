@@ -90,8 +90,6 @@ at_least_one_installs "${OBSERVABILITY_ARCHIVES[@]}"
 
 # TODO(jtattermusch): add a .proto file to the distribtest, generate python
 # code from it and then use the generated code from distribtest.py
-ARTIFACT_DIR="$EXTERNAL_GIT_ROOT/input_artifacts"
-"$PYTHON" -m pip install grpcio-tools --no-index --find-links "file://$ARTIFACT_DIR/"
 "$PYTHON" -m grpc_tools.protoc --help
 
 "$PYTHON" distribtest.py

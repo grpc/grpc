@@ -39,3 +39,9 @@ Repository = "https://github.com/grpc/grpc"
 "Source Code" = "https://github.com/grpc/grpc/tree/master/tools/distrib/python/grpcio_tools"
 "Bug Tracker" = "https://github.com/grpc/grpc/issues"
 
+[tool.setuptools]
+packages = {find = {where = ["."]}}
+
+[tool.setuptools.package-data]
+"grpc_tools" = ["_proto/*.proto"]
+
