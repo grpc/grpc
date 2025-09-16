@@ -308,6 +308,13 @@ def get_package_data():
     return package_data()
 
 
+# This function is called by setuptools to get the cmdclass
+def get_cmdclass():
+    return {
+        "build_ext": BuildExt,
+    }
+
+
 # Fallback: if this file is run directly, use the old setuptools.setup approach
 if __name__ == "__main__":
     try:

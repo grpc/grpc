@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0.0", "wheel", "cython>=3.1.1", "python_version"]
+requires = ["setuptools>=61.0.0", "wheel", "cython>=3.1.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -40,6 +40,13 @@ Repository = "https://github.com/grpc/grpc"
 "Bug Tracker" = "https://github.com/grpc/grpc/issues"
 
 [tool.setuptools]
-ext-modules = [
-    {name = "grpc_tools._protoc_compiler", sources = ["grpc_tools/_protoc_compiler.pyx", "grpc_tools/main.cc"]}
-]
+# Use the setup.py functions for complex extension module configuration
+# The ext-modules will be provided by get_ext_modules() function in setup.py
+package-data = {grpc_tools = ["_proto/*"]}
+
+[tool.setuptools.dynamic]
+version = {attr = "grpc_version.VERSION"}
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["grpc_tools*"]
