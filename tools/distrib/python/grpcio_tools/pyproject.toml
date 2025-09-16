@@ -41,6 +41,6 @@ Repository = "https://github.com/grpc/grpc"
 
 [tool.setuptools]
 packages = { find = { where = ["."] } }
-ext_modules = "setup:get_ext_modules"
-package_data = "setup:get_package_data"
+ext-modules = "setup:get_ext_modules"
+package-data = "setup:get_package_data"
 cmdclass = { build_ext = "setup.BuildExt" }
