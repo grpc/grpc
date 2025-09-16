@@ -39,11 +39,3 @@ Repository = "https://github.com/grpc/grpc"
 "Source Code" = "https://github.com/grpc/grpc/tree/master/tools/distrib/python/grpcio_tools"
 "Bug Tracker" = "https://github.com/grpc/grpc/issues"
 
-[tool.setuptools]
-packages = {find = {where = ["."]}}
-
-[tool.setuptools.dynamic]
-ext-modules = "setup:get_ext_modules"
-package-data = "setup:get_package_data"
-cmdclass = "setup:get_cmdclass"
-

@@ -313,3 +313,66 @@ def get_cmdclass():
     return {
         "build_ext": BuildExt,
     }
+
+
+# Fallback: if this file is run directly, use the old setuptools.setup approach
+if __name__ == "__main__":
+    try:
+        import grpc_version
+    except ImportError:
+        # Fallback when grpc_version is not available in build environment
+        class grpc_version:
+            VERSION = "1.76.0.dev0"
+    
+    try:
+        import python_version
+        # Check if it has the required attributes (local module vs PyPI package)
+        if not hasattr(python_version, 'MIN_PYTHON_VERSION'):
+            raise ImportError("python_version missing required attributes")
+    except ImportError:
+        # Fallback when python_version is not available or doesn't have required attributes
+        class python_version:
+            MIN_PYTHON_VERSION = 3.9
+            SUPPORTED_PYTHON_VERSIONS = ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+            MAX_PYTHON_VERSION = 3.14
+
+    CLASSIFIERS = [
+        "Development Status :: 5 - Production/Stable",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: Apache Software License",
+    ]
+
+    setuptools.setup(
+        name="grpcio-tools",
+        version=grpc_version.VERSION,
+        description="Protobuf code generator for gRPC",
+        long_description_content_type="text/x-rst",
+        long_description=open("README.rst", "r").read(),
+        author="The gRPC Authors",
+        author_email="grpc-io@googlegroups.com",
+        url="https://grpc.io",
+        project_urls={
+            "Source Code": "https://github.com/grpc/grpc/tree/master/tools/distrib/python/grpcio_tools",
+            "Bug Tracker": "https://github.com/grpc/grpc/issues",
+        },
+        license="Apache License 2.0",
+        classifiers=CLASSIFIERS,
+        ext_modules=extension_modules(),
+        packages=setuptools.find_packages("."),
+        python_requires=f">={python_version.MIN_PYTHON_VERSION}",
+        install_requires=[
+            "protobuf>=6.31.1,<7.0.0",
+            "setuptools",
+            # Note: grpcio dependency is handled by the build process
+        ],
+        package_data=package_data(),
+        cmdclass={
+            "build_ext": BuildExt,
+        },
+        entry_points={
+            "console_scripts": [
+                "python-grpc-tools-protoc = grpc_tools.protoc:entrypoint",
+            ],
+        },
+    )
