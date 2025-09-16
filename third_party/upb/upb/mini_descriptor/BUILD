@@ -31,13 +31,7 @@ cc_library(
         "//upb/mini_table",
         "//upb/mini_table:internal",
         "//upb/port",
-    ] + select({
-        "//upb:fasttable_enabled_setting": [
-            "//upb/wire/decode_fast:function_array",
-            "//upb/wire/decode_fast:select",
-        ],
-        "//conditions:default": [],
-    }),
+    ],
 )
 
 cc_library(

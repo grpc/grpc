@@ -97,12 +97,7 @@ cc_library(
         "//upb/mini_descriptor",
         "//upb/mini_table",
         "//upb/wire",
-    ] + select({
-        ":fasttable_enabled_setting": [
-            "//upb/wire/decode_fast:field_parsers",
-        ],
-        "//conditions:default": [],
-    }),
+    ],
 )
 
 # Common support code for C++ generated code.

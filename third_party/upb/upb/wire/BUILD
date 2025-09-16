@@ -70,12 +70,7 @@ cc_library(
         "//upb/mini_table",
         "//upb/mini_table:internal",
         "//upb/port",
-    ] + select({
-        "//upb:fasttable_enabled_setting": [
-            "//upb/wire/decode_fast:dispatch",
-        ],
-        "//conditions:default": [],
-    }),
+    ],
 )
 
 cc_test(
