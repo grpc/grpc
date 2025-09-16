@@ -132,6 +132,7 @@ grpc_cc_library(
         ":tool_options",
         "//:grpc_base",
         "//src/core:zviz_entity",
+        "//src/core:zviz_format_entity_list",
         "//src/core:zviz_layout_text",
         "//test/cpp/util:grpc_cli_utils",
     ],

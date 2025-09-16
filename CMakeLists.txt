@@ -11309,8 +11309,10 @@ add_executable(channelz_tool_test
   src/core/channelz/zviz/data.cc
   src/core/channelz/zviz/entity.cc
   src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/format_entity_list.cc
   src/core/channelz/zviz/layout.cc
   src/core/channelz/zviz/layout_text.cc
+  src/core/channelz/zviz/property_list.cc
   src/core/channelz/zviz/strings.cc
   src/core/channelz/zviz/style.cc
   src/core/channelz/zviz/trace.cc

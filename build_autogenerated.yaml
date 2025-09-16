@@ -8610,8 +8610,10 @@ targets:
   - src/core/channelz/zviz/data.h
   - src/core/channelz/zviz/entity.h
   - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/format_entity_list.h
   - src/core/channelz/zviz/layout.h
   - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/property_list.h
   - src/core/channelz/zviz/strings.h
   - src/core/channelz/zviz/style.h
   - src/core/channelz/zviz/trace.h
@@ -8674,8 +8676,10 @@ targets:
   - src/core/channelz/zviz/data.cc
   - src/core/channelz/zviz/entity.cc
   - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/format_entity_list.cc
   - src/core/channelz/zviz/layout.cc
   - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/property_list.cc
   - src/core/channelz/zviz/strings.cc
   - src/core/channelz/zviz/style.cc
   - src/core/channelz/zviz/trace.cc

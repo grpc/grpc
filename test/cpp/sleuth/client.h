@@ -38,6 +38,9 @@ class Client {
   absl::StatusOr<std::vector<grpc::channelz::v2::Entity>>
   QueryAllChannelzEntities();
 
+  absl::StatusOr<std::vector<grpc::channelz::v2::Entity>>
+  QueryAllChannelzEntitiesOfKind(absl::string_view entity_kind);
+
   absl::Status QueryTrace(
       int64_t entity_id, absl::string_view trace_name,
       absl::FunctionRef<
