@@ -90,6 +90,7 @@ at_least_one_installs "${OBSERVABILITY_ARCHIVES[@]}"
 
 # TODO(jtattermusch): add a .proto file to the distribtest, generate python
 # code from it and then use the generated code from distribtest.py
-"$PYTHON" -m grpc_tools.protoc --help
+# Run the test from a different directory to avoid importing from local source
+cd /tmp && "$PYTHON" -m grpc_tools.protoc --help
 
 "$PYTHON" distribtest.py
