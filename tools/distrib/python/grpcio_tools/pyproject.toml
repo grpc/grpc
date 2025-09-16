@@ -40,7 +40,7 @@ Repository = "https://github.com/grpc/grpc"
 "Bug Tracker" = "https://github.com/grpc/grpc/issues"
 
 
-[tool.setuptools.setup-kwargs]
+[tool.setuptools]
 ext_modules = "setup:get_ext_modules"
 package_data = "setup:get_package_data"
 cmdclass = "setup:get_cmdclass"
