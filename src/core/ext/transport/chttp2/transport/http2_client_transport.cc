@@ -40,6 +40,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
+#include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -224,8 +225,7 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
       << ", payload=" << frame.payload.JoinIntoString() << " }";
   ping_manager_.ReceivedDataFrame();
 
-  RefCountedPtr<Http2ClientTransport::Stream> stream =
-      LookupStream(frame.stream_id);
+  RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
   if (stream == nullptr) {
     // TODO(tjagtap) : [PH2][P3] : Implement this.
     // RFC9113 : The identifier of a newly established stream MUST be
@@ -1107,8 +1107,7 @@ Http2ClientTransport::~Http2ClientTransport() {
 ///////////////////////////////////////////////////////////////////////////////
 // Stream Related Operations
 
-RefCountedPtr<Http2ClientTransport::Stream> Http2ClientTransport::LookupStream(
-    uint32_t stream_id) {
+RefCountedPtr<Stream> Http2ClientTransport::LookupStream(uint32_t stream_id) {
   MutexLock lock(&transport_mutex_);
   auto it = stream_list_.find(stream_id);
   if (it == stream_list_.end()) {

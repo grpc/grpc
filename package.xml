@@ -435,6 +435,7 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_promise.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_rate_policy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_rate_policy.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_data_queue.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_lists.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_lists.h" role="src" />
