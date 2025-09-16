@@ -598,6 +598,10 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
                   .Set("ack_pings", t->ack_pings)
                   .Set("keepalive_incoming_data_wanted",
                        t->keepalive_incoming_data_wanted)
+                  .Set("max_concurrent_streams_local",
+                       t->settings.local().max_concurrent_streams())
+                  .Set("max_concurrent_streams_acked",
+                       t->settings.acked().max_concurrent_streams())
                   .Set("max_concurrent_streams_overload_protection",
                        t->max_concurrent_streams_overload_protection)
                   .Set("max_concurrent_streams_reject_on_client",
