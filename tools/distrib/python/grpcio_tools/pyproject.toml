@@ -42,9 +42,6 @@ Repository = "https://github.com/grpc/grpc"
 [tool.setuptools]
 packages = {find = {where = ["."]}}
 
-[tool.setuptools.package-data]
-"grpc_tools" = ["_proto/*.proto"]
-
 [tool.setuptools.dynamic]
 ext-modules = "setup:get_ext_modules"
 package-data = "setup:get_package_data"
