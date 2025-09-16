@@ -16,7 +16,6 @@ import errno
 import os
 import os.path
 import platform
-import re
 import shlex
 import shutil
 import subprocess
@@ -31,7 +30,6 @@ from setuptools.command import build_ext
 # TODO(atash) add flag to disable Cython use
 
 _PACKAGE_PATH = os.path.realpath(os.path.dirname(__file__))
-_README_PATH = os.path.join(_PACKAGE_PATH, "README.rst")
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.abspath("."))
@@ -39,23 +37,7 @@ sys.path.insert(0, os.path.abspath("."))
 import _parallel_compile_patch
 import _spawn_patch
 import protoc_lib_deps
-try:
-    import python_version
-    # Check if it has the required attributes (local module vs PyPI package)
-    if not hasattr(python_version, 'MIN_PYTHON_VERSION'):
-        raise ImportError("python_version missing required attributes")
-except ImportError:
-    # Fallback when python_version is not available or doesn't have required attributes
-    class python_version:
-        MIN_PYTHON_VERSION = 3.9
-        SUPPORTED_PYTHON_VERSIONS = ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
-        MAX_PYTHON_VERSION = 3.14
-try:
-    import grpc_version
-except ImportError:
-    # Fallback when grpc_version is not available in build environment
-    class grpc_version:
-        VERSION = "1.76.0.dev0"
+
 _EXT_INIT_SYMBOL = None
 if sys.version_info[0] == 2:
     _EXT_INIT_SYMBOL = "init_protoc_compiler"
@@ -64,15 +46,6 @@ else:
 
 _parallel_compile_patch.monkeypatch_compile_maybe()
 _spawn_patch.monkeypatch_spawn()
-
-CLASSIFIERS = [
-    "Development Status :: 5 - Production/Stable",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: Apache Software License",
-]
-
-PY3 = sys.version_info.major == 3
 
 
 def _env_bool_value(env_name, default):
@@ -86,12 +59,6 @@ def _env_bool_value(env_name, default):
 BUILD_WITH_CYTHON = _env_bool_value("GRPC_PYTHON_BUILD_WITH_CYTHON", "False")
 
 # Export this variable to force building the python extension with a statically linked libstdc++.
-# At least on linux, this is normally not needed as we can build manylinux-compatible wheels on linux just fine
-# without statically linking libstdc++ (which leads to a slight increase in the wheel size).
-# This option is useful when crosscompiling wheels for aarch64 where
-# it's difficult to ensure that the crosscompilation toolchain has a high-enough version
-# of GCC (we require >=5.1) but still uses old-enough libstdc++ symbols.
-# TODO(jtattermusch): remove this workaround once issues with crosscompiler version are resolved.
 BUILD_WITH_STATIC_LIBSTDCXX = _env_bool_value(
     "GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX", "False"
 )
@@ -114,7 +81,6 @@ def check_linker_need_libatomic():
     if cpp_test.returncode == 0:
         return False
     # Double-check to see if -latomic actually can solve the problem.
-    # https://github.com/grpc/grpc/issues/22491
     cpp_test = subprocess.Popen(
         [cxx, "-x", "c++", "-std=c++17", "-", "-latomic"],
         stdin=PIPE,
@@ -165,10 +131,6 @@ class BuildExt(build_ext.build_ext):
 
 # When building extensions for macOS on a system running macOS 11.0 or newer,
 # make sure they target macOS 11.0 or newer to use C++17 stdlib properly.
-# This overrides the default behavior of distutils, which targets the macOS
-# version Python was built on. You can further customize the target macOS
-# version by setting the MACOSX_DEPLOYMENT_TARGET environment variable before
-# running setup.py.
 if sys.platform == "darwin":
     if "MACOSX_DEPLOYMENT_TARGET" not in os.environ:
         target_ver = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET")
@@ -184,11 +146,6 @@ if sys.platform == "darwin":
 
 # There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
 # entirely ignored/dropped/forgotten by distutils and its Cygwin/MinGW support.
-# We use these environment variables to thus get around that without locking
-# ourselves in w.r.t. the multitude of operating systems this ought to build on.
-# We can also use these variables as a way to inject environment-specific
-# compiler/linker flags. We assume GCC-like compilers and/or MinGW as a
-# reasonable default.
 EXTRA_ENV_COMPILE_ARGS = os.environ.get("GRPC_PYTHON_CFLAGS", None)
 EXTRA_ENV_LINK_ARGS = os.environ.get("GRPC_PYTHON_LDFLAGS", None)
 if EXTRA_ENV_COMPILE_ARGS is None:
@@ -341,36 +298,18 @@ def extension_modules():
         return extensions
 
 
-setuptools.setup(
-    name="grpcio-tools",
-    version=grpc_version.VERSION,
-    description="Protobuf code generator for gRPC",
-    long_description_content_type="text/x-rst",
-    long_description=open(_README_PATH, "r").read(),
-    author="The gRPC Authors",
-    author_email="grpc-io@googlegroups.com",
-    url="https://grpc.io",
-    project_urls={
-        "Source Code": "https://github.com/grpc/grpc/tree/master/tools/distrib/python/grpcio_tools",
-        "Bug Tracker": "https://github.com/grpc/grpc/issues",
-    },
-    license="Apache License 2.0",
-    classifiers=CLASSIFIERS,
-    ext_modules=extension_modules(),
-    packages=setuptools.find_packages("."),
-    python_requires=f">={python_version.MIN_PYTHON_VERSION}",
-    install_requires=[
-        "protobuf>=6.31.1,<7.0.0",
-        "setuptools",
-        # Note: grpcio dependency is handled by the build process
-    ],
-    package_data=package_data(),
-    cmdclass={
+# This function is called by setuptools to get the extension modules
+def get_ext_modules():
+    return extension_modules()
+
+
+# This function is called by setuptools to get the package data
+def get_package_data():
+    return package_data()
+
+
+# This function is called by setuptools to get the cmdclass
+def get_cmdclass():
+    return {
         "build_ext": BuildExt,
-    },
-    entry_points={
-        "console_scripts": [
-            "python-grpc-tools-protoc = grpc_tools.protoc:entrypoint",
-        ],
-    },
-)
+    }
