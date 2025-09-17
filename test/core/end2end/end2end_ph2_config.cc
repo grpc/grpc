@@ -113,6 +113,7 @@ namespace grpc_core {
   "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnFirst"                    \
   "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnSecond"                   \
   "|Http2SingleHopTests.MaxConcurrentStreamsRejectOnClient"                    \
+  "|Http2SingleHopTests.ServerMaxConcurrentStreams"                            \
   "|Http2SingleHopTests.SimpleDelayedRequestShort"
 
 #define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE               \
