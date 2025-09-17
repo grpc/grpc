@@ -110,15 +110,23 @@ struct Stream : public RefCounted<Stream> {
         DCHECK(false) << "MarkHalfClosedLocal called for an idle stream";
         break;
       case HttpStreamState::kOpen:
+        GRPC_HTTP2_CLIENT_DLOG
+            << "Http2ClientTransport::Stream::MarkHalfClosedLocal stream_id="
+            << stream_id << " transitioning to kHalfClosedLocal";
         stream_state = HttpStreamState::kHalfClosedLocal;
         break;
       case HttpStreamState::kHalfClosedRemote:
+        GRPC_HTTP2_CLIENT_DLOG
+            << "Http2ClientTransport::Stream::MarkHalfClosedLocal stream_id="
+            << stream_id << " transitioning to kClosed";
         stream_state = HttpStreamState::kClosed;
         break;
       case HttpStreamState::kHalfClosedLocal:
         break;
       case HttpStreamState::kClosed:
-        DCHECK(false) << "MarkHalfClosedLocal called for a closed stream";
+        GRPC_HTTP2_CLIENT_DLOG
+            << "Http2ClientTransport::Stream::MarkHalfClosedLocal stream_id="
+            << stream_id << " already closed";
         break;
     }
   }
@@ -129,15 +137,23 @@ struct Stream : public RefCounted<Stream> {
         DCHECK(false) << "MarkHalfClosedRemote called for an idle stream";
         break;
       case HttpStreamState::kOpen:
+        GRPC_HTTP2_CLIENT_DLOG
+            << "Http2ClientTransport::Stream::MarkHalfClosedRemote stream_id="
+            << stream_id << " transitioning to kHalfClosedRemote";
         stream_state = HttpStreamState::kHalfClosedRemote;
         break;
       case HttpStreamState::kHalfClosedLocal:
+        GRPC_HTTP2_CLIENT_DLOG
+            << "Http2ClientTransport::Stream::MarkHalfClosedRemote stream_id="
+            << stream_id << " transitioning to kClosed";
         stream_state = HttpStreamState::kClosed;
         break;
       case HttpStreamState::kHalfClosedRemote:
         break;
       case HttpStreamState::kClosed:
-        DCHECK(false) << "MarkHalfClosedRemote called for a closed stream";
+        GRPC_HTTP2_CLIENT_DLOG
+            << "Http2ClientTransport::Stream::MarkHalfClosedRemote stream_id="
+            << stream_id << " already closed";
         break;
     }
   }

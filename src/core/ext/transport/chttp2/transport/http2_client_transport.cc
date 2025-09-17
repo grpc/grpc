@@ -28,6 +28,7 @@
 
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/call/message.h"
 #include "src/core/call/metadata_batch.h"
@@ -260,18 +261,17 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
   Http2Status append_result = assembler.AppendHeaderFrame(std::move(frame));
   if (append_result.IsOk()) {
     return ProcessMetadata(stream->stream_id, assembler, stream->call,
-                           stream->did_push_initial_metadata,
-                           stream->did_push_trailing_metadata);
+                           stream->did_push_initial_metadata);
   }
   return append_result;
 }
 
 Http2Status Http2ClientTransport::ProcessMetadata(
     uint32_t stream_id, HeaderAssembler& assembler, CallHandler& call,
-    bool& did_push_initial_metadata, bool& did_push_trailing_metadata) {
+    bool& did_push_initial_metadata) {
   GRPC_HTTP2_CLIENT_DLOG << "Http2Transport ProcessMetadata";
   if (assembler.IsReady()) {
-    ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> read_result =
+    ValueOrHttp2Status<ServerMetadataHandle> read_result =
         assembler.ReadMetadata(parser_, !incoming_header_end_stream_,
                                /*is_client=*/true,
                                /*max_header_list_size_soft_limit=*/
@@ -279,23 +279,16 @@ Http2Status Http2ClientTransport::ProcessMetadata(
                                /*max_header_list_size_hard_limit=*/
                                settings_.acked().max_header_list_size());
     if (read_result.IsOk()) {
-      Arena::PoolPtr<grpc_metadata_batch> metadata =
-          TakeValue(std::move(read_result));
+      ServerMetadataHandle metadata = TakeValue(std::move(read_result));
       if (incoming_header_end_stream_) {
         // TODO(tjagtap) : [PH2][P1] : Is this the right way to differentiate
         // between initial and trailing metadata?
         GRPC_HTTP2_CLIENT_DLOG
             << "Http2Transport ProcessMetadata SpawnPushServerTrailingMetadata";
-        did_push_trailing_metadata = true;
-        call.SpawnPushServerTrailingMetadata(std::move(metadata));
-        CloseStream(stream_id, absl::OkStatus(),
-                    CloseStreamArgs{
-                        /*close_reads=*/true,
-                        /*close_writes=*/true,
-                        /*send_rst_stream=*/false,
-                        /*should_not_push_trailers=*/true,
-                    });
-
+        BeginCloseStream(
+            stream_id,
+            Http2ErrorCodeToRstFrameErrorCode(Http2ErrorCode::kNoError),
+            std::move(metadata));
       } else {
         GRPC_HTTP2_CLIENT_DLOG
             << "Http2Transport ProcessMetadata SpawnPushServerInitialMetadata";
@@ -318,16 +311,12 @@ Http2Status Http2ClientTransport::ProcessHttp2RstStreamFrame(
       << "Http2Transport ProcessHttp2RstStreamFrame { stream_id="
       << frame.stream_id << ", error_code=" << frame.error_code << " }";
   Http2ErrorCode error_code =
-      Http2ErrorCodeFromRstFrameErrorCode(frame.error_code);
-  CloseStream(frame.stream_id,
-              absl::Status((ErrorCodeToAbslStatusCode(error_code)),
-                           "Reset stream frame received."),
-              CloseStreamArgs{
-                  /*close_reads=*/true,
-                  /*close_writes=*/true,
-                  /*send_rst_stream=*/false,
-                  /*push_trailing_metadata=*/true,
-              });
+      RstFrameErrorCodeToHttp2ErrorCode(frame.error_code);
+  absl::Status status = absl::Status(ErrorCodeToAbslStatusCode(error_code),
+                                     "Reset stream frame received.");
+  BeginCloseStream(frame.stream_id, /*reset_stream_error_code=*/std::nullopt,
+                   CancelledServerMetadataFromStatus(status));
+
   // In case of stream error, we do not want the Read Loop to be broken. Hence
   // returning an ok status.
   return Http2Status::Ok();
@@ -475,8 +464,7 @@ Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
   Http2Status result = assember.AppendContinuationFrame(std::move(frame));
   if (result.IsOk()) {
     return ProcessMetadata(stream->stream_id, assember, stream->call,
-                           stream->did_push_initial_metadata,
-                           stream->did_push_trailing_metadata);
+                           stream->did_push_initial_metadata);
   }
   return result;
 }
@@ -570,8 +558,10 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
             /*incoming_header_stream_id*/ self->incoming_header_stream_id_,
             /*current_frame_header*/ header);
 
-        if (!status.IsOk()) {
-          return self->HandleError(std::move(status));
+        if (GPR_UNLIKELY(!status.IsOk())) {
+          DCHECK(status.GetType() ==
+                 Http2Status::Http2ErrorType::kConnectionError);
+          return self->HandleError(std::nullopt, std::move(status));
         }
         GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport ReadAndProcessOneFrame "
                                   "Validated Frame Header:"
@@ -596,6 +586,7 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
             ParseFramePayload(self->current_frame_header_, std::move(payload));
         if (!frame.IsOk()) {
           return self->HandleError(
+              self->current_frame_header_.stream_id,
               ValueOrHttp2Status<Http2Frame>::TakeStatus(std::move(frame)));
         }
         return TakeValue(std::move(frame));
@@ -604,14 +595,15 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
           GRPC_UNUSED Http2Frame frame) {
         GRPC_HTTP2_CLIENT_DLOG
             << "Http2ClientTransport ReadAndProcessOneFrame ProcessOneFrame";
-        return AssertResultType<absl::Status>(
-            Map(self->ProcessOneFrame(std::move(frame)),
-                [self](Http2Status status) {
-                  if (!status.IsOk()) {
-                    return self->HandleError(std::move(status));
-                  }
-                  return absl::OkStatus();
-                }));
+        return AssertResultType<absl::Status>(Map(
+            self->ProcessOneFrame(std::move(frame)),
+            [self](Http2Status status) {
+              if (!status.IsOk()) {
+                return self->HandleError(self->current_frame_header_.stream_id,
+                                         std::move(status));
+              }
+              return absl::OkStatus();
+            }));
       }));
 }
 
@@ -634,9 +626,9 @@ auto Http2ClientTransport::OnReadLoopEnded() {
       [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
         GRPC_HTTP2_CLIENT_DLOG
             << "Http2ClientTransport OnReadLoopEnded Promise Status=" << status;
-        GRPC_UNUSED absl::Status error =
-            self->HandleError(Http2Status::AbslConnectionError(
-                status.code(), std::string(status.message())));
+        GRPC_UNUSED absl::Status error = self->HandleError(
+            std::nullopt, Http2Status::AbslConnectionError(
+                              status.code(), std::string(status.message())));
       };
 }
 
@@ -821,10 +813,21 @@ auto Http2ClientTransport::MultiplexerLoop() {
                        "enqueue stream "
                     << *stream_id << " with status: " << status;
                 // Close transport if we fail to enqueue stream.
-                return self->HandleError(Http2Status::AbslConnectionError(
-                    absl::StatusCode::kUnavailable,
-                    std::string(status.message())));
+                return self->HandleError(std::nullopt,
+                                         Http2Status::AbslConnectionError(
+                                             absl::StatusCode::kUnavailable,
+                                             std::string(status.message())));
               }
+            }
+            if (result.HalfCloseDequeued()) {
+              self->CloseStream(*stream_id,
+                                CloseStreamArgs{/*close_reads=*/false,
+                                                /*close_writes=*/true});
+            }
+            if (result.ResetStreamDequeued()) {
+              self->CloseStream(*stream_id,
+                                CloseStreamArgs{/*close_reads=*/true,
+                                                /*close_writes=*/true});
             }
 
             // Update the write_bytes_remaining_ based on the bytes consumed in
@@ -880,9 +883,9 @@ auto Http2ClientTransport::OnMultiplexerLoopEnded() {
         GRPC_HTTP2_CLIENT_DLOG
             << "Http2ClientTransport OnMultiplexerLoopEnded Promise Status="
             << status;
-        GRPC_UNUSED absl::Status error =
-            self->HandleError(Http2Status::AbslConnectionError(
-                status.code(), std::string(status.message())));
+        GRPC_UNUSED absl::Status error = self->HandleError(
+            std::nullopt, Http2Status::AbslConnectionError(
+                              status.code(), std::string(status.message())));
       };
 }
 
@@ -997,13 +1000,12 @@ Http2ClientTransport::Http2ClientTransport(
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor End";
 }
 
-// This function MUST be idempotent.
-void Http2ClientTransport::CloseStream(uint32_t stream_id, absl::Status status,
-                                       CloseStreamArgs args,
+// This function MUST be idempotent. This function MUST be called from the
+// transport party.
+void Http2ClientTransport::CloseStream(uint32_t stream_id, CloseStreamArgs args,
                                        DebugLocation whence) {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseStream for stream id: "
-                         << stream_id << " status=" << status
-                         << " location=" << whence.file() << ":"
+                         << stream_id << " location=" << whence.file() << ":"
                          << whence.line();
 
   // TODO(akshitpatel) : [PH2][P3] : Measure the impact of holding mutex
@@ -1029,15 +1031,69 @@ void Http2ClientTransport::CloseStream(uint32_t stream_id, absl::Status status,
     GRPC_HTTP2_CLIENT_DLOG
         << "Http2ClientTransport::CloseStream for stream id: " << stream_id
         << " closing stream.";
-    if (args.send_rst_stream) {
-      // TODO(akshitpatel) : [PH2][P2] : Send RST_STREAM frame.
+    stream_list_.erase(stream_id);
+  }
+}
+
+// Here is the flow for stream close:
+// 1. BeginCloseStream is invoked if the transport needs to close the stream.
+// 2. If reset stream does not need to be sent, CloseStream is invoked
+//    immediately. In this case, the stream is immediately removed from the
+//    stream_list_ and hence when CallHandler.OnDone is invoked, the stream
+//    lookup would fail.
+// 3. If reset stream needs to be sent, the stream is not removed from the
+//    stream_list_. When CallHandler.OnDone is invoked, the reset stream is
+//    enqueued on the stream data queue. Once the multiplexer loop dequeues the
+//    reset stream, CloseStream is invoked.
+// TODO(akshitpatel) : [PH2][P2] : There is a bug here. Once BeginCloseStream
+// is called, the stream is not removed from the stream_list_. This can cause
+// some frames to be read/write before CallHandler.OnDone is invoked which is
+// wrong. I think adding a new state to the stream would help here. In this
+// statem all reads for that stream, would will ignored and only reset stream
+// would be processed for writes. Additionally, the reason we cannot remove the
+// stream from the stream_list_ immediately is because the transport needs to
+// wait for the reset stream to be dequeued before it can invoke CloseStream.
+void Http2ClientTransport::BeginCloseStream(
+    const uint32_t stream_id, std::optional<uint32_t> reset_stream_error_code,
+    ServerMetadataHandle&& metadata, DebugLocation whence) {
+  GRPC_HTTP2_CLIENT_DLOG
+      << "Http2ClientTransport::BeginCloseStream for stream id: " << stream_id
+      << " error_code="
+      << (reset_stream_error_code.has_value()
+              ? absl::StrCat(*reset_stream_error_code)
+              : "nullopt")
+      << " ServerMetadata=" << metadata->DebugString()
+      << " location=" << whence.file() << ":" << whence.line();
+
+  RefCountedPtr<Stream> stream = LookupStream(stream_id);
+  if (stream != nullptr) {
+    // If reset stream needs to be sent, CloseStream will be called from the
+    // Multiplexer after the reset stream frame is created.
+    if (!reset_stream_error_code) {
+      // No need to send a reset stream.
+      CloseStream(stream_id,
+                  CloseStreamArgs{/*close_reads*/ true, /*close_writes=*/true},
+                  whence);
+    } else {
+      // Need to send a reset stream.
+      // This would immediate close the stream for further writes.
+      if (metadata->get(GrpcCallWasCancelled())) {
+        absl::StatusOr<EnqueueResult> enqueue_result =
+            stream->EnqueueResetStream(reset_stream_error_code.value());
+        GRPC_HTTP2_CLIENT_DLOG << "Enqueued ResetStream with error code="
+                               << reset_stream_error_code.value()
+                               << " status=" << enqueue_result.status();
+        if (enqueue_result.ok()) {
+          GRPC_UNUSED absl::Status status = MaybeAddStreamToWritableStreamList(
+              stream_id, enqueue_result.value());
+        }
+      }
     }
 
-    if (args.push_trailing_metadata) {
-      stream->call.SpawnPushServerTrailingMetadata(
-          ServerMetadataFromStatus(status));
-    }
-    stream_list_.erase(stream_id);
+    stream->did_push_trailing_metadata = true;
+    // This maybe called multiple times while closing a stream. This should be
+    // fine as the the call spine ignores the subsequent calls.
+    stream->call.SpawnPushServerTrailingMetadata(std::move(metadata));
   }
 }
 
@@ -1089,8 +1145,11 @@ void Http2ClientTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
           // fail. Also, as this is running on the transport
           // party, there would not be concurrent access to the stream.
           auto& stream = pair.second;
-          stream->call.SpawnPushServerTrailingMetadata(
-              ServerMetadataFromStatus(http2_status.GetAbslConnectionError()));
+          self->BeginCloseStream(stream->stream_id,
+                                 Http2ErrorCodeToRstFrameErrorCode(
+                                     http2_status.GetConnectionErrorCode()),
+                                 CancelledServerMetadataFromStatus(
+                                     http2_status.GetAbslConnectionError()));
         }
 
         // RFC9113 : A GOAWAY frame might not immediately precede closing of
@@ -1131,6 +1190,45 @@ RefCountedPtr<Stream> Http2ClientTransport::LookupStream(uint32_t stream_id) {
   return it->second;
 }
 
+bool Http2ClientTransport::SetOnDone(CallHandler call_handler,
+                                     const uint32_t stream_id) {
+  return call_handler.OnDone([self = RefAsSubclass<Http2ClientTransport>(),
+                              stream_id](bool cancelled) {
+    GRPC_HTTP2_CLIENT_DLOG << "PH2: Client call " << self.get()
+                           << " id=" << stream_id
+                           << " done: cancelled=" << cancelled;
+    RefCountedPtr<Stream> stream = self->LookupStream(stream_id);
+    absl::StatusOr<EnqueueResult> enqueue_result;
+    GRPC_HTTP2_CLIENT_DLOG << "PH2: Client call " << self.get()
+                           << " id=" << stream_id
+                           << " done: stream=" << stream.get()
+                           << " cancelled=" << cancelled;
+    if (stream != nullptr) {
+      if (cancelled) {
+        // In most of the cases, EnqueueResetStream would be a no-op as
+        // BeginCloseStream would have already enqueued the reset stream.
+        // Currently only Aborts from application will actually enqueue
+        // the reset stream here.
+        enqueue_result = stream->EnqueueResetStream(
+            static_cast<uint32_t>(Http2ErrorCode::kCancel));
+        GRPC_HTTP2_CLIENT_DLOG << "Enqueued ResetStream with error code="
+                               << static_cast<uint32_t>(Http2ErrorCode::kCancel)
+                               << " status=" << enqueue_result.status();
+      } else {
+        enqueue_result = stream->EnqueueHalfClosed();
+        GRPC_HTTP2_CLIENT_DLOG << "Enqueued HalfClosed with result="
+                               << enqueue_result.status();
+      }
+
+      if (enqueue_result.ok()) {
+        GRPC_UNUSED absl::Status status =
+            self->MaybeAddStreamToWritableStreamList(stream_id,
+                                                     enqueue_result.value());
+      }
+    }
+  });
+}
+
 bool Http2ClientTransport::MakeStream(CallHandler call_handler,
                                       const uint32_t stream_id) {
   // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
@@ -1141,32 +1239,7 @@ bool Http2ClientTransport::MakeStream(CallHandler call_handler,
   // OnDone needs to be synchronous and hence InterActivityMutex might not be
   // an option to protect the stream_list_.
   MutexLock lock(&transport_mutex_);
-  const bool on_done_added =
-      call_handler.OnDone([self = RefAsSubclass<Http2ClientTransport>(),
-                           stream_id](bool cancelled) {
-        GRPC_HTTP2_CLIENT_DLOG << "PH2: Client call " << self.get()
-                               << " id=" << stream_id
-                               << " done: cancelled=" << cancelled;
-        if (cancelled) {
-          // TODO(akshitpatel) : [PH2][P2] : There are two ways to handle
-          // cancellation.
-          // 1. Call CloseStream from the on_done callback as done here. This
-          //    will be invoked when PullServerTrailingMetadata resolves.
-          // 2. Call CloseStream from the OutboundLoop. When the call is
-          //    cancelled, for_each() should return with an error. The
-          //    WasCancelled() function can be used to determinie if the call
-          //    was cancelled.
-          // At this point, both the above mentioned approaches seem to be more
-          // or less the same as both are running on the call party.
-          self->CloseStream(stream_id, absl::CancelledError(),
-                            CloseStreamArgs{
-                                /*close_reads=*/true,
-                                /*close_writes=*/true,
-                                /*send_rst_stream=*/true,
-                                /*push_trailing_metadata=*/false,
-                            });
-        }
-      });
+  const bool on_done_added = SetOnDone(call_handler, stream_id);
   if (!on_done_added) return false;
   stream_list_.emplace(
       stream_id,

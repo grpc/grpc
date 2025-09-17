@@ -246,9 +246,15 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
       MetadataHandle&& metadata) {
     MutexLock lock(&mu_);
     GRPC_DCHECK(metadata != nullptr);
-    GRPC_DCHECK(!is_reset_stream_queued_);
     GRPC_DCHECK(!is_client_);
     GRPC_DCHECK(!is_trailing_metadata_or_half_close_queued_);
+
+    if (GPR_UNLIKELY(IsEnqueueClosed())) {
+      GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueue closed for stream "
+                                   << stream_id_;
+      return EnqueueResult{/*became_writable=*/false,
+                           WritableStreams::StreamPriority::kStreamClosed};
+    }
 
     is_trailing_metadata_or_half_close_queued_ = true;
     absl::StatusOr<bool> result = queue_.ImmediateEnqueue(
@@ -272,7 +278,6 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   auto EnqueueMessage(MessageHandle&& message) {
     GRPC_DCHECK(is_initial_metadata_queued_);
     GRPC_DCHECK(message != nullptr);
-    GRPC_DCHECK(!is_reset_stream_queued_);
     GRPC_DCHECK_LE(
         message->payload()->Length(),
         std::numeric_limits<uint32_t>::max() - kGrpcHeaderSizeInBytes);
@@ -283,6 +288,12 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     return [self = this->Ref(), entry = QueueEntry{std::move(message)},
             tokens]() mutable -> Poll<absl::StatusOr<EnqueueResult>> {
       MutexLock lock(&self->mu_);
+      if (GPR_UNLIKELY(self->IsEnqueueClosed())) {
+        GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueue closed for stream "
+                                     << self->stream_id_;
+        return EnqueueResult{/*became_writable=*/false,
+                             WritableStreams::StreamPriority::kStreamClosed};
+      }
       Poll<absl::StatusOr<bool>> result = self->queue_.Enqueue(entry, tokens);
       if (result.ready()) {
         GRPC_STREAM_DATA_QUEUE_DEBUG
@@ -308,8 +319,16 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     MutexLock lock(&mu_);
     GRPC_DCHECK(is_initial_metadata_queued_);
     GRPC_DCHECK(is_client_);
-    GRPC_DCHECK(!is_reset_stream_queued_);
-    GRPC_DCHECK(!is_trailing_metadata_or_half_close_queued_);
+
+    if (GPR_UNLIKELY(IsEnqueueClosed() ||
+                     is_trailing_metadata_or_half_close_queued_)) {
+      GRPC_STREAM_DATA_QUEUE_DEBUG
+          << "Enqueue closed or trailing metadata/half close queued for stream "
+          << stream_id_ << " is_trailing_metadata_or_half_close_queued_ = "
+          << is_trailing_metadata_or_half_close_queued_;
+      return EnqueueResult{/*became_writable=*/false,
+                           WritableStreams::StreamPriority::kStreamClosed};
+    }
 
     is_trailing_metadata_or_half_close_queued_ = true;
     absl::StatusOr<bool> result =
@@ -331,7 +350,15 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   absl::StatusOr<EnqueueResult> EnqueueResetStream(const uint32_t error_code) {
     MutexLock lock(&mu_);
     GRPC_DCHECK(is_initial_metadata_queued_);
-    GRPC_DCHECK(!is_reset_stream_queued_);
+
+    // This can happen when the transport tries to close the stream and the
+    // stream is cancelled from the call stack.
+    if (GPR_UNLIKELY(IsEnqueueClosed())) {
+      GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueue closed for stream "
+                                   << stream_id_;
+      return EnqueueResult{/*became_writable=*/false,
+                           WritableStreams::StreamPriority::kStreamClosed};
+    }
 
     GRPC_STREAM_DATA_QUEUE_DEBUG
         << "Immediate enqueueing reset stream for stream " << stream_id_
@@ -627,6 +654,10 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
         << " with priority: " << WritableStreams::GetPriorityString(priority_)
         << " is_writable: " << is_writable_;
     return EnqueueResult{/*became_writable=*/false, priority_};
+  }
+
+  bool IsEnqueueClosed() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    return is_reset_stream_queued_;
   }
 
   const uint32_t stream_id_;

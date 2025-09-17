@@ -8361,6 +8361,7 @@ grpc_cc_library(
         "absl/log",
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
     ],
     deps = [
         "1999",

@@ -19,6 +19,8 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_CLIENT_TRANSPORT_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HTTP2_CLIENT_TRANSPORT_H
 
+#include <grpc/support/port_platform.h>
+
 #include <cstdint>
 #include <utility>
 
@@ -174,8 +176,7 @@ class Http2ClientTransport final : public ClientTransport {
   Http2Status ProcessHttp2SecurityFrame(Http2SecurityFrame frame);
   Http2Status ProcessMetadata(uint32_t stream_id, HeaderAssembler& assembler,
                               CallHandler& call,
-                              bool& did_push_initial_metadata,
-                              bool& did_push_trailing_metadata);
+                              bool& did_push_initial_metadata);
 
   // Reading from the endpoint.
 
@@ -285,13 +286,16 @@ class Http2ClientTransport final : public ClientTransport {
   struct CloseStreamArgs {
     bool close_reads;
     bool close_writes;
-    bool send_rst_stream;
-    bool push_trailing_metadata;
   };
 
   // This function MUST be idempotent.
-  void CloseStream(uint32_t stream_id, absl::Status status,
-                   CloseStreamArgs args, DebugLocation whence = {});
+  void CloseStream(uint32_t stream_id, CloseStreamArgs args,
+                   DebugLocation whence = {});
+
+  void BeginCloseStream(uint32_t stream_id,
+                        std::optional<uint32_t> reset_stream_error_code,
+                        ServerMetadataHandle&& metadata,
+                        DebugLocation whence = {});
 
   RefCountedPtr<Stream> LookupStream(uint32_t stream_id);
 
@@ -317,10 +321,10 @@ class Http2ClientTransport final : public ClientTransport {
   auto WaitForSettingsTimeoutDone() {
     return [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
       if (!status.ok()) {
-        GRPC_UNUSED absl::Status result =
-            self->HandleError(Http2Status::Http2ConnectionError(
-                Http2ErrorCode::kProtocolError,
-                std::string(RFC9113::kSettingsTimeout)));
+        GRPC_UNUSED absl::Status result = self->HandleError(
+            std::nullopt, Http2Status::Http2ConnectionError(
+                              Http2ErrorCode::kProtocolError,
+                              std::string(RFC9113::kSettingsTimeout)));
       } else {
         self->MarkPeerSettingsResolved();
       }
@@ -364,20 +368,18 @@ class Http2ClientTransport final : public ClientTransport {
   // should not be cancelled in case of stream errors.
   // If the error is a connection error, it closes the transport and returns the
   // corresponding (failed) absl status.
-  absl::Status HandleError(Http2Status status, DebugLocation whence = {}) {
+  absl::Status HandleError(const std::optional<uint32_t> stream_id,
+                           Http2Status status, DebugLocation whence = {}) {
     auto error_type = status.GetType();
     DCHECK(error_type != Http2Status::Http2ErrorType::kOk);
 
     if (error_type == Http2Status::Http2ErrorType::kStreamError) {
       LOG(ERROR) << "Stream Error: " << status.DebugString();
-      CloseStream(current_frame_header_.stream_id, status.GetAbslStreamError(),
-                  CloseStreamArgs{
-                      /*close_reads=*/true,
-                      /*close_writes=*/true,
-                      /*send_rst_stream=*/true,
-                      /*push_trailing_metadata=*/true,
-                  },
-                  whence);
+      DCHECK(stream_id.has_value());
+      BeginCloseStream(
+          *stream_id,
+          Http2ErrorCodeToRstFrameErrorCode(status.GetStreamErrorCode()),
+          ServerMetadataFromStatus(status.GetAbslStreamError()), whence);
       return absl::OkStatus();
     } else if (error_type == Http2Status::Http2ErrorType::kConnectionError) {
       LOG(ERROR) << "Connection Error: " << status.DebugString();
@@ -503,9 +505,9 @@ class Http2ClientTransport final : public ClientTransport {
       // to kRefusedStream). However looking at RFC9113, definition of
       // kRefusedStream doesn't seem to fit this case. We should revisit this
       // and update the error code.
-      return Immediate(
-          transport_->HandleError(Http2Status::Http2ConnectionError(
-              Http2ErrorCode::kRefusedStream, "Ping timeout")));
+      return Immediate(transport_->HandleError(
+          std::nullopt, Http2Status::Http2ConnectionError(
+                            Http2ErrorCode::kRefusedStream, "Ping timeout")));
     }
 
    private:
@@ -543,9 +545,10 @@ class Http2ClientTransport final : public ClientTransport {
       // to kRefusedStream). However looking at RFC9113, definition of
       // kRefusedStream doesn't seem to fit this case. We should revisit this
       // and update the error code.
-      return Immediate(
-          transport_->HandleError(Http2Status::Http2ConnectionError(
-              Http2ErrorCode::kRefusedStream, "Keepalive timeout")));
+      return Immediate(transport_->HandleError(
+          std::nullopt,
+          Http2Status::Http2ConnectionError(Http2ErrorCode::kRefusedStream,
+                                            "Keepalive timeout")));
     }
 
     bool NeedToSendKeepAlivePing() override {
@@ -578,13 +581,17 @@ class Http2ClientTransport final : public ClientTransport {
       absl::Status status =
           writable_stream_list_.Enqueue(stream_id, result.priority);
       if (!status.ok()) {
-        return HandleError(Http2Status::Http2ConnectionError(
-            Http2ErrorCode::kRefusedStream,
-            "Failed to enqueue stream to writable stream list"));
+        return HandleError(
+            std::nullopt,
+            Http2Status::Http2ConnectionError(
+                Http2ErrorCode::kRefusedStream,
+                "Failed to enqueue stream to writable stream list"));
       }
     }
     return absl::OkStatus();
   }
+  bool SetOnDone(CallHandler call_handler, uint32_t stream_id);
+
   /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
   /// the peer
   // TODO(tjagtap) : [PH2][P1] : Plumb this with the necessary frame size flow

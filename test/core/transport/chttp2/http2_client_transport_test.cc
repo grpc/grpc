@@ -238,6 +238,15 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportAbortTest) {
           helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
       },
       event_engine().get());
+  mock_endpoint.ExpectWrite(
+      {
+          helper_.EventEngineSliceFromHttp2HeaderFrame(std::string(
+              kPathDemoServiceStep.begin(), kPathDemoServiceStep.end())),
+          helper_.EventEngineSliceFromHttp2RstStreamFrame(
+              /*stream_id=*/1,
+              /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kCancel)),
+      },
+      event_engine().get());
 
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),

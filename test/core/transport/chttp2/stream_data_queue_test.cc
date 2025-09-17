@@ -620,6 +620,63 @@ TEST(StreamDataQueueTest, ClientEnqueueResetStreamTest) {
       /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
 }
 
+TEST(StreamDataQueueTest, ClientEnqueueAfterResetStreamTest) {
+  // Test to assert that no more data can be enqueued after a reset stream.
+  HPackCompressor encoder;
+  RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> stream_data_queue =
+      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
+          /*is_client=*/true,
+          /*stream_id=*/1,
+          /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
+  EnqueueInitialMetadataAndCheckSuccess(
+      stream_data_queue, TestClientInitialMetadata(),
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+  EnqueueResetStreamAndCheckSuccess(
+      stream_data_queue,
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+
+  // Enqueue message should fail.
+  EnqueueMessageAndCheckSuccess(
+      stream_data_queue,
+      TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(1)), 0),
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+
+  // Enqueue half close should fail.
+  EnqueueHalfClosedAndCheckSuccess(
+      stream_data_queue, /*expected_writeable_state*/ false,
+      /*expected_priority*/ WritableStreams::StreamPriority::kStreamClosed);
+
+  // Enqueue reset stream should fail.
+  EnqueueResetStreamAndCheckSuccess(
+      stream_data_queue,
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+
+  // Dequeue should return initial metadata and reset stream.
+  const uint32_t max_frame_length = 50;
+  std::vector<Http2Frame> expected_frames;
+  GetExpectedHeaderAndContinuationFrames(max_frame_length, expected_frames,
+                                         kPathDemoServiceStep,
+                                         /*end_stream=*/false);
+  expected_frames.emplace_back(
+      Http2RstStreamFrame{/*stream_id=*/1, /*error_code=*/0});
+  DequeueAndCheckSuccess(
+      stream_data_queue, std::move(expected_frames), encoder,
+      /*expected_flags=*/
+      (StreamDataQueue<ClientMetadataHandle>::kInitialMetadataDequeued |
+       StreamDataQueue<ClientMetadataHandle>::kResetStreamDequeued),
+      /*max_tokens=*/0, max_frame_length);
+
+  expected_frames.clear();
+  DequeueAndCheckSuccess(stream_data_queue, std::move(expected_frames), encoder,
+                         /*expected_flags=*/0,
+                         /*max_tokens=*/0, max_frame_length);
+  EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
+}
+
 TEST(StreamDataQueueTest, ClientEmptyDequeueTest) {
   // Test to assert that dequeue returns empty frames when there is nothing to
   // dequeue.
@@ -878,6 +935,64 @@ TEST(StreamDataQueueTest, ServerResetStreamTest) {
       stream_data_queue,
       /*expected_writeable_state=*/false,
       /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+}
+
+TEST(StreamDataQueueTest, ServerEnqueueAfterResetStreamTest) {
+  // Test to assert that no more data can be enqueued after a reset stream.
+  HPackCompressor encoder;
+  RefCountedPtr<StreamDataQueue<ServerMetadataHandle>> stream_data_queue =
+      MakeRefCounted<StreamDataQueue<ServerMetadataHandle>>(
+          /*is_client=*/false,
+          /*stream_id=*/1,
+          /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
+  EnqueueInitialMetadataAndCheckSuccess(
+      stream_data_queue, TestServerInitialMetadata(),
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+  EnqueueResetStreamAndCheckSuccess(
+      stream_data_queue,
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+
+  // Enqueue message should fail.
+  EnqueueMessageAndCheckSuccess(
+      stream_data_queue,
+      TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(1)), 0),
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+
+  // Enqueue trailing metadata should fail.
+  EnqueueTrailingMetadataAndCheckSuccess(
+      stream_data_queue, TestServerTrailingMetadata(),
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+
+  // Enqueue reset stream should fail.
+  EnqueueResetStreamAndCheckSuccess(
+      stream_data_queue,
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+
+  // Dequeue should return initial metadata and reset stream.
+  const uint32_t max_frame_length = 50;
+  std::vector<Http2Frame> expected_frames;
+  GetExpectedHeaderAndContinuationFrames(max_frame_length, expected_frames,
+                                         kPathDemoServiceStep2,
+                                         /*end_stream=*/false);
+  expected_frames.emplace_back(
+      Http2RstStreamFrame{/*stream_id=*/1, /*error_code=*/0});
+  DequeueAndCheckSuccess(
+      stream_data_queue, std::move(expected_frames), encoder,
+      /*expected_flags=*/
+      (StreamDataQueue<ServerMetadataHandle>::kInitialMetadataDequeued |
+       StreamDataQueue<ServerMetadataHandle>::kResetStreamDequeued),
+      /*max_tokens=*/0, max_frame_length);
+
+  expected_frames.clear();
+  DequeueAndCheckSuccess(stream_data_queue, std::move(expected_frames), encoder,
+                         /*expected_flags=*/0,
+                         /*max_tokens=*/100, max_frame_length);
+  EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
 }
 
 TEST(StreamDataQueueTest, ServerEnqueueDequeueFlowTest) {
