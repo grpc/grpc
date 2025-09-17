@@ -11,7 +11,7 @@ num_children = 3
 child_pids = []
 
 print(f"Parent: Forking {num_children} children...")
-sys.stdout.flush() # Flush print buffer before forking
+sys.stdout.flush()  # Flush print buffer before forking
 
 for i in range(num_children):
     try:
@@ -30,7 +30,9 @@ for i in range(num_children):
         import grpc
 
         print(f"  Child {i+1}: 'grpc' imported.")
-        print(f"  Child {i+1}: Your 'once-only' function ran here (Call #1 *in this child*).")
+        print(
+            f"  Child {i+1}: Your 'once-only' function ran here (Call #1 *in this child*)."
+        )
         print(f"  Child {i+1}: Exiting.")
 
         # Use os._exit() in children after a fork to prevent

@@ -57,15 +57,19 @@ print(f"\nIs the old reference the same as the new class? {are_same}")
 
 # Create a new channel using the *reloaded* module
 # This channel's type is the *new* grpc.Channel
-new_channel_obj = reloaded_grpc.insecure_channel('localhost:12345')
+new_channel_obj = reloaded_grpc.insecure_channel("localhost:12345")
 
 print(f"\nCreated a new channel object: {type(new_channel_obj)}")
 
 # This is where bugs hide. An `isinstance` check against
 # the *old* class reference will fail!
-print(f"isinstance(new_channel_obj, old_channel_reference)? {isinstance(new_channel_obj, old_channel_reference)}")
+print(
+    f"isinstance(new_channel_obj, old_channel_reference)? {isinstance(new_channel_obj, old_channel_reference)}"
+)
 
 # The check against the *new* class reference will pass.
-print(f"isinstance(new_channel_obj, reloaded_grpc.Channel)? {isinstance(new_channel_obj, reloaded_grpc.Channel)}")
+print(
+    f"isinstance(new_channel_obj, reloaded_grpc.Channel)? {isinstance(new_channel_obj, reloaded_grpc.Channel)}"
+)
 
 new_channel_obj.close()

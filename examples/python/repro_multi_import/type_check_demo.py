@@ -1,5 +1,5 @@
-import typing
 import sys
+import typing
 
 # --- 1. Conditional Import for Type Checking ---
 
@@ -15,6 +15,7 @@ if typing.TYPE_CHECKING:
 
 
 # --- 2. Function with Forward Reference Type Hint ---
+
 
 # We use a string "Channel" as the type hint. This is called a
 # "forward reference". It tells the type checker: "The type for
@@ -42,6 +43,7 @@ def check_channel(channel: "Channel") -> bool:
     print(f"Object is a real grpc.Channel: {is_valid}")
     return is_valid
 
+
 # --- 4. Demonstration ---
 
 if __name__ == "__main__":
@@ -55,10 +57,12 @@ if __name__ == "__main__":
     # channel object to pass to our function for the demo.
     import grpc
 
-    print(f"Is 'grpc' in sys.modules *after* main import? {'grpc' in sys.modules}")
+    print(
+        f"Is 'grpc' in sys.modules *after* main import? {'grpc' in sys.modules}"
+    )
 
     # Create a real channel object
-    real_channel = grpc.insecure_channel('localhost:12345')
+    real_channel = grpc.insecure_channel("localhost:12345")
 
     # Call the function
     check_channel(real_channel)

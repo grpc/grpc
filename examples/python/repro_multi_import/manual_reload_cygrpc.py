@@ -1,4 +1,5 @@
 import importlib
+
 import grpc
 
 # This import is just to make sure the name
@@ -16,4 +17,4 @@ try:
     # and call your "once-only" function a second time.
     importlib.reload(grpc._cython.cygrpc)
 except Exception as e:
-    print(f"\nSuccessfully caught expected error on reload: {e}") # 💥
+    print(f"\nSuccessfully caught expected error on reload: {e}")  # 💥

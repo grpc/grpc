@@ -3,6 +3,7 @@ import os
 import sys
 import time
 
+
 def child_worker():
     """This function is executed by the child process."""
     child_pid = os.getpid()
@@ -16,7 +17,9 @@ def child_worker():
     # On 'spawn' systems, this import will be the first
     # time gRPC is loaded in this process.
 
-    print(f"  Child: 'grpc' in sys.modules *before* import? {'grpc' in sys.modules}")
+    print(
+        f"  Child: 'grpc' in sys.modules *before* import? {'grpc' in sys.modules}"
+    )
 
     import grpc
 
@@ -26,6 +29,7 @@ def child_worker():
     print(f"  Child:   b) during the 'at_fork' handler (on 'fork')")
     print(f"  Child: Exiting.")
 
+
 # The 'if __name__ == "__main__":' guard is essential
 if __name__ == "__main__":
 
@@ -33,7 +37,7 @@ if __name__ == "__main__":
     print(f"--- Parent (PID: {os.getpid()}) ---")
     print("Parent: Importing 'grpc'...")
 
-    import grpc # <--- Parent import
+    import grpc  # <--- Parent import
 
     print("Parent: 'grpc' imported.")
     print("Parent: Your 'once-only' function ran here (Call #1).")
@@ -41,7 +45,7 @@ if __name__ == "__main__":
     # We explicitly set the start method to 'fork' to test this
     # scenario, as it's the more complex one.
     try:
-        multiprocessing.set_start_method('fork')
+        multiprocessing.set_start_method("fork")
         print("Parent: Start method set to 'fork'.")
     except (ValueError, AttributeError, RuntimeError):
         print("Parent: Could not set start method to 'fork'.")

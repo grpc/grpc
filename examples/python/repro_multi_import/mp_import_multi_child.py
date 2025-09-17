@@ -5,6 +5,7 @@ import time
 
 # --- NO 'import grpc' in the global scope ---
 
+
 def child_worker(child_num):
     """
     This function is the target for each child process.
@@ -17,11 +18,14 @@ def child_worker(child_num):
     import grpc
 
     print(f"  Child {child_num}: 'grpc' imported.")
-    print(f"  Child {child_num}: Your 'once-only' function ran here (Call #1 *in this child*).")
+    print(
+        f"  Child {child_num}: Your 'once-only' function ran here (Call #1 *in this child*)."
+    )
 
     # Do some minimal work to simulate a real task
     time.sleep(0.5)
     print(f"  Child {child_num}: Exiting.")
+
 
 # This guard is required for 'spawn' and 'forkserver' start methods
 # (default on Windows and macOS)

@@ -1,16 +1,19 @@
+import sys
 import threading
 import time
-import sys
+
 import grpc  # <-- Main thread import
 
 # We use a lock for print statements to prevent
 # garbled output from the two threads printing at once.
 print_lock = threading.Lock()
 
+
 def locked_print(message):
     """A thread-safe print function."""
     with print_lock:
         print(message)
+
 
 def worker_thread_importer():
     """
@@ -27,7 +30,7 @@ def worker_thread_importer():
 
     # This check will be True, because the main thread
     # already imported it.
-    if 'grpc' in sys.modules:
+    if "grpc" in sys.modules:
         locked_print(f"[{thread_name}] 'grpc' is *already* in sys.modules.")
     else:
         # This line should never be reached
@@ -62,8 +65,7 @@ if __name__ == "__main__":
 
     # Create and start the new thread
     worker = threading.Thread(
-        target=worker_thread_importer,
-        name="WorkerThread"
+        target=worker_thread_importer, name="WorkerThread"
     )
     worker.start()
 

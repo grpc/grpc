@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+
 import grpc  # <--- Import *before* fork
 
 print(f"--- Parent (PID: {os.getpid()}) ---")
@@ -31,7 +32,7 @@ if pid == 0:
     # We can prove gRPC is working (not hung) by using it
     try:
         print("Child: Testing gRPC functionality (creating channel)...")
-        channel = grpc.insecure_channel('localhost:12345')
+        channel = grpc.insecure_channel("localhost:12345")
         print("Child: gRPC channel created successfully.")
         channel.close()
         print("Child: Exiting normally.")
@@ -54,7 +55,7 @@ else:
         # We can prove gRPC is working (not hung) by using it
         try:
             print("Parent: Testing gRPC functionality (creating channel)...")
-            channel = grpc.insecure_channel('localhost:50051')
+            channel = grpc.insecure_channel("localhost:50051")
             print("Parent: gRPC channel created successfully.")
             channel.close()
             print("Parent: Exiting normally.")
@@ -75,15 +76,23 @@ else:
             exit_code = os.WEXITSTATUS(exit_status)
             print(f"Parent: Child exit code was: {exit_code}")
             if exit_code == 0:
-                print("Parent: ✅ Test shows the function was called twice with no error.")
+                print(
+                    "Parent: ✅ Test shows the function was called twice with no error."
+                )
             else:
-                print("Parent: ❌ Test shows the child failed (this is unexpected).")
+                print(
+                    "Parent: ❌ Test shows the child failed (this is unexpected)."
+                )
 
         elif os.WIFSIGNALED(exit_status):
             # This would happen if you *did* have your counter
             # and it raised an unhandled exception.
-            print(f"Parent: ❌ Child was terminated by signal: {os.WTERMSIG(exit_status)}")
-            print("Parent: (This would happen if your guarded function raised an error!)")
+            print(
+                f"Parent: ❌ Child was terminated by signal: {os.WTERMSIG(exit_status)}"
+            )
+            print(
+                "Parent: (This would happen if your guarded function raised an error!)"
+            )
 
     except OSError as e:
         print(f"Parent: os.waitpid() failed: {e}")
