@@ -8974,6 +8974,7 @@ grpc_cc_library(
         "chaotic_good_frame_transport",
         "chaotic_good_pending_connection",
         "chaotic_good_scheduler",
+        "chaotic_good_send_rate",
         "chaotic_good_serialize_little_endian",
         "chaotic_good_tcp_frame_header",
         "chaotic_good_tcp_ztrace_collector",
@@ -9036,6 +9037,23 @@ grpc_cc_library(
     name = "chaotic_good_serialize_little_endian",
     hdrs = [
         "ext/transport/chaotic_good/serialize_little_endian.h",
+    ],
+)
+
+grpc_cc_library(
+    name = "chaotic_good_send_rate",
+    srcs = [
+        "ext/transport/chaotic_good/send_rate.cc",
+    ],
+    hdrs = [
+        "ext/transport/chaotic_good/send_rate.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/log:check",
+    ],
+    deps = [
+        "channelz_property_list",
     ],
 )
 
