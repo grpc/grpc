@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
@@ -177,8 +178,7 @@ void PromiseFormatterImpl(const grpc::channelz::v2::Promise& promise,
       const auto& loop = promise.loop_promise();
       std::string loop_factory_str = loop.loop_factory();
       std::string formatted_loop_factory;
-      if (loop_factory_str.find("RepeatedPromiseFactory") !=
-          std::string::npos) {
+      if (absl::StrContains(loop_factory_str, "RepeatedPromiseFactory")) {
         size_t pos = loop_factory_str.find("(lambda at ");
         if (pos != std::string::npos) {
           size_t end_pos = pos;
@@ -225,7 +225,7 @@ void PromiseFormatterImpl(const grpc::channelz::v2::Promise& promise,
       if (!multiline) {
         const auto& prop = custom.properties().properties(0);
         std::string value = FormatValue(prop.value());
-        if (value.find('\n') != std::string::npos ||
+        if (absl::StrContains(value, '\n') ||
             custom.type().length() + prop.key().length() + value.length() + 2 >
                 60) {
           multiline = true;
@@ -258,7 +258,7 @@ void PromiseFormatterImpl(const grpc::channelz::v2::Promise& promise,
   }
 }
 
-bool PromiseFormatter(Environment& env, google::protobuf::Any value,
+bool PromiseFormatter(Environment&, google::protobuf::Any value,
                       layout::Element& element) {
   grpc::channelz::v2::Promise promise;
   if (!value.UnpackTo(&promise)) return false;
