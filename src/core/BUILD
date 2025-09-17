@@ -9070,6 +9070,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "chaotic_good_send_rate",
         "chaotic_good_tcp_ztrace_collector",
         "shared_bit_gen",
     ],
