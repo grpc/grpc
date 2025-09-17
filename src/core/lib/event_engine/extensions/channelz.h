@@ -30,7 +30,7 @@ class ChannelzExtension {
   static absl::string_view EndpointExtensionName() {
     return "io.grpc.event_engine.extension.channelz";
   }
-  virtual void AddJson(grpc_core::channelz::DataSink& sink) = 0;
+  virtual void AddData(grpc_core::channelz::DataSink& sink) = 0;
 
   void SetSocketNode(
       grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> socket_node) {
@@ -51,7 +51,7 @@ class ChannelzExtension {
     }
     ~EndpointDataSource() { SourceDestructing(); }
     void AddData(grpc_core::channelz::DataSink sink) override {
-      ep_->AddJson(sink);
+      ep_->AddData(sink);
     }
 
    private:

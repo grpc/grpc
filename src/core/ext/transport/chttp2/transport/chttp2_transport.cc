@@ -109,6 +109,7 @@
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/context_list_entry.h"
 #include "src/core/telemetry/default_tcp_tracer.h"
+#include "src/core/telemetry/instrument.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/telemetry/tcp_tracer.h"
@@ -697,6 +698,11 @@ grpc_chttp2_transport::grpc_chttp2_transport(
           channel_args.GetObject<grpc_core::ResourceQuota>()->stream_quota()),
       self_reservation(
           memory_owner.MakeReservation(sizeof(grpc_chttp2_transport))),
+      // TODO(ctiller): clean this up so we don't need to RefAsSubclass
+      resource_quota_telemetry_storage(
+          memory_owner.telemetry_storage()
+              ->RefAsSubclass<grpc_core::InstrumentStorage<
+                  grpc_core::ResourceQuotaDomain>>()),
       event_engine(
           channel_args
               .GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
@@ -3352,7 +3358,7 @@ static void benign_reclaimer_locked(
   if (error.ok() && t->stream_map.empty()) {
     // Channel with no active streams: send a goaway to try and make it
     // disconnect cleanly
-    t->memory_owner.telemetry_storage()->Increment(
+    t->resource_quota_telemetry_storage->Increment(
         grpc_core::ResourceQuotaDomain::kConnectionsDropped);
     GRPC_TRACE_LOG(resource_quota, INFO)
         << "HTTP2: " << t->peer_string.as_string_view()
@@ -3384,7 +3390,7 @@ static void destructive_reclaimer_locked(
     GRPC_TRACE_LOG(resource_quota, INFO)
         << "HTTP2: " << t->peer_string.as_string_view()
         << " - abandon stream id " << s->id;
-    t->memory_owner.telemetry_storage()->Increment(
+    t->resource_quota_telemetry_storage->Increment(
         grpc_core::ResourceQuotaDomain::kCallsDropped);
     grpc_chttp2_cancel_stream(
         t.get(), s,

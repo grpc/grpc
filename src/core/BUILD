@@ -8332,6 +8332,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "ph2_stream",
+    hdrs = [
+        "ext/transport/chttp2/transport/stream.h",
+    ],
+    external_deps = [
+        "absl/log",
+    ],
+    deps = [
+        "call_spine",
+        "http2_transport",
+        "stream_data_queue",
+        ":chttp2_flow_control",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "http2_client_transport",
     srcs = [
         "ext/transport/chttp2/transport/http2_client_transport.cc",
@@ -8362,6 +8379,7 @@ grpc_cc_library(
         "http2_settings_promises",
         "http2_status",
         "http2_transport",
+        "http2_ztrace_collector",
         "inter_activity_mutex",
         "internal_channel_arg_names",
         "keepalive",
@@ -8374,6 +8392,7 @@ grpc_cc_library(
         "metadata",
         "metadata_batch",
         "mpsc",
+        "ph2_stream",
         "ping_promise",
         "resource_quota",
         "stream_data_queue",
@@ -8506,11 +8525,13 @@ grpc_cc_library(
         "metadata_info",
         "mpsc",
         "sync",
+        ":event_engine_tcp_socket_utils",
         ":match_promise",
         ":poll",
         ":slice",
         ":slice_buffer",
         ":try_seq",
+        "//:channelz",
         "//:chttp2_frame",
         "//:gpr_platform",
         "//:grpc_base",
@@ -8563,6 +8584,7 @@ grpc_cc_library(
         "absl/log",
         "absl/status",
         "absl/status:statusor",
+        "absl/strings",
         "absl/strings:str_format",
     ],
     deps = [
@@ -8575,6 +8597,7 @@ grpc_cc_library(
         "endpoint_transport_client_channel_factory",
         "error",
         "error_utils",
+        "event_engine_tcp_socket_utils",
         "grpc_check",
         "grpc_insecure_credentials",
         "handshaker_registry",
@@ -10562,6 +10585,7 @@ grpc_cc_library(
         "absl/container:flat_hash_set",
     ],
     deps = [
+        "channelz_property_list",
         "ztrace_collector",
         "//:chttp2_frame",
     ],
@@ -10759,6 +10783,7 @@ grpc_cc_library(
         "zviz_environment",
         "zviz_layout",
         "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+        "//src/proto/grpc/channelz/v2:promise_cc_proto",
         "//src/proto/grpc/channelz/v2:property_list_cc_proto",
     ],
 )

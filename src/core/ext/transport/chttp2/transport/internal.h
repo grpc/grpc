@@ -304,6 +304,8 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   grpc_core::StreamQuotaRefPtr stream_quota;
   const grpc_core::MemoryAllocator::Reservation self_reservation;
   grpc_core::ReclamationSweep active_reclamation;
+  grpc_core::InstrumentStorageRefPtr<grpc_core::ResourceQuotaDomain>
+      resource_quota_telemetry_storage;
 
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
   grpc_core::Combiner* combiner;

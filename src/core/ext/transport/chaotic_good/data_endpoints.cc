@@ -171,6 +171,7 @@ OutputBuffers::Reader::PollReadNext() {
     DCHECK(!reading_);
     auto frames = std::move(frames_);
     frames_.clear();
+    output_buffers_->WakeupScheduler(/*async=*/true);
     mu_.Unlock();
     return std::move(frames);
   }
@@ -244,7 +245,7 @@ void OutputBuffers::DestroyReader(uint32_t id) {
   num_readers_.fetch_sub(1, std::memory_order_relaxed);
 }
 
-void OutputBuffers::WakeupScheduler() {
+void OutputBuffers::WakeupScheduler(bool async) {
   GRPC_LATENT_SEE_SCOPE("OutputBuffers::WakeupScheduler");
   auto state = scheduling_state_.load(std::memory_order_acquire);
   // CAS's here-in need to be acq-rel, so that we get an acquire on failure (at
@@ -266,7 +267,11 @@ void OutputBuffers::WakeupScheduler() {
                 state, kSchedulingWorkAvailable, std::memory_order_acq_rel)) {
           continue;
         }
-        waker->Wakeup();
+        if (async) {
+          waker->WakeupAsync();
+        } else {
+          waker->Wakeup();
+        }
         delete waker;
         return;
       }
@@ -327,7 +332,6 @@ void OutputBuffers::Schedule() {
   // hit data endpoints or be inlined on a control channel.
   scheduler_->NewStep(queued_tokens, first_message->frame.tokens());
   const auto now = clock_->Now();
-  bool any_readers = false;
   {
     GRPC_LATENT_SEE_SCOPE("OutputBuffers::Schedule::CollectData2");
     for (size_t i = 0; i < scheduling_data.size(); ++i) {
@@ -336,13 +340,11 @@ void OutputBuffers::Schedule() {
       scheduling.reader->mu_.Lock();
       auto delivery_data = scheduling.reader->send_rate_.GetDeliveryData(now);
       bool reading = scheduling.reader->reading_;
-      if (reading) any_readers = true;
       scheduling.reader->mu_.Unlock();
       scheduler_->AddChannel(i, reading, delivery_data.start_time,
                              delivery_data.bytes_per_second);
     }
   }
-  if (!any_readers) return;
   {
     GRPC_LATENT_SEE_SCOPE("OutputBuffers::Schedule::MakePlan");
     scheduler_->MakePlan(*ztrace_collector_);
@@ -377,9 +379,8 @@ void OutputBuffers::Schedule() {
       auto& reader = scheduling.reader;
       DCHECK_NE(reader.get(), nullptr);
       reader->mu_.Lock();
-      if (!reader->reading_) {
-        // Frames were assigned to this reader, but it's either not reading
-        // or not allocated anymore.
+      if (reader->dropped_) {
+        // Frames were assigned to this reader, but it's not allocated anymore.
         auto frames = std::move(scheduling.frames);
         scheduling.frames.clear();
         reader->mu_.Unlock();
@@ -389,7 +390,9 @@ void OutputBuffers::Schedule() {
         continue;
       }
       reader->send_rate_.StartSend(scheduling.queued_bytes);
-      reader->frames_ = std::move(scheduling.frames);
+      for (auto& frame : scheduling.frames) {
+        reader->frames_.push_back(std::move(frame));
+      }
       reader->reading_ = false;
       auto waker = std::move(reader->waker_);
       reader->mu_.Unlock();

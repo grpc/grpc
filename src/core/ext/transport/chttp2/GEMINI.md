@@ -103,6 +103,7 @@ and the underlying endpoint.
     *   `writable_streams.{h,cc}` Track streams that have some data to send to the peer and have available flow control tokens.
 *   Settings Helper : `http2_settings_promises.h`
 *   Flow Control Helper : `flow_control_manager.h`
+*   Stream : `stream.h` representation of each HTTP2 stream in the HTTP2 transport.
 
 ## 3. Common Files (Shared by CHTTP2 and PH2)
 
@@ -166,12 +167,19 @@ Key test files include:
     *   `test/core/transport/chttp2/message_assembler_test.cc`
     *   `test/core/transport/chttp2/keepalive_test.cc`
     *   `test/core/transport/chttp2/writable_streams_test.cc`
+    *   `test/core/transport/chttp2/http2_status_test.cc`
+    *   `test/core/transport/chttp2/message_assembler_fuzz_test.cc`
+    *   `test/core/transport/chttp2/stream_data_queue_fuzz_test.cc`
+    *   `test/core/transport/chttp2/writable_streams_fuzz_test.cc`
 
 *   **Common Component Tests:**
     *   `test/core/transport/chttp2/http2_settings_test.cc`
     *   `test/core/transport/chttp2/hpack_encoder_test.cc`
     *   `test/core/transport/chttp2/hpack_parser_test.cc`
     *   `test/core/transport/chttp2/flow_control_test.cc`
+    *   `test/core/transport/chttp2/flow_control_manager_test.cc`
+    *   `test/core/transport/chttp2/write_size_policy_test.cc`
+    *   `test/core/transport/chttp2/write_size_policy_fuzztest.cc`
 
 *   **PH2 End-to-end Tests:**
     *   `test/core/end2end/end2end_ph2_config.cc`: This file defines the test

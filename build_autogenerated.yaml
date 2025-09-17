@@ -355,6 +355,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/ping_callbacks.h
   - src/core/ext/transport/chttp2/transport/ping_promise.h
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.h
+  - src/core/ext/transport/chttp2/transport/stream.h
   - src/core/ext/transport/chttp2/transport/stream_data_queue.h
   - src/core/ext/transport/chttp2/transport/stream_lists.h
   - src/core/ext/transport/chttp2/transport/transport_common.h
@@ -2509,6 +2510,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/ping_callbacks.h
   - src/core/ext/transport/chttp2/transport/ping_promise.h
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.h
+  - src/core/ext/transport/chttp2/transport/stream.h
   - src/core/ext/transport/chttp2/transport/stream_data_queue.h
   - src/core/ext/transport/chttp2/transport/stream_lists.h
   - src/core/ext/transport/chttp2/transport/transport_common.h
@@ -8620,8 +8622,10 @@ targets:
   - src/core/channelz/zviz/data.h
   - src/core/channelz/zviz/entity.h
   - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/format_entity_list.h
   - src/core/channelz/zviz/layout.h
   - src/core/channelz/zviz/layout_text.h
+  - src/core/channelz/zviz/property_list.h
   - src/core/channelz/zviz/strings.h
   - src/core/channelz/zviz/style.h
   - src/core/channelz/zviz/trace.h
@@ -8679,13 +8683,16 @@ targets:
   - test/cpp/util/service_describer.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - src/proto/grpc/channelz/v2/promise.proto
   - src/proto/grpc/channelz/v2/property_list.proto
   - src/proto/grpc/reflection/v1alpha/reflection.proto
   - src/core/channelz/zviz/data.cc
   - src/core/channelz/zviz/entity.cc
   - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/format_entity_list.cc
   - src/core/channelz/zviz/layout.cc
   - src/core/channelz/zviz/layout_text.cc
+  - src/core/channelz/zviz/property_list.cc
   - src/core/channelz/zviz/strings.cc
   - src/core/channelz/zviz/style.cc
   - src/core/channelz/zviz/trace.cc
@@ -14772,6 +14779,7 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/promise/poll_matcher.h
+  - test/core/test_util/postmortem.h
   - test/core/transport/chttp2/http2_frame_test_helper.h
   - test/core/transport/util/mock_promise_endpoint.h
   - test/core/transport/util/transport_test.h
