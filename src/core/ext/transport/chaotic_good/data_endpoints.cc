@@ -60,78 +60,6 @@ const uint64_t kSecurityFramePayloadTag = 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// SendRate
-
-void SendRate::SetNetworkMetrics(const std::optional<NetworkSend>& network_send,
-                                 const NetworkMetrics& metrics) {
-  bool updated = false;
-  if (metrics.rtt_usec.has_value()) {
-    CHECK_GE(*metrics.rtt_usec, 0u);
-    rtt_usec_ = *metrics.rtt_usec;
-    updated = true;
-  }
-  if (metrics.bytes_per_nanosecond.has_value()) {
-    if (metrics.bytes_per_nanosecond < 0) {
-      LOG_EVERY_N_SEC(ERROR, 10)
-          << "Negative bytes per nanosecond: " << *metrics.bytes_per_nanosecond;
-    } else if (std::isnan(*metrics.bytes_per_nanosecond)) {
-      LOG_EVERY_N_SEC(ERROR, 10)
-          << "NaN bytes per nanosecond: " << *metrics.bytes_per_nanosecond;
-    } else {
-      current_rate_ = *metrics.bytes_per_nanosecond;
-    }
-    updated = true;
-  }
-  if (network_send.has_value() &&
-      network_send->start_time > last_send_started_time_) {
-    last_send_started_time_ = network_send->start_time;
-    last_send_bytes_outstanding_ = network_send->bytes;
-    updated = true;
-  }
-  if (updated) last_rate_measurement_ = Timestamp::Now();
-}
-
-bool SendRate::IsRateMeasurementStale() const {
-  return Timestamp::Now() - last_rate_measurement_ > Duration::Seconds(1);
-}
-
-SendRate::DeliveryData SendRate::GetDeliveryData(uint64_t current_time) const {
-  // start time relative to the current time for this send
-  double start_time = 0.0;
-  if (last_send_started_time_ != 0 && current_rate_ > 0) {
-    // Use integer subtraction to avoid rounding errors, getting everything
-    // with a zero base of 'now' to maximize precision.
-    // Since we have uint64_ts and want a signed double result we need to
-    // care about argument ordering to get a valid result.
-    const double send_start_time_relative_to_now =
-        current_time > last_send_started_time_
-            ? -static_cast<double>(current_time - last_send_started_time_)
-            : static_cast<double>(last_send_started_time_ - current_time);
-    const double predicted_end_time =
-        send_start_time_relative_to_now +
-        last_send_bytes_outstanding_ / current_rate_;
-    if (predicted_end_time > start_time) start_time = predicted_end_time;
-  }
-  if (current_rate_ <= 0) {
-    return DeliveryData{(start_time + rtt_usec_ * 500.0) * 1e-9, 1e14};
-  } else {
-    return DeliveryData{(start_time + rtt_usec_ * 500.0) * 1e-9,
-                        current_rate_ * 1e9};
-  }
-}
-
-channelz::PropertyList SendRate::ChannelzProperties() const {
-  channelz::PropertyList obj;
-  if (last_send_started_time_ != 0) {
-    obj.Set("send_start_time", last_send_started_time_)
-        .Set("send_size", last_send_bytes_outstanding_);
-  }
-  return obj.Set("current_rate", current_rate_)
-      .Set("rtt", rtt_usec_)
-      .Set("last_rate_measurement", last_rate_measurement_);
-}
-
-///////////////////////////////////////////////////////////////////////////////
 // OutputBuffers
 
 void OutputBuffers::Reader::EndReadNext() {
@@ -144,6 +72,7 @@ void OutputBuffers::Reader::EndReadNext() {
     // critical path anyway.
     auto frames = std::move(frames_);
     frames_.clear();
+    send_rate_.DequeueFromReader(output_buffers_->clock_->Now());
     mu_.Unlock();
     for (auto& frame : frames) {
       output_buffers_->Write(frame.payload_tag, std::move(frame.frame));
@@ -171,6 +100,7 @@ OutputBuffers::Reader::PollReadNext() {
     DCHECK(!reading_);
     auto frames = std::move(frames_);
     frames_.clear();
+    send_rate_.DequeueFromReader(output_buffers_->clock_->Now());
     output_buffers_->WakeupScheduler(/*async=*/true);
     mu_.Unlock();
     return std::move(frames);
@@ -341,9 +271,8 @@ void OutputBuffers::Schedule() {
       auto delivery_data = scheduling.reader->send_rate_.GetDeliveryData(now);
       bool reading = scheduling.reader->reading_;
       scheduling.reader->mu_.Unlock();
-      scheduler_->AddChannel(i, reading, delivery_data.start_time,
-                             delivery_data.bytes_per_second);
-    }
+      scheduler_->AddChannel(i, reading, delivery_data);
+      }
   }
   {
     GRPC_LATENT_SEE_SCOPE("OutputBuffers::Schedule::MakePlan");
@@ -389,7 +318,7 @@ void OutputBuffers::Schedule() {
         }
         continue;
       }
-      reader->send_rate_.StartSend(scheduling.queued_bytes);
+      reader->send_rate_.EnqueueToReader(scheduling.queued_bytes, now);
       for (auto& frame : scheduling.frames) {
         reader->frames_.push_back(std::move(frame));
       }
@@ -793,6 +722,10 @@ auto Endpoint::WriteLoop(RefCountedPtr<EndpointContext> ctx) {
                     << "CHAOTIC_GOOD: " << ctx->reader.get() << " "
                     << "Write done to data endpoint #" << ctx->id
                     << " status: " << status;
+                // This acquires the reader lock, but we don't expect too much
+                // contention here. In most cases, only one thread will be
+                // accessing the lock.
+                ctx->reader->FinishEndpointWrite();
                 return status;
               });
         },
