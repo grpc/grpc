@@ -373,6 +373,9 @@ inline constexpr uint32_t kMaxSize31Bit = 0x7fffffffu;
 inline constexpr uint32_t kMinimumFrameSize = 16384;
 inline constexpr uint32_t kMaximumFrameSize = 16777215;
 
+// Default Initial Window Size as per RFC 9113 Section 6.5.2
+inline constexpr uint32_t kHttp2InitialWindowSize = 65535u;
+
 }  // namespace RFC9113
 }  // namespace grpc_core
 
