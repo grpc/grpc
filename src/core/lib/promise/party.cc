@@ -202,13 +202,17 @@ void Party::ToJson(absl::AnyInvocable<void(Json::Object)> f) {
 }
 
 void Party::ExportToChannelz(std::string name, channelz::DataSink sink) {
-  Spawn(
-      "export-to-channelz",
-      [name = std::move(name), sink = std::move(sink), self = Ref()]() mutable {
-        sink.AddData(std::move(name), self->ChannelzPropertiesLocked());
-        return absl::OkStatus();
-      },
-      [](absl::Status) {});
+  arena()->GetContext<grpc_event_engine::experimental::EventEngine>()->Run(
+      [self = Ref(), name = std::move(name), sink = std::move(sink)]() mutable {
+        ExecCtx exec_ctx;
+        self->Spawn(
+            "export-to-channelz",
+            [name = std::move(name), sink = std::move(sink), self]() mutable {
+              sink.AddData(std::move(name), self->ChannelzPropertiesLocked());
+              return absl::OkStatus();
+            },
+            [](absl::Status) {});
+      });
 }
 
 channelz::PropertyList Party::ChannelzPropertiesLocked() {
