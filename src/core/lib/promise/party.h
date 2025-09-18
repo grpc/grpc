@@ -456,15 +456,11 @@ class Party : public Activity, private Wakeable {
     channelz::PropertyList ChannelzProperties() override {
       return channelz::PropertyList()
           .Set("on_complete", TypeName<OnComplete>())
-          .Set("factory", [this]() {
-            channelz::PropertyList factory;
-            if (started_) {
-              factory.Set("promise", PromiseProperty(&promise_));
-            } else {
-              factory.Set("factory",
-                          TypeName<typename Factory::UnderlyingFactory>());
-            }
-            return factory;
+          .Set("factory", TypeName<typename Factory::UnderlyingFactory>())
+          .Merge([this]() {
+            channelz::PropertyList p;
+            if (started_) p.Set("promise", PromiseProperty(&promise_));
+            return p;
           }());
     }
 
