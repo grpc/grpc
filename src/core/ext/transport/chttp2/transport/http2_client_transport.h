@@ -277,6 +277,17 @@ class Http2ClientTransport final : public ClientTransport {
   HPackCompressor encoder_;
   HPackParser parser_;
   bool is_transport_closed_ ABSL_GUARDED_BY(transport_mutex_) = false;
+  Latch<void> transport_closed_latch_;
+
+  template <typename Promise>
+  auto UntilTransportClosed(Promise promise) {
+    return Race(Map(transport_closed_latch_.Wait(),
+                    [](Empty) {
+                      GRPC_HTTP2_CLIENT_DLOG << "Transport closed";
+                      return absl::CancelledError("Transport closed");
+                    }),
+                std::move(promise));
+  }
 
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
       "http2_client", GRPC_CHANNEL_READY};

@@ -728,7 +728,8 @@ auto Http2ClientTransport::SerializeAndWrite(std::vector<Http2Frame>&& frames) {
 
 auto Http2ClientTransport::MultiplexerLoop() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport MultiplexerLoop Factory";
-  return Loop([self = RefAsSubclass<Http2ClientTransport>()]() {
+  return AssertResultType<
+      absl::Status>(Loop([self = RefAsSubclass<Http2ClientTransport>()]() {
     self->write_bytes_remaining_ = self->GetMaxWriteSize();
     GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport MultiplexerLoop "
                            << " max_write_size_=" << self->GetMaxWriteSize();
@@ -875,7 +876,7 @@ auto Http2ClientTransport::MultiplexerLoop() {
           }
           return Continue();
         });
-  });
+  }));
 }
 
 auto Http2ClientTransport::OnMultiplexerLoopEnded() {
@@ -962,10 +963,11 @@ Http2ClientTransport::Http2ClientTransport(
   general_party_arena->SetContext<EventEngine>(event_engine.get());
   general_party_ = Party::Make(std::move(general_party_arena));
 
-  general_party_->Spawn("ReadLoop", ReadLoop(), OnReadLoopEnded());
-  general_party_->Spawn("MultiplexerLoop", MultiplexerLoop(),
+  general_party_->Spawn("ReadLoop", UntilTransportClosed(ReadLoop()),
+                        OnReadLoopEnded());
+  general_party_->Spawn("MultiplexerLoop",
+                        UntilTransportClosed(MultiplexerLoop()),
                         OnMultiplexerLoopEnded());
-
   // The keepalive loop is only spawned if the keepalive time is not infinity.
   keepalive_manager_.Spawn(general_party_.get());
 
@@ -1102,6 +1104,8 @@ void Http2ClientTransport::BeginCloseStream(
 
 void Http2ClientTransport::CloseTransport() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseTransport";
+
+  transport_closed_latch_.Set();
   // This is the only place where the general_party_ is
   // reset.
   general_party_.reset();
