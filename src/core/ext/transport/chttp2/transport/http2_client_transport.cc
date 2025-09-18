@@ -819,6 +819,9 @@ auto Http2ClientTransport::MultiplexerLoop() {
                                              std::string(status.message())));
               }
             }
+            if (result.InitialMetadataDequeued()) {
+              stream->SentInitialMetadata();
+            }
             if (result.HalfCloseDequeued()) {
               self->CloseStream(*stream_id,
                                 CloseStreamArgs{/*close_reads=*/false,
@@ -1297,12 +1300,6 @@ auto Http2ClientTransport::CallOutboundLoop(
                        "Enqueued Initial Metadata";
                 return self->MaybeAddStreamToWritableStreamList(stream_id,
                                                                 result);
-              },
-              [stream] {
-                // TODO(akshitpatel) : [PH2][P2] : Think how to handle stream
-                // states.
-                stream->SentInitialMetadata();
-                return absl::OkStatus();
               });
         },
         []() {

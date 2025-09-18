@@ -47,6 +47,7 @@ struct Stream : public RefCounted<Stream> {
 
   ////////////////////////////////////////////////////////////////////////////
   // Data Queue Helpers
+  // All enqueue methods are called from the call party.
 
   auto EnqueueInitialMetadata(ClientMetadataHandle&& metadata) {
     GRPC_HTTP2_CLIENT_DLOG
@@ -83,6 +84,7 @@ struct Stream : public RefCounted<Stream> {
     return data_queue->EnqueueResetStream(error_code);
   }
 
+  // Called from the transport party
   auto DequeueFrames(const uint32_t transport_tokens,
                      const uint32_t max_frame_length,
                      HPackCompressor& encoder) {
@@ -92,6 +94,7 @@ struct Stream : public RefCounted<Stream> {
 
   ////////////////////////////////////////////////////////////////////////////
   // Stream State Management
+  // All state management helpers MUST be called from the transport party.
 
   // Modify the stream state
   // The possible stream transitions are as follows:
