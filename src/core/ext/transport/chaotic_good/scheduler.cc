@@ -25,6 +25,7 @@
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
+#include "src/core/ext/transport/chaotic_good/send_rate.h"
 #include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
 #include "src/core/util/shared_bit_gen.h"
 
@@ -93,9 +94,10 @@ class SimpleScheduler : public Scheduler {
     LOG(ERROR) << "SimpleScheduler::SetConfig: " << name << "=" << value;
   }
 
-  void AddChannel(uint32_t id, bool ready, double start_time,
-                  double bytes_per_second) override {
-    channels_.emplace_back(Channel{id, ready, start_time, bytes_per_second});
+  void AddChannel(uint32_t id, bool ready,
+                  const SendRate::DeliveryData& delivery_data) override {
+    channels_.emplace_back(Channel{id, ready, delivery_data.start_time,
+                                   delivery_data.bytes_per_second});
   }
 
   void MakePlan(TcpZTraceCollector&) override {
@@ -252,8 +254,8 @@ class SpanScheduler : public Scheduler {
 
   void SetConfig(absl::string_view name, absl::string_view value) override;
 
-  void AddChannel(uint32_t id, bool ready, double start_time,
-                  double bytes_per_second) override;
+  void AddChannel(uint32_t id, bool ready,
+                  const SendRate::DeliveryData& delivery_data) override;
 
   // Transition: Make a plan for the outstanding work.
   void MakePlan(TcpZTraceCollector& ztrace_collector) override;
@@ -318,9 +320,10 @@ void SpanScheduler::NewStep(double outstanding_bytes, double min_tokens) {
   channels_.clear();
 }
 
-void SpanScheduler::AddChannel(uint32_t id, bool ready, double start_time,
-                               double bytes_per_second) {
-  channels_.emplace_back(id, ready, start_time, bytes_per_second);
+void SpanScheduler::AddChannel(uint32_t id, bool ready,
+                               const SendRate::DeliveryData& delivery_data) {
+  channels_.emplace_back(id, ready, delivery_data.start_time,
+                         delivery_data.bytes_per_second);
 }
 
 void SpanScheduler::MakePlan(TcpZTraceCollector& ztrace_collector) {

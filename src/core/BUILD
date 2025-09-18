@@ -9051,10 +9051,10 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log",
-        "absl/log:check",
     ],
     deps = [
         "channelz_property_list",
+        "grpc_check",
     ],
 )
 

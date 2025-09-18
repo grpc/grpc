@@ -66,7 +66,7 @@ void SendRateIsRobust(double initial_rate, std::vector<SendRateOp> ops) {
   SendRate send_rate(initial_rate);
   for (const auto& op : ops) {
     Match(
-        op, [&](StartSendOp op) { send_rate.StartSend(op.bytes); },
+        op, [&](StartSendOp op) { send_rate.EnqueueToReader(op.bytes); },
         [&](SetNetworkMetricsOp op) {
           send_rate.SetNetworkMetrics(op.network_send, op.metrics);
         },
