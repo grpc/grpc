@@ -80,8 +80,7 @@ class OpenTelemetryPluginImpl::ClientCallTracerInterface::CallAttemptTracer<
         ->template GetContext<grpc_core::Call>()
         ->InternalRef(
             "OpenTelemetryPluginImpl::ClientCallTracerInterface::"
-            "CallAttemptTracer::"
-            "TcpCallTracer");
+            "CallAttemptTracer::TcpCallTracer");
   }
 
   ~TcpCallTracer() override {
@@ -91,9 +90,8 @@ class OpenTelemetryPluginImpl::ClientCallTracerInterface::CallAttemptTracer<
     // reset before unreffing the call.
     call_attempt_tracer_.reset();
     arena->template GetContext<grpc_core::Call>()->InternalUnref(
-        "OpenTelemetryPluginImpl::ClientCallTracerInterface::CallAttemptTracer:"
-        ":~"
-        "TcpCallTracer");
+        "OpenTelemetryPluginImpl::ClientCallTracerInterface::"
+        "CallAttemptTracer::~TcpCallTracer");
   }
 
   void RecordEvent(grpc_event_engine::experimental::internal::WriteEvent type,
