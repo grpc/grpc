@@ -80,6 +80,7 @@ grpc_cc_library(
     ],
     deps = [
         "proto_parser_helper",
+        "//:gpr_platform",
         "//:grpc++_config_proto",
         "@com_google_protobuf//src/google/protobuf/compiler:code_generator",
         "@com_google_protobuf//src/google/protobuf/compiler:plugin",
