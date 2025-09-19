@@ -726,6 +726,7 @@ void BasicMemoryQuota::AddData(channelz::DataSink sink) {
       channelz::PropertyList()
           .Set("free_bytes", free_bytes_.load(std::memory_order_relaxed))
           .Set("quota_size", quota_size_.load(std::memory_order_relaxed))
+          .Set("container_memory_pressure", ContainerMemoryPressure())
           .Merge(pressure_tracker_.ChannelzProperties())
           .Set("allocators",
                [this]() {
