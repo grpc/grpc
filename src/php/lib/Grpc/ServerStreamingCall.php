@@ -19,19 +19,24 @@
 
 namespace Grpc;
 
+use Generator;
+use Google\Protobuf\Internal\Message;
+
 /**
  * Represents an active call that sends a single message and then gets a
  * stream of responses.
+ *
+ * @template T of Message
  */
 class ServerStreamingCall extends AbstractCall
 {
     /**
      * Start the call.
      *
-     * @param mixed $data     The data to send
+     * @param T $data     The data to send
      * @param array $metadata Metadata to send with the call, if applicable
      *                        (optional)
-     * @param array $options  An array of options, possible keys:
+     * @param array<string, mixed> $options  An array of options, possible keys:
      *                        'flags' => a number (optional)
      */
     public function start($data, array $metadata = [], array $options = [])
@@ -48,7 +53,7 @@ class ServerStreamingCall extends AbstractCall
     }
 
     /**
-     * @return mixed An iterator of response values
+     * @return Generator<T|null> An iterator of response values
      */
     public function responses()
     {
@@ -72,7 +77,7 @@ class ServerStreamingCall extends AbstractCall
     /**
      * Wait for the server to send the status, and return it.
      *
-     * @return \stdClass The status object, with integer $code, string
+     * @return object{code: int, metadata: array<string, string[]>, details: string} The status object, with integer $code, string
      *                   $details, and array $metadata members
      */
     public function getStatus()
@@ -87,7 +92,7 @@ class ServerStreamingCall extends AbstractCall
     }
 
     /**
-     * @return mixed The metadata sent by the server
+     * @return array<string, string[]> The metadata sent by the server
      */
     public function getMetadata()
     {
