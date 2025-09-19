@@ -6377,6 +6377,8 @@ target_link_libraries(grpc_plugin_support
 
 foreach(_hdr
   include/grpc++/impl/codegen/config_protobuf.h
+  include/grpc/impl/codegen/port_platform.h
+  include/grpc/support/port_platform.h
   include/grpcpp/impl/codegen/config_protobuf.h
 )
   string(REPLACE "include/" "" _path ${_hdr})
