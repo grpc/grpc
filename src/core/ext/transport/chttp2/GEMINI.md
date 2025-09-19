@@ -71,8 +71,14 @@ and the underlying endpoint.
 *   **Compatibility:** Compatibility with the new efficient Call V3 stack.
 *   **Modernization:** Leverage the gRPC Promise API for cleaner and more maintainable asynchronous code.
 *   **Performance:** Aim for equal or better performance compared to CHTTP2.
-*   **Compliance:** Stricter adherence to HTTP/2 RFC [RFC 9113](https://www.rfc-editor.org/rfc/rfc9113.html).
+*   **Compliance:** Adhere to HTTP/2 RFC [RFC 9113](https://www.rfc-editor.org/rfc/rfc9113.html).
 *   **Feature Parity:** Support all necessary features currently provided by CHTTP2.
+
+### PH2 Development Guidelines
+
+*   **Reference CHTTP2:** When implementing features in PH2, always first check the CHTTP2 implementation in this directory for reference. Use the mapping in the "Key classes in CHTTP2 and their PH2 equivalents" section below to find the PH2 counterparts.
+*   **Asynchronous Operations:** All asynchronous operations *must* use the gRPC Promise library (`src/core/lib/promise`), particularly leveraging `Party` for concurrency. See the `Dependencies for PH2` section.
+*   **Testing:** Any changes to PH2 code should be accompanied by relevant tests. Ensure that existing tests in `test/core/transport/chttp2/http2_client_transport_test.cc` and `test/core/transport/chttp2/http2_server_transport_test.cc` pass. Add new tests as needed to cover new functionality.
 
 ### Key Differences from CHTTP2
 
@@ -195,3 +201,14 @@ Key test files include:
     *   PH2 heavily relies on the gRPC Promise framework [`src/core/lib/promise/`](../lib/promise/GEMINI.md)
     *   Key components like [`party.h`](../lib/promise/party.h) are fundamental to PH2's async model.
 *   **Call Spine:** PH2 interacts with the V3 Call Spine components located in [`src/core/call/`](../../call/GEMINI.md).
+
+## Similarities of PH2 and Chaotic Good
+
+PH2 shares several architectural similarities with the [Chaotic Good transport](../../ext/transport/chaotic_good/GEMINI.md) transport:
+
+*   **Promise-Based:** Both transports are built upon the gRPC Promise library for managing asynchronous operations. This is a departure from the callback-based system in CHTTP2.
+*   **Call V3 Stack:** Both are designed to work with the newer Call V3 stack.
+*   **Client Transport Implementation:** The client transport implementations in PH2 (`http2_client_transport.h`) and Chaotic Good (`client_transport.h`) show conceptual similarities in how they handle stream creation, frame sending/receiving, and interaction with the promise-based event loop.
+*   **Framing Concepts:** While the specific frame types and serialization differ (HTTP/2 vs. custom proto-based for Chaotic Good), the underlying concepts of defining frame structures (e.g., `frame.h` in both transports) and managing their serialization/deserialization are present in both.
+*   **Endpoint Interaction:** Both transports use the `PromiseEndpoint` abstraction or reading from and writing to the network, making the core transport logic independent of the underlying I/O mechanism.
+*   **Stream Initiation:** In PH2, `Http2ClientTransport::StartCall` initiates a new stream. It acquires a lock, assigns a new stream ID, creates a `Stream` object, and spawns the `CallOutboundLoop` to handle the stream's outgoing messages. Chaotic Good follows a similar pattern in `ChaoticGoodClientTransport::StartCall`, where it calls `StreamDispatch::MakeStream` to allocate a stream ID and create a `Stream` object, and then spawns `CallOutboundLoop` for the stream's lifecycle.
