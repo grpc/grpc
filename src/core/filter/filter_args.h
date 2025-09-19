@@ -34,7 +34,7 @@ class FilterConfig {
 
 struct FilterAndConfig {
   const grpc_channel_filter* filter;
-  std::shared_ptr<grpc_core::FilterConfig> config;
+  std::shared_ptr<FilterConfig> config;
 };
 
 // Filter arguments that are independent of channel args.
