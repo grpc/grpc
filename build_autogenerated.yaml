@@ -5295,6 +5295,8 @@ libs:
   language: c++
   public_headers:
   - include/grpc++/impl/codegen/config_protobuf.h
+  - include/grpc/impl/codegen/port_platform.h
+  - include/grpc/support/port_platform.h
   - include/grpcpp/impl/codegen/config_protobuf.h
   headers:
   - src/compiler/config.h
