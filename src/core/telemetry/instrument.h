@@ -491,6 +491,11 @@ struct Counter {
 // per InstrumentDomainImpl.
 template <typename Shape, typename Domain>
 class InstrumentHandle {
+ public:
+  absl::string_view name() const { return description_->name; }
+  absl::string_view description() const { return description_->description; }
+  absl::string_view unit() const { return description_->unit; }
+
  private:
   friend Domain;
 
@@ -512,7 +517,7 @@ template <typename T>
 using StdString = std::string;
 
 template <typename T>
-using ConstCharPtr = const char*;
+using AbslStringView = absl::string_view;
 
 }  // namespace instrument_detail
 
@@ -523,8 +528,8 @@ class LowContentionBackend final {
  public:
   explicit LowContentionBackend(size_t size);
 
-  void Increment(size_t index) {
-    counters_[index].fetch_add(1, std::memory_order_relaxed);
+  void Increment(size_t index, uint64_t amount) {
+    counters_[index].fetch_add(amount, std::memory_order_relaxed);
   }
 
   uint64_t Sum(size_t index);
@@ -541,8 +546,8 @@ class HighContentionBackend final {
  public:
   explicit HighContentionBackend(size_t size);
 
-  void Increment(size_t index) {
-    counters_.this_cpu()[index].fetch_add(1, std::memory_order_relaxed);
+  void Increment(size_t index, uint64_t amount) {
+    counters_.this_cpu()[index].fetch_add(amount, std::memory_order_relaxed);
   }
 
   uint64_t Sum(size_t index);
@@ -558,16 +563,21 @@ class MetricsSink {
  public:
   // Called once per label per metric, with the value of that metric for that
   // label.
-  virtual void Counter(absl::Span<const std::string> label,
+  virtual void Counter(absl::Span<const std::string> label_keys,
+                       absl::Span<const std::string> label,
                        absl::string_view name, uint64_t value) = 0;
-  virtual void Histogram(absl::Span<const std::string> label,
+  virtual void Histogram(absl::Span<const std::string> label_keys,
+                         absl::Span<const std::string> label,
                          absl::string_view name, HistogramBuckets bounds,
                          absl::Span<const uint64_t> counts) = 0;
-  virtual void DoubleGauge(absl::Span<const std::string> labels,
+  virtual void DoubleGauge(absl::Span<const std::string> label_keys,
+                           absl::Span<const std::string> labels,
                            absl::string_view name, double value) = 0;
-  virtual void IntGauge(absl::Span<const std::string> labels,
+  virtual void IntGauge(absl::Span<const std::string> label_keys,
+                        absl::Span<const std::string> labels,
                         absl::string_view name, int64_t value) = 0;
-  virtual void UintGauge(absl::Span<const std::string> labels,
+  virtual void UintGauge(absl::Span<const std::string> label_keys,
+                         absl::Span<const std::string> labels,
                          absl::string_view name, uint64_t value) = 0;
 
  protected:
@@ -602,7 +612,8 @@ class MetricsQuery {
              absl::FunctionRef<void(MetricsSink&)> fn, MetricsSink& sink) const;
 
   // Runs the query, outputting the results to `sink`.
-  void Run(std::unique_ptr<CollectionScope> scope, MetricsSink& sink) const;
+  void Run(const std::unique_ptr<CollectionScope>& scope,
+           MetricsSink& sink) const;
 
  private:
   void ApplyLabelChecks(absl::Span<const std::string> label_names,
@@ -708,16 +719,16 @@ class InstrumentDomainImpl final : public QueryableDomain {
 
     // Increments the counter specified by `handle` by 1 for this storages
     // labels.
-    void Increment(CounterHandle handle) {
+    void Increment(CounterHandle handle, uint64_t amount = 1) {
       DCHECK_EQ(handle.instrument_domain_, domain());
-      backend_.Increment(handle.offset_);
+      backend_.Increment(handle.offset_, amount);
     }
 
     template <typename Shape>
     void Increment(const HistogramHandle<Shape>& handle, int64_t value) {
       DCHECK_EQ(handle.instrument_domain_, domain());
       CallHistogramCollectionHooks(handle.description_, label(), value);
-      backend_.Increment(handle.offset_ + handle.shape_->BucketFor(value));
+      backend_.Increment(handle.offset_ + handle.shape_->BucketFor(value), 1);
     }
 
    private:
@@ -865,7 +876,7 @@ class InstrumentDomain {
  protected:
   template <typename... Label>
   static constexpr auto Labels(Label... labels) {
-    return std::tuple<instrument_detail::ConstCharPtr<Label>...>{labels...};
+    return std::tuple<instrument_detail::AbslStringView<Label>...>{labels...};
   }
 
   static auto RegisterCounter(absl::string_view name,
