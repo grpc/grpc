@@ -98,6 +98,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
       write_staging_buffer_ =
           memory_owner_.MakeSlice(MemoryRequest(STAGING_BUFFER_SIZE));
     }
+    is_zero_copy_protector_ = zero_copy_protector_ != nullptr;
   }
 
   ~FrameProtector() override {
@@ -179,6 +180,8 @@ class FrameProtector : public RefCounted<FrameProtector> {
     if (!ok) grpc_slice_buffer_reset_and_unref(read_buffer_);
     read_buffer_ = nullptr;
   }
+
+  bool IsZeroCopyProtector() const { return is_zero_copy_protector_; }
 
   absl::Status Unprotect(absl::Status read_status)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_) {
@@ -451,6 +454,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
   int min_progress_size_ = 1;
   SliceBuffer protector_staging_buffer_;
   bool shutdown_ = false;
+  bool is_zero_copy_protector_ = false;
 };
 }  // namespace
 }  // namespace grpc_core
@@ -807,7 +811,20 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
           impl->frame_protector_.TraceOp("data",
                                          source_buffer->c_slice_buffer());
           args = std::move(impl->last_read_args_);
-          args.set_read_hint_bytes(impl->frame_protector_.min_progress_size());
+          if (impl->frame_protector_.IsZeroCopyProtector()) {
+            // We currently only track min progress size for zero copy
+            // protectors. Once we add this for non-zero copy protectors, we
+            // should remove the if condition.
+            // Since we start unprotecting after the first read, the min
+            // progress size does not account for the bytes we have already read
+            // in the previous read, so we need to subtract them here.
+            args.set_read_hint_bytes(
+                std::max<size_t>(1, impl->frame_protector_.min_progress_size() -
+                                        source_buffer->Length()));
+          } else if (args.read_hint_bytes() > 0) {
+            args.set_read_hint_bytes(std::max<size_t>(
+                1, args.read_hint_bytes() - source_buffer->Length()));
+          }
         }
 
         // Kick off the next read in another thread while we unprotect in this

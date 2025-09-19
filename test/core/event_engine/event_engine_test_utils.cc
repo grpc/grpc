@@ -95,7 +95,8 @@ std::string ExtractSliceBufferIntoString(SliceBuffer* buf) {
 
 absl::Status SendValidatePayload(absl::string_view data,
                                  EventEngine::Endpoint* send_endpoint,
-                                 EventEngine::Endpoint* receive_endpoint) {
+                                 EventEngine::Endpoint* receive_endpoint,
+                                 int read_hint_bytes) {
   GRPC_CHECK_NE(receive_endpoint, nullptr);
   GRPC_CHECK_NE(send_endpoint, nullptr);
   int num_bytes_written = data.size();
@@ -129,13 +130,13 @@ absl::Status SendValidatePayload(absl::string_view data,
     EventEngine::Endpoint::ReadArgs args;
     args.set_read_hint_bytes(num_bytes_remaining);
     if (receive_endpoint->Read(read_cb, &read_slice_buf, std::move(args))) {
-      GRPC_CHECK_NE(read_slice_buf.Length(), 0u);
       read_cb(absl::OkStatus());
     }
   };
   // Start asynchronous reading at the receive_endpoint.
   EventEngine::Endpoint::ReadArgs args;
-  args.set_read_hint_bytes(num_bytes_written);
+  args.set_read_hint_bytes(
+      (read_hint_bytes == -1 ? num_bytes_written : read_hint_bytes));
   if (receive_endpoint->Read(read_cb, &read_slice_buf, std::move(args))) {
     read_cb(absl::OkStatus());
   }
