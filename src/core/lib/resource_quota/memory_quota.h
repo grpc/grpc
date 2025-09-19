@@ -551,12 +551,19 @@ class MemoryOwner final : public MemoryAllocator {
   // Is this object valid (ie has not been moved out of or reset)
   bool is_valid() const { return impl() != nullptr; }
 
-  static double memory_pressure_high_threshold() { return 0.99; }
+  static double memory_pressure_high_threshold_reject_new_streams() {
+    return 0.99;
+  }
 
-  // Return true if the controlled memory pressure is high.
-  bool IsMemoryPressureHigh() const {
+  static double memory_pressure_high_threshold_reject_new_connections() {
+    return 0.99;
+  }
+
+  // Return true if the controlled memory pressure is high enough to reject new
+  // streams.
+  bool RejectNewStreamsUnderHighMemoryPressure() const {
     return GetPressureInfo().pressure_control_value >
-           memory_pressure_high_threshold();
+           memory_pressure_high_threshold_reject_new_streams();
   }
 
   InstrumentStorage<ResourceQuotaDomain>* telemetry_storage() const {
@@ -598,9 +605,11 @@ class MemoryQuota final
   // Resize the quota to new_size.
   void SetSize(size_t new_size) { memory_quota_->SetSize(new_size); }
 
-  bool IsMemoryPressureHigh() const {
+  // Return true if the controlled memory pressure is high enough to reject new
+  // connections.
+  bool RejectNewConnectionsUnderHighMemoryPressure() const {
     return memory_quota_->GetPressureInfo().pressure_control_value >
-           MemoryOwner::memory_pressure_high_threshold();
+           MemoryOwner::memory_pressure_high_threshold_reject_new_connections();
   }
 
  private:

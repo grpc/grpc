@@ -421,7 +421,8 @@ static void on_read(void* arg, grpc_error_handle err) {
       goto error;
     }
 
-    if (sp->server->memory_quota->IsMemoryPressureHigh()) {
+    if (sp->server->memory_quota
+            ->RejectNewConnectionsUnderHighMemoryPressure()) {
       int64_t dropped_connections_count =
           num_dropped_connections.fetch_add(1, std::memory_order_relaxed) + 1;
       if (dropped_connections_count % 1000 == 1) {
