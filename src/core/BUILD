@@ -1774,6 +1774,7 @@ grpc_cc_library(
         "useful",
         ":resource_tracker",
         "//:channelz",
+        "//:config_vars",
         "//:gpr",
         "//:grpc_trace",
         "//:orphanable",

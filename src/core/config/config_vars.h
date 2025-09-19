@@ -48,6 +48,8 @@ class GPR_DLL ConfigVars {
     absl::optional<std::string> ssl_cipher_suites;
     absl::optional<std::string> experiments;
     absl::optional<std::string> trace;
+    absl::optional<double> experimental_target_memory_pressure;
+    absl::optional<double> experimental_memory_pressure_threshold;
   };
   ConfigVars(const ConfigVars&) = delete;
   ConfigVars& operator=(const ConfigVars&) = delete;
@@ -112,6 +114,19 @@ class GPR_DLL ConfigVars {
     return channelz_max_orphaned_nodes_;
   }
 
+  // EXPERIMENTAL: The target pressure for the memory quota pressure controller.
+  // This is a value between 0 and 1.
+  double ExperimentalTargetMemoryPressure() const {
+    return experimental_target_memory_pressure_;
+  }
+
+  // EXPERIMENTAL: The threshold for the memory quota pressure controller.
+  // This is a value between 0 and 1, and must always be greater than the
+  // target pressure.
+  double ExperimentalMemoryPressureThreshold() const {
+    return experimental_memory_pressure_threshold_;
+  }
+
  private:
   explicit ConfigVars(const Overrides& overrides);
   static const ConfigVars& Load();
@@ -130,6 +145,8 @@ class GPR_DLL ConfigVars {
   std::string trace_;
   absl::optional<std::string> override_system_ssl_roots_dir_;
   absl::optional<std::string> override_default_ssl_roots_file_path_;
+  double experimental_target_memory_pressure_;
+  double experimental_memory_pressure_threshold_;
 };
 
 }  // namespace grpc_core

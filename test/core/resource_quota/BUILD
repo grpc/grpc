@@ -55,6 +55,7 @@ grpc_cc_test(
     external_deps = [
         "absl/status",
         "absl/status:statusor",
+        "absl/time",
         "gtest",
     ],
     tags = [
@@ -65,6 +66,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "call_checker",
+        "//:config_vars",
         "//:exec_ctx",
         "//:gpr",
         "//src/core:memory_quota",

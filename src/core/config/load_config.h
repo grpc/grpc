@@ -33,6 +33,8 @@ int32_t LoadConfigFromEnv(absl::string_view environment_variable,
                           int32_t default_value);
 bool LoadConfigFromEnv(absl::string_view environment_variable,
                        bool default_value);
+double LoadConfigFromEnv(absl::string_view environment_variable,
+                         double default_value);
 
 template <typename T, typename D>
 T LoadConfig(const absl::Flag<absl::optional<T>>& flag,
