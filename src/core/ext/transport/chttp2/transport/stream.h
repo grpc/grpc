@@ -88,8 +88,13 @@ struct Stream : public RefCounted<Stream> {
   auto DequeueFrames(const uint32_t transport_tokens,
                      const uint32_t max_frame_length,
                      HPackCompressor& encoder) {
+    HttpStreamState state = GetStreamState();
+    // Reset stream MUST not be sent if the stream is idle or closed.
     return data_queue->DequeueFrames(transport_tokens, max_frame_length,
-                                     encoder);
+                                     encoder,
+                                     /*can_send_reset_stream=*/
+                                     !(state == HttpStreamState::kIdle ||
+                                       state == HttpStreamState::kClosed));
   }
 
   ////////////////////////////////////////////////////////////////////////////
@@ -103,14 +108,14 @@ struct Stream : public RefCounted<Stream> {
   // kHalfClosedLocal/kHalfClosedRemote -> kClosed
   // kClosed -> kClosed
   void SentInitialMetadata() {
-    DCHECK(stream_state == HttpStreamState::kIdle);
+    GRPC_DCHECK(stream_state == HttpStreamState::kIdle);
     stream_state = HttpStreamState::kOpen;
   }
 
   void MarkHalfClosedLocal() {
     switch (stream_state) {
       case HttpStreamState::kIdle:
-        DCHECK(false) << "MarkHalfClosedLocal called for an idle stream";
+        GRPC_DCHECK(false) << "MarkHalfClosedLocal called for an idle stream";
         break;
       case HttpStreamState::kOpen:
         GRPC_HTTP2_CLIENT_DLOG
@@ -137,7 +142,7 @@ struct Stream : public RefCounted<Stream> {
   void MarkHalfClosedRemote() {
     switch (stream_state) {
       case HttpStreamState::kIdle:
-        DCHECK(false) << "MarkHalfClosedRemote called for an idle stream";
+        GRPC_DCHECK(false) << "MarkHalfClosedRemote called for an idle stream";
         break;
       case HttpStreamState::kOpen:
         GRPC_HTTP2_CLIENT_DLOG

@@ -230,21 +230,15 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportAbortTest) {
   auto read_close = mock_endpoint.ExpectDelayedReadClose(
       absl::UnavailableError("Connection closed"), event_engine().get());
 
-  // Expect Client Initial Metadata to be sent.
+  // Expect Client Initial Metadata to be sent. We do not expect any writes
+  // after the abort. The stream is cancelled while in the IDLE state. The
+  // transport will not send a RST_STREAM frame for a stream that has not yet
+  // sent headers, as the server would not have created the stream yet.
   mock_endpoint.ExpectWrite(
       {
           EventEngineSlice(
               grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
           helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
-      },
-      event_engine().get());
-  mock_endpoint.ExpectWrite(
-      {
-          helper_.EventEngineSliceFromHttp2HeaderFrame(std::string(
-              kPathDemoServiceStep.begin(), kPathDemoServiceStep.end())),
-          helper_.EventEngineSliceFromHttp2RstStreamFrame(
-              /*stream_id=*/1,
-              /*error_code=*/static_cast<uint32_t>(Http2ErrorCode::kCancel)),
       },
       event_engine().get());
 

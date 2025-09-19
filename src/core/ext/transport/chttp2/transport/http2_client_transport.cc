@@ -559,8 +559,8 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
             /*current_frame_header*/ header);
 
         if (GPR_UNLIKELY(!status.IsOk())) {
-          DCHECK(status.GetType() ==
-                 Http2Status::Http2ErrorType::kConnectionError);
+          GRPC_DCHECK(status.GetType() ==
+                      Http2Status::Http2ErrorType::kConnectionError);
           return self->HandleError(std::nullopt, std::move(status));
         }
         GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport ReadAndProcessOneFrame "
@@ -1072,6 +1072,10 @@ void Http2ClientTransport::BeginCloseStream(
 
   RefCountedPtr<Stream> stream = LookupStream(stream_id);
   if (stream != nullptr) {
+    if (stream->did_push_trailing_metadata) {
+      return;
+    }
+
     // If reset stream needs to be sent, CloseStream will be called from the
     // Multiplexer after the reset stream frame is created.
     if (!reset_stream_error_code) {
