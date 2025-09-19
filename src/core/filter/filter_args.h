@@ -15,11 +15,27 @@
 #ifndef GRPC_SRC_CORE_FILTER_FILTER_ARGS_H
 #define GRPC_SRC_CORE_FILTER_FILTER_ARGS_H
 
+#include <memory>
+
 #include "src/core/filter/blackboard.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/util/match.h"
+#include "src/core/util/unique_type_name.h"
 
 namespace grpc_core {
+
+// A base class for filter configs.
+class FilterConfig {
+ public:
+  virtual ~FilterConfig() = default;
+
+  virtual UniqueTypeName Type() const = 0;
+};
+
+struct FilterAndConfig {
+  const grpc_channel_filter* filter;
+  std::shared_ptr<grpc_core::FilterConfig> config;
+};
 
 // Filter arguments that are independent of channel args.
 // Here-in should be things that depend on the filters location in the stack, or
@@ -31,9 +47,11 @@ class FilterArgs {
              grpc_channel_element* channel_element,
              size_t (*channel_stack_filter_instance_number)(
                  grpc_channel_stack*, grpc_channel_element*),
+             std::shared_ptr<FilterConfig> config = nullptr,
              const Blackboard* blackboard = nullptr)
       : impl_(ChannelStackBased{channel_stack, channel_element,
                                 channel_stack_filter_instance_number}),
+        config_(std::move(config)),
         blackboard_(blackboard) {}
   // While we're moving to call-v3 we need to have access to
   // grpc_channel_stack & friends here. That means that we can't rely on this
@@ -41,14 +59,18 @@ class FilterArgs {
   // of constructing this object without naming it ===> implicit construction.
   // TODO(ctiller): remove this once we're fully on call-v3
   // NOLINTNEXTLINE(google-explicit-constructor)
-  FilterArgs(size_t instance_id, const Blackboard* blackboard = nullptr)
-      : impl_(V3Based{instance_id}), blackboard_(blackboard) {}
+  FilterArgs(size_t instance_id, std::shared_ptr<FilterConfig> config = nullptr,
+             const Blackboard* blackboard = nullptr)
+      : impl_(V3Based{instance_id}),
+        config_(std::move(config)),
+        blackboard_(blackboard) {}
 
   ABSL_DEPRECATED("Direct access to channel stack is deprecated")
   grpc_channel_stack* channel_stack() const {
     return std::get<ChannelStackBased>(impl_).channel_stack;
   }
 
+  // FIXME: remove
   // Get the instance id of this filter.
   // This id is unique amongst all filters /of the same type/ and densely
   // packed (starting at 0) for a given channel stack instantiation.
@@ -65,6 +87,8 @@ class FilterArgs {
         },
         [](const V3Based& v3) { return v3.instance_id; });
   }
+
+  std::shared_ptr<FilterConfig> config() const { return config_; }
 
   // Gets the filter state associated with a particular type and key.
   template <typename T>
@@ -90,6 +114,7 @@ class FilterArgs {
   using Impl = std::variant<ChannelStackBased, V3Based>;
   Impl impl_;
 
+  const std::shared_ptr<FilterConfig> config_;
   const Blackboard* blackboard_ = nullptr;
 };
 
