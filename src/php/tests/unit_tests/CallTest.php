@@ -16,28 +16,48 @@
  * limitations under the License.
  *
  */
-class CallTest extends \PHPUnit\Framework\TestCase
+
+use Grpc\Call;
+use Grpc\Channel;
+use Grpc\Server;
+use Grpc\Timeval;
+use PHPUnit\Framework\TestCase;
+use const Grpc\OP_SEND_INITIAL_METADATA;
+
+class CallTest extends TestCase
 {
+    /**
+     * @var Server
+     */
     public static $server;
+    /**
+     * @var bool
+     */
     public static $port;
+    /**
+     * @var Channel
+     */
     private $channel;
+    /**
+     * @var Call
+     */
     private $call;
 
     public static function setUpBeforeClass(): void
     {
-        self::$server = new Grpc\Server([]);
+        self::$server = new Server([]);
         self::$port = self::$server->addHttp2Port('0.0.0.0:53000');
         self::$server->start();
     }
 
     public function setUp(): void
     {
-        $this->channel = new Grpc\Channel('localhost:'.self::$port, [
+        $this->channel = new Channel('localhost:'.self::$port, [
             'force_new' => true,
         ]);
-        $this->call = new Grpc\Call($this->channel,
+        $this->call = new Call($this->channel,
                                     '/foo',
-                                    Grpc\Timeval::infFuture());
+                                    Timeval::infFuture());
     }
 
     public function tearDown(): void
@@ -47,14 +67,14 @@ class CallTest extends \PHPUnit\Framework\TestCase
 
     public function testConstructor()
     {
-        $this->assertSame('Grpc\Call', get_class($this->call));
-        $this->assertObjectHasAttribute('channel', $this->call);
+        $this->assertSame(Call::class, get_class($this->call));
+        $this->assertObjectHasProperty('channel', $this->call);
     }
 
     public function testAddEmptyMetadata()
     {
         $batch = [
-            Grpc\OP_SEND_INITIAL_METADATA => [],
+            OP_SEND_INITIAL_METADATA => [],
         ];
         $result = $this->call->startBatch($batch);
         $this->assertTrue($result->send_metadata);
@@ -63,7 +83,7 @@ class CallTest extends \PHPUnit\Framework\TestCase
     public function testAddSingleMetadata()
     {
         $batch = [
-            Grpc\OP_SEND_INITIAL_METADATA => ['key' => ['value']],
+            OP_SEND_INITIAL_METADATA => ['key' => ['value']],
         ];
         $result = $this->call->startBatch($batch);
         $this->assertTrue($result->send_metadata);
@@ -72,7 +92,7 @@ class CallTest extends \PHPUnit\Framework\TestCase
     public function testAddMultiValueMetadata()
     {
         $batch = [
-            Grpc\OP_SEND_INITIAL_METADATA => ['key' => ['value1', 'value2']],
+            OP_SEND_INITIAL_METADATA => ['key' => ['value1', 'value2']],
         ];
         $result = $this->call->startBatch($batch);
         $this->assertTrue($result->send_metadata);
@@ -81,7 +101,7 @@ class CallTest extends \PHPUnit\Framework\TestCase
     public function testAddSingleAndMultiValueMetadata()
     {
         $batch = [
-            Grpc\OP_SEND_INITIAL_METADATA => ['key1' => ['value1'],
+            OP_SEND_INITIAL_METADATA => ['key1' => ['value1'],
                                               'key2' => ['value2',
                                                          'value3', ], ],
         ];
@@ -92,7 +112,7 @@ class CallTest extends \PHPUnit\Framework\TestCase
     public function testAddMultiAndMultiValueMetadata() 
     {   
         $batch = [  
-            Grpc\OP_SEND_INITIAL_METADATA => ['key1' => ['value1', 'value2'],   
+            OP_SEND_INITIAL_METADATA => ['key1' => ['value1', 'value2'],   
                                               'key2' => ['value3', 'value4'],], 
         ];  
         $result = $this->call->startBatch($batch);  
@@ -111,7 +131,7 @@ class CallTest extends \PHPUnit\Framework\TestCase
 
     public function testInvalidStartBatchKey()
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $batch = [
             'invalid' => ['key1' => 'value1'],
         ];
@@ -120,54 +140,54 @@ class CallTest extends \PHPUnit\Framework\TestCase
 
     public function testInvalidMetadataStrKey()
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $batch = [
-            Grpc\OP_SEND_INITIAL_METADATA => ['Key' => ['value1', 'value2']],
+            OP_SEND_INITIAL_METADATA => ['Key' => ['value1', 'value2']],
         ];
         $result = $this->call->startBatch($batch);
     }
 
     public function testInvalidMetadataIntKey()
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $batch = [
-            Grpc\OP_SEND_INITIAL_METADATA => [1 => ['value1', 'value2']],
+            OP_SEND_INITIAL_METADATA => [1 => ['value1', 'value2']],
         ];
         $result = $this->call->startBatch($batch);
     }
 
     public function testInvalidMetadataInnerValue()
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $batch = [
-            Grpc\OP_SEND_INITIAL_METADATA => ['key1' => 'value1'],
+            OP_SEND_INITIAL_METADATA => ['key1' => 'value1'],
         ];
         $result = $this->call->startBatch($batch);
     }
 
     public function testInvalidConstuctor()
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->call = new Grpc\Call();
+        $this->expectException(InvalidArgumentException::class);
+        $this->call = new Call();
         $this->assertNull($this->call);
     }
 
     public function testInvalidConstuctor2()
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->call = new Grpc\Call('hi', 'hi', 'hi');
+        $this->expectException(InvalidArgumentException::class);
+        $this->call = new Call('hi', 'hi', 'hi');
         $this->assertNull($this->call);
     }
 
     public function testInvalidSetCredentials()
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->call->setCredentials('hi');
     }
 
     public function testInvalidSetCredentials2()
     {
-        $this->expectException(\InvalidArgumentException::class);
+        $this->expectException(InvalidArgumentException::class);
         $this->call->setCredentials([]);
     }
 }
