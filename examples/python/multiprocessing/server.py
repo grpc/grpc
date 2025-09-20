@@ -33,6 +33,8 @@ import grpc
 import prime_pb2
 import prime_pb2_grpc
 
+import textwrap
+
 _LOGGER = logging.getLogger(__name__)
 
 _ONE_DAY = datetime.timedelta(days=1)
@@ -96,17 +98,35 @@ def _reserve_port():
 def main():
     # Check if we're on macOS and warn about SO_REUSEPORT limitations
     if platform.system() == "Darwin":
-        _LOGGER.warning(
-            "⚠️  WARNING: Running on macOS (Darwin). SO_REUSEPORT behavior "
-            "on MacOS is different from Linux."
-            "On MacOS, SO_REUSEPORT does not provide true "
-            "load balancing - all requests from the same"
-            "connection will be handled by the same process, "
-            "defeating the purpose of multiprocessing."
-            "This is the issue described in GitHub #40444."
-            "For true multiprocessing on macOS, "
-            "consider using multiple worker processes on different ports."
-        )
+        warning_message_raw = """
+            ⚠️  WARNING: Running on macOS (Darwin). SO_REUSEPORT behavior on MacOS is different from 
+            Linux. On MacOS, SO_REUSEPORT does not provide true load balancing - all requests from 
+            the same connection will be handled by the same process, defeating the purpose of 
+            multiprocessing. This is the issue described in GitHub #40444. For true multiprocessing 
+            on macOS, consider using multiple worker processes on different ports.
+        """
+        # 1. Clean up and split
+        message = textwrap.dedent(warning_message_raw).strip()
+        lines = message.splitlines()
+
+        # 2. Find width
+        max_width = max(len(line) for line in lines)
+
+        # 3. Create borders using Unicode characters
+        top_border = "╔" + "═" * (max_width + 2) + "╗"
+        bottom_border = "╚" + "═" * (max_width + 2) + "╝"
+        side_border = "║"
+
+        # 4. Build the message
+        boxed_message_lines = [top_border]
+        for line in lines:
+            padded_line = line.ljust(max_width)
+            boxed_message_lines.append(f"{side_border} {padded_line} {side_border}")
+        boxed_message_lines.append(bottom_border)
+
+        # 5. Join and print
+        boxed_message_unicode = "\n".join(boxed_message_lines)
+        print(boxed_message_unicode)
     with _reserve_port() as port:
         bind_address = "localhost:{}".format(port)
         _LOGGER.info("Binding to '%s'", bind_address)
