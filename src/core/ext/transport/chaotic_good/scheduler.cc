@@ -96,8 +96,7 @@ class SimpleScheduler : public Scheduler {
 
   void AddChannel(uint32_t id, bool ready,
                   const SendRate::DeliveryData& delivery_data) override {
-    channels_.emplace_back(Channel{id, ready, delivery_data.start_time,
-                                   delivery_data.bytes_per_second});
+    channels_.emplace_back(Channel{id, ready, delivery_data});
   }
 
   void MakePlan(TcpZTraceCollector&) override {
@@ -116,8 +115,7 @@ class SimpleScheduler : public Scheduler {
   struct Channel {
     uint32_t id;
     bool ready;
-    double start_time;
-    double bytes_per_second;
+    SendRate::DeliveryData delivery_data;
   };
 
   virtual const Channel* ChooseChannel(uint64_t bytes) = 0;
@@ -224,12 +222,14 @@ class RandomChoiceScheduler final : public SimpleScheduler {
       case WeightFn::kInverseReceiveTime:
         return RandomChannel(
             channels(), bytes, [](const Channel* c, uint64_t bytes) {
-              return 1.0 / (c->start_time + bytes / c->bytes_per_second);
+              return 1.0 / (c->delivery_data.start_time +
+                            bytes / c->delivery_data.bytes_per_second);
             });
       case WeightFn::kReadyInverseReceiveTime:
         return RandomChannel(
             ready_channels(), bytes, [](const Channel* c, uint64_t bytes) {
-              return 1.0 / (c->start_time + bytes / c->bytes_per_second);
+              return 1.0 / (c->delivery_data.start_time +
+                            bytes / c->delivery_data.bytes_per_second);
             });
     }
     return nullptr;
