@@ -67,9 +67,9 @@ class Rpc(object):
         else:
             trailing_metadata = self._pending_trailing_metadata
         code = (
-            grpc.StatusCode.OK
-            if self._pending_code is None
-            else self._pending_code
+            self._pending_code
+            if self._pending_code is not None
+            else grpc.StatusCode.OK
         )
         details = "" if self._pending_details is None else self._pending_details
         self._terminate(trailing_metadata, code, details)
