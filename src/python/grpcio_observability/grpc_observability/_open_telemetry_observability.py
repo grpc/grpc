@@ -490,8 +490,9 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             self._server_option_activated = True
 
     def _get_identifier(self) -> str:
-        plugin_identifiers = [_plugin.identifier for _plugin in self._plugins]
-        return PLUGIN_IDENTIFIER_SEP.join(plugin_identifiers)
+        return PLUGIN_IDENTIFIER_SEP.join(
+            _plugin.identifier for _plugin in self._plugins
+        )
 
     def get_enabled_optional_labels(self) -> List[OptionalLabelType]:
         return []
