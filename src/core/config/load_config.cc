@@ -51,6 +51,18 @@ int32_t LoadConfigFromEnv(absl::string_view environment_variable,
   return default_value;
 }
 
+double LoadConfigFromEnv(absl::string_view environment_variable,
+                         double default_value) {
+  auto env = LoadEnv(environment_variable);
+  if (env.has_value()) {
+    double out;
+    if (absl::SimpleAtod(*env, &out)) return out;
+    fprintf(stderr, "Error reading double from %s: '%s' is not a double",
+            std::string(environment_variable).c_str(), env->c_str());
+  }
+  return default_value;
+}
+
 bool LoadConfigFromEnv(absl::string_view environment_variable,
                        bool default_value) {
   auto env = LoadEnv(environment_variable);
