@@ -20,7 +20,7 @@ MetadataKey = str
 MetadataValue = Union[str, bytes]
 
 
-class Metadata(abc.Collection):
+class Metadata(abc.Collection): # noqa: PLW1641
     """Metadata abstraction for the asynchronous calls and interceptors.
 
     The metadata is a mapping from str -> List[str]
@@ -32,8 +32,6 @@ class Metadata(abc.Collection):
         * Supports an immutable view of the data
         * Allows partial mutation on the data without recreating the new object from scratch.
     """
-
-    __hash__ = None
 
     def __init__(self, *args: Tuple[MetadataKey, MetadataValue]) -> None:
         self._metadata = OrderedDict()
