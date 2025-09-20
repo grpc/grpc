@@ -78,7 +78,6 @@ ignore = [
     "RET501",  # Do not explicitly return None in function if it is the only possible return value
     "RET503",  # Missing explicit return at the end of function able to return non-None value
     "RET504",  # Unnecessary assignment to {name} before return statement
-    "RET506",  # Unnecessary {branch} after raise statement
     "RSE102",  # Unnecessary parentheses on raised exception
     "RUF005",  # Consider {expression} instead of concatenation
     "RUF013",  # PEP 484 prohibits implicit Optional

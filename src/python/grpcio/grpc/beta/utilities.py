@@ -42,7 +42,7 @@ class _ChannelReadyFuture(future.Future):
             while True:
                 if self._cancelled:
                     raise future.CancelledError()
-                elif self._matured:
+                if self._matured:
                     return
                 elif until is None:
                     self._condition.wait()
