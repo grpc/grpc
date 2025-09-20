@@ -50,11 +50,7 @@ def is_prime(n):
 
 class PrimeChecker(prime_pb2_grpc.PrimeCheckerServicer):
     def check(self, request, context):
-        _LOGGER.info(
-            "PID %d: Determining primality of %s",
-            os.getpid(),
-            request.candidate,
-        )
+        _LOGGER.info("Determining primality of %s", request.candidate)
         return prime_pb2.Primality(isPrime=is_prime(request.candidate))
 
 
@@ -68,7 +64,7 @@ def _wait_forever(server):
 
 def _run_server(bind_address):
     """Start a server in a subprocess."""
-    _LOGGER.info("Starting new server with PID %d", os.getpid())
+    _LOGGER.info("Starting new server.")
     options = (("grpc.so_reuseport", 1),)
 
     server = grpc.server(
@@ -102,22 +98,15 @@ def main():
     if platform.system() == "Darwin":
         _LOGGER.warning(
             "⚠️  WARNING: Running on macOS (Darwin). SO_REUSEPORT behavior "
-            "on macOS is different from Linux."
-        )
-        _LOGGER.warning(
-            "   On macOS, SO_REUSEPORT does not provide true "
+            "on MacOS is different from Linux."
+            "On MacOS, SO_REUSEPORT does not provide true "
             "load balancing - all requests from the same"
-        )
-        _LOGGER.warning(
-            "   connection will be handled by the same process, "
+            "connection will be handled by the same process, "
             "defeating the purpose of multiprocessing."
-        )
-        _LOGGER.warning("   This is the issue described in GitHub #40444.")
-        _LOGGER.warning(
-            "   For true multiprocessing on macOS, "
+            "This is the issue described in GitHub #40444."
+            "For true multiprocessing on macOS, "
             "consider using multiple worker processes on different ports."
         )
-        sys.stdout.flush()
     with _reserve_port() as port:
         bind_address = "localhost:{}".format(port)
         _LOGGER.info("Binding to '%s'", bind_address)
