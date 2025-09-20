@@ -118,7 +118,7 @@ def _get_gcp_observability_config_contents() -> str:
     # First try get config from GRPC_GCP_OBSERVABILITY_CONFIG_FILE_ENV.
     config_path = os.getenv(GRPC_GCP_OBSERVABILITY_CONFIG_FILE_ENV)
     if config_path:
-        with Path(config_path).open("r") as f:
+        with pathlib.Path(config_path).open("r") as f:
             contents_str = f.read()
 
     # Next, try GRPC_GCP_OBSERVABILITY_CONFIG_ENV env var.
