@@ -426,7 +426,7 @@ template <typename MetadataHandle>
 void EnqueueInitialMetadataAndCheckSuccess(
     RefCountedPtr<StreamDataQueue<MetadataHandle>> queue,
     MetadataHandle&& metadata, const bool expected_writeable_state,
-    const WritableStreams::StreamPriority expected_priority) {
+    const WritableStreamPriority expected_priority) {
   LOG(INFO) << "Enqueueing initial metadata";
   auto result =
       queue->EnqueueInitialMetadata(std::forward<MetadataHandle>(metadata));
@@ -441,7 +441,7 @@ template <typename MetadataHandle>
 void EnqueueTrailingMetadataAndCheckSuccess(
     RefCountedPtr<StreamDataQueue<MetadataHandle>> queue,
     MetadataHandle&& metadata, const bool expected_writeable_state,
-    const WritableStreams::StreamPriority expected_priority) {
+    const WritableStreamPriority expected_priority) {
   LOG(INFO) << "Enqueueing trailing metadata";
   auto result =
       queue->EnqueueTrailingMetadata(std::forward<MetadataHandle>(metadata));
@@ -456,7 +456,7 @@ template <typename MetadataHandle>
 void EnqueueMessageAndCheckSuccess(
     RefCountedPtr<StreamDataQueue<MetadataHandle>> queue,
     MessageHandle&& message, const bool expected_writeable_state,
-    const WritableStreams::StreamPriority expected_priority) {
+    const WritableStreamPriority expected_priority) {
   LOG(INFO) << "Enqueueing message with tokens: "
             << message->payload()->Length()
             << " and flags: " << message->flags();
@@ -473,7 +473,7 @@ template <typename MetadataHandle>
 void EnqueueResetStreamAndCheckSuccess(
     RefCountedPtr<StreamDataQueue<MetadataHandle>> queue,
     const bool expected_writeable_state,
-    const WritableStreams::StreamPriority expected_priority) {
+    const WritableStreamPriority expected_priority) {
   LOG(INFO) << "Enqueueing reset stream";
   auto result = queue->EnqueueResetStream(/*error_code=*/0);
   EXPECT_TRUE(result.ok());
@@ -485,7 +485,7 @@ void EnqueueResetStreamAndCheckSuccess(
 void EnqueueHalfClosedAndCheckSuccess(
     RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> queue,
     const bool expected_writeable_state,
-    const WritableStreams::StreamPriority expected_priority) {
+    const WritableStreamPriority expected_priority) {
   LOG(INFO) << "Enqueueing half closed";
   auto result = queue->EnqueueHalfClosed();
 
@@ -552,7 +552,7 @@ TEST(StreamDataQueueTest, ClientEnqueueInitialMetadataTest) {
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestClientInitialMetadata(),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
 }
 
 TEST(StreamDataQueueTest, ClientEnqueueMultipleMessagesTest) {
@@ -571,7 +571,7 @@ TEST(StreamDataQueueTest, ClientEnqueueMultipleMessagesTest) {
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestClientInitialMetadata(),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
 
   for (int count = 0; count < 10; ++count) {
     EnqueueMessageAndCheckSuccess(
@@ -579,7 +579,7 @@ TEST(StreamDataQueueTest, ClientEnqueueMultipleMessagesTest) {
         TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(message_size)),
                     0),
         /*expected_writeable_state=*/false,
-        /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+        /*expected_priority=*/WritableStreamPriority::kDefault);
   }
 }
 
@@ -595,16 +595,16 @@ TEST(StreamDataQueueTest, ClientEnqueueEndStreamTest) {
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestClientInitialMetadata(),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   EnqueueMessageAndCheckSuccess(
       stream_data_queue,
       TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(1)), 0),
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   EnqueueHalfClosedAndCheckSuccess(
       stream_data_queue,
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
 }
 
 TEST(StreamDataQueueTest, ClientEnqueueResetStreamTest) {
@@ -619,11 +619,11 @@ TEST(StreamDataQueueTest, ClientEnqueueResetStreamTest) {
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestClientInitialMetadata(),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   EnqueueResetStreamAndCheckSuccess(
       stream_data_queue,
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
 }
 
 TEST(StreamDataQueueTest, ClientEnqueueAfterResetStreamTest) {
@@ -637,29 +637,29 @@ TEST(StreamDataQueueTest, ClientEnqueueAfterResetStreamTest) {
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestClientInitialMetadata(),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   EnqueueResetStreamAndCheckSuccess(
       stream_data_queue,
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
 
   // Enqueue message should fail.
   EnqueueMessageAndCheckSuccess(
       stream_data_queue,
       TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(1)), 0),
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
 
   // Enqueue half close should fail.
   EnqueueHalfClosedAndCheckSuccess(
       stream_data_queue, /*expected_writeable_state*/ false,
-      /*expected_priority*/ WritableStreams::StreamPriority::kStreamClosed);
+      /*expected_priority*/ WritableStreamPriority::kStreamClosed);
 
   // Enqueue reset stream should fail.
   EnqueueResetStreamAndCheckSuccess(
       stream_data_queue,
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
 
   // Dequeue should return initial metadata and reset stream.
   const uint32_t max_frame_length = 50;
@@ -710,7 +710,7 @@ TEST(StreamDataQueueTest, ClientDequeueMetadataSingleFrameTest) {
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestClientInitialMetadata(),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   GetExpectedHeaderAndContinuationFrames(max_frame_length, expected_frames,
                                          kPathDemoServiceStep,
                                          /*end_stream=*/false);
@@ -740,7 +740,7 @@ TEST(StreamDataQueueTest, ClientDequeueFramesTest) {
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestClientInitialMetadata(),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
 
   GetExpectedHeaderAndContinuationFrames(max_frame_length, expected_frames,
                                          kPathDemoServiceStep,
@@ -757,7 +757,7 @@ TEST(StreamDataQueueTest, ClientDequeueFramesTest) {
       stream_data_queue,
       TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(50)), 0),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   DequeueMessageAndCheckSuccess(stream_data_queue,
                                 /*expected_frames_length=*/{10, 10, 10, 10, 10},
                                 encoder, /*expected_flags=*/0,
@@ -774,7 +774,7 @@ TEST(StreamDataQueueTest, ClientDequeueFramesTest) {
       stream_data_queue,
       TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(50)), 0),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   DequeueMessageAndCheckSuccess(stream_data_queue,
                                 /*expected_frames_length=*/{15, 10}, encoder,
                                 /*expected_flags=*/0,
@@ -819,16 +819,16 @@ TEST(StreamDataQueueTest, ClientEnqueueDequeueFlowTest) {
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestClientInitialMetadata(),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   EnqueueMessageAndCheckSuccess(
       stream_data_queue,
       TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(1)), 0),
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   EnqueueHalfClosedAndCheckSuccess(
       stream_data_queue,
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
 
   // Dequeue Initial Metadata
   GetExpectedHeaderAndContinuationFrames(
@@ -851,7 +851,7 @@ TEST(StreamDataQueueTest, ClientEnqueueDequeueFlowTest) {
   EnqueueResetStreamAndCheckSuccess(
       stream_data_queue,
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
   expected_close_frames.clear();
   expected_close_frames.emplace_back(
       Http2RstStreamFrame{/*stream_id=*/1, /*error_code=*/0});
@@ -877,20 +877,20 @@ TEST(StreamDataQueueTest, ClientDequeueResetStreamTest) {
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestClientInitialMetadata(),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   EnqueueMessageAndCheckSuccess(
       stream_data_queue,
       TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(1)), 0),
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   EnqueueHalfClosedAndCheckSuccess(
       stream_data_queue,
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
   EnqueueResetStreamAndCheckSuccess(
       stream_data_queue,
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
 
   // Empty dequeue call
   DequeueAndCheckSuccess(stream_data_queue, std::move(empty_frames), encoder,
@@ -913,7 +913,7 @@ TEST(StreamDataQueueTest, ClientEnqueueBigMessageResetStreamTest) {
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestClientInitialMetadata(),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
 
   // Dequeue Initial Metadata
   GetExpectedHeaderAndContinuationFrames(
@@ -930,7 +930,7 @@ TEST(StreamDataQueueTest, ClientEnqueueBigMessageResetStreamTest) {
       stream_data_queue,
       TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(10)), 0),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   DequeueMessageAndCheckSuccess(stream_data_queue,
                                 /*expected_frames_length=*/{6}, encoder,
                                 /*expected_flags=*/0,
@@ -938,7 +938,7 @@ TEST(StreamDataQueueTest, ClientEnqueueBigMessageResetStreamTest) {
   EnqueueResetStreamAndCheckSuccess(
       stream_data_queue,
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
 
   expected_frames.emplace_back(
       Http2RstStreamFrame{/*stream_id=*/1, /*error_code=*/0});
@@ -963,7 +963,7 @@ TEST(StreamDataQueueTest, ServerEnqueueInitialMetadataTest) {
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestServerInitialMetadata(),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
 }
 
 TEST(StreamDataQueueTest, ServerEnqueueMultipleMessagesTest) {
@@ -982,7 +982,7 @@ TEST(StreamDataQueueTest, ServerEnqueueMultipleMessagesTest) {
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestServerInitialMetadata(),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
 
   for (int count = 0; count < 10; ++count) {
     EnqueueMessageAndCheckSuccess(
@@ -990,7 +990,7 @@ TEST(StreamDataQueueTest, ServerEnqueueMultipleMessagesTest) {
         TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(message_size)),
                     0),
         /*expected_writeable_state=*/false,
-        /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+        /*expected_priority=*/WritableStreamPriority::kDefault);
   }
 }
 
@@ -1007,16 +1007,16 @@ TEST(StreamDataQueueTest, ServerEnqueueTrailingMetadataTest) {
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestServerInitialMetadata(),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   EnqueueMessageAndCheckSuccess(
       stream_data_queue,
       TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(1)), 0),
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   EnqueueTrailingMetadataAndCheckSuccess(
       stream_data_queue, TestServerTrailingMetadata(),
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
 }
 
 TEST(StreamDataQueueTest, ServerResetStreamTest) {
@@ -1031,11 +1031,11 @@ TEST(StreamDataQueueTest, ServerResetStreamTest) {
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestServerInitialMetadata(),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   EnqueueResetStreamAndCheckSuccess(
       stream_data_queue,
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
 }
 
 TEST(StreamDataQueueTest, ServerEnqueueAfterResetStreamTest) {
@@ -1049,30 +1049,30 @@ TEST(StreamDataQueueTest, ServerEnqueueAfterResetStreamTest) {
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestServerInitialMetadata(),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   EnqueueResetStreamAndCheckSuccess(
       stream_data_queue,
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
 
   // Enqueue message should fail.
   EnqueueMessageAndCheckSuccess(
       stream_data_queue,
       TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(1)), 0),
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
 
   // Enqueue trailing metadata should fail.
   EnqueueTrailingMetadataAndCheckSuccess(
       stream_data_queue, TestServerTrailingMetadata(),
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
 
   // Enqueue reset stream should fail.
   EnqueueResetStreamAndCheckSuccess(
       stream_data_queue,
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
 
   // Dequeue should return initial metadata and reset stream.
   const uint32_t max_frame_length = 50;
@@ -1119,16 +1119,16 @@ TEST(StreamDataQueueTest, ServerEnqueueDequeueFlowTest) {
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestServerInitialMetadata(),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   EnqueueMessageAndCheckSuccess(
       stream_data_queue,
       TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(1)), 0),
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   EnqueueTrailingMetadataAndCheckSuccess(
       stream_data_queue, TestServerTrailingMetadata(),
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
 
   // Dequeue Initial Metadata
   GetExpectedHeaderAndContinuationFrames(
@@ -1150,7 +1150,7 @@ TEST(StreamDataQueueTest, ServerEnqueueDequeueFlowTest) {
   EnqueueResetStreamAndCheckSuccess(
       stream_data_queue,
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
   expected_close_frames.clear();
   expected_close_frames.emplace_back(
       Http2RstStreamFrame{/*stream_id=*/1, /*error_code=*/0});

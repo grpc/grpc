@@ -582,15 +582,15 @@ class Http2ClientTransport final : public ClientTransport {
   WritableStreams writable_stream_list_;
 
   absl::Status MaybeAddStreamToWritableStreamList(
-      const uint32_t stream_id,
+      const RefCountedPtr<Stream> stream,
       const StreamDataQueue<ClientMetadataHandle>::EnqueueResult result) {
     if (result.became_writable) {
       GRPC_HTTP2_CLIENT_DLOG
           << "Http2ClientTransport MaybeAddStreamToWritableStreamList "
              " Stream id: "
-          << stream_id << " became writable";
+          << stream->GetStreamId() << " became writable";
       absl::Status status =
-          writable_stream_list_.Enqueue(stream_id, result.priority);
+          writable_stream_list_.Enqueue(stream, result.priority);
       if (!status.ok()) {
         return HandleError(
             std::nullopt,

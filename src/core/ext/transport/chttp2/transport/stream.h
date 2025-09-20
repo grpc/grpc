@@ -167,6 +167,7 @@ struct Stream : public RefCounted<Stream> {
   }
 
   HttpStreamState GetStreamState() const { return stream_state; }
+  uint32_t GetStreamId() const { return stream_id; }
 
   inline bool IsClosed() const {
     return stream_state == HttpStreamState::kClosed;
