@@ -19,6 +19,8 @@
 
 namespace Grpc;
 
+use Exception;
+
 /**
  * This is an experimental and incomplete implementation of gRPC server
  * for PHP. APIs are _definitely_ going to be changed.
@@ -35,9 +37,12 @@ class RpcServer extends Server
     // [ <String method_full_path> => MethodDescriptor ]
     private $paths_map = [];
 
+    /**
+     * @return object{metadata: array<string, string[]>, host: string, method: string, absolute_deadline :Timeval, call: Call}
+     */
     private function waitForNextEvent()
     {
-        return $this->requestCall();
+        return $this->requestCall(); // @phpstan-ignore arguments.count
     }
 
     /**
@@ -88,14 +93,14 @@ class RpcServer extends Server
                     $server_writer,
                     $context
                 );
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $context->setStatus(Status::status(
                     STATUS_INTERNAL,
                     $e->getMessage()
                 ));
                 $server_writer->finish();
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             fwrite(STDERR, "ERROR: " . $e->getMessage() . PHP_EOL);
             exit(1);
         }
@@ -145,7 +150,7 @@ class RpcServer extends Server
                 );
                 break;
             default:
-                throw new \Exception();
+                throw new Exception();
         }
     }
 }
