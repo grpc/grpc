@@ -47,6 +47,10 @@ class ClientLoadReportingFilter
     static inline const NoInterceptor OnClientToServerMessage;
     static inline const NoInterceptor OnClientToServerHalfClose;
     static inline const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList().Set("saw_initial_metadata",
+                                          saw_initial_metadata_);
+    }
 
    private:
     RefCountedPtr<GrpcLbClientStats> client_stats_;

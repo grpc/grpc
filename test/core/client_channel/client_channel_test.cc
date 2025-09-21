@@ -296,6 +296,9 @@ class TestFilter {
     static const NoInterceptor OnServerToClientMessage;
     static const NoInterceptor OnServerTrailingMetadata;
     static const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList();
+    }
   };
 
   static absl::StatusOr<std::unique_ptr<TestFilter>> Create(
