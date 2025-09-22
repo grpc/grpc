@@ -53,7 +53,8 @@ std::string GetNextSendMessage();
 // calling thread until said Write and Read operations are complete.
 absl::Status SendValidatePayload(absl::string_view data,
                                  EventEngine::Endpoint* send_endpoint,
-                                 EventEngine::Endpoint* receive_endpoint);
+                                 EventEngine::Endpoint* receive_endpoint,
+                                 int read_hint_bytes = -1);
 
 // A helper class to create clients/listeners and connections between them.
 // The clients and listeners can be created by the oracle EventEngine

@@ -24,6 +24,7 @@
 
 #include "src/core/call/call_spine.h"
 #include "src/core/call/metadata_info.h"
+#include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/promise/mpsc.h"
@@ -49,10 +50,9 @@ namespace http2 {
 #define GRPC_HTTP2_COMMON_DLOG \
   DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
 
-// TODO(akshitpatel) : [PH2][P4] : Choose appropriate size later. Currently this
-// is set to 100 MB assuming 1 MB per stream and 100 streams per connection.
-constexpr uint32_t kMpscSize = /*100 MB*/ 100u * 1024u * 1024u;
+// TODO(akshitpatel) : [PH2][P4] : Choose appropriate size later.
 constexpr uint32_t kStreamQueueSize = /*1 MB*/ 1024u * 1024u;
+constexpr uint32_t kMaxWriteSize = /*10 MB*/ 10u * 1024u * 1024u;
 
 enum class HttpStreamState : uint8_t {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-stream-states
@@ -66,7 +66,9 @@ enum class HttpStreamState : uint8_t {
 void InitLocalSettings(Http2Settings& settings, const bool is_client);
 
 void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
-                                 Http2Settings& settings, const bool is_client);
+                                 Http2Settings& local_settings,
+                                 chttp2::TransportFlowControl& flow_control,
+                                 const bool is_client);
 
 }  // namespace http2
 }  // namespace grpc_core

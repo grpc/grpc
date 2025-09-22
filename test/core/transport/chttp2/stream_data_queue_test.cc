@@ -212,7 +212,7 @@ TEST_F(SimpleQueueTest, DequeueTest) {
                               /*allow_oversized_dequeue=*/false,
                               /*allowed_dequeue_tokens=*/10);
                           on_dequeue_done.Call(absl::OkStatus());
-                          EXPECT_TRUE(queue.TestOnlyIsEmpty());
+                          EXPECT_TRUE(queue.IsEmpty());
                           return absl::OkStatus();
                         }),
                     [](auto) { LOG(INFO) << "Reached end of DequeueTest"; });
@@ -268,7 +268,7 @@ TEST_F(SimpleQueueTest, DequeuePartialDequeueTest) {
       [&on_dequeue_done, &queue](auto) {
         LOG(INFO) << "Reached end of DequeueTest";
         on_dequeue_done.Call(absl::OkStatus());
-        EXPECT_TRUE(queue.TestOnlyIsEmpty());
+        EXPECT_TRUE(queue.IsEmpty());
       });
 
   event_engine()->TickUntilIdle();
@@ -322,7 +322,7 @@ TEST_F(SimpleQueueTest, DequeueTokensTest) {
       [&on_dequeue_done, &queue](auto) {
         LOG(INFO) << "Reached end of DequeueTest";
         on_dequeue_done.Call(absl::OkStatus());
-        EXPECT_TRUE(queue.TestOnlyIsEmpty());
+        EXPECT_TRUE(queue.IsEmpty());
       });
 
   event_engine()->TickUntilIdle();
@@ -376,7 +376,7 @@ TEST_F(SimpleQueueTest, BigMessageEnqueueDequeueTest) {
               if (--dequeue_count == 0) {
                 execution_order.push_back('3');
                 on_dequeue_done.Call(absl::OkStatus());
-                EXPECT_TRUE(queue.TestOnlyIsEmpty());
+                EXPECT_TRUE(queue.IsEmpty());
                 return absl::OkStatus();
               } else {
                 return Continue();
@@ -426,15 +426,14 @@ template <typename MetadataHandle>
 void EnqueueInitialMetadataAndCheckSuccess(
     RefCountedPtr<StreamDataQueue<MetadataHandle>> queue,
     MetadataHandle&& metadata, const bool expected_writeable_state,
-    const WritableStreams::StreamPriority expected_priority) {
+    const WritableStreamPriority expected_priority) {
   LOG(INFO) << "Enqueueing initial metadata";
-  auto promise =
+  auto result =
       queue->EnqueueInitialMetadata(std::forward<MetadataHandle>(metadata));
-  auto result = promise();
-  EXPECT_TRUE(result.ready());
-  EXPECT_TRUE(result.value().ok());
-  EXPECT_EQ(result.value().value().became_writable, expected_writeable_state);
-  EXPECT_EQ(result.value().value().priority, expected_priority);
+
+  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(result.value().became_writable, expected_writeable_state);
+  EXPECT_EQ(result.value().priority, expected_priority);
   LOG(INFO) << "Enqueueing initial metadata success";
 }
 
@@ -442,15 +441,14 @@ template <typename MetadataHandle>
 void EnqueueTrailingMetadataAndCheckSuccess(
     RefCountedPtr<StreamDataQueue<MetadataHandle>> queue,
     MetadataHandle&& metadata, const bool expected_writeable_state,
-    const WritableStreams::StreamPriority expected_priority) {
+    const WritableStreamPriority expected_priority) {
   LOG(INFO) << "Enqueueing trailing metadata";
-  auto promise =
+  auto result =
       queue->EnqueueTrailingMetadata(std::forward<MetadataHandle>(metadata));
-  auto result = promise();
-  EXPECT_TRUE(result.ready());
-  EXPECT_TRUE(result.value().ok());
-  EXPECT_EQ(result.value().value().became_writable, expected_writeable_state);
-  EXPECT_EQ(result.value().value().priority, expected_priority);
+
+  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(result.value().became_writable, expected_writeable_state);
+  EXPECT_EQ(result.value().priority, expected_priority);
   LOG(INFO) << "Enqueueing trailing metadata success";
 }
 
@@ -458,7 +456,7 @@ template <typename MetadataHandle>
 void EnqueueMessageAndCheckSuccess(
     RefCountedPtr<StreamDataQueue<MetadataHandle>> queue,
     MessageHandle&& message, const bool expected_writeable_state,
-    const WritableStreams::StreamPriority expected_priority) {
+    const WritableStreamPriority expected_priority) {
   LOG(INFO) << "Enqueueing message with tokens: "
             << message->payload()->Length()
             << " and flags: " << message->flags();
@@ -475,28 +473,25 @@ template <typename MetadataHandle>
 void EnqueueResetStreamAndCheckSuccess(
     RefCountedPtr<StreamDataQueue<MetadataHandle>> queue,
     const bool expected_writeable_state,
-    const WritableStreams::StreamPriority expected_priority) {
+    const WritableStreamPriority expected_priority) {
   LOG(INFO) << "Enqueueing reset stream";
-  auto promise = queue->EnqueueResetStream(/*error_code=*/0);
-  auto result = promise();
-  EXPECT_TRUE(result.ready());
-  EXPECT_TRUE(result.value().ok());
-  EXPECT_EQ(result.value().value().became_writable, expected_writeable_state);
-  EXPECT_EQ(result.value().value().priority, expected_priority);
+  auto result = queue->EnqueueResetStream(/*error_code=*/0);
+  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(result.value().became_writable, expected_writeable_state);
+  EXPECT_EQ(result.value().priority, expected_priority);
   LOG(INFO) << "Enqueueing reset stream success";
 }
 
 void EnqueueHalfClosedAndCheckSuccess(
     RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> queue,
     const bool expected_writeable_state,
-    const WritableStreams::StreamPriority expected_priority) {
+    const WritableStreamPriority expected_priority) {
   LOG(INFO) << "Enqueueing half closed";
-  auto promise = queue->EnqueueHalfClosed();
-  auto result = promise();
-  EXPECT_TRUE(result.ready());
-  EXPECT_TRUE(result.value().ok());
-  EXPECT_EQ(result.value().value().became_writable, expected_writeable_state);
-  EXPECT_EQ(result.value().value().priority, expected_priority);
+  auto result = queue->EnqueueHalfClosed();
+
+  EXPECT_TRUE(result.ok());
+  EXPECT_EQ(result.value().became_writable, expected_writeable_state);
+  EXPECT_EQ(result.value().priority, expected_priority);
   LOG(INFO) << "Enqueueing half closed success";
 }
 
@@ -504,13 +499,18 @@ template <typename MetadataHandle>
 void DequeueAndCheckSuccess(
     RefCountedPtr<StreamDataQueue<MetadataHandle>> queue,
     std::vector<Http2Frame> expected_frames, HPackCompressor& encoder,
-    const uint32_t max_tokens = 10, const uint32_t max_frame_length = 10) {
-  absl::StatusOr<typename StreamDataQueue<MetadataHandle>::DequeueResult>
-      frames = queue->DequeueFrames(max_tokens, max_frame_length, encoder);
-  EXPECT_TRUE(frames.ok());
-  EXPECT_EQ(frames.value().frames.size(), expected_frames.size());
+    const bool can_send_reset_stream, const uint8_t expected_flags,
+    const uint32_t max_tokens = 10,
 
-  std::vector<Http2Frame>& frames_vector = frames.value().frames;
+    const uint32_t max_frame_length = 10) {
+  typename StreamDataQueue<MetadataHandle>::DequeueResult frames =
+      queue->DequeueFrames(max_tokens, max_frame_length, encoder,
+                           can_send_reset_stream);
+
+  EXPECT_EQ(frames.flags, expected_flags);
+  EXPECT_EQ(frames.frames.size(), expected_frames.size());
+
+  std::vector<Http2Frame>& frames_vector = frames.frames;
   for (int count = 0; count < frames_vector.size(); ++count) {
     EXPECT_EQ((frames_vector[count]), (expected_frames[count]));
   }
@@ -520,13 +520,17 @@ template <typename MetadataHandle>
 void DequeueMessageAndCheckSuccess(
     RefCountedPtr<StreamDataQueue<MetadataHandle>> queue,
     std::vector<int> expected_frames_length, HPackCompressor& encoder,
-    const uint32_t max_tokens = 10, const uint32_t max_frame_length = 10) {
-  absl::StatusOr<typename StreamDataQueue<MetadataHandle>::DequeueResult>
-      frames = queue->DequeueFrames(max_tokens, max_frame_length, encoder);
-  EXPECT_TRUE(frames.ok());
-  EXPECT_EQ(frames.value().frames.size(), expected_frames_length.size());
-  std::vector<Http2Frame>& frames_vector = frames.value().frames;
-  for (int count = 0; count < frames.value().frames.size(); ++count) {
+    const uint8_t expected_flags, const uint32_t max_tokens = 10,
+    const uint32_t max_frame_length = 10,
+    const bool can_send_reset_stream = true) {
+  typename StreamDataQueue<MetadataHandle>::DequeueResult frames =
+      queue->DequeueFrames(max_tokens, max_frame_length, encoder,
+                           can_send_reset_stream);
+
+  EXPECT_EQ(frames.flags, expected_flags);
+  EXPECT_EQ(frames.frames.size(), expected_frames_length.size());
+  std::vector<Http2Frame>& frames_vector = frames.frames;
+  for (int count = 0; count < frames.frames.size(); ++count) {
     EXPECT_EQ(std::get<Http2DataFrame>(frames_vector[count]).payload.Length(),
               expected_frames_length[count]);
   }
@@ -548,7 +552,7 @@ TEST(StreamDataQueueTest, ClientEnqueueInitialMetadataTest) {
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestClientInitialMetadata(),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
 }
 
 TEST(StreamDataQueueTest, ClientEnqueueMultipleMessagesTest) {
@@ -567,7 +571,7 @@ TEST(StreamDataQueueTest, ClientEnqueueMultipleMessagesTest) {
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestClientInitialMetadata(),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
 
   for (int count = 0; count < 10; ++count) {
     EnqueueMessageAndCheckSuccess(
@@ -575,7 +579,7 @@ TEST(StreamDataQueueTest, ClientEnqueueMultipleMessagesTest) {
         TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(message_size)),
                     0),
         /*expected_writeable_state=*/false,
-        /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+        /*expected_priority=*/WritableStreamPriority::kDefault);
   }
 }
 
@@ -591,16 +595,16 @@ TEST(StreamDataQueueTest, ClientEnqueueEndStreamTest) {
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestClientInitialMetadata(),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   EnqueueMessageAndCheckSuccess(
       stream_data_queue,
       TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(1)), 0),
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   EnqueueHalfClosedAndCheckSuccess(
       stream_data_queue,
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
 }
 
 TEST(StreamDataQueueTest, ClientEnqueueResetStreamTest) {
@@ -615,11 +619,66 @@ TEST(StreamDataQueueTest, ClientEnqueueResetStreamTest) {
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestClientInitialMetadata(),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   EnqueueResetStreamAndCheckSuccess(
       stream_data_queue,
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
+}
+
+TEST(StreamDataQueueTest, ClientEnqueueAfterResetStreamTest) {
+  // Test to assert that no more data can be enqueued after a reset stream.
+  HPackCompressor encoder;
+  RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> stream_data_queue =
+      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
+          /*is_client=*/true,
+          /*stream_id=*/1,
+          /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
+  EnqueueInitialMetadataAndCheckSuccess(
+      stream_data_queue, TestClientInitialMetadata(),
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreamPriority::kDefault);
+  EnqueueResetStreamAndCheckSuccess(
+      stream_data_queue,
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
+
+  // Enqueue message should fail.
+  EnqueueMessageAndCheckSuccess(
+      stream_data_queue,
+      TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(1)), 0),
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
+
+  // Enqueue half close should fail.
+  EnqueueHalfClosedAndCheckSuccess(
+      stream_data_queue, /*expected_writeable_state*/ false,
+      /*expected_priority*/ WritableStreamPriority::kStreamClosed);
+
+  // Enqueue reset stream should fail.
+  EnqueueResetStreamAndCheckSuccess(
+      stream_data_queue,
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
+
+  // Dequeue should return initial metadata and reset stream.
+  const uint32_t max_frame_length = 50;
+  std::vector<Http2Frame> expected_frames;
+  expected_frames.emplace_back(
+      Http2RstStreamFrame{/*stream_id=*/1, /*error_code=*/0});
+  DequeueAndCheckSuccess(
+      stream_data_queue, std::move(expected_frames), encoder,
+      /*can_send_reset_stream=*/true,
+      /*expected_flags=*/
+      StreamDataQueue<ClientMetadataHandle>::kResetStreamDequeued,
+      /*max_tokens=*/0, max_frame_length);
+
+  expected_frames.clear();
+  DequeueAndCheckSuccess(stream_data_queue, std::move(expected_frames), encoder,
+                         /*can_send_reset_stream=*/true,
+                         /*expected_flags=*/0,
+                         /*max_tokens=*/0, max_frame_length);
+  EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
 }
 
 TEST(StreamDataQueueTest, ClientEmptyDequeueTest) {
@@ -632,7 +691,9 @@ TEST(StreamDataQueueTest, ClientEmptyDequeueTest) {
           /*stream_id=*/1,
           /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
   EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
-  DequeueAndCheckSuccess(stream_data_queue, std::vector<Http2Frame>(), encoder);
+  DequeueAndCheckSuccess(stream_data_queue, std::vector<Http2Frame>(), encoder,
+                         /*can_send_reset_stream=*/false,
+                         /*expected_flags=*/0);
   EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
 }
 
@@ -649,12 +710,16 @@ TEST(StreamDataQueueTest, ClientDequeueMetadataSingleFrameTest) {
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestClientInitialMetadata(),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   GetExpectedHeaderAndContinuationFrames(max_frame_length, expected_frames,
                                          kPathDemoServiceStep,
                                          /*end_stream=*/false);
-  DequeueAndCheckSuccess(stream_data_queue, std::move(expected_frames), encoder,
-                         /*max_tokens=*/10, max_frame_length);
+  DequeueAndCheckSuccess(
+      stream_data_queue, std::move(expected_frames), encoder,
+      /*can_send_reset_stream=*/false,
+      /*expected_flags=*/
+      StreamDataQueue<ClientMetadataHandle>::kInitialMetadataDequeued,
+      /*max_tokens=*/10, max_frame_length);
   EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
 }
 
@@ -675,27 +740,32 @@ TEST(StreamDataQueueTest, ClientDequeueFramesTest) {
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestClientInitialMetadata(),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
 
   GetExpectedHeaderAndContinuationFrames(max_frame_length, expected_frames,
                                          kPathDemoServiceStep,
                                          /*end_stream=*/false);
-  DequeueAndCheckSuccess(stream_data_queue, std::move(expected_frames), encoder,
-                         /*max_tokens=*/10,
-                         /*max_frame_length=*/max_frame_length);
+  DequeueAndCheckSuccess(
+      stream_data_queue, std::move(expected_frames), encoder,
+      /*can_send_reset_stream=*/false,
+      /*expected_flags=*/
+      StreamDataQueue<ClientMetadataHandle>::kInitialMetadataDequeued,
+      /*max_tokens=*/10,
+      /*max_frame_length=*/max_frame_length);
 
   EnqueueMessageAndCheckSuccess(
       stream_data_queue,
       TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(50)), 0),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   DequeueMessageAndCheckSuccess(stream_data_queue,
                                 /*expected_frames_length=*/{10, 10, 10, 10, 10},
-                                encoder,
+                                encoder, /*expected_flags=*/0,
                                 /*max_tokens=*/50,
                                 /*max_frame_length=*/10);
   DequeueMessageAndCheckSuccess(stream_data_queue,
                                 /*expected_frames_length=*/{5}, encoder,
+                                /*expected_flags=*/0,
                                 /*max_tokens=*/50,
                                 /*max_frame_length=*/10);
   EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
@@ -704,17 +774,20 @@ TEST(StreamDataQueueTest, ClientDequeueFramesTest) {
       stream_data_queue,
       TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(50)), 0),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   DequeueMessageAndCheckSuccess(stream_data_queue,
                                 /*expected_frames_length=*/{15, 10}, encoder,
+                                /*expected_flags=*/0,
                                 /*max_tokens=*/25,
                                 /*max_frame_length=*/15);
   DequeueMessageAndCheckSuccess(stream_data_queue,
                                 /*expected_frames_length=*/{15, 10}, encoder,
+                                /*expected_flags=*/0,
                                 /*max_tokens=*/25,
                                 /*max_frame_length=*/15);
   DequeueMessageAndCheckSuccess(stream_data_queue,
                                 /*expected_frames_length=*/{5}, encoder,
+                                /*expected_flags=*/0,
                                 /*max_tokens=*/25,
                                 /*max_frame_length=*/15);
   EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
@@ -737,8 +810,6 @@ TEST(StreamDataQueueTest, ClientEnqueueDequeueFlowTest) {
   expected_close_frames.emplace_back(Http2DataFrame{/*stream_id=*/1,
                                                     /*end_stream=*/true,
                                                     /*payload=*/SliceBuffer()});
-  expected_close_frames.emplace_back(
-      Http2RstStreamFrame{/*stream_id=*/1, /*error_code=*/0});
 
   RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> stream_data_queue =
       MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
@@ -748,32 +819,134 @@ TEST(StreamDataQueueTest, ClientEnqueueDequeueFlowTest) {
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestClientInitialMetadata(),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   EnqueueMessageAndCheckSuccess(
       stream_data_queue,
       TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(1)), 0),
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   EnqueueHalfClosedAndCheckSuccess(
       stream_data_queue,
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
-  EnqueueResetStreamAndCheckSuccess(
-      stream_data_queue,
-      /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
 
   // Dequeue Initial Metadata
   GetExpectedHeaderAndContinuationFrames(
       max_frame_length, expected_initial_metadata_frames, kPathDemoServiceStep,
       /*end_stream=*/false);
-  DequeueAndCheckSuccess(stream_data_queue,
-                         std::move(expected_initial_metadata_frames), encoder,
-                         /*max_tokens=*/0, max_frame_length);
+  DequeueAndCheckSuccess(
+      stream_data_queue, std::move(expected_initial_metadata_frames), encoder,
+      /*can_send_reset_stream=*/false,
+      /*expected_flags=*/
+      StreamDataQueue<ClientMetadataHandle>::kInitialMetadataDequeued,
+      /*max_tokens=*/0, max_frame_length);
 
-  // Dequeue Message, Half Close and Reset Stream
-  DequeueAndCheckSuccess(stream_data_queue, std::move(expected_close_frames),
-                         encoder, /*max_tokens=*/6, max_frame_length);
+  // Dequeue Message and Half Close
+  DequeueAndCheckSuccess(
+      stream_data_queue, std::move(expected_close_frames), encoder,
+      /*can_send_reset_stream=*/true, /*expected_flags=*/
+      (StreamDataQueue<ClientMetadataHandle>::kHalfCloseDequeued),
+      /*max_tokens=*/6, max_frame_length);
+
+  EnqueueResetStreamAndCheckSuccess(
+      stream_data_queue,
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
+  expected_close_frames.clear();
+  expected_close_frames.emplace_back(
+      Http2RstStreamFrame{/*stream_id=*/1, /*error_code=*/0});
+  DequeueAndCheckSuccess(
+      stream_data_queue, std::move(expected_close_frames), encoder,
+      /*can_send_reset_stream=*/true, /*expected_flags=*/
+      StreamDataQueue<ClientMetadataHandle>::kResetStreamDequeued,
+      /*max_tokens=*/6, max_frame_length);
+  EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
+}
+
+TEST(StreamDataQueueTest, ClientDequeueResetStreamTest) {
+  // Test to enqueue and dequeue all the valid frames for a client.
+  HPackCompressor encoder;
+  const uint32_t max_frame_length = 8;
+  std::vector<Http2Frame> empty_frames;
+
+  RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> stream_data_queue =
+      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
+          /*is_client=*/true,
+          /*stream_id=*/1,
+          /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
+  EnqueueInitialMetadataAndCheckSuccess(
+      stream_data_queue, TestClientInitialMetadata(),
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreamPriority::kDefault);
+  EnqueueMessageAndCheckSuccess(
+      stream_data_queue,
+      TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(1)), 0),
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreamPriority::kDefault);
+  EnqueueHalfClosedAndCheckSuccess(
+      stream_data_queue,
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
+  EnqueueResetStreamAndCheckSuccess(
+      stream_data_queue,
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
+
+  // Empty dequeue call
+  DequeueAndCheckSuccess(stream_data_queue, std::move(empty_frames), encoder,
+                         /*can_send_reset_stream=*/false, /*expected_flags=*/0,
+                         /*max_tokens=*/6, max_frame_length);
+  EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
+}
+
+TEST(StreamDataQueueTest, ClientEnqueueBigMessageResetStreamTest) {
+  HPackCompressor encoder;
+  constexpr uint32_t max_frame_length = std::numeric_limits<uint32_t>::max();
+  std::vector<Http2Frame> expected_initial_metadata_frames;
+  std::vector<Http2Frame> expected_frames;
+  RefCountedPtr<StreamDataQueue<ClientMetadataHandle>> stream_data_queue =
+      MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
+          /*is_client=*/true,
+          /*stream_id=*/1,
+          /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
+
+  EnqueueInitialMetadataAndCheckSuccess(
+      stream_data_queue, TestClientInitialMetadata(),
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreamPriority::kDefault);
+
+  // Dequeue Initial Metadata
+  GetExpectedHeaderAndContinuationFrames(
+      max_frame_length, expected_initial_metadata_frames, kPathDemoServiceStep,
+      /*end_stream=*/false);
+  DequeueAndCheckSuccess(
+      stream_data_queue, std::move(expected_initial_metadata_frames), encoder,
+      /*can_send_reset_stream=*/false,
+      /*expected_flags=*/
+      StreamDataQueue<ClientMetadataHandle>::kInitialMetadataDequeued,
+      /*max_tokens=*/0, max_frame_length);
+
+  EnqueueMessageAndCheckSuccess(
+      stream_data_queue,
+      TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(10)), 0),
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreamPriority::kDefault);
+  DequeueMessageAndCheckSuccess(stream_data_queue,
+                                /*expected_frames_length=*/{6}, encoder,
+                                /*expected_flags=*/0,
+                                /*max_tokens=*/6, max_frame_length);
+  EnqueueResetStreamAndCheckSuccess(
+      stream_data_queue,
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
+
+  expected_frames.emplace_back(
+      Http2RstStreamFrame{/*stream_id=*/1, /*error_code=*/0});
+  DequeueAndCheckSuccess(
+      stream_data_queue, std::move(expected_frames), encoder,
+      /*can_send_reset_stream=*/true, /*expected_flags=*/
+      StreamDataQueue<ClientMetadataHandle>::kResetStreamDequeued,
+      /*max_tokens=*/6, max_frame_length);
   EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
 }
 
@@ -790,7 +963,7 @@ TEST(StreamDataQueueTest, ServerEnqueueInitialMetadataTest) {
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestServerInitialMetadata(),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
 }
 
 TEST(StreamDataQueueTest, ServerEnqueueMultipleMessagesTest) {
@@ -809,7 +982,7 @@ TEST(StreamDataQueueTest, ServerEnqueueMultipleMessagesTest) {
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestServerInitialMetadata(),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
 
   for (int count = 0; count < 10; ++count) {
     EnqueueMessageAndCheckSuccess(
@@ -817,7 +990,7 @@ TEST(StreamDataQueueTest, ServerEnqueueMultipleMessagesTest) {
         TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(message_size)),
                     0),
         /*expected_writeable_state=*/false,
-        /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+        /*expected_priority=*/WritableStreamPriority::kDefault);
   }
 }
 
@@ -834,16 +1007,16 @@ TEST(StreamDataQueueTest, ServerEnqueueTrailingMetadataTest) {
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestServerInitialMetadata(),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   EnqueueMessageAndCheckSuccess(
       stream_data_queue,
       TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(1)), 0),
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   EnqueueTrailingMetadataAndCheckSuccess(
       stream_data_queue, TestServerTrailingMetadata(),
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
 }
 
 TEST(StreamDataQueueTest, ServerResetStreamTest) {
@@ -858,11 +1031,66 @@ TEST(StreamDataQueueTest, ServerResetStreamTest) {
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestServerInitialMetadata(),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   EnqueueResetStreamAndCheckSuccess(
       stream_data_queue,
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
+}
+
+TEST(StreamDataQueueTest, ServerEnqueueAfterResetStreamTest) {
+  // Test to assert that no more data can be enqueued after a reset stream.
+  HPackCompressor encoder;
+  RefCountedPtr<StreamDataQueue<ServerMetadataHandle>> stream_data_queue =
+      MakeRefCounted<StreamDataQueue<ServerMetadataHandle>>(
+          /*is_client=*/false,
+          /*stream_id=*/1,
+          /*queue_size=*/10, kAllowTrueBinaryMetadataSetting);
+  EnqueueInitialMetadataAndCheckSuccess(
+      stream_data_queue, TestServerInitialMetadata(),
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreamPriority::kDefault);
+  EnqueueResetStreamAndCheckSuccess(
+      stream_data_queue,
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
+
+  // Enqueue message should fail.
+  EnqueueMessageAndCheckSuccess(
+      stream_data_queue,
+      TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(1)), 0),
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
+
+  // Enqueue trailing metadata should fail.
+  EnqueueTrailingMetadataAndCheckSuccess(
+      stream_data_queue, TestServerTrailingMetadata(),
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
+
+  // Enqueue reset stream should fail.
+  EnqueueResetStreamAndCheckSuccess(
+      stream_data_queue,
+      /*expected_writeable_state=*/false,
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
+
+  // Dequeue should return initial metadata and reset stream.
+  const uint32_t max_frame_length = 50;
+  std::vector<Http2Frame> expected_frames;
+  expected_frames.emplace_back(
+      Http2RstStreamFrame{/*stream_id=*/1, /*error_code=*/0});
+  DequeueAndCheckSuccess(
+      stream_data_queue, std::move(expected_frames), encoder,
+      /*can_send_reset_stream=*/true,
+      /*expected_flags=*/
+      (StreamDataQueue<ServerMetadataHandle>::kResetStreamDequeued),
+      /*max_tokens=*/0, max_frame_length);
+
+  expected_frames.clear();
+  DequeueAndCheckSuccess(stream_data_queue, std::move(expected_frames), encoder,
+                         /*can_send_reset_stream=*/true, /*expected_flags=*/0,
+                         /*max_tokens=*/100, max_frame_length);
+  EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
 }
 
 TEST(StreamDataQueueTest, ServerEnqueueDequeueFlowTest) {
@@ -882,8 +1110,6 @@ TEST(StreamDataQueueTest, ServerEnqueueDequeueFlowTest) {
   GetExpectedHeaderAndContinuationFrames(
       max_frame_length, expected_close_frames, kPathDemoServiceStep3,
       /*end_stream=*/true);
-  expected_close_frames.emplace_back(
-      Http2RstStreamFrame{/*stream_id=*/1, /*error_code=*/0});
 
   RefCountedPtr<StreamDataQueue<ServerMetadataHandle>> stream_data_queue =
       MakeRefCounted<StreamDataQueue<ServerMetadataHandle>>(
@@ -893,32 +1119,47 @@ TEST(StreamDataQueueTest, ServerEnqueueDequeueFlowTest) {
   EnqueueInitialMetadataAndCheckSuccess(
       stream_data_queue, TestServerInitialMetadata(),
       /*expected_writeable_state=*/true,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   EnqueueMessageAndCheckSuccess(
       stream_data_queue,
       TestMessage(SliceBuffer(Slice::ZeroContentsWithLength(1)), 0),
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kDefault);
+      /*expected_priority=*/WritableStreamPriority::kDefault);
   EnqueueTrailingMetadataAndCheckSuccess(
       stream_data_queue, TestServerTrailingMetadata(),
       /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
-  EnqueueResetStreamAndCheckSuccess(
-      stream_data_queue,
-      /*expected_writeable_state=*/false,
-      /*expected_priority=*/WritableStreams::StreamPriority::kStreamClosed);
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
 
   // Dequeue Initial Metadata
   GetExpectedHeaderAndContinuationFrames(
       max_frame_length, expected_initial_metadata_frames, kPathDemoServiceStep2,
       /*end_stream=*/false);
-  DequeueAndCheckSuccess(stream_data_queue,
-                         std::move(expected_initial_metadata_frames), encoder,
-                         /*max_tokens=*/0, max_frame_length);
+  DequeueAndCheckSuccess(
+      stream_data_queue, std::move(expected_initial_metadata_frames), encoder,
+      /*can_send_reset_stream=*/false,
+      /*expected_flags=*/
+      StreamDataQueue<ServerMetadataHandle>::kInitialMetadataDequeued,
+      /*max_tokens=*/0, max_frame_length);
 
-  // Dequeue Message, Trailing Metadata and Reset Stream
+  // Dequeue Message and Trailing Metadata
   DequeueAndCheckSuccess(stream_data_queue, std::move(expected_close_frames),
-                         encoder, /*max_tokens=*/6, max_frame_length);
+                         encoder,
+                         /*can_send_reset_stream=*/true, /*expected_flags=*/0,
+                         /*max_tokens=*/6, max_frame_length);
+
+  EnqueueResetStreamAndCheckSuccess(
+      stream_data_queue,
+      /*expected_writeable_state=*/true,
+      /*expected_priority=*/WritableStreamPriority::kStreamClosed);
+  expected_close_frames.clear();
+  expected_close_frames.emplace_back(
+      Http2RstStreamFrame{/*stream_id=*/1, /*error_code=*/0});
+  DequeueAndCheckSuccess(
+      stream_data_queue, std::move(expected_close_frames), encoder,
+      /*can_send_reset_stream=*/true,
+      /*expected_flags=*/
+      StreamDataQueue<ServerMetadataHandle>::kResetStreamDequeued,
+      /*max_tokens=*/6, max_frame_length);
   EXPECT_TRUE(stream_data_queue->TestOnlyIsEmpty());
 }
 

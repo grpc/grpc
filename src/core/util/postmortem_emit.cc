@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test/core/test_util/postmortem_emit.h"
+#include "src/core/util/postmortem_emit.h"
 
 #include <iostream>
 #include <sstream>

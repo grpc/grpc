@@ -24,7 +24,6 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
@@ -33,6 +32,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/shared_bit_gen.h"
 
 // TODO(tjagtap) TODO(akshitpatel): [PH2][P3] : Write micro benchmarks for
@@ -88,7 +88,7 @@ class HeaderAssembler {
   // The payload of the Http2HeaderFrame will be cleared in this function.
   Http2Status AppendHeaderFrame(Http2HeaderFrame&& frame) {
     // Validate input frame
-    DCHECK_GT(frame.stream_id, 0u)
+    GRPC_DCHECK_GT(frame.stream_id, 0u)
         << "RFC9113 : HEADERS frames MUST be associated with a stream.";
 
     // Manage size constraints
@@ -145,7 +145,7 @@ class HeaderAssembler {
     ASSEMBLER_LOG << "ReadMetadata " << buffer_.Length() << " Bytes.";
 
     // Validate
-    DCHECK_EQ(is_ready_, true);
+    GRPC_DCHECK_EQ(is_ready_, true);
 
     // Generate the gRPC Metadata from buffer_
     // RFC9113 :  A receiver MUST terminate the connection with a connection
@@ -236,7 +236,7 @@ class HeaderDisassembler {
   bool PrepareForSending(Arena::PoolPtr<grpc_metadata_batch>&& metadata,
                          HPackCompressor& encoder) {
     // Validate disassembler state
-    DCHECK(!is_done_);
+    GRPC_DCHECK(!is_done_);
     // Prepare metadata for sending
     return encoder.EncodeRawHeaders(*metadata.get(), buffer_,
                                     allow_true_binary_metadata_peer_);
@@ -245,8 +245,8 @@ class HeaderDisassembler {
   Http2Frame GetNextFrame(const uint32_t max_frame_length,
                           bool& out_end_headers) {
     if (buffer_.Length() == 0 || is_done_) {
-      DCHECK(false) << "Calling code must check size using HasMoreData() "
-                       "before GetNextFrame()";
+      GRPC_DCHECK(false) << "Calling code must check size using HasMoreData() "
+                            "before GetNextFrame()";
     }
     out_end_headers = buffer_.Length() <= max_frame_length;
     SliceBuffer temp;

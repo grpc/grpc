@@ -30,6 +30,7 @@ EXPERIMENT_ENABLES = {
     "event_engine_listener": "event_engine_listener",
     "event_engine_callback_cq": "event_engine_callback_cq,event_engine_client,event_engine_listener",
     "event_engine_for_all_other_endpoints": "event_engine_client,event_engine_dns,event_engine_dns_non_client_channel,event_engine_for_all_other_endpoints,event_engine_listener",
+    "event_engine_poller_for_python": "event_engine_poller_for_python",
     "event_engine_secure_endpoint": "event_engine_secure_endpoint",
     "free_large_allocator": "free_large_allocator",
     "fuse_filters": "fuse_filters",
@@ -57,6 +58,7 @@ EXPERIMENT_ENABLES = {
     "subchannel_wrapper_cleanup_on_orphan": "subchannel_wrapper_cleanup_on_orphan",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
+    "track_writes_in_resource_quota": "track_writes_in_resource_quota",
     "tsi_frame_protector_without_locks": "tsi_frame_protector_without_locks",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
 }
@@ -68,6 +70,7 @@ EXPERIMENT_POLLERS = [
     "event_engine_fork",
     "event_engine_listener",
     "event_engine_for_all_other_endpoints",
+    "event_engine_poller_for_python",
     "event_engine_secure_endpoint",
     "pipelined_read_secure_endpoint",
 ]
@@ -121,12 +124,16 @@ EXPERIMENTS = {
             "minimal_stack_test": [
                 "fuse_filters",
             ],
+            "posix_endpoint_test": [
+                "pipelined_read_secure_endpoint",
+            ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
                 "sleep_use_non_owning_waker",
             ],
             "resource_quota_test": [
                 "free_large_allocator",
+                "track_writes_in_resource_quota",
                 "unconstrained_max_quota_buffer_size",
             ],
             "secure_endpoint_test": [
@@ -154,6 +161,9 @@ EXPERIMENTS = {
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
+            ],
+            "posix_endpoint_test": [
+                "event_engine_secure_endpoint",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
@@ -211,12 +221,16 @@ EXPERIMENTS = {
             "minimal_stack_test": [
                 "fuse_filters",
             ],
+            "posix_endpoint_test": [
+                "pipelined_read_secure_endpoint",
+            ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
                 "sleep_use_non_owning_waker",
             ],
             "resource_quota_test": [
                 "free_large_allocator",
+                "track_writes_in_resource_quota",
                 "unconstrained_max_quota_buffer_size",
             ],
             "secure_endpoint_test": [
@@ -244,6 +258,9 @@ EXPERIMENTS = {
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
+            ],
+            "posix_endpoint_test": [
+                "event_engine_secure_endpoint",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
@@ -301,12 +318,16 @@ EXPERIMENTS = {
             "minimal_stack_test": [
                 "fuse_filters",
             ],
+            "posix_endpoint_test": [
+                "pipelined_read_secure_endpoint",
+            ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
                 "sleep_use_non_owning_waker",
             ],
             "resource_quota_test": [
                 "free_large_allocator",
+                "track_writes_in_resource_quota",
                 "unconstrained_max_quota_buffer_size",
             ],
             "secure_endpoint_test": [
@@ -334,6 +355,9 @@ EXPERIMENTS = {
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
+            ],
+            "posix_endpoint_test": [
+                "event_engine_secure_endpoint",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",

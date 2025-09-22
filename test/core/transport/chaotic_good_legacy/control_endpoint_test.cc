@@ -32,7 +32,9 @@ class ControlEndpointTest : public YodelTest {
 CONTROL_ENDPOINT_TEST(CanWrite) {
   util::testing::MockPromiseEndpoint ep(1234);
   chaotic_good_legacy::ControlEndpoint control_endpoint(
-      std::move(ep.promise_endpoint), event_engine().get());
+      std::move(ep.promise_endpoint), event_engine().get(),
+      std::make_shared<chaotic_good_legacy::LegacyZTraceCollector>(),
+      MakeRefCounted<channelz::SocketNode>("a", "b", "c", nullptr));
   ep.ExpectWrite(
       {grpc_event_engine::experimental::Slice::FromCopiedString("hello")},
       nullptr);

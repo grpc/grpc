@@ -19,9 +19,9 @@
 
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "src/core/util/grpc_check.h"
 
 // Helpers for dealing with absl::Status/StatusOr generically
 
@@ -128,7 +128,7 @@ struct FailureStatusCastImpl<absl::StatusOr<T>, const absl::Status&> {
 
 template <typename To, typename From>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline To FailureStatusCast(From&& from) {
-  DCHECK(!IsStatusOk(from));
+  GRPC_DCHECK(!IsStatusOk(from));
   return FailureStatusCastImpl<To, From>::Cast(std::forward<From>(from));
 }
 

@@ -38,7 +38,6 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -83,6 +82,7 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -521,7 +521,7 @@ void NewChttp2ServerListener::Start() {
       LOG(ERROR) << "Error adding port to server: " << StatusToString(error);
       // TODO(yashykt): We wouldn't need to assert here if we bound to the
       // port earlier during AddPort.
-      CHECK(0);
+      GRPC_CHECK(0);
     }
   }
   if (tcp_server != nullptr) {
@@ -692,7 +692,7 @@ absl::StatusOr<int> Chttp2ServerAddPort(Server* server, const char* addr,
         if (port_num == -1) {
           port_num = port_temp;
         } else {
-          CHECK(port_num == port_temp);
+          GRPC_CHECK(port_num == port_temp);
         }
       }
     }
@@ -722,7 +722,7 @@ namespace experimental {
 
 absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
     std::unique_ptr<EventEngine::Endpoint> endpoint) {
-  CHECK_NE(server_.get(), nullptr);
+  GRPC_CHECK_NE(server_.get(), nullptr);
   RefCountedPtr<NewChttp2ServerListener> new_listener;
   {
     MutexLock lock(&mu_);
@@ -742,7 +742,7 @@ absl::Status PassiveListenerImpl::AcceptConnectedEndpoint(
 }
 
 absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {
-  CHECK_NE(server_.get(), nullptr);
+  GRPC_CHECK_NE(server_.get(), nullptr);
   ExecCtx exec_ctx;
   auto& args = server_->channel_args();
   auto* supports_fd = QueryExtension<EventEngineSupportsFdExtension>(
@@ -754,7 +754,10 @@ absl::Status PassiveListenerImpl::AcceptConnectedFd(int fd) {
   }
   auto endpoint =
       supports_fd->CreateEndpointFromFd(fd, ChannelArgsEndpointConfig(args));
-  return AcceptConnectedEndpoint(std::move(endpoint));
+  if (!endpoint.ok()) {
+    return std::move(endpoint).status();
+  }
+  return AcceptConnectedEndpoint(std::move(endpoint).value());
 }
 
 void PassiveListenerImpl::ListenerDestroyed() {
@@ -809,7 +812,7 @@ void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
 
 void grpc_server_add_channel_from_fd(grpc_server* /* server */, int /* fd */,
                                      grpc_server_credentials* /* creds */) {
-  CHECK(0);
+  GRPC_CHECK(0);
 }
 
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD

@@ -33,7 +33,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -61,6 +60,7 @@
 #include "src/core/load_balancing/grpclb/grpclb.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/http_client/parser.h"
 #include "src/core/util/json/json.h"
@@ -222,7 +222,7 @@ static int is_metadata_server_reachable() {
   auto uri = grpc_core::URI::Create("http", /*user_info=*/"",
                                     GRPC_COMPUTE_ENGINE_DETECTION_HOST, "/",
                                     {} /* query params */, "" /* fragment */);
-  CHECK(uri.ok());  // params are hardcoded
+  GRPC_CHECK(uri.ok());  // params are hardcoded
   auto http_request = grpc_core::HttpRequest::Get(
       std::move(*uri), nullptr /* channel args */, &detector.pollent, &request,
       grpc_core::Timestamp::Now() + max_detection_delay,
@@ -490,8 +490,10 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
     // Create google default credentials.
     grpc_channel_credentials* ssl_creds =
         grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr);
-    CHECK_NE(ssl_creds, nullptr);
+    GRPC_CHECK_NE(ssl_creds, nullptr);
     grpc_alts_credentials_options* credentials_options =
+    GRPC_CHECK_NE(ssl_creds, nullptr);
+    grpc_alts_credentials_options* options =
         grpc_alts_credentials_client_options_create();
     grpc_channel_credentials* alts_creds =
         grpc_alts_credentials_create(credentials_options);
@@ -521,7 +523,7 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
     }
     result = grpc_composite_channel_credentials_create(
         creds.get(), call_creds.get(), nullptr);
-    CHECK_NE(result, nullptr);
+    GRPC_CHECK_NE(result, nullptr);
   } else {
     LOG(ERROR) << "Could not create google default credentials: "
                << grpc_core::StatusToString(error);

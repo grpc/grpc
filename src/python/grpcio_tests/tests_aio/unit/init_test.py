@@ -12,9 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
+import sys
 import unittest
 
 
+@unittest.skipIf(
+    sys.version_info >= (3, 14),
+    "Skip for Python 3.14+ until https://github.com/grpc/grpc/pull/40293 is merged",
+)
 class TestInit(unittest.TestCase):
     def test_grpc(self):
         import grpc  # pylint: disable=wrong-import-position

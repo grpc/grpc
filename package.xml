@@ -376,6 +376,7 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/decode_huff.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/flow_control.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/flow_control.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/flow_control_manager.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_data.cc" role="src" />
@@ -434,6 +435,7 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_promise.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_rate_policy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_rate_policy.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_data_queue.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_lists.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_lists.h" role="src" />
@@ -1656,9 +1658,13 @@
     <file baseinstalldir="/" name="src/core/lib/resource_quota/periodic_update.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/resource_quota.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/resource_quota.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/stream_quota.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_quota/stream_quota.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/telemetry.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/thread_quota.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/thread_quota.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_tracker/resource_tracker.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/resource_tracker/resource_tracker.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/audit_logging.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/audit_logging.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/authorization/authorization_engine.h" role="src" />
@@ -1978,6 +1984,8 @@
     <file baseinstalldir="/" name="src/core/util/glob.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/glob.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/gpr_time.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/grpc_check.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/grpc_check.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/grpc_if_nametoindex.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/grpc_if_nametoindex_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/grpc_if_nametoindex_unsupported.cc" role="src" />
@@ -2037,6 +2045,8 @@
     <file baseinstalldir="/" name="src/core/util/posix/thd.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/posix/time.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/posix/tmpfile.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/postmortem_emit.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/postmortem_emit.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/random_early_detection.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/random_early_detection.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/ref_counted.h" role="src" />

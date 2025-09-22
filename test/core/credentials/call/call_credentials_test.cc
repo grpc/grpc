@@ -32,7 +32,6 @@
 
 #include <string>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -67,6 +66,7 @@
 #include "src/core/transport/auth_context.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/http_client/httpcli_ssl_credentials.h"
@@ -343,11 +343,12 @@ TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingOk) {
   std::optional<Slice> token_value;
   Duration token_lifetime;
   grpc_http_response response = http_response(200, valid_oauth2_json_response);
-  CHECK(grpc_oauth2_token_fetcher_credentials_parse_server_response(
-            &response, &token_value, &token_lifetime) == GRPC_CREDENTIALS_OK);
-  CHECK(token_lifetime == Duration::Seconds(3599));
-  CHECK(token_value->as_string_view() ==
-        "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_");
+  GRPC_CHECK(grpc_oauth2_token_fetcher_credentials_parse_server_response(
+                 &response, &token_value, &token_lifetime) ==
+             GRPC_CREDENTIALS_OK);
+  GRPC_CHECK(token_lifetime == Duration::Seconds(3599));
+  GRPC_CHECK(token_value->as_string_view() ==
+             "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_");
   grpc_http_response_destroy(&response);
 }
 
@@ -356,9 +357,9 @@ TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingBadHttpStatus) {
   std::optional<Slice> token_value;
   Duration token_lifetime;
   grpc_http_response response = http_response(401, valid_oauth2_json_response);
-  CHECK(grpc_oauth2_token_fetcher_credentials_parse_server_response(
-            &response, &token_value, &token_lifetime) ==
-        GRPC_CREDENTIALS_ERROR);
+  GRPC_CHECK(grpc_oauth2_token_fetcher_credentials_parse_server_response(
+                 &response, &token_value, &token_lifetime) ==
+             GRPC_CREDENTIALS_ERROR);
   grpc_http_response_destroy(&response);
 }
 
@@ -367,9 +368,9 @@ TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingEmptyHttpBody) {
   std::optional<Slice> token_value;
   Duration token_lifetime;
   grpc_http_response response = http_response(200, "");
-  CHECK(grpc_oauth2_token_fetcher_credentials_parse_server_response(
-            &response, &token_value, &token_lifetime) ==
-        GRPC_CREDENTIALS_ERROR);
+  GRPC_CHECK(grpc_oauth2_token_fetcher_credentials_parse_server_response(
+                 &response, &token_value, &token_lifetime) ==
+             GRPC_CREDENTIALS_ERROR);
   grpc_http_response_destroy(&response);
 }
 
@@ -382,9 +383,9 @@ TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingInvalidJson) {
                     "{\"access_token\":\"ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_\","
                     " \"expires_in\":3599, "
                     " \"token_type\":\"Bearer\"");
-  CHECK(grpc_oauth2_token_fetcher_credentials_parse_server_response(
-            &response, &token_value, &token_lifetime) ==
-        GRPC_CREDENTIALS_ERROR);
+  GRPC_CHECK(grpc_oauth2_token_fetcher_credentials_parse_server_response(
+                 &response, &token_value, &token_lifetime) ==
+             GRPC_CREDENTIALS_ERROR);
   grpc_http_response_destroy(&response);
 }
 
@@ -396,9 +397,9 @@ TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingMissingToken) {
                                               "{"
                                               " \"expires_in\":3599, "
                                               " \"token_type\":\"Bearer\"}");
-  CHECK(grpc_oauth2_token_fetcher_credentials_parse_server_response(
-            &response, &token_value, &token_lifetime) ==
-        GRPC_CREDENTIALS_ERROR);
+  GRPC_CHECK(grpc_oauth2_token_fetcher_credentials_parse_server_response(
+                 &response, &token_value, &token_lifetime) ==
+             GRPC_CREDENTIALS_ERROR);
   grpc_http_response_destroy(&response);
 }
 
@@ -411,9 +412,9 @@ TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingMissingTokenType) {
                     "{\"access_token\":\"ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_\","
                     " \"expires_in\":3599, "
                     "}");
-  CHECK(grpc_oauth2_token_fetcher_credentials_parse_server_response(
-            &response, &token_value, &token_lifetime) ==
-        GRPC_CREDENTIALS_ERROR);
+  GRPC_CHECK(grpc_oauth2_token_fetcher_credentials_parse_server_response(
+                 &response, &token_value, &token_lifetime) ==
+             GRPC_CREDENTIALS_ERROR);
   grpc_http_response_destroy(&response);
 }
 
@@ -426,9 +427,9 @@ TEST_F(CredentialsTest,
       http_response(200,
                     "{\"access_token\":\"ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_\","
                     " \"token_type\":\"Bearer\"}");
-  CHECK(grpc_oauth2_token_fetcher_credentials_parse_server_response(
-            &response, &token_value, &token_lifetime) ==
-        GRPC_CREDENTIALS_ERROR);
+  GRPC_CHECK(grpc_oauth2_token_fetcher_credentials_parse_server_response(
+                 &response, &token_value, &token_lifetime) ==
+             GRPC_CREDENTIALS_ERROR);
   grpc_http_response_destroy(&response);
 }
 
@@ -562,7 +563,7 @@ TEST_F(CredentialsTest, TestGoogleIamCreds) {
       test_google_iam_authorization_token, test_google_iam_authority_selector,
       nullptr);
   // Check security level.
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  GRPC_CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   creds->Unref();
@@ -574,9 +575,9 @@ TEST_F(CredentialsTest, TestAccessTokenCreds) {
                                                  "authorization: Bearer blah");
   grpc_call_credentials* creds =
       grpc_access_token_credentials_create("blah", nullptr);
-  CHECK(creds->type() == grpc_access_token_credentials::Type());
+  GRPC_CHECK(creds->type() == grpc_access_token_credentials::Type());
   // Check security level.
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  GRPC_CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   creds->Unref();
@@ -587,9 +588,9 @@ class check_channel_oauth2 final : public grpc_channel_credentials {
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(
       RefCountedPtr<grpc_call_credentials> call_creds, const char* /*target*/,
       ChannelArgs* /*new_args*/) override {
-    CHECK(type() == Type());
-    CHECK(call_creds != nullptr);
-    CHECK(call_creds->type() == grpc_access_token_credentials::Type());
+    GRPC_CHECK(type() == Type());
+    GRPC_CHECK(call_creds != nullptr);
+    GRPC_CHECK(call_creds->type() == grpc_access_token_credentials::Type());
     return nullptr;
   }
 
@@ -637,7 +638,7 @@ TEST_F(CredentialsTest, TestOauth2GoogleIamCompositeCreds) {
       "authorization", test_oauth2_bearer_token);
 
   // Check security level of fake credentials.
-  CHECK_EQ(oauth2_creds->min_security_level(), GRPC_SECURITY_NONE);
+  GRPC_CHECK_EQ(oauth2_creds->min_security_level(), GRPC_SECURITY_NONE);
 
   grpc_call_credentials* google_iam_creds = grpc_google_iam_credentials_create(
       test_google_iam_authorization_token, test_google_iam_authority_selector,
@@ -646,17 +647,19 @@ TEST_F(CredentialsTest, TestOauth2GoogleIamCompositeCreds) {
       grpc_composite_call_credentials_create(oauth2_creds, google_iam_creds,
                                              nullptr);
   // Check security level of composite credentials.
-  CHECK_EQ(composite_creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  GRPC_CHECK_EQ(composite_creds->min_security_level(),
+                GRPC_PRIVACY_AND_INTEGRITY);
 
   oauth2_creds->Unref();
   google_iam_creds->Unref();
-  CHECK(composite_creds->type() == grpc_composite_call_credentials::Type());
+  GRPC_CHECK(composite_creds->type() ==
+             grpc_composite_call_credentials::Type());
   const grpc_composite_call_credentials::CallCredentialsList& creds_list =
       static_cast<const grpc_composite_call_credentials*>(composite_creds)
           ->inner();
-  CHECK_EQ(creds_list.size(), 2);
-  CHECK(creds_list[0]->type() == grpc_md_only_test_credentials::Type());
-  CHECK(creds_list[1]->type() == grpc_google_iam_credentials::Type());
+  GRPC_CHECK_EQ(creds_list.size(), 2);
+  GRPC_CHECK(creds_list[0]->type() == grpc_md_only_test_credentials::Type());
+  GRPC_CHECK(creds_list[1]->type() == grpc_google_iam_credentials::Type());
   state->RunRequestMetadataTest(composite_creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   composite_creds->Unref();
@@ -667,14 +670,14 @@ class check_channel_oauth2_google_iam final : public grpc_channel_credentials {
   RefCountedPtr<grpc_channel_security_connector> create_security_connector(
       RefCountedPtr<grpc_call_credentials> call_creds, const char* /*target*/,
       ChannelArgs* /*new_args*/) override {
-    CHECK(type() == Type());
-    CHECK(call_creds != nullptr);
-    CHECK(call_creds->type() == grpc_composite_call_credentials::Type());
+    GRPC_CHECK(type() == Type());
+    GRPC_CHECK(call_creds != nullptr);
+    GRPC_CHECK(call_creds->type() == grpc_composite_call_credentials::Type());
     const grpc_composite_call_credentials::CallCredentialsList& creds_list =
         static_cast<const grpc_composite_call_credentials*>(call_creds.get())
             ->inner();
-    CHECK(creds_list[0]->type() == grpc_access_token_credentials::Type());
-    CHECK(creds_list[1]->type() == grpc_google_iam_credentials::Type());
+    GRPC_CHECK(creds_list[0]->type() == grpc_access_token_credentials::Type());
+    GRPC_CHECK(creds_list[1]->type() == grpc_google_iam_credentials::Type());
     return nullptr;
   }
 
@@ -781,7 +784,7 @@ int httpcli_post_should_not_be_called(const grpc_http_request* /*request*/,
                                       Timestamp /*deadline*/,
                                       grpc_closure* /*on_done*/,
                                       grpc_http_response* /*response*/) {
-  CHECK(false) << "HTTP POST should not be called";
+  GRPC_CHECK(false) << "HTTP POST should not be called";
   return 1;
 }
 
@@ -789,7 +792,7 @@ int httpcli_get_should_not_be_called(const grpc_http_request* /*request*/,
                                      const URI& /*uri*/, Timestamp /*deadline*/,
                                      grpc_closure* /*on_done*/,
                                      grpc_http_response* /*response*/) {
-  CHECK(false) << "HTTP GET should not be called";
+  GRPC_CHECK(false) << "HTTP GET should not be called";
   return 1;
 }
 
@@ -799,7 +802,7 @@ int httpcli_put_should_not_be_called(const grpc_http_request* /*request*/,
                                      Timestamp /*deadline*/,
                                      grpc_closure* /*on_done*/,
                                      grpc_http_response* /*response*/) {
-  CHECK(false) << "HTTP PUT should not be called";
+  GRPC_CHECK(false) << "HTTP PUT should not be called";
   return 1;
 }
 
@@ -812,7 +815,7 @@ TEST_F(CredentialsTest, TestComputeEngineCredsSuccess) {
   grpc_call_credentials* creds =
       grpc_google_compute_engine_credentials_create(nullptr);
   // Check security level.
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  GRPC_CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
 
   // First request: http get should be called.
   auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
@@ -832,8 +835,8 @@ TEST_F(CredentialsTest, TestComputeEngineCredsSuccess) {
                                 kTestPath);
   ExecCtx::Get()->Flush();
 
-  CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
-           0);
+  GRPC_CHECK_EQ(
+      strcmp(creds->debug_string().c_str(), expected_creds_debug_string), 0);
   creds->Unref();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
@@ -890,8 +893,8 @@ TEST_F(CredentialsTest, TestComputeEngineCredsFailure) {
                            httpcli_put_should_not_be_called);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
-  CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
-           0);
+  GRPC_CHECK_EQ(
+      strcmp(creds->debug_string().c_str(), expected_creds_debug_string), 0);
   creds->Unref();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
@@ -965,7 +968,7 @@ TEST_F(CredentialsTest, TestRefreshTokenCredsSuccess) {
       test_refresh_token_str, nullptr);
 
   // Check security level.
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  GRPC_CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
 
   // First request: http put should be called.
   auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
@@ -984,8 +987,8 @@ TEST_F(CredentialsTest, TestRefreshTokenCredsSuccess) {
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
-  CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
-           0);
+  GRPC_CHECK_EQ(
+      strcmp(creds->debug_string().c_str(), expected_creds_debug_string), 0);
 
   creds->Unref();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
@@ -1006,8 +1009,8 @@ TEST_F(CredentialsTest, TestRefreshTokenCredsFailure) {
                            httpcli_put_should_not_be_called);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
-  CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
-           0);
+  GRPC_CHECK_EQ(
+      strcmp(creds->debug_string().c_str(), expected_creds_debug_string), 0);
 
   creds->Unref();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
@@ -1026,13 +1029,13 @@ TEST_F(CredentialsTest, TestValidStsCredsOptions) {
       nullptr                       // actor_token_type
   };
   absl::StatusOr<URI> sts_url = ValidateStsCredentialsOptions(&valid_options);
-  CHECK_OK(sts_url);
+  GRPC_CHECK_OK(sts_url);
   absl::string_view host;
   absl::string_view port;
   std::string authtority = sts_url->authority();
-  CHECK(SplitHostPort(authtority, &host, &port));
-  CHECK(host == "foo.com");
-  CHECK(port == "5555");
+  GRPC_CHECK(SplitHostPort(authtority, &host, &port));
+  GRPC_CHECK(host == "foo.com");
+  GRPC_CHECK(port == "5555");
 }
 
 TEST_F(CredentialsTest, TestInvalidStsCredsOptions) {
@@ -1049,7 +1052,7 @@ TEST_F(CredentialsTest, TestInvalidStsCredsOptions) {
   };
   absl::StatusOr<URI> url_should_be_invalid =
       ValidateStsCredentialsOptions(&invalid_options);
-  CHECK(!url_should_be_invalid.ok());
+  GRPC_CHECK(!url_should_be_invalid.ok());
 
   invalid_options = {
       test_sts_endpoint_url,        // sts_endpoint_url
@@ -1063,7 +1066,7 @@ TEST_F(CredentialsTest, TestInvalidStsCredsOptions) {
       nullptr                       // actor_token_type
   };
   url_should_be_invalid = ValidateStsCredentialsOptions(&invalid_options);
-  CHECK(!url_should_be_invalid.ok());
+  GRPC_CHECK(!url_should_be_invalid.ok());
 
   invalid_options = {
       nullptr,                      // sts_endpoint_url (Required)
@@ -1077,7 +1080,7 @@ TEST_F(CredentialsTest, TestInvalidStsCredsOptions) {
       nullptr                       // actor_token_type
   };
   url_should_be_invalid = ValidateStsCredentialsOptions(&invalid_options);
-  CHECK(!url_should_be_invalid.ok());
+  GRPC_CHECK(!url_should_be_invalid.ok());
 
   invalid_options = {
       "not_a_valid_uri",            // sts_endpoint_url
@@ -1091,7 +1094,7 @@ TEST_F(CredentialsTest, TestInvalidStsCredsOptions) {
       nullptr                       // actor_token_type
   };
   url_should_be_invalid = ValidateStsCredentialsOptions(&invalid_options);
-  CHECK(!url_should_be_invalid.ok());
+  GRPC_CHECK(!url_should_be_invalid.ok());
 
   invalid_options = {
       "ftp://ftp.is.not.a.valid.scheme/bar",  // sts_endpoint_url
@@ -1105,7 +1108,17 @@ TEST_F(CredentialsTest, TestInvalidStsCredsOptions) {
       nullptr                                 // actor_token_type
   };
   url_should_be_invalid = ValidateStsCredentialsOptions(&invalid_options);
-  CHECK(!url_should_be_invalid.ok());
+  GRPC_CHECK(!url_should_be_invalid.ok());
+}
+
+void assert_query_parameters(const URI& uri, absl::string_view expected_key,
+                             absl::string_view expected_val) {
+  const auto it = uri.query_parameter_map().find(expected_key);
+  GRPC_CHECK(it != uri.query_parameter_map().end());
+  if (it->second != expected_val) {
+    LOG(ERROR) << it->second << "!=" << expected_val;
+  }
+  GRPC_CHECK(it->second == expected_val);
 }
 
 void validate_sts_token_http_request(const grpc_http_request* request,
@@ -1117,7 +1130,7 @@ void validate_sts_token_http_request(const grpc_http_request* request,
   absl::StatusOr<URI> url = URI::Parse(get_url_equivalent);
   if (!url.ok()) {
     LOG(ERROR) << url.status();
-    CHECK_OK(url);
+    GRPC_CHECK_OK(url);
   }
   assert_query_parameters(*url, "resource", "resource");
   assert_query_parameters(*url, "audience", "audience");
@@ -1131,10 +1144,10 @@ void validate_sts_token_http_request(const grpc_http_request* request,
     assert_query_parameters(*url, "actor_token_type",
                             test_signed_jwt_token_type2);
   } else {
-    CHECK(url->query_parameter_map().find("actor_token") ==
-          url->query_parameter_map().end());
-    CHECK(url->query_parameter_map().find("actor_token_type") ==
-          url->query_parameter_map().end());
+    GRPC_CHECK(url->query_parameter_map().find("actor_token") ==
+               url->query_parameter_map().end());
+    GRPC_CHECK(url->query_parameter_map().find("actor_token_type") ==
+               url->query_parameter_map().end());
   }
 
   // Check the rest of the request.
@@ -1170,10 +1183,10 @@ int sts_token_httpcli_post_success_no_actor_token(
 char* write_tmp_jwt_file(const char* jwt_contents) {
   char* path;
   FILE* tmp = gpr_tmpfile(test_signed_jwt_path_prefix, &path);
-  CHECK_NE(path, nullptr);
-  CHECK_NE(tmp, nullptr);
+  GRPC_CHECK_NE(path, nullptr);
+  GRPC_CHECK_NE(tmp, nullptr);
   size_t jwt_length = strlen(jwt_contents);
-  CHECK_EQ(fwrite(jwt_contents, 1, jwt_length, tmp), jwt_length);
+  GRPC_CHECK_EQ(fwrite(jwt_contents, 1, jwt_length, tmp), jwt_length);
   fclose(tmp);
   return path;
 }
@@ -1201,7 +1214,7 @@ TEST_F(CredentialsTest, TestStsCredsSuccess) {
       grpc_sts_credentials_create(&valid_options, nullptr);
 
   // Check security level.
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  GRPC_CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
 
   // First request: http put should be called.
   auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
@@ -1220,8 +1233,8 @@ TEST_F(CredentialsTest, TestStsCredsSuccess) {
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
-  CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
-           0);
+  GRPC_CHECK_EQ(
+      strcmp(creds->debug_string().c_str(), expected_creds_debug_string), 0);
 
   creds->Unref();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
@@ -1246,7 +1259,7 @@ TEST_F(CredentialsTest, TestStsCredsTokenFileNotFound) {
       grpc_sts_credentials_create(&valid_options, nullptr);
 
   // Check security level.
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  GRPC_CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
 
   auto state = RequestMetadataState::NewInstance(
       // TODO(roth): This should return UNAVAILABLE.
@@ -1288,7 +1301,7 @@ TEST_F(CredentialsTest, TestStsCredsNoActorTokenSuccess) {
       grpc_sts_credentials_create(&valid_options, nullptr);
 
   // Check security level.
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  GRPC_CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
 
   // First request: http put should be called.
   auto state = RequestMetadataState::NewInstance(absl::OkStatus(), emd);
@@ -1307,8 +1320,8 @@ TEST_F(CredentialsTest, TestStsCredsNoActorTokenSuccess) {
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
-  CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
-           0);
+  GRPC_CHECK_EQ(
+      strcmp(creds->debug_string().c_str(), expected_creds_debug_string), 0);
 
   creds->Unref();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
@@ -1343,8 +1356,8 @@ TEST_F(CredentialsTest, TestStsCredsLoadTokenFailure) {
                            httpcli_put_should_not_be_called);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
-  CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
-           0);
+  GRPC_CHECK_EQ(
+      strcmp(creds->debug_string().c_str(), expected_creds_debug_string), 0);
 
   creds->Unref();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
@@ -1378,8 +1391,8 @@ TEST_F(CredentialsTest, TestStsCredsHttpFailure) {
                            httpcli_put_should_not_be_called);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
-  CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
-           0);
+  GRPC_CHECK_EQ(
+      strcmp(creds->debug_string().c_str(), expected_creds_debug_string), 0);
   creds->Unref();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
   gpr_free(test_signed_jwt_path);
@@ -1388,30 +1401,31 @@ TEST_F(CredentialsTest, TestStsCredsHttpFailure) {
 void validate_jwt_encode_and_sign_params(const grpc_auth_json_key* json_key,
                                          const char* scope,
                                          gpr_timespec token_lifetime) {
-  CHECK(grpc_auth_json_key_is_valid(json_key));
-  CHECK_NE(json_key->private_key, nullptr);
+  GRPC_CHECK(grpc_auth_json_key_is_valid(json_key));
+  GRPC_CHECK_NE(json_key->private_key, nullptr);
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
-  CHECK(RSA_check_key(json_key->private_key));
+  GRPC_CHECK(RSA_check_key(json_key->private_key));
 #else
   EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new(json_key->private_key, NULL);
-  CHECK(EVP_PKEY_private_check(ctx));
+  GRPC_CHECK(EVP_PKEY_private_check(ctx));
   EVP_PKEY_CTX_free(ctx);
 #endif
-  CHECK(json_key->type != nullptr &&
-        strcmp(json_key->type, "service_account") == 0);
-  CHECK(json_key->private_key_id != nullptr &&
-        strcmp(json_key->private_key_id,
-               "e6b5137873db8d2ef81e06a47289e6434ec8a165") == 0);
-  CHECK(json_key->client_id != nullptr &&
-        strcmp(json_key->client_id,
-               "777-abaslkan11hlb6nmim3bpspl31ud.apps."
-               "googleusercontent.com") == 0);
-  CHECK(json_key->client_email != nullptr &&
-        strcmp(json_key->client_email,
-               "777-abaslkan11hlb6nmim3bpspl31ud@developer."
-               "gserviceaccount.com") == 0);
-  if (scope != nullptr) CHECK_EQ(strcmp(scope, test_scope), 0);
-  CHECK_EQ(gpr_time_cmp(token_lifetime, grpc_max_auth_token_lifetime()), 0);
+  GRPC_CHECK(json_key->type != nullptr &&
+             strcmp(json_key->type, "service_account") == 0);
+  GRPC_CHECK(json_key->private_key_id != nullptr &&
+             strcmp(json_key->private_key_id,
+                    "e6b5137873db8d2ef81e06a47289e6434ec8a165") == 0);
+  GRPC_CHECK(json_key->client_id != nullptr &&
+             strcmp(json_key->client_id,
+                    "777-abaslkan11hlb6nmim3bpspl31ud.apps."
+                    "googleusercontent.com") == 0);
+  GRPC_CHECK(json_key->client_email != nullptr &&
+             strcmp(json_key->client_email,
+                    "777-abaslkan11hlb6nmim3bpspl31ud@developer."
+                    "gserviceaccount.com") == 0);
+  if (scope != nullptr) GRPC_CHECK_EQ(strcmp(scope, test_scope), 0);
+  GRPC_CHECK_EQ(gpr_time_cmp(token_lifetime, grpc_max_auth_token_lifetime()),
+                0);
 }
 
 char* encode_and_sign_jwt_success(const grpc_auth_json_key* json_key,
@@ -1443,8 +1457,9 @@ char* encode_and_sign_jwt_should_not_be_called(
 
 grpc_service_account_jwt_access_credentials* creds_as_jwt(
     grpc_call_credentials* creds) {
-  CHECK(creds != nullptr);
-  CHECK(creds->type() == grpc_service_account_jwt_access_credentials::Type());
+  GRPC_CHECK(creds != nullptr);
+  GRPC_CHECK(creds->type() ==
+             grpc_service_account_jwt_access_credentials::Type());
   return reinterpret_cast<grpc_service_account_jwt_access_credentials*>(creds);
 }
 
@@ -1456,28 +1471,29 @@ TEST_F(CredentialsTest, TestJwtCredsLifetime) {
   grpc_call_credentials* jwt_creds =
       grpc_service_account_jwt_access_credentials_create(
           json_key_string, grpc_max_auth_token_lifetime(), nullptr);
-  CHECK_EQ(gpr_time_cmp(creds_as_jwt(jwt_creds)->jwt_lifetime(),
-                        grpc_max_auth_token_lifetime()),
-           0);
+  GRPC_CHECK_EQ(gpr_time_cmp(creds_as_jwt(jwt_creds)->jwt_lifetime(),
+                             grpc_max_auth_token_lifetime()),
+                0);
   // Check security level.
-  CHECK_EQ(jwt_creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
-  CHECK_EQ(strncmp(expected_creds_debug_string_prefix,
-                   jwt_creds->debug_string().c_str(),
-                   strlen(expected_creds_debug_string_prefix)),
-           0);
+  GRPC_CHECK_EQ(jwt_creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  GRPC_CHECK_EQ(strncmp(expected_creds_debug_string_prefix,
+                        jwt_creds->debug_string().c_str(),
+                        strlen(expected_creds_debug_string_prefix)),
+                0);
   grpc_call_credentials_release(jwt_creds);
 
   // Shorter lifetime.
   gpr_timespec token_lifetime = {10, 0, GPR_TIMESPAN};
-  CHECK_GT(gpr_time_cmp(grpc_max_auth_token_lifetime(), token_lifetime), 0);
+  GRPC_CHECK_GT(gpr_time_cmp(grpc_max_auth_token_lifetime(), token_lifetime),
+                0);
   jwt_creds = grpc_service_account_jwt_access_credentials_create(
       json_key_string, token_lifetime, nullptr);
-  CHECK_EQ(
+  GRPC_CHECK_EQ(
       gpr_time_cmp(creds_as_jwt(jwt_creds)->jwt_lifetime(), token_lifetime), 0);
-  CHECK_EQ(strncmp(expected_creds_debug_string_prefix,
-                   jwt_creds->debug_string().c_str(),
-                   strlen(expected_creds_debug_string_prefix)),
-           0);
+  GRPC_CHECK_EQ(strncmp(expected_creds_debug_string_prefix,
+                        jwt_creds->debug_string().c_str(),
+                        strlen(expected_creds_debug_string_prefix)),
+                0);
   grpc_call_credentials_release(jwt_creds);
 
   // Cropped lifetime.
@@ -1485,11 +1501,11 @@ TEST_F(CredentialsTest, TestJwtCredsLifetime) {
   token_lifetime = gpr_time_add(grpc_max_auth_token_lifetime(), add_to_max);
   jwt_creds = grpc_service_account_jwt_access_credentials_create(
       json_key_string, token_lifetime, nullptr);
-  CHECK(gpr_time_cmp(creds_as_jwt(jwt_creds)->jwt_lifetime(),
-                     grpc_max_auth_token_lifetime()) == 0);
-  CHECK(strncmp(expected_creds_debug_string_prefix,
-                jwt_creds->debug_string().c_str(),
-                strlen(expected_creds_debug_string_prefix)) == 0);
+  GRPC_CHECK(gpr_time_cmp(creds_as_jwt(jwt_creds)->jwt_lifetime(),
+                          grpc_max_auth_token_lifetime()) == 0);
+  GRPC_CHECK(strncmp(expected_creds_debug_string_prefix,
+                     jwt_creds->debug_string().c_str(),
+                     strlen(expected_creds_debug_string_prefix)) == 0);
   grpc_call_credentials_release(jwt_creds);
 
   gpr_free(json_key_string);
@@ -1497,12 +1513,12 @@ TEST_F(CredentialsTest, TestJwtCredsLifetime) {
 
 TEST_F(CredentialsTest, TestRemoveServiceFromJwtUri) {
   const char wrong_uri[] = "hello world";
-  CHECK(!RemoveServiceNameFromJwtUri(wrong_uri).ok());
+  GRPC_CHECK(!RemoveServiceNameFromJwtUri(wrong_uri).ok());
   const char valid_uri[] = "https://foo.com/get/";
   const char expected_uri[] = "https://foo.com/";
   auto output = RemoveServiceNameFromJwtUri(valid_uri);
-  CHECK_OK(output);
-  CHECK_EQ(strcmp(output->c_str(), expected_uri), 0);
+  GRPC_CHECK_OK(output);
+  GRPC_CHECK_EQ(strcmp(output->c_str(), expected_uri), 0);
 }
 
 TEST_F(CredentialsTest, TestJwtCredsSuccess) {
@@ -1539,7 +1555,7 @@ TEST_F(CredentialsTest, TestJwtCredsSuccess) {
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestOtherAuthority,
                                 kTestOtherPath);
   ExecCtx::Get()->Flush();
-  CHECK_EQ(
+  GRPC_CHECK_EQ(
       strncmp(expected_creds_debug_string_prefix, creds->debug_string().c_str(),
               strlen(expected_creds_debug_string_prefix)),
       0);
@@ -1565,7 +1581,7 @@ TEST_F(CredentialsTest, TestJwtCredsSigningFailure) {
                                 kTestPath);
 
   gpr_free(json_key_string);
-  CHECK_EQ(
+  GRPC_CHECK_EQ(
       strncmp(expected_creds_debug_string_prefix, creds->debug_string().c_str(),
               strlen(expected_creds_debug_string_prefix)),
       0);
@@ -1579,9 +1595,9 @@ void set_google_default_creds_env_var_with_file_contents(
   size_t contents_len = strlen(contents);
   char* creds_file_name;
   FILE* creds_file = gpr_tmpfile(file_prefix, &creds_file_name);
-  CHECK_NE(creds_file_name, nullptr);
-  CHECK_NE(creds_file, nullptr);
-  CHECK_EQ(fwrite(contents, 1, contents_len, creds_file), contents_len);
+  GRPC_CHECK_NE(creds_file_name, nullptr);
+  GRPC_CHECK_NE(creds_file, nullptr);
+  GRPC_CHECK_EQ(fwrite(contents, 1, contents_len, creds_file), contents_len);
   fclose(creds_file);
   SetEnv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, creds_file_name);
   gpr_free(creds_file_name);
@@ -1612,15 +1628,15 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsAuthKey) {
   auto* default_creds =
       reinterpret_cast<const grpc_google_default_channel_credentials*>(
           creds->inner_creds());
-  CHECK_NE(default_creds->ssl_creds(), nullptr);
+  GRPC_CHECK_NE(default_creds->ssl_creds(), nullptr);
   auto* jwt =
       reinterpret_cast<const grpc_service_account_jwt_access_credentials*>(
           creds->call_creds());
-  CHECK_EQ(
+  GRPC_CHECK_EQ(
       strcmp(jwt->key().client_id,
              "777-abaslkan11hlb6nmim3bpspl31ud.apps.googleusercontent.com"),
       0);
-  CHECK_EQ(g_test_gce_tenancy_checker_called, false);
+  GRPC_CHECK_EQ(g_test_gce_tenancy_checker_called, false);
   creds->Unref();
   SetEnv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, "");  // Reset.
   grpc_override_well_known_credentials_path_getter(nullptr);
@@ -1639,13 +1655,13 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsRefreshToken) {
   auto* default_creds =
       reinterpret_cast<const grpc_google_default_channel_credentials*>(
           creds->inner_creds());
-  CHECK_NE(default_creds->ssl_creds(), nullptr);
+  GRPC_CHECK_NE(default_creds->ssl_creds(), nullptr);
   auto* refresh =
       reinterpret_cast<const grpc_google_refresh_token_credentials*>(
           creds->call_creds());
-  CHECK_EQ(strcmp(refresh->refresh_token().client_id,
-                  "32555999999.apps.googleusercontent.com"),
-           0);
+  GRPC_CHECK_EQ(strcmp(refresh->refresh_token().client_id,
+                       "32555999999.apps.googleusercontent.com"),
+                0);
   creds->Unref();
   SetEnv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, "");  // Reset.
   grpc_override_well_known_credentials_path_getter(nullptr);
@@ -1666,10 +1682,10 @@ TEST_F(CredentialsTest,
   auto* default_creds =
       reinterpret_cast<const grpc_google_default_channel_credentials*>(
           creds->inner_creds());
-  CHECK_NE(default_creds->ssl_creds(), nullptr);
+  GRPC_CHECK_NE(default_creds->ssl_creds(), nullptr);
   auto* external =
       reinterpret_cast<const ExternalAccountCredentials*>(creds->call_creds());
-  CHECK_NE(external, nullptr);
+  GRPC_CHECK_NE(external, nullptr);
   creds->Unref();
   SetEnv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, "");  // Reset.
   grpc_override_well_known_credentials_path_getter(nullptr);
@@ -1690,10 +1706,10 @@ TEST_F(CredentialsTest,
   auto* default_creds =
       reinterpret_cast<const grpc_google_default_channel_credentials*>(
           creds->inner_creds());
-  CHECK_NE(default_creds->ssl_creds(), nullptr);
+  GRPC_CHECK_NE(default_creds->ssl_creds(), nullptr);
   auto* external =
       reinterpret_cast<const ExternalAccountCredentials*>(creds->call_creds());
-  CHECK_NE(external, nullptr);
+  GRPC_CHECK_NE(external, nullptr);
   creds->Unref();
   SetEnv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, "");  // Reset.
   grpc_override_well_known_credentials_path_getter(nullptr);
@@ -1735,8 +1751,8 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsGce) {
           grpc_google_default_credentials_create(nullptr, nullptr));
 
   // Verify that the default creds actually embeds a GCE creds.
-  CHECK(creds != nullptr);
-  CHECK_NE(creds->call_creds(), nullptr);
+  GRPC_CHECK(creds != nullptr);
+  GRPC_CHECK_NE(creds->call_creds(), nullptr);
   HttpRequest::SetOverride(compute_engine_httpcli_get_success_override,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
@@ -1744,7 +1760,7 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsGce) {
                                 kTestAuthority, kTestPath);
   ExecCtx::Get()->Flush();
 
-  CHECK_EQ(g_test_gce_tenancy_checker_called, true);
+  GRPC_CHECK_EQ(g_test_gce_tenancy_checker_called, true);
 
   // Cleanup.
   creds->Unref();
@@ -1772,15 +1788,15 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsNonGce) {
       reinterpret_cast<grpc_composite_channel_credentials*>(
           grpc_google_default_credentials_create(nullptr, nullptr));
   // Verify that the default creds actually embeds a GCE creds.
-  CHECK(creds != nullptr);
-  CHECK_NE(creds->call_creds(), nullptr);
+  GRPC_CHECK(creds != nullptr);
+  GRPC_CHECK_NE(creds->call_creds(), nullptr);
   HttpRequest::SetOverride(compute_engine_httpcli_get_success_override,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
   state->RunRequestMetadataTest(creds->mutable_call_creds(), kTestUrlScheme,
                                 kTestAuthority, kTestPath);
   ExecCtx::Get()->Flush();
-  CHECK_EQ(g_test_gce_tenancy_checker_called, true);
+  GRPC_CHECK_EQ(g_test_gce_tenancy_checker_called, true);
   // Cleanup.
   creds->Unref();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
@@ -1811,11 +1827,13 @@ TEST_F(CredentialsTest, TestNoGoogleDefaultCreds) {
       default_creds_gce_detection_httpcli_get_failure_override,
       httpcli_post_should_not_be_called, httpcli_put_should_not_be_called);
   // Simulate a successful detection of GCE.
-  CHECK_EQ(grpc_google_default_credentials_create(nullptr, nullptr), nullptr);
+  GRPC_CHECK_EQ(grpc_google_default_credentials_create(nullptr, nullptr),
+                nullptr);
   // Try a second one. GCE detection should occur again.
   g_test_gce_tenancy_checker_called = false;
-  CHECK_EQ(grpc_google_default_credentials_create(nullptr, nullptr), nullptr);
-  CHECK_EQ(g_test_gce_tenancy_checker_called, true);
+  GRPC_CHECK_EQ(grpc_google_default_credentials_create(nullptr, nullptr),
+                nullptr);
+  GRPC_CHECK_EQ(g_test_gce_tenancy_checker_called, true);
   // Cleanup.
   grpc_override_well_known_credentials_path_getter(nullptr);
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
@@ -1838,9 +1856,9 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsCallCredsSpecified) {
   grpc_composite_channel_credentials* channel_creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
           grpc_google_default_credentials_create(call_creds, nullptr));
-  CHECK_EQ(g_test_gce_tenancy_checker_called, false);
-  CHECK_NE(channel_creds, nullptr);
-  CHECK_NE(channel_creds->call_creds(), nullptr);
+  GRPC_CHECK_EQ(g_test_gce_tenancy_checker_called, false);
+  GRPC_CHECK_NE(channel_creds, nullptr);
+  GRPC_CHECK_NE(channel_creds->call_creds(), nullptr);
   HttpRequest::SetOverride(compute_engine_httpcli_get_success_override,
                            httpcli_post_should_not_be_called,
                            httpcli_put_should_not_be_called);
@@ -1929,9 +1947,9 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsNotDefault) {
       reinterpret_cast<grpc_composite_channel_credentials*>(
           grpc_google_default_credentials_create(call_creds.release(),
                                                  nullptr));
-  CHECK_EQ(g_test_gce_tenancy_checker_called, false);
-  CHECK_NE(channel_creds, nullptr);
-  CHECK_NE(channel_creds->call_creds(), nullptr);
+  GRPC_CHECK_EQ(g_test_gce_tenancy_checker_called, false);
+  GRPC_CHECK_NE(channel_creds, nullptr);
+  GRPC_CHECK_NE(channel_creds->call_creds(), nullptr);
   state->RunRequestMetadataTest(channel_creds->mutable_call_creds(),
                                 kTestUrlScheme, kTestAuthority, kTestPath);
   ExecCtx::Get()->Flush();
@@ -1954,11 +1972,11 @@ int plugin_get_metadata_success(
     grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
     size_t* num_creds_md, grpc_status_code* /*status*/,
     const char** /*error_details*/) {
-  CHECK_EQ(strcmp(context.service_url, test_service_url), 0);
-  CHECK_EQ(strcmp(context.method_name, test_method), 0);
-  CHECK_EQ(context.channel_auth_context, nullptr);
-  CHECK_EQ(context.reserved, nullptr);
-  CHECK_LT(plugin_md.size(), GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX);
+  GRPC_CHECK_EQ(strcmp(context.service_url, test_service_url), 0);
+  GRPC_CHECK_EQ(strcmp(context.method_name, test_method), 0);
+  GRPC_CHECK_EQ(context.channel_auth_context, nullptr);
+  GRPC_CHECK_EQ(context.reserved, nullptr);
+  GRPC_CHECK_LT(plugin_md.size(), GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX);
   plugin_state* s = static_cast<plugin_state*>(state);
   *s = PLUGIN_GET_METADATA_CALLED_STATE;
   size_t i = 0;
@@ -1980,10 +1998,10 @@ int plugin_get_metadata_failure(
     grpc_metadata /*creds_md*/[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
     size_t* /*num_creds_md*/, grpc_status_code* status,
     const char** error_details) {
-  CHECK_EQ(strcmp(context.service_url, test_service_url), 0);
-  CHECK_EQ(strcmp(context.method_name, test_method), 0);
-  CHECK_EQ(context.channel_auth_context, nullptr);
-  CHECK_EQ(context.reserved, nullptr);
+  GRPC_CHECK_EQ(strcmp(context.service_url, test_service_url), 0);
+  GRPC_CHECK_EQ(strcmp(context.method_name, test_method), 0);
+  GRPC_CHECK_EQ(context.channel_auth_context, nullptr);
+  GRPC_CHECK_EQ(context.reserved, nullptr);
   plugin_state* s = static_cast<plugin_state*>(state);
   *s = PLUGIN_GET_METADATA_CALLED_STATE;
   *status = GRPC_STATUS_UNAUTHENTICATED;
@@ -2033,16 +2051,16 @@ TEST_F(CredentialsTest, TestMetadataPluginSuccess) {
   grpc_call_credentials* creds = grpc_metadata_credentials_create_from_plugin(
       plugin, GRPC_PRIVACY_AND_INTEGRITY, nullptr);
   // Check security level.
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
-  CHECK_EQ(state, PLUGIN_INITIAL_STATE);
+  GRPC_CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  GRPC_CHECK_EQ(state, PLUGIN_INITIAL_STATE);
   md_state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                    kTestPath);
-  CHECK_EQ(state, PLUGIN_GET_METADATA_CALLED_STATE);
-  CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
-           0);
+  GRPC_CHECK_EQ(state, PLUGIN_GET_METADATA_CALLED_STATE);
+  GRPC_CHECK_EQ(
+      strcmp(creds->debug_string().c_str(), expected_creds_debug_string), 0);
   creds->Unref();
 
-  CHECK_EQ(state, PLUGIN_DESTROY_CALLED_STATE);
+  GRPC_CHECK_EQ(state, PLUGIN_DESTROY_CALLED_STATE);
 }
 
 TEST_F(CredentialsTest, TestMetadataPluginFailure) {
@@ -2066,15 +2084,15 @@ TEST_F(CredentialsTest, TestMetadataPluginFailure) {
 
   grpc_call_credentials* creds = grpc_metadata_credentials_create_from_plugin(
       plugin, GRPC_PRIVACY_AND_INTEGRITY, nullptr);
-  CHECK_EQ(state, PLUGIN_INITIAL_STATE);
+  GRPC_CHECK_EQ(state, PLUGIN_INITIAL_STATE);
   md_state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                    kTestPath);
-  CHECK_EQ(state, PLUGIN_GET_METADATA_CALLED_STATE);
-  CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
-           0);
+  GRPC_CHECK_EQ(state, PLUGIN_GET_METADATA_CALLED_STATE);
+  GRPC_CHECK_EQ(
+      strcmp(creds->debug_string().c_str(), expected_creds_debug_string), 0);
   creds->Unref();
 
-  CHECK_EQ(state, PLUGIN_DESTROY_CALLED_STATE);
+  GRPC_CHECK_EQ(state, PLUGIN_DESTROY_CALLED_STATE);
 }
 
 TEST_F(CredentialsTest, TestGetWellKnownGoogleCredentialsFilePath) {
@@ -2089,12 +2107,12 @@ TEST_F(CredentialsTest, TestGetWellKnownGoogleCredentialsFilePath) {
 #endif  // defined(GRPC_BAZEL_BUILD) && (defined(GPR_POSIX_ENV) ||
         // defined(GPR_LINUX_ENV))
   std::string path = grpc_get_well_known_google_credentials_file_path();
-  CHECK(!path.empty());
+  GRPC_CHECK(!path.empty());
 #if defined(GPR_POSIX_ENV) || defined(GPR_LINUX_ENV)
   restore_home_env = true;
   UnsetEnv("HOME");
   path = grpc_get_well_known_google_credentials_file_path();
-  CHECK(path.empty());
+  GRPC_CHECK(path.empty());
 #endif  // GPR_POSIX_ENV || GPR_LINUX_ENV
   if (restore_home_env) {
     SetOrUnsetEnv("HOME", home);
@@ -2111,7 +2129,7 @@ TEST_F(CredentialsTest, TestChannelCredsDuplicateWithoutCallCreds) {
 
   RefCountedPtr<grpc_channel_credentials> dup =
       channel_creds->duplicate_without_call_credentials();
-  CHECK(dup == channel_creds);
+  GRPC_CHECK(dup == channel_creds);
   dup.reset();
 
   grpc_call_credentials* call_creds =
@@ -2119,13 +2137,13 @@ TEST_F(CredentialsTest, TestChannelCredsDuplicateWithoutCallCreds) {
   grpc_channel_credentials* composite_creds =
       grpc_composite_channel_credentials_create(channel_creds, call_creds,
                                                 nullptr);
-  CHECK_EQ(
+  GRPC_CHECK_EQ(
       strcmp(call_creds->debug_string().c_str(), expected_creds_debug_string),
       0);
 
   call_creds->Unref();
   dup = composite_creds->duplicate_without_call_credentials();
-  CHECK(dup == channel_creds);
+  GRPC_CHECK(dup == channel_creds);
   dup.reset();
 
   channel_creds->Unref();
@@ -2237,7 +2255,7 @@ TEST_F(CredentialsTest, TestAuthMetadataContext) {
                             test_cases[i].desired_method_name,
                             auth_md_context.method_name));
     }
-    CHECK_EQ(auth_md_context.channel_auth_context, nullptr);
+    GRPC_CHECK_EQ(auth_md_context.channel_auth_context, nullptr);
     grpc_slice_unref(call_host);
     grpc_slice_unref(call_method);
     grpc_auth_metadata_context_reset(&auth_md_context);
@@ -2253,7 +2271,7 @@ void validate_external_account_creds_token_exchange_request(
   absl::StatusOr<URI> uri = URI::Parse(get_url_equivalent);
   if (!uri.ok()) {
     LOG(ERROR) << uri.status().ToString();
-    CHECK_OK(uri);
+    GRPC_CHECK_OK(uri);
   }
   assert_query_parameters(*uri, "audience", "audience");
   assert_query_parameters(*uri, "grant_type",
@@ -2422,7 +2440,7 @@ void validate_aws_external_account_creds_token_exchange_request(
   std::string get_url_equivalent =
       absl::StrFormat("%s?%s", "https://foo.com:5555/token", body);
   absl::StatusOr<URI> uri = URI::Parse(get_url_equivalent);
-  CHECK_OK(uri);
+  GRPC_CHECK_OK(uri);
   assert_query_parameters(*uri, "audience", "audience");
   assert_query_parameters(*uri, "grant_type",
                           "urn:ietf:params:oauth:grant-type:token-exchange");
@@ -2521,7 +2539,7 @@ class TokenFetcherCredentialsTest : public ::testing::Test {
         : TokenFetcherCredentials(std::move(event_engine),
                                   /*test_only_use_backoff_jitter=*/false) {}
 
-    ~TestTokenFetcherCredentials() override { CHECK_EQ(queue_.size(), 0); }
+    ~TestTokenFetcherCredentials() override { GRPC_CHECK_EQ(queue_.size(), 0); }
 
     void AddResult(absl::StatusOr<RefCountedPtr<Token>> result) {
       MutexLock lock(&mu_);
@@ -2555,7 +2573,7 @@ class TokenFetcherCredentialsTest : public ::testing::Test {
       absl::StatusOr<RefCountedPtr<Token>> result;
       {
         MutexLock lock(&mu_);
-        CHECK(!queue_.empty());
+        GRPC_CHECK(!queue_.empty());
         result = std::move(queue_.back());
         queue_.pop_back();
       }
@@ -4396,14 +4414,14 @@ TEST_F(ExternalAccountCredentialsTest,
 
 TEST_F(CredentialsTest, TestFakeCallCredentialsCompareSuccess) {
   auto call_creds = MakeRefCounted<fake_call_creds>();
-  CHECK_EQ(call_creds->cmp(call_creds.get()), 0);
+  GRPC_CHECK_EQ(call_creds->cmp(call_creds.get()), 0);
 }
 
 TEST_F(CredentialsTest, TestFakeCallCredentialsCompareFailure) {
   auto fake_creds = MakeRefCounted<fake_call_creds>();
   auto* md_creds = grpc_md_only_test_credentials_create("key", "value");
-  CHECK_NE(fake_creds->cmp(md_creds), 0);
-  CHECK_NE(md_creds->cmp(fake_creds.get()), 0);
+  GRPC_CHECK_NE(fake_creds->cmp(md_creds), 0);
+  GRPC_CHECK_NE(md_creds->cmp(fake_creds.get()), 0);
   grpc_call_credentials_release(md_creds);
 }
 
@@ -4490,7 +4508,7 @@ TEST_F(GcpServiceAccountIdentityCredentialsTest, Basic) {
   ExecCtx exec_ctx;
   auto creds =
       MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  GRPC_CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(absl::OkStatus(), g_token);
   state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
@@ -4505,7 +4523,7 @@ TEST_F(GcpServiceAccountIdentityCredentialsTest, FailsWithHttpStatus429) {
   ExecCtx exec_ctx;
   auto creds =
       MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  GRPC_CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::UnavailableError("JWT fetch failed with status 429"), "");
   state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
@@ -4522,7 +4540,7 @@ TEST_F(GcpServiceAccountIdentityCredentialsTest, FailsWithHttpStatus400) {
   ExecCtx exec_ctx;
   auto creds =
       MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  GRPC_CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::UnauthenticatedError("JWT fetch failed with status 400"), "");
   state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
@@ -4537,7 +4555,7 @@ TEST_F(GcpServiceAccountIdentityCredentialsTest, FailsWithHttpIOError) {
   ExecCtx exec_ctx;
   auto creds =
       MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  GRPC_CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::UnavailableError("INTERNAL:uh oh"), "");
   state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
@@ -4552,7 +4570,7 @@ TEST_F(GcpServiceAccountIdentityCredentialsTest, TokenHasWrongNumberOfDots) {
   ExecCtx exec_ctx;
   auto creds =
       MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  GRPC_CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::UnauthenticatedError("error parsing JWT token"), "");
   state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
@@ -4567,7 +4585,7 @@ TEST_F(GcpServiceAccountIdentityCredentialsTest, TokenPayloadNotBase64) {
   ExecCtx exec_ctx;
   auto creds =
       MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  GRPC_CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::UnauthenticatedError("error parsing JWT token"), "");
   state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
@@ -4583,7 +4601,7 @@ TEST_F(GcpServiceAccountIdentityCredentialsTest, TokenPayloadNotJson) {
   ExecCtx exec_ctx;
   auto creds =
       MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  GRPC_CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::UnauthenticatedError("error parsing JWT token"), "");
   state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
@@ -4599,7 +4617,7 @@ TEST_F(GcpServiceAccountIdentityCredentialsTest, TokenInvalidExpiration) {
   ExecCtx exec_ctx;
   auto creds =
       MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  GRPC_CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
       absl::UnauthenticatedError("error parsing JWT token"), "");
   state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
@@ -4636,7 +4654,7 @@ TEST_F(JwtTokenFileCallCredentialsTest, Basic) {
       MakeJwtTokenWithExpiration(Timestamp::Now() + Duration::Hours(1));
   char* path = write_tmp_jwt_file(token.c_str());
   auto creds = MakeRefCounted<JwtTokenFileCallCredentials>(path, event_engine_);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  GRPC_CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   ExecCtx exec_ctx;
   auto state = RequestMetadataState::NewInstance(absl::OkStatus(), token);
   state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
@@ -4649,7 +4667,7 @@ TEST_F(JwtTokenFileCallCredentialsTest, Basic) {
 TEST_F(JwtTokenFileCallCredentialsTest, FileDoesNotExist) {
   auto creds = MakeRefCounted<JwtTokenFileCallCredentials>("/does/not/exist",
                                                            event_engine_);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  GRPC_CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   ExecCtx exec_ctx;
   auto state = RequestMetadataState::NewInstance(
       absl::UnavailableError("Failed to load file: /does/not/exist due to "
@@ -4663,7 +4681,7 @@ TEST_F(JwtTokenFileCallCredentialsTest, FileDoesNotExist) {
 TEST_F(JwtTokenFileCallCredentialsTest, InvalidToken) {
   char* path = write_tmp_jwt_file("invalid_token");
   auto creds = MakeRefCounted<JwtTokenFileCallCredentials>(path, event_engine_);
-  CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  GRPC_CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   ExecCtx exec_ctx;
   auto state = RequestMetadataState::NewInstance(
       absl::UnauthenticatedError("error parsing JWT token"), "");

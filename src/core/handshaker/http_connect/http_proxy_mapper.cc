@@ -29,7 +29,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -47,6 +46,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/memory.h"
 #include "src/core/util/string.h"
@@ -105,7 +105,7 @@ bool AddressIncluded(const std::optional<grpc_resolved_address>& target_address,
 ///
 std::optional<std::string> GetHttpProxyServer(
     const ChannelArgs& args, std::optional<std::string>* user_cred) {
-  CHECK_NE(user_cred, nullptr);
+  GRPC_CHECK_NE(user_cred, nullptr);
   absl::StatusOr<URI> uri;
   // We check the following places to determine the HTTP proxy to use, stopping
   // at the first one that is set:

@@ -27,7 +27,6 @@
 #include <set>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -48,6 +47,7 @@
 #include "src/core/load_balancing/ring_hash/ring_hash.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/string.h"
@@ -366,7 +366,7 @@ absl::StatusOr<std::shared_ptr<const XdsEndpointResource>> EdsResourceParse(
       auto parsed_locality =
           LocalityParse(context, endpoints[i], &address_set, &errors);
       if (parsed_locality.has_value()) {
-        CHECK_NE(parsed_locality->locality.lb_weight, 0u);
+        GRPC_CHECK_NE(parsed_locality->locality.lb_weight, 0u);
         // Make sure prorities is big enough. Note that they might not
         // arrive in priority order.
         if (eds_resource->priorities.size() < parsed_locality->priority + 1) {

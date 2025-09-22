@@ -63,7 +63,7 @@ grpc_cc_library(
         "//src/core:useful",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
-        "//test/core/test_util:postmortem_emit",
+        "//test/core/test_util:postmortem",
     ],
 )
 

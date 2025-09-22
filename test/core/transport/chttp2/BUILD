@@ -381,6 +381,19 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "flow_control_manager_test",
+    srcs = ["flow_control_manager_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:chttp2_frame",
+        "//src/core:chttp2_flow_control",
+        "//src/core:flow_control_manager",
+    ],
+)
+
+grpc_cc_test(
     name = "graceful_shutdown_test",
     srcs = ["graceful_shutdown_test.cc"],
     external_deps = [
@@ -843,6 +856,7 @@ grpc_cc_test(
         "//test/core/promise:poll_matcher",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
+        "//test/core/test_util:postmortem",
         "//test/core/transport/util:mock_promise_endpoint",
         "//test/core/transport/util:transport_test",
     ],
@@ -1063,8 +1077,24 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        "//src/core:join",
         "//src/core:loop",
         "//src/core:writable_streams",
         "//test/core/transport/util:transport_test",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "writable_streams_fuzz_test",
+    srcs = ["writable_streams_fuzz_test.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        "//src/core:loop",
+        "//src/core:sleep",
+        "//test/core/call/yodel:yodel_test",
     ],
 )

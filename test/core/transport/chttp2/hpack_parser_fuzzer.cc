@@ -25,7 +25,6 @@
 #include <utility>
 
 #include "absl/cleanup/cleanup.h"
-#include "absl/log/check.h"
 #include "absl/random/bit_gen_ref.h"
 #include "fuzztest/fuzztest.h"
 #include "gtest/gtest.h"
@@ -37,6 +36,7 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
 #include "test/core/test_util/fuzz_config_vars.h"
@@ -122,8 +122,8 @@ void HpackParserFuzzer(const hpack_parser_fuzzer::Msg& msg) {
         // (This is incredibly generous, but having a bound nevertheless means
         // we don't accidentally flow to infinity, which would be crossing the
         // streams level bad).
-        CHECK(static_cast<int>(parser->buffered_bytes() / 4) <
-              std::max(1024, absolute_max_length));
+        GRPC_CHECK(static_cast<int>(parser->buffered_bytes() / 4) <
+                   std::max(1024, absolute_max_length));
         if (!err.ok()) {
           intptr_t unused;
           if (grpc_error_get_int(err, StatusIntProperty::kStreamId, &unused)) {

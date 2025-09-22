@@ -102,9 +102,10 @@ grpc_fuzz_test(
         "//src/core:chaotic_good_frame_transport",
         "//src/core:chaotic_good_tcp_frame_transport",
         "//src/core:inter_activity_latch",
+        "//src/core:postmortem",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
-        "//test/core/test_util:postmortem_emit",
+        "//test/core/test_util:postmortem",
         "@com_google_protobuf//:protobuf",
     ],
 )

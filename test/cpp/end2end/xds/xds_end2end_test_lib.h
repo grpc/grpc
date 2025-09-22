@@ -31,7 +31,6 @@
 #include <thread>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
@@ -44,6 +43,7 @@
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/util/grpc_check.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.pb.h"
 #include "test/core/test_util/port.h"
@@ -251,7 +251,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     virtual ~ServerThread() {
       // Shutdown should be called manually. Shutdown calls virtual methods and
       // can't be called from the base class destructor.
-      CHECK(!running_);
+      GRPC_CHECK(!running_);
     }
 
     void Start();
@@ -1003,8 +1003,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // use a uniform distribution instead. We need a better estimate of how many
   // RPCs are needed with what error tolerance.
   static size_t ComputeIdealNumRpcs(double p, double error_tolerance) {
-    CHECK_GE(p, 0);
-    CHECK_LE(p, 1);
+    GRPC_CHECK_GE(p, 0);
+    GRPC_CHECK_LE(p, 1);
     size_t num_rpcs =
         ceil(p * (1 - p) * 5.00 * 5.00 / error_tolerance / error_tolerance);
     num_rpcs += 1000;  // Add 1K as a buffer to avoid flakiness.

@@ -34,7 +34,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -77,6 +76,7 @@
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/transport/endpoint_transport_client_channel_factory.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/time.h"
@@ -108,7 +108,7 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
                               grpc_closure* notify) {
   {
     MutexLock lock(&mu_);
-    CHECK_EQ(notify_, nullptr);
+    GRPC_CHECK_EQ(notify_, nullptr);
     args_ = args;
     result_ = result;
     notify_ = notify;
@@ -174,7 +174,7 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
     if (is_callv1) {
       result_->transport = grpc_create_chttp2_transport(
           (*result)->args, std::move((*result)->endpoint), true);
-      CHECK_NE(result_->transport, nullptr);
+      GRPC_CHECK_NE(result_->transport, nullptr);
       result_->channel_args = std::move((*result)->args);
       Ref().release();  // Ref held by OnReceiveSettings()
       GRPC_CLOSURE_INIT(&on_receive_settings_, OnReceiveSettings, this,
@@ -225,7 +225,7 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
           std::move(promise_endpoint), (*result)->args, event_engine_ptr,
           &on_receive_settings_);
       result_->channel_args = std::move((*result)->args);
-      DCHECK_NE(result_->transport, nullptr);
+      GRPC_DCHECK_NE(result_->transport, nullptr);
       timer_handle_ = event_engine_->RunAfter(
           args_.deadline - Timestamp::Now(),
           [self = RefAsSubclass<Chttp2Connector>()]() mutable {
@@ -240,7 +240,7 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
     // If the handshaking succeeded but there is no endpoint, then the
     // handshaker may have handed off the connection to some external
     // code. Just verify that exit_early flag is set.
-    DCHECK((*result)->exit_early);
+    GRPC_DCHECK((*result)->exit_early);
     NullThenSchedClosure(DEBUG_LOCATION, &notify_, result.status());
   }
   handshake_mgr_.reset();
@@ -348,14 +348,14 @@ grpc_channel* grpc_channel_create_from_fd(const char* target, int fd,
           .SetObject(creds->Ref());
 
   int flags = fcntl(fd, F_GETFL, 0);
-  CHECK_EQ(fcntl(fd, F_SETFL, flags | O_NONBLOCK), 0);
+  GRPC_CHECK_EQ(fcntl(fd, F_SETFL, flags | O_NONBLOCK), 0);
   grpc_core::OrphanablePtr<grpc_endpoint> client(grpc_tcp_create_from_fd(
       grpc_fd_create(fd, "client", true),
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(final_args),
       "fd-client"));
   grpc_core::Transport* transport =
       grpc_create_chttp2_transport(final_args, std::move(client), true);
-  CHECK(transport);
+  GRPC_CHECK(transport);
   auto channel = grpc_core::ChannelCreate(
       target, final_args, GRPC_CLIENT_DIRECT_CHANNEL, transport);
   if (channel.ok()) {
@@ -377,7 +377,7 @@ grpc_channel* grpc_channel_create_from_fd(const char* /* target */,
                                           int /* fd */,
                                           grpc_channel_credentials* /* creds*/,
                                           const grpc_channel_args* /* args */) {
-  CHECK(0);
+  GRPC_CHECK(0);
   return nullptr;
 }
 
