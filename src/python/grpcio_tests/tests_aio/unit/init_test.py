@@ -17,10 +17,6 @@ from typing_extensions import override
 import unittest
 
 
-# @unittest.skipIf(
-#     sys.version_info >= (3, 14),
-#     "Skip for Python 3.14+ until https://github.com/grpc/grpc/pull/40293 is merged",
-# )
 class TestInit(unittest.TestCase):
     @classmethod
     @override
