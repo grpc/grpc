@@ -42,12 +42,14 @@ class TestInit(unittest.TestCase):
         import grpc  # pylint: disable=wrong-import-position
 
         channel = grpc.aio.insecure_channel("phony")
+        logging.info(f"created Channel<{id(channel._loop)=}>")
         self.assertIsInstance(channel, grpc.aio.Channel)
 
     def test_grpc_dot_aio(self):
         import grpc.aio  # pylint: disable=wrong-import-position
 
         channel = grpc.aio.insecure_channel("phony")
+        logging.info(f"created Channel<{id(channel._loop)=}>")
         self.assertIsInstance(channel, grpc.aio.Channel)
 
 
