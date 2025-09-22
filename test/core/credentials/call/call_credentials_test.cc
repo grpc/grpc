@@ -1111,16 +1111,6 @@ TEST_F(CredentialsTest, TestInvalidStsCredsOptions) {
   GRPC_CHECK(!url_should_be_invalid.ok());
 }
 
-void assert_query_parameters(const URI& uri, absl::string_view expected_key,
-                             absl::string_view expected_val) {
-  const auto it = uri.query_parameter_map().find(expected_key);
-  GRPC_CHECK(it != uri.query_parameter_map().end());
-  if (it->second != expected_val) {
-    LOG(ERROR) << it->second << "!=" << expected_val;
-  }
-  GRPC_CHECK(it->second == expected_val);
-}
-
 void validate_sts_token_http_request(const grpc_http_request* request,
                                      const URI& uri, absl::string_view body,
                                      bool expect_actor_token) {

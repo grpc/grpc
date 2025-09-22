@@ -492,8 +492,6 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
         grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr);
     GRPC_CHECK_NE(ssl_creds, nullptr);
     grpc_alts_credentials_options* credentials_options =
-    GRPC_CHECK_NE(ssl_creds, nullptr);
-    grpc_alts_credentials_options* options =
         grpc_alts_credentials_client_options_create();
     grpc_channel_credentials* alts_creds =
         grpc_alts_credentials_create(credentials_options);
