@@ -876,6 +876,7 @@ class PythonLanguage(object):
                 # Default set tested on master. Test oldest and newest.
                 return (
                     python39_config,
+                    python312_config,
                     python314_config,
                 )
         elif args.compiler == "python3.9":
