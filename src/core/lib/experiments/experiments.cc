@@ -196,6 +196,9 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
+const char* const description_track_writes_in_resource_quota =
+    "Track the Write memory in Resource Quota.";
+const char* const additional_constraints_track_writes_in_resource_quota = "{}";
 const char* const description_tsi_frame_protector_without_locks =
     "Do not hold locks while using the tsi_frame_protector.";
 const char* const additional_constraints_tsi_frame_protector_without_locks =
@@ -334,6 +337,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
+    {"track_writes_in_resource_quota",
+     description_track_writes_in_resource_quota,
+     additional_constraints_track_writes_in_resource_quota, nullptr, 0, false,
+     true},
     {"tsi_frame_protector_without_locks",
      description_tsi_frame_protector_without_locks,
      additional_constraints_tsi_frame_protector_without_locks, nullptr, 0,
@@ -521,6 +528,9 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
+const char* const description_track_writes_in_resource_quota =
+    "Track the Write memory in Resource Quota.";
+const char* const additional_constraints_track_writes_in_resource_quota = "{}";
 const char* const description_tsi_frame_protector_without_locks =
     "Do not hold locks while using the tsi_frame_protector.";
 const char* const additional_constraints_tsi_frame_protector_without_locks =
@@ -659,6 +669,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
+    {"track_writes_in_resource_quota",
+     description_track_writes_in_resource_quota,
+     additional_constraints_track_writes_in_resource_quota, nullptr, 0, false,
+     true},
     {"tsi_frame_protector_without_locks",
      description_tsi_frame_protector_without_locks,
      additional_constraints_tsi_frame_protector_without_locks, nullptr, 0,
@@ -846,6 +860,9 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
+const char* const description_track_writes_in_resource_quota =
+    "Track the Write memory in Resource Quota.";
+const char* const additional_constraints_track_writes_in_resource_quota = "{}";
 const char* const description_tsi_frame_protector_without_locks =
     "Do not hold locks while using the tsi_frame_protector.";
 const char* const additional_constraints_tsi_frame_protector_without_locks =
@@ -984,6 +1001,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
+    {"track_writes_in_resource_quota",
+     description_track_writes_in_resource_quota,
+     additional_constraints_track_writes_in_resource_quota, nullptr, 0, false,
+     true},
     {"tsi_frame_protector_without_locks",
      description_tsi_frame_protector_without_locks,
      additional_constraints_tsi_frame_protector_without_locks, nullptr, 0,
