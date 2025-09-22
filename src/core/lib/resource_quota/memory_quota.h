@@ -35,6 +35,7 @@
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/promise/activity.h"
@@ -274,6 +275,11 @@ class PressureTracker {
   std::atomic<double> report_{0.0};
   PeriodicUpdate update_{Duration::Seconds(1)};
   PressureController controller_{100, 3};
+
+  const double target_memory_pressure_ =
+      ConfigVars::Get().ExperimentalTargetMemoryPressure();
+  const double memory_pressure_threshold_ =
+      ConfigVars::Get().ExperimentalMemoryPressureThreshold();
 };
 }  // namespace memory_quota_detail
 
