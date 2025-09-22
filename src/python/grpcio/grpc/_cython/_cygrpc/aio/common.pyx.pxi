@@ -240,10 +240,11 @@ def _loop_policy_try_to_get_default_loop():
         try:
             loop = asyncio.get_event_loop_policy().get_event_loop()
             _LOGGER.info(f"loaded policy loop: {id(loop)=}")
+            return loop
         except DeprecationWarning:
             # Since version 3.12, DeprecationWarning is emitted if there is no
             # current event loop.
-            _LOGGER.info(f"_try_to_get_default_policy_loop DeprecationWarning")
+            # _LOGGER.info(f"_try_to_get_default_policy_loop DeprecationWarning")
             return None
         # except RuntimeError:
         #     # In non-main threads, BaseDefaultEventLoopPolicy always throws
