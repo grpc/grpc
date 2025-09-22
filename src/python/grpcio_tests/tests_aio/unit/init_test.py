@@ -12,31 +12,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import warnings, logging
-import threading
-
-warnings.simplefilter("default")
-# logging.basicConfig(
-#     level=logging.DEBUG,
-#     style="{",
-#     format="{levelname[0]}{asctime}.{msecs:03.0f} {thread} {filename}:{lineno}] {message}",
-#     datefmt="%m%d %H:%M:%S",
-# )
-logging.basicConfig(
-    level=logging.DEBUG,
-    style="{",
-    format="{levelname[0]}{asctime}.{msecs:03.0f} {thread} {threadName} {filename}:{lineno}] {message}",
-    datefmt="%m%d %H:%M:%S",
-)
-
+from typing_extensions import override
+import warnings
 import logging
-import sys
-import time
 import unittest
 
 
 class TestInit(unittest.TestCase):
-    def test_grpc(self):
+    @classmethod
+    @override
+    def setUpClass(cls):
+        # Logging configuration compatible with bazel-based runner.
+        warnings.simplefilter("default")
+        logging.basicConfig(
+            level=logging.DEBUG,
+            style="{",
+            format="{levelname[0]}{asctime}.{msecs:03.0f} {thread} {threadName} {filename}:{lineno}] {message}",
+            datefmt="%m%d %H:%M:%S",
+        )
+
+    @override
+    def setUp(self):
+        logging.info(f"=== starting test: {self.id()} ===")
+
+    def test_grpc_init(self):
         import grpc  # pylint: disable=wrong-import-position
 
         channel = grpc.aio.insecure_channel("phony")
@@ -45,14 +44,14 @@ class TestInit(unittest.TestCase):
         channel2 = grpc.aio.insecure_channel("phony")
         self.log_chan(channel2)
 
-    # def test_grpc_dot_aio(self):
-    #     import grpc.aio  # pylint: disable=wrong-import-position
+    def test_grpc_dot_aio_init(self):
+        import grpc.aio  # pylint: disable=wrong-import-position
 
-    #     channel = grpc.aio.insecure_channel("phony")
-    #     self.log_chan(channel)
-    #     self.assertIsInstance(channel, grpc.aio.Channel)
+        channel = grpc.aio.insecure_channel("phony")
+        self.log_chan(channel)
+        self.assertIsInstance(channel, grpc.aio.Channel)
 
-    def test_grpc_zzz_thread_pool(self):
+    def test_grpc_thread_pool(self):
         from concurrent.futures import ThreadPoolExecutor
 
         with ThreadPoolExecutor(max_workers=3) as executor:
@@ -108,6 +107,4 @@ class TestInit(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    # logging.basicConfig(level=logging.DEBUG)
-    unittest.main()
-    # unittest.main(verbosity=2)
+    unittest.main(verbosity=2)
