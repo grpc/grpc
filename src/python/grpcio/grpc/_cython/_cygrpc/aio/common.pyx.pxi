@@ -233,18 +233,19 @@ async def generator_to_async_generator(object gen, object loop, object thread_po
 #     return asyncio.get_event_loop_policy().new_event_loop()
 
 
-def _loop_policy_try_to_get_default_loop():
+def _loop_policy_try_to_get_default_loop(policy):
     with warnings.catch_warnings():
         # Convert DeprecationWarning to errors so we can capture them with except
-        warnings.simplefilter("error", DeprecationWarning)
         try:
-            loop = asyncio.get_event_loop_policy().get_event_loop()
+            warnings.simplefilter("error", DeprecationWarning)
+            loop = policy.get_event_loop()
             _LOGGER.info(f"loaded policy loop: {id(loop)=}")
             return loop
         except DeprecationWarning:
             # Since version 3.12, DeprecationWarning is emitted if there is no
             # current event loop.
-            # _LOGGER.info(f"_try_to_get_default_policy_loop DeprecationWarning")
+            # Note this is buggy behavior, 3.12 should be able to load policy
+            # despite its deprecation. For now, we preserve things as they are.
             return None
         # except RuntimeError:
         #     # In non-main threads, BaseDefaultEventLoopPolicy always throws
@@ -252,20 +253,30 @@ def _loop_policy_try_to_get_default_loop():
         #     return None
 
 
-def _loop_policy_create_new_loop():
+def _loop_policy_create_new_loop(policy):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", DeprecationWarning)
-        loop = asyncio.get_event_loop_policy().new_event_loop()
+        loop = policy.new_event_loop()
         _LOGGER.info(f"created policy loop: {id(loop)=}")
         return loop
 
 
+def _get_event_loop_policy():
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        return asyncio.get_event_loop_policy()
+
+
 def _get_or_create_default_loop():
-    default_policy_loop = _loop_policy_try_to_get_default_loop()
+    policy = _get_event_loop_policy()
+    if not policy:
+        raise RuntimeError("Couldn't load asyncio.get_event_loop_policy()")
+
+    default_policy_loop = _loop_policy_try_to_get_default_loop(policy)
     if default_policy_loop is not None:
         return default_policy_loop
 
-    return _loop_policy_create_new_loop()
+    return _loop_policy_create_new_loop(policy)
 
 
 def get_working_loop():
