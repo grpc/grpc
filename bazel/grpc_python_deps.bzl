@@ -25,6 +25,13 @@ def grpc_python_deps():
             sha256 = "13671d304cfe43350302213a60d93a5fc0b763b0a6de17397e3e239253b61b73",
             strip_prefix = "rules_python-1.5.4",
             url = "https://github.com/bazel-contrib/rules_python/releases/download/1.5.4/rules_python-1.5.4.tar.gz",
+            patches = [
+                # TODO(sergiitk): remove after >= 1.6.0
+                # Fixes @rules_python//python/bin:repl
+                # See https://github.com/bazel-contrib/rules_python/pull/3104
+                "@com_github_grpc_grpc//bazel:rules_python.patch",
+            ],
+            patch_args = ["-p1"],
         )
 
     python_configure(name = "local_config_python")

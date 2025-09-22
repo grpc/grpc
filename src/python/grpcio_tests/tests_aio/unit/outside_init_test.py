@@ -16,6 +16,8 @@
 import asyncio
 import logging
 import sys
+import warnings
+from typing_extensions import override
 import unittest
 
 import grpc
@@ -28,11 +30,23 @@ from tests_aio.unit._test_server import start_test_server
 _NUM_OF_LOOPS = 50
 
 
-@unittest.skipIf(
-    sys.version_info >= (3, 14),
-    "Skip for Python 3.14+ until https://github.com/grpc/grpc/pull/40293 is merged",
-)
 class TestOutsideInit(unittest.TestCase):
+    @classmethod
+    @override
+    def setUpClass(cls):
+        cls.setup_logging()
+
+    @staticmethod
+    def setup_logging():
+        # Logging configuration compatible with bazel-based runner.
+        warnings.simplefilter("default")
+        logging.basicConfig(
+            level=logging.INFO,
+            style="{",
+            format="{levelname[0]}{asctime}.{msecs:03.0f} {thread} {threadName} {filename}:{lineno}] {message}",
+            datefmt="%m%d %H:%M:%S",
+        )
+
     def test_behavior_outside_asyncio(self):
         # Ensures non-AsyncIO object can be initiated
         channel_creds = grpc.ssl_channel_credentials()
@@ -63,10 +77,15 @@ class TestOutsideInit(unittest.TestCase):
             await server.stop(None)
 
         for i in range(_NUM_OF_LOOPS):
-            old_loop = asyncio.get_event_loop()
-            old_loop.close()
+            # In python 3.14+, the first time we get the loop, it doesn't exist.
+            # TODO(sergiitk): revisit after getting rid of the loop policies.
+            if sys.version_info < (3, 14) or i > 0:
+                old_loop = asyncio.get_event_loop()
+                logging.info(f"Closing old loop: {id(old_loop)}")
+                old_loop.close()
 
             loop = asyncio.new_event_loop()
+            logging.info(f"Created new loop: {id(loop)}")
             loop.set_debug(True)
             asyncio.set_event_loop(loop)
 
@@ -76,5 +95,4 @@ class TestOutsideInit(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)
