@@ -232,6 +232,29 @@ async def generator_to_async_generator(object gen, object loop, object thread_po
 #     with warnings.
 #     return asyncio.get_event_loop_policy().new_event_loop()
 
+
+def _try_to_get_default_policy_loop():
+    with warnings.catch_warnings():
+        # Convert DeprecationWarning to errors so we can capture them with except
+        warnings.simplefilter("error", DeprecationWarning)
+        try:
+            return asyncio.get_event_loop_policy().get_event_loop()
+        except DeprecationWarning:
+            # Since version 3.12, DeprecationWarning is emitted if there is no
+            # current event loop.
+            return None
+        except RuntimeError:
+            # In non-main threads, BaseDefaultEventLoopPolicy always throws
+            # when there's no loop set.
+            return None
+
+
+def _get_or_create_default_loop():
+    default_policy_loop = _try_to_get_default_policy_loop()
+    if default_policy_loop is None:
+        return asyncio.get_event_loop_policy().new_event_loop()
+
+
 def get_working_loop():
     """Returns a running event loop.
 
@@ -241,18 +264,11 @@ def get_working_loop():
     try:
         return asyncio.get_running_loop()
     except RuntimeError:
-        if PY_MAJOR_VERSION >= 3 and PY_MINOR_VERSION >= 14:
-            return asyncio.get_event_loop_policy().new_event_loop()
+        pass
 
-        with warnings.catch_warnings():
-            # Convert DeprecationWarning to errors so we can capture them with except
-            warnings.simplefilter("error", DeprecationWarning)
-            try:
-                return asyncio.get_event_loop_policy().get_event_loop()
-            # Since version 3.12, DeprecationWarning is emitted if there is no
-            # current event loop.
-            except DeprecationWarning:
-                return asyncio.get_event_loop_policy().new_event_loop()
+    return _get_or_create_default_loop()
+        # if PY_MAJOR_VERSION >= 3 and PY_MINOR_VERSION >= 14:
+        #     return asyncio.get_event_loop_policy().new_event_loop()
 
 
 def raise_if_not_valid_trailing_metadata(object metadata):

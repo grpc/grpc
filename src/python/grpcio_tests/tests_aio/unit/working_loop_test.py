@@ -62,30 +62,26 @@ class TestWorkingLoop(unittest.TestCase):
             future: Future = executor.submit(self.make_chan, num)
             futures.append(future)
 
-        time.sleep(1)
+        time.sleep(0.3)
 
         logging.info("Collecting results...")
+        errors = []
         for future in futures:
             ex = future.exception(timeout=3)
             if ex:
                 logging.error(ex)
+                errors.append(ex)
                 continue
             chan = future.result()
             self.log_chan(chan, "back to main thread")
 
+        # log first error
+        if errors:
+            logging.error(f"Exceptions: {len(errors)}")
+            raise errors[0]
+
     @staticmethod
     def make_chan(num) -> None:
-        # logging.basicConfig(
-        #     level=logging.DEBUG,
-        #     style="{",
-        #     format="{levelname[0]}{asctime}.{msecs:03.0f} {thread} {filename}:{lineno}] {message}",
-        #     datefmt="%m%d %H:%M:%S",
-        # )
-
-        # logging.info(
-        #     f"[Thread {threading.current_thread().name}] make_chan({num=})"
-        # )
-
         logging.info(f"called make_chan({num=})")
         import grpc
 
