@@ -15,6 +15,7 @@
 
 import asyncio
 import logging
+import sys
 import warnings
 from typing_extensions import override
 import unittest
@@ -76,7 +77,9 @@ class TestOutsideInit(unittest.TestCase):
             await server.stop(None)
 
         for i in range(_NUM_OF_LOOPS):
-            if i > 0:
+            # In python 3.14+, the first time we get the loop, it doesn't exist.
+            # TODO(sergiitk): revisit after getting rid of the loop policies.
+            if sys.version_info < (3, 14) or i > 0:
                 old_loop = asyncio.get_event_loop()
                 logging.info(f"Closing old loop: {id(old_loop)}")
                 old_loop.close()
