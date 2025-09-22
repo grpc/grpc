@@ -233,26 +233,38 @@ async def generator_to_async_generator(object gen, object loop, object thread_po
 #     return asyncio.get_event_loop_policy().new_event_loop()
 
 
-def _try_to_get_default_policy_loop():
+def _loop_policy_try_to_get_default_loop():
     with warnings.catch_warnings():
         # Convert DeprecationWarning to errors so we can capture them with except
         warnings.simplefilter("error", DeprecationWarning)
         try:
-            return asyncio.get_event_loop_policy().get_event_loop()
+            loop = asyncio.get_event_loop_policy().get_event_loop()
+            _LOGGER.info(f"loaded policy loop: {id(loop)=}")
         except DeprecationWarning:
             # Since version 3.12, DeprecationWarning is emitted if there is no
             # current event loop.
+            _LOGGER.info(f"_try_to_get_default_policy_loop DeprecationWarning")
             return None
-        except RuntimeError:
-            # In non-main threads, BaseDefaultEventLoopPolicy always throws
-            # when there's no loop set.
-            return None
+        # except RuntimeError:
+        #     # In non-main threads, BaseDefaultEventLoopPolicy always throws
+        #     # when there's no loop set.
+        #     return None
+
+
+def _loop_policy_create_new_loop():
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        loop = asyncio.get_event_loop_policy().new_event_loop()
+        _LOGGER.info(f"created policy loop: {id(loop)=}")
+        return loop
 
 
 def _get_or_create_default_loop():
-    default_policy_loop = _try_to_get_default_policy_loop()
-    if default_policy_loop is None:
-        return asyncio.get_event_loop_policy().new_event_loop()
+    default_policy_loop = _loop_policy_try_to_get_default_loop()
+    if default_policy_loop is not None:
+        return default_policy_loop
+
+    return _loop_policy_create_new_loop()
 
 
 def get_working_loop():
@@ -262,13 +274,13 @@ def get_working_loop():
     not be set as the default event loop for the main thread.
     """
     try:
-        return asyncio.get_running_loop()
+        loop =  asyncio.get_running_loop()
+        _LOGGER.info(f"loaded running loop: {id(loop)=}")
+        return loop
     except RuntimeError:
         pass
 
     return _get_or_create_default_loop()
-        # if PY_MAJOR_VERSION >= 3 and PY_MINOR_VERSION >= 14:
-        #     return asyncio.get_event_loop_policy().new_event_loop()
 
 
 def raise_if_not_valid_trailing_metadata(object metadata):

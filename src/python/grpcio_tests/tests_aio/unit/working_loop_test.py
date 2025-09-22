@@ -23,6 +23,10 @@ class TestWorkingLoop(unittest.TestCase):
     @classmethod
     @override
     def setUpClass(cls):
+        cls.setup_logging()
+
+    @staticmethod
+    def setup_logging():
         # Logging configuration compatible with bazel-based runner.
         warnings.simplefilter("default")
         logging.basicConfig(
@@ -57,15 +61,17 @@ class TestWorkingLoop(unittest.TestCase):
 
         executor = ThreadPoolExecutor(max_workers=3, thread_name_prefix="TPE")
 
+        test_count = 10
         futures = []
-        for num in range(10):
+        for num in range(test_count):
             future: Future = executor.submit(self.make_chan, num)
             futures.append(future)
 
-        time.sleep(0.3)
+        time.sleep(1)
 
         logging.info("Collecting results...")
         errors = []
+        results = []
         for future in futures:
             ex = future.exception(timeout=3)
             if ex:
@@ -73,19 +79,26 @@ class TestWorkingLoop(unittest.TestCase):
                 errors.append(ex)
                 continue
             chan = future.result()
-            self.log_chan(chan, "back to main thread")
+            results.append(chan)
+            # self.log_chan(chan, "back to main thread ")
+
+        for result in results:
+            self.log_chan(result, "pass ")
 
         # log first error
         if errors:
-            logging.error(f"Exceptions: {len(errors)}")
+            logging.error(f"Exceptions={len(errors)}, Pass={len(results)}")
             raise errors[0]
+
+        executor.shutdown(True, cancel_futures=True)
 
     @staticmethod
     def make_chan(num) -> None:
-        logging.info(f"called make_chan({num=})")
+        target = f"localhost:5005{num}"
+        logging.info(f"called make_chan({num=}) {target=}")
         import grpc
 
-        chan = grpc.aio.insecure_channel(f"localhost:5005{num}")
+        chan = grpc.aio.insecure_channel(target)
         TestWorkingLoop.log_chan(chan, f"make_chan({num=}) created chan ")
         return chan
 
