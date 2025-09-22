@@ -13,8 +13,9 @@
 # limitations under the License.
 
 import warnings
+import threading
 
-from cpython.version cimport PY_MAJOR_VERSION, PY_MINOR_VERSION
+from cpython.version cimport PY_MINOR_VERSION
 
 TYPE_METADATA_STRING = "Tuple[Tuple[str, Union[str, bytes]]...]"
 
@@ -247,10 +248,19 @@ def _loop_policy_try_to_get_default_loop(policy):
             # Note this is buggy behavior, 3.12 should be able to load policy
             # despite its deprecation. For now, we preserve things as they are.
             return None
-        # except RuntimeError:
-        #     # In non-main threads, BaseDefaultEventLoopPolicy always throws
-        #     # when there's no loop set.
-        #     return None
+        except RuntimeError:
+            # In non-main threads, BaseDefaultEventLoopPolicy always throws
+            # when there's no loop set. We'll preserve this behavior for now.
+            if PY_MINOR_VERSION < 14:
+                raise
+
+            # Python 3.14 throws even in the main loop. We'll keep the behavior
+            # for non-main threads, but create a new loop for the main.
+            if threading.current_thread() is not threading.main_thread():
+                raise
+
+            _LOGGER.info(f"python 3.14+ main thread custom behavior")
+            return None
 
 
 def _loop_policy_create_new_loop(policy):

@@ -42,15 +42,36 @@ class TestInit(unittest.TestCase):
         import grpc  # pylint: disable=wrong-import-position
 
         channel = grpc.aio.insecure_channel("phony")
-        logging.info(f"created Channel<{id(channel._loop)=}>")
+        self.log_chan(channel, f"created grpc")
         self.assertIsInstance(channel, grpc.aio.Channel)
 
     def test_grpc_dot_aio(self):
         import grpc.aio  # pylint: disable=wrong-import-position
 
         channel = grpc.aio.insecure_channel("phony")
-        logging.info(f"created Channel<{id(channel._loop)=}>")
+        self.log_chan(channel, f"created grpc.aio")
         self.assertIsInstance(channel, grpc.aio.Channel)
+
+    @staticmethod
+    def log_chan(chan, msg="") -> None:
+        if msg:
+            msg += " "
+
+        cy_chan = chan._channel
+        target = "unset"
+        try:
+            target = cy_chan._target.decode()
+        except AttributeError:
+            pass
+
+        cy_ch_loop = ""
+        try:
+            cy_ch_loop = f" {id(cy_chan.loop)=}"
+        except AttributeError:
+            pass
+
+        # f"[Thread {threading.current_thread().name}]"
+        logging.info(f"{msg}Channel<{target=} {id(chan._loop)=}{cy_ch_loop}>")
 
 
 if __name__ == "__main__":
