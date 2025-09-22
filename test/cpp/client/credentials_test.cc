@@ -19,18 +19,23 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security.h>
+#include <grpc/support/string_util.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/server_builder.h>
 
+#include <cstddef>
 #include <memory>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/tmpfile.h"
+#include "src/core/util/uri.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "test/cpp/util/tls_test_utils.h"
 
@@ -56,6 +61,25 @@ using ::grpc::experimental::StaticDataCertificateProvider;
 using ::grpc::experimental::TlsChannelCredentialsOptions;
 using ::grpc::experimental::TlsCredentialsOptions;
 
+int MockSuccessfulMetadataServiceResponse(const grpc_http_request* /*request*/,
+                                          const grpc_core::URI& /*uri*/,
+                                          grpc_core::Timestamp /*deadline*/,
+                                          grpc_closure* on_done,
+                                          grpc_http_response* response) {
+  *response = {};
+  response->status = 200;
+  response->body = gpr_strdup("");
+  response->body_length = 0;
+  grpc_http_header* headers =
+      static_cast<grpc_http_header*>(gpr_malloc(sizeof(*headers) * 1));
+  headers[0].key = gpr_strdup("Metadata-Flavor");
+  headers[0].value = gpr_strdup("Google");
+  response->hdr_count = 1;
+  response->hdrs = headers;
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, absl::OkStatus());
+  return 1;
+}
+
 }  // namespace
 
 namespace grpc {
@@ -68,7 +92,24 @@ TEST(CredentialsTest, InvalidGoogleRefreshToken) {
 }
 
 TEST(CredentialsTest, DefaultCredentials) {
+  // Simulate a successful detection of metadata server.
+  grpc_core::HttpRequest::SetOverride(MockSuccessfulMetadataServiceResponse,
+                                      nullptr, nullptr);
   auto creds = GoogleDefaultCredentials();
+  // Reset the override to default.
+  grpc_core::HttpRequest::SetOverride(nullptr, nullptr, nullptr);
+}
+
+TEST(CredentialsTest, DefaultCredentialsWithAlts) {
+  // Simulate a successful detection of metadata server.
+  grpc_core::HttpRequest::SetOverride(MockSuccessfulMetadataServiceResponse,
+                                      nullptr, nullptr);
+  GoogleDefaultCredentialsOptions options = {};
+  options.use_alts_call_credentials = true;
+  auto creds = GoogleDefaultCredentials(options);
+  EXPECT_NE(creds, nullptr);
+  // Reset the override to default.
+  grpc_core::HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
 
 TEST(CredentialsTest, ExternalAccountCredentials) {
