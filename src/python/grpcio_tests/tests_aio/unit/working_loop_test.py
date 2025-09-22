@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import time
 from typing_extensions import override
 import warnings
 import logging
@@ -37,6 +38,7 @@ class TestWorkingLoop(unittest.TestCase):
 
     def test_grpc_thread_pool(self):
         from concurrent.futures import ThreadPoolExecutor
+        from concurrent.futures import Future
 
         # with ThreadPoolExecutor(max_workers=3, thread_name_prefix="TPEC") as executor:
         #     logging.info("Submitting tasks using executor.map()...")
@@ -57,13 +59,17 @@ class TestWorkingLoop(unittest.TestCase):
 
         futures = []
         for num in range(10):
-            future = executor.submit(self.make_chan, num)
+            future: Future = executor.submit(self.make_chan, num)
             futures.append(future)
 
-        # time.sleep(10)
+        time.sleep(1)
 
         logging.info("Collecting results...")
         for future in futures:
+            ex = future.exception(timeout=3)
+            if ex:
+                logging.error(ex)
+                continue
             chan = future.result()
             self.log_chan(chan, "back to main thread")
 
@@ -90,11 +96,21 @@ class TestWorkingLoop(unittest.TestCase):
     @staticmethod
     def log_chan(chan, msg="") -> None:
         cy_chan = chan._channel
-        target = cy_chan._target.decode()
+
+        target = "unset"
+        try:
+            target = cy_chan._target.decode()
+        except AttributeError:
+            pass
+
+        cy_ch_loop = ""
+        try:
+            cy_ch_loop = f" {id(cy_chan.loop)=}"
+        except AttributeError:
+            pass
+
         # f"[Thread {threading.current_thread().name}]"
-        logging.info(
-            f"{msg}Channel<{target=} {id(chan._loop)=} {id(cy_chan.loop)=}>"
-        )
+        logging.info(f"{msg}Channel<{target=} {id(chan._loop)=}{cy_ch_loop}>")
 
 
 if __name__ == "__main__":
