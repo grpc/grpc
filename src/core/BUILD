@@ -8328,7 +8328,7 @@ grpc_cc_library(
         "message",
         "message_assembler",
         "metadata_batch",
-        "writable_streams",
+        "transport_common",
     ],
 )
 
@@ -11037,6 +11037,7 @@ grpc_cc_library(
         "if",
         "mpsc",
         "race",
+        "transport_common",
         "try_seq",
     ],
 )

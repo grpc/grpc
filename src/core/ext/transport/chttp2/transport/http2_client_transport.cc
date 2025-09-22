@@ -762,28 +762,20 @@ auto Http2ClientTransport::MultiplexerLoop() {
           while (self->write_bytes_remaining_ > 0) {
             // TODO(akshitpatel) : [PH2][P3] : Plug transport_tokens when
             // transport flow control is implemented.
-            std::optional<uint32_t> stream_id =
+            std::optional<RefCountedPtr<Stream>> optional_stream =
                 self->writable_stream_list_.ImmediateNext(
                     self->AreTransportFlowControlTokensAvailable());
-            if (!stream_id.has_value()) {
+            if (!optional_stream.has_value()) {
               GRPC_HTTP2_CLIENT_DLOG
                   << "Http2ClientTransport MultiplexerLoop "
                      "No writable streams available, write_bytes_remaining_ = "
                   << self->write_bytes_remaining_;
               break;
             }
+            RefCountedPtr<Stream> stream = std::move(optional_stream.value());
             GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport MultiplexerLoop "
                                       "Next writable stream id = "
-                                   << *stream_id;
-            RefCountedPtr<Stream> stream = self->LookupStream(*stream_id);
-            if (GPR_UNLIKELY(stream == nullptr)) {
-              // Stream was closed before we could dequeue.
-              GRPC_HTTP2_CLIENT_DLOG
-                  << "Http2ClientTransport MultiplexerLoop "
-                     "Stream was closed before we could dequeue. stream_id = "
-                  << *stream_id;
-              continue;
-            }
+                                   << stream->GetStreamId();
 
             // write_bytes_remaining_ is passed as an upper bound on the max
             // number of tokens that can be dequeued to prevent dequeuing huge
@@ -806,13 +798,13 @@ auto Http2ClientTransport::MultiplexerLoop() {
               // stream list.
               // TODO(akshitpatel) : [PH2][P3] : Plug transport_tokens when
               // transport flow control is implemented.
-              absl::Status status = self->writable_stream_list_.Enqueue(
-                  *stream_id, result.priority);
+              absl::Status status =
+                  self->writable_stream_list_.Enqueue(stream, result.priority);
               if (GPR_UNLIKELY(!status.ok())) {
                 GRPC_HTTP2_CLIENT_DLOG
                     << "Http2ClientTransport MultiplexerLoop Failed to "
                        "enqueue stream "
-                    << *stream_id << " with status: " << status;
+                    << stream->GetStreamId() << " with status: " << status;
                 // Close transport if we fail to enqueue stream.
                 return self->HandleError(std::nullopt,
                                          Http2Status::AbslConnectionError(
@@ -824,12 +816,12 @@ auto Http2ClientTransport::MultiplexerLoop() {
               stream->SentInitialMetadata();
             }
             if (result.HalfCloseDequeued()) {
-              self->CloseStream(*stream_id,
+              self->CloseStream(stream->GetStreamId(),
                                 CloseStreamArgs{/*close_reads=*/false,
                                                 /*close_writes=*/true});
             }
             if (result.ResetStreamDequeued()) {
-              self->CloseStream(*stream_id,
+              self->CloseStream(stream->GetStreamId(),
                                 CloseStreamArgs{/*close_reads=*/true,
                                                 /*close_writes=*/true});
             }
@@ -846,7 +838,7 @@ auto Http2ClientTransport::MultiplexerLoop() {
                    "write_bytes_remaining_ after dequeue = "
                 << self->write_bytes_remaining_
                 << " total_bytes_consumed = " << result.total_bytes_consumed
-                << " stream_id = " << *stream_id
+                << " stream_id = " << stream->GetStreamId()
                 << " is_writable = " << result.is_writable
                 << " stream_priority = "
                 << static_cast<uint8_t>(result.priority)
@@ -1094,7 +1086,7 @@ void Http2ClientTransport::BeginCloseStream(
                                << " status=" << enqueue_result.status();
         if (enqueue_result.ok()) {
           GRPC_UNUSED absl::Status status = MaybeAddStreamToWritableStreamList(
-              stream_id, enqueue_result.value());
+              stream, enqueue_result.value());
         }
       }
     }
@@ -1233,7 +1225,7 @@ bool Http2ClientTransport::SetOnDone(CallHandler call_handler,
 
       if (enqueue_result.ok()) {
         GRPC_UNUSED absl::Status status =
-            self->MaybeAddStreamToWritableStreamList(stream_id,
+            self->MaybeAddStreamToWritableStreamList(stream,
                                                      enqueue_result.value());
       }
     }
@@ -1275,14 +1267,14 @@ auto Http2ClientTransport::CallOutboundLoop(
     RefCountedPtr<Stream> stream = self->LookupStream(stream_id);
     return If(
         stream != nullptr,
-        [self, stream, message = std::move(message), stream_id]() mutable {
+        [self, stream, message = std::move(message)]() mutable {
           return TrySeq(stream->EnqueueMessage(std::move(message)),
-                        [self, stream_id](const EnqueueResult result) {
+                        [self, stream](const EnqueueResult result) mutable {
                           GRPC_HTTP2_CLIENT_DLOG
                               << "Http2ClientTransport CallOutboundLoop "
                                  "Enqueued Message";
                           return self->MaybeAddStreamToWritableStreamList(
-                              stream_id, result);
+                              std::move(stream), result);
                         });
         },
         []() {
@@ -1297,17 +1289,17 @@ auto Http2ClientTransport::CallOutboundLoop(
     RefCountedPtr<Stream> stream = self->LookupStream(stream_id);
     return If(
         stream != nullptr,
-        [self, stream, metadata = std::move(metadata), stream_id]() mutable {
+        [self, stream, metadata = std::move(metadata)]() mutable {
           return TrySeq(
               [stream, metadata = std::move(metadata)]() mutable {
                 return stream->EnqueueInitialMetadata(std::move(metadata));
               },
-              [self, stream_id](const EnqueueResult result) {
+              [self, stream](const EnqueueResult result) mutable {
                 GRPC_HTTP2_CLIENT_DLOG
                     << "Http2ClientTransport CallOutboundLoop "
                        "Enqueued Initial Metadata";
-                return self->MaybeAddStreamToWritableStreamList(stream_id,
-                                                                result);
+                return self->MaybeAddStreamToWritableStreamList(
+                    std::move(stream), result);
               });
         },
         []() {
@@ -1322,14 +1314,14 @@ auto Http2ClientTransport::CallOutboundLoop(
     RefCountedPtr<Stream> stream = self->LookupStream(stream_id);
     return If(
         stream != nullptr,
-        [self, stream, stream_id]() mutable {
+        [self, stream]() mutable {
           return TrySeq([stream]() { return stream->EnqueueHalfClosed(); },
-                        [self, stream_id](const EnqueueResult result) {
+                        [self, stream](const EnqueueResult result) mutable {
                           GRPC_HTTP2_CLIENT_DLOG
                               << "Http2ClientTransport CallOutboundLoop "
                                  "Enqueued Half Closed";
                           return self->MaybeAddStreamToWritableStreamList(
-                              stream_id, result);
+                              std::move(stream), result);
                         });
         },
         []() {

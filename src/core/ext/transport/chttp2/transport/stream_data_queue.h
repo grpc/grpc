@@ -24,7 +24,7 @@
 #include "absl/log/log.h"
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
-#include "src/core/ext/transport/chttp2/transport/writable_streams.h"
+#include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
@@ -208,7 +208,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
 
   struct EnqueueResult {
     bool became_writable;
-    WritableStreams::StreamPriority priority;
+    WritableStreamPriority priority;
   };
 
   // Enqueue Initial Metadata.
@@ -234,8 +234,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
       return result.status();
     }
     return UpdateWritableStateLocked(
-        /*became_non_empty*/ result.value(),
-        WritableStreams::StreamPriority::kDefault);
+        /*became_non_empty*/ result.value(), WritableStreamPriority::kDefault);
   }
 
   // Enqueue Trailing Metadata.
@@ -253,7 +252,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
       GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueue closed for stream "
                                    << stream_id_;
       return EnqueueResult{/*became_writable=*/false,
-                           WritableStreams::StreamPriority::kStreamClosed};
+                           WritableStreamPriority::kStreamClosed};
     }
 
     is_trailing_metadata_or_half_close_queued_ = true;
@@ -267,7 +266,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     }
     return UpdateWritableStateLocked(
         /*became_non_empty*/ result.value(),
-        WritableStreams::StreamPriority::kStreamClosed);
+        WritableStreamPriority::kStreamClosed);
   }
 
   // Returns a promise that resolves when the message is enqueued. There may be
@@ -292,7 +291,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
         GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueue closed for stream "
                                      << self->stream_id_;
         return EnqueueResult{/*became_writable=*/false,
-                             WritableStreams::StreamPriority::kStreamClosed};
+                             WritableStreamPriority::kStreamClosed};
       }
       Poll<absl::StatusOr<bool>> result = self->queue_.Enqueue(entry, tokens);
       if (result.ready()) {
@@ -303,7 +302,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
         if (GPR_LIKELY(result.value().ok())) {
           return self->UpdateWritableStateLocked(
               /*became_non_empty*/ result.value().value(),
-              WritableStreams::StreamPriority::kDefault);
+              WritableStreamPriority::kDefault);
         }
         return result.value().status();
       }
@@ -327,7 +326,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
           << stream_id_ << " is_trailing_metadata_or_half_close_queued_ = "
           << is_trailing_metadata_or_half_close_queued_;
       return EnqueueResult{/*became_writable=*/false,
-                           WritableStreams::StreamPriority::kStreamClosed};
+                           WritableStreamPriority::kStreamClosed};
     }
 
     is_trailing_metadata_or_half_close_queued_ = true;
@@ -341,7 +340,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     }
     return UpdateWritableStateLocked(
         /*became_non_empty*/ result.value(),
-        WritableStreams::StreamPriority::kStreamClosed);
+        WritableStreamPriority::kStreamClosed);
   }
 
   // Enqueue Reset Stream.
@@ -357,7 +356,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
       GRPC_STREAM_DATA_QUEUE_DEBUG << "Enqueue closed for stream "
                                    << stream_id_;
       return EnqueueResult{/*became_writable=*/false,
-                           WritableStreams::StreamPriority::kStreamClosed};
+                           WritableStreamPriority::kStreamClosed};
     }
 
     GRPC_STREAM_DATA_QUEUE_DEBUG
@@ -372,7 +371,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     // writable.
     return UpdateWritableStateLocked(
         /*became_non_empty*/ queue_.IsEmpty(),
-        WritableStreams::StreamPriority::kStreamClosed);
+        WritableStreamPriority::kStreamClosed);
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -385,7 +384,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   struct DequeueResult {
     std::vector<Http2Frame> frames;
     bool is_writable;
-    WritableStreams::StreamPriority priority;
+    WritableStreamPriority priority;
     // Maybe not be extremely accurate but should be good enough for our
     // purposes.
     size_t total_bytes_consumed = 0u;
@@ -633,9 +632,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   // stream has become writable. Returns if the stream became writable and
   // updated priority. It is expected that the caller will hold the lock on the
   // queue when calling this function.
-  EnqueueResult UpdateWritableStateLocked(
-      const bool became_non_empty,
-      const WritableStreams::StreamPriority priority)
+  EnqueueResult UpdateWritableStateLocked(const bool became_non_empty,
+                                          const WritableStreamPriority priority)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     priority_ = priority;
     if (!is_writable_ && became_non_empty) {
@@ -643,13 +641,13 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
       GRPC_STREAM_DATA_QUEUE_DEBUG
           << "UpdateWritableStateLocked for stream id: " << stream_id_
           << " became writable with priority: "
-          << WritableStreams::GetPriorityString(priority_);
+          << GetWritableStreamPriorityString(priority_);
       return EnqueueResult{/*became_writable=*/true, priority_};
     }
 
     GRPC_STREAM_DATA_QUEUE_DEBUG
         << "UpdateWritableStateLocked for stream id: " << stream_id_
-        << " with priority: " << WritableStreams::GetPriorityString(priority_)
+        << " with priority: " << GetWritableStreamPriorityString(priority_)
         << " is_writable: " << is_writable_;
     return EnqueueResult{/*became_writable=*/false, priority_};
   }
@@ -733,8 +731,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   RstStreamState reset_stream_state_ ABSL_GUARDED_BY(mu_) =
       RstStreamState::kNotQueued;
   SimpleQueue<QueueEntry> queue_;
-  WritableStreams::StreamPriority priority_ ABSL_GUARDED_BY(mu_) =
-      WritableStreams::StreamPriority::kDefault;
+  WritableStreamPriority priority_ ABSL_GUARDED_BY(mu_) =
+      WritableStreamPriority::kDefault;
   uint32_t reset_stream_error_code_ ABSL_GUARDED_BY(mu_) =
       static_cast<uint32_t>(Http2ErrorCode::kNoError);
 
