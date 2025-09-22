@@ -1,3 +1,5 @@
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
 load(
     "//upb/bazel:build_defs.bzl",
     "UPB_DEFAULT_COPTS",
@@ -23,12 +25,12 @@ cc_library(
     deps = [
         ":internal",
         "//upb/base",
-        "//upb/mem",
-        "//upb:mini_table",
-        "//upb:port",
         "//upb/base:internal",
+        "//upb/mem",
         "//upb/message:types",
+        "//upb/mini_table",
         "//upb/mini_table:internal",
+        "//upb/port",
     ],
 )
 
@@ -50,8 +52,8 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "//upb/base",
-        "//upb:port",
         "//upb/base:internal",
+        "//upb/port",
     ],
 )
 
@@ -65,11 +67,11 @@ cc_test(
         "//src/google/protobuf",
         "//upb/base",
         "//upb/mem",
-        "//upb:message",
-        "//upb:mini_table",
-        "//upb:port",
-        "//upb:wire",
+        "//upb/message",
         "//upb/message:internal",
+        "//upb/mini_table",
+        "//upb/port",
+        "//upb/wire",
         "@abseil-cpp//absl/container:flat_hash_set",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
