@@ -53,31 +53,42 @@ bool SendRate::IsRateMeasurementStale() const {
   return Timestamp::Now() - last_rate_measurement_ > Duration::Seconds(1);
 }
 
+// Returns a signed double representing the difference between the two times.
+double ToRelativeTime(uint64_t ts, uint64_t now) {
+  // Use integer subtraction to avoid rounding errors, getting everything
+  // with a zero base of 'now' to maximize precision.
+  // Since we have uint64_ts and want a signed double result we need to
+  // care about argument ordering to get a valid result.
+  return now > ts ? -static_cast<double>(now - ts)
+                  : static_cast<double>(ts - now);
+}
+
 SendRate::DeliveryData SendRate::GetDeliveryData(uint64_t current_time) const {
   // start time relative to the current time for this send
   double start_time = 0.0;
   if (timestamps_.network_send_started_time != 0 && current_rate_ > 0) {
-    // Use integer subtraction to avoid rounding errors, getting everything
-    // with a zero base of 'now' to maximize precision.
-    // Since we have uint64_ts and want a signed double result we need to
-    // care about argument ordering to get a valid result.
     const double send_start_time_relative_to_now =
-        current_time > timestamps_.network_send_started_time
-            ? -static_cast<double>(current_time -
-                                   timestamps_.network_send_started_time)
-            : static_cast<double>(timestamps_.network_send_started_time -
-                                  current_time);
+        ToRelativeTime(timestamps_.network_send_started_time, current_time);
     const double predicted_end_time =
         send_start_time_relative_to_now +
         queued_bytes_.network_outstanding_bytes / current_rate_;
     if (predicted_end_time > start_time) start_time = predicted_end_time;
   }
+  double relative_last_scheduled_time =
+      ToRelativeTime(timestamps_.last_scheduled_time, current_time);
+  double relative_last_reader_dequeued_time =
+      ToRelativeTime(timestamps_.last_reader_dequeued_time, current_time);
   if (current_rate_ <= 0) {
-    return DeliveryData{(start_time + rtt_usec_ * 500.0) * 1e-9, 1e14,
-                        queued_bytes_};
+    return DeliveryData{
+        (start_time + rtt_usec_ * 500.0) * 1e-9, 1e14, queued_bytes_,
+        DeliveryData::RelativeTimestamps{relative_last_scheduled_time,
+                                         relative_last_reader_dequeued_time}};
   } else {
-    return DeliveryData{(start_time + rtt_usec_ * 500.0) * 1e-9,
-                        current_rate_ * 1e9, queued_bytes_};
+    return DeliveryData{
+        (start_time + rtt_usec_ * 500.0) * 1e-9, current_rate_ * 1e9,
+        queued_bytes_,
+        DeliveryData::RelativeTimestamps{relative_last_scheduled_time,
+                                         relative_last_reader_dequeued_time}};
   }
 }
 
