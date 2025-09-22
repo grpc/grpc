@@ -111,6 +111,7 @@ inline bool IsSleepUseNonOwningWakerEnabled() { return false; }
 inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
+inline bool IsTrackWritesInResourceQuotaEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 
@@ -169,6 +170,7 @@ inline bool IsSleepUseNonOwningWakerEnabled() { return false; }
 inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
+inline bool IsTrackWritesInResourceQuotaEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 
@@ -227,6 +229,7 @@ inline bool IsSleepUseNonOwningWakerEnabled() { return false; }
 inline bool IsSubchannelWrapperCleanupOnOrphanEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
+inline bool IsTrackWritesInResourceQuotaEnabled() { return false; }
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #endif
@@ -274,6 +277,7 @@ enum ExperimentIds {
   kExperimentIdSubchannelWrapperCleanupOnOrphan,
   kExperimentIdTcpFrameSizeTuning,
   kExperimentIdTcpRcvLowat,
+  kExperimentIdTrackWritesInResourceQuota,
   kExperimentIdTsiFrameProtectorWithoutLocks,
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
   kNumExperiments
@@ -441,6 +445,10 @@ inline bool IsTcpFrameSizeTuningEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_RCV_LOWAT
 inline bool IsTcpRcvLowatEnabled() {
   return IsExperimentEnabled<kExperimentIdTcpRcvLowat>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_TRACK_WRITES_IN_RESOURCE_QUOTA
+inline bool IsTrackWritesInResourceQuotaEnabled() {
+  return IsExperimentEnabled<kExperimentIdTrackWritesInResourceQuota>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TSI_FRAME_PROTECTOR_WITHOUT_LOCKS
 inline bool IsTsiFrameProtectorWithoutLocksEnabled() {
