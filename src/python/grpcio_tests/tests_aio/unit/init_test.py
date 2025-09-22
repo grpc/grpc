@@ -12,7 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-import sys
+import warnings
+from typing_extensions import override
 import unittest
 
 
@@ -21,6 +22,22 @@ import unittest
 #     "Skip for Python 3.14+ until https://github.com/grpc/grpc/pull/40293 is merged",
 # )
 class TestInit(unittest.TestCase):
+    @classmethod
+    @override
+    def setUpClass(cls):
+        cls.setup_logging()
+
+    @staticmethod
+    def setup_logging():
+        # Logging configuration compatible with bazel-based runner.
+        warnings.simplefilter("default")
+        logging.basicConfig(
+            level=logging.INFO,
+            style="{",
+            format="{levelname[0]}{asctime}.{msecs:03.0f} {thread} {threadName} {filename}:{lineno}] {message}",
+            datefmt="%m%d %H:%M:%S",
+        )
+
     def test_grpc(self):
         import grpc  # pylint: disable=wrong-import-position
 
@@ -35,5 +52,4 @@ class TestInit(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
     unittest.main(verbosity=2)
