@@ -54,28 +54,34 @@ class TestInit(unittest.TestCase):
     def test_grpc_thread_pool(self):
         from concurrent.futures import ThreadPoolExecutor
 
-        with ThreadPoolExecutor(max_workers=3) as executor:
-            logging.info("Submitting tasks using executor.map()...")
-            results_iterator = executor.map(self.make_chan, list(range(10)))
+        # with ThreadPoolExecutor(max_workers=3, thread_name_prefix="TPEC") as executor:
+        #     logging.info("Submitting tasks using executor.map()...")
+        #     results_iterator = executor.map(self.make_chan, list(range(10)))
 
-            logging.info("Collecting results...")
-            for chan in results_iterator:
-                # {chan._loop=},
-                # {chan._channel.loop=}
-                # logging.info(
-                #     f"{chan.__class__.__module__}.{chan.__class__.__qualname__}"
-                # )
-                # {chan._channel._target=}
-                # print(dir(chan._channel))
-                self.log_chan(chan)
+        #     logging.info("Collecting results...")
+        #     for chan in results_iterator:
+        #         # {chan._loop=},
+        #         # {chan._channel.loop=}
+        #         # logging.info(
+        #         #     f"{chan.__class__.__module__}.{chan.__class__.__qualname__}"
+        #         # )
+        #         # {chan._channel._target=}
+        #         # print(dir(chan._channel))
+        #         self.log_chan(chan)
 
-        # executor = ThreadPoolExecutor()
+        executor = ThreadPoolExecutor(max_workers=3, thread_name_prefix="TPE")
 
-        # futures = []
-        # for num in range(10):
-        #     future = executor.submit(self.make_chan, num)
-        #     futures.append(future)
+        futures = []
+        for num in range(10):
+            future = executor.submit(self.make_chan, num)
+            futures.append(future)
+
         # time.sleep(10)
+
+        logging.info("Collecting results...")
+        for future in futures:
+            chan = future.result()
+            self.log_chan(chan, "back to main thread")
 
     @staticmethod
     def make_chan(num) -> None:
@@ -90,19 +96,21 @@ class TestInit(unittest.TestCase):
         #     f"[Thread {threading.current_thread().name}] make_chan({num=})"
         # )
 
-        logging.info(f"make_chan({num=})")
+        logging.info(f"called make_chan({num=})")
         import grpc
 
-        return grpc.aio.insecure_channel(f"localhost:5005{num}")
+        chan = grpc.aio.insecure_channel(f"localhost:5005{num}")
+        TestInit.log_chan(chan, f"make_chan({num=}) created chan ")
+        return chan
         # return grpc.insecure_channel("localhost:50051")
 
     @staticmethod
-    def log_chan(chan) -> None:
+    def log_chan(chan, msg="") -> None:
         cy_chan = chan._channel
         target = cy_chan._target.decode()
         # f"[Thread {threading.current_thread().name}]"
         logging.info(
-            f"Channel<{target=} {id(chan._loop)=} {id(cy_chan.loop)=}>"
+            f"{msg}Channel<{target=} {id(chan._loop)=} {id(cy_chan.loop)=}>"
         )
 
 
