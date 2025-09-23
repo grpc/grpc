@@ -877,13 +877,12 @@ class _MultiThreadedRendezvous(
             )
             if timed_out:
                 raise grpc.FutureTimeoutError()
+            elif self._state.code is grpc.StatusCode.OK:
+                return self._state.response
+            elif self._state.cancelled:
+                raise grpc.FutureCancelledError()
             else:
-                if self._state.code is grpc.StatusCode.OK:
-                    return self._state.response
-                elif self._state.cancelled:
-                    raise grpc.FutureCancelledError()
-                else:
-                    raise self
+                raise self
 
     def exception(self, timeout: Optional[float] = None) -> Optional[Exception]:
         """Return the exception raised by the computation.
@@ -896,13 +895,12 @@ class _MultiThreadedRendezvous(
             )
             if timed_out:
                 raise grpc.FutureTimeoutError()
+            elif self._state.code is grpc.StatusCode.OK:
+                return None
+            elif self._state.cancelled:
+                raise grpc.FutureCancelledError()
             else:
-                if self._state.code is grpc.StatusCode.OK:
-                    return None
-                elif self._state.cancelled:
-                    raise grpc.FutureCancelledError()
-                else:
-                    return self
+                return self
 
     def traceback(
         self, timeout: Optional[float] = None
@@ -917,16 +915,15 @@ class _MultiThreadedRendezvous(
             )
             if timed_out:
                 raise grpc.FutureTimeoutError()
+            elif self._state.code is grpc.StatusCode.OK:
+                return None
+            elif self._state.cancelled:
+                raise grpc.FutureCancelledError()
             else:
-                if self._state.code is grpc.StatusCode.OK:
-                    return None
-                elif self._state.cancelled:
-                    raise grpc.FutureCancelledError()
-                else:
-                    try:
-                        raise self
-                    except grpc.RpcError:
-                        return sys.exc_info()[2]
+                try:
+                    raise self
+                except grpc.RpcError:
+                    return sys.exc_info()[2]
 
     def add_done_callback(self, fn: Callable[[grpc.Future], None]) -> None:
         with self._state.condition:
