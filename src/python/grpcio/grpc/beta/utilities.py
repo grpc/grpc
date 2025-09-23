@@ -105,15 +105,12 @@ class _ChannelReadyFuture(future.Future):
 
     def result(self, timeout=None):
         self._block(timeout)
-        return None
 
     def exception(self, timeout=None):
         self._block(timeout)
-        return None
 
     def traceback(self, timeout=None):
         self._block(timeout)
-        return None
 
     def add_done_callback(self, fn):
         with self._condition:
