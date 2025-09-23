@@ -39,6 +39,7 @@ ignore = [
     "D107",    # Missing docstring in __init__
     "D200",    # One-line docstring should fit on one line
     "D202",    # No blank lines allowed after function docstring (found {num_lines})
+    "D203",    # Checks for docstrings on class definitions that are not preceded by a blank line.
     "D205",    # 1 blank line required between summary line and description
     "D207",    # Docstring is under-indented
     "D209",    # Multi-line docstring closing quotes should be on a separate line

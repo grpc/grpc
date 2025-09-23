@@ -93,4 +93,4 @@ __all__ = [
 if sys.version_info[0] >= 3 and sys.version_info[1] >= 6:
     from . import _async as aio  # pylint: disable=unused-import
 
-    __all__.append("aio")
+    __all__ += ["aio"]

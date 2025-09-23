@@ -182,7 +182,7 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
             # If CSM label injector is enabled on server side but client didn't send
             # XEnvoyPeerMetadata, we'll record remote label as unknown.
             else:
-                for _, remote_key in METADATA_EXCHANGE_KEY_FIXED_MAP.items():
+                for remote_key in METADATA_EXCHANGE_KEY_FIXED_MAP.values():
                     deserialized_labels[remote_key] = UNKNOWN_VALUE
                 deserialized_labels[key] = value
 
