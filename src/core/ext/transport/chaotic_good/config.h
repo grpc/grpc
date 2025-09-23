@@ -154,6 +154,7 @@ class Config {
     options.decode_alignment = decode_alignment_;
     options.inlined_payload_size_threshold = inline_payload_size_threshold_;
     options.scheduler_config = scheduler_config_;
+    options.enable_tracing = tracing_enabled_;
     return options;
   }
 
