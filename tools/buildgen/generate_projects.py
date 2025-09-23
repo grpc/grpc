@@ -80,11 +80,15 @@ def preprocess_build_files() -> _utils.Bunch:
         with open(build_file, "r") as f:
             _utils.merge_json(build_spec, yaml.safe_load(f.read()))
     # Execute the csharp_version plugin update.
-    if 'settings' in build_spec:
-        settings = build_spec['settings']
-        version = settings.get('version')
-        if isinstance(version, str) and version and 'csharp_version' not in settings:
-            settings['csharp_version'] = version
+    if "settings" in build_spec:
+        settings = build_spec["settings"]
+        version = settings.get("version")
+        if (
+            isinstance(version, str)
+            and version
+            and "csharp_version" not in settings
+        ):
+            settings["csharp_version"] = version
     # Executes plugins. Plugins update the build spec in-place.
     for py_file in sorted(glob.glob("tools/buildgen/plugins/*.py")):
         plugin = _utils.import_python_module(py_file)
