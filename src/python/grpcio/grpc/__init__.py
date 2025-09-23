@@ -1840,28 +1840,27 @@ def ssl_server_credentials(
       object is an argument to add_secure_port() method during server setup.
     """
     if not private_key_certificate_chain_pairs:
-        raise ValueError(
-            "At least one private key-certificate chain pair is required!"
-        )
-    elif require_client_auth and root_certificates is None:
-        raise ValueError(
+        error_msg = "At least one private key-certificate chain pair is required!"
+        raise ValueError(error_msg)
+    if require_client_auth and root_certificates is None:
+        error_msg = (
             "Illegal to require client auth without providing root"
             " certificates!"
         )
-    elif require_client_auth and root_certificates is None:
+        raise ValueError(error_msg)
+    if require_client_auth and root_certificates is None:
         error_msg = "Illegal to require client auth without providing root certificates!"
         raise ValueError(error_msg)
-    else:
-        return ServerCredentials(
-            _cygrpc.server_credentials_ssl(
-                root_certificates,
-                [
-                    _cygrpc.SslPemKeyCertPair(key, pem)
-                    for key, pem in private_key_certificate_chain_pairs
-                ],
-                require_client_auth,
-            )
+    return ServerCredentials(
+        _cygrpc.server_credentials_ssl(
+            root_certificates,
+            [
+                _cygrpc.SslPemKeyCertPair(key, pem)
+                for key, pem in private_key_certificate_chain_pairs
+            ],
+            require_client_auth,
         )
+    )
 
 
 def xds_server_credentials(fallback_credentials):
@@ -1914,11 +1913,10 @@ def ssl_server_certificate_configuration(
                 ],
             )
         )
-    else:
-        error_msg = (
-            "At least one private key-certificate chain pair is required!"
-        )
-        raise ValueError(error_msg)
+    error_msg = (
+        "At least one private key-certificate chain pair is required!"
+    )
+    raise ValueError(error_msg)
 
 
 def dynamic_ssl_server_credentials(
