@@ -442,18 +442,8 @@ class _Context(grpc.ServicerContext):
                 self._state.initial_metadata_allowed = False
                 self._state.due.add(_SEND_INITIAL_METADATA_TOKEN)
             else:
-                if self._state.initial_metadata_allowed:
-                    operation = _get_initial_metadata_operation(
-                        self._state, initial_metadata
-                    )
-                    self._rpc_event.call.start_server_batch(
-                        (operation,), _send_initial_metadata(self._state)
-                    )
-                    self._state.initial_metadata_allowed = False
-                    self._state.due.add(_SEND_INITIAL_METADATA_TOKEN)
-                else:
-                    error_msg = "Initial metadata no longer allowed!"
-                    raise ValueError(error_msg)
+                error_msg = "Initial metadata no longer allowed!"
+                raise ValueError(error_msg)
 
     def set_trailing_metadata(self, trailing_metadata: MetadataType) -> None:
         with self._state.condition:
