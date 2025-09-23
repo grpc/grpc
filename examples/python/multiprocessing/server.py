@@ -26,13 +26,12 @@ import multiprocessing
 import platform
 import socket
 import sys
+import textwrap
 import time
 
 import grpc
 import prime_pb2
 import prime_pb2_grpc
-
-import textwrap
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -98,10 +97,10 @@ def main():
     # Check if we're on macOS and warn about SO_REUSEPORT limitations
     if platform.system() == "Darwin":
         warning_message_raw = """
-            ⚠️  WARNING: Running on macOS (Darwin). SO_REUSEPORT behavior on MacOS is different from 
-            Linux. On MacOS, SO_REUSEPORT does not provide true load balancing - all requests from 
-            the same connection will be handled by the same process, defeating the purpose of 
-            multiprocessing. This is the issue described in GitHub #40444. For true multiprocessing 
+            ⚠️  WARNING: Running on macOS (Darwin). SO_REUSEPORT behavior on MacOS is different from
+            Linux. On MacOS, SO_REUSEPORT does not provide true load balancing - all requests from
+            the same connection will be handled by the same process, defeating the purpose of
+            multiprocessing. This is the issue described in GitHub #40444. For true multiprocessing
             on macOS, consider using multiple worker processes on different ports.
         """
         # 1. Clean up and split
@@ -120,7 +119,9 @@ def main():
         boxed_message_lines = [top_border]
         for line in lines:
             padded_line = line.ljust(max_width)
-            boxed_message_lines.append(f"{side_border} {padded_line} {side_border}")
+            boxed_message_lines.append(
+                f"{side_border} {padded_line} {side_border}"
+            )
         boxed_message_lines.append(bottom_border)
 
         # 5. Join and print
