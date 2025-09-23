@@ -29,6 +29,7 @@
 #include "src/core/call/interception_chain.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/client_channel/client_channel_internal.h"
+#include "src/core/client_channel/filter_chain.h"
 #include "src/core/filter/blackboard.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -61,6 +62,13 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
   }
 
   // The channel will call this when the resolver returns a new ConfigSelector
+  // to initialize the filter chains that the ConfigSelector may need.
+  virtual void BuildFilterChains(FilterChainBuilder& builder,
+                                 const Blackboard* old_blackboard,
+                                 Blackboard* new_blackboard) = 0;
+
+// FIXME: remove
+  // The channel will call this when the resolver returns a new ConfigSelector
   // to determine what set of dynamic filters will be configured.
   virtual void AddFilters(InterceptionChainBuilder& /*builder*/,
                           const Blackboard* /*old_blackboard*/,
@@ -78,7 +86,8 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
     Arena* arena;
     ClientChannelServiceConfigCallData* service_config_call_data;
   };
-  virtual absl::Status GetCallConfig(GetCallConfigArgs args) = 0;
+  virtual absl::StatusOr<RefCountedPtr<FilterChain>> GetCallConfig(
+      GetCallConfigArgs args) = 0;
 
   static absl::string_view ChannelArgName() { return GRPC_ARG_CONFIG_SELECTOR; }
   static int ChannelArgsCompare(const ConfigSelector* a,
@@ -108,14 +117,21 @@ class DefaultConfigSelector final : public ConfigSelector {
     return kFactory.Create();
   }
 
-  absl::Status GetCallConfig(GetCallConfigArgs args) override {
+  void BuildFilterChains(FilterChainBuilder& builder,
+                         const Blackboard* /*old_blackboard*/,
+                         Blackboard* new_blackboard) override {
+    filter_chain_ = builder.Build(new_blackboard);
+  }
+
+  absl::StatusOr<RefCountedPtr<FilterChain>> GetCallConfig(
+      GetCallConfigArgs args) override {
     Slice* path = args.initial_metadata->get_pointer(HttpPathMetadata());
     GRPC_CHECK_NE(path, nullptr);
     auto* parsed_method_configs =
         service_config_->GetMethodParsedConfigVector(path->c_slice());
     args.service_config_call_data->SetServiceConfig(service_config_,
                                                     parsed_method_configs);
-    return absl::OkStatus();
+    return filter_chain_;
   }
 
   // Only comparing the ConfigSelector itself, not the underlying
@@ -124,6 +140,7 @@ class DefaultConfigSelector final : public ConfigSelector {
 
  private:
   RefCountedPtr<ServiceConfig> service_config_;
+  RefCountedPtr<FilterChain> filter_chain_;
 };
 
 }  // namespace grpc_core

@@ -1256,6 +1256,15 @@ void ClientChannel::UpdateServiceConfigInControlPlaneLocked(
   }
 }
 
+namespace {
+
+class FilterChainBuilderImpl : public FilterChainBuilder {
+ public:
+ private:
+};
+
+}  // namespace
+
 void ClientChannel::UpdateServiceConfigInDataPlaneLocked(
     const ChannelArgs& args) {
   GRPC_TRACE_LOG(client_channel, INFO)
@@ -1271,6 +1280,8 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked(
   ChannelArgs new_args = args.SetObject(this).SetObject(saved_service_config_);
   // Construct filter stack.
   auto new_blackboard = MakeRefCounted<Blackboard>();
+
+// FIXME
   InterceptionChainBuilder builder(new_args, new_blackboard.get());
   if (idle_timeout_ != Duration::Zero()) {
     builder.AddOnServerTrailingMetadata([this](ServerMetadata&) {
@@ -1292,6 +1303,7 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked(
   blackboard_ = std::move(new_blackboard);
   // Create call destination.
   auto top_of_stack_call_destination = builder.Build(call_destination_);
+
   // Send result to data plane.
   if (!top_of_stack_call_destination.ok()) {
     resolver_data_for_calls_.Set(MaybeRewriteIllegalStatusCode(
@@ -1385,12 +1397,14 @@ absl::Status ClientChannel::ApplyServiceConfigToCall(
       GetContext<Arena>()->New<ClientChannelServiceConfigCallData>(
           GetContext<Arena>());
   // Use the ConfigSelector to determine the config for the call.
-  absl::Status call_config_status = config_selector.GetCallConfig(
+  auto filter_chain = config_selector.GetCallConfig(
       {&client_initial_metadata, GetContext<Arena>(),
        service_config_call_data});
-  if (!call_config_status.ok()) {
-    return MaybeRewriteIllegalStatusCode(call_config_status, "ConfigSelector");
+  if (!filter_chain.ok()) {
+    return MaybeRewriteIllegalStatusCode(filter_chain.status(),
+                                         "ConfigSelector");
   }
+// FIXME: do something with filter_chain
   // Apply our own method params to the call.
   auto* method_params = DownCast<ClientChannelMethodParsedConfig*>(
       service_config_call_data->GetMethodParsedConfig(

@@ -273,7 +273,12 @@ class XdsResolver final : public Resolver {
              filters_ == other_xds->filters_;
     }
 
-    absl::Status GetCallConfig(GetCallConfigArgs args) override;
+    void BuildFilterChains(FilterChainBuilder& builder,
+                           const Blackboard* old_blackboard,
+                           Blackboard* new_blackboard) override;
+
+    absl::StatusOr<RefCountedPtr<FilterChain>> GetCallConfig(
+        GetCallConfigArgs args) override;
 
     void AddFilters(InterceptionChainBuilder& builder,
                     const Blackboard* old_blackboard,
@@ -664,8 +669,14 @@ std::optional<uint64_t> HeaderHashHelper(
   return XXH64(header_value->data(), header_value->size(), 0);
 }
 
-absl::Status XdsResolver::XdsConfigSelector::GetCallConfig(
-    GetCallConfigArgs args) {
+void XdsResolver::XdsConfigSelector::BuildFilterChains(
+    FilterChainBuilder& builder, const Blackboard* old_blackboard,
+    Blackboard* new_blackboard) {
+// FIXME: implement
+}
+
+absl::StatusOr<RefCountedPtr<FilterChain>>
+XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
   Slice* path = args.initial_metadata->get_pointer(HttpPathMetadata());
   GRPC_CHECK_NE(path, nullptr);
   auto* entry = route_config_data_->GetRouteForRequest(path->as_string_view(),
@@ -773,7 +784,7 @@ absl::Status XdsResolver::XdsConfigSelector::GetCallConfig(
   args.service_config_call_data->SetCallAttribute(
       args.arena->ManagedNew<XdsRouteStateAttributeImpl>(route_config_data_,
                                                          entry));
-  return absl::OkStatus();
+  return nullptr;  // FIXME
 }
 
 void XdsResolver::XdsConfigSelector::AddFilters(

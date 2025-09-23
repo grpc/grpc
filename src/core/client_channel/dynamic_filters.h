@@ -23,6 +23,7 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/client_channel/filter_chain.h"
 #include "src/core/filter/blackboard.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -41,7 +42,7 @@
 
 namespace grpc_core {
 
-class DynamicFilters final : public RefCounted<DynamicFilters> {
+class DynamicFilters final : public FilterChain {
  public:
   // Implements the interface of RefCounted<>.
   class Call {
@@ -89,7 +90,7 @@ class DynamicFilters final : public RefCounted<DynamicFilters> {
   };
 
   static RefCountedPtr<DynamicFilters> Create(
-      const ChannelArgs& args, std::vector<const grpc_channel_filter*> filters,
+      const ChannelArgs& args, std::vector<FilterAndConfig> filters,
       const Blackboard* blackboard);
 
   explicit DynamicFilters(RefCountedPtr<grpc_channel_stack> channel_stack)

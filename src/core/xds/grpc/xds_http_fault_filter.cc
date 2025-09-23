@@ -219,7 +219,7 @@ void XdsHttpFaultFilter::AddFilter(InterceptionChainBuilder& builder) const {
 }
 
 const grpc_channel_filter* XdsHttpFaultFilter::channel_filter() const {
-  return &FaultInjectionFilter::kFilter;
+  return &FaultInjectionFilter::kFilterVtable;
 }
 
 ChannelArgs XdsHttpFaultFilter::ModifyChannelArgs(
