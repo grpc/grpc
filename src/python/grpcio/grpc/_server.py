@@ -432,7 +432,7 @@ class _Context(grpc.ServicerContext):
         with self._state.condition:
             if self._state.client is _CANCELLED:
                 _raise_rpc_error(self._state)
-            elif self._state.initial_metadata_allowed:
+            if self._state.initial_metadata_allowed:
                 operation = _get_initial_metadata_operation(
                     self._state, initial_metadata
                 )
