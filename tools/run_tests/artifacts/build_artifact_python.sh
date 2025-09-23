@@ -320,3 +320,5 @@ then
   cp -r src/python/grpcio_admin/dist/* "$ARTIFACT_DIR"
 
 fi
+
+exit 1
