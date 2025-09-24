@@ -25,7 +25,7 @@
 
 #include <sstream>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
 #include "test/cpp/microbenchmarks/fullstack_fixtures.h"
@@ -86,10 +86,10 @@ static void BM_UnaryPingPong(benchmark::State& state) {
     bool ok;
     {
       GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("WaitForRequest");
-      CHECK(fixture->cq()->Next(&t, &ok));
+      GRPC_CHECK(fixture->cq()->Next(&t, &ok));
     }
-    CHECK(ok);
-    CHECK(t == tag(0) || t == tag(1));
+    GRPC_CHECK(ok);
+    GRPC_CHECK(t == tag(0) || t == tag(1));
     intptr_t slot = reinterpret_cast<intptr_t>(t);
     ServerEnv* senv = server_env[slot];
     ServerContextMutator svr_ctx_mut(&senv->ctx);
@@ -97,13 +97,13 @@ static void BM_UnaryPingPong(benchmark::State& state) {
     {
       GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("WaitForCqs");
       for (int i = (1 << 3) | (1 << 4); i != 0;) {
-        CHECK(fixture->cq()->Next(&t, &ok));
-        CHECK(ok);
+        GRPC_CHECK(fixture->cq()->Next(&t, &ok));
+        GRPC_CHECK(ok);
         int tagnum = static_cast<int>(reinterpret_cast<intptr_t>(t));
-        CHECK(i & (1 << tagnum));
+        GRPC_CHECK(i & (1 << tagnum));
         i -= 1 << tagnum;
       }
-      CHECK(recv_status.ok());
+      GRPC_CHECK(recv_status.ok());
     }
     {
       GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("RequestEcho");

@@ -21,13 +21,13 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/memory_usage.h"
 
 // TODO(tjagtap) TODO(akshitpatel): [PH2][P3] : Write micro benchmarks for
@@ -120,7 +120,7 @@ uint16_t Read2b(const uint8_t* input) {
 }
 
 void Write3b(uint32_t x, uint8_t* output) {
-  CHECK_LT(x, 16777216u);
+  GRPC_CHECK_LT(x, 16777216u);
   output[0] = static_cast<uint8_t>(x >> 16);
   output[1] = static_cast<uint8_t>(x >> 8);
   output[2] = static_cast<uint8_t>(x);
@@ -669,7 +669,7 @@ SerializeReturn Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out) {
 
 http2::ValueOrHttp2Status<Http2Frame> ParseFramePayload(
     const Http2FrameHeader& hdr, SliceBuffer payload) {
-  CHECK(payload.Length() == hdr.length);
+  GRPC_CHECK(payload.Length() == hdr.length);
 
   switch (static_cast<FrameType>(hdr.type)) {
     case FrameType::kData:
@@ -699,14 +699,21 @@ http2::ValueOrHttp2Status<Http2Frame> ParseFramePayload(
   }
 }
 
-http2::Http2ErrorCode Http2ErrorCodeFromRstFrameErrorCode(uint32_t error_code) {
+http2::Http2ErrorCode RstFrameErrorCodeToHttp2ErrorCode(
+    const uint32_t error_code) {
   if (GPR_UNLIKELY(error_code > http2::GetMaxHttp2ErrorCode())) {
-    LOG(ERROR) << "Http2ErrorCodeFromRstFrameErrorCode: Invalid error code "
+    LOG(ERROR) << "RstFrameErrorCodeToHttp2ErrorCode: Invalid error code "
                   "received from RST_STREAM frame: "
                << error_code;
     return http2::Http2ErrorCode::kInternalError;
   }
   return static_cast<http2::Http2ErrorCode>(error_code);
+}
+
+uint32_t Http2ErrorCodeToRstFrameErrorCode(
+    const http2::Http2ErrorCode error_code) {
+  DCHECK_LE(static_cast<uint8_t>(error_code), http2::GetMaxHttp2ErrorCode());
+  return static_cast<uint32_t>(error_code);
 }
 
 size_t GetFrameMemoryUsage(const Http2Frame& frame) {
@@ -717,7 +724,7 @@ size_t GetFrameMemoryUsage(const Http2Frame& frame) {
 // GRPC Header
 
 GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload) {
-  CHECK_GE(payload.Length(), kGrpcHeaderSizeInBytes);
+  GRPC_CHECK_GE(payload.Length(), kGrpcHeaderSizeInBytes);
   uint8_t buffer[kGrpcHeaderSizeInBytes];
   payload.CopyFirstNBytesIntoBuffer(kGrpcHeaderSizeInBytes, buffer);
   GrpcMessageHeader header;

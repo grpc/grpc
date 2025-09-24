@@ -61,6 +61,35 @@ Client::QueryAllChannelzEntities() {
   return entities;
 }
 
+absl::StatusOr<std::vector<grpc::channelz::v2::Entity>>
+Client::QueryAllChannelzEntitiesOfKind(absl::string_view entity_kind) {
+  grpc::ClientContext context;
+  grpc::channelz::v2::QueryEntitiesRequest request;
+  request.set_kind(entity_kind);
+  grpc::channelz::v2::QueryEntitiesResponse response;
+  std::vector<grpc::channelz::v2::Entity> entities;
+  while (true) {
+    grpc::Status status = stub_->QueryEntities(&context, request, &response);
+    if (!status.ok()) {
+      return absl::Status(static_cast<absl::StatusCode>(status.error_code()),
+                          status.error_message());
+    }
+    for (const auto& entity : response.entities()) {
+      entities.push_back(entity);
+    }
+    if (response.end()) {
+      break;
+    }
+    if (response.entities().empty()) {
+      return absl::InternalError(
+          "channelz pagination issue: received no entities but not end of "
+          "list");
+    }
+    request.set_start_entity_id(entities.back().id() + 1);
+  }
+  return entities;
+}
+
 absl::Status Client::QueryTrace(
     int64_t entity_id, absl::string_view trace_name,
     absl::FunctionRef<

@@ -68,6 +68,7 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/stream_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/init_internally.h"
@@ -115,6 +116,7 @@ typedef enum {
   GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE,
 } grpc_chttp2_write_state;
 
+// Not getting used anywhere AFAIK
 typedef enum {
   GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY,
   GRPC_CHTTP2_OPTIMIZE_FOR_THROUGHPUT,
@@ -299,8 +301,11 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
       transport_framing_endpoint_extension = nullptr;
 
   grpc_core::MemoryOwner memory_owner;
+  grpc_core::StreamQuotaRefPtr stream_quota;
   const grpc_core::MemoryAllocator::Reservation self_reservation;
   grpc_core::ReclamationSweep active_reclamation;
+  grpc_core::InstrumentStorageRefPtr<grpc_core::ResourceQuotaDomain>
+      resource_quota_telemetry_storage;
 
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
   grpc_core::Combiner* combiner;
@@ -739,17 +744,6 @@ struct grpc_chttp2_stream {
   grpc_core::Timestamp last_window_update_time =
       grpc_core::Timestamp::InfPast();
 };
-
-// EXPERIMENTAL: provide protection against overloading a server with too many
-// requests: wait for streams to be deallocated before they stop counting
-// against MAX_CONCURRENT_STREAMS
-#define GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION \
-  "grpc.http.overload_protection"
-
-// EXPERIMENTAL: Fail requests at the client if the client is over max
-// concurrent streams, so they may be retried elsewhere.
-#define GRPC_ARG_MAX_CONCURRENT_STREAMS_REJECT_ON_CLIENT \
-  "grpc.http.max_concurrent_streams_reject_on_client"
 
 /// Transport writing call flow:
 /// grpc_chttp2_initiate_write() is called anywhere that we know bytes need to

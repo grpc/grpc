@@ -75,7 +75,8 @@ class ControlEndpoint {
  public:
   ControlEndpoint(PromiseEndpoint endpoint,
                   grpc_event_engine::experimental::EventEngine* event_engine,
-                  std::shared_ptr<LegacyZTraceCollector> ztrace_collector);
+                  std::shared_ptr<LegacyZTraceCollector> ztrace_collector,
+                  RefCountedPtr<channelz::SocketNode> socket_node);
 
   // Write some data to the control endpoint; returns a promise that resolves
   // to Empty{} -- it's not possible to see errors from this api.

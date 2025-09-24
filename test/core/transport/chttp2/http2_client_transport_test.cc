@@ -32,6 +32,7 @@
 #include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
+#include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
@@ -229,7 +230,10 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportAbortTest) {
   auto read_close = mock_endpoint.ExpectDelayedReadClose(
       absl::UnavailableError("Connection closed"), event_engine().get());
 
-  // Expect Client Initial Metadata to be sent.
+  // Expect Client Initial Metadata to be sent. We do not expect any writes
+  // after the abort. The stream is cancelled while in the IDLE state. The
+  // transport will not send a RST_STREAM frame for a stream that has not yet
+  // sent headers, as the server would not have created the stream yet.
   mock_endpoint.ExpectWrite(
       {
           EventEngineSlice(
@@ -453,6 +457,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
   StrictMock<MockFunction<void()>> ping_ack_received;
   EXPECT_CALL(ping_ack_received, Call());
   auto ping_complete = std::make_shared<Latch<void>>();
+  absl::AnyInvocable<void()> read_cb_transport_close;
 
   // Redundant ping ack
   auto read_cb = mock_endpoint.ExpectDelayedRead(
@@ -475,7 +480,8 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
                                                      /*opaque=*/0),
       },
       event_engine().get(),
-      [&mock_endpoint, &read_cb, this](SliceBuffer& out, SliceBuffer& expect) {
+      [&mock_endpoint, &read_cb, this, &read_cb_transport_close](
+          SliceBuffer& out, SliceBuffer& expect) {
         char out_buffer[kFrameHeaderSize + 1] = {};
         char expect_buffer[kFrameHeaderSize + 1] = {};
         out.CopyFirstNBytesIntoBuffer(kFrameHeaderSize, out_buffer);
@@ -495,7 +501,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
             },
             event_engine().get());
         // Break the read loop
-        mock_endpoint.ExpectReadClose(
+        read_cb_transport_close = mock_endpoint.ExpectDelayedReadClose(
             absl::UnavailableError("Connection closed"), event_engine().get());
       });
 
@@ -505,14 +511,15 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
                                                      /*opaque=*/0),
       },
       event_engine().get(),
-      [event_engine = event_engine().get()](SliceBuffer& out,
-                                            SliceBuffer& expect) {
+      [event_engine = event_engine().get(), &read_cb_transport_close](
+          SliceBuffer& out, SliceBuffer& expect) {
         char out_buffer[kFrameHeaderSize];
         out.CopyFirstNBytesIntoBuffer(kFrameHeaderSize, out_buffer);
         char expect_buffer[kFrameHeaderSize];
         expect.CopyFirstNBytesIntoBuffer(kFrameHeaderSize, expect_buffer);
 
         EXPECT_STREQ(out_buffer, expect_buffer);
+        read_cb_transport_close();
       });
 
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
@@ -722,6 +729,45 @@ TEST(Http2CommonTransportTest, TestReadChannelArgs) {
   EXPECT_EQ(settings2.enable_push(), true);
   EXPECT_EQ(settings2.allow_true_binary_metadata(), false);
   EXPECT_EQ(settings2.allow_security_frame(), false);
+}
+
+TEST_F(Http2ClientTransportTest, TestFlowControlWindow) {
+  MockPromiseEndpoint mock_endpoint(/*port=*/1000);
+  mock_endpoint.ExpectWrite(
+      {
+          EventEngineSlice(
+              grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+          helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
+      },
+      event_engine().get());
+  mock_endpoint.ExpectRead(
+      {helper_.EventEngineSliceFromHttp2SettingsFrameDefault()},
+      event_engine().get());
+
+  // Simulate the client receiving two WINDOW_UPDATE frames from the peer.
+  mock_endpoint.ExpectRead(
+      {helper_.EventEngineSliceFromHttp2WindowUpdateFrame(/*stream_id=*/0,
+                                                          /*increment=*/1000),
+       helper_.EventEngineSliceFromHttp2WindowUpdateFrame(/*stream_id=*/0,
+                                                          /*increment=*/500)},
+      event_engine().get());
+
+  // Break the ReadLoop
+  mock_endpoint.ExpectReadClose(absl::UnavailableError("Connection closed"),
+                                event_engine().get());
+
+  auto client_transport = MakeOrphanable<Http2ClientTransport>(
+      std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
+      event_engine(), nullptr);
+
+  // Wait for Http2ClientTransport's internal activities to finish.
+  event_engine()->TickUntilIdle();
+
+  EXPECT_TRUE(client_transport->AreTransportFlowControlTokensAvailable());
+  EXPECT_EQ(client_transport->TestOnlyTransportFlowControlWindow(),
+            RFC9113::kHttp2InitialWindowSize + 1000 + 500);
+
+  event_engine()->UnsetGlobalHooks();
 }
 
 class SettingsTimeoutManagerTest : public ::testing::Test {

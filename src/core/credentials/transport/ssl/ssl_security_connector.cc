@@ -26,7 +26,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
@@ -50,6 +49,7 @@
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
@@ -357,7 +357,7 @@ class grpc_ssl_server_security_connector
     tsi_ssl_server_handshaker_factory* new_handshaker_factory = nullptr;
     const grpc_ssl_server_credentials* server_creds =
         static_cast<const grpc_ssl_server_credentials*>(this->server_creds());
-    DCHECK_NE(config->pem_root_certs, nullptr);
+    GRPC_DCHECK_NE(config->pem_root_certs, nullptr);
     tsi_ssl_server_handshaker_options options;
     options.pem_key_cert_pairs = grpc_convert_grpc_to_tsi_cert_pairs(
         config->pem_key_cert_pairs, config->num_key_cert_pairs);
@@ -425,7 +425,7 @@ grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_ssl_server_security_connector_create(
     grpc_core::RefCountedPtr<grpc_server_credentials> server_credentials,
     const grpc_core::ChannelArgs& args) {
-  CHECK(server_credentials != nullptr);
+  GRPC_CHECK(server_credentials != nullptr);
   grpc_core::RefCountedPtr<grpc_ssl_server_security_connector> c =
       grpc_core::MakeRefCounted<grpc_ssl_server_security_connector>(
           std::move(server_credentials));

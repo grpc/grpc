@@ -24,7 +24,6 @@
 #include <tuple>
 
 #include "absl/cleanup/cleanup.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/random/random.h"
@@ -48,6 +47,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
@@ -98,7 +98,7 @@ void ChaoticGoodServerTransport::StreamDispatch::DispatchFrame(
   if (stream == nullptr) return;
   stream->spawn_serializer->Spawn(
       [this, stream, frame = std::move(frame)]() mutable {
-        DCHECK_NE(stream.get(), nullptr);
+        GRPC_DCHECK_NE(stream.get(), nullptr);
         auto& call = stream->call;
         return call.CancelIfFails(call.UntilCallCompletes(TrySeq(
             frame.Payload(),
@@ -278,7 +278,7 @@ ChaoticGoodServerTransport::StreamDispatch::StreamDispatch(
           1024)),
       call_destination_(std::move(call_destination)),
       message_chunker_(message_chunker) {
-  CHECK(ctx_ != nullptr);
+  GRPC_CHECK(ctx_ != nullptr);
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       ctx_->event_engine.get());

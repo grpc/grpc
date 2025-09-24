@@ -35,7 +35,6 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
@@ -62,6 +61,7 @@
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
@@ -329,7 +329,7 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
           --multiplier_;
         }
       } else {
-        CHECK(ejection_time_.has_value());
+        GRPC_CHECK(ejection_time_.has_value());
         auto change_time = ejection_time_.value() +
                            Duration::Milliseconds(std::min(
                                base_ejection_time_in_millis * multiplier_,

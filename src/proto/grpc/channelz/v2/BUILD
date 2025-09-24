@@ -82,6 +82,11 @@ grpc_internal_proto_library(
 )
 
 grpc_cc_proto_library(
+    name = "promise_cc_proto",
+    deps = [":promise_proto"],
+)
+
+grpc_cc_proto_library(
     name = "channelz_cc_proto",
     visibility = [
         "//bazel:channelz",

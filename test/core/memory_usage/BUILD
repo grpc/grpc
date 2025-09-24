@@ -26,7 +26,6 @@ grpc_cc_library(
     ],
     hdrs = ["memstats.h"],
     external_deps = [
-        "absl/log:check",
         "absl/strings",
     ],
     tags = [
@@ -36,6 +35,7 @@ grpc_cc_library(
     ],
     deps = [
         "//:gpr",
+        "//src/core:grpc_check",
     ],
 )
 

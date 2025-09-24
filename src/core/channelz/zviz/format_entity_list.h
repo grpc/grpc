@@ -25,8 +25,8 @@
 namespace grpc_zviz {
 
 struct EntityTableColumn {
-  absl::string_view title;
-  absl::string_view property_path;
+  std::string title;
+  std::string property_path;
 };
 
 void FormatEntityList(Environment& env,

@@ -24,7 +24,6 @@
 #include <tuple>
 
 #include "absl/cleanup/cleanup.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/random/random.h"
@@ -47,6 +46,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/telemetry/metrics.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
@@ -218,7 +218,7 @@ auto ChaoticGoodServerTransport::CallOutboundLoop(
 absl::Status ChaoticGoodServerTransport::NewStream(
     ChaoticGoodTransport& transport, const FrameHeader& header,
     SliceBuffer payload) {
-  CHECK_EQ(header.payload_length, payload.Length());
+  GRPC_CHECK_EQ(header.payload_length, payload.Length());
   auto client_initial_metadata_frame =
       transport.DeserializeFrame<ClientInitialMetadataFrame>(
           header, std::move(payload));
@@ -374,8 +374,8 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
 
 void ChaoticGoodServerTransport::SetCallDestination(
     RefCountedPtr<UnstartedCallDestination> call_destination) {
-  CHECK(call_destination_ == nullptr);
-  CHECK(call_destination != nullptr);
+  GRPC_CHECK(call_destination_ == nullptr);
+  GRPC_CHECK(call_destination != nullptr);
   call_destination_ = call_destination;
   got_acceptor_.Set();
 }

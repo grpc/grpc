@@ -36,10 +36,10 @@
 #include "absl/strings/string_view.h"
 #include "src/core/lib/surface/init.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/postmortem_emit.h"
 #include "src/core/util/wait_for_single_owner.h"
 #include "test/core/event_engine/test_init.h"
 #include "test/core/test_util/build.h"
-#include "test/core/test_util/postmortem_emit.h"
 #include "test/core/test_util/stack_tracer.h"
 
 int64_t g_fixture_slowdown_factor = 1;

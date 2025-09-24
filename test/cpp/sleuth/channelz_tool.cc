@@ -14,7 +14,10 @@
 
 #include "absl/flags/flag.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
 #include "src/core/channelz/zviz/entity.h"
+#include "src/core/channelz/zviz/format_entity_list.h"
 #include "src/core/channelz/zviz/layout_text.h"
 #include "src/core/channelz/zviz/trace.h"
 #include "test/cpp/sleuth/client.h"
@@ -23,6 +26,14 @@
 
 ABSL_FLAG(std::optional<std::string>, channelz_target, std::nullopt,
           "Target to connect to for channelz");
+ABSL_FLAG(std::string, channelz_columns,
+          "ID@id,Kind@kind,Name@v1_compatibility.name",
+          "Comma separated list of columns to include. Format is "
+          "`[title@]path_to_property` -- ie "
+          "socket@v1_compatibility.name,call_counts.streams_started will print "
+          "two columns, one titled 'socket' containing the value of "
+          "v1_compatibility.name and one titled 'call_counts.streams_started' "
+          "containing the value of streams_started.");
 
 namespace grpc_sleuth {
 
@@ -52,6 +63,28 @@ class SleuthEnvironment : public grpc_zviz::Environment {
  private:
   std::map<int64_t, grpc::channelz::v2::Entity> entities_;
 };
+
+absl::StatusOr<std::vector<grpc_zviz::EntityTableColumn>> ParseColumnsFlag() {
+  std::vector<grpc_zviz::EntityTableColumn> result;
+  for (const auto& column :
+       absl::StrSplit(absl::GetFlag(FLAGS_channelz_columns), ',')) {
+    std::vector<std::string> segments = absl::StrSplit(column, '@');
+    switch (segments.size()) {
+      case 1:
+        result.push_back(
+            grpc_zviz::EntityTableColumn{segments[0], segments[0]});
+        break;
+      case 2:
+        result.push_back(
+            grpc_zviz::EntityTableColumn{segments[0], segments[1]});
+        break;
+      default:
+        return absl::InvalidArgumentError(
+            absl::StrCat("Invalid column spec: ", column));
+    }
+  }
+  return result;
+}
 }  // namespace
 
 SLEUTH_TOOL(dump_channelz, "[destination]",
@@ -80,6 +113,32 @@ SLEUTH_TOOL(dump_channelz, "[destination]",
   }
   std::cout << root.Render();
 
+  return absl::OkStatus();
+}
+
+SLEUTH_TOOL(ls, "[entity_kind]", "Lists all entities of the given kind.") {
+  if (args.size() > 1) {
+    return absl::InvalidArgumentError("Too many arguments");
+  }
+  absl::StatusOr<std::vector<grpc::channelz::v2::Entity>> response;
+  auto target = absl::GetFlag(FLAGS_channelz_target);
+  if (!target.has_value()) {
+    return absl::InvalidArgumentError("--channelz_target is required");
+  }
+  auto columns = ParseColumnsFlag();
+  if (!columns.ok()) return columns.status();
+  if (args.empty()) {
+    response = Client(*target, ToolClientOptions()).QueryAllChannelzEntities();
+  } else {
+    std::string entity_kind = args[0];
+    response = Client(*target, ToolClientOptions())
+                   .QueryAllChannelzEntitiesOfKind(entity_kind);
+  }
+  if (!response.ok()) return response.status();
+  grpc_zviz::layout::TextElement root;
+  SleuthEnvironment env(*response);
+  grpc_zviz::FormatEntityList(env, *response, *columns, root);
+  std::cout << root.Render();
   return absl::OkStatus();
 }
 

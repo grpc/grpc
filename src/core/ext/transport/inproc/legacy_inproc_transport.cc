@@ -35,7 +35,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -61,6 +60,7 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/time.h"
@@ -1275,7 +1275,7 @@ grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
     auto new_channel = grpc_core::ChannelCreate(
         "inproc", client_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport);
     if (!new_channel.ok()) {
-      CHECK(!channel);
+      GRPC_CHECK(!channel);
       LOG(ERROR) << "Failed to create client channel: "
                  << grpc_core::StatusToString(error);
       intptr_t integer;
@@ -1293,7 +1293,7 @@ grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
       channel = new_channel->release()->c_ptr();
     }
   } else {
-    CHECK(!channel);
+    GRPC_CHECK(!channel);
     LOG(ERROR) << "Failed to create server channel: "
                << grpc_core::StatusToString(error);
     intptr_t integer;

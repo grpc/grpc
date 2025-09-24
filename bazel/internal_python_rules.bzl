@@ -13,6 +13,7 @@
 # limitations under the License.
 """Python-related rules intended only for use internal to the repo."""
 
+load("@rules_python//python:defs.bzl", "py_test")
 load("//bazel:gevent_test.bzl", "py_grpc_gevent_test")
 load("//bazel:logging_threshold_test.bzl", "py_grpc_logging_threshold_test")
 load("//bazel:run_time_type_check_test.bzl", "py_grpc_run_time_type_check_test")
@@ -24,7 +25,7 @@ def internal_py_grpc_test(name, **kwargs):
       name: The name of the test.
       **kwargs: Any additional arguments to add to the test.
     """
-    native.py_test(
+    py_test(
         name = name + ".native",
         python_version = "PY3",
         **kwargs

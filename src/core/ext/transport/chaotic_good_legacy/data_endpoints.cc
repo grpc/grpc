@@ -22,6 +22,7 @@
 #include "absl/strings/escaping.h"
 #include "src/core/ext/transport/chaotic_good_legacy/pending_connection.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
+#include "src/core/lib/event_engine/extensions/channelz.h"
 #include "src/core/lib/event_engine/extensions/tcp_trace.h"
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -265,7 +266,8 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
                    grpc_event_engine::experimental::EventEngine* event_engine,
                    std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
                        stats_plugin_group,
-                   std::shared_ptr<LegacyZTraceCollector> ztrace_collector)
+                   std::shared_ptr<LegacyZTraceCollector> ztrace_collector,
+                   RefCountedPtr<channelz::SocketNode> socket_node)
     : id_(id), ztrace_collector_(std::move(ztrace_collector)) {
   CHECK_NE(ztrace_collector_, nullptr);
   input_queues->AddEndpoint(id);
@@ -279,15 +281,16 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
        pending_connection = std::move(pending_connection),
        arena = std::move(arena),
        stats_plugin_group = std::move(stats_plugin_group),
-       ztrace_collector = ztrace_collector_]() mutable {
+       ztrace_collector = ztrace_collector_,
+       socket_node = std::move(socket_node)]() mutable {
         CHECK_NE(ztrace_collector, nullptr);
         return TrySeq(
             pending_connection.Await(),
             [id, enable_tracing, output_buffers = std::move(output_buffers),
              input_queues = std::move(input_queues), arena = std::move(arena),
              stats_plugin_group = std::move(stats_plugin_group),
-             ztrace_collector =
-                 std::move(ztrace_collector)](PromiseEndpoint ep) mutable {
+             ztrace_collector = std::move(ztrace_collector),
+             socket_node = std::move(socket_node)](PromiseEndpoint ep) mutable {
               GRPC_TRACE_LOG(chaotic_good, INFO)
                   << "CHAOTIC_GOOD: data endpoint " << id << " to "
                   << grpc_event_engine::experimental::ResolvedAddressToString(
@@ -295,6 +298,10 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
                          .value_or("<<unknown peer address>>")
                   << " ready";
               auto endpoint = std::make_shared<PromiseEndpoint>(std::move(ep));
+              auto epte = grpc_event_engine::experimental::QueryExtension<
+                  grpc_event_engine::experimental::ChannelzExtension>(
+                  endpoint->GetEventEngineEndpoint().get());
+              if (epte != nullptr) epte->SetSocketNode(socket_node);
               // Enable RxMemoryAlignment and RPC receive coalescing after the
               // transport setup is complete. At this point all the settings
               // frames should have been read.
@@ -334,7 +341,8 @@ DataEndpoints::DataEndpoints(
     std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
         stats_plugin_group,
     bool enable_tracing,
-    std::shared_ptr<LegacyZTraceCollector> ztrace_collector)
+    std::shared_ptr<LegacyZTraceCollector> ztrace_collector,
+    RefCountedPtr<channelz::SocketNode> socket_node)
     : output_buffers_(MakeRefCounted<data_endpoints_detail::OutputBuffers>(
           ztrace_collector)),
       input_queues_(MakeRefCounted<data_endpoints_detail::InputQueues>(
@@ -343,7 +351,8 @@ DataEndpoints::DataEndpoints(
   for (size_t i = 0; i < endpoints_vec.size(); ++i) {
     endpoints_.emplace_back(i, output_buffers_, input_queues_,
                             std::move(endpoints_vec[i]), enable_tracing,
-                            event_engine, stats_plugin_group, ztrace_collector);
+                            event_engine, stats_plugin_group, ztrace_collector,
+                            socket_node);
   }
 }
 

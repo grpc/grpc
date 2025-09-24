@@ -767,7 +767,7 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
           out->Print(
               var,
               "f'The grpc package installed is at version {GRPC_VERSION},'\n"
-              "+ f' but the generated code in $Pb2GrpcFileName$_pb2_grpc.py "
+              "+ ' but the generated code in $Pb2GrpcFileName$_pb2_grpc.py "
               "depends on'\n"
               "+ f' grpcio>={GRPC_GENERATED_VERSION}.'\n"
               "+ f' Please upgrade your grpc module to "
