@@ -236,7 +236,7 @@ then
   if $is_sonoma; then
     # For updated hash checksums https://composer.github.io/pubkeys.html
     EXPECTED_COMPOSER_SHA384_SUM="ed0feb545ba87161262f2d45a633e34f591ebb3381f2e0063c345ebea4d228dd0043083717770234ec00c5a9f9593792"
-    echo -n "Expected composer-setup.php sha384 sum: ${EXPECTED_COMPOSER_SHA384_SUM}"
+    echo "Expected composer-setup.php sha384 sum: ${EXPECTED_COMPOSER_SHA384_SUM}"
 
     curl --retry 3 -sL -o composer-setup.php https://getcomposer.org/installer
     echo "Downloaded composer-setup.php sha384 sum: $(sha384sum composer-setup.php)"
