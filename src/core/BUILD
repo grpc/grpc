@@ -10765,6 +10765,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/status:statusor",
     ],
+    visibility = ["//bazel:channelz"],
     deps = [
         "zviz_strings",
         "//src/proto/grpc/channelz/v2:channelz_cc_proto",
@@ -10866,6 +10867,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/types:span",
     ],
+    visibility = ["//bazel:channelz"],
     deps = [
         "zviz_data",
         "zviz_environment",
@@ -10924,6 +10926,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
     ],
+    visibility = ["//bazel:channelz"],
     deps = [
         "zviz_layout",
     ],

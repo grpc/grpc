@@ -1354,6 +1354,7 @@ grpc_cc_library(
         "@com_google_protobuf//upb/base",
         "@com_google_protobuf//upb/mem",
     ],
+    visibility = ["//bazel:channelz"],
     deps = [
         "channelz_service_upb",
         "channelz_upb",
