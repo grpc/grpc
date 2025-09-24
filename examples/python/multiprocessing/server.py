@@ -26,7 +26,6 @@ import multiprocessing
 import platform
 import socket
 import sys
-import textwrap
 import time
 
 import grpc
@@ -103,30 +102,7 @@ def main():
             multiprocessing. This is the issue described in GitHub #40444. For true multiprocessing
             on macOS, consider using multiple worker processes on different ports.
         """
-        # 1. Clean up and split
-        message = textwrap.dedent(warning_message_raw).strip()
-        lines = message.splitlines()
-
-        # 2. Find width
-        max_width = max(len(line) for line in lines)
-
-        # 3. Create borders using Unicode characters
-        top_border = "╔" + "═" * (max_width + 2) + "╗"
-        bottom_border = "╚" + "═" * (max_width + 2) + "╝"
-        side_border = "║"
-
-        # 4. Build the message
-        boxed_message_lines = [top_border]
-        for line in lines:
-            padded_line = line.ljust(max_width)
-            boxed_message_lines.append(
-                f"{side_border} {padded_line} {side_border}"
-            )
-        boxed_message_lines.append(bottom_border)
-
-        # 5. Join and print
-        boxed_message_unicode = "\n".join(boxed_message_lines)
-        print(boxed_message_unicode)
+        print(warning_message_raw)
     with _reserve_port() as port:
         bind_address = "localhost:{}".format(port)
         _LOGGER.info("Binding to '%s'", bind_address)
