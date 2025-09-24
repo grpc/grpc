@@ -320,7 +320,7 @@ CORE_END2END_TEST(Http2SingleHopTests, ServerMaxConcurrentStreams) {
 
   // perform a few ping-pongs to ensure that server settings have reached the
   // client.
-  for (int i = 0; i < 10; ++i) {
+  for (int i = 0; i < 1000; ++i) {
     SimpleRequestBody(*this);
   }
 
