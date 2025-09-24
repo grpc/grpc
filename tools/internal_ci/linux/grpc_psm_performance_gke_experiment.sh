@@ -89,7 +89,7 @@ psmBuildConfigs() {
     -s prebuilt_image_prefix="${PREBUILT_IMAGE_PREFIX}" \
     -s prebuilt_image_tag="${UNIQUE_IDENTIFIER}" \
     -s psm_image_prefix="${PSM_IMAGE_PREFIX}" \
-    -s psm_image_tag="${PSM_IMAGE_TAG}" \
+    -s psm_image_tag="v${PSM_IMAGE_TAG}" \
     -a ci_buildNumber="${KOKORO_BUILD_NUMBER}" \
     -a ci_buildUrl="${CLOUD_LOGGING_URL}" \
     -a ci_jobName="${KOKORO_JOB_NAME}" \
