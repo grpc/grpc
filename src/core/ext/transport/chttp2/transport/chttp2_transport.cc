@@ -631,17 +631,20 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
                          }
                          return "unknown";
                        }())
-                  .Set("write_state", [t]() {
-                    switch (t->write_state) {
-                      case GRPC_CHTTP2_WRITE_STATE_IDLE:
-                        return "idle";
-                      case GRPC_CHTTP2_WRITE_STATE_WRITING:
-                        return "writing";
-                      case GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE:
-                        return "writing_with_more";
-                    }
-                    return "unknown";
-                  }()));
+                  .Set("write_state",
+                       [t]() {
+                         switch (t->write_state) {
+                           case GRPC_CHTTP2_WRITE_STATE_IDLE:
+                             return "idle";
+                           case GRPC_CHTTP2_WRITE_STATE_WRITING:
+                             return "writing";
+                           case GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE:
+                             return "writing_with_more";
+                         }
+                         return "unknown";
+                       }())
+                  .Set("tarpit_extra_streams", t->extra_streams)
+                  .Set("stream_map_size", t->stream_map.size()));
         }),
         absl::OkStatus());
   });
