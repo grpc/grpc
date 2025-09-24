@@ -725,7 +725,6 @@ std::unique_ptr<Scheduler> MakeScheduler(absl::string_view config) {
         break;
     }
   }
-  LOG(INFO) << "Using scheduler: " << scheduler->Config();
   return scheduler;
 }
 
