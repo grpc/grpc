@@ -95,14 +95,14 @@ def _reserve_port():
 def main():
     # Check if we're on macOS and warn about SO_REUSEPORT limitations
     if platform.system() == "Darwin":
-        warning_message_raw = """
+        warning_message = """
             ⚠️  WARNING: Running on macOS (Darwin). SO_REUSEPORT behavior on MacOS is different from
             Linux. On MacOS, SO_REUSEPORT does not provide true load balancing - all requests from
             the same connection will be handled by the same process, defeating the purpose of
             multiprocessing. This is the issue described in GitHub #40444. For true multiprocessing
             on macOS, consider using multiple worker processes on different ports.
         """
-        print(warning_message_raw)
+        print(warning_message)
     with _reserve_port() as port:
         bind_address = "localhost:{}".format(port)
         _LOGGER.info("Binding to '%s'", bind_address)
