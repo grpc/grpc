@@ -15,10 +15,16 @@
 #ifndef GRPC_SUPPORT_METRICS_H
 #define GRPC_SUPPORT_METRICS_H
 
-#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/support/port_platform.h>
 
 #include "absl/strings/string_view.h"
+
+// Forward declaration for EndpointConfig
+namespace grpc_event_engine {
+namespace experimental {
+class EndpointConfig;  // Forward declaration
+}  // namespace experimental
+}  // namespace grpc_event_engine
 
 namespace grpc_core {
 namespace experimental {
