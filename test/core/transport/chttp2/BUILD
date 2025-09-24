@@ -856,6 +856,7 @@ grpc_cc_test(
         "//test/core/promise:poll_matcher",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
+        "//test/core/test_util:postmortem",
         "//test/core/transport/util:mock_promise_endpoint",
         "//test/core/transport/util:transport_test",
     ],

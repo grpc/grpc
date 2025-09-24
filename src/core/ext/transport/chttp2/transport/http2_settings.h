@@ -67,7 +67,13 @@ class Http2Settings {
   bool allow_security_frame() const { return allow_security_frame_; }
 
   void SetHeaderTableSize(uint32_t x) { header_table_size_ = x; }
-  void SetMaxConcurrentStreams(uint32_t x) { max_concurrent_streams_ = x; }
+  void SetMaxConcurrentStreams(uint32_t x) {
+    initial_max_concurrent_streams_ = x;
+    max_concurrent_streams_ = x;
+  }
+  void UpdateMaxConcurrentStreams(uint32_t x) {
+    max_concurrent_streams_ = std::min(x, initial_max_concurrent_streams_);
+  }
   void SetInitialWindowSize(uint32_t x) {
     initial_window_size_ = std::min(x, max_initial_window_size());
   }
@@ -161,6 +167,7 @@ class Http2Settings {
   // to 0 for client.
   // SERVER : This setting can change for the server. This is usually changed to
   // handle memory pressure.
+  uint32_t initial_max_concurrent_streams_ = 4294967295u;
   uint32_t max_concurrent_streams_ = 4294967295u;
 
   // RFC9113 states the default for SETTINGS_INITIAL_WINDOW_SIZE

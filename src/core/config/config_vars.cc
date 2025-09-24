@@ -70,6 +70,9 @@ ABSL_FLAG(absl::optional<std::string>, grpc_system_ssl_roots_dir, {},
           "Custom directory to SSL Roots");
 ABSL_FLAG(absl::optional<std::string>, grpc_default_ssl_roots_file_path, {},
           "Path to the default SSL roots file.");
+ABSL_FLAG(absl::optional<bool>, grpc_use_system_roots_over_language_callback,
+          {},
+          "Prefer loading system root certificates over language callback.");
 ABSL_FLAG(absl::optional<bool>, grpc_not_use_system_ssl_roots, {},
           "Disable loading system root certificates.");
 ABSL_FLAG(absl::optional<std::string>, grpc_ssl_cipher_suites, {},
@@ -83,6 +86,16 @@ ABSL_FLAG(
     "EXPERIMENTAL: If non-zero, extend the lifetime of channelz nodes past the "
     "underlying object lifetime, up to this many nodes. The value may be "
     "adjusted slightly to account for implementation limits.");
+
+ABSL_FLAG(absl::optional<double>, grpc_experimental_target_memory_pressure, {},
+          "EXPERIMENTAL: The target pressure for the memory quota pressure "
+          "controller. This is a value between 0 and 1.");
+
+ABSL_FLAG(
+    absl::optional<double>, grpc_experimental_memory_pressure_threshold, {},
+    "EXPERIMENTAL: The threshold for the memory quota pressure controller. "
+    "This is a value between 0 and 1, and must always be greater than the "
+    "target pressure.");
 
 namespace grpc_core {
 
@@ -101,6 +114,10 @@ ConfigVars::ConfigVars(const Overrides& overrides)
       abort_on_leaks_(LoadConfig(FLAGS_grpc_abort_on_leaks,
                                  "GRPC_ABORT_ON_LEAKS",
                                  overrides.abort_on_leaks, false)),
+      use_system_roots_over_language_callback_(
+          LoadConfig(FLAGS_grpc_use_system_roots_over_language_callback,
+                     "GRPC_USE_SYSTEM_ROOTS_OVER_LANGUAGE_CALLBACK",
+                     overrides.use_system_roots_over_language_callback, false)),
       not_use_system_ssl_roots_(LoadConfig(
           FLAGS_grpc_not_use_system_ssl_roots, "GRPC_NOT_USE_SYSTEM_SSL_ROOTS",
           overrides.not_use_system_ssl_roots, false)),
@@ -126,7 +143,15 @@ ConfigVars::ConfigVars(const Overrides& overrides)
       trace_(LoadConfig(FLAGS_grpc_trace, "GRPC_TRACE", overrides.trace, "")),
       override_system_ssl_roots_dir_(overrides.system_ssl_roots_dir),
       override_default_ssl_roots_file_path_(
-          overrides.default_ssl_roots_file_path) {}
+          overrides.default_ssl_roots_file_path),
+      experimental_target_memory_pressure_(
+          LoadConfig(FLAGS_grpc_experimental_target_memory_pressure,
+                     "GRPC_EXPERIMENTAL_TARGET_MEMORY_PRESSURE",
+                     overrides.experimental_target_memory_pressure, 0.95)),
+      experimental_memory_pressure_threshold_(
+          LoadConfig(FLAGS_grpc_experimental_memory_pressure_threshold,
+                     "GRPC_EXPERIMENTAL_MEMORY_PRESSURE_THRESHOLD",
+                     overrides.experimental_memory_pressure_threshold, 0.99)) {}
 
 std::string ConfigVars::SystemSslRootsDir() const {
   return LoadConfig(FLAGS_grpc_system_ssl_roots_dir,
@@ -158,7 +183,11 @@ std::string ConfigVars::ToString() const {
       ", ssl_cipher_suites: ", "\"", absl::CEscape(SslCipherSuites()), "\"",
       ", cpp_experimental_disable_reflection: ",
       CppExperimentalDisableReflection() ? "true" : "false",
-      ", channelz_max_orphaned_nodes: ", ChannelzMaxOrphanedNodes());
+      ", channelz_max_orphaned_nodes: ", ChannelzMaxOrphanedNodes(),
+      ", experimental_target_memory_pressure: ",
+      ExperimentalTargetMemoryPressure(),
+      ", experimental_memory_pressure_threshold: ",
+      ExperimentalMemoryPressureThreshold());
 }
 
 }  // namespace grpc_core

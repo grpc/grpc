@@ -35,7 +35,6 @@
 #include <memory>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/numbers.h"
@@ -53,6 +52,7 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/http_client/httpcli_ssl_credentials.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
@@ -293,6 +293,9 @@ class grpc_compute_engine_token_fetcher_credentials
     : public grpc_core::Oauth2TokenFetcherCredentials {
  public:
   grpc_compute_engine_token_fetcher_credentials() = default;
+  explicit grpc_compute_engine_token_fetcher_credentials(
+      std::vector<grpc_core::URI::QueryParam> query_params)
+      : query_params_(std::move(query_params)) {}
   ~grpc_compute_engine_token_fetcher_credentials() override = default;
 
   std::string debug_string() override {
@@ -317,8 +320,8 @@ class grpc_compute_engine_token_fetcher_credentials
     auto uri = grpc_core::URI::Create("http", /*user_info=*/"",
                                       GRPC_COMPUTE_ENGINE_METADATA_HOST,
                                       GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH,
-                                      {} /* query params */, "" /* fragment */);
-    CHECK(uri.ok());  // params are hardcoded
+                                      query_params_, "" /* fragment */);
+    GRPC_CHECK(uri.ok());  // params are hardcoded
     auto http_request = grpc_core::HttpRequest::Get(
         std::move(*uri), /*args=*/nullptr, pollent, &request, deadline,
         on_complete, response,
@@ -327,17 +330,22 @@ class grpc_compute_engine_token_fetcher_credentials
     http_request->Start();
     return http_request;
   }
-};
 
+  std::vector<grpc_core::URI::QueryParam> query_params_;
+};
 }  // namespace
 
 grpc_call_credentials* grpc_google_compute_engine_credentials_create(
-    void* reserved) {
+    grpc_google_compute_engine_credentials_options* options) {
   GRPC_TRACE_LOG(api, INFO)
-      << "grpc_compute_engine_credentials_create(reserved=" << reserved << ")";
-  CHECK_EQ(reserved, nullptr);
+      << "grpc_compute_engine_credentials_create(options=" << options << ")";
+  std::vector<grpc_core::URI::QueryParam> query_params;
+  if (options != nullptr && options->alts_hard_bound) {
+    query_params.push_back({"transport", "alts"});
+  }
   return grpc_core::MakeRefCounted<
-             grpc_compute_engine_token_fetcher_credentials>()
+             grpc_compute_engine_token_fetcher_credentials>(
+             std::move(query_params))
       .release();
 }
 
@@ -377,7 +385,7 @@ grpc_google_refresh_token_credentials::StartHttpRequest(
                                     GRPC_GOOGLE_OAUTH2_SERVICE_HOST,
                                     GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH,
                                     {} /* query params */, "" /* fragment */);
-  CHECK(uri.ok());  // params are hardcoded
+  GRPC_CHECK(uri.ok());  // params are hardcoded
   auto http_request = grpc_core::HttpRequest::Post(
       std::move(*uri), /*args=*/nullptr, pollent, &request, deadline,
       on_complete, response, grpc_core::CreateHttpRequestSSLCredentials());
@@ -426,7 +434,7 @@ grpc_call_credentials* grpc_google_refresh_token_credentials_create(
       << "grpc_refresh_token_credentials_create(json_refresh_token="
       << create_loggable_refresh_token(&token) << ", reserved=" << reserved
       << ")";
-  CHECK_EQ(reserved, nullptr);
+  GRPC_CHECK_EQ(reserved, nullptr);
   return grpc_refresh_token_credentials_create_from_auth_refresh_token(token)
       .release();
 }
@@ -604,7 +612,7 @@ absl::StatusOr<URI> ValidateStsCredentialsOptions(
 
 grpc_call_credentials* grpc_sts_credentials_create(
     const grpc_sts_credentials_options* options, void* reserved) {
-  CHECK_EQ(reserved, nullptr);
+  GRPC_CHECK_EQ(reserved, nullptr);
   absl::StatusOr<grpc_core::URI> sts_url =
       grpc_core::ValidateStsCredentialsOptions(options);
   if (!sts_url.ok()) {
@@ -650,7 +658,7 @@ grpc_call_credentials* grpc_access_token_credentials_create(
   GRPC_TRACE_LOG(api, INFO) << "grpc_access_token_credentials_create(access_"
                                "token=<redacted>, reserved="
                             << reserved << ")";
-  CHECK_EQ(reserved, nullptr);
+  GRPC_CHECK_EQ(reserved, nullptr);
   return grpc_core::MakeRefCounted<grpc_access_token_credentials>(access_token)
       .release();
 }

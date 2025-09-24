@@ -93,6 +93,7 @@ std::optional<std::string> GetPropertyAsString(
     const grpc::channelz::v2::Entity& entity, absl::string_view path) {
   if (path.empty()) return std::nullopt;
   if (path == "id") return absl::StrCat(entity.id());
+  if (path == "kind") return entity.kind();
 
   std::vector<absl::string_view> parts = absl::StrSplit(path, '.');
   absl::string_view first_part = parts[0];

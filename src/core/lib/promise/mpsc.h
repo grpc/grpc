@@ -23,12 +23,12 @@
 #include <cstdint>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "src/core/channelz/property_list.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/status_flag.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 
@@ -181,7 +181,7 @@ class Mpsc {
 
  public:
   auto Send(Node* node) {
-    DCHECK(node->waker_.is_unwakeable());
+    GRPC_DCHECK(node->waker_.is_unwakeable());
     // Enqueue the node immediately; this means that Send() must be called
     // from the same activity that will poll the result.
     Enqueue(node);

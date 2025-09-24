@@ -121,7 +121,7 @@ YODEL_TEST(SimpleQueueFuzzTest, EnqueueAndDequeueMultiPartyTest) {
              &queue]() -> LoopCtl<absl::Status> {
               if (++current_dequeue_count == dequeue_count) {
                 on_dequeue_done.Call(absl::OkStatus());
-                EXPECT_TRUE(queue.TestOnlyIsEmpty());
+                EXPECT_TRUE(queue.IsEmpty());
                 return absl::OkStatus();
               } else {
                 return Continue();
@@ -221,7 +221,7 @@ class StreamDataQueueFuzzTest : public YodelTest {
       Crash("UnknownFrame not expected");
     }
     ClientMetadataHandle GetMetadata() {
-      DCHECK(header_assembler_.IsReady());
+      GRPC_DCHECK(header_assembler_.IsReady());
       ValueOrHttp2Status<ClientMetadataHandle> status_or_metadata =
           header_assembler_.ReadMetadata(
               parser_, /*is_initial_metadata=*/true,
@@ -352,7 +352,8 @@ YODEL_TEST(StreamDataQueueFuzzTest, EnqueueDequeueMultiParty) {
             [this, &stream_data_queue, &assembler, &dequeued_messages] {
               typename StreamDataQueue<ClientMetadataHandle>::DequeueResult
                   frames = stream_data_queue.DequeueFrames(
-                      max_tokens, max_frame_length, GetEncoder());
+                      max_tokens, max_frame_length, GetEncoder(),
+                      /*can_send_reset_stream=*/true);
 
               for (auto& frame : frames.frames) {
                 std::visit(assembler, std::move(frame));

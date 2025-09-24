@@ -230,8 +230,7 @@ class Call:
         if not self._cython_call.done():
             self._cython_call.cancel(details)
             return True
-        else:
-            return False
+        return False
 
     def cancel(self) -> bool:
         return self._cancel(_LOCAL_CANCELLATION_DETAILS)
@@ -302,8 +301,7 @@ class _UnaryResponseMixin(Call, Generic[ResponseType]):
         if super().cancel():
             self._call_response.cancel()
             return True
-        else:
-            return False
+        return False
 
     def __await__(self) -> Generator[Any, None, ResponseType]:
         """Wait till the ongoing RPC request finishes."""
@@ -355,8 +353,7 @@ class _StreamResponseMixin(Call):
         if super().cancel():
             self._preparation.cancel()
             return True
-        else:
-            return False
+        return False
 
     async def _fetch_stream_responses(self) -> ResponseType:
         message = await self._read()
@@ -387,10 +384,7 @@ class _StreamResponseMixin(Call):
 
         if raw_response is cygrpc.EOF:
             return cygrpc.EOF
-        else:
-            return _common.deserialize(
-                raw_response, self._response_deserializer
-            )
+        return _common.deserialize(raw_response, self._response_deserializer)
 
     async def read(self) -> Union[EOFType, ResponseType]:
         if self.done():
@@ -437,8 +431,7 @@ class _StreamRequestMixin(Call):
             if self._async_request_poller is not None:
                 self._async_request_poller.cancel()
             return True
-        else:
-            return False
+        return False
 
     def _metadata_sent_observer(self):
         self._metadata_sent.set()
@@ -597,8 +590,7 @@ class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall):
             return _common.deserialize(
                 serialized_response, self._response_deserializer
             )
-        else:
-            return cygrpc.EOF
+        return cygrpc.EOF
 
     async def wait_for_connection(self) -> None:
         await self._invocation_task
@@ -711,8 +703,7 @@ class StreamUnaryCall(
             return _common.deserialize(
                 serialized_response, self._response_deserializer
             )
-        else:
-            return cygrpc.EOF
+        return cygrpc.EOF
 
 
 class StreamStreamCall(

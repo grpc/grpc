@@ -490,10 +490,9 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             self._server_option_activated = True
 
     def _get_identifier(self) -> str:
-        plugin_identifiers = []
-        for _plugin in self._plugins:
-            plugin_identifiers.append(_plugin.identifier)
-        return PLUGIN_IDENTIFIER_SEP.join(plugin_identifiers)
+        return PLUGIN_IDENTIFIER_SEP.join(
+            _plugin.identifier for _plugin in self._plugins
+        )
 
     def get_enabled_optional_labels(self) -> List[OptionalLabelType]:
         return []
@@ -502,7 +501,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
 def _start_open_telemetry_observability(
     otel_o11y: OpenTelemetryObservability,
 ) -> None:
-    global _OPEN_TELEMETRY_OBSERVABILITY  # pylint: disable=global-statement
+    global _OPEN_TELEMETRY_OBSERVABILITY  # pylint: disable=global-statement # noqa: PLW0603
     with _observability_lock:
         if _OPEN_TELEMETRY_OBSERVABILITY is None:
             _OPEN_TELEMETRY_OBSERVABILITY = otel_o11y
@@ -513,7 +512,7 @@ def _start_open_telemetry_observability(
 
 
 def _end_open_telemetry_observability() -> None:
-    global _OPEN_TELEMETRY_OBSERVABILITY  # pylint: disable=global-statement
+    global _OPEN_TELEMETRY_OBSERVABILITY  # pylint: disable=global-statement # noqa: PLW0603
     with _observability_lock:
         if not _OPEN_TELEMETRY_OBSERVABILITY:
             error_msg = "Trying to end gPRC Python observability without initialize first!"

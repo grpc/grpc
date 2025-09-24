@@ -1328,7 +1328,9 @@ LIBGRPC_SRC = \
     src/core/lib/resource_quota/memory_quota.cc \
     src/core/lib/resource_quota/periodic_update.cc \
     src/core/lib/resource_quota/resource_quota.cc \
+    src/core/lib/resource_quota/stream_quota.cc \
     src/core/lib/resource_quota/thread_quota.cc \
+    src/core/lib/resource_tracker/resource_tracker.cc \
     src/core/lib/security/authorization/audit_logging.cc \
     src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \
     src/core/lib/security/authorization/evaluate_args.cc \
@@ -1484,6 +1486,7 @@ LIBGRPC_SRC = \
     src/core/util/gethostname_sysconf.cc \
     src/core/util/glob.cc \
     src/core/util/gpr_time.cc \
+    src/core/util/grpc_check.cc \
     src/core/util/grpc_if_nametoindex_posix.cc \
     src/core/util/grpc_if_nametoindex_unsupported.cc \
     src/core/util/host_port.cc \
@@ -1514,6 +1517,7 @@ LIBGRPC_SRC = \
     src/core/util/posix/thd.cc \
     src/core/util/posix/time.cc \
     src/core/util/posix/tmpfile.cc \
+    src/core/util/postmortem_emit.cc \
     src/core/util/random_early_detection.cc \
     src/core/util/ref_counted_string.cc \
     src/core/util/shared_bit_gen.cc \

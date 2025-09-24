@@ -58,7 +58,8 @@ DATA_ENDPOINTS_TEST(CanWrite) {
   util::testing::MockPromiseEndpoint ep(1234);
   chaotic_good_legacy::DataEndpoints data_endpoints(
       Endpoints(std::move(ep.promise_endpoint)), event_engine().get(), nullptr,
-      false, std::make_shared<chaotic_good_legacy::LegacyZTraceCollector>());
+      false, std::make_shared<chaotic_good_legacy::LegacyZTraceCollector>(),
+      MakeRefCounted<channelz::SocketNode>("a", "b", "c", nullptr));
   ep.ExpectWrite(
       {grpc_event_engine::experimental::Slice::FromCopiedString("hello")},
       event_engine().get());
@@ -76,7 +77,8 @@ DATA_ENDPOINTS_TEST(CanMultiWrite) {
       Endpoints(std::move(ep1.promise_endpoint),
                 std::move(ep2.promise_endpoint)),
       event_engine().get(), nullptr, false,
-      std::make_shared<chaotic_good_legacy::LegacyZTraceCollector>());
+      std::make_shared<chaotic_good_legacy::LegacyZTraceCollector>(),
+      MakeRefCounted<channelz::SocketNode>("a", "b", "c", nullptr));
   SliceBuffer writes1;
   SliceBuffer writes2;
   ep1.CaptureWrites(writes1, event_engine().get());
@@ -105,7 +107,8 @@ DATA_ENDPOINTS_TEST(CanRead) {
   util::testing::MockPromiseEndpoint ep(1234);
   chaotic_good_legacy::DataEndpoints data_endpoints(
       Endpoints(std::move(ep.promise_endpoint)), event_engine().get(), nullptr,
-      false, std::make_shared<chaotic_good_legacy::LegacyZTraceCollector>());
+      false, std::make_shared<chaotic_good_legacy::LegacyZTraceCollector>(),
+      MakeRefCounted<channelz::SocketNode>("a", "b", "c", nullptr));
   ep.ExpectRead(
       {grpc_event_engine::experimental::Slice::FromCopiedString("hello")},
       event_engine().get());

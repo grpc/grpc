@@ -24,7 +24,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "src/core/channelz/property_list.h"
 #include "src/core/config/core_configuration.h"
@@ -32,6 +31,7 @@
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/util/alloc.h"
+#include "src/core/util/grpc_check.h"
 
 using grpc_event_engine::experimental::EventEngine;
 
@@ -66,7 +66,7 @@ size_t grpc_channel_stack_size(const grpc_channel_filter** filters,
                                                sizeof(grpc_channel_element));
   size_t i;
 
-  CHECK((GPR_MAX_ALIGNMENT & (GPR_MAX_ALIGNMENT - 1)) == 0)
+  GRPC_CHECK((GPR_MAX_ALIGNMENT & (GPR_MAX_ALIGNMENT - 1)) == 0)
       << "GPR_MAX_ALIGNMENT must be a power of two";
 
   // add the size for each filter
@@ -166,9 +166,9 @@ grpc_error_handle grpc_channel_stack_init(
     call_size += GPR_ROUND_UP_TO_ALIGNMENT_SIZE(filters[i]->sizeof_call_data);
   }
 
-  CHECK(user_data > (char*)stack);
-  CHECK((uintptr_t)(user_data - (char*)stack) ==
-        grpc_channel_stack_size(filters, filter_count));
+  GRPC_CHECK(user_data > (char*)stack);
+  GRPC_CHECK((uintptr_t)(user_data - (char*)stack) ==
+             grpc_channel_stack_size(filters, filter_count));
 
   stack->call_stack_size = call_size;
   stack->channelz_data_source.Init(

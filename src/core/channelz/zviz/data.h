@@ -20,6 +20,7 @@
 #include "src/core/channelz/zviz/environment.h"
 #include "src/core/channelz/zviz/layout.h"
 #include "src/proto/grpc/channelz/v2/channelz.pb.h"
+#include "src/proto/grpc/channelz/v2/promise.pb.h"
 
 namespace grpc_zviz {
 
@@ -28,6 +29,8 @@ void Format(Environment& env, const grpc::channelz::v2::Data& data,
 
 void Format(Environment& env, const google::protobuf::Any& value,
             layout::Element& element);
+
+std::string Format(const grpc::channelz::v2::Promise& promise);
 
 }  // namespace grpc_zviz
 
