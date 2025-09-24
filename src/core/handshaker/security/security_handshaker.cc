@@ -324,6 +324,9 @@ grpc_error_handle SecurityHandshaker::CheckPeerLocked() {
       });
   connector_->check_peer(peer, args_->endpoint.get(), args_->args,
                          &auth_context_, on_peer_checked_);
+  if (auth_context_ != nullptr) {
+    auth_context_->set_protocol(connector_->type().name());
+  }
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
       auth_context_.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
