@@ -50,5 +50,4 @@ class State(_common.ChannelHandler):
                 method_rpc_states = self._rpc_states[method_full_rpc_name]
                 if method_rpc_states:
                     return method_rpc_states.pop(0)
-                else:
-                    self._condition.wait()
+                self._condition.wait()
