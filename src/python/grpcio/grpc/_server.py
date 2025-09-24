@@ -711,7 +711,6 @@ def _send_response(
     with state.condition:
         if not _is_rpc_state_active(state):
             return False
-<<<<<<< HEAD
         if state.initial_metadata_allowed:
             operations = (
                 _get_initial_metadata_operation(state, None),
@@ -739,36 +738,6 @@ def _send_response(
             state.condition.wait()
             if token not in state.due:
                 return _is_rpc_state_active(state)
-=======
-        else:
-            if state.initial_metadata_allowed:
-                operations = (
-                    _get_initial_metadata_operation(state, None),
-                    cygrpc.SendMessageOperation(
-                        serialized_response,
-                        _get_send_message_op_flags_from_state(state),
-                    ),
-                )
-                state.initial_metadata_allowed = False
-                token = _SEND_INITIAL_METADATA_AND_SEND_MESSAGE_TOKEN
-            else:
-                operations = (
-                    cygrpc.SendMessageOperation(
-                        serialized_response,
-                        _get_send_message_op_flags_from_state(state),
-                    ),
-                )
-                token = _SEND_MESSAGE_TOKEN
-            rpc_event.call.start_server_batch(
-                operations, _send_message(state, token)
-            )
-            state.due.add(token)
-            _reset_per_message_state(state)
-            while True:
-                state.condition.wait()
-                if token not in state.due:
-                    return _is_rpc_state_active(state)
->>>>>>> 71aeee69ef (removed suppression for TRY002)
 
 
 def _status(
