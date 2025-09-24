@@ -136,10 +136,9 @@ class _Callback(stream.Consumer):
                     raise abandonment.Abandoned()
                 if self._values:
                     return self._values.pop(0)
-                elif self._terminated:
+                if self._terminated:
                     return None
-                else:
-                    self._condition.wait()
+                self._condition.wait()
 
     def draw_all_values(self):
         with self._condition:
@@ -150,8 +149,7 @@ class _Callback(stream.Consumer):
                     all_values = tuple(self._values)
                     self._values = None
                     return all_values
-                else:
-                    self._condition.wait()
+                self._condition.wait()
 
 
 def _run_request_pipe_thread(

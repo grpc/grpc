@@ -619,8 +619,7 @@ class _SingleThreadedRendezvous(
                 return self._state.response
             if self._state.cancelled:
                 raise grpc.FutureCancelledError()
-            else:
-                raise self
+            raise self
 
     def exception(self, timeout: Optional[float] = None) -> Optional[Exception]:
         """Return the exception raised by the computation.
@@ -643,8 +642,7 @@ class _SingleThreadedRendezvous(
                 return None
             if self._state.cancelled:
                 raise grpc.FutureCancelledError()
-            else:
-                return self
+            return self
 
     def traceback(
         self, timeout: Optional[float] = None
@@ -669,11 +667,10 @@ class _SingleThreadedRendezvous(
                 return None
             if self._state.cancelled:
                 raise grpc.FutureCancelledError()
-            else:
-                try:
-                    raise self
-                except grpc.RpcError:
-                    return sys.exc_info()[2]
+            try:
+                raise self
+            except grpc.RpcError:
+                return sys.exc_info()[2]
 
     def add_done_callback(self, fn: Callable[[grpc.Future], None]) -> None:
         with self._state.condition:
@@ -872,10 +869,9 @@ class _MultiThreadedRendezvous(
                 raise grpc.FutureTimeoutError()
             if self._state.code is grpc.StatusCode.OK:
                 return self._state.response
-            elif self._state.cancelled:
+            if self._state.cancelled:
                 raise grpc.FutureCancelledError()
-            else:
-                raise self
+            raise self
 
     def exception(self, timeout: Optional[float] = None) -> Optional[Exception]:
         """Return the exception raised by the computation.
@@ -890,10 +886,9 @@ class _MultiThreadedRendezvous(
                 raise grpc.FutureTimeoutError()
             if self._state.code is grpc.StatusCode.OK:
                 return None
-            elif self._state.cancelled:
+            if self._state.cancelled:
                 raise grpc.FutureCancelledError()
-            else:
-                return self
+            return self
 
     def traceback(
         self, timeout: Optional[float] = None
@@ -910,13 +905,12 @@ class _MultiThreadedRendezvous(
                 raise grpc.FutureTimeoutError()
             if self._state.code is grpc.StatusCode.OK:
                 return None
-            elif self._state.cancelled:
+            if self._state.cancelled:
                 raise grpc.FutureCancelledError()
-            else:
-                try:
-                    raise self
-                except grpc.RpcError:
-                    return sys.exc_info()[2]
+            try:
+                raise self
+            except grpc.RpcError:
+                return sys.exc_info()[2]
 
     def add_done_callback(self, fn: Callable[[grpc.Future], None]) -> None:
         with self._state.condition:
