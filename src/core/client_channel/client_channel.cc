@@ -630,7 +630,7 @@ ClientChannel::ClientChannel(
       client_channel_factory_(client_channel_factory),
       channelz_node_(channel_args_.GetObject<channelz::ChannelNode>()),
       idle_timeout_(GetClientIdleTimeout(channel_args_)),
-      resolver_data_for_calls_(ResolverDataForCalls{}),
+      resolver_data_for_calls_(nullptr),
       picker_(nullptr),
       call_destination_(
           call_destination_factory->CreateCallDestination(picker_)),
@@ -859,6 +859,71 @@ grpc_call* ClientChannel::CreateCall(
                         compression_options(), std::move(arena), Ref());
 }
 
+namespace {
+
+class FilterChainImpl : public FilterChain {
+ public:
+  explicit FilterChainImpl(RefCountedPtr<UnstartedCallDestination> destination)
+      : destination_(std::move(destination)) {}
+
+  UnstartedCallDestination* destination() const { return destination_.get(); }
+
+ private:
+  RefCountedPtr<UnstartedCallDestination> destination_;
+};
+
+class FilterChainBuilderImpl : public FilterChainBuilder {
+ public:
+  FilterChainBuilderImpl(
+      bool enable_retries, const ChannelArgs& channel_args,
+      Blackboard* blackboard,
+      std::function<void(ServerMetadata&)> on_server_trailing_metadata,
+      RefCountedPtr<UnstartedCallDestination> destination)
+      : enable_retries_(enable_retries),
+        channel_args_(channel_args),
+        blackboard_(blackboard),
+        on_server_trailing_metadata_(std::move(on_server_trailing_metadata)),
+        destination_(std::move(destination)) {}
+
+  absl::StatusOr<RefCountedPtr<FilterChain>> Build() override {
+    if (enable_retries_) builder_->Add<RetryInterceptor>();
+    auto top_of_stack_destination = builder_->Build(destination_);
+    if (!top_of_stack_destination.ok()) {
+      return MaybeRewriteIllegalStatusCode(top_of_stack_destination.status(),
+                                           "channel construction");
+    }
+    builder_.reset();
+    return MakeRefCounted<FilterChainImpl>(
+        std::move(*top_of_stack_destination));
+  }
+
+ private:
+  void AddFilter(const FilterHandle& filter_handle,
+                 std::shared_ptr<FilterConfig> config) override {
+    if (builder_ == nullptr) InitBuilder();
+    filter_handle.AddToBuilder(builder_.get(), std::move(config));
+  }
+
+  void InitBuilder() {
+    builder_ =
+        std::make_unique<InterceptionChainBuilder>(channel_args_, blackboard_);
+    CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
+        GRPC_CLIENT_CHANNEL, *builder_);
+    if (on_server_trailing_metadata_ != nullptr) {
+      builder_->AddOnServerTrailingMetadata(on_server_trailing_metadata_);
+    }
+  }
+
+  const bool enable_retries_;
+  const ChannelArgs channel_args_;
+  const Blackboard* blackboard_;
+  const std::function<void(ServerMetadata&)> on_server_trailing_metadata_;
+  const RefCountedPtr<UnstartedCallDestination> destination_;
+  std::unique_ptr<InterceptionChainBuilder> builder_;
+};
+
+}  // namespace
+
 void ClientChannel::StartCall(UnstartedCallHandler unstarted_handler) {
   // Increment call count.
   if (idle_timeout_ != Duration::Zero()) idle_state_.IncreaseCallCount();
@@ -877,31 +942,32 @@ void ClientChannel::StartCall(UnstartedCallHandler unstarted_handler) {
             // Wait for the resolver result.
             CheckDelayed(self->resolver_data_for_calls_.NextWhen(
                 [wait_for_ready](
-                    const absl::StatusOr<ResolverDataForCalls> result) {
+                    const absl::StatusOr<RefCountedPtr<ConfigSelector>>
+                        config_selector) {
                   bool got_result = false;
                   // If the resolver reports an error but the call is
                   // wait_for_ready, keep waiting for the next result
                   // instead of failing the call.
-                  if (!result.ok()) {
+                  if (!config_selector.ok()) {
                     got_result = !wait_for_ready;
                   } else {
                     // Not an error.  Make sure we actually have a result.
-                    got_result = result->config_selector != nullptr;
+                    got_result = *config_selector != nullptr;
                   }
                   return got_result;
                 })),
             // Handle resolver result.
             [self, unstarted_handler](
-                std::tuple<absl::StatusOr<ResolverDataForCalls>, bool>
+                std::tuple<absl::StatusOr<RefCountedPtr<ConfigSelector>>, bool>
                     result_and_delayed) mutable {
-              auto& resolver_data = std::get<0>(result_and_delayed);
-              const bool was_queued = std::get<1>(result_and_delayed);
-              if (!resolver_data.ok()) return resolver_data.status();
+              auto& [config_selector, was_queued] = result_and_delayed;
+              if (!config_selector.ok()) return config_selector.status();
               // Apply service config to call.
-              absl::Status status = self->ApplyServiceConfigToCall(
-                  *resolver_data->config_selector,
-                  unstarted_handler.UnprocessedClientInitialMetadata());
-              if (!status.ok()) return status;
+              absl::StatusOr<RefCountedPtr<FilterChain>> filter_chain =
+                  self->ApplyServiceConfigToCall(
+                      **config_selector,
+                      unstarted_handler.UnprocessedClientInitialMetadata());
+              if (!filter_chain.ok()) return filter_chain.status();
               // If the call was queued, add trace annotation.
               if (was_queued) {
                 auto* call_tracer = MaybeGetContext<CallSpan>();
@@ -912,8 +978,10 @@ void ClientChannel::StartCall(UnstartedCallHandler unstarted_handler) {
               }
               // Start the call on the destination provided by the
               // resolver.
-              resolver_data->call_destination->StartCall(
-                  std::move(unstarted_handler));
+              auto destination =
+                  DownCast<FilterChainImpl*>(filter_chain->get())
+                  ->destination();
+              destination->StartCall(std::move(unstarted_handler));
               return absl::OkStatus();
             });
       });
@@ -945,7 +1013,7 @@ void ClientChannel::DestroyResolverAndLbPolicyLocked() {
     resolver_.reset();
     saved_service_config_.reset();
     saved_config_selector_.reset();
-    resolver_data_for_calls_.Set(ResolverDataForCalls{nullptr, nullptr});
+    resolver_data_for_calls_.Set(nullptr);
     // Clear LB policy if set.
     if (lb_policy_ != nullptr) {
       GRPC_TRACE_LOG(client_channel, INFO)
@@ -1256,15 +1324,6 @@ void ClientChannel::UpdateServiceConfigInControlPlaneLocked(
   }
 }
 
-namespace {
-
-class FilterChainBuilderImpl : public FilterChainBuilder {
- public:
- private:
-};
-
-}  // namespace
-
 void ClientChannel::UpdateServiceConfigInDataPlaneLocked(
     const ChannelArgs& args) {
   GRPC_TRACE_LOG(client_channel, INFO)
@@ -1280,38 +1339,26 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked(
   ChannelArgs new_args = args.SetObject(this).SetObject(saved_service_config_);
   // Construct filter stack.
   auto new_blackboard = MakeRefCounted<Blackboard>();
-
-// FIXME
-  InterceptionChainBuilder builder(new_args, new_blackboard.get());
-  if (idle_timeout_ != Duration::Zero()) {
-    builder.AddOnServerTrailingMetadata([this](ServerMetadata&) {
-      if (idle_state_.DecreaseCallCount()) StartIdleTimer();
-    });
-  }
-  CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
-      GRPC_CLIENT_CHANNEL, builder);
-  // Add filters returned by the config selector (e.g., xDS HTTP filters).
-  config_selector->AddFilters(builder, blackboard_.get(), new_blackboard.get());
   const bool enable_retries =
       !channel_args_.WantMinimalStack() &&
       channel_args_.GetBool(GRPC_ARG_ENABLE_RETRIES).value_or(true);
   if (enable_retries) {
     RetryInterceptor::UpdateBlackboard(*saved_service_config_,
                                        blackboard_.get(), new_blackboard.get());
-    builder.Add<RetryInterceptor>();
   }
+  std::function<void(ServerMetadata&)> on_server_trailing_metadata;
+  if (idle_timeout_ != Duration::Zero()) {
+    on_server_trailing_metadata = [this](ServerMetadata&) {
+      if (idle_state_.DecreaseCallCount()) StartIdleTimer();
+    };
+  }
+  FilterChainBuilderImpl filter_chain_builder(
+      enable_retries, new_args, new_blackboard.get(),
+      std::move(on_server_trailing_metadata), call_destination_);
+  config_selector->BuildFilterChains(filter_chain_builder, blackboard_.get(),
+                                     new_blackboard.get());
   blackboard_ = std::move(new_blackboard);
-  // Create call destination.
-  auto top_of_stack_call_destination = builder.Build(call_destination_);
-
-  // Send result to data plane.
-  if (!top_of_stack_call_destination.ok()) {
-    resolver_data_for_calls_.Set(MaybeRewriteIllegalStatusCode(
-        top_of_stack_call_destination.status(), "channel construction"));
-  } else {
-    resolver_data_for_calls_.Set(ResolverDataForCalls{
-        std::move(config_selector), std::move(*top_of_stack_call_destination)});
-  }
+  resolver_data_for_calls_.Set(std::move(config_selector));
 }
 
 void ClientChannel::UpdateStateLocked(grpc_connectivity_state state,
@@ -1382,7 +1429,8 @@ void ClientChannel::StartIdleTimer() {
       std::move(arena)));
 }
 
-absl::Status ClientChannel::ApplyServiceConfigToCall(
+absl::StatusOr<RefCountedPtr<FilterChain>>
+ClientChannel::ApplyServiceConfigToCall(
     ConfigSelector& config_selector,
     ClientMetadata& client_initial_metadata) const {
   GRPC_TRACE_LOG(client_channel_call, INFO)
@@ -1404,7 +1452,6 @@ absl::Status ClientChannel::ApplyServiceConfigToCall(
     return MaybeRewriteIllegalStatusCode(filter_chain.status(),
                                          "ConfigSelector");
   }
-// FIXME: do something with filter_chain
   // Apply our own method params to the call.
   auto* method_params = DownCast<ClientChannelMethodParsedConfig*>(
       service_config_call_data->GetMethodParsedConfig(
@@ -1428,7 +1475,7 @@ absl::Status ClientChannel::ApplyServiceConfigToCall(
       wait_for_ready->value = method_params->wait_for_ready().value();
     }
   }
-  return absl::OkStatus();
+  return filter_chain;
 }
 
 }  // namespace grpc_core

@@ -1440,18 +1440,23 @@ namespace {
 // Filter chain builder impl to inject into ConfigSelector.
 class LegacyFilterChainBuilder : public FilterChainBuilder {
  public:
-  LegacyFilterChainBuilder(bool enable_retries, const ChannelArgs& channel_args)
-      : enable_retries_(enable_retries), channel_args_(channel_args) {}
+  LegacyFilterChainBuilder(bool enable_retries, const ChannelArgs& channel_args,
+                           const Blackboard* blackboard)
+      : enable_retries_(enable_retries),
+        channel_args_(channel_args),
+        blackboard_(blackboard) {}
 
-  RefCountedPtr<FilterChain> Build(Blackboard* blackboard) override {
+  absl::StatusOr<RefCountedPtr<FilterChain>> Build() override {
     if (enable_retries_) {
       builder_.AddFilter(&RetryFilter::kFilterVtable, nullptr);
     } else {
       builder_.AddFilter(&DynamicTerminationFilter::kFilterVtable, nullptr);
     }
     RefCountedPtr<DynamicFilters> dynamic_filters = DynamicFilters::Create(
-        channel_args_, builder_.TakeFilters(), blackboard);
-    GRPC_CHECK(dynamic_filters != nullptr);
+        channel_args_, builder_.TakeFilters(), blackboard_);
+    if (dynamic_filters == nullptr) {
+      return absl::InternalError("error constructing dynamic filter stack");
+    }
     return dynamic_filters;
   }
 
@@ -1463,6 +1468,7 @@ class LegacyFilterChainBuilder : public FilterChainBuilder {
 
   const bool enable_retries_;
   const ChannelArgs channel_args_;
+  const Blackboard* blackboard_;
   filter_chain_detail::FilterChainBuilderV1 builder_;
 };
 
@@ -1492,7 +1498,8 @@ void ClientChannelFilter::UpdateServiceConfigInDataPlaneLocked(
     RetryFilter::UpdateBlackboard(*service_config, blackboard_.get(),
                                   new_blackboard.get());
   }
-  LegacyFilterChainBuilder filter_chain_builder(enable_retries, new_args);
+  LegacyFilterChainBuilder filter_chain_builder(enable_retries, new_args,
+                                                new_blackboard.get());
   config_selector->BuildFilterChains(filter_chain_builder, blackboard_.get(),
                                      new_blackboard.get());
   blackboard_ = std::move(new_blackboard);

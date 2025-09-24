@@ -119,8 +119,8 @@ class DefaultConfigSelector final : public ConfigSelector {
 
   void BuildFilterChains(FilterChainBuilder& builder,
                          const Blackboard* /*old_blackboard*/,
-                         Blackboard* new_blackboard) override {
-    filter_chain_ = builder.Build(new_blackboard);
+                         Blackboard* /*new_blackboard*/) override {
+    filter_chain_ = builder.Build();
   }
 
   absl::StatusOr<RefCountedPtr<FilterChain>> GetCallConfig(
@@ -140,7 +140,7 @@ class DefaultConfigSelector final : public ConfigSelector {
 
  private:
   RefCountedPtr<ServiceConfig> service_config_;
-  RefCountedPtr<FilterChain> filter_chain_;
+  absl::StatusOr<RefCountedPtr<FilterChain>> filter_chain_;
 };
 
 }  // namespace grpc_core
