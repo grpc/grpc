@@ -156,10 +156,12 @@ def int_default_value(x, name):
         return x[1:]
     return x
 
+
 def double_default_value(x, name):
     if isinstance(x, str) and x.startswith("$"):
         return x[1:]
     return x
+
 
 def string_default_value(x, name):
     if x is None:
