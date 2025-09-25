@@ -227,4 +227,168 @@ XdsHttpStatefulSessionFilter::GenerateServiceConfig(
   return ServiceConfigJsonEntry{"", ""};
 }
 
+namespace {
+
+StatefulSessionFilter::CookieConfig ParseCookieConfig(
+    const XdsResourceType::DecodeContext& context,
+    const envoy_extensions_filters_http_stateful_session_v3_StatefulSession*
+        stateful_session,
+    ValidationErrors* errors) {
+  ValidationErrors::ScopedField field(errors, ".session_state");
+  const auto* session_state =
+      envoy_extensions_filters_http_stateful_session_v3_StatefulSession_session_state(
+          stateful_session);
+  if (session_state == nullptr) {
+    return {};
+  }
+  ValidationErrors::ScopedField field2(errors, ".typed_config");
+  const auto* typed_config =
+      envoy_config_core_v3_TypedExtensionConfig_typed_config(session_state);
+  auto extension = ExtractXdsExtension(context, typed_config, errors);
+  if (!extension.has_value()) return {};
+  if (extension->type !=
+      "envoy.extensions.http.stateful_session.cookie.v3"
+      ".CookieBasedSessionState") {
+    errors->AddError("unsupported session state type");
+    return {};
+  }
+  absl::string_view* serialized_session_state =
+      std::get_if<absl::string_view>(&extension->value);
+  if (serialized_session_state == nullptr) {
+    errors->AddError("could not parse session state config");
+    return {};
+  }
+  auto* cookie_state =
+      envoy_extensions_http_stateful_session_cookie_v3_CookieBasedSessionState_parse(
+          serialized_session_state->data(), serialized_session_state->size(),
+          context.arena);
+  if (cookie_state == nullptr) {
+    errors->AddError("could not parse session state config");
+    return {};
+  }
+  ValidationErrors::ScopedField field3(errors, ".cookie");
+  const auto* cookie =
+      envoy_extensions_http_stateful_session_cookie_v3_CookieBasedSessionState_cookie(
+          cookie_state);
+  if (cookie == nullptr) {
+    errors->AddError("field not present");
+    return {};
+  }
+  StatefulSessionFilter::CookieConfig config;
+  // name
+  config.name = UpbStringToStdString(envoy_type_http_v3_Cookie_name(cookie));
+  if (config.name.empty()) {
+    ValidationErrors::ScopedField field(errors, ".name");
+    errors->AddError("field not present");
+  }
+  // ttl
+  if (const auto* duration = envoy_type_http_v3_Cookie_ttl(cookie);
+      duration != nullptr) {
+    ValidationErrors::ScopedField field(errors, ".ttl");
+    config.ttl = ParseDuration(duration, errors);
+  }
+  // path
+  config.path = UpbStringToStdString(envoy_type_http_v3_Cookie_path(cookie));
+  return config;
+}
+
+}  // namespace
+
+RefCountedPtr<const grpc_core::FilterConfig>
+XdsHttpStatefulSessionFilter::ParseTopLevelConfig(
+      absl::string_view instance_name,
+      const XdsResourceType::DecodeContext& context, XdsExtension extension,
+      ValidationErrors* errors) const {
+  absl::string_view* serialized_filter_config =
+      std::get_if<absl::string_view>(&extension.value);
+  if (serialized_filter_config == nullptr) {
+    errors->AddError("could not parse stateful session filter config");
+    return nullptr;
+  }
+  auto* stateful_session =
+      envoy_extensions_filters_http_stateful_session_v3_StatefulSession_parse(
+          serialized_filter_config->data(), serialized_filter_config->size(),
+          context.arena);
+  if (stateful_session == nullptr) {
+    errors->AddError("could not parse stateful session filter config");
+    return nullptr;
+  }
+  auto config = MakeRefCounted<StatefulSessionFilter::Config>();
+  config->cookie_config = ParseCookieConfig(context, stateful_session, errors);
+  return config;
+}
+
+RefCountedPtr<const grpc_core::FilterConfig>
+XdsHttpStatefulSessionFilter::ParseOverrideConfig(
+      absl::string_view instance_name,
+      const XdsResourceType::DecodeContext& context, XdsExtension extension,
+      ValidationErrors* errors) const {
+  absl::string_view* serialized_filter_config =
+      std::get_if<absl::string_view>(&extension.value);
+  if (serialized_filter_config == nullptr) {
+    errors->AddError("could not parse stateful session filter override config");
+    return nullptr;
+  }
+  auto* stateful_session_per_route =
+      envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute_parse(
+          serialized_filter_config->data(), serialized_filter_config->size(),
+          context.arena);
+  if (stateful_session_per_route == nullptr) {
+    errors->AddError("could not parse stateful session filter override config");
+    return nullptr;
+  }
+  auto config = MakeRefCounted<StatefulSessionFilter::OverrideConfig>();
+  if (!envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute_disabled(
+          stateful_session_per_route)) {
+    ValidationErrors::ScopedField field(errors, ".stateful_session");
+    const auto* stateful_session =
+        envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute_stateful_session(
+            stateful_session_per_route);
+    if (stateful_session != nullptr) {
+      config->cookie_config =
+          ParseCookieConfig(context, stateful_session, errors);
+    }
+  }
+  return config;
+}
+
+namespace {
+
+RefCountedPtr<const grpc_core::FilterConfig>
+ConvertOverrideConfigToTopLevelConfig(
+    const grpc_core::FilterConfig& override_config) {
+  const auto& oc =
+      DownCast<const StatefulSessionFilter::OverrideConfig&>(override_config);
+  auto config = MakeRefCounted<StatefulSessionFilter::Config>();
+  config->cookie_config = oc.cookie_config;
+  return config;
+}
+
+}  // namespace
+
+RefCountedPtr<const grpc_core::FilterConfig>
+XdsHttpStatefulSessionFilter::MergeConfigs(
+    RefCountedPtr<const grpc_core::FilterConfig> top_level_config,
+    RefCountedPtr<const grpc_core::FilterConfig>
+        virtual_host_override_config,
+    RefCountedPtr<const grpc_core::FilterConfig> route_override_config,
+    RefCountedPtr<const grpc_core::FilterConfig>
+        cluster_weight_override_config) const {
+  // No merging here, we just use the most specific config.  However,
+  // because the override configs are a different protobuf message type,
+  // we need to convert them to the top-level config type, which is what
+  // the filter expects.
+  if (cluster_weight_override_config != nullptr) {
+    return ConvertOverrideConfigToTopLevelConfig(
+        *cluster_weight_override_config);
+  }
+  if (route_override_config != nullptr) {
+    return ConvertOverrideConfigToTopLevelConfig(*route_override_config);
+  }
+  if (virtual_host_override_config != nullptr) {
+    return ConvertOverrideConfigToTopLevelConfig(*virtual_host_override_config);
+  }
+  return top_level_config;
+}
+
 }  // namespace grpc_core

@@ -54,6 +54,21 @@ class XdsHttpRbacFilter final : public XdsHttpFilterImpl {
       const FilterConfig* filter_config_override) const override;
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const FilterConfig& hcm_filter_config) const override;
+  RefCountedPtr<const grpc_core::FilterConfig> ParseTopLevelConfig(
+        absl::string_view instance_name,
+        const XdsResourceType::DecodeContext& context, XdsExtension extension,
+        ValidationErrors* errors) const override;
+  RefCountedPtr<const grpc_core::FilterConfig> ParseOverrideConfig(
+        absl::string_view instance_name,
+        const XdsResourceType::DecodeContext& context, XdsExtension extension,
+        ValidationErrors* errors) const override;
+  RefCountedPtr<const grpc_core::FilterConfig> MergeConfigs(
+      RefCountedPtr<const grpc_core::FilterConfig> top_level_config,
+      RefCountedPtr<const grpc_core::FilterConfig>
+          virtual_host_override_config,
+      RefCountedPtr<const grpc_core::FilterConfig> route_override_config,
+      RefCountedPtr<const grpc_core::FilterConfig>
+          cluster_weight_override_config) const override;
   bool IsSupportedOnClients() const override { return false; }
   bool IsSupportedOnServers() const override { return true; }
 };

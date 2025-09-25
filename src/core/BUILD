@@ -5474,6 +5474,7 @@ grpc_cc_library(
         "channel_args",
         "channel_fwd",
         "context",
+        "filter_args",
         "grpc_service_config",
         "json",
         "json_args",

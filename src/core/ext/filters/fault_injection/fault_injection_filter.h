@@ -25,6 +25,7 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/random/random.h"
 #include "absl/status/statusor.h"
+#include "src/core/filter/filter_args.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
@@ -41,6 +42,33 @@ namespace grpc_core {
 class FaultInjectionFilter
     : public ImplementChannelFilter<FaultInjectionFilter> {
  public:
+  struct Config : public FilterConfig {
+    static UniqueTypeName Type() {
+      return GRPC_UNIQUE_TYPE_NAME_HERE(
+          "envoy.extensions.filters.http.fault.v3.HTTPFault");
+    }
+    UniqueTypeName type() const override { return Type(); }
+
+    bool Equals(const FilterConfig& other) const override;
+    std::string ToString() const override;
+
+    grpc_status_code abort_code = GRPC_STATUS_OK;
+    std::string abort_message = "Fault injected";
+    std::string abort_code_header;
+    std::string abort_percentage_header;
+    uint32_t abort_percentage_numerator = 0;
+    uint32_t abort_percentage_denominator = 100;
+
+    Duration delay;
+    std::string delay_header;
+    std::string delay_percentage_header;
+    uint32_t delay_percentage_numerator = 0;
+    uint32_t delay_percentage_denominator = 100;
+
+    // By default, the max allowed active faults are unlimited.
+    uint32_t max_faults = std::numeric_limits<uint32_t>::max();
+  };
+
   static const grpc_channel_filter kFilterVtable;
 
   static absl::string_view TypeName() { return "fault_injection_filter"; }
@@ -68,9 +96,12 @@ class FaultInjectionFilter
   InjectionDecision MakeInjectionDecision(
       const ClientMetadata& initial_metadata);
 
+// FIXME: remove
   // The relative index of instances of the same filter.
   size_t index_;
   const size_t service_config_parser_index_;
+
+  const RefCountedPtr<const Config> config_;
   Mutex mu_;
   absl::InsecureBitGen abort_rand_generator_ ABSL_GUARDED_BY(mu_);
   absl::InsecureBitGen delay_rand_generator_ ABSL_GUARDED_BY(mu_);

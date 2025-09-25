@@ -40,13 +40,15 @@ ChannelStackBuilder& ChannelStackBuilder::SetTarget(const char* target) {
   return *this;
 }
 
-void ChannelStackBuilder::PrependFilter(const grpc_channel_filter* filter,
-                                        std::shared_ptr<FilterConfig> config) {
+void ChannelStackBuilder::PrependFilter(
+    const grpc_channel_filter* filter,
+    RefCountedPtr<const FilterConfig> config) {
   stack_.insert(stack_.begin(), {filter, std::move(config)});
 }
 
-void ChannelStackBuilder::AppendFilter(const grpc_channel_filter* filter,
-                                       std::shared_ptr<FilterConfig> config) {
+void ChannelStackBuilder::AppendFilter(
+    const grpc_channel_filter* filter,
+    RefCountedPtr<const FilterConfig> config) {
   stack_.push_back({filter, std::move(config)});
 }
 

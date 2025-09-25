@@ -1123,7 +1123,9 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
                   http_filter.config.config_proto_type_name);
           GRPC_CHECK_NE(filter_impl,
                         nullptr);  // Enforced in config validation.
-          filter_impl->UpdateBlackboard(http_filter.config, old_blackboard,
+          filter_impl->UpdateBlackboard(http_filter.config,
+                                        nullptr,  // FIXME
+                                        old_blackboard,
                                         new_blackboard);
         }
       });

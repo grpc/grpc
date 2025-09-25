@@ -669,12 +669,6 @@ std::optional<uint64_t> HeaderHashHelper(
   return XXH64(header_value->data(), header_value->size(), 0);
 }
 
-void XdsResolver::XdsConfigSelector::BuildFilterChains(
-    FilterChainBuilder& builder, const Blackboard* old_blackboard,
-    Blackboard* new_blackboard) {
-// FIXME: implement
-}
-
 absl::StatusOr<RefCountedPtr<FilterChain>>
 XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
   Slice* path = args.initial_metadata->get_pointer(HttpPathMetadata());
@@ -796,7 +790,9 @@ void XdsResolver::XdsConfigSelector::AddFilters(
   for (size_t i = 0; i < filters_.size(); ++i) {
     auto* filter = filters_[i];
     filter->AddFilter(builder);
-    filter->UpdateBlackboard(hcm.http_filters[i].config, old_blackboard,
+    filter->UpdateBlackboard(hcm.http_filters[i].config,
+                             nullptr,  // FIXME
+                             old_blackboard,
                              new_blackboard);
   }
   builder.Add<ClusterSelectionFilter>();
@@ -814,11 +810,19 @@ XdsResolver::XdsConfigSelector::GetFilters(const Blackboard* old_blackboard,
     if (filter->channel_filter() != nullptr) {
       filters.push_back(filter->channel_filter());
     }
-    filter->UpdateBlackboard(hcm.http_filters[i].config, old_blackboard,
+    filter->UpdateBlackboard(hcm.http_filters[i].config,
+                             nullptr,  // FIXME
+                             old_blackboard,
                              new_blackboard);
   }
   filters.push_back(&ClusterSelectionFilter::kFilter);
   return filters;
+}
+
+void XdsResolver::XdsConfigSelector::BuildFilterChains(
+    FilterChainBuilder& builder, const Blackboard* old_blackboard,
+    Blackboard* new_blackboard) {
+// FIXME: implement
 }
 
 //

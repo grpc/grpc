@@ -68,11 +68,11 @@ class ChannelStackBuilder {
 
   // Helper to add a filter to the front of the stack.
   void PrependFilter(const grpc_channel_filter* filter,
-                     std::shared_ptr<FilterConfig> config = nullptr);
+                     RefCountedPtr<const FilterConfig> config = nullptr);
 
   // Helper to add a filter to the end of the stack.
   void AppendFilter(const grpc_channel_filter* filter,
-                    std::shared_ptr<FilterConfig> config = nullptr);
+                    RefCountedPtr<const FilterConfig> config = nullptr);
 
   // Build the channel stack.
   // After success, *result holds the new channel stack,

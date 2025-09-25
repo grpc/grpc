@@ -77,7 +77,7 @@ struct grpc_channel_element_args {
   grpc_core::ChannelArgs channel_args;
   int is_first;
   int is_last;
-  std::shared_ptr<grpc_core::FilterConfig> config;
+  grpc_core::RefCountedPtr<const grpc_core::FilterConfig> config;
   const grpc_core::Blackboard* blackboard;
 };
 struct grpc_call_element_args {

@@ -20,21 +20,30 @@
 #include "src/core/filter/blackboard.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/util/match.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
 
 namespace grpc_core {
 
 // A base class for filter configs.
-class FilterConfig {
+class FilterConfig : public RefCounted<FilterConfig> {
  public:
-  virtual ~FilterConfig() = default;
+  virtual UniqueTypeName type() const = 0;
 
-  virtual UniqueTypeName Type() const = 0;
+  bool operator==(const FilterConfig& other) const {
+    if (type() != other.type()) return false;
+    return Equals(other);
+  }
+
+  virtual bool Equals(const FilterConfig& other) const = 0;
+
+  virtual std::string ToString() const = 0;
 };
 
 struct FilterAndConfig {
   const grpc_channel_filter* filter;
-  std::shared_ptr<FilterConfig> config;
+  RefCountedPtr<const FilterConfig> config;
 };
 
 // Filter arguments that are independent of channel args.
@@ -47,7 +56,7 @@ class FilterArgs {
              grpc_channel_element* channel_element,
              size_t (*channel_stack_filter_instance_number)(
                  grpc_channel_stack*, grpc_channel_element*),
-             std::shared_ptr<FilterConfig> config = nullptr,
+             RefCountedPtr<const FilterConfig> config = nullptr,
              const Blackboard* blackboard = nullptr)
       : impl_(ChannelStackBased{channel_stack, channel_element,
                                 channel_stack_filter_instance_number}),
@@ -59,7 +68,8 @@ class FilterArgs {
   // of constructing this object without naming it ===> implicit construction.
   // TODO(ctiller): remove this once we're fully on call-v3
   // NOLINTNEXTLINE(google-explicit-constructor)
-  FilterArgs(size_t instance_id, std::shared_ptr<FilterConfig> config = nullptr,
+  FilterArgs(size_t instance_id,
+             RefCountedPtr<const FilterConfig> config = nullptr,
              const Blackboard* blackboard = nullptr)
       : impl_(V3Based{instance_id}),
         config_(std::move(config)),
@@ -88,7 +98,7 @@ class FilterArgs {
         [](const V3Based& v3) { return v3.instance_id; });
   }
 
-  std::shared_ptr<FilterConfig> config() const { return config_; }
+  RefCountedPtr<const FilterConfig> config() const { return config_; }
 
   // Gets the filter state associated with a particular type and key.
   template <typename T>
@@ -114,7 +124,7 @@ class FilterArgs {
   using Impl = std::variant<ChannelStackBased, V3Based>;
   Impl impl_;
 
-  const std::shared_ptr<FilterConfig> config_;
+  const RefCountedPtr<const FilterConfig> config_;
   const Blackboard* blackboard_ = nullptr;
 };
 

@@ -1462,7 +1462,7 @@ class LegacyFilterChainBuilder : public FilterChainBuilder {
 
  private:
   void AddFilter(const FilterHandle& filter_handle,
-                 std::shared_ptr<FilterConfig> config) override {
+                 RefCountedPtr<const FilterConfig> config) override {
     filter_handle.AddToBuilder(&builder_, std::move(config));
   }
 

@@ -64,7 +64,6 @@ size_t grpc_channel_stack_size(
   size_t size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_channel_stack)) +
                 GPR_ROUND_UP_TO_ALIGNMENT_SIZE(filters.size() *
                                                sizeof(grpc_channel_element));
-  size_t i;
 
   GRPC_CHECK((GPR_MAX_ALIGNMENT & (GPR_MAX_ALIGNMENT - 1)) == 0)
       << "GPR_MAX_ALIGNMENT must be a power of two";

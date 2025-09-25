@@ -41,7 +41,7 @@ namespace filter_chain_detail {
 class FilterChainBuilderV1 {
  public:
   void AddFilter(const grpc_channel_filter* vtable,
-                 std::shared_ptr<FilterConfig> config) {
+                 RefCountedPtr<const FilterConfig> config) {
     filters_.push_back({vtable, std::move(config)});
   }
 
@@ -68,7 +68,7 @@ class FilterChainBuilder {
 
   // Add a filter using a convenience template method.
   template <typename FilterType>
-  void AddFilter(std::shared_ptr<FilterConfig> config = nullptr) {
+  void AddFilter(RefCountedPtr<const FilterConfig> config = nullptr) {
     // TODO(roth): Once the v3 migration is done, this can directly call
     // InterceptionChainBuilder.
     AddFilter(FilterHandleImpl<FilterType>(), std::move(config));
@@ -85,9 +85,10 @@ class FilterChainBuilder {
     virtual ~FilterHandle() = default;
     virtual void AddToBuilder(
         filter_chain_detail::FilterChainBuilderV1* builder,
-        std::shared_ptr<FilterConfig> config) const = 0;
-    virtual void AddToBuilder(InterceptionChainBuilder* builder,
-                              std::shared_ptr<FilterConfig> config) const = 0;
+        RefCountedPtr<const FilterConfig> config) const = 0;
+    virtual void AddToBuilder(
+        InterceptionChainBuilder* builder,
+        RefCountedPtr<const FilterConfig> config) const = 0;
   };
 
  private:
@@ -96,18 +97,18 @@ class FilterChainBuilder {
   class FilterHandleImpl : public FilterHandle {
    public:
     void AddToBuilder(filter_chain_detail::FilterChainBuilderV1* builder,
-                      std::shared_ptr<FilterConfig> config) const override {
+                      RefCountedPtr<const FilterConfig> config) const override {
       builder->AddFilter(FilterType::kFilterVtable, std::move(config));
     }
     void AddToBuilder(InterceptionChainBuilder* builder,
-                      std::shared_ptr<FilterConfig> config) const override {
+                      RefCountedPtr<const FilterConfig> config) const override {
       builder->Add<FilterType>(std::move(config));
     }
   };
 
   // Pure virtual method to be implemented by concrete wrappers.
   virtual void AddFilter(const FilterHandle& filter_handle,
-                         std::shared_ptr<FilterConfig> config) = 0;
+                         RefCountedPtr<const FilterConfig> config) = 0;
 };
 
 }  // namespace grpc_core

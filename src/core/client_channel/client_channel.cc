@@ -899,7 +899,7 @@ class FilterChainBuilderImpl : public FilterChainBuilder {
 
  private:
   void AddFilter(const FilterHandle& filter_handle,
-                 std::shared_ptr<FilterConfig> config) override {
+                 RefCountedPtr<const FilterConfig> config) override {
     if (builder_ == nullptr) InitBuilder();
     filter_handle.AddToBuilder(builder_.get(), std::move(config));
   }

@@ -50,6 +50,53 @@
 
 namespace grpc_core {
 
+bool FaultInjectionFilter::Config::Equals(const FilterConfig& other) const {
+  const auto& o = DownCast<const Config&>(other);
+  return abort_code == o.abort_code &&
+         abort_message == o.abort_message &&
+         abort_code_header == o.abort_code_header &&
+         abort_percentage_header == o.abort_percentage_header &&
+         delay == o.delay &&
+         delay_header == o.delay_header &&
+         delay_percentage_header == o.delay_percentage_header &&
+         delay_percentage_numerator == o.delay_percentage_numerator &&
+         delay_percentage_denominator == o.delay_percentage_denominator &&
+         max_faults == o.max_faults;
+}
+
+std::string FaultInjectionFilter::Config::ToString() const {
+  std::vector<std::string> parts;
+  if (abort_code != GRPC_STATUS_OK) {
+    parts.push_back(
+        absl::StrCat("abort_code=", grpc_status_code_to_string(abort_code)));
+    parts.push_back(absl::StrCat("abort_message=\"", abort_message, "\""));
+    if (!abort_code_header.empty()) {
+      parts.push_back(
+          absl::StrCat("abort_code_header=\"", abort_code_header, "\""));
+    }
+    if (!abort_percentage_header.empty()) {
+      parts.push_back(absl::StrCat(
+          "abort_percentage_header=\"", abort_percentage_header, "\""));
+    }
+    parts.push_back(absl::StrCat(
+        "abort_percentage_numerator=", abort_percentage_numerator));
+    parts.push_back(absl::StrCat(
+        "abort_percentage_denominator=", abort_percentage_denominator));
+  }
+  if (delay != Duration::Zero()) {
+    parts.push_back(absl::StrCat("delay=", delay.ToString()));
+    if (!delay_header.empty()) {
+      parts.push_back(absl::StrCat("delay_header=\"", delay_header, "\""));
+    }
+    if (!delay_percentage_header.empty()) {
+      parts.push_back(absl::StrCat(
+          "delay_percentage_header=\"", delay_percentage_header, "\""));
+    }
+  }
+  parts.push_back(absl::StrCat("max_faults=", max_faults));
+  return absl::StrCat("{", absl::StrJoin(parts, ", "), "}");
+}
+
 namespace {
 
 std::atomic<uint32_t> g_active_faults{0};
@@ -128,13 +175,19 @@ class FaultInjectionFilter::InjectionDecision {
 absl::StatusOr<std::unique_ptr<FaultInjectionFilter>>
 FaultInjectionFilter::Create(const ChannelArgs&,
                              ChannelFilter::Args filter_args) {
+  if (filter_args.config()->type() != Config::Type()) {
+    return absl::InternalError(absl::StrCat(
+        "wrong config type passed to fault injection filter: ",
+        filter_args.config()->type().name()));
+  }
   return std::make_unique<FaultInjectionFilter>(filter_args);
 }
 
 FaultInjectionFilter::FaultInjectionFilter(ChannelFilter::Args filter_args)
     : index_(filter_args.instance_id()),
       service_config_parser_index_(
-          FaultInjectionServiceConfigParser::ParserIndex()) {}
+          FaultInjectionServiceConfigParser::ParserIndex()),
+      config_(filter_args.config().TakeAsSubclass<const Config>()) {}
 
 // Construct a promise for one call.
 ArenaPromise<absl::Status> FaultInjectionFilter::Call::OnClientInitialMetadata(
@@ -152,6 +205,7 @@ ArenaPromise<absl::Status> FaultInjectionFilter::Call::OnClientInitialMetadata(
 FaultInjectionFilter::InjectionDecision
 FaultInjectionFilter::MakeInjectionDecision(
     const ClientMetadata& initial_metadata) {
+#if 0
   // Fetch the fault injection policy from the service config, based on the
   // relative index for which policy should this CallData use.
   auto* service_config_call_data = GetContext<ServiceConfigCallData>();
@@ -236,6 +290,81 @@ FaultInjectionFilter::MakeInjectionDecision(
       abort_request ? std::optional<absl::Status>(absl::Status(
                           static_cast<absl::StatusCode>(abort_code),
                           fi_policy->abort_message))
+                    : std::nullopt);
+#endif
+
+  // Shouldn't ever be null, but just in case, return a no-op decision.
+  if (config_ == nullptr) {
+    return InjectionDecision(/*max_faults=*/0, /*delay_time=*/Duration::Zero(),
+                             /*abort_request=*/std::nullopt);
+  }
+
+  grpc_status_code abort_code = config_->abort_code;
+  uint32_t abort_percentage_numerator = config_->abort_percentage_numerator;
+  uint32_t delay_percentage_numerator = config_->delay_percentage_numerator;
+  Duration delay = config_->delay;
+
+  // Update the policy with values in initial metadata.
+  if (!config_->abort_code_header.empty() ||
+      !config_->abort_percentage_header.empty() ||
+      !config_->delay_header.empty() ||
+      !config_->delay_percentage_header.empty()) {
+    std::string buffer;
+    if (!config_->abort_code_header.empty() && abort_code == GRPC_STATUS_OK) {
+      auto value = initial_metadata.GetStringValue(config_->abort_code_header,
+                                                   &buffer);
+      if (value.has_value()) {
+        grpc_status_code_from_int(
+            AsInt<int>(*value).value_or(GRPC_STATUS_UNKNOWN), &abort_code);
+      }
+    }
+    if (!config_->abort_percentage_header.empty()) {
+      auto value = initial_metadata.GetStringValue(
+          config_->abort_percentage_header, &buffer);
+      if (value.has_value()) {
+        abort_percentage_numerator = std::min(
+            AsInt<uint32_t>(*value).value_or(-1), abort_percentage_numerator);
+      }
+    }
+    if (!config_->delay_header.empty() && delay == Duration::Zero()) {
+      auto value =
+          initial_metadata.GetStringValue(config_->delay_header, &buffer);
+      if (value.has_value()) {
+        delay = Duration::Milliseconds(
+            std::max(AsInt<int64_t>(*value).value_or(0), int64_t{0}));
+      }
+    }
+    if (!config_->delay_percentage_header.empty()) {
+      auto value = initial_metadata.GetStringValue(
+          config_->delay_percentage_header, &buffer);
+      if (value.has_value()) {
+        delay_percentage_numerator = std::min(
+            AsInt<uint32_t>(*value).value_or(-1), delay_percentage_numerator);
+      }
+    }
+  }
+  // Roll the dice
+  bool delay_request = delay != Duration::Zero();
+  bool abort_request = abort_code != GRPC_STATUS_OK;
+  if (delay_request || abort_request) {
+    MutexLock lock(&mu_);
+    if (delay_request) {
+      delay_request =
+          UnderFraction(&delay_rand_generator_, delay_percentage_numerator,
+                        config_->delay_percentage_denominator);
+    }
+    if (abort_request) {
+      abort_request =
+          UnderFraction(&abort_rand_generator_, abort_percentage_numerator,
+                        config_->abort_percentage_denominator);
+    }
+  }
+
+  return InjectionDecision(
+      config_->max_faults, delay_request ? delay : Duration::Zero(),
+      abort_request ? std::optional<absl::Status>(absl::Status(
+                          static_cast<absl::StatusCode>(abort_code),
+                          config_->abort_message))
                     : std::nullopt);
 }
 

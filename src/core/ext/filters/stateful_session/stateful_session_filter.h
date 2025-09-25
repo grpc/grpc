@@ -70,6 +70,44 @@ class XdsOverrideHostAttribute
 class StatefulSessionFilter
     : public ImplementChannelFilter<StatefulSessionFilter> {
  public:
+  struct CookieConfig {
+    std::string name;
+    Duration ttl;
+    std::string path;
+
+    bool operator==(const CookieConfig& other) const {
+      return name == other.name && ttl == other.ttl && path == other.path;
+    }
+    std::string ToString() const;
+  };
+
+  struct Config : public FilterConfig {
+    static UniqueTypeName Type() {
+      return GRPC_UNIQUE_TYPE_NAME_HERE(
+          "envoy.extensions.filters.http.stateful_session.v3.StatefulSession");
+    }
+    UniqueTypeName type() const override { return Type(); }
+
+    bool Equals(const FilterConfig& other) const override;
+    std::string ToString() const override { return cookie_config.ToString(); }
+
+    CookieConfig cookie_config;
+  };
+
+  struct OverrideConfig : public FilterConfig {
+    static UniqueTypeName Type() {
+      return GRPC_UNIQUE_TYPE_NAME_HERE(
+          "envoy.extensions.filters.http.stateful_session.v3"
+          ".StatefulSessionPerRoute");
+    }
+    UniqueTypeName type() const override { return Type(); }
+
+    bool Equals(const FilterConfig& other) const override;
+    std::string ToString() const override { return cookie_config.ToString(); }
+
+    CookieConfig cookie_config;
+  };
+
   static const grpc_channel_filter kFilterVtable;
 
   static absl::string_view TypeName() { return "stateful_session_filter"; }
@@ -83,15 +121,19 @@ class StatefulSessionFilter
    public:
     void OnClientInitialMetadata(ClientMetadata& md,
                                  StatefulSessionFilter* filter);
-    void OnServerInitialMetadata(ServerMetadata& md);
-    void OnServerTrailingMetadata(ServerMetadata& md);
+    void OnServerInitialMetadata(ServerMetadata& md,
+                                 StatefulSessionFilter* filter);
+    void OnServerTrailingMetadata(ServerMetadata& md,
+                                  StatefulSessionFilter* filter);
     static inline const NoInterceptor OnClientToServerMessage;
     static inline const NoInterceptor OnClientToServerHalfClose;
     static inline const NoInterceptor OnServerToClientMessage;
     static inline const NoInterceptor OnFinalize;
 
    private:
+    // FIXME: remove
     const StatefulSessionMethodParsedConfig::CookieConfig* cookie_config_;
+
     XdsOverrideHostAttribute* override_host_attribute_;
     absl::string_view cluster_name_;
     absl::string_view cookie_address_list_;
@@ -100,6 +142,9 @@ class StatefulSessionFilter
   };
 
  private:
+  const RefCountedPtr<const Config> config_;
+
+// FIXME: remove
   // The relative index of instances of the same filter.
   const size_t index_;
   // Index of the service config parser.

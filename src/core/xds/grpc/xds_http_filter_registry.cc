@@ -80,6 +80,45 @@ XdsHttpRouterFilter::GenerateFilterConfigOverride(
   return std::nullopt;
 }
 
+RefCountedPtr<const grpc_core::FilterConfig>
+XdsHttpRouterFilter::ParseTopLevelConfig(
+    absl::string_view instance_name,
+    const XdsResourceType::DecodeContext& context, XdsExtension extension,
+    ValidationErrors* errors) const {
+  absl::string_view* serialized_filter_config =
+      std::get_if<absl::string_view>(&extension.value);
+  if (serialized_filter_config == nullptr) {
+    errors->AddError("could not parse router filter config");
+    return nullptr;
+  }
+  if (envoy_extensions_filters_http_router_v3_Router_parse(
+          serialized_filter_config->data(), serialized_filter_config->size(),
+          context.arena) == nullptr) {
+    errors->AddError("could not parse router filter config");
+    return nullptr;
+  }
+  return nullptr;  // FIXME: is this okay?
+}
+
+RefCountedPtr<const grpc_core::FilterConfig>
+XdsHttpRouterFilter::ParseOverrideConfig(
+    absl::string_view instance_name,
+    const XdsResourceType::DecodeContext& context, XdsExtension extension,
+    ValidationErrors* errors) const {
+  errors->AddError("router filter does not support config override");
+  return nullptr;
+}
+
+RefCountedPtr<const grpc_core::FilterConfig> XdsHttpRouterFilter::MergeConfigs(
+    RefCountedPtr<const grpc_core::FilterConfig> top_level_config,
+    RefCountedPtr<const grpc_core::FilterConfig>
+        /*virtual_host_override_config*/,
+    RefCountedPtr<const grpc_core::FilterConfig> /*route_override_config*/,
+    RefCountedPtr<const grpc_core::FilterConfig>
+        /*cluster_weight_override_config*/) const {
+  return top_level_config;
+}
+
 //
 // XdsHttpFilterRegistry
 //

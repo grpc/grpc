@@ -64,6 +64,21 @@ class XdsHttpRouterFilter final : public XdsHttpFilterImpl {
     // This will never be called, since channel_filter() returns null.
     return absl::UnimplementedError("router filter should never be called");
   }
+  RefCountedPtr<const grpc_core::FilterConfig> ParseTopLevelConfig(
+        absl::string_view instance_name,
+        const XdsResourceType::DecodeContext& context, XdsExtension extension,
+        ValidationErrors* errors) const override;
+  RefCountedPtr<const grpc_core::FilterConfig> ParseOverrideConfig(
+        absl::string_view instance_name,
+        const XdsResourceType::DecodeContext& context, XdsExtension extension,
+        ValidationErrors* errors) const override;
+  RefCountedPtr<const grpc_core::FilterConfig> MergeConfigs(
+      RefCountedPtr<const grpc_core::FilterConfig> top_level_config,
+      RefCountedPtr<const grpc_core::FilterConfig>
+          virtual_host_override_config,
+      RefCountedPtr<const grpc_core::FilterConfig> route_override_config,
+      RefCountedPtr<const grpc_core::FilterConfig>
+          cluster_weight_override_config) const override;
   bool IsSupportedOnClients() const override { return true; }
   bool IsSupportedOnServers() const override { return true; }
   bool IsTerminalFilter() const override { return true; }
