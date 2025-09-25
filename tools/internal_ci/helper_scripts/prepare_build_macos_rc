@@ -239,7 +239,8 @@ then
 
     # Dynamically load the current checksum per
     # https://getcomposer.org/doc/faqs/how-to-install-composer-programmatically.md
-    EXPECTED_COMPOSER_SHA384_SUM="$(curl -s https://composer.github.io/installer.sig)"
+    curl --retry 3 -sL -o composer-installer.sig https://composer.github.io/installer.sig
+    EXPECTED_COMPOSER_SHA384_SUM="$(cat composer-installer.sig)"
     if [[ -z "${EXPECTED_COMPOSER_SHA384_SUM}" ]]; then
       echo "Failed to load latest composer installer checksum" >&2
       exit 1
