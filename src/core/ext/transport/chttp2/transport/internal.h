@@ -68,7 +68,6 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/lib/resource_quota/stream_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/init_internally.h"
@@ -301,7 +300,6 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
       transport_framing_endpoint_extension = nullptr;
 
   grpc_core::MemoryOwner memory_owner;
-  grpc_core::StreamQuotaRefPtr stream_quota;
   const grpc_core::MemoryAllocator::Reservation self_reservation;
   grpc_core::ReclamationSweep active_reclamation;
   grpc_core::InstrumentStorageRefPtr<grpc_core::ResourceQuotaDomain>
