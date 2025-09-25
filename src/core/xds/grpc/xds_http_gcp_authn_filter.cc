@@ -116,7 +116,7 @@ void XdsHttpGcpAuthnFilter::AddFilter(InterceptionChainBuilder& builder) const {
 }
 
 const grpc_channel_filter* XdsHttpGcpAuthnFilter::channel_filter() const {
-  return &GcpAuthenticationFilter::kFilter;
+  return &GcpAuthenticationFilter::kFilterVtable;
 }
 
 ChannelArgs XdsHttpGcpAuthnFilter::ModifyChannelArgs(

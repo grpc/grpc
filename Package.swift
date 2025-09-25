@@ -192,6 +192,7 @@ let package = Package(
         "src/core/client_channel/direct_channel.h",
         "src/core/client_channel/dynamic_filters.cc",
         "src/core/client_channel/dynamic_filters.h",
+        "src/core/client_channel/filter_chain.h",
         "src/core/client_channel/global_subchannel_pool.cc",
         "src/core/client_channel/global_subchannel_pool.h",
         "src/core/client_channel/lb_metadata.cc",

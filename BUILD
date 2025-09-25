@@ -3659,6 +3659,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_fwd",
         "//src/core:channel_stack_type",
+        "//src/core:filter_args",
     ],
 )
 
@@ -3864,6 +3865,7 @@ grpc_cc_library(
         "//src/core:client_channel/client_channel_factory.h",
         "//src/core:client_channel/client_channel_filter.h",
         "//src/core:client_channel/dynamic_filters.h",
+        "//src/core:client_channel/filter_chain.h",
         "//src/core:client_channel/global_subchannel_pool.h",
         "//src/core:client_channel/load_balanced_call_destination.h",
         "//src/core:client_channel/local_subchannel_pool.h",
@@ -3940,6 +3942,7 @@ grpc_cc_library(
         "//src/core:error_utils",
         "//src/core:exec_ctx_wakeup_scheduler",
         "//src/core:experiments",
+        "//src/core:filter_args",
         "//src/core:gpr_manual_constructor",
         "//src/core:grpc_backend_metric_data",
         "//src/core:grpc_channel_idle_filter",

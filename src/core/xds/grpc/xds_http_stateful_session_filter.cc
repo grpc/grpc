@@ -203,7 +203,7 @@ void XdsHttpStatefulSessionFilter::AddFilter(
 
 const grpc_channel_filter* XdsHttpStatefulSessionFilter::channel_filter()
     const {
-  return &StatefulSessionFilter::kFilter;
+  return &StatefulSessionFilter::kFilterVtable;
 }
 
 ChannelArgs XdsHttpStatefulSessionFilter::ModifyChannelArgs(
