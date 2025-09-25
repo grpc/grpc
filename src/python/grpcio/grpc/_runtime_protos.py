@@ -61,6 +61,7 @@ def _call_with_lazy_import(
     if not _is_grpc_tools_importable():
         raise NotImplementedError(_UNINSTALLED_TEMPLATE.format(fn_name))
     import grpc_tools.protoc  # pytype: disable=import-error
+
     if _has_runtime_proto_symbols(grpc_tools.protoc):
         fn = getattr(grpc_tools.protoc, "_" + fn_name)
         return fn(protobuf_path)
