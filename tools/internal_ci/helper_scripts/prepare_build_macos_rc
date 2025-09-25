@@ -247,11 +247,11 @@ then
     fi
 
     curl --retry 3 -sL -o composer-setup.php https://getcomposer.org/installer
-    ACTUAL_COMPOSER_SHA384_SUM="$(sha384sum --quiet composer-setup.php)"
+    ACTUAL_COMPOSER_SHA384_SUM="$(sha384sum composer-setup.php | cut -w -f1)"
 
     echo "Expected composer-setup.php sha384 sum: ${EXPECTED_COMPOSER_SHA384_SUM}"
     echo "Downloaded composer-setup.php sha384 sum: ${ACTUAL_COMPOSER_SHA384_SUM}"
-    if [[ "$EXPECTED_COMPOSER_SHA384_SUM" != "$ACTUAL_COMPOSER_SHA384_SUM" ]]; then
+    if [[ "${EXPECTED_COMPOSER_SHA384_SUM}" != "${ACTUAL_COMPOSER_SHA384_SUM}" ]]; then
       echo "Invalid composer-setup.php checksum" >&2
       exit 1
     fi
