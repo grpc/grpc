@@ -255,9 +255,10 @@ then
       echo "Invalid composer-setup.php checksum" >&2
       exit 1
     fi
+    echo "composer-setup.php checksum matched"
 
     php composer-setup.php --install-dir /tmp
-    rm -v composer-setup.php
+    rm composer-setup.php
 
     # Install PHP test dependencies.
     php /tmp/composer.phar global require phpunit/phpunit:9.5.9
