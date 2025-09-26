@@ -39,11 +39,13 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/instrument.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
 #include "src/cpp/ext/otel/key_value_iterable.h"
 #include "src/cpp/ext/otel/otel_client_call_tracer.h"
 #include "src/cpp/ext/otel/otel_server_call_tracer.h"
+#include "third_party/opentelemetry/cpp/api/include/opentelemetry/metrics/async_instruments.h"
 
 using opentelemetry::context::propagation::TextMapPropagator;
 using opentelemetry::trace::SpanContext;
@@ -52,6 +54,16 @@ using opentelemetry::trace::TraceId;
 
 namespace grpc {
 namespace internal {
+
+namespace {
+bool IsMetricEnabledByDefault(absl::string_view metric_name) { return false; }
+}  // namespace
+
+bool IsOpenTelemetryLabelOptional(absl::string_view label_key) {
+  // TODO(ctiller): register other optional labels here with
+  // `if (label_key =="xyz") return true;` checks.
+  return absl::StartsWith(label_key, "test_optional.");
+}
 
 absl::string_view OpenTelemetryMethodKey() { return "grpc.method"; }
 
@@ -85,6 +97,12 @@ absl::flat_hash_set<std::string> BaseMetrics() {
               GlobalInstrumentDescriptor& descriptor) {
         if (descriptor.enable_by_default) {
           base_metrics.emplace(descriptor.name);
+        }
+      });
+  grpc_core::InstrumentMetadata::ForEachInstrument(
+      [&](const grpc_core::InstrumentMetadata::Description* description) {
+        if (IsMetricEnabledByDefault(description->name)) {
+          base_metrics.emplace(description->name);
         }
       });
   return base_metrics;
@@ -392,6 +410,169 @@ void OpenTelemetryPluginImpl::ServerBuilderOption::UpdateArguments(
   plugin_->AddToChannelArguments(args);
 }
 
+class OpenTelemetryPluginImpl::ExporterCallback {
+ public:
+  virtual ~ExporterCallback() = default;
+};
+
+template <class Exporter>
+class OpenTelemetryPluginImpl::ExporterCallbackImpl final
+    : public ExporterCallback {
+ public:
+  template <class... Args>
+  explicit ExporterCallbackImpl(
+      opentelemetry::nostd::shared_ptr<
+          opentelemetry::metrics::ObservableInstrument>
+          instrument,
+      Args&&... args)
+      : exporter_(std::forward<Args>(args)...),
+        instrument_(std::move(instrument)) {
+    instrument_->AddCallback(Callback, this);
+  }
+
+  ~ExporterCallbackImpl() override {
+    instrument_->RemoveCallback(Callback, this);
+  }
+
+ private:
+  static void Callback(opentelemetry::metrics::ObserverResult result,
+                       void* arg) {
+    static_cast<ExporterCallbackImpl*>(arg)->exporter_.Export(
+        std::move(result));
+  }
+
+  Exporter exporter_;
+  const opentelemetry::nostd::shared_ptr<
+      opentelemetry::metrics::ObservableInstrument>
+      instrument_;
+};
+
+class OpenTelemetryPluginImpl::ExportedMetricKeyValueIterable final
+    : public opentelemetry::common::KeyValueIterable {
+ public:
+  explicit ExportedMetricKeyValueIterable(
+      absl::Span<const std::pair<std::string, std::string>> labels)
+      : labels_(labels) {}
+
+  bool ForEachKeyValue(opentelemetry::nostd::function_ref<
+                       bool(opentelemetry::nostd::string_view,
+                            opentelemetry::common::AttributeValue)>
+                           callback) const noexcept override {
+    for (const auto& [key, value] : labels_) {
+      if (!callback(key, opentelemetry::common::AttributeValue(value))) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  size_t size() const noexcept override { return labels_.size(); }
+
+ private:
+  absl::Span<const std::pair<std::string, std::string>> labels_;
+};
+
+class OpenTelemetryPluginImpl::CounterExporter final {
+ public:
+  explicit CounterExporter(OpenTelemetryPluginImpl* impl,
+                           const grpc_core::InstrumentMetadata::Description* md)
+      : impl_(impl), md_(std::move(md)) {}
+
+  void Export(opentelemetry::metrics::ObserverResult result) {
+    auto observer = std::get<opentelemetry::nostd::shared_ptr<
+        opentelemetry::metrics::ObserverResultT<int64_t>>>(result);
+    impl_->WithTelemetryCache(
+        query_cycle_, [&, this](const TelemetryCache& cache) {
+          auto it = cache.counters.find(md_->name);
+          if (it == cache.counters.end()) return;
+          for (const auto& [labels, value] : it->second) {
+            ExportedMetricKeyValueIterable labels_iterable(labels);
+            observer->Observe(value, labels_iterable);
+          }
+        });
+  }
+
+ private:
+  uint64_t query_cycle_ = 0;
+  OpenTelemetryPluginImpl* const impl_;
+  const grpc_core::InstrumentMetadata::Description* const md_;
+};
+
+class OpenTelemetryPluginImpl::MetricsSink final
+    : public grpc_core::MetricsSink {
+ public:
+  void Counter(absl::Span<const std::string> label_keys,
+               absl::Span<const std::string> label, absl::string_view name,
+               uint64_t value) override {
+    CHECK_EQ(label_keys.size(), label.size()) << "Counter labels mismatch";
+    cache_.counters[name].emplace_back(
+        [&]() {
+          std::vector<std::pair<std::string, std::string>> labels;
+          labels.reserve(label.size());
+          for (size_t i = 0; i < label.size(); ++i) {
+            labels.emplace_back(label_keys[i], label[i]);
+          }
+          return labels;
+        }(),
+        value);
+  }
+  void Histogram(absl::Span<const std::string> label_keys,
+                 absl::Span<const std::string> label, absl::string_view name,
+                 grpc_core::HistogramBuckets bounds,
+                 absl::Span<const uint64_t> counts) override {
+    LOG(FATAL) << "Histogram not supported";
+  }
+  void DoubleGauge(absl::Span<const std::string> label_keys,
+                   absl::Span<const std::string> labels, absl::string_view name,
+                   double value) override {
+    LOG(FATAL) << "DoubleGauge not supported";
+  }
+  void IntGauge(absl::Span<const std::string> label_keys,
+                absl::Span<const std::string> labels, absl::string_view name,
+                int64_t value) override {
+    LOG(FATAL) << "IntGauge not supported";
+  }
+  void UintGauge(absl::Span<const std::string> label_keys,
+                 absl::Span<const std::string> labels, absl::string_view name,
+                 uint64_t value) override {
+    LOG(FATAL) << "UintGauge not supported";
+  }
+
+  TelemetryCache TakeNewCache() { return std::move(cache_); }
+
+ private:
+  TelemetryCache cache_;
+};
+
+void OpenTelemetryPluginImpl::WithTelemetryCache(
+    uint64_t& query_cycle, absl::FunctionRef<void(const TelemetryCache&)> f) {
+  // OpenTelemetry queries one metric at a time, but our collection facility
+  // queries all metrics at once. To avoid ending up N**2 we keep a cache, which
+  // invalidates whenever a metric is queried a second time in the same query
+  // cycle.
+  grpc_core::MutexLock lock(&telemetry_cache_mu_);
+  if (query_cycle == query_cycle_) {
+    MetricsSink sink;
+    // The collection scope keeps all metrics storage alive for the duration of
+    // its lifetime, ensuring counters that would otherwise be garbage collected
+    // are still visible to the query.
+    // Creating a new one here scopes that retention to the lifetime of the
+    // query cycle.
+    collection_scope_ =
+        std::exchange(collection_scope_, grpc_core::CreateCollectionScope());
+    grpc_core::MetricsQuery()
+        .OnlyMetrics(exported_metrics_)
+        .CollapseLabels(collapse_labels_)
+        .Run(collection_scope_, sink);
+    telemetry_cache_ = sink.TakeNewCache();
+    ++query_cycle_;
+  } else {
+    CHECK_LT(query_cycle, query_cycle_);
+  }
+  query_cycle = query_cycle_;
+  f(telemetry_cache_);
+}
+
 namespace {
 opentelemetry::nostd::shared_ptr<opentelemetry::trace::Tracer> MaybeMakeTracer(
     opentelemetry::trace::TracerProvider* tracer_provider) {
@@ -540,6 +721,50 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
         per_call_optional_label_bits_.set(
             static_cast<size_t>(optional_key.value()));
       }
+    }
+    if (grpc_core::IsOtelExportTelemetryDomainsEnabled()) {
+      // gRPC metrics.
+      grpc_core::InstrumentMetadata::ForEachInstrument(
+          [&](const grpc_core::InstrumentMetadata::Description* description) {
+            if (!metrics.contains(description->name)) return;
+            exported_metrics_.push_back(std::string(description->name));
+            grpc_core::Match(
+                description->shape,
+                [&](grpc_core::InstrumentMetadata::CounterShape) {
+                  auto instrument = meter->CreateInt64ObservableCounter(
+                      std::string(description->name),
+                      std::string(description->description),
+                      std::string(description->unit));
+                  exporter_callbacks_.push_back(
+                      std::make_unique<ExporterCallbackImpl<CounterExporter>>(
+                          instrument, this, description));
+                  return instrument;
+                },
+                [&](grpc_core::InstrumentMetadata::DoubleGaugeShape) {
+                  return meter->CreateDoubleObservableGauge(
+                      std::string(description->name),
+                      std::string(description->description),
+                      std::string(description->unit));
+                },
+                [&](grpc_core::InstrumentMetadata::IntGaugeShape) {
+                  return meter->CreateInt64ObservableGauge(
+                      std::string(description->name),
+                      std::string(description->description),
+                      std::string(description->unit));
+                },
+                [&](grpc_core::InstrumentMetadata::UintGaugeShape) {
+                  // Result should be clamped to int64_t.
+                  return meter->CreateInt64ObservableGauge(
+                      std::string(description->name),
+                      std::string(description->description),
+                      std::string(description->unit));
+                },
+                [&](grpc_core::InstrumentMetadata::HistogramShape)
+                    -> opentelemetry::nostd::shared_ptr<
+                        opentelemetry::metrics::ObservableInstrument> {
+                  LOG(FATAL) << "Histogram shape is not supported yet";
+                });
+          });
     }
     // Non-per-call metrics.
     grpc_core::GlobalInstrumentsRegistry::ForEach(
