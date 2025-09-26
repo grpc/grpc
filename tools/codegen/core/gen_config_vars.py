@@ -102,6 +102,7 @@ def put_copyright(file):
 
 RETURN_TYPE = {
     "int": "int32_t",
+    "double": "double",
     "string": "absl::string_view",
     "comma_separated_string": "absl::string_view",
     "bool": "bool",
@@ -109,6 +110,7 @@ RETURN_TYPE = {
 
 MEMBER_TYPE = {
     "int": "int32_t",
+    "double": "double",
     "string": "std::string",
     "comma_separated_string": "std::string",
     "bool": "bool",
@@ -116,6 +118,7 @@ MEMBER_TYPE = {
 
 FLAG_TYPE = {
     "int": "absl::optional<int32_t>",
+    "double": "absl::optional<double>",
     "string": "absl::optional<std::string>",
     "comma_separated_string": "std::vector<std::string>",
     "bool": "absl::optional<bool>",
@@ -123,6 +126,7 @@ FLAG_TYPE = {
 
 PROTO_TYPE = {
     "int": "int32",
+    "double": "double",
     "string": "string",
     "comma_separated_string": "string",
     "bool": "bool",
@@ -130,9 +134,10 @@ PROTO_TYPE = {
 
 SORT_ORDER_FOR_PACKING = {
     "int": 0,
-    "bool": 1,
-    "string": 2,
-    "comma_separated_string": 3,
+    "double": 1,
+    "bool": 2,
+    "string": 3,
+    "comma_separated_string": 4,
 }
 
 
@@ -152,6 +157,12 @@ def int_default_value(x, name):
     return x
 
 
+def double_default_value(x, name):
+    if isinstance(x, str) and x.startswith("$"):
+        return x[1:]
+    return x
+
+
 def string_default_value(x, name):
     if x is None:
         return '""'
@@ -162,6 +173,7 @@ def string_default_value(x, name):
 
 DEFAULT_VALUE = {
     "int": int_default_value,
+    "double": double_default_value,
     "bool": bool_default_value,
     "string": string_default_value,
     "comma_separated_string": string_default_value,
@@ -169,6 +181,7 @@ DEFAULT_VALUE = {
 
 TO_STRING = {
     "int": "$",
+    "double": "$",
     "bool": '$?"true":"false"',
     "string": '"\\"", absl::CEscape($), "\\""',
     "comma_separated_string": '"\\"", absl::CEscape($), "\\""',
