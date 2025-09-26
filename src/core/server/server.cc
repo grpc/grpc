@@ -2066,11 +2066,7 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
   auto op_deadline = calld->recv_initial_metadata_->get(GrpcTimeoutMetadata());
   if (op_deadline.has_value()) {
     calld->deadline_ = *op_deadline;
-    if (grpc_core::IsFailRecvMetadataOnDeadlineExceededEnabled()) {
-      error = Call::FromC(calld->call_)->UpdateDeadline(*op_deadline);
-    } else {
-      Call::FromC(calld->call_)->UpdateDeadline(*op_deadline).IgnoreError();
-    }
+    Call::FromC(calld->call_)->UpdateDeadline(*op_deadline);
   }
   if (calld->host_.has_value() && calld->path_.has_value()) {
     // do nothing

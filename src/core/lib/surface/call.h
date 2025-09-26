@@ -102,8 +102,7 @@ class Call : public CppImplOf<Call, grpc_call>,
   virtual void InternalRef(const char* reason) = 0;
   virtual void InternalUnref(const char* reason) = 0;
 
-  grpc_error_handle UpdateDeadline(Timestamp deadline)
-      ABSL_LOCKS_EXCLUDED(deadline_mu_);
+  void UpdateDeadline(Timestamp deadline) ABSL_LOCKS_EXCLUDED(deadline_mu_);
   void ResetDeadline() ABSL_LOCKS_EXCLUDED(deadline_mu_);
   Timestamp deadline() {
     MutexLock lock(&deadline_mu_);
