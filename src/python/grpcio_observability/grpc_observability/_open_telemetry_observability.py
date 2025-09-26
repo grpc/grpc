@@ -95,7 +95,7 @@ class _OpenTelemetryPlugin:
 
     def _should_record(self, stats_data: StatsData) -> bool:
         # Decide if this plugin should record the stats_data.
-        return stats_data.name in self._metric_to_recorder.keys()
+        return stats_data.name in self._metric_to_recorder
 
     def _record_stats_data(self, stats_data: StatsData) -> None:
         recorder = self._metric_to_recorder[stats_data.name]
@@ -250,26 +250,11 @@ class _OpenTelemetryPlugin:
                     unit=metric.unit,
                     description=metric.description,
                 )
-            elif metric == _open_telemetry_measures.CLIENT_ATTEMPT_DURATION:
-                recorder = meter.create_histogram(
-                    name=metric.name,
-                    unit=metric.unit,
-                    description=metric.description,
-                )
-            elif metric == _open_telemetry_measures.CLIENT_RPC_DURATION:
-                recorder = meter.create_histogram(
-                    name=metric.name,
-                    unit=metric.unit,
-                    description=metric.description,
-                )
-            elif metric == _open_telemetry_measures.CLIENT_ATTEMPT_SEND_BYTES:
-                recorder = meter.create_histogram(
-                    name=metric.name,
-                    unit=metric.unit,
-                    description=metric.description,
-                )
-            elif (
-                metric == _open_telemetry_measures.CLIENT_ATTEMPT_RECEIVED_BYTES
+            elif metric in (
+                _open_telemetry_measures.CLIENT_ATTEMPT_DURATION,
+                _open_telemetry_measures.CLIENT_RPC_DURATION,
+                _open_telemetry_measures.CLIENT_ATTEMPT_SEND_BYTES,
+                _open_telemetry_measures.CLIENT_ATTEMPT_RECEIVED_BYTES,
             ):
                 recorder = meter.create_histogram(
                     name=metric.name,
@@ -282,19 +267,11 @@ class _OpenTelemetryPlugin:
                     unit=metric.unit,
                     description=metric.description,
                 )
-            elif metric == _open_telemetry_measures.SERVER_RPC_DURATION:
-                recorder = meter.create_histogram(
-                    name=metric.name,
-                    unit=metric.unit,
-                    description=metric.description,
-                )
-            elif metric == _open_telemetry_measures.SERVER_RPC_SEND_BYTES:
-                recorder = meter.create_histogram(
-                    name=metric.name,
-                    unit=metric.unit,
-                    description=metric.description,
-                )
-            elif metric == _open_telemetry_measures.SERVER_RPC_RECEIVED_BYTES:
+            elif metric in (
+                _open_telemetry_measures.SERVER_RPC_DURATION,
+                _open_telemetry_measures.SERVER_RPC_SEND_BYTES,
+                _open_telemetry_measures.SERVER_RPC_RECEIVED_BYTES,
+            ):
                 recorder = meter.create_histogram(
                     name=metric.name,
                     unit=metric.unit,
