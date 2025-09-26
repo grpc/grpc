@@ -1403,7 +1403,7 @@ absl::Status ClientChannel::ApplyServiceConfigToCall(
       const Timestamp per_method_deadline =
           Timestamp::FromCycleCounterRoundUp(call->start_time()) +
           method_params->timeout();
-      call->UpdateDeadline(per_method_deadline);
+      call->UpdateDeadline(per_method_deadline).IgnoreError();
     }
     // If the service config set wait_for_ready and the application
     // did not explicitly set it, use the value from the service config.
