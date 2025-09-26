@@ -35,6 +35,7 @@ struct Stream : public RefCounted<Stream> {
                   bool allow_true_binary_metadata_acked,
                   chttp2::TransportFlowControl& transport_flow_control)
       : call(std::move(call)),
+        is_write_closed(false),
         stream_state(HttpStreamState::kIdle),
         stream_id(stream_id1),
         header_assembler(stream_id1, allow_true_binary_metadata_acked),
@@ -166,15 +167,22 @@ struct Stream : public RefCounted<Stream> {
     }
   }
 
-  HttpStreamState GetStreamState() const { return stream_state; }
-  uint32_t GetStreamId() const { return stream_id; }
+  inline HttpStreamState GetStreamState() const { return stream_state; }
+  inline uint32_t GetStreamId() const { return stream_id; }
 
-  inline bool IsClosed() const {
-    return stream_state == HttpStreamState::kClosed;
-  }
+  inline bool IsClosedForWrites() const { return is_write_closed; }
+  inline void SetWriteClosed() { is_write_closed = true; }
 
   CallHandler call;
-  // TODO(akshitpatel) : [PH2][P3] : Investigate if this needs to be atomic.
+  // This flag is kept separate from the stream_state as the stream_state
+  // is inline with the HTTP2 spec, whereas this flag is an implementation
+  // detail of the PH2 transport. As far as PH2 is concerned, if a stream is
+  // closed for writes, it will not send any more frames on that stream.
+  // Similarly if a stream is closed for reads(this is achieved by removing the
+  // stream from the transport map), then all the frames read on that stream
+  // will be dropped.
+  bool is_write_closed;
+  // This MUST be accessed from the transport party.
   HttpStreamState stream_state;
   const uint32_t stream_id;
   GrpcMessageAssembler assembler;
