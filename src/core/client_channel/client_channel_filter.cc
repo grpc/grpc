@@ -260,7 +260,9 @@ class ClientChannelFilter::FilterBasedCallData final
   void ResetDeadline(Duration timeout) override {
     const Timestamp per_method_deadline =
         Timestamp::FromCycleCounterRoundUp(call_start_time_) + timeout;
-    arena_->GetContext<Call>()->UpdateDeadline(per_method_deadline);
+    arena_->GetContext<Call>()
+        ->UpdateDeadline(per_method_deadline)
+        .IgnoreError();
   }
 
   void CreateDynamicCall();
