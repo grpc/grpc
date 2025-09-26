@@ -234,20 +234,33 @@ then
   php --version
 
   if $is_sonoma; then
-    # For updated hash checksums https://composer.github.io/pubkeys.html
-    EXPECTED_COMPOSER_SHA384_SUM="ed0feb545ba87161262f2d45a633e34f591ebb3381f2e0063c345ebea4d228dd0043083717770234ec00c5a9f9593792"
-    echo "Expected composer-setup.php sha384 sum: ${EXPECTED_COMPOSER_SHA384_SUM}"
+    # See https://getcomposer.org/download.
+    # Composer installer checksum verification: https://composer.github.io/pubkeys.html
+
+    # Dynamically load the current checksum per
+    # https://getcomposer.org/doc/faqs/how-to-install-composer-programmatically.md
+    curl --retry 3 -sL -o composer-installer.sig https://composer.github.io/installer.sig
+    EXPECTED_COMPOSER_SHA384_SUM="$(cat composer-installer.sig)"
+    if [[ -z "${EXPECTED_COMPOSER_SHA384_SUM}" ]]; then
+      echo "Failed to load latest composer installer checksum" >&2
+      exit 1
+    fi
 
     curl --retry 3 -sL -o composer-setup.php https://getcomposer.org/installer
-    echo "Downloaded composer-setup.php sha384 sum: $(sha384sum composer-setup.php)"
+    ACTUAL_COMPOSER_SHA384_SUM="$(sha384sum composer-setup.php | cut -w -f1)"
 
-    # https://getcomposer.org/download "Download Composer" snippet from here,
-    # modified for simpler updates hash updates.
-    php -r "if (hash_file('sha384', 'composer-setup.php') === '${EXPECTED_COMPOSER_SHA384_SUM}') { echo 'Installer verified'.PHP_EOL; } else { echo 'Installer corrupt'.PHP_EOL; unlink('composer-setup.php'); exit(1); }"
+    echo "Expected composer-setup.php sha384 sum: ${EXPECTED_COMPOSER_SHA384_SUM}"
+    echo "Downloaded composer-setup.php sha384 sum: ${ACTUAL_COMPOSER_SHA384_SUM}"
+    if [[ "${EXPECTED_COMPOSER_SHA384_SUM}" != "${ACTUAL_COMPOSER_SHA384_SUM}" ]]; then
+      echo "Invalid composer-setup.php checksum" >&2
+      exit 1
+    fi
+    echo "composer-setup.php checksum matched"
+
     php composer-setup.php --install-dir /tmp
-    php -r "unlink('composer-setup.php');"
+    rm composer-setup.php
 
-    # install composer deps
+    # Install PHP test dependencies.
     php /tmp/composer.phar global require phpunit/phpunit:9.5.9
   else
     # Workaround for https://github.com/Homebrew/homebrew-core/issues/41081
