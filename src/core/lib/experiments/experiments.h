@@ -81,6 +81,7 @@ inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 inline bool IsEventEnginePollerForPythonEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_SECURE_ENDPOINT
 inline bool IsEventEngineSecureEndpointEnabled() { return true; }
+inline bool IsFailRecvMetadataOnDeadlineExceededEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsFuseFiltersEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
@@ -140,6 +141,7 @@ inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 inline bool IsEventEnginePollerForPythonEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_SECURE_ENDPOINT
 inline bool IsEventEngineSecureEndpointEnabled() { return true; }
+inline bool IsFailRecvMetadataOnDeadlineExceededEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsFuseFiltersEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
@@ -199,6 +201,7 @@ inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 inline bool IsEventEnginePollerForPythonEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_SECURE_ENDPOINT
 inline bool IsEventEngineSecureEndpointEnabled() { return true; }
+inline bool IsFailRecvMetadataOnDeadlineExceededEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsFuseFiltersEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
@@ -251,6 +254,7 @@ enum ExperimentIds {
   kExperimentIdEventEngineForAllOtherEndpoints,
   kExperimentIdEventEnginePollerForPython,
   kExperimentIdEventEngineSecureEndpoint,
+  kExperimentIdFailRecvMetadataOnDeadlineExceeded,
   kExperimentIdFreeLargeAllocator,
   kExperimentIdFuseFilters,
   kExperimentIdKeepAlivePingTimerBatch,
@@ -341,6 +345,10 @@ inline bool IsEventEnginePollerForPythonEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_SECURE_ENDPOINT
 inline bool IsEventEngineSecureEndpointEnabled() {
   return IsExperimentEnabled<kExperimentIdEventEngineSecureEndpoint>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_FAIL_RECV_METADATA_ON_DEADLINE_EXCEEDED
+inline bool IsFailRecvMetadataOnDeadlineExceededEnabled() {
+  return IsExperimentEnabled<kExperimentIdFailRecvMetadataOnDeadlineExceeded>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_FREE_LARGE_ALLOCATOR
 inline bool IsFreeLargeAllocatorEnabled() {

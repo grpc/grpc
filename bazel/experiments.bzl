@@ -32,6 +32,7 @@ EXPERIMENT_ENABLES = {
     "event_engine_for_all_other_endpoints": "event_engine_client,event_engine_dns,event_engine_dns_non_client_channel,event_engine_for_all_other_endpoints,event_engine_listener",
     "event_engine_poller_for_python": "event_engine_poller_for_python",
     "event_engine_secure_endpoint": "event_engine_secure_endpoint",
+    "fail_recv_metadata_on_deadline_exceeded": "fail_recv_metadata_on_deadline_exceeded",
     "free_large_allocator": "free_large_allocator",
     "fuse_filters": "fuse_filters",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
