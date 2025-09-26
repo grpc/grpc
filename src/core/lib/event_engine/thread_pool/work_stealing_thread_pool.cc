@@ -378,15 +378,25 @@ WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::Lifeguard(
   // lifeguard_running_ is set early to avoid a quiesce race while the
   // lifeguard is still starting up.
   lifeguard_running_.store(true);
-  grpc_core::Thread(
-      "lifeguard",
-      [](void* arg) {
-        auto* lifeguard = static_cast<Lifeguard*>(arg);
-        lifeguard->LifeguardMain();
-      },
-      this, nullptr,
-      grpc_core::Thread::Options().set_tracked(false).set_joinable(false))
-      .Start();
+  while (true) {
+    bool success = false;
+    grpc_core::Thread thread(
+        "lifeguard",
+        [](void* arg) {
+          auto* lifeguard = static_cast<Lifeguard*>(arg);
+          lifeguard->LifeguardMain();
+        },
+        this, &success,
+        grpc_core::Thread::Options().set_tracked(false).set_joinable(false));
+    if (success) {
+      thread.Start();
+      break;
+    } else {
+      // Wait until the system/user has sufficient resources to create a thread.
+      absl::SleepFor(
+          absl::Milliseconds(kTimeBetweenThrottledThreadStarts.millis()));
+    }
+  }
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
