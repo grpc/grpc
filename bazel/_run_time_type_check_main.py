@@ -37,37 +37,34 @@ install_import_hook('grpc.aio._call')
 
 
 class SingleLoader:
-    def __init__(self, target_module: str, test_patterns: Optional[list[str]] = None):
+    def __init__(
+        self, target_module: str, test_patterns: Optional[list[str]] = None
+    ):
         loader = unittest.TestLoader()
         loader.testNamePatterns = test_patterns
         self.suite = unittest.TestSuite()
         suites = []
 
         # Look in the current working directory for test modules
-        current_dir = os.getcwd()
-
-        for _, module_name, _ in pkgutil.walk_packages([current_dir]):
+        for _, module_name, _ in pkgutil.walk_packages([os.getcwd()]):
             if target_module in module_name:
                 spec = importlib.util.find_spec(module_name)
-                target_module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(target_module)
-                suites.append(loader.loadTestsFromModule(target_module))
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                suites.append(loader.loadTestsFromModule(module))
 
         assert len(suites) == 1, f"Expected only 1 test module. Found {suites}"
         self.suite.addTest(suites[0])
 
-    def loadTestsFromNames(self, names: Sequence[str], module: str = None) -> unittest.TestSuite:
-        return self.suite
-
 
 def _convert_select_pattern(pattern):
     # Same as https://github.com/python/cpython/blob/v3.13.7/Lib/unittest/main.py#L50
-    if not '*' in pattern:
-        pattern = '*%s*' % pattern
+    if not "*" in pattern:
+        pattern = "*%s*" % pattern
     return pattern
 
 
-def argsParser() -> argparse.ArgumentParser:
+def _arg_parser() -> argparse.ArgumentParser:
     # https://github.com/python/cpython/blob/v3.13.7/Lib/unittest/main.py#L161
     parser = argparse.ArgumentParser()
     parser.add_argument('-v', '--verbose', dest='verbosity',
@@ -103,7 +100,7 @@ def main():
     target_module = sys.argv[0]
 
     # Optional test args the rest.
-    parsed_args = argsParser().parse_args(sys.argv[1:])
+    parsed_args = _arg_parser().parse_args(sys.argv[1:])
     test_kwargs = vars(parsed_args)
 
     if test_kwargs["verbosity"] is None:
