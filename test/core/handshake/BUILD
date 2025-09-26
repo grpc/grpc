@@ -49,6 +49,7 @@ grpc_fuzz_test(
     external_deps = [
         "fuzztest",
         "fuzztest_main",
+        "gtest",
     ],
     deps = [
         "test_handshake",
