@@ -51,6 +51,7 @@ _CLIENT_FORK_SCRIPT_TEMPLATE = """if True:
     from src.python.grpcio_tests.tests.fork import native_debug
 
     native_debug.install_failure_signal_handler()
+    methods.setup_logger()
 
     cygrpc._GRPC_ENABLE_FORK_SUPPORT = True
     os.environ['GRPC_ENABLE_FORK_SUPPORT'] = 'true'
