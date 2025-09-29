@@ -19,6 +19,7 @@
 #include <map>
 #include <string>
 
+#include "src/core/channelz/property_list.h"
 #include "src/core/channelz/ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 
@@ -229,6 +230,37 @@ using Http2ZTraceCollector = channelz::ZTraceCollector<
     H2GoAwayTrace<true>, H2WindowUpdateTrace<true>, H2SecurityTrace<true>,
     H2UnknownFrameTrace, H2FlowControlStall, H2BeginWriteCycle, H2EndWriteCycle,
     H2BeginEndpointWrite>;
+
+struct PromiseEndpointReadTrace {
+  uint64_t bytes;
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList().Set("read_bytes", bytes);
+  }
+};
+
+struct PromiseEndpointWriteTrace {
+  uint64_t bytes;
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList().Set("written_bytes", bytes);
+  }
+};
+
+namespace promise_http2_ztrace_collector_detail {
+class Config {
+ public:
+  explicit Config(const channelz::ZTrace::Args&) {}
+
+  template <typename T>
+  bool Finishes(const T&) {
+    return false;
+  }
+};
+}  // namespace promise_http2_ztrace_collector_detail
+
+using PromiseHttp2ZTraceCollector =
+    channelz::ZTraceCollector<promise_http2_ztrace_collector_detail::Config,
+                              PromiseEndpointReadTrace,
+                              PromiseEndpointWriteTrace>;
 
 }  // namespace grpc_core
 
