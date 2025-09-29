@@ -36,6 +36,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
@@ -44,6 +45,7 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/time.h"
 #include "test/core/promise/poll_matcher.h"
+#include "test/core/test_util/postmortem.h"
 #include "test/core/transport/chttp2/http2_frame_test_helper.h"
 #include "test/core/transport/util/mock_promise_endpoint.h"
 #include "test/core/transport/util/transport_test.h"
@@ -89,6 +91,8 @@ class Http2ClientTransportTest : public TransportTest {
 
  protected:
   Http2FrameTestHelper helper_;
+  OrphanablePtr<Http2ClientTransport> client_transport_;
+  PostMortem postmortem_;
 };
 
 TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
@@ -121,14 +125,24 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
   mock_endpoint.ExpectReadClose(absl::UnavailableError("Connection closed"),
                                 event_engine().get());
 
-  auto client_transport = MakeOrphanable<Http2ClientTransport>(
+  client_transport_ = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
-      event_engine(), nullptr);
+      event_engine(), /*on_receive_settings=*/nullptr);
 
-  EXPECT_EQ(client_transport->filter_stack_transport(), nullptr);
-  EXPECT_NE(client_transport->client_transport(), nullptr);
-  EXPECT_EQ(client_transport->server_transport(), nullptr);
-  EXPECT_EQ(client_transport->GetTransportName(), "http2");
+  EXPECT_EQ(client_transport_->filter_stack_transport(), nullptr);
+  EXPECT_NE(client_transport_->client_transport(), nullptr);
+  EXPECT_EQ(client_transport_->server_transport(), nullptr);
+  EXPECT_EQ(client_transport_->GetTransportName(), "http2");
+
+  std::unique_ptr<channelz::ZTrace> trace =
+      client_transport_->GetZTrace("transport_frames");
+  EXPECT_NE(trace, nullptr);
+
+  auto socket_node = client_transport_->GetSocketNode();
+  EXPECT_NE(socket_node, nullptr);
+
+  // Uncomment this when you want to see ChannelZ Postmortem.
+  // FAIL() << "Intentionally failing to display channelz data";
 
   // Wait for Http2ClientTransport's internal activities to finish.
   event_engine()->TickUntilIdle();
@@ -187,7 +201,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromCall) {
 
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
-      event_engine(), nullptr);
+      event_engine(), /*on_receive_settings=*/nullptr);
   auto call = MakeCall(TestInitialMetadata());
   client_transport->StartCall(call.handler.StartCall());
 
@@ -244,7 +258,7 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportAbortTest) {
 
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
-      event_engine(), nullptr);
+      event_engine(), /*on_receive_settings=*/nullptr);
   auto call = MakeCall(TestInitialMetadata());
   client_transport->StartCall(call.handler.StartCall());
 
@@ -313,7 +327,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingRead) {
 
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
-      event_engine(), nullptr);
+      event_engine(), /*on_receive_settings=*/nullptr);
 
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
@@ -378,7 +392,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingWrite) {
 
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
-      event_engine(), nullptr);
+      event_engine(), /*on_receive_settings=*/nullptr);
   client_transport->TestOnlySpawnPromise(
       "PingRequest", [&client_transport, &ping_ack_received] {
         return Map(TrySeq(client_transport->TestOnlyTriggerWriteCycle(),
@@ -432,7 +446,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingTimeout) {
 
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
-      event_engine(), nullptr);
+      event_engine(), /*on_receive_settings=*/nullptr);
   client_transport->TestOnlySpawnPromise("PingRequest", [&client_transport] {
     return Map(TrySeq(client_transport->TestOnlyTriggerWriteCycle(),
                       [&client_transport] {
@@ -527,7 +541,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
       GetChannelArgs()
           .Set(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS, 2)
           .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, true),
-      event_engine(), nullptr);
+      event_engine(), /*on_receive_settings=*/nullptr);
 
   client_transport->TestOnlySpawnPromise(
       "PingRequest", [&client_transport, &ping_ack_received, ping_complete] {
@@ -609,7 +623,7 @@ TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
   LOG(INFO) << "Creating Http2ClientTransport";
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
-      event_engine(), nullptr);
+      event_engine(), /*on_receive_settings=*/nullptr);
   LOG(INFO) << "Initiating CallSpine";
   auto call = MakeCall(TestInitialMetadata());
 

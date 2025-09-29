@@ -35,6 +35,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
@@ -90,7 +91,8 @@ namespace http2 {
 // familiar with the PH2 project (Moving chttp2 to promises.)
 // TODO(tjagtap) : [PH2][P3] : Update the experimental status of the code before
 // http2 rollout begins.
-class Http2ClientTransport final : public ClientTransport {
+class Http2ClientTransport final : public ClientTransport,
+                                   public channelz::DataSource {
   // TODO(tjagtap) : [PH2][P3] Move the definitions to the header for better
   // inlining. For now definitions are in the cc file to
   // reduce cognitive load in the header.
@@ -130,8 +132,17 @@ class Http2ClientTransport final : public ClientTransport {
   void AbortWithError();
 
   RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
+    return const_cast<channelz::BaseNode*>(
+               channelz::DataSource::channelz_node())
+        ->RefAsSubclass<channelz::SocketNode>();
+  }
+
+  std::unique_ptr<channelz::ZTrace> GetZTrace(absl::string_view name) override {
+    if (name == "transport_frames") return ztrace_collector_->MakeZTrace();
     return nullptr;
   }
+
+  void AddData(channelz::DataSink sink) override;
 
   auto TestOnlyTriggerWriteCycle() {
     return Immediate(writable_stream_list_.ForceReadyForWrite());
@@ -311,15 +322,13 @@ class Http2ClientTransport final : public ClientTransport {
 
   auto EndpointReadSlice(const size_t num_bytes) {
     return Map(endpoint_.ReadSlice(num_bytes),
-               [self = RefAsSubclass<Http2ClientTransport>()](
-                   absl::StatusOr<Slice> status) {
-                 // We are ignoring the case where the read fails and call
-                 // GotData() regardless. Reasoning:
-                 // 1. It is expected that if the read fails, the transport will
-                 //    close and the keepalive loop will be stopped.
-                 // 2. It does not seem worth to have an extra condition for the
-                 //    success cases which would be way more common.
-                 self->keepalive_manager_.GotData();
+               [self = RefAsSubclass<Http2ClientTransport>(),
+                num_bytes](absl::StatusOr<Slice> status) {
+                 if (status.ok()) {
+                   self->keepalive_manager_.GotData();
+                   self->ztrace_collector_->Append(
+                       PromiseEndpointReadTrace{num_bytes});
+                 }
                  return status;
                });
   }
@@ -351,15 +360,13 @@ class Http2ClientTransport final : public ClientTransport {
 
   auto EndpointRead(const size_t num_bytes) {
     return Map(endpoint_.Read(num_bytes),
-               [self = RefAsSubclass<Http2ClientTransport>()](
-                   absl::StatusOr<SliceBuffer> status) {
-                 // We are ignoring the case where the read fails and call
-                 // GotData() regardless. Reasoning:
-                 // 1. It is expected that if the read fails, the transport will
-                 //    close and the keepalive loop will be stopped.
-                 // 2. It does not seem worth to have an extra condition for the
-                 //    success cases which would be way more common.
-                 self->keepalive_manager_.GotData();
+               [self = RefAsSubclass<Http2ClientTransport>(),
+                num_bytes](absl::StatusOr<SliceBuffer> status) {
+                 if (status.ok()) {
+                   self->keepalive_manager_.GotData();
+                   self->ztrace_collector_->Append(
+                       PromiseEndpointReadTrace{num_bytes});
+                 }
                  return status;
                });
   }
@@ -611,6 +618,7 @@ class Http2ClientTransport final : public ClientTransport {
   GRPC_UNUSED bool enable_preferred_rx_crypto_frame_advertisement_;
   MemoryOwner memory_owner_;
   chttp2::TransportFlowControl flow_control_;
+  std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
 };
 
 // Since the corresponding class in CHTTP2 is about 3.9KB, our goal is to
