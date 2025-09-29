@@ -70,44 +70,10 @@ static const upb_MiniTableField validate_FieldRules__fields[22] = {
 const upb_MiniTable validate__FieldRules_msg_init = {
   &validate_FieldRules__submsgs[0],
   &validate_FieldRules__fields[0],
-  UPB_SIZE(24, 32), 22, kUpb_ExtMode_NonExtendable, 22, UPB_FASTTABLE_MASK(248), 0,
+  UPB_SIZE(24, 32), 22, kUpb_ExtMode_NonExtendable, 22, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.FieldRules",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0018000c0100000a, &upb_pom_1bt_max64b},
-    {0x0018000c02010012, &upb_pom_1bt_max128b},
-    {0x0018000c0302001a, &upb_pom_1bt_max64b},
-    {0x0018000c04030022, &upb_pom_1bt_max128b},
-    {0x0018000c0504002a, &upb_pom_1bt_max64b},
-    {0x0018000c06050032, &upb_pom_1bt_max128b},
-    {0x0018000c0706003a, &upb_pom_1bt_max64b},
-    {0x0018000c08070042, &upb_pom_1bt_max128b},
-    {0x0018000c0908004a, &upb_pom_1bt_max64b},
-    {0x0018000c0a090052, &upb_pom_1bt_max128b},
-    {0x0018000c0b0a005a, &upb_pom_1bt_max64b},
-    {0x0018000c0c0b0062, &upb_pom_1bt_max128b},
-    {0x0018000c0d0c006a, &upb_pom_1bt_max64b},
-    {0x0018000c0e0d0072, &upb_pom_1bt_max192b},
-    {0x0018000c0f0e007a, &upb_pom_1bt_max192b},
-    {0x0018000c100f0182, &upb_pom_2bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0018000c12110192, &upb_pom_2bt_max64b},
-    {0x0018000c1312019a, &upb_pom_2bt_max64b},
-    {0x0018000c141301a2, &upb_pom_2bt_max64b},
-    {0x0018000c151401aa, &upb_pom_2bt_max128b},
-    {0x0018000c161501b2, &upb_pom_2bt_max128b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* validate__FieldRules_msg_init_ptr = &validate__FieldRules_msg_init;
@@ -131,13 +97,13 @@ const upb_MiniTable validate__FloatRules_msg_init = {
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002000003f000035, &upb_prf4_1bt},
-    {0x002800003f00003d, &upb_prf4_1bt},
+    {0x000c00000000000d, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x0010000001000015, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x001400000200001d, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x0018000003000025, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x001c00000400002d, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x002000003f000035, &upb_DecodeFast_Fixed32_Repeated_Tag1Byte},
+    {0x002800003f00003d, &upb_DecodeFast_Fixed32_Repeated_Tag1Byte},
   })
 };
 
@@ -162,13 +128,13 @@ const upb_MiniTable validate__DoubleRules_msg_init = {
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x003800003f000031, &upb_prf8_1bt},
-    {0x004000003f000039, &upb_prf8_1bt},
+    {0x0010000000000009, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x0018000001000011, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x0020000002000019, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x0028000003000021, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x0030000004000029, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x003800003f000031, &upb_DecodeFast_Fixed64_Repeated_Tag1Byte},
+    {0x004000003f000039, &upb_DecodeFast_Fixed64_Repeated_Tag1Byte},
   })
 };
 
@@ -187,20 +153,10 @@ static const upb_MiniTableField validate_Int32Rules__fields[8] = {
 const upb_MiniTable validate__Int32Rules_msg_init = {
   NULL,
   &validate_Int32Rules__fields[0],
-  UPB_SIZE(40, 48), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(40, 48), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.Int32Rules",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002000003f000030, &upb_prv4_1bt},
-    {0x002800003f000038, &upb_prv4_1bt},
-  })
 };
 
 const upb_MiniTable* validate__Int32Rules_msg_init_ptr = &validate__Int32Rules_msg_init;
@@ -218,20 +174,10 @@ static const upb_MiniTableField validate_Int64Rules__fields[8] = {
 const upb_MiniTable validate__Int64Rules_msg_init = {
   NULL,
   &validate_Int64Rules__fields[0],
-  UPB_SIZE(64, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(64, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.Int64Rules",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x003800003f000030, &upb_prv8_1bt},
-    {0x004000003f000038, &upb_prv8_1bt},
-  })
 };
 
 const upb_MiniTable* validate__Int64Rules_msg_init_ptr = &validate__Int64Rules_msg_init;
@@ -249,20 +195,10 @@ static const upb_MiniTableField validate_UInt32Rules__fields[8] = {
 const upb_MiniTable validate__UInt32Rules_msg_init = {
   NULL,
   &validate_UInt32Rules__fields[0],
-  UPB_SIZE(40, 48), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(40, 48), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.UInt32Rules",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002000003f000030, &upb_prv4_1bt},
-    {0x002800003f000038, &upb_prv4_1bt},
-  })
 };
 
 const upb_MiniTable* validate__UInt32Rules_msg_init_ptr = &validate__UInt32Rules_msg_init;
@@ -280,20 +216,10 @@ static const upb_MiniTableField validate_UInt64Rules__fields[8] = {
 const upb_MiniTable validate__UInt64Rules_msg_init = {
   NULL,
   &validate_UInt64Rules__fields[0],
-  UPB_SIZE(64, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(64, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.UInt64Rules",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x003800003f000030, &upb_prv8_1bt},
-    {0x004000003f000038, &upb_prv8_1bt},
-  })
 };
 
 const upb_MiniTable* validate__UInt64Rules_msg_init_ptr = &validate__UInt64Rules_msg_init;
@@ -311,20 +237,10 @@ static const upb_MiniTableField validate_SInt32Rules__fields[8] = {
 const upb_MiniTable validate__SInt32Rules_msg_init = {
   NULL,
   &validate_SInt32Rules__fields[0],
-  UPB_SIZE(40, 48), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(40, 48), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.SInt32Rules",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002000003f000030, &upb_prz4_1bt},
-    {0x002800003f000038, &upb_prz4_1bt},
-  })
 };
 
 const upb_MiniTable* validate__SInt32Rules_msg_init_ptr = &validate__SInt32Rules_msg_init;
@@ -342,20 +258,10 @@ static const upb_MiniTableField validate_SInt64Rules__fields[8] = {
 const upb_MiniTable validate__SInt64Rules_msg_init = {
   NULL,
   &validate_SInt64Rules__fields[0],
-  UPB_SIZE(64, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(64, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.SInt64Rules",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x003800003f000030, &upb_prz8_1bt},
-    {0x004000003f000038, &upb_prz8_1bt},
-  })
 };
 
 const upb_MiniTable* validate__SInt64Rules_msg_init_ptr = &validate__SInt64Rules_msg_init;
@@ -379,13 +285,13 @@ const upb_MiniTable validate__Fixed32Rules_msg_init = {
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002000003f000035, &upb_prf4_1bt},
-    {0x002800003f00003d, &upb_prf4_1bt},
+    {0x000c00000000000d, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x0010000001000015, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x001400000200001d, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x0018000003000025, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x001c00000400002d, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x002000003f000035, &upb_DecodeFast_Fixed32_Repeated_Tag1Byte},
+    {0x002800003f00003d, &upb_DecodeFast_Fixed32_Repeated_Tag1Byte},
   })
 };
 
@@ -410,13 +316,13 @@ const upb_MiniTable validate__Fixed64Rules_msg_init = {
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x003800003f000031, &upb_prf8_1bt},
-    {0x004000003f000039, &upb_prf8_1bt},
+    {0x0010000000000009, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x0018000001000011, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x0020000002000019, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x0028000003000021, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x0030000004000029, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x003800003f000031, &upb_DecodeFast_Fixed64_Repeated_Tag1Byte},
+    {0x004000003f000039, &upb_DecodeFast_Fixed64_Repeated_Tag1Byte},
   })
 };
 
@@ -441,13 +347,13 @@ const upb_MiniTable validate__SFixed32Rules_msg_init = {
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x002000003f000035, &upb_prf4_1bt},
-    {0x002800003f00003d, &upb_prf4_1bt},
+    {0x000c00000000000d, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x0010000001000015, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x001400000200001d, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x0018000003000025, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x001c00000400002d, &upb_DecodeFast_Fixed32_Scalar_Tag1Byte},
+    {0x002000003f000035, &upb_DecodeFast_Fixed32_Repeated_Tag1Byte},
+    {0x002800003f00003d, &upb_DecodeFast_Fixed32_Repeated_Tag1Byte},
   })
 };
 
@@ -472,13 +378,13 @@ const upb_MiniTable validate__SFixed64Rules_msg_init = {
 #endif
   UPB_FASTTABLE_INIT({
     {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x003800003f000031, &upb_prf8_1bt},
-    {0x004000003f000039, &upb_prf8_1bt},
+    {0x0010000000000009, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x0018000001000011, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x0020000002000019, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x0028000003000021, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x0030000004000029, &upb_DecodeFast_Fixed64_Scalar_Tag1Byte},
+    {0x003800003f000031, &upb_DecodeFast_Fixed64_Repeated_Tag1Byte},
+    {0x004000003f000039, &upb_DecodeFast_Fixed64_Repeated_Tag1Byte},
   })
 };
 
@@ -533,44 +439,10 @@ static const upb_MiniTableField validate_StringRules__fields[26] = {
 const upb_MiniTable validate__StringRules_msg_init = {
   &validate_StringRules__submsgs[0],
   &validate_StringRules__fields[0],
-  UPB_SIZE(128, 184), 26, kUpb_ExtMode_NonExtendable, 26, UPB_FASTTABLE_MASK(248), 0,
+  UPB_SIZE(128, 184), 26, kUpb_ExtMode_NonExtendable, 26, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.StringRules",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x009800003f000052, &upb_prs_1bt},
-    {0x00a000003f00005a, &upb_prs_1bt},
-    {0x0010000c0c000060, &upb_pob1_1bt},
-    {0x0010000c0d000068, &upb_pob1_1bt},
-    {0x0010000c0e000070, &upb_pob1_1bt},
-    {0x0010000c0f000078, &upb_pob1_1bt},
-    {0x0010000c10000180, &upb_pob1_2bt},
-    {0x0010000c11000188, &upb_pob1_2bt},
-    {0x0010000c12000190, &upb_pob1_2bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0010000c150001a8, &upb_pob1_2bt},
-    {0x0010000c160001b0, &upb_pob1_2bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* validate__StringRules_msg_init_ptr = &validate__StringRules_msg_init;
@@ -594,28 +466,10 @@ static const upb_MiniTableField validate_BytesRules__fields[14] = {
 const upb_MiniTable validate__BytesRules_msg_init = {
   NULL,
   &validate_BytesRules__fields[0],
-  UPB_SIZE(88, 136), 14, kUpb_ExtMode_NonExtendable, 14, UPB_FASTTABLE_MASK(120), 0,
+  UPB_SIZE(88, 136), 14, kUpb_ExtMode_NonExtendable, 14, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.BytesRules",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x007000003f000042, &upb_prb_1bt},
-    {0x007800003f00004a, &upb_prb_1bt},
-    {0x000b000c0a000050, &upb_pob1_1bt},
-    {0x000b000c0b000058, &upb_pob1_1bt},
-    {0x000b000c0c000060, &upb_pob1_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* validate__BytesRules_msg_init_ptr = &validate__BytesRules_msg_init;
@@ -629,20 +483,10 @@ static const upb_MiniTableField validate_EnumRules__fields[4] = {
 const upb_MiniTable validate__EnumRules_msg_init = {
   NULL,
   &validate_EnumRules__fields[0],
-  UPB_SIZE(24, 32), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(24, 32), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.EnumRules",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f000018, &upb_prv4_1bt},
-    {0x001800003f000020, &upb_prv4_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* validate__EnumRules_msg_init_ptr = &validate__EnumRules_msg_init;
@@ -716,16 +560,10 @@ static const upb_MiniTableField validate_AnyRules__fields[3] = {
 const upb_MiniTable validate__AnyRules_msg_init = {
   NULL,
   &validate_AnyRules__fields[0],
-  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(24, 32), 3, kUpb_ExtMode_NonExtendable, 3, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.AnyRules",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f000012, &upb_prs_1bt},
-    {0x001800003f00001a, &upb_prs_1bt},
-  })
 };
 
 const upb_MiniTable* validate__AnyRules_msg_init_ptr = &validate__AnyRules_msg_init;
@@ -753,28 +591,10 @@ static const upb_MiniTableField validate_DurationRules__fields[8] = {
 const upb_MiniTable validate__DurationRules_msg_init = {
   &validate_DurationRules__submsgs[0],
   &validate_DurationRules__fields[0],
-  UPB_SIZE(40, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(120), 0,
+  UPB_SIZE(40, 72), 8, kUpb_ExtMode_NonExtendable, 8, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "validate.DurationRules",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x003800003f05003a, &upb_prm_1bt_maxmaxb},
-    {0x004000003f060042, &upb_prm_1bt_maxmaxb},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* validate__DurationRules_msg_init_ptr = &validate__DurationRules_msg_init;

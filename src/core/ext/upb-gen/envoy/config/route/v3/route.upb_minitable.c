@@ -58,28 +58,10 @@ static const upb_MiniTableField envoy_config_route_v3_RouteConfiguration__fields
 const upb_MiniTable envoy__config__route__v3__RouteConfiguration_msg_init = {
   &envoy_config_route_v3_RouteConfiguration__submsgs[0],
   &envoy_config_route_v3_RouteConfiguration__fields[0],
-  UPB_SIZE(72, 136), 17, kUpb_ExtMode_NonExtendable, 17, UPB_FASTTABLE_MASK(120), 0,
+  UPB_SIZE(72, 136), 17, kUpb_ExtMode_NonExtendable, 17, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.route.v3.RouteConfiguration",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x002000003f000012, &upb_prm_1bt_maxmaxb},
-    {0x002800003f00001a, &upb_prs_1bt},
-    {0x003000003f010022, &upb_prm_1bt_maxmaxb},
-    {0x003800003f00002a, &upb_prs_1bt},
-    {0x004000003f020032, &upb_prm_1bt_maxmaxb},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x005000003f000042, &upb_prs_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000900003f000050, &upb_psb1_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x006800003f060062, &upb_prm_1bt_maxmaxb},
-    {0x007000003f07006a, &upb_prm_1bt_maxmaxb},
-    {0x000a00003f000070, &upb_psb1_1bt},
-    {0x000b00003f000078, &upb_psb1_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__config__route__v3__RouteConfiguration_msg_init_ptr = &envoy__config__route__v3__RouteConfiguration_msg_init;
@@ -95,14 +77,10 @@ static const upb_MiniTableField envoy_config_route_v3_RouteConfiguration_TypedPe
 const upb_MiniTable envoy__config__route__v3__RouteConfiguration__TypedPerFilterConfigEntry_msg_init = {
   &envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry__submsgs[0],
   &envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry__fields[0],
-  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
+  48, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.config.route.v3.RouteConfiguration.TypedPerFilterConfigEntry",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__config__route__v3__RouteConfiguration__TypedPerFilterConfigEntry_msg_init_ptr = &envoy__config__route__v3__RouteConfiguration__TypedPerFilterConfigEntry_msg_init;

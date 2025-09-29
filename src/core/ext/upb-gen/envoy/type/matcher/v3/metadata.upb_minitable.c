@@ -33,20 +33,10 @@ static const upb_MiniTableField envoy_type_matcher_v3_MetadataMatcher__fields[4]
 const upb_MiniTable envoy__type__matcher__v3__MetadataMatcher_msg_init = {
   &envoy_type_matcher_v3_MetadataMatcher__submsgs[0],
   &envoy_type_matcher_v3_MetadataMatcher__fields[0],
-  UPB_SIZE(32, 48), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(56), 0,
+  UPB_SIZE(32, 48), 4, kUpb_ExtMode_NonExtendable, 4, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.type.matcher.v3.MetadataMatcher",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000003f00000a, &upb_pss_1bt},
-    {0x002000003f000012, &upb_prm_1bt_max64b},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x000900003f000020, &upb_psb1_1bt},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-  })
 };
 
 const upb_MiniTable* envoy__type__matcher__v3__MetadataMatcher_msg_init_ptr = &envoy__type__matcher__v3__MetadataMatcher_msg_init;
@@ -57,14 +47,10 @@ static const upb_MiniTableField envoy_type_matcher_v3_MetadataMatcher_PathSegmen
 const upb_MiniTable envoy__type__matcher__v3__MetadataMatcher__PathSegment_msg_init = {
   NULL,
   &envoy_type_matcher_v3_MetadataMatcher_PathSegment__fields[0],
-  UPB_SIZE(24, 32), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+  UPB_SIZE(24, 32), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.type.matcher.v3.MetadataMatcher.PathSegment",
 #endif
-  UPB_FASTTABLE_INIT({
-    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
-    {0x001000080100000a, &upb_pos_1bt},
-  })
 };
 
 const upb_MiniTable* envoy__type__matcher__v3__MetadataMatcher__PathSegment_msg_init_ptr = &envoy__type__matcher__v3__MetadataMatcher__PathSegment_msg_init;
