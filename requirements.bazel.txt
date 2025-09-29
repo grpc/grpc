@@ -36,7 +36,8 @@
 absl-py
 certifi
 chardet
-gevent
+# Note: this is a temporary for local builds until CI is running py3.9+
+gevent~=25.8
 google-auth
 googleapis-common-protos
 idna

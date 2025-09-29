@@ -10636,6 +10636,7 @@ grpc_cc_library(
         "time",
         "upb_utils",
         "//:channelz_property_list_upb",
+        "//:channelz_property_list_upbdefs",
         "//:channelz_upb",
         "//:gpr",
         "//:protobuf_any_upb",
