@@ -174,9 +174,7 @@ class Http2ClientTransport final : public ClientTransport {
   Http2Status ProcessHttp2WindowUpdateFrame(Http2WindowUpdateFrame frame);
   Http2Status ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame);
   Http2Status ProcessHttp2SecurityFrame(Http2SecurityFrame frame);
-  Http2Status ProcessMetadata(uint32_t stream_id, HeaderAssembler& assembler,
-                              CallHandler& call,
-                              bool& did_push_initial_metadata);
+  Http2Status ProcessMetadata(RefCountedPtr<Stream> stream);
 
   // Reading from the endpoint.
 
@@ -224,7 +222,7 @@ class Http2ClientTransport final : public ClientTransport {
 
   // Returns a promise to fetch data from the callhandler and pass it further
   // down towards the endpoint.
-  auto CallOutboundLoop(CallHandler call_handler, uint32_t stream_id,
+  auto CallOutboundLoop(CallHandler call_handler, RefCountedPtr<Stream> stream,
                         InterActivityMutex<uint32_t>::Lock lock,
                         ClientMetadataHandle metadata);
 
@@ -292,7 +290,8 @@ class Http2ClientTransport final : public ClientTransport {
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
       "http2_client", GRPC_CHANNEL_READY};
 
-  bool MakeStream(CallHandler call_handler, uint32_t stream_id);
+  std::optional<RefCountedPtr<Stream>> MakeStream(CallHandler call_handler,
+                                                  uint32_t stream_id);
 
   struct CloseStreamArgs {
     bool close_reads;
@@ -300,7 +299,7 @@ class Http2ClientTransport final : public ClientTransport {
   };
 
   // This function MUST be idempotent.
-  void CloseStream(uint32_t stream_id, CloseStreamArgs args,
+  void CloseStream(RefCountedPtr<Stream> stream, CloseStreamArgs args,
                    DebugLocation whence = {});
 
   void BeginCloseStream(uint32_t stream_id,
@@ -601,7 +600,9 @@ class Http2ClientTransport final : public ClientTransport {
     }
     return absl::OkStatus();
   }
-  bool SetOnDone(CallHandler call_handler, uint32_t stream_id);
+  bool SetOnDone(CallHandler call_handler, RefCountedPtr<Stream> stream);
+  absl::StatusOr<std::vector<Http2Frame>> DequeueStreamFrames(
+      RefCountedPtr<Stream> stream);
 
   /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
   /// the peer
