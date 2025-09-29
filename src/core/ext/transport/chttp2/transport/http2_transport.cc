@@ -47,7 +47,7 @@ void InitLocalSettings(Http2Settings& settings, const bool is_client) {
     // gRPC has never supported PUSH_PROMISE and we have no plan to do so in the
     // future.
     settings.SetEnablePush(false);
-    // This is to make it double-sure that server cannot initite a stream.
+    // This is to make it double-sure that server cannot initiate a stream.
     settings.SetMaxConcurrentStreams(0);
   }
   settings.SetMaxHeaderListSize(DEFAULT_MAX_HEADER_LIST_SIZE);
@@ -144,6 +144,44 @@ RefCountedPtr<channelz::SocketNode> CreateChannelzSocketNode(
         args.GetObjectRef<channelz::SocketNode::Security>());
   }
   return nullptr;
+}
+
+ValueOrHttp2Status<chttp2::FlowControlAction>
+ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
+                                    chttp2::TransportFlowControl& flow_control,
+                                    RefCountedPtr<Stream> stream) {
+  GRPC_DCHECK_EQ(frame_header.type, 0u);
+  if (frame_header.length > 0) {
+    if (stream == nullptr) {
+      // This flow control bookkeeping needs to happen even though the stream is
+      // gone because otherwise we will go out-of-sync with the peer.
+      // The flow control numbers should be consistent for both peers.
+      chttp2::TransportFlowControl::IncomingUpdateContext transport_fc(
+          &flow_control);
+      absl::Status fc_status = transport_fc.RecvData(frame_header.length);
+      chttp2::FlowControlAction action = transport_fc.MakeAction();
+      if (!fc_status.ok()) {
+        LOG(ERROR) << "Flow control error: " << fc_status.message();
+        return Http2Status::Http2ConnectionError(
+            Http2ErrorCode::kFlowControlError,
+            std::string(fc_status.message()));
+      }
+      return action;
+    } else {
+      chttp2::StreamFlowControl::IncomingUpdateContext stream_fc(
+          &stream->flow_control);
+      absl::Status fc_status = stream_fc.RecvData(frame_header.length);
+      chttp2::FlowControlAction action = stream_fc.MakeAction();
+      if (!fc_status.ok()) {
+        LOG(ERROR) << "Flow control error: " << fc_status.message();
+        return Http2Status::Http2ConnectionError(
+            Http2ErrorCode::kFlowControlError,
+            std::string(fc_status.message()));
+      }
+      return action;
+    }
+  }
+  return chttp2::FlowControlAction();
 }
 
 }  // namespace http2
