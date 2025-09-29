@@ -10516,6 +10516,32 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "goaway",
+    srcs = [
+        "ext/transport/chttp2/transport/goaway.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/goaway.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/status",
+    ],
+    deps = [
+        "activity",
+        "http2_status",
+        "if",
+        "race",
+        "slice_buffer",
+        "try_seq",
+        "wait_set",
+        "//:chttp2_frame",
+        "//:promise",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "spiffe_utils",
     srcs = [
         "//src/core:credentials/transport/tls/spiffe_utils.cc",
