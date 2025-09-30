@@ -173,7 +173,7 @@
   test_tags: []
 - name: max_inflight_pings_strict_limit
   description: If set, the max inflight pings limit is strictly enforced.
-  expiry: 2025/09/30
+  expiry: 2026/02/01
   owner: akshitpatel@google.com
   test_tags: []
 - name: monitoring_experiment
