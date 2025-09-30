@@ -579,7 +579,7 @@ class _InterceptedStreamRequestMixin:
 
         if call.done():
             raise asyncio.InvalidStateError(_RPC_ALREADY_FINISHED_DETAILS)
-        elif call._done_writing_flag:
+        if call._done_writing_flag:
             raise asyncio.InvalidStateError(_RPC_HALF_CLOSED_DETAILS)
 
         await self._write_to_iterator_queue_interruptible(request, call)
