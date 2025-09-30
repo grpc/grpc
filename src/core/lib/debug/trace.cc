@@ -17,8 +17,6 @@
 //
 
 #include "src/core/lib/debug/trace.h"
-
-#include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
 #include <string>
@@ -33,8 +31,6 @@
 #include "absl/strings/strip.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/util/glob.h"
-
-int grpc_tracer_set_enabled(const char* name, int enabled);
 
 namespace grpc_core {
 namespace {
