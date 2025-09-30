@@ -46,6 +46,9 @@ class XdsHttpFilterImpl {
       return config_proto_type_name == other.config_proto_type_name &&
              config == other.config;
     }
+    bool operator!=(const FilterConfig& other) const {
+      return !(*this == other);
+    }
     std::string ToString() const {
       return absl::StrCat("{config_proto_type_name=", config_proto_type_name,
                           " config=", JsonDump(config), "}");

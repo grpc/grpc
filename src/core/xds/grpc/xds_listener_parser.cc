@@ -264,13 +264,18 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
           }
           continue;
         }
+// FIXME: remove old config parsing
         std::optional<XdsHttpFilterImpl::FilterConfig> filter_config =
             filter_impl->GenerateFilterConfig(name, context,
                                               std::move(*extension), errors);
-        if (filter_config.has_value()) {
+        RefCountedPtr<const FilterConfig> config =
+            filter_impl->ParseTopLevelConfig(name, context,
+                                             std::move(*extension), errors);
+        if (filter_config.has_value() || config != nullptr) {
           http_connection_manager.http_filters.emplace_back(
               XdsListenerResource::HttpConnectionManager::HttpFilter{
-                  std::string(name), std::move(*filter_config)});
+                  std::string(name), std::move(*filter_config),
+                  std::move(config)});
         }
       }
     }

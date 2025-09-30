@@ -29,6 +29,7 @@
 #include <variant>
 #include <vector>
 
+#include "src/core/filter/filter_args.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/util/time.h"
 #include "src/core/xds/grpc/xds_common_types.h"
@@ -52,9 +53,11 @@ struct XdsListenerResource : public XdsResourceType::ResourceData {
     struct HttpFilter {
       std::string name;
       XdsHttpFilterImpl::FilterConfig config;
+      RefCountedPtr<const FilterConfig> filter_config;
 
       bool operator==(const HttpFilter& other) const {
-        return name == other.name && config == other.config;
+        return name == other.name && config == other.config &&
+               *filter_config == *other.filter_config;
       }
 
       std::string ToString() const;

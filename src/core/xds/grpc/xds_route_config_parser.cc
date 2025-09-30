@@ -407,7 +407,14 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
         filter_impl->GenerateFilterConfigOverride(
             key, context, std::move(*extension_to_use), errors);
     if (filter_config.has_value()) {
-      typed_per_filter_config[std::string(key)] = std::move(*filter_config);
+      typed_per_filter_config[std::string(key)].old_config =
+          std::move(*filter_config);
+    }
+    RefCountedPtr<const FilterConfig> config =
+        filter_impl->ParseOverrideConfig(
+            key, context, std::move(*extension_to_use), errors);
+    if (config != nullptr) {
+      typed_per_filter_config[std::string(key)].config = std::move(config);
     }
   }
   return typed_per_filter_config;

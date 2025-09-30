@@ -6069,6 +6069,7 @@ grpc_cc_library(
     ],
     tags = ["nofixdeps"],
     deps = [
+        "filter_args",
         "match",
         "resolved_address",
         "time",

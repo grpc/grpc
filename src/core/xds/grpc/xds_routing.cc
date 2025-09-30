@@ -201,14 +201,16 @@ const XdsHttpFilterImpl::FilterConfig* FindFilterConfigOverride(
   // Check ClusterWeight, if any.
   if (cluster_weight != nullptr) {
     auto it = cluster_weight->typed_per_filter_config.find(instance_name);
-    if (it != cluster_weight->typed_per_filter_config.end()) return &it->second;
+    if (it != cluster_weight->typed_per_filter_config.end()) {
+      return &it->second.old_config;
+    }
   }
   // Check Route.
   auto it = route.typed_per_filter_config.find(instance_name);
-  if (it != route.typed_per_filter_config.end()) return &it->second;
+  if (it != route.typed_per_filter_config.end()) return &it->second.old_config;
   // Check VirtualHost.
   it = vhost.typed_per_filter_config.find(instance_name);
-  if (it != vhost.typed_per_filter_config.end()) return &it->second;
+  if (it != vhost.typed_per_filter_config.end()) return &it->second.old_config;
   // Not found.
   return nullptr;
 }
