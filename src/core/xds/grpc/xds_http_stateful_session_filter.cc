@@ -302,7 +302,7 @@ StatefulSessionFilter::CookieConfig ParseCookieConfig(
 
 RefCountedPtr<const grpc_core::FilterConfig>
 XdsHttpStatefulSessionFilter::ParseTopLevelConfig(
-      absl::string_view instance_name,
+      absl::string_view /*instance_name*/,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
@@ -326,7 +326,7 @@ XdsHttpStatefulSessionFilter::ParseTopLevelConfig(
 
 RefCountedPtr<const grpc_core::FilterConfig>
 XdsHttpStatefulSessionFilter::ParseOverrideConfig(
-      absl::string_view instance_name,
+      absl::string_view /*instance_name*/,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =

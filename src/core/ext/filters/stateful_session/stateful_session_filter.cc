@@ -94,7 +94,8 @@ StatefulSessionFilter::Create(const ChannelArgs&,
 }
 
 StatefulSessionFilter::StatefulSessionFilter(ChannelFilter::Args filter_args)
-    : index_(filter_args.instance_id()),
+    : config_(filter_args.config().TakeAsSubclass<const Config>()),
+      index_(filter_args.instance_id()),
       service_config_parser_index_(
           StatefulSessionServiceConfigParser::ParserIndex()) {}
 
