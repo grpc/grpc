@@ -164,6 +164,7 @@ XdsHttpGcpAuthnFilter::ParseTopLevelConfig(
     return nullptr;
   }
   auto config = MakeRefCounted<GcpAuthenticationFilter::Config>();
+  config->instance_name = std::string(instance_name);
   const auto* cache_config =
       envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_cache_config(
           gcp_auth);
