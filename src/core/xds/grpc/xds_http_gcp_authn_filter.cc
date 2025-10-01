@@ -16,8 +16,6 @@
 
 #include "src/core/xds/grpc/xds_http_gcp_authn_filter.h"
 
-#include <grpc/support/json.h>
-
 #include <string>
 #include <utility>
 #include <variant>
@@ -29,8 +27,6 @@
 #include "src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h"
 #include "src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/util/json/json.h"
-#include "src/core/util/json/json_writer.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
@@ -202,18 +198,11 @@ RefCountedPtr<const FilterConfig> XdsHttpGcpAuthnFilter::MergeConfigs(
 }
 
 void XdsHttpGcpAuthnFilter::UpdateBlackboard(
-    const XdsFilterConfig& hcm_filter_config,
-    const FilterConfig* config,
-    const Blackboard* old_blackboard,
+    const FilterConfig& config, const Blackboard* old_blackboard,
     Blackboard* new_blackboard) const {
   const auto& filter_config =
-      DownCast<const GcpAuthenticationFilter::Config&>(*config);
+      DownCast<const GcpAuthenticationFilter::Config&>(config);
   ValidationErrors errors;
-#if 0
-  auto config = LoadFromJson<GcpAuthenticationParsedConfig::Config>(
-      hcm_filter_config.config, JsonArgs(), &errors);
-  CHECK(errors.ok()) << errors.message("filter config validation failed");
-#endif
   RefCountedPtr<GcpAuthenticationFilter::CallCredentialsCache> cache;
   if (old_blackboard != nullptr) {
     cache = old_blackboard->Get<GcpAuthenticationFilter::CallCredentialsCache>(

@@ -463,8 +463,7 @@ void XdsResolver::RouteConfigData::BuildFilterChains(
         GRPC_TRACE_LOG(xds_resolver, INFO)
             << "  Adding filter=" << filter_config.name << " config="
             << config->ToString();
-        filter->UpdateBlackboard({}, config.get(), old_blackboard,
-                                 new_blackboard);
+        filter->UpdateBlackboard(*config, old_blackboard, new_blackboard);
         filter->AddFilter(builder, std::move(config));
       }
       default_filter_chain = builder.Build();
@@ -507,8 +506,7 @@ void XdsResolver::RouteConfigData::BuildFilterChains(
             GRPC_TRACE_LOG(xds_resolver, INFO)
                 << "  Adding filter=" << filter_config.name << " config="
                 << config->ToString();
-            filter->UpdateBlackboard({}, config.get(), old_blackboard,
-                                     new_blackboard);
+            filter->UpdateBlackboard(*config, old_blackboard, new_blackboard);
             filter->AddFilter(builder, std::move(config));
           }
           route_filter_chain = builder.Build();
@@ -559,8 +557,7 @@ void XdsResolver::RouteConfigData::BuildFilterChains(
             GRPC_TRACE_LOG(xds_resolver, INFO)
                 << "  Adding filter=" << filter_config.name << " config="
                 << config->ToString();
-            filter->UpdateBlackboard({}, config.get(), old_blackboard,
-                                     new_blackboard);
+            filter->UpdateBlackboard(*config, old_blackboard, new_blackboard);
             filter->AddFilter(builder, std::move(config));
           }
           cluster_weight.filter_chain = builder.Build();
@@ -932,8 +929,8 @@ void XdsResolver::XdsConfigSelector::AddFilters(
   for (size_t i = 0; i < filters_.size(); ++i) {
     auto* filter = filters_[i];
     filter->AddFilter(builder);
-    filter->UpdateBlackboard(hcm.http_filters[i].config, nullptr,
-                             old_blackboard, new_blackboard);
+    filter->UpdateBlackboard(hcm.http_filters[i].config, old_blackboard,
+                             new_blackboard);
   }
   builder.Add<ClusterSelectionFilter>();
 }
@@ -950,8 +947,8 @@ XdsResolver::XdsConfigSelector::GetFilters(const Blackboard* old_blackboard,
     if (filter->channel_filter() != nullptr) {
       filters.push_back(filter->channel_filter());
     }
-    filter->UpdateBlackboard(hcm.http_filters[i].config, nullptr,
-                             old_blackboard, new_blackboard);
+    filter->UpdateBlackboard(hcm.http_filters[i].config, old_blackboard,
+                             new_blackboard);
   }
   filters.push_back(&ClusterSelectionFilter::kFilter);
   return filters;

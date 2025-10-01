@@ -69,8 +69,7 @@ class XdsHttpGcpAuthnFilter final : public XdsHttpFilterImpl {
       RefCountedPtr<const FilterConfig> route_override_config,
       RefCountedPtr<const FilterConfig>
           cluster_weight_override_config) const override;
-  void UpdateBlackboard(const XdsFilterConfig& hcm_filter_config,
-                        const FilterConfig* config,
+  void UpdateBlackboard(const FilterConfig& config,
                         const Blackboard* old_blackboard,
                         Blackboard* new_blackboard) const override;
   bool IsSupportedOnClients() const override { return true; }

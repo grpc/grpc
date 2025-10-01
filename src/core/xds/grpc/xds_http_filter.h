@@ -130,6 +130,13 @@ class XdsHttpFilterImpl {
   virtual absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const XdsFilterConfig& hcm_filter_config) const = 0;
 
+// FIXME: remove
+  // Adds state to new_blackboard if needed for the specified filter
+  // config.  Copies existing state from old_blackboard as appropriate.
+  virtual void UpdateBlackboard(const XdsFilterConfig& /*hcm_filter_config*/,
+                                const Blackboard* /*old_blackboard*/,
+                                Blackboard* /*new_blackboard*/) const {}
+
   // Adds the filter to the builder.
   virtual void AddFilter(FilterChainBuilder& builder,
                          RefCountedPtr<const FilterConfig> config) const = 0;
@@ -158,9 +165,7 @@ class XdsHttpFilterImpl {
 
   // Adds state to new_blackboard if needed for the specified filter
   // config.  Copies existing state from old_blackboard as appropriate.
-  virtual void UpdateBlackboard(
-      const XdsFilterConfig& /*hcm_filter_config*/,  // FIXME: remove
-                                const FilterConfig* /*config*/,
+  virtual void UpdateBlackboard(const FilterConfig& /*config*/,
                                 const Blackboard* /*old_blackboard*/,
                                 Blackboard* /*new_blackboard*/) const {}
 
