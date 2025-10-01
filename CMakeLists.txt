@@ -1601,6 +1601,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx latch_test)
   add_dependencies(buildtests_cxx latent_see_service_test)
   add_dependencies(buildtests_cxx latent_see_test)
+  add_dependencies(buildtests_cxx latent_see_tool_test)
   add_dependencies(buildtests_cxx layout_test)
   add_dependencies(buildtests_cxx lb_get_cpu_stats_test)
   add_dependencies(buildtests_cxx lb_load_data_store_test)
@@ -11310,6 +11311,10 @@ add_executable(channelz_tool_test
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/promise.pb.h
@@ -11355,6 +11360,7 @@ add_executable(channelz_tool_test
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   src/core/util/seq_bit_set.cc
+  src/cpp/latent_see/latent_see_client.cc
   test/cpp/sleuth/channelz_tool.cc
   test/cpp/sleuth/channelz_tool_test.cc
   test/cpp/sleuth/client.cc
@@ -12385,6 +12391,11 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(client_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.h
+  src/cpp/latent_see/latent_see_client.cc
   test/cpp/sleuth/client.cc
   test/cpp/sleuth/client_test.cc
   third_party/googletest/googlemock/src/gmock_main.cc
@@ -22535,6 +22546,107 @@ target_link_libraries(latent_see_test
   absl::span
   absl::utility
   gpr
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(latent_see_tool_test
+  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/service.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/service.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/service.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/service.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+  src/core/ext/transport/chaotic_good/chaotic_good.cc
+  src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good/client_transport.cc
+  src/core/ext/transport/chaotic_good/control_endpoint.cc
+  src/core/ext/transport/chaotic_good/data_endpoints.cc
+  src/core/ext/transport/chaotic_good/frame.cc
+  src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/scheduler.cc
+  src/core/ext/transport/chaotic_good/send_rate.cc
+  src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good/server_transport.cc
+  src/core/ext/transport/chaotic_good/tcp_frame_header.cc
+  src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
+  src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
+  src/core/ext/transport/chaotic_good_legacy/client_transport.cc
+  src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
+  src/core/ext/transport/chaotic_good_legacy/data_endpoints.cc
+  src/core/ext/transport/chaotic_good_legacy/frame.cc
+  src/core/ext/transport/chaotic_good_legacy/frame_header.cc
+  src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
+  src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  src/core/util/seq_bit_set.cc
+  src/cpp/latent_see/latent_see_client.cc
+  src/cpp/latent_see/latent_see_service.cc
+  test/cpp/sleuth/client.cc
+  test/cpp/sleuth/latent_see_tool.cc
+  test/cpp/sleuth/latent_see_tool_test.cc
+  test/cpp/sleuth/tool_credentials.cc
+  test/cpp/sleuth/tool_options.cc
+  test/cpp/sleuth/tool_test.cc
+  test/cpp/util/cli_call.cc
+  test/cpp/util/cli_credentials.cc
+  test/cpp/util/proto_file_parser.cc
+  test/cpp/util/proto_reflection_descriptor_database.cc
+  test/cpp/util/service_describer.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(latent_see_tool_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(latent_see_tool_test PUBLIC cxx_std_17)
+target_include_directories(latent_see_tool_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(latent_see_tool_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc++
+  ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  grpc_test_util
 )
 
 
