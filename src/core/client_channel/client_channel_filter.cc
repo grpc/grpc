@@ -128,7 +128,7 @@ class ClientChannelFilter::CallData {
   virtual void RetryCheckResolutionLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannelFilter::resolution_mu_) = 0;
 
-  RefCountedPtr<DynamicFilters> dynamic_filters() const {
+  RefCountedPtr<const DynamicFilters> dynamic_filters() const {
     return dynamic_filters_;
   }
 
@@ -181,7 +181,7 @@ class ClientChannelFilter::CallData {
   // from the resolver.
   virtual void ResetDeadline(Duration timeout) = 0;
 
-  RefCountedPtr<DynamicFilters> dynamic_filters_;
+  RefCountedPtr<const DynamicFilters> dynamic_filters_;
 };
 
 class ClientChannelFilter::FilterBasedCallData final
@@ -1866,7 +1866,7 @@ grpc_error_handle ClientChannelFilter::CallData::ApplyServiceConfigToCallLocked(
     return absl_status_to_grpc_error(
         MaybeRewriteIllegalStatusCode(filter_chain.status(), "ConfigSelector"));
   }
-  dynamic_filters_ = filter_chain->TakeAsSubclass<DynamicFilters>();
+  dynamic_filters_ = filter_chain->TakeAsSubclass<const DynamicFilters>();
   // Apply our own method params to the call.
   auto* method_params = static_cast<ClientChannelMethodParsedConfig*>(
       service_config_call_data->GetMethodParsedConfig(
@@ -2282,7 +2282,7 @@ void ClientChannelFilter::FilterBasedCallData::CreateDynamicCall() {
                                      call_start_time_,  deadline_,
                                      arena(),           call_combiner()};
   grpc_error_handle error;
-  DynamicFilters* channel_stack = args.channel_stack.get();
+  const DynamicFilters* channel_stack = args.channel_stack.get();
   GRPC_TRACE_LOG(client_channel_call, INFO)
       << "chand=" << chand() << " calld=" << this
       << ": creating dynamic call stack on channel_stack=" << channel_stack;

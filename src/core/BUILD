@@ -3760,6 +3760,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "filter_chain",
+    hdrs = [
+        "filter/filter_chain.h",
+    ],
+    deps = [
+        "filter_args",
+        "interception_chain",
+        "ref_counted",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "fused_filters",
     srcs = [
         "filter/fused_filters.cc",
@@ -6022,6 +6035,7 @@ grpc_cc_library(
         "blackboard",
         "channel_args",
         "channel_fwd",
+        "filter_chain",
         "interception_chain",
         "json",
         "json_writer",

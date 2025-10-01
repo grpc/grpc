@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_CLIENT_CHANNEL_FILTER_CHAIN_H
-#define GRPC_SRC_CORE_CLIENT_CHANNEL_FILTER_CHAIN_H
+#ifndef GRPC_SRC_CORE_FILTER_FILTER_CHAIN_H
+#define GRPC_SRC_CORE_FILTER_FILTER_CHAIN_H
 
 #include <memory>
 #include <utility>
@@ -98,7 +98,7 @@ class FilterChainBuilder {
    public:
     void AddToBuilder(filter_chain_detail::FilterChainBuilderV1* builder,
                       RefCountedPtr<const FilterConfig> config) const override {
-      builder->AddFilter(FilterType::kFilterVtable, std::move(config));
+      builder->AddFilter(&FilterType::kFilterVtable, std::move(config));
     }
     void AddToBuilder(InterceptionChainBuilder* builder,
                       RefCountedPtr<const FilterConfig> config) const override {
@@ -113,4 +113,4 @@ class FilterChainBuilder {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_CLIENT_CHANNEL_FILTER_CHAIN_H
+#endif  // GRPC_SRC_CORE_FILTER_FILTER_CHAIN_H

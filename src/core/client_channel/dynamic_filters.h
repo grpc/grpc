@@ -23,8 +23,8 @@
 #include <utility>
 #include <vector>
 
-#include "src/core/client_channel/filter_chain.h"
 #include "src/core/filter/blackboard.h"
+#include "src/core/filter/filter_chain.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -48,7 +48,7 @@ class DynamicFilters final : public FilterChain {
   class Call {
    public:
     struct Args {
-      RefCountedPtr<DynamicFilters> channel_stack;
+      RefCountedPtr<const DynamicFilters> channel_stack;
       grpc_polling_entity* pollent;
       gpr_cycle_counter start_time;
       Timestamp deadline;
@@ -85,7 +85,7 @@ class DynamicFilters final : public FilterChain {
 
     static void Destroy(void* arg, grpc_error_handle error);
 
-    RefCountedPtr<DynamicFilters> channel_stack_;
+    RefCountedPtr<const DynamicFilters> channel_stack_;
     grpc_closure* after_call_stack_destroy_ = nullptr;
   };
 
@@ -96,7 +96,8 @@ class DynamicFilters final : public FilterChain {
   explicit DynamicFilters(RefCountedPtr<grpc_channel_stack> channel_stack)
       : channel_stack_(std::move(channel_stack)) {}
 
-  RefCountedPtr<Call> CreateCall(Call::Args args, grpc_error_handle* error);
+  RefCountedPtr<Call> CreateCall(Call::Args args,
+                                 grpc_error_handle* error) const;
 
   grpc_channel_stack* channel_stack() const { return channel_stack_.get(); }
 

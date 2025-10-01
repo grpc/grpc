@@ -166,7 +166,7 @@ class ClientChannel : public Channel {
 
   // Applies service config settings from config_selector to the call.
   // May modify call context and client_initial_metadata.
-  absl::StatusOr<RefCountedPtr<FilterChain>> ApplyServiceConfigToCall(
+  absl::StatusOr<RefCountedPtr<const FilterChain>> ApplyServiceConfigToCall(
       ConfigSelector& config_selector,
       ClientMetadata& client_initial_metadata) const;
 

@@ -573,6 +573,12 @@ void XdsHttpRbacFilter::AddFilter(InterceptionChainBuilder& builder) const {
   builder.Add<RbacFilter>();
 }
 
+void XdsHttpRbacFilter::AddFilter(
+    FilterChainBuilder& builder,
+    RefCountedPtr<const grpc_core::FilterConfig> config) const {
+  builder.AddFilter<RbacFilter>(std::move(config));
+}
+
 const grpc_channel_filter* XdsHttpRbacFilter::channel_filter() const {
   return &RbacFilter::kFilterVtable;
 }

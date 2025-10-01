@@ -115,6 +115,12 @@ void XdsHttpGcpAuthnFilter::AddFilter(InterceptionChainBuilder& builder) const {
   builder.Add<GcpAuthenticationFilter>();
 }
 
+void XdsHttpGcpAuthnFilter::AddFilter(
+    FilterChainBuilder& builder,
+    RefCountedPtr<const grpc_core::FilterConfig> config) const {
+  builder.AddFilter<GcpAuthenticationFilter>(std::move(config));
+}
+
 const grpc_channel_filter* XdsHttpGcpAuthnFilter::channel_filter() const {
   return &GcpAuthenticationFilter::kFilterVtable;
 }

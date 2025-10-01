@@ -201,6 +201,12 @@ void XdsHttpStatefulSessionFilter::AddFilter(
   builder.Add<StatefulSessionFilter>();
 }
 
+void XdsHttpStatefulSessionFilter::AddFilter(
+    FilterChainBuilder& builder,
+    RefCountedPtr<const grpc_core::FilterConfig> config) const {
+  builder.AddFilter<StatefulSessionFilter>(std::move(config));
+}
+
 const grpc_channel_filter* XdsHttpStatefulSessionFilter::channel_filter()
     const {
   return &StatefulSessionFilter::kFilterVtable;

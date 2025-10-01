@@ -109,7 +109,8 @@ void DynamicFilters::Call::Destroy(void* arg, grpc_error_handle /*error*/) {
   DynamicFilters::Call* self = static_cast<DynamicFilters::Call*>(arg);
   // Keep some members before destroying the subchannel call.
   grpc_closure* after_call_stack_destroy = self->after_call_stack_destroy_;
-  RefCountedPtr<DynamicFilters> channel_stack = std::move(self->channel_stack_);
+  RefCountedPtr<const DynamicFilters> channel_stack =
+      std::move(self->channel_stack_);
   // Destroy the subchannel call.
   self->~Call();
   // Destroy the call stack. This should be after destroying the call, because
@@ -164,7 +165,7 @@ RefCountedPtr<DynamicFilters> DynamicFilters::Create(
 }
 
 RefCountedPtr<DynamicFilters::Call> DynamicFilters::CreateCall(
-    DynamicFilters::Call::Args args, grpc_error_handle* error) {
+    DynamicFilters::Call::Args args, grpc_error_handle* error) const {
   size_t allocation_size = GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(Call)) +
                            channel_stack_->call_stack_size;
   Call* call = static_cast<Call*>(args.arena->Alloc(allocation_size));

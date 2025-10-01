@@ -64,6 +64,8 @@ class XdsHttpRouterFilter final : public XdsHttpFilterImpl {
     // This will never be called, since channel_filter() returns null.
     return absl::UnimplementedError("router filter should never be called");
   }
+  void AddFilter(FilterChainBuilder& /*builder*/,
+                 RefCountedPtr<const grpc_core::FilterConfig> /*config*/) const override {}
   RefCountedPtr<const grpc_core::FilterConfig> ParseTopLevelConfig(
         absl::string_view instance_name,
         const XdsResourceType::DecodeContext& context, XdsExtension extension,

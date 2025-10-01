@@ -29,8 +29,8 @@
 #include "src/core/call/interception_chain.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/client_channel/client_channel_internal.h"
-#include "src/core/client_channel/filter_chain.h"
 #include "src/core/filter/blackboard.h"
+#include "src/core/filter/filter_chain.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
@@ -86,7 +86,7 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
     Arena* arena;
     ClientChannelServiceConfigCallData* service_config_call_data;
   };
-  virtual absl::StatusOr<RefCountedPtr<FilterChain>> GetCallConfig(
+  virtual absl::StatusOr<RefCountedPtr<const FilterChain>> GetCallConfig(
       GetCallConfigArgs args) = 0;
 
   static absl::string_view ChannelArgName() { return GRPC_ARG_CONFIG_SELECTOR; }
@@ -123,7 +123,7 @@ class DefaultConfigSelector final : public ConfigSelector {
     filter_chain_ = builder.Build();
   }
 
-  absl::StatusOr<RefCountedPtr<FilterChain>> GetCallConfig(
+  absl::StatusOr<RefCountedPtr<const FilterChain>> GetCallConfig(
       GetCallConfigArgs args) override {
     Slice* path = args.initial_metadata->get_pointer(HttpPathMetadata());
     GRPC_CHECK_NE(path, nullptr);

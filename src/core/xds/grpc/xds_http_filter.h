@@ -25,6 +25,7 @@
 #include "absl/strings/string_view.h"
 #include "src/core/call/interception_chain.h"
 #include "src/core/filter/blackboard.h"
+#include "src/core/filter/filter_chain.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/util/json/json.h"
@@ -97,7 +98,7 @@ class XdsHttpFilterImpl {
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const = 0;
 
-// FIXME: these need to work differently
+// FIXME: remove
   // C-core channel filter implementation.
   virtual void AddFilter(InterceptionChainBuilder& builder) const = 0;
   // TODO(roth): Remove this once the legacy filter stack goes away.
@@ -128,6 +129,10 @@ class XdsHttpFilterImpl {
   // Currently used only on the client side.
   virtual absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const FilterConfig& hcm_filter_config) const = 0;
+
+  // Adds the filter to the builder.
+  virtual void AddFilter(FilterChainBuilder& builder,
+                         RefCountedPtr<const grpc_core::FilterConfig> config) const = 0;
 
   // Parses the top-level filter config.
   virtual RefCountedPtr<const grpc_core::FilterConfig> ParseTopLevelConfig(

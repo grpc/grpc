@@ -218,6 +218,12 @@ void XdsHttpFaultFilter::AddFilter(InterceptionChainBuilder& builder) const {
   builder.Add<FaultInjectionFilter>();
 }
 
+void XdsHttpFaultFilter::AddFilter(
+    FilterChainBuilder& builder,
+    RefCountedPtr<const grpc_core::FilterConfig> config) const {
+  builder.AddFilter<FaultInjectionFilter>(std::move(config));
+}
+
 const grpc_channel_filter* XdsHttpFaultFilter::channel_filter() const {
   return &FaultInjectionFilter::kFilterVtable;
 }

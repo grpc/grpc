@@ -52,6 +52,8 @@ class XdsHttpGcpAuthnFilter final : public XdsHttpFilterImpl {
       const FilterConfig* filter_config_override) const override;
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const FilterConfig& hcm_filter_config) const override;
+  void AddFilter(FilterChainBuilder& builder,
+                 RefCountedPtr<const grpc_core::FilterConfig> config) const override;
   RefCountedPtr<const grpc_core::FilterConfig> ParseTopLevelConfig(
         absl::string_view instance_name,
         const XdsResourceType::DecodeContext& context, XdsExtension extension,

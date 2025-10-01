@@ -963,7 +963,7 @@ void ClientChannel::StartCall(UnstartedCallHandler unstarted_handler) {
               auto& [config_selector, was_queued] = result_and_delayed;
               if (!config_selector.ok()) return config_selector.status();
               // Apply service config to call.
-              absl::StatusOr<RefCountedPtr<FilterChain>> filter_chain =
+              absl::StatusOr<RefCountedPtr<const FilterChain>> filter_chain =
                   self->ApplyServiceConfigToCall(
                       **config_selector,
                       unstarted_handler.UnprocessedClientInitialMetadata());
@@ -979,7 +979,7 @@ void ClientChannel::StartCall(UnstartedCallHandler unstarted_handler) {
               // Start the call on the destination provided by the
               // resolver.
               auto destination =
-                  DownCast<FilterChainImpl*>(filter_chain->get())
+                  DownCast<const FilterChainImpl*>(filter_chain->get())
                   ->destination();
               destination->StartCall(std::move(unstarted_handler));
               return absl::OkStatus();
@@ -1429,7 +1429,7 @@ void ClientChannel::StartIdleTimer() {
       std::move(arena)));
 }
 
-absl::StatusOr<RefCountedPtr<FilterChain>>
+absl::StatusOr<RefCountedPtr<const FilterChain>>
 ClientChannel::ApplyServiceConfigToCall(
     ConfigSelector& config_selector,
     ClientMetadata& client_initial_metadata) const {
