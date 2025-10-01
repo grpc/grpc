@@ -97,7 +97,7 @@ XdsHttpRouterFilter::ParseTopLevelConfig(
     errors->AddError("could not parse router filter config");
     return nullptr;
   }
-  return nullptr;  // FIXME: is this okay?
+  return nullptr;
 }
 
 RefCountedPtr<const grpc_core::FilterConfig>

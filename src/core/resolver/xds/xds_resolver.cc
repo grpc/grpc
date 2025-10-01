@@ -445,23 +445,31 @@ void XdsResolver::RouteConfigData::BuildFilterChains(
   GRPC_CHECK_EQ(filters.size(), hcm.http_filters.size());
   // A lambda to build the top-level filter chain, to be used for any
   // route that does not have a per-route override config.
-  absl::StatusOr<RefCountedPtr<const FilterChain>> default_filter_chain;
+  absl::StatusOr<RefCountedPtr<const FilterChain>> default_filter_chain =
+      nullptr;
   auto get_default_filter_chain = [&]() {
     if (default_filter_chain.ok() && *default_filter_chain == nullptr) {
+      GRPC_TRACE_LOG(xds_resolver, INFO) << "Building default filter chain:";
       for (size_t i = 0; i < filters.size(); ++i) {
         auto* filter = filters[i];
         const auto& filter_config = hcm.http_filters[i];
+        if (filter_config.filter_config == nullptr) continue;
         auto vhost_override_config = GetOverrideConfig(
             xds_config.virtual_host->typed_per_filter_config,
             filter_config.name);
         auto config = filter->MergeConfigs(
             filter_config.filter_config, std::move(vhost_override_config),
             nullptr, nullptr);
-        filter->AddFilter(builder, config);
+        GRPC_TRACE_LOG(xds_resolver, INFO)
+            << "  Adding filter=" << filter_config.name << " config="
+            << config->ToString();
         filter->UpdateBlackboard({}, config.get(), old_blackboard,
                                  new_blackboard);
+        filter->AddFilter(builder, std::move(config));
       }
       default_filter_chain = builder.Build();
+      GRPC_TRACE_LOG(xds_resolver, INFO)
+          << "Filter chain creation status: " << default_filter_chain.status();
     }
     return default_filter_chain;
   };
@@ -473,9 +481,13 @@ void XdsResolver::RouteConfigData::BuildFilterChains(
     if (route_action == nullptr) continue;
     // A lambda to construct filter chain for the route.  Used if the
     // route does not have any per-ClusterWeight override configs.
-    absl::StatusOr<RefCountedPtr<const FilterChain>> route_filter_chain;
+    absl::StatusOr<RefCountedPtr<const FilterChain>> route_filter_chain =
+        nullptr;
     auto get_route_filter_chain = [&]() {
       if (route_filter_chain.ok() && *route_filter_chain == nullptr) {
+        GRPC_TRACE_LOG(xds_resolver, INFO)
+            << "Building filter chain for route:"
+            << route_entry.route.ToString();
         if (route_entry.route.typed_per_filter_config.empty()) {
           // No per-route overrides, so use the default filter chain.
           route_filter_chain = get_default_filter_chain();
@@ -483,6 +495,7 @@ void XdsResolver::RouteConfigData::BuildFilterChains(
           for (size_t i = 0; i < filters.size(); ++i) {
             auto* filter = filters[i];
             const auto& filter_config = hcm.http_filters[i];
+            if (filter_config.filter_config == nullptr) continue;
             auto vhost_override_config = GetOverrideConfig(
                 xds_config.virtual_host->typed_per_filter_config,
                 filter_config.name);
@@ -491,11 +504,17 @@ void XdsResolver::RouteConfigData::BuildFilterChains(
             auto config = filter->MergeConfigs(
                 filter_config.filter_config, std::move(vhost_override_config),
                 std::move(route_override_config), nullptr);
-            filter->AddFilter(builder, config);
+            GRPC_TRACE_LOG(xds_resolver, INFO)
+                << "  Adding filter=" << filter_config.name << " config="
+                << config->ToString();
             filter->UpdateBlackboard({}, config.get(), old_blackboard,
                                      new_blackboard);
+            filter->AddFilter(builder, std::move(config));
           }
           route_filter_chain = builder.Build();
+          GRPC_TRACE_LOG(xds_resolver, INFO)
+              << "Filter chain creation status: "
+              << route_filter_chain.status();
         }
       }
       return route_filter_chain;
@@ -510,33 +529,44 @@ void XdsResolver::RouteConfigData::BuildFilterChains(
       GRPC_CHECK_EQ(weighted_clusters->size(),
                     route_entry.weighted_cluster_state.size());
       for (size_t j = 0; j < weighted_clusters->size(); ++j) {
-        const auto& typed_per_filter_config =
-            (*weighted_clusters)[j].typed_per_filter_config;
+        const auto& cluster_weight_entry = (*weighted_clusters)[j];
         auto& cluster_weight = route_entry.weighted_cluster_state[j];
-        if (typed_per_filter_config.empty()) {
+        if (cluster_weight_entry.typed_per_filter_config.empty()) {
           // No per-ClusterWeight overrides, so use the route-level
           // filter chain.
           cluster_weight.filter_chain = get_route_filter_chain();
         } else {
+          GRPC_TRACE_LOG(xds_resolver, INFO)
+              << "Building filter chain for route:"
+              << route_entry.route.ToString()
+              << " ClusterWeight:" << cluster_weight_entry.ToString();
           for (size_t i = 0; i < filters.size(); ++i) {
             auto* filter = filters[i];
             const auto& filter_config = hcm.http_filters[i];
+            if (filter_config.filter_config == nullptr) continue;
             auto vhost_override_config = GetOverrideConfig(
                 xds_config.virtual_host->typed_per_filter_config,
                 filter_config.name);
             auto route_override_config = GetOverrideConfig(
                 route_entry.route.typed_per_filter_config, filter_config.name);
             auto cluster_weight_override_config = GetOverrideConfig(
-                typed_per_filter_config, filter_config.name);
+                cluster_weight_entry.typed_per_filter_config,
+                filter_config.name);
             auto config = filter->MergeConfigs(
                 filter_config.filter_config, std::move(vhost_override_config),
                 std::move(route_override_config),
                 std::move(cluster_weight_override_config));
-            filter->AddFilter(builder, config);
+            GRPC_TRACE_LOG(xds_resolver, INFO)
+                << "  Adding filter=" << filter_config.name << " config="
+                << config->ToString();
             filter->UpdateBlackboard({}, config.get(), old_blackboard,
                                      new_blackboard);
+            filter->AddFilter(builder, std::move(config));
           }
           cluster_weight.filter_chain = builder.Build();
+          GRPC_TRACE_LOG(xds_resolver, INFO)
+              << "Filter chain creation status: "
+              << cluster_weight.filter_chain.status();
         }
       }
     }
