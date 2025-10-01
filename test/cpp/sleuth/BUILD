@@ -118,6 +118,9 @@ grpc_cc_binary(
         "absl/flags:parse",
         "absl/status",
     ],
+    visibility = [
+        "//platforms/bloom/packages/grpc:__subpackages__",
+    ],
     deps = [
         ":channelz_tool",
         ":latent_see_tool",
