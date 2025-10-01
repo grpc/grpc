@@ -84,7 +84,6 @@ class FilterArgs {
     return std::get<ChannelStackBased>(impl_).channel_stack;
   }
 
-  // FIXME: remove
   // Get the instance id of this filter.
   // This id is unique amongst all filters /of the same type/ and densely
   // packed (starting at 0) for a given channel stack instantiation.
@@ -92,6 +91,8 @@ class FilterArgs {
   // 0 0 0 1 1 0 2.
   // This is useful for filters that need to store per-instance data in a
   // parallel data structure.
+  // TODO(roth): Remove this once server side is migrated to the new
+  // approach for handling xDS filter configs.
   size_t instance_id() const {
     return Match(
         impl_,

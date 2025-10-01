@@ -607,30 +607,35 @@ XdsHttpRbacFilter::GenerateServiceConfig(
 
 RefCountedPtr<const FilterConfig>
 XdsHttpRbacFilter::ParseTopLevelConfig(
-      absl::string_view instance_name,
-      const XdsResourceType::DecodeContext& context, XdsExtension extension,
-      ValidationErrors* errors) const {
-// FIXME
+      absl::string_view /*instance_name*/,
+      const XdsResourceType::DecodeContext& /*context*/,
+      XdsExtension /*extension*/,
+      ValidationErrors* /*errors*/) const {
+  // TODO(roth): Implement this as part of migrating the server side to
+  // the new approach for passing xDS HTTP filter configs.
   return nullptr;
 }
 
 RefCountedPtr<const FilterConfig>
 XdsHttpRbacFilter::ParseOverrideConfig(
-      absl::string_view instance_name,
-      const XdsResourceType::DecodeContext& context, XdsExtension extension,
-      ValidationErrors* errors) const {
-// FIXME
+      absl::string_view /*instance_name*/,
+      const XdsResourceType::DecodeContext& /*context*/,
+      XdsExtension /*extension*/,
+      ValidationErrors* /*errors*/) const {
+  // TODO(roth): Implement this as part of migrating the server side to
+  // the new approach for passing xDS HTTP filter configs.
   return nullptr;
 }
 
 RefCountedPtr<const FilterConfig> XdsHttpRbacFilter::MergeConfigs(
-    RefCountedPtr<const FilterConfig> top_level_config,
+    RefCountedPtr<const FilterConfig> /*top_level_config*/,
     RefCountedPtr<const FilterConfig>
-        virtual_host_override_config,
-    RefCountedPtr<const FilterConfig> route_override_config,
+        /*virtual_host_override_config*/,
+    RefCountedPtr<const FilterConfig> /*route_override_config*/,
     RefCountedPtr<const FilterConfig>
-        cluster_weight_override_config) const {
-// FIXME
+        /*cluster_weight_override_config*/) const {
+  // TODO(roth): Implement this as part of migrating the server side to
+  // the new approach for passing xDS HTTP filter configs.
   return nullptr;
 }
 
