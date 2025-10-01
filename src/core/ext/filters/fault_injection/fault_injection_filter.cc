@@ -17,7 +17,6 @@
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 
 #include <grpc/status.h>
-#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <algorithm>
@@ -37,15 +36,12 @@
 #include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/status_util.h"
-#include "src/core/config/core_configuration.h"
-#include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/service_config/service_config_call_data.h"
 #include "src/core/util/time.h"
 
 namespace grpc_core {
@@ -184,10 +180,7 @@ FaultInjectionFilter::Create(const ChannelArgs&,
 }
 
 FaultInjectionFilter::FaultInjectionFilter(ChannelFilter::Args filter_args)
-    : index_(filter_args.instance_id()),
-      service_config_parser_index_(
-          FaultInjectionServiceConfigParser::ParserIndex()),
-      config_(filter_args.config().TakeAsSubclass<const Config>()) {}
+    : config_(filter_args.config().TakeAsSubclass<const Config>()) {}
 
 // Construct a promise for one call.
 ArenaPromise<absl::Status> FaultInjectionFilter::Call::OnClientInitialMetadata(
@@ -205,94 +198,6 @@ ArenaPromise<absl::Status> FaultInjectionFilter::Call::OnClientInitialMetadata(
 FaultInjectionFilter::InjectionDecision
 FaultInjectionFilter::MakeInjectionDecision(
     const ClientMetadata& initial_metadata) {
-#if 0
-  // Fetch the fault injection policy from the service config, based on the
-  // relative index for which policy should this CallData use.
-  auto* service_config_call_data = GetContext<ServiceConfigCallData>();
-  auto* method_params = static_cast<FaultInjectionMethodParsedConfig*>(
-      service_config_call_data->GetMethodParsedConfig(
-          service_config_parser_index_));
-  const FaultInjectionMethodParsedConfig::FaultInjectionPolicy* fi_policy =
-      nullptr;
-  if (method_params != nullptr) {
-    fi_policy = method_params->fault_injection_policy(index_);
-  }
-
-  // Shouldn't ever be null, but just in case, return a no-op decision.
-  if (fi_policy == nullptr) {
-    return InjectionDecision(/*max_faults=*/0, /*delay_time=*/Duration::Zero(),
-                             /*abort_request=*/std::nullopt);
-  }
-
-  grpc_status_code abort_code = fi_policy->abort_code;
-  uint32_t abort_percentage_numerator = fi_policy->abort_percentage_numerator;
-  uint32_t delay_percentage_numerator = fi_policy->delay_percentage_numerator;
-  Duration delay = fi_policy->delay;
-
-  // Update the policy with values in initial metadata.
-  if (!fi_policy->abort_code_header.empty() ||
-      !fi_policy->abort_percentage_header.empty() ||
-      !fi_policy->delay_header.empty() ||
-      !fi_policy->delay_percentage_header.empty()) {
-    std::string buffer;
-    if (!fi_policy->abort_code_header.empty() && abort_code == GRPC_STATUS_OK) {
-      auto value = initial_metadata.GetStringValue(fi_policy->abort_code_header,
-                                                   &buffer);
-      if (value.has_value()) {
-        grpc_status_code_from_int(
-            AsInt<int>(*value).value_or(GRPC_STATUS_UNKNOWN), &abort_code);
-      }
-    }
-    if (!fi_policy->abort_percentage_header.empty()) {
-      auto value = initial_metadata.GetStringValue(
-          fi_policy->abort_percentage_header, &buffer);
-      if (value.has_value()) {
-        abort_percentage_numerator = std::min(
-            AsInt<uint32_t>(*value).value_or(-1), abort_percentage_numerator);
-      }
-    }
-    if (!fi_policy->delay_header.empty() && delay == Duration::Zero()) {
-      auto value =
-          initial_metadata.GetStringValue(fi_policy->delay_header, &buffer);
-      if (value.has_value()) {
-        delay = Duration::Milliseconds(
-            std::max(AsInt<int64_t>(*value).value_or(0), int64_t{0}));
-      }
-    }
-    if (!fi_policy->delay_percentage_header.empty()) {
-      auto value = initial_metadata.GetStringValue(
-          fi_policy->delay_percentage_header, &buffer);
-      if (value.has_value()) {
-        delay_percentage_numerator = std::min(
-            AsInt<uint32_t>(*value).value_or(-1), delay_percentage_numerator);
-      }
-    }
-  }
-  // Roll the dice
-  bool delay_request = delay != Duration::Zero();
-  bool abort_request = abort_code != GRPC_STATUS_OK;
-  if (delay_request || abort_request) {
-    MutexLock lock(&mu_);
-    if (delay_request) {
-      delay_request =
-          UnderFraction(&delay_rand_generator_, delay_percentage_numerator,
-                        fi_policy->delay_percentage_denominator);
-    }
-    if (abort_request) {
-      abort_request =
-          UnderFraction(&abort_rand_generator_, abort_percentage_numerator,
-                        fi_policy->abort_percentage_denominator);
-    }
-  }
-
-  return InjectionDecision(
-      fi_policy->max_faults, delay_request ? delay : Duration::Zero(),
-      abort_request ? std::optional<absl::Status>(absl::Status(
-                          static_cast<absl::StatusCode>(abort_code),
-                          fi_policy->abort_message))
-                    : std::nullopt);
-#endif
-
   // Shouldn't ever be null, but just in case, return a no-op decision.
   if (config_ == nullptr) {
     return InjectionDecision(/*max_faults=*/0, /*delay_time=*/Duration::Zero(),
@@ -395,9 +300,5 @@ std::string FaultInjectionFilter::InjectionDecision::ToString() const {
 
 const grpc_channel_filter FaultInjectionFilter::kFilterVtable =
     MakePromiseBasedFilter<FaultInjectionFilter, FilterEndpoint::kClient>();
-
-void FaultInjectionFilterRegister(CoreConfiguration::Builder* builder) {
-  FaultInjectionServiceConfigParser::Register(builder);
-}
 
 }  // namespace grpc_core

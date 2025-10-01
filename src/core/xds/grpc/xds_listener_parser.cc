@@ -264,7 +264,6 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
           }
           continue;
         }
-// FIXME: remove old config parsing
         std::optional<XdsHttpFilterImpl::XdsFilterConfig> filter_config =
             filter_impl->GenerateFilterConfig(name, context,
                                               std::move(*extension), errors);
@@ -272,10 +271,13 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
             filter_impl->ParseTopLevelConfig(name, context,
                                              std::move(*extension), errors);
         if (filter_config.has_value() || config != nullptr) {
-          http_connection_manager.http_filters.emplace_back(
-              XdsListenerResource::HttpConnectionManager::HttpFilter{
-                  std::string(name), std::move(*filter_config),
-                  std::move(config)});
+          http_connection_manager.http_filters.emplace_back();
+          auto& entry = http_connection_manager.http_filters.back();
+          entry.name = std::string(name);
+          if (filter_config.has_value()) {
+            entry.config = std::move(*filter_config);
+          }
+          if (config != nullptr) entry.filter_config = std::move(config);
         }
       }
     }
@@ -288,15 +290,19 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
     // to take care of the case where there are two terminal filters in the list
     // out of which only one gets added in the final list.
     for (const auto& http_filter : http_connection_manager.http_filters) {
+      absl::string_view config_proto_type_name =
+          http_filter.config.config_proto_type_name;
+      if (config_proto_type_name.empty()) {
+        config_proto_type_name = http_filter.filter_config->type().name();
+      }
       const XdsHttpFilterImpl* filter_impl =
-          http_filter_registry.GetFilterForType(
-              http_filter.config.config_proto_type_name);
+          http_filter_registry.GetFilterForType(config_proto_type_name);
       if (&http_filter != &http_connection_manager.http_filters.back()) {
         // Filters before the last filter must not be terminal.
         if (filter_impl->IsTerminalFilter()) {
           errors->AddError(
               absl::StrCat("terminal filter for config type ",
-                           http_filter.config.config_proto_type_name,
+                           config_proto_type_name,
                            " must be the last filter in the chain"));
         }
       } else {
@@ -304,7 +310,7 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
         if (!filter_impl->IsTerminalFilter()) {
           errors->AddError(
               absl::StrCat("non-terminal filter for config type ",
-                           http_filter.config.config_proto_type_name,
+                           config_proto_type_name,
                            " is the last filter in the chain"));
         }
       }

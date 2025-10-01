@@ -35,7 +35,6 @@
 #include "google/protobuf/wrappers.upb.h"
 #include "src/core/call/status_util.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
-#include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/util/json/json.h"
@@ -83,137 +82,6 @@ void XdsHttpFaultFilter::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_fault_v3_HTTPFault_getmsgdef(symtab);
 }
 
-std::optional<XdsHttpFilterImpl::XdsFilterConfig>
-XdsHttpFaultFilter::GenerateFilterConfig(
-    absl::string_view /*instance_name*/,
-    const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    ValidationErrors* errors) const {
-  absl::string_view* serialized_filter_config =
-      std::get_if<absl::string_view>(&extension.value);
-  if (serialized_filter_config == nullptr) {
-    errors->AddError("could not parse fault injection filter config");
-    return std::nullopt;
-  }
-  auto* http_fault = envoy_extensions_filters_http_fault_v3_HTTPFault_parse(
-      serialized_filter_config->data(), serialized_filter_config->size(),
-      context.arena);
-  if (http_fault == nullptr) {
-    errors->AddError("could not parse fault injection filter config");
-    return std::nullopt;
-  }
-  // NOTE(lidiz): Here, we are manually translating the upb messages into the
-  // JSON form of the filter config as part of method config, which will be
-  // directly used later by service config. In this way, we can validate the
-  // filter configs, and NACK if needed. It also allows the service config to
-  // function independently without xDS, but not the other way around.
-  // NOTE(lidiz): please refer to FaultInjectionPolicy for ground truth
-  // definitions, located at:
-  // src/core/ext/filters/fault_injection/service_config_parser.h
-  Json::Object fault_injection_policy_json;
-  // Section 1: Parse the abort injection config
-  const auto* fault_abort =
-      envoy_extensions_filters_http_fault_v3_HTTPFault_abort(http_fault);
-  if (fault_abort != nullptr) {
-    ValidationErrors::ScopedField field(errors, ".abort");
-    grpc_status_code abort_grpc_status_code = GRPC_STATUS_OK;
-    // Try if gRPC status code is set first.  Otherwise, use HTTP status.
-    if (int abort_grpc_status_code_raw =
-            envoy_extensions_filters_http_fault_v3_FaultAbort_grpc_status(
-                fault_abort);
-        abort_grpc_status_code_raw != 0) {
-      if (!grpc_status_code_from_int(abort_grpc_status_code_raw,
-                                     &abort_grpc_status_code)) {
-        ValidationErrors::ScopedField field(errors, ".grpc_status");
-        errors->AddError(absl::StrCat("invalid gRPC status code: ",
-                                      abort_grpc_status_code_raw));
-      }
-    } else if (
-        int abort_http_status_code =
-            envoy_extensions_filters_http_fault_v3_FaultAbort_http_status(
-                fault_abort);
-        abort_http_status_code != 0 && abort_http_status_code != 200) {
-      abort_grpc_status_code =
-          grpc_http2_status_to_grpc_status(abort_http_status_code);
-    }
-    // Set the abort_code, even if it's OK
-    fault_injection_policy_json["abortCode"] =
-        Json::FromString(grpc_status_code_to_string(abort_grpc_status_code));
-    // Set the headers if we enabled header abort injection control
-    if (envoy_extensions_filters_http_fault_v3_FaultAbort_has_header_abort(
-            fault_abort)) {
-      fault_injection_policy_json["abortCodeHeader"] =
-          Json::FromString("x-envoy-fault-abort-grpc-request");
-      fault_injection_policy_json["abortPercentageHeader"] =
-          Json::FromString("x-envoy-fault-abort-percentage");
-    }
-    // Set the fraction percent
-    auto* percent =
-        envoy_extensions_filters_http_fault_v3_FaultAbort_percentage(
-            fault_abort);
-    if (percent != nullptr) {
-      fault_injection_policy_json["abortPercentageNumerator"] =
-          Json::FromNumber(envoy_type_v3_FractionalPercent_numerator(percent));
-      fault_injection_policy_json["abortPercentageDenominator"] =
-          Json::FromNumber(GetDenominator(percent));
-    }
-  }
-  // Section 2: Parse the delay injection config
-  const auto* fault_delay =
-      envoy_extensions_filters_http_fault_v3_HTTPFault_delay(http_fault);
-  if (fault_delay != nullptr) {
-    ValidationErrors::ScopedField field(errors, ".delay");
-    // Parse the delay duration
-    const auto* delay_duration =
-        envoy_extensions_filters_common_fault_v3_FaultDelay_fixed_delay(
-            fault_delay);
-    if (delay_duration != nullptr) {
-      ValidationErrors::ScopedField field(errors, ".fixed_delay");
-      Duration duration = ParseDuration(delay_duration, errors);
-      fault_injection_policy_json["delay"] =
-          Json::FromString(duration.ToJsonString());
-    }
-    // Set the headers if we enabled header delay injection control
-    if (envoy_extensions_filters_common_fault_v3_FaultDelay_has_header_delay(
-            fault_delay)) {
-      fault_injection_policy_json["delayHeader"] =
-          Json::FromString("x-envoy-fault-delay-request");
-      fault_injection_policy_json["delayPercentageHeader"] =
-          Json::FromString("x-envoy-fault-delay-request-percentage");
-    }
-    // Set the fraction percent
-    auto* percent =
-        envoy_extensions_filters_common_fault_v3_FaultDelay_percentage(
-            fault_delay);
-    if (percent != nullptr) {
-      fault_injection_policy_json["delayPercentageNumerator"] =
-          Json::FromNumber(envoy_type_v3_FractionalPercent_numerator(percent));
-      fault_injection_policy_json["delayPercentageDenominator"] =
-          Json::FromNumber(GetDenominator(percent));
-    }
-  }
-  // Section 3: Parse the maximum active faults
-  auto max_fault_wrapper = ParseUInt32Value(
-      envoy_extensions_filters_http_fault_v3_HTTPFault_max_active_faults(
-          http_fault));
-  if (max_fault_wrapper.has_value()) {
-    fault_injection_policy_json["maxFaults"] =
-        Json::FromNumber(*max_fault_wrapper);
-  }
-  return XdsFilterConfig{ConfigProtoName(),
-                         Json::FromObject(std::move(fault_injection_policy_json))};
-}
-
-std::optional<XdsHttpFilterImpl::XdsFilterConfig>
-XdsHttpFaultFilter::GenerateFilterConfigOverride(
-    absl::string_view instance_name,
-    const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    ValidationErrors* errors) const {
-  // HTTPFault filter has the same message type in HTTP connection manager's
-  // filter config and in overriding filter config field.
-  return GenerateFilterConfig(instance_name, context, std::move(extension),
-                              errors);
-}
-
 void XdsHttpFaultFilter::AddFilter(InterceptionChainBuilder& builder) const {
   builder.Add<FaultInjectionFilter>();
 }
@@ -226,28 +94,6 @@ void XdsHttpFaultFilter::AddFilter(
 
 const grpc_channel_filter* XdsHttpFaultFilter::channel_filter() const {
   return &FaultInjectionFilter::kFilterVtable;
-}
-
-ChannelArgs XdsHttpFaultFilter::ModifyChannelArgs(
-    const ChannelArgs& args) const {
-  return args.Set(GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG, 1);
-}
-
-absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
-XdsHttpFaultFilter::GenerateMethodConfig(
-    const XdsFilterConfig& hcm_filter_config,
-    const XdsFilterConfig* filter_config_override) const {
-  Json policy_json = filter_config_override != nullptr
-                         ? filter_config_override->config
-                         : hcm_filter_config.config;
-  // The policy JSON may be empty, that's allowed.
-  return ServiceConfigJsonEntry{"faultInjectionPolicy", JsonDump(policy_json)};
-}
-
-absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
-XdsHttpFaultFilter::GenerateServiceConfig(
-    const XdsFilterConfig& /*hcm_filter_config*/) const {
-  return ServiceConfigJsonEntry{"", ""};
 }
 
 RefCountedPtr<const FilterConfig>

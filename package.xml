@@ -332,8 +332,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_filter.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_service_config_parser.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/gcp_authentication/gcp_authentication_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.cc" role="src" />
