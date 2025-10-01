@@ -263,13 +263,6 @@ class XdsResolver final : public Resolver {
     absl::StatusOr<RefCountedPtr<const FilterChain>> GetCallConfig(
         GetCallConfigArgs args) override;
 
-    void AddFilters(InterceptionChainBuilder& builder,
-                    const Blackboard* old_blackboard,
-                    Blackboard* new_blackboard) override;
-
-    std::vector<const grpc_channel_filter*> GetFilters(
-        const Blackboard* old_blackboard, Blackboard* new_blackboard) override;
-
    private:
     RefCountedPtr<XdsResolver> resolver_;
     RefCountedPtr<const XdsConfig> xds_config_;
@@ -885,40 +878,6 @@ XdsResolver::XdsConfigSelector::GetCallConfig(GetCallConfigArgs args) {
       args.arena->ManagedNew<XdsRouteStateAttributeImpl>(route_config_data_,
                                                          entry));
   return filter_chain;
-}
-
-void XdsResolver::XdsConfigSelector::AddFilters(
-    InterceptionChainBuilder& builder, const Blackboard* old_blackboard,
-    Blackboard* new_blackboard) {
-  const auto& hcm = std::get<XdsListenerResource::HttpConnectionManager>(
-      xds_config_->listener->listener);
-  GRPC_CHECK_EQ(filters_.size(), hcm.http_filters.size());
-  for (size_t i = 0; i < filters_.size(); ++i) {
-    auto* filter = filters_[i];
-    filter->AddFilter(builder);
-    filter->UpdateBlackboard(hcm.http_filters[i].config, old_blackboard,
-                             new_blackboard);
-  }
-  builder.Add<ClusterSelectionFilter>();
-}
-
-std::vector<const grpc_channel_filter*>
-XdsResolver::XdsConfigSelector::GetFilters(const Blackboard* old_blackboard,
-                                           Blackboard* new_blackboard) {
-  const auto& hcm = std::get<XdsListenerResource::HttpConnectionManager>(
-      xds_config_->listener->listener);
-  GRPC_CHECK_EQ(filters_.size(), hcm.http_filters.size());
-  std::vector<const grpc_channel_filter*> filters;
-  for (size_t i = 0; i < filters_.size(); ++i) {
-    auto* filter = filters_[i];
-    if (filter->channel_filter() != nullptr) {
-      filters.push_back(filter->channel_filter());
-    }
-    filter->UpdateBlackboard(hcm.http_filters[i].config, old_blackboard,
-                             new_blackboard);
-  }
-  filters.push_back(&ClusterSelectionFilter::kFilter);
-  return filters;
 }
 
 void XdsResolver::XdsConfigSelector::BuildFilterChains(

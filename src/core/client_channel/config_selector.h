@@ -67,18 +67,6 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
                                  const Blackboard* old_blackboard,
                                  Blackboard* new_blackboard) = 0;
 
-// FIXME: remove
-  // The channel will call this when the resolver returns a new ConfigSelector
-  // to determine what set of dynamic filters will be configured.
-  virtual void AddFilters(InterceptionChainBuilder& /*builder*/,
-                          const Blackboard* /*old_blackboard*/,
-                          Blackboard* /*new_blackboard*/) {}
-  // TODO(roth): Remove this once the legacy filter stack goes away.
-  virtual std::vector<const grpc_channel_filter*> GetFilters(
-      const Blackboard* /*old_blackboard*/, Blackboard* /*new_blackboard*/) {
-    return {};
-  }
-
   // Gets the configuration for the call and stores it in service config
   // call data.
   struct GetCallConfigArgs {
