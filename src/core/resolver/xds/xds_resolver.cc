@@ -193,13 +193,6 @@ class XdsResolver final : public Resolver {
         absl::string_view cluster;
         RefCountedPtr<ServiceConfig> method_config;
         absl::StatusOr<RefCountedPtr<const FilterChain>> filter_chain;
-
-        bool operator==(const ClusterWeightState& other) const {
-          return range_end == other.range_end && cluster == other.cluster &&
-                 MethodConfigsEqual(method_config.get(),
-                                    other.method_config.get()) &&
-                 FilterChainsEqual(filter_chain, other.filter_chain);
-        }
       };
 
       XdsRouteConfigResource::Route route;
@@ -208,22 +201,10 @@ class XdsResolver final : public Resolver {
       std::vector<ClusterWeightState> weighted_cluster_state;
 
       explicit RouteEntry(const XdsRouteConfigResource::Route& r) : route(r) {}
-
-      bool operator==(const RouteEntry& other) const {
-        return route == other.route &&
-               weighted_cluster_state == other.weighted_cluster_state &&
-               MethodConfigsEqual(method_config.get(),
-                                  other.method_config.get());
-               FilterChainsEqual(filter_chain, other.filter_chain);
-      }
     };
 
     static absl::StatusOr<RefCountedPtr<RouteConfigData>> Create(
         XdsResolver* resolver, const Duration& default_max_stream_duration);
-
-    bool operator==(const RouteConfigData& other) const {
-      return clusters_ == other.clusters_ && routes_ == other.routes_;
-    }
 
     RefCountedPtr<ClusterRef> FindClusterRef(absl::string_view name) const {
       auto it = clusters_.find(name);
@@ -250,25 +231,6 @@ class XdsResolver final : public Resolver {
         const XdsRouteConfigResource::Route::RouteAction::ClusterWeight*
             cluster_weight);
 
-    static bool MethodConfigsEqual(const ServiceConfig* sc1,
-                                   const ServiceConfig* sc2) {
-      if (sc1 == nullptr) return sc2 == nullptr;
-      if (sc2 == nullptr) return false;
-      return sc1->json_string() == sc2->json_string();
-    }
-
-    static bool FilterChainsEqual(
-        const absl::StatusOr<RefCountedPtr<const FilterChain>>& fc1,
-        const absl::StatusOr<RefCountedPtr<const FilterChain>>& fc2) {
-      if (fc1.status() != fc2.status()) return false;
-      if (!fc1.ok()) return true;
-      if (*fc1 == nullptr) return *fc2 == nullptr;
-      if (*fc2 == nullptr) return false;
-      // FIXME:
-      //return **fc1 == **fc2;
-      return true;
-    }
-
     absl::Status AddRouteEntry(XdsResolver* resolver,
                                const XdsRouteConfigResource::Route& route,
                                const Duration& default_max_stream_duration);
@@ -290,9 +252,11 @@ class XdsResolver final : public Resolver {
 
     bool Equals(const ConfigSelector* other) const override {
       const auto* other_xds = static_cast<const XdsConfigSelector*>(other);
-      // Don't need to compare resolver_, since that will always be the same.
-      return *route_config_data_ == *other_xds->route_config_data_ &&
-             filters_ == other_xds->filters_;
+      // Only need to compare LDS and RDS resources, since all of our
+      // other state is derived from those.
+      return *xds_config_->listener == *other_xds->xds_config_->listener &&
+             *xds_config_->route_config ==
+                 *other_xds->xds_config_->route_config;
     }
 
     void BuildFilterChains(FilterChainBuilder& builder,
