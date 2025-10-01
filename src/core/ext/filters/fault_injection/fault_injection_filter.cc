@@ -48,12 +48,10 @@ namespace grpc_core {
 
 bool FaultInjectionFilter::Config::Equals(const FilterConfig& other) const {
   const auto& o = DownCast<const Config&>(other);
-  return abort_code == o.abort_code &&
-         abort_message == o.abort_message &&
+  return abort_code == o.abort_code && abort_message == o.abort_message &&
          abort_code_header == o.abort_code_header &&
          abort_percentage_header == o.abort_percentage_header &&
-         delay == o.delay &&
-         delay_header == o.delay_header &&
+         delay == o.delay && delay_header == o.delay_header &&
          delay_percentage_header == o.delay_percentage_header &&
          delay_percentage_numerator == o.delay_percentage_numerator &&
          delay_percentage_denominator == o.delay_percentage_denominator &&
@@ -71,13 +69,13 @@ std::string FaultInjectionFilter::Config::ToString() const {
           absl::StrCat("abort_code_header=\"", abort_code_header, "\""));
     }
     if (!abort_percentage_header.empty()) {
-      parts.push_back(absl::StrCat(
-          "abort_percentage_header=\"", abort_percentage_header, "\""));
+      parts.push_back(absl::StrCat("abort_percentage_header=\"",
+                                   abort_percentage_header, "\""));
     }
-    parts.push_back(absl::StrCat(
-        "abort_percentage_numerator=", abort_percentage_numerator));
-    parts.push_back(absl::StrCat(
-        "abort_percentage_denominator=", abort_percentage_denominator));
+    parts.push_back(absl::StrCat("abort_percentage_numerator=",
+                                 abort_percentage_numerator));
+    parts.push_back(absl::StrCat("abort_percentage_denominator=",
+                                 abort_percentage_denominator));
   }
   if (delay != Duration::Zero()) {
     parts.push_back(absl::StrCat("delay=", delay.ToString()));
@@ -85,8 +83,8 @@ std::string FaultInjectionFilter::Config::ToString() const {
       parts.push_back(absl::StrCat("delay_header=\"", delay_header, "\""));
     }
     if (!delay_percentage_header.empty()) {
-      parts.push_back(absl::StrCat(
-          "delay_percentage_header=\"", delay_percentage_header, "\""));
+      parts.push_back(absl::StrCat("delay_percentage_header=\"",
+                                   delay_percentage_header, "\""));
     }
   }
   parts.push_back(absl::StrCat("max_faults=", max_faults));
@@ -172,9 +170,9 @@ absl::StatusOr<std::unique_ptr<FaultInjectionFilter>>
 FaultInjectionFilter::Create(const ChannelArgs&,
                              ChannelFilter::Args filter_args) {
   if (filter_args.config()->type() != Config::Type()) {
-    return absl::InternalError(absl::StrCat(
-        "wrong config type passed to fault injection filter: ",
-        filter_args.config()->type().name()));
+    return absl::InternalError(
+        absl::StrCat("wrong config type passed to fault injection filter: ",
+                     filter_args.config()->type().name()));
   }
   return std::make_unique<FaultInjectionFilter>(filter_args);
 }
@@ -216,8 +214,8 @@ FaultInjectionFilter::MakeInjectionDecision(
       !config_->delay_percentage_header.empty()) {
     std::string buffer;
     if (!config_->abort_code_header.empty() && abort_code == GRPC_STATUS_OK) {
-      auto value = initial_metadata.GetStringValue(config_->abort_code_header,
-                                                   &buffer);
+      auto value =
+          initial_metadata.GetStringValue(config_->abort_code_header, &buffer);
       if (value.has_value()) {
         grpc_status_code_from_int(
             AsInt<int>(*value).value_or(GRPC_STATUS_UNKNOWN), &abort_code);

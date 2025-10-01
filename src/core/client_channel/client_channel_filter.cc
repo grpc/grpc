@@ -1858,10 +1858,9 @@ grpc_error_handle ClientChannelFilter::CallData::ApplyServiceConfigToCallLocked(
   auto* service_config_call_data =
       arena()->New<ClientChannelServiceConfigCallData>(arena());
   // Use the ConfigSelector to determine the config for the call.
-  auto filter_chain =
-      (*config_selector)
-          ->GetCallConfig(
-              {send_initial_metadata(), arena(), service_config_call_data});
+  auto filter_chain = (*config_selector)
+                          ->GetCallConfig({send_initial_metadata(), arena(),
+                                           service_config_call_data});
   if (!filter_chain.ok()) {
     return absl_status_to_grpc_error(
         MaybeRewriteIllegalStatusCode(filter_chain.status(), "ConfigSelector"));

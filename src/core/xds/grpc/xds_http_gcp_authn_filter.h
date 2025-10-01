@@ -39,15 +39,13 @@ class XdsHttpGcpAuthnFilter final : public XdsHttpFilterImpl {
   std::optional<XdsFilterConfig> GenerateFilterConfig(
       absl::string_view /*instance_name*/,
       const XdsResourceType::DecodeContext& /*context*/,
-      XdsExtension /*extension*/,
-      ValidationErrors* /*errors*/) const override {
+      XdsExtension /*extension*/, ValidationErrors* /*errors*/) const override {
     return std::nullopt;
   }
   std::optional<XdsFilterConfig> GenerateFilterConfigOverride(
       absl::string_view /*instance_name*/,
       const XdsResourceType::DecodeContext& /*context*/,
-      XdsExtension /*extension*/,
-      ValidationErrors* /*errors*/) const override {
+      XdsExtension /*extension*/, ValidationErrors* /*errors*/) const override {
     return std::nullopt;
   }
   void AddFilter(InterceptionChainBuilder& builder) const override;
@@ -66,20 +64,19 @@ class XdsHttpGcpAuthnFilter final : public XdsHttpFilterImpl {
   void AddFilter(FilterChainBuilder& builder,
                  RefCountedPtr<const FilterConfig> config) const override;
   RefCountedPtr<const FilterConfig> ParseTopLevelConfig(
-        absl::string_view instance_name,
-        const XdsResourceType::DecodeContext& context, XdsExtension extension,
-        ValidationErrors* errors) const override;
+      absl::string_view instance_name,
+      const XdsResourceType::DecodeContext& context, XdsExtension extension,
+      ValidationErrors* errors) const override;
   RefCountedPtr<const FilterConfig> ParseOverrideConfig(
-        absl::string_view instance_name,
-        const XdsResourceType::DecodeContext& context, XdsExtension extension,
-        ValidationErrors* errors) const override;
+      absl::string_view instance_name,
+      const XdsResourceType::DecodeContext& context, XdsExtension extension,
+      ValidationErrors* errors) const override;
   RefCountedPtr<const FilterConfig> MergeConfigs(
       RefCountedPtr<const FilterConfig> top_level_config,
-      RefCountedPtr<const FilterConfig>
-          virtual_host_override_config,
+      RefCountedPtr<const FilterConfig> virtual_host_override_config,
       RefCountedPtr<const FilterConfig> route_override_config,
-      RefCountedPtr<const FilterConfig>
-          cluster_weight_override_config) const override;
+      RefCountedPtr<const FilterConfig> cluster_weight_override_config)
+      const override;
   void UpdateBlackboard(const FilterConfig& config,
                         const Blackboard* old_blackboard,
                         Blackboard* new_blackboard) const override;

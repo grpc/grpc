@@ -42,8 +42,8 @@ bool GcpAuthenticationFilter::Config::Equals(const FilterConfig& other) const {
 }
 
 std::string GcpAuthenticationFilter::Config::ToString() const {
-  return absl::StrCat("{instance_name=\"", instance_name, "\", cache_size=",
-                      cache_size, "}");
+  return absl::StrCat("{instance_name=\"", instance_name,
+                      "\", cache_size=", cache_size, "}");
 }
 
 //
@@ -162,9 +162,9 @@ GcpAuthenticationFilter::Create(const ChannelArgs& args,
   }
   // Get filter config.
   if (filter_args.config()->type() != Config::Type()) {
-    return absl::InternalError(absl::StrCat(
-        "wrong config type passed to GCP authn filter: ",
-        filter_args.config()->type().name()));
+    return absl::InternalError(
+        absl::StrCat("wrong config type passed to GCP authn filter: ",
+                     filter_args.config()->type().name()));
   }
   auto config = filter_args.config().TakeAsSubclass<const Config>();
   // Get cache from blackboard.  This must have been populated
@@ -176,9 +176,8 @@ GcpAuthenticationFilter::Create(const ChannelArgs& args,
         "gcp_auth: cache object not found in filter state");
   }
   // Instantiate filter.
-  return std::unique_ptr<GcpAuthenticationFilter>(
-      new GcpAuthenticationFilter(std::move(config), std::move(xds_config),
-                                  std::move(cache)));
+  return std::unique_ptr<GcpAuthenticationFilter>(new GcpAuthenticationFilter(
+      std::move(config), std::move(xds_config), std::move(cache)));
 }
 
 GcpAuthenticationFilter::GcpAuthenticationFilter(

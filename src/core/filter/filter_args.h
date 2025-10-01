@@ -36,9 +36,7 @@ class FilterConfig : public RefCounted<FilterConfig> {
     return Equals(other);
   }
 
-  bool operator!=(const FilterConfig& other) const {
-    return !(*this == other);
-  }
+  bool operator!=(const FilterConfig& other) const { return !(*this == other); }
 
   virtual bool Equals(const FilterConfig& other) const = 0;
 

@@ -980,7 +980,7 @@ void ClientChannel::StartCall(UnstartedCallHandler unstarted_handler) {
               // resolver.
               auto destination =
                   DownCast<const FilterChainImpl*>(filter_chain->get())
-                  ->destination();
+                      ->destination();
               destination->StartCall(std::move(unstarted_handler));
               return absl::OkStatus();
             });
@@ -1445,9 +1445,9 @@ ClientChannel::ApplyServiceConfigToCall(
       GetContext<Arena>()->New<ClientChannelServiceConfigCallData>(
           GetContext<Arena>());
   // Use the ConfigSelector to determine the config for the call.
-  auto filter_chain = config_selector.GetCallConfig(
-      {&client_initial_metadata, GetContext<Arena>(),
-       service_config_call_data});
+  auto filter_chain = config_selector.GetCallConfig({&client_initial_metadata,
+                                                     GetContext<Arena>(),
+                                                     service_config_call_data});
   if (!filter_chain.ok()) {
     return MaybeRewriteIllegalStatusCode(filter_chain.status(),
                                          "ConfigSelector");

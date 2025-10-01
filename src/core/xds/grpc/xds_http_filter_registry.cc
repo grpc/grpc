@@ -80,8 +80,7 @@ XdsHttpRouterFilter::GenerateFilterConfigOverride(
   return std::nullopt;
 }
 
-RefCountedPtr<const FilterConfig>
-XdsHttpRouterFilter::ParseTopLevelConfig(
+RefCountedPtr<const FilterConfig> XdsHttpRouterFilter::ParseTopLevelConfig(
     absl::string_view instance_name,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
@@ -100,8 +99,7 @@ XdsHttpRouterFilter::ParseTopLevelConfig(
   return nullptr;
 }
 
-RefCountedPtr<const FilterConfig>
-XdsHttpRouterFilter::ParseOverrideConfig(
+RefCountedPtr<const FilterConfig> XdsHttpRouterFilter::ParseOverrideConfig(
     absl::string_view instance_name,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
     ValidationErrors* errors) const {
@@ -112,10 +110,10 @@ XdsHttpRouterFilter::ParseOverrideConfig(
 RefCountedPtr<const FilterConfig> XdsHttpRouterFilter::MergeConfigs(
     RefCountedPtr<const FilterConfig> top_level_config,
     RefCountedPtr<const FilterConfig>
-        /*virtual_host_override_config*/,
+    /*virtual_host_override_config*/,
     RefCountedPtr<const FilterConfig> /*route_override_config*/,
     RefCountedPtr<const FilterConfig>
-        /*cluster_weight_override_config*/) const {
+    /*cluster_weight_override_config*/) const {
   return top_level_config;
 }
 

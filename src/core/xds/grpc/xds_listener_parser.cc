@@ -300,18 +300,16 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
       if (&http_filter != &http_connection_manager.http_filters.back()) {
         // Filters before the last filter must not be terminal.
         if (filter_impl->IsTerminalFilter()) {
-          errors->AddError(
-              absl::StrCat("terminal filter for config type ",
-                           config_proto_type_name,
-                           " must be the last filter in the chain"));
+          errors->AddError(absl::StrCat(
+              "terminal filter for config type ", config_proto_type_name,
+              " must be the last filter in the chain"));
         }
       } else {
         // The last filter must be terminal.
         if (!filter_impl->IsTerminalFilter()) {
-          errors->AddError(
-              absl::StrCat("non-terminal filter for config type ",
-                           config_proto_type_name,
-                           " is the last filter in the chain"));
+          errors->AddError(absl::StrCat("non-terminal filter for config type ",
+                                        config_proto_type_name,
+                                        " is the last filter in the chain"));
         }
       }
     }

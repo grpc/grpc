@@ -55,7 +55,8 @@ auto RemoveFilterNamed(std::string name) {
     auto* stk = builder.mutable_stack();
     stk->erase(std::remove_if(stk->begin(), stk->end(),
                               [name](const FilterAndConfig& filter_and_config) {
-                                return filter_and_config.filter->name.name() == name;
+                                return filter_and_config.filter->name.name() ==
+                                       name;
                               }),
                stk->end());
   };

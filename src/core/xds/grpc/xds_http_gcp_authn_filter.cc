@@ -59,11 +59,10 @@ const grpc_channel_filter* XdsHttpGcpAuthnFilter::channel_filter() const {
   return &GcpAuthenticationFilter::kFilterVtable;
 }
 
-RefCountedPtr<const FilterConfig>
-XdsHttpGcpAuthnFilter::ParseTopLevelConfig(
-      absl::string_view instance_name,
-      const XdsResourceType::DecodeContext& context, XdsExtension extension,
-      ValidationErrors* errors) const {
+RefCountedPtr<const FilterConfig> XdsHttpGcpAuthnFilter::ParseTopLevelConfig(
+    absl::string_view instance_name,
+    const XdsResourceType::DecodeContext& context, XdsExtension extension,
+    ValidationErrors* errors) const {
   absl::string_view* serialized_filter_config =
       std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
@@ -97,11 +96,10 @@ XdsHttpGcpAuthnFilter::ParseTopLevelConfig(
   return config;
 }
 
-RefCountedPtr<const FilterConfig>
-XdsHttpGcpAuthnFilter::ParseOverrideConfig(
-      absl::string_view /*instance_name*/,
-      const XdsResourceType::DecodeContext& /*context*/,
-      XdsExtension /*extension*/, ValidationErrors* errors) const {
+RefCountedPtr<const FilterConfig> XdsHttpGcpAuthnFilter::ParseOverrideConfig(
+    absl::string_view /*instance_name*/,
+    const XdsResourceType::DecodeContext& /*context*/,
+    XdsExtension /*extension*/, ValidationErrors* errors) const {
   errors->AddError("GCP auth filter does not support config override");
   return nullptr;
 }
@@ -111,14 +109,14 @@ RefCountedPtr<const FilterConfig> XdsHttpGcpAuthnFilter::MergeConfigs(
     RefCountedPtr<const FilterConfig> /*virtual_host_override_config*/,
     RefCountedPtr<const FilterConfig> /*route_override_config*/,
     RefCountedPtr<const FilterConfig> /*cluster_weight_override_config*/)
-        const {
+    const {
   // Does not support override config.
   return top_level_config;
 }
 
-void XdsHttpGcpAuthnFilter::UpdateBlackboard(
-    const FilterConfig& config, const Blackboard* old_blackboard,
-    Blackboard* new_blackboard) const {
+void XdsHttpGcpAuthnFilter::UpdateBlackboard(const FilterConfig& config,
+                                             const Blackboard* old_blackboard,
+                                             Blackboard* new_blackboard) const {
   const auto& filter_config =
       DownCast<const GcpAuthenticationFilter::Config&>(config);
   ValidationErrors errors;

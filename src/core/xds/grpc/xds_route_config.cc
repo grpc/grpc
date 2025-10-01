@@ -169,8 +169,8 @@ bool TypedPerFilterConfigsAreEqual(
 }  // namespace
 
 bool XdsRouteConfigResource::Route::RouteAction::ClusterWeight::operator==(
-    const XdsRouteConfigResource::Route::RouteAction::ClusterWeight&
-        other) const {
+    const XdsRouteConfigResource::Route::RouteAction::ClusterWeight& other)
+    const {
   return name == other.name && weight == other.weight &&
          TypedPerFilterConfigsAreEqual(typed_per_filter_config,
                                        other.typed_per_filter_config);

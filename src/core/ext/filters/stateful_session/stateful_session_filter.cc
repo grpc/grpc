@@ -58,7 +58,7 @@ UniqueTypeName XdsOverrideHostAttribute::TypeName() {
 
 std::string StatefulSessionFilter::CookieConfig::ToString() const {
   std::vector<std::string> parts = {
-    absl::StrCat("name=\"", name, "\""),
+      absl::StrCat("name=\"", name, "\""),
   };
   if (ttl != Duration::Zero()) {
     parts.push_back(absl::StrCat("ttl=", ttl.ToString()));
@@ -111,9 +111,8 @@ absl::string_view AllocateStringOnArena(
 
 // Adds the set-cookie header to the server initial metadata if needed.
 void MaybeUpdateServerInitialMetadata(
-    const StatefulSessionFilter::CookieConfig& config,
-    bool cluster_changed, absl::string_view actual_cluster,
-    absl::string_view cookie_address_list,
+    const StatefulSessionFilter::CookieConfig& config, bool cluster_changed,
+    absl::string_view actual_cluster, absl::string_view cookie_address_list,
     XdsOverrideHostAttribute* override_host_attribute,
     ServerMetadata& server_initial_metadata) {
   // If cookie doesn't need to change, do nothing.
@@ -271,10 +270,9 @@ void StatefulSessionFilter::Call::OnServerInitialMetadata(
   GRPC_LATENT_SEE_SCOPE("StatefulSessionFilter::Call::OnServerInitialMetadata");
   if (!perform_filtering_) return;
   // Add cookie to server initial metadata if needed.
-  MaybeUpdateServerInitialMetadata(filter->config_->cookie_config,
-                                   cluster_changed_, cluster_name_,
-                                   cookie_address_list_,
-                                   override_host_attribute_, md);
+  MaybeUpdateServerInitialMetadata(
+      filter->config_->cookie_config, cluster_changed_, cluster_name_,
+      cookie_address_list_, override_host_attribute_, md);
 }
 
 void StatefulSessionFilter::Call::OnServerTrailingMetadata(
@@ -286,10 +284,9 @@ void StatefulSessionFilter::Call::OnServerTrailingMetadata(
   // cookie to the trailing metadata instead of the
   // initial metadata.
   if (md.get(GrpcTrailersOnly()).value_or(false)) {
-    MaybeUpdateServerInitialMetadata(filter->config_->cookie_config,
-                                     cluster_changed_, cluster_name_,
-                                     cookie_address_list_,
-                                     override_host_attribute_, md);
+    MaybeUpdateServerInitialMetadata(
+        filter->config_->cookie_config, cluster_changed_, cluster_name_,
+        cookie_address_list_, override_host_attribute_, md);
   }
 }
 
