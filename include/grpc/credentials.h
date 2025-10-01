@@ -19,12 +19,12 @@
 #ifndef GRPC_CREDENTIALS_H
 #define GRPC_CREDENTIALS_H
 
-#include <grpc/support/time.h>
-#include <grpc/impl/grpc_types.h>
 #include <grpc/grpc_security_constants.h>
+#include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus
