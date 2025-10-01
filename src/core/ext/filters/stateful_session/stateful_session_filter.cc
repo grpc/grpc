@@ -16,7 +16,6 @@
 
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 
-#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <algorithm>
@@ -35,8 +34,6 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "src/core/call/metadata_batch.h"
-#include "src/core/config/core_configuration.h"
-#include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/context.h"
@@ -94,10 +91,7 @@ StatefulSessionFilter::Create(const ChannelArgs&,
 }
 
 StatefulSessionFilter::StatefulSessionFilter(ChannelFilter::Args filter_args)
-    : config_(filter_args.config().TakeAsSubclass<const Config>()),
-      index_(filter_args.instance_id()),
-      service_config_parser_index_(
-          StatefulSessionServiceConfigParser::ParserIndex()) {}
+    : config_(filter_args.config().TakeAsSubclass<const Config>()) {}
 
 namespace {
 
@@ -240,18 +234,6 @@ bool IsConfiguredPath(absl::string_view configured_path,
 void StatefulSessionFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, StatefulSessionFilter* filter) {
   GRPC_LATENT_SEE_SCOPE("StatefulSessionFilter::Call::OnClientInitialMetadata");
-#if 0
-  // Get config.
-  auto* service_config_call_data = GetContext<ServiceConfigCallData>();
-  GRPC_CHECK_NE(service_config_call_data, nullptr);
-  auto* method_params = static_cast<StatefulSessionMethodParsedConfig*>(
-      service_config_call_data->GetMethodParsedConfig(
-          filter->service_config_parser_index_));
-  GRPC_CHECK_NE(method_params, nullptr);
-  cookie_config_ = method_params->GetConfig(filter->index_);
-  GRPC_CHECK_NE(cookie_config_, nullptr);
-  if (!cookie_config_->name.has_value() ||
-#endif
   if (filter->config_->cookie_config.name.empty() ||
       !IsConfiguredPath(filter->config_->cookie_config.path, md)) {
     return;
@@ -309,10 +291,6 @@ void StatefulSessionFilter::Call::OnServerTrailingMetadata(
                                      cookie_address_list_,
                                      override_host_attribute_, md);
   }
-}
-
-void StatefulSessionFilterRegister(CoreConfiguration::Builder* builder) {
-  StatefulSessionServiceConfigParser::Register(builder);
 }
 
 }  // namespace grpc_core

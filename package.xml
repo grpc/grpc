@@ -351,8 +351,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/rbac/rbac_service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/stateful_session/stateful_session_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/stateful_session/stateful_session_filter.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/alpn/alpn.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/alpn/alpn.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/chttp2_plugin.cc" role="src" />

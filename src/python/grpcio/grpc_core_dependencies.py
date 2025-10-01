@@ -135,7 +135,6 @@ CORE_SOURCE_FILES = [
     'src/core/ext/filters/rbac/rbac_filter.cc',
     'src/core/ext/filters/rbac/rbac_service_config_parser.cc',
     'src/core/ext/filters/stateful_session/stateful_session_filter.cc',
-    'src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc',
     'src/core/ext/transport/chttp2/alpn/alpn.cc',
     'src/core/ext/transport/chttp2/chttp2_plugin.cc',
     'src/core/ext/transport/chttp2/client/chttp2_connector.cc',

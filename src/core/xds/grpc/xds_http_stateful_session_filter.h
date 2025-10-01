@@ -40,20 +40,31 @@ class XdsHttpStatefulSessionFilter final : public XdsHttpFilterImpl {
   void PopulateSymtab(upb_DefPool* symtab) const override;
   std::optional<XdsFilterConfig> GenerateFilterConfig(
       absl::string_view /*instance_name*/,
-      const XdsResourceType::DecodeContext& context, XdsExtension extension,
-      ValidationErrors* errors) const override;
+      const XdsResourceType::DecodeContext& /*context*/,
+      XdsExtension /*extension*/,
+      ValidationErrors* /*errors*/) const override {
+    return std::nullopt;
+  }
   std::optional<XdsFilterConfig> GenerateFilterConfigOverride(
       absl::string_view /*instance_name*/,
-      const XdsResourceType::DecodeContext& context, XdsExtension extension,
-      ValidationErrors* errors) const override;
+      const XdsResourceType::DecodeContext& /*context*/,
+      XdsExtension /*extension*/,
+      ValidationErrors* /*errors*/) const override {
+    return std::nullopt;
+  }
   void AddFilter(InterceptionChainBuilder& builder) const override;
   const grpc_channel_filter* channel_filter() const override;
-  ChannelArgs ModifyChannelArgs(const ChannelArgs& args) const override;
   absl::StatusOr<ServiceConfigJsonEntry> GenerateMethodConfig(
-      const XdsFilterConfig& hcm_filter_config,
-      const XdsFilterConfig* filter_config_override) const override;
+      const XdsFilterConfig& /*hcm_filter_config*/,
+      const XdsFilterConfig* /*filter_config_override*/) const override {
+    return absl::UnimplementedError(
+        "old-style filter config APIs not supported");
+  }
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
-      const XdsFilterConfig& hcm_filter_config) const override;
+      const XdsFilterConfig& /*hcm_filter_config*/) const override {
+    return absl::UnimplementedError(
+        "old-style filter config APIs not supported");
+  }
   void AddFilter(FilterChainBuilder& builder,
                  RefCountedPtr<const FilterConfig> config) const override;
   RefCountedPtr<const FilterConfig> ParseTopLevelConfig(

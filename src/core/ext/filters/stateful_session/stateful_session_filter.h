@@ -17,14 +17,12 @@
 #ifndef GRPC_SRC_CORE_EXT_FILTERS_STATEFUL_SESSION_STATEFUL_SESSION_FILTER_H
 #define GRPC_SRC_CORE_EXT_FILTERS_STATEFUL_SESSION_STATEFUL_SESSION_FILTER_H
 
-#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <utility>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
@@ -131,9 +129,6 @@ class StatefulSessionFilter
     static inline const NoInterceptor OnFinalize;
 
    private:
-    // FIXME: remove
-    const StatefulSessionMethodParsedConfig::CookieConfig* cookie_config_;
-
     XdsOverrideHostAttribute* override_host_attribute_;
     absl::string_view cluster_name_;
     absl::string_view cookie_address_list_;
@@ -143,12 +138,6 @@ class StatefulSessionFilter
 
  private:
   const RefCountedPtr<const Config> config_;
-
-// FIXME: remove
-  // The relative index of instances of the same filter.
-  const size_t index_;
-  // Index of the service config parser.
-  const size_t service_config_parser_index_;
 };
 
 }  // namespace grpc_core
