@@ -383,6 +383,7 @@ grpc_cc_binary(
     ],
     visibility = [
         "//bazel:cli",
+        "//platforms/bloom/packages/grpc:__subpackages__",
     ],
     deps = [
         ":grpc++_proto_reflection_desc_db",
