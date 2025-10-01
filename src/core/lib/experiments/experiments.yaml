@@ -276,11 +276,6 @@
       "event_engine_listener",
       "event_engine_secure_endpoint",
     ]
-- name: server_global_callbacks_ownership
-  description: If set, server global callbacks ownership is fixed to not be owned by gRPC.
-  expiry: 2025/09/30
-  owner: yashkt@google.com
-  test_tags: []
 - name: sleep_promise_exec_ctx_removal
   description: If set, polling the sleep promise does not rely on the ExecCtx.
   expiry: 2026/02/01
