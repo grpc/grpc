@@ -5587,11 +5587,9 @@ grpc_cc_library(
     name = "gcp_authentication_filter",
     srcs = [
         "ext/filters/gcp_authentication/gcp_authentication_filter.cc",
-        "ext/filters/gcp_authentication/gcp_authentication_service_config_parser.cc",
     ],
     hdrs = [
         "ext/filters/gcp_authentication/gcp_authentication_filter.h",
-        "ext/filters/gcp_authentication/gcp_authentication_service_config_parser.h",
     ],
     external_deps = [
         "absl/status",
@@ -5607,16 +5605,10 @@ grpc_cc_library(
         "gcp_service_account_identity_credentials",
         "grpc_check",
         "grpc_resolver_xds_attributes",
-        "grpc_service_config",
-        "json",
-        "json_args",
-        "json_object_loader",
         "lru_cache",
-        "service_config_parser",
         "sync",
         "validation_errors",
         "xds_config",
-        "//:config",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_security_base",

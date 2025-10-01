@@ -352,8 +352,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/fault_injection/fault_injection_filter.h )
   s.files += %w( src/core/ext/filters/gcp_authentication/gcp_authentication_filter.cc )
   s.files += %w( src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h )
-  s.files += %w( src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.cc )
-  s.files += %w( src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.h )
   s.files += %w( src/core/ext/filters/http/client/http_client_filter.cc )
   s.files += %w( src/core/ext/filters/http/client/http_client_filter.h )
   s.files += %w( src/core/ext/filters/http/client_authority_filter.cc )

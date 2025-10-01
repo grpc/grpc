@@ -25,8 +25,6 @@
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb.h"
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.h"
 #include "src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h"
-#include "src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
@@ -47,66 +45,6 @@ void XdsHttpGcpAuthnFilter::PopulateSymtab(upb_DefPool* symtab) const {
       symtab);
 }
 
-namespace {
-
-Json::Object ValidateFilterConfig(
-    absl::string_view instance_name,
-    const envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig*
-        gcp_auth,
-    ValidationErrors* errors) {
-  Json::Object config = {
-      {"filter_instance_name", Json::FromString(std::string(instance_name))}};
-  const auto* cache_config =
-      envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_cache_config(
-          gcp_auth);
-  if (cache_config == nullptr) return config;
-  uint64_t cache_size =
-      ParseUInt64Value(
-          envoy_extensions_filters_http_gcp_authn_v3_TokenCacheConfig_cache_size(
-              cache_config))
-          .value_or(10);
-  if (cache_size == 0) {
-    ValidationErrors::ScopedField field(errors, ".cache_config.cache_size");
-    errors->AddError("must be greater than 0");
-  }
-  config["cache_size"] = Json::FromNumber(cache_size);
-  return config;
-}
-
-}  // namespace
-
-std::optional<XdsHttpFilterImpl::XdsFilterConfig>
-XdsHttpGcpAuthnFilter::GenerateFilterConfig(
-    absl::string_view instance_name,
-    const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    ValidationErrors* errors) const {
-  absl::string_view* serialized_filter_config =
-      std::get_if<absl::string_view>(&extension.value);
-  if (serialized_filter_config == nullptr) {
-    errors->AddError("could not parse GCP auth filter config");
-    return std::nullopt;
-  }
-  auto* gcp_auth =
-      envoy_extensions_filters_http_gcp_authn_v3_GcpAuthnFilterConfig_parse(
-          serialized_filter_config->data(), serialized_filter_config->size(),
-          context.arena);
-  if (gcp_auth == nullptr) {
-    errors->AddError("could not parse GCP auth filter config");
-    return std::nullopt;
-  }
-  return XdsFilterConfig{ConfigProtoName(), Json::FromObject(ValidateFilterConfig(
-                                             instance_name, gcp_auth, errors))};
-}
-
-std::optional<XdsHttpFilterImpl::XdsFilterConfig>
-XdsHttpGcpAuthnFilter::GenerateFilterConfigOverride(
-    absl::string_view /*instance_name*/,
-    const XdsResourceType::DecodeContext& /*context*/,
-    XdsExtension /*extension*/, ValidationErrors* errors) const {
-  errors->AddError("GCP auth filter does not support config override");
-  return std::nullopt;
-}
-
 void XdsHttpGcpAuthnFilter::AddFilter(InterceptionChainBuilder& builder) const {
   builder.Add<GcpAuthenticationFilter>();
 }
@@ -119,25 +57,6 @@ void XdsHttpGcpAuthnFilter::AddFilter(
 
 const grpc_channel_filter* XdsHttpGcpAuthnFilter::channel_filter() const {
   return &GcpAuthenticationFilter::kFilterVtable;
-}
-
-ChannelArgs XdsHttpGcpAuthnFilter::ModifyChannelArgs(
-    const ChannelArgs& args) const {
-  return args.Set(GRPC_ARG_PARSE_GCP_AUTHENTICATION_METHOD_CONFIG, 1);
-}
-
-absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
-XdsHttpGcpAuthnFilter::GenerateMethodConfig(
-    const XdsFilterConfig& /*hcm_filter_config*/,
-    const XdsFilterConfig* /*filter_config_override*/) const {
-  return ServiceConfigJsonEntry{"", ""};
-}
-
-absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
-XdsHttpGcpAuthnFilter::GenerateServiceConfig(
-    const XdsFilterConfig& hcm_filter_config) const {
-  return ServiceConfigJsonEntry{"gcp_authentication",
-                                JsonDump(hcm_filter_config.config)};
 }
 
 RefCountedPtr<const FilterConfig>

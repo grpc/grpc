@@ -777,7 +777,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/channel_idle/legacy_channel_idle_filter.cc \
     src/core/ext/filters/fault_injection/fault_injection_filter.cc \
     src/core/ext/filters/gcp_authentication/gcp_authentication_filter.cc \
-    src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.cc \
     src/core/ext/filters/http/client/http_client_filter.cc \
     src/core/ext/filters/http/client_authority_filter.cc \
     src/core/ext/filters/http/http_filters_plugin.cc \

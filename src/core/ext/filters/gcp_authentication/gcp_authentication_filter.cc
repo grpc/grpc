@@ -22,16 +22,12 @@
 
 #include "absl/strings/str_cat.h"
 #include "src/core/call/security_context.h"
-#include "src/core/config/core_configuration.h"
 #include "src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.h"
-#include "src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/resolver/xds/xds_resolver_attributes.h"
-#include "src/core/service_config/service_config.h"
-#include "src/core/service_config/service_config_call_data.h"
 #include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
@@ -165,24 +161,6 @@ GcpAuthenticationFilter::Create(const ChannelArgs& args,
         "gcp_auth: xds config not found in channel args");
   }
   // Get filter config.
-#if 0
-  auto service_config = args.GetObjectRef<ServiceConfig>();
-  if (service_config == nullptr) {
-    return absl::InvalidArgumentError(
-        "gcp_auth: no service config in channel args");
-  }
-  auto* config = static_cast<const GcpAuthenticationParsedConfig*>(
-      service_config->GetGlobalParsedConfig(
-          GcpAuthenticationServiceConfigParser::ParserIndex()));
-  if (config == nullptr) {
-    return absl::InvalidArgumentError("gcp_auth: parsed config not found");
-  }
-  auto* filter_config = config->GetConfig(filter_args.instance_id());
-  if (filter_config == nullptr) {
-    return absl::InvalidArgumentError(
-        "gcp_auth: filter instance ID not found in filter config");
-  }
-#endif
   if (filter_args.config()->type() != Config::Type()) {
     return absl::InternalError(absl::StrCat(
         "wrong config type passed to GCP authn filter: ",
@@ -210,9 +188,5 @@ GcpAuthenticationFilter::GcpAuthenticationFilter(
     : filter_config_(std::move(filter_config)),
       xds_config_(std::move(xds_config)),
       cache_(std::move(cache)) {}
-
-void GcpAuthenticationFilterRegister(CoreConfiguration::Builder* builder) {
-  GcpAuthenticationServiceConfigParser::Register(builder);
-}
 
 }  // namespace grpc_core
