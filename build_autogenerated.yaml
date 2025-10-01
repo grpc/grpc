@@ -16,12 +16,10 @@ libs:
   build: all
   language: c
   public_headers:
-  - include/grpc/impl/call.h
   - include/grpc/impl/codegen/atm.h
   - include/grpc/impl/codegen/atm_gcc_atomic.h
   - include/grpc/impl/codegen/atm_gcc_sync.h
   - include/grpc/impl/codegen/atm_windows.h
-  - include/grpc/impl/codegen/fork.h
   - include/grpc/impl/codegen/gpr_types.h
   - include/grpc/impl/codegen/log.h
   - include/grpc/impl/codegen/port_platform.h
@@ -126,6 +124,7 @@ libs:
   - absl/flags:flag
   - absl/flags:marshalling
   - absl/functional:any_invocable
+  - absl/functional:bind_front
   - absl/log:check
   - absl/log:globals
   - absl/log:log
@@ -167,11 +166,13 @@ libs:
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
+  - include/grpc/impl/call.h
   - include/grpc/impl/channel_arg_names.h
   - include/grpc/impl/codegen/byte_buffer.h
   - include/grpc/impl/codegen/byte_buffer_reader.h
   - include/grpc/impl/codegen/compression_types.h
   - include/grpc/impl/codegen/connectivity_state.h
+  - include/grpc/impl/codegen/fork.h
   - include/grpc/impl/codegen/grpc_types.h
   - include/grpc/impl/codegen/propagation_bits.h
   - include/grpc/impl/codegen/slice.h
@@ -2223,7 +2224,6 @@ libs:
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
   - absl/container:node_hash_map
-  - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -2361,11 +2361,13 @@ libs:
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
+  - include/grpc/impl/call.h
   - include/grpc/impl/channel_arg_names.h
   - include/grpc/impl/codegen/byte_buffer.h
   - include/grpc/impl/codegen/byte_buffer_reader.h
   - include/grpc/impl/codegen/compression_types.h
   - include/grpc/impl/codegen/connectivity_state.h
+  - include/grpc/impl/codegen/fork.h
   - include/grpc/impl/codegen/grpc_types.h
   - include/grpc/impl/codegen/propagation_bits.h
   - include/grpc/impl/codegen/slice.h
@@ -3402,7 +3404,6 @@ libs:
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
   - absl/container:node_hash_map
-  - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -4520,8 +4521,12 @@ libs:
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
   deps:
+  - absl/base:dynamic_annotations
+  - absl/base:prefetch
+  - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:internal
   - grpc_unsecure
   - protobuf
   baselib: true
@@ -4552,11 +4557,13 @@ libs:
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
+  - include/grpc/impl/call.h
   - include/grpc/impl/channel_arg_names.h
   - include/grpc/impl/codegen/byte_buffer.h
   - include/grpc/impl/codegen/byte_buffer_reader.h
   - include/grpc/impl/codegen/compression_types.h
   - include/grpc/impl/codegen/connectivity_state.h
+  - include/grpc/impl/codegen/fork.h
   - include/grpc/impl/codegen/grpc_types.h
   - include/grpc/impl/codegen/propagation_bits.h
   - include/grpc/impl/codegen/slice.h
@@ -19379,7 +19386,6 @@ targets:
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
-  - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -21817,9 +21823,6 @@ targets:
   - gtest
   - absl/container:flat_hash_map
   - absl/hash:hash
-  - absl/status:statusor
-  - absl/types:span
-  - absl/utility:utility
   - gpr
   uses_polling: false
 - name: sockaddr_resolver_test
@@ -26061,8 +26064,12 @@ targets:
   - test/core/xds/xds_transport_fake.cc
   deps:
   - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:prefetch
+  - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:internal
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -26347,8 +26354,12 @@ targets:
   - test/core/xds/xds_cluster_resource_type_test.cc
   deps:
   - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:prefetch
+  - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:internal
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -27411,8 +27422,12 @@ targets:
   - test/core/xds/xds_endpoint_resource_type_test.cc
   deps:
   - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:prefetch
+  - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:internal
   - protobuf
   - grpc_test_util
   uses_polling: false
