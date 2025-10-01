@@ -83,7 +83,7 @@ void XdsHttpFaultFilter::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_fault_v3_HTTPFault_getmsgdef(symtab);
 }
 
-std::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::XdsFilterConfig>
 XdsHttpFaultFilter::GenerateFilterConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
@@ -199,11 +199,11 @@ XdsHttpFaultFilter::GenerateFilterConfig(
     fault_injection_policy_json["maxFaults"] =
         Json::FromNumber(*max_fault_wrapper);
   }
-  return FilterConfig{ConfigProtoName(),
-                      Json::FromObject(std::move(fault_injection_policy_json))};
+  return XdsFilterConfig{ConfigProtoName(),
+                         Json::FromObject(std::move(fault_injection_policy_json))};
 }
 
-std::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::XdsFilterConfig>
 XdsHttpFaultFilter::GenerateFilterConfigOverride(
     absl::string_view instance_name,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
@@ -220,7 +220,7 @@ void XdsHttpFaultFilter::AddFilter(InterceptionChainBuilder& builder) const {
 
 void XdsHttpFaultFilter::AddFilter(
     FilterChainBuilder& builder,
-    RefCountedPtr<const grpc_core::FilterConfig> config) const {
+    RefCountedPtr<const FilterConfig> config) const {
   builder.AddFilter<FaultInjectionFilter>(std::move(config));
 }
 
@@ -235,8 +235,8 @@ ChannelArgs XdsHttpFaultFilter::ModifyChannelArgs(
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpFaultFilter::GenerateMethodConfig(
-    const FilterConfig& hcm_filter_config,
-    const FilterConfig* filter_config_override) const {
+    const XdsFilterConfig& hcm_filter_config,
+    const XdsFilterConfig* filter_config_override) const {
   Json policy_json = filter_config_override != nullptr
                          ? filter_config_override->config
                          : hcm_filter_config.config;
@@ -246,11 +246,11 @@ XdsHttpFaultFilter::GenerateMethodConfig(
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpFaultFilter::GenerateServiceConfig(
-    const FilterConfig& /*hcm_filter_config*/) const {
+    const XdsFilterConfig& /*hcm_filter_config*/) const {
   return ServiceConfigJsonEntry{"", ""};
 }
 
-RefCountedPtr<const grpc_core::FilterConfig>
+RefCountedPtr<const FilterConfig>
 XdsHttpFaultFilter::ParseTopLevelConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
@@ -349,7 +349,7 @@ XdsHttpFaultFilter::ParseTopLevelConfig(
   return config;
 }
 
-RefCountedPtr<const grpc_core::FilterConfig>
+RefCountedPtr<const FilterConfig>
 XdsHttpFaultFilter::ParseOverrideConfig(
     absl::string_view instance_name,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
@@ -358,11 +358,11 @@ XdsHttpFaultFilter::ParseOverrideConfig(
                              errors);
 }
 
-RefCountedPtr<const grpc_core::FilterConfig> XdsHttpFaultFilter::MergeConfigs(
-    RefCountedPtr<const grpc_core::FilterConfig> top_level_config,
-    RefCountedPtr<const grpc_core::FilterConfig> virtual_host_override_config,
-    RefCountedPtr<const grpc_core::FilterConfig> route_override_config,
-    RefCountedPtr<const grpc_core::FilterConfig>
+RefCountedPtr<const FilterConfig> XdsHttpFaultFilter::MergeConfigs(
+    RefCountedPtr<const FilterConfig> top_level_config,
+    RefCountedPtr<const FilterConfig> virtual_host_override_config,
+    RefCountedPtr<const FilterConfig> route_override_config,
+    RefCountedPtr<const FilterConfig>
         cluster_weight_override_config) const {
   // No merging, just return the most specific config that exists.
   if (cluster_weight_override_config != nullptr) {

@@ -36,11 +36,11 @@ class XdsHttpGcpAuthnFilter final : public XdsHttpFilterImpl {
   absl::string_view ConfigProtoName() const override;
   absl::string_view OverrideConfigProtoName() const override;
   void PopulateSymtab(upb_DefPool* symtab) const override;
-  std::optional<FilterConfig> GenerateFilterConfig(
+  std::optional<XdsFilterConfig> GenerateFilterConfig(
       absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const override;
-  std::optional<FilterConfig> GenerateFilterConfigOverride(
+  std::optional<XdsFilterConfig> GenerateFilterConfigOverride(
       absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const override;
@@ -48,29 +48,29 @@ class XdsHttpGcpAuthnFilter final : public XdsHttpFilterImpl {
   const grpc_channel_filter* channel_filter() const override;
   ChannelArgs ModifyChannelArgs(const ChannelArgs& args) const override;
   absl::StatusOr<ServiceConfigJsonEntry> GenerateMethodConfig(
-      const FilterConfig& hcm_filter_config,
-      const FilterConfig* filter_config_override) const override;
+      const XdsFilterConfig& hcm_filter_config,
+      const XdsFilterConfig* filter_config_override) const override;
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
-      const FilterConfig& hcm_filter_config) const override;
+      const XdsFilterConfig& hcm_filter_config) const override;
   void AddFilter(FilterChainBuilder& builder,
-                 RefCountedPtr<const grpc_core::FilterConfig> config) const override;
-  RefCountedPtr<const grpc_core::FilterConfig> ParseTopLevelConfig(
+                 RefCountedPtr<const FilterConfig> config) const override;
+  RefCountedPtr<const FilterConfig> ParseTopLevelConfig(
         absl::string_view instance_name,
         const XdsResourceType::DecodeContext& context, XdsExtension extension,
         ValidationErrors* errors) const override;
-  RefCountedPtr<const grpc_core::FilterConfig> ParseOverrideConfig(
+  RefCountedPtr<const FilterConfig> ParseOverrideConfig(
         absl::string_view instance_name,
         const XdsResourceType::DecodeContext& context, XdsExtension extension,
         ValidationErrors* errors) const override;
-  RefCountedPtr<const grpc_core::FilterConfig> MergeConfigs(
-      RefCountedPtr<const grpc_core::FilterConfig> top_level_config,
-      RefCountedPtr<const grpc_core::FilterConfig>
+  RefCountedPtr<const FilterConfig> MergeConfigs(
+      RefCountedPtr<const FilterConfig> top_level_config,
+      RefCountedPtr<const FilterConfig>
           virtual_host_override_config,
-      RefCountedPtr<const grpc_core::FilterConfig> route_override_config,
-      RefCountedPtr<const grpc_core::FilterConfig>
+      RefCountedPtr<const FilterConfig> route_override_config,
+      RefCountedPtr<const FilterConfig>
           cluster_weight_override_config) const override;
-  void UpdateBlackboard(const FilterConfig& hcm_filter_config,
-                        const grpc_core::FilterConfig* config,
+  void UpdateBlackboard(const XdsFilterConfig& hcm_filter_config,
+                        const FilterConfig* config,
                         const Blackboard* old_blackboard,
                         Blackboard* new_blackboard) const override;
   bool IsSupportedOnClients() const override { return true; }

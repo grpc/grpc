@@ -516,7 +516,7 @@ void XdsHttpRbacFilter::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_rbac_v3_RBAC_getmsgdef(symtab);
 }
 
-std::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::XdsFilterConfig>
 XdsHttpRbacFilter::GenerateFilterConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
@@ -534,11 +534,11 @@ XdsHttpRbacFilter::GenerateFilterConfig(
     errors->AddError("could not parse HTTP RBAC filter config");
     return std::nullopt;
   }
-  return FilterConfig{ConfigProtoName(),
+  return XdsFilterConfig{ConfigProtoName(),
                       ParseHttpRbacToJson(context, rbac, errors)};
 }
 
-std::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::XdsFilterConfig>
 XdsHttpRbacFilter::GenerateFilterConfigOverride(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
@@ -566,7 +566,7 @@ XdsHttpRbacFilter::GenerateFilterConfigOverride(
     ValidationErrors::ScopedField field(errors, ".rbac");
     rbac_json = ParseHttpRbacToJson(context, rbac, errors);
   }
-  return FilterConfig{OverrideConfigProtoName(), std::move(rbac_json)};
+  return XdsFilterConfig{OverrideConfigProtoName(), std::move(rbac_json)};
 }
 
 void XdsHttpRbacFilter::AddFilter(InterceptionChainBuilder& builder) const {
@@ -575,7 +575,7 @@ void XdsHttpRbacFilter::AddFilter(InterceptionChainBuilder& builder) const {
 
 void XdsHttpRbacFilter::AddFilter(
     FilterChainBuilder& builder,
-    RefCountedPtr<const grpc_core::FilterConfig> config) const {
+    RefCountedPtr<const FilterConfig> config) const {
   builder.AddFilter<RbacFilter>(std::move(config));
 }
 
@@ -590,8 +590,8 @@ ChannelArgs XdsHttpRbacFilter::ModifyChannelArgs(
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpRbacFilter::GenerateMethodConfig(
-    const FilterConfig& hcm_filter_config,
-    const FilterConfig* filter_config_override) const {
+    const XdsFilterConfig& hcm_filter_config,
+    const XdsFilterConfig* filter_config_override) const {
   const Json& policy_json = filter_config_override != nullptr
                                 ? filter_config_override->config
                                 : hcm_filter_config.config;
@@ -601,11 +601,11 @@ XdsHttpRbacFilter::GenerateMethodConfig(
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpRbacFilter::GenerateServiceConfig(
-    const FilterConfig& /*hcm_filter_config*/) const {
+    const XdsFilterConfig& /*hcm_filter_config*/) const {
   return ServiceConfigJsonEntry{"", ""};
 }
 
-RefCountedPtr<const grpc_core::FilterConfig>
+RefCountedPtr<const FilterConfig>
 XdsHttpRbacFilter::ParseTopLevelConfig(
       absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
@@ -614,7 +614,7 @@ XdsHttpRbacFilter::ParseTopLevelConfig(
   return nullptr;
 }
 
-RefCountedPtr<const grpc_core::FilterConfig>
+RefCountedPtr<const FilterConfig>
 XdsHttpRbacFilter::ParseOverrideConfig(
       absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
@@ -623,12 +623,12 @@ XdsHttpRbacFilter::ParseOverrideConfig(
   return nullptr;
 }
 
-RefCountedPtr<const grpc_core::FilterConfig> XdsHttpRbacFilter::MergeConfigs(
-    RefCountedPtr<const grpc_core::FilterConfig> top_level_config,
-    RefCountedPtr<const grpc_core::FilterConfig>
+RefCountedPtr<const FilterConfig> XdsHttpRbacFilter::MergeConfigs(
+    RefCountedPtr<const FilterConfig> top_level_config,
+    RefCountedPtr<const FilterConfig>
         virtual_host_override_config,
-    RefCountedPtr<const grpc_core::FilterConfig> route_override_config,
-    RefCountedPtr<const grpc_core::FilterConfig>
+    RefCountedPtr<const FilterConfig> route_override_config,
+    RefCountedPtr<const FilterConfig>
         cluster_weight_override_config) const {
 // FIXME
   return nullptr;

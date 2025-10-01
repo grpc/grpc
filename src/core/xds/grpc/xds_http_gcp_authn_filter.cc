@@ -79,7 +79,7 @@ Json::Object ValidateFilterConfig(
 
 }  // namespace
 
-std::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::XdsFilterConfig>
 XdsHttpGcpAuthnFilter::GenerateFilterConfig(
     absl::string_view instance_name,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
@@ -98,11 +98,11 @@ XdsHttpGcpAuthnFilter::GenerateFilterConfig(
     errors->AddError("could not parse GCP auth filter config");
     return std::nullopt;
   }
-  return FilterConfig{ConfigProtoName(), Json::FromObject(ValidateFilterConfig(
+  return XdsFilterConfig{ConfigProtoName(), Json::FromObject(ValidateFilterConfig(
                                              instance_name, gcp_auth, errors))};
 }
 
-std::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::XdsFilterConfig>
 XdsHttpGcpAuthnFilter::GenerateFilterConfigOverride(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& /*context*/,
@@ -117,7 +117,7 @@ void XdsHttpGcpAuthnFilter::AddFilter(InterceptionChainBuilder& builder) const {
 
 void XdsHttpGcpAuthnFilter::AddFilter(
     FilterChainBuilder& builder,
-    RefCountedPtr<const grpc_core::FilterConfig> config) const {
+    RefCountedPtr<const FilterConfig> config) const {
   builder.AddFilter<GcpAuthenticationFilter>(std::move(config));
 }
 
@@ -132,19 +132,19 @@ ChannelArgs XdsHttpGcpAuthnFilter::ModifyChannelArgs(
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpGcpAuthnFilter::GenerateMethodConfig(
-    const FilterConfig& /*hcm_filter_config*/,
-    const FilterConfig* /*filter_config_override*/) const {
+    const XdsFilterConfig& /*hcm_filter_config*/,
+    const XdsFilterConfig* /*filter_config_override*/) const {
   return ServiceConfigJsonEntry{"", ""};
 }
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpGcpAuthnFilter::GenerateServiceConfig(
-    const FilterConfig& hcm_filter_config) const {
+    const XdsFilterConfig& hcm_filter_config) const {
   return ServiceConfigJsonEntry{"gcp_authentication",
                                 JsonDump(hcm_filter_config.config)};
 }
 
-RefCountedPtr<const grpc_core::FilterConfig>
+RefCountedPtr<const FilterConfig>
 XdsHttpGcpAuthnFilter::ParseTopLevelConfig(
       absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
@@ -182,7 +182,7 @@ XdsHttpGcpAuthnFilter::ParseTopLevelConfig(
   return config;
 }
 
-RefCountedPtr<const grpc_core::FilterConfig>
+RefCountedPtr<const FilterConfig>
 XdsHttpGcpAuthnFilter::ParseOverrideConfig(
       absl::string_view /*instance_name*/,
       const XdsResourceType::DecodeContext& /*context*/,
@@ -191,19 +191,19 @@ XdsHttpGcpAuthnFilter::ParseOverrideConfig(
   return nullptr;
 }
 
-RefCountedPtr<const grpc_core::FilterConfig> XdsHttpGcpAuthnFilter::MergeConfigs(
-    RefCountedPtr<const grpc_core::FilterConfig> top_level_config,
-    RefCountedPtr<const grpc_core::FilterConfig> /*virtual_host_override_config*/,
-    RefCountedPtr<const grpc_core::FilterConfig> /*route_override_config*/,
-    RefCountedPtr<const grpc_core::FilterConfig> /*cluster_weight_override_config*/)
+RefCountedPtr<const FilterConfig> XdsHttpGcpAuthnFilter::MergeConfigs(
+    RefCountedPtr<const FilterConfig> top_level_config,
+    RefCountedPtr<const FilterConfig> /*virtual_host_override_config*/,
+    RefCountedPtr<const FilterConfig> /*route_override_config*/,
+    RefCountedPtr<const FilterConfig> /*cluster_weight_override_config*/)
         const {
   // Does not support override config.
   return top_level_config;
 }
 
 void XdsHttpGcpAuthnFilter::UpdateBlackboard(
-    const FilterConfig& hcm_filter_config,
-    const grpc_core::FilterConfig* config,
+    const XdsFilterConfig& hcm_filter_config,
+    const FilterConfig* config,
     const Blackboard* old_blackboard,
     Blackboard* new_blackboard) const {
   const auto& filter_config =

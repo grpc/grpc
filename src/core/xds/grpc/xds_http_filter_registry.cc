@@ -51,7 +51,7 @@ void XdsHttpRouterFilter::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_router_v3_Router_getmsgdef(symtab);
 }
 
-std::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::XdsFilterConfig>
 XdsHttpRouterFilter::GenerateFilterConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
@@ -68,10 +68,10 @@ XdsHttpRouterFilter::GenerateFilterConfig(
     errors->AddError("could not parse router filter config");
     return std::nullopt;
   }
-  return FilterConfig{ConfigProtoName(), Json()};
+  return XdsFilterConfig{ConfigProtoName(), Json()};
 }
 
-std::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::XdsFilterConfig>
 XdsHttpRouterFilter::GenerateFilterConfigOverride(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& /*context*/,
@@ -80,7 +80,7 @@ XdsHttpRouterFilter::GenerateFilterConfigOverride(
   return std::nullopt;
 }
 
-RefCountedPtr<const grpc_core::FilterConfig>
+RefCountedPtr<const FilterConfig>
 XdsHttpRouterFilter::ParseTopLevelConfig(
     absl::string_view instance_name,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
@@ -100,7 +100,7 @@ XdsHttpRouterFilter::ParseTopLevelConfig(
   return nullptr;
 }
 
-RefCountedPtr<const grpc_core::FilterConfig>
+RefCountedPtr<const FilterConfig>
 XdsHttpRouterFilter::ParseOverrideConfig(
     absl::string_view instance_name,
     const XdsResourceType::DecodeContext& context, XdsExtension extension,
@@ -109,12 +109,12 @@ XdsHttpRouterFilter::ParseOverrideConfig(
   return nullptr;
 }
 
-RefCountedPtr<const grpc_core::FilterConfig> XdsHttpRouterFilter::MergeConfigs(
-    RefCountedPtr<const grpc_core::FilterConfig> top_level_config,
-    RefCountedPtr<const grpc_core::FilterConfig>
+RefCountedPtr<const FilterConfig> XdsHttpRouterFilter::MergeConfigs(
+    RefCountedPtr<const FilterConfig> top_level_config,
+    RefCountedPtr<const FilterConfig>
         /*virtual_host_override_config*/,
-    RefCountedPtr<const grpc_core::FilterConfig> /*route_override_config*/,
-    RefCountedPtr<const grpc_core::FilterConfig>
+    RefCountedPtr<const FilterConfig> /*route_override_config*/,
+    RefCountedPtr<const FilterConfig>
         /*cluster_weight_override_config*/) const {
   return top_level_config;
 }

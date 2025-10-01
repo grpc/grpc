@@ -403,7 +403,7 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
       if (!is_optional) errors->AddError("unsupported filter type");
       continue;
     }
-    std::optional<XdsHttpFilterImpl::FilterConfig> filter_config =
+    std::optional<XdsHttpFilterImpl::XdsFilterConfig> filter_config =
         filter_impl->GenerateFilterConfigOverride(
             key, context, std::move(*extension_to_use), errors);
     if (filter_config.has_value()) {

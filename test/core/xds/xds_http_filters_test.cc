@@ -301,7 +301,7 @@ TEST_F(XdsFaultInjectionFilterTest, ModifyChannelArgs) {
 }
 
 TEST_F(XdsFaultInjectionFilterTest, GenerateMethodConfigTopLevelConfig) {
-  XdsHttpFilterImpl::FilterConfig config;
+  XdsHttpFilterImpl::XdsFilterConfig config;
   config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
   auto service_config = filter_->GenerateMethodConfig(config, nullptr);
   ASSERT_TRUE(service_config.ok()) << service_config.status();
@@ -310,9 +310,9 @@ TEST_F(XdsFaultInjectionFilterTest, GenerateMethodConfigTopLevelConfig) {
 }
 
 TEST_F(XdsFaultInjectionFilterTest, GenerateMethodConfigOverrideConfig) {
-  XdsHttpFilterImpl::FilterConfig top_config;
+  XdsHttpFilterImpl::XdsFilterConfig top_config;
   top_config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
-  XdsHttpFilterImpl::FilterConfig override_config;
+  XdsHttpFilterImpl::XdsFilterConfig override_config;
   override_config.config =
       Json::FromObject({{"baz", Json::FromString("quux")}});
   auto service_config =
@@ -323,7 +323,7 @@ TEST_F(XdsFaultInjectionFilterTest, GenerateMethodConfigOverrideConfig) {
 }
 
 TEST_F(XdsFaultInjectionFilterTest, GenerateServiceConfig) {
-  XdsHttpFilterImpl::FilterConfig config;
+  XdsHttpFilterImpl::XdsFilterConfig config;
   config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
   auto service_config = filter_->GenerateServiceConfig(config);
   ASSERT_TRUE(service_config.ok()) << service_config.status();
@@ -338,7 +338,7 @@ class XdsFaultInjectionFilterConfigTest
     : public XdsFaultInjectionFilterTest,
       public ::testing::WithParamInterface<bool> {
  protected:
-  std::optional<XdsHttpFilterImpl::FilterConfig> GenerateConfig(
+  std::optional<XdsHttpFilterImpl::XdsFilterConfig> GenerateConfig(
       XdsExtension extension) {
     if (GetParam()) {
       return filter_->GenerateFilterConfigOverride(
@@ -602,7 +602,7 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverrideUnparsable) {
 }
 
 TEST_F(XdsRbacFilterTest, GenerateMethodConfig) {
-  XdsHttpFilterImpl::FilterConfig hcm_config = {
+  XdsHttpFilterImpl::XdsFilterConfig hcm_config = {
       filter_->ConfigProtoName(),
       Json::FromObject({{"name", Json::FromString("foo")}})};
   auto config = filter_->GenerateMethodConfig(hcm_config, nullptr);
@@ -613,7 +613,7 @@ TEST_F(XdsRbacFilterTest, GenerateMethodConfig) {
 }
 
 TEST_F(XdsRbacFilterTest, GenerateServiceConfig) {
-  XdsHttpFilterImpl::FilterConfig config;
+  XdsHttpFilterImpl::XdsFilterConfig config;
   config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
   auto service_config = filter_->GenerateServiceConfig(config);
   ASSERT_TRUE(service_config.ok()) << service_config.status();
@@ -627,7 +627,7 @@ TEST_F(XdsRbacFilterTest, GenerateServiceConfig) {
 class XdsRbacFilterConfigTest : public XdsRbacFilterTest,
                                 public ::testing::WithParamInterface<bool> {
  protected:
-  std::optional<XdsHttpFilterImpl::FilterConfig> GenerateConfig(RBAC rbac) {
+  std::optional<XdsHttpFilterImpl::XdsFilterConfig> GenerateConfig(RBAC rbac) {
     if (GetParam()) {
       RBACPerRoute rbac_per_route;
       *rbac_per_route.mutable_rbac() = rbac;
@@ -1167,7 +1167,7 @@ TEST_F(XdsStatefulSessionFilterTest, OverrideConfigDisabled) {
 }
 
 TEST_F(XdsStatefulSessionFilterTest, GenerateMethodConfigNoOverride) {
-  XdsHttpFilterImpl::FilterConfig hcm_config = {
+  XdsHttpFilterImpl::XdsFilterConfig hcm_config = {
       filter_->ConfigProtoName(),
       Json::FromObject({{"name", Json::FromString("foo")}})};
   auto config = filter_->GenerateMethodConfig(hcm_config, nullptr);
@@ -1178,10 +1178,10 @@ TEST_F(XdsStatefulSessionFilterTest, GenerateMethodConfigNoOverride) {
 }
 
 TEST_F(XdsStatefulSessionFilterTest, GenerateMethodConfigWithOverride) {
-  XdsHttpFilterImpl::FilterConfig hcm_config = {
+  XdsHttpFilterImpl::XdsFilterConfig hcm_config = {
       filter_->ConfigProtoName(),
       Json::FromObject({{"name", Json::FromString("foo")}})};
-  XdsHttpFilterImpl::FilterConfig override_config = {
+  XdsHttpFilterImpl::XdsFilterConfig override_config = {
       filter_->OverrideConfigProtoName(),
       Json::FromObject({{"name", Json::FromString("bar")}})};
   auto config = filter_->GenerateMethodConfig(hcm_config, &override_config);
@@ -1192,7 +1192,7 @@ TEST_F(XdsStatefulSessionFilterTest, GenerateMethodConfigWithOverride) {
 }
 
 TEST_F(XdsStatefulSessionFilterTest, GenerateServiceConfig) {
-  XdsHttpFilterImpl::FilterConfig config;
+  XdsHttpFilterImpl::XdsFilterConfig config;
   config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
   auto service_config = filter_->GenerateServiceConfig(config);
   ASSERT_TRUE(service_config.ok()) << service_config.status();
@@ -1277,7 +1277,7 @@ class XdsStatefulSessionFilterConfigTest
     : public XdsStatefulSessionFilterTest,
       public ::testing::WithParamInterface<bool> {
  protected:
-  std::optional<XdsHttpFilterImpl::FilterConfig> GenerateConfig(
+  std::optional<XdsHttpFilterImpl::XdsFilterConfig> GenerateConfig(
       StatefulSession stateful_session) {
     if (GetParam()) {
       StatefulSessionPerRoute stateful_session_per_route;
@@ -1615,7 +1615,7 @@ TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigOverride) {
 }
 
 TEST_F(XdsGcpAuthnFilterTest, GenerateMethodConfig) {
-  XdsHttpFilterImpl::FilterConfig config;
+  XdsHttpFilterImpl::XdsFilterConfig config;
   config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
   auto service_config = filter_->GenerateMethodConfig(config, nullptr);
   ASSERT_TRUE(service_config.ok()) << service_config.status();
@@ -1624,7 +1624,7 @@ TEST_F(XdsGcpAuthnFilterTest, GenerateMethodConfig) {
 }
 
 TEST_F(XdsGcpAuthnFilterTest, GenerateServiceConfig) {
-  XdsHttpFilterImpl::FilterConfig config;
+  XdsHttpFilterImpl::XdsFilterConfig config;
   config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
   auto service_config = filter_->GenerateServiceConfig(config);
   ASSERT_TRUE(service_config.ok()) << service_config.status();

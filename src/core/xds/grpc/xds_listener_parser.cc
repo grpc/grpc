@@ -265,7 +265,7 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
           continue;
         }
 // FIXME: remove old config parsing
-        std::optional<XdsHttpFilterImpl::FilterConfig> filter_config =
+        std::optional<XdsHttpFilterImpl::XdsFilterConfig> filter_config =
             filter_impl->GenerateFilterConfig(name, context,
                                               std::move(*extension), errors);
         RefCountedPtr<const FilterConfig> config =

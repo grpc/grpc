@@ -39,15 +39,15 @@ namespace grpc_core {
 
 class XdsHttpFilterImpl {
  public:
-  struct FilterConfig {
+  struct XdsFilterConfig {
     absl::string_view config_proto_type_name;
     Json config;
 
-    bool operator==(const FilterConfig& other) const {
+    bool operator==(const XdsFilterConfig& other) const {
       return config_proto_type_name == other.config_proto_type_name &&
              config == other.config;
     }
-    bool operator!=(const FilterConfig& other) const {
+    bool operator!=(const XdsFilterConfig& other) const {
       return !(*this == other);
     }
     std::string ToString() const {
@@ -85,7 +85,7 @@ class XdsHttpFilterImpl {
 // FIXME: remove
   // Generates a Config from the xDS filter config proto.
   // Used for the top-level config in the HCM HTTP filter list.
-  virtual std::optional<FilterConfig> GenerateFilterConfig(
+  virtual std::optional<XdsFilterConfig> GenerateFilterConfig(
       absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const = 0;
@@ -93,7 +93,7 @@ class XdsHttpFilterImpl {
 // FIXME: remove
   // Generates a Config from the xDS filter config proto.
   // Used for the typed_per_filter_config override in VirtualHost and Route.
-  virtual std::optional<FilterConfig> GenerateFilterConfigOverride(
+  virtual std::optional<XdsFilterConfig> GenerateFilterConfigOverride(
       absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const = 0;
@@ -119,8 +119,8 @@ class XdsHttpFilterImpl {
   // Route, or VirtualHost entries that it is found in, or null if
   // there is no override in any of those locations.
   virtual absl::StatusOr<ServiceConfigJsonEntry> GenerateMethodConfig(
-      const FilterConfig& hcm_filter_config,
-      const FilterConfig* filter_config_override) const = 0;
+      const XdsFilterConfig& hcm_filter_config,
+      const XdsFilterConfig* filter_config_override) const = 0;
 
 // FIXME: remove
   // Function to convert the Configs into a JSON string to be added to the
@@ -128,39 +128,39 @@ class XdsHttpFilterImpl {
   // The hcm_filter_config comes from the HttpConnectionManager config.
   // Currently used only on the client side.
   virtual absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
-      const FilterConfig& hcm_filter_config) const = 0;
+      const XdsFilterConfig& hcm_filter_config) const = 0;
 
   // Adds the filter to the builder.
   virtual void AddFilter(FilterChainBuilder& builder,
-                         RefCountedPtr<const grpc_core::FilterConfig> config) const = 0;
+                         RefCountedPtr<const FilterConfig> config) const = 0;
 
   // Parses the top-level filter config.
-  virtual RefCountedPtr<const grpc_core::FilterConfig> ParseTopLevelConfig(
+  virtual RefCountedPtr<const FilterConfig> ParseTopLevelConfig(
       absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const = 0;
 
   // Parses an override config.
-  virtual RefCountedPtr<const grpc_core::FilterConfig> ParseOverrideConfig(
+  virtual RefCountedPtr<const FilterConfig> ParseOverrideConfig(
       absl::string_view instance_name,
       const XdsResourceType::DecodeContext& context, XdsExtension extension,
       ValidationErrors* errors) const = 0;
 
   // Returns a new filter config that takes into account any necessary
   // overrides.
-  virtual RefCountedPtr<const grpc_core::FilterConfig> MergeConfigs(
-      RefCountedPtr<const grpc_core::FilterConfig> top_level_config,
-      RefCountedPtr<const grpc_core::FilterConfig>
+  virtual RefCountedPtr<const FilterConfig> MergeConfigs(
+      RefCountedPtr<const FilterConfig> top_level_config,
+      RefCountedPtr<const FilterConfig>
           virtual_host_override_config,
-      RefCountedPtr<const grpc_core::FilterConfig> route_override_config,
-      RefCountedPtr<const grpc_core::FilterConfig>
+      RefCountedPtr<const FilterConfig> route_override_config,
+      RefCountedPtr<const FilterConfig>
           cluster_weight_override_config) const = 0;
 
   // Adds state to new_blackboard if needed for the specified filter
   // config.  Copies existing state from old_blackboard as appropriate.
   virtual void UpdateBlackboard(
-      const FilterConfig& /*hcm_filter_config*/,  // FIXME: remove
-                                const grpc_core::FilterConfig* /*config*/,
+      const XdsFilterConfig& /*hcm_filter_config*/,  // FIXME: remove
+                                const FilterConfig* /*config*/,
                                 const Blackboard* /*old_blackboard*/,
                                 Blackboard* /*new_blackboard*/) const {}
 

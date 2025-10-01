@@ -39,7 +39,7 @@ namespace grpc_core {
 
 struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
   struct FilterConfigOverride {
-    XdsHttpFilterImpl::FilterConfig old_config;
+    XdsHttpFilterImpl::XdsFilterConfig old_config;
     RefCountedPtr<const FilterConfig> config;
   };
   using TypedPerFilterConfig = std::map<std::string, FilterConfigOverride>;
