@@ -381,10 +381,7 @@ grpc_cc_binary(
     external_deps = [
         "absl/flags:flag",
     ],
-    visibility = [
-        "//bazel:cli",
-        "//platforms/bloom/packages/grpc:__subpackages__",
-    ],
+    visibility = ["//bazel:cli"],
     deps = [
         ":grpc++_proto_reflection_desc_db",
         ":grpc_cli_libs",
