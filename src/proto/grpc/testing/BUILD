@@ -18,6 +18,7 @@ load(
     "grpc_cc_proto_library",
     "grpc_internal_proto_library",
     "grpc_package",
+    "grpc_proto_library",
 )
 load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
@@ -365,6 +366,12 @@ genrule(
     cmd = "cp $< $@",
 )
 
+grpc_proto_library(
+    name = "messages_gen_proto",
+    srcs = ["messages_gen_proto_file"],
+    has_services = False,
+)
+
 genrule(
     name = "test_gen_proto_file",
     srcs = ["test.proto"],
@@ -379,4 +386,14 @@ genrule(
 alias(
     name = "empty_proto_only",
     actual = "empty_proto",
+)
+
+# Consume generated files in srcs and in deps
+grpc_proto_library(
+    name = "test_gen_proto",
+    srcs = ["test_gen_proto_file"],
+    deps = [
+        "empty_proto",
+        "messages_gen_proto",
+    ],
 )
