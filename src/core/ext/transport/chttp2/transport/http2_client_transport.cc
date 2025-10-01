@@ -268,7 +268,6 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
 
 Http2Status Http2ClientTransport::ProcessMetadata(
     RefCountedPtr<Stream> stream) {
-  const uint32_t stream_id = stream->GetStreamId();
   HeaderAssembler& assembler = stream->header_assembler;
   CallHandler call = stream->call;
 
@@ -289,10 +288,9 @@ Http2Status Http2ClientTransport::ProcessMetadata(
         GRPC_HTTP2_CLIENT_DLOG
             << "Http2Transport ProcessMetadata SpawnPushServerTrailingMetadata";
         stream->MarkHalfClosedRemote();
-        BeginCloseStream(
-            stream_id,
-            Http2ErrorCodeToRstFrameErrorCode(Http2ErrorCode::kNoError),
-            std::move(metadata));
+        BeginCloseStream(stream,
+                         /*reset_stream_error_code=*/std::nullopt,
+                         std::move(metadata));
       } else {
         GRPC_HTTP2_CLIENT_DLOG
             << "Http2Transport ProcessMetadata SpawnPushServerInitialMetadata";
@@ -318,8 +316,12 @@ Http2Status Http2ClientTransport::ProcessHttp2RstStreamFrame(
       RstFrameErrorCodeToHttp2ErrorCode(frame.error_code);
   absl::Status status = absl::Status(ErrorCodeToAbslStatusCode(error_code),
                                      "Reset stream frame received.");
-  BeginCloseStream(frame.stream_id, /*reset_stream_error_code=*/std::nullopt,
-                   CancelledServerMetadataFromStatus(status));
+  RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
+  if (stream != nullptr) {
+    stream->MarkHalfClosedRemote();
+    BeginCloseStream(stream, /*reset_stream_error_code=*/std::nullopt,
+                     CancelledServerMetadataFromStatus(status));
+  }
 
   // In case of stream error, we do not want the Read Loop to be broken. Hence
   // returning an ok status.
@@ -771,14 +773,15 @@ Http2ClientTransport::DequeueStreamFrames(RefCountedPtr<Stream> stream) {
     stream->SentInitialMetadata();
   }
   if (result.HalfCloseDequeued()) {
-    CloseStream(stream, CloseStreamArgs{/*close_reads=*/false,
-                                        /*close_writes=*/true});
     stream->MarkHalfClosedLocal();
+    CloseStream(stream, CloseStreamArgs{
+                            /*close_reads=*/stream->did_push_trailing_metadata,
+                            /*close_writes=*/true});
   }
   if (result.ResetStreamDequeued()) {
+    stream->MarkHalfClosedLocal();
     CloseStream(stream, CloseStreamArgs{/*close_reads=*/true,
                                         /*close_writes=*/true});
-    stream->MarkHalfClosedLocal();
   }
 
   // Update the write_bytes_remaining_ based on the bytes consumed
@@ -1048,78 +1051,112 @@ void Http2ClientTransport::CloseStream(RefCountedPtr<Stream> stream,
   }
 }
 
-// Here is the flow for stream close:
-// 1. BeginCloseStream is invoked if the transport needs to close the stream.
-// 2. If reset stream does not need to be sent, the stream is closed for reads
-//    and writes immediately. Also, the stream is removed from the
-//    stream_list_.
-// 3. If reset stream needs to be sent and the stream is cancelled, the stream
-//    is closed for reads immediately. This will result in stream being removed
-//    from the stream_list_. Additionally, the reset stream frame is enqueued
-//    and the stream is closed for writes once the frame is created.
-// 4. Trailing metadata is pushed to the call stack.
-// Extended:
-// 5. Eventually CallHandler.OnDone() is invoked.
-// 6. If the call was cancelled, we try to enqueue a reset stream frame. In most
-//    of the cases, this would be a no-op. The only case where this would
-//    enqueue the reset stream frame is an application initiated abort.
-// 7. If the call was not cancelled, we try to enqueue a half close frame. If
-//    the stream was already closed from writes, this would be a no-op.
+// This function is idempotent and MUST be called from the transport party.
+// All the scenarios that can lead to this function being called are:
+// 1. Reading a RST stream frame: In this case, the stream is immediately
+//    closed for reads and writes and removed from the stream_list_.
+// 2. Reading a Trailing Metadata frame: There are two possible scenarios:
+//    a. The stream is closed for writes: Close the stream for reads and writes
+//       and remove the stream from the stream_list_.
+//    b. The stream is NOT closed for writes: Stream is kept open for reads and
+//       writes. CallHandler OnDone will trigger sending a half close frame. If
+//       before the multiplexer loop triggers sending a half close a RST stream
+//       is read, the stream is closed for reads and writes immediately and the
+//       half close is discarded. If no RST stream is read, the stream is closed
+//       for reads and writes upon sending the half close frame from the
+//       multiplexer loop.
+// 3. Hitting error condition in the transport: In this case, RST stream is
+//    enqueued and the stream is closed for reads immediately. This implies we
+//    reduce the number of active streams inline. When multiplexer loop
+//    processes the RST stream frame, the stream ref will dropped. The other
+//    stream ref will be dropped when CallHandler's OnDone is executed causing
+//    the stream to be destroyed. CallHandlers OnDone also tries to enqueue a
+//    RST stream frame. This is a no-op at this point.
+// 4. Application abort: In this case, CallHandler OnDone will enqueue RST
+//    stream frame to the stream data queue. The multiplexer loop will send the
+//    reset stream frame and close the stream from reads and writes.
+// 5. Transport close: This takes up the same path as case 3.
+// In all the above cases, trailing metadata is pushed to the call spine.
+// Note: The stream ref is held in atmost 3 places:
+// 1. stream_list_ : This is released when the stream is closed for reads.
+// 2. CallHandler OnDone : This is released when Trailing Metadata is pushed to
+//    the call spine.
+// 3. List of writable streams : This is released after the final frame is
+//    dequeued from the StreamDataQueue.
 void Http2ClientTransport::BeginCloseStream(
-    const uint32_t stream_id, std::optional<uint32_t> reset_stream_error_code,
+    RefCountedPtr<Stream> stream,
+    std::optional<uint32_t> reset_stream_error_code,
     ServerMetadataHandle&& metadata, DebugLocation whence) {
+  if (stream == nullptr) {
+    GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::BeginCloseStream stream "
+                              "is null reset_stream_error_code="
+                           << (reset_stream_error_code.has_value()
+                                   ? absl::StrCat(*reset_stream_error_code)
+                                   : "nullopt")
+                           << " metadata=" << metadata->DebugString();
+    return;
+  }
+
   GRPC_HTTP2_CLIENT_DLOG
-      << "Http2ClientTransport::BeginCloseStream for stream id: " << stream_id
-      << " error_code="
+      << "Http2ClientTransport::BeginCloseStream for stream id: "
+      << stream->GetStreamId() << " error_code="
       << (reset_stream_error_code.has_value()
               ? absl::StrCat(*reset_stream_error_code)
               : "nullopt")
       << " ServerMetadata=" << metadata->DebugString()
       << " location=" << whence.file() << ":" << whence.line();
 
-  RefCountedPtr<Stream> stream = LookupStream(stream_id);
-  if (stream != nullptr) {
-    if (stream->did_push_trailing_metadata) {
-      return;
-    }
-
-    // If reset stream needs to be sent, CloseStream will be called from the
-    // Multiplexer after the reset stream frame is created.
+  bool close_reads = false;
+  bool close_writes = false;
+  if (metadata->get(GrpcCallWasCancelled())) {
     if (!reset_stream_error_code) {
       // Callers taking this path:
       // 1. Reading a RST stream frame (will not send any frame out).
-
-      CloseStream(stream,
-                  CloseStreamArgs{/*close_reads*/ true, /*close_writes=*/true},
-                  whence);
-      stream->MarkHalfClosedRemote();
+      close_reads = true;
+      close_writes = true;
+      GRPC_HTTP2_CLIENT_DLOG
+          << "Http2ClientTransport::BeginCloseStream for stream id: "
+          << stream->GetStreamId() << " close_reads= " << close_reads
+          << " close_writes= " << close_writes;
     } else {
       // Callers taking this path:
-      // 1. Reading Trailing Metadata (MAY send half close from OnDone).
-      // 2. Processing Error in transport (will send reset stream from here).
-
-      if (metadata->get(GrpcCallWasCancelled())) {
-        CloseStream(
-            stream,
-            CloseStreamArgs{/*close_reads*/ true, /*close_writes=*/false},
-            whence);
-        absl::StatusOr<EnqueueResult> enqueue_result =
-            stream->EnqueueResetStream(reset_stream_error_code.value());
-        GRPC_HTTP2_CLIENT_DLOG << "Enqueued ResetStream with error code="
-                               << reset_stream_error_code.value()
-                               << " status=" << enqueue_result.status();
-        if (enqueue_result.ok()) {
-          GRPC_UNUSED absl::Status status = MaybeAddStreamToWritableStreamList(
-              stream, enqueue_result.value());
-        }
+      // 1. Processing Error in transport (will send reset stream from here).
+      absl::StatusOr<EnqueueResult> enqueue_result =
+          stream->EnqueueResetStream(reset_stream_error_code.value());
+      GRPC_HTTP2_CLIENT_DLOG << "Enqueued ResetStream with error code="
+                             << reset_stream_error_code.value()
+                             << " status=" << enqueue_result.status();
+      if (enqueue_result.ok()) {
+        GRPC_UNUSED absl::Status status =
+            MaybeAddStreamToWritableStreamList(stream, enqueue_result.value());
       }
+      close_reads = true;
+      GRPC_HTTP2_CLIENT_DLOG
+          << "Http2ClientTransport::BeginCloseStream for stream id: "
+          << stream->GetStreamId() << " close_reads= " << close_reads
+          << " close_writes= " << close_writes;
     }
-
-    stream->did_push_trailing_metadata = true;
-    // This maybe called multiple times while closing a stream. This should be
-    // fine as the the call spine ignores the subsequent calls.
-    stream->call.SpawnPushServerTrailingMetadata(std::move(metadata));
+  } else {
+    // Callers taking this path:
+    // 1. Reading Trailing Metadata (MAY send half close from OnDone).
+    if (stream->IsClosedForWrites()) {
+      close_reads = true;
+      close_writes = true;
+      GRPC_HTTP2_CLIENT_DLOG
+          << "Http2ClientTransport::BeginCloseStream for stream id: "
+          << stream->GetStreamId() << " close_reads= " << close_reads
+          << " close_writes= " << close_writes;
+    }
   }
+
+  if (close_reads || close_writes) {
+    CloseStream(stream, CloseStreamArgs{close_reads, close_writes}, whence);
+  }
+
+  stream->did_push_trailing_metadata = true;
+  // This maybe called multiple times while closing a stream. This should be
+  // fine as the the call spine ignores the subsequent calls.
+  stream->call.SpawnPushServerTrailingMetadata(std::move(metadata));
 }
 
 void Http2ClientTransport::CloseTransport() {
@@ -1172,7 +1209,7 @@ void Http2ClientTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
           // fail. Also, as this is running on the transport
           // party, there would not be concurrent access to the stream.
           auto& stream = pair.second;
-          self->BeginCloseStream(stream->stream_id,
+          self->BeginCloseStream(stream,
                                  Http2ErrorCodeToRstFrameErrorCode(
                                      http2_status.GetConnectionErrorCode()),
                                  CancelledServerMetadataFromStatus(
@@ -1270,21 +1307,27 @@ bool Http2ClientTransport::SetOnDone(CallHandler call_handler,
 }
 
 std::optional<RefCountedPtr<Stream>> Http2ClientTransport::MakeStream(
-    CallHandler call_handler, const uint32_t stream_id) {
+    CallHandler call_handler,
+    InterActivityMutex<uint32_t>::Lock& next_stream_id_lock) {
   // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
-  // TODO(tjagtap) : [PH2][P2] Validate implementation.
-
   // TODO(akshitpatel) : [PH2][P1] : Probably do not need this lock. This
   // function is always called under the stream_id_mutex_. The issue is the
   // OnDone needs to be synchronous and hence InterActivityMutex might not be
   // an option to protect the stream_list_.
   MutexLock lock(&transport_mutex_);
+
+  std::optional<uint32_t> stream_id = NextStreamId(next_stream_id_lock);
+  if (!stream_id.has_value()) {
+    return std::nullopt;
+  }
+
   RefCountedPtr<Stream> stream = MakeRefCounted<Stream>(
-      call_handler, stream_id, settings_.peer().allow_true_binary_metadata(),
+      call_handler, stream_id.value(),
+      settings_.peer().allow_true_binary_metadata(),
       settings_.acked().allow_true_binary_metadata(), flow_control_);
   const bool on_done_added = SetOnDone(call_handler, stream);
   if (!on_done_added) return std::nullopt;
-  stream_list_.emplace(stream_id, stream);
+  stream_list_.emplace(stream_id.value(), stream);
   return stream;
 }
 
@@ -1389,9 +1432,8 @@ void Http2ClientTransport::StartCall(CallHandler call_handler) {
             // this for incoming streams only. If a server receives more streams
             // from a client than is allowed by the clients settings, whether or
             // not we should fail is debatable.
-            const uint32_t stream_id = self->NextStreamId(std::get<0>(args));
             std::optional<RefCountedPtr<Stream>> stream =
-                self->MakeStream(call_handler, stream_id);
+                self->MakeStream(call_handler, std::get<0>(args));
             return If(
                 stream.has_value(),
                 [self, call_handler, stream, args = std::move(args)]() mutable {

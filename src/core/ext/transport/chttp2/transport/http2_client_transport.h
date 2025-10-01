@@ -253,9 +253,36 @@ class Http2ClientTransport final : public ClientTransport,
   SettingsTimeoutManager transport_settings_;
 
   Http2FrameHeader current_frame_header_;
+  // Returns the number of active streams. A stream is removed from the `active`
+  // list once both client and server agree to close the stream. The count of
+  // stream_list_(even though stream list represents streams open for reads)
+  // works here because of the following cases where the stream is closed:
+  // 1. Reading a RST stream frame: In this case, the stream is immediately
+  //    closed for reads and writes and removed from the stream_list_
+  //    (effectively tracking the number of active streams).
+  // 2. Reading a Trailing Metadata frame: In this case, the stream MAY be
+  //    closed for reads and writes immediately which follows the above case. In
+  //    other cases, the transport either reads RST stream frame from the server
+  //    (and follows case 1) or sends a half close frame and closes the stream
+  //    for reads and writes (in the multiplexer loop).
+  // 3. Hitting error condition in the transport: In this case, RST stream is
+  //    is enqueued and the stream is closed for reads immediately. This means
+  //    we effectively reduce the number of active streams inline (because we
+  //    remove the stream from the stream_list_). This is fine because the
+  //    priority logic in list of writable streams ensures that the RST stream
+  //    frame is given priority over any new streams being created by the
+  //    client.
+  // 4. Application abort: In this case, multiplexer loop will write RST stream
+  //    frame to the endpoint and close the stream from reads and writes. This
+  //    then follows the same reasoning as case 1.
+  uint32_t GetActiveStreamCount() const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_) {
+    return stream_list_.size();
+  }
 
-  uint32_t NextStreamId(
-      InterActivityMutex<uint32_t>::Lock& next_stream_id_lock) {
+  std::optional<uint32_t> NextStreamId(
+      InterActivityMutex<uint32_t>::Lock& next_stream_id_lock)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_) {
     const uint32_t stream_id = *next_stream_id_lock;
     if (stream_id > RFC9113::kMaxStreamId31Bit) {
       // TODO(tjagtap) : [PH2][P3] : Handle case if transport runs out of stream
@@ -267,6 +294,13 @@ class Http2ClientTransport final : public ClientTransport,
       // that is unable to establish a new stream identifier can send a GOAWAY
       // frame so that the client is forced to open a new connection for new
       // streams.
+      return std::nullopt;
+    }
+    // TODO(akshitpatel) : [PH2][P3] : There is a channel arg to delay
+    // starting new streams instead of failing them. This needs to be
+    // implemented.
+    if (GetActiveStreamCount() >= settings_.peer().max_concurrent_streams()) {
+      return std::nullopt;
     }
     // RFC9113 : Streams initiated by a client MUST use odd-numbered stream
     // identifiers.
@@ -301,8 +335,9 @@ class Http2ClientTransport final : public ClientTransport,
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
       "http2_client", GRPC_CHANNEL_READY};
 
-  std::optional<RefCountedPtr<Stream>> MakeStream(CallHandler call_handler,
-                                                  uint32_t stream_id);
+  std::optional<RefCountedPtr<Stream>> MakeStream(
+      CallHandler call_handler,
+      InterActivityMutex<uint32_t>::Lock& next_stream_id_lock);
 
   struct CloseStreamArgs {
     bool close_reads;
@@ -313,7 +348,7 @@ class Http2ClientTransport final : public ClientTransport,
   void CloseStream(RefCountedPtr<Stream> stream, CloseStreamArgs args,
                    DebugLocation whence = {});
 
-  void BeginCloseStream(uint32_t stream_id,
+  void BeginCloseStream(RefCountedPtr<Stream> stream,
                         std::optional<uint32_t> reset_stream_error_code,
                         ServerMetadataHandle&& metadata,
                         DebugLocation whence = {});
@@ -394,7 +429,7 @@ class Http2ClientTransport final : public ClientTransport,
       LOG(ERROR) << "Stream Error: " << status.DebugString();
       DCHECK(stream_id.has_value());
       BeginCloseStream(
-          *stream_id,
+          LookupStream(stream_id.value()),
           Http2ErrorCodeToRstFrameErrorCode(status.GetStreamErrorCode()),
           ServerMetadataFromStatus(status.GetAbslStreamError()), whence);
       return absl::OkStatus();
@@ -468,7 +503,7 @@ class Http2ClientTransport final : public ClientTransport,
   // Ping Helper functions
   Duration NextAllowedPingInterval() {
     MutexLock lock(&transport_mutex_);
-    return (!keepalive_permit_without_calls_ && stream_list_.empty())
+    return (!keepalive_permit_without_calls_ && GetActiveStreamCount() == 0)
                ? Duration::Hours(2)
                : Duration::Seconds(1);
   }
@@ -573,7 +608,7 @@ class Http2ClientTransport final : public ClientTransport,
       {
         MutexLock lock(&transport_->transport_mutex_);
         need_to_send_ping = (transport_->keepalive_permit_without_calls_ ||
-                             !transport_->stream_list_.empty());
+                             transport_->GetActiveStreamCount() > 0);
       }
       return need_to_send_ping;
     }
