@@ -30,6 +30,9 @@ grpc_cc_library(
     ],
     deps = [
         "//:grpc++",
+        "//:grpcpp_latent_see_client",
+        "//src/core:latent_see",
+        "//src/proto/grpc/channelz/v2:latent_see_cc_grpc",
         "//src/proto/grpc/channelz/v2:service_cc_grpc",
     ],
 )
@@ -91,6 +94,23 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_test(
+    name = "latent_see_tool_test",
+    srcs = ["latent_see_tool_test.cc"],
+    external_deps = [
+        "absl/flags:flag",
+        "gtest",
+        "gtest_main",
+    ],
+    deps = [
+        ":latent_see_tool",
+        ":tool_test",
+        "//:grpc++_public_hdrs",
+        "//:grpcpp_latent_see_service",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
 grpc_cc_binary(
     name = "sleuth",
     srcs = ["sleuth.cc"],
@@ -100,6 +120,7 @@ grpc_cc_binary(
     ],
     deps = [
         ":channelz_tool",
+        ":latent_see_tool",
         ":tool",
         "//test/cpp/util:test_config",
     ],
@@ -135,6 +156,22 @@ grpc_cc_library(
         "//src/core:zviz_format_entity_list",
         "//src/core:zviz_layout_text",
         "//test/cpp/util:grpc_cli_utils",
+    ],
+    alwayslink = True,
+)
+
+grpc_cc_library(
+    name = "latent_see_tool",
+    srcs = ["latent_see_tool.cc"],
+    external_deps = [
+        "absl/status:status",
+    ],
+    deps = [
+        ":client",
+        ":tool",
+        ":tool_options",
+        "//:grpc_base",
+        "//src/core:latent_see",
     ],
     alwayslink = True,
 )
