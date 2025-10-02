@@ -19,6 +19,7 @@
 
 #include <memory>
 #include <tuple>
+#include <type_traits>
 #include <vector>
 
 #include "absl/container/flat_hash_set.h"
@@ -31,6 +32,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/util/function_signature.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/latent_see.h"
 #include "src/core/util/memory_usage.h"
 #include "src/core/util/single_set_ptr.h"
 #include "src/core/util/string.h"
@@ -165,6 +167,13 @@ class ZTraceCollector {
   // complexity.
   template <typename X>
   void Append(X producer_or_value) {
+    if constexpr (ztrace_collector_detail::kIsElement<X, Data...>) {
+      GRPC_LATENT_SEE_ALWAYS_ON_MARK_EXTRA_EVENT(X, producer_or_value);
+    } else {
+      using ResultType = std::result_of<decltype(producer_or_value)()>::type;
+      GRPC_LATENT_SEE_ALWAYS_ON_MARK_EXTRA_EVENT(ResultType,
+                                                 producer_or_value());
+    }
     GRPC_TRACE_LOG(ztrace, INFO) << "ZTRACE[" << this << "]: " << [&]() {
       upb::Arena arena;
       google_protobuf_Any* any = google_protobuf_Any_new(arena.ptr());
