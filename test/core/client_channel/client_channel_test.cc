@@ -279,7 +279,7 @@ CLIENT_CHANNEL_TEST(StartCall) {
 }
 
 // A filter that adds metadata foo=bar.
-class TestFilter {
+class TestFilter : public ImplementChannelFilter<TestFilter> {
  public:
   class Call {
    public:
@@ -298,6 +298,10 @@ class TestFilter {
     static const NoInterceptor OnFinalize;
   };
 
+  static const grpc_channel_filter kFilterVtable;
+
+  static absl::string_view TypeName() { return "test_filter"; }
+
   static absl::StatusOr<std::unique_ptr<TestFilter>> Create(
       const ChannelArgs& /*args*/, ChannelFilter::Args /*filter_args*/) {
     return std::make_unique<TestFilter>();
@@ -311,6 +315,9 @@ const NoInterceptor TestFilter::Call::OnServerToClientMessage;
 const NoInterceptor TestFilter::Call::OnServerTrailingMetadata;
 const NoInterceptor TestFilter::Call::OnFinalize;
 
+const grpc_channel_filter TestFilter::kFilterVtable =
+    MakePromiseBasedFilter<TestFilter, FilterEndpoint::kClient, 0>();
+
 // A config selector that adds TestFilter as a dynamic filter.
 class TestConfigSelector : public ConfigSelector {
  public:
@@ -322,6 +329,7 @@ class TestConfigSelector : public ConfigSelector {
   void BuildFilterChains(FilterChainBuilder& builder,
                          const Blackboard* /*old_blackboard*/,
                          Blackboard* /*new_blackboard*/) override {
+    builder.AddFilter<TestFilter>();
     filter_chain_ = builder.Build();
   }
 
