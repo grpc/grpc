@@ -886,6 +886,7 @@ class FilterChainBuilderImpl : public FilterChainBuilder {
         destination_(std::move(destination)) {}
 
   absl::StatusOr<RefCountedPtr<FilterChain>> Build() override {
+    if (builder_ == nullptr) InitBuilder();
     if (enable_retries_) builder_->Add<RetryInterceptor>();
     auto top_of_stack_destination = builder_->Build(destination_);
     if (!top_of_stack_destination.ok()) {
