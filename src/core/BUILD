@@ -274,6 +274,10 @@ grpc_cc_library(
     ],
     visibility = ["//bazel:latent_see"],
     deps = [
+        "channelz_property_list",
+        "function_signature",
+        "json",
+        "json_writer",
         "notification",
         "sync",
         "//:backoff",
@@ -10626,6 +10630,7 @@ grpc_cc_library(
         "channelz_text_encode",
         "function_signature",
         "json_writer",
+        "latent_see",
         "memory_usage",
         "single_set_ptr",
         "sync",
