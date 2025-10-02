@@ -1477,8 +1477,6 @@
     <file baseinstalldir="/" name="src/core/lib/experiments/experiments.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/experiments/experiments.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/block_annotate.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/buffer_list.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/buffer_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/call_combiner.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/call_combiner.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/cfstream_handle.cc" role="src" />

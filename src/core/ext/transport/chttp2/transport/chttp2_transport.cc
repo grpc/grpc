@@ -244,7 +244,6 @@ using WriteEventSink =
 using WriteEvent =
     ::grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent;
 
-grpc_core::WriteTimestampsCallback g_write_timestamps_callback = nullptr;
 }  // namespace
 
 namespace grpc_core {
@@ -287,34 +286,6 @@ void TestOnlySetGlobalHttp2TransportDestructCallback(
 void TestOnlyGlobalHttp2TransportDisableTransientFailureStateNotification(
     bool disable) {
   test_only_disable_transient_failure_state_notification = disable;
-}
-
-void GrpcHttp2SetWriteTimestampsCallback(WriteTimestampsCallback fn) {
-  g_write_timestamps_callback = fn;
-}
-
-WriteTimestampsCallback GrpcHttp2GetWriteTimestampsCallback() {
-  return g_write_timestamps_callback;
-}
-
-// For each entry in the passed ContextList, it executes the function set using
-// GrpcHttp2SetWriteTimestampsCallback method with each context in the list
-// and \a ts. It also deletes/frees up the passed ContextList after this
-// operation.
-void ForEachContextListEntryExecute(void* arg, Timestamps* ts,
-                                    grpc_error_handle error) {
-  ContextList* context_list = reinterpret_cast<ContextList*>(arg);
-  if (!context_list) {
-    return;
-  }
-  for (auto it = context_list->begin(); it != context_list->end(); it++) {
-    ContextListEntry& entry = (*it);
-    if (ts) {
-      ts->byte_offset = static_cast<uint32_t>(entry.ByteOffsetInStream());
-    }
-    g_write_timestamps_callback(entry.TraceContext(), ts, error);
-  }
-  delete context_list;
 }
 
 HttpAnnotation::HttpAnnotation(Type type, gpr_timespec time)

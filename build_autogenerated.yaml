@@ -973,7 +973,6 @@ libs:
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/iomgr/block_annotate.h
-  - src/core/lib/iomgr/buffer_list.h
   - src/core/lib/iomgr/call_combiner.h
   - src/core/lib/iomgr/cfstream_handle.h
   - src/core/lib/iomgr/closure.h
@@ -1913,7 +1912,6 @@ libs:
   - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
-  - src/core/lib/iomgr/buffer_list.cc
   - src/core/lib/iomgr/call_combiner.cc
   - src/core/lib/iomgr/cfstream_handle.cc
   - src/core/lib/iomgr/closure.cc
@@ -2679,7 +2677,6 @@ libs:
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/iomgr/block_annotate.h
-  - src/core/lib/iomgr/buffer_list.h
   - src/core/lib/iomgr/call_combiner.h
   - src/core/lib/iomgr/cfstream_handle.h
   - src/core/lib/iomgr/closure.h
@@ -3183,7 +3180,6 @@ libs:
   - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
-  - src/core/lib/iomgr/buffer_list.cc
   - src/core/lib/iomgr/call_combiner.cc
   - src/core/lib/iomgr/cfstream_handle.cc
   - src/core/lib/iomgr/closure.cc
@@ -4757,7 +4753,6 @@ libs:
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/iomgr/block_annotate.h
-  - src/core/lib/iomgr/buffer_list.h
   - src/core/lib/iomgr/call_combiner.h
   - src/core/lib/iomgr/cfstream_handle.h
   - src/core/lib/iomgr/closure.h
@@ -5111,7 +5106,6 @@ libs:
   - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
-  - src/core/lib/iomgr/buffer_list.cc
   - src/core/lib/iomgr/call_combiner.cc
   - src/core/lib/iomgr/cfstream_handle.cc
   - src/core/lib/iomgr/closure.cc
@@ -6695,16 +6689,6 @@ targets:
   - absl/utility:utility
   - gpr
   uses_polling: false
-- name: buffer_list_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/iomgr/buffer_list_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
 - name: byte_buffer_test
   gtest: true
   build: test
@@ -7404,7 +7388,6 @@ targets:
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/iomgr/block_annotate.h
-  - src/core/lib/iomgr/buffer_list.h
   - src/core/lib/iomgr/call_combiner.h
   - src/core/lib/iomgr/cfstream_handle.h
   - src/core/lib/iomgr/closure.h
@@ -7721,7 +7704,6 @@ targets:
   - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
-  - src/core/lib/iomgr/buffer_list.cc
   - src/core/lib/iomgr/call_combiner.cc
   - src/core/lib/iomgr/cfstream_handle.cc
   - src/core/lib/iomgr/closure.cc
@@ -12575,7 +12557,6 @@ targets:
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/iomgr/block_annotate.h
-  - src/core/lib/iomgr/buffer_list.h
   - src/core/lib/iomgr/call_combiner.h
   - src/core/lib/iomgr/cfstream_handle.h
   - src/core/lib/iomgr/closure.h
@@ -12892,7 +12873,6 @@ targets:
   - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
-  - src/core/lib/iomgr/buffer_list.cc
   - src/core/lib/iomgr/call_combiner.cc
   - src/core/lib/iomgr/cfstream_handle.cc
   - src/core/lib/iomgr/closure.cc
@@ -24201,7 +24181,6 @@ targets:
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
   - src/core/lib/iomgr/block_annotate.h
-  - src/core/lib/iomgr/buffer_list.h
   - src/core/lib/iomgr/call_combiner.h
   - src/core/lib/iomgr/cfstream_handle.h
   - src/core/lib/iomgr/closure.h
@@ -24520,7 +24499,6 @@ targets:
   - src/core/lib/event_engine/work_queue/basic_work_queue.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
-  - src/core/lib/iomgr/buffer_list.cc
   - src/core/lib/iomgr/call_combiner.cc
   - src/core/lib/iomgr/cfstream_handle.cc
   - src/core/lib/iomgr/closure.cc
