@@ -319,19 +319,23 @@ class TestConfigSelector : public ConfigSelector {
     return kFactory.Create();
   }
 
-  void AddFilters(InterceptionChainBuilder& builder,
-                  const Blackboard* /*old_blackboard*/,
-                  Blackboard* /*new_blackboard*/) override {
-    builder.Add<TestFilter>();
+  void BuildFilterChains(FilterChainBuilder& builder,
+                         const Blackboard* /*old_blackboard*/,
+                         Blackboard* /*new_blackboard*/) override {
+    filter_chain_ = builder.Build();
   }
 
-  absl::Status GetCallConfig(GetCallConfigArgs /*args*/) override {
-    return absl::OkStatus();
+  absl::StatusOr<RefCountedPtr<const FilterChain>> GetCallConfig(
+      GetCallConfigArgs /*args*/) override {
+    return filter_chain_;
   }
 
   // Any instance of this class will behave the same, so all comparisons
   // are true.
   bool Equals(const ConfigSelector* /*other*/) const override { return true; }
+
+ private:
+  absl::StatusOr<RefCountedPtr<const FilterChain>> filter_chain_;
 };
 
 CLIENT_CHANNEL_TEST(ConfigSelectorWithDynamicFilters) {
