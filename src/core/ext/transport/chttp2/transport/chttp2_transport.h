@@ -30,7 +30,6 @@
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -76,21 +75,6 @@ void TestOnlySetGlobalHttp2TransportDestructCallback(
 // same time that a GOAWAY is received.
 void TestOnlyGlobalHttp2TransportDisableTransientFailureStateNotification(
     bool disable);
-
-typedef void (*WriteTimestampsCallback)(void*, Timestamps*,
-                                        grpc_error_handle error);
-
-void GrpcHttp2SetWriteTimestampsCallback(WriteTimestampsCallback fn);
-
-WriteTimestampsCallback GrpcHttp2GetWriteTimestampsCallback();
-
-// Interprets the passed arg as a ContextList type and for each entry in the
-// passed ContextList, it executes the function set using
-// GrpcHttp2SetWriteTimestampsCallback method with each context in the list
-// and \a ts. It also deletes/frees up the passed ContextList after this
-// operation.
-void ForEachContextListEntryExecute(void* arg, Timestamps* ts,
-                                    grpc_error_handle error);
 
 class HttpAnnotation : public CallTracerAnnotationInterface::Annotation {
  public:
