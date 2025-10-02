@@ -161,6 +161,9 @@ GcpAuthenticationFilter::Create(const ChannelArgs& args,
         "gcp_auth: xds config not found in channel args");
   }
   // Get filter config.
+  if (filter_args.config() == nullptr) {
+    return absl::InternalError("gcp_auth: filter config not set");
+  }
   if (filter_args.config()->type() != Config::Type()) {
     return absl::InternalError(
         absl::StrCat("wrong config type passed to GCP authn filter: ",
