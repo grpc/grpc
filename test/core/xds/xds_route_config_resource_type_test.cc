@@ -421,7 +421,6 @@ TEST_P(TypedPerFilterConfigTest, Basic) {
             "envoy.extensions.filters.http.fault.v3.HTTPFault");
   EXPECT_EQ(filter_config.config->ToString(),
             "{abort_code=PERMISSION_DENIED, abort_message=\"Fault injected\", "
-            "abort_percentage_numerator=0, abort_percentage_denominator=100, "
             "max_faults=4294967295}");
 }
 
@@ -534,7 +533,6 @@ TEST_P(TypedPerFilterConfigTest, FilterConfigWrapper) {
             "envoy.extensions.filters.http.fault.v3.HTTPFault");
   EXPECT_EQ(filter_config.config->ToString(),
             "{abort_code=PERMISSION_DENIED, abort_message=\"Fault injected\", "
-            "abort_percentage_numerator=0, abort_percentage_denominator=100, "
             "max_faults=4294967295}");
 }
 
