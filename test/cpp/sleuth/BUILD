@@ -118,6 +118,9 @@ grpc_cc_binary(
         "absl/flags:parse",
         "absl/status",
     ],
+    visibility = [
+        "//bazel:sleuth",
+    ],
     deps = [
         ":channelz_tool",
         ":latent_see_tool",
