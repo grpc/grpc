@@ -60,7 +60,7 @@ class Ph2InsecureFixture : public InsecureFixture {
   "|CoreEnd2endTests.BinaryMetadataServerHttp2FallbackClientHttp2Fallback"     \
   "|CoreEnd2endTests.BinaryMetadataServerHttp2FallbackClientTrueBinary"        \
   "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientTrueBinary"           \
-  "|CoreEnd2endTests.TrailingMetadata"                                        \
+  "|CoreEnd2endTests.TrailingMetadata"                                         \
   "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientHttp2Fallback"        \
   "|CoreEnd2endTests.CancelAfterAccept"                                        \
   "|CoreEnd2endTests.CancelAfterClientDone"                                    \
