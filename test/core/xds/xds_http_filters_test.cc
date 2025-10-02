@@ -48,15 +48,13 @@
 #include "envoy/type/matcher/v3/string.pb.h"
 #include "envoy/type/v3/percent.pb.h"
 #include "envoy/type/v3/range.pb.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
-#include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
 #include "src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h"
-#include "src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.h"
 #include "src/core/ext/filters/rbac/rbac_filter.h"
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
-#include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
@@ -293,59 +291,68 @@ TEST_F(XdsFaultInjectionFilterTest, Accessors) {
   EXPECT_FALSE(filter_->IsTerminalFilter());
 }
 
-TEST_F(XdsFaultInjectionFilterTest, ModifyChannelArgs) {
-  ChannelArgs args = filter_->ModifyChannelArgs(ChannelArgs());
-  auto value = args.GetInt(GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG);
-  ASSERT_TRUE(value.has_value());
-  EXPECT_EQ(*value, 1);
+TEST_F(XdsFaultInjectionFilterTest, MergeConfigs) {
+  // Top-level config: UNAVAILABLE.
+  HTTPFault fault;
+  auto* abort = fault.mutable_abort();
+  abort->set_grpc_status(GRPC_STATUS_UNAVAILABLE);
+  auto top_level_config = filter_->ParseTopLevelConfig(
+      "", decode_context_, MakeXdsExtension(fault), &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  // VirtualHost-level config: ABORTED.
+  abort->set_grpc_status(GRPC_STATUS_ABORTED);
+  auto vhost_config = filter_->ParseOverrideConfig(
+      "", decode_context_, MakeXdsExtension(fault), &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  // Route-level config: UNKNOWN.
+  abort->set_grpc_status(GRPC_STATUS_UNKNOWN);
+  auto route_config = filter_->ParseOverrideConfig(
+      "", decode_context_, MakeXdsExtension(fault), &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  // ClusterWeight-level config: FAILED_PRECONDITION.
+  abort->set_grpc_status(GRPC_STATUS_FAILED_PRECONDITION);
+  auto cluster_weight_config = filter_->ParseOverrideConfig(
+      "", decode_context_, MakeXdsExtension(fault), &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  // Merging all 4 should return the ClusterWeight config.
+  auto config = filter_->MergeConfigs(
+      top_level_config, vhost_config, route_config, cluster_weight_config);
+  EXPECT_THAT(config->ToString(),
+              ::testing::HasSubstr("abort_code=FAILED_PRECONDITION"));
+  // Merging only the top 3 should return the route-level config.
+  config = filter_->MergeConfigs(
+      top_level_config, vhost_config, route_config, nullptr);
+  EXPECT_THAT(config->ToString(),
+              ::testing::HasSubstr("abort_code=UNKNOWN"));
+  // Merging only the top 2 should return the vhost-level config.
+  config =
+      filter_->MergeConfigs(top_level_config, vhost_config, nullptr, nullptr);
+  EXPECT_THAT(config->ToString(),
+              ::testing::HasSubstr("abort_code=ABORTED"));
+  // Merging only the top-level config returns the top-level config.
+  config = filter_->MergeConfigs(top_level_config, nullptr, nullptr, nullptr);
+  EXPECT_THAT(config->ToString(),
+              ::testing::HasSubstr("abort_code=UNAVAILABLE"));
 }
 
-TEST_F(XdsFaultInjectionFilterTest, GenerateMethodConfigTopLevelConfig) {
-  XdsHttpFilterImpl::XdsFilterConfig config;
-  config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
-  auto service_config = filter_->GenerateMethodConfig(config, nullptr);
-  ASSERT_TRUE(service_config.ok()) << service_config.status();
-  EXPECT_EQ(service_config->service_config_field_name, "faultInjectionPolicy");
-  EXPECT_EQ(service_config->element, "{\"foo\":\"bar\"}");
-}
-
-TEST_F(XdsFaultInjectionFilterTest, GenerateMethodConfigOverrideConfig) {
-  XdsHttpFilterImpl::XdsFilterConfig top_config;
-  top_config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
-  XdsHttpFilterImpl::XdsFilterConfig override_config;
-  override_config.config =
-      Json::FromObject({{"baz", Json::FromString("quux")}});
-  auto service_config =
-      filter_->GenerateMethodConfig(top_config, &override_config);
-  ASSERT_TRUE(service_config.ok()) << service_config.status();
-  EXPECT_EQ(service_config->service_config_field_name, "faultInjectionPolicy");
-  EXPECT_EQ(service_config->element, "{\"baz\":\"quux\"}");
-}
-
-TEST_F(XdsFaultInjectionFilterTest, GenerateServiceConfig) {
-  XdsHttpFilterImpl::XdsFilterConfig config;
-  config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
-  auto service_config = filter_->GenerateServiceConfig(config);
-  ASSERT_TRUE(service_config.ok()) << service_config.status();
-  EXPECT_EQ(service_config->service_config_field_name, "");
-  EXPECT_EQ(service_config->element, "");
-}
-
-// For the fault injection filter, GenerateFilterConfig() and
-// GenerateFilterConfigOverride() accept the same input, so we want to
-// run all tests for both.
+// For the fault injection filter, ParseTopLevelConfig() and
+// ParseOverrideConfig() accept the same input, so we want to run all
+// tests for both.
 class XdsFaultInjectionFilterConfigTest
     : public XdsFaultInjectionFilterTest,
       public ::testing::WithParamInterface<bool> {
  protected:
-  std::optional<XdsHttpFilterImpl::XdsFilterConfig> GenerateConfig(
-      XdsExtension extension) {
+  RefCountedPtr<const FilterConfig> GenerateConfig(XdsExtension extension) {
     if (GetParam()) {
-      return filter_->GenerateFilterConfigOverride(
-          "", decode_context_, std::move(extension), &errors_);
+      return filter_->ParseTopLevelConfig("", decode_context_, extension,
+                                          &errors_);
     }
-    return filter_->GenerateFilterConfig("", decode_context_,
-                                         std::move(extension), &errors_);
+    return filter_->ParseOverrideConfig("", decode_context_, extension,
+                                        &errors_);
   }
 };
 
@@ -357,9 +364,9 @@ TEST_P(XdsFaultInjectionFilterConfigTest, EmptyConfig) {
   auto config = GenerateConfig(std::move(extension));
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
-  ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
-  EXPECT_EQ(config->config, Json::FromObject({})) << JsonDump(config->config);
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->type().name(), filter_->ConfigProtoName());
+  EXPECT_EQ(config->ToString(), "{max_faults=4294967295}");
 }
 
 TEST_P(XdsFaultInjectionFilterConfigTest, BasicConfig) {
@@ -377,16 +384,17 @@ TEST_P(XdsFaultInjectionFilterConfigTest, BasicConfig) {
   auto config = GenerateConfig(std::move(extension));
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
-  ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
-  EXPECT_EQ(JsonDump(config->config),
-            "{\"abortCode\":\"UNAVAILABLE\","
-            "\"abortPercentageDenominator\":100,"
-            "\"abortPercentageNumerator\":75,"
-            "\"delay\":\"1.500000000s\","
-            "\"delayPercentageDenominator\":100,"
-            "\"delayPercentageNumerator\":25,"
-            "\"maxFaults\":10}");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->type().name(), filter_->ConfigProtoName());
+  EXPECT_EQ(config->ToString(),
+            "{abort_code=UNAVAILABLE, "
+            "abort_message=\"Fault injected\", "
+            "abort_percentage_numerator=75, "
+            "abort_percentage_denominator=100, "
+            "delay=1500ms, "
+            "delay_percentage_numerator=25, "
+            "delay_percentage_denominator=100, "
+            "max_faults=10}");
 }
 
 TEST_P(XdsFaultInjectionFilterConfigTest, HttpAbortCode) {
@@ -397,9 +405,12 @@ TEST_P(XdsFaultInjectionFilterConfigTest, HttpAbortCode) {
   auto config = GenerateConfig(std::move(extension));
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
-  ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
-  EXPECT_EQ(JsonDump(config->config), "{\"abortCode\":\"UNIMPLEMENTED\"}");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->type().name(), filter_->ConfigProtoName());
+  EXPECT_EQ(config->ToString(),
+            "{abort_code=UNIMPLEMENTED, "
+            "abort_message=\"Fault injected\", "
+            "max_faults=4294967295}");
 }
 
 TEST_P(XdsFaultInjectionFilterConfigTest, HeaderAbortAndDelay) {
@@ -410,15 +421,16 @@ TEST_P(XdsFaultInjectionFilterConfigTest, HeaderAbortAndDelay) {
   auto config = GenerateConfig(std::move(extension));
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
-  ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->type().name(), filter_->ConfigProtoName());
   EXPECT_EQ(
-      JsonDump(config->config),
-      "{\"abortCode\":\"OK\","
-      "\"abortCodeHeader\":\"x-envoy-fault-abort-grpc-request\","
-      "\"abortPercentageHeader\":\"x-envoy-fault-abort-percentage\","
-      "\"delayHeader\":\"x-envoy-fault-delay-request\","
-      "\"delayPercentageHeader\":\"x-envoy-fault-delay-request-percentage\"}");
+      config->ToString(),
+      "{abort_code_header=\"x-envoy-fault-abort-grpc-request\", "
+      "abort_message=\"Fault injected\", "
+      "abort_percentage_header=\"x-envoy-fault-abort-percentage\", "
+      "delay_header=\"x-envoy-fault-delay-request\", "
+      "delay_percentage_header=\"x-envoy-fault-delay-request-percentage\", "
+      "max_faults=4294967295}");
 }
 
 TEST_P(XdsFaultInjectionFilterConfigTest, InvalidGrpcStatusCode) {
@@ -1144,13 +1156,6 @@ TEST_F(XdsStatefulSessionFilterTest, Accessors) {
   EXPECT_TRUE(filter_->IsSupportedOnClients());
   EXPECT_FALSE(filter_->IsSupportedOnServers());
   EXPECT_FALSE(filter_->IsTerminalFilter());
-}
-
-TEST_F(XdsStatefulSessionFilterTest, ModifyChannelArgs) {
-  ChannelArgs args = filter_->ModifyChannelArgs(ChannelArgs());
-  auto value = args.GetInt(GRPC_ARG_PARSE_STATEFUL_SESSION_METHOD_CONFIG);
-  ASSERT_TRUE(value.has_value());
-  EXPECT_EQ(*value, 1);
 }
 
 TEST_F(XdsStatefulSessionFilterTest, OverrideConfigDisabled) {

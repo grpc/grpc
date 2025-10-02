@@ -99,7 +99,7 @@ StatefulSessionFilter::CookieConfig ParseCookieConfig(
     errors->AddError("unsupported session state type");
     return {};
   }
-  absl::string_view* serialized_session_state =
+  const absl::string_view* serialized_session_state =
       std::get_if<absl::string_view>(&extension->value);
   if (serialized_session_state == nullptr) {
     errors->AddError("could not parse session state config");
@@ -144,9 +144,9 @@ StatefulSessionFilter::CookieConfig ParseCookieConfig(
 RefCountedPtr<const FilterConfig>
 XdsHttpStatefulSessionFilter::ParseTopLevelConfig(
     absl::string_view /*instance_name*/,
-    const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    ValidationErrors* errors) const {
-  absl::string_view* serialized_filter_config =
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  const absl::string_view* serialized_filter_config =
       std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse stateful session filter config");
@@ -168,9 +168,9 @@ XdsHttpStatefulSessionFilter::ParseTopLevelConfig(
 RefCountedPtr<const FilterConfig>
 XdsHttpStatefulSessionFilter::ParseOverrideConfig(
     absl::string_view /*instance_name*/,
-    const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    ValidationErrors* errors) const {
-  absl::string_view* serialized_filter_config =
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  const absl::string_view* serialized_filter_config =
       std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse stateful session filter override config");

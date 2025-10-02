@@ -60,31 +60,43 @@ bool FaultInjectionFilter::Config::Equals(const FilterConfig& other) const {
 
 std::string FaultInjectionFilter::Config::ToString() const {
   std::vector<std::string> parts;
-  if (abort_code != GRPC_STATUS_OK) {
-    parts.push_back(
-        absl::StrCat("abort_code=", grpc_status_code_to_string(abort_code)));
-    parts.push_back(absl::StrCat("abort_message=\"", abort_message, "\""));
+  if (abort_code != GRPC_STATUS_OK || !abort_code_header.empty()) {
+    if (abort_code != GRPC_STATUS_OK) {
+      parts.push_back(
+          absl::StrCat("abort_code=", grpc_status_code_to_string(abort_code)));
+    }
     if (!abort_code_header.empty()) {
       parts.push_back(
           absl::StrCat("abort_code_header=\"", abort_code_header, "\""));
     }
+    parts.push_back(absl::StrCat("abort_message=\"", abort_message, "\""));
     if (!abort_percentage_header.empty()) {
       parts.push_back(absl::StrCat("abort_percentage_header=\"",
                                    abort_percentage_header, "\""));
     }
-    parts.push_back(absl::StrCat("abort_percentage_numerator=",
-                                 abort_percentage_numerator));
-    parts.push_back(absl::StrCat("abort_percentage_denominator=",
-                                 abort_percentage_denominator));
+    if (abort_percentage_numerator > 0) {
+      parts.push_back(absl::StrCat("abort_percentage_numerator=",
+                                   abort_percentage_numerator));
+      parts.push_back(absl::StrCat("abort_percentage_denominator=",
+                                   abort_percentage_denominator));
+    }
   }
-  if (delay != Duration::Zero()) {
-    parts.push_back(absl::StrCat("delay=", delay.ToString()));
+  if (delay != Duration::Zero() || !delay_header.empty()) {
+    if (delay != Duration::Zero()) {
+      parts.push_back(absl::StrCat("delay=", delay.ToString()));
+    }
     if (!delay_header.empty()) {
       parts.push_back(absl::StrCat("delay_header=\"", delay_header, "\""));
     }
     if (!delay_percentage_header.empty()) {
       parts.push_back(absl::StrCat("delay_percentage_header=\"",
                                    delay_percentage_header, "\""));
+    }
+    if (delay_percentage_numerator > 0) {
+      parts.push_back(absl::StrCat("delay_percentage_numerator=",
+                                   delay_percentage_numerator));
+      parts.push_back(absl::StrCat("delay_percentage_denominator=",
+                                   delay_percentage_denominator));
     }
   }
   parts.push_back(absl::StrCat("max_faults=", max_faults));

@@ -54,9 +54,9 @@ void XdsHttpRouterFilter::PopulateSymtab(upb_DefPool* symtab) const {
 std::optional<XdsHttpFilterImpl::XdsFilterConfig>
 XdsHttpRouterFilter::GenerateFilterConfig(
     absl::string_view /*instance_name*/,
-    const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    ValidationErrors* errors) const {
-  absl::string_view* serialized_filter_config =
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  const absl::string_view* serialized_filter_config =
       std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse router filter config");
@@ -75,16 +75,16 @@ std::optional<XdsHttpFilterImpl::XdsFilterConfig>
 XdsHttpRouterFilter::GenerateFilterConfigOverride(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& /*context*/,
-    XdsExtension /*extension*/, ValidationErrors* errors) const {
+    const XdsExtension& /*extension*/, ValidationErrors* errors) const {
   errors->AddError("router filter does not support config override");
   return std::nullopt;
 }
 
 RefCountedPtr<const FilterConfig> XdsHttpRouterFilter::ParseTopLevelConfig(
     absl::string_view instance_name,
-    const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    ValidationErrors* errors) const {
-  absl::string_view* serialized_filter_config =
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  const absl::string_view* serialized_filter_config =
       std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse router filter config");
@@ -100,9 +100,9 @@ RefCountedPtr<const FilterConfig> XdsHttpRouterFilter::ParseTopLevelConfig(
 }
 
 RefCountedPtr<const FilterConfig> XdsHttpRouterFilter::ParseOverrideConfig(
-    absl::string_view instance_name,
-    const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    ValidationErrors* errors) const {
+    absl::string_view /*instance_name*/,
+    const XdsResourceType::DecodeContext& /*context*/,
+    const XdsExtension& /*extension*/, ValidationErrors* errors) const {
   errors->AddError("router filter does not support config override");
   return nullptr;
 }

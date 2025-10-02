@@ -58,14 +58,14 @@ class XdsHttpFilterImpl {
   // Parses the top-level filter config.
   virtual RefCountedPtr<const FilterConfig> ParseTopLevelConfig(
       absl::string_view instance_name,
-      const XdsResourceType::DecodeContext& context, XdsExtension extension,
-      ValidationErrors* errors) const = 0;
+      const XdsResourceType::DecodeContext& context,
+      const XdsExtension& extension, ValidationErrors* errors) const = 0;
 
   // Parses an override config.
   virtual RefCountedPtr<const FilterConfig> ParseOverrideConfig(
       absl::string_view instance_name,
-      const XdsResourceType::DecodeContext& context, XdsExtension extension,
-      ValidationErrors* errors) const = 0;
+      const XdsResourceType::DecodeContext& context,
+      const XdsExtension& extension, ValidationErrors* errors) const = 0;
 
   // Returns a new filter config that takes into account any necessary
   // overrides.
@@ -134,15 +134,15 @@ class XdsHttpFilterImpl {
   // Used for the top-level config in the HCM HTTP filter list.
   virtual std::optional<XdsFilterConfig> GenerateFilterConfig(
       absl::string_view instance_name,
-      const XdsResourceType::DecodeContext& context, XdsExtension extension,
-      ValidationErrors* errors) const = 0;
+      const XdsResourceType::DecodeContext& context,
+      const XdsExtension& extension, ValidationErrors* errors) const = 0;
 
   // Generates a Config from the xDS filter config proto.
   // Used for the typed_per_filter_config override in VirtualHost and Route.
   virtual std::optional<XdsFilterConfig> GenerateFilterConfigOverride(
       absl::string_view instance_name,
-      const XdsResourceType::DecodeContext& context, XdsExtension extension,
-      ValidationErrors* errors) const = 0;
+      const XdsResourceType::DecodeContext& context,
+      const XdsExtension& extension, ValidationErrors* errors) const = 0;
 
   // C-core channel filter implementation.
   virtual void AddFilter(InterceptionChainBuilder& builder) const = 0;

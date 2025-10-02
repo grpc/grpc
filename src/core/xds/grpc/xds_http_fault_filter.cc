@@ -98,9 +98,9 @@ const grpc_channel_filter* XdsHttpFaultFilter::channel_filter() const {
 
 RefCountedPtr<const FilterConfig> XdsHttpFaultFilter::ParseTopLevelConfig(
     absl::string_view /*instance_name*/,
-    const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    ValidationErrors* errors) const {
-  absl::string_view* serialized_filter_config =
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  const absl::string_view* serialized_filter_config =
       std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse fault injection filter config");
@@ -196,10 +196,9 @@ RefCountedPtr<const FilterConfig> XdsHttpFaultFilter::ParseTopLevelConfig(
 
 RefCountedPtr<const FilterConfig> XdsHttpFaultFilter::ParseOverrideConfig(
     absl::string_view instance_name,
-    const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    ValidationErrors* errors) const {
-  return ParseTopLevelConfig(instance_name, context, std::move(extension),
-                             errors);
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  return ParseTopLevelConfig(instance_name, context, extension, errors);
 }
 
 RefCountedPtr<const FilterConfig> XdsHttpFaultFilter::MergeConfigs(

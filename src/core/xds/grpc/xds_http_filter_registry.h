@@ -45,12 +45,12 @@ class XdsHttpRouterFilter final : public XdsHttpFilterImpl {
   void PopulateSymtab(upb_DefPool* symtab) const override;
   std::optional<XdsFilterConfig> GenerateFilterConfig(
       absl::string_view /*instance_name*/,
-      const XdsResourceType::DecodeContext& context, XdsExtension extension,
-      ValidationErrors* errors) const override;
+      const XdsResourceType::DecodeContext& context,
+      const XdsExtension& extension, ValidationErrors* errors) const override;
   std::optional<XdsFilterConfig> GenerateFilterConfigOverride(
       absl::string_view /*instance_name*/,
-      const XdsResourceType::DecodeContext& context, XdsExtension extension,
-      ValidationErrors* errors) const override;
+      const XdsResourceType::DecodeContext& context,
+      const XdsExtension& extension, ValidationErrors* errors) const override;
   void AddFilter(InterceptionChainBuilder& /*builder*/) const override {}
   const grpc_channel_filter* channel_filter() const override { return nullptr; }
   absl::StatusOr<ServiceConfigJsonEntry> GenerateMethodConfig(
@@ -68,12 +68,12 @@ class XdsHttpRouterFilter final : public XdsHttpFilterImpl {
                  RefCountedPtr<const FilterConfig> /*config*/) const override {}
   RefCountedPtr<const FilterConfig> ParseTopLevelConfig(
       absl::string_view instance_name,
-      const XdsResourceType::DecodeContext& context, XdsExtension extension,
-      ValidationErrors* errors) const override;
+      const XdsResourceType::DecodeContext& context,
+      const XdsExtension& extension, ValidationErrors* errors) const override;
   RefCountedPtr<const FilterConfig> ParseOverrideConfig(
       absl::string_view instance_name,
-      const XdsResourceType::DecodeContext& context, XdsExtension extension,
-      ValidationErrors* errors) const override;
+      const XdsResourceType::DecodeContext& context,
+      const XdsExtension& extension, ValidationErrors* errors) const override;
   RefCountedPtr<const FilterConfig> MergeConfigs(
       RefCountedPtr<const FilterConfig> top_level_config,
       RefCountedPtr<const FilterConfig> virtual_host_override_config,

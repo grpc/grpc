@@ -41,13 +41,15 @@ class XdsHttpFaultFilter final : public XdsHttpFilterImpl {
   std::optional<XdsFilterConfig> GenerateFilterConfig(
       absl::string_view /*instance_name*/,
       const XdsResourceType::DecodeContext& /*context*/,
-      XdsExtension /*extension*/, ValidationErrors* /*errors*/) const override {
+      const XdsExtension& /*extension*/,
+      ValidationErrors* /*errors*/) const override {
     return std::nullopt;
   }
   std::optional<XdsFilterConfig> GenerateFilterConfigOverride(
       absl::string_view /*instance_name*/,
       const XdsResourceType::DecodeContext& /*context*/,
-      XdsExtension /*extension*/, ValidationErrors* /*errors*/) const override {
+      const XdsExtension& /*extension*/,
+      ValidationErrors* /*errors*/) const override {
     return std::nullopt;
   }
   void AddFilter(InterceptionChainBuilder& builder) const override;
@@ -67,12 +69,12 @@ class XdsHttpFaultFilter final : public XdsHttpFilterImpl {
                  RefCountedPtr<const FilterConfig> config) const override;
   RefCountedPtr<const FilterConfig> ParseTopLevelConfig(
       absl::string_view instance_name,
-      const XdsResourceType::DecodeContext& context, XdsExtension extension,
-      ValidationErrors* errors) const override;
+      const XdsResourceType::DecodeContext& context,
+      const XdsExtension& extension, ValidationErrors* errors) const override;
   RefCountedPtr<const FilterConfig> ParseOverrideConfig(
       absl::string_view instance_name,
-      const XdsResourceType::DecodeContext& context, XdsExtension extension,
-      ValidationErrors* errors) const override;
+      const XdsResourceType::DecodeContext& context,
+      const XdsExtension& extension, ValidationErrors* errors) const override;
   RefCountedPtr<const FilterConfig> MergeConfigs(
       RefCountedPtr<const FilterConfig> top_level_config,
       RefCountedPtr<const FilterConfig> virtual_host_override_config,

@@ -519,9 +519,9 @@ void XdsHttpRbacFilter::PopulateSymtab(upb_DefPool* symtab) const {
 std::optional<XdsHttpFilterImpl::XdsFilterConfig>
 XdsHttpRbacFilter::GenerateFilterConfig(
     absl::string_view /*instance_name*/,
-    const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    ValidationErrors* errors) const {
-  absl::string_view* serialized_filter_config =
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  const absl::string_view* serialized_filter_config =
       std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse HTTP RBAC filter config");
@@ -541,9 +541,9 @@ XdsHttpRbacFilter::GenerateFilterConfig(
 std::optional<XdsHttpFilterImpl::XdsFilterConfig>
 XdsHttpRbacFilter::GenerateFilterConfigOverride(
     absl::string_view /*instance_name*/,
-    const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    ValidationErrors* errors) const {
-  absl::string_view* serialized_filter_config =
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  const absl::string_view* serialized_filter_config =
       std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse RBACPerRoute");
@@ -608,7 +608,7 @@ XdsHttpRbacFilter::GenerateServiceConfig(
 RefCountedPtr<const FilterConfig> XdsHttpRbacFilter::ParseTopLevelConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& /*context*/,
-    XdsExtension /*extension*/, ValidationErrors* /*errors*/) const {
+    const XdsExtension& /*extension*/, ValidationErrors* /*errors*/) const {
   // TODO(roth): Implement this as part of migrating the server side to
   // the new approach for passing xDS HTTP filter configs.
   return nullptr;
@@ -617,7 +617,7 @@ RefCountedPtr<const FilterConfig> XdsHttpRbacFilter::ParseTopLevelConfig(
 RefCountedPtr<const FilterConfig> XdsHttpRbacFilter::ParseOverrideConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& /*context*/,
-    XdsExtension /*extension*/, ValidationErrors* /*errors*/) const {
+    const XdsExtension& /*extension*/, ValidationErrors* /*errors*/) const {
   // TODO(roth): Implement this as part of migrating the server side to
   // the new approach for passing xDS HTTP filter configs.
   return nullptr;

@@ -265,11 +265,10 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
           continue;
         }
         std::optional<XdsHttpFilterImpl::XdsFilterConfig> filter_config =
-            filter_impl->GenerateFilterConfig(name, context,
-                                              std::move(*extension), errors);
+            filter_impl->GenerateFilterConfig(name, context, *extension,
+                                              errors);
         RefCountedPtr<const FilterConfig> config =
-            filter_impl->ParseTopLevelConfig(name, context,
-                                             std::move(*extension), errors);
+            filter_impl->ParseTopLevelConfig(name, context, *extension, errors);
         if (filter_config.has_value() || config != nullptr) {
           http_connection_manager.http_filters.emplace_back();
           auto& entry = http_connection_manager.http_filters.back();

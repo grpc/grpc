@@ -61,9 +61,9 @@ const grpc_channel_filter* XdsHttpGcpAuthnFilter::channel_filter() const {
 
 RefCountedPtr<const FilterConfig> XdsHttpGcpAuthnFilter::ParseTopLevelConfig(
     absl::string_view instance_name,
-    const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    ValidationErrors* errors) const {
-  absl::string_view* serialized_filter_config =
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  const absl::string_view* serialized_filter_config =
       std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse GCP auth filter config");
@@ -99,7 +99,7 @@ RefCountedPtr<const FilterConfig> XdsHttpGcpAuthnFilter::ParseTopLevelConfig(
 RefCountedPtr<const FilterConfig> XdsHttpGcpAuthnFilter::ParseOverrideConfig(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& /*context*/,
-    XdsExtension /*extension*/, ValidationErrors* errors) const {
+    const XdsExtension& /*extension*/, ValidationErrors* errors) const {
   errors->AddError("GCP auth filter does not support config override");
   return nullptr;
 }

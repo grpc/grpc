@@ -41,6 +41,10 @@ namespace grpc_core {
 class FaultInjectionFilter
     : public ImplementChannelFilter<FaultInjectionFilter> {
  public:
+  // TODO(roth): The config structure here does not map cleanly to the
+  // xDS representation, and I suspect that we are not handling all of
+  // the edge cases correctly (e.g., abort_code=OK).  When we have time,
+  // restructure this.
   struct Config : public FilterConfig {
     static UniqueTypeName Type() {
       return GRPC_UNIQUE_TYPE_NAME_HERE(
