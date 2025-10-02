@@ -56,10 +56,7 @@ class FilterChainBuilderV1 {
 // Base class for filter chains.
 // TODO(roth): Once the v3 migration is done, this can probably go away in
 // favor of just directly using UnstartedCallDestination.
-class FilterChain : public RefCounted<FilterChain> {
- public:
-  virtual ~FilterChain() = default;
-};
+class FilterChain : public RefCounted<FilterChain> {};
 
 // Abstract filter chain builder interface.
 class FilterChainBuilder {

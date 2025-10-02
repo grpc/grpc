@@ -162,8 +162,7 @@ bool TypedPerFilterConfigsAreEqual(
     if (*a_config.config != *b_config.config) return false;
     ++b_it;
   }
-  if (b_it != b.end()) return false;
-  return true;
+  return b_it == b.end();
 }
 
 }  // namespace

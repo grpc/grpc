@@ -209,8 +209,8 @@ TEST_F(XdsRouterFilterTest, Accessors) {
 
 TEST_F(XdsRouterFilterTest, GenerateFilterConfig) {
   XdsExtension extension = MakeXdsExtension(Router());
-  auto config = filter_->GenerateFilterConfig("", decode_context_,
-                                              std::move(extension), &errors_);
+  auto config =
+      filter_->GenerateFilterConfig("", decode_context_, extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
@@ -221,8 +221,8 @@ TEST_F(XdsRouterFilterTest, GenerateFilterConfig) {
 TEST_F(XdsRouterFilterTest, GenerateFilterConfigTypedStruct) {
   XdsExtension extension = MakeXdsExtension(Router());
   extension.value = Json();
-  auto config = filter_->GenerateFilterConfig("", decode_context_,
-                                              std::move(extension), &errors_);
+  auto config =
+      filter_->GenerateFilterConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -238,8 +238,8 @@ TEST_F(XdsRouterFilterTest, GenerateFilterConfigUnparsable) {
   XdsExtension extension = MakeXdsExtension(Router());
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
-  auto config = filter_->GenerateFilterConfig("", decode_context_,
-                                              std::move(extension), &errors_);
+  auto config =
+      filter_->GenerateFilterConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -253,8 +253,8 @@ TEST_F(XdsRouterFilterTest, GenerateFilterConfigUnparsable) {
 
 TEST_F(XdsRouterFilterTest, GenerateFilterConfigOverride) {
   XdsExtension extension = MakeXdsExtension(Router());
-  auto config = filter_->GenerateFilterConfigOverride(
-      "", decode_context_, std::move(extension), &errors_);
+  auto config = filter_->GenerateFilterConfigOverride("", decode_context_,
+                                                      extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -527,8 +527,8 @@ TEST_F(XdsRbacFilterTest, ModifyChannelArgs) {
 
 TEST_F(XdsRbacFilterTest, GenerateFilterConfig) {
   XdsExtension extension = MakeXdsExtension(RBAC());
-  auto config = filter_->GenerateFilterConfig("", decode_context_,
-                                              std::move(extension), &errors_);
+  auto config =
+      filter_->GenerateFilterConfig("", decode_context_, extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
@@ -539,8 +539,8 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfig) {
 TEST_F(XdsRbacFilterTest, GenerateFilterConfigTypedStruct) {
   XdsExtension extension = MakeXdsExtension(RBAC());
   extension.value = Json();
-  auto config = filter_->GenerateFilterConfig("", decode_context_,
-                                              std::move(extension), &errors_);
+  auto config =
+      filter_->GenerateFilterConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -556,8 +556,8 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfigUnparsable) {
   XdsExtension extension = MakeXdsExtension(RBAC());
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
-  auto config = filter_->GenerateFilterConfig("", decode_context_,
-                                              std::move(extension), &errors_);
+  auto config =
+      filter_->GenerateFilterConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -571,8 +571,8 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfigUnparsable) {
 
 TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverride) {
   XdsExtension extension = MakeXdsExtension(RBACPerRoute());
-  auto config = filter_->GenerateFilterConfigOverride(
-      "", decode_context_, std::move(extension), &errors_);
+  auto config = filter_->GenerateFilterConfigOverride("", decode_context_,
+                                                      extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
@@ -583,8 +583,8 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverride) {
 TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverrideTypedStruct) {
   XdsExtension extension = MakeXdsExtension(RBACPerRoute());
   extension.value = Json();
-  auto config = filter_->GenerateFilterConfigOverride(
-      "", decode_context_, std::move(extension), &errors_);
+  auto config = filter_->GenerateFilterConfigOverride("", decode_context_,
+                                                      extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -599,8 +599,8 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverrideUnparsable) {
   XdsExtension extension = MakeXdsExtension(RBACPerRoute());
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
-  auto config = filter_->GenerateFilterConfigOverride(
-      "", decode_context_, std::move(extension), &errors_);
+  auto config = filter_->GenerateFilterConfigOverride("", decode_context_,
+                                                      extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -642,12 +642,12 @@ class XdsRbacFilterConfigTest : public XdsRbacFilterTest,
       RBACPerRoute rbac_per_route;
       *rbac_per_route.mutable_rbac() = rbac;
       XdsExtension extension = MakeXdsExtension(rbac_per_route);
-      return filter_->GenerateFilterConfigOverride(
-          "", decode_context_, std::move(extension), &errors_);
+      return filter_->GenerateFilterConfigOverride("", decode_context_,
+                                                   extension, &errors_);
     }
     XdsExtension extension = MakeXdsExtension(rbac);
-    return filter_->GenerateFilterConfig("", decode_context_,
-                                         std::move(extension), &errors_);
+    return filter_->GenerateFilterConfig("", decode_context_, extension,
+                                         &errors_);
   }
 
   std::string FieldPrefix() {
