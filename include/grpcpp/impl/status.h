@@ -34,7 +34,7 @@ namespace grpc {
 class GRPC_MUST_USE_RESULT_WHEN_USE_STRICT_WARNING GRPCXX_DLL Status {
  public:
   /// Construct an OK instance.
-  constexpr Status() : code_(StatusCode::OK) {
+  Status() : code_(StatusCode::OK) {
     // Static assertions to make sure that the C++ API value correctly
     // maps to the core surface API value
     static_assert(StatusCode::OK == static_cast<StatusCode>(GRPC_STATUS_OK),
