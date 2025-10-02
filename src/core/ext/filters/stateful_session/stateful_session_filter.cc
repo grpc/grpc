@@ -57,14 +57,15 @@ UniqueTypeName XdsOverrideHostAttribute::TypeName() {
 }
 
 std::string StatefulSessionFilter::CookieConfig::ToString() const {
-  std::vector<std::string> parts = {
-      absl::StrCat("name=\"", name, "\""),
-  };
-  if (ttl != Duration::Zero()) {
-    parts.push_back(absl::StrCat("ttl=", ttl.ToString()));
+  std::vector<std::string> parts;
+  if (!name.empty()) {
+    parts.push_back(absl::StrCat("name=\"", name, "\""));
   }
   if (!path.empty()) {
     parts.push_back(absl::StrCat("path=\"", path, "\""));
+  }
+  if (ttl != Duration::Zero()) {
+    parts.push_back(absl::StrCat("ttl=", ttl.ToString()));
   }
   return absl::StrCat("{", absl::StrJoin(parts, ", "), "}");
 }

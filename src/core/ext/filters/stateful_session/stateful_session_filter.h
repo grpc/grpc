@@ -70,11 +70,11 @@ class StatefulSessionFilter
  public:
   struct CookieConfig {
     std::string name;
-    Duration ttl;
     std::string path;
+    Duration ttl;
 
     bool operator==(const CookieConfig& other) const {
-      return name == other.name && ttl == other.ttl && path == other.path;
+      return name == other.name && path == other.path && ttl == other.ttl;
     }
     std::string ToString() const;
   };
