@@ -236,6 +236,9 @@ class CollectionScope {
 
 namespace instrument_detail {
 
+// Hi
+// Again
+
 void CallHistogramCollectionHooks(
     const InstrumentMetadata::Description* instrument,
     absl::Span<const std::string> labels, int64_t value);
