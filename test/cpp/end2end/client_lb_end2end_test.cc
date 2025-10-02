@@ -3136,7 +3136,7 @@ TEST_F(ControlPlaneStatusRewritingTest, RewritesFromConfigSelector) {
     void BuildFilterChains(grpc_core::FilterChainBuilder&,
                            const grpc_core::Blackboard*,
                            grpc_core::Blackboard*) override {}
-    absl::StatusOr<grpc_core::RefCountedPtr<grpc_core::FilterChain>>
+    absl::StatusOr<grpc_core::RefCountedPtr<const grpc_core::FilterChain>>
     GetCallConfig(GetCallConfigArgs /*args*/) override {
       return status_;
     }
