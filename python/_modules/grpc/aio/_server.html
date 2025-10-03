@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._server &#8212; gRPC Python 1.74.0 documentation</title>
+    <title>grpc.aio._server &#8212; gRPC Python 1.75.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5ecbeea2" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=f0f94f3a" />
-    <script src="../../../_static/documentation_options.js?v=6f9416a0"></script>
+    <script src="../../../_static/documentation_options.js?v=ba39d8e0"></script>
     <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -28,7 +28,7 @@
 
 
 
-<p class="blurb">1.74.0</p>
+<p class="blurb">1.75.1</p>
 
 
 
@@ -144,10 +144,11 @@
                 <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">interceptor</span><span class="p">,</span> <span class="n">ServerInterceptor</span><span class="p">)</span>
             <span class="p">]</span>
             <span class="k">if</span> <span class="n">invalid_interceptors</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;Interceptor must be ServerInterceptor, the &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;following are invalid: </span><span class="si">{</span><span class="n">invalid_interceptors</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">error_msg</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="s2">&quot;Interceptor must be ServerInterceptor,&quot;</span>
+                    <span class="s2">&quot;the following are invalid: </span><span class="si">{invalid_interceptors}</span><span class="s2">&quot;</span>
                 <span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_server</span> <span class="o">=</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">AioServer</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_loop</span><span class="p">,</span>
             <span class="n">thread_pool</span><span class="p">,</span>

@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc &#8212; gRPC Python 1.74.0 documentation</title>
+    <title>grpc &#8212; gRPC Python 1.75.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=5ecbeea2" />
     <link rel="stylesheet" type="text/css" href="../_static/alabaster.css?v=f0f94f3a" />
-    <script src="../_static/documentation_options.js?v=6f9416a0"></script>
+    <script src="../_static/documentation_options.js?v=ba39d8e0"></script>
     <script src="../_static/doctools.js?v=9a2dae69"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -28,7 +28,7 @@
 
 
 
-<p class="blurb">1.74.0</p>
+<p class="blurb">1.75.1</p>
 
 
 
@@ -1817,7 +1817,9 @@
 
 <div class="viewcode-block" id="Server.add_registered_method_handlers">
 <a class="viewcode-back" href="../grpc.html#grpc.Server.add_registered_method_handlers">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">add_registered_method_handlers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">method_handlers</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_registered_method_handlers</span><span class="p">(</span>  <span class="c1"># noqa: B027</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">method_handlers</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Registers GenericRpcHandlers with this Server.</span>
 
 <span class="sd">        This method is only safe to call before the server is started.</span>
@@ -2250,14 +2252,13 @@
 <span class="sd">      object is an argument to add_secure_port() method during server setup.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">private_key_certificate_chain_pairs</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+        <span class="n">error_msg</span> <span class="o">=</span> <span class="p">(</span>
             <span class="s2">&quot;At least one private key-certificate chain pair is required!&quot;</span>
         <span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">require_client_auth</span> <span class="ow">and</span> <span class="n">root_certificates</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;Illegal to require client auth without providing root&quot;</span>
-            <span class="s2">&quot; certificates!&quot;</span>
-        <span class="p">)</span>
+        <span class="n">error_msg</span> <span class="o">=</span> <span class="s2">&quot;Illegal to require client auth without providing root certificates!&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">ServerCredentials</span><span class="p">(</span>
             <span class="n">_cygrpc</span><span class="o">.</span><span class="n">server_credentials_ssl</span><span class="p">(</span>
@@ -2325,9 +2326,10 @@
             <span class="p">)</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+        <span class="n">error_msg</span> <span class="o">=</span> <span class="p">(</span>
             <span class="s2">&quot;At least one private key-certificate chain pair is required!&quot;</span>
-        <span class="p">)</span></div>
+        <span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span></div>
 
 
 
@@ -2466,6 +2468,7 @@
 <span class="sd">        peer identity of the server, handshake will fail. The arg can be empty</span>
 <span class="sd">        if the client does not have any information about trusted server</span>
 <span class="sd">        identity.</span>
+
 <span class="sd">    Returns:</span>
 <span class="sd">      A ChannelCredentials for use with an ALTS-enabled Channel</span>
 <span class="sd">    &quot;&quot;&quot;</span>

@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc_observability._open_telemetry_plugin &#8212; gRPC Python 1.74.0 documentation</title>
+    <title>grpc_observability._open_telemetry_plugin &#8212; gRPC Python 1.75.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=5ecbeea2" />
     <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=f0f94f3a" />
-    <script src="../../_static/documentation_options.js?v=6f9416a0"></script>
+    <script src="../../_static/documentation_options.js?v=ba39d8e0"></script>
     <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -28,7 +28,7 @@
 
 
 
-<p class="blurb">1.74.0</p>
+<p class="blurb">1.75.1</p>
 
 
 
@@ -191,7 +191,7 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
-        <span class="n">plugin_options</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">OpenTelemetryPluginOption</span><span class="p">]</span> <span class="o">=</span> <span class="p">[],</span>
+        <span class="n">plugin_options</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">OpenTelemetryPluginOption</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">meter_provider</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MeterProvider</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">target_attribute_filter</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">generic_method_attribute_filter</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -218,13 +218,13 @@
 <span class="sd">        Return True means the original method name will be used, False means method name will</span>
 <span class="sd">        be replaced with &quot;other&quot;.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">plugin_options</span> <span class="o">=</span> <span class="n">plugin_options</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plugin_options</span> <span class="o">=</span> <span class="n">plugin_options</span> <span class="ow">or</span> <span class="p">[]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">meter_provider</span> <span class="o">=</span> <span class="n">meter_provider</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">target_attribute_filter</span> <span class="o">=</span> <span class="n">target_attribute_filter</span> <span class="ow">or</span> <span class="p">(</span>
-            <span class="k">lambda</span> <span class="n">target</span><span class="p">:</span> <span class="kc">True</span>
+            <span class="k">lambda</span> <span class="n">_target</span><span class="p">:</span> <span class="kc">True</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">generic_method_attribute_filter</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="n">generic_method_attribute_filter</span> <span class="ow">or</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">target</span><span class="p">:</span> <span class="kc">False</span><span class="p">)</span>
+            <span class="n">generic_method_attribute_filter</span> <span class="ow">or</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">_target</span><span class="p">:</span> <span class="kc">False</span><span class="p">)</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_plugins</span> <span class="o">=</span> <span class="p">[</span>
             <span class="n">_open_telemetry_observability</span><span class="o">.</span><span class="n">_OpenTelemetryPlugin</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>

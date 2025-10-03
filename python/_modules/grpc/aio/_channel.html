@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._channel &#8212; gRPC Python 1.74.0 documentation</title>
+    <title>grpc.aio._channel &#8212; gRPC Python 1.75.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5ecbeea2" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=f0f94f3a" />
-    <script src="../../../_static/documentation_options.js?v=6f9416a0"></script>
+    <script src="../../../_static/documentation_options.js?v=ba39d8e0"></script>
     <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -28,7 +28,7 @@
 
 
 
-<p class="blurb">1.74.0</p>
+<p class="blurb">1.75.1</p>
 
 
 
@@ -180,8 +180,8 @@
     <span class="n">_loop</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">AbstractEventLoop</span>
     <span class="n">_channel</span><span class="p">:</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">AioChannel</span>
     <span class="n">_method</span><span class="p">:</span> <span class="nb">bytes</span>
-    <span class="n">_request_serializer</span><span class="p">:</span> <span class="n">SerializingFunction</span>
-    <span class="n">_response_deserializer</span><span class="p">:</span> <span class="n">DeserializingFunction</span>
+    <span class="n">_request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">]</span>
+    <span class="n">_response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">]</span>
     <span class="n">_interceptors</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">ClientInterceptor</span><span class="p">]]</span>
     <span class="n">_references</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span>
     <span class="n">_loop</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">AbstractEventLoop</span>
@@ -191,8 +191,8 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">channel</span><span class="p">:</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">AioChannel</span><span class="p">,</span>
         <span class="n">method</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span>
-        <span class="n">request_serializer</span><span class="p">:</span> <span class="n">SerializingFunction</span><span class="p">,</span>
-        <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">DeserializingFunction</span><span class="p">,</span>
+        <span class="n">request_serializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">SerializingFunction</span><span class="p">],</span>
+        <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DeserializingFunction</span><span class="p">],</span>
         <span class="n">interceptors</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">ClientInterceptor</span><span class="p">]],</span>
         <span class="n">references</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span>
         <span class="n">loop</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">AbstractEventLoop</span><span class="p">,</span>
@@ -214,8 +214,10 @@
 <span class="sd">        metadata, as it should be used for the current call.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">metadata</span> <span class="o">=</span> <span class="n">metadata</span> <span class="ow">or</span> <span class="n">Metadata</span><span class="p">()</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">Metadata</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
-            <span class="n">metadata</span> <span class="o">=</span> <span class="n">Metadata</span><span class="o">.</span><span class="n">from_tuple</span><span class="p">(</span><span class="n">metadata</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">Metadata</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="n">metadata</span><span class="p">,</span> <span class="n">Sequence</span>
+        <span class="p">):</span>
+            <span class="n">metadata</span> <span class="o">=</span> <span class="n">Metadata</span><span class="o">.</span><span class="n">from_tuple</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">metadata</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">compression</span><span class="p">:</span>
             <span class="n">metadata</span> <span class="o">=</span> <span class="n">Metadata</span><span class="p">(</span>
                 <span class="o">*</span><span class="n">_compression</span><span class="o">.</span><span class="n">augment_metadata</span><span class="p">(</span><span class="n">metadata</span><span class="p">,</span> <span class="n">compression</span><span class="p">)</span>
@@ -525,9 +527,8 @@
                             <span class="k">continue</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="c1"># Unidentified Call object</span>
-                        <span class="k">raise</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">InternalError</span><span class="p">(</span>
-                            <span class="sa">f</span><span class="s2">&quot;Unrecognized call object: </span><span class="si">{</span><span class="n">candidate</span><span class="si">}</span><span class="s2">&quot;</span>
-                        <span class="p">)</span>
+                        <span class="n">error_msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;Unrecognized call object: </span><span class="si">{</span><span class="n">candidate</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="k">raise</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">InternalError</span><span class="p">(</span><span class="n">error_msg</span><span class="p">)</span>
 
                     <span class="n">calls</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">candidate</span><span class="p">)</span>
                     <span class="n">call_tasks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
