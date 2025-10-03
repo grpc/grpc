@@ -44,18 +44,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/base/attributes.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/hash/hash.h"
-#include "absl/log/log.h"
-#include "absl/meta/type_traits.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/strings/cord.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/time.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/metadata_info.h"
 #include "src/core/channelz/property_list.h"
@@ -71,6 +59,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_stats_collector.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
@@ -126,6 +115,18 @@
 #include "src/core/util/string.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
+#include "absl/base/attributes.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/hash/hash.h"
+#include "absl/log/log.h"
+#include "absl/meta/type_traits.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/strings/cord.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 
 using grpc_core::Json;
 
@@ -1201,7 +1202,13 @@ static void write_action(
   }
   args.set_max_frame_size(max_frame_size);
   args.SetDeprecatedAndDiscouragedGoogleSpecificPointer(cl);
-  if (!tcp_call_tracers.empty()) {
+  bool trace_ztrace = false;
+  auto now = grpc_core::Timestamp::Now();
+  if (now - t->last_ztrace_time > grpc_core::Duration::Milliseconds(100)) {
+    t->last_ztrace_time = now;
+    trace_ztrace = t->http2_ztrace_collector.IsActive();
+  }
+  if (!tcp_call_tracers.empty() || trace_ztrace) {
     EventEngine::Endpoint* ee_ep =
         grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
             t->ep.get());
@@ -1212,24 +1219,35 @@ static void write_action(
         args.set_metrics_sink(WriteEventSink(
             std::move(metrics_set),
             {WriteEvent::kSendMsg, WriteEvent::kScheduled, WriteEvent::kSent,
-             WriteEvent::kAcked},
+             WriteEvent::kAcked, WriteEvent::kClosed},
             [tcp_call_tracers = std::move(tcp_call_tracers),
-             telemetry_info = std::move(telemetry_info)](
+             telemetry_info = std::move(telemetry_info),
+             ztrace_collector =
+                 trace_ztrace ? &t->http2_ztrace_collector : nullptr](
                 WriteEvent event, absl::Time timestamp,
                 std::vector<WriteMetric> metrics) {
-              std::vector<grpc_core::TcpCallTracer::TcpEventMetric> tcp_metrics;
-              tcp_metrics.reserve(metrics.size());
-              for (auto& metric : metrics) {
-                auto name = telemetry_info->GetMetricName(metric.key);
-                if (name.has_value()) {
-                  tcp_metrics.push_back(
-                      grpc_core::TcpCallTracer::TcpEventMetric{name.value(),
-                                                               metric.value});
+              if (!tcp_call_tracers.empty()) {
+                std::vector<grpc_core::TcpCallTracer::TcpEventMetric>
+                    tcp_metrics;
+                tcp_metrics.reserve(metrics.size());
+                for (auto& metric : metrics) {
+                  auto name = telemetry_info->GetMetricName(metric.key);
+                  if (name.has_value()) {
+                    tcp_metrics.push_back(
+                        grpc_core::TcpCallTracer::TcpEventMetric{name.value(),
+                                                                 metric.value});
+                  }
+                }
+                for (auto& tracer : tcp_call_tracers) {
+                  tracer.tcp_call_tracer->RecordEvent(
+                      event, timestamp, tracer.byte_offset, tcp_metrics);
                 }
               }
-              for (auto& tracer : tcp_call_tracers) {
-                tracer.tcp_call_tracer->RecordEvent(
-                    event, timestamp, tracer.byte_offset, tcp_metrics);
+              if (ztrace_collector != nullptr) {
+                ztrace_collector->Append([&]() {
+                  return grpc_core::H2TcpMetricsTrace{
+                      telemetry_info, event, std::move(metrics), timestamp};
+                });
               }
             }));
       }

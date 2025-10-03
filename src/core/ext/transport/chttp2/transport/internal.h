@@ -593,6 +593,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
 
   std::shared_ptr<grpc_core::Http2StatsCollector> http2_stats;
   grpc_core::Http2ZTraceCollector http2_ztrace_collector;
+  grpc_core::Timestamp last_ztrace_time = grpc_core::Timestamp::InfPast();
 
   GPR_NO_UNIQUE_ADDRESS grpc_core::latent_see::Flow write_flow;
 };
