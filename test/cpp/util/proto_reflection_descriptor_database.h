@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
+#include "absl/container/flat_hash_set.h"
 
 namespace grpc {
 
@@ -47,13 +48,13 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
   //
   // Find a file by file name.  Fills in *output and returns true if found.
   // Otherwise, returns false, leaving the contents of *output undefined.
-  bool FindFileByName(const string& filename,
+  bool FindFileByName(StringViewArg filename,
                       protobuf::FileDescriptorProto* output) override;
 
   // Find the file that declares the given fully-qualified symbol name.
   // If found, fills in *output and returns true, otherwise returns false
   // and leaves *output undefined.
-  bool FindFileContainingSymbol(const string& symbol_name,
+  bool FindFileContainingSymbol(StringViewArg symbol_name,
                                 protobuf::FileDescriptorProto* output) override;
 
   // Find the file which defines an extension extending the given message type
@@ -61,7 +62,7 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
   // otherwise returns false and leaves *output undefined.  containing_type
   // must be a fully-qualified type name.
   bool FindFileContainingExtension(
-      const string& containing_type, int field_number,
+      StringViewArg containing_type, int field_number,
       protobuf::FileDescriptorProto* output) override;
 
   // Finds the tag numbers used by all known extensions of
@@ -71,7 +72,7 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
   // FindFileContainingExtension will return true on all of the found
   // numbers. Returns true if the search was successful, otherwise
   // returns false and leaves output unchanged.
-  bool FindAllExtensionNumbers(const string& extendee_type,
+  bool FindAllExtensionNumbers(StringViewArg extendee_type,
                                std::vector<int>* output) override;
 
   // Provide a list of full names of registered services
@@ -98,10 +99,12 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
   std::shared_ptr<ClientStream> stream_;
   grpc::ClientContext ctx_;
   std::unique_ptr<grpc::reflection::v1alpha::ServerReflection::Stub> stub_;
-  std::unordered_set<string> known_files_;
-  std::unordered_set<string> missing_symbols_;
-  std::unordered_map<string, std::unordered_set<int>> missing_extensions_;
-  std::unordered_map<string, std::vector<int>> cached_extension_numbers_;
+  absl::flat_hash_set<absl::string_view> known_files_;
+  absl::flat_hash_set<absl::string_view> missing_symbols_;
+  absl::flat_hash_map<absl::string_view, absl::flat_hash_set<int>>
+      missing_extensions_;
+  absl::flat_hash_map<absl::string_view, std::vector<int>>
+      cached_extension_numbers_;
   std::mutex stream_mutex_;
 
   protobuf::SimpleDescriptorDatabase cached_db_;
