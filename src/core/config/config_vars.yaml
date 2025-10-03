@@ -105,6 +105,10 @@
   default:
   description: Path to the default SSL roots file.
   force-load-on-access: true
+- name: use_system_roots_over_language_callback
+  type: bool
+  default: false
+  description: Prefer loading system root certificates over language callback.
 - name: not_use_system_ssl_roots
   type: bool
   default: false

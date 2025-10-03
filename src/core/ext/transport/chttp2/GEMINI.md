@@ -110,6 +110,7 @@ and the underlying endpoint.
 *   Settings Helper : `http2_settings_promises.h`
 *   Flow Control Helper : `flow_control_manager.h`
 *   Stream : `stream.h` representation of each HTTP2 stream in the HTTP2 transport.
+*   GoAway : `goaway.{h,cc}` for implementation of HTTP2 GOAWAY
 
 ## 3. Common Files (Shared by CHTTP2 and PH2)
 
@@ -166,6 +167,7 @@ Key test files include:
 *   **PH2 Specific Tests:**
     *   `test/core/transport/chttp2/http2_client_transport_test.cc`: Main test suite for the PH2 client transport.
     *   `test/core/transport/chttp2/http2_server_transport_test.cc`: Main test suite for the PH2 server transport.
+    *   `test/core/transport/chttp2/http2_transport_test.cc`: Common to PH2 Client and Server Transport. Tests code in `http2_transport.{h,cc}`.
     *   `test/core/transport/chttp2/frame_test.cc`
     *   `test/core/transport/chttp2/ping_promise_test.cc`
     *   `test/core/transport/chttp2/stream_data_queue_test.cc`

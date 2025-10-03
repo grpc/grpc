@@ -86,8 +86,6 @@
   default: false
 - name: schedule_cancellation_over_write
   default: false
-- name: server_global_callbacks_ownership
-  default: true
 - name: sleep_promise_exec_ctx_removal
   default: false
 - name: sleep_use_non_owning_waker

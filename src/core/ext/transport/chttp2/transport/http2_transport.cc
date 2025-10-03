@@ -23,8 +23,10 @@
 
 #include "src/core/call/call_spine.h"
 #include "src/core/call/metadata_info.h"
+#include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/transport/promise_endpoint.h"
@@ -121,6 +123,27 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
       << local_settings.allow_true_binary_metadata()
       << ", allow_security_frame: " << local_settings.allow_security_frame()
       << "}";
+}
+
+RefCountedPtr<channelz::SocketNode> CreateChannelzSocketNode(
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+        event_engine_endpoint,
+    const ChannelArgs& args) {
+  if (args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
+          .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
+    auto local_addr = grpc_event_engine::experimental::ResolvedAddressToString(
+        event_engine_endpoint->GetLocalAddress());
+    auto peer_addr = grpc_event_engine::experimental::ResolvedAddressToString(
+        event_engine_endpoint->GetPeerAddress());
+    GRPC_HTTP2_COMMON_DLOG << "CreateChannelzSocketNode: local_addr: "
+                           << local_addr.value_or("unknown")
+                           << " peer_addr: " << peer_addr.value_or("unknown");
+    return MakeRefCounted<channelz::SocketNode>(
+        local_addr.value_or("unknown"), peer_addr.value_or("unknown"),
+        absl::StrCat("http2", " ", peer_addr.value_or("unknown")),
+        args.GetObjectRef<channelz::SocketNode::Security>());
+  }
+  return nullptr;
 }
 
 }  // namespace http2

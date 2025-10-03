@@ -77,6 +77,11 @@ package_group(
 )
 
 package_group(
+    name = "sleuth",
+    packages = [],
+)
+
+package_group(
     name = "client_channel",
     packages = [],
 )

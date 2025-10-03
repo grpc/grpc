@@ -177,5 +177,4 @@ def validate_port_binding_result(address: str, port: int) -> int:
         # The Core API doesn't return a failure message. The best we can do
         # is raising an exception to prevent further confusion.
         raise RuntimeError(_ERROR_MESSAGE_PORT_BINDING_FAILED % address)
-    else:
-        return port
+    return port

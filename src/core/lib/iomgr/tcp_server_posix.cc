@@ -280,6 +280,8 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   s->shutdown = false;
   s->shutdown_starting.head = nullptr;
   s->shutdown_starting.tail = nullptr;
+  s->shutdown_ending.head = nullptr;
+  s->shutdown_ending.tail = nullptr;
   if (!grpc_event_engine::experimental::UseEventEngineListener()) {
     s->shutdown_complete = shutdown_complete;
   } else {

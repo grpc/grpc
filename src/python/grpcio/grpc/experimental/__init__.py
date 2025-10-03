@@ -127,8 +127,8 @@ if sys.version_info > (3, 6):
     from grpc._simple_stubs import unary_unary
 
     __all__ += (
-        "unary_unary",
-        "unary_stream",
-        "stream_unary",
         "stream_stream",
+        "stream_unary",
+        "unary_stream",
+        "unary_unary",
     )

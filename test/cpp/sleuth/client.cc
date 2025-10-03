@@ -19,13 +19,15 @@
 #include <vector>
 
 #include "src/core/transport/endpoint_transport.h"
+#include "src/cpp/latent_see/latent_see_client.h"
 
 namespace grpc_sleuth {
 
 Client::Client(std::string target, Options options)
     : channel_(grpc::CreateCustomChannel(target, options.creds,
                                          MakeChannelArguments(options))),
-      stub_(grpc::channelz::v2::Channelz::NewStub(channel_)) {}
+      stub_(grpc::channelz::v2::Channelz::NewStub(channel_)),
+      latent_see_stub_(grpc::channelz::v2::LatentSee::NewStub(channel_)) {}
 
 grpc::ChannelArguments Client::MakeChannelArguments(const Options& options) {
   grpc::ChannelArguments args;
@@ -109,6 +111,17 @@ absl::Status Client::QueryTrace(
   grpc::Status status = reader->Finish();
   if (!status.ok()) {
     // Manual conversion
+    return absl::Status(static_cast<absl::StatusCode>(status.error_code()),
+                        status.error_message());
+  }
+  return absl::OkStatus();
+}
+
+absl::Status Client::FetchLatentSee(double sample_time,
+                                    grpc_core::latent_see::Output* output) {
+  grpc::Status status =
+      grpc::FetchLatentSee(latent_see_stub_.get(), sample_time, output);
+  if (!status.ok()) {
     return absl::Status(static_cast<absl::StatusCode>(status.error_code()),
                         status.error_message());
   }

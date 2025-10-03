@@ -93,6 +93,9 @@ def get_commit_detail(commit):
     glg_command = [
         "git",
         "log",
+        "--no-abbrev-commit",
+        "--no-color",
+        "--pretty=full",
         "-n 1",
         "%s" % commit,
     ]
@@ -125,6 +128,8 @@ def get_commit_log(prevRelLabel, relBranch):
     glg_command = [
         "git",
         "log",
+        "--no-abbrev-commit",
+        "--no-color",
         "--pretty=oneline",
         "%s..%s" % (prevRelLabel, relBranch),
     ]
