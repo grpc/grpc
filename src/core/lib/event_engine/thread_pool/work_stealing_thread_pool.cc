@@ -265,7 +265,8 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::StartThread() {
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Quiesce() {
-  SetShutdown(true);
+  bool was_shutdown = work_signal()->SetShutdown(true);
+  GRPC_CHECK(!was_shutdown);
   // Wait until all threads have exited.
   // Note that if this is a threadpool thread then we won't exit this thread
   // until all other threads have exited, so we need to wait for just one thread
@@ -290,13 +291,6 @@ bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::SetThrottled(
   return throttled_.exchange(throttled, std::memory_order_relaxed);
 }
 
-void WorkStealingThreadPool::WorkStealingThreadPoolImpl::SetShutdown(
-    bool is_shutdown) {
-  auto was_shutdown = shutdown_.exchange(is_shutdown);
-  GRPC_CHECK(is_shutdown != was_shutdown);
-  work_signal_.SignalAll();
-}
-
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::SetForking(
     bool is_forking) {
   auto was_forking = forking_.exchange(is_forking);
@@ -305,10 +299,6 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::SetForking(
 
 bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::IsForking() {
   return forking_.load(std::memory_order_relaxed);
-}
-
-bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::IsShutdown() {
-  return shutdown_.load(std::memory_order_relaxed);
 }
 
 bool WorkStealingThreadPool::WorkStealingThreadPoolImpl::IsQuiesced() {
@@ -395,7 +385,7 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Lifeguard::
     if (pool_->IsForking()) break;
     // If the pool is shut down, loop quickly until quiesced. Otherwise,
     // reduce the check rate if the pool is idle.
-    if (pool_->IsShutdown()) {
+    if (pool_->work_signal()->IsShutdown()) {
       if (pool_->IsQuiesced()) break;
       if (MaybeStartNewThread()) {
         // A new thread needed to be spawned to handle the workload.
@@ -507,7 +497,7 @@ void WorkStealingThreadPool::ThreadState::ThreadBody() {
         pool_->queue()->Add(closure);
       }
     }
-  } else if (pool_->IsShutdown()) {
+  } else if (pool_->work_signal()->IsShutdown()) {
     FinishDraining();
   }
   GRPC_CHECK(g_local_queue->Empty());
@@ -560,10 +550,10 @@ bool WorkStealingThreadPool::ThreadState::Step() {
     }
     // No closures were retrieved from anywhere.
     // Quit the thread if the pool has been shut down.
-    if (pool_->IsShutdown()) break;
+    if (pool_->work_signal()->IsShutdown()) break;
     bool timed_out =
         pool_->work_signal()->WaitWithTimeout(backoff_.NextAttemptDelay());
-    if (pool_->IsForking() || pool_->IsShutdown()) break;
+    if (pool_->IsForking() || pool_->work_signal()->IsShutdown()) break;
     // Quit a thread if the pool has more than it requires, and this thread
     // has been idle long enough.
     if (timed_out &&
@@ -626,7 +616,20 @@ void WorkStealingThreadPool::WorkSignal::SignalAll() {
 bool WorkStealingThreadPool::WorkSignal::WaitWithTimeout(
     grpc_core::Duration time) {
   grpc_core::MutexLock lock(&mu_);
+  if (shutdown_) return false;
   return cv_.WaitWithTimeout(&mu_, absl::Milliseconds(time.millis()));
+}
+
+bool WorkStealingThreadPool::WorkSignal::SetShutdown(bool is_shutdown) {
+  grpc_core::MutexLock lock(&mu_);
+  bool old = shutdown_;
+  shutdown_ = is_shutdown;
+  return old;
+}
+
+bool WorkStealingThreadPool::WorkSignal::IsShutdown() {
+  grpc_core::MutexLock lock(&mu_);
+  return shutdown_;
 }
 
 }  // namespace grpc_event_engine::experimental
