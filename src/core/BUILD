@@ -8332,7 +8332,6 @@ grpc_cc_library(
     ],
     deps = [
         "call_spine",
-        "http2_transport",
         "stream_data_queue",
         ":chttp2_flow_control",
         "//:ref_counted_ptr",
@@ -8349,6 +8348,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/container:flat_hash_map",
+        "absl/container:flat_hash_set",
         "absl/log",
         "absl/status",
         "absl/status:statusor",
@@ -8512,10 +8512,12 @@ grpc_cc_library(
         "grpc_check",
         "grpc_promise_endpoint",
         "http2_settings",
+        "http2_status",
         "loop",
         "map",
         "metadata_info",
         "mpsc",
+        "ph2_stream",
         "sync",
         ":event_engine_tcp_socket_utils",
         ":match_promise",
