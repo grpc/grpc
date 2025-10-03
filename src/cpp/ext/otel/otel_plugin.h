@@ -43,11 +43,14 @@
 #include "opentelemetry/trace/tracer.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/telemetry/instrument.h"
 #include "src/core/telemetry/metrics.h"
 #include "src/core/util/down_cast.h"
 
 namespace grpc {
 namespace internal {
+
+bool IsOpenTelemetryLabelOptional(absl::string_view label_key);
 
 // An iterable container interface that can be used as a return type for the
 // OpenTelemetry plugin's label injector.
@@ -245,6 +248,20 @@ class OpenTelemetryPluginImpl
   class KeyValueIterable;
   class NPCMetricsKeyValueIterable;
   class ServerCallTracerInterface;
+  class ExporterCallback;
+  template <class Exporter>
+  class ExporterCallbackImpl;
+  class CounterExporter;
+  class MetricsSink;
+  class ExportedMetricKeyValueIterable;
+
+  struct TelemetryCache {
+    absl::flat_hash_map<
+        std::string,
+        std::vector<std::pair<std::vector<std::pair<std::string, std::string>>,
+                              int64_t>>>
+        counters;
+  };
 
   // Creates a convenience wrapper to help iterate over only those plugin
   // options that are active over a given channel/server.
@@ -478,6 +495,9 @@ class OpenTelemetryPluginImpl
       grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle)
       const override;
 
+  void WithTelemetryCache(uint64_t& query_cycle,
+                          absl::FunctionRef<void(const TelemetryCache&)> f);
+
   const absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*args*/) const>&
   server_selector() const {
     return server_selector_;
@@ -565,6 +585,16 @@ class OpenTelemetryPluginImpl
   absl::AnyInvocable<bool(
       const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
       channel_scope_filter_;
+  // Telemetry cache: don't access directly, use WithTelemetryCache() to
+  // guarantee proper locking.
+  std::vector<std::string> exported_metrics_;
+  std::vector<std::string> collapse_labels_;
+  grpc_core::Mutex telemetry_cache_mu_;
+  std::unique_ptr<grpc_core::CollectionScope> collection_scope_
+      ABSL_GUARDED_BY(telemetry_cache_mu_) = grpc_core::CreateCollectionScope();
+  uint64_t query_cycle_ ABSL_GUARDED_BY(telemetry_cache_mu_) = 0;
+  TelemetryCache telemetry_cache_ ABSL_GUARDED_BY(telemetry_cache_mu_);
+  std::vector<std::unique_ptr<ExporterCallback>> exporter_callbacks_;
 };
 
 class GrpcTextMapCarrier

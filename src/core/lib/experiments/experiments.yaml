@@ -186,6 +186,11 @@
   expiry: 2026/02/01
   owner: ctiller@google.com
   test_tags: [flow_control_test]
+- name: otel_export_telemetry_domains
+  description: Export telemetry domains in OpenTelemetry metrics.
+  expiry: 2026/02/01
+  owner: ctiller@google.com
+  test_tags: [core_end2end_test]
 - name: pick_first_ignore_empty_updates
   description: Ignore empty resolutions in pick_first
   expiry: 2026/02/02
