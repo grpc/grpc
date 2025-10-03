@@ -53,7 +53,66 @@ namespace grpc_core {
 namespace http2 {
 namespace testing {
 
-// TODO(tjagtap) : [PH2][P0] : Fix in the flow control test PR.
+TEST(Http2CommonTransportTest, TestReadChannelArgs) {
+  // Test to validate that ReadChannelArgs reads all the channel args
+  // correctly.
+  Http2Settings settings;
+  chttp2::TransportFlowControl transport_flow_control(
+      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*memory_owner=*/nullptr);
+  ChannelArgs channel_args =
+      ChannelArgs()
+          .Set(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER, 2048)
+          .Set(GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES, 1024)
+          .Set(GRPC_ARG_HTTP2_MAX_FRAME_SIZE, 16384)
+          .Set(GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE, true)
+          .Set(GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY, 1)
+          .Set(GRPC_ARG_SECURITY_FRAME_ALLOWED, true);
+  ReadSettingsFromChannelArgs(channel_args, settings, transport_flow_control,
+                              /*is_client=*/true);
+  // Settings read from ChannelArgs.
+  EXPECT_EQ(settings.header_table_size(), 2048u);
+  EXPECT_EQ(settings.initial_window_size(), 1024u);
+  EXPECT_EQ(settings.max_frame_size(), 16384u);
+  EXPECT_EQ(settings.preferred_receive_crypto_message_size(), INT_MAX);
+  EXPECT_EQ(settings.allow_true_binary_metadata(), true);
+  EXPECT_EQ(settings.allow_security_frame(), true);
+  // Default settings
+  EXPECT_EQ(settings.max_concurrent_streams(), 4294967295u);
+  EXPECT_EQ(settings.max_header_list_size(), 16384u);
+  EXPECT_EQ(settings.enable_push(), true);
+
+  // If ChannelArgs don't have a value for the setting, the default must be
+  // loaded into the Settings object
+  Http2Settings settings2;
+  EXPECT_EQ(settings2.header_table_size(), 4096u);
+  EXPECT_EQ(settings2.max_concurrent_streams(), 4294967295u);
+  EXPECT_EQ(settings2.initial_window_size(), 65535u);
+  EXPECT_EQ(settings2.max_frame_size(), 16384u);
+  // TODO(tjagtap) : [PH2][P4] : Investigate why we change it in
+  // ReadSettingsFromChannelArgs . Right now ReadSettingsFromChannelArgs is
+  // functinally similar to the legacy read_channel_args.
+  EXPECT_EQ(settings2.max_header_list_size(), 16777216u);
+  EXPECT_EQ(settings2.preferred_receive_crypto_message_size(), 0u);
+  EXPECT_EQ(settings2.enable_push(), true);
+  EXPECT_EQ(settings2.allow_true_binary_metadata(), false);
+  EXPECT_EQ(settings2.allow_security_frame(), false);
+
+  ReadSettingsFromChannelArgs(ChannelArgs(), settings2, transport_flow_control,
+                              /*is_client=*/true);
+  EXPECT_EQ(settings2.header_table_size(), 4096u);
+  EXPECT_EQ(settings2.max_concurrent_streams(), 4294967295u);
+  EXPECT_EQ(settings2.initial_window_size(), 65535u);
+  EXPECT_EQ(settings2.max_frame_size(), 16384u);
+  // TODO(tjagtap) : [PH2][P4] : Investigate why we change it in
+  // ReadSettingsFromChannelArgs . Right now ReadSettingsFromChannelArgs is
+  // functinally similar to the legacy read_channel_args.
+  EXPECT_EQ(settings2.max_header_list_size(), 16384u);
+  EXPECT_EQ(settings2.preferred_receive_crypto_message_size(), 0u);
+  EXPECT_EQ(settings2.enable_push(), true);
+  EXPECT_EQ(settings2.allow_true_binary_metadata(), false);
+  EXPECT_EQ(settings2.allow_security_frame(), false);
+}
 
 }  // namespace testing
 
