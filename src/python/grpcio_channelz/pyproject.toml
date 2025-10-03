@@ -1,0 +1,28 @@
+[build-system]
+requires = [
+    "setuptools>=61.0.0",
+    "wheel",
+]
+    # "grpcio>=1.63.0", # Static minimum for the build environment
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "grpcio-channelz"
+license = "Apache-2.0"
+description = "Channel Level Live Debug Information Service for gRPC"
+readme = {file = "README.rst", content-type = "text/x-rst"} # adding content-type resolves twine check warnings during release upload
+authors = [{name = "The gRPC Authors", email = "grpc-io@googlegroups.com"}]
+
+dynamic = ["dependencies", "version", "requires-python", "classifiers"]
+
+[project.urls]
+Homepage = "https://grpc.io"
+
+[tool.setuptools.packages]
+find = {}
+
+[tool.setuptools.dynamic]
+version = {attr = "grpc_version.VERSION"}
+
+[tool.setuptools.package-dir]
+"" = "."
