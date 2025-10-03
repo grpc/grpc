@@ -39,6 +39,7 @@ grpc_cc_library(
         "//src/core:grpc_promise_endpoint",
         "//src/core:notification",
         "//src/core:transport_framing_endpoint_extension",
+        "//src/core:useful",
     ],
 )
 
