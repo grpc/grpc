@@ -1,0 +1,41 @@
+[build-system]
+requires = [
+    "setuptools>=77.0.0",
+    "wheel",
+    "cython==3.1.1"
+]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "grpcio"
+license = "Apache-2.0"
+description = "HTTP/2-based RPC framework"
+readme = {file = "src/python/grpcio/README.rst", content-type = "text/x-rst"} # adding content-type resolves twine check warnings during release upload
+authors = [{name = "The gRPC Authors", email = "grpc-io@googlegroups.com"}]
+
+dynamic = ["version", "requires-python", "classifiers", "dependencies", "optional-dependencies"]
+
+[project.urls]
+Homepage = "https://grpc.io"
+"Source Code" = "https://github.com/grpc/grpc"
+"Bug Tracker" = "https://github.com/grpc/grpc/issues"
+Documentation = "https://grpc.github.io/grpc/python"
+
+[tool.setuptools.packages.find]
+where = ["src/python/grpcio"]
+
+[tool.setuptools.dynamic]
+version = {attr = "grpc_version.VERSION"}
+
+[tool.setuptools.package-dir]
+"" = "src/python/grpcio"
+
+[tool.setuptools.package-data]
+# Binaries that may or may not be present in the final installation, but are
+# mentioned here for completeness.
+"grpc._cython" = [
+    "_credentials/roots.pem",
+    "_windows/grpc_c.32.python",
+    "_windows/grpc_c.64.python",
+]
