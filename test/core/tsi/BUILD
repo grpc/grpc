@@ -36,6 +36,7 @@ grpc_cc_library(
         "//:grpc",
         "//:tsi_base",
         "//src/core:error",
+        "//src/core:grpc_check",
     ],
 )
 
@@ -65,6 +66,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:tsi_ssl_session_cache",
+        "//src/core:grpc_check",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -186,6 +188,7 @@ grpc_cc_test(
         "//:tsi",
         "//:tsi_base",
         "//:tsi_ssl_credentials",
+        "//src/core:grpc_check",
         "//test/core/test_util:grpc_test_util",
     ],
 )

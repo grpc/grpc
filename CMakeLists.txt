@@ -7980,6 +7980,9 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(alts_handshaker_client_test
+  src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   test/core/tsi/alts/handshaker/alts_handshaker_client_test.cc
   test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
 )
@@ -11262,6 +11265,12 @@ add_executable(channelz_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.h
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
   test/core/channelz/channelz_test.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/cpp/util/channel_trace_proto_helper.cc
@@ -45685,6 +45694,43 @@ add_executable(xds_matcher_parse_test
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.pb.h
   ${_gRPC_PROTO_GENS_DIR}/xds/type/v3/typed_struct.grpc.pb.h
+  src/core/ext/upb-gen/google/api/annotations.upb_minitable.c
+  src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.c
+  src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.c
+  src/core/ext/upb-gen/google/api/http.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
+  src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/validate/validate.upb_minitable.c
+  src/core/ext/upb-gen/xds/annotations/v3/migrate.upb_minitable.c
+  src/core/ext/upb-gen/xds/annotations/v3/security.upb_minitable.c
+  src/core/ext/upb-gen/xds/annotations/v3/sensitive.upb_minitable.c
+  src/core/ext/upb-gen/xds/annotations/v3/status.upb_minitable.c
+  src/core/ext/upb-gen/xds/annotations/v3/versioning.upb_minitable.c
+  src/core/ext/upb-gen/xds/core/v3/authority.upb_minitable.c
+  src/core/ext/upb-gen/xds/core/v3/cidr.upb_minitable.c
+  src/core/ext/upb-gen/xds/core/v3/collection_entry.upb_minitable.c
+  src/core/ext/upb-gen/xds/core/v3/context_params.upb_minitable.c
+  src/core/ext/upb-gen/xds/core/v3/extension.upb_minitable.c
+  src/core/ext/upb-gen/xds/core/v3/resource.upb_minitable.c
+  src/core/ext/upb-gen/xds/core/v3/resource_locator.upb_minitable.c
+  src/core/ext/upb-gen/xds/core/v3/resource_name.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/cel.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/domain.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/http_inputs.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/ip.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/matcher.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/range.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/regex.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/matcher/v3/string.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/v3/cel.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/v3/range.upb_minitable.c
+  src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.c
   test/core/xds/xds_matcher_parse_test.cc
 )
 if(WIN32 AND MSVC)

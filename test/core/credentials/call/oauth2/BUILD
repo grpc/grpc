@@ -54,6 +54,7 @@ grpc_cc_binary(
         "//:grpc_credentials_util",
         "//:grpc_security_base",
         "//src/core:error",
+        "//src/core:grpc_check",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],

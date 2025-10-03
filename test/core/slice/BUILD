@@ -31,6 +31,7 @@ grpc_fuzz_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:grpc_check",
         "//src/core:percent_encoding",
         "//src/core:slice",
         "//test/core/test_util:grpc_test_util",
@@ -103,6 +104,7 @@ grpc_cc_test(
         "//:gpr",
         "//:gpr_platform",
         "//:grpc",
+        "//src/core:grpc_check",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//test/core/test_util:grpc_test_util",

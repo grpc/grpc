@@ -44,6 +44,7 @@ grpc_cc_test(
         "//src/core:channel_args_endpoint_config",
         "//src/core:default_event_engine",
         "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:grpc_check",
         "//src/core:notification",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/event_engine:event_engine_test_utils",

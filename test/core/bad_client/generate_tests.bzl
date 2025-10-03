@@ -48,6 +48,7 @@ def grpc_bad_client_tests():
             "absl/log:log",
         ],
         deps = [
+            "//:channel_arg_names",
             "//:channelz",
             "//:config",
             "//:exec_ctx",
@@ -58,6 +59,7 @@ def grpc_bad_client_tests():
             "//:iomgr",
             "//:server",
             "//src/core:channel_args",
+            "//src/core:grpc_check",
             "//src/core:channel_args_preconditioning",
             "//src/core:closure",
             "//src/core:error",
@@ -71,9 +73,11 @@ def grpc_bad_client_tests():
             name = "%s_bad_client_test" % t,
             srcs = ["tests/%s.cc" % t],
             deps = [
+                "//:grpc_base",
                 "//:gpr",
                 "//:server",
                 "//src/core:experiments",
+                "//src/core:grpc_check",
                 "//src/core:time",
                 "//test/core/end2end:cq_verifier",
                 "//test/core/test_util:grpc_test_util",

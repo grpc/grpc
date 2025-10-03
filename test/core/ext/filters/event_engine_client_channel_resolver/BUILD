@@ -65,6 +65,7 @@ grpc_fuzz_test(
         "//src/core:default_event_engine",
         "//src/core:event_engine_tcp_socket_utils",
         "//src/core:experiments",
+        "//src/core:grpc_check",
         "//src/core:grpc_resolver_dns_event_engine",
         "//test/core/event_engine:aborting_event_engine",
         "//test/core/event_engine/fuzzing_event_engine",

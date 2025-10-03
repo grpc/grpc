@@ -157,6 +157,7 @@ grpc_cc_test(
     ],
     uses_polling = False,
     deps = [
+        "//:channel_arg_names",
         "//:gpr",
         "//:grpc",
         "//:http_connect_handshaker",

@@ -55,6 +55,7 @@ def qps_json_driver_batch():
                 "//:gpr",
                 "//:grpc++",
                 "//:grpc++_config_proto",
+                "//src/core:grpc_check",
                 "//test/core/test_util:grpc_test_util",
                 "//test/cpp/qps:parse_json",
                 "//test/cpp/qps:qps_worker_impl",
@@ -97,6 +98,7 @@ def json_run_localhost_batch():
             deps = [
                 "//:gpr",
                 "//src/core:env",
+                "//src/core:grpc_check",
                 "//test/core/test_util:grpc_test_util",
                 "//test/cpp/util:test_config",
                 "//test/cpp/util:test_util",

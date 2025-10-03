@@ -53,6 +53,7 @@ grpc_cc_library(
         "//src/core:event_engine_tcp_socket_utils",
         "//src/core:event_engine_time_util",
         "//src/core:experiments",
+        "//src/core:grpc_check",
         "//src/core:iomgr_port",
         "//src/core:native_posix_dns_resolver",
         "//src/core:no_destruct",

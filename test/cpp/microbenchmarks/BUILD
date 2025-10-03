@@ -85,6 +85,7 @@ grpc_cc_benchmark(
         "//:grpc++_base",
         "//src/core:common_event_engine_closures",
         "//src/core:default_event_engine",
+        "//src/core:grpc_check",
         "//src/core:notification",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
@@ -107,6 +108,7 @@ grpc_cc_benchmark(
         "//:grpc++_base",
         "//src/core:common_event_engine_closures",
         "//src/core:event_engine_thread_pool",
+        "//src/core:grpc_check",
         "//src/core:notification",
         "//src/core:useful",
         "//test/core/test_util:grpc_test_util",
@@ -142,6 +144,7 @@ grpc_cc_library(
         "//:server",
         "//:stats",
         "//src/core:channel_args",
+        "//src/core:grpc_check",
         "//src/core:stats_data",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:grpc_test_util",
@@ -179,6 +182,7 @@ grpc_cc_library(
         "//:server",
         "//:stats",
         "//src/core:channel_args",
+        "//src/core:grpc_check",
         "//src/core:stats_data",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:grpc_test_util",
@@ -272,6 +276,7 @@ grpc_cc_benchmark(
         "//:grpc++",
         "//:grpc++_base",
         "//:grpc_base",
+        "//src/core:grpc_check",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
     ],
@@ -310,6 +315,7 @@ grpc_cc_benchmark(
         "//:grpc++",
         "//:grpc++_base",
         "//:grpc_base",
+        "//src/core:grpc_check",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
     ],
@@ -329,6 +335,7 @@ grpc_cc_benchmark(
         "//:grpc_base",
         "//:grpc_public_hdrs",
         "//:iomgr",
+        "//src/core:grpc_check",
         "//src/core:iomgr_port",
         "//src/core:time",
         "//test/core/test_util:grpc_test_util",
@@ -352,6 +359,7 @@ grpc_cc_library(
     ],
     deps = [
         ":helpers",
+        "//src/core:grpc_check",
         "//src/proto/grpc/testing:echo_cc_grpc",
     ],
 )
@@ -383,6 +391,7 @@ grpc_cc_library(
     ],
     deps = [
         ":helpers",
+        "//src/core:grpc_check",
         "//src/proto/grpc/testing:echo_cc_grpc",
     ],
 )
@@ -411,6 +420,7 @@ grpc_cc_library(
     ],
     deps = [
         ":helpers_secure",
+        "//src/core:grpc_check",
         "//src/proto/grpc/testing:echo_cc_grpc",
     ],
 )
@@ -458,6 +468,7 @@ grpc_cc_benchmark(
         "//:gpr",
         "//:hpack_encoder",
         "//:hpack_parser",
+        "//src/core:grpc_check",
         "//src/core:metadata_batch",
         "//src/core:resource_quota",
         "//src/core:slice",
@@ -493,6 +504,7 @@ grpc_cc_library(
     ],
     deps = [
         ":helpers",
+        "//src/core:grpc_check",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/cpp/util:test_util",
     ],
@@ -511,6 +523,7 @@ grpc_cc_library(
     deps = [
         ":bm_callback_test_service_impl",
         ":helpers",
+        "//src/core:grpc_check",
         "//src/proto/grpc/testing:echo_cc_grpc",
     ],
 )
@@ -542,6 +555,7 @@ grpc_cc_library(
     deps = [
         ":bm_callback_test_service_impl",
         ":helpers",
+        "//src/core:grpc_check",
         "//src/proto/grpc/testing:echo_cc_grpc",
     ],
 )

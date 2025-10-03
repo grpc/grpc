@@ -85,6 +85,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr",
+        "//:grpc",
         "//:grpc_trace",
         "//src/core:useful",
         "//test/core/test_util:grpc_test_util",

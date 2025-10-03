@@ -186,6 +186,7 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        "//:channel_arg_names",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc",
@@ -227,6 +228,7 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        "//:channel_arg_names",
         "//:gpr",
         "//:grpc",
         "//:grpc_core_credentials_header",
@@ -243,6 +245,7 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        "//:channel_arg_names",
         "//:gpr",
         "//:grpc",
         "//:grpc_core_credentials_header",
@@ -261,6 +264,7 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        "//:channel_arg_names",
         "//:gpr",
         "//:grpc",
         "//:grpc_core_credentials_header",
