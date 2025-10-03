@@ -517,6 +517,31 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
 TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
   MockPromiseEndpoint mock_endpoint(/*port=*/1000);
 
+  // Make our mock_enpoint pretend that the peer sent
+  // 1. A HEADER frame that contains our initial metadata
+  // 2. A DATA frame with END_STREAM flag false.
+  // 3. A HEADER frame that contains our trailing metadata.
+  auto read_initial_metadata_cb = mock_endpoint.ExpectDelayedRead(
+      {helper_.EventEngineSliceFromHttp2HeaderFrame(
+           std::string(kPathDemoServiceStep.begin(),
+                       kPathDemoServiceStep.end()),
+           /*stream_id=*/1,
+           /*end_headers=*/true, /*end_stream=*/false),
+       helper_.EventEngineSliceFromHttp2DataFrame(
+           /*payload=*/"Hello", /*stream_id=*/1, /*end_stream=*/false)},
+      event_engine().get());
+
+  auto read_trailing_metadata_cb = mock_endpoint.ExpectDelayedRead(
+      {
+          helper_.EventEngineSliceFromHttp2HeaderFrame(
+              std::string(kPathDemoServiceStep.begin(),
+                          kPathDemoServiceStep.end()),
+              /*stream_id=*/1,
+              /*end_headers=*/true, /*end_stream=*/true),
+      },
+      event_engine().get());
+  absl::AnyInvocable<void()> read_cb_transport_close;
+
   // Send
   // 1. Client Initial Metadata
   // 2. Data frame with END_STREAM flag set.
@@ -528,39 +553,17 @@ TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
           helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
       },
       event_engine().get());
-  mock_endpoint.ExpectWrite(
+  mock_endpoint.ExpectWriteWithCallback(
       {
           helper_.EventEngineSliceFromHttp2HeaderFrame(std::string(
               kPathDemoServiceStep.begin(), kPathDemoServiceStep.end())),
           helper_.EventEngineSliceFromEmptyHttp2DataFrame(/*stream_id=*/1,
                                                           /*end_stream=*/true),
       },
-      event_engine().get());
-
-  // Make our mock_enpoint pretend that the peer sent
-  // 1. A HEADER frame that contains our initial metadata
-  // 2. A DATA frame with END_STREAM flag false.
-  // 3. A HEADER frame that contains our trailing metadata.
-  mock_endpoint.ExpectRead(
-      {helper_.EventEngineSliceFromHttp2HeaderFrame(
-           std::string(kPathDemoServiceStep.begin(),
-                       kPathDemoServiceStep.end()),
-           /*stream_id=*/1,
-           /*end_headers=*/true, /*end_stream=*/false),
-       helper_.EventEngineSliceFromHttp2DataFrame(
-           /*payload=*/"Hello", /*stream_id=*/1, /*end_stream=*/false)},
-      event_engine().get());
-
-  auto read_cb = mock_endpoint.ExpectDelayedRead(
-      {
-          helper_.EventEngineSliceFromHttp2HeaderFrame(
-              std::string(kPathDemoServiceStep.begin(),
-                          kPathDemoServiceStep.end()),
-              /*stream_id=*/1,
-              /*end_headers=*/true, /*end_stream=*/true),
-      },
-      event_engine().get());
-  absl::AnyInvocable<void()> read_cb_transport_close;
+      event_engine().get(), [&](SliceBuffer& out, SliceBuffer& expect) {
+        EXPECT_EQ(out.JoinIntoString(), expect.JoinIntoString());
+        read_initial_metadata_cb();
+      });
 
   LOG(INFO) << "Creating Http2ClientTransport";
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
@@ -583,43 +586,44 @@ TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
 
-  call.initiator.SpawnInfallible("test-wait", [initator = call.initiator,
-                                               &on_done, &read_cb,
-                                               &read_cb_transport_close,
-                                               &mock_endpoint, this]() mutable {
-    return Seq(
-        initator.PullServerInitialMetadata(),
-        [](std::optional<ServerMetadataHandle> header) {
-          EXPECT_TRUE(header.has_value());
-          EXPECT_EQ((*header)->DebugString(),
-                    ":path: /demo.Service/Step, GrpcStatusFromWire: true");
-          LOG(INFO) << "PullServerInitialMetadata Resolved";
-        },
-        initator.PullMessage(),
-        [](ServerToClientNextMessage message) {
-          EXPECT_TRUE(message.ok());
-          EXPECT_TRUE(message.has_value());
-          EXPECT_EQ(message.value().payload()->JoinIntoString(), "Hello");
-          LOG(INFO) << "PullMessage Resolved";
-        },
-        [&read_cb, &read_cb_transport_close, &mock_endpoint, this]() mutable {
-          read_cb();
-          read_cb_transport_close = mock_endpoint.ExpectDelayedReadClose(
-              absl::UnavailableError("Connection closed"),
-              event_engine().get());
-        },
-        initator.PullServerTrailingMetadata(),
-        [&on_done,
-         &read_cb_transport_close](std::optional<ServerMetadataHandle> header) {
-          EXPECT_TRUE(header.has_value());
-          EXPECT_EQ((*header)->DebugString(),
-                    ":path: /demo.Service/Step, GrpcStatusFromWire: true");
-          on_done.Call();
-          read_cb_transport_close();
-          LOG(INFO) << "PullServerTrailingMetadata Resolved";
-          return Empty{};
-        });
-  });
+  call.initiator.SpawnInfallible(
+      "test-wait",
+      [initator = call.initiator, &on_done, &read_trailing_metadata_cb,
+       &read_cb_transport_close, &mock_endpoint, this]() mutable {
+        return Seq(
+            initator.PullServerInitialMetadata(),
+            [](std::optional<ServerMetadataHandle> header) {
+              EXPECT_TRUE(header.has_value());
+              EXPECT_EQ((*header)->DebugString(),
+                        ":path: /demo.Service/Step, GrpcStatusFromWire: true");
+              LOG(INFO) << "PullServerInitialMetadata Resolved";
+            },
+            initator.PullMessage(),
+            [](ServerToClientNextMessage message) {
+              EXPECT_TRUE(message.ok());
+              EXPECT_TRUE(message.has_value());
+              EXPECT_EQ(message.value().payload()->JoinIntoString(), "Hello");
+              LOG(INFO) << "PullMessage Resolved";
+            },
+            [&read_trailing_metadata_cb, &read_cb_transport_close,
+             &mock_endpoint, this]() mutable {
+              read_trailing_metadata_cb();
+              read_cb_transport_close = mock_endpoint.ExpectDelayedReadClose(
+                  absl::UnavailableError("Connection closed"),
+                  event_engine().get());
+            },
+            initator.PullServerTrailingMetadata(),
+            [&on_done, &read_cb_transport_close](
+                std::optional<ServerMetadataHandle> header) {
+              EXPECT_TRUE(header.has_value());
+              EXPECT_EQ((*header)->DebugString(),
+                        ":path: /demo.Service/Step, GrpcStatusFromWire: true");
+              on_done.Call();
+              read_cb_transport_close();
+              LOG(INFO) << "PullServerTrailingMetadata Resolved";
+              return Empty{};
+            });
+      });
 
   // Wait for Http2ClientTransport's internal activities to finish.
   event_engine()->TickUntilIdle();
