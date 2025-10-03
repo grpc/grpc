@@ -5,10 +5,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>gRPC AsyncIO API &#8212; gRPC Python 1.74.0 documentation</title>
+    <title>gRPC AsyncIO API &#8212; gRPC Python 1.75.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=f0f94f3a" />
-    <script src="_static/documentation_options.js?v=6f9416a0"></script>
+    <script src="_static/documentation_options.js?v=ba39d8e0"></script>
     <script src="_static/doctools.js?v=9a2dae69"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -31,7 +31,7 @@
 
 
 
-<p class="blurb">1.74.0</p>
+<p class="blurb">1.75.1</p>
 
 
 
@@ -1700,7 +1700,7 @@ timed out, or None if no deadline was specified for the RPC.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>method</strong> (<em>str</em>) – The method name of the RPC.</p></li>
+<li><p><strong>method</strong> (<em>bytes</em>) – The method name of the RPC.</p></li>
 <li><p><strong>timeout</strong> (<em>float</em><em> | </em><em>None</em>) – An optional duration of time in seconds to allow for the RPC.</p></li>
 <li><p><strong>metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a><em> | </em><em>None</em>) – Optional metadata to be transmitted to the service-side of
 the RPC.</p></li>
@@ -1720,17 +1720,17 @@ the interceptor task is finished.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>interceptors</strong> (<em>Sequence</em><em>[</em><a class="reference internal" href="#grpc.aio.UnaryUnaryClientInterceptor" title="grpc.aio._interceptor.UnaryUnaryClientInterceptor"><em>UnaryUnaryClientInterceptor</em></a><em>]</em>)</p></li>
+<li><p><strong>interceptors</strong> (<em>Sequence</em><em>[</em><a class="reference internal" href="#grpc.aio.UnaryUnaryClientInterceptor" title="grpc.aio.UnaryUnaryClientInterceptor"><em>UnaryUnaryClientInterceptor</em></a><em>]</em>)</p></li>
 <li><p><strong>request</strong> (<em>RequestType</em>)</p></li>
-<li><p><strong>timeout</strong> (<em>float</em><em> | </em><em>None</em>)</p></li>
-<li><p><strong>metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio._metadata.Metadata"><em>Metadata</em></a>)</p></li>
-<li><p><strong>credentials</strong> (<a class="reference internal" href="grpc.html#grpc.CallCredentials" title="grpc.CallCredentials"><em>CallCredentials</em></a><em> | </em><em>None</em>)</p></li>
-<li><p><strong>wait_for_ready</strong> (<em>bool</em><em> | </em><em>None</em>)</p></li>
-<li><p><strong>channel</strong> (<em>AioChannel</em>)</p></li>
+<li><p><strong>timeout</strong> (<em>Optional</em><em>[</em><em>float</em><em>]</em>)</p></li>
+<li><p><strong>metadata</strong> (<a class="reference internal" href="#grpc.aio.Metadata" title="grpc.aio.Metadata"><em>Metadata</em></a>)</p></li>
+<li><p><strong>credentials</strong> (<em>Optional</em><em>[</em><a class="reference internal" href="grpc.html#grpc.CallCredentials" title="grpc.CallCredentials"><em>grpc.CallCredentials</em></a><em>]</em>)</p></li>
+<li><p><strong>wait_for_ready</strong> (<em>Optional</em><em>[</em><em>bool</em><em>]</em>)</p></li>
+<li><p><strong>channel</strong> (<em>cygrpc.AioChannel</em>)</p></li>
 <li><p><strong>method</strong> (<em>bytes</em>)</p></li>
-<li><p><strong>request_serializer</strong> (<em>Callable</em><em>[</em><em>[</em><em>Any</em><em>]</em><em>, </em><em>bytes</em><em>]</em>)</p></li>
-<li><p><strong>response_deserializer</strong> (<em>Callable</em><em>[</em><em>[</em><em>bytes</em><em>]</em><em>, </em><em>Any</em><em>]</em>)</p></li>
-<li><p><strong>loop</strong> (<em>AbstractEventLoop</em>)</p></li>
+<li><p><strong>request_serializer</strong> (<em>Optional</em><em>[</em><em>SerializingFunction</em><em>]</em>)</p></li>
+<li><p><strong>response_deserializer</strong> (<em>Optional</em><em>[</em><em>DeserializingFunction</em><em>]</em>)</p></li>
+<li><p><strong>loop</strong> (<em>asyncio.AbstractEventLoop</em>)</p></li>
 </ul>
 </dd>
 </dl>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.74.0</span>
+   &#160;<span id="projectnumber">1.75.1</span>
    </div>
   </td>
  </tr>
@@ -77,12 +77,14 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a796ef530e5ff982a060413684830ce31"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_file_watcher_certificate_provider.html#a796ef530e5ff982a060413684830ce31">FileWatcherCertificateProvider</a> (const std::string &amp;private_key_path, const std::string &amp;identity_certificate_path, const std::string &amp;root_cert_path, unsigned int refresh_interval_sec)</td></tr>
-<tr class="separator:a796ef530e5ff982a060413684830ce31"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae5cbd268ad85a34c7df38e24db09be2e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_file_watcher_certificate_provider.html#ae5cbd268ad85a34c7df38e24db09be2e">FileWatcherCertificateProvider</a> (const std::string &amp;private_key_path, const std::string &amp;identity_certificate_path, const std::string &amp;root_cert_path, const std::string &amp;spiffe_bundle_map_path, unsigned int refresh_interval_sec)</td></tr>
+<tr class="separator:ae5cbd268ad85a34c7df38e24db09be2e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ac7afc32d97f7459e79d7de3176387865"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_file_watcher_certificate_provider.html#ac7afc32d97f7459e79d7de3176387865">FileWatcherCertificateProvider</a> (const std::string &amp;private_key_path, const std::string &amp;identity_certificate_path, unsigned int refresh_interval_sec)</td></tr>
 <tr class="separator:ac7afc32d97f7459e79d7de3176387865"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af3edde419c3b8aad5e4a6f286c4c0369"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_file_watcher_certificate_provider.html#af3edde419c3b8aad5e4a6f286c4c0369">FileWatcherCertificateProvider</a> (const std::string &amp;root_cert_path, unsigned int refresh_interval_sec)</td></tr>
 <tr class="separator:af3edde419c3b8aad5e4a6f286c4c0369"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a796ef530e5ff982a060413684830ce31"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_file_watcher_certificate_provider.html#a796ef530e5ff982a060413684830ce31">FileWatcherCertificateProvider</a> (const std::string &amp;private_key_path, const std::string &amp;identity_certificate_path, const std::string &amp;root_cert_path, unsigned int refresh_interval_sec)</td></tr>
+<tr class="separator:a796ef530e5ff982a060413684830ce31"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a74b0da79f08e7d99612784b284c4535f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_file_watcher_certificate_provider.html#a74b0da79f08e7d99612784b284c4535f">~FileWatcherCertificateProvider</a> () override</td></tr>
 <tr class="separator:a74b0da79f08e7d99612784b284c4535f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a52c6245b084bc0a811177b28fc023d2a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc_2credentials_8h.html#ab7eb1d297905525b6c1f0508de55c028">grpc_tls_certificate_provider</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_file_watcher_certificate_provider.html#a52c6245b084bc0a811177b28fc023d2a">c_provider</a> () override</td></tr>
@@ -94,8 +96,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:afe79d717cfed70937978dfd030da57fb inherit pub_methods_classgrpc_1_1experimental_1_1_certificate_provider_interface"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a796ef530e5ff982a060413684830ce31"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a796ef530e5ff982a060413684830ce31">&#9670;&nbsp;</a></span>FileWatcherCertificateProvider() <span class="overload">[1/3]</span></h2>
+<a id="ae5cbd268ad85a34c7df38e24db09be2e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae5cbd268ad85a34c7df38e24db09be2e">&#9670;&nbsp;</a></span>FileWatcherCertificateProvider() <span class="overload">[1/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -121,6 +123,12 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>spiffe_bundle_map_path</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype">unsigned int&#160;</td>
           <td class="paramname"><em>refresh_interval_sec</em>&#160;</td>
         </tr>
@@ -135,7 +143,7 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <a id="ac7afc32d97f7459e79d7de3176387865"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ac7afc32d97f7459e79d7de3176387865">&#9670;&nbsp;</a></span>FileWatcherCertificateProvider() <span class="overload">[2/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#ac7afc32d97f7459e79d7de3176387865">&#9670;&nbsp;</a></span>FileWatcherCertificateProvider() <span class="overload">[2/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -177,7 +185,7 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <a id="af3edde419c3b8aad5e4a6f286c4c0369"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af3edde419c3b8aad5e4a6f286c4c0369">&#9670;&nbsp;</a></span>FileWatcherCertificateProvider() <span class="overload">[3/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#af3edde419c3b8aad5e4a6f286c4c0369">&#9670;&nbsp;</a></span>FileWatcherCertificateProvider() <span class="overload">[3/4]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -188,6 +196,54 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="memname">grpc::experimental::FileWatcherCertificateProvider::FileWatcherCertificateProvider </td>
           <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>root_cert_path</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned int&#160;</td>
+          <td class="paramname"><em>refresh_interval_sec</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a796ef530e5ff982a060413684830ce31"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a796ef530e5ff982a060413684830ce31">&#9670;&nbsp;</a></span>FileWatcherCertificateProvider() <span class="overload">[4/4]</span></h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">grpc::experimental::FileWatcherCertificateProvider::FileWatcherCertificateProvider </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>private_key_path</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>identity_certificate_path</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype">const std::string &amp;&#160;</td>
           <td class="paramname"><em>root_cert_path</em>, </td>
         </tr>
@@ -288,7 +344,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jul 24 2025 18:13:19 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Oct 3 2025 00:28:30 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

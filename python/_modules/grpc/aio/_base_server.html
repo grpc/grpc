@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._base_server &#8212; gRPC Python 1.74.0 documentation</title>
+    <title>grpc.aio._base_server &#8212; gRPC Python 1.75.1 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5ecbeea2" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=f0f94f3a" />
-    <script src="../../../_static/documentation_options.js?v=6f9416a0"></script>
+    <script src="../../../_static/documentation_options.js?v=ba39d8e0"></script>
     <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -28,7 +28,7 @@
 
 
 
-<p class="blurb">1.74.0</p>
+<p class="blurb">1.75.1</p>
 
 
 
@@ -249,7 +249,9 @@
 
 <div class="viewcode-block" id="Server.add_registered_method_handlers">
 <a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.Server.add_registered_method_handlers">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">add_registered_method_handlers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">method_handlers</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_registered_method_handlers</span><span class="p">(</span>  <span class="c1"># noqa: B027</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">service_name</span><span class="p">,</span> <span class="n">method_handlers</span>
+    <span class="p">):</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Registers GenericRpcHandlers with this Server.</span>
 
 <span class="sd">        This method is only safe to call before the server is started.</span>
@@ -321,7 +323,7 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">code</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="p">,</span>
         <span class="n">details</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span><span class="p">,</span>
-        <span class="n">trailing_metadata</span><span class="p">:</span> <span class="n">MetadataType</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(),</span>
+        <span class="n">trailing_metadata</span><span class="p">:</span> <span class="n">MetadataType</span> <span class="o">=</span> <span class="p">(),</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NoReturn</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Raises an exception to terminate the RPC with a non-OK status.</span>
 

@@ -672,7 +672,7 @@ var searchData=
   ['grpc_5fsts_5fcredentials_5foptions_826',['grpc_sts_credentials_options',['../structgrpc__sts__credentials__options.html',1,'']]],
   ['grpc_5ftcp_5fdefault_5fread_5fslice_5fsize_827',['GRPC_TCP_DEFAULT_READ_SLICE_SIZE',['../group__grpc__arg__keys.html#ga1f91c3aec64a436d29051c8d415b1053',1,'channel_arg_names.h']]],
   ['grpc_5ftls_5fcertificate_5fprovider_828',['grpc_tls_certificate_provider',['../credentials_8h.html#ab7eb1d297905525b6c1f0508de55c028',1,'credentials.h']]],
-  ['grpc_5ftls_5fcertificate_5fprovider_5ffile_5fwatcher_5fcreate_829',['grpc_tls_certificate_provider_file_watcher_create',['../credentials_8h.html#ab1e7fd62504654f44e2aa1be61a0e338',1,'credentials.h']]],
+  ['grpc_5ftls_5fcertificate_5fprovider_5ffile_5fwatcher_5fcreate_829',['grpc_tls_certificate_provider_file_watcher_create',['../credentials_8h.html#a922d877cbcbc211065684e1705420e08',1,'credentials.h']]],
   ['grpc_5ftls_5fcertificate_5fprovider_5frelease_830',['grpc_tls_certificate_provider_release',['../credentials_8h.html#aa224b04c356727ee0ea74e255e942b07',1,'credentials.h']]],
   ['grpc_5ftls_5fcertificate_5fprovider_5fstatic_5fdata_5fcreate_831',['grpc_tls_certificate_provider_static_data_create',['../credentials_8h.html#af2bc85e32b46689f20d6b8fe78954146',1,'credentials.h']]],
   ['grpc_5ftls_5fcertificate_5fverifier_832',['grpc_tls_certificate_verifier',['../credentials_8h.html#afc10060e41d23b0e31f5c5a312d49138',1,'credentials.h']]],
