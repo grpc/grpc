@@ -32,7 +32,11 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/time.h"
 
+#if defined (GPR_OPENBSD)
+#define GRPC_MAX_SOCKADDR_SIZE 256
+#else
 #define GRPC_MAX_SOCKADDR_SIZE 128
+#endif
 
 namespace grpc_core {
 extern const char* kDefaultSecurePort;
