@@ -1220,6 +1220,125 @@ class ImplementChannelFilter : public ChannelFilter,
   }
 };
 
+// Allows writing v3 interceptor that works with v2 stacks (and consequently
+// also v1 stacks since we can run v2 filters in v1 stacks).
+template <typename Derived>
+class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
+ public:
+  V3InterceptorToV2Bridge() {
+    // Insert CallDestinationToNextV2Filter as the wrapped destination in
+    // Interceptor, so that we can route the server side of the
+    // interceptor back into the v2 filter chain.
+    wrapped_destination_ = MakeRefCounted<CallDestinationToNextV2Filter>();
+  }
+
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args, NextPromiseFactory next_promise_factory) final {
+    // Allocate call state on the arena.
+    auto* call = GetContext<Arena>()->ManagedNew<Call>();
+    // Intercept all operations from v2 API.
+    auto* client_to_server_messages_receiver = std::exchange(
+        call_args.client_to_server_messages,
+        &call->client_to_server_messages.receiver);
+    auto* server_initial_metadata_sender = std::exchange(
+        call_args.server_initial_metadata,
+        &call->server_initial_metadata.sender);
+    auto* server_to_client_messages_sender = std::exchange(
+        call_args.server_to_client_messages,
+        &call->server_to_client_messages.sender);
+    // Now we create a new v3 call pair.  The initiator will be the
+    // client side of the v3 interceptor, and the handler will be the
+    // server side.
+    // FIXME: need to propagate cancellation somehow?
+    // FIXME: how do I propagate server trailing metadata and status?
+    auto [initiator, unstarted_handler] = MakeCallPair(
+        std::move(call_args.client_initial_metadata), GetContext<Arena>());
+    // Inject the unstarted handler into the interceptor.
+    StartCall(std::move(unstarted_handler));
+    // FIXME: need to spawn these into the party somehow
+    // Push client messages into the initiator.
+    auto initiator_client_to_server_messages_promise =
+        [initiator, client_to_server_messages_receiver]() {
+          return Loop(
+            TrySeq(
+              client_to_server_messages_receiver->Next(),
+              [initiator](NextResult<Message> m) {
+                initiator.PushMessage(move(*m));
+              }
+            )
+          );
+        };
+    // Pull server-sent events from the initiator and into the v2 pipes.
+    auto initiator_server_initial_metadata_promise =
+        [initiator, server_initial_metadata_sender]() {
+          return TrySeq(
+              initiator->PullServerInitialMetadata(),
+              [server_initial_metadata_sender](
+                  std::optional<ServerMetadataHandle> metadata) {
+                server_initial_metadata_sender->Push(std::move(metadata));
+              });
+        };
+    auto initiator_server_to_client_messages_promise =
+        [initiator, server_to_client_messages_sender]() {
+          return TrySeq(
+              initiator->PullMessage(),
+              [server_to_client_messages_sender](NextResult<Message> m) {
+                server_to_client_messages_sender->Push(std::move(metadata));
+              });
+        };
+    // FIXME: this doesn't seem right -- need to first poll on the above
+    // promises somehow?
+    return next_promise_factory(std::move(call_args));
+  }
+
+ private:
+  struct Call {
+    Pipe client_to_server_messages;
+    Pipe server_initial_metadata;
+    Pipe server_to_client_messages;
+  };
+
+  // A custom UnstartedCallDestination that forwards the results from the
+  // v3 interceptor into the v2 pipes.  We insert this into
+  // the interceptor as the wrapped call destination, so that it will handle
+  // the result of the interception.
+  class CallDestinationToNextV2Filter final : public UnstartedCallDestination {
+   public:
+    void StartCall(UnstartedCallHandler unstarted_call_handler) override {
+      CallHandler handler = unstarted_call_handler.StartCall();
+      Call* call = nullptr;  // FIXME: how do I get the Call object here?
+      // FIXME: need to spawn these into the party somehow
+      auto handler_server_initial_metadata_promise = [call, handler]() {
+        return TrySeq(
+            call->server_initial_metadata.receiver->Next(),
+            [handler](std::optional<ServerMetadataHandle> metadata) {
+              handler.PushServerInitialMetadata(std::move(metadata));
+            });
+      };
+      auto handler_server_to_client_messages_promise = [call, handler]() {
+        return Loop(
+            TrySeq(
+              call->server_to_client_messages.receiver->Next(),
+              [handler](NextResult<Message> m) {
+                handler.PushMessage(move(*m));
+              }));
+      };
+      auto handler_client_to_server_messages_promise = [call, handler]() {
+        return Loop(
+            TrySeq(
+              handler.PullMessage();
+              [handler](NextResult<Message> m) {
+                call->client_to_server_messages.sender->Push(std::move(*m));
+              }));
+      };
+      // FIXME: how do I propagate server trailing metadata and status?
+    }
+
+   private:
+    NextPromiseFactory next_promise_factory_;
+  };
+};
+
 // Designator for whether a filter is client side or server side.
 // Please don't use this outside calls to MakePromiseBasedFilter - it's
 // intended to be deleted once the promise conversion is complete.
