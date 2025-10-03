@@ -17,55 +17,50 @@
  *
  */
 
-class ChannelCredentialsTest extends \PHPUnit\Framework\TestCase
+use Grpc\ChannelCredentials;
+use PHPUnit\Framework\TestCase;
+
+class ChannelCredentialsTest extends TestCase
 {
-    public function setUp(): void
-    {
-    }
-
-    public function tearDown(): void
-    {
-    }
-
     public function testCreateSslWith3Null()
     {
-        $channel_credentials = Grpc\ChannelCredentials::createSsl(null, null,
+        $channel_credentials = ChannelCredentials::createSsl(null, null,
                                                                   null);
         $this->assertNotNull($channel_credentials);
     }
 
     public function testCreateSslWith3NullString()
     {
-        $channel_credentials = Grpc\ChannelCredentials::createSsl('', '', '');
+        $channel_credentials = ChannelCredentials::createSsl('', '', '');
         $this->assertNotNull($channel_credentials);
     }
 
     public function testCreateInsecure()
     {
-        $channel_credentials = Grpc\ChannelCredentials::createInsecure();
+        $channel_credentials = ChannelCredentials::createInsecure();
         $this->assertNull($channel_credentials);
     }
 
     public function testDefaultRootsPem()
     {
-        Grpc\ChannelCredentials::setDefaultRootsPem("Pem-Content-Not-Verified");
-        $this->assertTrue(Grpc\ChannelCredentials::isDefaultRootsPemSet());
-        Grpc\ChannelCredentials::invalidateDefaultRootsPem();
-        $this->assertFalse(Grpc\ChannelCredentials::isDefaultRootsPemSet());
-        Grpc\ChannelCredentials::setDefaultRootsPem("Content-Not-Verified");
-        $this->assertTrue(Grpc\ChannelCredentials::isDefaultRootsPemSet());
+        ChannelCredentials::setDefaultRootsPem("Pem-Content-Not-Verified");
+        $this->assertTrue(ChannelCredentials::isDefaultRootsPemSet());
+        ChannelCredentials::invalidateDefaultRootsPem();
+        $this->assertFalse(ChannelCredentials::isDefaultRootsPemSet());
+        ChannelCredentials::setDefaultRootsPem("Content-Not-Verified");
+        $this->assertTrue(ChannelCredentials::isDefaultRootsPemSet());
     }
 
     public function testInvalidCreateSsl()
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $channel_credentials = Grpc\ChannelCredentials::createSsl([]);
+        $this->expectException(InvalidArgumentException::class);
+        ChannelCredentials::createSsl([]);
     }
 
     public function testInvalidCreateComposite()
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $channel_credentials = Grpc\ChannelCredentials::createComposite(
+        $this->expectException(InvalidArgumentException::class);
+        ChannelCredentials::createComposite(
             'something', 'something');
     }
 }
