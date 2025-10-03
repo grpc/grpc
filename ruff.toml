@@ -80,13 +80,9 @@ ignore = [
     "RET504",  # Unnecessary assignment to {name} before return statement
     "RSE102",  # Unnecessary parentheses on raised exception
     "RUF005",  # Consider {expression} instead of concatenation
-    "RUF013",  # PEP 484 prohibits implicit Optional
-    "RUF022",  # __all__ is not sorted
-    "RUF023",  # {}.__slots__ is not sorted
     "S101",    # Use of assert detected
     "S105",    # Possible hardcoded password assigned to: "{}"
     "S110",    # try-except-pass detected, consider logging the exception
-    "S301",    # pickle and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue
     "S311",    # Standard pseudo-random generators are not suitable for cryptographic purposes
     "S603",    # subprocess call: check for execution of untrusted input
     "SIM102",  # Use a single if statement instead of nested if statements
