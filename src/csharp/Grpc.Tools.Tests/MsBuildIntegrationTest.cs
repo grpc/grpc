@@ -181,6 +181,47 @@ namespace Grpc.Tools.Tests
             TryRunMsBuild("TestSetOutputDirs", expectedFiles.ToString());
         }
 
+        [Test]
+        public void TestNullable()
+        {
+            // Test code generation options for nullable reference types
+            // when project contains <Nullable>enable</Nullable>
+            SetUpForTest(nameof(TestNullable));
+
+            var expectedFiles = new ExpectedFilesBuilder();
+            expectedFiles.Add("file.proto", "File.cs", "FileGrpc.cs");
+
+            TryRunMsBuild("TestNullable", expectedFiles.ToString());
+        }
+
+        [Test]
+        public void TestNullableForceOff()
+        {
+            // Test code generation options for nullable reference types
+            // when project contains <Nullable>enable</Nullable> but
+            // it is force off by declaring other properties
+            SetUpForTest(nameof(TestNullableForceOff));
+
+            var expectedFiles = new ExpectedFilesBuilder();
+            expectedFiles.Add("file.proto", "File.cs", "FileGrpc.cs");
+
+            TryRunMsBuild("TestNullableForceOff", expectedFiles.ToString());
+        }
+
+        [Test]
+        public void TestNullableForceOn()
+        {
+            // Test code generation options for nullable reference types
+            // when project contains <Nullable>disable</Nullable> but
+            // it is forced on by declaring other properties
+            SetUpForTest(nameof(TestNullableForceOn));
+
+            var expectedFiles = new ExpectedFilesBuilder();
+            expectedFiles.Add("file.proto", "File.cs", "FileGrpc.cs");
+
+            TryRunMsBuild("TestNullableForceOn", expectedFiles.ToString());
+        }
+
         /// <summary>
         /// Set up common paths for all the tests
         /// </summary>
