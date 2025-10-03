@@ -19,14 +19,29 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_STREAM_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_STREAM_H
 
+#include <cstdint>
+
 #include "src/core/call/call_spine.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
-#include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
 #include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
 namespace http2 {
+
+#define GRPC_HTTP2_STREAM_LOG VLOG(2)
+
+// TODO(akshitpatel) : [PH2][P4] : Choose appropriate size later.
+constexpr uint32_t kStreamQueueSize = /*1 MB*/ 1024u * 1024u;
+
+enum class HttpStreamState : uint8_t {
+  // https://www.rfc-editor.org/rfc/rfc9113.html#name-stream-states
+  kIdle,
+  kOpen,
+  kHalfClosedLocal,
+  kHalfClosedRemote,
+  kClosed,
+};
 
 // Managing the streams
 struct Stream : public RefCounted<Stream> {
@@ -51,35 +66,35 @@ struct Stream : public RefCounted<Stream> {
   // All enqueue methods are called from the call party.
 
   auto EnqueueInitialMetadata(ClientMetadataHandle&& metadata) {
-    GRPC_HTTP2_CLIENT_DLOG
+    GRPC_HTTP2_STREAM_LOG
         << "Http2ClientTransport::Stream::EnqueueInitialMetadata stream_id="
         << stream_id;
     return data_queue->EnqueueInitialMetadata(std::move(metadata));
   }
 
   auto EnqueueTrailingMetadata(ClientMetadataHandle&& metadata) {
-    GRPC_HTTP2_CLIENT_DLOG
+    GRPC_HTTP2_STREAM_LOG
         << "Http2ClientTransport::Stream::EnqueueTrailingMetadata stream_id="
         << stream_id;
     return data_queue->EnqueueTrailingMetadata(std::move(metadata));
   }
 
   auto EnqueueMessage(MessageHandle&& message) {
-    GRPC_HTTP2_CLIENT_DLOG
+    GRPC_HTTP2_STREAM_LOG
         << "Http2ClientTransport::Stream::EnqueueMessage stream_id="
         << stream_id << " with payload size = " << message->payload()->Length();
     return data_queue->EnqueueMessage(std::move(message));
   }
 
   auto EnqueueHalfClosed() {
-    GRPC_HTTP2_CLIENT_DLOG
+    GRPC_HTTP2_STREAM_LOG
         << "Http2ClientTransport::Stream::EnqueueHalfClosed stream_id="
         << stream_id;
     return data_queue->EnqueueHalfClosed();
   }
 
   auto EnqueueResetStream(const uint32_t error_code) {
-    GRPC_HTTP2_CLIENT_DLOG
+    GRPC_HTTP2_STREAM_LOG
         << "Http2ClientTransport::Stream::EnqueueResetStream stream_id="
         << stream_id << " with error_code = " << error_code;
     return data_queue->EnqueueResetStream(error_code);
@@ -119,13 +134,13 @@ struct Stream : public RefCounted<Stream> {
         GRPC_DCHECK(false) << "MarkHalfClosedLocal called for an idle stream";
         break;
       case HttpStreamState::kOpen:
-        GRPC_HTTP2_CLIENT_DLOG
+        GRPC_HTTP2_STREAM_LOG
             << "Http2ClientTransport::Stream::MarkHalfClosedLocal stream_id="
             << stream_id << " transitioning to kHalfClosedLocal";
         stream_state = HttpStreamState::kHalfClosedLocal;
         break;
       case HttpStreamState::kHalfClosedRemote:
-        GRPC_HTTP2_CLIENT_DLOG
+        GRPC_HTTP2_STREAM_LOG
             << "Http2ClientTransport::Stream::MarkHalfClosedLocal stream_id="
             << stream_id << " transitioning to kClosed";
         stream_state = HttpStreamState::kClosed;
@@ -133,7 +148,7 @@ struct Stream : public RefCounted<Stream> {
       case HttpStreamState::kHalfClosedLocal:
         break;
       case HttpStreamState::kClosed:
-        GRPC_HTTP2_CLIENT_DLOG
+        GRPC_HTTP2_STREAM_LOG
             << "Http2ClientTransport::Stream::MarkHalfClosedLocal stream_id="
             << stream_id << " already closed";
         break;
@@ -146,13 +161,13 @@ struct Stream : public RefCounted<Stream> {
         GRPC_DCHECK(false) << "MarkHalfClosedRemote called for an idle stream";
         break;
       case HttpStreamState::kOpen:
-        GRPC_HTTP2_CLIENT_DLOG
+        GRPC_HTTP2_STREAM_LOG
             << "Http2ClientTransport::Stream::MarkHalfClosedRemote stream_id="
             << stream_id << " transitioning to kHalfClosedRemote";
         stream_state = HttpStreamState::kHalfClosedRemote;
         break;
       case HttpStreamState::kHalfClosedLocal:
-        GRPC_HTTP2_CLIENT_DLOG
+        GRPC_HTTP2_STREAM_LOG
             << "Http2ClientTransport::Stream::MarkHalfClosedRemote stream_id="
             << stream_id << " transitioning to kClosed";
         stream_state = HttpStreamState::kClosed;
@@ -160,7 +175,7 @@ struct Stream : public RefCounted<Stream> {
       case HttpStreamState::kHalfClosedRemote:
         break;
       case HttpStreamState::kClosed:
-        GRPC_HTTP2_CLIENT_DLOG
+        GRPC_HTTP2_STREAM_LOG
             << "Http2ClientTransport::Stream::MarkHalfClosedRemote stream_id="
             << stream_id << " already closed";
         break;

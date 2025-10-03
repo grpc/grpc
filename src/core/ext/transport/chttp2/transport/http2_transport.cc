@@ -26,6 +26,7 @@
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/stream.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/transport/promise_endpoint.h"
