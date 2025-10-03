@@ -136,6 +136,9 @@ class Interceptor : public UnstartedCallDestination {
  private:
   friend class InterceptionChainBuilder;
 
+  template <typename Derived>
+  friend class V3InterceptorToV2Bridge;
+
   RefCountedPtr<UnstartedCallDestination> wrapped_destination_;
   RefCountedPtr<CallFilters::Stack> filter_stack_;
 };
