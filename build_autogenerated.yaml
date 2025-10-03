@@ -16,12 +16,10 @@ libs:
   build: all
   language: c
   public_headers:
-  - include/grpc/impl/call.h
   - include/grpc/impl/codegen/atm.h
   - include/grpc/impl/codegen/atm_gcc_atomic.h
   - include/grpc/impl/codegen/atm_gcc_sync.h
   - include/grpc/impl/codegen/atm_windows.h
-  - include/grpc/impl/codegen/fork.h
   - include/grpc/impl/codegen/gpr_types.h
   - include/grpc/impl/codegen/log.h
   - include/grpc/impl/codegen/port_platform.h
@@ -126,6 +124,7 @@ libs:
   - absl/flags:flag
   - absl/flags:marshalling
   - absl/functional:any_invocable
+  - absl/functional:bind_front
   - absl/log:check
   - absl/log:globals
   - absl/log:log
@@ -167,11 +166,13 @@ libs:
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
+  - include/grpc/impl/call.h
   - include/grpc/impl/channel_arg_names.h
   - include/grpc/impl/codegen/byte_buffer.h
   - include/grpc/impl/codegen/byte_buffer_reader.h
   - include/grpc/impl/codegen/compression_types.h
   - include/grpc/impl/codegen/connectivity_state.h
+  - include/grpc/impl/codegen/fork.h
   - include/grpc/impl/codegen/grpc_types.h
   - include/grpc/impl/codegen/propagation_bits.h
   - include/grpc/impl/codegen/slice.h
@@ -1073,7 +1074,6 @@ libs:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
-  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -1992,7 +1992,6 @@ libs:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
-  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/security/authorization/audit_logging.cc
@@ -2225,7 +2224,6 @@ libs:
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
   - absl/container:node_hash_map
-  - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -2363,11 +2361,13 @@ libs:
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
+  - include/grpc/impl/call.h
   - include/grpc/impl/channel_arg_names.h
   - include/grpc/impl/codegen/byte_buffer.h
   - include/grpc/impl/codegen/byte_buffer_reader.h
   - include/grpc/impl/codegen/compression_types.h
   - include/grpc/impl/codegen/connectivity_state.h
+  - include/grpc/impl/codegen/fork.h
   - include/grpc/impl/codegen/grpc_types.h
   - include/grpc/impl/codegen/propagation_bits.h
   - include/grpc/impl/codegen/slice.h
@@ -2778,7 +2778,6 @@ libs:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
-  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -3261,7 +3260,6 @@ libs:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
-  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
@@ -3406,7 +3404,6 @@ libs:
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
   - absl/container:node_hash_map
-  - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -4524,8 +4521,12 @@ libs:
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
   deps:
+  - absl/base:dynamic_annotations
+  - absl/base:prefetch
+  - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:internal
   - grpc_unsecure
   - protobuf
   baselib: true
@@ -4556,11 +4557,13 @@ libs:
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
+  - include/grpc/impl/call.h
   - include/grpc/impl/channel_arg_names.h
   - include/grpc/impl/codegen/byte_buffer.h
   - include/grpc/impl/codegen/byte_buffer_reader.h
   - include/grpc/impl/codegen/compression_types.h
   - include/grpc/impl/codegen/connectivity_state.h
+  - include/grpc/impl/codegen/fork.h
   - include/grpc/impl/codegen/grpc_types.h
   - include/grpc/impl/codegen/propagation_bits.h
   - include/grpc/impl/codegen/slice.h
@@ -4842,7 +4845,6 @@ libs:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
-  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -5182,7 +5184,6 @@ libs:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
-  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/security/authorization/audit_logging.cc
@@ -6139,8 +6140,17 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h
   - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h
   src:
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   - test/core/tsi/alts/handshaker/alts_handshaker_client_test.cc
   - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
   deps:
@@ -6847,7 +6857,6 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
-  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -6961,7 +6970,6 @@ targets:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
-  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -7484,7 +7492,6 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
-  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -7787,7 +7794,6 @@ targets:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
-  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -7972,7 +7978,6 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
-  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -8068,7 +8073,6 @@ targets:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
-  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -8605,10 +8609,25 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/cpp/util/channel_trace_proto_helper.h
   src:
   - src/proto/grpc/channelz/channelz.proto
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
   - test/core/channelz/channelz_test.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/cpp/util/channel_trace_proto_helper.cc
@@ -8673,6 +8692,7 @@ targets:
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
   - src/core/util/seq_bit_set.h
+  - src/cpp/latent_see/latent_see_client.h
   - test/cpp/sleuth/client.h
   - test/cpp/sleuth/tool.h
   - test/cpp/sleuth/tool_credentials.h
@@ -8686,6 +8706,7 @@ targets:
   - test/cpp/util/service_describer.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - src/proto/grpc/channelz/v2/latent_see.proto
   - src/proto/grpc/channelz/v2/promise.proto
   - src/proto/grpc/channelz/v2/property_list.proto
   - src/proto/grpc/reflection/v1alpha/reflection.proto
@@ -8722,6 +8743,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/util/seq_bit_set.cc
+  - src/cpp/latent_see/latent_see_client.cc
   - test/cpp/sleuth/channelz_tool.cc
   - test/cpp/sleuth/channelz_tool_test.cc
   - test/cpp/sleuth/client.cc
@@ -8868,7 +8890,6 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
-  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -8965,7 +8986,6 @@ targets:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
-  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -9229,8 +9249,11 @@ targets:
   build: test
   language: c++
   headers:
+  - src/cpp/latent_see/latent_see_client.h
   - test/cpp/sleuth/client.h
   src:
+  - src/proto/grpc/channelz/v2/latent_see.proto
+  - src/cpp/latent_see/latent_see_client.cc
   - test/cpp/sleuth/client.cc
   - test/cpp/sleuth/client_test.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -12640,7 +12663,6 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
-  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -12943,7 +12965,6 @@ targets:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
-  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -13373,7 +13394,6 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
-  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -13473,7 +13493,6 @@ targets:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
-  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -13605,7 +13624,6 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
-  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -13702,7 +13720,6 @@ targets:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
-  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -15040,6 +15057,29 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+- name: http2_transport_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/promise/poll_matcher.h
+  - test/core/test_util/postmortem.h
+  - test/core/transport/chttp2/http2_frame_test_helper.h
+  - test/core/transport/util/mock_promise_endpoint.h
+  - test/core/transport/util/transport_test.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/transport/chttp2/http2_transport_test.cc
+  - test/core/transport/util/mock_promise_endpoint.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  uses_polling: false
 - name: http_proxy_mapper_test
   gtest: true
   build: test
@@ -15685,7 +15725,6 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
-  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -15782,7 +15821,6 @@ targets:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
-  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -16419,6 +16457,114 @@ targets:
   - absl/utility:utility
   - gpr
   uses_polling: false
+- name: latent_see_tool_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/config.h
+  - src/core/ext/transport/chaotic_good/control_endpoint.h
+  - src/core/ext/transport/chaotic_good/data_endpoints.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/frame_transport.h
+  - src/core/ext/transport/chaotic_good/message_chunker.h
+  - src/core/ext/transport/chaotic_good/message_reassembly.h
+  - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/scheduler.h
+  - src/core/ext/transport/chaotic_good/send_rate.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
+  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
+  - src/core/ext/transport/chaotic_good_legacy/config.h
+  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.h
+  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.h
+  - src/core/ext/transport/chaotic_good_legacy/frame.h
+  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
+  - src/core/ext/transport/chaotic_good_legacy/legacy_ztrace_collector.h
+  - src/core/ext/transport/chaotic_good_legacy/message_chunker.h
+  - src/core/ext/transport/chaotic_good_legacy/message_reassembly.h
+  - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
+  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/util/seq_bit_set.h
+  - src/cpp/latent_see/latent_see_client.h
+  - src/cpp/latent_see/latent_see_service.h
+  - test/cpp/sleuth/client.h
+  - test/cpp/sleuth/tool.h
+  - test/cpp/sleuth/tool_credentials.h
+  - test/cpp/sleuth/tool_options.h
+  - test/cpp/sleuth/tool_test.h
+  - test/cpp/util/cli_call.h
+  - test/cpp/util/cli_credentials.h
+  - test/cpp/util/config_grpc_cli.h
+  - test/cpp/util/proto_file_parser.h
+  - test/cpp/util/proto_reflection_descriptor_database.h
+  - test/cpp/util/service_describer.h
+  src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/latent_see.proto
+  - src/proto/grpc/channelz/v2/service.proto
+  - src/proto/grpc/reflection/v1alpha/reflection.proto
+  - src/core/ext/transport/chaotic_good/chaotic_good.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/control_endpoint.cc
+  - src/core/ext/transport/chaotic_good/data_endpoints.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/scheduler.cc
+  - src/core/ext/transport/chaotic_good/send_rate.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
+  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
+  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
+  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.cc
+  - src/core/ext/transport/chaotic_good_legacy/frame.cc
+  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
+  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/util/seq_bit_set.cc
+  - src/cpp/latent_see/latent_see_client.cc
+  - src/cpp/latent_see/latent_see_service.cc
+  - test/cpp/sleuth/client.cc
+  - test/cpp/sleuth/latent_see_tool.cc
+  - test/cpp/sleuth/latent_see_tool_test.cc
+  - test/cpp/sleuth/tool_credentials.cc
+  - test/cpp/sleuth/tool_options.cc
+  - test/cpp/sleuth/tool_test.cc
+  - test/cpp/util/cli_call.cc
+  - test/cpp/util/cli_credentials.cc
+  - test/cpp/util/proto_file_parser.cc
+  - test/cpp/util/proto_reflection_descriptor_database.cc
+  - test/cpp/util/service_describer.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
+  deps:
+  - gtest
+  - grpc++
+  - protoc
+  - grpc_test_util
 - name: layout_test
   gtest: true
   build: test
@@ -17174,7 +17320,6 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
-  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -17271,7 +17416,6 @@ targets:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
-  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -19403,7 +19547,6 @@ targets:
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
-  - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -20855,7 +20998,6 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
-  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -20974,7 +21116,6 @@ targets:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
-  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -21843,9 +21984,6 @@ targets:
   - gtest
   - absl/container:flat_hash_map
   - absl/hash:hash
-  - absl/status:statusor
-  - absl/types:span
-  - absl/utility:utility
   - gpr
   uses_polling: false
 - name: sockaddr_resolver_test
@@ -22426,34 +22564,6 @@ targets:
   deps:
   - gtest
   - grpc_test_util
-- name: stream_quota_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/lib/resource_quota/periodic_update.h
-  - src/core/lib/resource_quota/stream_quota.h
-  - src/core/util/atomic_utils.h
-  - src/core/util/down_cast.h
-  - src/core/util/per_cpu.h
-  - src/core/util/ref_counted.h
-  - src/core/util/ref_counted_ptr.h
-  - src/core/util/time.h
-  src:
-  - src/core/lib/resource_quota/periodic_update.cc
-  - src/core/lib/resource_quota/stream_quota.cc
-  - src/core/util/per_cpu.cc
-  - src/core/util/time.cc
-  - test/core/resource_quota/stream_quota_test.cc
-  deps:
-  - gtest
-  - absl/functional:function_ref
-  - absl/hash:hash
-  - absl/status:statusor
-  - absl/types:span
-  - absl/utility:utility
-  - gpr
-  uses_polling: false
 - name: streaming_throughput_test
   gtest: true
   build: test
@@ -24179,7 +24289,6 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
-  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -24484,7 +24593,6 @@ targets:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
-  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -26117,8 +26225,12 @@ targets:
   - test/core/xds/xds_transport_fake.cc
   deps:
   - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:prefetch
+  - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:internal
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -26403,8 +26515,12 @@ targets:
   - test/core/xds/xds_cluster_resource_type_test.cc
   deps:
   - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:prefetch
+  - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:internal
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -27467,8 +27583,12 @@ targets:
   - test/core/xds/xds_endpoint_resource_type_test.cc
   deps:
   - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:prefetch
+  - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:internal
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -28450,6 +28570,80 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/upb-gen/google/api/annotations.upb.h
+  - src/core/ext/upb-gen/google/api/annotations.upb_minitable.h
+  - src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb.h
+  - src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.h
+  - src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb.h
+  - src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.h
+  - src/core/ext/upb-gen/google/api/http.upb.h
+  - src/core/ext/upb-gen/google/api/http.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/struct.upb.h
+  - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/wrappers.upb.h
+  - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.h
+  - src/core/ext/upb-gen/google/rpc/status.upb.h
+  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/validate/validate.upb.h
+  - src/core/ext/upb-gen/validate/validate.upb_minitable.h
+  - src/core/ext/upb-gen/xds/annotations/v3/migrate.upb.h
+  - src/core/ext/upb-gen/xds/annotations/v3/migrate.upb_minitable.h
+  - src/core/ext/upb-gen/xds/annotations/v3/security.upb.h
+  - src/core/ext/upb-gen/xds/annotations/v3/security.upb_minitable.h
+  - src/core/ext/upb-gen/xds/annotations/v3/sensitive.upb.h
+  - src/core/ext/upb-gen/xds/annotations/v3/sensitive.upb_minitable.h
+  - src/core/ext/upb-gen/xds/annotations/v3/status.upb.h
+  - src/core/ext/upb-gen/xds/annotations/v3/status.upb_minitable.h
+  - src/core/ext/upb-gen/xds/annotations/v3/versioning.upb.h
+  - src/core/ext/upb-gen/xds/annotations/v3/versioning.upb_minitable.h
+  - src/core/ext/upb-gen/xds/core/v3/authority.upb.h
+  - src/core/ext/upb-gen/xds/core/v3/authority.upb_minitable.h
+  - src/core/ext/upb-gen/xds/core/v3/cidr.upb.h
+  - src/core/ext/upb-gen/xds/core/v3/cidr.upb_minitable.h
+  - src/core/ext/upb-gen/xds/core/v3/collection_entry.upb.h
+  - src/core/ext/upb-gen/xds/core/v3/collection_entry.upb_minitable.h
+  - src/core/ext/upb-gen/xds/core/v3/context_params.upb.h
+  - src/core/ext/upb-gen/xds/core/v3/context_params.upb_minitable.h
+  - src/core/ext/upb-gen/xds/core/v3/extension.upb.h
+  - src/core/ext/upb-gen/xds/core/v3/extension.upb_minitable.h
+  - src/core/ext/upb-gen/xds/core/v3/resource.upb.h
+  - src/core/ext/upb-gen/xds/core/v3/resource.upb_minitable.h
+  - src/core/ext/upb-gen/xds/core/v3/resource_locator.upb.h
+  - src/core/ext/upb-gen/xds/core/v3/resource_locator.upb_minitable.h
+  - src/core/ext/upb-gen/xds/core/v3/resource_name.upb.h
+  - src/core/ext/upb-gen/xds/core/v3/resource_name.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/cel.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/cel.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/domain.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/domain.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/http_inputs.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/http_inputs.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/ip.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/ip.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/matcher.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/matcher.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/range.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/range.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/regex.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/regex.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/string.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/string.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/v3/cel.upb.h
+  - src/core/ext/upb-gen/xds/type/v3/cel.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/v3/range.upb.h
+  - src/core/ext/upb-gen/xds/type/v3/range.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/v3/typed_struct.upb.h
+  - src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.h
   - third_party/protoc-gen-validate/validate/validate.h
   src:
   - third_party/envoy-api/envoy/annotations/deprecation.proto
@@ -28535,6 +28729,43 @@ targets:
   - third_party/xds/xds/type/v3/cel.proto
   - third_party/xds/xds/type/v3/range.proto
   - third_party/xds/xds/type/v3/typed_struct.proto
+  - src/core/ext/upb-gen/google/api/annotations.upb_minitable.c
+  - src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.c
+  - src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.c
+  - src/core/ext/upb-gen/google/api/http.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
+  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/validate/validate.upb_minitable.c
+  - src/core/ext/upb-gen/xds/annotations/v3/migrate.upb_minitable.c
+  - src/core/ext/upb-gen/xds/annotations/v3/security.upb_minitable.c
+  - src/core/ext/upb-gen/xds/annotations/v3/sensitive.upb_minitable.c
+  - src/core/ext/upb-gen/xds/annotations/v3/status.upb_minitable.c
+  - src/core/ext/upb-gen/xds/annotations/v3/versioning.upb_minitable.c
+  - src/core/ext/upb-gen/xds/core/v3/authority.upb_minitable.c
+  - src/core/ext/upb-gen/xds/core/v3/cidr.upb_minitable.c
+  - src/core/ext/upb-gen/xds/core/v3/collection_entry.upb_minitable.c
+  - src/core/ext/upb-gen/xds/core/v3/context_params.upb_minitable.c
+  - src/core/ext/upb-gen/xds/core/v3/extension.upb_minitable.c
+  - src/core/ext/upb-gen/xds/core/v3/resource.upb_minitable.c
+  - src/core/ext/upb-gen/xds/core/v3/resource_locator.upb_minitable.c
+  - src/core/ext/upb-gen/xds/core/v3/resource_name.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/cel.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/domain.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/http_inputs.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/ip.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/matcher.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/range.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/regex.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/string.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/v3/cel.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/v3/range.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.c
   - test/core/xds/xds_matcher_parse_test.cc
   deps:
   - gtest

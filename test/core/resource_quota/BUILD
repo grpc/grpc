@@ -46,7 +46,10 @@ grpc_cc_library(
     testonly = True,
     hdrs = ["call_checker.h"],
     external_deps = ["absl/log:check"],
-    deps = ["//:gpr"],
+    deps = [
+        "//:gpr",
+        "//src/core:grpc_check",
+    ],
 )
 
 grpc_cc_test(
@@ -97,15 +100,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = ["//src/core:thread_quota"],
-)
-
-grpc_cc_test(
-    name = "stream_quota_test",
-    srcs = ["stream_quota_test.cc"],
-    external_deps = ["gtest"],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = ["//src/core:stream_quota"],
 )
 
 grpc_cc_test(

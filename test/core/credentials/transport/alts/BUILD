@@ -35,6 +35,7 @@ grpc_fuzz_test(
         "//:grpc_alts_credentials",
         "//:grpc_core_credentials_header",
         "//src/core:env",
+        "//src/core:grpc_check",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
