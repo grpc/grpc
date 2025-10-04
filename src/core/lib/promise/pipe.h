@@ -25,8 +25,7 @@
 #include <utility>
 #include <variant>
 
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/if.h"
@@ -38,6 +37,8 @@
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
@@ -360,6 +361,15 @@ class Center : public InterceptorList<T> {
     }
   }
 
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("refs", refs_)
+        .Set("state", ValueStateName(value_state_))
+        .Set("on_empty", on_empty_.DebugString())
+        .Set("on_full", on_full_.DebugString())
+        .Set("on_closed", on_closed_.DebugString());
+  }
+
  private:
   // State of value_.
   enum class ValueState : uint8_t {
@@ -458,6 +468,10 @@ class PipeSender {
       center_->MarkCancelled();
       center_.reset();
     }
+  }
+
+  channelz::PropertyList ChannelzProperties() {
+    return center_->ChannelzProperties();
   }
 
   void Swap(PipeSender<T>* other) { std::swap(center_, other->center_); }

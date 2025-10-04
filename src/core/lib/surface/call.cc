@@ -47,18 +47,12 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/call_finalization.h"
 #include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/status_util.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
@@ -105,6 +99,13 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/time_precise.h"
 #include "src/core/util/useful.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -116,14 +117,39 @@ using GrpcClosure = Closure;
 // Call
 
 Call::Call(bool is_client, Timestamp send_deadline, RefCountedPtr<Arena> arena)
-    : arena_(std::move(arena)),
+    : channelz::DataSource(ConfigVars::Get().ChannelzCallTracer()
+                               ? MakeRefCounted<channelz::CallNode>()
+                               : nullptr),
+      arena_(std::move(arena)),
       send_deadline_(send_deadline),
       is_client_(is_client) {
   GRPC_DCHECK_NE(arena_.get(), nullptr);
   GRPC_DCHECK_NE(
       arena_->GetContext<grpc_event_engine::experimental::EventEngine>(),
       nullptr);
+  arena_->SetContext<channelz::CallNode>(
+      DownCast<channelz::CallNode*>(channelz_node().get()));
   arena_->SetContext<Call>(this);
+}
+
+void Call::AddData(channelz::DataSink sink) {
+  channelz::PropertyList properties;
+  properties.Set("is_client", is_client_)
+      .Set("send_deadline", send_deadline_)
+      .Set("start_time", Timestamp::FromCycleCounterRoundDown(start_time_))
+      .Set("cancellation_is_inherited", cancellation_is_inherited_)
+      .Set("traced", traced_)
+      .Set("encodings_accepted_by_peer",
+           encodings_accepted_by_peer_.ToString());
+  {
+    MutexLock lock(&peer_mu_);
+    properties.Set("peer_string", peer_string_.as_string_view());
+  }
+  {
+    MutexLock lock(&deadline_mu_);
+    properties.Set("deadline", deadline_);
+  }
+  sink.AddData("call", properties);
 }
 
 Call::ParentCall* Call::GetOrCreateParentCall() {

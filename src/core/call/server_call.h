@@ -72,6 +72,7 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
         cq_(cq),
         server_(server) {
     global_stats().IncrementServerCallsCreated();
+    SourceConstructed();
   }
 
   void CancelWithError(grpc_error_handle error) override {
@@ -97,6 +98,7 @@ class ServerCall final : public Call, public DualRefCounted<ServerCall> {
   void InternalUnref(const char*) override { WeakUnref(); }
 
   void Orphaned() override {
+    SourceDestructing();
     if (!saw_was_cancelled_.load(std::memory_order_relaxed)) {
       CancelWithError(absl::CancelledError());
     }
