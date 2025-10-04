@@ -16,6 +16,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <cstdlib>
 #include <memory>
 #include <string>
 #include <vector>
@@ -23,6 +24,8 @@
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/util/backoff.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_writer.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/sync.h"
 
@@ -38,10 +41,12 @@ std::string JsonOutput::MicrosString(int64_t nanos) {
   return absl::StrFormat("%d.%03d", micros, remainder);
 }
 
-void JsonOutput::Mark(absl::string_view name, int64_t tid, int64_t timestamp) {
+void JsonOutput::Mark(absl::string_view name, int64_t tid, int64_t timestamp,
+                      absl::string_view json_args) {
   out_ << absl::StrCat(sep_, "{\"name\":\"", name,
                        "\",\"ph\":\"i\",\"ts\":", MicrosString(timestamp),
-                       ",\"pid\":0,\"tid\":", tid, "}");
+                       ",\"pid\":0,\"tid\":", tid, ",\"args\":", json_args,
+                       "}");
   sep_ = ",\n";
 }
 
@@ -130,7 +135,7 @@ std::unique_ptr<Sink::EventDump> Sink::Stop() {
 void Sink::Record(std::unique_ptr<Bin> bin) {
   MutexLock lock(&mu_);
   if (events_ == nullptr) return;
-  CHECK_LE(bin->num_events, Bin::kEventsPerBin);
+  CHECK_LE(bin->used_space, Bin::kMaxBinSize);
   events_->emplace_back(std::move(bin));
   if (events_->size() > max_bins_) events_->pop_front();
 }
@@ -177,7 +182,8 @@ void Collect(Notification* n, absl::Duration timeout, size_t memory_limit,
         earliest_timestamp = std::min(
             {earliest_timestamp, event.timestamp_begin, event.timestamp_end});
       } else {
-        earliest_timestamp = std::min(earliest_timestamp, -event.timestamp_end);
+        earliest_timestamp =
+            std::min(earliest_timestamp, abs(event.timestamp_end));
       }
     }
   }
@@ -193,22 +199,31 @@ void Collect(Notification* n, absl::Duration timeout, size_t memory_limit,
     } else {
       displayed_thread_id = it->second;
     }
-    for (const auto& event : *bin) {
-      if (event.timestamp_begin == event.timestamp_end) {
-        output->Mark(event.metadata->name, displayed_thread_id,
-                     event.timestamp_begin - earliest_timestamp);
-      } else if (event.timestamp_begin < 0 && event.timestamp_end > 0) {
-        output->FlowBegin(event.metadata->name, displayed_thread_id,
-                          event.timestamp_end - earliest_timestamp,
-                          -event.timestamp_begin);
-      } else if (event.timestamp_begin < 0) {
-        output->FlowEnd(event.metadata->name, displayed_thread_id,
-                        -event.timestamp_end - earliest_timestamp,
-                        -event.timestamp_begin);
+    for (auto it = bin->begin(); it != bin->end(); ++it) {
+      if (it->timestamp_begin == it->timestamp_end) {
+        if (it->metadata->extra_event_size > 0) {
+          auto properties_json = Json::FromObject(
+              it->metadata->to_property_list(it.ptr() + sizeof(Bin::Event))
+                  .TakeJsonObject());
+          output->Mark(it->metadata->name, displayed_thread_id,
+                       it->timestamp_begin - earliest_timestamp,
+                       JsonDump(properties_json));
+        } else {
+          output->Mark(it->metadata->name, displayed_thread_id,
+                       it->timestamp_begin - earliest_timestamp, "{}");
+        }
+      } else if (it->timestamp_begin < 0 && it->timestamp_end > 0) {
+        output->FlowBegin(it->metadata->name, displayed_thread_id,
+                          it->timestamp_end - earliest_timestamp,
+                          -it->timestamp_begin);
+      } else if (it->timestamp_begin < 0) {
+        output->FlowEnd(it->metadata->name, displayed_thread_id,
+                        -it->timestamp_end - earliest_timestamp,
+                        -it->timestamp_begin);
       } else {
-        output->Span(event.metadata->name, displayed_thread_id,
-                     event.timestamp_begin - earliest_timestamp,
-                     event.timestamp_end - event.timestamp_begin);
+        output->Span(it->metadata->name, displayed_thread_id,
+                     it->timestamp_begin - earliest_timestamp,
+                     it->timestamp_end - it->timestamp_begin);
       }
     }
   }

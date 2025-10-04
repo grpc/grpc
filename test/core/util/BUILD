@@ -105,10 +105,12 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//src/core:http2_ztrace_collector",
         "//src/core:json",
         "//src/core:json_reader",
         "//src/core:latent_see",
         "//src/core:notification",
+        "//src/core:promise_factory",
     ],
 )
 
