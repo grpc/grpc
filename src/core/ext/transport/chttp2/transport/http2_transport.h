@@ -68,6 +68,11 @@ RefCountedPtr<channelz::SocketNode> CreateChannelzSocketNode(
         event_engine_endpoint,
     const ChannelArgs& args);
 
+ValueOrHttp2Status<chttp2::FlowControlAction>
+ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame,
+                                    chttp2::TransportFlowControl& flow_control,
+                                    RefCountedPtr<Stream> stream);
+
 }  // namespace http2
 }  // namespace grpc_core
 

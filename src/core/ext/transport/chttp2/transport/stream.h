@@ -158,8 +158,6 @@ struct Stream : public RefCounted<Stream> {
   void MarkHalfClosedRemote() {
     switch (stream_state) {
       case HttpStreamState::kIdle:
-        GRPC_DCHECK(false) << "MarkHalfClosedRemote called for an idle stream";
-        break;
       case HttpStreamState::kOpen:
         GRPC_HTTP2_STREAM_LOG
             << "Http2ClientTransport::Stream::MarkHalfClosedRemote stream_id="
@@ -187,6 +185,11 @@ struct Stream : public RefCounted<Stream> {
 
   inline bool IsClosedForWrites() const { return is_write_closed; }
   inline void SetWriteClosed() { is_write_closed = true; }
+
+  inline bool CanSendWindowUpdateFrames() const {
+    return stream_state == HttpStreamState::kOpen ||
+           stream_state == HttpStreamState::kHalfClosedLocal;
+  }
 
   CallHandler call;
   // This flag is kept separate from the stream_state as the stream_state
