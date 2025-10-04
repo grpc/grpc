@@ -48,7 +48,18 @@ CC_INCLUDES={cc_includes}
 # maps bazel reference to actual path
 BAZEL_REFERENCE_LINK = [
     ("@com_google_absl//", "third_party/abseil-cpp/"),
+    ("@com_google_protobuf//upb/", "third_party/protobuf/upb/"),
+    ("@com_google_protobuf//third_party/", "third_party/protobuf/third_party/"),
     ("//src", "grpc_root/src"),
+]
+
+# maps bazel reference to a proto to actual path
+BAZEL_PROTO_REFERENCE_LINK = [
+    ("//src", "grpc_root/src/core/ext/upb-gen/src"),
+    (
+        "@com_google_protobuf//src/google/",
+        "grpc_root/src/core/ext/upb-gen/google/",
+    ),
 ]
 
 ABSL_INCLUDE = (os.path.join("third_party", "abseil-cpp"),)
@@ -57,10 +68,17 @@ UPB_DEFS_GEN_INCLUDE = (
     os.path.join("grpc_root", "src", "core", "ext", "upbdefs-gen"),
 )
 PROTOBUF_INCLUDE = (os.path.join("third_party", "protobuf"),)
+PROTOBUF_UTF8_RANGE_INCLUDE = (
+    os.path.join("third_party", "protobuf", "third_party", "utf8_range"),
+)
 
 # will be added to include path when building grpcio_observability
 EXTENSION_INCLUDE_DIRECTORIES = (
-    ABSL_INCLUDE + UPB_GEN_INCLUDE + UPB_DEFS_GEN_INCLUDE + PROTOBUF_INCLUDE
+    ABSL_INCLUDE
+    + UPB_GEN_INCLUDE
+    + UPB_DEFS_GEN_INCLUDE
+    + PROTOBUF_INCLUDE
+    + PROTOBUF_UTF8_RANGE_INCLUDE
 )
 
 CC_INCLUDES = list(EXTENSION_INCLUDE_DIRECTORIES)
@@ -74,6 +92,10 @@ COPY_FILES_SOURCE_TARGET_PAIRS = [
     ("include", "grpc_root/include"),
     ("third_party/abseil-cpp/absl", "third_party/abseil-cpp/absl"),
     ("third_party/protobuf/upb", "third_party/protobuf/upb"),
+    (
+        "third_party/protobuf/third_party/utf8_range",
+        "third_party/protobuf/third_party/utf8_range",
+    ),
     ("src/core", "grpc_root/src/core"),
 ]
 
@@ -134,6 +156,17 @@ def _bazel_name_to_file_path(name):
     return None
 
 
+def _bazel_proto_name_to_file_path(name):
+    """Transform bazel reference to source file name."""
+    for link in BAZEL_PROTO_REFERENCE_LINK:
+        if name.startswith(link[0]):
+            filepath = link[1] + name[len(link[0]) :].replace(":", "/").replace(
+                ".proto", ".upb_minitable.c"
+            )
+            return filepath
+    return None
+
+
 def _generate_deps_file_content():
     """Returns the data structure with dependencies of protoc as python code."""
     cc_files_output = []
@@ -143,7 +176,17 @@ def _generate_deps_file_content():
     # Collect .cc files (that will be later included in the native extension build)
     cc_files = set()
     for name in cc_files_output:
+        if name.endswith(".proto"):
+            filepath = _bazel_proto_name_to_file_path(name)
+            if filepath and os.path.exists(filepath.replace("grpc_root/", "")):
+                cc_files.add(filepath)
         if name.endswith(".cc"):
+            filepath = _bazel_name_to_file_path(name)
+            if filepath:
+                cc_files.add(filepath)
+        if name.endswith(".c") and not name.endswith(
+            (".upb.c", ".upb_minitable.c")
+        ):
             filepath = _bazel_name_to_file_path(name)
             if filepath:
                 cc_files.add(filepath)

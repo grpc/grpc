@@ -485,12 +485,14 @@ class ChannelzRegistryBasedTest : public ::testing::TestWithParam<size_t> {
   void SetUp() override {
     WaitForSingleOwner(GetDefaultEventEngine());
     ResourceQuota::TestOnlyResetDefaultResourceQuota();
+    TestOnlyResetInstruments();
     ChannelzRegistry::TestOnlyReset();
   }
 
   void TearDown() override {
     WaitForSingleOwner(GetDefaultEventEngine());
     ResourceQuota::TestOnlyResetDefaultResourceQuota();
+    TestOnlyResetInstruments();
     ChannelzRegistry::TestOnlyReset();
   }
 };

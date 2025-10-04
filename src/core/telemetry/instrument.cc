@@ -30,6 +30,7 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
@@ -475,12 +476,122 @@ const InstrumentMetadata::Description* InstrumentIndex::Find(
 
 DomainStorage::DomainStorage(QueryableDomain* domain,
                              std::vector<std::string> label)
-    : domain_(domain), label_(std::move(label)) {}
+    : DataSource(MakeRefCounted<channelz::MetricsDomainStorageNode>(
+          absl::StrCat(domain->name(), ":", absl::StrJoin(label, ",")))),
+      domain_(domain),
+      label_(std::move(label)) {
+  channelz_node()->AddParent(domain->channelz_node().get());
+  SourceConstructed();
+}
 
-void DomainStorage::Orphaned() { domain_->DomainStorageOrphaned(this); }
+void DomainStorage::Orphaned() {
+  SourceDestructing();
+  domain_->DomainStorageOrphaned(this);
+}
+
+void DomainStorage::AddData(channelz::DataSink sink) {
+  sink.AddData(
+      "domain_storage",
+      channelz::PropertyList()
+          .Set("label",
+               [this]() {
+                 channelz::PropertyGrid grid;
+                 for (size_t i = 0; i < label_.size(); ++i) {
+                   grid.SetRow(
+                       domain_->label_names()[i],
+                       channelz::PropertyList().Set("value", label_[i]));
+                 }
+                 return grid;
+               }())
+          .Set("metrics", [this]() {
+            GaugeStorage storage(domain_);
+            FillGaugeStorage(storage);
+            channelz::PropertyGrid grid;
+            for (const auto* metric : domain_->metrics_) {
+              Match(
+                  metric->shape,
+                  [&, this](InstrumentMetadata::CounterShape) {
+                    grid.SetRow(metric->name,
+                                channelz::PropertyList().Set(
+                                    "value", SumCounter(metric->offset)));
+                  },
+                  [&](InstrumentMetadata::DoubleGaugeShape) {
+                    grid.SetRow(
+                        metric->name,
+                        channelz::PropertyList().Set(
+                            "value", storage.GetDouble(metric->offset)));
+                  },
+                  [&](InstrumentMetadata::IntGaugeShape) {
+                    grid.SetRow(metric->name,
+                                channelz::PropertyList().Set(
+                                    "value", storage.GetInt(metric->offset)));
+                  },
+                  [&](InstrumentMetadata::UintGaugeShape) {
+                    grid.SetRow(metric->name,
+                                channelz::PropertyList().Set(
+                                    "value", storage.GetUint(metric->offset)));
+                  },
+                  [&](const InstrumentMetadata::HistogramShape& h) {
+                    channelz::PropertyTable table;
+                    for (size_t i = 0; i < h.size(); ++i) {
+                      table.AppendRow(
+                          channelz::PropertyList()
+                              .Set("bucket_max", h[i])
+                              .Set("count", SumCounter(metric->offset + i)));
+                    }
+                    grid.SetRow(metric->name, channelz::PropertyList().Set(
+                                                  "value", std::move(table)));
+                  });
+            }
+            return grid;
+          }()));
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 // QueryableDomain
+
+void QueryableDomain::AddData(channelz::DataSink sink) {
+  sink.AddData(
+      "domain",
+      channelz::PropertyList()
+          .Set("allocated_counter_slots", allocated_counter_slots_)
+          .Set("allocated_double_gauge_slots", allocated_double_gauge_slots_)
+          .Set("allocated_int_gauge_slots", allocated_int_gauge_slots_)
+          .Set("allocated_uint_gauge_slots", allocated_uint_gauge_slots_)
+          .Set("map_shards", map_shards_size_)
+          .Set("metrics",
+               [this]() {
+                 channelz::PropertyGrid grid;
+                 for (auto* metric : metrics_) {
+                   grid.SetRow(
+                       metric->name,
+                       channelz::PropertyList()
+                           .Set("description", metric->description)
+                           .Set("unit", metric->unit)
+                           .Set("offset", metric->offset)
+                           .Set("shape",
+                                Match(
+                                    metric->shape,
+                                    [](InstrumentMetadata::CounterShape)
+                                        -> std::string { return "counter"; },
+                                    [](InstrumentMetadata::DoubleGaugeShape)
+                                        -> std::string {
+                                      return "double_gauge";
+                                    },
+                                    [](InstrumentMetadata::IntGaugeShape)
+                                        -> std::string { return "int_gauge"; },
+                                    [](InstrumentMetadata::UintGaugeShape)
+                                        -> std::string { return "uint_gauge"; },
+                                    [](const InstrumentMetadata::HistogramShape&
+                                           h) -> std::string {
+                                      return absl::StrCat(
+                                          "histogram:", absl::StrJoin(h, ","));
+                                    })));
+                 }
+                 return grid;
+               }())
+          .Set("labels", absl::StrJoin(label_names_, ",")));
+}
 
 void QueryableDomain::Constructed() {
   GRPC_CHECK_EQ(prev_, nullptr);
@@ -561,6 +672,7 @@ void QueryableDomain::UnregisterStorageSet(StorageSet* storage_set) {
 }
 
 void QueryableDomain::TestOnlyReset() {
+  channelz_.Reset();
   map_shards_ = std::make_unique<MapShard[]>(map_shards_size_);
   MutexLock lock(&active_storage_sets_mu_);
   active_storage_sets_.clear();
