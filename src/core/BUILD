@@ -8363,6 +8363,7 @@ grpc_cc_library(
         "connectivity_state",
         "flow_control_manager",
         "for_each",
+        "goaway",
         "grpc_check",
         "grpc_promise_endpoint",
         "header_assembler",

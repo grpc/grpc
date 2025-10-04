@@ -28,6 +28,7 @@
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control_manager.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/goaway.h"
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
@@ -275,7 +276,7 @@ class Http2ClientTransport final : public ClientTransport,
   // 4. Application abort: In this case, multiplexer loop will write RST stream
   //    frame to the endpoint and close the stream from reads and writes. This
   //    then follows the same reasoning as case 1.
-  uint32_t GetActiveStreamCount() const
+  inline uint32_t GetActiveStreamCount() const
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_) {
     return stream_list_.size();
   }
@@ -309,8 +310,6 @@ class Http2ClientTransport final : public ClientTransport,
   }
 
   Mutex transport_mutex_;
-  // TODO(tjagtap) : [PH2][P2] : Add to map in StartCall and clean this
-  // mapping up in the on_done of the CallInitiator or CallHandler
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_
       ABSL_GUARDED_BY(transport_mutex_);
 
@@ -430,7 +429,7 @@ class Http2ClientTransport final : public ClientTransport,
       DCHECK(stream_id.has_value());
       BeginCloseStream(
           LookupStream(stream_id.value()),
-          Http2ErrorCodeToRstFrameErrorCode(status.GetStreamErrorCode()),
+          Http2ErrorCodeToFrameErrorCode(status.GetStreamErrorCode()),
           ServerMetadataFromStatus(status.GetAbslStreamError()), whence);
       return absl::OkStatus();
     } else if (error_type == Http2Status::Http2ErrorType::kConnectionError) {
@@ -471,6 +470,38 @@ class Http2ClientTransport final : public ClientTransport,
   size_t GetMaxWriteSize() const { return max_write_size_; }
 
   auto SerializeAndWrite(std::vector<Http2Frame>&& frames);
+  // Tracks the max allowed stream id. Currently this is only set on receiving a
+  // graceful GOAWAY frame.
+  uint32_t max_allowed_stream_id_ = RFC9113::kMaxStreamId31Bit;
+  uint32_t GetMaxAllowedStreamId() const {
+    GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport GetMaxAllowedStreamId "
+                           << max_allowed_stream_id_;
+    return max_allowed_stream_id_;
+  }
+
+  void SetMaxAllowedStreamId(const uint32_t max_allowed_stream_id) {
+    const uint32_t old_max_allowed_stream_id = GetMaxAllowedStreamId();
+    GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport SetMaxAllowedStreamId "
+                           << " max_allowed_stream_id: "
+                           << max_allowed_stream_id
+                           << " old_allowed_max_stream_id: "
+                           << old_max_allowed_stream_id;
+    // RFC9113 : Endpoints MUST NOT increase the value they send in the last
+    // stream identifier, since the peers might already have retried unprocessed
+    // requests on another connection.
+    if (GPR_LIKELY(max_allowed_stream_id <= old_max_allowed_stream_id)) {
+      max_allowed_stream_id_ = max_allowed_stream_id;
+    } else {
+      LOG_IF(ERROR, max_allowed_stream_id > old_max_allowed_stream_id)
+          << "Endpoints MUST NOT increase the value they send in the last "
+             "stream "
+             "identifier";
+      GRPC_DCHECK_LE(max_allowed_stream_id, old_max_allowed_stream_id)
+          << "Endpoints MUST NOT increase the value they send in the last "
+             "stream "
+             "identifier";
+    }
+  }
 
   // Ping related members
   // TODO(akshitpatel) : [PH2][P2] : Consider removing the timeout related
@@ -619,6 +650,37 @@ class Http2ClientTransport final : public ClientTransport,
     // transport and greatly simpilfy the cleanup path.
     Http2ClientTransport* transport_;
   };
+
+  class GoawayInterfaceImpl : public GoawayInterface {
+   public:
+    static std::unique_ptr<GoawayInterface> Make(
+        Http2ClientTransport* transport) {
+      return std::make_unique<GoawayInterfaceImpl>(
+          GoawayInterfaceImpl(transport));
+    }
+
+    Promise<absl::Status> SendPingAndWaitForAck() override {
+      return transport_->ping_manager_.RequestPing([] {}, /*important=*/true);
+    }
+
+    void TriggerWriteCycle() override { transport_->TriggerWriteCycle(); }
+
+    uint32_t GetLastAcceptedStreamId() override {
+      GRPC_DCHECK(false)
+          << "GetLastAcceptedStreamId is not implemented for client transport.";
+      LOG(ERROR) << "GetLastAcceptedStreamId is not implemented for client "
+                    "transport.";
+      return 0;
+    }
+
+   private:
+    explicit GoawayInterfaceImpl(Http2ClientTransport* transport)
+        : transport_(transport) {}
+
+    Http2ClientTransport* transport_;
+  };
+
+  GoawayManager goaway_manager_;
 
   WritableStreams<RefCountedPtr<Stream>> writable_stream_list_;
 
