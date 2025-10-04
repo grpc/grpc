@@ -26,9 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "absl/log/log.h"
 #include "src/core/config/config_vars.h"
-#include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -38,6 +36,7 @@
 #include "src/core/util/string.h"
 #include "src/core/util/thd.h"
 #include "src/core/util/useful.h"
+#include "absl/log/log.h"
 
 static gpr_mu g_mu;
 static gpr_cv g_rcv;
