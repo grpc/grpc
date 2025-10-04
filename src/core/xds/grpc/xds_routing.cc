@@ -192,7 +192,7 @@ std::optional<absl::string_view> XdsRouting::GetHeaderValue(
 
 namespace {
 
-const XdsHttpFilterImpl::FilterConfig* FindFilterConfigOverride(
+const XdsHttpFilterImpl::XdsFilterConfig* FindFilterConfigOverride(
     const std::string& instance_name,
     const XdsRouteConfigResource::VirtualHost& vhost,
     const XdsRouteConfigResource::Route& route,
@@ -201,14 +201,16 @@ const XdsHttpFilterImpl::FilterConfig* FindFilterConfigOverride(
   // Check ClusterWeight, if any.
   if (cluster_weight != nullptr) {
     auto it = cluster_weight->typed_per_filter_config.find(instance_name);
-    if (it != cluster_weight->typed_per_filter_config.end()) return &it->second;
+    if (it != cluster_weight->typed_per_filter_config.end()) {
+      return &it->second.old_config;
+    }
   }
   // Check Route.
   auto it = route.typed_per_filter_config.find(instance_name);
-  if (it != route.typed_per_filter_config.end()) return &it->second;
+  if (it != route.typed_per_filter_config.end()) return &it->second.old_config;
   // Check VirtualHost.
   it = vhost.typed_per_filter_config.find(instance_name);
-  if (it != vhost.typed_per_filter_config.end()) return &it->second;
+  if (it != vhost.typed_per_filter_config.end()) return &it->second.old_config;
   // Not found.
   return nullptr;
 }
@@ -226,11 +228,15 @@ GeneratePerHTTPFilterConfigs(
   XdsRouting::GeneratePerHttpFilterConfigsResult result;
   result.args = args;
   for (const auto& http_filter : http_filters) {
+    absl::string_view config_proto_type_name =
+        http_filter.config.config_proto_type_name;
+    if (config_proto_type_name.empty()) {
+      config_proto_type_name = http_filter.filter_config->type().name();
+    }
     // Find filter.  This is guaranteed to succeed, because it's checked
     // at config validation time in the listener parsing code.
     const XdsHttpFilterImpl* filter_impl =
-        http_filter_registry.GetFilterForType(
-            http_filter.config.config_proto_type_name);
+        http_filter_registry.GetFilterForType(config_proto_type_name);
     GRPC_CHECK_NE(filter_impl, nullptr);
     // If there is not actually any C-core filter associated with this
     // xDS filter, then it won't need any config, so skip it.
@@ -270,7 +276,7 @@ XdsRouting::GeneratePerHTTPFilterConfigsForMethodConfig(
       [&](const XdsHttpFilterImpl& filter_impl,
           const XdsListenerResource::HttpConnectionManager::HttpFilter&
               http_filter) {
-        const XdsHttpFilterImpl::FilterConfig* config_override =
+        const XdsHttpFilterImpl::XdsFilterConfig* config_override =
             FindFilterConfigOverride(http_filter.name, vhost, route,
                                      cluster_weight);
         // Generate service config for filter.

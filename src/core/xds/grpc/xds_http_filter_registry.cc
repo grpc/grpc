@@ -51,12 +51,12 @@ void XdsHttpRouterFilter::PopulateSymtab(upb_DefPool* symtab) const {
   envoy_extensions_filters_http_router_v3_Router_getmsgdef(symtab);
 }
 
-std::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::XdsFilterConfig>
 XdsHttpRouterFilter::GenerateFilterConfig(
     absl::string_view /*instance_name*/,
-    const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    ValidationErrors* errors) const {
-  absl::string_view* serialized_filter_config =
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  const absl::string_view* serialized_filter_config =
       std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse router filter config");
@@ -68,16 +68,53 @@ XdsHttpRouterFilter::GenerateFilterConfig(
     errors->AddError("could not parse router filter config");
     return std::nullopt;
   }
-  return FilterConfig{ConfigProtoName(), Json()};
+  return XdsFilterConfig{ConfigProtoName(), Json()};
 }
 
-std::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::XdsFilterConfig>
 XdsHttpRouterFilter::GenerateFilterConfigOverride(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& /*context*/,
-    XdsExtension /*extension*/, ValidationErrors* errors) const {
+    const XdsExtension& /*extension*/, ValidationErrors* errors) const {
   errors->AddError("router filter does not support config override");
   return std::nullopt;
+}
+
+RefCountedPtr<const FilterConfig> XdsHttpRouterFilter::ParseTopLevelConfig(
+    absl::string_view /*instance_name*/,
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  const absl::string_view* serialized_filter_config =
+      std::get_if<absl::string_view>(&extension.value);
+  if (serialized_filter_config == nullptr) {
+    errors->AddError("could not parse router filter config");
+    return nullptr;
+  }
+  if (envoy_extensions_filters_http_router_v3_Router_parse(
+          serialized_filter_config->data(), serialized_filter_config->size(),
+          context.arena) == nullptr) {
+    errors->AddError("could not parse router filter config");
+    return nullptr;
+  }
+  return nullptr;
+}
+
+RefCountedPtr<const FilterConfig> XdsHttpRouterFilter::ParseOverrideConfig(
+    absl::string_view /*instance_name*/,
+    const XdsResourceType::DecodeContext& /*context*/,
+    const XdsExtension& /*extension*/, ValidationErrors* errors) const {
+  errors->AddError("router filter does not support config override");
+  return nullptr;
+}
+
+RefCountedPtr<const FilterConfig> XdsHttpRouterFilter::MergeConfigs(
+    RefCountedPtr<const FilterConfig> top_level_config,
+    RefCountedPtr<const FilterConfig>
+    /*virtual_host_override_config*/,
+    RefCountedPtr<const FilterConfig> /*route_override_config*/,
+    RefCountedPtr<const FilterConfig>
+    /*cluster_weight_override_config*/) const {
+  return top_level_config;
 }
 
 //
