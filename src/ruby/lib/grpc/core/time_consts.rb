@@ -28,11 +28,11 @@ module GRPC
       #
       # * if timish is one of the TimeConsts.TimeSpec constants the value is
       # preserved.
-      # * timish < 0 => TimeConsts.INFINITE_FUTURE
-      # * timish == 0 => TimeConsts.ZERO
+      # * timish < 0 => TimeConsts::INFINITE_FUTURE
+      # * timish == 0 => TimeConsts::ZERO
       #
-      # @param timeish [Number|TimeSpec]
-      # @return [Number|TimeSpec]
+      # @param timeish [Time|TimeSpec]
+      # @return [Time|TimeSpec]
       def from_relative_time(timeish)
         if timeish.is_a? TimeSpec
           timeish
