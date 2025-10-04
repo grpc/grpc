@@ -36,14 +36,13 @@ from subprocess import PIPE
 import sys
 import sysconfig
 
-import _metadata
+# import _metadata
 from setuptools import Extension
 from setuptools.command import egg_info
 
 # Redirect the manifest template from MANIFEST.in to PYTHON-MANIFEST.in.
 egg_info.manifest_maker.template = "PYTHON-MANIFEST.in"
 
-PY3 = sys.version_info.major == 3
 PYTHON_STEM = os.path.join("src", "python", "grpcio")
 CORE_INCLUDE = (
     "include",
@@ -83,7 +82,6 @@ ZLIB_INCLUDE = (os.path.join("third_party", "zlib"),)
 README = os.path.join(PYTHON_STEM, "README.rst")
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.abspath(PYTHON_STEM))
 
 # Break import-style to ensure we can actually find our in-repo dependencies.
@@ -111,7 +109,7 @@ CLASSIFIERS = (
         f"Programming Language :: Python :: {x}"
         for x in python_version.SUPPORTED_PYTHON_VERSIONS
     ]
-    + ["License :: OSI Approved :: Apache Software License"]
+    # removed as License classifiers have been superseded by license expressions (see https://peps.python.org/pep-0639/)
 )
 
 
@@ -408,7 +406,7 @@ DEFINE_MACROS += (
     ("GRPC_XDS_USER_AGENT_NAME_SUFFIX", _quote_build_define("Python")),
     (
         "GRPC_XDS_USER_AGENT_VERSION_SUFFIX",
-        _quote_build_define(_metadata.__version__),
+        _quote_build_define(grpc_version.VERSION),
     ),
 )
 
@@ -478,7 +476,7 @@ DEFINE_MACROS += (("__STDC_FORMAT_MACROS", None),)
 LDFLAGS = tuple(EXTRA_LINK_ARGS)
 CFLAGS = tuple(EXTRA_COMPILE_ARGS)
 if "linux" in sys.platform or "darwin" in sys.platform:
-    pymodinit_type = "PyObject*" if PY3 else "void"
+    pymodinit_type = "PyObject*"
     pymodinit = 'extern "C" __attribute__((visibility ("default"))) {}'.format(
         pymodinit_type
     )
@@ -548,6 +546,10 @@ PACKAGE_DIRECTORIES = {
     "": PYTHON_STEM,
 }
 
+# this can be removed and replaced with `dependencies` in pyproject.toml
+# however since SETUP_REQUIRES also needs it, further updates to
+# typing-extensions version will have to be done in both places.
+# Hence keeping it in setup.py itself for a single place of update.
 INSTALL_REQUIRES = ("typing-extensions~=4.12",)
 
 EXTRAS_REQUIRES = {
@@ -592,40 +594,13 @@ shutil.copyfile(
     os.path.join("etc", "roots.pem"), os.path.join(credentials_dir, "roots.pem")
 )
 
-PACKAGE_DATA = {
-    # Binaries that may or may not be present in the final installation, but are
-    # mentioned here for completeness.
-    "grpc._cython": [
-        "_credentials/roots.pem",
-        "_windows/grpc_c.32.python",
-        "_windows/grpc_c.64.python",
-    ],
-}
-PACKAGES = setuptools.find_packages(PYTHON_STEM)
-
-setuptools.setup(
-    name="grpcio",
-    version=grpc_version.VERSION,
-    description="HTTP/2-based RPC framework",
-    author="The gRPC Authors",
-    author_email="grpc-io@googlegroups.com",
-    url="https://grpc.io",
-    project_urls={
-        "Source Code": "https://github.com/grpc/grpc",
-        "Bug Tracker": "https://github.com/grpc/grpc/issues",
-        "Documentation": "https://grpc.github.io/grpc/python",
-    },
-    license=LICENSE,
-    classifiers=CLASSIFIERS,
-    long_description_content_type="text/x-rst",
-    long_description=open(README).read(),
-    ext_modules=CYTHON_EXTENSION_MODULES,
-    packages=list(PACKAGES),
-    package_dir=PACKAGE_DIRECTORIES,
-    package_data=PACKAGE_DATA,
-    python_requires=f">={python_version.MIN_PYTHON_VERSION}",
-    install_requires=INSTALL_REQUIRES,
-    extras_require=EXTRAS_REQUIRES,
-    setup_requires=SETUP_REQUIRES,
-    cmdclass=COMMAND_CLASS,
-)
+if __name__ == '__main__':
+    setuptools.setup(
+        classifiers=CLASSIFIERS,
+        ext_modules=CYTHON_EXTENSION_MODULES,
+        python_requires=f">={python_version.MIN_PYTHON_VERSION}",
+        install_requires=INSTALL_REQUIRES,
+        extras_require=EXTRAS_REQUIRES,
+        setup_requires=SETUP_REQUIRES,
+        cmdclass=COMMAND_CLASS,
+    )

@@ -175,7 +175,12 @@ class BuildPy(build_py.build_py):
 
 def _poison_extensions(extensions, message):
     """Includes a file that will always fail to compile in all extensions."""
-    poison_filename = os.path.join(PYTHON_STEM, "poison.c")
+
+    # use relative path as setuptools doesn't support absolute path in
+    # extension.sources
+    python_rel_path = os.path.relpath(PYTHON_STEM, start=GRPC_STEM)
+    poison_filename = os.path.join(python_rel_path, "poison.c")
+
     with open(poison_filename, "w") as poison:
         poison.write("#error {}".format(message))
     for extension in extensions:

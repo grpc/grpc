@@ -1,0 +1,38 @@
+[build-system]
+requires = [
+    "setuptools>=75.0.0",
+    "wheel",
+    "Cython==3.1.1",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "grpcio-tools"
+license = "Apache-2.0"
+description = "Protobuf code generator for gRPC"
+readme = {file = "README.rst", content-type = "text/x-rst"} # adding content-type resolves twine check warnings during release upload
+authors = [{name = "The gRPC Authors", email = "grpc-io@googlegroups.com"}]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+
+dynamic = ["dependencies", "version", "requires-python"]
+
+[project.urls]
+Homepage = "https://grpc.io"
+"Source Code" = "https://github.com/grpc/grpc/tree/master/tools/distrib/python/grpcio_tools"
+"Bug Tracker" = "https://github.com/grpc/grpc/issues"
+
+[project.scripts]
+"python-grpc-tools-protoc" = "grpc_tools.protoc:entrypoint"
+
+[tool.setuptools.packages]
+find = {}
+
+[tool.setuptools.dynamic]
+version = {attr = "grpc_version.VERSION"}
+
+[tool.setuptools.package-dir]
+"" = "."

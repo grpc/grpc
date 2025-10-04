@@ -16,12 +16,11 @@
 import os
 
 import setuptools
+import sys
 
-_PACKAGE_PATH = os.path.realpath(os.path.dirname(__file__))
-_README_PATH = os.path.join(_PACKAGE_PATH, "README.rst")
-
-# Ensure we're in the proper directory whether or not we're being used by pip.
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
+# Manually insert the source directory into the Python path for local module
+# imports to succeed
+sys.path.insert(0, os.path.abspath("."))
 
 # Break import-style to ensure we can actually find our local modules.
 import python_version
@@ -55,12 +54,8 @@ CLASSIFIERS = (
         f"Programming Language :: Python :: {x}"
         for x in python_version.SUPPORTED_PYTHON_VERSIONS
     ]
-    + ["License :: OSI Approved :: Apache Software License"]
 )
 
-PACKAGE_DIRECTORIES = {
-    "": ".",
-}
 
 INSTALL_REQUIRES = (
     "protobuf>=6.31.1,<7.0.0",
@@ -84,19 +79,10 @@ except ImportError:
         "build_package_protos": _NoOpCommand,
     }
 
-setuptools.setup(
-    name="grpcio-status",
-    version=grpc_version.VERSION,
-    description="Status proto mapping for gRPC",
-    long_description=open(_README_PATH, "r").read(),
-    author="The gRPC Authors",
-    author_email="grpc-io@googlegroups.com",
-    url="https://grpc.io",
-    license="Apache License 2.0",
-    classifiers=CLASSIFIERS,
-    package_dir=PACKAGE_DIRECTORIES,
-    packages=setuptools.find_packages("."),
-    python_requires=f">={python_version.MIN_PYTHON_VERSION}",
-    install_requires=INSTALL_REQUIRES,
-    cmdclass=COMMAND_CLASS,
-)
+if __name__ == '__main__':
+    setuptools.setup(
+        classifiers=CLASSIFIERS,
+        python_requires=f">={python_version.MIN_PYTHON_VERSION}",
+        install_requires=INSTALL_REQUIRES,
+        cmdclass=COMMAND_CLASS,
+    )
