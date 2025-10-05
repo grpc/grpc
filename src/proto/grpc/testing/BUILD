@@ -26,6 +26,8 @@ licenses(["notice"])
 
 grpc_package(
     name = "testing",
+    # TODO(rishesh): remove this once all the generated files are fixed.
+    features = ["-parse_headers"],
     visibility = "public",
 )
 
