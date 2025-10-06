@@ -234,7 +234,6 @@ class Http2ClientTransport final : public ClientTransport,
   // Returns a promise to fetch data from the callhandler and pass it further
   // down towards the endpoint.
   auto CallOutboundLoop(CallHandler call_handler, RefCountedPtr<Stream> stream,
-                        InterActivityMutex<uint32_t>::Lock lock,
                         ClientMetadataHandle metadata);
 
   // Force triggers a transport write cycle
@@ -280,11 +279,10 @@ class Http2ClientTransport final : public ClientTransport,
     return stream_list_.size();
   }
 
-  std::optional<uint32_t> NextStreamId(
-      InterActivityMutex<uint32_t>::Lock& next_stream_id_lock)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_) {
-    const uint32_t stream_id = *next_stream_id_lock;
-    if (stream_id > RFC9113::kMaxStreamId31Bit) {
+  // Returns the next stream id. If the next stream id is not available, it
+  // returns std::nullopt. MUST be called from the transport party.
+  absl::StatusOr<uint32_t> NextStreamId() {
+    if (next_stream_id_ > RFC9113::kMaxStreamId31Bit) {
       // TODO(tjagtap) : [PH2][P3] : Handle case if transport runs out of stream
       // ids
       // RFC9113 : Stream identifiers cannot be reused. Long-lived connections
@@ -294,19 +292,28 @@ class Http2ClientTransport final : public ClientTransport,
       // that is unable to establish a new stream identifier can send a GOAWAY
       // frame so that the client is forced to open a new connection for new
       // streams.
-      return std::nullopt;
+      return absl::ResourceExhaustedError("No more stream ids available");
     }
     // TODO(akshitpatel) : [PH2][P3] : There is a channel arg to delay
     // starting new streams instead of failing them. This needs to be
     // implemented.
-    if (GetActiveStreamCount() >= settings_.peer().max_concurrent_streams()) {
-      return std::nullopt;
+    {
+      MutexLock lock(&transport_mutex_);
+      if (GetActiveStreamCount() >= settings_.peer().max_concurrent_streams()) {
+        return absl::ResourceExhaustedError("Reached max concurrent streams");
+      }
     }
+
     // RFC9113 : Streams initiated by a client MUST use odd-numbered stream
     // identifiers.
-    (*next_stream_id_lock) += 2;
-    return stream_id;
+    return std::exchange(next_stream_id_, next_stream_id_ + 2);
   }
+
+  // Returns the next stream id without incrementing it. MUST be called from the
+  // transport party.
+  uint32_t PeekNextStreamId() const { return next_stream_id_; }
+
+  absl::Status AssignStreamIdAndAddToStreamList(RefCountedPtr<Stream> stream);
 
   Mutex transport_mutex_;
   // TODO(tjagtap) : [PH2][P2] : Add to map in StartCall and clean this
@@ -314,9 +321,7 @@ class Http2ClientTransport final : public ClientTransport,
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_
       ABSL_GUARDED_BY(transport_mutex_);
 
-  // Mutex to preserve the order of headers being sent out for new streams.
-  // This also tracks the stream_id for creating new streams.
-  InterActivityMutex<uint32_t> stream_id_mutex_;
+  uint32_t next_stream_id_;
   HPackCompressor encoder_;
   HPackParser parser_;
   bool is_transport_closed_ ABSL_GUARDED_BY(transport_mutex_) = false;
@@ -335,9 +340,8 @@ class Http2ClientTransport final : public ClientTransport,
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
       "http2_client", GRPC_CHANNEL_READY};
 
-  std::optional<RefCountedPtr<Stream>> MakeStream(
-      CallHandler call_handler,
-      InterActivityMutex<uint32_t>::Lock& next_stream_id_lock);
+  // Runs on the call party.
+  std::optional<RefCountedPtr<Stream>> MakeStream(CallHandler call_handler);
 
   struct CloseStreamArgs {
     bool close_reads;

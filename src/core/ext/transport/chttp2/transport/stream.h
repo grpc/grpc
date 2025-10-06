@@ -33,6 +33,7 @@ namespace http2 {
 
 // TODO(akshitpatel) : [PH2][P4] : Choose appropriate size later.
 constexpr uint32_t kStreamQueueSize = /*1 MB*/ 1024u * 1024u;
+constexpr uint32_t kInvalidStreamId = 0u;
 
 enum class HttpStreamState : uint8_t {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-stream-states
@@ -45,21 +46,37 @@ enum class HttpStreamState : uint8_t {
 
 // Managing the streams
 struct Stream : public RefCounted<Stream> {
-  explicit Stream(CallHandler call, const uint32_t stream_id1,
-                  bool allow_true_binary_metadata_peer,
+  explicit Stream(CallHandler call, bool allow_true_binary_metadata_peer,
                   bool allow_true_binary_metadata_acked,
                   chttp2::TransportFlowControl& transport_flow_control)
       : call(std::move(call)),
         is_write_closed(false),
         stream_state(HttpStreamState::kIdle),
-        stream_id(stream_id1),
-        header_assembler(stream_id1, allow_true_binary_metadata_acked),
+        stream_id(kInvalidStreamId),
+        header_assembler(allow_true_binary_metadata_acked),
         did_push_initial_metadata(false),
         did_push_trailing_metadata(false),
         data_queue(MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
-            /*is_client*/ true, /*stream_id*/ stream_id1,
+            /*is_client*/ true,
             /*queue_size*/ kStreamQueueSize, allow_true_binary_metadata_peer)),
         flow_control(&transport_flow_control) {}
+
+  // TODO(akshitpatel) : [PH2][P4] : SetStreamId can be avoided if we pass the
+  // stream id as a parameter to the dequeue function. The only downside here
+  // is that we will be creating two new disassemblers for every dequeue call.
+  // The upside is that we save 8 bytes per call. Decide based on benchmark
+  // results.
+  void SetStreamId(const uint32_t stream_id) {
+    GRPC_DCHECK_NE(stream_id, 0u);
+    GRPC_DCHECK_EQ(this->stream_id, 0u);
+    GRPC_HTTP2_STREAM_LOG
+        << "Http2ClientTransport::Stream::SetStreamId stream_id=" << stream_id;
+    if (GPR_LIKELY(this->stream_id == 0)) {
+      this->stream_id = stream_id;
+      header_assembler.SetStreamId(stream_id);
+      data_queue->SetStreamId(stream_id);
+    }
+  }
 
   ////////////////////////////////////////////////////////////////////////////
   // Data Queue Helpers
@@ -199,7 +216,7 @@ struct Stream : public RefCounted<Stream> {
   bool is_write_closed;
   // This MUST be accessed from the transport party.
   HttpStreamState stream_state;
-  const uint32_t stream_id;
+  uint32_t stream_id;
   GrpcMessageAssembler assembler;
   HeaderAssembler header_assembler;
   // TODO(akshitpatel) : [PH2][P2] : StreamQ should maintain a flag that

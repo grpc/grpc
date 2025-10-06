@@ -170,17 +170,14 @@ class SimpleQueue {
 template <typename MetadataHandle>
 class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
  public:
-  explicit StreamDataQueue(const bool is_client, const uint32_t stream_id,
-                           const uint32_t queue_size,
+  explicit StreamDataQueue(const bool is_client, const uint32_t queue_size,
                            bool allow_true_binary_metadata)
-      : stream_id_(stream_id),
+      : stream_id_(0),
         is_client_(is_client),
         queue_(queue_size),
-        initial_metadata_disassembler_(stream_id,
-                                       /*is_trailing_metadata=*/false,
+        initial_metadata_disassembler_(/*is_trailing_metadata=*/false,
                                        allow_true_binary_metadata),
-        trailing_metadata_disassembler_(stream_id,
-                                        /*is_trailing_metadata=*/true,
+        trailing_metadata_disassembler_(/*is_trailing_metadata=*/true,
                                         allow_true_binary_metadata) {};
   ~StreamDataQueue() = default;
 
@@ -188,6 +185,14 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
   StreamDataQueue& operator=(StreamDataQueue&& rhs) = delete;
   StreamDataQueue(const StreamDataQueue&) = delete;
   StreamDataQueue& operator=(const StreamDataQueue&) = delete;
+
+  void SetStreamId(const uint32_t stream_id) {
+    GRPC_DCHECK_EQ(stream_id_, 0u);
+    GRPC_DCHECK_NE(stream_id, 0u);
+    stream_id_ = stream_id;
+    initial_metadata_disassembler_.SetStreamId(stream_id);
+    trailing_metadata_disassembler_.SetStreamId(stream_id);
+  }
 
   //////////////////////////////////////////////////////////////////////////////
   // Enqueue Helpers
@@ -439,6 +444,8 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
         << message_disassembler_.GetBufferedLength()
         << " Can send reset stream: " << can_send_reset_stream
         << " Reset stream state: " << static_cast<uint8_t>(reset_stream_state_);
+    GRPC_DCHECK_GT(stream_id_, 0u)
+        << "Stream id must be set before dequeueing frames.";
 
     // If a reset stream is queued, we do not want to send any more frames. Any
     // metadata enqueued has not reached HPACK encoder, so it is safe to drop
@@ -712,7 +719,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
     GPR_UNREACHABLE_CODE("Invalid reset stream state");
   }
 
-  const uint32_t stream_id_;
+  uint32_t stream_id_;
   const bool is_client_;
 
   enum class RstStreamState : uint8_t {
