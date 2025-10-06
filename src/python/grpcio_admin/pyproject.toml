@@ -1,0 +1,32 @@
+[build-system]
+requires = [
+    "setuptools>=75.0.0",
+    "wheel",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "grpcio-admin"
+license = "Apache-2.0"
+description = "a collection of admin services"
+readme = {file = "README.rst", content-type = "text/x-rst"} # adding content-type resolves twine check warnings during release upload
+authors = [{name = "The gRPC Authors", email = "grpc-io@googlegroups.com"}]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+
+dynamic = ["dependencies", "version", "requires-python"]
+
+[project.urls]
+Homepage = "https://grpc.io"
+
+[tool.setuptools.packages]
+find = {}
+
+[tool.setuptools.dynamic]
+version = {attr = "grpc_version.VERSION"}
+
+[tool.setuptools.package-dir]
+"" = "."
