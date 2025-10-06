@@ -1241,16 +1241,17 @@ Http2ClientTransport::~Http2ClientTransport() {
 }
 
 void Http2ClientTransport::AddData(channelz::DataSink sink) {
-  sink.AddData(
-      "Http2ClientTransport",
-      channelz::PropertyList()
-          .Set("settings", settings_.ChannelzProperties())
-          .Set("keepalive_time", keepalive_time_)
-          .Set("keepalive_timeout", keepalive_timeout_)
-          .Set("ping_timeout", ping_timeout_)
-          .Set("keepalive_permit_without_calls",
-               keepalive_permit_without_calls_)
-          .Set("flow_control", flow_control_.stats().ChannelzProperties()));
+  sink.AddData("Http2ClientTransport",
+               channelz::PropertyList()
+                   .Set("keepalive_time", keepalive_time_)
+                   .Set("keepalive_timeout", keepalive_timeout_)
+                   .Set("ping_timeout", ping_timeout_)
+                   .Set("keepalive_permit_without_calls",
+                        keepalive_permit_without_calls_));
+  // TODO(tjagtap) : [PH2][P1] : These were causing data race.
+  // Figure out how to plumb this.
+  // .Set("settings", settings_.ChannelzProperties())
+  // .Set("flow_control", flow_control_.stats().ChannelzProperties()));
   general_party_->ExportToChannelz("Http2ClientTransport Party", sink);
 }
 
