@@ -273,7 +273,7 @@ then
   # skips the wheel building step.
 
   # Build xds_protos source distribution
-  # build.py is invoked as part of generate_projects.
+  # build_xds_protos.py is invoked as part of generate_projects.
   ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/xds_protos/setup.py \
       sdist bdist_wheel install
   cp -r tools/distrib/python/xds_protos/dist/* "$ARTIFACT_DIR"

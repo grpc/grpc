@@ -87,11 +87,11 @@ function toolchain() {
 }
 
 # When we mount and reuse the existing repo from host machine inside docker
-# container, the `tools/bazel.rc` file is shared to the docker container and 
-# the Bazel override written to `bazel.rc` from tools/.../grpc_build_submodule_at_head.sh 
+# container, the `tools/bazel.rc` file is shared to the docker container and
+# the Bazel override written to `bazel.rc` from tools/.../grpc_build_submodule_at_head.sh
 # (outside docker container) forces bazel to look for the same host location
 # inside the docker container, which doesn't exist.
-# Hence overriding it again with the working directory inside the container 
+# Hence overriding it again with the working directory inside the container
 # should solve this issue
 BAZEL_DEP_PATH="$(pwd)/third_party/protobuf"
 BAZEL_DEP_NAME="com_google_protobuf"
@@ -216,7 +216,7 @@ pip_install_dir "$ROOT/src/python/grpcio_status"
 
 
 # Build/install status proto mapping
-# build.py is invoked as part of generate_projects.sh
+# build_xds_protos.py is invoked as part of generate_projects.sh
 pip_install_dir "$ROOT/tools/distrib/python/xds_protos"
 
 # Build/install csds
