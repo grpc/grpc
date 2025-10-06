@@ -61,7 +61,7 @@ except ImportError:
         "preprocess": _NoOpCommand,
     }
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     setuptools.setup(
         install_requires=INSTALL_REQUIRES,
         cmdclass=COMMAND_CLASS,

@@ -14,9 +14,9 @@
 """Setup module for the GRPC Python package's status mapping."""
 
 import os
+import sys
 
 import setuptools
-import sys
 
 # Manually insert the source directory into the Python path for local module
 # imports to succeed
@@ -44,17 +44,14 @@ class _NoOpCommand(setuptools.Command):
         pass
 
 
-CLASSIFIERS = (
-    [
-        "Development Status :: 5 - Production/Stable",
-        "Programming Language :: Python",
-        "Programming Language :: Python :: 3",
-    ]
-    + [
-        f"Programming Language :: Python :: {x}"
-        for x in python_version.SUPPORTED_PYTHON_VERSIONS
-    ]
-)
+CLASSIFIERS = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+] + [
+    f"Programming Language :: Python :: {x}"
+    for x in python_version.SUPPORTED_PYTHON_VERSIONS
+]
 
 
 INSTALL_REQUIRES = (
@@ -79,7 +76,7 @@ except ImportError:
         "build_package_protos": _NoOpCommand,
     }
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     setuptools.setup(
         classifiers=CLASSIFIERS,
         python_requires=f">={python_version.MIN_PYTHON_VERSION}",

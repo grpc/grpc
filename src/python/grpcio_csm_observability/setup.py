@@ -13,9 +13,9 @@
 # limitations under the License.
 
 import os
+import sys
 
 import setuptools
-import sys
 
 # Manually insert the source directory into the Python path for local module
 # imports to succeed
@@ -25,7 +25,6 @@ import python_version
 
 import grpc_version
 
-
 INSTALL_REQUIRES = (
     "opentelemetry-sdk>=1.25.0",
     "opentelemetry-resourcedetector-gcp>=1.6.0a0",
@@ -33,7 +32,7 @@ INSTALL_REQUIRES = (
     "protobuf>=6.31.1,<7.0.0",
 )
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     setuptools.setup(
         python_requires=f">={python_version.MIN_PYTHON_VERSION}",
         install_requires=INSTALL_REQUIRES,
