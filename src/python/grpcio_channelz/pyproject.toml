@@ -1,9 +1,8 @@
 [build-system]
 requires = [
-    "setuptools>=61.0.0",
+    "setuptools>=75.0.0",
     "wheel",
 ]
-    # "grpcio>=1.63.0", # Static minimum for the build environment
 build-backend = "setuptools.build_meta"
 
 [project]

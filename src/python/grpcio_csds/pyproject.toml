@@ -4,8 +4,6 @@ requires = [
     "wheel",
     "protobuf>=6.31.1,<7.0.0"
 ]
-    # "xds-protos==1.63.0", # Static minimum for the build environment
-    # "grpcio>=1.63.0", # Static minimum for the build environment
 build-backend = "setuptools.build_meta"
 
 [project]
