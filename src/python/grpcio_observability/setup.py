@@ -26,7 +26,6 @@ import setuptools
 from setuptools import Extension
 from setuptools.command import build_ext
 
-
 # Manually insert the source directory into the Python path for local module
 # imports to succeed
 sys.path.insert(0, os.path.abspath("."))

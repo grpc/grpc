@@ -40,7 +40,6 @@ import python_version
 
 import grpc_version
 
-
 _EXT_INIT_SYMBOL = "PyInit__protoc_compiler"
 
 _parallel_compile_patch.monkeypatch_compile_maybe()

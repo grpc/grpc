@@ -27,7 +27,6 @@ import python_version
 
 import grpc_version
 
-
 INSTALL_REQUIRES = (
     "protobuf>=6.31.1,<7.0.0",
     f"xds-protos=={grpc_version.VERSION}",
@@ -37,7 +36,7 @@ SETUP_REQUIRES = INSTALL_REQUIRES
 
 PYTHON_REQUIRES = f">={python_version.MIN_PYTHON_VERSION}"
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     setuptools.setup(
         python_requires=f">={python_version.MIN_PYTHON_VERSION}",
         install_requires=INSTALL_REQUIRES,
