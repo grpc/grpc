@@ -12,12 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "absl/flags/parse.h"
+#include <cstdlib>
+#include <iostream>
+#include <string>
+#include <vector>
+#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "test/cpp/sleuth/tool.h"
+#include "test/cpp/sleuth/version.h"
 #include "test/cpp/util/test_config.h"
 
 void UsageThenDie() {
+  std::cerr << "Sleuth version " << grpc_sleuth::kSleuthVersion << "\n";
   std::cerr << "Usage: sleuth <tool> [args...]\n";
   for (const auto& tool : grpc_sleuth::ToolRegistry::Get()->GetMetadata()) {
     std::cerr << "  " << tool.name << " " << tool.args << ": "
