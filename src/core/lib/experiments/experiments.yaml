@@ -145,7 +145,7 @@
   allow_in_fuzzing_config: false
 - name: free_large_allocator
   description: If set, return all free bytes from a "big" allocator
-  expiry: 2025/09/30
+  expiry: 2026/03/30
   owner: alishananda@google.com
   test_tags: [resource_quota_test]
 - name: fuse_filters
