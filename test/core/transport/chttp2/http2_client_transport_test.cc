@@ -517,6 +517,31 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
 TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
   MockPromiseEndpoint mock_endpoint(/*port=*/1000);
 
+  // Make our mock_enpoint pretend that the peer sent
+  // 1. A HEADER frame that contains our initial metadata
+  // 2. A DATA frame with END_STREAM flag false.
+  // 3. A HEADER frame that contains our trailing metadata.
+  auto read_initial_metadata_cb = mock_endpoint.ExpectDelayedRead(
+      {helper_.EventEngineSliceFromHttp2HeaderFrame(
+           std::string(kPathDemoServiceStep.begin(),
+                       kPathDemoServiceStep.end()),
+           /*stream_id=*/1,
+           /*end_headers=*/true, /*end_stream=*/false),
+       helper_.EventEngineSliceFromHttp2DataFrame(
+           /*payload=*/"Hello", /*stream_id=*/1, /*end_stream=*/false)},
+      event_engine().get());
+
+  auto read_trailing_metadata_cb = mock_endpoint.ExpectDelayedRead(
+      {
+          helper_.EventEngineSliceFromHttp2HeaderFrame(
+              std::string(kPathDemoServiceStep.begin(),
+                          kPathDemoServiceStep.end()),
+              /*stream_id=*/1,
+              /*end_headers=*/true, /*end_stream=*/true),
+      },
+      event_engine().get());
+  absl::AnyInvocable<void()> read_cb_transport_close;
+
   // Send
   // 1. Client Initial Metadata
   // 2. Data frame with END_STREAM flag set.
@@ -528,39 +553,17 @@ TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
           helper_.EventEngineSliceFromHttp2SettingsFrameDefault(),
       },
       event_engine().get());
-  mock_endpoint.ExpectWrite(
+  mock_endpoint.ExpectWriteWithCallback(
       {
           helper_.EventEngineSliceFromHttp2HeaderFrame(std::string(
               kPathDemoServiceStep.begin(), kPathDemoServiceStep.end())),
           helper_.EventEngineSliceFromEmptyHttp2DataFrame(/*stream_id=*/1,
                                                           /*end_stream=*/true),
       },
-      event_engine().get());
-
-  // Make our mock_enpoint pretend that the peer sent
-  // 1. A HEADER frame that contains our initial metadata
-  // 2. A DATA frame with END_STREAM flag false.
-  // 3. A HEADER frame that contains our trailing metadata.
-  mock_endpoint.ExpectRead(
-      {helper_.EventEngineSliceFromHttp2HeaderFrame(
-           std::string(kPathDemoServiceStep.begin(),
-                       kPathDemoServiceStep.end()),
-           /*stream_id=*/1,
-           /*end_headers=*/true, /*end_stream=*/false),
-       helper_.EventEngineSliceFromHttp2DataFrame(
-           /*payload=*/"Hello", /*stream_id=*/1, /*end_stream=*/false)},
-      event_engine().get());
-
-  auto read_cb = mock_endpoint.ExpectDelayedRead(
-      {
-          helper_.EventEngineSliceFromHttp2HeaderFrame(
-              std::string(kPathDemoServiceStep.begin(),
-                          kPathDemoServiceStep.end()),
-              /*stream_id=*/1,
-              /*end_headers=*/true, /*end_stream=*/true),
-      },
-      event_engine().get());
-  absl::AnyInvocable<void()> read_cb_transport_close;
+      event_engine().get(), [&](SliceBuffer& out, SliceBuffer& expect) {
+        EXPECT_EQ(out.JoinIntoString(), expect.JoinIntoString());
+        read_initial_metadata_cb();
+      });
 
   LOG(INFO) << "Creating Http2ClientTransport";
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
@@ -583,43 +586,44 @@ TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
   StrictMock<MockFunction<void()>> on_done;
   EXPECT_CALL(on_done, Call());
 
-  call.initiator.SpawnInfallible("test-wait", [initator = call.initiator,
-                                               &on_done, &read_cb,
-                                               &read_cb_transport_close,
-                                               &mock_endpoint, this]() mutable {
-    return Seq(
-        initator.PullServerInitialMetadata(),
-        [](std::optional<ServerMetadataHandle> header) {
-          EXPECT_TRUE(header.has_value());
-          EXPECT_EQ((*header)->DebugString(),
-                    ":path: /demo.Service/Step, GrpcStatusFromWire: true");
-          LOG(INFO) << "PullServerInitialMetadata Resolved";
-        },
-        initator.PullMessage(),
-        [](ServerToClientNextMessage message) {
-          EXPECT_TRUE(message.ok());
-          EXPECT_TRUE(message.has_value());
-          EXPECT_EQ(message.value().payload()->JoinIntoString(), "Hello");
-          LOG(INFO) << "PullMessage Resolved";
-        },
-        [&read_cb, &read_cb_transport_close, &mock_endpoint, this]() mutable {
-          read_cb();
-          read_cb_transport_close = mock_endpoint.ExpectDelayedReadClose(
-              absl::UnavailableError("Connection closed"),
-              event_engine().get());
-        },
-        initator.PullServerTrailingMetadata(),
-        [&on_done,
-         &read_cb_transport_close](std::optional<ServerMetadataHandle> header) {
-          EXPECT_TRUE(header.has_value());
-          EXPECT_EQ((*header)->DebugString(),
-                    ":path: /demo.Service/Step, GrpcStatusFromWire: true");
-          on_done.Call();
-          read_cb_transport_close();
-          LOG(INFO) << "PullServerTrailingMetadata Resolved";
-          return Empty{};
-        });
-  });
+  call.initiator.SpawnInfallible(
+      "test-wait",
+      [initator = call.initiator, &on_done, &read_trailing_metadata_cb,
+       &read_cb_transport_close, &mock_endpoint, this]() mutable {
+        return Seq(
+            initator.PullServerInitialMetadata(),
+            [](std::optional<ServerMetadataHandle> header) {
+              EXPECT_TRUE(header.has_value());
+              EXPECT_EQ((*header)->DebugString(),
+                        ":path: /demo.Service/Step, GrpcStatusFromWire: true");
+              LOG(INFO) << "PullServerInitialMetadata Resolved";
+            },
+            initator.PullMessage(),
+            [](ServerToClientNextMessage message) {
+              EXPECT_TRUE(message.ok());
+              EXPECT_TRUE(message.has_value());
+              EXPECT_EQ(message.value().payload()->JoinIntoString(), "Hello");
+              LOG(INFO) << "PullMessage Resolved";
+            },
+            [&read_trailing_metadata_cb, &read_cb_transport_close,
+             &mock_endpoint, this]() mutable {
+              read_trailing_metadata_cb();
+              read_cb_transport_close = mock_endpoint.ExpectDelayedReadClose(
+                  absl::UnavailableError("Connection closed"),
+                  event_engine().get());
+            },
+            initator.PullServerTrailingMetadata(),
+            [&on_done, &read_cb_transport_close](
+                std::optional<ServerMetadataHandle> header) {
+              EXPECT_TRUE(header.has_value());
+              EXPECT_EQ((*header)->DebugString(),
+                        ":path: /demo.Service/Step, GrpcStatusFromWire: true");
+              on_done.Call();
+              read_cb_transport_close();
+              LOG(INFO) << "PullServerTrailingMetadata Resolved";
+              return Empty{};
+            });
+      });
 
   // Wait for Http2ClientTransport's internal activities to finish.
   event_engine()->TickUntilIdle();
@@ -884,67 +888,6 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportAbortTest) {
   // Wait for Http2ClientTransport's internal activities to finish.
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
-}
-
-TEST(Http2CommonTransportTest, TestReadChannelArgs) {
-  // Test to validate that ReadChannelArgs reads all the channel args
-  // correctly.
-  Http2Settings settings;
-  chttp2::TransportFlowControl transport_flow_control(
-      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
-      /*memory_owner=*/nullptr);
-  ChannelArgs channel_args =
-      ChannelArgs()
-          .Set(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER, 2048)
-          .Set(GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES, 1024)
-          .Set(GRPC_ARG_HTTP2_MAX_FRAME_SIZE, 16384)
-          .Set(GRPC_ARG_EXPERIMENTAL_HTTP2_PREFERRED_CRYPTO_FRAME_SIZE, true)
-          .Set(GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY, 1)
-          .Set(GRPC_ARG_SECURITY_FRAME_ALLOWED, true);
-  ReadSettingsFromChannelArgs(channel_args, settings, transport_flow_control,
-                              /*is_client=*/true);
-  // Settings read from ChannelArgs.
-  EXPECT_EQ(settings.header_table_size(), 2048u);
-  EXPECT_EQ(settings.initial_window_size(), 1024u);
-  EXPECT_EQ(settings.max_frame_size(), 16384u);
-  EXPECT_EQ(settings.preferred_receive_crypto_message_size(), INT_MAX);
-  EXPECT_EQ(settings.allow_true_binary_metadata(), true);
-  EXPECT_EQ(settings.allow_security_frame(), true);
-  // Default settings
-  EXPECT_EQ(settings.max_concurrent_streams(), 4294967295u);
-  EXPECT_EQ(settings.max_header_list_size(), 16384u);
-  EXPECT_EQ(settings.enable_push(), true);
-
-  // If ChannelArgs don't have a value for the setting, the default must be
-  // loaded into the Settings object
-  Http2Settings settings2;
-  EXPECT_EQ(settings2.header_table_size(), 4096u);
-  EXPECT_EQ(settings2.max_concurrent_streams(), 4294967295u);
-  EXPECT_EQ(settings2.initial_window_size(), 65535u);
-  EXPECT_EQ(settings2.max_frame_size(), 16384u);
-  // TODO(tjagtap) : [PH2][P4] : Investigate why we change it in
-  // ReadSettingsFromChannelArgs . Right now ReadSettingsFromChannelArgs is
-  // functinally similar to the legacy read_channel_args.
-  EXPECT_EQ(settings2.max_header_list_size(), 16777216u);
-  EXPECT_EQ(settings2.preferred_receive_crypto_message_size(), 0u);
-  EXPECT_EQ(settings2.enable_push(), true);
-  EXPECT_EQ(settings2.allow_true_binary_metadata(), false);
-  EXPECT_EQ(settings2.allow_security_frame(), false);
-
-  ReadSettingsFromChannelArgs(ChannelArgs(), settings2, transport_flow_control,
-                              /*is_client=*/true);
-  EXPECT_EQ(settings2.header_table_size(), 4096u);
-  EXPECT_EQ(settings2.max_concurrent_streams(), 4294967295u);
-  EXPECT_EQ(settings2.initial_window_size(), 65535u);
-  EXPECT_EQ(settings2.max_frame_size(), 16384u);
-  // TODO(tjagtap) : [PH2][P4] : Investigate why we change it in
-  // ReadSettingsFromChannelArgs . Right now ReadSettingsFromChannelArgs is
-  // functinally similar to the legacy read_channel_args.
-  EXPECT_EQ(settings2.max_header_list_size(), 16384u);
-  EXPECT_EQ(settings2.preferred_receive_crypto_message_size(), 0u);
-  EXPECT_EQ(settings2.enable_push(), true);
-  EXPECT_EQ(settings2.allow_true_binary_metadata(), false);
-  EXPECT_EQ(settings2.allow_security_frame(), false);
 }
 
 TEST_F(Http2ClientTransportTest, TestFlowControlWindow) {

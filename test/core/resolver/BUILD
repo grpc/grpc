@@ -35,6 +35,7 @@ grpc_cc_test(
         "//:parse_address",
         "//:sockaddr_utils",
         "//:uri",
+        "//src/core:grpc_check",
         "//src/core:resolved_address",
         "//test/core/test_util:grpc_test_util",
     ],

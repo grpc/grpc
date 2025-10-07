@@ -47,6 +47,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc",
         "//:sockaddr_utils",
+        "//src/core:grpc_check",
         "//src/core:notification",
         "//src/core:resolved_address",
         "//src/core:strerror",

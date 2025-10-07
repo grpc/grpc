@@ -33,6 +33,7 @@ grpc_cc_binary(
         "//:grpc",
         "//:iomgr",
         "//src/core:error",
+        "//src/core:grpc_check",
         "//src/core:grpc_sockaddr",
         "//src/core:strerror",
         "//src/core:useful",

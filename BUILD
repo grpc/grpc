@@ -5163,6 +5163,11 @@ grpc_cc_library(
 ### UPB Targets
 
 grpc_upb_proto_library(
+    name = "alts_handshaker_upb_proto",
+    deps = ["//src/proto/grpc/gcp:alts_handshaker_proto"],
+)
+
+grpc_upb_proto_library(
     name = "envoy_admin_upb",
     deps = ["@envoy_api//envoy/admin/v3:pkg"],
 )

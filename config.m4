@@ -178,6 +178,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/transport/frame_security.cc \
     src/core/ext/transport/chttp2/transport/frame_settings.cc \
     src/core/ext/transport/chttp2/transport/frame_window_update.cc \
+    src/core/ext/transport/chttp2/transport/goaway.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc \
     src/core/ext/transport/chttp2/transport/hpack_parse_result.cc \

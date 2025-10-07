@@ -405,6 +405,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/frame_settings.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/frame_window_update.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/frame_window_update.h )
+  s.files += %w( src/core/ext/transport/chttp2/transport/goaway.cc )
+  s.files += %w( src/core/ext/transport/chttp2/transport/goaway.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/header_assembler.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/hpack_constants.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/hpack_encoder.cc )

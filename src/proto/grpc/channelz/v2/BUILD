@@ -19,6 +19,7 @@ load(
     "grpc_internal_proto_library",
     "grpc_package",
     "grpc_upb_proto_library",
+    "grpc_upb_proto_reflection_library",
 )
 
 licenses(["notice"])
@@ -35,6 +36,16 @@ grpc_internal_proto_library(
         "@com_google_protobuf//:any_proto",
         "@com_google_protobuf//:timestamp_proto",
     ],
+)
+
+grpc_upb_proto_library(
+    name = "channelz_upb_proto",
+    deps = ["channelz_proto"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "channelz_upbdefs_proto",
+    deps = ["channelz_proto"],
 )
 
 grpc_internal_proto_library(
