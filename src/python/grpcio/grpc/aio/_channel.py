@@ -423,23 +423,22 @@ class Channel(_base_channel.Channel):
             # Explicitly check for a non-null candidate instead of the more pythonic 'if candidate:'
             # because doing 'if candidate:' assumes that the coroutine implements '__bool__' which
             # might not always be the case.
-            if candidate is not None:
-                if isinstance(candidate, _base_call.Call):
-                    if hasattr(candidate, "_channel"):
-                        # For intercepted Call object
-                        if candidate._channel is not self._channel:
-                            continue
-                    elif hasattr(candidate, "_cython_call"):
-                        # For normal Call object
-                        if candidate._cython_call._channel is not self._channel:
-                            continue
-                    else:
-                        # Unidentified Call object
-                        error_msg = f"Unrecognized call object: {candidate}"
-                        raise cygrpc.InternalError(error_msg)
+            if candidate is not None and isinstance(candidate, _base_call.Call):
+                if hasattr(candidate, "_channel"):
+                    # For intercepted Call object
+                    if candidate._channel is not self._channel:
+                        continue
+                elif hasattr(candidate, "_cython_call"):
+                    # For normal Call object
+                    if candidate._cython_call._channel is not self._channel:
+                        continue
+                else:
+                    # Unidentified Call object
+                    error_msg = f"Unrecognized call object: {candidate}"
+                    raise cygrpc.InternalError(error_msg)
 
-                    calls.append(candidate)
-                    call_tasks.append(task)
+                calls.append(candidate)
+                call_tasks.append(task)
 
         # If needed, try to wait for them to finish.
         # Call objects are not always awaitables.
