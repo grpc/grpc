@@ -438,8 +438,8 @@ class Channel(_base_channel.Channel):
                         error_msg = f"Unrecognized call object: {candidate}"
                         raise cygrpc.InternalError(error_msg)
 
-                calls.append(candidate)
-                call_tasks.append(task)
+                    calls.append(candidate)
+                    call_tasks.append(task)
 
         # If needed, try to wait for them to finish.
         # Call objects are not always awaitables.
