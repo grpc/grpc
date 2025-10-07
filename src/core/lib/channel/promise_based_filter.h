@@ -61,6 +61,7 @@
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_like.h"
+#include "src/core/lib/promise/inter_activity_latch.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
@@ -1220,8 +1221,21 @@ class ImplementChannelFilter : public ChannelFilter,
   }
 };
 
+struct V3InterceptorToV2State {
+  InterActivityLatch<CallHandler> call_handler_latch;
+};
+
+template <>
+struct ArenaContextType<V3InterceptorToV2State> {
+  static void Destroy(V3InterceptorToV2State*) {}
+};
+
 // Allows writing v3 interceptor that works with v2 stacks (and consequently
 // also v1 stacks since we can run v2 filters in v1 stacks).
+//
+// Note that this bridge does not support the full functionality of the
+// v3 interceptor API.  In particular, it assumes that the interceptor
+// will create exactly one child call.
 template <typename Derived>
 class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
  public:
@@ -1234,108 +1248,128 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
 
   ArenaPromise<ServerMetadataHandle> MakeCallPromise(
       CallArgs call_args, NextPromiseFactory next_promise_factory) final {
-    // Allocate call state on the arena.
-    auto* call = GetContext<Arena>()->ManagedNew<Call>();
-    // Intercept all operations from v2 API.
-    auto* client_to_server_messages_receiver = std::exchange(
-        call_args.client_to_server_messages,
-        &call->client_to_server_messages.receiver);
-    auto* server_initial_metadata_sender = std::exchange(
-        call_args.server_initial_metadata,
-        &call->server_initial_metadata.sender);
-    auto* server_to_client_messages_sender = std::exchange(
-        call_args.server_to_client_messages,
-        &call->server_to_client_messages.sender);
+    // Create a latch to get the call handler, and put a pointer to it
+    // in call context, so that CallDestinationToNextV2Filter can set
+    // it when it starts the call.
+    auto* arena = GetContext<Arena>();
+    auto* state = arena->ManagedNew<V3InterceptorToV2State>();
+    arena->SetContext<V3InterceptorToV2State>(state);
     // Now we create a new v3 call pair.  The initiator will be the
     // client side of the v3 interceptor, and the handler will be the
     // server side.
-    // FIXME: need to propagate cancellation somehow?
-    // FIXME: how do I propagate server trailing metadata and status?
-    auto [initiator, unstarted_handler] = MakeCallPair(
-        std::move(call_args.client_initial_metadata), GetContext<Arena>());
+    auto [initiator, unstarted_handler] =
+        MakeCallPair(std::move(call_args.client_initial_metadata),
+                     GetContext<Arena>()->Ref());
     // Inject the unstarted handler into the interceptor.
     StartCall(std::move(unstarted_handler));
-    // FIXME: need to spawn these into the party somehow
-    // Push client messages into the initiator.
-    auto initiator_client_to_server_messages_promise =
-        [initiator, client_to_server_messages_receiver]() {
-          return Loop(
-            TrySeq(
-              client_to_server_messages_receiver->Next(),
-              [initiator](NextResult<Message> m) {
-                initiator.PushMessage(move(*m));
-              }
-            )
-          );
-        };
-    // Pull server-sent events from the initiator and into the v2 pipes.
-    auto initiator_server_initial_metadata_promise =
-        [initiator, server_initial_metadata_sender]() {
-          return TrySeq(
-              initiator->PullServerInitialMetadata(),
-              [server_initial_metadata_sender](
-                  std::optional<ServerMetadataHandle> metadata) {
-                server_initial_metadata_sender->Push(std::move(metadata));
-              });
-        };
-    auto initiator_server_to_client_messages_promise =
-        [initiator, server_to_client_messages_sender]() {
-          return TrySeq(
-              initiator->PullMessage(),
-              [server_to_client_messages_sender](NextResult<Message> m) {
-                server_to_client_messages_sender->Push(std::move(metadata));
-              });
-        };
-    // FIXME: this doesn't seem right -- need to first poll on the above
-    // promises somehow?
-    return next_promise_factory(std::move(call_args));
+    // Now return a promise that does all the things.
+    // FIXME: need to propagate cancellation somehow?
+    return TrySeq(
+        state->call_handler_latch.Wait(),
+        [initiator = std::move(initiator), call_args = std::move(call_args),
+         next_promise_factory =
+             std::move(next_promise_factory)](CallHandler handler) mutable {
+          // Intercept all pipes from v2 API.
+          Pipe<MessageHandle> client_to_server_messages;
+          auto* client_to_server_messages_receiver =
+              std::exchange(call_args.client_to_server_messages,
+                            &client_to_server_messages.receiver);
+          Pipe<ServerMetadataHandle> server_initial_metadata;
+          auto* server_initial_metadata_sender =
+              std::exchange(call_args.server_initial_metadata,
+                            &server_initial_metadata.sender);
+          Pipe<MessageHandle> server_to_client_messages;
+          auto* server_to_client_messages_sender =
+              std::exchange(call_args.server_to_client_messages,
+                            &server_to_client_messages.sender);
+          // Initiator-side promise for client-to-server data.
+          auto initiator_client_to_server_promise =
+              [initiator, client_to_server_messages_receiver]() mutable {
+                return ForEach([&]() {
+                  return TrySeq(
+                      client_to_server_messages_receiver->Next(),
+                      [initiator](NextResult<MessageHandle> message) mutable {
+                        return initiator.PushMessage(std::move(*message));
+                      });
+                });
+              };
+          // Initiator-side promise for server-to-client data.
+          auto initiator_server_to_client_promise =
+              [initiator, server_initial_metadata_sender,
+               server_to_client_messages_sender]() mutable {
+                return TrySeq(TrySeq(initiator.PullServerInitialMetadata(),
+                                     [server_initial_metadata_sender](
+                                         std::optional<ServerMetadataHandle>
+                                             metadata) mutable {
+                                       // FIXME: check if metadata.has_value()
+                                       server_initial_metadata_sender->Push(
+                                           std::move(*metadata));
+                                     }),
+                              ForEach([&]() {
+                                return TrySeq(
+                                    initiator.PullMessage(),
+                                    [server_to_client_messages_sender](
+                                        NextResult<MessageHandle> message) {
+                                      server_to_client_messages_sender->Push(
+                                          std::move(*message));
+                                    });
+                              }));
+              };
+          // Handler-side promise for client-to-server data.
+          auto handler_client_to_server_promise =
+              [handler, &client_to_server_messages]() mutable {
+                return ForEach([&]() {
+                  return TrySeq(handler.PullMessage(),
+                                [&](NextResult<MessageHandle> message) {
+                                  client_to_server_messages.sender.Push(
+                                      std::move(*message));
+                                });
+                });
+              };
+          // Handler-side promise for server-to-client data.
+          auto handler_server_to_client_promise =
+              [handler, &server_initial_metadata,
+               &server_to_client_messages]() mutable {
+                return TrySeq(
+                    TrySeq(server_initial_metadata.receiver.Next(),
+                           [handler](std::optional<ServerMetadataHandle>
+                                         metadata) mutable {
+                             // FIXME: check if metadata.has_value()
+                             handler.PushServerInitialMetadata(
+                                 std::move(*metadata));
+                           }),
+                    ForEach([&]() {
+                      return TrySeq(
+                          server_to_client_messages.receiver.Next(),
+                          [handler](NextResult<MessageHandle> message) mutable {
+                            handler.PushMessage(std::move(*message));
+                          });
+                    }));
+              };
+          // Now put it all together.
+          return PrioritizedRace(next_promise_factory(std::move(call_args)),
+                                 initiator_client_to_server_promise,
+                                 initiator_server_to_client_promise,
+                                 handler_client_to_server_promise,
+                                 handler_server_to_client_promise);
+        });
   }
 
  private:
-  struct Call {
-    Pipe client_to_server_messages;
-    Pipe server_initial_metadata;
-    Pipe server_to_client_messages;
-  };
-
-  // A custom UnstartedCallDestination that forwards the results from the
-  // v3 interceptor into the v2 pipes.  We insert this into
-  // the interceptor as the wrapped call destination, so that it will handle
-  // the result of the interception.
+  // A custom UnstartedCallDestination that starts the call and returns
+  // the resulting handler via a latch obtained from call context.
   class CallDestinationToNextV2Filter final : public UnstartedCallDestination {
    public:
     void StartCall(UnstartedCallHandler unstarted_call_handler) override {
+      // Get the latch from call context.
+      auto* arena = GetContext<Arena>();
+      auto* state = arena->GetContext<V3InterceptorToV2State>();
+      arena->SetContext<V3InterceptorToV2State>(nullptr);
+      // Start the call.
       CallHandler handler = unstarted_call_handler.StartCall();
-      Call* call = nullptr;  // FIXME: how do I get the Call object here?
-      // FIXME: need to spawn these into the party somehow
-      auto handler_server_initial_metadata_promise = [call, handler]() {
-        return TrySeq(
-            call->server_initial_metadata.receiver->Next(),
-            [handler](std::optional<ServerMetadataHandle> metadata) {
-              handler.PushServerInitialMetadata(std::move(metadata));
-            });
-      };
-      auto handler_server_to_client_messages_promise = [call, handler]() {
-        return Loop(
-            TrySeq(
-              call->server_to_client_messages.receiver->Next(),
-              [handler](NextResult<Message> m) {
-                handler.PushMessage(move(*m));
-              }));
-      };
-      auto handler_client_to_server_messages_promise = [call, handler]() {
-        return Loop(
-            TrySeq(
-              handler.PullMessage();
-              [handler](NextResult<Message> m) {
-                call->client_to_server_messages.sender->Push(std::move(*m));
-              }));
-      };
-      // FIXME: how do I propagate server trailing metadata and status?
+      // Pass call handler to the latch.
+      state->call_handler_latch.Set(std::move(handler));
     }
-
-   private:
-    NextPromiseFactory next_promise_factory_;
   };
 };
 

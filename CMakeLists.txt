@@ -6074,6 +6074,7 @@ add_library(grpc_authorization_provider
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
+  src/core/lib/promise/wait_set.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -10140,6 +10141,7 @@ add_executable(call_utils_test
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
+  src/core/lib/promise/wait_set.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -17055,6 +17057,7 @@ add_executable(filter_fusion_test
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
+  src/core/lib/promise/wait_set.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -34882,6 +34885,7 @@ add_executable(tool_test_test
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
+  src/core/lib/promise/wait_set.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc

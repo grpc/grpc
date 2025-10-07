@@ -4827,6 +4827,7 @@ libs:
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
+  - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/interceptor_list.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
@@ -4840,6 +4841,7 @@ libs:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/try_seq.h
+  - src/core/lib/promise/wait_set.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
@@ -5179,6 +5181,7 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_posix.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/party.cc
+  - src/core/lib/promise/wait_set.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
@@ -7465,6 +7468,7 @@ targets:
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
+  - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/interceptor_list.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
@@ -7478,6 +7482,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/try_seq.h
+  - src/core/lib/promise/wait_set.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
@@ -7780,6 +7785,7 @@ targets:
   - src/core/lib/iomgr/wakeup_fd_posix.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/party.cc
+  - src/core/lib/promise/wait_set.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
@@ -12621,6 +12627,7 @@ targets:
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
+  - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/interceptor_list.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
@@ -12634,6 +12641,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/try_seq.h
+  - src/core/lib/promise/wait_set.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
@@ -12936,6 +12944,7 @@ targets:
   - src/core/lib/iomgr/wakeup_fd_posix.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/party.cc
+  - src/core/lib/promise/wait_set.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc
@@ -24224,6 +24233,7 @@ targets:
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
+  - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/interceptor_list.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
@@ -24237,6 +24247,7 @@ targets:
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/try_seq.h
+  - src/core/lib/promise/wait_set.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/memory_quota.h
@@ -24541,6 +24552,7 @@ targets:
   - src/core/lib/iomgr/wakeup_fd_posix.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/party.cc
+  - src/core/lib/promise/wait_set.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/memory_quota.cc

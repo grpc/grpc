@@ -2084,6 +2084,7 @@ grpc_cc_library(
         "//src/core:gpr_spinlock",
         "//src/core:grpc_check",
         "//src/core:if",
+        "//src/core:inter_activity_latch",
         "//src/core:iomgr_fwd",
         "//src/core:latch",
         "//src/core:latent_see",
