@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+PYTHON_STEM# Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -31,10 +31,11 @@ from setuptools.command import test
 
 PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
 GRPC_STEM = os.path.abspath(PYTHON_STEM + "../../../../")
-GRPC_PROTO_STEM = os.path.join(GRPC_STEM, "src", "proto")
-PROTO_STEM = os.path.join(PYTHON_STEM, "src", "proto")
-PYTHON_PROTO_TOP_LEVEL = os.path.join(PYTHON_STEM, "src")
-
+GRPC_ROOT = os.path.relpath(GRPC_STEM, start=GRPC_STEM)
+PYTHON_REL_PATH = os.path.relpath(PYTHON_STEM, start=GRPC_STEM)
+GRPC_PROTO_STEM = os.path.join(GRPC_ROOT, "src", "proto")
+PROTO_STEM = os.path.join(PYTHON_REL_PATH, "src", "proto")
+PYTHON_PROTO_TOP_LEVEL = os.path.join(PYTHON_REL_PATH, "src")
 
 class CommandError(object):
     pass
