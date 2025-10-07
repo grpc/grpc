@@ -236,7 +236,7 @@ def _populate_metadata_from_file(scenario_result, test_metadata_file):
 
         annotations = test_metadata.get("annotations", {})
 
-        # if use kubectl apply ..., kubectl will append current configuration to
+        # if using kubectl apply ..., kubectl will append current configuration to
         # annotation, the field is deleted since it includes a lot of irrelevant
         # information
         if "kubectl.kubernetes.io/last-applied-configuration" in annotations:
