@@ -83,7 +83,6 @@ ignore = [
     "S101",    # Use of assert detected
     "S105",    # Possible hardcoded password assigned to: "{}"
     "S110",    # try-except-pass detected, consider logging the exception
-    "S301",    # pickle and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue
     "SIM103",  # Return the condition {condition} directly
     "SIM105",  # Use contextlib.suppress({exception}) instead of try-except-pass
     "SIM108",  # Use ternary operator {contents} instead of if-else-block
