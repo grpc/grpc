@@ -24,7 +24,6 @@
 #include <string.h>
 
 #include <atomic>
-#include <cstdint>
 #include <initializer_list>
 #include <limits>
 #include <memory>
@@ -672,7 +671,8 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
                         nullptr, &t->http2_ztrace_collector));
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
-    } else if (GPR_UNLIKELY(t->memory_owner.IsMemoryPressureHigh())) {
+    } else if (GPR_UNLIKELY(
+                   t->memory_owner.RejectNewStreamsUnderHighMemoryPressure())) {
       // We have more streams allocated than we'd like, so apply some pushback
       // by refusing this stream.
       t->memory_owner.telemetry_storage()->Increment(
@@ -754,17 +754,6 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
       GRPC_CHTTP2_IF_TRACING(ERROR) << "grpc_chttp2_stream not accepted";
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
     }
-
-    uint32_t current_open_streams = t->stream_map.size() + t->extra_streams;
-    if (t->max_concurrent_streams_overload_protection) {
-      current_open_streams =
-          t->streams_allocated.load(std::memory_order_relaxed);
-    }
-
-    t->settings.mutable_local().UpdateMaxConcurrentStreams(
-        t->stream_quota->GetConnectionMaxConcurrentRequests(
-            current_open_streams));
-
     if (GRPC_TRACE_FLAG_ENABLED(http) ||
         GRPC_TRACE_FLAG_ENABLED(chttp2_new_stream)) {
       LOG(INFO) << "[t:" << t << " fd:" << grpc_endpoint_get_fd(t->ep.get())

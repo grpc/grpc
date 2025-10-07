@@ -91,6 +91,7 @@ using ::grpc_event_engine::experimental::SliceBuffer;
 static void finish_shutdown(grpc_tcp_server* s) {
   gpr_mu_lock(&s->mu);
   GRPC_CHECK(s->shutdown);
+  grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_ending);
   gpr_mu_unlock(&s->mu);
   if (s->shutdown_complete != nullptr) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, s->shutdown_complete,
@@ -279,6 +280,8 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   s->shutdown = false;
   s->shutdown_starting.head = nullptr;
   s->shutdown_starting.tail = nullptr;
+  s->shutdown_ending.head = nullptr;
+  s->shutdown_ending.tail = nullptr;
   if (!grpc_event_engine::experimental::UseEventEngineListener()) {
     s->shutdown_complete = shutdown_complete;
   } else {
@@ -421,7 +424,8 @@ static void on_read(void* arg, grpc_error_handle err) {
       goto error;
     }
 
-    if (sp->server->memory_quota->IsMemoryPressureHigh()) {
+    if (sp->server->memory_quota
+            ->RejectNewConnectionsUnderHighMemoryPressure()) {
       int64_t dropped_connections_count =
           num_dropped_connections.fetch_add(1, std::memory_order_relaxed) + 1;
       if (dropped_connections_count % 1000 == 1) {
@@ -835,6 +839,14 @@ static void tcp_server_shutdown_starting_add(grpc_tcp_server* s,
   gpr_mu_unlock(&s->mu);
 }
 
+static void tcp_server_shutdown_ending_add(grpc_tcp_server* s,
+                                           grpc_closure* shutdown_ending) {
+  gpr_mu_lock(&s->mu);
+  grpc_closure_list_append(&s->shutdown_ending, shutdown_ending,
+                           absl::OkStatus());
+  gpr_mu_unlock(&s->mu);
+}
+
 static void tcp_server_unref(grpc_tcp_server* s) {
   if (gpr_unref(&s->refs)) {
     grpc_tcp_server_shutdown_listeners(s);
@@ -969,6 +981,7 @@ grpc_tcp_server_vtable grpc_posix_tcp_server_vtable = {
     tcp_server_port_fd,
     tcp_server_ref,
     tcp_server_shutdown_starting_add,
+    tcp_server_shutdown_ending_add,
     tcp_server_unref,
     tcp_server_shutdown_listeners,
     tcp_server_pre_allocated_fd,

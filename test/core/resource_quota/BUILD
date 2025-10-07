@@ -55,6 +55,7 @@ grpc_cc_test(
     external_deps = [
         "absl/status",
         "absl/status:statusor",
+        "absl/time",
         "gtest",
     ],
     tags = [
@@ -65,6 +66,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "call_checker",
+        "//:config_vars",
         "//:exec_ctx",
         "//:gpr",
         "//src/core:memory_quota",
@@ -95,15 +97,6 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = ["//src/core:thread_quota"],
-)
-
-grpc_cc_test(
-    name = "stream_quota_test",
-    srcs = ["stream_quota_test.cc"],
-    external_deps = ["gtest"],
-    uses_event_engine = False,
-    uses_polling = False,
-    deps = ["//src/core:stream_quota"],
 )
 
 grpc_cc_test(

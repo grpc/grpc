@@ -72,7 +72,7 @@ void OutputBuffers::Reader::EndReadNext() {
     // critical path anyway.
     auto frames = std::move(frames_);
     frames_.clear();
-    send_rate_.DequeueFromReader();
+    send_rate_.DequeueFromReader(output_buffers_->clock_->Now());
     mu_.Unlock();
     for (auto& frame : frames) {
       output_buffers_->Write(frame.payload_tag, std::move(frame.frame));
@@ -100,7 +100,7 @@ OutputBuffers::Reader::PollReadNext() {
     DCHECK(!reading_);
     auto frames = std::move(frames_);
     frames_.clear();
-    send_rate_.DequeueFromReader();
+    send_rate_.DequeueFromReader(output_buffers_->clock_->Now());
     output_buffers_->WakeupScheduler(/*async=*/true);
     mu_.Unlock();
     return std::move(frames);
@@ -318,7 +318,7 @@ void OutputBuffers::Schedule() {
         }
         continue;
       }
-      reader->send_rate_.EnqueueToReader(scheduling.queued_bytes);
+      reader->send_rate_.EnqueueToReader(scheduling.queued_bytes, now);
       for (auto& frame : scheduling.frames) {
         reader->frames_.push_back(std::move(frame));
       }

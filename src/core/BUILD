@@ -488,6 +488,7 @@ grpc_cc_library(
         "time_precise",
         "//:gpr_platform",
         "//:gpr_public_hdrs",
+        "//:grpc_support_time",
     ],
 )
 
@@ -504,6 +505,7 @@ grpc_cc_library(
     deps = [
         "//:gpr_platform",
         "//:gpr_public_hdrs",
+        "//:grpc_support_time",
     ],
 )
 
@@ -523,9 +525,10 @@ grpc_cc_library(
         "nofixdeps",
     ],
     deps = [
+        ":gpr_time",
         "//:gpr_platform",
         "//:gpr_public_hdrs",
-        "//src/core:gpr_time",
+        "//:grpc_support_time",
     ],
 )
 
@@ -556,6 +559,7 @@ grpc_cc_library(
         "time_util",
         "//:gpr_platform",
         "//:gpr_public_hdrs",
+        "//:grpc_support_time",
     ],
 )
 
@@ -1774,6 +1778,7 @@ grpc_cc_library(
         "useful",
         ":resource_tracker",
         "//:channelz",
+        "//:config_vars",
         "//:gpr",
         "//:grpc_trace",
         "//:orphanable",
@@ -1840,28 +1845,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "stream_quota",
-    srcs = [
-        "lib/resource_quota/stream_quota.cc",
-    ],
-    hdrs = [
-        "lib/resource_quota/stream_quota.h",
-    ],
-    external_deps = [
-        "absl/base:core_headers",
-        "absl/log:check",
-    ],
-    deps = [
-        "periodic_update",
-        "ref_counted",
-        "sync",
-        ":per_cpu",
-        "//:gpr",
-        "//:ref_counted_ptr",
-    ],
-)
-
-grpc_cc_library(
     name = "connection_quota",
     srcs = [
         "lib/resource_quota/connection_quota.cc",
@@ -1922,7 +1905,6 @@ grpc_cc_library(
         "ref_counted",
         "resource_quota_telemetry",
         "single_set_ptr",
-        "stream_quota",
         "thread_quota",
         "useful",
         "//:channel_arg_names",
@@ -1958,10 +1940,10 @@ grpc_cc_library(
     ],
     public_hdrs = [
         "//:include/grpc/slice.h",
+        "//:include/grpc/impl/slice_type.h",
     ],
     deps = [
         "//:debug_location",
-        "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc_trace",
     ],
@@ -1989,8 +1971,8 @@ grpc_cc_library(
         "slice_cast",
         "slice_refcount",
         "//:debug_location",
-        "//:event_engine_base_hdrs",
         "//:gpr",
+        "//:grpc_event_engine_slice",
     ],
 )
 
@@ -2006,8 +1988,9 @@ grpc_cc_library(
     external_deps = ["absl/log:check"],
     deps = [
         "slice",
-        "slice_refcount",
         "//:gpr",
+        "//:gpr_platform",
+        "//:grpc_slice",
     ],
 )
 
@@ -2037,6 +2020,7 @@ grpc_cc_library(
         "useful",
         "//:gpr",
         "//:grpc_public_hdrs",
+        "//:grpc_support_time",
         "//:grpc_trace",
     ],
 )
@@ -2083,6 +2067,7 @@ grpc_cc_library(
         "useful",
         "//:event_engine_base_hdrs",
         "//:gpr",
+        "//:grpc_support_time",
     ],
 )
 
@@ -2342,6 +2327,7 @@ grpc_cc_library(
         "time",
         "//:event_engine_base_hdrs",
         "//:gpr",
+        "//:grpc_support_time",
         "//:grpc_trace",
     ],
 )
@@ -2686,6 +2672,7 @@ grpc_cc_library(
         "sync",
         "//:event_engine_base_hdrs",
         "//:gpr",
+        "//:grpc_support_time",
     ],
 )
 
@@ -3117,6 +3104,7 @@ grpc_cc_library(
         "useful",
         "//:event_engine_base_hdrs",
         "//:gpr",
+        "//:grpc_trace",
         "//:parse_address",
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
@@ -3404,6 +3392,7 @@ grpc_cc_library(
         "grpc_check",
         "time",
         "//:gpr",
+        "//:grpc_support_time",
         "//:grpc_trace",
     ],
 )
@@ -5690,6 +5679,7 @@ grpc_cc_library(
         "//:grpc_resolver",
         "//:grpc_resolver_fake",
         "//:grpc_security_base",
+        "//:grpc_support_time",
         "//:grpc_trace",
         "//:lb_child_policy_handler",
         "//:orphanable",
@@ -5834,6 +5824,7 @@ grpc_cc_library(
     ],
     deps = [
         "//:gpr",
+        "//:grpc_support_time",
         "//:protobuf_duration_upb",
         "//:protobuf_timestamp_upb",
     ],
@@ -8319,7 +8310,7 @@ grpc_cc_library(
         "message",
         "message_assembler",
         "metadata_batch",
-        "writable_streams",
+        "transport_common",
     ],
 )
 
@@ -9991,6 +9982,7 @@ grpc_cc_library(
     deps = [
         "//:gpr",
         "//:grpc_public_hdrs",
+        "//:grpc_support_time",
     ],
 )
 
@@ -10335,6 +10327,7 @@ grpc_cc_library(
         "slice",
         "time",
         "//:gpr",
+        "//:grpc_support_time",
     ],
 )
 
@@ -10531,6 +10524,32 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "goaway",
+    srcs = [
+        "ext/transport/chttp2/transport/goaway.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/goaway.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/status",
+    ],
+    deps = [
+        "activity",
+        "http2_status",
+        "if",
+        "race",
+        "slice_buffer",
+        "try_seq",
+        "wait_set",
+        "//:chttp2_frame",
+        "//:promise",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "spiffe_utils",
     srcs = [
         "//src/core:credentials/transport/tls/spiffe_utils.cc",
@@ -10584,6 +10603,7 @@ grpc_cc_library(
         "//:channelz_service_upb",
         "//:channelz_upb",
         "//:gpr",
+        "//:grpc_support_time",
         "//:grpc_trace",
         "//:protobuf_any_upb",
         "//:protobuf_any_upbdefs",
@@ -11029,6 +11049,7 @@ grpc_cc_library(
         "if",
         "mpsc",
         "race",
+        "transport_common",
         "try_seq",
     ],
 )

@@ -171,11 +171,6 @@ const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
-const char* const description_server_global_callbacks_ownership =
-    "If set, server global callbacks ownership is fixed to not be owned by "
-    "gRPC.";
-const char* const additional_constraints_server_global_callbacks_ownership =
-    "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
@@ -196,6 +191,9 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
+const char* const description_track_writes_in_resource_quota =
+    "Track the Write memory in Resource Quota.";
+const char* const additional_constraints_track_writes_in_resource_quota = "{}";
 const char* const description_tsi_frame_protector_without_locks =
     "Do not hold locks while using the tsi_frame_protector.";
 const char* const additional_constraints_tsi_frame_protector_without_locks =
@@ -315,10 +313,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_secure_endpoint_offload_large_writes,
      additional_constraints_secure_endpoint_offload_large_writes,
      required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
-    {"server_global_callbacks_ownership",
-     description_server_global_callbacks_ownership,
-     additional_constraints_server_global_callbacks_ownership, nullptr, 0, true,
-     true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
@@ -334,6 +328,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
+    {"track_writes_in_resource_quota",
+     description_track_writes_in_resource_quota,
+     additional_constraints_track_writes_in_resource_quota, nullptr, 0, false,
+     true},
     {"tsi_frame_protector_without_locks",
      description_tsi_frame_protector_without_locks,
      additional_constraints_tsi_frame_protector_without_locks, nullptr, 0,
@@ -496,11 +494,6 @@ const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
-const char* const description_server_global_callbacks_ownership =
-    "If set, server global callbacks ownership is fixed to not be owned by "
-    "gRPC.";
-const char* const additional_constraints_server_global_callbacks_ownership =
-    "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
@@ -521,6 +514,9 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
+const char* const description_track_writes_in_resource_quota =
+    "Track the Write memory in Resource Quota.";
+const char* const additional_constraints_track_writes_in_resource_quota = "{}";
 const char* const description_tsi_frame_protector_without_locks =
     "Do not hold locks while using the tsi_frame_protector.";
 const char* const additional_constraints_tsi_frame_protector_without_locks =
@@ -640,10 +636,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_secure_endpoint_offload_large_writes,
      additional_constraints_secure_endpoint_offload_large_writes,
      required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
-    {"server_global_callbacks_ownership",
-     description_server_global_callbacks_ownership,
-     additional_constraints_server_global_callbacks_ownership, nullptr, 0, true,
-     true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
@@ -659,6 +651,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
+    {"track_writes_in_resource_quota",
+     description_track_writes_in_resource_quota,
+     additional_constraints_track_writes_in_resource_quota, nullptr, 0, false,
+     true},
     {"tsi_frame_protector_without_locks",
      description_tsi_frame_protector_without_locks,
      additional_constraints_tsi_frame_protector_without_locks, nullptr, 0,
@@ -821,11 +817,6 @@ const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
-const char* const description_server_global_callbacks_ownership =
-    "If set, server global callbacks ownership is fixed to not be owned by "
-    "gRPC.";
-const char* const additional_constraints_server_global_callbacks_ownership =
-    "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
@@ -846,6 +837,9 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
+const char* const description_track_writes_in_resource_quota =
+    "Track the Write memory in Resource Quota.";
+const char* const additional_constraints_track_writes_in_resource_quota = "{}";
 const char* const description_tsi_frame_protector_without_locks =
     "Do not hold locks while using the tsi_frame_protector.";
 const char* const additional_constraints_tsi_frame_protector_without_locks =
@@ -965,10 +959,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_secure_endpoint_offload_large_writes,
      additional_constraints_secure_endpoint_offload_large_writes,
      required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
-    {"server_global_callbacks_ownership",
-     description_server_global_callbacks_ownership,
-     additional_constraints_server_global_callbacks_ownership, nullptr, 0, true,
-     true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
@@ -984,6 +974,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
+    {"track_writes_in_resource_quota",
+     description_track_writes_in_resource_quota,
+     additional_constraints_track_writes_in_resource_quota, nullptr, 0, false,
+     true},
     {"tsi_frame_protector_without_locks",
      description_tsi_frame_protector_without_locks,
      additional_constraints_tsi_frame_protector_without_locks, nullptr, 0,

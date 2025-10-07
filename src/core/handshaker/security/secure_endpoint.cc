@@ -102,6 +102,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
       write_staging_buffer_ =
           memory_owner_.MakeSlice(MemoryRequest(STAGING_BUFFER_SIZE));
     }
+    is_zero_copy_protector_ = (zero_copy_protector_ != nullptr);
   }
 
   ~FrameProtector() override {
@@ -289,6 +290,8 @@ class FrameProtector : public RefCounted<FrameProtector> {
     grpc_slice_buffer_reset_and_unref(read_buffer_);
   }
 
+  bool IsZeroCopyProtector() const { return is_zero_copy_protector_; }
+
   bool MaybeCompleteReadImmediately() {
     GRPC_TRACE_LOG(secure_endpoint, INFO)
         << "MaybeCompleteReadImmediately: " << this
@@ -456,6 +459,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
   int min_progress_size_ = 1;
   SliceBuffer protector_staging_buffer_;
   bool shutdown_ = false;
+  bool is_zero_copy_protector_ = false;
 };
 }  // namespace
 }  // namespace grpc_core
@@ -795,7 +799,9 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       if (frame_protector_.MaybeCompleteReadImmediately()) {
         return MaybeFinishReadImmediately();
       }
-      args.set_read_hint_bytes(frame_protector_.min_progress_size());
+      if (frame_protector_.IsZeroCopyProtector()) {
+        args.set_read_hint_bytes(frame_protector_.min_progress_size());
+      }
       bool read_completed_immediately = wrapped_ep_->Read(
           [impl = Ref()](absl::Status status) mutable {
             grpc_core::ExecCtx exec_ctx;

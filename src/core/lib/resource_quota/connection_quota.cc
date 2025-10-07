@@ -37,7 +37,7 @@ void ConnectionQuota::SetMaxIncomingConnections(int max_incoming_connections) {
 // server.
 bool ConnectionQuota::AllowIncomingConnection(MemoryQuotaRefPtr mem_quota,
                                               absl::string_view /*peer*/) {
-  if (mem_quota->IsMemoryPressureHigh()) {
+  if (mem_quota->RejectNewConnectionsUnderHighMemoryPressure()) {
     return false;
   }
 

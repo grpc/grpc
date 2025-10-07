@@ -48,6 +48,32 @@ namespace grpc_core {
 
 Duration TarpitDuration(int min_tarpit_duration_ms, int max_tarpit_duration_ms);
 
+namespace http2 {
+enum class WritableStreamPriority : uint8_t {
+  // Highest priority
+  kStreamClosed = 0,
+  kWaitForTransportFlowControl,
+  // Lowest Priority
+  kDefault,
+  kLastPriority
+};
+
+// Debug helper function to convert a WritableStreamPriority to a string.
+inline std::string GetWritableStreamPriorityString(
+    const WritableStreamPriority priority) {
+  switch (priority) {
+    case WritableStreamPriority::kStreamClosed:
+      return "StreamClosed";
+    case WritableStreamPriority::kWaitForTransportFlowControl:
+      return "WaitForTransportFlowControl";
+    case WritableStreamPriority::kDefault:
+      return "Default";
+    default:
+      return "unknown";
+  }
+}
+}  // namespace http2
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_TRANSPORT_COMMON_H

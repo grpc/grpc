@@ -254,6 +254,7 @@ grpc_cc_test(
     ],
     tags = [
         "no_windows",
+        "posix_endpoint_test",
     ],
     uses_event_engine = True,
     uses_polling = True,

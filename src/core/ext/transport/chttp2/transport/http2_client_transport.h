@@ -35,6 +35,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings_promises.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
@@ -90,7 +91,8 @@ namespace http2 {
 // familiar with the PH2 project (Moving chttp2 to promises.)
 // TODO(tjagtap) : [PH2][P3] : Update the experimental status of the code before
 // http2 rollout begins.
-class Http2ClientTransport final : public ClientTransport {
+class Http2ClientTransport final : public ClientTransport,
+                                   public channelz::DataSource {
   // TODO(tjagtap) : [PH2][P3] Move the definitions to the header for better
   // inlining. For now definitions are in the cc file to
   // reduce cognitive load in the header.
@@ -130,8 +132,17 @@ class Http2ClientTransport final : public ClientTransport {
   void AbortWithError();
 
   RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
+    return const_cast<channelz::BaseNode*>(
+               channelz::DataSource::channelz_node())
+        ->RefAsSubclass<channelz::SocketNode>();
+  }
+
+  std::unique_ptr<channelz::ZTrace> GetZTrace(absl::string_view name) override {
+    if (name == "transport_frames") return ztrace_collector_->MakeZTrace();
     return nullptr;
   }
+
+  void AddData(channelz::DataSink sink) override;
 
   auto TestOnlyTriggerWriteCycle() {
     return Immediate(writable_stream_list_.ForceReadyForWrite());
@@ -174,9 +185,7 @@ class Http2ClientTransport final : public ClientTransport {
   Http2Status ProcessHttp2WindowUpdateFrame(Http2WindowUpdateFrame frame);
   Http2Status ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame);
   Http2Status ProcessHttp2SecurityFrame(Http2SecurityFrame frame);
-  Http2Status ProcessMetadata(uint32_t stream_id, HeaderAssembler& assembler,
-                              CallHandler& call,
-                              bool& did_push_initial_metadata);
+  Http2Status ProcessMetadata(RefCountedPtr<Stream> stream);
 
   // Reading from the endpoint.
 
@@ -224,7 +233,7 @@ class Http2ClientTransport final : public ClientTransport {
 
   // Returns a promise to fetch data from the callhandler and pass it further
   // down towards the endpoint.
-  auto CallOutboundLoop(CallHandler call_handler, uint32_t stream_id,
+  auto CallOutboundLoop(CallHandler call_handler, RefCountedPtr<Stream> stream,
                         InterActivityMutex<uint32_t>::Lock lock,
                         ClientMetadataHandle metadata);
 
@@ -244,9 +253,36 @@ class Http2ClientTransport final : public ClientTransport {
   SettingsTimeoutManager transport_settings_;
 
   Http2FrameHeader current_frame_header_;
+  // Returns the number of active streams. A stream is removed from the `active`
+  // list once both client and server agree to close the stream. The count of
+  // stream_list_(even though stream list represents streams open for reads)
+  // works here because of the following cases where the stream is closed:
+  // 1. Reading a RST stream frame: In this case, the stream is immediately
+  //    closed for reads and writes and removed from the stream_list_
+  //    (effectively tracking the number of active streams).
+  // 2. Reading a Trailing Metadata frame: In this case, the stream MAY be
+  //    closed for reads and writes immediately which follows the above case. In
+  //    other cases, the transport either reads RST stream frame from the server
+  //    (and follows case 1) or sends a half close frame and closes the stream
+  //    for reads and writes (in the multiplexer loop).
+  // 3. Hitting error condition in the transport: In this case, RST stream is
+  //    is enqueued and the stream is closed for reads immediately. This means
+  //    we effectively reduce the number of active streams inline (because we
+  //    remove the stream from the stream_list_). This is fine because the
+  //    priority logic in list of writable streams ensures that the RST stream
+  //    frame is given priority over any new streams being created by the
+  //    client.
+  // 4. Application abort: In this case, multiplexer loop will write RST stream
+  //    frame to the endpoint and close the stream from reads and writes. This
+  //    then follows the same reasoning as case 1.
+  uint32_t GetActiveStreamCount() const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_) {
+    return stream_list_.size();
+  }
 
-  uint32_t NextStreamId(
-      InterActivityMutex<uint32_t>::Lock& next_stream_id_lock) {
+  std::optional<uint32_t> NextStreamId(
+      InterActivityMutex<uint32_t>::Lock& next_stream_id_lock)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_) {
     const uint32_t stream_id = *next_stream_id_lock;
     if (stream_id > RFC9113::kMaxStreamId31Bit) {
       // TODO(tjagtap) : [PH2][P3] : Handle case if transport runs out of stream
@@ -258,6 +294,13 @@ class Http2ClientTransport final : public ClientTransport {
       // that is unable to establish a new stream identifier can send a GOAWAY
       // frame so that the client is forced to open a new connection for new
       // streams.
+      return std::nullopt;
+    }
+    // TODO(akshitpatel) : [PH2][P3] : There is a channel arg to delay
+    // starting new streams instead of failing them. This needs to be
+    // implemented.
+    if (GetActiveStreamCount() >= settings_.peer().max_concurrent_streams()) {
+      return std::nullopt;
     }
     // RFC9113 : Streams initiated by a client MUST use odd-numbered stream
     // identifiers.
@@ -292,7 +335,9 @@ class Http2ClientTransport final : public ClientTransport {
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
       "http2_client", GRPC_CHANNEL_READY};
 
-  bool MakeStream(CallHandler call_handler, uint32_t stream_id);
+  std::optional<RefCountedPtr<Stream>> MakeStream(
+      CallHandler call_handler,
+      InterActivityMutex<uint32_t>::Lock& next_stream_id_lock);
 
   struct CloseStreamArgs {
     bool close_reads;
@@ -300,10 +345,10 @@ class Http2ClientTransport final : public ClientTransport {
   };
 
   // This function MUST be idempotent.
-  void CloseStream(uint32_t stream_id, CloseStreamArgs args,
+  void CloseStream(RefCountedPtr<Stream> stream, CloseStreamArgs args,
                    DebugLocation whence = {});
 
-  void BeginCloseStream(uint32_t stream_id,
+  void BeginCloseStream(RefCountedPtr<Stream> stream,
                         std::optional<uint32_t> reset_stream_error_code,
                         ServerMetadataHandle&& metadata,
                         DebugLocation whence = {});
@@ -312,15 +357,13 @@ class Http2ClientTransport final : public ClientTransport {
 
   auto EndpointReadSlice(const size_t num_bytes) {
     return Map(endpoint_.ReadSlice(num_bytes),
-               [self = RefAsSubclass<Http2ClientTransport>()](
-                   absl::StatusOr<Slice> status) {
-                 // We are ignoring the case where the read fails and call
-                 // GotData() regardless. Reasoning:
-                 // 1. It is expected that if the read fails, the transport will
-                 //    close and the keepalive loop will be stopped.
-                 // 2. It does not seem worth to have an extra condition for the
-                 //    success cases which would be way more common.
-                 self->keepalive_manager_.GotData();
+               [self = RefAsSubclass<Http2ClientTransport>(),
+                num_bytes](absl::StatusOr<Slice> status) {
+                 if (status.ok()) {
+                   self->keepalive_manager_.GotData();
+                   self->ztrace_collector_->Append(
+                       PromiseEndpointReadTrace{num_bytes});
+                 }
                  return status;
                });
   }
@@ -352,15 +395,13 @@ class Http2ClientTransport final : public ClientTransport {
 
   auto EndpointRead(const size_t num_bytes) {
     return Map(endpoint_.Read(num_bytes),
-               [self = RefAsSubclass<Http2ClientTransport>()](
-                   absl::StatusOr<SliceBuffer> status) {
-                 // We are ignoring the case where the read fails and call
-                 // GotData() regardless. Reasoning:
-                 // 1. It is expected that if the read fails, the transport will
-                 //    close and the keepalive loop will be stopped.
-                 // 2. It does not seem worth to have an extra condition for the
-                 //    success cases which would be way more common.
-                 self->keepalive_manager_.GotData();
+               [self = RefAsSubclass<Http2ClientTransport>(),
+                num_bytes](absl::StatusOr<SliceBuffer> status) {
+                 if (status.ok()) {
+                   self->keepalive_manager_.GotData();
+                   self->ztrace_collector_->Append(
+                       PromiseEndpointReadTrace{num_bytes});
+                 }
                  return status;
                });
   }
@@ -388,7 +429,7 @@ class Http2ClientTransport final : public ClientTransport {
       LOG(ERROR) << "Stream Error: " << status.DebugString();
       DCHECK(stream_id.has_value());
       BeginCloseStream(
-          *stream_id,
+          LookupStream(stream_id.value()),
           Http2ErrorCodeToRstFrameErrorCode(status.GetStreamErrorCode()),
           ServerMetadataFromStatus(status.GetAbslStreamError()), whence);
       return absl::OkStatus();
@@ -462,7 +503,7 @@ class Http2ClientTransport final : public ClientTransport {
   // Ping Helper functions
   Duration NextAllowedPingInterval() {
     MutexLock lock(&transport_mutex_);
-    return (!keepalive_permit_without_calls_ && stream_list_.empty())
+    return (!keepalive_permit_without_calls_ && GetActiveStreamCount() == 0)
                ? Duration::Hours(2)
                : Duration::Seconds(1);
   }
@@ -567,7 +608,7 @@ class Http2ClientTransport final : public ClientTransport {
       {
         MutexLock lock(&transport_->transport_mutex_);
         need_to_send_ping = (transport_->keepalive_permit_without_calls_ ||
-                             !transport_->stream_list_.empty());
+                             transport_->GetActiveStreamCount() > 0);
       }
       return need_to_send_ping;
     }
@@ -579,18 +620,18 @@ class Http2ClientTransport final : public ClientTransport {
     Http2ClientTransport* transport_;
   };
 
-  WritableStreams writable_stream_list_;
+  WritableStreams<RefCountedPtr<Stream>> writable_stream_list_;
 
   absl::Status MaybeAddStreamToWritableStreamList(
-      const uint32_t stream_id,
+      const RefCountedPtr<Stream> stream,
       const StreamDataQueue<ClientMetadataHandle>::EnqueueResult result) {
     if (result.became_writable) {
       GRPC_HTTP2_CLIENT_DLOG
           << "Http2ClientTransport MaybeAddStreamToWritableStreamList "
              " Stream id: "
-          << stream_id << " became writable";
+          << stream->GetStreamId() << " became writable";
       absl::Status status =
-          writable_stream_list_.Enqueue(stream_id, result.priority);
+          writable_stream_list_.Enqueue(stream, result.priority);
       if (!status.ok()) {
         return HandleError(
             std::nullopt,
@@ -601,7 +642,9 @@ class Http2ClientTransport final : public ClientTransport {
     }
     return absl::OkStatus();
   }
-  bool SetOnDone(CallHandler call_handler, uint32_t stream_id);
+  bool SetOnDone(CallHandler call_handler, RefCountedPtr<Stream> stream);
+  absl::StatusOr<std::vector<Http2Frame>> DequeueStreamFrames(
+      RefCountedPtr<Stream> stream);
 
   /// Based on channel args, preferred_rx_crypto_frame_sizes are advertised to
   /// the peer
@@ -610,6 +653,7 @@ class Http2ClientTransport final : public ClientTransport {
   GRPC_UNUSED bool enable_preferred_rx_crypto_frame_advertisement_;
   MemoryOwner memory_owner_;
   chttp2::TransportFlowControl flow_control_;
+  std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
 };
 
 // Since the corresponding class in CHTTP2 is about 3.9KB, our goal is to

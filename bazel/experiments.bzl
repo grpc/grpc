@@ -52,12 +52,12 @@ EXPERIMENT_ENABLES = {
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "secure_endpoint_offload_large_reads": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,secure_endpoint_offload_large_reads",
     "secure_endpoint_offload_large_writes": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,secure_endpoint_offload_large_writes",
-    "server_global_callbacks_ownership": "server_global_callbacks_ownership",
     "sleep_promise_exec_ctx_removal": "sleep_promise_exec_ctx_removal",
     "sleep_use_non_owning_waker": "sleep_use_non_owning_waker",
     "subchannel_wrapper_cleanup_on_orphan": "subchannel_wrapper_cleanup_on_orphan",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
+    "track_writes_in_resource_quota": "track_writes_in_resource_quota",
     "tsi_frame_protector_without_locks": "tsi_frame_protector_without_locks",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
 }
@@ -123,12 +123,16 @@ EXPERIMENTS = {
             "minimal_stack_test": [
                 "fuse_filters",
             ],
+            "posix_endpoint_test": [
+                "pipelined_read_secure_endpoint",
+            ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
                 "sleep_use_non_owning_waker",
             ],
             "resource_quota_test": [
                 "free_large_allocator",
+                "track_writes_in_resource_quota",
                 "unconstrained_max_quota_buffer_size",
             ],
             "secure_endpoint_test": [
@@ -156,6 +160,9 @@ EXPERIMENTS = {
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
+            ],
+            "posix_endpoint_test": [
+                "event_engine_secure_endpoint",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
@@ -213,12 +220,16 @@ EXPERIMENTS = {
             "minimal_stack_test": [
                 "fuse_filters",
             ],
+            "posix_endpoint_test": [
+                "pipelined_read_secure_endpoint",
+            ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
                 "sleep_use_non_owning_waker",
             ],
             "resource_quota_test": [
                 "free_large_allocator",
+                "track_writes_in_resource_quota",
                 "unconstrained_max_quota_buffer_size",
             ],
             "secure_endpoint_test": [
@@ -246,6 +257,9 @@ EXPERIMENTS = {
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
+            ],
+            "posix_endpoint_test": [
+                "event_engine_secure_endpoint",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
@@ -303,12 +317,16 @@ EXPERIMENTS = {
             "minimal_stack_test": [
                 "fuse_filters",
             ],
+            "posix_endpoint_test": [
+                "pipelined_read_secure_endpoint",
+            ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
                 "sleep_use_non_owning_waker",
             ],
             "resource_quota_test": [
                 "free_large_allocator",
+                "track_writes_in_resource_quota",
                 "unconstrained_max_quota_buffer_size",
             ],
             "secure_endpoint_test": [
@@ -336,6 +354,9 @@ EXPERIMENTS = {
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
+            ],
+            "posix_endpoint_test": [
+                "event_engine_secure_endpoint",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",

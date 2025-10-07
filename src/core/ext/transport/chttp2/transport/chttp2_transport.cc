@@ -599,10 +599,6 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
                   .Set("ack_pings", t->ack_pings)
                   .Set("keepalive_incoming_data_wanted",
                        t->keepalive_incoming_data_wanted)
-                  .Set("max_concurrent_streams_local",
-                       t->settings.local().max_concurrent_streams())
-                  .Set("max_concurrent_streams_acked",
-                       t->settings.acked().max_concurrent_streams())
                   .Set("max_concurrent_streams_overload_protection",
                        t->max_concurrent_streams_overload_protection)
                   .Set("max_concurrent_streams_reject_on_client",
@@ -631,17 +627,20 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
                          }
                          return "unknown";
                        }())
-                  .Set("write_state", [t]() {
-                    switch (t->write_state) {
-                      case GRPC_CHTTP2_WRITE_STATE_IDLE:
-                        return "idle";
-                      case GRPC_CHTTP2_WRITE_STATE_WRITING:
-                        return "writing";
-                      case GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE:
-                        return "writing_with_more";
-                    }
-                    return "unknown";
-                  }()));
+                  .Set("write_state",
+                       [t]() {
+                         switch (t->write_state) {
+                           case GRPC_CHTTP2_WRITE_STATE_IDLE:
+                             return "idle";
+                           case GRPC_CHTTP2_WRITE_STATE_WRITING:
+                             return "writing";
+                           case GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE:
+                             return "writing_with_more";
+                         }
+                         return "unknown";
+                       }())
+                  .Set("tarpit_extra_streams", t->extra_streams)
+                  .Set("stream_map_size", t->stream_map.size()));
         }),
         absl::OkStatus());
   });
@@ -694,8 +693,6 @@ grpc_chttp2_transport::grpc_chttp2_transport(
       memory_owner(channel_args.GetObject<grpc_core::ResourceQuota>()
                        ->memory_quota()
                        ->CreateMemoryOwner()),
-      stream_quota(
-          channel_args.GetObject<grpc_core::ResourceQuota>()->stream_quota()),
       self_reservation(
           memory_owner.MakeReservation(sizeof(grpc_chttp2_transport))),
       // TODO(ctiller): clean this up so we don't need to RefAsSubclass

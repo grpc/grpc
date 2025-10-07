@@ -61,6 +61,7 @@
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_like.h"
+#include "src/core/lib/promise/inter_activity_latch.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
@@ -1218,6 +1219,158 @@ class ImplementChannelFilter : public ChannelFilter,
                 &call->error_latch),
         call);
   }
+};
+
+struct V3InterceptorToV2State {
+  InterActivityLatch<CallHandler> call_handler_latch;
+};
+
+template <>
+struct ArenaContextType<V3InterceptorToV2State> {
+  static void Destroy(V3InterceptorToV2State*) {}
+};
+
+// Allows writing v3 interceptor that works with v2 stacks (and consequently
+// also v1 stacks since we can run v2 filters in v1 stacks).
+//
+// Note that this bridge does not support the full functionality of the
+// v3 interceptor API.  In particular, it assumes that the interceptor
+// will create exactly one child call.
+template <typename Derived>
+class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
+ public:
+  V3InterceptorToV2Bridge() {
+    // Insert CallDestinationToNextV2Filter as the wrapped destination in
+    // Interceptor, so that we can route the server side of the
+    // interceptor back into the v2 filter chain.
+    wrapped_destination_ = MakeRefCounted<CallDestinationToNextV2Filter>();
+  }
+
+  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
+      CallArgs call_args, NextPromiseFactory next_promise_factory) final {
+    // Create a latch to get the call handler, and put a pointer to it
+    // in call context, so that CallDestinationToNextV2Filter can set
+    // it when it starts the call.
+    auto* arena = GetContext<Arena>();
+    auto* state = arena->ManagedNew<V3InterceptorToV2State>();
+    arena->SetContext<V3InterceptorToV2State>(state);
+    // Now we create a new v3 call pair.  The initiator will be the
+    // client side of the v3 interceptor, and the handler will be the
+    // server side.
+    auto [initiator, unstarted_handler] =
+        MakeCallPair(std::move(call_args.client_initial_metadata),
+                     GetContext<Arena>()->Ref());
+    // Inject the unstarted handler into the interceptor.
+    StartCall(std::move(unstarted_handler));
+    // Now return a promise that does all the things.
+    // FIXME: need to propagate cancellation somehow?
+    return TrySeq(
+        state->call_handler_latch.Wait(),
+        [initiator = std::move(initiator), call_args = std::move(call_args),
+         next_promise_factory =
+             std::move(next_promise_factory)](CallHandler handler) mutable {
+          // Intercept all pipes from v2 API.
+          Pipe<MessageHandle> client_to_server_messages;
+          auto* client_to_server_messages_receiver =
+              std::exchange(call_args.client_to_server_messages,
+                            &client_to_server_messages.receiver);
+          Pipe<ServerMetadataHandle> server_initial_metadata;
+          auto* server_initial_metadata_sender =
+              std::exchange(call_args.server_initial_metadata,
+                            &server_initial_metadata.sender);
+          Pipe<MessageHandle> server_to_client_messages;
+          auto* server_to_client_messages_sender =
+              std::exchange(call_args.server_to_client_messages,
+                            &server_to_client_messages.sender);
+          // Initiator-side promise for client-to-server data.
+          auto initiator_client_to_server_promise =
+              [initiator, client_to_server_messages_receiver]() mutable {
+                return ForEach([&]() {
+                  return TrySeq(
+                      client_to_server_messages_receiver->Next(),
+                      [initiator](NextResult<MessageHandle> message) mutable {
+                        return initiator.PushMessage(std::move(*message));
+                      });
+                });
+              };
+          // Initiator-side promise for server-to-client data.
+          auto initiator_server_to_client_promise =
+              [initiator, server_initial_metadata_sender,
+               server_to_client_messages_sender]() mutable {
+                return TrySeq(TrySeq(initiator.PullServerInitialMetadata(),
+                                     [server_initial_metadata_sender](
+                                         std::optional<ServerMetadataHandle>
+                                             metadata) mutable {
+                                       // FIXME: check if metadata.has_value()
+                                       server_initial_metadata_sender->Push(
+                                           std::move(*metadata));
+                                     }),
+                              ForEach([&]() {
+                                return TrySeq(
+                                    initiator.PullMessage(),
+                                    [server_to_client_messages_sender](
+                                        NextResult<MessageHandle> message) {
+                                      server_to_client_messages_sender->Push(
+                                          std::move(*message));
+                                    });
+                              }));
+              };
+          // Handler-side promise for client-to-server data.
+          auto handler_client_to_server_promise =
+              [handler, &client_to_server_messages]() mutable {
+                return ForEach([&]() {
+                  return TrySeq(handler.PullMessage(),
+                                [&](NextResult<MessageHandle> message) {
+                                  client_to_server_messages.sender.Push(
+                                      std::move(*message));
+                                });
+                });
+              };
+          // Handler-side promise for server-to-client data.
+          auto handler_server_to_client_promise =
+              [handler, &server_initial_metadata,
+               &server_to_client_messages]() mutable {
+                return TrySeq(
+                    TrySeq(server_initial_metadata.receiver.Next(),
+                           [handler](std::optional<ServerMetadataHandle>
+                                         metadata) mutable {
+                             // FIXME: check if metadata.has_value()
+                             handler.PushServerInitialMetadata(
+                                 std::move(*metadata));
+                           }),
+                    ForEach([&]() {
+                      return TrySeq(
+                          server_to_client_messages.receiver.Next(),
+                          [handler](NextResult<MessageHandle> message) mutable {
+                            handler.PushMessage(std::move(*message));
+                          });
+                    }));
+              };
+          // Now put it all together.
+          return PrioritizedRace(next_promise_factory(std::move(call_args)),
+                                 initiator_client_to_server_promise,
+                                 initiator_server_to_client_promise,
+                                 handler_client_to_server_promise,
+                                 handler_server_to_client_promise);
+        });
+  }
+
+ private:
+  // A custom UnstartedCallDestination that starts the call and returns
+  // the resulting handler via a latch obtained from call context.
+  class CallDestinationToNextV2Filter final : public UnstartedCallDestination {
+   public:
+    void StartCall(UnstartedCallHandler unstarted_call_handler) override {
+      // Get the latch from call context.
+      auto* arena = GetContext<Arena>();
+      auto* state = arena->GetContext<V3InterceptorToV2State>();
+      arena->SetContext<V3InterceptorToV2State>(nullptr);
+      // Start the call.
+      CallHandler handler = unstarted_call_handler.StartCall();
+      // Pass call handler to the latch.
+      state->call_handler_latch.Set(std::move(handler));
+    }
+  };
 };
 
 // Designator for whether a filter is client side or server side.
