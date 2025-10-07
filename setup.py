@@ -594,7 +594,7 @@ shutil.copyfile(
     os.path.join("etc", "roots.pem"), os.path.join(credentials_dir, "roots.pem")
 )
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     setuptools.setup(
         classifiers=CLASSIFIERS,
         ext_modules=CYTHON_EXTENSION_MODULES,
