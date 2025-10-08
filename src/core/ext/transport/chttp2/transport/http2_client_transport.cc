@@ -1099,14 +1099,6 @@ Http2ClientTransport::Http2ClientTransport(
   general_party_arena->SetContext<EventEngine>(event_engine.get());
   general_party_ = Party::Make(std::move(general_party_arena));
 
-  general_party_->Spawn("ReadLoop", UntilTransportClosed(ReadLoop()),
-                        OnReadLoopEnded());
-  general_party_->Spawn("MultiplexerLoop",
-                        UntilTransportClosed(MultiplexerLoop()),
-                        OnMultiplexerLoopEnded());
-  // The keepalive loop is only spawned if the keepalive time is not infinity.
-  keepalive_manager_.Spawn(general_party_.get());
-
   // TODO(tjagtap) : [PH2][P2] Delete this hack once flow control is done.
   // We are increasing the flow control window so that we can avoid sending
   // WINDOW_UPDATE frames while flow control is under development. Once it is
@@ -1133,10 +1125,13 @@ Http2ClientTransport::Http2ClientTransport(
     // allow_security_frame too.
   }
 
-  // Spawn a promise to flush the gRPC initial connection string and settings
-  // frames.
-  general_party_->Spawn("SpawnFlushInitialFrames", TriggerWriteCycle(),
-                        [](GRPC_UNUSED absl::Status status) {});
+  general_party_->Spawn("ReadLoop", UntilTransportClosed(ReadLoop()),
+                        OnReadLoopEnded());
+  general_party_->Spawn("MultiplexerLoop",
+                        UntilTransportClosed(MultiplexerLoop()),
+                        OnMultiplexerLoopEnded());
+  // The keepalive loop is only spawned if the keepalive time is not infinity.
+  keepalive_manager_.Spawn(general_party_.get());
 
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor End";
 }
