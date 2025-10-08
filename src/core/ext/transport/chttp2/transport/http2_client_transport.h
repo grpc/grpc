@@ -275,7 +275,7 @@ class Http2ClientTransport final : public ClientTransport,
   // 4. Application abort: In this case, multiplexer loop will write RST stream
   //    frame to the endpoint and close the stream from reads and writes. This
   //    then follows the same reasoning as case 1.
-  uint32_t GetActiveStreamCount() const
+  inline uint32_t GetActiveStreamCount() const
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_) {
     return stream_list_.size();
   }
@@ -283,7 +283,7 @@ class Http2ClientTransport final : public ClientTransport,
   // Returns the next stream id. If the next stream id is not available, it
   // returns std::nullopt. MUST be called from the transport party.
   absl::StatusOr<uint32_t> NextStreamId() {
-    if (next_stream_id_ > RFC9113::kMaxStreamId31Bit) {
+    if (next_stream_id_ > GetMaxAllowedStreamId()) {
       // TODO(tjagtap) : [PH2][P3] : Handle case if transport runs out of stream
       // ids
       // RFC9113 : Stream identifiers cannot be reused. Long-lived connections
@@ -314,11 +314,12 @@ class Http2ClientTransport final : public ClientTransport,
   // transport party.
   uint32_t PeekNextStreamId() const { return next_stream_id_; }
 
-  absl::Status AssignStreamIdAndAddToStreamList(RefCountedPtr<Stream> stream);
+  absl::Status AssignStreamId(RefCountedPtr<Stream> stream);
+
+  void AddToStreamList(RefCountedPtr<Stream> stream);
 
   Mutex transport_mutex_;
-  // TODO(tjagtap) : [PH2][P2] : Add to map in StartCall and clean this
-  // mapping up in the on_done of the CallInitiator or CallHandler
+
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_
       ABSL_GUARDED_BY(transport_mutex_);
 
@@ -435,7 +436,7 @@ class Http2ClientTransport final : public ClientTransport,
       DCHECK(stream_id.has_value());
       BeginCloseStream(
           LookupStream(stream_id.value()),
-          Http2ErrorCodeToRstFrameErrorCode(status.GetStreamErrorCode()),
+          Http2ErrorCodeToFrameErrorCode(status.GetStreamErrorCode()),
           ServerMetadataFromStatus(status.GetAbslStreamError()), whence);
       return absl::OkStatus();
     } else if (error_type == Http2Status::Http2ErrorType::kConnectionError) {
@@ -476,6 +477,16 @@ class Http2ClientTransport final : public ClientTransport,
   size_t GetMaxWriteSize() const { return max_write_size_; }
 
   auto SerializeAndWrite(std::vector<Http2Frame>&& frames);
+  // Tracks the max allowed stream id. Currently this is only set on receiving a
+  // graceful GOAWAY frame.
+  uint32_t max_allowed_stream_id_ = RFC9113::kMaxStreamId31Bit;
+
+  uint32_t GetMaxAllowedStreamId() const;
+
+  void SetMaxAllowedStreamId(uint32_t max_allowed_stream_id);
+
+  bool CanCloseTransportLocked() const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_);
 
   // Ping related members
   // TODO(akshitpatel) : [PH2][P2] : Consider removing the timeout related
@@ -624,6 +635,38 @@ class Http2ClientTransport final : public ClientTransport,
     // transport and greatly simpilfy the cleanup path.
     Http2ClientTransport* transport_;
   };
+
+  class GoawayInterfaceImpl : public GoawayInterface {
+   public:
+    static std::unique_ptr<GoawayInterface> Make(
+        Http2ClientTransport* transport) {
+      return std::make_unique<GoawayInterfaceImpl>(
+          GoawayInterfaceImpl(transport));
+    }
+
+    Promise<absl::Status> SendPingAndWaitForAck() override {
+      return transport_->ping_manager_.RequestPing(/*on_initiate=*/[] {},
+                                                   /*important=*/true);
+    }
+
+    void TriggerWriteCycle() override { transport_->TriggerWriteCycle(); }
+
+    uint32_t GetLastAcceptedStreamId() override {
+      GRPC_DCHECK(false)
+          << "GetLastAcceptedStreamId is not implemented for client transport.";
+      LOG(ERROR) << "GetLastAcceptedStreamId is not implemented for client "
+                    "transport.";
+      return 0;
+    }
+
+   private:
+    explicit GoawayInterfaceImpl(Http2ClientTransport* transport)
+        : transport_(transport) {}
+
+    Http2ClientTransport* transport_;
+  };
+
+  GoawayManager goaway_manager_;
 
   WritableStreams<RefCountedPtr<Stream>> writable_stream_list_;
 

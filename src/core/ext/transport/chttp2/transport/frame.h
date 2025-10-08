@@ -242,8 +242,8 @@ http2::ValueOrHttp2Status<Http2Frame> ParseFramePayload(
 // move things out of frames)
 SerializeReturn Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out);
 
-http2::Http2ErrorCode RstFrameErrorCodeToHttp2ErrorCode(uint32_t error_code);
-uint32_t Http2ErrorCodeToRstFrameErrorCode(http2::Http2ErrorCode error_code);
+http2::Http2ErrorCode FrameErrorCodeToHttp2ErrorCode(uint32_t error_code);
+uint32_t Http2ErrorCodeToFrameErrorCode(http2::Http2ErrorCode error_code);
 
 // Returns approximate memory usage of the frame.
 size_t GetFrameMemoryUsage(const Http2Frame& frame);
