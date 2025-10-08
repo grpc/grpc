@@ -42,6 +42,9 @@ namespace http2 {
 // Do not use or edit any of these functions unless you are
 // familiar with the PH2 project (Moving chttp2 to promises.)
 
+///////////////////////////////////////////////////////////////////////////////
+// Settings and ChannelArgs helpers
+
 void InitLocalSettings(Http2Settings& settings, const bool is_client) {
   if (is_client) {
     // gRPC has never supported PUSH_PROMISE and we have no plan to do so in the
@@ -125,6 +128,9 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
       << "}";
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// ChannelZ helpers
+
 RefCountedPtr<channelz::SocketNode> CreateChannelzSocketNode(
     std::shared_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         event_engine_endpoint,
@@ -144,6 +150,21 @@ RefCountedPtr<channelz::SocketNode> CreateChannelzSocketNode(
         args.GetObjectRef<channelz::SocketNode::Security>());
   }
   return nullptr;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Flow control helpers
+
+void ProcessOutgoingDataFrameFlowControl(
+    chttp2::StreamFlowControl& stream_flow_control,
+    const uint32_t flow_control_tokens_consumed) {
+  if (flow_control_tokens_consumed > 0) {
+    chttp2::StreamFlowControl::OutgoingUpdateContext fc_update(
+        &stream_flow_control);
+    // This updates flow control tokens for both stream and transport flow
+    // control.
+    fc_update.SentData(flow_control_tokens_consumed);
+  }
 }
 
 }  // namespace http2
