@@ -24,6 +24,7 @@ ROOT_REL_DIR = os.path.relpath(ROOT_DIR, start=GRPC_ROOT_ABS_PATH)
 HEALTH_PROTO = "src/proto/grpc/health/v1/health.proto"
 LICENSE = "./LICENSE"
 
+
 class Preprocess(setuptools.Command):
     """Command to copy proto modules from grpc/src/proto and LICENSE from
     the root directory"""

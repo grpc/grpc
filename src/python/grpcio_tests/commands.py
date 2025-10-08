@@ -37,6 +37,7 @@ GRPC_PROTO_STEM = os.path.join(GRPC_ROOT, "src", "proto")
 PROTO_STEM = os.path.join(PYTHON_REL_PATH, "src", "proto")
 PYTHON_PROTO_TOP_LEVEL = os.path.join(PYTHON_REL_PATH, "src")
 
+
 class CommandError(object):
     pass
 
