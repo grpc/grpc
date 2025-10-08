@@ -55,11 +55,6 @@ namespace http2 {
 namespace testing {
 
 using EventEngineSlice = grpc_event_engine::experimental::Slice;
-using ::testing::MockFunction;
-using ::testing::StrictMock;
-using transport::testing::Http2FrameTestHelper;
-using util::testing::MockPromiseEndpoint;
-using util::testing::TransportTest;
 
 class SettingsTimeoutManagerTest : public ::testing::Test {
  protected:
