@@ -909,10 +909,9 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
             grpc_event_engine::experimental::SliceBuffer::TakeCSliceBuffer(
                 buf->data.raw.slice_buffer);
       }
-      GRPC_CHECK(
-          GRPC_LOG_IF_ERROR("listener_handle_external_connection",
-                            listener_supports_fd->HandleExternalConnection(
-                                listener_fd, fd, &pending_data)));
+      GRPC_LOG_IF_ERROR("listener_handle_external_connection",
+                        listener_supports_fd->HandleExternalConnection(
+                            listener_fd, fd, &pending_data));
       return;
     }
     grpc_pollset* read_notifier_pollset;
