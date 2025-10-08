@@ -42,6 +42,8 @@ set ARTIFACT_DIR=%cd%\%ARTIFACTS_OUT%
 python tools\distrib\python\make_grpcio_tools.py
 
 @rem Build gRPC Python extensions
+@rem Verified that the `setup.py build_ext` command still works and will not be
+@rem deprecated on Oct 31,2025, hence leaving unchanged
 python setup.py build_ext -c %EXT_COMPILER% || goto :error
 
 pushd tools\distrib\python\grpcio_tools
@@ -49,10 +51,10 @@ python setup.py build_ext -c %EXT_COMPILER% || goto :error
 popd
 
 @rem Build gRPC Python distributions
-python setup.py bdist_wheel || goto :error
+python -m build --wheel || goto :error
 
 pushd tools\distrib\python\grpcio_tools
-python setup.py bdist_wheel || goto :error
+python -m build --wheel || goto :error
 popd
 
 @rem Ensure the generate artifacts are valid.
