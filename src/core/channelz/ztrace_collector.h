@@ -61,6 +61,8 @@ class StubImpl {
   std::unique_ptr<ZTrace> MakeZTrace() {
     return std::make_unique<ZTraceImpl>();
   }
+
+  bool IsActive() { return false; }
 };
 }  // namespace ztrace_collector_detail
 
