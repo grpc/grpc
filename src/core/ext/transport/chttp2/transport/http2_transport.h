@@ -56,6 +56,8 @@ namespace http2 {
 
 constexpr uint32_t kMaxWriteSize = /*10 MB*/ 10u * 1024u * 1024u;
 
+constexpr uint32_t kGoawaySendTimeoutSeconds = 5u;
+
 ///////////////////////////////////////////////////////////////////////////////
 // Settings and ChannelArgs helpers
 
