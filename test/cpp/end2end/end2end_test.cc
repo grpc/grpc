@@ -1170,8 +1170,12 @@ TEST_P(End2endTest, DiffPackageServices) {
 
 template <class ServiceType>
 void CancelRpc(ClientContext* context, int delay_us, ServiceType* service) {
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                               gpr_time_from_micros(delay_us, GPR_TIMESPAN)));
+  // Use condition variable timeout instead of gpr_sleep_until to reduce race conditions
+  std::mutex delay_mutex;
+  std::condition_variable delay_cv;
+  std::unique_lock<std::mutex> lock(delay_mutex);
+  delay_cv.wait_for(lock, std::chrono::microseconds(delay_us));
+  
   while (!service->signal_client()) {
   }
   context->TryCancel();
