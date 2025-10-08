@@ -699,10 +699,10 @@ http2::ValueOrHttp2Status<Http2Frame> ParseFramePayload(
   }
 }
 
-http2::Http2ErrorCode RstFrameErrorCodeToHttp2ErrorCode(
+http2::Http2ErrorCode FrameErrorCodeToHttp2ErrorCode(
     const uint32_t error_code) {
   if (GPR_UNLIKELY(error_code > http2::GetMaxHttp2ErrorCode())) {
-    LOG(ERROR) << "RstFrameErrorCodeToHttp2ErrorCode: Invalid error code "
+    LOG(ERROR) << "FrameErrorCodeToHttp2ErrorCode: Invalid error code "
                   "received from RST_STREAM frame: "
                << error_code;
     return http2::Http2ErrorCode::kInternalError;
@@ -710,7 +710,7 @@ http2::Http2ErrorCode RstFrameErrorCodeToHttp2ErrorCode(
   return static_cast<http2::Http2ErrorCode>(error_code);
 }
 
-uint32_t Http2ErrorCodeToRstFrameErrorCode(
+uint32_t Http2ErrorCodeToFrameErrorCode(
     const http2::Http2ErrorCode error_code) {
   DCHECK_LE(static_cast<uint8_t>(error_code), http2::GetMaxHttp2ErrorCode());
   return static_cast<uint32_t>(error_code);

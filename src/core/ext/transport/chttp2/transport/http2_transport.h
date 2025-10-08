@@ -56,6 +56,11 @@ namespace http2 {
 
 constexpr uint32_t kMaxWriteSize = /*10 MB*/ 10u * 1024u * 1024u;
 
+constexpr uint32_t kGoawaySendTimeoutSeconds = 5u;
+
+///////////////////////////////////////////////////////////////////////////////
+// Settings and ChannelArgs helpers
+
 void InitLocalSettings(Http2Settings& settings, const bool is_client);
 
 void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
@@ -63,10 +68,20 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
                                  chttp2::TransportFlowControl& flow_control,
                                  const bool is_client);
 
+///////////////////////////////////////////////////////////////////////////////
+// ChannelZ helpers
+
 RefCountedPtr<channelz::SocketNode> CreateChannelzSocketNode(
     std::shared_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         event_engine_endpoint,
     const ChannelArgs& args);
+
+///////////////////////////////////////////////////////////////////////////////
+// Flow control helpers
+
+void ProcessOutgoingDataFrameFlowControl(
+    chttp2::StreamFlowControl& stream_flow_control,
+    uint32_t flow_control_tokens_consumed);
 
 }  // namespace http2
 }  // namespace grpc_core

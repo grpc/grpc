@@ -34,6 +34,7 @@ EXPERIMENT_ENABLES = {
     "event_engine_secure_endpoint": "event_engine_secure_endpoint",
     "free_large_allocator": "free_large_allocator",
     "fuse_filters": "fuse_filters",
+    "graceful_external_connection_failure": "graceful_external_connection_failure",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
     "max_age_filter_float_to_top": "max_age_filter_float_to_top",

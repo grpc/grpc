@@ -104,6 +104,21 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "info_tool_test",
+    srcs = ["info_tool_test.cc"],
+    external_deps = [
+        "absl/strings",
+        "gtest",
+        "gtest_main",
+    ],
+    deps = [
+        ":info_tool",
+        ":tool_test",
+        ":version",
+    ],
+)
+
+grpc_cc_test(
     name = "latent_see_tool_test",
     srcs = ["latent_see_tool_test.cc"],
     external_deps = [
@@ -132,8 +147,10 @@ grpc_cc_binary(
     ],
     deps = [
         ":channelz_tool",
+        ":info_tool",
         ":latent_see_tool",
         ":tool",
+        ":version",
         "//test/cpp/util:test_config",
     ],
 )
@@ -155,6 +172,11 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "version",
+    hdrs = ["version.h"],
+)
+
+grpc_cc_library(
     name = "channelz_tool",
     srcs = ["channelz_tool.cc"],
     external_deps = [
@@ -172,6 +194,19 @@ grpc_cc_library(
         "//src/core:zviz_layout_text",
         "//src/core:zviz_trace",
         "//test/cpp/util:grpc_cli_utils",
+    ],
+    alwayslink = True,
+)
+
+grpc_cc_library(
+    name = "info_tool",
+    srcs = ["info_tool.cc"],
+    external_deps = [
+        "absl/status",
+    ],
+    deps = [
+        ":tool",
+        ":version",
     ],
     alwayslink = True,
 )
