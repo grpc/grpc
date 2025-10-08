@@ -53,8 +53,8 @@ class GcpObservabilityConfig:
 
         self.project_id = config_json.get("project_id", "")
         self.labels = config_json.get("labels", {})
-        self.stats_enabled = "cloud_monitoring" in config_json.keys()
-        self.tracing_enabled = "cloud_trace" in config_json.keys()
+        self.stats_enabled = "cloud_monitoring" in config_json
+        self.tracing_enabled = "cloud_trace" in config_json
         tracing_config = config_json.get("cloud_trace", {})
         self.sampling_rate = tracing_config.get("sampling_rate", 0.0)
 
