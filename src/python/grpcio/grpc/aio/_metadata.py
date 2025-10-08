@@ -54,6 +54,7 @@ class Metadata(abc.Collection):  # noqa: PLW1641
         self._metadata.setdefault(key, [])
         self._metadata[key].append(value)
 
+    # TODO: Resolve MetadatumType circular import and use it instead
     def append(self, metadata: Tuple[MetadataKey, MetadataValue]) -> None:
         """Adds a key,value pair to the metadata.
         Similar to add() but provided for backward compatibility with list
@@ -64,7 +65,6 @@ class Metadata(abc.Collection):  # noqa: PLW1641
             error_msg = "data to append must be a (key, value) tuple"
             raise ValueError(error_msg)
 
-        # actually should we support a list with two elements here too?
         key, value = metadata
         self.add(key, value)
 
