@@ -39,7 +39,9 @@ class Preprocess(setuptools.Command):
         pass
 
     def run(self):
-        package_status_proto_rel_path = os.path.join(ROOT_REL_DIR, PACKAGE_STATUS_PROTO_PATH)
+        package_status_proto_rel_path = os.path.join(
+            ROOT_REL_DIR, PACKAGE_STATUS_PROTO_PATH
+        )
 
         if os.path.isfile(STATUS_PROTO):
             if not os.path.isdir(package_status_proto_rel_path):

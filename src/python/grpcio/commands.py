@@ -126,7 +126,9 @@ class BuildProjectMetadata(setuptools.Command):
         pass
 
     def run(self):
-        module_file_path = os.path.join(PYTHON_REL_PATH, "grpc/_grpcio_metadata.py")
+        module_file_path = os.path.join(
+            PYTHON_REL_PATH, "grpc/_grpcio_metadata.py"
+        )
         version = self.distribution.get_version()
 
         # TODO(sergiitk): sometime in Nov 2025 - consider removing the env var
