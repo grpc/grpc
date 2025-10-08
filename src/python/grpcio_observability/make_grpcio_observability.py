@@ -55,7 +55,7 @@ BAZEL_REFERENCE_LINK = [
 
 # maps bazel reference to a proto to actual path
 BAZEL_PROTO_REFERENCE_LINK = [
-    ("//src", "grpc_root/src/core/ext/upb-gen/src"),
+    ("//src/proto/", "grpc_root/src/core/ext/upb-gen/src/proto/"),
     (
         "@com_google_protobuf//src/google/",
         "grpc_root/src/core/ext/upb-gen/google/",
@@ -156,14 +156,17 @@ def _bazel_name_to_file_path(name):
     return None
 
 
-def _bazel_proto_name_to_file_path(name):
-    """Transform bazel reference to source file name."""
-    for link in BAZEL_PROTO_REFERENCE_LINK:
-        if name.startswith(link[0]):
-            filepath = link[1] + name[len(link[0]) :].replace(":", "/").replace(
-                ".proto", ".upb_minitable.c"
+def _bazel_proto_name_to_file_path(proto_target: str):
+    """Transform bazel proto target to local file name."""
+    for bazel_prefix, local_path in BAZEL_PROTO_REFERENCE_LINK:
+        if proto_target.startswith(bazel_prefix):
+            normalized_name = (
+                proto_target.removeprefix(bazel_prefix)
+                .lstrip("/")
+                .replace(":", "/")
             )
-            return filepath
+            new_name = normalized_name.replace(".proto", ".upb_minitable.c")
+            return f"{local_path.rstrip('/')}/{new_name}"
     return None
 
 
@@ -178,14 +181,11 @@ def _generate_deps_file_content():
     for name in cc_files_output:
         if name.endswith(".proto"):
             filepath = _bazel_proto_name_to_file_path(name)
-            if filepath and os.path.exists(filepath.replace("grpc_root/", "")):
+            if filepath and os.path.exists(filepath.removeprefix("grpc_root/")):
                 cc_files.add(filepath)
-        if name.endswith(".cc"):
-            filepath = _bazel_name_to_file_path(name)
-            if filepath:
-                cc_files.add(filepath)
-        if name.endswith(".c") and not name.endswith(
-            (".upb.c", ".upb_minitable.c")
+        if name.endswith(".cc") or (
+            name.endswith(".c")
+            and not name.endswith((".upb.c", ".upb_minitable.c"))
         ):
             filepath = _bazel_name_to_file_path(name)
             if filepath:
