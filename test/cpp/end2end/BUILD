@@ -295,8 +295,9 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "client_callback_end2end_test",
+grpc_cc_library(
+    name = "client_callback_end2end_test_lib",
+    testonly = True,
     srcs = ["client_callback_end2end_test.cc"],
     external_deps = [
         "absl/log",
@@ -304,7 +305,7 @@ grpc_cc_test(
         "absl/memory",
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    linkstatic = True,
     deps = [
         ":interceptors_util",
         ":test_service_impl",
@@ -322,15 +323,25 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_test(
-    name = "delegating_channel_test",
+    name = "client_callback_end2end_test",
+    tags = ["cpp_end2end_test"],
+    deps = [
+        ":client_callback_end2end_test_lib",
+    ],
+)
+
+grpc_cc_library(
+    name = "delegating_channel_test_lib",
+    testonly = True,
     srcs = ["delegating_channel_test.cc"],
     external_deps = [
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    linkstatic = True,
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -343,17 +354,27 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_test(
-    name = "client_interceptors_end2end_test",
+    name = "delegating_channel_test",
+    tags = ["cpp_end2end_test"],
+    deps = [
+        ":delegating_channel_test_lib",
+    ],
+)
+
+grpc_cc_library(
+    name = "client_interceptors_end2end_test_lib",
+    testonly = True,
     srcs = ["client_interceptors_end2end_test.cc"],
     external_deps = [
         "absl/log:check",
         "absl/memory",
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    linkstatic = True,
     deps = [
         ":interceptors_util",
         ":test_service_impl",
@@ -369,6 +390,15 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_test(
+    name = "client_interceptors_end2end_test",
+    tags = ["cpp_end2end_test"],
+    deps = [
+        ":client_interceptors_end2end_test_lib",
     ],
 )
 
@@ -501,13 +531,14 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "server_early_return_test",
+grpc_cc_library(
+    name = "server_early_return_test_lib",
+    testonly = True,
     srcs = ["server_early_return_test.cc"],
     external_deps = [
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    linkstatic = True,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -516,6 +547,15 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_test(
+    name = "server_early_return_test",
+    tags = ["cpp_end2end_test"],
+    deps = [
+        ":server_early_return_test_lib",
     ],
 )
 
@@ -536,12 +576,14 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "exception_test",
+grpc_cc_library(
+    name = "exception_test_lib",
+    testonly = True,
     srcs = ["exception_test.cc"],
     external_deps = [
         "gtest",
     ],
+    linkstatic = True,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -551,16 +593,26 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_test(
-    name = "generic_end2end_test",
+    name = "exception_test",
+    tags = ["cpp_end2end_test"],
+    deps = [
+        ":exception_test_lib",
+    ],
+)
+
+grpc_cc_library(
+    name = "generic_end2end_test_lib",
+    testonly = True,
     srcs = ["generic_end2end_test.cc"],
     external_deps = [
         "absl/memory",
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    linkstatic = True,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -572,21 +624,25 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_test(
-    name = "health_service_end2end_test",
+    name = "generic_end2end_test",
+    tags = ["cpp_end2end_test"],
+    deps = [
+        ":generic_end2end_test_lib",
+    ],
+)
+
+grpc_cc_library(
+    name = "health_service_end2end_test_lib",
+    testonly = True,
     srcs = ["health_service_end2end_test.cc"],
     external_deps = [
         "gtest",
     ],
-    tags = [
-        "cpp_end2end_test",
-        # Will fail as sync health check service is enabled by default internally, which is however
-        # disabled in OSS:
-        # b/117623310.
-        "grpc:no-internal-poller",
-    ],
+    linkstatic = True,
     deps = [
         ":test_health_check_service_impl",
         ":test_service_impl",
@@ -600,17 +656,33 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_test(
-    name = "hybrid_end2end_test",
+    name = "health_service_end2end_test",
+    tags = [
+        "cpp_end2end_test",
+        # Will fail as sync health check service is enabled by default internally, which is however
+        # disabled in OSS:
+        # b/117623310.
+        "grpc:no-internal-poller",
+    ],
+    deps = [
+        ":health_service_end2end_test_lib",
+    ],
+)
+
+grpc_cc_library(
+    name = "hybrid_end2end_test_lib",
+    testonly = True,
     srcs = ["hybrid_end2end_test.cc"],
     external_deps = [
         "absl/log",
         "absl/log:check",
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    linkstatic = True,
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -626,16 +698,26 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_test(
-    name = "raw_end2end_test",
+    name = "hybrid_end2end_test",
+    tags = ["cpp_end2end_test"],
+    deps = [
+        ":hybrid_end2end_test_lib",
+    ],
+)
+
+grpc_cc_library(
+    name = "raw_end2end_test_lib",
+    testonly = True,
     srcs = ["raw_end2end_test.cc"],
     external_deps = [
         "absl/log:check",
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    linkstatic = True,
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -652,16 +734,26 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_test(
-    name = "mock_test",
+    name = "raw_end2end_test",
+    tags = ["cpp_end2end_test"],
+    deps = [
+        ":raw_end2end_test_lib",
+    ],
+)
+
+grpc_cc_library(
+    name = "mock_test_lib",
+    testonly = True,
     srcs = ["mock_test.cc"],
     external_deps = [
         "gtest",
         "absl/log",
     ],
-    tags = ["cpp_end2end_test"],
+    linkstatic = True,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -673,6 +765,15 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
         "@com_google_protobuf//:protobuf",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_test(
+    name = "mock_test",
+    tags = ["cpp_end2end_test"],
+    deps = [
+        ":mock_test_lib",
     ],
 )
 
@@ -699,8 +800,9 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "client_lb_end2end_test",
+grpc_cc_library(
+    name = "client_lb_end2end_test_lib",
+    testonly = True,
     srcs = ["client_lb_end2end_test.cc"],
     external_deps = [
         "absl/log:check",
@@ -710,14 +812,7 @@ grpc_cc_test(
         "absl/strings:str_format",
         "gtest",
     ],
-    flaky = True,  # TODO(b/151315347)
-    tags = [
-        "cpp_end2end_test",
-        "cpp_lb_end2end_test",
-        # b/117575949.
-        "grpc:no-internal-poller",
-        "no_windows",
-    ],  # TODO(jtattermusch): fix test on windows
+    linkstatic = True,
     deps = [
         ":connection_attempt_injector",
         ":test_service_impl",
@@ -759,6 +854,22 @@ grpc_cc_test(
         "//test/core/test_util:test_lb_policies",
         "//test/cpp/util:test_util",
         "@com_github_cncf_xds//xds/data/orca/v3:pkg_cc_proto",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_test(
+    name = "client_lb_end2end_test",
+    flaky = True,  # TODO(b/151315347)
+    tags = [
+        "cpp_end2end_test",
+        "cpp_lb_end2end_test",
+        # b/117575949.
+        "grpc:no-internal-poller",
+        "no_windows",
+    ],  # TODO(jtattermusch): fix test on windows
+    deps = [
+        ":client_lb_end2end_test_lib",
     ],
 )
 
@@ -817,8 +928,9 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "service_config_end2end_test",
+grpc_cc_library(
+    name = "service_config_end2end_test_lib",
+    testonly = True,
     srcs = ["service_config_end2end_test.cc"],
     external_deps = [
         "absl/log",
@@ -827,7 +939,7 @@ grpc_cc_test(
         "absl/strings",
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    linkstatic = True,
     deps = [
         ":test_service_impl",
         "//:backoff",
@@ -856,10 +968,24 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util_base",
         "//test/cpp/util:test_util",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_test(
-    name = "grpclb_end2end_test",
+    name = "service_config_end2end_test",
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
+    tags = ["cpp_end2end_test"],
+    deps = [
+        ":service_config_end2end_test_lib",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpclb_end2end_test_lib",
+    testonly = True,
     srcs = ["grpclb_end2end_test.cc"],
     external_deps = [
         "absl/cleanup",
@@ -872,13 +998,7 @@ grpc_cc_test(
         "absl/types:span",
         "gtest",
     ],
-    flaky = True,  # TODO(b/150567713)
-    shard_count = 20,
-    tags = [
-        "cpp_end2end_test",
-        "cpp_lb_end2end_test",
-        "no_windows",
-    ],  # TODO(jtattermusch): fix test on windows
+    linkstatic = True,
     deps = [
         ":counted_service",
         ":test_service_impl",
@@ -914,19 +1034,35 @@ grpc_cc_test(
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_test(
-    name = "proto_server_reflection_test",
+    name = "grpclb_end2end_test",
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
+    flaky = True,  # TODO(b/150567713)
+    shard_count = 20,
+    tags = [
+        "cpp_end2end_test",
+        "cpp_lb_end2end_test",
+        "no_windows",
+    ],  # TODO(jtattermusch): fix test on windows
+    deps = [
+        ":grpclb_end2end_test_lib",
+    ],
+)
+
+grpc_cc_library(
+    name = "proto_server_reflection_test_lib",
+    testonly = True,
     srcs = ["proto_server_reflection_test.cc"],
     external_deps = [
         "gtest",
     ],
-    tags = [
-        "cpp_end2end_test",
-        # b/117623310.
-        "grpc:no-internal-poller",
-    ],
+    linkstatic = True,
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -942,16 +1078,30 @@ grpc_cc_test(
         "//test/cpp/util:grpc++_proto_reflection_desc_db",
         "//test/cpp/util:test_util",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_test(
-    name = "server_builder_plugin_test",
+    name = "proto_server_reflection_test",
+    tags = [
+        "cpp_end2end_test",
+        # b/117623310.
+        "grpc:no-internal-poller",
+    ],
+    deps = [
+        ":proto_server_reflection_test_lib",
+    ],
+)
+
+grpc_cc_library(
+    name = "server_builder_plugin_test_lib",
+    testonly = True,
     srcs = ["server_builder_plugin_test.cc"],
     external_deps = [
         "gtest",
         "absl/memory",
     ],
-    tags = ["cpp_end2end_test"],
+    linkstatic = True,
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -964,6 +1114,18 @@ grpc_cc_test(
         "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_test(
+    name = "server_builder_plugin_test",
+    external_deps = [
+        "gtest",
+    ],
+    tags = ["cpp_end2end_test"],
+    deps = [
+        ":server_builder_plugin_test_lib",
     ],
 )
 
@@ -1019,17 +1181,16 @@ grpc_cc_binary(
     ],
 )
 
-grpc_cc_test(
-    name = "server_interceptors_end2end_test",
+grpc_cc_library(
+    name = "server_interceptors_end2end_test_lib",
+    testonly = True,
     srcs = ["server_interceptors_end2end_test.cc"],
     external_deps = [
         "absl/memory",
         "absl/strings",
         "gtest",
     ],
-    tags = [
-        "cpp_end2end_test",
-    ],
+    linkstatic = True,
     deps = [
         ":interceptors_util",
         ":test_service_impl",
@@ -1042,6 +1203,15 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_test(
+    name = "server_interceptors_end2end_test",
+    tags = ["cpp_end2end_test"],
+    deps = [
+        ":server_interceptors_end2end_test_lib",
     ],
 )
 
@@ -1093,15 +1263,16 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "shutdown_test",
+grpc_cc_library(
+    name = "shutdown_test_lib",
+    testonly = True,
     srcs = ["shutdown_test.cc"],
     external_deps = [
         "absl/log:check",
         "absl/log",
         "gtest",
     ],
-    tags = ["cpp_end2end_test"],
+    linkstatic = True,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -1114,17 +1285,27 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_test(
-    name = "streaming_throughput_test",
+    name = "shutdown_test",
+    tags = ["cpp_end2end_test"],
+    deps = [
+        ":shutdown_test_lib",
+    ],
+)
+
+grpc_cc_library(
+    name = "streaming_throughput_test_lib",
+    testonly = True,
     srcs = ["streaming_throughput_test.cc"],
     external_deps = [
         "gtest",
         "absl/log",
     ],
+    linkstatic = True,
     tags = [
-        "cpp_end2end_test",
         "no_windows",
     ],
     deps = [
@@ -1136,6 +1317,18 @@ grpc_cc_test(
         "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_test(
+    name = "streaming_throughput_test",
+    tags = [
+        "cpp_end2end_test",
+        "no_windows",
+    ],
+    deps = [
+        ":streaming_throughput_test_lib",
     ],
 )
 
