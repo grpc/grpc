@@ -83,9 +83,6 @@ ignore = [
     "S101",    # Use of assert detected
     "S105",    # Possible hardcoded password assigned to: "{}"
     "S110",    # try-except-pass detected, consider logging the exception
-    "S311",    # Standard pseudo-random generators are not suitable for cryptographic purposes
-    "S603",    # subprocess call: check for execution of untrusted input
-    "SIM102",  # Use a single if statement instead of nested if statements
     "SIM103",  # Return the condition {condition} directly
     "SIM105",  # Use contextlib.suppress({exception}) instead of try-except-pass
     "SIM108",  # Use ternary operator {contents} instead of if-else-block
