@@ -114,6 +114,28 @@ TEST(Http2CommonTransportTest, TestReadChannelArgs) {
   EXPECT_EQ(settings2.allow_security_frame(), false);
 }
 
+TEST(Http2CommonTransportTest, ProcessOutgoingDataFrameFlowControlTest) {
+  chttp2::TransportFlowControl transport_flow_control(
+      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*memory_owner=*/nullptr);
+  chttp2::StreamFlowControl stream_flow_control(&transport_flow_control);
+  EXPECT_EQ(transport_flow_control.remote_window(), chttp2::kDefaultWindow);
+  EXPECT_EQ(stream_flow_control.remote_window_delta(), 0);
+
+  ProcessOutgoingDataFrameFlowControl(stream_flow_control, 1000);
+  EXPECT_EQ(transport_flow_control.remote_window(),
+            chttp2::kDefaultWindow - 1000);
+  EXPECT_EQ(stream_flow_control.remote_window_delta(), -1000);
+
+  // Test with 0 tokens consumed
+  for (int i = 0; i < 3; ++i) {
+    ProcessOutgoingDataFrameFlowControl(stream_flow_control, 0);
+    EXPECT_EQ(transport_flow_control.remote_window(),
+              chttp2::kDefaultWindow - 1000);
+    EXPECT_EQ(stream_flow_control.remote_window_delta(), -1000);
+  }
+}
+
 }  // namespace testing
 
 }  // namespace http2

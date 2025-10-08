@@ -40,6 +40,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
@@ -752,6 +753,8 @@ Http2ClientTransport::DequeueStreamFrames(RefCountedPtr<Stream> stream) {
               static_cast<uint32_t>(Clamp<size_t>(write_bytes_remaining_, 0,
                                                   RFC9113::kMaxSize31Bit - 1))),
           settings_.peer().max_frame_size(), encoder_);
+  ProcessOutgoingDataFrameFlowControl(stream->flow_control,
+                                      result.flow_control_tokens_consumed);
   if (result.is_writable) {
     // Stream is still writable. Enqueue it back to the writable
     // stream list.
@@ -803,6 +806,8 @@ Http2ClientTransport::DequeueStreamFrames(RefCountedPtr<Stream> stream) {
   return std::move(result.frames);
 }
 
+// This MultiplexerLoop promise is responsible for Multiplexing multiple gRPC
+// Requests (HTTP2 Streams) and writing them into one common endpoint.
 auto Http2ClientTransport::MultiplexerLoop() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport MultiplexerLoop Factory";
   return AssertResultType<

@@ -147,6 +147,13 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
   // Wait for Http2ClientTransport's internal activities to finish.
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
+
+  // The stream object would have been deallocated already.
+  // However, we would still have accounting of DATA frame message bytes written
+  // in the transport flow control.
+  // We did not write a DATA frame with a payload.
+  EXPECT_EQ(client_transport_->TestOnlyTransportFlowControlWindow(),
+            RFC9113::kHttp2InitialWindowSize);
   LOG(INFO) << "TestHttp2ClientTransportObjectCreation End";
 }
 
@@ -232,6 +239,13 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromCall) {
   // Wait for Http2ClientTransport's internal activities to finish.
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
+
+  // The stream object would have been deallocated already.
+  // However, we would still have accounting of DATA frame message bytes written
+  // in the transport flow control.
+  // "Hello!" is 6 bytes, plus 5 bytes gRPC header = 11 bytes.
+  EXPECT_EQ(client_transport->TestOnlyTransportFlowControlWindow(),
+            RFC9113::kHttp2InitialWindowSize - 11);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -628,8 +642,16 @@ TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
   // Wait for Http2ClientTransport's internal activities to finish.
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
+
+  // The stream object would have been deallocated already.
+  // However, we would still have accounting of DATA frame message bytes written
+  // in the transport flow control.
+  // We did not write a DATA frame with a payload.
+  EXPECT_EQ(client_transport->TestOnlyTransportFlowControlWindow(),
+            RFC9113::kHttp2InitialWindowSize);
 }
 
+////////////////////////////////////////////////////////////////////////////////
 // Cleanup Tests
 TEST_F(Http2ClientTransportTest, StreamCleanupTrailingMetadata) {
   MockPromiseEndpoint mock_endpoint(/*port=*/1000);
