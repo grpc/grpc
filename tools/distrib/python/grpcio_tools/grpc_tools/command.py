@@ -40,7 +40,7 @@ def _get_resource_file_name(
     return str(file_name)
 
 
-def build_package_protos(package_root, strict_mode=False):
+def build_package_protos(package_root, strict_mode=True):
     proto_files = []
 
     inclusion_root = os.path.abspath(package_root)
@@ -85,7 +85,7 @@ class BuildPackageProtos(setuptools.Command):
     ]
 
     def initialize_options(self):
-        self.strict_mode = False
+        self.strict_mode = True
 
     def finalize_options(self):
         pass
