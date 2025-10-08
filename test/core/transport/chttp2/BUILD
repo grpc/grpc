@@ -887,6 +887,47 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "settings_timeout_manager_test",
+    srcs = ["settings_timeout_manager_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+        "absl/status",
+        "absl/strings",
+        "gtest",
+    ],
+    uses_polling = False,
+    deps = [
+        ":http2_frame_test_helper",
+        "//:chttp2_frame",
+        "//:config",
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+        "//:grpc",
+        "//:orphanable",
+        "//src/core:channel_args",
+        "//src/core:default_event_engine",
+        "//src/core:http2_client_transport",
+        "//src/core:http2_settings",
+        "//src/core:http2_settings_manager",
+        "//src/core:http2_status",
+        "//src/core:http2_transport",
+        "//src/core:message",
+        "//src/core:metadata",
+        "//src/core:notification",
+        "//src/core:time",
+        "//src/core:transport_common",
+        "//src/core:try_join",
+        "//test/core/promise:poll_matcher",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:grpc_test_util_base",
+        "//test/core/test_util:postmortem",
+        "//test/core/transport/util:mock_promise_endpoint",
+        "//test/core/transport/util:transport_test",
+    ],
+)
+
+grpc_cc_test(
     name = "http2_transport_test",
     srcs = ["http2_transport_test.cc"],
     external_deps = [
