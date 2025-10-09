@@ -86,8 +86,7 @@ namespace http2 {
 // Max Party Slots (Always): 3
 // Max Promise Slots (Worst Case): 4
 
-// Experimental : This is just the initial skeleton of class
-// and it is functions. The code will be written iteratively.
+// Experimental : The code will be written iteratively.
 // Do not use or edit any of these functions unless you are
 // familiar with the PH2 project (Moving chttp2 to promises.)
 // TODO(tjagtap) : [PH2][P3] : Update the experimental status of the code before
@@ -130,7 +129,6 @@ class Http2ClientTransport final : public ClientTransport,
   void StopConnectivityWatch(ConnectivityStateWatcherInterface* watcher);
 
   void Orphan() override;
-  void AbortWithError();
 
   RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
     return const_cast<channelz::BaseNode*>(

@@ -360,14 +360,6 @@ TEST_P(HeaderAssemblerDisassemblerTest, ValidMultipleHeadersAndContinuations) {
                                    /*end_stream=*/true);
 }
 
-// TODO(tjagtap) : [PH2][P3] : Validate later. Edge case
-//  Is this a valid case?
-//  First we receive one HEADER frame with END_HEADER . This is initial metadata
-//  The stream has no Messages. Hence no DATA Frames
-//  Then we receive one HEADER frame with END_HEADER and END_STREAM.
-//  We Append both and parse both because we read them together.
-//  Is this a valid case?
-
 ///////////////////////////////////////////////////////////////////////////////
 // HeaderDisassembler - Helpers
 

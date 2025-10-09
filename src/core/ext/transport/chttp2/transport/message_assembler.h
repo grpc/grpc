@@ -123,10 +123,7 @@ constexpr uint32_t kMaxMessageBatchSize = (16 * 1024u);
 
 // This class is meant to convert gRPC Messages into Http2DataFrame ensuring
 // that the payload size of the data frame is configurable.
-// This class is not responsible for queueing or backpressure. That will be done
-// by other classes.
-// TODO(tjagtap) : [PH2][P2] Edit comment once this
-// class is integrated and exercised.
+// This class is not responsible for queueing or backpressure.
 class GrpcMessageDisassembler {
  public:
   // One GrpcMessageDisassembler instance MUST be associated with one stream
