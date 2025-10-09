@@ -149,7 +149,7 @@ pip_install() {
 
 pip_install --upgrade pip
 pip_install --upgrade wheel
-pip_install --upgrade setuptools==70.1.1
+pip_install --upgrade setuptools==77.0.0
 
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.
