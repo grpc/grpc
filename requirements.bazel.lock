@@ -115,7 +115,7 @@ zope-interface==7.2
     #   twisted
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==75.3.0
+setuptools==77.0.0
     # via
     #   incremental
     #   zope-event
