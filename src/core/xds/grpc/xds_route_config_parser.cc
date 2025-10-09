@@ -403,17 +403,18 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
       if (!is_optional) errors->AddError("unsupported filter type");
       continue;
     }
+    auto& entry = typed_per_filter_config[std::string(key)];
+    entry.config_proto_type = filter_impl->OverrideConfigProtoName();
     std::optional<XdsHttpFilterImpl::XdsFilterConfig> filter_config =
         filter_impl->GenerateFilterConfigOverride(key, context,
                                                   *extension_to_use, errors);
     if (filter_config.has_value()) {
-      typed_per_filter_config[std::string(key)].old_config =
-          std::move(*filter_config);
+      entry.old_config = std::move(*filter_config);
     }
     RefCountedPtr<const FilterConfig> config = filter_impl->ParseOverrideConfig(
         key, context, *extension_to_use, errors);
     if (config != nullptr) {
-      typed_per_filter_config[std::string(key)].config = std::move(config);
+      entry.config = std::move(config);
     }
   }
   return typed_per_filter_config;

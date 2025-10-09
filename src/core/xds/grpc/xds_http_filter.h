@@ -96,7 +96,7 @@ class XdsHttpFilterImpl {
   // ALL INTERFACES BELOW ARE DEPRECATED
   //
   /////////////////////////////////////////////////////////////////////////////
-  // TODO(roth): Remove this once the server side is migrated to the new
+  // TODO(roth): Remove these once the server side is migrated to the new
   // approach for passing xDS HTTP filter configs.
 
   struct XdsFilterConfig {

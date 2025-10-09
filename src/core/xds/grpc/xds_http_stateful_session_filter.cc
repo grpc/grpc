@@ -76,34 +76,33 @@ const grpc_channel_filter* XdsHttpStatefulSessionFilter::channel_filter()
 
 namespace {
 
-StatefulSessionFilter::CookieConfig ParseCookieConfig(
+RefCountedPtr<StatefulSessionFilter::Config> ParseStatefulSession(
     const XdsResourceType::DecodeContext& context,
     const envoy_extensions_filters_http_stateful_session_v3_StatefulSession*
         stateful_session,
     ValidationErrors* errors) {
+  auto config = MakeRefCounted<StatefulSessionFilter::Config>();
   ValidationErrors::ScopedField field(errors, ".session_state");
   const auto* session_state =
       envoy_extensions_filters_http_stateful_session_v3_StatefulSession_session_state(
           stateful_session);
-  if (session_state == nullptr) {
-    return {};
-  }
+  if (session_state == nullptr) return config;
   ValidationErrors::ScopedField field2(errors, ".typed_config");
   const auto* typed_config =
       envoy_config_core_v3_TypedExtensionConfig_typed_config(session_state);
   auto extension = ExtractXdsExtension(context, typed_config, errors);
-  if (!extension.has_value()) return {};
+  if (!extension.has_value()) return config;
   if (extension->type !=
       "envoy.extensions.http.stateful_session.cookie.v3"
       ".CookieBasedSessionState") {
     errors->AddError("unsupported session state type");
-    return {};
+    return config;
   }
   const absl::string_view* serialized_session_state =
       std::get_if<absl::string_view>(&extension->value);
   if (serialized_session_state == nullptr) {
     errors->AddError("could not parse session state config");
-    return {};
+    return config;
   }
   auto* cookie_state =
       envoy_extensions_http_stateful_session_cookie_v3_CookieBasedSessionState_parse(
@@ -111,7 +110,7 @@ StatefulSessionFilter::CookieConfig ParseCookieConfig(
           context.arena);
   if (cookie_state == nullptr) {
     errors->AddError("could not parse session state config");
-    return {};
+    return config;
   }
   ValidationErrors::ScopedField field3(errors, ".cookie");
   const auto* cookie =
@@ -119,12 +118,12 @@ StatefulSessionFilter::CookieConfig ParseCookieConfig(
           cookie_state);
   if (cookie == nullptr) {
     errors->AddError("field not present");
-    return {};
+    return config;
   }
-  StatefulSessionFilter::CookieConfig config;
   // name
-  config.name = UpbStringToStdString(envoy_type_http_v3_Cookie_name(cookie));
-  if (config.name.empty()) {
+  config->cookie_name =
+      UpbStringToStdString(envoy_type_http_v3_Cookie_name(cookie));
+  if (config->cookie_name.empty()) {
     ValidationErrors::ScopedField field(errors, ".name");
     errors->AddError("field not present");
   }
@@ -132,10 +131,10 @@ StatefulSessionFilter::CookieConfig ParseCookieConfig(
   if (const auto* duration = envoy_type_http_v3_Cookie_ttl(cookie);
       duration != nullptr) {
     ValidationErrors::ScopedField field(errors, ".ttl");
-    config.ttl = ParseDuration(duration, errors);
+    config->ttl = ParseDuration(duration, errors);
   }
   // path
-  config.path = UpbStringToStdString(envoy_type_http_v3_Cookie_path(cookie));
+  config->path = UpbStringToStdString(envoy_type_http_v3_Cookie_path(cookie));
   return config;
 }
 
@@ -160,9 +159,7 @@ XdsHttpStatefulSessionFilter::ParseTopLevelConfig(
     errors->AddError("could not parse stateful session filter config");
     return nullptr;
   }
-  auto config = MakeRefCounted<StatefulSessionFilter::Config>();
-  config->cookie_config = ParseCookieConfig(context, stateful_session, errors);
-  return config;
+  return ParseStatefulSession(context, stateful_session, errors);
 }
 
 RefCountedPtr<const FilterConfig>
@@ -184,7 +181,6 @@ XdsHttpStatefulSessionFilter::ParseOverrideConfig(
     errors->AddError("could not parse stateful session filter override config");
     return nullptr;
   }
-  auto config = MakeRefCounted<StatefulSessionFilter::OverrideConfig>();
   if (!envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute_disabled(
           stateful_session_per_route)) {
     ValidationErrors::ScopedField field(errors, ".stateful_session");
@@ -192,44 +188,27 @@ XdsHttpStatefulSessionFilter::ParseOverrideConfig(
         envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute_stateful_session(
             stateful_session_per_route);
     if (stateful_session != nullptr) {
-      config->cookie_config =
-          ParseCookieConfig(context, stateful_session, errors);
+      return ParseStatefulSession(context, stateful_session, errors);
     }
   }
-  return config;
+  // Return an empty config.  This is used to disable the filter.
+  return MakeRefCounted<StatefulSessionFilter::Config>();
 }
-
-namespace {
-
-RefCountedPtr<const FilterConfig> ConvertOverrideConfigToTopLevelConfig(
-    const FilterConfig& override_config) {
-  const auto& oc =
-      DownCast<const StatefulSessionFilter::OverrideConfig&>(override_config);
-  auto config = MakeRefCounted<StatefulSessionFilter::Config>();
-  config->cookie_config = oc.cookie_config;
-  return config;
-}
-
-}  // namespace
 
 RefCountedPtr<const FilterConfig> XdsHttpStatefulSessionFilter::MergeConfigs(
     RefCountedPtr<const FilterConfig> top_level_config,
     RefCountedPtr<const FilterConfig> virtual_host_override_config,
     RefCountedPtr<const FilterConfig> route_override_config,
     RefCountedPtr<const FilterConfig> cluster_weight_override_config) const {
-  // No merging here, we just use the most specific config.  However,
-  // because the override configs are a different protobuf message type,
-  // we need to convert them to the top-level config type, which is what
-  // the filter expects.
+  // No merging here, we just use the most specific config.
   if (cluster_weight_override_config != nullptr) {
-    return ConvertOverrideConfigToTopLevelConfig(
-        *cluster_weight_override_config);
+    return cluster_weight_override_config;
   }
   if (route_override_config != nullptr) {
-    return ConvertOverrideConfigToTopLevelConfig(*route_override_config);
+    return route_override_config;
   }
   if (virtual_host_override_config != nullptr) {
-    return ConvertOverrideConfigToTopLevelConfig(*virtual_host_override_config);
+    return virtual_host_override_config;
   }
   return top_level_config;
 }

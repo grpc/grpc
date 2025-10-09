@@ -181,6 +181,9 @@ class FaultInjectionFilter::InjectionDecision {
 absl::StatusOr<std::unique_ptr<FaultInjectionFilter>>
 FaultInjectionFilter::Create(const ChannelArgs&,
                              ChannelFilter::Args filter_args) {
+  if (filter_args.config() == nullptr) {
+    return absl::InternalError("no config passed to fault injection filter");
+  }
   if (filter_args.config()->type() != Config::Type()) {
     return absl::InternalError(
         absl::StrCat("wrong config type passed to fault injection filter: ",

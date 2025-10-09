@@ -47,8 +47,7 @@ class FaultInjectionFilter
   // restructure this.
   struct Config : public FilterConfig {
     static UniqueTypeName Type() {
-      return GRPC_UNIQUE_TYPE_NAME_HERE(
-          "envoy.extensions.filters.http.fault.v3.HTTPFault");
+      return GRPC_UNIQUE_TYPE_NAME_HERE("fault_injection_filter_config");
     }
     UniqueTypeName type() const override { return Type(); }
 

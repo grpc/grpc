@@ -417,7 +417,7 @@ TEST_P(TypedPerFilterConfigTest, Basic) {
   ASSERT_NE(it, typed_per_filter_config.end());
   EXPECT_EQ("fault", it->first);
   const auto& filter_config = it->second;
-  EXPECT_EQ(filter_config.config->type().name(),
+  EXPECT_EQ(filter_config.config_proto_type,
             "envoy.extensions.filters.http.fault.v3.HTTPFault");
   EXPECT_EQ(filter_config.config->ToString(),
             "{abort_code=PERMISSION_DENIED, abort_message=\"Fault injected\", "
@@ -529,7 +529,7 @@ TEST_P(TypedPerFilterConfigTest, FilterConfigWrapper) {
   ASSERT_NE(it, typed_per_filter_config.end());
   EXPECT_EQ("fault", it->first);
   const auto& filter_config = it->second;
-  EXPECT_EQ(filter_config.config->type().name(),
+  EXPECT_EQ(filter_config.config_proto_type,
             "envoy.extensions.filters.http.fault.v3.HTTPFault");
   EXPECT_EQ(filter_config.config->ToString(),
             "{abort_code=PERMISSION_DENIED, abort_message=\"Fault injected\", "

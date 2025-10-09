@@ -158,6 +158,7 @@ bool TypedPerFilterConfigsAreEqual(
     if (b_it == b.end()) return false;
     const auto& [b_name, b_config] = *b_it;
     if (a_name != b_name) return false;
+    if (a_config.config_proto_type != b_config.config_proto_type) return false;
     if (a_config.old_config != b_config.old_config) return false;
     if (*a_config.config != *b_config.config) return false;
     ++b_it;
@@ -184,7 +185,8 @@ XdsRouteConfigResource::Route::RouteAction::ClusterWeight::ToString() const {
     std::vector<std::string> parts;
     for (const auto& [key, config] : typed_per_filter_config) {
       parts.push_back(absl::StrCat(
-          key, "={old_config=", config.old_config.ToString(), ", config=",
+          key, "={config_proto_type=", config.config_proto_type,
+          ", old_config=", config.old_config.ToString(), ", config=",
           config.config == nullptr ? "null" : config.config->ToString(), "}"));
     }
     contents.push_back(absl::StrCat("typed_per_filter_config={",

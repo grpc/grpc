@@ -364,7 +364,7 @@ TEST_P(XdsFaultInjectionFilterConfigTest, EmptyConfig) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
-  EXPECT_EQ(config->type().name(), filter_->ConfigProtoName());
+  EXPECT_EQ(config->type(), FaultInjectionFilter::Config::Type());
   EXPECT_EQ(config->ToString(), "{max_faults=4294967295}");
 }
 
@@ -384,7 +384,7 @@ TEST_P(XdsFaultInjectionFilterConfigTest, BasicConfig) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
-  EXPECT_EQ(config->type().name(), filter_->ConfigProtoName());
+  EXPECT_EQ(config->type(), FaultInjectionFilter::Config::Type());
   EXPECT_EQ(config->ToString(),
             "{abort_code=UNAVAILABLE, "
             "abort_message=\"Fault injected\", "
@@ -405,7 +405,7 @@ TEST_P(XdsFaultInjectionFilterConfigTest, HttpAbortCode) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
-  EXPECT_EQ(config->type().name(), filter_->ConfigProtoName());
+  EXPECT_EQ(config->type(), FaultInjectionFilter::Config::Type());
   EXPECT_EQ(config->ToString(),
             "{abort_code=UNIMPLEMENTED, "
             "abort_message=\"Fault injected\", "
@@ -421,7 +421,7 @@ TEST_P(XdsFaultInjectionFilterConfigTest, HeaderAbortAndDelay) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
-  EXPECT_EQ(config->type().name(), filter_->ConfigProtoName());
+  EXPECT_EQ(config->type(), FaultInjectionFilter::Config::Type());
   EXPECT_EQ(
       config->ToString(),
       "{abort_code_header=\"x-envoy-fault-abort-grpc-request\", "
@@ -1202,22 +1202,22 @@ TEST_F(XdsStatefulSessionFilterTest, MergeConfigs) {
   // Merging all 4 should return the ClusterWeight config.
   auto config = filter_->MergeConfigs(top_level_config, vhost_config,
                                       route_config, cluster_weight_config);
-  EXPECT_EQ(config->type().name(), filter_->ConfigProtoName());
-  EXPECT_EQ(config->ToString(), "{name=\"quux\"}");
+  EXPECT_EQ(config->type(), StatefulSessionFilter::Config::Type());
+  EXPECT_EQ(config->ToString(), "{cookie_name=\"quux\"}");
   // Merging only the top 3 should return the route-level config.
   config = filter_->MergeConfigs(top_level_config, vhost_config, route_config,
                                  nullptr);
-  EXPECT_EQ(config->type().name(), filter_->ConfigProtoName());
-  EXPECT_EQ(config->ToString(), "{name=\"baz\"}");
+  EXPECT_EQ(config->type(), StatefulSessionFilter::Config::Type());
+  EXPECT_EQ(config->ToString(), "{cookie_name=\"baz\"}");
   // Merging only the top 2 should return the vhost-level config.
   config =
       filter_->MergeConfigs(top_level_config, vhost_config, nullptr, nullptr);
-  EXPECT_EQ(config->type().name(), filter_->ConfigProtoName());
-  EXPECT_EQ(config->ToString(), "{name=\"bar\"}");
+  EXPECT_EQ(config->type(), StatefulSessionFilter::Config::Type());
+  EXPECT_EQ(config->ToString(), "{cookie_name=\"bar\"}");
   // Merging only the top-level config returns the top-level config.
   config = filter_->MergeConfigs(top_level_config, nullptr, nullptr, nullptr);
-  EXPECT_EQ(config->type().name(), filter_->ConfigProtoName());
-  EXPECT_EQ(config->ToString(), "{name=\"foo\"}");
+  EXPECT_EQ(config->type(), StatefulSessionFilter::Config::Type());
+  EXPECT_EQ(config->ToString(), "{cookie_name=\"foo\"}");
 }
 
 TEST_F(XdsStatefulSessionFilterTest, ParseOverrideConfigDisabled) {
@@ -1229,7 +1229,7 @@ TEST_F(XdsStatefulSessionFilterTest, ParseOverrideConfigDisabled) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
-  EXPECT_EQ(config->type().name(), filter_->OverrideConfigProtoName());
+  EXPECT_EQ(config->type(), StatefulSessionFilter::Config::Type());
   EXPECT_EQ(config->ToString(), "{}");
 }
 
@@ -1345,10 +1345,8 @@ TEST_P(XdsStatefulSessionFilterConfigTest, MinimalConfig) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
-  EXPECT_EQ(config->type().name(), GetParam()
-                                       ? filter_->OverrideConfigProtoName()
-                                       : filter_->ConfigProtoName());
-  EXPECT_EQ(config->ToString(), "{name=\"foo\"}");
+  EXPECT_EQ(config->type(), StatefulSessionFilter::Config::Type());
+  EXPECT_EQ(config->ToString(), "{cookie_name=\"foo\"}");
 }
 
 TEST_P(XdsStatefulSessionFilterConfigTest, PathAndTtl) {
@@ -1364,11 +1362,9 @@ TEST_P(XdsStatefulSessionFilterConfigTest, PathAndTtl) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
-  EXPECT_EQ(config->type().name(), GetParam()
-                                       ? filter_->OverrideConfigProtoName()
-                                       : filter_->ConfigProtoName());
+  EXPECT_EQ(config->type(), StatefulSessionFilter::Config::Type());
   EXPECT_EQ(config->ToString(),
-            "{name=\"foo\", path=\"/service/method\", ttl=3000ms}");
+            "{cookie_name=\"foo\", path=\"/service/method\", ttl=3000ms}");
 }
 
 TEST_P(XdsStatefulSessionFilterConfigTest, SessionStateUnset) {
@@ -1376,9 +1372,7 @@ TEST_P(XdsStatefulSessionFilterConfigTest, SessionStateUnset) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
-  EXPECT_EQ(config->type().name(), GetParam()
-                                       ? filter_->OverrideConfigProtoName()
-                                       : filter_->ConfigProtoName());
+  EXPECT_EQ(config->type(), StatefulSessionFilter::Config::Type());
   EXPECT_EQ(config->ToString(), "{}");
 }
 
@@ -1534,7 +1528,7 @@ TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigEmpty) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
-  EXPECT_EQ(config->type().name(), filter_->ConfigProtoName());
+  EXPECT_EQ(config->type(), GcpAuthenticationFilter::Config::Type());
   EXPECT_EQ(config->ToString(),
             "{instance_name=\"enterprise\", cache_size=10}");
 }
@@ -1548,7 +1542,7 @@ TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigCacheSizeDefault) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
-  EXPECT_EQ(config->type().name(), filter_->ConfigProtoName());
+  EXPECT_EQ(config->type(), GcpAuthenticationFilter::Config::Type());
   EXPECT_EQ(config->ToString(), "{instance_name=\"yorktown\", cache_size=10}");
 }
 
@@ -1561,7 +1555,7 @@ TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigCacheSize) {
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_NE(config, nullptr);
-  EXPECT_EQ(config->type().name(), filter_->ConfigProtoName());
+  EXPECT_EQ(config->type(), GcpAuthenticationFilter::Config::Type());
   EXPECT_EQ(config->ToString(), "{instance_name=\"hornet\", cache_size=6}");
 }
 
