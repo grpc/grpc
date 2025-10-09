@@ -101,35 +101,12 @@ class CompositeFilter final : public V3InterceptorToV2Bridge<CompositeFilter> {
   // Top-level filter config.
   struct Config final : public FilterConfig {
     static UniqueTypeName Type() {
-      return GRPC_UNIQUE_TYPE_NAME_HERE(
-          "envoy.extensions.common.matching.v3.ExtensionWithMatcher");
+      return GRPC_UNIQUE_TYPE_NAME_HERE("composite_filter_config");
     }
     UniqueTypeName type() const override { return Type(); }
 
     bool Equals(const FilterConfig& other) const override {
       const auto& o = DownCast<const Config&>(other);
-      if (matcher == nullptr) return o.matcher == nullptr;
-      if (o.matcher == nullptr) return false;
-      return matcher->Equals(*o.matcher);
-    }
-    std::string ToString() const override {
-      if (matcher == nullptr) return "{}";
-      return matcher->ToString();
-    }
-
-    std::unique_ptr<XdsMatcher> matcher;
-  };
-
-  // Override filter config.
-  struct ConfigOverride final : public FilterConfig {
-    static UniqueTypeName Type() {
-      return GRPC_UNIQUE_TYPE_NAME_HERE(
-          "envoy.extensions.common.matching.v3.ExtensionWithMatcherPerRoute");
-    }
-    UniqueTypeName type() const override { return Type(); }
-
-    bool Equals(const FilterConfig& other) const override {
-      const auto& o = DownCast<const ConfigOverride&>(other);
       if (matcher == nullptr) return o.matcher == nullptr;
       if (o.matcher == nullptr) return false;
       return matcher->Equals(*o.matcher);

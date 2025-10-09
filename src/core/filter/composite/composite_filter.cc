@@ -169,7 +169,7 @@ void CompositeFilter::InterceptCall(
                     ForwardCall(handler, initiator);
                     return absl::OkStatus();
                   },
-                  []() -> StatusFlag { return Success{}; });
+                  []() { return absl::OkStatus(); });
             });
       });
 }

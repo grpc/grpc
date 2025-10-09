@@ -150,7 +150,7 @@ class ExecuteFilterActionFactory final : public XdsMatcherActionFactory {
       auto extension = ExtractXdsExtension(context, any, errors);
       if (extension.has_value()) {
         const XdsHttpFilterImpl* filter_impl =
-            http_filter_registry.GetFilterForType(extension->type);
+            http_filter_registry.GetFilterForTopLevelType(extension->type);
         if (filter_impl == nullptr) {
           errors->AddError("unsupported filter type");
         } else {
@@ -264,46 +264,13 @@ RefCountedPtr<const FilterConfig> XdsHttpCompositeFilter::ParseOverrideConfig(
     errors->AddError("could not parse composite filter override config");
     return nullptr;
   }
-  auto config = MakeRefCounted<CompositeFilter::ConfigOverride>();
+  auto config = MakeRefCounted<CompositeFilter::Config>();
   config->matcher = ParseMatcher(
       context,
       envoy_extensions_common_matching_v3_ExtensionWithMatcherPerRoute_xds_matcher(
           extension_with_matcher),
       errors);
   return config;
-}
-
-namespace {
-
-RefCountedPtr<const FilterConfig> ConvertOverrideConfigToTopLevelConfig(
-    const FilterConfig& override_config) {
-  const auto& oc =
-      DownCast<const CompositeFilter::ConfigOverride&>(override_config);
-  auto config = MakeRefCounted<CompositeFilter::Config>();
-  config->matcher = oc.matcher;
-  return config;
-}
-
-}  // namespace
-
-RefCountedPtr<const FilterConfig> XdsHttpCompositeFilter::MergeConfigs(
-    RefCountedPtr<const FilterConfig> top_level_config,
-    RefCountedPtr<const FilterConfig> virtual_host_override_config,
-    RefCountedPtr<const FilterConfig> route_override_config,
-    RefCountedPtr<const FilterConfig> cluster_weight_override_config) const {
-  // No merging here, we just use the most specific config.  However,
-  // because the override configs are a different protobuf message type,
-  // we need to convert them to the top-level config type, which is what
-  // the filter expects.
-  if (cluster_weight_override_config != nullptr) {                                  return ConvertOverrideConfigToTopLevelConfig(
-        *cluster_weight_override_config);                                         }
-  if (route_override_config != nullptr) {
-    return ConvertOverrideConfigToTopLevelConfig(*route_override_config);
-  }
-  if (virtual_host_override_config != nullptr) {
-    return ConvertOverrideConfigToTopLevelConfig(*virtual_host_override_config);
-  }
-  return top_level_config;
 }
 
 }  // namespace grpc_core
