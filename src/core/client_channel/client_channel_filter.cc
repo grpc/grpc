@@ -1438,7 +1438,7 @@ void ClientChannelFilter::UpdateServiceConfigInControlPlaneLocked(
 namespace {
 
 // Filter chain builder impl to inject into ConfigSelector.
-class LegacyFilterChainBuilder : public FilterChainBuilder {
+class LegacyFilterChainBuilder final : public FilterChainBuilder {
  public:
   LegacyFilterChainBuilder(bool enable_retries, const ChannelArgs& channel_args,
                            const Blackboard* blackboard)

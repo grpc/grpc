@@ -17,9 +17,13 @@
 #include "src/core/xds/grpc/xds_http_composite_filter.h"
 
 #include "absl/strings/string_view.h"
+#include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/extensions/common/matching/v3/extension_matcher.upb.h"
+#include "envoy/extensions/common/matching/v3/extension_matcher.upbdefs.h"
 #include "envoy/extensions/filters/common/matcher/action/v3/skip_action.upb.h"
+#include "envoy/extensions/filters/common/matcher/action/v3/skip_action.upbdefs.h"
 #include "envoy/extensions/filters/http/composite/v3/composite.upb.h"
+#include "envoy/extensions/filters/http/composite/v3/composite.upbdefs.h"
 #include "envoy/type/v3/percent.upb.h"
 #include "src/core/filter/composite/composite_filter.h"
 #include "src/core/util/validation_errors.h"
@@ -29,7 +33,8 @@
 #include "src/core/xds/grpc/xds_matcher.h"
 #include "src/core/xds/grpc/xds_matcher_action.h"
 #include "src/core/xds/grpc/xds_matcher_context.h"
-#include "src/core/xds/grpc/xds_matcher_parser.h"
+#include "src/core/xds/grpc/xds_matcher_parse.h"
+#include "src/core/xds/xds_client/xds_client.h"
 
 namespace grpc_core {
 
@@ -73,7 +78,7 @@ namespace {
 class SkipFilterActionFactory final : public XdsMatcherActionFactory {
  public:
   absl::string_view type() const override {
-    return CompositeFilter::SkipFilterAction::Type();
+    return CompositeFilter::SkipFilterAction::Type().name();
   }
 
   std::unique_ptr<XdsMatcher::Action> ParseAndCreateAction(
@@ -82,8 +87,7 @@ class SkipFilterActionFactory final : public XdsMatcherActionFactory {
       const override {
     const auto* skip_filter =
         envoy_extensions_filters_common_matcher_action_v3_SkipFilter_parse(
-            serialized_filter_config->data(), serialized_filter_config->size(),
-            context.arena);
+            serialized_value.data(), serialized_value.size(), context.arena);
     if (skip_filter == nullptr) {
       errors->AddError("could not parse SkipFilter action");
       return nullptr;
@@ -116,7 +120,7 @@ uint32_t ParseFractionalPercent(
 class ExecuteFilterActionFactory final : public XdsMatcherActionFactory {
  public:
   absl::string_view type() const override {
-    return CompositeFilter::ExecuteFilterAction::Type();
+    return CompositeFilter::ExecuteFilterAction::Type().name();
   }
 
   std::unique_ptr<XdsMatcher::Action> ParseAndCreateAction(
@@ -125,8 +129,7 @@ class ExecuteFilterActionFactory final : public XdsMatcherActionFactory {
       const override {
     const auto* execute_filter =
         envoy_extensions_filters_http_composite_v3_ExecuteFilterAction_parse(
-            serialized_filter_config->data(), serialized_filter_config->size(),
-            context.arena);
+            serialized_value.data(), serialized_value.size(), context.arena);
     if (execute_filter == nullptr) {
       errors->AddError("could not parse ExecuteFilterAction");
       return nullptr;
@@ -171,7 +174,8 @@ class ExecuteFilterActionFactory final : public XdsMatcherActionFactory {
           envoy_config_core_v3_RuntimeFractionalPercent_default_value(
               sample_percent_proto);
       if (default_value == nullptr) {
-        ValidationErrors::ScopedField field(".sample_percent.default_value");
+        ValidationErrors::ScopedField field(
+            errors, ".sample_percent.default_value");
         errors->AddError("field not set");
       } else {
         sample_per_million = ParseFractionalPercent(default_value);
@@ -218,7 +222,7 @@ RefCountedPtr<const FilterConfig> XdsHttpCompositeFilter::ParseTopLevelConfig(
       envoy_extensions_common_matching_v3_ExtensionWithMatcher_extension_config(
           extension_with_matcher);
   if (extension_config == nullptr) {
-    ValidationErrors::ScopedField field(".extension_config");
+    ValidationErrors::ScopedField field(errors, ".extension_config");
     errors->AddError("field not set");
   } else {
     const auto* typed_config =

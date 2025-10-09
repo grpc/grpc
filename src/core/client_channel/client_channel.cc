@@ -872,7 +872,7 @@ class FilterChainImpl : public FilterChain {
   RefCountedPtr<UnstartedCallDestination> destination_;
 };
 
-class FilterChainBuilderImpl : public FilterChainBuilder {
+class FilterChainBuilderImpl final : public FilterChainBuilder {
  public:
   FilterChainBuilderImpl(
       bool enable_retries, const ChannelArgs& channel_args,

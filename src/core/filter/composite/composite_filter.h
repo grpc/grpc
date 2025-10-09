@@ -17,9 +17,22 @@
 #ifndef GRPC_SRC_CORE_FILTER_COMPOSITE_COMPOSITE_FILTERS_H
 #define GRPC_SRC_CORE_FILTER_COMPOSITE_COMPOSITE_FILTERS_H
 
-#include "src/core/filter/filter_chain.h"
+#include <memory>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/container/flat_hash_map.h"
+#include "src/core/call/call_destination.h"
+#include "src/core/filter/filter_args.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/util/down_cast.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/unique_type_name.h"
+#include "src/core/xds/grpc/xds_http_filter.h"
 #include "src/core/xds/grpc/xds_matcher.h"
 
 namespace grpc_core {
@@ -44,13 +57,16 @@ class CompositeFilter final : public V3InterceptorToV2Bridge<CompositeFilter> {
   // A matcher action indicating a filter chain to use.
   class ExecuteFilterAction final : public XdsMatcher::Action {
    public:
-    // TODO(roth): Once we're done with the promise migration, see if
-    // there's a way to construct the v3 filter chain during xDS
-    // resource validation and store it here directly, so we don't need
-    // a layer of indirection in the composite filter itself.
     struct Filter {
       const XdsHttpFilterImpl* filter_impl;
       RefCountedPtr<const FilterConfig> filter_config;
+
+      bool operator==(const Filter& other) const {
+        if (filter_impl != other.filter_impl) return false;
+        if (filter_config == nullptr) return other.filter_config == nullptr;
+        if (other.filter_config == nullptr) return false;
+        return *filter_config == *other.filter_config;
+      }
     };
 
     ExecuteFilterAction(std::vector<Filter> filter_chain,
@@ -60,15 +76,11 @@ class CompositeFilter final : public V3InterceptorToV2Bridge<CompositeFilter> {
 
     bool Equals(const Action& other) const override {
       const auto& o = DownCast<const ExecuteFilterAction&>(other);
-      if (filter_chain_ == nullptr) return o.filter_chain_ == nullptr;
-      if (o.filter_chain_ == nullptr) return false;
-      return *filter_chain_ == *o.filter_chain_;
+      return filter_chain_ == o.filter_chain_ &&
+             sample_per_million_ == o.sample_per_million_;
     }
 
-    std::string ToString() const override {
-      if (filter_chain_ == nullptr) return "{}";
-      return filter_chain_->ToString();
-    }
+    std::string ToString() const override;
 
     static UniqueTypeName Type() {
       return GRPC_UNIQUE_TYPE_NAME_HERE(
@@ -96,9 +108,9 @@ class CompositeFilter final : public V3InterceptorToV2Bridge<CompositeFilter> {
 
     bool Equals(const FilterConfig& other) const override {
       const auto& o = DownCast<const Config&>(other);
-      if (matcher == nullptr) return other.matcher == nullptr;
-      if (other.matcher == nullptr) return false;
-      return matcher->Equals(*other.matcher);
+      if (matcher == nullptr) return o.matcher == nullptr;
+      if (o.matcher == nullptr) return false;
+      return matcher->Equals(*o.matcher);
     }
     std::string ToString() const override {
       if (matcher == nullptr) return "{}";
@@ -118,9 +130,9 @@ class CompositeFilter final : public V3InterceptorToV2Bridge<CompositeFilter> {
 
     bool Equals(const FilterConfig& other) const override {
       const auto& o = DownCast<const ConfigOverride&>(other);
-      if (matcher == nullptr) return other.matcher == nullptr;
-      if (other.matcher == nullptr) return false;
-      return matcher->Equals(*other.matcher);
+      if (matcher == nullptr) return o.matcher == nullptr;
+      if (o.matcher == nullptr) return false;
+      return matcher->Equals(*o.matcher);
     }
     std::string ToString() const override {
       if (matcher == nullptr) return "{}";
@@ -134,16 +146,33 @@ class CompositeFilter final : public V3InterceptorToV2Bridge<CompositeFilter> {
 
   static absl::string_view TypeName() { return "composite"; }
 
-  static absl::StatusOr<std::unique_ptr<CompositeFilter>> Create(
+  static absl::StatusOr<RefCountedPtr<CompositeFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
-  explicit CompositeFilter(std::unique_ptr<const Config> config);
+  CompositeFilter(const ChannelArgs& args,
+                  RefCountedPtr<const Config> config,
+                  ChannelFilter::Args filter_args);
 
  private:
-  std::unique_ptr<const Config> config_;
+  void Orphaned() override {}
+
+  void InterceptCall(UnstartedCallHandler unstarted_call_handler) override;
+
+  RefCountedPtr<const Config> config_;
+
+  // Map from action in the matcher tree to corresponding filter chain.
+  //
+  // Ideally, we'd prefer to avoid having a separate map here and instead
+  // store the filter chain directly in the xDS matcher.  However, the xDS
+  // matcher is constructed at xDS resource validation time, and we can't
+  // construct the filter chain at that point, because we don't know the call
+  // destination to use -- and we can't know it there, because each channel
+  // that uses the same xDS resource will have its own call destination.
   absl::flat_hash_map<const XdsMatcher::Action*,
                       absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>>
       filter_chain_map_;
 };
+
+}  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_FILTER_COMPOSITE_COMPOSITE_FILTERS_H
