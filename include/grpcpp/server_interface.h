@@ -265,9 +265,8 @@ class ServerInterface : public internal::CallHook {
         return RegisteredAsyncRequest::FinalizeResult(tag, status);
       }
       if (*status) {
-        if (!payload_.Valid() || !SerializationTraits<Message>::Deserialize(
-                                      payload_.bbuf_ptr(), request_)
-                                      .ok()) {
+        if (!payload_.Valid() ||
+            !Deserialize(payload_.bbuf_ptr(), request_).ok()) {
           // If deserialization fails, we cancel the call and instantiate
           // a new instance of ourselves to request another call.  We then
           // return false, which prevents the call from being returned to
