@@ -357,7 +357,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:iomgr",
-        "//:iomgr_buffer_list",
         "//src/core:channel_args",
         "//src/core:channel_args_endpoint_config",
         "//src/core:default_event_engine",
@@ -369,28 +368,6 @@ grpc_cc_test(
         "//src/core:notification",
         "//src/core:posix_event_engine_base_hdrs",
         "//src/core:slice",
-        "//src/core:time",
-        "//src/core:useful",
-        "//test/core/test_util:grpc_test_util",
-        "//test/core/test_util:grpc_test_util_base",
-    ],
-)
-
-grpc_cc_test(
-    name = "buffer_list_test",
-    srcs = ["buffer_list_test.cc"],
-    external_deps = [
-        "absl/log:check",
-        "gtest",
-    ],
-    deps = [
-        "//:exec_ctx",
-        "//:gpr",
-        "//:grpc",
-        "//:iomgr_buffer_list",
-        "//:iomgr_internal_errqueue",
-        "//src/core:grpc_check",
-        "//src/core:iomgr_port",
         "//src/core:time",
         "//src/core:useful",
         "//test/core/test_util:grpc_test_util",
