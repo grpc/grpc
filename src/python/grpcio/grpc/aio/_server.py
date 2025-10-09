@@ -58,6 +58,7 @@ class Server(_base_server.Server):
                     "the following are invalid: {invalid_interceptors}"
                 )
                 # TODO: fix the value error below
+                # not caught by ruff.
                 raise ValueError(error_msg)
         self._server = cygrpc.AioServer(
             self._loop,
