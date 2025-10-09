@@ -165,6 +165,7 @@ pip_install_dir_and_deps() {
   PWD=$(pwd)
   cd "$1"
   ($VENV_PYTHON setup.py build_ext -c "$TOOLCHAIN" || true)
+  $VENV_PYTHON -m pip freeze | grep grpc
   $VENV_PYTHON -m pip install .
   cd "$PWD"
 }
