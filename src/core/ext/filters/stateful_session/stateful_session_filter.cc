@@ -86,9 +86,9 @@ StatefulSessionFilter::Create(const ChannelArgs&,
     return absl::InternalError("no config in stateful session filter");
   }
   if (filter_args.config()->type() != Config::Type()) {
-    return absl::InternalError(absl::StrCat(
-        "wrong config type in stateful session filter: ",
-        filter_args.config()->type().name()));
+    return absl::InternalError(
+        absl::StrCat("wrong config type in stateful session filter: ",
+                     filter_args.config()->type().name()));
   }
   return std::make_unique<StatefulSessionFilter>(filter_args);
 }
@@ -272,9 +272,9 @@ void StatefulSessionFilter::Call::OnServerInitialMetadata(
   GRPC_LATENT_SEE_SCOPE("StatefulSessionFilter::Call::OnServerInitialMetadata");
   if (!perform_filtering_) return;
   // Add cookie to server initial metadata if needed.
-  MaybeUpdateServerInitialMetadata(
-      *filter->config_, cluster_changed_, cluster_name_, cookie_address_list_,
-      override_host_attribute_, md);
+  MaybeUpdateServerInitialMetadata(*filter->config_, cluster_changed_,
+                                   cluster_name_, cookie_address_list_,
+                                   override_host_attribute_, md);
 }
 
 void StatefulSessionFilter::Call::OnServerTrailingMetadata(
@@ -286,9 +286,9 @@ void StatefulSessionFilter::Call::OnServerTrailingMetadata(
   // cookie to the trailing metadata instead of the
   // initial metadata.
   if (md.get(GrpcTrailersOnly()).value_or(false)) {
-    MaybeUpdateServerInitialMetadata(
-        *filter->config_, cluster_changed_, cluster_name_,
-        cookie_address_list_, override_host_attribute_, md);
+    MaybeUpdateServerInitialMetadata(*filter->config_, cluster_changed_,
+                                     cluster_name_, cookie_address_list_,
+                                     override_host_attribute_, md);
   }
 }
 

@@ -448,10 +448,9 @@ void XdsResolver::RouteConfigData::BuildFilterChains(
         auto* filter = filters[i];
         const auto& filter_config = hcm.http_filters[i];
         if (filter_config.filter_config == nullptr) continue;
-        auto vhost_override_config =
-            GetOverrideConfig(filter,
-                              xds_config.virtual_host->typed_per_filter_config,
-                              filter_config.name);
+        auto vhost_override_config = GetOverrideConfig(
+            filter, xds_config.virtual_host->typed_per_filter_config,
+            filter_config.name);
         auto config = filter->MergeConfigs(filter_config.filter_config,
                                            std::move(vhost_override_config),
                                            nullptr, nullptr);
