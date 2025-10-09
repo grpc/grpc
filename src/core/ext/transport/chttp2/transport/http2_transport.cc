@@ -19,18 +19,25 @@
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 
 #include <cstdint>
+#include <string>
 #include <utility>
 
+#include "absl/log/log.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/call/metadata_info.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 
@@ -50,7 +57,7 @@ void InitLocalSettings(Http2Settings& settings, const bool is_client) {
     // gRPC has never supported PUSH_PROMISE and we have no plan to do so in the
     // future.
     settings.SetEnablePush(false);
-    // This is to make it double-sure that server cannot initite a stream.
+    // This is to make it double-sure that server cannot initiate a stream.
     settings.SetMaxConcurrentStreams(0);
   }
   settings.SetMaxHeaderListSize(DEFAULT_MAX_HEADER_LIST_SIZE);
@@ -165,6 +172,48 @@ void ProcessOutgoingDataFrameFlowControl(
     // control.
     fc_update.SentData(flow_control_tokens_consumed);
   }
+}
+
+ValueOrHttp2Status<chttp2::FlowControlAction>
+ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
+                                    chttp2::TransportFlowControl& flow_control,
+                                    RefCountedPtr<Stream> stream) {
+  GRPC_DCHECK_EQ(frame_header.type, 0u);
+  if (frame_header.length > 0) {
+    if (stream == nullptr) {
+      // This flow control bookkeeping needs to happen even though the stream is
+      // gone because otherwise we will go out-of-sync with the peer.
+      // The flow control numbers should be consistent for both peers.
+      chttp2::TransportFlowControl::IncomingUpdateContext transport_fc(
+          &flow_control);
+      absl::Status fc_status = transport_fc.RecvData(frame_header.length);
+      chttp2::FlowControlAction action = transport_fc.MakeAction();
+      if (!fc_status.ok()) {
+        LOG(ERROR) << "Flow control error: " << fc_status.message();
+        // RFC9113 : A receiver MAY respond with a stream error or connection
+        // error of type FLOW_CONTROL_ERROR if it is unable to accept a frame.
+        return Http2Status::Http2ConnectionError(
+            Http2ErrorCode::kFlowControlError,
+            std::string(fc_status.message()));
+      }
+      return action;
+    } else {
+      chttp2::StreamFlowControl::IncomingUpdateContext stream_fc(
+          &stream->flow_control);
+      absl::Status fc_status = stream_fc.RecvData(frame_header.length);
+      chttp2::FlowControlAction action = stream_fc.MakeAction();
+      if (!fc_status.ok()) {
+        LOG(ERROR) << "Flow control error: " << fc_status.message();
+        // RFC9113 : A receiver MAY respond with a stream error or connection
+        // error of type FLOW_CONTROL_ERROR if it is unable to accept a frame.
+        return Http2Status::Http2ConnectionError(
+            Http2ErrorCode::kFlowControlError,
+            std::string(fc_status.message()));
+      }
+      return action;
+    }
+  }
+  return chttp2::FlowControlAction();
 }
 
 }  // namespace http2

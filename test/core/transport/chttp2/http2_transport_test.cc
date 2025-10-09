@@ -22,6 +22,7 @@
 #include <grpc/event_engine/slice.h>
 #include <grpc/grpc.h>
 
+#include <cstdint>
 #include <memory>
 #include <utility>
 
@@ -52,6 +53,9 @@
 namespace grpc_core {
 namespace http2 {
 namespace testing {
+
+///////////////////////////////////////////////////////////////////////////////
+// Settings and ChannelArgs helpers tests
 
 TEST(Http2CommonTransportTest, TestReadChannelArgs) {
   // Test to validate that ReadChannelArgs reads all the channel args
@@ -114,6 +118,9 @@ TEST(Http2CommonTransportTest, TestReadChannelArgs) {
   EXPECT_EQ(settings2.allow_security_frame(), false);
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Flow control helpers tests
+
 TEST(Http2CommonTransportTest, ProcessOutgoingDataFrameFlowControlTest) {
   chttp2::TransportFlowControl transport_flow_control(
       /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
@@ -133,6 +140,99 @@ TEST(Http2CommonTransportTest, ProcessOutgoingDataFrameFlowControlTest) {
     EXPECT_EQ(transport_flow_control.remote_window(),
               chttp2::kDefaultWindow - 1000);
     EXPECT_EQ(stream_flow_control.remote_window_delta(), -1000);
+  }
+}
+
+TEST(Http2CommonTransportTest, ProcessIncomingDataFrameFlowControlNullStream) {
+  const uint32_t frame_payload_size = 20000;
+  chttp2::TransportFlowControl flow_control(
+      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*memory_owner=*/nullptr);
+  Http2FrameHeader frame_header;
+  frame_header.length = frame_payload_size;
+  frame_header.type = 0;  // DATA Frame
+  frame_header.flags = 0;
+  frame_header.stream_id = 1;
+
+  EXPECT_EQ(flow_control.announced_window(), chttp2::kDefaultWindow);
+
+  // First DATA frame of size frame_payload_size
+  ValueOrHttp2Status<chttp2::FlowControlAction> action1 =
+      ProcessIncomingDataFrameFlowControl(frame_header, flow_control, nullptr);
+  EXPECT_TRUE(action1.IsOk());
+  EXPECT_EQ(flow_control.announced_window(),
+            chttp2::kDefaultWindow - frame_payload_size);
+
+  // 2nd DATA frame of size frame_payload_size
+  ValueOrHttp2Status<chttp2::FlowControlAction> action2 =
+      ProcessIncomingDataFrameFlowControl(frame_header, flow_control, nullptr);
+  EXPECT_TRUE(action2.IsOk());
+  EXPECT_EQ(flow_control.announced_window(),
+            chttp2::kDefaultWindow - 2 * frame_payload_size);
+
+  // 3rd DATA frame of size frame_payload_size
+  ValueOrHttp2Status<chttp2::FlowControlAction> action3 =
+      ProcessIncomingDataFrameFlowControl(frame_header, flow_control, nullptr);
+  EXPECT_TRUE(action3.IsOk());
+  EXPECT_EQ(flow_control.announced_window(),
+            chttp2::kDefaultWindow - 3 * frame_payload_size);
+
+  // 4th DATA frame of size frame_payload_size.
+  // This will fail because the flow control window is exhausted.
+  ValueOrHttp2Status<chttp2::FlowControlAction> action4 =
+      ProcessIncomingDataFrameFlowControl(frame_header, flow_control, nullptr);
+  // Invalid operation because flow control window was exceeded.
+  EXPECT_FALSE(action4.IsOk());
+  EXPECT_EQ(action4.GetErrorType(),
+            Http2Status::Http2ErrorType::kConnectionError);
+  EXPECT_EQ(action4.GetConnectionErrorCode(),
+            Http2ErrorCode::kFlowControlError);
+  EXPECT_EQ(action4.DebugString(),
+            "Connection Error: {Error Code:FLOW_CONTROL_ERROR, Message:frame "
+            "of size 20000 overflows local window of 5535}");
+}
+
+TEST(Http2CommonTransportTest, ProcessIncomingDataFrameFlowControlNullStream1) {
+  const uint32_t frame_payload_size = 60000;
+  chttp2::TransportFlowControl flow_control(
+      /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+      /*memory_owner=*/nullptr);
+  Http2FrameHeader frame_header;
+  frame_header.length = frame_payload_size;
+  frame_header.type = 0;  // DATA Frame
+  frame_header.flags = 0;
+  frame_header.stream_id = 1;
+
+  EXPECT_EQ(flow_control.announced_window(), chttp2::kDefaultWindow);
+
+  // Receive first large DATA frame.
+  ValueOrHttp2Status<chttp2::FlowControlAction> action1 =
+      ProcessIncomingDataFrameFlowControl(frame_header, flow_control, nullptr);
+  EXPECT_TRUE(action1.IsOk());
+  EXPECT_EQ(flow_control.announced_window(),
+            chttp2::kDefaultWindow - frame_payload_size);
+
+  // Send the flow control update to peer
+  uint32_t increment = flow_control.MaybeSendUpdate(true);
+
+  // Receive 2nd large DATA frame.
+  // This should be accepted because we sent fresh flow control tokens.
+  ValueOrHttp2Status<chttp2::FlowControlAction> action2 =
+      ProcessIncomingDataFrameFlowControl(frame_header, flow_control, nullptr);
+  EXPECT_TRUE(action2.IsOk());
+  EXPECT_EQ(flow_control.announced_window(),
+            (chttp2::kDefaultWindow + increment) - 2 * frame_payload_size);
+
+  // For an empty DATA frame the flow control window must not change.
+  // All empty DATA frames should be accepted by flow control.
+  frame_header.length = 0;
+  for (int i = 0; i < 3; ++i) {
+    ValueOrHttp2Status<chttp2::FlowControlAction> action3 =
+        ProcessIncomingDataFrameFlowControl(frame_header, flow_control,
+                                            nullptr);
+    EXPECT_TRUE(action3.IsOk());
+    EXPECT_EQ(flow_control.announced_window(),
+              (chttp2::kDefaultWindow + increment) - 2 * frame_payload_size);
   }
 }
 
