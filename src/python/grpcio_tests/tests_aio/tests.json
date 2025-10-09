@@ -18,6 +18,7 @@
   "tests_aio.unit.channel_argument_test.TestChannelArgument",
   "tests_aio.unit.channel_ready_test.TestChannelReady",
   "tests_aio.unit.channel_test.TestChannel",
+  "tests_aio.unit.client_multi_type_interceptor_test.TestMultiTypeInterceptor",
   "tests_aio.unit.client_stream_stream_interceptor_test.TestStreamStreamClientInterceptor",
   "tests_aio.unit.client_stream_unary_interceptor_test.TestStreamUnaryClientInterceptor",
   "tests_aio.unit.client_unary_stream_interceptor_test.TestUnaryStreamClientInterceptor",
