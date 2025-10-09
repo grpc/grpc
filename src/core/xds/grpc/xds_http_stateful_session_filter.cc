@@ -195,22 +195,4 @@ XdsHttpStatefulSessionFilter::ParseOverrideConfig(
   return MakeRefCounted<StatefulSessionFilter::Config>();
 }
 
-RefCountedPtr<const FilterConfig> XdsHttpStatefulSessionFilter::MergeConfigs(
-    RefCountedPtr<const FilterConfig> top_level_config,
-    RefCountedPtr<const FilterConfig> virtual_host_override_config,
-    RefCountedPtr<const FilterConfig> route_override_config,
-    RefCountedPtr<const FilterConfig> cluster_weight_override_config) const {
-  // No merging here, we just use the most specific config.
-  if (cluster_weight_override_config != nullptr) {
-    return cluster_weight_override_config;
-  }
-  if (route_override_config != nullptr) {
-    return route_override_config;
-  }
-  if (virtual_host_override_config != nullptr) {
-    return virtual_host_override_config;
-  }
-  return top_level_config;
-}
-
 }  // namespace grpc_core

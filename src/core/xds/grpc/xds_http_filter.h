@@ -68,13 +68,14 @@ class XdsHttpFilterImpl {
       const XdsExtension& extension, ValidationErrors* errors) const = 0;
 
   // Returns a new filter config that takes into account any necessary
-  // overrides.
+  // overrides.  Base class returns the most specific filter config;
+  // subclasses can override if needed.
   virtual RefCountedPtr<const FilterConfig> MergeConfigs(
       RefCountedPtr<const FilterConfig> top_level_config,
       RefCountedPtr<const FilterConfig> virtual_host_override_config,
       RefCountedPtr<const FilterConfig> route_override_config,
       RefCountedPtr<const FilterConfig> cluster_weight_override_config)
-      const = 0;
+      const;
 
   // Adds state to new_blackboard if needed for the specified filter
   // config.  Copies existing state from old_blackboard as appropriate.

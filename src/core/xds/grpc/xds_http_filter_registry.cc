@@ -107,16 +107,6 @@ RefCountedPtr<const FilterConfig> XdsHttpRouterFilter::ParseOverrideConfig(
   return nullptr;
 }
 
-RefCountedPtr<const FilterConfig> XdsHttpRouterFilter::MergeConfigs(
-    RefCountedPtr<const FilterConfig> top_level_config,
-    RefCountedPtr<const FilterConfig>
-    /*virtual_host_override_config*/,
-    RefCountedPtr<const FilterConfig> /*route_override_config*/,
-    RefCountedPtr<const FilterConfig>
-    /*cluster_weight_override_config*/) const {
-  return top_level_config;
-}
-
 //
 // XdsHttpFilterRegistry
 //

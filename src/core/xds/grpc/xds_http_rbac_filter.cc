@@ -623,16 +623,4 @@ RefCountedPtr<const FilterConfig> XdsHttpRbacFilter::ParseOverrideConfig(
   return nullptr;
 }
 
-RefCountedPtr<const FilterConfig> XdsHttpRbacFilter::MergeConfigs(
-    RefCountedPtr<const FilterConfig> /*top_level_config*/,
-    RefCountedPtr<const FilterConfig>
-    /*virtual_host_override_config*/,
-    RefCountedPtr<const FilterConfig> /*route_override_config*/,
-    RefCountedPtr<const FilterConfig>
-    /*cluster_weight_override_config*/) const {
-  // TODO(roth): Implement this as part of migrating the server side to
-  // the new approach for passing xDS HTTP filter configs.
-  return nullptr;
-}
-
 }  // namespace grpc_core

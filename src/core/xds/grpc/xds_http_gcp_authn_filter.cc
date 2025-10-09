@@ -104,16 +104,6 @@ RefCountedPtr<const FilterConfig> XdsHttpGcpAuthnFilter::ParseOverrideConfig(
   return nullptr;
 }
 
-RefCountedPtr<const FilterConfig> XdsHttpGcpAuthnFilter::MergeConfigs(
-    RefCountedPtr<const FilterConfig> top_level_config,
-    RefCountedPtr<const FilterConfig> /*virtual_host_override_config*/,
-    RefCountedPtr<const FilterConfig> /*route_override_config*/,
-    RefCountedPtr<const FilterConfig> /*cluster_weight_override_config*/)
-    const {
-  // Does not support override config.
-  return top_level_config;
-}
-
 void XdsHttpGcpAuthnFilter::UpdateBlackboard(const FilterConfig& config,
                                              const Blackboard* old_blackboard,
                                              Blackboard* new_blackboard) const {
