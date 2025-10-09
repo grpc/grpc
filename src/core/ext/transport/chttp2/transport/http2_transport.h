@@ -88,6 +88,10 @@ ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame,
                                     chttp2::TransportFlowControl& flow_control,
                                     RefCountedPtr<Stream> stream);
 
+void ProcessIncomingWindowUpdateFrameFlowControl(
+    const Http2WindowUpdateFrame& frame,
+    chttp2::TransportFlowControl& flow_control, RefCountedPtr<Stream> stream);
+
 }  // namespace http2
 }  // namespace grpc_core
 
