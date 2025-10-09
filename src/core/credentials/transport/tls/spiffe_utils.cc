@@ -20,8 +20,10 @@
 
 #include <openssl/x509.h>
 
+#include <set>
 #include <string>
 
+#include "absl/base/no_destructor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -36,7 +38,8 @@
 namespace grpc_core {
 namespace {
 constexpr absl::string_view kAllowedUse = "x509-svid";
-const std::set<absl::string_view> kAllowedKtys = {"RSA", "EC"};
+const absl::NoDestructor<std::set<absl::string_view>> kAllowedKtys({"RSA",
+                                                                    "EC"});
 constexpr absl::string_view kCertificatePrefix =
     "-----BEGIN CERTIFICATE-----\n";
 constexpr absl::string_view kCertificateSuffix = "\n-----END CERTIFICATE-----";
@@ -194,10 +197,10 @@ void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs& args,
   {
     ValidationErrors::ScopedField field(errors, ".kty");
     if (kty.has_value()) {
-      if (kAllowedKtys.find(*kty) == kAllowedKtys.end()) {
+      if (kAllowedKtys->find(*kty) == kAllowedKtys->end()) {
         errors->AddError(
             absl::StrFormat("value must be one of \"%s\", got \"%s\"",
-                            absl::StrJoin(kAllowedKtys, "\", \""), *kty));
+                            absl::StrJoin(*kAllowedKtys, "\", \""), *kty));
       }
     }
   }
