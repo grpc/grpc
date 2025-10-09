@@ -149,6 +149,8 @@ ${SETARCH_CMD} "${PYTHON}" -m build "tools/distrib/python/grpcio_tools" --sdist
 
 # Build gRPC tools package binary distribution
 # shellcheck disable=SC2086
+${SETARCH_CMD} "${PYTHON}" -m pip show setuptools
+
 ${SETARCH_CMD} "${PYTHON}" -m build "tools/distrib/python/grpcio_tools" \
   --wheel --no-isolation -C--build-option="--plat-name=$WHEEL_PLAT_NAME_FLAG"
 

@@ -319,7 +319,7 @@ if __name__ == "__main__":
         install_requires=[
             "protobuf>=6.31.1,<7.0.0",
             "grpcio>={version}".format(version=grpc_version.VERSION),
-            "setuptools",
+            "setuptools>=75.0.0",
         ],
         package_data=package_data(),
         cmdclass={
