@@ -38,10 +38,11 @@ class InterceptorBatchMethodsImpl
     : public experimental::InterceptorBatchMethods {
  public:
   InterceptorBatchMethodsImpl() {
+    const auto num_hooks =
+        experimental::InterceptionHookPoints::NUM_INTERCEPTION_HOOKS;
     for (auto i = static_cast<experimental::InterceptionHookPoints>(0);
-         i < experimental::InterceptionHookPoints::NUM_INTERCEPTION_HOOKS;
-         i = static_cast<experimental::InterceptionHookPoints>(
-             static_cast<size_t>(i) + 1)) {
+         i < num_hooks; i = static_cast<experimental::InterceptionHookPoints>(
+                            static_cast<size_t>(i) + 1)) {
       hooks_[static_cast<size_t>(i)] = false;
     }
   }
