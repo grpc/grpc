@@ -328,6 +328,10 @@ class GoawayManager {
   // needed.
   void MaybeGetSerializedGoawayFrame(SliceBuffer& output_buf);
 
+  bool IsImmediateGoAway() const {
+    return context_->goaway_state == GoawayState::kImmediateGoawayRequested;
+  }
+
   // Called from the transport write cycle to notify the GOAWAY manager that a
   // GOAWAY frame may have been sent. If a GOAWAY frame is sent in current
   // write cycle, this function handles the needed state transition.

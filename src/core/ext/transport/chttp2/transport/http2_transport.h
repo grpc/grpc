@@ -83,6 +83,11 @@ void ProcessOutgoingDataFrameFlowControl(
     chttp2::StreamFlowControl& stream_flow_control,
     uint32_t flow_control_tokens_consumed);
 
+ValueOrHttp2Status<chttp2::FlowControlAction>
+ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame,
+                                    chttp2::TransportFlowControl& flow_control,
+                                    RefCountedPtr<Stream> stream);
+
 }  // namespace http2
 }  // namespace grpc_core
 
