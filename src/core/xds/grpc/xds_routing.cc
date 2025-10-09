@@ -236,7 +236,7 @@ GeneratePerHTTPFilterConfigs(
     // Find filter.  This is guaranteed to succeed, because it's checked
     // at config validation time in the listener parsing code.
     const XdsHttpFilterImpl* filter_impl =
-        http_filter_registry.GetFilterForType(config_proto_type_name);
+        http_filter_registry.GetFilterForTopLevelType(config_proto_type_name);
     GRPC_CHECK_NE(filter_impl, nullptr);
     // If there is not actually any C-core filter associated with this
     // xDS filter, then it won't need any config, so skip it.

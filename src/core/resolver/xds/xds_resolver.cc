@@ -726,7 +726,7 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     // Find filter.  This is guaranteed to succeed, because it's checked
     // at config validation time.
     const XdsHttpFilterImpl* filter_impl =
-        http_filter_registry.GetFilterForType(config_proto_type_name);
+        http_filter_registry.GetFilterForTopLevelType(config_proto_type_name);
     GRPC_CHECK_NE(filter_impl, nullptr);
     // Add filter to list.
     filters_.push_back(filter_impl);

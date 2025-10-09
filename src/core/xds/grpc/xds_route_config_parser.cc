@@ -398,7 +398,7 @@ XdsRouteConfigResource::TypedPerFilterConfig ParseTypedPerFilterConfig(
         DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
             .http_filter_registry();
     const XdsHttpFilterImpl* filter_impl =
-        http_filter_registry.GetFilterForType(extension_to_use->type);
+        http_filter_registry.GetFilterForOverrideType(extension_to_use->type);
     if (filter_impl == nullptr) {
       if (!is_optional) errors->AddError("unsupported filter type");
       continue;

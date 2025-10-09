@@ -251,7 +251,7 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
         auto extension = ExtractXdsExtension(context, typed_config, errors);
         if (!extension.has_value()) continue;
         const XdsHttpFilterImpl* filter_impl =
-            http_filter_registry.GetFilterForType(extension->type);
+            http_filter_registry.GetFilterForTopLevelType(extension->type);
         if (filter_impl == nullptr) {
           if (!is_optional) errors->AddError("unsupported filter type");
           continue;
@@ -295,7 +295,7 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
         config_proto_type_name = http_filter.filter_config->type().name();
       }
       const XdsHttpFilterImpl* filter_impl =
-          http_filter_registry.GetFilterForType(config_proto_type_name);
+          http_filter_registry.GetFilterForTopLevelType(config_proto_type_name);
       if (&http_filter != &http_connection_manager.http_filters.back()) {
         // Filters before the last filter must not be terminal.
         if (filter_impl->IsTerminalFilter()) {
