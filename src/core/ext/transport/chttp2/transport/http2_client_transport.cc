@@ -135,12 +135,6 @@ void Http2ClientTransport::Orphan() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Orphan End";
 }
 
-void Http2ClientTransport::AbortWithError() {
-  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport AbortWithError Begin";
-  // TODO(tjagtap) : [PH2][P2] : Implement this function.
-  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport AbortWithError End";
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 // Processing each type of frame
 
@@ -406,8 +400,6 @@ auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
 Http2Status Http2ClientTransport::ProcessHttp2GoawayFrame(
     Http2GoawayFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-goaway
-  GRPC_HTTP2_CLIENT_DLOG << "Http2Transport ProcessHttp2GoawayFrame Factory";
-  // TODO(tjagtap) : [PH2][P2] : Implement this.
   GRPC_HTTP2_CLIENT_DLOG << "Http2Transport ProcessHttp2GoawayFrame Promise { "
                             "last_stream_id="
                          << frame.last_stream_id
