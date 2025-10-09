@@ -68,7 +68,6 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/lib/resource_quota/stream_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/init_internally.h"
@@ -301,7 +300,6 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
       transport_framing_endpoint_extension = nullptr;
 
   grpc_core::MemoryOwner memory_owner;
-  grpc_core::StreamQuotaRefPtr stream_quota;
   const grpc_core::MemoryAllocator::Reservation self_reservation;
   grpc_core::ReclamationSweep active_reclamation;
   grpc_core::InstrumentStorageRefPtr<grpc_core::ResourceQuotaDomain>
@@ -595,6 +593,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
 
   std::shared_ptr<grpc_core::Http2StatsCollector> http2_stats;
   grpc_core::Http2ZTraceCollector http2_ztrace_collector;
+  grpc_core::Timestamp last_ztrace_time = grpc_core::Timestamp::InfPast();
 
   GPR_NO_UNIQUE_ADDRESS grpc_core::latent_see::Flow write_flow;
 };

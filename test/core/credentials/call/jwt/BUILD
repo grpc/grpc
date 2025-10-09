@@ -88,6 +88,7 @@ grpc_cc_binary(
         "//:grpc",
         "//:grpc_jwt_credentials",
         "//:iomgr",
+        "//src/core:grpc_check",
         "//src/core:json_writer",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",

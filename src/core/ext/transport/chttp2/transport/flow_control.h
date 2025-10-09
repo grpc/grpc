@@ -59,10 +59,6 @@ static constexpr const uint32_t kMaxInitialWindowSize = (1u << 30);
 static constexpr const int64_t kMaxWindowDelta = (1u << 20);
 static constexpr const int kDefaultPreferredRxCryptoFrameSize = INT_MAX;
 
-// TODO(ctiller): clean up when flow_control_fixes is enabled by default
-static constexpr uint32_t kFrameSize = 1024 * 1024;
-static constexpr const uint32_t kMinInitialWindowSize = 128;
-
 class TransportFlowControl;
 class StreamFlowControl;
 

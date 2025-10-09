@@ -280,6 +280,8 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   s->shutdown = false;
   s->shutdown_starting.head = nullptr;
   s->shutdown_starting.tail = nullptr;
+  s->shutdown_ending.head = nullptr;
+  s->shutdown_ending.tail = nullptr;
   if (!grpc_event_engine::experimental::UseEventEngineListener()) {
     s->shutdown_complete = shutdown_complete;
   } else {
@@ -907,10 +909,9 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
             grpc_event_engine::experimental::SliceBuffer::TakeCSliceBuffer(
                 buf->data.raw.slice_buffer);
       }
-      GRPC_CHECK(
-          GRPC_LOG_IF_ERROR("listener_handle_external_connection",
-                            listener_supports_fd->HandleExternalConnection(
-                                listener_fd, fd, &pending_data)));
+      GRPC_LOG_IF_ERROR("listener_handle_external_connection",
+                        listener_supports_fd->HandleExternalConnection(
+                            listener_fd, fd, &pending_data));
       return;
     }
     grpc_pollset* read_notifier_pollset;

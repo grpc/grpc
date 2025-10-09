@@ -26,12 +26,11 @@ class _RequestIterator(object):
         read = self._handler.take_request()
         if read.requests_closed:
             raise StopIteration()
-        elif read.terminated:
+        if read.terminated:
             rpc_error = grpc.RpcError()
             self._rpc.add_rpc_error(rpc_error)
             raise rpc_error
-        else:
-            return read.request
+        return read.request
 
     def __iter__(self):
         return self
