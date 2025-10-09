@@ -20,23 +20,27 @@
 
 #include <openssl/x509.h>
 
+#include <set>
 #include <string>
 
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_split.h"
 #include "src/core/tsi/ssl_transport_security_utils.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/load_file.h"
 #include "src/core/util/status_helper.h"
+#include "absl/base/no_destructor.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace {
 constexpr absl::string_view kAllowedUse = "x509-svid";
-const std::set<absl::string_view> kAllowedKtys = {"RSA", "EC"};
+const absl::NoDestructor<std::set<absl::string_view>> kAllowedKtys({"RSA",
+                                                                    "EC"});
 constexpr absl::string_view kCertificatePrefix =
     "-----BEGIN CERTIFICATE-----\n";
 constexpr absl::string_view kCertificateSuffix = "\n-----END CERTIFICATE-----";
@@ -194,10 +198,10 @@ void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs& args,
   {
     ValidationErrors::ScopedField field(errors, ".kty");
     if (kty.has_value()) {
-      if (kAllowedKtys.find(*kty) == kAllowedKtys.end()) {
+      if (kAllowedKtys->find(*kty) == kAllowedKtys->end()) {
         errors->AddError(
             absl::StrFormat("value must be one of \"%s\", got \"%s\"",
-                            absl::StrJoin(kAllowedKtys, "\", \""), *kty));
+                            absl::StrJoin(*kAllowedKtys, "\", \""), *kty));
       }
     }
   }
