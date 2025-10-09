@@ -585,6 +585,38 @@ cdef extern from "grpc/credentials.h":
     const char *private_key
     const char *certificate_chain "cert_chain"
 
+  ctypedef struct grpc_tls_credentials_options:
+    # We don't care about the internals (and in fact don't know them)
+    pass
+
+  grpc_tls_credentials_options *grpc_tls_credentials_options_create()
+
+  ctypedef struct grpc_tls_certificate_provider:
+    # We don't care about the internals (and in fact don't know them)
+    pass
+
+  void grpc_tls_credentials_options_set_certificate_provider(grpc_tls_credentials_options* options, grpc_tls_certificate_provider* provider)
+
+  ctypedef struct grpc_tls_identity_pairs:
+    # We don't care about the internals (and in fact don't know them)
+    pass
+
+  grpc_tls_identity_pairs* grpc_tls_identity_pairs_create();
+
+  void grpc_tls_identity_pairs_add_pair(grpc_tls_identity_pairs* pairs,
+                                              const char* private_key,
+                                              const char* cert_chain);
+
+  grpc_tls_certificate_provider* grpc_tls_certificate_provider_static_data_create(
+    const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs);
+
+  void grpc_tls_credentials_options_set_certificate_provider(
+    grpc_tls_credentials_options* options,
+    grpc_tls_certificate_provider* provider);
+
+  void grpc_tls_certificate_provider_release(
+    grpc_tls_certificate_provider* provider);
+
   ctypedef struct grpc_channel_credentials:
     # We don't care about the internals (and in fact don't know them)
     pass
@@ -602,6 +634,8 @@ cdef extern from "grpc/credentials.h":
   grpc_channel_credentials *grpc_ssl_credentials_create(
       const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair,
       verify_peer_options *verify_options, void *reserved) nogil
+  grpc_channel_credentials* grpc_tls_credentials_create(
+    grpc_tls_credentials_options* options) nogil
   grpc_channel_credentials *grpc_composite_channel_credentials_create(
       grpc_channel_credentials *creds1, grpc_call_credentials *creds2,
       void *reserved) nogil
