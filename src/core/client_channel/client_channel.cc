@@ -861,7 +861,7 @@ grpc_call* ClientChannel::CreateCall(
 
 namespace {
 
-class FilterChainImpl : public FilterChain {
+class FilterChainImpl final : public FilterChain {
  public:
   explicit FilterChainImpl(RefCountedPtr<UnstartedCallDestination> destination)
       : destination_(std::move(destination)) {}

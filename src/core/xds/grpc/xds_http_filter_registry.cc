@@ -107,16 +107,6 @@ RefCountedPtr<const FilterConfig> XdsHttpRouterFilter::ParseOverrideConfig(
   return nullptr;
 }
 
-RefCountedPtr<const FilterConfig> XdsHttpRouterFilter::MergeConfigs(
-    RefCountedPtr<const FilterConfig> top_level_config,
-    RefCountedPtr<const FilterConfig>
-    /*virtual_host_override_config*/,
-    RefCountedPtr<const FilterConfig> /*route_override_config*/,
-    RefCountedPtr<const FilterConfig>
-    /*cluster_weight_override_config*/) const {
-  return top_level_config;
-}
-
 //
 // XdsHttpFilterRegistry
 //
@@ -134,18 +124,27 @@ XdsHttpFilterRegistry::XdsHttpFilterRegistry(bool register_builtins) {
 void XdsHttpFilterRegistry::RegisterFilter(
     std::unique_ptr<XdsHttpFilterImpl> filter) {
   GRPC_CHECK(
-      registry_map_.emplace(filter->ConfigProtoName(), filter.get()).second);
+      top_level_config_map_.emplace(filter->ConfigProtoName(), filter.get())
+          .second);
   auto override_proto_name = filter->OverrideConfigProtoName();
   if (!override_proto_name.empty()) {
-    GRPC_CHECK(registry_map_.emplace(override_proto_name, filter.get()).second);
+    GRPC_CHECK(
+        override_config_map_.emplace(override_proto_name, filter.get()).second);
   }
   owning_list_.push_back(std::move(filter));
 }
 
-const XdsHttpFilterImpl* XdsHttpFilterRegistry::GetFilterForType(
+const XdsHttpFilterImpl* XdsHttpFilterRegistry::GetFilterForTopLevelType(
     absl::string_view proto_type_name) const {
-  auto it = registry_map_.find(proto_type_name);
-  if (it == registry_map_.end()) return nullptr;
+  auto it = top_level_config_map_.find(proto_type_name);
+  if (it == top_level_config_map_.end()) return nullptr;
+  return it->second;
+}
+
+const XdsHttpFilterImpl* XdsHttpFilterRegistry::GetFilterForOverrideType(
+    absl::string_view proto_type_name) const {
+  auto it = override_config_map_.find(proto_type_name);
+  if (it == override_config_map_.end()) return nullptr;
   return it->second;
 }
 

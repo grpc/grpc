@@ -75,7 +75,7 @@ absl::string_view XdsHttpFaultFilter::ConfigProtoName() const {
 }
 
 absl::string_view XdsHttpFaultFilter::OverrideConfigProtoName() const {
-  return "";
+  return "envoy.extensions.filters.http.fault.v3.HTTPFault";
 }
 
 void XdsHttpFaultFilter::PopulateSymtab(upb_DefPool* symtab) const {
@@ -199,24 +199,6 @@ RefCountedPtr<const FilterConfig> XdsHttpFaultFilter::ParseOverrideConfig(
     const XdsResourceType::DecodeContext& context,
     const XdsExtension& extension, ValidationErrors* errors) const {
   return ParseTopLevelConfig(instance_name, context, extension, errors);
-}
-
-RefCountedPtr<const FilterConfig> XdsHttpFaultFilter::MergeConfigs(
-    RefCountedPtr<const FilterConfig> top_level_config,
-    RefCountedPtr<const FilterConfig> virtual_host_override_config,
-    RefCountedPtr<const FilterConfig> route_override_config,
-    RefCountedPtr<const FilterConfig> cluster_weight_override_config) const {
-  // No merging, just return the most specific config that exists.
-  if (cluster_weight_override_config != nullptr) {
-    return cluster_weight_override_config;
-  }
-  if (route_override_config != nullptr) {
-    return route_override_config;
-  }
-  if (virtual_host_override_config != nullptr) {
-    return virtual_host_override_config;
-  }
-  return top_level_config;
 }
 
 }  // namespace grpc_core

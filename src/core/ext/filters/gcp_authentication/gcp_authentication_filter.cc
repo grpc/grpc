@@ -157,7 +157,7 @@ GcpAuthenticationFilter::Create(const ChannelArgs& args,
   // Get XdsConfig so that we can look up CDS resources.
   auto xds_config = args.GetObjectRef<XdsConfig>();
   if (xds_config == nullptr) {
-    return absl::InvalidArgumentError(
+    return absl::InternalError(
         "gcp_auth: xds config not found in channel args");
   }
   // Get filter config.
@@ -175,7 +175,7 @@ GcpAuthenticationFilter::Create(const ChannelArgs& args,
   auto cache =
       filter_args.GetState<CallCredentialsCache>(config->instance_name);
   if (cache == nullptr) {
-    return absl::InvalidArgumentError(
+    return absl::InternalError(
         "gcp_auth: cache object not found in filter state");
   }
   // Instantiate filter.

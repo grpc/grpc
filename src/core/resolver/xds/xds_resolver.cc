@@ -418,10 +418,14 @@ XdsResolver::RouteConfigData::GetRouteForRequest(
 }
 
 RefCountedPtr<const FilterConfig> GetOverrideConfig(
+    const XdsHttpFilterImpl* filter_impl,
     const XdsRouteConfigResource::TypedPerFilterConfig& typed_per_filter_config,
     const std::string& name) {
   auto it = typed_per_filter_config.find(name);
   if (it == typed_per_filter_config.end()) return nullptr;
+  if (it->second.config_proto_type != filter_impl->OverrideConfigProtoName()) {
+    return nullptr;
+  }
   return it->second.config;
 }
 
@@ -444,9 +448,9 @@ void XdsResolver::RouteConfigData::BuildFilterChains(
         auto* filter = filters[i];
         const auto& filter_config = hcm.http_filters[i];
         if (filter_config.filter_config == nullptr) continue;
-        auto vhost_override_config =
-            GetOverrideConfig(xds_config.virtual_host->typed_per_filter_config,
-                              filter_config.name);
+        auto vhost_override_config = GetOverrideConfig(
+            filter, xds_config.virtual_host->typed_per_filter_config,
+            filter_config.name);
         auto config = filter->MergeConfigs(filter_config.filter_config,
                                            std::move(vhost_override_config),
                                            nullptr, nullptr);
@@ -485,10 +489,11 @@ void XdsResolver::RouteConfigData::BuildFilterChains(
             const auto& filter_config = hcm.http_filters[i];
             if (filter_config.filter_config == nullptr) continue;
             auto vhost_override_config = GetOverrideConfig(
-                xds_config.virtual_host->typed_per_filter_config,
+                filter, xds_config.virtual_host->typed_per_filter_config,
                 filter_config.name);
             auto route_override_config = GetOverrideConfig(
-                route_entry.route.typed_per_filter_config, filter_config.name);
+                filter, route_entry.route.typed_per_filter_config,
+                filter_config.name);
             auto config = filter->MergeConfigs(
                 filter_config.filter_config, std::move(vhost_override_config),
                 std::move(route_override_config), nullptr);
@@ -530,13 +535,14 @@ void XdsResolver::RouteConfigData::BuildFilterChains(
             const auto& filter_config = hcm.http_filters[i];
             if (filter_config.filter_config == nullptr) continue;
             auto vhost_override_config = GetOverrideConfig(
-                xds_config.virtual_host->typed_per_filter_config,
+                filter, xds_config.virtual_host->typed_per_filter_config,
                 filter_config.name);
             auto route_override_config = GetOverrideConfig(
-                route_entry.route.typed_per_filter_config, filter_config.name);
-            auto cluster_weight_override_config =
-                GetOverrideConfig(cluster_weight_entry.typed_per_filter_config,
-                                  filter_config.name);
+                filter, route_entry.route.typed_per_filter_config,
+                filter_config.name);
+            auto cluster_weight_override_config = GetOverrideConfig(
+                filter, cluster_weight_entry.typed_per_filter_config,
+                filter_config.name);
             auto config = filter->MergeConfigs(
                 filter_config.filter_config, std::move(vhost_override_config),
                 std::move(route_override_config),
@@ -718,15 +724,11 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
   const auto& hcm = std::get<XdsListenerResource::HttpConnectionManager>(
       xds_config_->listener->listener);
   for (const auto& http_filter : hcm.http_filters) {
-    absl::string_view config_proto_type_name =
-        http_filter.config.config_proto_type_name;
-    if (config_proto_type_name.empty()) {
-      config_proto_type_name = http_filter.filter_config->type().name();
-    }
     // Find filter.  This is guaranteed to succeed, because it's checked
     // at config validation time.
     const XdsHttpFilterImpl* filter_impl =
-        http_filter_registry.GetFilterForType(config_proto_type_name);
+        http_filter_registry.GetFilterForTopLevelType(
+            http_filter.config_proto_type);
     GRPC_CHECK_NE(filter_impl, nullptr);
     // Add filter to list.
     filters_.push_back(filter_impl);

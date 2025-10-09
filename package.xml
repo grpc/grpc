@@ -2152,6 +2152,7 @@
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_composite_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_fault_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_fault_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_filter_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/xds/grpc/xds_http_filter_registry.h" role="src" />

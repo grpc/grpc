@@ -251,7 +251,7 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
         auto extension = ExtractXdsExtension(context, typed_config, errors);
         if (!extension.has_value()) continue;
         const XdsHttpFilterImpl* filter_impl =
-            http_filter_registry.GetFilterForType(extension->type);
+            http_filter_registry.GetFilterForTopLevelType(extension->type);
         if (filter_impl == nullptr) {
           if (!is_optional) errors->AddError("unsupported filter type");
           continue;
@@ -273,6 +273,7 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
           http_connection_manager.http_filters.emplace_back();
           auto& entry = http_connection_manager.http_filters.back();
           entry.name = std::string(name);
+          entry.config_proto_type = filter_impl->ConfigProtoName();
           if (filter_config.has_value()) {
             entry.config = std::move(*filter_config);
           }
@@ -289,25 +290,21 @@ XdsListenerResource::HttpConnectionManager HttpConnectionManagerParse(
     // to take care of the case where there are two terminal filters in the list
     // out of which only one gets added in the final list.
     for (const auto& http_filter : http_connection_manager.http_filters) {
-      absl::string_view config_proto_type_name =
-          http_filter.config.config_proto_type_name;
-      if (config_proto_type_name.empty()) {
-        config_proto_type_name = http_filter.filter_config->type().name();
-      }
       const XdsHttpFilterImpl* filter_impl =
-          http_filter_registry.GetFilterForType(config_proto_type_name);
+          http_filter_registry.GetFilterForTopLevelType(
+              http_filter.config_proto_type);
       if (&http_filter != &http_connection_manager.http_filters.back()) {
         // Filters before the last filter must not be terminal.
         if (filter_impl->IsTerminalFilter()) {
           errors->AddError(absl::StrCat(
-              "terminal filter for config type ", config_proto_type_name,
+              "terminal filter for config type ", http_filter.config_proto_type,
               " must be the last filter in the chain"));
         }
       } else {
         // The last filter must be terminal.
         if (!filter_impl->IsTerminalFilter()) {
           errors->AddError(absl::StrCat("non-terminal filter for config type ",
-                                        config_proto_type_name,
+                                        http_filter.config_proto_type,
                                         " is the last filter in the chain"));
         }
       }

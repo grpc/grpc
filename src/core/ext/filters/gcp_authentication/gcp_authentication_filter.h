@@ -43,8 +43,7 @@ class GcpAuthenticationFilter
  public:
   struct Config : public FilterConfig {
     static UniqueTypeName Type() {
-      return GRPC_UNIQUE_TYPE_NAME_HERE(
-          "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig");
+      return GRPC_UNIQUE_TYPE_NAME_HERE("gcp_authentication_filter_config");
     }
     UniqueTypeName type() const override { return Type(); }
 

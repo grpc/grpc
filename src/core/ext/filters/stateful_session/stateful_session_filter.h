@@ -68,42 +68,18 @@ class XdsOverrideHostAttribute
 class StatefulSessionFilter
     : public ImplementChannelFilter<StatefulSessionFilter> {
  public:
-  struct CookieConfig {
-    std::string name;
-    std::string path;
-    Duration ttl;
-
-    bool operator==(const CookieConfig& other) const {
-      return name == other.name && path == other.path && ttl == other.ttl;
-    }
-    std::string ToString() const;
-  };
-
   struct Config : public FilterConfig {
     static UniqueTypeName Type() {
-      return GRPC_UNIQUE_TYPE_NAME_HERE(
-          "envoy.extensions.filters.http.stateful_session.v3.StatefulSession");
+      return GRPC_UNIQUE_TYPE_NAME_HERE("stateful_session_filter_config");
     }
     UniqueTypeName type() const override { return Type(); }
 
     bool Equals(const FilterConfig& other) const override;
-    std::string ToString() const override { return cookie_config.ToString(); }
+    std::string ToString() const override;
 
-    CookieConfig cookie_config;
-  };
-
-  struct OverrideConfig : public FilterConfig {
-    static UniqueTypeName Type() {
-      return GRPC_UNIQUE_TYPE_NAME_HERE(
-          "envoy.extensions.filters.http.stateful_session.v3"
-          ".StatefulSessionPerRoute");
-    }
-    UniqueTypeName type() const override { return Type(); }
-
-    bool Equals(const FilterConfig& other) const override;
-    std::string ToString() const override { return cookie_config.ToString(); }
-
-    CookieConfig cookie_config;
+    std::string cookie_name;
+    std::string path;
+    Duration ttl;
   };
 
   static const grpc_channel_filter kFilterVtable;

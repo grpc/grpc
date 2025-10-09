@@ -39,6 +39,7 @@ namespace grpc_core {
 
 struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
   struct FilterConfigOverride {
+    absl::string_view config_proto_type;
     XdsHttpFilterImpl::XdsFilterConfig old_config;
     RefCountedPtr<const FilterConfig> config;
   };
