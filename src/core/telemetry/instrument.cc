@@ -243,7 +243,7 @@ void MetricsQuery::Run(std::unique_ptr<CollectionScope> scope,
   if (selected_metrics.has_value()) {
     for (const auto& metric : *selected_metrics) {
       const auto* desc = instrument_detail::InstrumentIndex::Get().Find(metric);
-      if (desc == nullptr) continue;
+      GRPC_CHECK_NE(desc, nullptr) << "Metric not found: " << metric;
       metrics_by_domain[desc->domain].push_back(desc);
     }
   } else {
