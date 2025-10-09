@@ -462,24 +462,14 @@ Http2Status Http2ClientTransport::ProcessHttp2WindowUpdateFrame(
     Http2WindowUpdateFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-window_update
   GRPC_HTTP2_CLIENT_DLOG
-      << "Http2Transport ProcessHttp2WindowUpdateFrame Factory";
-  // TODO(tjagtap) : [PH2][P2] : Implement this.
-  GRPC_HTTP2_CLIENT_DLOG
       << "Http2Transport ProcessHttp2WindowUpdateFrame Promise { "
          " stream_id="
       << frame.stream_id << ", increment=" << frame.increment << "}";
+  RefCountedPtr<Stream> stream = nullptr;
   if (frame.stream_id != 0) {
-    RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
-    if (stream != nullptr) {
-      chttp2::StreamFlowControl::OutgoingUpdateContext fc_update(
-          &stream->flow_control);
-      fc_update.RecvUpdate(frame.increment);
-    }
-  } else {
-    chttp2::TransportFlowControl::OutgoingUpdateContext fc_update(
-        &flow_control_);
-    fc_update.RecvUpdate(frame.increment);
+    stream = LookupStream(frame.stream_id);
   }
+  ProcessIncomingWindowUpdateFrameFlowControl(frame, flow_control_, stream);
   return Http2Status::Ok();
 }
 

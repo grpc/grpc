@@ -216,5 +216,24 @@ ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
   return chttp2::FlowControlAction();
 }
 
+void ProcessIncomingWindowUpdateFrameFlowControl(
+    const Http2WindowUpdateFrame& frame,
+    chttp2::TransportFlowControl& flow_control, RefCountedPtr<Stream> stream) {
+  if (frame.stream_id != 0) {
+    if (stream != nullptr) {
+      chttp2::StreamFlowControl::OutgoingUpdateContext fc_update(
+          &stream->flow_control);
+      fc_update.RecvUpdate(frame.increment);
+    } else {
+      // If stream id is non zero, and stream is nullptr, maybe the stream was
+      // closed. Ignore this WINDOW_UPDATE frame. Do nothing.
+    }
+  } else {
+    chttp2::TransportFlowControl::OutgoingUpdateContext fc_update(
+        &flow_control);
+    fc_update.RecvUpdate(frame.increment);
+  }
+}
+
 }  // namespace http2
 }  // namespace grpc_core
