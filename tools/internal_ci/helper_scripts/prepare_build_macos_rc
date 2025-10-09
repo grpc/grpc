@@ -145,7 +145,7 @@ then
 
   # python
   time pip install --user -r $DIR/requirements.macos.txt
-  time pip install --user --upgrade virtualenv Mako tox setuptools==77.0.0 twisted
+  time pip install --user --upgrade virtualenv Mako tox setuptools==77.0.1 twisted
 
   # Install Python 3.9 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.9" ]; then
