@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-    "setuptools>=77.0.0",
+    "setuptools>=77.0.1",
     "wheel",
     "protobuf>=6.31.1,<7.0.0"
 ]
