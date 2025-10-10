@@ -28,6 +28,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 import python_version
 
 import grpc_version
+import python_protobuf_version
 
 CLASSIFIERS = [
     "Development Status :: 5 - Production/Stable",
@@ -41,7 +42,7 @@ PACKAGE_DIRECTORIES = {
 }
 
 INSTALL_REQUIRES = (
-    "protobuf>=6.31.1,<7.0.0",
+    f"protobuf>={python_protobuf_version.PYTHON_PROTOBUF_MIN_VERSION},<{python_protobuf_version.PYTHON_PROTOBUF_MAX_VERSION}",
     f"xds-protos=={grpc_version.VERSION}",
     f"grpcio>={grpc_version.VERSION}",
 )
