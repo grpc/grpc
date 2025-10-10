@@ -1627,6 +1627,7 @@ auto Http2ClientTransport::CallOutboundLoop(CallHandler call_handler,
 }
 
 void Http2ClientTransport::StartCall(CallHandler call_handler) {
+  int unused = 6;
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport StartCall Begin";
   call_handler.SpawnGuarded(
       "OutboundLoop",

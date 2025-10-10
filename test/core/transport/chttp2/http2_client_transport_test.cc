@@ -111,6 +111,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
   // 3. Tests trivial functions GetTransportName() , server_transport() and
   // client_transport().
 
+  int unused = 5;
   LOG(INFO) << "TestHttp2ClientTransportObjectCreation Begin";
   MockPromiseEndpoint mock_endpoint(/*port=*/1000);
 
