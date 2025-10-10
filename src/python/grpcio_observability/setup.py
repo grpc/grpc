@@ -282,9 +282,6 @@ if __name__ == "__main__":
     setuptools.setup(
         ext_modules=extension_modules(),
         python_requires=f">={python_version.MIN_PYTHON_VERSION}",
-        setup_requires=[
-            "grpcio=={version}".format(version=grpc_version.VERSION),
-        ],
         install_requires=[
             "grpcio=={version}".format(version=grpc_version.VERSION),
             "setuptools>=77.0.1",
