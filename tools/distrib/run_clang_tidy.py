@@ -60,7 +60,7 @@ if args.only_changed:
     orig_files = set(args.files)
     actual_files = []
     output = subprocess.check_output(
-        ["git", "diff", "upstream/master", "HEAD", "--name-only"]
+        ["git", "diff", "origin/master", "HEAD", "--name-only"]
     )
     for line in output.decode("ascii").splitlines(False):
         if line in orig_files:
