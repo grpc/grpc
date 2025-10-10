@@ -27,6 +27,7 @@ import setuptools
 # Break import-style to ensure we can actually find our in-repo dependencies.
 import commands
 import grpc_version
+import python_version
 
 INSTALL_REQUIRES = (
     "coverage>=4.0",
@@ -61,11 +62,19 @@ TEST_LOADER = "tests:Loader"
 TEST_RUNNER = "tests:Runner"
 TESTS_REQUIRE = INSTALL_REQUIRES
 
+CLASSIFIERS = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+
 if __name__ == "__main__":
     multiprocessing.freeze_support()
     setuptools.setup(
         install_requires=INSTALL_REQUIRES,
         cmdclass=COMMAND_CLASS,
+        classifiers=CLASSIFIERS,
+        python_requires=f">={python_version.MIN_PYTHON_VERSION}",
         tests_require=TESTS_REQUIRE,
         test_suite=TEST_SUITE,
         test_loader=TEST_LOADER,
