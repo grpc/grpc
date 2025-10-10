@@ -198,7 +198,7 @@ void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs& args,
     ValidationErrors::ScopedField field(errors, ".kty");
     if (kty.has_value() && *kty != kRsaKty && *kty != kEcKty) {
       errors->AddError(
-          absl::StrFormat("value must be one of \"%s\", \"%s\" got \"%s\"",
+          absl::StrFormat("value must be one of \"%s\", \"%s\", got \"%s\"",
                           kEcKty, kRsaKty, *kty));
     }
   }
