@@ -29,6 +29,8 @@ syntax = "proto3";
 
 package grpc.channelz.v2;
 
+import "src/proto/grpc/channelz/v2/property_list.proto";
+
 message LatentSeeTrace {
   message FlowBegin {
     int64 id = 1;
@@ -36,7 +38,9 @@ message LatentSeeTrace {
   message FlowEnd {
     int64 id = 1;
   }
-  message Mark {}
+  message Mark {
+    PropertyList properties = 1;
+  }
   message Span {
     int64 duration_ns = 1;
   }

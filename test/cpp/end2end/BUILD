@@ -214,6 +214,7 @@ grpc_cc_test(
         "//:grpcpp_latent_see_service",
         "//src/core:json_reader",
         "//src/proto/grpc/channelz/v2:latent_see_cc_grpc",
+        "//src/proto/grpc/channelz/v2:property_list_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
