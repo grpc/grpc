@@ -1426,18 +1426,29 @@ Http2ClientTransport::~Http2ClientTransport() {
 }
 
 void Http2ClientTransport::AddData(channelz::DataSink sink) {
-  sink.AddData("Http2ClientTransport",
-               channelz::PropertyList()
-                   .Set("keepalive_time", keepalive_time_)
-                   .Set("keepalive_timeout", keepalive_timeout_)
-                   .Set("ping_timeout", ping_timeout_)
-                   .Set("keepalive_permit_without_calls",
-                        keepalive_permit_without_calls_));
-  // TODO(tjagtap) : [PH2][P1] : These were causing data race.
-  // Figure out how to plumb this.
-  // .Set("settings", settings_.ChannelzProperties())
-  // .Set("flow_control", flow_control_.stats().ChannelzProperties()));
-  general_party_->ExportToChannelz("Http2ClientTransport Party", sink);
+  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::AddData Begin";
+  general_party_->Spawn(
+      "AddData",
+      [self = RefAsSubclass<Http2ClientTransport>(),
+       sink = std::move(sink)]() mutable {
+        GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::AddData Promise";
+        sink.AddData(
+            "Http2ClientTransport",
+            channelz::PropertyList()
+                .Set("keepalive_time", self->keepalive_time_)
+                .Set("keepalive_timeout", self->keepalive_timeout_)
+                .Set("ping_timeout", self->ping_timeout_)
+                .Set("keepalive_permit_without_calls",
+                     self->keepalive_permit_without_calls_)
+                .Set("settings", self->settings_.ChannelzProperties())
+                .Set("flow_control",
+                     self->flow_control_.stats().ChannelzProperties()));
+        self->general_party_->ExportToChannelz("Http2ClientTransport Party",
+                                               sink);
+        GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::AddData End";
+        return Empty{};
+      },
+      [](auto) {});
 }
 
 ///////////////////////////////////////////////////////////////////////////////
