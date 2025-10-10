@@ -262,7 +262,7 @@ fi
 # are in a docker image or in a virtualenv.
 if [ "$GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS" != "" ]
 then
-  "${PYTHON}" -m pip install -rrequirements.txt
+  "${PYTHON}" -m pip install -r requirements.txt
 
   if [ "$("$PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
   then

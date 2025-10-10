@@ -158,7 +158,7 @@ pip_install_dir() {
   cd "$1"
   ($VENV_PYTHON setup.py build_ext -c "$TOOLCHAIN" || true)
   $VENV_PYTHON -m pip freeze
-  $VENV_PYTHON -m pip install --no-deps .
+  $VENV_PYTHON -m pip install --no-deps --no-build-isolation .
   cd "$PWD"
 }
 
@@ -167,7 +167,7 @@ pip_install_dir_and_deps() {
   cd "$1"
   ($VENV_PYTHON setup.py build_ext -c "$TOOLCHAIN" || true)
   $VENV_PYTHON -m pip freeze
-  $VENV_PYTHON -m pip install .
+  $VENV_PYTHON -m pip install --no-build-isolation .
   cd "$PWD"
 }
 
