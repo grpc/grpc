@@ -242,10 +242,9 @@ absl::Status ChaoticGoodServerListener::BindExternal(std::string addr,
             grpc_event_engine::experimental::SliceBuffer::TakeCSliceBuffer(
                 pending_read->data.raw.slice_buffer);
       }
-      GRPC_CHECK(
-          GRPC_LOG_IF_ERROR("listener_handle_external_connection",
-                            listener_supports_fd_->HandleExternalConnection(
-                                listener_fd, fd, &pending_data)));
+      GRPC_LOG_IF_ERROR("listener_handle_external_connection",
+                        listener_supports_fd_->HandleExternalConnection(
+                            listener_fd, fd, &pending_data));
     }
 
    private:

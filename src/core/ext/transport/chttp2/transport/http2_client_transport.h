@@ -24,6 +24,7 @@
 #include <cstdint>
 #include <utility>
 
+#include "absl/container/flat_hash_set.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control_manager.h"
@@ -86,8 +87,7 @@ namespace http2 {
 // Max Party Slots (Always): 3
 // Max Promise Slots (Worst Case): 4
 
-// Experimental : This is just the initial skeleton of class
-// and it is functions. The code will be written iteratively.
+// Experimental : The code will be written iteratively.
 // Do not use or edit any of these functions unless you are
 // familiar with the PH2 project (Moving chttp2 to promises.)
 // TODO(tjagtap) : [PH2][P3] : Update the experimental status of the code before
@@ -130,7 +130,6 @@ class Http2ClientTransport final : public ClientTransport,
   void StopConnectivityWatch(ConnectivityStateWatcherInterface* watcher);
 
   void Orphan() override;
-  void AbortWithError();
 
   RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
     return const_cast<channelz::BaseNode*>(
@@ -206,15 +205,8 @@ class Http2ClientTransport final : public ClientTransport,
   // Writing to the endpoint.
 
   // Write time sensitive control frames to the endpoint. Frames sent from here
-  // will be:
-  // 1. SETTINGS - This is first because for a new connection, SETTINGS MUST be
-  //               the first frame to be written onto a connection as per
-  //               RFC9113.
-  // 2. GOAWAY - This is second because if this is the final GoAway, then we may
-  //             not need to send anything else to the peer.
-  // 3. PING and PING acks.
-  // 4. WINDOW_UPDATE
-  // 5. Custom gRPC security frame
+  // will be GOAWAY, SETTINGS, PING and PING acks, WINDOW_UPDATE and
+  // Custom gRPC security frame.
   // These frames are written to the endpoint in a single endpoint write. If any
   // module needs to take action after the write (for cases like spawning
   // timeout promises), they MUST plug the call in the
@@ -244,7 +236,7 @@ class Http2ClientTransport final : public ClientTransport,
 
   // Processes the flow control action and take necessary steps.
   void ActOnFlowControlAction(const chttp2::FlowControlAction& action,
-                              uint32_t stream_id);
+                              RefCountedPtr<Stream> stream);
 
   RefCountedPtr<Party> general_party_;
 
@@ -275,7 +267,7 @@ class Http2ClientTransport final : public ClientTransport,
   // 4. Application abort: In this case, multiplexer loop will write RST stream
   //    frame to the endpoint and close the stream from reads and writes. This
   //    then follows the same reasoning as case 1.
-  uint32_t GetActiveStreamCount() const
+  inline uint32_t GetActiveStreamCount() const
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_) {
     return stream_list_.size();
   }
@@ -283,7 +275,7 @@ class Http2ClientTransport final : public ClientTransport,
   // Returns the next stream id. If the next stream id is not available, it
   // returns std::nullopt. MUST be called from the transport party.
   absl::StatusOr<uint32_t> NextStreamId() {
-    if (next_stream_id_ > RFC9113::kMaxStreamId31Bit) {
+    if (next_stream_id_ > GetMaxAllowedStreamId()) {
       // TODO(tjagtap) : [PH2][P3] : Handle case if transport runs out of stream
       // ids
       // RFC9113 : Stream identifiers cannot be reused. Long-lived connections
@@ -314,11 +306,12 @@ class Http2ClientTransport final : public ClientTransport,
   // transport party.
   uint32_t PeekNextStreamId() const { return next_stream_id_; }
 
-  absl::Status AssignStreamIdAndAddToStreamList(RefCountedPtr<Stream> stream);
+  absl::Status AssignStreamId(RefCountedPtr<Stream> stream);
+
+  void AddToStreamList(RefCountedPtr<Stream> stream);
 
   Mutex transport_mutex_;
-  // TODO(tjagtap) : [PH2][P2] : Add to map in StartCall and clean this
-  // mapping up in the on_done of the CallInitiator or CallHandler
+
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_
       ABSL_GUARDED_BY(transport_mutex_);
 
@@ -435,7 +428,7 @@ class Http2ClientTransport final : public ClientTransport,
       DCHECK(stream_id.has_value());
       BeginCloseStream(
           LookupStream(stream_id.value()),
-          Http2ErrorCodeToRstFrameErrorCode(status.GetStreamErrorCode()),
+          Http2ErrorCodeToFrameErrorCode(status.GetStreamErrorCode()),
           ServerMetadataFromStatus(status.GetAbslStreamError()), whence);
       return absl::OkStatus();
     } else if (error_type == Http2Status::Http2ErrorType::kConnectionError) {
@@ -476,6 +469,16 @@ class Http2ClientTransport final : public ClientTransport,
   size_t GetMaxWriteSize() const { return max_write_size_; }
 
   auto SerializeAndWrite(std::vector<Http2Frame>&& frames);
+  // Tracks the max allowed stream id. Currently this is only set on receiving a
+  // graceful GOAWAY frame.
+  uint32_t max_allowed_stream_id_ = RFC9113::kMaxStreamId31Bit;
+
+  uint32_t GetMaxAllowedStreamId() const;
+
+  void SetMaxAllowedStreamId(uint32_t max_allowed_stream_id);
+
+  bool CanCloseTransportLocked() const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_);
 
   // Ping related members
   // TODO(akshitpatel) : [PH2][P2] : Consider removing the timeout related
@@ -504,6 +507,8 @@ class Http2ClientTransport final : public ClientTransport,
       Serialize(absl::Span<Http2Frame>(&settings_frame.value(), 1), output_buf);
     }
   }
+
+  void MaybeGetWindowUpdateFrames(SliceBuffer& output_buf);
 
   // Ping Helper functions
   Duration NextAllowedPingInterval() {
@@ -625,6 +630,38 @@ class Http2ClientTransport final : public ClientTransport,
     Http2ClientTransport* transport_;
   };
 
+  class GoawayInterfaceImpl : public GoawayInterface {
+   public:
+    static std::unique_ptr<GoawayInterface> Make(
+        Http2ClientTransport* transport) {
+      return std::make_unique<GoawayInterfaceImpl>(
+          GoawayInterfaceImpl(transport));
+    }
+
+    Promise<absl::Status> SendPingAndWaitForAck() override {
+      return transport_->ping_manager_.RequestPing(/*on_initiate=*/[] {},
+                                                   /*important=*/true);
+    }
+
+    void TriggerWriteCycle() override { transport_->TriggerWriteCycle(); }
+
+    uint32_t GetLastAcceptedStreamId() override {
+      GRPC_DCHECK(false)
+          << "GetLastAcceptedStreamId is not implemented for client transport.";
+      LOG(ERROR) << "GetLastAcceptedStreamId is not implemented for client "
+                    "transport.";
+      return 0;
+    }
+
+   private:
+    explicit GoawayInterfaceImpl(Http2ClientTransport* transport)
+        : transport_(transport) {}
+
+    Http2ClientTransport* transport_;
+  };
+
+  GoawayManager goaway_manager_;
+
   WritableStreams<RefCountedPtr<Stream>> writable_stream_list_;
 
   absl::Status MaybeAddStreamToWritableStreamList(
@@ -659,6 +696,7 @@ class Http2ClientTransport final : public ClientTransport,
   MemoryOwner memory_owner_;
   chttp2::TransportFlowControl flow_control_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
+  absl::flat_hash_set<uint32_t> window_update_list_;
 };
 
 // Since the corresponding class in CHTTP2 is about 3.9KB, our goal is to
