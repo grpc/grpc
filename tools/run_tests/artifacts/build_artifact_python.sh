@@ -157,10 +157,10 @@ ${SETARCH_CMD} "${PYTHON}" -m build "tools/distrib/python/grpcio_tools" \
 if [ "$GRPC_BUILD_MAC" == "" ]; then
   "${PYTHON}" src/python/grpcio_observability/make_grpcio_observability.py
   ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_observability" \
-    --sdist --no-isolation
+    --sdist
   # shellcheck disable=SC2086
   ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_observability" \
-    --wheel --no-isolation -C--build-option="--plat-name=$WHEEL_PLAT_NAME_FLAG"
+    --wheel -C--build-option="--plat-name=$WHEEL_PLAT_NAME_FLAG"
 fi
 
 
