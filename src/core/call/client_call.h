@@ -78,6 +78,7 @@ class ClientCall final
   void InternalUnref(const char*) override { WeakUnref(); }
 
   void Orphaned() override {
+    SourceDestructing();
     if (!saw_trailing_metadata_.load(std::memory_order_relaxed)) {
       CancelWithError(absl::CancelledError());
     }
@@ -117,6 +118,8 @@ class ClientCall final
     auto arena = this->arena()->Ref();
     this->~ClientCall();
   }
+
+  void AddData(channelz::DataSink sink) override;
 
  private:
   struct UnorderedStart {
