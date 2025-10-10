@@ -36,9 +36,9 @@ sys.path.insert(0, os.path.abspath("."))
 import _parallel_compile_patch
 import _spawn_patch
 import protoc_lib_deps
-import python_version
 
 import grpc_version
+import python_version
 
 _EXT_INIT_SYMBOL = "PyInit__protoc_compiler"
 

@@ -21,9 +21,8 @@ import setuptools
 # imports to succeed
 sys.path.insert(0, os.path.abspath("."))
 
-import python_version
-
 import grpc_version
+import python_version
 
 INSTALL_REQUIRES = (
     "opentelemetry-sdk>=1.25.0",

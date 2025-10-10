@@ -23,9 +23,8 @@ import setuptools
 sys.path.insert(0, os.path.abspath("."))
 
 # Break import style to ensure that we can find same-directory modules.
-import python_version
-
 import grpc_version
+import python_version
 
 
 class _NoOpCommand(setuptools.Command):
