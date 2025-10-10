@@ -69,9 +69,6 @@ if args.only_changed:
         else:
             print(("skip: %s - not in the build" % line))
     args.files = actual_files
-    print("orig_files:")
-    print(orig_files)
-    sys.exit(1)
 
 jobs = []
 for filename in args.files:
