@@ -24,6 +24,7 @@ sys.path.insert(0, os.path.abspath("."))
 
 # Break import style to ensure that we can find same-directory modules.
 import grpc_version
+import python_version
 
 
 class _NoOpCommand(setuptools.Command):
@@ -61,8 +62,16 @@ except ImportError:
         "preprocess": _NoOpCommand,
     }
 
+CLASSIFIERS = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+]
+
 if __name__ == "__main__":
     setuptools.setup(
+        python_requires=f">={python_version.MIN_PYTHON_VERSION}",
         install_requires=INSTALL_REQUIRES,
         cmdclass=COMMAND_CLASS,
+        classifiers=CLASSIFIERS,
     )

@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 name = "grpcio-tests"
 license = "Apache-2.0"
 
-dynamic = ["dependencies", "version", "optional-dependencies"]
+dynamic = ["dependencies", "version", "optional-dependencies", "classifiers", "requires-python"]
 
 [project.urls]
 Homepage = "https://grpc.io"
