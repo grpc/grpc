@@ -38,8 +38,8 @@
 namespace grpc_core {
 namespace {
 constexpr absl::string_view kAllowedUse = "x509-svid";
-const absl::NoDestructor<std::set<absl::string_view>> kAllowedKtys({"RSA",
-                                                                    "EC"});
+constexpr absl::string_view kRsaKty = "RSA";
+constexpr absl::string_view kEcKty = "EC";
 constexpr absl::string_view kCertificatePrefix =
     "-----BEGIN CERTIFICATE-----\n";
 constexpr absl::string_view kCertificateSuffix = "\n-----END CERTIFICATE-----";
@@ -196,12 +196,10 @@ void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs& args,
       LoadJsonObjectField<std::string>(json.object(), args, "kty", errors);
   {
     ValidationErrors::ScopedField field(errors, ".kty");
-    if (kty.has_value()) {
-      if (kAllowedKtys->find(*kty) == kAllowedKtys->end()) {
-        errors->AddError(
-            absl::StrFormat("value must be one of \"%s\", got \"%s\"",
-                            absl::StrJoin(*kAllowedKtys, "\", \""), *kty));
-      }
+    if (kty.has_value() && *kty != kRsaKty && *kty != kEcKty) {
+      errors->AddError(
+          absl::StrFormat("value must be one of \"%s\", \"%s\" got \"%s\"",
+                          kEcKty, kRsaKty, *kty));
     }
   }
   auto x5c = LoadJsonObjectField<std::vector<std::string>>(json.object(), args,
