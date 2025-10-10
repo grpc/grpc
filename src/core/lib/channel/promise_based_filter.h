@@ -1286,7 +1286,7 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
           auto initiator_client_to_server_promise =
               [initiator, client_to_server_messages_receiver]() mutable {
                 return ForEach(
-                    client_to_server_messages_receiver,
+                    *client_to_server_messages_receiver,
                     [initiator](NextResult<MessageHandle> message) mutable {
                       // FIXME: check if message has a value
                       return initiator.PushMessage(std::move(*message));
