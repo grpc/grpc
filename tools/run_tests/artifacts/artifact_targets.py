@@ -428,9 +428,9 @@ def targets():
             # PythonArtifact("manylinux2014", "aarch64", "cp311-cp311"),
             # PythonArtifact("manylinux2014", "aarch64", "cp312-cp312"),
             # PythonArtifact("manylinux2014", "aarch64", "cp313-cp313"),
-            # PythonArtifact(
-            #     "manylinux2014", "aarch64", "cp314-cp314", presubmit=True
-            # ),
+            PythonArtifact(
+                "manylinux2014", "aarch64", "cp314-cp314", presubmit=True
+            ),
             # PythonArtifact("linux_extra", "armv7", "cp39-cp39", presubmit=True),
             # PythonArtifact("linux_extra", "armv7", "cp310-cp310"),
             # PythonArtifact("linux_extra", "armv7", "cp311-cp311"),
