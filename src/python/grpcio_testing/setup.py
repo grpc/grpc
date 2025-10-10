@@ -23,6 +23,7 @@ import setuptools
 sys.path.insert(0, os.path.abspath("."))
 
 # Break import style to ensure that we can find same-directory modules.
+import python_version
 import grpc_version
 
 
@@ -63,6 +64,7 @@ except ImportError:
 
 if __name__ == "__main__":
     setuptools.setup(
+        python_requires=f">={python_version.MIN_PYTHON_VERSION}",
         install_requires=INSTALL_REQUIRES,
         cmdclass=COMMAND_CLASS,
     )
