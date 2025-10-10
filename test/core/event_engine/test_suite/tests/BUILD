@@ -79,7 +79,6 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
-        "address_sorting",
         "gtest",
     ],
     deps = [
@@ -99,6 +98,7 @@ grpc_cc_library(
         "//test/cpp/util:get_grpc_test_runfile_dir",
         "//test/cpp/util:test_util",
         "//test/cpp/util/windows:manifest_file",
+        "//third_party/address_sorting",
     ],
     alwayslink = 1,
 )
