@@ -236,6 +236,10 @@ pip_install coverage==7.2.0 oauth2client==4.1.0 \
             google-auth>=1.35.0 requests==2.31.0 \
             rsa==4.0 absl-py==1.4.0 \
             opentelemetry-sdk==1.21.0
+
+# working dir after the last pip_install_dir changes to
+# "$ROOT/src/python/grpcio_testing". So reset to $ROOT
+cd $ROOT
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" preprocess
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" build_package_protos
 pip_install_dir "$ROOT/src/python/grpcio_tests"
