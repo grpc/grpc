@@ -204,10 +204,10 @@ cdef class SSLChannelCredentials(ChannelCredentials):
     cdef grpc_tls_certificate_provider* c_tls_certificate_provider
 
     c_tls_credentials_options = grpc_tls_credentials_options_create()
-    if self._pem_root_certificates is not None:
-      c_pem_root_certificates = self._pem_root_certificates
-    else:
+    if self._pem_root_certificates is None:
       c_pem_root_certificates = NULL
+    else:
+      c_pem_root_certificates = self._pem_root_certificates
     if self._private_key or self._certificate_chain:
       c_tls_identity_pairs = grpc_tls_identity_pairs_create()
       if self._private_key:
@@ -223,6 +223,10 @@ cdef class SSLChannelCredentials(ChannelCredentials):
       c_tls_certificate_provider = grpc_tls_certificate_provider_static_data_create(c_pem_root_certificates, c_tls_identity_pairs)
       grpc_tls_credentials_options_set_certificate_provider(c_tls_credentials_options, c_tls_certificate_provider)
       grpc_tls_certificate_provider_release(c_tls_certificate_provider)
+      if c_pem_root_certificates != NULL:
+        grpc_tls_credentials_options_watch_root_certs(c_tls_credentials_options)
+      if c_tls_identity_pairs != NULL:
+        grpc_tls_credentials_options_watch_identity_key_cert_pairs(c_tls_credentials_options)
     with nogil:
       return grpc_tls_credentials_create(c_tls_credentials_options)
 

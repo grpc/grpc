@@ -589,33 +589,39 @@ cdef extern from "grpc/credentials.h":
     # We don't care about the internals (and in fact don't know them)
     pass
 
-  grpc_tls_credentials_options *grpc_tls_credentials_options_create()
+  grpc_tls_credentials_options *grpc_tls_credentials_options_create() nogil
 
   ctypedef struct grpc_tls_certificate_provider:
     # We don't care about the internals (and in fact don't know them)
     pass
 
-  void grpc_tls_credentials_options_set_certificate_provider(grpc_tls_credentials_options* options, grpc_tls_certificate_provider* provider)
+  void grpc_tls_credentials_options_set_certificate_provider(grpc_tls_credentials_options* options, grpc_tls_certificate_provider* provider) nogil
 
   ctypedef struct grpc_tls_identity_pairs:
     # We don't care about the internals (and in fact don't know them)
     pass
 
-  grpc_tls_identity_pairs* grpc_tls_identity_pairs_create();
+  grpc_tls_identity_pairs* grpc_tls_identity_pairs_create() nogil
 
   void grpc_tls_identity_pairs_add_pair(grpc_tls_identity_pairs* pairs,
                                               const char* private_key,
-                                              const char* cert_chain);
+                                              const char* cert_chain) nogil
 
   grpc_tls_certificate_provider* grpc_tls_certificate_provider_static_data_create(
-    const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs);
+    const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs) nogil
 
   void grpc_tls_credentials_options_set_certificate_provider(
     grpc_tls_credentials_options* options,
-    grpc_tls_certificate_provider* provider);
+    grpc_tls_certificate_provider* provider) nogil
+  
+  void grpc_tls_credentials_options_watch_root_certs(
+    grpc_tls_credentials_options* options) nogil
+
+  void grpc_tls_credentials_options_watch_identity_key_cert_pairs(
+    grpc_tls_credentials_options* options) nogil
 
   void grpc_tls_certificate_provider_release(
-    grpc_tls_certificate_provider* provider);
+    grpc_tls_certificate_provider* provider) nogil
 
   ctypedef struct grpc_channel_credentials:
     # We don't care about the internals (and in fact don't know them)
