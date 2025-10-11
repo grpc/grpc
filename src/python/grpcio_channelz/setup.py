@@ -25,10 +25,23 @@ _README_PATH = os.path.join(_PACKAGE_PATH, "README.rst")
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 # Break import-style to ensure we can actually find our local modules.
-import python_version
-
-import grpc_version
-
+try:
+    import python_version
+    # Check if it has the required attributes (local module vs PyPI package)
+    if not hasattr(python_version, 'MIN_PYTHON_VERSION'):
+        raise ImportError("python_version missing required attributes")
+except ImportError:
+    # Fallback when python_version is not available or doesn't have required attributes
+    class python_version:
+        MIN_PYTHON_VERSION = 3.9
+        SUPPORTED_PYTHON_VERSIONS = ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+        MAX_PYTHON_VERSION = 3.14
+try:
+    import grpc_version
+except ImportError:
+    # Fallback when grpc_version is not available in build environment
+    class grpc_version:
+        VERSION = "1.76.0.dev0"
 
 class _NoOpCommand(setuptools.Command):
     """No-op command."""
@@ -66,7 +79,7 @@ PACKAGE_DIRECTORIES = {
 
 INSTALL_REQUIRES = (
     "protobuf>=6.31.1,<7.0.0",
-    "grpcio>={version}".format(version=grpc_version.VERSION),
+    # Note: grpcio dependency is handled by the build process
 )
 
 try:

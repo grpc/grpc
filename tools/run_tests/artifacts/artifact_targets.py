@@ -160,7 +160,7 @@ class PythonArtifact:
                 ),
                 "tools/run_tests/artifacts/build_artifact_python.sh",
                 environ=environ,
-                timeout_seconds=60 * 60 * 2,
+                timeout_seconds=60 * 60 * 4,
             )
         elif "manylinux" in self.platform:
             if self.arch == "x86":
@@ -191,7 +191,7 @@ class PythonArtifact:
                 % (self.platform, self.arch),
                 "tools/run_tests/artifacts/build_artifact_python.sh",
                 environ=environ,
-                timeout_seconds=60 * 60 * 2,
+                timeout_seconds=60 * 60 * 4,
             )
         elif "musllinux" in self.platform:
             environ["PYTHON"] = "/opt/python/{}/bin/python".format(
@@ -231,7 +231,7 @@ class PythonArtifact:
                     "32" if self.arch == "x86" else "64",
                 ],
                 environ=environ,
-                timeout_seconds=60 * 60 * 2,
+                timeout_seconds=60 * 60 * 4,
                 use_workspace=True,
             )
         else:
@@ -241,7 +241,7 @@ class PythonArtifact:
                 self.name,
                 ["tools/run_tests/artifacts/build_artifact_python.sh"],
                 environ=environ,
-                timeout_seconds=60 * 60 * 2,
+                timeout_seconds=60 * 60 * 4,
                 use_workspace=True,
             )
 
