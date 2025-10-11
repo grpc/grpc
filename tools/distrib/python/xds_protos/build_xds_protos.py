@@ -58,15 +58,14 @@ EXCLUDE_PROTO_PACKAGES_LIST = tuple(
 
 # Compute the paths
 WORK_DIR = os.path.dirname(os.path.abspath(__file__))
-GRPC_ROOT = os.path.abspath(os.path.join(WORK_DIR, "..", "..", "..", ".."))
-ENVOY_API_PROTO_ROOT = os.path.join(GRPC_ROOT, "third_party", "envoy-api")
-XDS_PROTO_ROOT = os.path.join(GRPC_ROOT, "third_party", "xds")
-GOOGLEAPIS_ROOT = os.path.join(GRPC_ROOT, "third_party", "googleapis")
-VALIDATE_ROOT = os.path.join(GRPC_ROOT, "third_party", "protoc-gen-validate")
+ENVOY_API_PROTO_ROOT = os.path.join("third_party", "envoy-api")
+XDS_PROTO_ROOT = os.path.join("third_party", "xds")
+GOOGLEAPIS_ROOT = os.path.join("third_party", "googleapis")
+VALIDATE_ROOT = os.path.join("third_party", "protoc-gen-validate")
 OPENCENSUS_PROTO_ROOT = os.path.join(
-    GRPC_ROOT, "third_party", "opencensus-proto", "src"
+    "third_party", "opencensus-proto", "src"
 )
-OPENTELEMETRY_PROTO_ROOT = os.path.join(GRPC_ROOT, "third_party", "opentelemetry")
+OPENTELEMETRY_PROTO_ROOT = os.path.join("third_party", "opentelemetry")
 WELL_KNOWN_PROTOS_INCLUDE = _get_resource_file_name("grpc_tools", "_proto")
 
 OUTPUT_PATH = WORK_DIR

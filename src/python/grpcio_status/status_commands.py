@@ -19,11 +19,11 @@ import shutil
 import setuptools
 
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
-STATUS_PROTO = os.path.join(
-    ROOT_DIR, "../../../third_party/googleapis/google/rpc/status.proto"
-)
+GRPC_ROOT_ABS_PATH = os.path.join(ROOT_DIR, "../../..")
+STATUS_PROTO = "third_party/googleapis/google/rpc/status.proto"
+ROOT_REL_DIR = os.path.relpath(ROOT_DIR, start=GRPC_ROOT_ABS_PATH)
 PACKAGE_STATUS_PROTO_PATH = "grpc_status/google/rpc"
-LICENSE = os.path.join(ROOT_DIR, "../../../LICENSE")
+LICENSE = "./LICENSE"
 
 
 class Preprocess(setuptools.Command):
@@ -39,14 +39,16 @@ class Preprocess(setuptools.Command):
         pass
 
     def run(self):
+        package_status_proto_rel_path = os.path.join(
+            ROOT_REL_DIR, PACKAGE_STATUS_PROTO_PATH
+        )
+
         if os.path.isfile(STATUS_PROTO):
-            if not os.path.isdir(PACKAGE_STATUS_PROTO_PATH):
-                os.makedirs(PACKAGE_STATUS_PROTO_PATH)
+            if not os.path.isdir(package_status_proto_rel_path):
+                os.makedirs(package_status_proto_rel_path)
             shutil.copyfile(
                 STATUS_PROTO,
-                os.path.join(
-                    ROOT_DIR, PACKAGE_STATUS_PROTO_PATH, "status.proto"
-                ),
+                os.path.join(package_status_proto_rel_path, "status.proto"),
             )
         if os.path.isfile(LICENSE):
-            shutil.copyfile(LICENSE, os.path.join(ROOT_DIR, "LICENSE"))
+            shutil.copyfile(LICENSE, os.path.join(ROOT_REL_DIR, "LICENSE"))

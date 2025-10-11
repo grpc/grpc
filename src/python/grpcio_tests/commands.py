@@ -31,9 +31,10 @@ from setuptools.command import test
 
 PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
 GRPC_STEM = os.path.abspath(PYTHON_STEM + "../../../../")
-GRPC_PROTO_STEM = os.path.join(GRPC_STEM, "src", "proto")
-PROTO_STEM = os.path.join(PYTHON_STEM, "src", "proto")
-PYTHON_PROTO_TOP_LEVEL = os.path.join(PYTHON_STEM, "src")
+PYTHON_REL_PATH = os.path.relpath(PYTHON_STEM, start=GRPC_STEM)
+GRPC_PROTO_STEM = os.path.join("src", "proto")
+PROTO_STEM = os.path.join(PYTHON_REL_PATH, "src", "proto")
+PYTHON_PROTO_TOP_LEVEL = os.path.join(PYTHON_REL_PATH, "src")
 
 
 class CommandError(object):
@@ -58,6 +59,7 @@ class GatherProto(setuptools.Command):
         except Exception as error:
             # We don't care if this command fails
             pass
+        print("Current working directory:", os.path.abspath(os.curdir))
         shutil.copytree(GRPC_PROTO_STEM, PROTO_STEM)
         for root, _, _ in os.walk(PYTHON_PROTO_TOP_LEVEL):
             path = os.path.join(root, "__init__.py")
