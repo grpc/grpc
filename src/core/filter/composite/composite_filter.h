@@ -14,17 +14,17 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_FILTER_COMPOSITE_COMPOSITE_FILTERS_H
-#define GRPC_SRC_CORE_FILTER_COMPOSITE_COMPOSITE_FILTERS_H
+#ifndef GRPC_SRC_CORE_FILTER_COMPOSITE_COMPOSITE_FILTER_H
+#define GRPC_SRC_CORE_FILTER_COMPOSITE_COMPOSITE_FILTER_H
 
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/container/flat_hash_map.h"
 #include "src/core/call/call_destination.h"
 #include "src/core/filter/filter_args.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -126,8 +126,7 @@ class CompositeFilter final : public V3InterceptorToV2Bridge<CompositeFilter> {
   static absl::StatusOr<RefCountedPtr<CompositeFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
-  CompositeFilter(const ChannelArgs& args,
-                  RefCountedPtr<const Config> config,
+  CompositeFilter(const ChannelArgs& args, RefCountedPtr<const Config> config,
                   ChannelFilter::Args filter_args);
 
  private:
@@ -152,4 +151,4 @@ class CompositeFilter final : public V3InterceptorToV2Bridge<CompositeFilter> {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_FILTER_COMPOSITE_COMPOSITE_FILTERS_H
+#endif  // GRPC_SRC_CORE_FILTER_COMPOSITE_COMPOSITE_FILTER_H

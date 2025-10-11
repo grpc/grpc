@@ -1272,10 +1272,8 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
     return TrySeq(
         state->call_handler_latch.Wait(),
         [initiator = std::move(initiator), call_args = std::move(call_args),
-         next_promise_factory =
-             std::move(next_promise_factory)](
-                 V3InterceptorToV2State::HandlerWrapper
-                     handler_wrapper) mutable {
+         next_promise_factory = std::move(next_promise_factory)](
+            V3InterceptorToV2State::HandlerWrapper handler_wrapper) mutable {
           CallHandler handler = std::move(handler_wrapper.handler);
           // Intercept all pipes from v2 API.
           Pipe<MessageHandle> client_to_server_messages;
@@ -1303,34 +1301,31 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
           auto initiator_server_to_client_promise =
               [initiator, server_initial_metadata_sender,
                server_to_client_messages_sender]() mutable {
-                return TrySeq(TrySeq(initiator.PullServerInitialMetadata(),
-                                     [server_initial_metadata_sender](
-                                         std::optional<ServerMetadataHandle>
-                                             metadata) mutable {
-                                       // FIXME: check if metadata.has_value()
-                                       return server_initial_metadata_sender->
-                                           Push(std::move(*metadata));
-                                     }),
-                              ForEach(
-                                  MessagesFrom(initiator),
-                                  [server_to_client_messages_sender](
-                                      MessageHandle message) {
-                                    return Map(
-                                        server_to_client_messages_sender
-                                            ->Push(std::move(message)),
-                                        [](bool x) { return StatusFlag(x); });
-                                  }));
+                return TrySeq(
+                    TrySeq(initiator.PullServerInitialMetadata(),
+                           [server_initial_metadata_sender](
+                               std::optional<ServerMetadataHandle>
+                                   metadata) mutable {
+                             // FIXME: check if metadata.has_value()
+                             return server_initial_metadata_sender->Push(
+                                 std::move(*metadata));
+                           }),
+                    ForEach(MessagesFrom(initiator),
+                            [server_to_client_messages_sender](
+                                MessageHandle message) {
+                              return Map(server_to_client_messages_sender->Push(
+                                             std::move(message)),
+                                         [](bool x) { return StatusFlag(x); });
+                            }));
               };
           // Handler-side promise for client-to-server data.
           auto handler_client_to_server_promise =
               [handler, &client_to_server_messages]() mutable {
                 return ForEach(
-                    MessagesFrom(handler),
-                    [&](MessageHandle message) {
-                      return Map(
-                          client_to_server_messages.sender.Push(
-                              std::move(message)),
-                          [](bool x) { return StatusFlag(x); });
+                    MessagesFrom(handler), [&](MessageHandle message) {
+                      return Map(client_to_server_messages.sender.Push(
+                                     std::move(message)),
+                                 [](bool x) { return StatusFlag(x); });
                     });
               };
           // Handler-side promise for server-to-client data.
@@ -1345,11 +1340,10 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                              return handler.PushServerInitialMetadata(
                                  std::move(*metadata));
                            }),
-                    ForEach(
-                        server_to_client_messages.receiver,
-                        [handler](MessageHandle message) mutable {
-                          return handler.PushMessage(std::move(message));
-                        }));
+                    ForEach(server_to_client_messages.receiver,
+                            [handler](MessageHandle message) mutable {
+                              return handler.PushMessage(std::move(message));
+                            }));
               };
           // Now put it all together.
           return PrioritizedRace(next_promise_factory(std::move(call_args)),

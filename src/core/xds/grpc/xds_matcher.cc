@@ -85,8 +85,7 @@ bool XdsMatcher::OnMatch::FindMatches(const MatchContext& context,
 void XdsMatcherList::OnMatch::ForEachAction(
     absl::FunctionRef<void(const Action&)> func) const {
   Match(
-      action,
-      [&](const std::unique_ptr<Action>& action) { func(*action); },
+      action, [&](const std::unique_ptr<Action>& action) { func(*action); },
       [&](const std::unique_ptr<XdsMatcher>& matcher) {
         matcher->ForEachAction(func);
       });
@@ -306,10 +305,9 @@ bool XdsMatcherPrefixMap::FindMatches(const MatchContext& context,
 
 void XdsMatcherPrefixMap::ForEachAction(
     absl::FunctionRef<void(const Action&)> func) const {
-  root_.ForEach(
-      [&](absl::string_view /*key*/, const OnMatch& on_match) {
-        on_match.ForEachAction(func);
-      });
+  root_.ForEach([&](absl::string_view /*key*/, const OnMatch& on_match) {
+    on_match.ForEachAction(func);
+  });
   if (on_no_match_.has_value()) {
     on_no_match_->ForEachAction(func);
   }

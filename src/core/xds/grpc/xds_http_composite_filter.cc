@@ -83,8 +83,8 @@ class SkipFilterActionFactory final : public XdsMatcherActionFactory {
 
   std::unique_ptr<XdsMatcher::Action> ParseAndCreateAction(
       const XdsResourceType::DecodeContext& context,
-      absl::string_view serialized_value, ValidationErrors* errors)
-      const override {
+      absl::string_view serialized_value,
+      ValidationErrors* errors) const override {
     const auto* skip_filter =
         envoy_extensions_filters_common_matcher_action_v3_SkipFilter_parse(
             serialized_value.data(), serialized_value.size(), context.arena);
@@ -125,8 +125,8 @@ class ExecuteFilterActionFactory final : public XdsMatcherActionFactory {
 
   std::unique_ptr<XdsMatcher::Action> ParseAndCreateAction(
       const XdsResourceType::DecodeContext& context,
-      absl::string_view serialized_value, ValidationErrors* errors)
-      const override {
+      absl::string_view serialized_value,
+      ValidationErrors* errors) const override {
     const auto* execute_filter =
         envoy_extensions_filters_http_composite_v3_ExecuteFilterAction_parse(
             serialized_value.data(), serialized_value.size(), context.arena);
@@ -174,8 +174,8 @@ class ExecuteFilterActionFactory final : public XdsMatcherActionFactory {
           envoy_config_core_v3_RuntimeFractionalPercent_default_value(
               sample_percent_proto);
       if (default_value == nullptr) {
-        ValidationErrors::ScopedField field(
-            errors, ".sample_percent.default_value");
+        ValidationErrors::ScopedField field(errors,
+                                            ".sample_percent.default_value");
         errors->AddError("field not set");
       } else {
         sample_per_million = ParseFractionalPercent(default_value);

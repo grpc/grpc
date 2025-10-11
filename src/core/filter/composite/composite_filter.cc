@@ -16,13 +16,13 @@
 
 #include "src/core/filter/composite/composite_filter.h"
 
+#include "absl/random/random.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-#include "absl/random/random.h"
 #include "src/core/call/interception_chain.h"
 #include "src/core/filter/filter_chain.h"
-#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/promise/context.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/util/shared_bit_gen.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
 #include "src/core/xds/grpc/xds_matcher_context.h"
@@ -38,8 +38,10 @@ std::string CompositeFilter::ExecuteFilterAction::ToString() const {
 }
 
 const grpc_channel_filter CompositeFilter::kFilterVtable =
-    MakePromiseBasedFilter<CompositeFilter, FilterEndpoint::kClient,
-                           kFilterExaminesServerInitialMetadata|kFilterExaminesOutboundMessages|kFilterExaminesInboundMessages|kFilterExaminesCallContext>();
+    MakePromiseBasedFilter<
+        CompositeFilter, FilterEndpoint::kClient,
+        kFilterExaminesServerInitialMetadata | kFilterExaminesOutboundMessages |
+            kFilterExaminesInboundMessages | kFilterExaminesCallContext>();
 
 absl::StatusOr<RefCountedPtr<CompositeFilter>> CompositeFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args filter_args) {
@@ -47,8 +49,8 @@ absl::StatusOr<RefCountedPtr<CompositeFilter>> CompositeFilter::Create(
     return absl::InternalError("composite filter config has wrong type");
   }
   auto config = filter_args.config().TakeAsSubclass<const Config>();
-  return MakeRefCounted<CompositeFilter>(
-      args, std::move(config), std::move(filter_args));
+  return MakeRefCounted<CompositeFilter>(args, std::move(config),
+                                         std::move(filter_args));
 }
 
 namespace {
@@ -86,8 +88,8 @@ CompositeFilter::CompositeFilter(const ChannelArgs& args,
         DownCast<const ExecuteFilterAction&>(action);
     InterceptionChainBuilder builder(args, filter_args.blackboard());
     InterceptionChainBuilderWrapper builder_wrapper(builder);
-    for (const auto& [filter_impl, filter_config]
-         : execute_filter_action.filter_chain()) {
+    for (const auto& [filter_impl, filter_config] :
+         execute_filter_action.filter_chain()) {
       filter_impl->AddFilter(builder_wrapper, filter_config);
     }
     filter_chain_map_[&execute_filter_action] =
@@ -100,8 +102,7 @@ void CompositeFilter::InterceptCall(
   // Consume the call coming to us from the client side.
   CallHandler handler = Consume(std::move(unstarted_call_handler));
   handler.SpawnGuarded(
-      "choose_filter_chain",
-      [this, handler = std::move(handler)]() mutable {
+      "choose_filter_chain", [this, handler = std::move(handler)]() mutable {
         return TrySeq(
             handler.PullClientInitialMetadata(),
             [&](std::optional<ClientMetadataHandle> metadata) {
@@ -164,8 +165,8 @@ void CompositeFilter::InterceptCall(
                     }
                     auto [initiator, unstarted_handler] = MakeCallPair(
                         std::move(*metadata), GetContext<Arena>()->Ref());
-                    (*unstarted_destination)->StartCall(
-                        std::move(unstarted_handler));
+                    (*unstarted_destination)
+                        ->StartCall(std::move(unstarted_handler));
                     ForwardCall(handler, initiator);
                     return absl::OkStatus();
                   },
