@@ -65,6 +65,7 @@ class HighContentionDomain final
     : public InstrumentDomain<HighContentionDomain> {
  public:
   using Backend = HighContentionBackend;
+  static constexpr absl::string_view kName = "high_contention";
   static constexpr auto kLabels = Labels();
 
   static inline const auto kCounter =
@@ -74,6 +75,7 @@ class HighContentionDomain final
 class LowContentionDomain final : public InstrumentDomain<LowContentionDomain> {
  public:
   using Backend = LowContentionBackend;
+  static constexpr absl::string_view kName = "low_contention";
   static constexpr auto kLabels = Labels("grpc.target");
 
   static inline const auto kCounter =
@@ -93,6 +95,7 @@ class InstanceCounterDomain final
     : public InstrumentDomain<InstanceCounterDomain> {
  public:
   using Backend = LowContentionBackend;
+  static constexpr absl::string_view kName = "instance_counter";
   static constexpr auto kLabels = Labels("grpc.target");
 
   static inline const auto kInstanceCounter =
@@ -102,6 +105,7 @@ class InstanceCounterDomain final
 class TestDomain1 : public InstrumentDomain<TestDomain1> {
  public:
   using Backend = LowContentionBackend;
+  static constexpr absl::string_view kName = "test_domain1";
   static constexpr auto kLabels = Labels("label1");
   static inline const auto kCounter1 = RegisterCounter("test.counter1", "", "");
 };
@@ -109,6 +113,7 @@ class TestDomain1 : public InstrumentDomain<TestDomain1> {
 class TestDomain2 : public InstrumentDomain<TestDomain2> {
  public:
   using Backend = LowContentionBackend;
+  static constexpr absl::string_view kName = "test_domain2";
   static constexpr auto kLabels = Labels("label2", "label3");
   static inline const auto kCounter2 = RegisterCounter("test.counter2", "", "");
 };
@@ -117,6 +122,7 @@ class GarbageCollectionTestDomain
     : public InstrumentDomain<GarbageCollectionTestDomain> {
  public:
   using Backend = LowContentionBackend;
+  static constexpr absl::string_view kName = "gc_test";
   static constexpr auto kLabels = Labels("label");
   static inline const auto kTestCounter =
       RegisterCounter("gc-test.counter", "", "");
@@ -127,6 +133,7 @@ using InstrumentIndexTest = InstrumentTest;
 class FanOutDomain final : public InstrumentDomain<FanOutDomain> {
  public:
   using Backend = LowContentionBackend;
+  static constexpr absl::string_view kName = "fan_out";
   static constexpr auto kLabels = Labels("grpc.target", "grpc.method");
 
   static inline const auto kCounter =
@@ -174,22 +181,22 @@ TEST_F(InstrumentIndexTest, RegisterDuplicateReturnsSame) {
 // released.
 TEST_F(MetricsQueryTest, HighContention) {
   auto storage = HighContentionDomain::GetStorage();
-  testing::StrictMock<MockMetricsSink> sink;
+  ::testing::StrictMock<MockMetricsSink> sink;
   EXPECT_CALL(sink,
               Counter(absl::Span<const std::string>(), "high_contention", 0));
   MetricsQuery()
       .OnlyMetrics({"high_contention"})
       .Run(QueryableDomain::CreateCollectionScope(), sink);
-  testing::Mock::VerifyAndClearExpectations(&sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
   storage->Increment(HighContentionDomain::kCounter);
   EXPECT_CALL(sink,
               Counter(absl::Span<const std::string>(), "high_contention", 1));
   MetricsQuery()
       .OnlyMetrics({"high_contention"})
       .Run(QueryableDomain::CreateCollectionScope(), sink);
-  testing::Mock::VerifyAndClearExpectations(&sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
   storage.reset();
-  testing::Mock::VerifyAndClearExpectations(&sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
   storage = HighContentionDomain::GetStorage();
   EXPECT_CALL(sink,
               Counter(absl::Span<const std::string>(), "high_contention", 0));
@@ -204,20 +211,20 @@ TEST_F(MetricsQueryTest, HighContention) {
 TEST_F(MetricsQueryTest, LowContention) {
   auto storage = LowContentionDomain::GetStorage("example.com");
   std::vector<std::string> label = {"example.com"};
-  testing::StrictMock<MockMetricsSink> sink;
+  ::testing::StrictMock<MockMetricsSink> sink;
   EXPECT_CALL(
       sink, Counter(absl::Span<const std::string>(label), "low_contention", 0));
   MetricsQuery()
       .OnlyMetrics({"low_contention"})
       .Run(QueryableDomain::CreateCollectionScope(), sink);
-  testing::Mock::VerifyAndClearExpectations(&sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
   storage->Increment(LowContentionDomain::kCounter);
   EXPECT_CALL(
       sink, Counter(absl::Span<const std::string>(label), "low_contention", 1));
   MetricsQuery()
       .OnlyMetrics({"low_contention"})
       .Run(QueryableDomain::CreateCollectionScope(), sink);
-  testing::Mock::VerifyAndClearExpectations(&sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
   storage.reset();
   MetricsQuery()
       .OnlyMetrics({"low_contention"})
@@ -235,10 +242,11 @@ TEST_F(MetricsQueryTest, LowContention) {
 TEST_F(MetricsQueryTest, LowContentionHistogram) {
   std::vector<uint64_t> value_before;
   auto storage = LowContentionDomain::GetStorage("example.com");
-  testing::StrictMock<MockMetricsSink> sink;
+  ::testing::StrictMock<MockMetricsSink> sink;
   std::vector<std::string> label = {"example.com"};
-  EXPECT_CALL(sink, Histogram(absl::Span<const std::string>(label),
-                              "exponential_histogram", testing::_, testing::_))
+  EXPECT_CALL(sink,
+              Histogram(absl::Span<const std::string>(label),
+                        "exponential_histogram", ::testing::_, ::testing::_))
       .WillOnce([&value_before](auto, auto, auto, auto counts) {
         value_before.assign(counts.begin(), counts.end());
       });
@@ -246,19 +254,19 @@ TEST_F(MetricsQueryTest, LowContentionHistogram) {
       .OnlyMetrics({"exponential_histogram"})
       .WithLabelEq("grpc.target", "example.com")
       .Run(QueryableDomain::CreateCollectionScope(), sink);
-  testing::Mock::VerifyAndClearExpectations(&sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
   std::vector<uint64_t> expect_value = value_before;
   expect_value[0] += 1;
   storage->Increment(LowContentionDomain::kExponentialHistogram, 0);
   EXPECT_CALL(sink, Histogram(absl::Span<const std::string>(label),
-                              "exponential_histogram", testing::_,
+                              "exponential_histogram", ::testing::_,
                               absl::MakeConstSpan(expect_value)))
       .Times(1);
   MetricsQuery()
       .OnlyMetrics({"exponential_histogram"})
       .WithLabelEq("grpc.target", "example.com")
       .Run(QueryableDomain::CreateCollectionScope(), sink);
-  testing::Mock::VerifyAndClearExpectations(&sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
 }
 
 // Tests gauge functionality (double, int, uint) in a low-contention domain.
@@ -267,7 +275,7 @@ TEST_F(MetricsQueryTest, LowContentionHistogram) {
 TEST_F(MetricsQueryTest, LowContentionGauge) {
   auto storage = LowContentionDomain::GetStorage("example.com");
   std::vector<std::string> label = {"example.com"};
-  testing::StrictMock<MockMetricsSink> sink;
+  ::testing::StrictMock<MockMetricsSink> sink;
 
   class MyGaugeProvider final : public GaugeProvider<LowContentionDomain> {
    public:
@@ -296,7 +304,7 @@ TEST_F(MetricsQueryTest, LowContentionGauge) {
   MetricsQuery()
       .OnlyMetrics({"double_gauge", "int_gauge", "uint_gauge"})
       .Run(QueryableDomain::CreateCollectionScope(), sink);
-  testing::Mock::VerifyAndClearExpectations(&sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
 }
 
 // Tests metric collection across multiple label sets ("fan-out").
@@ -307,7 +315,7 @@ TEST_F(MetricsQueryTest, FanOut) {
   std::vector<std::string> label_foo = {"example.com", "foo"};
   auto storage_bar = FanOutDomain::GetStorage("example.com", "bar");
   std::vector<std::string> label_bar = {"example.com", "bar"};
-  testing::StrictMock<MockMetricsSink> sink;
+  ::testing::StrictMock<MockMetricsSink> sink;
   EXPECT_CALL(sink,
               Counter(absl::Span<const std::string>(label_foo), "fan_out", 0));
   EXPECT_CALL(sink,
@@ -315,7 +323,7 @@ TEST_F(MetricsQueryTest, FanOut) {
   MetricsQuery()
       .OnlyMetrics({"fan_out"})
       .Run(QueryableDomain::CreateCollectionScope(), sink);
-  testing::Mock::VerifyAndClearExpectations(&sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
   storage_foo->Increment(FanOutDomain::kCounter);
   storage_bar->Increment(FanOutDomain::kCounter);
   EXPECT_CALL(sink,
@@ -325,7 +333,7 @@ TEST_F(MetricsQueryTest, FanOut) {
   MetricsQuery()
       .OnlyMetrics({"fan_out"})
       .Run(QueryableDomain::CreateCollectionScope(), sink);
-  testing::Mock::VerifyAndClearExpectations(&sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
   const std::vector<std::string> label_all = {"example.com"};
   EXPECT_CALL(sink,
               Counter(absl::Span<const std::string>(label_all), "fan_out", 2));
@@ -333,13 +341,13 @@ TEST_F(MetricsQueryTest, FanOut) {
       .OnlyMetrics({"fan_out"})
       .CollapseLabels({"grpc.method"})
       .Run(QueryableDomain::CreateCollectionScope(), sink);
-  testing::Mock::VerifyAndClearExpectations(&sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
   storage_foo.reset();
   storage_bar.reset();
   MetricsQuery()
       .OnlyMetrics({"fan_out"})
       .Run(QueryableDomain::CreateCollectionScope(), sink);
-  testing::Mock::VerifyAndClearExpectations(&sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
   storage_foo = FanOutDomain::GetStorage("example.com", "foo");
   storage_bar = FanOutDomain::GetStorage("example.com", "bar");
   EXPECT_CALL(sink,
@@ -349,7 +357,7 @@ TEST_F(MetricsQueryTest, FanOut) {
   MetricsQuery()
       .OnlyMetrics({"fan_out"})
       .Run(QueryableDomain::CreateCollectionScope(), sink);
-  testing::Mock::VerifyAndClearExpectations(&sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
   EXPECT_CALL(sink,
               Counter(absl::Span<const std::string>(label_all), "fan_out", 0));
   MetricsQuery()
@@ -367,7 +375,7 @@ TEST_F(MetricsQueryTest, FanOutGauge) {
   std::vector<std::string> label_foo = {"example.com", "foo"};
   auto storage_bar = FanOutDomain::GetStorage("example.com", "bar");
   std::vector<std::string> label_bar = {"example.com", "bar"};
-  testing::StrictMock<MockMetricsSink> sink;
+  ::testing::StrictMock<MockMetricsSink> sink;
 
   class MyGaugeProvider final : public GaugeProvider<FanOutDomain> {
    public:
@@ -395,7 +403,7 @@ TEST_F(MetricsQueryTest, FanOutGauge) {
   MetricsQuery()
       .OnlyMetrics({"fan_out_double"})
       .Run(QueryableDomain::CreateCollectionScope(), sink);
-  testing::Mock::VerifyAndClearExpectations(&sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
 
   // Test label equality filter
   EXPECT_CALL(sink, DoubleGauge(absl::Span<const std::string>(label_foo),
@@ -404,15 +412,16 @@ TEST_F(MetricsQueryTest, FanOutGauge) {
       .OnlyMetrics({"fan_out_double"})
       .WithLabelEq("grpc.method", "foo")
       .Run(QueryableDomain::CreateCollectionScope(), sink);
-  testing::Mock::VerifyAndClearExpectations(&sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
 
   // Test collapsing - Gauges are not aggregated.
-  EXPECT_CALL(sink, DoubleGauge(testing::_, testing::_, testing::_)).Times(0);
+  EXPECT_CALL(sink, DoubleGauge(::testing::_, ::testing::_, ::testing::_))
+      .Times(0);
   MetricsQuery()
       .OnlyMetrics({"fan_out_double"})
       .CollapseLabels({"grpc.method"})
       .Run(QueryableDomain::CreateCollectionScope(), sink);
-  testing::Mock::VerifyAndClearExpectations(&sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
 }
 
 // Tests the `WithLabelEq` filter in MetricsQuery.
@@ -422,7 +431,7 @@ TEST_F(MetricsQueryTest, LabelEq) {
   std::vector<std::string> label_foo = {"example.com", "foo"};
   auto storage_bar = FanOutDomain::GetStorage("example.com", "bar");
   auto storage_baz = FanOutDomain::GetStorage("example.org", "baz");
-  testing::StrictMock<MockMetricsSink> sink;
+  ::testing::StrictMock<MockMetricsSink> sink;
   EXPECT_CALL(sink,
               Counter(absl::Span<const std::string>(label_foo), "fan_out", 0));
   MetricsQuery()
@@ -430,7 +439,7 @@ TEST_F(MetricsQueryTest, LabelEq) {
       .WithLabelEq("grpc.target", "example.com")
       .WithLabelEq("grpc.method", "foo")
       .Run(QueryableDomain::CreateCollectionScope(), sink);
-  testing::Mock::VerifyAndClearExpectations(&sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
   storage_foo->Increment(FanOutDomain::kCounter);
   storage_bar->Increment(FanOutDomain::kCounter);
   storage_baz->Increment(FanOutDomain::kCounter);
@@ -441,7 +450,7 @@ TEST_F(MetricsQueryTest, LabelEq) {
       .WithLabelEq("grpc.target", "example.com")
       .WithLabelEq("grpc.method", "foo")
       .Run(QueryableDomain::CreateCollectionScope(), sink);
-  testing::Mock::VerifyAndClearExpectations(&sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
 }
 
 // A stress test that runs multiple threads concurrently, performing metric
@@ -526,40 +535,41 @@ TEST_F(MetricsQueryTest, ThreadStress) {
 // Tests that a registered histogram collection hook is called when a histogram
 // is incremented.
 TEST_F(InstrumentTest, HistogramHook) {
-  testing::MockFunction<void(const InstrumentMetadata::Description* instrument,
-                             absl::Span<const std::string> labels,
-                             int64_t value)>
+  ::testing::MockFunction<void(
+      const InstrumentMetadata::Description* instrument,
+      absl::Span<const std::string> labels, int64_t value)>
       hook;
   RegisterHistogramCollectionHook(hook.AsStdFunction());
   auto storage = LowContentionDomain::GetStorage("example.com");
   std::vector<std::string> label = {"example.com"};
-  EXPECT_CALL(hook, Call(testing::_, absl::Span<const std::string>(label), 10));
+  EXPECT_CALL(hook,
+              Call(::testing::_, absl::Span<const std::string>(label), 10));
   storage->Increment(LowContentionDomain::kExponentialHistogram, 10);
-  testing::Mock::VerifyAndClearExpectations(&hook);
+  ::testing::Mock::VerifyAndClearExpectations(&hook);
 }
 
 // Tests that multiple registered histogram collection hooks are all called when
 // a histogram is incremented.
 TEST_F(InstrumentTest, MultipleHistogramHooks) {
-  testing::MockFunction<void(const InstrumentMetadata::Description* instrument,
-                             absl::Span<const std::string> labels,
-                             int64_t value)>
+  ::testing::MockFunction<void(
+      const InstrumentMetadata::Description* instrument,
+      absl::Span<const std::string> labels, int64_t value)>
       hook1;
-  testing::MockFunction<void(const InstrumentMetadata::Description* instrument,
-                             absl::Span<const std::string> labels,
-                             int64_t value)>
+  ::testing::MockFunction<void(
+      const InstrumentMetadata::Description* instrument,
+      absl::Span<const std::string> labels, int64_t value)>
       hook2;
   RegisterHistogramCollectionHook(hook1.AsStdFunction());
   RegisterHistogramCollectionHook(hook2.AsStdFunction());
   auto storage = LowContentionDomain::GetStorage("example.com");
   std::vector<std::string> label = {"example.com"};
   EXPECT_CALL(hook1,
-              Call(testing::_, absl::Span<const std::string>(label), 10));
+              Call(::testing::_, absl::Span<const std::string>(label), 10));
   EXPECT_CALL(hook2,
-              Call(testing::_, absl::Span<const std::string>(label), 10));
+              Call(::testing::_, absl::Span<const std::string>(label), 10));
   storage->Increment(LowContentionDomain::kExponentialHistogram, 10);
-  testing::Mock::VerifyAndClearExpectations(&hook1);
-  testing::Mock::VerifyAndClearExpectations(&hook2);
+  ::testing::Mock::VerifyAndClearExpectations(&hook1);
+  ::testing::Mock::VerifyAndClearExpectations(&hook2);
 }
 
 // Verifies that calling GetStorage with the same labels multiple times returns
@@ -578,7 +588,7 @@ TEST_F(GetStorageTest, SameInstanceForRepeatedCalls) {
 TEST_F(GetStorageTest, NewInstanceAfterRelease) {
   const std::string target = "test.com";
   std::vector<std::string> label = {target};
-  testing::StrictMock<MockMetricsSink> sink;
+  ::testing::StrictMock<MockMetricsSink> sink;
 
   auto storage1 = InstanceCounterDomain::GetStorage(target);
   storage1->Increment(InstanceCounterDomain::kInstanceCounter);
@@ -587,7 +597,7 @@ TEST_F(GetStorageTest, NewInstanceAfterRelease) {
   MetricsQuery()
       .OnlyMetrics({"instance_counter"})
       .Run(QueryableDomain::CreateCollectionScope(), sink);
-  testing::Mock::VerifyAndClearExpectations(&sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
 
   // Release the strong ref. Orphaned() should run and remove it from the map.
   storage1.reset();
@@ -600,7 +610,7 @@ TEST_F(GetStorageTest, NewInstanceAfterRelease) {
   MetricsQuery()
       .OnlyMetrics({"instance_counter"})
       .Run(QueryableDomain::CreateCollectionScope(), sink);
-  testing::Mock::VerifyAndClearExpectations(&sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
 
   storage2->Increment(InstanceCounterDomain::kInstanceCounter);
   EXPECT_CALL(sink, Counter(absl::Span<const std::string>(label),
@@ -614,14 +624,14 @@ TEST_F(GetStorageTest, NewInstanceAfterRelease) {
 // created is still visible and included in the metric query results for that
 // scope.
 TEST_F(MetricsQueryTest, NewStorageVisibleInQuery) {
-  testing::StrictMock<MockMetricsSink> sink;
+  ::testing::StrictMock<MockMetricsSink> sink;
   std::vector<std::string> label = {"new_metric.com"};
 
   // Initial query, storage doesn't exist yet.
   MetricsQuery()
       .OnlyMetrics({"low_contention"})
       .Run(QueryableDomain::CreateCollectionScope(), sink);
-  testing::Mock::VerifyAndClearExpectations(&sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
 
   // Create scope.
   auto scope = QueryableDomain::CreateCollectionScope();
@@ -633,7 +643,7 @@ TEST_F(MetricsQueryTest, NewStorageVisibleInQuery) {
   EXPECT_CALL(
       sink, Counter(absl::Span<const std::string>(label), "low_contention", 1));
   MetricsQuery().OnlyMetrics({"low_contention"}).Run(std::move(scope), sink);
-  testing::Mock::VerifyAndClearExpectations(&sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
 
   // Query with a new scope, should also be visible.
   EXPECT_CALL(
@@ -725,7 +735,7 @@ TEST_F(InstrumentTest, CollectionScopeSnapshotsExistingMetrics) {
   auto scope = QueryableDomain::CreateCollectionScope();
 
   // Query the data.
-  testing::StrictMock<MockMetricsSink> sink;
+  ::testing::StrictMock<MockMetricsSink> sink;
   std::vector<std::string> label1 = {"test1.com"};
   std::vector<std::string> label2 = {"target1", "method1"};
   EXPECT_CALL(sink, Counter(absl::Span<const std::string>(label1),
@@ -752,7 +762,7 @@ TEST_F(InstrumentTest, CollectionScopeSeesNewMetrics) {
   }
 
   // Query the data using the original scope.
-  testing::StrictMock<MockMetricsSink> sink;
+  ::testing::StrictMock<MockMetricsSink> sink;
   std::vector<std::string> label1 = {"test1.com"};
   std::vector<std::string> label2 = {"target1", "method1"};
   EXPECT_CALL(sink, Counter(absl::Span<const std::string>(label1),
@@ -799,12 +809,12 @@ TEST_F(InstrumentTest, GarbageCollection) {
   storage.reset();
 
   // The storage should still be alive in the scope.
-  testing::StrictMock<MockMetricsSink> sink;
+  ::testing::StrictMock<MockMetricsSink> sink;
   std::vector<std::string> label = {"a"};
   EXPECT_CALL(sink, Counter(absl::Span<const std::string>(label),
                             "gc-test.counter", 1));
   MetricsQuery().Run(std::move(scope), sink);
-  testing::Mock::VerifyAndClearExpectations(&sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
 
   // Now the scope is gone, the storage should be gone too.
   storage = GarbageCollectionTestDomain::GetStorage("a");
@@ -828,19 +838,19 @@ TEST_F(InstrumentTest, GarbageCollectionMultipleScopes) {
   storage.reset();
 
   // The storage should still be alive in the first scope.
-  testing::StrictMock<MockMetricsSink> sink;
+  ::testing::StrictMock<MockMetricsSink> sink;
   std::vector<std::string> label = {"b"};
   EXPECT_CALL(sink, Counter(absl::Span<const std::string>(label),
                             "gc-test.counter", 1));
   MetricsQuery().Run(std::move(scope1), sink);
-  testing::Mock::VerifyAndClearExpectations(&sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
 
   // After the first scope is destroyed, the storage should still be alive in
   // the second scope.
   EXPECT_CALL(sink, Counter(absl::Span<const std::string>(label),
                             "gc-test.counter", 1));
   MetricsQuery().Run(std::move(scope2), sink);
-  testing::Mock::VerifyAndClearExpectations(&sink);
+  ::testing::Mock::VerifyAndClearExpectations(&sink);
 
   // Now that both scopes are gone, the storage should be gone too.
   storage = GarbageCollectionTestDomain::GetStorage("b");

@@ -130,6 +130,8 @@ class BaseNode : public DualRefCounted<BaseNode> {
     kSocket,
     kCall,
     kResourceQuota,
+    kMetricsDomain,
+    kMetricsDomainStorage,
   };
 
   static absl::string_view EntityTypeString(EntityType type) {
@@ -150,6 +152,10 @@ class BaseNode : public DualRefCounted<BaseNode> {
         return "call";
       case EntityType::kResourceQuota:
         return "resource_quota";
+      case EntityType::kMetricsDomain:
+        return "metrics_domain";
+      case EntityType::kMetricsDomainStorage:
+        return "metrics_domain_storage";
     }
     return "unknown";
   }
@@ -172,6 +178,10 @@ class BaseNode : public DualRefCounted<BaseNode> {
         return "call";
       case EntityType::kResourceQuota:
         return "resource_quota";
+      case EntityType::kMetricsDomain:
+        return "metrics_domain";
+      case EntityType::kMetricsDomainStorage:
+        return "metrics_domain_storage";
     }
   }
 
@@ -184,6 +194,10 @@ class BaseNode : public DualRefCounted<BaseNode> {
     if (kind == "socket") return EntityType::kSocket;
     if (kind == "call") return EntityType::kCall;
     if (kind == "resource_quota") return EntityType::kResourceQuota;
+    if (kind == "metrics_domain") return EntityType::kMetricsDomain;
+    if (kind == "metrics_domain_storage") {
+      return EntityType::kMetricsDomainStorage;
+    }
     return std::nullopt;
   }
 
@@ -804,6 +818,28 @@ class ResourceQuotaNode final : public BaseNode {
   }
 
   Json RenderJson() override { return Json::FromString("ResourceQuota"); }
+};
+
+class MetricsDomainNode final : public BaseNode {
+ public:
+  explicit MetricsDomainNode(std::string name)
+      : BaseNode(EntityType::kMetricsDomain, 0, std::move(name)) {
+    NodeConstructed();
+  }
+
+  Json RenderJson() override { return Json::FromString("MetricsDomain"); }
+};
+
+class MetricsDomainStorageNode final : public BaseNode {
+ public:
+  explicit MetricsDomainStorageNode(std::string name)
+      : BaseNode(EntityType::kMetricsDomainStorage, 0, std::move(name)) {
+    NodeConstructed();
+  }
+
+  Json RenderJson() override {
+    return Json::FromString("MetricsDomainStorage");
+  }
 };
 
 }  // namespace channelz
