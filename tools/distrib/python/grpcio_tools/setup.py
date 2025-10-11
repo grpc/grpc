@@ -37,6 +37,7 @@ sys.path.insert(0, os.path.abspath("."))
 import _parallel_compile_patch
 import _spawn_patch
 import protoc_lib_deps
+import grpc_version
 
 _EXT_INIT_SYMBOL = None
 if sys.version_info[0] == 2:
@@ -252,14 +253,16 @@ def package_data():
         relative_target = os.path.join(
             GRPC_PYTHON_PROTO_RESOURCES_NAME, proto_file
         )
-        try:
-            os.makedirs(os.path.dirname(target))
-        except OSError as error:
-            if error.errno == errno.EEXIST:
-                pass
-            else:
-                raise
-        shutil.copy(source, target)
+        # Only copy files if they exist and we're actually building
+        if os.path.exists(source):
+            try:
+                os.makedirs(os.path.dirname(target), exist_ok=True)
+                shutil.copy(source, target)
+            except OSError as error:
+                if error.errno == errno.EEXIST:
+                    pass
+                else:
+                    raise
         proto_files.append(relative_target)
     return {GRPC_PYTHON_TOOLS_PACKAGE: proto_files}
 

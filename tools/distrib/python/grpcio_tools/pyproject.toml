@@ -28,10 +28,12 @@ authors = [
 dependencies = [
     "protobuf>=6.31.1,<7.0.0",
     "setuptools",
+    "grpcio>=1.76.0.dev0",
 ]
 
-[project.scripts]
-"python-grpc-tools-protoc" = "grpc_tools.protoc:entrypoint"
+# Entry points are defined in setup.py to avoid conflicts
+# [project.scripts]
+# "python-grpc-tools-protoc" = "grpc_tools.protoc:entrypoint"
 
 [project.urls]
 Homepage = "https://grpc.io"
