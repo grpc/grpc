@@ -486,8 +486,8 @@ grpc_cc_library(
     deps = [
         "gpr_atm",
         "time_precise",
+        "//:gpr",
         "//:gpr_platform",
-        "//:gpr_public_hdrs",
         "//:grpc_support_time",
     ],
 )
@@ -503,8 +503,8 @@ grpc_cc_library(
         "nofixdeps",
     ],
     deps = [
+        "//:gpr",
         "//:gpr_platform",
-        "//:gpr_public_hdrs",
         "//:grpc_support_time",
     ],
 )

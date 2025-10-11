@@ -866,26 +866,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "gpr_public_hdrs",
-    hdrs = [
-        # TODO(ctiller): remove from gpr target entirely
-        # All usage should be via gpr_platform
-        "include/grpc/impl/codegen/port_platform.h",
-        "include/grpc/support/port_platform.h",
-    ],
-    external_deps = [
-        "absl/strings",
-        "absl/base:core_headers",
-    ],
-    public_hdrs = GPR_PUBLIC_HDRS,
-    tags = [
-        "avoid_dep",
-        "nofixdeps",
-    ],
-    visibility = ["//bazel:gpr_public_hdrs"],
-)
-
-grpc_cc_library(
     name = "cpp_impl_of",
     hdrs = ["//src/core:util/cpp_impl_of.h"],
 )
