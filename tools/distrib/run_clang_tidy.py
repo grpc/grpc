@@ -39,7 +39,7 @@ argp.add_argument(
     help="Number of CPUs to use",
 )
 argp.add_argument("--only-changed", dest="only_changed", action="store_true")
-argp.set_defaults(fix=False, only_changed=False)
+argp.set_defaults(fix=False, only_changed=True)
 args = argp.parse_args()
 
 # Explicitly passing the .clang-tidy config by reading it.
@@ -60,7 +60,7 @@ if args.only_changed:
     orig_files = set(args.files)
     actual_files = []
     output = subprocess.check_output(
-        ["git", "diff", "upstream/master", "HEAD", "--name-only"]
+        ["git", "diff", "origin/master", "HEAD", "--name-only"]
     )
     for line in output.decode("ascii").splitlines(False):
         if line in orig_files:
