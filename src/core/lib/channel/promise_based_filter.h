@@ -1222,7 +1222,12 @@ class ImplementChannelFilter : public ChannelFilter,
 };
 
 struct V3InterceptorToV2State {
-  InterActivityLatch<CallHandler> call_handler_latch;
+  // A wrapper struct, needed to default-construct CallHandler.
+  struct HandlerWrapper {
+    CallHandler handler{nullptr};
+  };
+
+  InterActivityLatch<HandlerWrapper> call_handler_latch;
 };
 
 template <>
@@ -1268,7 +1273,10 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
         state->call_handler_latch.Wait(),
         [initiator = std::move(initiator), call_args = std::move(call_args),
          next_promise_factory =
-             std::move(next_promise_factory)](CallHandler handler) mutable {
+             std::move(next_promise_factory)](
+                 V3InterceptorToV2State::HandlerWrapper
+                     handler_wrapper) mutable {
+          CallHandler handler = std::move(handler_wrapper.handler);
           // Intercept all pipes from v2 API.
           Pipe<MessageHandle> client_to_server_messages;
           auto* client_to_server_messages_receiver =
@@ -1286,10 +1294,9 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
           auto initiator_client_to_server_promise =
               [initiator, client_to_server_messages_receiver]() mutable {
                 return ForEach(
-                    *client_to_server_messages_receiver,
-                    [initiator](NextResult<MessageHandle> message) mutable {
-                      // FIXME: check if message has a value
-                      return initiator.PushMessage(std::move(*message));
+                    std::move(*client_to_server_messages_receiver),
+                    [initiator](MessageHandle message) mutable {
+                      return initiator.PushMessage(std::move(message));
                     });
               };
           // Initiator-side promise for server-to-client data.
@@ -1307,10 +1314,11 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                               ForEach(
                                   MessagesFrom(initiator),
                                   [server_to_client_messages_sender](
-                                      NextResult<MessageHandle> message) {
-                                    // FIXME: check if message has a value
-                                    return server_to_client_messages_sender->
-                                        Push(std::move(*message));
+                                      MessageHandle message) {
+                                    return Map(
+                                        server_to_client_messages_sender
+                                            ->Push(std::move(message)),
+                                        [](bool x) { return StatusFlag(x); });
                                   }));
               };
           // Handler-side promise for client-to-server data.
@@ -1318,10 +1326,11 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
               [handler, &client_to_server_messages]() mutable {
                 return ForEach(
                     MessagesFrom(handler),
-                    [&](NextResult<MessageHandle> message) {
-                      // FIXME: check if message has a value
-                      return client_to_server_messages.sender.Push(
-                          std::move(*message));
+                    [&](MessageHandle message) {
+                      return Map(
+                          client_to_server_messages.sender.Push(
+                              std::move(message)),
+                          [](bool x) { return StatusFlag(x); });
                     });
               };
           // Handler-side promise for server-to-client data.
@@ -1338,9 +1347,8 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                            }),
                     ForEach(
                         server_to_client_messages.receiver,
-                        [handler](NextResult<MessageHandle> message) mutable {
-                          // FIXME: check if message has a value
-                          return handler.PushMessage(std::move(*message));
+                        [handler](MessageHandle message) mutable {
+                          return handler.PushMessage(std::move(message));
                         }));
               };
           // Now put it all together.
@@ -1370,7 +1378,7 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
       // Start the call.
       CallHandler handler = unstarted_call_handler.StartCall();
       // Pass call handler to the latch.
-      state->call_handler_latch.Set(std::move(handler));
+      state->call_handler_latch.Set({std::move(handler)});
     }
 
     void Orphaned() override {}
