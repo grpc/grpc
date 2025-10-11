@@ -34,16 +34,12 @@ except ImportError:
         MIN_PYTHON_VERSION = 3.9
         MAX_PYTHON_VERSION = 3.14
 
-<<<<<<< HEAD
 try:
     import grpc_version
 except ImportError:
     # Fallback when grpc_version is not available in build environment
     class grpc_version:
         VERSION = "1.76.0.dev0"
-=======
-import grpc_version
->>>>>>> 1e2e63f4125 (Fix Windows Python distribution test issues)
 
 CLASSIFIERS = [
     "Development Status :: 5 - Production/Stable",
