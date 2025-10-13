@@ -58,6 +58,7 @@ processing requests via debug logs. Available tracers include:
   - plugin_credentials - Plugin credentials.
   - priority_lb - Priority LB policy.
   - queue_pluck - Completion queue plucking. The `api` tracer must be enabled for this flag to have any effect.
+  - random_subsetting_lb - Random subsetting load balancing policy.
   - resource_quota - Resource quota objects internals.
   - retry - Call retries.
   - ring_hash_lb - Ring hash load balancing policy.
