@@ -40,6 +40,7 @@ class Ph2InsecureFixture : public InsecureFixture {
     // At Least one of the 2 peers MUST be a PH2
     GRPC_DCHECK(IsPromiseBasedHttp2ClientTransportEnabled() ||
                 IsPromiseBasedHttp2ServerTransportEnabled());
+    grpc_tracer_set_enabled("http2_ph2_transport", true);
   }
 
   ChannelArgs MutateClientArgs(ChannelArgs args) override {
