@@ -2084,6 +2084,7 @@ grpc_cc_library(
         "//src/core:gpr_spinlock",
         "//src/core:grpc_check",
         "//src/core:if",
+        "//src/core:inter_activity_latch",
         "//src/core:iomgr_fwd",
         "//src/core:latch",
         "//src/core:latent_see",
@@ -3763,6 +3764,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_fwd",
         "//src/core:channel_stack_type",
+        "//src/core:filter_args",
     ],
 )
 
@@ -4044,6 +4046,8 @@ grpc_cc_library(
         "//src/core:error_utils",
         "//src/core:exec_ctx_wakeup_scheduler",
         "//src/core:experiments",
+        "//src/core:filter_args",
+        "//src/core:filter_chain",
         "//src/core:gpr_manual_constructor",
         "//src/core:grpc_backend_metric_data",
         "//src/core:grpc_channel_idle_filter",

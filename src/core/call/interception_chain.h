@@ -24,6 +24,7 @@
 #include "src/core/call/call_filters.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/call/metadata.h"
+#include "src/core/filter/filter_args.h"
 #include "src/core/util/ref_counted.h"
 
 namespace grpc_core {
@@ -87,6 +88,12 @@ class HijackedCall final {
 // *Interceptor* in the call chain (without having been processed by any
 // intervening filters) -- note that this is commonly not useful (not enough
 // guarantees), and so it's usually better to Hijack and examine the metadata.
+//
+// TODO(roth, ctiller): Change this API such that it always deals with
+// the client initial metadata after it has been processed by any
+// preceding filters.  We don't actually have any use-case for seeing
+// the unprocessed initial metadata and deciding to do a PassThrough(),
+// and its presence in this API is confusing.
 
 class Interceptor : public UnstartedCallDestination {
  public:
@@ -136,6 +143,9 @@ class Interceptor : public UnstartedCallDestination {
  private:
   friend class InterceptionChainBuilder;
 
+  template <typename Derived>
+  friend class V3InterceptorToV2Bridge;
+
   RefCountedPtr<UnstartedCallDestination> wrapped_destination_;
   RefCountedPtr<CallFilters::Stack> filter_stack_;
 };
@@ -171,10 +181,10 @@ class InterceptionChainBuilder final {
   // call_filters.h.
   template <typename T>
   absl::enable_if_t<sizeof(typename T::Call) != 0, InterceptionChainBuilder&>
-  Add() {
+  Add(RefCountedPtr<const FilterConfig> config = nullptr) {
     if (!status_.ok()) return *this;
-    auto filter =
-        T::Create(args_, {FilterInstanceId(FilterTypeId<T>()), blackboard_});
+    auto filter = T::Create(args_, {FilterInstanceId(FilterTypeId<T>()),
+                                    std::move(config), blackboard_});
     if (!filter.ok()) {
       status_ = filter.status();
       return *this;
@@ -189,9 +199,9 @@ class InterceptionChainBuilder final {
   template <typename T>
   absl::enable_if_t<std::is_base_of<Interceptor, T>::value,
                     InterceptionChainBuilder&>
-  Add() {
-    AddInterceptor(
-        T::Create(args_, {FilterInstanceId(FilterTypeId<T>()), blackboard_}));
+  Add(RefCountedPtr<const FilterConfig> config = nullptr) {
+    AddInterceptor(T::Create(args_, {FilterInstanceId(FilterTypeId<T>()),
+                                     std::move(config), blackboard_}));
     return *this;
   };
 
