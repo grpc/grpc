@@ -50,3 +50,9 @@ version = {attr = "grpc_version.VERSION"}
     "credentials/server1.pem",
 ]
 "tests" = ["tests.json"]
+
+[tool.coverage.run]
+# Default core on Python3.14+ has changed to sysmon which doesn't support
+# plugins. So force coverage to use the C Tracer to support plugins on
+# Python 3.14+
+core = "ctrace"
