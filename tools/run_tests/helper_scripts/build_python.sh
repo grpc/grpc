@@ -154,21 +154,21 @@ pip_install --upgrade setuptools==77.0.1
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.
 pip_install_dir() {
-  PWD=$(pwd)
+  WORKDIR=$(pwd)
   cd "$1"
   ($VENV_PYTHON setup.py build_ext -c "$TOOLCHAIN" || true)
   $VENV_PYTHON -m pip freeze
   $VENV_PYTHON -m pip install --no-deps --no-build-isolation .
-  cd "$PWD"
+  cd "$WORKDIR"
 }
 
 pip_install_dir_and_deps() {
-  PWD=$(pwd)
+  WORKDIR=$(pwd)
   cd "$1"
   ($VENV_PYTHON setup.py build_ext -c "$TOOLCHAIN" || true)
   $VENV_PYTHON -m pip freeze
   $VENV_PYTHON -m pip install --no-build-isolation .
-  cd "$PWD"
+  cd "$WORKDIR"
 }
 
 pip_install -U gevent
@@ -237,9 +237,6 @@ pip_install coverage==7.2.0 oauth2client==4.1.0 \
             rsa==4.0 absl-py==1.4.0 \
             opentelemetry-sdk==1.21.0
 
-# working dir after the last pip_install_dir changes to
-# "$ROOT/src/python/grpcio_testing". So reset to $ROOT
-cd $ROOT
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" preprocess
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" build_package_protos
 pip_install_dir "$ROOT/src/python/grpcio_tests"
