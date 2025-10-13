@@ -39,7 +39,6 @@ grpc_cc_test(
         "absl/flags:flag",
         "absl/log:check",
         "gtest",
-        "opencensus-stats-test",
     ],
     tags = [
         # Uses opencensus features not enabled internally.
@@ -52,6 +51,7 @@ grpc_cc_test(
         "//:lb_load_reporter",
         "//src/core:lb_server_load_reporting_filter",
         "//test/core/test_util:grpc_test_util",
+        "//third_party/opencensus/stats:test_utils",
     ],
 )
 

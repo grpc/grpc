@@ -3097,7 +3097,6 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/time",
-        "opencensus-stats",
         "opencensus-tags",
         "opencensus-tags-context_util",
         "opencensus-trace",
@@ -3129,6 +3128,7 @@ grpc_cc_library(
         "//src/core:slice_refcount",
         "//src/core:sync",
         "//src/core:tcp_tracer",
+        "//third_party/opencensus/stats",
     ],
 )
 
