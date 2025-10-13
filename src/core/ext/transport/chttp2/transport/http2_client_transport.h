@@ -424,7 +424,7 @@ class Http2ClientTransport final : public ClientTransport,
     DCHECK(error_type != Http2Status::Http2ErrorType::kOk);
 
     if (error_type == Http2Status::Http2ErrorType::kStreamError) {
-      LOG(ERROR) << "Stream Error: " << status.DebugString();
+      GRPC_HTTP2_CLIENT_ERROR_DLOG << "Stream Error: " << status.DebugString();
       DCHECK(stream_id.has_value());
       BeginCloseStream(
           LookupStream(stream_id.value()),
@@ -432,7 +432,8 @@ class Http2ClientTransport final : public ClientTransport,
           ServerMetadataFromStatus(status.GetAbslStreamError()), whence);
       return absl::OkStatus();
     } else if (error_type == Http2Status::Http2ErrorType::kConnectionError) {
-      LOG(ERROR) << "Connection Error: " << status.DebugString();
+      GRPC_HTTP2_CLIENT_ERROR_DLOG << "Connection Error: "
+                                   << status.DebugString();
       absl::Status absl_status = status.GetAbslConnectionError();
       MaybeSpawnCloseTransport(std::move(status), whence);
       return absl_status;
