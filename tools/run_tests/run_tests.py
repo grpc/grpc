@@ -1282,7 +1282,7 @@ class Sanity(object):
                 environ["DISABLE_BAZEL_WRAPPER"] = "true"
             return [
                 self.config.job_spec(
-                    cmd["script"].split(),
+                    cmd["script"].split() + self.args.script_args,
                     timeout_seconds=90 * 60,
                     environ=environ,
                     cpu_cost=cmd.get("cpu_cost", 1),
@@ -1845,6 +1845,12 @@ argp.add_argument(
     default=[],
     action="append",
     help="Extra arguments that will be passed to the cmake configure command. Only works for C/C++.",
+)
+argp.add_argument(
+    "--script_extra_args",
+    default=[],
+    action="append",
+    help="Extra arguments that will be passed to the underlying test scripts. Currently only works for Sanity scripts.",
 )
 args = argp.parse_args()
 

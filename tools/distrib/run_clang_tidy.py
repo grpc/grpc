@@ -39,7 +39,7 @@ argp.add_argument(
     help="Number of CPUs to use",
 )
 argp.add_argument("--only-changed", dest="only_changed", action="store_true")
-argp.set_defaults(fix=False, only_changed=True)
+argp.set_defaults(fix=False, only_changed=False)
 args = argp.parse_args()
 
 # Explicitly passing the .clang-tidy config by reading it.
