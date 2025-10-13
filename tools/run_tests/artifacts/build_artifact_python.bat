@@ -41,13 +41,16 @@ set ARTIFACT_DIR=%cd%\%ARTIFACTS_OUT%
 @rem Set up gRPC Python tools
 python tools\distrib\python\make_grpcio_tools.py
 
+set SHORT_TMP_DIR="T:\t"
+if not exist %SHORT_TMP_DIR% mkdir %SHORT_TMP_DIR%
+
 @rem Build gRPC Python extensions
 @rem Verified that the `setup.py build_ext` command still works and will not be
 @rem deprecated on Oct 31,2025, hence leaving unchanged
-python setup.py build_ext -c %EXT_COMPILER% || goto :error
+python setup.py build_ext -c %EXT_COMPILER% --build-temp %SHORT_TMP_DIR% || goto :error
 
 pushd tools\distrib\python\grpcio_tools
-python setup.py build_ext -c %EXT_COMPILER% || goto :error
+python setup.py build_ext -c %EXT_COMPILER% --build-temp %SHORT_TMP_DIR% || goto :error
 popd
 
 @rem Build gRPC Python distributions
