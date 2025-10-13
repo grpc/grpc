@@ -147,6 +147,50 @@ module GRPC
     end
   end
 
+  # A standard client interceptor that applies authentication metadata to an RPC.
+  # It does so by reading credential state from the call's channel object.
+  class ClientAuthInterceptor < ClientInterceptor
+    def initialize
+      super()
+    end
+
+    def request_response(request:, call:, method:, metadata:)
+      apply_metadata_from_channel(call.channel, metadata, method)
+      yield
+    end
+
+    def client_streamer(requests:, call:, method:, metadata:)
+      apply_metadata_from_channel(call.channel, metadata, method)
+      yield
+    end
+
+    def server_streamer(request:, call:, method:, metadata:)
+      apply_metadata_from_channel(call.channel, metadata, method)
+      yield
+    end
+
+    def bidi_streamer(requests:, call:, method:, metadata:)
+      apply_metadata_from_channel(call.channel, metadata, method)
+      yield
+    end
+
+    private
+    def apply_credentials_from_channel(channel, metadata, method)
+      call_credentials = channel.call_credentials
+      return unless call_credentials
+
+      call_credentials.each do |call_credential|
+        auth_metadata = call_credential.get_metadata(
+          service_url: channel.target,
+          method_name: method
+        )
+        metadata.merge!(auth_metadata) if auth_metadata
+      end
+    rescue => e
+      raise GRPC::Unavailable.new("Failed to get call credentials: #{e.message}", cause: e)
+    end
+  end
+
   ##
   # Represents the context in which an interceptor runs. Used to provide an
   # injectable mechanism for handling interception. This is an EXPERIMENTAL API.
