@@ -156,12 +156,20 @@ def _bazel_name_to_file_path(name):
     return None
 
 
+# TODO(sergiitk): remove after all CI run on python3.9+, use str.removeprefix
+def _removeprefix(input: str, prefix: str, /) -> str:
+    if input.startswith(prefix):
+        return input[len(prefix) :]
+    else:
+        return input[:]
+
+
 def _bazel_proto_name_to_file_path(proto_target: str):
     """Transform bazel proto target to local file name."""
     for bazel_prefix, local_path in BAZEL_PROTO_REFERENCE_LINK:
         if proto_target.startswith(bazel_prefix):
             normalized_name = (
-                proto_target.removeprefix(bazel_prefix)
+                _removeprefix(proto_target, bazel_prefix)
                 .lstrip("/")
                 .replace(":", "/")
             )
@@ -181,7 +189,9 @@ def _generate_deps_file_content():
     for name in cc_files_output:
         if name.endswith(".proto"):
             filepath = _bazel_proto_name_to_file_path(name)
-            if filepath and os.path.exists(filepath.removeprefix("grpc_root/")):
+            if filepath and os.path.exists(
+                _removeprefix(filepath, "grpc_root/")
+            ):
                 cc_files.add(filepath)
         if name.endswith(".cc") or (
             name.endswith(".c")
