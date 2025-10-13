@@ -56,3 +56,6 @@ version = {attr = "grpc_version.VERSION"}
 # plugins. So force coverage to use the C Tracer to support plugins on
 # Python 3.14+
 core = "ctrace"
+plugins = [
+    "Cython.Coverage"
+]
