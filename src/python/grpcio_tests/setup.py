@@ -30,7 +30,7 @@ import grpc_version
 import python_version
 
 INSTALL_REQUIRES = (
-    "coverage>=4.0",
+    "coverage>=7.10.0",
     "grpcio>={version}".format(version=grpc_version.VERSION),
     "grpcio-channelz>={version}".format(version=grpc_version.VERSION),
     "grpcio-status>={version}".format(version=grpc_version.VERSION),
