@@ -29,8 +29,6 @@ grpc_cc_library(
     external_deps = [
         "absl/strings",
         "gtest",
-        "opencensus-stats",
-        "opencensus-stats-test",
         "opencensus-tags",
         "opencensus-trace",
         "opencensus-with-tag-map",
@@ -46,6 +44,8 @@ grpc_cc_library(
         "//test/cpp/end2end:test_service_impl",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
+        "//third_party/opencensus/stats",
+        "//third_party/opencensus/stats:test_utils",
     ],
 )
 
@@ -57,11 +57,9 @@ grpc_cc_test(
     external_deps = [
         "absl/log:log",
         "gtest",
-        "opencensus-stats-test",
         "opencensus-tags",
         "opencensus-with-tag-map",
         "absl/strings",
-        "opencensus-stats",
     ],
     flaky = True,
     linkstatic = True,
@@ -81,6 +79,8 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
+        "//third_party/opencensus/stats",
+        "//third_party/opencensus/stats:test_utils",
     ],
 )
 
@@ -92,8 +92,6 @@ grpc_cc_test(
     external_deps = [
         "absl/strings",
         "gtest",
-        "opencensus-stats",
-        "opencensus-stats-test",
         "opencensus-tags",
         "opencensus-with-tag-map",
     ],
@@ -113,5 +111,7 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
+        "//third_party/opencensus/stats",
+        "//third_party/opencensus/stats:test_utils",
     ],
 )

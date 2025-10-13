@@ -57,5 +57,6 @@ grpc_cc_test(
         "//src/core:grpc_xds_channel_stack_modifier",
         "//src/core:iomgr_fwd",
         "//test/core/test_util:grpc_test_util",
+        "//third_party/opencensus/stats",
     ],
 )
