@@ -1848,8 +1848,8 @@ argp.add_argument(
 )
 argp.add_argument(
     "--script_extra_args",
-    default=[],
-    action="extend",
+    default="",
+    type=str,
     nargs="+",
     help="Extra arguments that will be passed to the underlying test scripts. Currently only works for Sanity scripts.",
 )
