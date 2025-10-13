@@ -27,7 +27,6 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "src/core/tsi/ssl_transport_security_utils.h"
 #include "src/core/util/json/json_object_loader.h"
@@ -38,8 +37,12 @@
 namespace grpc_core {
 namespace {
 constexpr absl::string_view kAllowedUse = "x509-svid";
+<<<<<<< HEAD
 constexpr absl::string_view kRsaKty = "RSA";
 constexpr absl::string_view kEcKty = "EC";
+=======
+constexpr absl::string_view kAllowedKty = "RSA";
+>>>>>>> master
 constexpr absl::string_view kCertificatePrefix =
     "-----BEGIN CERTIFICATE-----\n";
 constexpr absl::string_view kCertificateSuffix = "\n-----END CERTIFICATE-----";
