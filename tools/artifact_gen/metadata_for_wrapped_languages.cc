@@ -30,6 +30,11 @@
 #include "absl/strings/str_replace.h"
 #include "absl/strings/str_split.h"
 #include "utils.h"
+#include <curl/curl.h>
+#include <sstream>
+#include <string>
+
+#define PROTOC_BASE_MINOR 26
 
 namespace {
 void AddCApis(nlohmann::json& config) {
@@ -389,6 +394,81 @@ void ExpandSupportedPythonVersions(nlohmann::json& config) {
   settings["min_python_version"] = supported_python_versions.front();
   settings["max_python_version"] = supported_python_versions.back();
 }
+
+static size_t WriteCallback(void* contents, size_t size, size_t nmemb,
+                            void* userp) {
+  size_t real_size = size * nmemb;
+  auto* mem = static_cast<std::string*>(userp);
+  mem->append(static_cast<char*>(contents), real_size);
+  return real_size;
+}
+
+bool FetchVersionJsonFromPyPI(const std::string& version) {
+  const std::string url = "https://pypi.org/pypi/protobuf/" + version + "/json";
+  std::string buffer;
+  CURL* curl = curl_easy_init();
+  if (!curl) {
+    LOG(INFO) << "[protobuf version fetch] curl_easy_init failed.";
+    return false;
+  }
+  curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+  curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+  curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3L);
+  curl_easy_setopt(curl, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+  curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+  curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
+  CURLcode res = curl_easy_perform(curl);
+  long http_code = 0;
+  curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &http_code);
+  curl_easy_cleanup(curl);
+  if (res == CURLE_OK && http_code == 200) {
+    LOG(INFO) << "[protobuf version fetch] Found version at: " << url;
+    return true;
+  }
+  LOG(INFO) << "[protobuf version fetch] Failed for: " << url
+            << " (code: " << http_code << ")";
+  return false;
+}
+
+int ComputePythonMajorFromProtocMinor(int protoc_minor) {
+  if (protoc_minor <= PROTOC_BASE_MINOR)
+    return 4;
+  else
+    return 4 + ((protoc_minor - PROTOC_BASE_MINOR) / 4) + 1;
+}
+
+void FetchProtobufVersionBounds(nlohmann::json& config) {
+  auto& settings = config["settings"];
+  std::string protobuf_version_str = settings["protobuf_version"];
+  std::vector<std::string> protobuf_version_parts =
+      absl::StrSplit(protobuf_version_str, '.');
+  CHECK_EQ(protobuf_version_parts.size(), 3u);
+  int protoc_major, protoc_minor, protoc_patch;
+  CHECK(absl::SimpleAtoi(protobuf_version_parts[0], &protoc_major));
+  CHECK(absl::SimpleAtoi(protobuf_version_parts[1], &protoc_minor));
+  CHECK(absl::SimpleAtoi(protobuf_version_parts[2], &protoc_patch));
+  LOG(INFO) << "[protobuf version fetch] Parsing version: "
+            << protobuf_version_str;
+  int expected_py_major = ComputePythonMajorFromProtocMinor(protoc_minor);
+  std::array<int, 3> candidates = {expected_py_major, expected_py_major - 1,
+                                   expected_py_major + 1};
+  for (int py_major : candidates) {
+    std::string py_protobuf_version_str =
+        absl::StrCat(py_major, ".", protoc_minor, ".", protoc_patch);
+    if (FetchVersionJsonFromPyPI(py_protobuf_version_str)) {
+      settings["python_protobuf_min_version"] = py_protobuf_version_str;
+      settings["python_protobuf_max_version"] =
+          std::to_string(py_major + 1) + ".0.0";
+      ;
+      LOG(INFO) << "[protobuf version fetch] Matched PyPI version: "
+                << settings["python_protobuf_min_version"];
+      LOG(INFO) << "[protobuf version fetch] Dependency bounds: >= "
+                << settings["python_protobuf_min_version"] << ", < "
+                << settings["python_protobuf_max_version"];
+      return;
+    }
+  }
+}
 }  // namespace
 
 void AddMetadataForWrappedLanguages(nlohmann::json& config) {
@@ -400,4 +480,5 @@ void AddMetadataForWrappedLanguages(nlohmann::json& config) {
   ExpandVersion(config);
   AddSupportedBazelVersions(config);
   ExpandSupportedPythonVersions(config);
+  FetchProtobufVersionBounds(config); 
 }
