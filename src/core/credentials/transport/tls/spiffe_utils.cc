@@ -20,10 +20,8 @@
 
 #include <openssl/x509.h>
 
-#include <set>
 #include <string>
 
-#include "absl/base/no_destructor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -37,12 +35,8 @@
 namespace grpc_core {
 namespace {
 constexpr absl::string_view kAllowedUse = "x509-svid";
-<<<<<<< HEAD
 constexpr absl::string_view kRsaKty = "RSA";
 constexpr absl::string_view kEcKty = "EC";
-=======
-constexpr absl::string_view kAllowedKty = "RSA";
->>>>>>> master
 constexpr absl::string_view kCertificatePrefix =
     "-----BEGIN CERTIFICATE-----\n";
 constexpr absl::string_view kCertificateSuffix = "\n-----END CERTIFICATE-----";
