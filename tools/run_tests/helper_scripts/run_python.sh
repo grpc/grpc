@@ -23,6 +23,9 @@ PYTHON="$(pwd)/${1:-py39/bin/python}"
 
 ROOT=$(pwd)
 
+$PYTHON -m pip freeze
+$PYTHON -m coverage --version
+
 # TODO(ssreenithi): find pyproject.toml/pytest equivalent
 COVERAGE_CORE="ctrace" $PYTHON "$ROOT/src/python/grpcio_tests/setup.py" "$2"
 
