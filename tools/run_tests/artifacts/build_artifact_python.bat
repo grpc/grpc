@@ -41,25 +41,35 @@ set ARTIFACT_DIR=%cd%\%ARTIFACTS_OUT%
 @rem Set up gRPC Python tools
 python tools\distrib\python\make_grpcio_tools.py
 
+@rem Use time for randomness
+set "CURRENT_TIME=%TIME%"
+echo %CURRENT_TIME%
+
+@rem remove : and . from the time
+set "CLEAN_TIME=%CURRENT_TIME::=%"
+set "CLEAN_TIME=%CLEAN_TIME:.=%"
+
+@rem create a unique id using last 7 digits
+set "UNIQUE_ID=%CLEAN_TIME:~-7%"
+
 @rem Creates a unique, short, and concurrency-safe directory like T:\b12345
-set "SHORT_TMP_DIR=T:\b%RANDOM%"
+set "SHORT_TMP_DIR=T:\t%UNIQUE_ID%"
 mkdir "%SHORT_TMP_DIR%"
 @rem if not exist %SHORT_TMP_DIR% mkdir %SHORT_TMP_DIR%\Release
 
 @rem Build gRPC Python extensions
-@rem Verified that the `setup.py build_ext` command still works and will not be
-@rem deprecated on Oct 31,2025, hence leaving unchanged
-python setup.py build_ext -c %EXT_COMPILER% --build-temp %SHORT_TMP_DIR% || goto :error
+@rem python -m build will itself build extensions, no need to build separately
+@rem python setup.py build_ext -c %EXT_COMPILER% --build-temp %SHORT_TMP_DIR% || goto :error
 
-pushd tools\distrib\python\grpcio_tools
-python setup.py build_ext -c %EXT_COMPILER% --build-temp %SHORT_TMP_DIR% || goto :error
-popd
+@rem pushd tools\distrib\python\grpcio_tools
+@rem python setup.py build_ext -c %EXT_COMPILER% --build-temp %SHORT_TMP_DIR% || goto :error
+@rem popd
 
 @rem Build gRPC Python distributions
-python -m build --wheel || goto :error
+python -m build --wheel -C--build-option="--build-temp=%SHORT_TMP_DIR%" || goto :error
 
 pushd tools\distrib\python\grpcio_tools
-python -m build --wheel || goto :error
+python -m build --wheel -C--build-option="--build-temp=%SHORT_TMP_DIR%" || goto :error
 popd
 
 @rem Ensure the generate artifacts are valid.
