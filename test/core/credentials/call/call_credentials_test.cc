@@ -1323,8 +1323,9 @@ TEST_F(CredentialsTest, TestStsCredsLoadTokenFailure) {
       "token-exchange,Authority:foo.com:5555,OAuth2TokenFetcherCredentials}";
   ExecCtx exec_ctx;
   auto state = RequestMetadataState::NewInstance(
-      absl::UnavailableError("INTERNAL:Failed to load file: invalid_path due to "
-                          "error(fdopen): No such file or directory"),
+      absl::UnavailableError(
+          "INTERNAL:Failed to load file: invalid_path due to "
+          "error(fdopen): No such file or directory"),
       {});
   char* test_signed_jwt_path = write_tmp_jwt_file(test_signed_jwt);
   grpc_sts_credentials_options options = {
@@ -4530,7 +4531,8 @@ TEST_F(GcpServiceAccountIdentityCredentialsTest, FailsWithHttpStatus400) {
       MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
   GRPC_CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
-      absl::UnauthenticatedError("HTTP token fetch failed with status 400"), "");
+      absl::UnauthenticatedError("HTTP token fetch failed with status 400"),
+      "");
   state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
