@@ -66,10 +66,10 @@ mkdir "%SHORT_TMP_DIR%"
 @rem popd
 
 @rem Build gRPC Python distributions
-python -m build --wheel -C--build-option="--build-temp=%SHORT_TMP_DIR%" || goto :error
+python -m build --wheel -C--build-temp="%SHORT_TMP_DIR%" || goto :error
 
 pushd tools\distrib\python\grpcio_tools
-python -m build --wheel -C--build-option="--build-temp=%SHORT_TMP_DIR%" || goto :error
+python -m build --wheel -C--build-temp="%SHORT_TMP_DIR%" || goto :error
 popd
 
 @rem Ensure the generate artifacts are valid.
