@@ -183,7 +183,9 @@ void DoRpc(const std::string& server_addr,
   } else {
     EXPECT_FALSE(result.ok());
     EXPECT_EQ(result.error_code(), failure_code);
-#if GTEST_USES_POSIX_RE
+// we need regex for this, and the test matches BoringSSL 1.1.1 expected error
+// codes.
+#if GTEST_USES_POSIX_RE && OPENSSL_VERSION_NUMBER < 0x30000000L
     EXPECT_THAT(result.error_message(),
                 ::testing::MatchesRegex(failure_message_regex));
 #endif
