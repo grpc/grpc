@@ -1282,7 +1282,7 @@ class Sanity(object):
                 environ["DISABLE_BAZEL_WRAPPER"] = "true"
             return [
                 self.config.job_spec(
-                    [script + self.args.script_extra_args for script in cmd["script"].split()],
+                    cmd["script"].split() + shlex.split(self.args.script_extra_args or ""),
                     timeout_seconds=90 * 60,
                     environ=environ,
                     cpu_cost=cmd.get("cpu_cost", 1),
