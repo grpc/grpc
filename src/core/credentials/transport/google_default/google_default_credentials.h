@@ -63,8 +63,6 @@ class grpc_google_default_channel_credentials
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
       const char* target, grpc_core::ChannelArgs* args) override;
 
-  grpc_core::ChannelArgs update_arguments(grpc_core::ChannelArgs args) override;
-
   static grpc_core::UniqueTypeName Type();
 
   grpc_core::UniqueTypeName type() const override { return Type(); }
