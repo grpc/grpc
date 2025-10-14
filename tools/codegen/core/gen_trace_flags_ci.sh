@@ -16,6 +16,7 @@ set -ex
 # cd to repo root
 dir=$(dirname "${0}")
 cd "${dir}/../../.."
+PWD=$(pwd)
 
 tools/bazel run --cxxopt='-std=c++17' tools/codegen/core:generate_trace_flags -- \
  --trace_flags_yaml=$(pwd)/src/core/lib/debug/trace_flags.yaml \
@@ -23,7 +24,7 @@ tools/bazel run --cxxopt='-std=c++17' tools/codegen/core:generate_trace_flags --
  --cpp_path=$(pwd)/src/core/lib/debug/trace_flags.cc \
  --markdown_path=$(pwd)/doc/trace_flags.md
 
-CHANGED_FILES="src/core/lib/debug/*" TEST="" tools/distrib/clang_format_code.sh
+CHANGED_FILES="${PWD}/src/core/lib/debug/*" TEST="" tools/distrib/clang_format_code.sh
 
 output=$(git diff)
 if [[ -n "$output" ]]; then
