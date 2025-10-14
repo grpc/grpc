@@ -34,7 +34,8 @@ tools/distrib/gen_experiments_and_format.sh
 tools/bazel run --cxxopt='-std=c++17' tools/codegen/core:generate_trace_flags -- \
  --trace_flags_yaml=$(pwd)/src/core/lib/debug/trace_flags.yaml \
  --header_path=$(pwd)/src/core/lib/debug/trace_flags.h \
- --cpp_path=$(pwd)/src/core/lib/debug/trace_flags.cc
+ --cpp_path=$(pwd)/src/core/lib/debug/trace_flags.cc \
+ --markdown_path=$(pwd)/doc/trace_flags.md
 tools/bazel run --cxxopt='-std=c++17' -c opt tools/codegen/core/gen_stats:gen_stats_data -- \
     --stats_data_yaml=$(pwd)/src/core/telemetry/stats_data.yaml \
     --header_path=$(pwd)/src/core/telemetry/stats_data.h \
