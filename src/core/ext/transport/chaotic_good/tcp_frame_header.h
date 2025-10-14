@@ -16,9 +16,9 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_TCP_FRAME_HEADER_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_TCP_FRAME_HEADER_H
 
-#include "absl/strings/str_cat.h"
 #include "src/core/channelz/property_list.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core::chaotic_good {
 

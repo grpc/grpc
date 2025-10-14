@@ -26,10 +26,10 @@
 #include <initializer_list>
 #include <optional>
 
-#include "absl/strings/string_view.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/bitset.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

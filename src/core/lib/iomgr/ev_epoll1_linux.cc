@@ -40,10 +40,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/block_annotate.h"
@@ -59,6 +55,10 @@
 #include "src/core/util/strerror.h"
 #include "src/core/util/string.h"
 #include "src/core/util/useful.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 
 static grpc_wakeup_fd global_wakeup_fd;
 static bool g_is_shutdown = true;

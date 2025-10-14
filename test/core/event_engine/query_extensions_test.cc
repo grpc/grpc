@@ -19,10 +19,10 @@
 
 #include <string>
 
+#include "src/core/util/crash.h"
+#include "gtest/gtest.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
-#include "gtest/gtest.h"
-#include "src/core/util/crash.h"
 
 namespace grpc_event_engine {
 namespace experimental {

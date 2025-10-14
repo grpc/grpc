@@ -17,10 +17,10 @@
 #include <string>
 #include <vector>
 
-#include "absl/strings/string_view.h"
-#include "absl/strings/strip.h"
 #include "src/core/channelz/zviz/layout.h"
 #include "src/core/channelz/zviz/property_list.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 
 namespace grpc_zviz {
 

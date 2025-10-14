@@ -21,13 +21,13 @@
 
 #include <thread>
 
+#include "src/core/util/host_port.h"
+#include "src/proto/grpc/testing/istio_echo.pb.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
 #include "absl/synchronization/blocking_counter.h"
-#include "src/core/util/host_port.h"
-#include "src/proto/grpc/testing/istio_echo.pb.h"
 
 using proto::EchoRequest;
 using proto::EchoResponse;

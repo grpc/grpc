@@ -21,10 +21,10 @@
 #include <grpc/support/port_platform.h>
 #include <stddef.h>
 
-#include "absl/strings/string_view.h"
 #include "src/core/service_config/service_config_parser.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/useful.h"
+#include "absl/strings/string_view.h"
 
 // The main purpose of the code here is to parse the service config in
 // JSON form, which will look like this:

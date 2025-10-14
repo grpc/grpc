@@ -20,11 +20,11 @@
 
 #include <string>
 
+#include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
-#include "gtest/gtest.h"
-#include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 namespace {
