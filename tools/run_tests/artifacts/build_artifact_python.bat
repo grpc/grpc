@@ -41,8 +41,10 @@ set ARTIFACT_DIR=%cd%\%ARTIFACTS_OUT%
 @rem Set up gRPC Python tools
 python tools\distrib\python\make_grpcio_tools.py
 
-set SHORT_TMP_DIR="T:\t"
-if not exist %SHORT_TMP_DIR% mkdir %SHORT_TMP_DIR%
+@rem Creates a unique, short, and concurrency-safe directory like T:\b12345
+set "SHORT_TMP_DIR=T:\b%RANDOM%"
+mkdir "%SHORT_TMP_DIR%"
+@rem if not exist %SHORT_TMP_DIR% mkdir %SHORT_TMP_DIR%\Release
 
 @rem Build gRPC Python extensions
 @rem Verified that the `setup.py build_ext` command still works and will not be
