@@ -235,7 +235,6 @@ grpc_objc_library(
         ":grpc_objc_interface",
         ":grpc_objc_interface_legacy",
         ":rx_library",
-        "//:grpc_objc",
     ],
 )
 
