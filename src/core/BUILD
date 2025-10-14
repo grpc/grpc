@@ -3331,7 +3331,6 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
-        "address_sorting",
         "cares",
     ],
     deps = [
@@ -3360,6 +3359,7 @@ grpc_cc_library(
         "//:parse_address",
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
+        "//third_party/address_sorting",
     ],
 )
 
@@ -10433,13 +10433,16 @@ grpc_cc_library(
     ],
     deps = [
         "avl",
+        "channelz_property_list",
         "dual_ref_counted",
         "grpc_check",
         "histogram",
         "match",
         "per_cpu",
         "ref_counted",
+        "single_set_ptr",
         "sync",
+        "//:channelz",
         "//:gpr",
         "//:ref_counted_ptr",
     ],
@@ -10652,6 +10655,7 @@ grpc_cc_library(
         "time",
         "upb_utils",
         "//:channelz_property_list_upb",
+        "//:channelz_property_list_upbdefs",
         "//:channelz_upb",
         "//:gpr",
         "//:protobuf_any_upb",

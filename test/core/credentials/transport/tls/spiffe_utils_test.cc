@@ -388,7 +388,7 @@ TEST(SpiffeBundle, WrongKtyFails) {
       absl::InvalidArgumentError(
           "errors validating JSON: "
           "[field:trust_domains[\"example.com\"].keys[0].kty error:value must "
-          "be one of \"EC\", \"RSA\", got \"DSA\"]"));
+          "be \"RSA\", got \"EC\"]"));
 }
 
 TEST(SpiffeBundle, WrongKidFails) {

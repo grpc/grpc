@@ -24,6 +24,7 @@
 #include <cstdint>
 #include <utility>
 
+#include "absl/container/flat_hash_set.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control_manager.h"
@@ -86,8 +87,7 @@ namespace http2 {
 // Max Party Slots (Always): 3
 // Max Promise Slots (Worst Case): 4
 
-// Experimental : This is just the initial skeleton of class
-// and it is functions. The code will be written iteratively.
+// Experimental : The code will be written iteratively.
 // Do not use or edit any of these functions unless you are
 // familiar with the PH2 project (Moving chttp2 to promises.)
 // TODO(tjagtap) : [PH2][P3] : Update the experimental status of the code before
@@ -130,7 +130,6 @@ class Http2ClientTransport final : public ClientTransport,
   void StopConnectivityWatch(ConnectivityStateWatcherInterface* watcher);
 
   void Orphan() override;
-  void AbortWithError();
 
   RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
     return const_cast<channelz::BaseNode*>(
@@ -206,15 +205,8 @@ class Http2ClientTransport final : public ClientTransport,
   // Writing to the endpoint.
 
   // Write time sensitive control frames to the endpoint. Frames sent from here
-  // will be:
-  // 1. SETTINGS - This is first because for a new connection, SETTINGS MUST be
-  //               the first frame to be written onto a connection as per
-  //               RFC9113.
-  // 2. GOAWAY - This is second because if this is the final GoAway, then we may
-  //             not need to send anything else to the peer.
-  // 3. PING and PING acks.
-  // 4. WINDOW_UPDATE
-  // 5. Custom gRPC security frame
+  // will be GOAWAY, SETTINGS, PING and PING acks, WINDOW_UPDATE and
+  // Custom gRPC security frame.
   // These frames are written to the endpoint in a single endpoint write. If any
   // module needs to take action after the write (for cases like spawning
   // timeout promises), they MUST plug the call in the
@@ -244,7 +236,7 @@ class Http2ClientTransport final : public ClientTransport,
 
   // Processes the flow control action and take necessary steps.
   void ActOnFlowControlAction(const chttp2::FlowControlAction& action,
-                              uint32_t stream_id);
+                              RefCountedPtr<Stream> stream);
 
   RefCountedPtr<Party> general_party_;
 
@@ -432,7 +424,7 @@ class Http2ClientTransport final : public ClientTransport,
     DCHECK(error_type != Http2Status::Http2ErrorType::kOk);
 
     if (error_type == Http2Status::Http2ErrorType::kStreamError) {
-      LOG(ERROR) << "Stream Error: " << status.DebugString();
+      GRPC_HTTP2_CLIENT_ERROR_DLOG << "Stream Error: " << status.DebugString();
       DCHECK(stream_id.has_value());
       BeginCloseStream(
           LookupStream(stream_id.value()),
@@ -440,7 +432,8 @@ class Http2ClientTransport final : public ClientTransport,
           ServerMetadataFromStatus(status.GetAbslStreamError()), whence);
       return absl::OkStatus();
     } else if (error_type == Http2Status::Http2ErrorType::kConnectionError) {
-      LOG(ERROR) << "Connection Error: " << status.DebugString();
+      GRPC_HTTP2_CLIENT_ERROR_DLOG << "Connection Error: "
+                                   << status.DebugString();
       absl::Status absl_status = status.GetAbslConnectionError();
       MaybeSpawnCloseTransport(std::move(status), whence);
       return absl_status;
@@ -515,6 +508,8 @@ class Http2ClientTransport final : public ClientTransport,
       Serialize(absl::Span<Http2Frame>(&settings_frame.value(), 1), output_buf);
     }
   }
+
+  void MaybeGetWindowUpdateFrames(SliceBuffer& output_buf);
 
   // Ping Helper functions
   Duration NextAllowedPingInterval() {
@@ -702,6 +697,7 @@ class Http2ClientTransport final : public ClientTransport,
   MemoryOwner memory_owner_;
   chttp2::TransportFlowControl flow_control_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
+  absl::flat_hash_set<uint32_t> window_update_list_;
 };
 
 // Since the corresponding class in CHTTP2 is about 3.9KB, our goal is to

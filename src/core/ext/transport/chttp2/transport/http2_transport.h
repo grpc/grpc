@@ -51,6 +51,9 @@ namespace http2 {
 #define GRPC_HTTP2_CLIENT_DLOG \
   DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
 
+#define GRPC_HTTP2_CLIENT_ERROR_DLOG \
+  LOG_IF(ERROR, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
+
 #define GRPC_HTTP2_COMMON_DLOG \
   DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
 
@@ -82,6 +85,15 @@ RefCountedPtr<channelz::SocketNode> CreateChannelzSocketNode(
 void ProcessOutgoingDataFrameFlowControl(
     chttp2::StreamFlowControl& stream_flow_control,
     uint32_t flow_control_tokens_consumed);
+
+ValueOrHttp2Status<chttp2::FlowControlAction>
+ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame,
+                                    chttp2::TransportFlowControl& flow_control,
+                                    RefCountedPtr<Stream> stream);
+
+void ProcessIncomingWindowUpdateFrameFlowControl(
+    const Http2WindowUpdateFrame& frame,
+    chttp2::TransportFlowControl& flow_control, RefCountedPtr<Stream> stream);
 
 }  // namespace http2
 }  // namespace grpc_core
