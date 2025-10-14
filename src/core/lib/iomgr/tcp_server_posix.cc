@@ -91,7 +91,12 @@ using ::grpc_event_engine::experimental::SliceBuffer;
 static void finish_shutdown(grpc_tcp_server* s) {
   gpr_mu_lock(&s->mu);
   GRPC_CHECK(s->shutdown);
-  grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_ending);
+  if (grpc_core::ExecCtx::Get() == nullptr) {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_ending);
+  } else {
+    grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_ending);
+  }
   gpr_mu_unlock(&s->mu);
   if (s->shutdown_complete != nullptr) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, s->shutdown_complete,
