@@ -174,7 +174,8 @@ TEST_P(HeaderAssemblerDisassemblerTest, ValidOneHeaderFrame) {
   // 3. Validate the contents of the Metadata.
   const uint32_t stream_id = 0x7fffffff;
   HPackParser parser;
-  HeaderAssembler assembler(stream_id, allow_true_binary_metadata());
+  HeaderAssembler assembler(allow_true_binary_metadata());
+  assembler.SetStreamId(stream_id);
   ValidateOneHeader(stream_id, parser, assembler, /*end_headers=*/true);
 }
 
@@ -183,7 +184,8 @@ TEST_P(HeaderAssemblerDisassemblerTest, InvalidAssemblerNotReady1) {
   // If we try to read the Header before END_HEADERS is received.
   const uint32_t stream_id = 0x12345678;
   HPackParser parser;
-  HeaderAssembler assembler(stream_id, allow_true_binary_metadata());
+  HeaderAssembler assembler(allow_true_binary_metadata());
+  assembler.SetStreamId(stream_id);
   Http2HeaderFrame header = GenerateHeaderFrame(
       kSimpleRequestEncoded, stream_id, /*end_headers=*/false,
       /*end_stream=*/false);
@@ -272,7 +274,8 @@ TEST_P(HeaderAssemblerDisassemblerTest, ValidOneHeaderTwoContinuationFrame) {
   // 3. Validate the contents of the Metadata.
   const uint32_t stream_id = 0x78654321;
   HPackParser parser;
-  HeaderAssembler assembler(stream_id, allow_true_binary_metadata());
+  HeaderAssembler assembler(allow_true_binary_metadata());
+  assembler.SetStreamId(stream_id);
   ValidateOneHeaderTwoContinuation(stream_id, parser, assembler,
                                    /*end_stream=*/false);
 }
@@ -282,7 +285,8 @@ TEST_P(HeaderAssemblerDisassemblerTest, InvalidAssemblerNotReady2) {
   // If we try to read the Metadata before END_HEADERS is received.
   const uint32_t stream_id = 1111;
   HPackParser parser;
-  HeaderAssembler assembler(stream_id, allow_true_binary_metadata());
+  HeaderAssembler assembler(allow_true_binary_metadata());
+  assembler.SetStreamId(stream_id);
   Http2HeaderFrame header =
       GenerateHeaderFrame(kSimpleRequestEncodedPart1, stream_id,
                           /*end_headers=*/false, /*end_stream=*/false);
@@ -333,7 +337,8 @@ TEST_P(HeaderAssemblerDisassemblerTest, ValidTwoHeaderFrames) {
   // 4. Do all the above for the second HEADERS frame.
   const uint32_t stream_id = 1111;
   HPackParser parser;
-  HeaderAssembler assembler(stream_id, allow_true_binary_metadata());
+  HeaderAssembler assembler(allow_true_binary_metadata());
+  assembler.SetStreamId(stream_id);
   ValidateOneHeader(stream_id, parser, assembler, /*end_headers=*/true);
   ValidateOneHeader(stream_id, parser, assembler, /*end_headers=*/true);
 }
@@ -347,20 +352,13 @@ TEST_P(HeaderAssemblerDisassemblerTest, ValidMultipleHeadersAndContinuations) {
   // 4. Do all the above for the second set of Header and Continuation frames.
   const uint32_t stream_id = 1111;
   HPackParser parser;
-  HeaderAssembler assembler(stream_id, allow_true_binary_metadata());
+  HeaderAssembler assembler(allow_true_binary_metadata());
+  assembler.SetStreamId(stream_id);
   ValidateOneHeaderTwoContinuation(stream_id, parser, assembler,
                                    /*end_stream=*/false);
   ValidateOneHeaderTwoContinuation(stream_id, parser, assembler,
                                    /*end_stream=*/true);
 }
-
-// TODO(tjagtap) : [PH2][P3] : Validate later. Edge case
-//  Is this a valid case?
-//  First we receive one HEADER frame with END_HEADER . This is initial metadata
-//  The stream has no Messages. Hence no DATA Frames
-//  Then we receive one HEADER frame with END_HEADER and END_STREAM.
-//  We Append both and parse both because we read them together.
-//  Is this a valid case?
 
 ///////////////////////////////////////////////////////////////////////////////
 // HeaderDisassembler - Helpers
@@ -370,7 +368,8 @@ constexpr uint32_t kEncodedMetadataLen = 166;
 Arena::PoolPtr<grpc_metadata_batch> GenerateMetadata(
     const uint32_t stream_id, bool is_trailing_metadata, HPackParser& parser,
     const bool allow_true_binary_metadata) {
-  HeaderAssembler assembler(stream_id, allow_true_binary_metadata);
+  HeaderAssembler assembler(allow_true_binary_metadata);
+  assembler.SetStreamId(stream_id);
   Http2HeaderFrame header = GenerateHeaderFrame(
       kSimpleRequestEncoded, stream_id, /*end_headers=*/true,
       /*end_stream=*/is_trailing_metadata);
@@ -483,8 +482,9 @@ void OneMetadataInThreeFrames(const uint32_t stream_id,
 
 TEST_P(HeaderAssemblerDisassemblerTest, OneInitialMetadataInOneFrame) {
   const uint32_t stream_id = 1;
-  HeaderDisassembler disassembler(stream_id, /*is_trailing_metadata=*/false,
+  HeaderDisassembler disassembler(/*is_trailing_metadata=*/false,
                                   allow_true_binary_metadata());
+  disassembler.SetStreamId(stream_id);
   HPackParser parser;
   HPackCompressor encoder;
   OneMetadataInOneFrame(stream_id, disassembler,
@@ -494,8 +494,9 @@ TEST_P(HeaderAssemblerDisassemblerTest, OneInitialMetadataInOneFrame) {
 
 TEST_P(HeaderAssemblerDisassemblerTest, OneInitialMetadataInThreeFrames) {
   const uint32_t stream_id = 3;
-  HeaderDisassembler disassembler(stream_id, /*is_trailing_metadata=*/false,
+  HeaderDisassembler disassembler(/*is_trailing_metadata=*/false,
                                   allow_true_binary_metadata());
+  disassembler.SetStreamId(stream_id);
   HPackParser parser;
   HPackCompressor encoder;
   OneMetadataInThreeFrames(stream_id, disassembler,
@@ -508,8 +509,9 @@ TEST_P(HeaderAssemblerDisassemblerTest, OneInitialMetadataInThreeFrames) {
 
 TEST_P(HeaderAssemblerDisassemblerTest, OneTrailingMetadataInOneFrame) {
   const uint32_t stream_id = 0x7fffffff;
-  HeaderDisassembler disassembler(stream_id, /*is_trailing_metadata=*/true,
+  HeaderDisassembler disassembler(/*is_trailing_metadata=*/true,
                                   allow_true_binary_metadata());
+  disassembler.SetStreamId(stream_id);
   HPackParser parser;
   HPackCompressor encoder;
   OneMetadataInOneFrame(stream_id, disassembler, /*is_trailing_metadata=*/true,
@@ -519,8 +521,9 @@ TEST_P(HeaderAssemblerDisassemblerTest, OneTrailingMetadataInOneFrame) {
 
 TEST_P(HeaderAssemblerDisassemblerTest, OneTrailingMetadataInThreeFrames) {
   const uint32_t stream_id = 0x0fffffff;
-  HeaderDisassembler disassembler(stream_id, /*is_trailing_metadata=*/true,
+  HeaderDisassembler disassembler(/*is_trailing_metadata=*/true,
                                   allow_true_binary_metadata());
+  disassembler.SetStreamId(stream_id);
   HPackParser parser;
   HPackCompressor encoder;
   OneMetadataInThreeFrames(stream_id, disassembler,
@@ -533,12 +536,12 @@ TEST_P(HeaderAssemblerDisassemblerTest, OneTrailingMetadataInThreeFrames) {
 
 TEST_P(HeaderAssemblerDisassemblerTest, OneInitialAndOneTrailingMetadata) {
   const uint32_t stream_id = 0x1111;
-  HeaderDisassembler disassembler_initial(stream_id,
-                                          /*is_trailing_metadata=*/false,
+  HeaderDisassembler disassembler_initial(/*is_trailing_metadata=*/false,
                                           allow_true_binary_metadata());
-  HeaderDisassembler disassembler_trailing(stream_id,
-                                           /*is_trailing_metadata=*/true,
+  disassembler_initial.SetStreamId(stream_id);
+  HeaderDisassembler disassembler_trailing(/*is_trailing_metadata=*/true,
                                            allow_true_binary_metadata());
+  disassembler_trailing.SetStreamId(stream_id);
   HPackParser parser;
   HPackCompressor encoder;
   OneMetadataInOneFrame(stream_id, disassembler_initial,
@@ -554,12 +557,12 @@ TEST_P(HeaderAssemblerDisassemblerTest, OneInitialAndOneTrailingMetadata) {
 TEST_P(HeaderAssemblerDisassemblerTest,
        OneInitialAndOneTrailingMetadataInFourFrames) {
   const uint32_t stream_id = 0x1111;
-  HeaderDisassembler disassembler_initial(stream_id,
-                                          /*is_trailing_metadata=*/false,
+  HeaderDisassembler disassembler_initial(/*is_trailing_metadata=*/false,
                                           allow_true_binary_metadata());
-  HeaderDisassembler disassembler_trailing(stream_id,
-                                           /*is_trailing_metadata=*/true,
+  disassembler_initial.SetStreamId(stream_id);
+  HeaderDisassembler disassembler_trailing(/*is_trailing_metadata=*/true,
                                            allow_true_binary_metadata());
+  disassembler_trailing.SetStreamId(stream_id);
   HPackParser parser;
   HPackCompressor encoder;
   OneMetadataInThreeFrames(stream_id, disassembler_initial,
@@ -585,8 +588,9 @@ TEST_P(HeaderAssemblerDisassemblerTest, Reversibility) {
 
   // Pass metadata to disassembler for frame generation
   HPackCompressor encoder;
-  HeaderDisassembler disassembler(stream_id, /*is_trailing_metadata=*/false,
+  HeaderDisassembler disassembler(/*is_trailing_metadata=*/false,
                                   allow_true_binary_metadata());
+  disassembler.SetStreamId(stream_id);
   disassembler.PrepareForSending(std::move(metadata), encoder);
   EXPECT_EQ(disassembler.TestOnlyGetMainBufferLength(), kEncodedMetadataLen);
   EXPECT_TRUE(disassembler.HasMoreData());
@@ -598,7 +602,8 @@ TEST_P(HeaderAssemblerDisassemblerTest, Reversibility) {
     EXPECT_EQ(is_end_headers, true);
 
     // Give the frame back to the assembler
-    HeaderAssembler assembler(stream_id, allow_true_binary_metadata());
+    HeaderAssembler assembler(allow_true_binary_metadata());
+    assembler.SetStreamId(stream_id);
     Http2HeaderFrame& header = std::get<Http2HeaderFrame>(frame);
     Http2Status status = assembler.AppendHeaderFrame(std::move(header));
     Http2Settings default_settings;

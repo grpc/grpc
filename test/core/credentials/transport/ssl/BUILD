@@ -41,6 +41,7 @@ grpc_fuzz_test(
         "//:grpc_core_credentials_header",
         "//:grpc_security_base",
         "//src/core:default_event_engine",
+        "//src/core:grpc_check",
         "//src/core:notification",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",

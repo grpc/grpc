@@ -25,7 +25,6 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
-#include <gtest/gtest.h>
 #include <openssl/rsa.h>
 #include <stdlib.h>
 #include <string.h>
@@ -38,6 +37,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_replace.h"
 #include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/credentials/call/composite/composite_call_credentials.h"
 #include "src/core/credentials/call/external/aws_external_account_credentials.h"
 #include "src/core/credentials/call/external/external_account_credentials.h"

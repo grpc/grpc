@@ -146,6 +146,8 @@ class HeaderAssembler {
 
     // Validate
     GRPC_DCHECK_EQ(is_ready_, true);
+    GRPC_DCHECK_GT(stream_id_, 0u)
+        << "Stream id must be set before reading metadata.";
 
     // Generate the gRPC Metadata from buffer_
     // RFC9113 :  A receiver MUST terminate the connection with a connection
@@ -198,12 +200,11 @@ class HeaderAssembler {
   // This value MUST be checked before calling ReadMetadata()
   bool IsReady() const { return is_ready_; }
 
-  explicit HeaderAssembler(const uint32_t stream_id,
-                           const bool allow_true_binary_metadata_acked)
+  explicit HeaderAssembler(const bool allow_true_binary_metadata_acked)
       : header_in_progress_(false),
         is_ready_(false),
         allow_true_binary_metadata_acked_(allow_true_binary_metadata_acked),
-        stream_id_(stream_id) {}
+        stream_id_(0) {}
 
   ~HeaderAssembler() = default;
 
@@ -211,6 +212,12 @@ class HeaderAssembler {
   HeaderAssembler& operator=(HeaderAssembler&& rvalue) = delete;
   HeaderAssembler(const HeaderAssembler&) = delete;
   HeaderAssembler& operator=(const HeaderAssembler&) = delete;
+
+  void SetStreamId(const uint32_t stream_id) {
+    GRPC_DCHECK_EQ(stream_id_, 0u);
+    GRPC_DCHECK_NE(stream_id, 0u);
+    stream_id_ = stream_id;
+  }
 
  private:
   void Cleanup() {
@@ -222,7 +229,7 @@ class HeaderAssembler {
   bool header_in_progress_;
   bool is_ready_;
   GRPC_UNUSED const bool allow_true_binary_metadata_acked_;
-  const uint32_t stream_id_;
+  uint32_t stream_id_;
   SliceBuffer buffer_;
 };
 
@@ -244,6 +251,9 @@ class HeaderDisassembler {
 
   Http2Frame GetNextFrame(const uint32_t max_frame_length,
                           bool& out_end_headers) {
+    GRPC_DCHECK_GT(stream_id_, 0u) << "Stream id must be set before getting "
+                                      "next Header/Continuation frame.";
+
     if (buffer_.Length() == 0 || is_done_) {
       GRPC_DCHECK(false) << "Calling code must check size using HasMoreData() "
                             "before GetNextFrame()";
@@ -273,10 +283,9 @@ class HeaderDisassembler {
 
   // A separate HeaderDisassembler object MUST be made for Initial Metadata and
   // Trailing Metadata
-  explicit HeaderDisassembler(const uint32_t stream_id,
-                              const bool is_trailing_metadata,
+  explicit HeaderDisassembler(const bool is_trailing_metadata,
                               const bool allow_true_binary_metadata_peer)
-      : stream_id_(stream_id),
+      : stream_id_(0),
         end_stream_(is_trailing_metadata),
         did_send_header_frame_(false),
         is_done_(false),
@@ -290,9 +299,14 @@ class HeaderDisassembler {
   HeaderDisassembler& operator=(const HeaderDisassembler&) = delete;
 
   size_t TestOnlyGetMainBufferLength() const { return buffer_.Length(); }
+  void SetStreamId(const uint32_t stream_id) {
+    GRPC_DCHECK_EQ(stream_id_, 0u);
+    GRPC_DCHECK_NE(stream_id, 0u);
+    stream_id_ = stream_id;
+  }
 
  private:
-  const uint32_t stream_id_;
+  uint32_t stream_id_;
   const bool end_stream_;
   bool did_send_header_frame_;
   bool is_done_;  // Protect against the same disassembler from being used twice

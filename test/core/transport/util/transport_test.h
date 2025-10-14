@@ -42,7 +42,8 @@ class TransportTest : public ::testing::Test {
   ChannelArgs GetChannelArgs() {
     return CoreConfiguration::Get()
         .channel_args_preconditioning()
-        .PreconditionChannelArgs(nullptr);
+        .PreconditionChannelArgs(nullptr)
+        .Set(GRPC_ARG_ENABLE_CHANNELZ, true);
   }
 
   RefCountedPtr<Arena> MakeArena() {

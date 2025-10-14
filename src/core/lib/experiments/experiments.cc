@@ -88,6 +88,10 @@ const char* const additional_constraints_free_large_allocator = "{}";
 const char* const description_fuse_filters =
     "If set, individual filters are merged into fused filters";
 const char* const additional_constraints_fuse_filters = "{}";
+const char* const description_graceful_external_connection_failure =
+    "If set, handles external connection failures gracefully";
+const char* const additional_constraints_graceful_external_connection_failure =
+    "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -171,11 +175,6 @@ const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
-const char* const description_server_global_callbacks_ownership =
-    "If set, server global callbacks ownership is fixed to not be owned by "
-    "gRPC.";
-const char* const additional_constraints_server_global_callbacks_ownership =
-    "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
@@ -258,6 +257,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"fuse_filters", description_fuse_filters,
      additional_constraints_fuse_filters, nullptr, 0, false, false},
+    {"graceful_external_connection_failure",
+     description_graceful_external_connection_failure,
+     additional_constraints_graceful_external_connection_failure, nullptr, 0,
+     true, false},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -318,10 +321,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_secure_endpoint_offload_large_writes,
      additional_constraints_secure_endpoint_offload_large_writes,
      required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
-    {"server_global_callbacks_ownership",
-     description_server_global_callbacks_ownership,
-     additional_constraints_server_global_callbacks_ownership, nullptr, 0, true,
-     true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
@@ -420,6 +419,10 @@ const char* const additional_constraints_free_large_allocator = "{}";
 const char* const description_fuse_filters =
     "If set, individual filters are merged into fused filters";
 const char* const additional_constraints_fuse_filters = "{}";
+const char* const description_graceful_external_connection_failure =
+    "If set, handles external connection failures gracefully";
+const char* const additional_constraints_graceful_external_connection_failure =
+    "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -503,11 +506,6 @@ const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
-const char* const description_server_global_callbacks_ownership =
-    "If set, server global callbacks ownership is fixed to not be owned by "
-    "gRPC.";
-const char* const additional_constraints_server_global_callbacks_ownership =
-    "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
@@ -590,6 +588,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"fuse_filters", description_fuse_filters,
      additional_constraints_fuse_filters, nullptr, 0, false, false},
+    {"graceful_external_connection_failure",
+     description_graceful_external_connection_failure,
+     additional_constraints_graceful_external_connection_failure, nullptr, 0,
+     true, false},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -650,10 +652,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_secure_endpoint_offload_large_writes,
      additional_constraints_secure_endpoint_offload_large_writes,
      required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
-    {"server_global_callbacks_ownership",
-     description_server_global_callbacks_ownership,
-     additional_constraints_server_global_callbacks_ownership, nullptr, 0, true,
-     true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
@@ -752,6 +750,10 @@ const char* const additional_constraints_free_large_allocator = "{}";
 const char* const description_fuse_filters =
     "If set, individual filters are merged into fused filters";
 const char* const additional_constraints_fuse_filters = "{}";
+const char* const description_graceful_external_connection_failure =
+    "If set, handles external connection failures gracefully";
+const char* const additional_constraints_graceful_external_connection_failure =
+    "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -835,11 +837,6 @@ const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
-const char* const description_server_global_callbacks_ownership =
-    "If set, server global callbacks ownership is fixed to not be owned by "
-    "gRPC.";
-const char* const additional_constraints_server_global_callbacks_ownership =
-    "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
@@ -922,6 +919,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"fuse_filters", description_fuse_filters,
      additional_constraints_fuse_filters, nullptr, 0, false, false},
+    {"graceful_external_connection_failure",
+     description_graceful_external_connection_failure,
+     additional_constraints_graceful_external_connection_failure, nullptr, 0,
+     true, false},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -982,10 +983,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_secure_endpoint_offload_large_writes,
      additional_constraints_secure_endpoint_offload_large_writes,
      required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
-    {"server_global_callbacks_ownership",
-     description_server_global_callbacks_ownership,
-     additional_constraints_server_global_callbacks_ownership, nullptr, 0, true,
-     true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,

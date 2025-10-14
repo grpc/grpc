@@ -257,6 +257,7 @@ grpc_cc_benchmark(
         ":call_spine_benchmarks",
         "//:gpr",
         "//:grpc",
+        "//:grpc_base",
         "//src/core:default_event_engine",
         "//src/core:resource_quota",
     ],
@@ -310,6 +311,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:grpc_check",
         "//src/core:metadata_batch",
         "//src/core:parsed_metadata",
         "//test/core/test_util:grpc_test_util",
