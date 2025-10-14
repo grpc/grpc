@@ -24,7 +24,7 @@ PYTHON="$(pwd)/${1:-py39/bin/python}"
 ROOT=$(pwd)
 
 # TODO(ssreenithi): find pyproject.toml/pytest equivalent
-$PYTHON "$ROOT/src/python/grpcio_tests/setup.py" "$2"
+COVERAGE_CORE="ctrace" $PYTHON "$ROOT/src/python/grpcio_tests/setup.py" "$2"
 
 mkdir -p "$ROOT/reports"
 rm -rf "$ROOT/reports/python-coverage"
