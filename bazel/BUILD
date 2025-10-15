@@ -112,11 +112,6 @@ package_group(
 )
 
 package_group(
-    name = "gpr_public_hdrs",
-    packages = [],
-)
-
-package_group(
     name = "grpc_public_hdrs",
     packages = [],
 )
