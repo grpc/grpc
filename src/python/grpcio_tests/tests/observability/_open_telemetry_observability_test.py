@@ -36,7 +36,7 @@ from opentelemetry.sdk.metrics.export import MetricExporter
 from opentelemetry.sdk.metrics.export import MetricsData
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
 from opentelemetry.sdk.trace import ReadableSpan, TracerProvider
-from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor, SpanExporter
 from opentelemetry.sdk.trace.export.in_memory_span_exporter import InMemorySpanExporter
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
@@ -137,11 +137,9 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         if self._server:
             self._server.stop(0)
 
-    def testRecordUnaryUnaryUseContextManager(self):
+    def testMetricsForUnaryUnaryCallWithContextManager(self):
         with grpc_observability.OpenTelemetryPlugin(
             meter_provider=self._meter_provider,
-            tracer_provider=self._tracer_provider,
-            text_map_propagator=TraceContextTextMapPropagator()
         ):
             server, port = _test_server.start_server()
             self._server = server
@@ -150,6 +148,16 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics.keys())
 
+    def testTracesForUnaryUnaryCallWithContextManager(self):
+        with grpc_observability.OpenTelemetryPlugin(
+            tracer_provider=self._tracer_provider,
+            text_map_propagator=TraceContextTextMapPropagator()
+        ):
+            server, port = _test_server.start_server()
+            self._server = server
+            _test_server.unary_unary_call(port=port)
+
+        self._validate_spans_exist(self._span_exporter)
         self._validate_spans(
             spans=self._span_exporter.get_finished_spans(),
             expected_span_size=3,
@@ -163,9 +171,8 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             ]
         )
 
-    def testRecordUnaryUnaryUseContextManagerForTwoServerCalls(self):
+    def testTracesForTwoUnaryUnaryCallsWithContextManager(self):
         with grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._meter_provider,
             tracer_provider=self._tracer_provider,
             text_map_propagator=TraceContextTextMapPropagator()
         ):
@@ -174,13 +181,11 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             _test_server.unary_unary_call(port=port)
             _test_server.unary_unary_call(port=port)
 
-        self._validate_metrics_exist(self.all_metrics)
-        self._validate_all_metrics_names(self.all_metrics.keys())
-
         # for each unary unary server call, 3 spans are created, which must be validated separately
         first_rpc_spans = self._span_exporter.get_finished_spans()[0:3]
         second_rpc_spans = self._span_exporter.get_finished_spans()[3:]
 
+        self._validate_spans_exist(self._span_exporter)
         self._validate_spans(
             spans=first_rpc_spans,
             expected_span_size=3,
@@ -206,11 +211,9 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             ]
         )
 
-    def testRecordUnaryUnaryUseGlobalInit(self):
+    def testMetricsForUnaryUnaryCallWithGlobalInit(self):
         otel_plugin = grpc_observability.OpenTelemetryPlugin(
             meter_provider=self._meter_provider,
-            tracer_provider=self._tracer_provider,
-            text_map_propagator=TraceContextTextMapPropagator()
         )
         otel_plugin.register_global()
 
@@ -220,7 +223,20 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
 
         self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics.keys())
+        otel_plugin.deregister_global()
 
+    def testTracesForUnaryUnaryCallWithGlobalInit(self):
+        otel_plugin = grpc_observability.OpenTelemetryPlugin(
+            tracer_provider=self._tracer_provider,
+            text_map_propagator=TraceContextTextMapPropagator()
+        )
+        otel_plugin.register_global()
+
+        server, port = _test_server.start_server()
+        self._server = server
+        _test_server.unary_unary_call(port=port)
+
+        self._validate_spans_exist(self._span_exporter)
         self._validate_spans(
             spans=self._span_exporter.get_finished_spans(),
             expected_span_size=3,
@@ -409,11 +425,9 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         with self.assertRaisesRegex(AssertionError, "No metrics was exported"):
             self._validate_metrics_exist(self.all_metrics)
 
-    def testRecordUnaryStream(self):
+    def testMetricsForUnaryStreamCall(self):
         with grpc_observability.OpenTelemetryPlugin(
             meter_provider=self._meter_provider,
-            tracer_provider=self._tracer_provider,
-            text_map_propagator=TraceContextTextMapPropagator()
         ):
             server, port = _test_server.start_server()
             self._server = server
@@ -422,6 +436,16 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics.keys())
 
+    def testTracesForUnaryStreamCall(self):
+        with grpc_observability.OpenTelemetryPlugin(
+            tracer_provider=self._tracer_provider,
+            text_map_propagator=TraceContextTextMapPropagator()
+        ):
+            server, port = _test_server.start_server()
+            self._server = server
+            _test_server.unary_stream_call(port=port)
+
+        self._validate_spans_exist(self._span_exporter)
         self._validate_spans(
             spans=self._span_exporter.get_finished_spans(),
             expected_span_size=3,
@@ -443,11 +467,9 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             ]
         )
 
-    def testRecordStreamUnary(self):
+    def testMetricsForStreamUnaryCall(self):
         with grpc_observability.OpenTelemetryPlugin(
             meter_provider=self._meter_provider,
-            tracer_provider=self._tracer_provider,
-            text_map_propagator=TraceContextTextMapPropagator()
         ):
             server, port = _test_server.start_server()
             self._server = server
@@ -456,6 +478,16 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics.keys())
 
+    def testTracesForStreamUnaryCall(self):
+        with grpc_observability.OpenTelemetryPlugin(
+            tracer_provider=self._tracer_provider,
+            text_map_propagator=TraceContextTextMapPropagator()
+        ):
+            server, port = _test_server.start_server()
+            self._server = server
+            _test_server.stream_unary_call(port=port)
+
+        self._validate_spans_exist(self._span_exporter)
         self._validate_spans(
             spans=self._span_exporter.get_finished_spans(),
             expected_span_size=3,
@@ -477,11 +509,9 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             ]
         )
 
-    def testRecordStreamStream(self):
+    def testMetricsForStreamStreamCall(self):
         with grpc_observability.OpenTelemetryPlugin(
             meter_provider=self._meter_provider,
-            tracer_provider=self._tracer_provider,
-            text_map_propagator=TraceContextTextMapPropagator()
         ):
             server, port = _test_server.start_server()
             self._server = server
@@ -490,6 +520,16 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics.keys())
 
+    def testTracesForStreamStreamCall(self):
+        with grpc_observability.OpenTelemetryPlugin(
+            tracer_provider=self._tracer_provider,
+            text_map_propagator=TraceContextTextMapPropagator()
+        ):
+            server, port = _test_server.start_server()
+            self._server = server
+            _test_server.stream_stream_call(port=port)
+
+        self._validate_spans_exist(self._span_exporter)
         self._validate_spans(
             spans=self._span_exporter.get_finished_spans(),
             expected_span_size=3,
@@ -679,6 +719,12 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
                     base_metric.name in metric_names,
                     msg=f"metric {base_metric.name} not found in exported metrics: {metric_names}!",
                 )
+
+    def _validate_spans_exist(self, span_exporter: SpanExporter):
+        # Sleep here to make sure we have at least one export from OTel SpanExporter.
+        self.assert_eventually(
+            lambda: len(span_exporter.get_finished_spans()) > 1,
+            message=lambda: f"No traces were exported",)
 
     def _validate_spans(
             self,
