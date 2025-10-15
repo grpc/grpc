@@ -25,7 +25,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/log.h"
 #include "src/core/tsi/alts/crypt/gsec.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h"
@@ -33,6 +32,7 @@
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h"
 #include "src/core/tsi/transport_security_grpc.h"
 #include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
 
 constexpr size_t kMinFrameLength = 1024;
 constexpr size_t kDefaultFrameLength = 16 * 1024;

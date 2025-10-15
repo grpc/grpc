@@ -22,11 +22,11 @@
 #include <string>
 #include <thread>
 
+#include "src/core/util/notification.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
-#include "src/core/util/notification.h"
 
 namespace grpc_event_engine::experimental {
 

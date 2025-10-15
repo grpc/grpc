@@ -14,9 +14,9 @@
 
 #include <gtest/gtest.h>
 
-#include "absl/strings/str_cat.h"
 #include "test/cpp/sleuth/tool_test.h"
 #include "test/cpp/sleuth/version.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_sleuth {
 namespace {

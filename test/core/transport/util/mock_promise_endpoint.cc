@@ -21,10 +21,10 @@
 #include <utility>
 #include <vector>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/notification.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 using EventEngineSlice = grpc_event_engine::experimental::Slice;
 using grpc_event_engine::experimental::EventEngine;

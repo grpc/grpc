@@ -16,10 +16,10 @@
 
 #include <iostream>
 
-#include "absl/status/status.h"
+#include "test/cpp/sleuth/tool.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "test/cpp/sleuth/tool.h"
+#include "absl/status/status.h"
 
 namespace grpc_sleuth {
 namespace {

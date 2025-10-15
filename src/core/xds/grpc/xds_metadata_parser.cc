@@ -19,8 +19,6 @@
 #include <utility>
 #include <variant>
 
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/address.upbdefs.h"
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb.h"
@@ -38,6 +36,8 @@
 #include "upb/message/map.h"
 #include "upb/message/message.h"
 #include "upb/text/encode.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

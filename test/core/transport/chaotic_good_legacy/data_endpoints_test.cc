@@ -31,9 +31,9 @@
 #include <google/protobuf/text_format.h>
 #include <grpc/grpc.h>
 
-#include "gtest/gtest.h"
 #include "test/core/call/yodel/yodel_test.h"
 #include "test/core/transport/util/mock_promise_endpoint.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 
