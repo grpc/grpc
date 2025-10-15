@@ -15,16 +15,6 @@
 @rem allow timing of how long the script takes to run.
 echo "!TIME!: prepare_build_windows.bat started"
 
-powershell New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
-
-if %ERRORLEVEL% neq 0 (
-    echo.
-    echo ERROR: Failed to enable Windows Long Path support in the Registry.
-    echo.
-    @rem Exit the script with the error code
-    exit /b %ERRORLEVEL%
-)
-
 @rem make sure msys binaries are preferred over cygwin binaries
 @rem set path to python3.9
 @rem set path to CMake

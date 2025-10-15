@@ -38,6 +38,16 @@
 @rem CI script path needs to be passed as arg1.
 set CI_SCRIPT_RELATIVE_TO_SRC=%1
 
+powershell New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
+
+if %ERRORLEVEL% neq 0 (
+    echo.
+    echo ERROR: Failed to enable Windows Long Path support in the Registry.
+    echo.
+    @rem Exit the script with the error code
+    exit /b %ERRORLEVEL%
+)
+
 @rem Check that this script was invoked under correct circumstances.
 IF NOT "%cd%"=="T:\src" (
   @echo "Error: Current directory must be T:\src when invoking move_src_tree_and_respawn_itself.bat"
@@ -60,7 +70,7 @@ cd altsrc
 @rem land in a directory that is going to be rsynced back to the kokoro agent.
 set GRPC_TEST_REPORT_BASE_DIR=T:\src\github\grpc
 
-echo "Invoking original CI script now."
+echo "Relaunching and invoking original CI script now in a new environment."
 @echo on
-call "%CI_SCRIPT_RELATIVE_TO_SRC%"
+start /wait cmd.exe /c "call %CI_SCRIPT_RELATIVE_TO_SRC%"
 exit /b %errorlevel%
