@@ -802,8 +802,7 @@ class ListenSocketNode final : public BaseNode {
 
 class CallNode final : public BaseNode {
  public:
-  explicit CallNode(std::string name)
-      : BaseNode(EntityType::kCall, 0, std::move(name)) {
+  explicit CallNode() : BaseNode(EntityType::kCall, 0, std::string()) {
     NodeConstructed();
   }
 

@@ -45,6 +45,13 @@ T*& ArgAsPtr(ArgType* arg) {
 }
 
 template <typename T>
+T const* const& ArgAsPtr(ArgType const* arg) {
+  static_assert(sizeof(ArgType) >= sizeof(T**),
+                "Must have ArgType of at least one pointer size");
+  return *reinterpret_cast<T const* const*>(arg);
+}
+
+template <typename T>
 struct Vtable {
   // Poll the promise, once.
   Poll<T> (*poll_once)(ArgType* arg);
@@ -54,6 +61,9 @@ struct Vtable {
   // Since we don't delete (the arena owns the memory) but we may need to call a
   // destructor, we expose this for when the ArenaPromise object is destroyed.
   void (*destroy)(ArgType* arg);
+  // Get the proto representation of the promise.
+  void (*to_proto)(const ArgType* arg, grpc_channelz_v2_Promise* promise_proto,
+                   upb_Arena* arena);
 };
 
 template <typename T>
@@ -77,10 +87,14 @@ struct Null {
 
   static void Move(ArgType*, ArgType*) {}
   static void Destroy(ArgType*) {}
+  static void ToProto(const ArgType*, grpc_channelz_v2_Promise* p, upb_Arena*) {
+    grpc_channelz_v2_Promise_set_unknown_promise(
+        p, StdStringToUpbString(TypeName<T>()));
+  }
 };
 
 template <typename T>
-const Vtable<T> Null<T>::vtable = {PollOnce, Move, Destroy};
+const Vtable<T> Null<T>::vtable = {PollOnce, Move, Destroy, ToProto};
 
 // Implementation of ImplInterface for a callable object.
 template <typename T, typename Callable>
@@ -96,11 +110,17 @@ struct AllocatedCallable {
   }
 
   static void Destroy(ArgType* arg) { Destruct(ArgAsPtr<Callable>(arg)); }
+
+  static void ToProto(const ArgType* arg,
+                      grpc_channelz_v2_Promise* promise_proto,
+                      upb_Arena* arena) {
+    PromiseAsProto(*ArgAsPtr<Callable>(arg), promise_proto, arena);
+  }
 };
 
 template <typename T, typename Callable>
 const Vtable<T> AllocatedCallable<T, Callable>::vtable = {PollOnce, Move,
-                                                          Destroy};
+                                                          Destroy, ToProto};
 
 // Implementation of ImplInterface for a small callable object (one that fits
 // within the ArgType arg)
@@ -119,10 +139,18 @@ struct Inlined {
   static void Destroy(ArgType* arg) {
     Destruct(reinterpret_cast<Callable*>(arg));
   }
+
+  static void ToProto(const ArgType* arg,
+                      grpc_channelz_v2_Promise* promise_proto,
+                      upb_Arena* arena) {
+    PromiseAsProto(*reinterpret_cast<Callable const*>(arg), promise_proto,
+                   arena);
+  }
 };
 
 template <typename T, typename Callable>
-const Vtable<T> Inlined<T, Callable>::vtable = {PollOnce, Move, Destroy};
+const Vtable<T> Inlined<T, Callable>::vtable = {PollOnce, Move, Destroy,
+                                                ToProto};
 
 // If a callable object is empty we can substitute any instance of that callable
 // for the one we call (for how could we tell the difference)?
@@ -137,6 +165,11 @@ struct SharedCallable {
 
   static Poll<T> PollOnce(ArgType* arg) {
     return (*reinterpret_cast<Callable*>(arg))();
+  }
+
+  static void ToProto(ArgType* arg, grpc_channelz_v2_Promise* promise_proto,
+                      upb_Arena* arena) {
+    PromiseAsProto(*reinterpret_cast<Callable*>(arg), promise_proto, arena);
   }
 };
 
@@ -236,6 +269,12 @@ class ArenaPromise {
 
   bool has_value() const {
     return vtable_and_arg_.vtable != &arena_promise_detail::Null<T>::vtable;
+  }
+
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    vtable_and_arg_.vtable->to_proto(&vtable_and_arg_.arg, promise_proto,
+                                     arena);
   }
 
  private:

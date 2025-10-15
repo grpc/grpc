@@ -84,7 +84,9 @@ FilterStackCall::FilterStackCall(RefCountedPtr<Arena> arena,
            std::move(arena)),
       channel_(args.channel->RefAsSubclass<Channel>()),
       cq_(args.cq),
-      stream_op_payload_{} {}
+      stream_op_payload_{} {
+  SourceConstructed();
+}
 
 grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
                                           grpc_call** out_call) {
@@ -231,6 +233,7 @@ void FilterStackCall::ReleaseCall(void* call, grpc_error_handle /*error*/) {
 
 void FilterStackCall::DestroyCall(void* call, grpc_error_handle /*error*/) {
   auto* c = static_cast<FilterStackCall*>(call);
+  c->SourceDestructing();
   c->recv_initial_metadata_.Clear();
   c->recv_trailing_metadata_.Clear();
   c->receiving_slice_buffer_.reset();
