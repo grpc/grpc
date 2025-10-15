@@ -77,6 +77,7 @@ class GlobalInstrumentsRegistry {
     kCounter,
     kHistogram,
     kCallbackGauge,
+    kUpDownCounter,
   };
   using InstrumentID = uint32_t;
   struct GlobalInstrumentDescriptor {
@@ -202,6 +203,15 @@ class GlobalInstrumentsRegistry {
                               absl::string_view unit, bool enable_by_default) {
     return RegistrationBuilder<ValueType::kDouble,
                                InstrumentType::kCallbackGauge, 0, 0>(
+        name, description, unit, enable_by_default);
+  }
+  static RegistrationBuilder<ValueType::kUInt64, InstrumentType::kUpDownCounter,
+                             0, 0>
+  RegisterUInt64UpDownCounter(absl::string_view name,
+                              absl::string_view description,
+                              absl::string_view unit, bool enable_by_default) {
+    return RegistrationBuilder<ValueType::kUInt64,
+                               InstrumentType::kUpDownCounter, 0, 0>(
         name, description, unit, enable_by_default);
   }
 

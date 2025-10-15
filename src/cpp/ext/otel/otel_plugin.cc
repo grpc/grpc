@@ -636,6 +636,22 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
                                       descriptor.value_type));
               }
               break;
+            case grpc_core::GlobalInstrumentsRegistry::InstrumentType::
+                kUpDownCounter:
+              switch (descriptor.value_type) {
+                case grpc_core::GlobalInstrumentsRegistry::ValueType::kUInt64:
+                  instruments_data_[descriptor.index].instrument =
+                      meter->CreateInt64UpDownCounter(
+                          std::string(descriptor.name),
+                          std::string(descriptor.description),
+                          std::string(descriptor.unit));
+                  break;
+                default:
+                  grpc_core::Crash(
+                      absl::StrFormat("Unknown or unsupported value type: %d",
+                                      descriptor.value_type));
+              }
+              break;
             default:
               grpc_core::Crash(absl::StrFormat("Unknown instrument_type: %d",
                                                descriptor.instrument_type));
@@ -678,7 +694,8 @@ OpenTelemetryPluginImpl::~OpenTelemetryPluginImpl() {
                 state.get());
             state->ot_callback_registered = false;
           }
-        });
+        },
+        [](const std::unique_ptr<opentelemetry::metrics::UpDownCounter<int64_t>>&) {});
   }
 }
 

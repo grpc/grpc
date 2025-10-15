@@ -538,7 +538,8 @@ class OpenTelemetryPluginImpl
                    std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>,
                    std::unique_ptr<opentelemetry::metrics::Histogram<double>>,
                    std::unique_ptr<CallbackGaugeState<int64_t>>,
-                   std::unique_ptr<CallbackGaugeState<double>>>;
+                   std::unique_ptr<CallbackGaugeState<double>>,
+                   std::unique_ptr<opentelemetry::metrics::UpDownCounter<int64_t>>>;
   struct InstrumentData {
     Instrument instrument;
     OptionalLabelsBitSet optional_labels_bits;

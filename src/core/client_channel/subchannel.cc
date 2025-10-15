@@ -90,6 +90,42 @@ namespace grpc_core {
 
 using ::grpc_event_engine::experimental::EventEngine;
 
+const auto kMetricDisconnections =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.subchannel.disconnections",
+        "Number of times the selected subchannel becomes disconnected.",
+        "{disconnection}", false)
+        .Labels(kMetricLabelTarget)
+        .OptionalLabels("grpc.lb.backend_service", "grpc.lb.locality", "grpc.disconnect_error")
+        .Build();
+
+const auto kMetricConnectionAttemptsSucceeded =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.subchannel.connection_attempts_succeeded",
+        "Number of successful connection attempts.", "{attempt}",
+        false)
+        .Labels(kMetricLabelTarget)
+        .OptionalLabels("grpc.lb.backend_service", "grpc.lb.locality", "grpc.disconnect_error")
+        .Build();
+
+const auto kMetricConnectionAttemptsFailed =
+    GlobalInstrumentsRegistry::RegisterUInt64Counter(
+        "grpc.subchannel.connection_attempts_failed",
+        "Number of failed connection attempts.", "{attempt}",
+        false)
+        .Labels(kMetricLabelTarget)
+        .OptionalLabels("grpc.lb.backend_service", "grpc.lb.locality")
+        .Build();
+
+const auto kMetricOpenConnections =
+    GlobalInstrumentsRegistry::RegisterUInt64UpDownCounter(
+        "grpc.subchannel.open_connections",
+        "Number of open connections.", "{connection}",
+        false)
+        .Labels(kMetricLabelTarget)
+        .OptionalLabels("grpc.security_level", "grpc.lb.backend_service", "grpc.lb.locality")
+        .Build();
+
 //
 // ConnectedSubchannel
 //
