@@ -41,7 +41,7 @@ class HighContentionDomain : public InstrumentDomain<HighContentionDomain> {
 };
 
 void BM_IncrementLowContentionInstrument(benchmark::State& state) {
-  auto storage = LowContentionDomain::GetStorage();
+  auto storage = LowContentionDomain::GetStorage(GetGlobalCollectionScope({}));
   for (auto _ : state) {
     storage->Increment(LowContentionDomain::kCounter);
   }
@@ -49,7 +49,7 @@ void BM_IncrementLowContentionInstrument(benchmark::State& state) {
 BENCHMARK(BM_IncrementLowContentionInstrument)->ThreadRange(1, 64);
 
 void BM_IncrementHighContentionInstrument(benchmark::State& state) {
-  auto storage = HighContentionDomain::GetStorage();
+  auto storage = HighContentionDomain::GetStorage(GetGlobalCollectionScope({}));
   for (auto _ : state) {
     storage->Increment(HighContentionDomain::kCounter);
   }
