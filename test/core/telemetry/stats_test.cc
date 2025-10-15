@@ -24,10 +24,10 @@
 #include <memory>
 
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/telemetry/stats_data.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {

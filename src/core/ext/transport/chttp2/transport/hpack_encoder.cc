@@ -25,7 +25,6 @@
 #include <algorithm>
 #include <cstdint>
 
-#include "absl/log/log.h"
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
@@ -36,6 +35,7 @@
 #include "src/core/lib/transport/timeout_encoding.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 

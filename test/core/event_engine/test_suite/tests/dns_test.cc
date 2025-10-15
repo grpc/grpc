@@ -26,14 +26,6 @@
 #include <tuple>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -44,6 +36,14 @@
 #include "test/core/test_util/port.h"
 #include "test/cpp/util/get_grpc_test_runfile_dir.h"
 #include "test/cpp/util/subprocess.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 #ifdef GPR_WINDOWS
 #include "test/cpp/util/windows/manifest_file.h"

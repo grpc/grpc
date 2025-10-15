@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "absl/flags/flag.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_split.h"
 #include "src/core/channelz/zviz/entity.h"
 #include "src/core/channelz/zviz/format_entity_list.h"
 #include "src/core/channelz/zviz/layout_text.h"
@@ -23,6 +19,10 @@
 #include "test/cpp/sleuth/client.h"
 #include "test/cpp/sleuth/tool.h"
 #include "test/cpp/sleuth/tool_options.h"
+#include "absl/flags/flag.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
 
 ABSL_FLAG(std::optional<std::string>, channelz_target, std::nullopt,
           "Target to connect to for channelz");

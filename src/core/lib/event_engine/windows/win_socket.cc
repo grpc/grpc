@@ -17,7 +17,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log_windows.h>
 
-#include "absl/log/log.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
@@ -25,6 +24,7 @@
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
+#include "absl/log/log.h"
 
 #if defined(__MSYS__) && defined(GPR_ARCH_64)
 // Nasty workaround for nasty bug when using the 64 bits msys compiler

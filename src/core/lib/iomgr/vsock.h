@@ -24,9 +24,9 @@
 
 #include <string>
 
-#include "absl/strings/string_view.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "absl/strings/string_view.h"
 
 absl::StatusOr<std::vector<grpc_resolved_address>> grpc_resolve_vsock_address(
     absl::string_view name);

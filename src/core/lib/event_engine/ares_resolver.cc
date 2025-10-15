@@ -53,14 +53,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/log/log.h"
-#include "absl/strings/match.h"
-#include "absl/strings/numbers.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "absl/strings/substitute.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -73,6 +65,14 @@
 #include "src/core/util/host_port.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
+#include "absl/strings/match.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/substitute.h"
 #ifdef GRPC_POSIX_SOCKET_ARES_EV_DRIVER
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #endif

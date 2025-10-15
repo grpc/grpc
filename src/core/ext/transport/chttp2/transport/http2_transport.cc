@@ -22,7 +22,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/log.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/call/metadata_info.h"
 #include "src/core/channelz/channelz.h"
@@ -40,6 +39,7 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 namespace http2 {

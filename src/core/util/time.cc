@@ -23,10 +23,10 @@
 #include <string>
 #include <utility>
 
+#include "src/core/util/no_destruct.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
-#include "src/core/util/no_destruct.h"
 
 // IWYU pragma: no_include <ratio>
 

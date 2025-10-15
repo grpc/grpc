@@ -19,12 +19,12 @@
 #include <initializer_list>
 #include <utility>
 
-#include "absl/status/status.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace {

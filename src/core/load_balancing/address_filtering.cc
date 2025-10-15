@@ -21,10 +21,10 @@
 
 #include <utility>
 
-#include "absl/functional/function_ref.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/functional/function_ref.h"
 
 namespace grpc_core {
 

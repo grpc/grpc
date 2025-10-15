@@ -35,8 +35,6 @@
 
 #include <vector>
 
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/memory_allocator_factory.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
@@ -58,6 +56,8 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
 

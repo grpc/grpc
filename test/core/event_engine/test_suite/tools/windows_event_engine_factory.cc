@@ -17,8 +17,8 @@
 
 #include <memory>
 
-#include "absl/functional/any_invocable.h"
 #include "src/core/util/grpc_check.h"
+#include "absl/functional/any_invocable.h"
 
 #ifdef GPR_WINDOWS
 

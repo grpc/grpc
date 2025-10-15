@@ -21,10 +21,10 @@
 #include <optional>
 #include <vector>
 
+#include "src/core/util/grpc_check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/span.h"
-#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 

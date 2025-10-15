@@ -25,8 +25,8 @@
 #include <cstring>
 #include <vector>
 
-#include "gtest/gtest.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 namespace grpc {
 

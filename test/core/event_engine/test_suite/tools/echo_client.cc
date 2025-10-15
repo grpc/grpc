@@ -39,13 +39,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/flags/flag.h"
-#include "absl/flags/parse.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
@@ -54,6 +47,13 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/util/notification.h"
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 
 extern absl::AnyInvocable<
     std::shared_ptr<grpc_event_engine::experimental::EventEngine>(void)>

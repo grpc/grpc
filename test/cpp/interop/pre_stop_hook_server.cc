@@ -22,9 +22,9 @@
 
 #include <thread>
 
-#include "absl/strings/str_format.h"
 #include "src/core/util/sync.h"
 #include "src/proto/grpc/testing/messages.pb.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc {
 namespace testing {

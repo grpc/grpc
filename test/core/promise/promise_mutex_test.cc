@@ -17,13 +17,13 @@
 #include <memory>
 #include <optional>
 
-#include "absl/status/status.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace {

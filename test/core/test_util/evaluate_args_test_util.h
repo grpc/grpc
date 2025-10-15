@@ -22,7 +22,6 @@
 
 #include <memory>
 
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/handshaker/endpoint_info/endpoint_info_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -33,6 +32,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

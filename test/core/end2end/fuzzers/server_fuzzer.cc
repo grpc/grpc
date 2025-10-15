@@ -21,7 +21,6 @@
 #include <string>
 
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
@@ -38,6 +37,7 @@
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {

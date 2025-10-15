@@ -27,9 +27,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/strip.h"
 #include "envoy/config/core/v3/address.pb.h"
 #include "envoy/config/core/v3/base.pb.h"
 #include "envoy/config/core/v3/extension.pb.h"
@@ -48,7 +45,6 @@
 #include "envoy/type/matcher/v3/string.pb.h"
 #include "envoy/type/v3/percent.pb.h"
 #include "envoy/type/v3/range.pb.h"
-#include "gtest/gtest.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
 #include "src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h"
@@ -71,6 +67,10 @@
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
 #include "xds/type/v3/typed_struct.pb.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/strip.h"
 
 // IWYU pragma: no_include <google/protobuf/message.h>
 

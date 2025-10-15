@@ -21,10 +21,10 @@
 #include <utility>
 #include <variant>
 
+#include "src/core/util/sync.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "src/core/util/sync.h"
 
 namespace grpc_event_engine::experimental {
 

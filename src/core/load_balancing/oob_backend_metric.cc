@@ -29,9 +29,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "google/protobuf/duration.upb.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/client_channel/subchannel.h"
@@ -54,6 +51,9 @@
 #include "src/core/util/time.h"
 #include "upb/mem/arena.hpp"
 #include "xds/service/orca/v3/orca.upb.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

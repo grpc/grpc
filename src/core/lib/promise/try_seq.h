@@ -21,9 +21,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/meta/type_traits.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "src/core/lib/promise/detail/basic_seq.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/detail/seq_state.h"
@@ -31,6 +28,9 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/util/grpc_check.h"
+#include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 

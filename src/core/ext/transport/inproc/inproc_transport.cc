@@ -20,8 +20,6 @@
 #include <atomic>
 #include <memory>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
 #include "src/core/call/metadata.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/inproc/legacy_inproc_transport.h"
@@ -36,6 +34,8 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 

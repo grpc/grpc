@@ -20,9 +20,9 @@
 
 #include <cstdint>
 
-#include "absl/status/statusor.h"
 #include "src/core/channelz/property_list.h"
 #include "src/core/util/bitset.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 namespace chaotic_good {

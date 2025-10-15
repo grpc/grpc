@@ -17,8 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/strings/string_view.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_event_engine::experimental {
 

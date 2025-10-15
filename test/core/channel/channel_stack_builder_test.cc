@@ -24,14 +24,14 @@
 #include <memory>
 #include <utility>
 
-#include "absl/status/status.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace testing {

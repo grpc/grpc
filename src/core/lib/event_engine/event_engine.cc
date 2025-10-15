@@ -14,8 +14,8 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
-#include "absl/strings/str_cat.h"
 #include "src/core/telemetry/context_list_entry.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_event_engine::experimental {
 

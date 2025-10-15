@@ -19,14 +19,14 @@
 
 #include <atomic>
 
-#include "absl/strings/string_view.h"
-#include "absl/strings/strip.h"
 #include "constants.h"
 #include "metadata_exchange.h"
 #include "python_observability_context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 
 namespace grpc_observability {
 

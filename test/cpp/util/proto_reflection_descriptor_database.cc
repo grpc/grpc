@@ -20,8 +20,8 @@
 
 #include <vector>
 
-#include "absl/log/log.h"
 #include "src/core/util/crash.h"
+#include "absl/log/log.h"
 
 using grpc::reflection::v1alpha::ErrorResponse;
 using grpc::reflection::v1alpha::ListServiceResponse;

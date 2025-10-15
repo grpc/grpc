@@ -18,9 +18,9 @@
 
 #include "src/core/util/env.h"
 
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 TEST(EnvTest, SetenvGetenv) {
   const char* name = "FOO";

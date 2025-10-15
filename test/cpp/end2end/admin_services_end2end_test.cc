@@ -20,12 +20,12 @@
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
 
-#include "absl/strings/str_cat.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc {
 namespace testing {

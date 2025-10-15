@@ -20,7 +20,6 @@
 #include <cstddef>
 #include <utility>
 
-#include "absl/meta/type_traits.h"
 #include "src/core/channelz/property_list.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/util/function_signature.h"
@@ -28,6 +27,7 @@
 #include "src/proto/grpc/channelz/v2/promise.upb.h"
 #include "src/proto/grpc/channelz/v2/promise.upbdefs.h"
 #include "upb/reflection/def.hpp"
+#include "absl/meta/type_traits.h"
 
 // A Promise is a callable object that returns Poll<T> for some T.
 // Often when we're writing code that uses promises, we end up wanting to also

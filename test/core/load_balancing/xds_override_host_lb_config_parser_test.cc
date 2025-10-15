@@ -18,9 +18,6 @@
 
 #include <memory>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "gtest/gtest.h"
 #include "src/core/client_channel/client_channel_service_config.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/load_balancing/xds/xds_override_host.h"
@@ -29,6 +26,9 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/xds/grpc/xds_health_status.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 namespace testing {

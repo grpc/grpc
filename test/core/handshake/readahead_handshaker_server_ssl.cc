@@ -20,9 +20,6 @@
 
 #include <memory>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/strings/string_view.h"
-#include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_factory.h"
@@ -37,6 +34,9 @@
 #include "src/core/util/sync.h"
 #include "test/core/handshake/server_ssl_common.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/string_view.h"
 
 // The purpose of this test is to exercise the case when a
 // grpc *security_handshaker* begins its handshake with data already

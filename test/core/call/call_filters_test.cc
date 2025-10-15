@@ -16,9 +16,9 @@
 
 #include <vector>
 
+#include "test/core/promise/poll_matcher.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "test/core/promise/poll_matcher.h"
 
 using testing::Mock;
 using testing::StrictMock;

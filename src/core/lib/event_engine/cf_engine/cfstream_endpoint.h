@@ -22,7 +22,6 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <grpc/event_engine/event_engine.h>
 
-#include "absl/strings/str_format.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/cf_engine/cf_engine.h"
 #include "src/core/lib/event_engine/cf_engine/cftype_unique_ref.h"
@@ -31,6 +30,7 @@
 #include "src/core/util/host_port.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc_event_engine::experimental {
 

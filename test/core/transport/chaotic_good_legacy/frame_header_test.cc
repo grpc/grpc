@@ -17,8 +17,8 @@
 #include <cstdint>
 #include <vector>
 
-#include "absl/status/status.h"
 #include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace chaotic_good_legacy {

@@ -20,8 +20,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/log.h"
 #include "upb/mem/arena.hpp"
+#include "absl/log/log.h"
 
 bool grpc_gcp_rpc_protocol_versions_set_max(
     grpc_gcp_rpc_protocol_versions* versions, uint32_t max_major,

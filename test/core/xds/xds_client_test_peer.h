@@ -21,9 +21,9 @@
 
 #include <set>
 
+#include "src/core/xds/xds_client/xds_client.h"
 #include "absl/functional/function_ref.h"
 #include "absl/strings/str_cat.h"
-#include "src/core/xds/xds_client/xds_client.h"
 
 namespace grpc_core {
 namespace testing {

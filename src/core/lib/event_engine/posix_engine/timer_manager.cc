@@ -25,10 +25,10 @@
 #include <optional>
 #include <utility>
 
-#include "absl/log/log.h"
-#include "absl/time/time.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
+#include "absl/time/time.h"
 
 static thread_local bool g_timer_thread;
 

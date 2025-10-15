@@ -21,23 +21,23 @@
 #include <list>
 #include <string>
 
+#include "src/core/lib/iomgr/port.h"
+#include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "gtest/gtest.h"
-#include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 
 #include <ifaddrs.h>
 
-#include "absl/log/log.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "test/core/test_util/port.h"
+#include "absl/log/log.h"
 
 namespace grpc_event_engine {
 namespace experimental {

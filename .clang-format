@@ -8,6 +8,22 @@ IncludeCategories:
   # ruby.h is even more first if it's included
   - Regex: '^<ruby/ruby.h>'
     Priority: -200
+  - Regex: '^("absl/)'
+    Priority: 400
+    SortPriority: 500
+  - Regex: '^"gmock/gmock.h"'
+    Priority: 400
+    SortPriority: 450
+  - Regex: '^"gtest/gtest.h"'
+    Priority: 400
+    SortPriority: 450
+  - Regex: '^<.*\.h>'
+    Priority: 200
+  - Regex: '^<.*'
+    Priority: 300
+  - Regex: '.*'
+    Priority: 400
+    SortPriority: 400
 ---
 Language: ObjC
 BasedOnStyle: Google

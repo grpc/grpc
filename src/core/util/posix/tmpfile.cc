@@ -27,12 +27,12 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/strerror.h"
 #include "src/core/util/string.h"
 #include "src/core/util/tmpfile.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 
 FILE* gpr_tmpfile(const char* prefix, char** tmp_filename) {
   FILE* result = nullptr;

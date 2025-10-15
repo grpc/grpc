@@ -28,8 +28,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/util/matchers.h"
@@ -37,6 +35,8 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

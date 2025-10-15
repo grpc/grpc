@@ -34,8 +34,6 @@
 #include <unordered_set>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -45,6 +43,8 @@
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 

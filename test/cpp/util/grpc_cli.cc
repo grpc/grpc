@@ -67,10 +67,10 @@
 #include <functional>
 #include <iostream>
 
-#include "absl/flags/flag.h"
 #include "test/cpp/util/cli_credentials.h"
 #include "test/cpp/util/grpc_tool.h"
 #include "test/cpp/util/test_config.h"
+#include "absl/flags/flag.h"
 
 ABSL_FLAG(std::string, outfile, "", "Output file (default is stdout)");
 

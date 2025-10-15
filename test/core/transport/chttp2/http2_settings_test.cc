@@ -14,9 +14,9 @@
 
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 
+#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 
 using grpc_core::http2::Http2ErrorCode;
 

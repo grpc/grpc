@@ -17,11 +17,11 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
 #include "test/cpp/sleuth/tool.h"
 #include "test/cpp/sleuth/version.h"
 #include "test/cpp/util/test_config.h"
+#include "absl/log/check.h"
+#include "absl/status/status.h"
 
 void UsageThenDie() {
   std::cerr << "Sleuth version " << grpc_sleuth::kSleuthVersion << "\n";

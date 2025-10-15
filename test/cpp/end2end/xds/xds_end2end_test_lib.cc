@@ -26,15 +26,7 @@
 #include <thread>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
 #include "envoy/extensions/filters/http/router/v3/router.pb.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/server/server.h"
 #include "src/core/util/env.h"
@@ -46,6 +38,14 @@
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/util/credentials.h"
 #include "test/cpp/util/tls_test_utils.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 namespace testing {

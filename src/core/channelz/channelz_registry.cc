@@ -33,8 +33,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -43,6 +41,8 @@
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/sync.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 namespace channelz {

@@ -28,11 +28,11 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/log.h"
 #include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/health/v1/health.upb.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
+#include "absl/log/log.h"
 
 #define MAX_SERVICE_NAME_LENGTH 200
 

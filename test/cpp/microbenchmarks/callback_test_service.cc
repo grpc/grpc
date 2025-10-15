@@ -18,8 +18,8 @@
 
 #include "test/cpp/microbenchmarks/callback_test_service.h"
 
-#include "absl/log/log.h"
 #include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace testing {

@@ -13,8 +13,8 @@
 // limitations under the License.
 
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/channelz/channelz.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core::channelz {
 namespace {

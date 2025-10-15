@@ -31,9 +31,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "absl/log/log.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/strerror.h"
+#include "absl/log/log.h"
 
 static int ncpus = 0;
 

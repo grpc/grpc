@@ -28,10 +28,10 @@
 #include <utility>
 #include <vector>
 
-#include "absl/strings/string_view.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
 #include "opencensus/tags/tag_map.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 

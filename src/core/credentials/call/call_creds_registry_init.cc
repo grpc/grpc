@@ -22,8 +22,6 @@
 #include <memory>
 #include <string>
 
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/credentials/call/call_creds_registry.h"
@@ -34,6 +32,8 @@
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/validation_errors.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

@@ -18,11 +18,11 @@
 #include <string>
 #include <vector>
 
-#include "absl/status/statusor.h"
 #include "fuzztest/fuzztest.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/uri.h"
+#include "absl/status/statusor.h"
 
 using fuzztest::Arbitrary;
 using fuzztest::VectorOf;

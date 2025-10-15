@@ -28,9 +28,6 @@
 #include <tuple>
 #include <utility>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/channelz/property_list.h"
 #include "src/core/lib/debug/trace.h"
@@ -44,6 +41,9 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/mpscq.h"
 #include "src/core/util/useful.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 

@@ -25,12 +25,12 @@
 #include <atomic>
 #include <thread>
 
-#include "absl/log/log.h"
 #include "src/core/util/host_port.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/cpp/qps/qps_server_builder.h"
 #include "test/cpp/qps/server.h"
 #include "test/cpp/qps/usage_timer.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace testing {

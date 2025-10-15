@@ -22,11 +22,11 @@
 
 #include <memory>
 
-#include "absl/flags/declare.h"
-#include "absl/flags/flag.h"
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/transport/transport.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "absl/flags/declare.h"
+#include "absl/flags/flag.h"
 
 ABSL_DECLARE_FLAG(bool, use_alts);
 ABSL_DECLARE_FLAG(bool, use_tls);

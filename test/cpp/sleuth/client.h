@@ -21,10 +21,10 @@
 #include <memory>
 #include <vector>
 
-#include "absl/status/statusor.h"
 #include "src/core/util/latent_see.h"
 #include "src/proto/grpc/channelz/v2/latent_see.grpc.pb.h"
 #include "src/proto/grpc/channelz/v2/service.grpc.pb.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_sleuth {
 

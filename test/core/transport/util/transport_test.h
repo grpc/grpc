@@ -15,8 +15,6 @@
 #ifndef GRPC_TEST_CORE_TRANSPORT_UTIL_TRANSPORT_TEST_H
 #define GRPC_TEST_CORE_TRANSPORT_UTIL_TRANSPORT_TEST_H
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/call/call_arena_allocator.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/config/core_configuration.h"
@@ -27,6 +25,8 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace util {

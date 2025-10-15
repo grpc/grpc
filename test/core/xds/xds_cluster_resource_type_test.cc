@@ -26,9 +26,6 @@
 #include <utility>
 #include <variant>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
 #include "envoy/config/cluster/v3/cluster.pb.h"
 #include "envoy/config/cluster/v3/outlier_detection.pb.h"
 #include "envoy/config/core/v3/address.pb.h"
@@ -44,8 +41,6 @@
 #include "envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.pb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
 #include "envoy/extensions/upstreams/http/v3/http_protocol_options.pb.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/load_balancing/outlier_detection/outlier_detection.h"
@@ -67,6 +62,11 @@
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
 #include "xds/type/v3/typed_struct.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 
 using envoy::config::cluster::v3::Cluster;
 using envoy::extensions::clusters::aggregate::v3::ClusterConfig;

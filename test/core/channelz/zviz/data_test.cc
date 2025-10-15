@@ -16,11 +16,11 @@
 
 #include <google/protobuf/text_format.h>
 
-#include "absl/log/check.h"
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "test/core/channelz/zviz/environment_fake.h"
 #include "test/core/channelz/zviz/layout_log.h"
+#include "gtest/gtest.h"
+#include "absl/log/check.h"
 
 namespace grpc_zviz {
 namespace {

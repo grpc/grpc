@@ -24,8 +24,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/interception_chain.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/client_channel/client_channel_internal.h"
@@ -39,6 +37,8 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 // Channel arg key for ConfigSelector.
 #define GRPC_ARG_CONFIG_SELECTOR "grpc.internal.config_selector"

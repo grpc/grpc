@@ -23,11 +23,11 @@
 #include <string>
 #include <vector>
 
-#include "absl/strings/str_cat.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/proto/grpc/channelz/v2/channelz.pb.h"
 #include "test/core/test_util/port.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_sleuth {
 namespace {

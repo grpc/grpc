@@ -32,13 +32,13 @@
 #include <mutex>
 #include <thread>
 
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
 #include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;

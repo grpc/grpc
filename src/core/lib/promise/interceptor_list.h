@@ -24,9 +24,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
@@ -34,6 +31,9 @@
 #include "src/core/util/construct_destruct.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc_core {
 

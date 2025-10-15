@@ -17,10 +17,10 @@
 #include <memory>
 #include <utility>
 
+#include "src/core/lib/promise/seq.h"
+#include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-#include "gtest/gtest.h"
-#include "src/core/lib/promise/seq.h"
 
 namespace grpc_core {
 

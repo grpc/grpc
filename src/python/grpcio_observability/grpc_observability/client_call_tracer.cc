@@ -20,14 +20,14 @@
 #include <algorithm>
 #include <vector>
 
-#include "absl/strings/str_cat.h"
-#include "absl/time/clock.h"
 #include "constants.h"
 #include "metadata_exchange.h"
 #include "observability_util.h"
 #include "python_observability_context.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/slice/slice.h"
+#include "absl/strings/str_cat.h"
+#include "absl/time/clock.h"
 
 namespace grpc_observability {
 

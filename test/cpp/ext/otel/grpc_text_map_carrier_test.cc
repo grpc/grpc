@@ -16,12 +16,12 @@
 //
 //
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 #include "test/core/promise/test_context.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc {
 namespace internal {

@@ -21,9 +21,9 @@
 #include <string>
 #include <vector>
 
+#include "src/core/util/time.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "src/core/util/time.h"
 
 namespace grpc_event_engine::experimental {
 

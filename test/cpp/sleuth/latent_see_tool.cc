@@ -16,12 +16,12 @@
 #include <iostream>
 #include <ostream>
 
-#include "absl/flags/flag.h"
-#include "absl/status/status.h"
 #include "src/core/util/latent_see.h"
 #include "test/cpp/sleuth/client.h"
 #include "test/cpp/sleuth/tool.h"
 #include "test/cpp/sleuth/tool_options.h"
+#include "absl/flags/flag.h"
+#include "absl/status/status.h"
 
 ABSL_FLAG(std::optional<std::string>, latent_see_target, std::nullopt,
           "Target to connect to for latent see");

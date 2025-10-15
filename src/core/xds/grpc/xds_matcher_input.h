@@ -15,11 +15,11 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_MATCHER_INPUT_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_MATCHER_INPUT_H
 
-#include "absl/strings/str_cat.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_matcher.h"
 #include "src/core/xds/grpc/xds_matcher_context.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 

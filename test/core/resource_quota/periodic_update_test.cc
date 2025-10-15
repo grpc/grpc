@@ -22,8 +22,8 @@
 #include <thread>
 #include <vector>
 
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {

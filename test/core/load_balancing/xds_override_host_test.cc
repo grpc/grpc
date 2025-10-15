@@ -26,15 +26,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
-#include "absl/strings/strip.h"
-#include "absl/types/span.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/load_balancing/lb_policy.h"
@@ -45,6 +36,15 @@
 #include "src/core/xds/grpc/xds_health_status.h"
 #include "test/core/load_balancing/lb_policy_test_lib.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 namespace testing {

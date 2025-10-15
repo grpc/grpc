@@ -24,11 +24,11 @@
 #include <mutex>
 #include <string>
 
+#include "wrapping_event_engine.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/log/initialize.h"
 #include "absl/log/log.h"
-#include "wrapping_event_engine.h"
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"

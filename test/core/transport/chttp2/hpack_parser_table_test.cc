@@ -23,12 +23,12 @@
 #include <string>
 #include <utility>
 
-#include "absl/strings/str_cat.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/telemetry/stats.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace {

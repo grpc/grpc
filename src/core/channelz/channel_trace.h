@@ -31,9 +31,6 @@
 #include <tuple>
 #include <type_traits>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/debug/trace_flags.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/memory_usage.h"
@@ -41,6 +38,9 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/proto/grpc/channelz/v2/channelz.upb.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace channelz {

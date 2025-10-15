@@ -20,10 +20,10 @@
 
 #include <utility>
 
-#include "absl/status/status.h"
+#include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "test/core/test_util/test_config.h"
+#include "absl/status/status.h"
 
 using ::testing::ContainerEq;
 using ::testing::Contains;

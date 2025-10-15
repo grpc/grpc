@@ -26,8 +26,6 @@
 #include <memory>
 #include <unordered_map>
 
-#include "absl/flags/flag.h"
-#include "absl/log/log.h"
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
@@ -37,6 +35,8 @@
 #include "test/cpp/interop/client_helper.h"
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/util/test_config.h"
+#include "absl/flags/flag.h"
+#include "absl/log/log.h"
 
 ABSL_FLAG(bool, use_alts, false,
           "Whether to use alts. Enable alts will disable tls.");

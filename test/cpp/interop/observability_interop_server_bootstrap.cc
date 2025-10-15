@@ -19,11 +19,11 @@
 #include <grpcpp/ext/gcp_observability.h>
 #include <signal.h>
 
-#include "absl/flags/flag.h"
-#include "absl/log/log.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/interop/server_helper.h"
 #include "test/cpp/util/test_config.h"
+#include "absl/flags/flag.h"
+#include "absl/log/log.h"
 
 gpr_atm grpc::testing::interop::g_got_sigint;
 

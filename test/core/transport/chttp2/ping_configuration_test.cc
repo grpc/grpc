@@ -18,7 +18,6 @@
 
 #include <memory>
 
-#include "gtest/gtest.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
@@ -33,6 +32,7 @@
 #include "src/core/util/time.h"
 #include "test/core/test_util/mock_endpoint.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {

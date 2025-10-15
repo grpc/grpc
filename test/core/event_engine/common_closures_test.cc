@@ -18,9 +18,9 @@
 
 #include <memory>
 
-#include "absl/functional/any_invocable.h"
-#include "gtest/gtest.h"
 #include "src/core/util/notification.h"
+#include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
 
 using ::grpc_event_engine::experimental::AnyInvocableClosure;
 using ::grpc_event_engine::experimental::SelfDeletingClosure;

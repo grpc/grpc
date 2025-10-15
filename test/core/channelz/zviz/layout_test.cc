@@ -14,9 +14,9 @@
 
 #include "src/core/channelz/zviz/layout.h"
 
+#include "src/core/channelz/zviz/environment.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "src/core/channelz/zviz/environment.h"
 
 using testing::HasSubstr;
 using testing::Return;

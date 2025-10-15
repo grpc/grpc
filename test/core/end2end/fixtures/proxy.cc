@@ -32,8 +32,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/cleanup/cleanup.h"
-#include "absl/log/log.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/util/crash.h"
@@ -41,6 +39,8 @@
 #include "src/core/util/host_port.h"
 #include "src/core/util/thd.h"
 #include "test/core/test_util/port.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/log/log.h"
 
 struct grpc_end2end_proxy {
   grpc_end2end_proxy()

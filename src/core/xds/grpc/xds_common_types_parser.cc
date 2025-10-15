@@ -24,11 +24,6 @@
 #include <map>
 #include <utility>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
@@ -49,6 +44,11 @@
 #include "upb/mem/arena.h"
 #include "xds/type/matcher/v3/regex.upb.h"
 #include "xds/type/v3/typed_struct.upb.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 
 namespace grpc_core {
 

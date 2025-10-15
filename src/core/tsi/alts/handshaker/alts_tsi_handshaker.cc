@@ -29,7 +29,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "absl/log/log.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
@@ -42,6 +41,7 @@
 #include "src/core/util/memory.h"
 #include "src/core/util/sync.h"
 #include "upb/mem/arena.hpp"
+#include "absl/log/log.h"
 
 namespace {
 constexpr absl::string_view kUseGrpcExperimentalAltsHandshakerKeepaliveParams =

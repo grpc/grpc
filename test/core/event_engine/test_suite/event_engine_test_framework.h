@@ -19,9 +19,9 @@
 #include <memory>
 #include <utility>
 
-#include "absl/functional/any_invocable.h"
-#include "gtest/gtest.h"
 #include "src/core/util/grpc_check.h"
+#include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
 
 extern absl::AnyInvocable<
     std::shared_ptr<grpc_event_engine::experimental::EventEngine>()>*

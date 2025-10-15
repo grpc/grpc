@@ -22,8 +22,8 @@
 
 #include <memory>
 
-#include "gtest/gtest.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 TEST(AllocTest, MallocAligned) {
   for (size_t size = 1; size <= 256; ++size) {

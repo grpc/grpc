@@ -19,14 +19,14 @@
 #include <atomic>
 #include <memory>
 
-#include "absl/log/log.h"
-#include "absl/strings/string_view.h"
-#include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/service_config/service_config_impl.h"
 #include "test/core/call/yodel/yodel_test.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

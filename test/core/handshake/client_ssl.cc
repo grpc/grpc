@@ -25,12 +25,12 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/strings/str_format.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/port.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/str_format.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
 
@@ -49,13 +49,13 @@
 
 #include <string>
 
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/thd.h"
 #include "test/core/test_util/tls_utils.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 #define SSL_CERT_PATH "src/core/tsi/test_creds/server1.pem"
 #define SSL_KEY_PATH "src/core/tsi/test_creds/server1.key"

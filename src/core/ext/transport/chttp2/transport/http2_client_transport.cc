@@ -27,9 +27,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
@@ -66,6 +63,9 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace http2 {

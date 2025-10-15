@@ -36,13 +36,9 @@
 #include <variant>
 #include <vector>
 
-#include "absl/strings/str_cat.h"
-#include "absl/time/time.h"
 #include "envoy/config/core/v3/base.pb.h"
 #include "envoy/service/discovery/v3/discovery.pb.h"
 #include "envoy/service/status/v3/csds.pb.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/json/json.h"
@@ -62,6 +58,10 @@
 #include "test/core/xds/xds_client_test_peer.h"
 #include "test/core/xds/xds_transport_fake.h"
 #include "upb/reflection/def.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/strings/str_cat.h"
+#include "absl/time/time.h"
 
 // IWYU pragma: no_include <google/protobuf/message.h>
 // IWYU pragma: no_include <google/protobuf/stubs/status.h>

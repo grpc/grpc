@@ -25,8 +25,6 @@
 #include <utility>
 #include <variant>
 
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/if.h"
@@ -38,6 +36,8 @@
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 

@@ -18,10 +18,10 @@
 #include <thread>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/ref_counted.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 namespace {

@@ -22,9 +22,6 @@
 
 #include <utility>
 
-#include "absl/base/attributes.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/promise_like.h"
@@ -33,6 +30,9 @@
 #include "src/core/util/construct_destruct.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
+#include "absl/base/attributes.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 // A sequence under some traits for some set of callables P, Fs.
 // P should be a promise-like object that yields a value.

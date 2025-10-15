@@ -24,9 +24,6 @@
 #include <thread>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "absl/time/time.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -36,6 +33,9 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/time/time.h"
 
 extern char** environ;
 

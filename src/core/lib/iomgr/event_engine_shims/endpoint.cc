@@ -24,11 +24,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/extensions/can_track_errors.h"
 #include "src/core/lib/event_engine/extensions/supports_fd.h"
@@ -47,6 +42,11 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/string.h"
 #include "src/core/util/sync.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_event_engine {
 namespace experimental {

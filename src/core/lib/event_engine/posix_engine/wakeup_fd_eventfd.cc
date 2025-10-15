@@ -16,10 +16,10 @@
 
 #include <utility>
 
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"  // IWYU pragma: keep
+#include "absl/strings/str_cat.h"
 
 #ifdef GRPC_LINUX_EVENTFD
 

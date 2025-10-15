@@ -24,9 +24,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/cleanup/cleanup.h"
-#include "absl/log/log.h"
-#include "absl/strings/string_view.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/endpoint/v3/load_report.upb.h"
 #include "envoy/service/load_stats/v3/lrs.upb.h"
@@ -51,6 +48,9 @@
 #include "upb/mem/arena.h"
 #include "upb/reflection/def.h"
 #include "upb/text/encode.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/log/log.h"
+#include "absl/strings/string_view.h"
 
 #define GRPC_XDS_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_XDS_RECONNECT_BACKOFF_MULTIPLIER 1.6

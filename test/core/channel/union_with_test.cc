@@ -20,8 +20,8 @@
 #include <vector>
 
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 

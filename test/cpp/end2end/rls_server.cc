@@ -16,11 +16,11 @@
 
 #include "test/cpp/end2end/rls_server.h"
 
-#include "absl/log/log.h"
-#include "gmock/gmock.h"
 #include "src/proto/grpc/lookup/v1/rls.grpc.pb.h"
 #include "src/proto/grpc/lookup/v1/rls.pb.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "absl/log/log.h"
 
 using ::grpc::lookup::v1::RouteLookupRequest;
 using ::grpc::lookup::v1::RouteLookupResponse;

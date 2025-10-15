@@ -37,7 +37,6 @@
 #include <grpc/support/time.h>
 #include <sys/socket.h>
 
-#include "absl/log/log.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/util/grpc_check.h"
@@ -46,6 +45,7 @@
 #include "src/core/util/useful.h"
 #include "test/core/test_util/cmdline.h"
 #include "test/core/test_util/histogram.h"
+#include "absl/log/log.h"
 
 typedef struct fd_pair {
   int read_fd;

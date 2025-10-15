@@ -22,16 +22,16 @@
 #include <utility>
 #include <vector>
 
-#include "absl/status/statusor.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
-#include "gtest/gtest.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/channelz/property_list.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/notification.h"
 #include "src/proto/grpc/channelz/v2/property_list.pb.h"
 #include "src/proto/grpc/channelz/v2/service.pb.h"
+#include "gtest/gtest.h"
+#include "absl/status/statusor.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 namespace grpc_core::channelz {
 

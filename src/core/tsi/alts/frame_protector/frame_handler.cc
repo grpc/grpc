@@ -26,9 +26,9 @@
 
 #include <algorithm>
 
-#include "absl/log/log.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/memory.h"
+#include "absl/log/log.h"
 
 // Use little endian to interpret a string of bytes as uint32_t.
 static uint32_t load_32_le(const unsigned char* buffer) {

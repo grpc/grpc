@@ -20,7 +20,6 @@
 #include <memory>
 
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
 #include "src/core/lib/promise/inter_activity_latch.h"
 #include "src/core/util/postmortem_emit.h"
@@ -28,6 +27,7 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/transport/chaotic_good/test_frame.h"
 #include "test/core/transport/chaotic_good/test_frame.pb.h"
+#include "gtest/gtest.h"
 
 using fuzztest::Arbitrary;
 using fuzztest::InRange;

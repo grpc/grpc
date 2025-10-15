@@ -31,8 +31,6 @@
 #include <memory>
 #include <vector>
 
-#include "absl/memory/memory.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -42,6 +40,8 @@
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
 #include "test/cpp/util/string_ref_helper.h"
+#include "gtest/gtest.h"
+#include "absl/memory/memory.h"
 
 #ifdef GRPC_POSIX_SOCKET
 #include <fcntl.h>

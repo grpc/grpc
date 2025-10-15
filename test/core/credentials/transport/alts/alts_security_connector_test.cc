@@ -24,14 +24,14 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
 #include "src/core/credentials/transport/alts/alts_credentials.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/util/crash.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 namespace {
 

@@ -13,10 +13,10 @@
 // limitations under the License.
 
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/util/match.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 

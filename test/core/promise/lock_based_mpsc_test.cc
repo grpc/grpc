@@ -20,11 +20,11 @@
 #include <optional>
 #include <string>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/promise.h"
 #include "test/core/promise/poll_matcher.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 using testing::Mock;
 using testing::StrictMock;

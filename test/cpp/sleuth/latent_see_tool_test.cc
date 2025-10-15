@@ -20,14 +20,14 @@
 #include <optional>
 #include <string>
 
-#include "absl/flags/declare.h"
-#include "absl/flags/flag.h"
-#include "absl/strings/str_cat.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/cpp/latent_see/latent_see_service.h"
 #include "test/core/test_util/port.h"
 #include "test/cpp/sleuth/tool_test.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/flags/declare.h"
+#include "absl/flags/flag.h"
+#include "absl/strings/str_cat.h"
 
 ABSL_DECLARE_FLAG(std::optional<std::string>, latent_see_target);
 ABSL_DECLARE_FLAG(std::string, channel_creds_type);

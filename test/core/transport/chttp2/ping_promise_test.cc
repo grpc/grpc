@@ -17,9 +17,6 @@
 //
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
 
-#include "absl/log/log.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/party.h"
@@ -29,6 +26,9 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "test/core/call/yodel/yodel_test.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 

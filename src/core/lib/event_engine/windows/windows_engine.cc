@@ -24,10 +24,6 @@
 #include <memory>
 #include <ostream>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/handle_containers.h"
@@ -48,6 +44,10 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_event_engine::experimental {
 

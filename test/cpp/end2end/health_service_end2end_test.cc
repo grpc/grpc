@@ -31,7 +31,6 @@
 #include <thread>
 #include <vector>
 
-#include "gtest/gtest.h"
 #include "src/core/util/crash.h"
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
@@ -40,6 +39,7 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_health_check_service_impl.h"
 #include "test/cpp/end2end/test_service_impl.h"
+#include "gtest/gtest.h"
 
 using grpc::health::v1::Health;
 using grpc::health::v1::HealthCheckRequest;

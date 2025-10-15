@@ -25,12 +25,12 @@
 #include <memory>
 #include <vector>
 
-#include "absl/strings/str_cat.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/channelz/channelz_registry.h"
 #include "src/core/channelz/v2tov1/convert.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/notification.h"
+#include "absl/strings/str_cat.h"
 
 using grpc_core::channelz::BaseNode;
 

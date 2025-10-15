@@ -21,8 +21,8 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/meta/type_traits.h"
 #include "src/core/lib/promise/detail/promise_like.h"
+#include "absl/meta/type_traits.h"
 
 // PromiseFactory is an adaptor class.
 //

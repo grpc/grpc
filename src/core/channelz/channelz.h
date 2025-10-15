@@ -35,10 +35,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_set.h"
-#include "absl/container/inlined_vector.h"
-#include "absl/strings/string_view.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/dual_ref_counted.h"
@@ -53,6 +49,10 @@
 #include "src/core/util/useful.h"
 #include "src/proto/grpc/channelz/v2/channelz.upb.h"
 #include "src/proto/grpc/channelz/v2/service.upb.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/strings/string_view.h"
 
 // Channel arg key for channelz node.
 #define GRPC_ARG_CHANNELZ_CHANNEL_NODE \

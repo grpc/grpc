@@ -38,10 +38,6 @@
 #include <queue>
 #include <string>
 
-#include "absl/flags/flag.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
 #include "google/protobuf/text_format.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
@@ -51,6 +47,10 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "absl/flags/flag.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 
 ABSL_FLAG(std::string, server_address, "", "channelz server address");
 ABSL_FLAG(std::string, custom_credentials_type, "", "custom credentials type");

@@ -16,14 +16,14 @@
 
 #include <google/protobuf/text_format.h>
 
-#include "absl/log/check.h"
 #include "fuzztest/fuzztest.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/timestamp.upb.h"
-#include "gtest/gtest.h"
 #include "src/proto/grpc/channelz/v2/property_list.pb.h"
 #include "src/proto/grpc/channelz/v2/property_list.upb.h"
 #include "upb/mem/arena.hpp"
+#include "gtest/gtest.h"
+#include "absl/log/check.h"
 
 namespace grpc_core {
 namespace channelz {

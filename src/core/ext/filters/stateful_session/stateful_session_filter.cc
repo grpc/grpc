@@ -27,13 +27,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/strings/escaping.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
-#include "absl/strings/strip.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
@@ -51,6 +44,13 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/latent_see.h"
 #include "src/core/util/time.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 
 namespace grpc_core {
 

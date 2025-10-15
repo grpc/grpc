@@ -20,11 +20,11 @@
 
 #include <memory>
 
-#include "absl/base/thread_annotations.h"
 #include "src/core/lib/event_engine/posix_engine/file_descriptor_collection.h"
 #include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
 
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
 
@@ -39,12 +39,12 @@
 #include <unordered_set>
 #include <utility>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_event_engine::experimental {
 

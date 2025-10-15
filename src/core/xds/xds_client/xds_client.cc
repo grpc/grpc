@@ -29,14 +29,6 @@
 #include <type_traits>
 #include <vector>
 
-#include "absl/cleanup/cleanup.h"
-#include "absl/log/log.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
-#include "absl/strings/strip.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/service/discovery/v3/discovery.upb.h"
 #include "envoy/service/discovery/v3/discovery.upbdefs.h"
@@ -61,6 +53,14 @@
 #include "upb/mem/arena.h"
 #include "upb/reflection/def.h"
 #include "upb/text/encode.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/log/log.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 
 #define GRPC_XDS_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_XDS_RECONNECT_BACKOFF_MULTIPLIER 1.6

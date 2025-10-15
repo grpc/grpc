@@ -22,9 +22,6 @@
 #include <memory>
 #include <thread>
 
-#include "absl/flags/flag.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_split.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/string.h"
 #include "test/core/test_util/test_config.h"
@@ -32,6 +29,9 @@
 #include "test/cpp/interop/interop_client.h"
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_config.h"
+#include "absl/flags/flag.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_split.h"
 
 ABSL_FLAG(std::string, server_uris, "",
           "Comma-separated list of sever URIs to make RPCs to");

@@ -22,13 +22,13 @@
 #include <grpc/support/time.h>
 #include <string.h>
 
-#include "absl/log/log.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "test/core/test_util/test_tcp_server.h"
+#include "absl/log/log.h"
+#include "absl/strings/string_view.h"
 
 static void pretty_print_backoffs(reconnect_server* server) {
   gpr_timespec diff;

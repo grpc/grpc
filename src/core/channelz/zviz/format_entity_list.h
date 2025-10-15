@@ -17,10 +17,10 @@
 
 #include <string>
 
-#include "absl/types/span.h"
 #include "src/core/channelz/zviz/environment.h"
 #include "src/core/channelz/zviz/layout.h"
 #include "src/proto/grpc/channelz/v2/channelz.pb.h"
+#include "absl/types/span.h"
 
 namespace grpc_zviz {
 

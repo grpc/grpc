@@ -28,9 +28,6 @@
 #include <optional>
 #include <string>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
@@ -46,6 +43,9 @@
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 using TlsSessionKeyLogger = tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger;
 

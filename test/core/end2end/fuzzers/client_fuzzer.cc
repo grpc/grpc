@@ -19,7 +19,6 @@
 #include <optional>
 #include <string>
 
-#include "absl/status/statusor.h"
 #include "fuzztest/fuzztest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
@@ -44,6 +43,7 @@
 #include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/test_util/mock_endpoint.h"
 #include "test/core/test_util/test_config.h"
+#include "absl/status/statusor.h"
 
 bool squelch = true;
 bool leak_check = true;

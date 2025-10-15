@@ -14,10 +14,10 @@
 
 #include "src/core/util/tdigest.h"
 
+#include "src/core/util/grpc_check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
-#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 

@@ -28,9 +28,6 @@
 #include <grpc/support/time.h>
 #include <stdint.h>
 
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -43,6 +40,9 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_TCP

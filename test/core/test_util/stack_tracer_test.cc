@@ -20,10 +20,10 @@
 
 #include <string>
 
+#include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
-#include "gtest/gtest.h"
-#include "test/core/test_util/test_config.h"
 
 TEST(StackTracerTest, Basic) {
   std::string stack_trace = grpc_core::testing::GetCurrentStackTrace();

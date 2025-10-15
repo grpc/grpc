@@ -23,9 +23,6 @@
 #include <atomic>
 #include <memory>
 
-#include "absl/functional/any_invocable.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "opentelemetry/metrics/provider.h"
 #include "opentelemetry/sdk/metrics/export/metric_producer.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
@@ -38,6 +35,9 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
 
 namespace {
 

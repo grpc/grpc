@@ -21,14 +21,14 @@
 #include <optional>
 #include <vector>
 
-#include "absl/strings/string_view.h"
-#include "absl/types/span.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
 #include "src/core/util/debug_location.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 namespace util {

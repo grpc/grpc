@@ -31,12 +31,12 @@
 
 #include <thread>
 
-#include "absl/memory/memory.h"
-#include "gtest/gtest.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
+#include "gtest/gtest.h"
+#include "absl/memory/memory.h"
 
 #define PLUGIN_NAME "TestServerBuilderPlugin"
 

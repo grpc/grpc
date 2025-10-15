@@ -27,9 +27,6 @@
 #include <thread>
 #include <vector>
 
-#include "absl/container/flat_hash_map.h"
-#include "absl/container/flat_hash_set.h"
-#include "absl/log/log.h"
 #include "envoy/config/cluster/v3/cluster.pb.h"
 #include "envoy/config/endpoint/v3/endpoint.pb.h"
 #include "envoy/config/listener/v3/listener.pb.h"
@@ -43,6 +40,9 @@
 #include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/counted_service.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace testing {

@@ -20,9 +20,9 @@
 
 #include <grpc/grpc.h>
 
-#include "gtest/gtest.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tracer_util.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {

@@ -19,9 +19,9 @@
 #include <optional>
 #include <string>
 
-#include "absl/strings/string_view.h"
 #include "src/core/ext/transport/chaotic_good/send_rate.h"
 #include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core::chaotic_good {
 

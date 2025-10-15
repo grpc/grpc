@@ -24,10 +24,10 @@
 
 #include <vector>
 
-#include "absl/strings/string_view.h"
 #include "src/core/load_balancing/grpclb/grpclb_client_stats.h"
 #include "src/core/util/time.h"
 #include "upb/mem/arena.h"
+#include "absl/strings/string_view.h"
 
 #define GRPC_GRPCLB_SERVICE_NAME_MAX_LENGTH 128
 #define GRPC_GRPCLB_SERVER_IP_ADDRESS_MAX_SIZE 16

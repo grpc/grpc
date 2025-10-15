@@ -28,7 +28,6 @@
 
 #include <string>
 
-#include "absl/log/log.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/grpc_check.h"
@@ -36,6 +35,7 @@
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "absl/log/log.h"
 
 static void run_test(bool wait_for_ready, bool use_service_config) {
   grpc_channel* chan;

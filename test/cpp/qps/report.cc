@@ -22,12 +22,12 @@
 
 #include <fstream>
 
-#include "absl/log/log.h"
 #include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/report_qps_scenario_service.grpc.pb.h"
 #include "test/cpp/qps/driver.h"
 #include "test/cpp/qps/parse_json.h"
 #include "test/cpp/qps/stats.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace testing {

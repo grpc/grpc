@@ -20,11 +20,11 @@
 #include <sstream>
 #include <thread>
 
-#include "absl/functional/function_ref.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/notification.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/functional/function_ref.h"
 
 using testing::IsEmpty;
 

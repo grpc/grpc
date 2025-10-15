@@ -16,11 +16,11 @@
 
 #include "src/core/util/lru_cache.h"
 
-#include "absl/strings/numbers.h"
-#include "absl/strings/str_cat.h"
+#include "src/core/util/grpc_check.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "src/core/util/grpc_check.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
