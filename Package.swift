@@ -1489,8 +1489,6 @@ let package = Package(
         "src/core/lib/experiments/experiments.cc",
         "src/core/lib/experiments/experiments.h",
         "src/core/lib/iomgr/block_annotate.h",
-        "src/core/lib/iomgr/buffer_list.cc",
-        "src/core/lib/iomgr/buffer_list.h",
         "src/core/lib/iomgr/call_combiner.cc",
         "src/core/lib/iomgr/call_combiner.h",
         "src/core/lib/iomgr/cfstream_handle.cc",

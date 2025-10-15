@@ -1495,8 +1495,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/experiments/experiments.cc )
   s.files += %w( src/core/lib/experiments/experiments.h )
   s.files += %w( src/core/lib/iomgr/block_annotate.h )
-  s.files += %w( src/core/lib/iomgr/buffer_list.cc )
-  s.files += %w( src/core/lib/iomgr/buffer_list.h )
   s.files += %w( src/core/lib/iomgr/call_combiner.cc )
   s.files += %w( src/core/lib/iomgr/call_combiner.h )
   s.files += %w( src/core/lib/iomgr/cfstream_handle.cc )

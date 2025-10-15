@@ -57,9 +57,9 @@
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
+#include "src/core/lib/iomgr/internal_errqueue.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -517,8 +517,6 @@ struct grpc_tcp {
   grpc_core::MemoryOwner memory_owner;
   grpc_core::MemoryAllocator::Reservation self_reservation;
 
-  grpc_core::TracedBufferList tb_list;  // List of traced buffers
-
   // grpc_endpoint_write takes an argument which if non-null means that the
   // transport layer wants the TCP layer to collect timestamps for this write.
   // This arg is forwarded to the timestamps callback function when the ACK
@@ -753,8 +751,6 @@ static void tcp_free(grpc_tcp* tcp) {
   grpc_fd_orphan(tcp->em_fd, tcp->release_fd_cb, tcp->release_fd,
                  "tcp_unref_orphan");
   grpc_slice_buffer_destroy(&tcp->last_read_buffer);
-  tcp->tb_list.Shutdown(tcp->outgoing_buffer_arg,
-                        GRPC_ERROR_CREATE("endpoint destroyed"));
   tcp->outgoing_buffer_arg = nullptr;
   delete tcp;
 }
@@ -1278,8 +1274,6 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
   *sent_length = length;
   // Only save timestamps if all the bytes were taken by sendmsg.
   if (sending_length == static_cast<size_t>(length)) {
-    tcp->tb_list.AddNewEntry(static_cast<uint32_t>(tcp->bytes_counter + length),
-                             tcp->fd, tcp->outgoing_buffer_arg);
     tcp->outgoing_buffer_arg = nullptr;
   }
   return true;
@@ -1359,15 +1353,12 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
     return cmsg;
   }
 
-  auto tss =
-      reinterpret_cast<struct grpc_core::scm_timestamping*>(CMSG_DATA(cmsg));
   auto serr = reinterpret_cast<struct sock_extended_err*>(CMSG_DATA(next_cmsg));
   if (serr->ee_errno != ENOMSG ||
       serr->ee_origin != SO_EE_ORIGIN_TIMESTAMPING) {
     LOG(ERROR) << "Unexpected control message";
     return cmsg;
   }
-  tcp->tb_list.ProcessTimestamp(serr, opt_stats, tss);
   return next_cmsg;
 }
 
@@ -1503,8 +1494,6 @@ static void tcp_handle_error(void* /*arg*/ /* grpc_tcp */,
 // release operations needed can be performed on the arg
 void tcp_shutdown_buffer_list(grpc_tcp* tcp) {
   if (tcp->outgoing_buffer_arg) {
-    tcp->tb_list.Shutdown(tcp->outgoing_buffer_arg,
-                          GRPC_ERROR_CREATE("TracedBuffer list shutdown"));
     tcp->outgoing_buffer_arg = nullptr;
   }
 }

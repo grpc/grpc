@@ -1630,7 +1630,6 @@ grpc_cc_library(
         "grpc_core_credentials_header",
         "grpc_public_hdrs",
         "grpc_trace",
-        "iomgr_buffer_list",
         "iomgr_internal_errqueue",
         "iomgr_timer",
         "orphanable",
@@ -3629,29 +3628,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "iomgr_buffer_list",
-    srcs = [
-        "//src/core:lib/iomgr/buffer_list.cc",
-    ],
-    hdrs = [
-        "//src/core:lib/iomgr/buffer_list.h",
-    ],
-    external_deps = [
-        "absl/log:log",
-        "absl/strings",
-        "absl/strings:str_format",
-    ],
-    tags = ["nofixdeps"],
-    deps = [
-        "gpr",
-        "iomgr_internal_errqueue",
-        "//src/core:error",
-        "//src/core:iomgr_port",
-        "//src/core:sync",
-    ],
-)
-
-grpc_cc_library(
     name = "uri",
     srcs = [
         "//src/core:util/uri.cc",
@@ -5036,7 +5012,6 @@ grpc_cc_library(
         "hpack_parser_table",
         "httpcli",
         "iomgr",
-        "iomgr_buffer_list",
         "ref_counted_ptr",
         "stats",
         "transport_auth_context",
