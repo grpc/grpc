@@ -299,7 +299,15 @@ class Http2ClientTransport final : public ClientTransport,
 
     // RFC9113 : Streams initiated by a client MUST use odd-numbered stream
     // identifiers.
-    return std::exchange(next_stream_id_, next_stream_id_ + 2);
+    uint32_t new_stream_id =
+        std::exchange(next_stream_id_, next_stream_id_ + 2);
+    if (GPR_UNLIKELY(next_stream_id_ > GetMaxAllowedStreamId())) {
+      SetConnectivityState(
+          GRPC_CHANNEL_TRANSIENT_FAILURE,
+          absl::ResourceExhaustedError("Transport Stream IDs exhausted"),
+          "no_more_stream_ids");
+    }
+    return new_stream_id;
   }
 
   // Returns the next stream id without incrementing it. MUST be called from the
@@ -510,6 +518,9 @@ class Http2ClientTransport final : public ClientTransport,
   }
 
   void MaybeGetWindowUpdateFrames(SliceBuffer& output_buf);
+
+  void SetConnectivityState(grpc_connectivity_state state,
+                           const absl::Status& status, const char* reason);
 
   // Ping Helper functions
   Duration NextAllowedPingInterval() {

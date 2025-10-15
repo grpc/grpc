@@ -44,6 +44,8 @@
 #define GRPC_ARG_MAX_CONCURRENT_STREAMS_REJECT_ON_CLIENT \
   "grpc.http.max_concurrent_streams_reject_on_client"
 
+#define KEEPALIVE_TIME_BACKOFF_MULTIPLIER 2
+
 namespace grpc_core {
 
 Duration TarpitDuration(int min_tarpit_duration_ms, int max_tarpit_duration_ms);
