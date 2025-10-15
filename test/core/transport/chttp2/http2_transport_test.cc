@@ -25,7 +25,9 @@
 #include <cstdint>
 #include <memory>
 #include <utility>
+#include <vector>
 
+#include "src/core/call/call_spine.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
@@ -36,6 +38,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/promise/try_join.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/time.h"
@@ -53,6 +56,41 @@
 namespace grpc_core {
 namespace http2 {
 namespace testing {
+
+class TestsNeedingStreamObjects : public ::testing::Test {
+ protected:
+  TestsNeedingStreamObjects()
+      : transport_flow_control_(
+            /*name=*/"TestFlowControl", /*enable_bdp_probe=*/false,
+            /*memory_owner=*/nullptr) {}
+
+  void SetUp() override {}
+
+  RefCountedPtr<Stream> CreateMinimalTestStream(uint32_t stream_id) {
+    RefCountedPtr<Arena> arena = SimpleArenaAllocator()->MakeArena();
+    arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        grpc_event_engine::experimental::GetDefaultEventEngine().get());
+    auto client_initial_metadata =
+        Arena::MakePooledForOverwrite<ClientMetadata>();
+    client_initial_metadata->Set(HttpPathMetadata(),
+                                 Slice::FromCopiedString("/foo/bar"));
+    std::unique_ptr<CallInitiatorAndHandler> call_pair =
+        std::make_unique<CallInitiatorAndHandler>(
+            MakeCallPair(std::move(client_initial_metadata), std::move(arena)));
+    RefCountedPtr<Stream> stream = MakeRefCounted<Stream>(
+        call_pair->handler.StartCall(),
+        /*allow_true_binary_metadata_peer=*/true,
+        /*allow_true_binary_metadata_acked=*/true, transport_flow_control_);
+    stream->SetStreamId(stream_id);
+    GRPC_CHECK_EQ(stream->stream_id, stream_id);
+    stream_set_.push_back(std::move(stream));
+    return stream_set_.back();
+  }
+  chttp2::TransportFlowControl transport_flow_control_;
+
+ private:
+  std::vector<RefCountedPtr<Stream>> stream_set_;
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 // Settings and ChannelArgs helpers tests
@@ -242,6 +280,175 @@ TEST(Http2CommonTransportTest, ProcessIncomingDataFrameFlowControlNullStream1) {
   }
 }
 
+TEST_F(TestsNeedingStreamObjects,
+       ProcessIncomingDataFrameFlowControlWithStream) {
+  const uint32_t frame_payload_size = 20000;
+  RefCountedPtr<Stream> stream = CreateMinimalTestStream(1);
+  Http2FrameHeader frame_header;
+  frame_header.length = frame_payload_size;
+  frame_header.type = 0;  // DATA Frame
+  frame_header.flags = 0;
+  frame_header.stream_id = 1;
+
+  EXPECT_EQ(transport_flow_control_.announced_window(), chttp2::kDefaultWindow);
+  EXPECT_EQ(stream->flow_control.announced_window_delta(), 0);
+
+  // First DATA frame of size frame_payload_size
+  ValueOrHttp2Status<chttp2::FlowControlAction> action1 =
+      ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
+                                          stream);
+  EXPECT_TRUE(action1.IsOk());
+  EXPECT_EQ(transport_flow_control_.announced_window(),
+            chttp2::kDefaultWindow - frame_payload_size);
+  EXPECT_EQ(stream->flow_control.announced_window_delta(),
+            -static_cast<int64_t>(frame_payload_size));
+
+  // 2nd DATA frame of size frame_payload_size
+  ValueOrHttp2Status<chttp2::FlowControlAction> action2 =
+      ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
+                                          stream);
+  EXPECT_TRUE(action2.IsOk());
+  EXPECT_EQ(transport_flow_control_.announced_window(),
+            chttp2::kDefaultWindow - 2 * frame_payload_size);
+  EXPECT_EQ(stream->flow_control.announced_window_delta(),
+            -2 * static_cast<int64_t>(frame_payload_size));
+
+  // 3rd DATA frame of size frame_payload_size
+  ValueOrHttp2Status<chttp2::FlowControlAction> action3 =
+      ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
+                                          stream);
+  EXPECT_TRUE(action3.IsOk());
+  EXPECT_EQ(transport_flow_control_.announced_window(),
+            chttp2::kDefaultWindow - 3 * frame_payload_size);
+  EXPECT_EQ(stream->flow_control.announced_window_delta(),
+            -3 * static_cast<int64_t>(frame_payload_size));
+
+  // 4th DATA frame of size frame_payload_size.
+  // This will fail because the flow control window is exhausted.
+  ValueOrHttp2Status<chttp2::FlowControlAction> action4 =
+      ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
+                                          stream);
+  // Invalid operation because flow control window was exceeded.
+  EXPECT_FALSE(action4.IsOk());
+  EXPECT_EQ(action4.GetErrorType(),
+            Http2Status::Http2ErrorType::kConnectionError);
+  EXPECT_EQ(action4.GetConnectionErrorCode(),
+            Http2ErrorCode::kFlowControlError);
+  EXPECT_EQ(action4.DebugString(),
+            "Connection Error: {Error Code:FLOW_CONTROL_ERROR, Message:frame "
+            "of size 20000 overflows local window of 5535}");
+}
+
+TEST_F(TestsNeedingStreamObjects,
+       ProcessIncomingDataFrameTransportWindowUpdate) {
+  const uint32_t frame_payload_size = 60000;
+  RefCountedPtr<Stream> stream = CreateMinimalTestStream(1);
+  Http2FrameHeader frame_header;
+  frame_header.length = frame_payload_size;
+  frame_header.type = 0;  // DATA Frame
+  frame_header.flags = 0;
+  frame_header.stream_id = 1;
+
+  EXPECT_EQ(transport_flow_control_.announced_window(), chttp2::kDefaultWindow);
+  EXPECT_EQ(stream->flow_control.announced_window_delta(), 0);
+
+  // Receive first large DATA frame.
+  ValueOrHttp2Status<chttp2::FlowControlAction> action1 =
+      ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
+                                          stream);
+  EXPECT_TRUE(action1.IsOk());
+  EXPECT_EQ(transport_flow_control_.announced_window(),
+            chttp2::kDefaultWindow - frame_payload_size);
+  EXPECT_EQ(stream->flow_control.announced_window_delta(),
+            -static_cast<int64_t>(frame_payload_size));
+
+  // Send the flow control update to peer for transport
+  uint32_t increment =
+      transport_flow_control_.MaybeSendUpdate(/*writing_anyway=*/true);
+  EXPECT_GT(increment, 0);
+  EXPECT_EQ(transport_flow_control_.announced_window(),
+            chttp2::kDefaultWindow - frame_payload_size + increment);
+
+  // Receive 2nd large DATA frame.
+  // This should be fail because stream window is not updated.
+  ValueOrHttp2Status<chttp2::FlowControlAction> action2 =
+      ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
+                                          stream);
+  EXPECT_FALSE(action2.IsOk());
+  EXPECT_EQ(action2.GetErrorType(),
+            Http2Status::Http2ErrorType::kConnectionError);
+  EXPECT_EQ(action2.GetConnectionErrorCode(),
+            Http2ErrorCode::kFlowControlError);
+  EXPECT_EQ(
+      action2.DebugString(),
+      "Connection Error: {Error Code:FLOW_CONTROL_ERROR, Message:frame of "
+      "size 60000 overflows local window of 5535}");
+}
+
+TEST_F(TestsNeedingStreamObjects,
+       ProcessIncomingDataFrameTransportAndStreamWindowUpdate) {
+  const uint32_t frame_payload_size = 60000;
+  RefCountedPtr<Stream> stream = CreateMinimalTestStream(1);
+  Http2FrameHeader frame_header;
+  frame_header.length = frame_payload_size;
+  frame_header.type = 0;  // DATA Frame
+  frame_header.flags = 0;
+  frame_header.stream_id = 1;
+  int64_t expected_announced_window = chttp2::kDefaultWindow;
+  int64_t expected_announced_window_delta = 0;
+
+  EXPECT_EQ(transport_flow_control_.announced_window(),
+            expected_announced_window);
+  EXPECT_EQ(stream->flow_control.announced_window_delta(),
+            expected_announced_window_delta);
+
+  // Receive first large DATA frame.
+  ValueOrHttp2Status<chttp2::FlowControlAction> action1 =
+      ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
+                                          stream);
+  expected_announced_window -= frame_payload_size;
+  expected_announced_window_delta -= frame_payload_size;
+  EXPECT_TRUE(action1.IsOk());
+  EXPECT_EQ(transport_flow_control_.announced_window(),
+            expected_announced_window);
+  EXPECT_EQ(stream->flow_control.announced_window_delta(),
+            expected_announced_window_delta);
+
+  // Announce we want to receive more data.
+  chttp2::StreamFlowControl::IncomingUpdateContext stream_flow_control_context(
+      &stream->flow_control);
+  stream_flow_control_context.SetPendingSize(frame_payload_size);
+  stream_flow_control_context.SetMinProgressSize(frame_payload_size);
+  chttp2::FlowControlAction action = stream_flow_control_context.MakeAction();
+  EXPECT_EQ(action.send_stream_update(),
+            chttp2::FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
+
+  // Send the flow control update to peer for stream
+  uint32_t transport_increment =
+      transport_flow_control_.MaybeSendUpdate(/*writing_anyway=*/true);
+  uint32_t stream_increment = stream->flow_control.MaybeSendUpdate();
+  EXPECT_GT(transport_increment, 0);
+  EXPECT_GT(stream_increment, 0);
+  expected_announced_window += transport_increment;
+  expected_announced_window_delta += stream_increment;
+  EXPECT_EQ(transport_flow_control_.announced_window(),
+            expected_announced_window);
+  EXPECT_EQ(stream->flow_control.announced_window_delta(),
+            expected_announced_window_delta);
+
+  // Receive 2nd large DATA frame.
+  ValueOrHttp2Status<chttp2::FlowControlAction> action2 =
+      ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
+                                          stream);
+  EXPECT_TRUE(action2.IsOk());
+  expected_announced_window -= frame_payload_size;
+  expected_announced_window_delta -= frame_payload_size;
+  EXPECT_EQ(transport_flow_control_.announced_window(),
+            expected_announced_window);
+  EXPECT_EQ(stream->flow_control.announced_window_delta(),
+            expected_announced_window_delta);
+}
+
 TEST(Http2CommonTransportTest,
      ProcessIncomingWindowUpdateFrameFlowControlNullStream) {
   chttp2::TransportFlowControl flow_control(
@@ -284,6 +491,58 @@ TEST(Http2CommonTransportTest,
                                               /*stream=*/nullptr);
   EXPECT_EQ(flow_control.remote_window(),
             chttp2::kDefaultWindow + 1000 + 10000);
+}
+
+TEST_F(TestsNeedingStreamObjects,
+       ProcessIncomingWindowUpdateFrameFlowControlWithStream) {
+  RefCountedPtr<Stream> stream = CreateMinimalTestStream(1);
+  EXPECT_EQ(transport_flow_control_.remote_window(), chttp2::kDefaultWindow);
+  EXPECT_EQ(stream->flow_control.remote_window_delta(), 0);
+
+  Http2WindowUpdateFrame frame;
+  frame.increment = 1000;
+
+  // If stream_id != 0 and stream is not null, stream flow control window should
+  // increase.
+  frame.stream_id = 1;
+  ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
+                                              stream);
+  EXPECT_EQ(transport_flow_control_.remote_window(), chttp2::kDefaultWindow);
+  EXPECT_EQ(stream->flow_control.remote_window_delta(), 1000);
+
+  // If stream_id == 0, transport flow control window should increase.
+  frame.stream_id = 0;
+  ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
+                                              stream);
+  EXPECT_EQ(transport_flow_control_.remote_window(),
+            chttp2::kDefaultWindow + 1000);
+  EXPECT_EQ(stream->flow_control.remote_window_delta(), 1000);
+
+  // If increment is 0, no change in flow control window.
+  // Although 0 increment would be a connection layer at the frame parsing
+  // layer, we should be graceful with it at this layer.
+  frame.increment = 0;
+  frame.stream_id = 0;
+  ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
+                                              stream);
+  EXPECT_EQ(transport_flow_control_.remote_window(),
+            chttp2::kDefaultWindow + 1000);
+  EXPECT_EQ(stream->flow_control.remote_window_delta(), 1000);
+  frame.stream_id = 1;
+  ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
+                                              stream);
+  EXPECT_EQ(transport_flow_control_.remote_window(),
+            chttp2::kDefaultWindow + 1000);
+  EXPECT_EQ(stream->flow_control.remote_window_delta(), 1000);
+
+  // Large increment
+  frame.increment = 10000;
+  frame.stream_id = 1;
+  ProcessIncomingWindowUpdateFrameFlowControl(frame, transport_flow_control_,
+                                              stream);
+  EXPECT_EQ(transport_flow_control_.remote_window(),
+            chttp2::kDefaultWindow + 1000);
+  EXPECT_EQ(stream->flow_control.remote_window_delta(), 1000 + 10000);
 }
 
 }  // namespace testing
