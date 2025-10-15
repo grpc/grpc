@@ -97,9 +97,7 @@ class HijackingInterceptor : public experimental::Interceptor {
       EchoRequest req;
       auto* buffer = methods->GetSerializedSendMessage();
       auto copied_buffer = *buffer;
-      EXPECT_TRUE(
-          SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
-              .ok());
+      EXPECT_TRUE(Deserialize(&copied_buffer, &req).ok());
       EXPECT_EQ(req.message(), "Hello");
     }
     if (methods->QueryInterceptionHookPoint(
@@ -203,9 +201,7 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
       EchoRequest req;
       auto* buffer = methods->GetSerializedSendMessage();
       auto copied_buffer = *buffer;
-      EXPECT_TRUE(
-          SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
-              .ok());
+      EXPECT_TRUE(Deserialize(&copied_buffer, &req).ok());
       EXPECT_EQ(req.message(), "Hello");
       req_ = req;
       stub_ = grpc::testing::EchoTestService::NewStub(
@@ -318,9 +314,7 @@ class BidiStreamingRpcHijackingInterceptor : public experimental::Interceptor {
       EchoRequest req;
       auto* buffer = methods->GetSerializedSendMessage();
       auto copied_buffer = *buffer;
-      EXPECT_TRUE(
-          SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
-              .ok());
+      EXPECT_TRUE(Deserialize(&copied_buffer, &req).ok());
       EXPECT_EQ(req.message().find("Hello"), 0u);
       msg = req.message();
     }
@@ -455,9 +449,7 @@ class ServerStreamingRpcHijackingInterceptor
       EchoRequest req;
       auto* buffer = methods->GetSerializedSendMessage();
       auto copied_buffer = *buffer;
-      EXPECT_TRUE(
-          SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
-              .ok());
+      EXPECT_TRUE(Deserialize(&copied_buffer, &req).ok());
       EXPECT_EQ(req.message(), "Hello");
     }
     if (methods->QueryInterceptionHookPoint(
@@ -573,9 +565,7 @@ class LoggingInterceptor : public experimental::Interceptor {
         auto* buffer = methods->GetSerializedSendMessage();
         auto copied_buffer = *buffer;
         EchoRequest req;
-        EXPECT_TRUE(
-            SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
-                .ok());
+        EXPECT_TRUE(Deserialize(&copied_buffer, &req).ok());
         EXPECT_EQ(req.message(), "Hello");
       } else {
         EXPECT_EQ(
@@ -584,9 +574,7 @@ class LoggingInterceptor : public experimental::Interceptor {
       }
       auto* buffer = methods->GetSerializedSendMessage();
       auto copied_buffer = *buffer;
-      EXPECT_TRUE(
-          SerializationTraits<EchoRequest>::Deserialize(&copied_buffer, &req)
-              .ok());
+      EXPECT_TRUE(Deserialize(&copied_buffer, &req).ok());
       EXPECT_TRUE(req.message().find("Hello") == 0u);
       pre_send_message_count_++;
     }
