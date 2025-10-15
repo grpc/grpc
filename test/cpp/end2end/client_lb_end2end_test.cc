@@ -3462,9 +3462,8 @@ TEST_F(RandomSubsettingTest, AddressUpdates) {
   ResetCounters();
 
   // Update to a different set of servers
-  std::vector<int> new_ports = {
-    servers_[2]->port_, servers_[3]->port_, servers_[4]->port_
-  };
+  std::vector<int> new_ports = {servers_[2]->port_, servers_[3]->port_,
+                                servers_[4]->port_};
   response_generator.SetNextResolution(new_ports, service_config_json);
   // Discover the new active subset
   std::set<int> new_active_servers;

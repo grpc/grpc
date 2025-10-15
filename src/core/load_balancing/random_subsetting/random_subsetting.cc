@@ -14,7 +14,6 @@
 // limitations under the License.
 //
 
-
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/port_platform.h>
 
@@ -28,7 +27,6 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -36,8 +34,8 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/load_balancing/child_policy_handler.h"
 #include "src/core/load_balancing/delegating_helper.h"
-#include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/load_balancing/lb_policy.h"
+#include "src/core/load_balancing/lb_policy_factory.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/json/json.h"
@@ -56,15 +54,18 @@ constexpr absl::string_view kRandomSubsetting = "random_subsetting";
 
 class RandomSubsettingConfig final : public LoadBalancingPolicy::Config {
  public:
-  RandomSubsettingConfig(uint32_t subset_size,
-                          RefCountedPtr<LoadBalancingPolicy::Config> child_policy)
+  RandomSubsettingConfig(
+      uint32_t subset_size,
+      RefCountedPtr<LoadBalancingPolicy::Config> child_policy)
       : subset_size_(subset_size), child_policy_(std::move(child_policy)) {}
 
   absl::string_view name() const override { return kRandomSubsetting; }
 
   uint32_t subset_size() const { return subset_size_; }
 
-  RefCountedPtr<LoadBalancingPolicy::Config> child_policy() const { return child_policy_; }
+  RefCountedPtr<LoadBalancingPolicy::Config> child_policy() const {
+    return child_policy_;
+  }
 
  private:
   uint32_t subset_size_;
@@ -86,7 +87,7 @@ class RandomSubsetting final : public LoadBalancingPolicy {
 
  private:
   EndpointAddressesList FilterEndpoints(const EndpointAddressesList& endpoints,
-    uint32_t subset_size, uint64_t seed);
+                                        uint32_t subset_size, uint64_t seed);
 
   OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
       const ChannelArgs& args);
@@ -96,23 +97,22 @@ class RandomSubsetting final : public LoadBalancingPolicy {
   OrphanablePtr<LoadBalancingPolicy> child_policy_;
 
   class Helper final
-        : public ParentOwningDelegatingChannelControlHelper<RandomSubsetting> {
-    public:
-      explicit Helper(RefCountedPtr<RandomSubsetting> random_subsetting_policy)
-          : ParentOwningDelegatingChannelControlHelper(
-                std::move(random_subsetting_policy)) {}
+      : public ParentOwningDelegatingChannelControlHelper<RandomSubsetting> {
+   public:
+    explicit Helper(RefCountedPtr<RandomSubsetting> random_subsetting_policy)
+        : ParentOwningDelegatingChannelControlHelper(
+              std::move(random_subsetting_policy)) {}
 
-      void UpdateState(grpc_connectivity_state state, const absl::Status& status,
-                      RefCountedPtr<SubchannelPicker> picker) override {
-        // Simply delegate to parent - no special picker wrapping needed
-        parent_helper()->UpdateState(state, status, std::move(picker));
-      }
-    };
+    void UpdateState(grpc_connectivity_state state, const absl::Status& status,
+                     RefCountedPtr<SubchannelPicker> picker) override {
+      // Simply delegate to parent - no special picker wrapping needed
+      parent_helper()->UpdateState(state, status, std::move(picker));
+    }
+  };
 };
 
 RandomSubsetting::RandomSubsetting(Args args)
-    : LoadBalancingPolicy(std::move(args)),
-      seed_(SharedBitGen()()) {
+    : LoadBalancingPolicy(std::move(args)), seed_(SharedBitGen()()) {
   GRPC_TRACE_LOG(random_subsetting_lb, INFO)
       << "[random_subsetting " << this << "] created";
 }
@@ -141,7 +141,8 @@ absl::Status RandomSubsetting::UpdateLocked(UpdateArgs args) {
   });
 
   // Filter endpoints using rendezvous hashing
-  auto filtered_endpoints = FilterEndpoints(endpoint_list, config->subset_size(), seed_);
+  auto filtered_endpoints =
+      FilterEndpoints(endpoint_list, config->subset_size(), seed_);
 
   // Create child policy if needed
   if (child_policy_ == nullptr) {
@@ -192,8 +193,7 @@ RandomSubsetting::~RandomSubsetting() {
 }
 
 EndpointAddressesList RandomSubsetting::FilterEndpoints(
-    const EndpointAddressesList& endpoints,
-    uint32_t subset_size,
+    const EndpointAddressesList& endpoints, uint32_t subset_size,
     uint64_t seed) {
   if (subset_size >= endpoints.size()) {
     return endpoints;
@@ -211,7 +211,8 @@ EndpointAddressesList RandomSubsetting::FilterEndpoints(
     if (endpoint.addresses().empty()) continue;
     // Use the first address as input to hash function
     const auto& first_address = endpoint.addresses().front();
-    std::string address_str = grpc_sockaddr_to_string(&first_address, false).value();
+    std::string address_str =
+        grpc_sockaddr_to_string(&first_address, false).value();
     uint64_t hash = XXH64(address_str.data(), address_str.size(), seed);
     endpoints_with_hash.push_back({hash, endpoint});
   }
@@ -265,16 +266,16 @@ class RandomSubsettingFactory final : public LoadBalancingPolicyFactory {
 
   absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
   ParseLoadBalancingConfig(const Json& json) const override;
-  };
+};
 
 absl::StatusOr<RefCountedPtr<LoadBalancingPolicy::Config>>
 RandomSubsettingFactory::ParseLoadBalancingConfig(const Json& json) const {
   ValidationErrors errors;
-    uint32_t subset_size = 0;
-    RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
+  uint32_t subset_size = 0;
+  RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
 
-    // Parse subset_size
-    {
+  // Parse subset_size
+  {
     ValidationErrors::ScopedField field(&errors, ".subset_size");
     auto it = json.object().find("subset_size");
     if (it == json.object().end()) {
@@ -288,10 +289,10 @@ RandomSubsettingFactory::ParseLoadBalancingConfig(const Json& json) const {
         errors.AddError("must be greater than 0");
       }
     }
-    }
+  }
 
-    // Parse childPolicy
-    {
+  // Parse childPolicy
+  {
     ValidationErrors::ScopedField field(&errors, ".childPolicy");
     auto it = json.object().find("childPolicy");
     if (it == json.object().end()) {
@@ -299,31 +300,31 @@ RandomSubsettingFactory::ParseLoadBalancingConfig(const Json& json) const {
     } else if (it->second.type() != Json::Type::kArray) {
       errors.AddError("is not an array");
     } else {
-      auto child_policy_config =
-          CoreConfiguration::Get()
-              .lb_policy_registry()
-              .ParseLoadBalancingConfig(it->second);
+      auto child_policy_config = CoreConfiguration::Get()
+                                     .lb_policy_registry()
+                                     .ParseLoadBalancingConfig(it->second);
       if (!child_policy_config.ok()) {
         errors.AddError(child_policy_config.status().message());
       } else {
         child_policy = std::move(*child_policy_config);
       }
     }
-    }
+  }
 
-    if (!errors.ok()) {
-      return errors.status(absl::StatusCode::kInvalidArgument,
-          "errors validating random_subsetting LB policy config");
-    }
+  if (!errors.ok()) {
+    return errors.status(
+        absl::StatusCode::kInvalidArgument,
+        "errors validating random_subsetting LB policy config");
+  }
 
-    if (child_policy == nullptr) {  // "should never happen" check
-      return absl::InternalError(
-          "child policy config is null after successful parsing");
-    }
+  if (child_policy == nullptr) {  // "should never happen" check
+    return absl::InternalError(
+        "child policy config is null after successful parsing");
+  }
 
-    return MakeRefCounted<RandomSubsettingConfig>(
-      subset_size, std::move(child_policy));
-    }
+  return MakeRefCounted<RandomSubsettingConfig>(subset_size,
+                                                std::move(child_policy));
+}
 
 }  // namespace
 

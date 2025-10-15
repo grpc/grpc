@@ -15,13 +15,13 @@
 //
 
 #include <grpc/grpc.h>
+
 #include <array>
 #include <string>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
 #include "src/core/client_channel/client_channel_service_config.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/service_config/service_config_impl.h"
@@ -58,31 +58,31 @@ class RandomSubsettingTest : public LoadBalancingPolicyTest {
 };
 
 TEST_F(RandomSubsettingTest, BasicConfig) {
-  auto service_config = ServiceConfigImpl::Create(ChannelArgs(),
-      MakeRandomSubsettingServiceConfig());
+  auto service_config = ServiceConfigImpl::Create(
+      ChannelArgs(), MakeRandomSubsettingServiceConfig());
   ASSERT_TRUE(service_config.ok()) << service_config.status();
   ASSERT_NE(*service_config, nullptr);
 }
 
 TEST_F(RandomSubsettingTest, SubsetSizeLargerThanEndpoints) {
-  auto service_config = ServiceConfigImpl::Create(ChannelArgs(),
-      MakeRandomSubsettingServiceConfig(42));
+  auto service_config = ServiceConfigImpl::Create(
+      ChannelArgs(), MakeRandomSubsettingServiceConfig(42));
   ASSERT_TRUE(service_config.ok()) << service_config.status();
   ASSERT_NE(*service_config, nullptr);
 
   auto global_config = DownCast<ClientChannelGlobalParsedConfig*>(
-      (*service_config)->GetGlobalParsedConfig(
-        ClientChannelServiceConfigParser::ParserIndex()));
+      (*service_config)
+          ->GetGlobalParsedConfig(
+              ClientChannelServiceConfigParser::ParserIndex()));
   ASSERT_NE(global_config, nullptr);
   auto lb_config = global_config->parsed_lb_config();
   ASSERT_NE(lb_config, nullptr);
 }
 
 TEST_F(RandomSubsettingTest, ZeroSubsetSize) {
-  auto service_config = ServiceConfigImpl::Create(ChannelArgs(),
-      MakeRandomSubsettingServiceConfig(0));
-  EXPECT_EQ(service_config.status().code(),
-            absl::StatusCode::kInvalidArgument);
+  auto service_config = ServiceConfigImpl::Create(
+      ChannelArgs(), MakeRandomSubsettingServiceConfig(0));
+  EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(service_config.status().message(),
               ::testing::HasSubstr("must be greater than 0"));
 }
@@ -98,10 +98,10 @@ TEST_F(RandomSubsettingTest, MissingSubsetSize) {
       "}\n";
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
-  EXPECT_EQ(service_config.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
-              ::testing::HasSubstr("field:subset_size error:field not present"));
+  EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_THAT(
+      service_config.status().message(),
+      ::testing::HasSubstr("field:subset_size error:field not present"));
 }
 
 TEST_F(RandomSubsettingTest, MissingChildPolicy) {
@@ -115,10 +115,10 @@ TEST_F(RandomSubsettingTest, MissingChildPolicy) {
       "}\n";
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
-  EXPECT_EQ(service_config.status().code(),
-            absl::StatusCode::kInvalidArgument);
-  EXPECT_THAT(service_config.status().message(),
-              ::testing::HasSubstr("field:childPolicy error:field not present"));
+  EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_THAT(
+      service_config.status().message(),
+      ::testing::HasSubstr("field:childPolicy error:field not present"));
 }
 
 TEST_F(RandomSubsettingTest, ChildPolicyNotArray) {
@@ -133,28 +133,29 @@ TEST_F(RandomSubsettingTest, ChildPolicyNotArray) {
       "}\n";
   auto service_config =
       ServiceConfigImpl::Create(ChannelArgs(), service_config_json);
-  EXPECT_EQ(service_config.status().code(),
-            absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(service_config.status().code(), absl::StatusCode::kInvalidArgument);
   EXPECT_THAT(service_config.status().message(),
               ::testing::HasSubstr("is not an array"));
 }
 
 TEST_F(RandomSubsettingTest, EmptyAddressList) {
-  auto service_config = ServiceConfigImpl::Create(ChannelArgs(),
-      MakeRandomSubsettingServiceConfig());
+  auto service_config = ServiceConfigImpl::Create(
+      ChannelArgs(), MakeRandomSubsettingServiceConfig());
   auto global_config = DownCast<ClientChannelGlobalParsedConfig*>(
-      (*service_config)->GetGlobalParsedConfig(
-          ClientChannelServiceConfigParser::ParserIndex()));
+      (*service_config)
+          ->GetGlobalParsedConfig(
+              ClientChannelServiceConfigParser::ParserIndex()));
   auto lb_config = global_config->parsed_lb_config();
 
   const std::array<absl::string_view, 0> kEmptyAddresses = {};
-  auto status = ApplyUpdate(BuildUpdate(kEmptyAddresses, lb_config), lb_policy());
+  auto status =
+      ApplyUpdate(BuildUpdate(kEmptyAddresses, lb_config), lb_policy());
   EXPECT_EQ(status.code(), absl::StatusCode::kUnavailable);
   EXPECT_THAT(status.message(), ::testing::HasSubstr("empty address list"));
 
   // Should report TRANSIENT_FAILURE with the error status
   auto picker = ExpectState(GRPC_CHANNEL_TRANSIENT_FAILURE,
-                           absl::UnavailableError("empty address list"));
+                            absl::UnavailableError("empty address list"));
   ASSERT_NE(picker, nullptr);
 }
 
@@ -165,13 +166,13 @@ TEST_F(RandomSubsettingTest, FiltersEndpointsCorrectly) {
       "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445"};
 
   auto service_config = ServiceConfigImpl::Create(
-      ChannelArgs(),
-      MakeRandomSubsettingServiceConfig(kSubsetSize));
+      ChannelArgs(), MakeRandomSubsettingServiceConfig(kSubsetSize));
   ASSERT_TRUE(service_config.ok()) << service_config.status();
 
   auto global_config = DownCast<ClientChannelGlobalParsedConfig*>(
-      (*service_config)->GetGlobalParsedConfig(
-          ClientChannelServiceConfigParser::ParserIndex()));
+      (*service_config)
+          ->GetGlobalParsedConfig(
+              ClientChannelServiceConfigParser::ParserIndex()));
   ASSERT_NE(global_config, nullptr);
   auto lb_config = global_config->parsed_lb_config();
   ASSERT_NE(lb_config, nullptr);
@@ -195,13 +196,15 @@ TEST_F(RandomSubsettingTest, ConnectivityStateTransitions) {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443",
       "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445"};
 
-  auto service_config = ServiceConfigImpl::Create(ChannelArgs(),
+  auto service_config = ServiceConfigImpl::Create(
+      ChannelArgs(),
       MakeRandomSubsettingServiceConfig(kSubsetSize, "pick_first"));
   ASSERT_TRUE(service_config.ok()) << service_config.status();
 
   auto global_config = DownCast<ClientChannelGlobalParsedConfig*>(
-      (*service_config)->GetGlobalParsedConfig(
-          ClientChannelServiceConfigParser::ParserIndex()));
+      (*service_config)
+          ->GetGlobalParsedConfig(
+              ClientChannelServiceConfigParser::ParserIndex()));
   ASSERT_NE(global_config, nullptr);
   auto lb_config = global_config->parsed_lb_config();
   ASSERT_NE(lb_config, nullptr);
@@ -239,11 +242,12 @@ TEST_F(RandomSubsettingTest, MinimizesChurnOnAddressUpdate) {
       "ipv4:127.0.0.1:441", "ipv4:127.0.0.1:442", "ipv4:127.0.0.1:443",
       "ipv4:127.0.0.1:444", "ipv4:127.0.0.1:445"};
 
-  auto service_config = ServiceConfigImpl::Create(ChannelArgs(),
-      MakeRandomSubsettingServiceConfig(kSubsetSize));
+  auto service_config = ServiceConfigImpl::Create(
+      ChannelArgs(), MakeRandomSubsettingServiceConfig(kSubsetSize));
   auto global_config = DownCast<ClientChannelGlobalParsedConfig*>(
-      (*service_config)->GetGlobalParsedConfig(
-          ClientChannelServiceConfigParser::ParserIndex()));
+      (*service_config)
+          ->GetGlobalParsedConfig(
+              ClientChannelServiceConfigParser::ParserIndex()));
   auto lb_config = global_config->parsed_lb_config();
 
   EXPECT_EQ(ApplyUpdate(BuildUpdate(kInitialAddresses, lb_config), lb_policy()),
@@ -275,7 +279,8 @@ TEST_F(RandomSubsettingTest, MinimizesChurnOnAddressUpdate) {
     }
   }
   // With rendezvous hashing, most subchannels should remain unchanged
-  EXPECT_GE(unchanged_count, kMinUnchanged) << "Rendezvous hashing should minimize churn";
+  EXPECT_GE(unchanged_count, kMinUnchanged)
+      << "Rendezvous hashing should minimize churn";
 }
 
 }  // namespace
