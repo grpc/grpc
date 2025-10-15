@@ -27,7 +27,7 @@ $PYTHON -m pip freeze
 $PYTHON -m coverage --version
 
 # TODO(ssreenithi): find pyproject.toml/pytest equivalent
-COVERAGE_CORE="ctrace" $PYTHON "$ROOT/src/python/grpcio_tests/setup.py" "$2"
+$PYTHON "$ROOT/src/python/grpcio_tests/setup.py" "$2"
 
 mkdir -p "$ROOT/reports"
 rm -rf "$ROOT/reports/python-coverage"
