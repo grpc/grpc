@@ -8358,6 +8358,7 @@ grpc_cc_library(
     ],
     deps = [
         "1999",
+        "activity",
         "arena",
         "call_spine",
         "channel_args",

@@ -874,6 +874,7 @@ grpc_cc_test(
         "//src/core:message",
         "//src/core:metadata",
         "//src/core:notification",
+        "//src/core:seq",
         "//src/core:time",
         "//src/core:transport_common",
         "//src/core:try_join",
