@@ -28,13 +28,13 @@
 
 #include "src/core/channelz/property_list.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/single_set_ptr.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
-#include "src/core/util/no_destruct.h"
-#include "src/core/util/single_set_ptr.h"
 
 namespace grpc_core {
 
