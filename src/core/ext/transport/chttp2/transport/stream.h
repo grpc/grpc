@@ -46,35 +46,36 @@ enum class HttpStreamState : uint8_t {
 
 // Managing the streams
 struct Stream : public RefCounted<Stream> {
-  explicit Stream(CallHandler call, bool allow_true_binary_metadata_peer,
-                  bool allow_true_binary_metadata_acked,
+  explicit Stream(CallHandler call,
                   chttp2::TransportFlowControl& transport_flow_control)
       : call(std::move(call)),
         is_write_closed(false),
         stream_state(HttpStreamState::kIdle),
         stream_id(kInvalidStreamId),
-        header_assembler(allow_true_binary_metadata_acked),
+        header_assembler(),
         did_push_initial_metadata(false),
         did_push_trailing_metadata(false),
         data_queue(MakeRefCounted<StreamDataQueue<ClientMetadataHandle>>(
             /*is_client*/ true,
-            /*queue_size*/ kStreamQueueSize, allow_true_binary_metadata_peer)),
+            /*queue_size*/ kStreamQueueSize)),
         flow_control(&transport_flow_control) {}
 
-  // TODO(akshitpatel) : [PH2][P4] : SetStreamId can be avoided if we pass the
-  // stream id as a parameter to the dequeue function. The only downside here
-  // is that we will be creating two new disassemblers for every dequeue call.
-  // The upside is that we save 8 bytes per call. Decide based on benchmark
-  // results.
-  void SetStreamId(const uint32_t stream_id) {
+  // TODO(akshitpatel) : [PH2][P4] : Initialize can be avoided if we pass
+  // the stream id as a parameter to the dequeue function. The only downside
+  // here is that we will be creating two new disassemblers for every dequeue
+  // call. The upside is that we save 8 bytes per call. Decide based on
+  // benchmark results.
+  void Initialize(const uint32_t stream_id,
+                  bool allow_true_binary_metadata_peer,
+                  bool allow_true_binary_metadata_acked) {
     GRPC_DCHECK_NE(stream_id, 0u);
     GRPC_DCHECK_EQ(this->stream_id, 0u);
     GRPC_HTTP2_STREAM_LOG
         << "Http2ClientTransport::Stream::SetStreamId stream_id=" << stream_id;
     if (GPR_LIKELY(this->stream_id == 0)) {
       this->stream_id = stream_id;
-      header_assembler.SetStreamId(stream_id);
-      data_queue->SetStreamId(stream_id);
+      header_assembler.Initialize(stream_id, allow_true_binary_metadata_acked);
+      data_queue->Initialize(stream_id, allow_true_binary_metadata_peer);
     }
   }
 
