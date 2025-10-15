@@ -1,8 +1,6 @@
 #!/usr/bin/env powershell
 # Install Python 3.9 for x64 and x86 in order to build wheels on Windows.
 
-New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
-
 Set-StrictMode -Version 2
 $ErrorActionPreference = 'Stop'
 # Disable progress bar to avoid getting the
