@@ -42,19 +42,19 @@ set ARTIFACT_DIR=%cd%\%ARTIFACTS_OUT%
 python tools\distrib\python\make_grpcio_tools.py
 
 @rem Use time for randomness
-set "CURRENT_TIME=%TIME%"
-echo %CURRENT_TIME%
+@REM set "CURRENT_TIME=%TIME%"
+@REM echo %CURRENT_TIME%
 
-@rem remove : and . from the time
-set "CLEAN_TIME=%CURRENT_TIME::=%"
-set "CLEAN_TIME=%CLEAN_TIME:.=%"
+@REM @rem remove : and . from the time
+@REM set "CLEAN_TIME=%CURRENT_TIME::=%"
+@REM set "CLEAN_TIME=%CLEAN_TIME:.=%"
 
-@rem create a unique id using last 7 digits
-set "UNIQUE_ID=%CLEAN_TIME:~-7%"
+@REM @rem create a unique id using last 7 digits
+@REM set "UNIQUE_ID=%CLEAN_TIME:~-7%"
 
-@rem Creates a unique, short, and concurrency-safe directory like T:\b12345
-set "SHORT_TMP_DIR=T:\t%UNIQUE_ID%"
-mkdir "%SHORT_TMP_DIR%"
+@REM @rem Creates a unique, short, and concurrency-safe directory like T:\b12345
+@REM set "SHORT_TMP_DIR=T:\t%UNIQUE_ID%"
+@REM mkdir "%SHORT_TMP_DIR%"
 @rem if not exist %SHORT_TMP_DIR% mkdir %SHORT_TMP_DIR%\Release
 
 @rem Build gRPC Python extensions
@@ -66,10 +66,10 @@ mkdir "%SHORT_TMP_DIR%"
 @rem popd
 
 @rem Build gRPC Python distributions
-python -m build --wheel -C--build-temp="%SHORT_TMP_DIR%" || goto :error
+python -m build --wheel || goto :error
 
 pushd tools\distrib\python\grpcio_tools
-python -m build --wheel -C--build-temp="%SHORT_TMP_DIR%" || goto :error
+python -m build --wheel || goto :error
 popd
 
 @rem Ensure the generate artifacts are valid.
