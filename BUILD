@@ -30,13 +30,7 @@ load(
 
 licenses(["reciprocal"])
 
-package(
-    default_visibility = ["//visibility:public"],
-    features = [
-        "-parse_headers",
-        "layering_check",
-    ],
-)
+package(default_visibility = ["//visibility:public"])
 
 exports_files([
     "LICENSE",
@@ -839,6 +833,10 @@ grpc_cc_library(
         "absl/time:time",
         "absl/functional:bind_front",
         "absl/flags:flag",
+    ],
+    google_deps = [
+        "//base:config",
+        "//base:percpu",
     ],
     public_hdrs = GPR_PUBLIC_HDRS,
     tags = [
