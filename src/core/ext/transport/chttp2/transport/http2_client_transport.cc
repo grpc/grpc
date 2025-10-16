@@ -804,24 +804,24 @@ Http2ClientTransport::DequeueStreamFrames(RefCountedPtr<Stream> stream) {
   // data frames when write_bytes_remaining_ is very low. As the
   // available transport tokens can only range from 0 to 2^31 - 1,
   // we are clamping the write_bytes_remaining_ to that range.
-  // TODO(akshitpatel) : [PH2][P3] : Plug transport_tokens when
-  // transport flow control is implemented.
+  const uint32_t max_dequeue_size =
+      GetMaxPermittedDequeue(flow_control_, stream->flow_control,
+                             write_bytes_remaining_, settings_.peer());
   StreamDataQueue<ClientMetadataHandle>::DequeueResult result =
-      stream->DequeueFrames(
-          /*transport_tokens*/ std::min(
-              std::numeric_limits<uint32_t>::max(),
-              static_cast<uint32_t>(Clamp<size_t>(write_bytes_remaining_, 0,
-                                                  RFC9113::kMaxSize31Bit - 1))),
-          settings_.peer().max_frame_size(), encoder_);
+      stream->DequeueFrames(max_dequeue_size, settings_.peer().max_frame_size(),
+                            encoder_);
   ProcessOutgoingDataFrameFlowControl(stream->flow_control,
                                       result.flow_control_tokens_consumed);
   if (result.is_writable) {
     // Stream is still writable. Enqueue it back to the writable
     // stream list.
-    // TODO(akshitpatel) : [PH2][P3] : Plug transport_tokens when
-    // transport flow control is implemented.
-    absl::Status status =
-        writable_stream_list_.Enqueue(stream, result.priority);
+    absl::Status status;
+    if (AreTransportFlowControlTokensAvailable()) {
+      status = writable_stream_list_.Enqueue(stream, result.priority);
+    } else {
+      status = writable_stream_list_.BlockedOnTransportFlowControl(stream);
+    }
+
     if (GPR_UNLIKELY(!status.ok())) {
       GRPC_HTTP2_CLIENT_DLOG
           << "Http2ClientTransport MultiplexerLoop Failed to "
@@ -926,8 +926,6 @@ auto Http2ClientTransport::MultiplexerLoop() {
           // some cases, we may write more than max_write_size_ bytes(like
           // writing metadata).
           while (self->write_bytes_remaining_ > 0) {
-            // TODO(akshitpatel) : [PH2][P3] : Plug transport_tokens when
-            // transport flow control is implemented.
             std::optional<RefCountedPtr<Stream>> optional_stream =
                 self->writable_stream_list_.ImmediateNext(
                     self->AreTransportFlowControlTokensAvailable());
@@ -1155,17 +1153,6 @@ Http2ClientTransport::Http2ClientTransport(
                         OnMultiplexerLoopEnded());
   // The keepalive loop is only spawned if the keepalive time is not infinity.
   keepalive_manager_.Spawn(general_party_.get());
-
-  // TODO(tjagtap) : [PH2][P2] Delete this hack once flow control is done.
-  // We are increasing the flow control window so that we can avoid sending
-  // WINDOW_UPDATE frames while flow control is under development. Once it is
-  // ready we should remove these lines.
-  // <DeleteAfterFlowControl>
-  Http2ErrorCode code = settings_.mutable_local().Apply(
-      Http2Settings::kInitialWindowSizeWireId,
-      (Http2Settings::max_initial_window_size() - 1));
-  GRPC_DCHECK(code == Http2ErrorCode::kNoError);
-  // </DeleteAfterFlowControl>
 
   const int max_hpack_table_size =
       channel_args.GetInt(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER).value_or(-1);

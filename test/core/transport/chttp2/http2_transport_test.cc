@@ -414,10 +414,8 @@ TEST_F(TestsNeedingStreamObjects,
   EXPECT_EQ(stream->flow_control.announced_window_delta(),
             expected_announced_window_delta);
 
-  // Announce we want to receive more data.
   chttp2::StreamFlowControl::IncomingUpdateContext stream_flow_control_context(
       &stream->flow_control);
-  stream_flow_control_context.SetPendingSize(frame_payload_size);
   stream_flow_control_context.SetMinProgressSize(frame_payload_size);
   chttp2::FlowControlAction action = stream_flow_control_context.MakeAction();
   EXPECT_EQ(action.send_stream_update(),
