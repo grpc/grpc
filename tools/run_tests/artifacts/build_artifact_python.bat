@@ -41,35 +41,16 @@ set ARTIFACT_DIR=%cd%\%ARTIFACTS_OUT%
 @rem Set up gRPC Python tools
 python tools\distrib\python\make_grpcio_tools.py
 
-@rem Use time for randomness
-@REM set "CURRENT_TIME=%TIME%"
-@REM echo %CURRENT_TIME%
+@rem Creates a unique, short, and concurrency-safe directory like T:\b12345
+call :CreateAndGetUniqueTempDir
 
-@REM @rem remove : and . from the time
-@REM set "CLEAN_TIME=%CURRENT_TIME::=%"
-@REM set "CLEAN_TIME=%CLEAN_TIME:.=%"
+@rem Build gRPC Python distribution
+python -m build --wheel -C--build-temp="\\?\%SHORT_TMP_DIR%" || goto :error
 
-@REM @rem create a unique id using last 7 digits
-@REM set "UNIQUE_ID=%CLEAN_TIME:~-7%"
-
-@REM @rem Creates a unique, short, and concurrency-safe directory like T:\b12345
-@REM set "SHORT_TMP_DIR=T:\t%UNIQUE_ID%"
-@REM mkdir "%SHORT_TMP_DIR%"
-@rem if not exist %SHORT_TMP_DIR% mkdir %SHORT_TMP_DIR%\Release
-
-@rem Build gRPC Python extensions
-@rem python -m build will itself build extensions, no need to build separately
-@rem python setup.py build_ext -c %EXT_COMPILER% --build-temp %SHORT_TMP_DIR% || goto :error
-
-@rem pushd tools\distrib\python\grpcio_tools
-@rem python setup.py build_ext -c %EXT_COMPILER% --build-temp %SHORT_TMP_DIR% || goto :error
-@rem popd
-
-@rem Build gRPC Python distributions
-python -m build --wheel || goto :error
-
+@rem Build grpcio-tools Python distribution
+call :CreateAndGetUniqueTempDir
 pushd tools\distrib\python\grpcio_tools
-python -m build --wheel || goto :error
+python -m build --wheel -C--build-temp="\\?\%SHORT_TMP_DIR%" || goto :error
 popd
 
 @rem Ensure the generate artifacts are valid.
@@ -84,3 +65,18 @@ goto :EOF
 :error
 popd
 exit /b 1
+
+:CreateAndGetUniqueTempDir
+  @rem Use time for randomness
+  set "CURRENT_TIME=%TIME%"
+  echo %CURRENT_TIME%
+
+  @rem remove : and . from the time
+  set "CLEAN_TIME=%CURRENT_TIME::=%"
+  set "CLEAN_TIME=%CLEAN_TIME:.=%"
+
+  @rem create a unique id using last 7 digits
+  set "UNIQUE_ID=%CLEAN_TIME:~-7%"
+
+  set "SHORT_TMP_DIR=T:\t%UNIQUE_ID%"
+  mkdir "%SHORT_TMP_DIR%"
