@@ -19,7 +19,9 @@ from grpc_observability import _open_telemetry_observability
 from grpc_observability._observability import OptionalLabelType
 from opentelemetry.metrics import MeterProvider
 from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+from opentelemetry.trace.propagation.tracecontext import (
+    TraceContextTextMapPropagator,
+)
 
 GRPC_METHOD_LABEL = "grpc.method"
 GRPC_TARGET_LABEL = "grpc.target"

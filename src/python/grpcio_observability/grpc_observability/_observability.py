@@ -17,7 +17,7 @@ import abc
 from dataclasses import dataclass
 from dataclasses import field
 import enum
-from typing import Dict, List, Mapping, Set, Tuple, Union
+from typing import Dict, List, Mapping, Set, Union
 
 
 class Exporter(metaclass=abc.ABCMeta):
@@ -112,7 +112,9 @@ class TracingData:
     should_sample: bool
     child_span_count: int
     span_labels: Mapping[str, Union[str, bytes]] = field(default_factory=dict)
-    span_events: List[Dict[str, Union[str, Dict[str, str]]]] = field(default_factory=list)
+    span_events: List[Dict[str, Union[str, Dict[str, str]]]] = field(
+        default_factory=list
+    )
 
 
 @enum.unique
