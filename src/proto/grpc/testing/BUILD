@@ -26,6 +26,8 @@ licenses(["notice"])
 
 grpc_package(
     name = "testing",
+    # TODO(roth): b/443065135 Remove parse_headers check once the bug is fixed.
+    features = ["-parse_headers"],
     visibility = "public",
 )
 
