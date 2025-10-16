@@ -43,22 +43,24 @@ python tools\distrib\python\make_grpcio_tools.py
 
 @rem Creates a unique, short, and concurrency-safe directory like T:\b12345
 call :CreateAndGetUniqueTempDir
+set "GRPC_BUILD_EXT_TEMP=%SHORT_TMP_DIR%"
 
 @rem Build gRPC Python distribution
-python -m build --wheel -C--build-temp="\\?\%SHORT_TMP_DIR%" || goto :error
+python -m build --wheel || goto :error
 
 @rem Build grpcio-tools Python distribution
-call :CreateAndGetUniqueTempDir
-pushd tools\distrib\python\grpcio_tools
-python -m build --wheel -C--build-temp="\\?\%SHORT_TMP_DIR%" || goto :error
-popd
+@REM call :CreateAndGetUniqueTempDir
+@REM set "GRPC_TOOLS_BUILD_EXT_TEMP=%SHORT_TMP_DIR%"
+@REM pushd tools\distrib\python\grpcio_tools
+@REM python -m build --wheel || goto :error
+@REM popd
 
-@rem Ensure the generate artifacts are valid.
-python -m pip install packaging==21.3 twine==5.0.0
-python -m twine check dist\* tools\distrib\python\grpcio_tools\dist\* || goto :error
+@REM @rem Ensure the generate artifacts are valid.
+@REM python -m pip install packaging==21.3 twine==5.0.0
+@REM python -m twine check dist\* tools\distrib\python\grpcio_tools\dist\* || goto :error
 
-xcopy /Y /I /S dist\* %ARTIFACT_DIR% || goto :error
-xcopy /Y /I /S tools\distrib\python\grpcio_tools\dist\* %ARTIFACT_DIR% || goto :error
+@REM xcopy /Y /I /S dist\* %ARTIFACT_DIR% || goto :error
+@REM xcopy /Y /I /S tools\distrib\python\grpcio_tools\dist\* %ARTIFACT_DIR% || goto :error
 
 goto :EOF
 

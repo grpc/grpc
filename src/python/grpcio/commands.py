@@ -289,6 +289,12 @@ class BuildExt(build_ext.build_ext):
         return filename
 
     def build_extensions(self):
+
+        grpc_temp_dir = os.getenv("GRPC_BUILD_EXT_TEMP", None)
+        if grpc_temp_dir is not None:
+            print(f"Overriding build_temp with environment variable: {grpc_temp_dir}")
+            self.build_temp = grpc_temp_dir
+
         # This is to let UnixCompiler get either C or C++ compiler options depending on the source.
         # Note that this doesn't work for MSVCCompiler and will be handled by _spawn_patch.py.
         old_compile = self.compiler._compile
