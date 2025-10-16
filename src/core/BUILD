@@ -8497,6 +8497,10 @@ grpc_cc_library(
     external_deps = [
         "absl/random",
     ],
+    visibility = [
+        "//:__subpackages__",
+        "//bazel:transport_common",
+    ],
     deps = [
         ":shared_bit_gen",
         ":time",

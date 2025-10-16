@@ -242,3 +242,8 @@ package_group(
     name = "socket_mutator",
     packages = [],
 )
+
+package_group(
+    name = "transport_common",
+    packages = [],
+)
