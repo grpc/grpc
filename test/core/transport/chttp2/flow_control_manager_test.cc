@@ -156,11 +156,13 @@ TEST(FlowControlManagerTest, GetMaxPermittedDequeue) {
 
   // If transport window is limiting
   {
-    chttp2::TransportFlowControl::OutgoingUpdateContext tfc_upd(
-        &transport_flow_control);
-    tfc_upd.StreamSentData(60000);
+    chttp2::StreamFlowControl::OutgoingUpdateContext sfc_upd(
+        &stream_flow_control);
+    sfc_upd.SentData(60000);
+    // This restores the stream tokens, but NOT the transport tokens.
+    sfc_upd.RecvUpdate(60000);
   }
-  // transport window = 64535-60000=4535, stream_delta=-1000
+  // transport window = 64535-60000=4535, stream_delta=-1000-60000+60000 = -1000
   // flow_control_tokens = min(4535, -1000+65535) = min(4535, 64535) = 4535
   EXPECT_EQ(4535,
             GetMaxPermittedDequeue(transport_flow_control, stream_flow_control,
