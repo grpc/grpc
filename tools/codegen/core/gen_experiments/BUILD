@@ -29,7 +29,7 @@ grpc_cc_library(
         "absl/strings:str_format",
         "absl/time:time",
         "absl/container:flat_hash_map",
-        "yaml-cpp",
+        "@yaml-cpp//:yaml-cpp",
     ],
     visibility = ["//visibility:public"],
 )

@@ -40,10 +40,10 @@
 #include "absl/time/civil_time.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "third_party/yamlcpp/include/yaml-cpp/node/emit.h"
-#include "third_party/yamlcpp/include/yaml-cpp/node/node.h"
-#include "third_party/yamlcpp/include/yaml-cpp/node/parse.h"
-#include "third_party/yamlcpp/include/yaml-cpp/yaml.h"  // IWYU pragma: keep
+#include "include/yaml-cpp/node/emit.h"
+#include "include/yaml-cpp/node/node.h"
+#include "include/yaml-cpp/node/parse.h"
+#include "include/yaml-cpp/yaml.h"  // IWYU pragma: keep
 
 namespace grpc_core {
 
@@ -255,14 +255,17 @@ absl::Status ExperimentsCompiler::AddRolloutSpecification(
     RolloutSpecification rollout_specification;
     if (!value["default"].IsMap()) {
       // default is a single value, either true or false.
-      rollout_specification = RolloutSpecification(
-          value["name"].as<std::string>(), value["default"].as<std::string>(),
-          std::map<std::string, std::string>());
+      rollout_specification = RolloutSpecification{
+          .name = value["name"].as<std::string>(),
+          .default_value = value["default"].as<std::string>(),
+          .platform_value = std::map<std::string, std::string>()};
     } else {
       // default is a map of platform to value.
-      rollout_specification = RolloutSpecification(
-          value["name"].as<std::string>(), std::string(),
-          value["default"].as<std::map<std::string, std::string>>());
+      rollout_specification = RolloutSpecification{
+          .name = value["name"].as<std::string>(),
+          .default_value = std::string(),
+          .platform_value =
+              value["default"].as<std::map<std::string, std::string>>()};
     }
     auto it = experiment_definitions_.find(value["name"].as<std::string>());
     if (it == experiment_definitions_.end()) {
