@@ -69,7 +69,7 @@ cd altsrc
 @rem scripts in tools/run_tests generate test reports and we need to make sure these reports
 @rem land in a directory that is going to be rsynced back to the kokoro agent.
 set GRPC_TEST_REPORT_BASE_DIR=T:\src\github\grpc
-set CI_SCRIPT_LOG_FILE="build_artifacts_python/ci_build.log"
+set CI_SCRIPT_LOG_FILE="ci_build.log"
 echo "Relaunching and invoking original CI script now in a new environment."
 @echo on
 start /wait cmd.exe /c "call %CI_SCRIPT_RELATIVE_TO_SRC% 1> %CI_SCRIPT_LOG_FILE% 2>&1"
