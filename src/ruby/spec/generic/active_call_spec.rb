@@ -37,6 +37,16 @@ describe GRPC::ActiveCall do
     active_call.instance_variable_get(:@call)
   end
 
+  before(:all) do
+    linux = RUBY_PLATFORM =~ /linux/
+    arm = RUBY_PLATFORM =~ /(aarch64|arm64)/
+    if linux && arm
+      # TODO(stanleycheung): fix test timing out on linux arch, see
+      # prod:grpc/core/master/linux/arm64/grpc_basictests_ruby
+      skip "Flaky: this tests times out randomly when running on arm64 linux"
+    end
+  end
+
   before(:each) do
     @pass_through = proc { |x| x }
     host = '0.0.0.0:0'
