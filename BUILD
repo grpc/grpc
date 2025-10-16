@@ -30,13 +30,7 @@ load(
 
 licenses(["reciprocal"])
 
-package(
-    default_visibility = ["//visibility:public"],
-    features = [
-        "-parse_headers",
-        "layering_check",
-    ],
-)
+package(default_visibility = ["//visibility:public"])
 
 exports_files([
     "LICENSE",
