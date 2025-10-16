@@ -134,8 +134,12 @@ class SpanContext final {
  public:
   SpanContext() : is_valid_(false) {}
 
-  SpanContext(const std::string& trace_id, const std::string& span_id, bool should_sample)
-      : trace_id_(trace_id), span_id_(span_id), should_sample_(should_sample), is_valid_(true) {}
+  SpanContext(const std::string& trace_id, const std::string& span_id,
+              bool should_sample)
+      : trace_id_(trace_id),
+        span_id_(span_id),
+        should_sample_(should_sample),
+        is_valid_(true) {}
 
   // Returns the TraceId associated with this SpanContext.
   std::string TraceId() const { return trace_id_; }
@@ -159,9 +163,12 @@ class SpanContext final {
 // associated PythonCensusContext.
 class Span final {
  public:
-  explicit Span(const std::string& name, const std::string& parent_span_id, absl::Time start_time,
-                const SpanContext& context)
-      : name_(name), parent_span_id_(parent_span_id), start_time_(start_time), context_(context) {}
+  explicit Span(const std::string& name, const std::string& parent_span_id,
+                absl::Time start_time, const SpanContext& context)
+      : name_(name),
+        parent_span_id_(parent_span_id),
+        start_time_(start_time),
+        context_(context) {}
 
   void End() { end_time_ = absl::Now(); }
 
@@ -169,7 +176,8 @@ class Span final {
 
   static Span StartSpan(absl::string_view name, const Span* parent);
 
-  static Span StartSpan(absl::string_view name, const SpanContext& parent_context);
+  static Span StartSpan(absl::string_view name,
+                        const SpanContext& parent_context);
 
   static Span StartSpan(absl::string_view name, absl::string_view trace_id);
 
@@ -183,8 +191,9 @@ class Span final {
 
   void AddEvent(absl::string_view name);
 
-  void AddEvent(absl::string_view name,
-                std::vector<std::pair<absl::string_view, absl::string_view>> attributes);
+  void AddEvent(
+      absl::string_view name,
+      std::vector<std::pair<absl::string_view, absl::string_view>> attributes);
 
   SpanCensusData ToCensusData() const;
 
@@ -223,7 +232,8 @@ class PythonCensusContext {
   PythonCensusContext(absl::string_view name, const SpanContext& parent_context)
       : span_(Span::StartSpan(name, parent_context)), labels_({}) {}
 
-  PythonCensusContext(absl::string_view name, const Span* parent, const std::vector<Label>& labels)
+  PythonCensusContext(absl::string_view name, const Span* parent,
+                      const std::vector<Label>& labels)
       : span_(Span::StartSpan(name, parent)), labels_(labels) {}
 
   // For attempt Spans only
@@ -240,8 +250,9 @@ class PythonCensusContext {
 
   void AddSpanEvent(absl::string_view name) { AddSpanEvent(name, {}); }
 
-  void AddSpanEvent(absl::string_view name,
-                    std::vector<std::pair<absl::string_view, absl::string_view>> attributes) {
+  void AddSpanEvent(
+      absl::string_view name,
+      std::vector<std::pair<absl::string_view, absl::string_view>> attributes) {
     span_.AddEvent(name, attributes);
   }
 
@@ -259,7 +270,8 @@ class PythonCensusContext {
 // span automatically becomes a root span. This should only be called with a
 // blank CensusContext as it overwrites it.
 void GenerateClientContext(absl::string_view method, absl::string_view trace_id,
-                           absl::string_view parent_span_id, PythonCensusContext* context);
+                           absl::string_view parent_span_id,
+                           PythonCensusContext* context);
 
 // Deserialize the incoming SpanContext and generate a new server context based
 // on that. This new span will never be a root span. This should only be called
@@ -299,8 +311,8 @@ SpanContext FromGrpcTraceBinHeader(absl::string_view header);
 
 // Serializes the outgoing trace context. tracing_buf must be
 // opencensus::trace::propagation::kGrpcTraceBinHeaderLen bytes long.
-size_t TraceContextSerialize(const PythonCensusContext& context, char* tracing_buf,
-                             size_t tracing_buf_size);
+size_t TraceContextSerialize(const PythonCensusContext& context,
+                             char* tracing_buf, size_t tracing_buf_size);
 
 // Serializes the outgoing stats context.  Field IDs are 1 byte followed by
 // field data. A 1 byte version ID is always encoded first. Tags are directly
@@ -308,10 +320,12 @@ size_t TraceContextSerialize(const PythonCensusContext& context, char* tracing_b
 size_t StatsContextSerialize(size_t max_tags_len, grpc_slice* tags);
 
 // Deserialize incoming server stats. Returns the number of bytes deserialized.
-size_t ServerStatsDeserialize(const char* buf, size_t buf_size, uint64_t* server_elapsed_time);
+size_t ServerStatsDeserialize(const char* buf, size_t buf_size,
+                              uint64_t* server_elapsed_time);
 
 // Serialize outgoing server stats. Returns the number of bytes serialized.
-size_t ServerStatsSerialize(uint64_t server_elapsed_time, char* buf, size_t buf_size);
+size_t ServerStatsSerialize(uint64_t server_elapsed_time, char* buf,
+                            size_t buf_size);
 
 // Returns the incoming data size from the grpc call final info.
 uint64_t GetIncomingDataSize(const grpc_call_final_info* final_info);
