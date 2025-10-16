@@ -49,6 +49,7 @@ grpc_cc_test(
     deps = [
         ":client",
         "//:grpc++",
+        "//:grpc++_base",
         "//:grpcpp_channelz",
         "//src/proto/grpc/channelz/v2:channelz_cc_proto",
         "//test/core/test_util:grpc_test_util",
@@ -123,6 +124,7 @@ grpc_cc_test(
     srcs = ["latent_see_tool_test.cc"],
     external_deps = [
         "absl/flags:flag",
+        "absl/strings",
         "gtest",
         "gtest_main",
     ],
@@ -139,6 +141,8 @@ grpc_cc_binary(
     name = "sleuth",
     srcs = ["sleuth.cc"],
     external_deps = [
+        "absl/log:check",
+        "absl/flags:flag",
         "absl/flags:parse",
         "absl/status",
     ],
@@ -215,6 +219,7 @@ grpc_cc_library(
     name = "latent_see_tool",
     srcs = ["latent_see_tool.cc"],
     external_deps = [
+        "absl/flags:flag",
         "absl/status:status",
     ],
     deps = [
