@@ -74,6 +74,8 @@ echo "Relaunching and invoking original CI script now in a new environment."
 @echo on
 start /wait cmd.exe /c "call %CI_SCRIPT_RELATIVE_TO_SRC% 1> %CI_SCRIPT_LOG_FILE% 2>&1"
 
+set FAILED=%errorlevel%
+
 type %CI_SCRIPT_LOG_FILE%
 
-exit /b %errorlevel%
+exit /b %FAILED%
