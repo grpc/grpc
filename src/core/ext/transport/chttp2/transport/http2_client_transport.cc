@@ -104,6 +104,27 @@ using EnqueueResult = StreamDataQueue<ClientMetadataHandle>::EnqueueResult;
 // TODO(tjagtap) : [PH2][P3] : Delete this comment when http2
 // rollout begins
 
+template <typename Factory>
+void Http2ClientTransport::SpawnInfallibleTransportParty(absl::string_view name,
+                                                         Factory&& factory) {
+  general_party_->Spawn(name, std::forward<Factory>(factory), [](Empty) {});
+}
+
+template <typename Factory>
+void Http2ClientTransport::SpawnGuardedTransportParty(absl::string_view name,
+                                                      Factory&& factory) {
+  general_party_->Spawn(
+      name, std::forward<Factory>(factory),
+      [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
+        if (!status.ok()) {
+          GRPC_UNUSED absl::Status error = self->HandleError(
+              /*stream_id=*/std::nullopt,
+              Http2Status::AbslConnectionError(status.code(),
+                                               std::string(status.message())));
+        }
+      });
+}
+
 void Http2ClientTransport::PerformOp(grpc_transport_op* op) {
   // Notes : Refer : src/core/ext/transport/chaotic_good/client_transport.cc
   // Functions : StartConnectivityWatch, StopConnectivityWatch, PerformOp
@@ -678,18 +699,6 @@ auto Http2ClientTransport::ReadLoop() {
       }));
 }
 
-auto Http2ClientTransport::OnReadLoopEnded() {
-  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport OnReadLoopEnded Factory";
-  return
-      [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
-        GRPC_HTTP2_CLIENT_DLOG
-            << "Http2ClientTransport OnReadLoopEnded Promise Status=" << status;
-        GRPC_UNUSED absl::Status error = self->HandleError(
-            std::nullopt, Http2Status::AbslConnectionError(
-                              status.code(), std::string(status.message())));
-      };
-}
-
 // Equivalent to grpc_chttp2_act_on_flowctl_action in chttp2_transport.cc
 // TODO(tjagtap) : [PH2][P4] : grpc_chttp2_act_on_flowctl_action has a "reason"
 // parameter which looks like it would be really helpful for debugging. Add that
@@ -1002,20 +1011,6 @@ auto Http2ClientTransport::MultiplexerLoop() {
   }));
 }
 
-auto Http2ClientTransport::OnMultiplexerLoopEnded() {
-  GRPC_HTTP2_CLIENT_DLOG
-      << "Http2ClientTransport OnMultiplexerLoopEnded Factory";
-  return
-      [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
-        GRPC_HTTP2_CLIENT_DLOG
-            << "Http2ClientTransport OnMultiplexerLoopEnded Promise Status="
-            << status;
-        GRPC_UNUSED absl::Status error = self->HandleError(
-            std::nullopt, Http2Status::AbslConnectionError(
-                              status.code(), std::string(status.message())));
-      };
-}
-
 absl::Status Http2ClientTransport::AssignStreamId(
     RefCountedPtr<Stream> stream) {
   absl::StatusOr<uint32_t> next_stream_id = NextStreamId();
@@ -1146,11 +1141,6 @@ Http2ClientTransport::Http2ClientTransport(
   general_party_arena->SetContext<EventEngine>(event_engine.get());
   general_party_ = Party::Make(std::move(general_party_arena));
 
-  general_party_->Spawn("ReadLoop", UntilTransportClosed(ReadLoop()),
-                        OnReadLoopEnded());
-  general_party_->Spawn("MultiplexerLoop",
-                        UntilTransportClosed(MultiplexerLoop()),
-                        OnMultiplexerLoopEnded());
   // The keepalive loop is only spawned if the keepalive time is not infinity.
   keepalive_manager_.Spawn(general_party_.get());
 
@@ -1171,9 +1161,10 @@ Http2ClientTransport::Http2ClientTransport(
 
   // Spawn a promise to flush the gRPC initial connection string and settings
   // frames.
-  general_party_->Spawn("SpawnFlushInitialFrames", TriggerWriteCycle(),
-                        [](GRPC_UNUSED absl::Status status) {});
-
+  SpawnGuardedTransportParty("FlushInitialFrames", TriggerWriteCycle());
+  SpawnGuardedTransportParty("ReadLoop", UntilTransportClosed(ReadLoop()));
+  SpawnGuardedTransportParty("MultiplexerLoop",
+                             UntilTransportClosed(MultiplexerLoop()));
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor End";
 }
 
@@ -1362,11 +1353,10 @@ void Http2ClientTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
                           "transport closed");
   lock.Release();
 
-  general_party_->Spawn(
-      "CloseTransport",
-      [self = RefAsSubclass<Http2ClientTransport>(),
-       stream_list = std::move(stream_list),
-       http2_status = std::move(http2_status)]() mutable {
+  SpawnInfallibleTransportParty(
+      "CloseTransport", [self = RefAsSubclass<Http2ClientTransport>(),
+                         stream_list = std::move(stream_list),
+                         http2_status = std::move(http2_status)]() mutable {
         GRPC_HTTP2_CLIENT_DLOG
             << "Http2ClientTransport::CloseTransport Cleaning up call stacks";
         // Clean up the call stacks for all active streams.
@@ -1406,8 +1396,7 @@ void Http2ClientTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
               return Empty{};
             });
         ;
-      },
-      [](auto) {});
+      });
 }
 
 bool Http2ClientTransport::CanCloseTransportLocked() const {
@@ -1434,10 +1423,9 @@ Http2ClientTransport::~Http2ClientTransport() {
 
 void Http2ClientTransport::AddData(channelz::DataSink sink) {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::AddData Begin";
-  general_party_->Spawn(
-      "AddData",
-      [self = RefAsSubclass<Http2ClientTransport>(),
-       sink = std::move(sink)]() mutable {
+  SpawnInfallibleTransportParty(
+      "AddData", [self = RefAsSubclass<Http2ClientTransport>(),
+                  sink = std::move(sink)]() mutable {
         GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::AddData Promise";
         sink.AddData(
             "Http2ClientTransport",
@@ -1454,8 +1442,7 @@ void Http2ClientTransport::AddData(channelz::DataSink sink) {
                                                sink);
         GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::AddData End";
         return Empty{};
-      },
-      [](auto) {});
+      });
 }
 
 ///////////////////////////////////////////////////////////////////////////////
