@@ -440,11 +440,11 @@ class Http2ClientTransport final : public ClientTransport,
   absl::Status HandleError(const std::optional<uint32_t> stream_id,
                            Http2Status status, DebugLocation whence = {}) {
     auto error_type = status.GetType();
-    DCHECK(error_type != Http2Status::Http2ErrorType::kOk);
+    GRPC_DCHECK(error_type != Http2Status::Http2ErrorType::kOk);
 
     if (error_type == Http2Status::Http2ErrorType::kStreamError) {
       GRPC_HTTP2_CLIENT_ERROR_DLOG << "Stream Error: " << status.DebugString();
-      DCHECK(stream_id.has_value());
+      GRPC_DCHECK(stream_id.has_value());
       BeginCloseStream(
           LookupStream(stream_id.value()),
           Http2ErrorCodeToFrameErrorCode(status.GetStreamErrorCode()),

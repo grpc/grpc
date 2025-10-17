@@ -712,7 +712,8 @@ http2::Http2ErrorCode FrameErrorCodeToHttp2ErrorCode(
 
 uint32_t Http2ErrorCodeToFrameErrorCode(
     const http2::Http2ErrorCode error_code) {
-  DCHECK_LE(static_cast<uint8_t>(error_code), http2::GetMaxHttp2ErrorCode());
+  GRPC_DCHECK_LE(static_cast<uint8_t>(error_code),
+                 http2::GetMaxHttp2ErrorCode());
   return static_cast<uint32_t>(error_code);
 }
 

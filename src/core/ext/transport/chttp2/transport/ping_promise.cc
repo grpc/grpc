@@ -23,6 +23,7 @@
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
 #include "src/core/util/time.h"
 
@@ -146,7 +147,7 @@ void PingManager::MaybeGetSerializedPingFrames(
                       << pending_ping_acks_.size()
                       << " next_allowed_ping_interval: "
                       << next_allowed_ping_interval;
-  DCHECK(!opaque_data_.has_value());
+  GRPC_DCHECK(!opaque_data_.has_value());
   std::vector<Http2Frame> frames;
   frames.reserve(pending_ping_acks_.size() + 1);  // +1 for the ping frame.
 

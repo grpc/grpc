@@ -42,7 +42,7 @@ namespace grpc_core {
 namespace http2 {
 
 // If the Client Transport code is using HeaderAssembler in the wrong way,
-// we fail with a DCHECK.
+// we fail with a GRPC_DCHECK.
 // If the peer sent some bad data, we fail with the appropriate Http2Status.
 
 #define ASSEMBLER_LOG DVLOG(3)

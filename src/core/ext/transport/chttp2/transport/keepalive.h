@@ -20,6 +20,7 @@
 
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/util/grpc_check.h"
 #include "absl/status/status.h"
 
 namespace grpc_core {
@@ -104,7 +105,7 @@ class KeepaliveManager {
     };
   }
   auto SendPingAndWaitForAck() {
-    DCHECK_EQ(data_received_in_last_cycle_, false);
+    GRPC_DCHECK_EQ(data_received_in_last_cycle_, false);
     return keep_alive_interface_->SendPingAndWaitForAck();
   }
 

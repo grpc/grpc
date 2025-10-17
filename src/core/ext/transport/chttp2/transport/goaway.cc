@@ -18,6 +18,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/goaway.h"
 
+#include "src/core/util/grpc_check.h"
+
 namespace grpc_core {
 namespace http2 {
 
@@ -30,21 +32,21 @@ std::optional<Http2Frame> GoawayManager::MaybeGetGoawayFrame() {
     case GoawayState::kDone:
       break;
     case GoawayState::kInitialGracefulGoawayScheduled: {
-      DCHECK(!goaway_sent_);
+      GRPC_DCHECK(!goaway_sent_);
       Http2Frame goaway_frame = context_->GetInitialGracefulGoawayFrame();
       GRPC_HTTP2_GOAWAY_LOG << "Graceful GOAWAY frame created.";
       goaway_sent_ = true;
       return std::move(goaway_frame);
     }
     case GoawayState::kFinalGracefulGoawayScheduled: {
-      DCHECK(!goaway_sent_);
+      GRPC_DCHECK(!goaway_sent_);
       Http2Frame goaway_frame = context_->GetFinalGracefulGoawayFrame();
       GRPC_HTTP2_GOAWAY_LOG << "Final graceful GOAWAY frame created.";
       goaway_sent_ = true;
       return std::move(goaway_frame);
     }
     case GoawayState::kImmediateGoawayRequested: {
-      DCHECK(!goaway_sent_);
+      GRPC_DCHECK(!goaway_sent_);
       Http2Frame goaway_frame = context_->GetImmediateGoawayFrame();
       GRPC_HTTP2_GOAWAY_LOG << "Immediate GOAWAY frame created.";
       goaway_sent_ = true;
