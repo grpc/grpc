@@ -18,6 +18,7 @@ support an @command_file directive where command_file is a file
 containing the full command line.
 """
 
+import distutils
 from distutils import ccompiler
 import os
 import os.path
@@ -28,6 +29,27 @@ import tempfile
 MAX_COMMAND_LENGTH = 8191
 
 _classic_spawn = ccompiler.CCompiler.spawn
+
+def get_setuptools_temp_dir():
+    # Get the Platform/Architecture Part ('win32' / 'win-amd64')
+    platform_tag = distutils.util.get_platform()
+
+    # Get the Python Implementation and Version Part (e.g., 'cpython-314')
+
+    # Get the implementation name (usually 'cpython')
+    impl_name = sys.implementation.name
+
+    # Get major and minor version numbers
+    python_major = sys.version_info.major
+    python_minor = sys.version_info.minor
+
+    # Combine them into the format used by setuptools
+    python_tag = f"{impl_name}-{python_major}{python_minor}"
+
+    # Combine them to a format like `temp.win32-cpython-314`
+    full_setuptools_dir = f"temp.{platform_tag}-{python_tag}"
+
+    return full_setuptools_dir
 
 
 def _commandfile_spawn(self, command, **kwargs):
@@ -43,6 +65,28 @@ def _commandfile_spawn(self, command, **kwargs):
     if os.name == "nt" and command_length > MAX_COMMAND_LENGTH:
         # Even if this command doesn't support the @command_file, it will
         # fail as is so we try blindly
+
+        build_temp = os.path.join("pyb", get_setuptools_temp_dir())
+        #os.environ.get("BUILD_EXT_TEMP")
+
+        print("Using temp directory:", build_temp)
+        release_build_dir = os.path.join(build_temp, "Release")
+        third_party_dir = os.path.join(release_build_dir, "third_party")
+
+        print("release_build_dir:", release_build_dir)
+        print("third_party_dir:", third_party_dir)
+
+        os.environ["BUILD_DIR"] = release_build_dir
+        os.environ["THIRD_PARTY"] = third_party_dir
+
+        def replace_and_escape_paths(path: str):
+            old_path = path
+            path.replace(third_party_dir, "%THIRD_PARTY%")
+            path.replace(release_build_dir, "%BUILD_DIR%")
+            path = '"' + path.replace("\\", "\\\\") + '"'
+            print("Converted", old_path, "->", path)
+            return path
+
         print("Command line length exceeded, using command file")
         print(" ".join(command))
         temporary_directory = tempfile.mkdtemp()
@@ -51,7 +95,7 @@ def _commandfile_spawn(self, command, **kwargs):
         )
         with open(command_filename, "w") as command_file:
             escaped_args = [
-                '"' + arg.replace("\\", "\\\\") + '"' for arg in command[1:]
+                replace_and_escape_paths(arg) for arg in command[1:]
             ]
             # add each arg on a separate line to avoid hitting the
             # "line in command file contains 131071 or more characters" error
