@@ -108,13 +108,13 @@ ${SETARCH_CMD} "${PYTHON}" -m build --sdist
 # Wheel has a bug where directories don't get excluded.
 # https://bitbucket.org/pypa/wheel/issues/99/cannot-exclude-directory
 # shellcheck disable=SC2086
+
+WHEEL_PLAT_CONFIG_OPTION=""
 if [[ -n "$WHEEL_PLAT_NAME_FLAG" ]]; then
-  $WHEEL_PLAT_CONFIG_OPTION='-C--build-option="--plat-name=$WHEEL_PLAT_NAME_FLAG"'
-else
-  $WHEEL_PLAT_CONFIG_OPTION=""
+  WHEEL_PLAT_CONFIG_OPTION='-C--build-option="--plat-name=$WHEEL_PLAT_NAME_FLAG"'
 fi
 
-${SETARCH_CMD} "${PYTHON}" -m build --wheel $WHEEL_PLAT_CONFIG_OPTION
+${SETARCH_CMD} "${PYTHON}" -m build --wheel ${WHEEL_PLAT_CONFIG_OPTION}
 
 GRPCIO_STRIP_TEMPDIR=$(mktemp -d)
 GRPCIO_TAR_GZ_LIST=( dist/grpcio-*.tar.gz )
