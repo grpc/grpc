@@ -81,8 +81,8 @@ def _commandfile_spawn(self, command, **kwargs):
 
         def replace_and_escape_paths(path: str):
             old_path = path
-            path.replace(third_party_dir, "%THIRD_PARTY%")
-            path.replace(release_build_dir, "%BUILD_DIR%")
+            path = path.replace(third_party_dir, "%THIRD_PARTY%")
+            path = path.replace(release_build_dir, "%BUILD_DIR%")
             path = '"' + path.replace("\\", "\\\\") + '"'
             print("Converted", old_path, "->", path)
             return path
