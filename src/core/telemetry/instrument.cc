@@ -16,6 +16,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
@@ -25,13 +26,15 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/channelz/property_list.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/single_set_ptr.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
-#include "src/core/channelz/property_list.h"
-#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 
@@ -66,34 +69,165 @@ void CallHistogramCollectionHooks(
 
 }  // namespace instrument_detail
 
-CollectionScope::CollectionScope(
-    std::vector<std::unique_ptr<instrument_detail::StorageSet>> storage_sets)
-    : storage_sets_(std::move(storage_sets)) {}
+namespace {
+std::vector<std::string> FilterLabels(
+    absl::Span<const std::string> domain_label_names,
+    const absl::flat_hash_set<std::string>& scope_labels_of_interest,
+    absl::Span<const std::string> full_label_values) {
+  std::vector<std::string> result;
+  result.reserve(domain_label_names.size());
+  for (size_t i = 0; i < domain_label_names.size(); ++i) {
+    if (scope_labels_of_interest.contains(domain_label_names[i])) {
+      result.push_back(full_label_values[i]);
+    } else {
+      result.push_back(std::string(kOmittedLabel));
+    }
+  }
+  return result;
+}
+}  // namespace
+
+CollectionScope::CollectionScope(RefCountedPtr<CollectionScope> parent,
+                                 absl::Span<const std::string> labels,
+                                 size_t child_shards_count,
+                                 size_t storage_shards_count)
+    : parent_(std::move(parent)),
+      labels_of_interest_(labels.begin(), labels.end()),
+      child_shards_(child_shards_count),
+      storage_shards_(storage_shards_count) {
+  if (parent_ != nullptr) {
+    labels_of_interest_.insert(parent_->labels_of_interest_.begin(),
+                               parent_->labels_of_interest_.end());
+    auto& shard =
+        parent_
+            ->child_shards_[absl::HashOf(this) % parent_->child_shards_.size()];
+    MutexLock lock(&shard.mu);
+    shard.children.insert(this);
+  }
+}
+
+CollectionScope::~CollectionScope() {
+  if (parent_ != nullptr) {
+    auto& shard =
+        parent_
+            ->child_shards_[absl::HashOf(this) % parent_->child_shards_.size()];
+    MutexLock lock(&shard.mu);
+    shard.children.erase(this);
+  }
+  for (auto& shard : storage_shards_) {
+    // TODO(ctiller): Consider a different entry point than GetDomainStorage
+    // for this post-aggregation. We ought to be able to do this step without
+    // accessing full_labels.
+    MutexLock lock(&shard.mu);
+    for (auto& storage_pair : shard.storage) {
+      if (parent_ != nullptr) {
+        storage_pair.second->domain()
+            ->GetDomainStorage(parent_, storage_pair.second->label())
+            ->Add(storage_pair.second.get());
+      }
+    }
+  }
+}
 
 size_t CollectionScope::TestOnlyCountStorageHeld() const {
   size_t count = 0;
-  for (const auto& set : storage_sets_) {
-    count += set->TestOnlyCountStorageHeld();
+  for (const auto& shard : storage_shards_) {
+    MutexLock lock(&shard.mu);
+    count += shard.storage.size();
   }
   return count;
 }
 
-std::vector<instrument_detail::StorageSet*> CollectionScope::GetStorageSets() {
-  std::vector<instrument_detail::StorageSet*> result;
-  result.reserve(storage_sets_.size());
-  for (const auto& storage_set : storage_sets_) {
-    result.push_back(storage_set.get());
-  }
-  return result;
+void CollectionScope::ForEachUniqueStorage(
+    absl::FunctionRef<void(instrument_detail::DomainStorage*)> cb) {
+  absl::flat_hash_set<instrument_detail::DomainStorage*> visited;
+  ForEachUniqueStorage(cb, visited);
 }
 
-std::unique_ptr<CollectionScope>
-instrument_detail::QueryableDomain::CreateCollectionScope() {
-  std::vector<std::unique_ptr<instrument_detail::StorageSet>> storage_sets;
-  for (auto* domain = last_; domain != nullptr; domain = domain->prev_) {
-    storage_sets.push_back(domain->CreateStorageSet());
+void CollectionScope::ForEachUniqueStorage(
+    absl::FunctionRef<void(instrument_detail::DomainStorage*)> cb,
+    absl::flat_hash_set<instrument_detail::DomainStorage*>& visited) {
+  for (auto& shard : storage_shards_) {
+    MutexLock lock(&shard.mu);
+    for (const auto& s : shard.storage) {
+      if (visited.insert(s.second.get()).second) {
+        cb(s.second.get());
+      }
+    }
   }
-  return std::make_unique<CollectionScope>(std::move(storage_sets));
+  for (auto& shard : child_shards_) {
+    MutexLock lock(&shard.mu);
+    for (auto* child : shard.children) {
+      child->ForEachUniqueStorage(cb, visited);
+    }
+  }
+}
+
+struct GlobalScopeHolder {
+  Mutex mu;
+  SingleSetRefCountedPtr<CollectionScope> scope;
+  std::atomic<bool> frozen{false};
+
+  RefCountedPtr<CollectionScope> Get(absl::Span<const std::string> labels);
+  void Reset() {
+    MutexLock lock(&mu);
+    scope.Reset();
+    frozen.store(false, std::memory_order_relaxed);
+  }
+};
+
+namespace {
+GlobalScopeHolder* GetGlobalScopeHolderImpl() {
+  static NoDestruct<GlobalScopeHolder> g_scope_holder;
+  return g_scope_holder.get();
+}
+}  // namespace
+
+RefCountedPtr<CollectionScope> GlobalScopeHolder::Get(
+    absl::Span<const std::string> labels) {
+  if (labels.empty() && scope.is_set()) return scope.Get()->Ref();
+  MutexLock lock(&mu);
+  if (!scope.is_set()) {
+    scope.Set(MakeRefCounted<CollectionScope>(nullptr, labels, 1, 16));
+  } else if (!frozen.load(std::memory_order_relaxed)) {
+    bool has_storage = false;
+    for (size_t i = 0; i < scope.Get()->storage_shards_.size(); ++i) {
+      MutexLock lock(&scope.Get()->storage_shards_[i].mu);
+      if (!scope.Get()->storage_shards_[i].storage.empty()) {
+        has_storage = true;
+        break;
+      }
+    }
+    if (has_storage) {
+      frozen.store(true, std::memory_order_release);
+    } else {
+      for (const auto& label : labels) {
+        scope.Get()->labels_of_interest_.insert(label);
+      }
+    }
+  }
+  if (frozen.load(std::memory_order_relaxed)) {
+    for (const auto& label : labels) {
+      if (!scope.Get()->labels_of_interest_.contains(label)) {
+        LOG(WARNING)
+            << "Attempt to add label '" << label
+            << "' to global collection scope after labels were frozen.";
+      }
+    }
+  }
+  return scope.Get()->Ref();
+}
+
+RefCountedPtr<CollectionScope> GetGlobalCollectionScope(
+    absl::Span<const std::string> labels) {
+  return GetGlobalScopeHolderImpl()->Get(labels);
+}
+
+RefCountedPtr<CollectionScope> CreateCollectionScope(
+    RefCountedPtr<CollectionScope> parent, absl::Span<const std::string> labels,
+    size_t child_shards_count, size_t storage_shards_count) {
+  return MakeRefCounted<CollectionScope>(
+      std::move(parent), labels, child_shards_count, storage_shards_count);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -113,102 +247,6 @@ GaugeStorage::GaugeStorage(QueryableDomain* domain)
     : double_gauges_(domain->allocated_double_gauge_slots()),
       int_gauges_(domain->allocated_int_gauge_slots()),
       uint_gauges_(domain->allocated_uint_gauge_slots()) {}
-
-}  // namespace instrument_detail
-
-////////////////////////////////////////////////////////////////////////////////
-// StorageSet
-
-namespace instrument_detail {
-
-StorageSet::StorageSet(QueryableDomain* domain, size_t map_shards_size)
-    : domain_(domain),
-      map_shards_(std::make_unique<MapShard[]>(map_shards_size)),
-      map_shards_size_(map_shards_size) {
-  domain_->RegisterStorageSet(this);
-}
-
-StorageSet::~StorageSet() { domain_->UnregisterStorageSet(this); }
-
-void StorageSet::ExportMetrics(
-    MetricsSink& sink,
-    absl::Span<const InstrumentMetadata::Description* const> metrics) {
-  for (size_t i = 0; i < map_shards_size_; ++i) {
-    MutexLock lock(&map_shards_[i].mu);
-    map_shards_[i].storage_map.ForEach([&](const auto& label,
-                                           const auto& weak_storage) {
-      // It's safe to use `get()` here because the `StorageSet` itself
-      // holds a weak reference, guaranteeing the object's memory is
-      // alive. We can't get a strong ref if the object is orphaned, but
-      // we still need to read its final metric values.
-      DomainStorage* storage = weak_storage.get();
-      GaugeStorage gauge_storage(storage->domain());
-      storage->FillGaugeStorage(gauge_storage);
-      for (const auto* metric : metrics) {
-        Match(
-            metric->shape,
-            [metric, &sink, storage, &label](InstrumentMetadata::CounterShape) {
-              sink.Counter(label, metric->name,
-                           storage->SumCounter(metric->offset));
-            },
-            [metric, &sink, storage,
-             &label](InstrumentMetadata::HistogramShape bounds) {
-              std::vector<uint64_t> counts(bounds.size());
-              for (size_t i = 0; i < bounds.size(); ++i) {
-                counts[i] = storage->SumCounter(metric->offset + i);
-              }
-              sink.Histogram(label, metric->name, bounds, counts);
-            },
-            [metric, &sink, &gauge_storage,
-             &label](InstrumentMetadata::DoubleGaugeShape) {
-              if (auto value = gauge_storage.GetDouble(metric->offset);
-                  value.has_value()) {
-                sink.DoubleGauge(label, metric->name, *value);
-              }
-            },
-            [metric, &sink, &gauge_storage,
-             &label](InstrumentMetadata::IntGaugeShape) {
-              if (auto value = gauge_storage.GetInt(metric->offset);
-                  value.has_value()) {
-                sink.IntGauge(label, metric->name, *value);
-              }
-            },
-            [metric, &sink, &gauge_storage,
-             &label](InstrumentMetadata::UintGaugeShape) {
-              if (auto value = gauge_storage.GetUint(metric->offset);
-                  value.has_value()) {
-                sink.UintGauge(label, metric->name, *value);
-              }
-            });
-      }
-    });
-  }
-}
-
-size_t StorageSet::TestOnlyCountStorageHeld() const {
-  size_t count = 0;
-  for (size_t i = 0; i < map_shards_size_; ++i) {
-    MutexLock lock(&map_shards_[i].mu);
-    map_shards_[i].storage_map.ForEach([&](const auto&, const auto& weak) {
-      count += weak->RefIfNonZero() != nullptr;
-    });
-  }
-  return count;
-}
-
-void StorageSet::AddStorage(WeakRefCountedPtr<DomainStorage> storage) {
-  size_t shard;
-  auto label = storage->label();
-  if (map_shards_size_ == 1) {
-    shard = 0;
-  } else {
-    GRPC_CHECK(!label.empty());
-    shard = absl::HashOf(label[0], this) % map_shards_size_;
-  }
-  MapShard& map_shard = map_shards_[shard];
-  MutexLock lock(&map_shard.mu);
-  map_shard.storage_map = map_shard.storage_map.Add(label, std::move(storage));
-}
 
 }  // namespace instrument_detail
 
@@ -234,34 +272,88 @@ MetricsQuery& MetricsQuery::OnlyMetrics(absl::Span<const std::string> metrics) {
   return *this;
 }
 
-void MetricsQuery::Run(std::unique_ptr<CollectionScope> scope,
+void MetricsQuery::Run(RefCountedPtr<CollectionScope> scope,
                        MetricsSink& sink) const {
   GRPC_CHECK_NE(scope.get(), nullptr);
+  struct DomainInfo {
+    std::vector<const InstrumentMetadata::Description*> metrics;
+    std::vector<instrument_detail::DomainStorage*> storage;
+  };
+  absl::flat_hash_map<instrument_detail::QueryableDomain*, DomainInfo>
+      domain_info_map;
   auto selected_metrics = this->selected_metrics();
-  absl::flat_hash_map<instrument_detail::QueryableDomain*,
-                      std::vector<const InstrumentMetadata::Description*>>
-      metrics_by_domain;
+  // Calculate list of desired metrics, per domain.
   if (selected_metrics.has_value()) {
     for (const auto& metric : *selected_metrics) {
       const auto* desc = instrument_detail::InstrumentIndex::Get().Find(metric);
       GRPC_CHECK_NE(desc, nullptr) << "Metric not found: " << metric;
-      metrics_by_domain[desc->domain].push_back(desc);
+      domain_info_map[desc->domain].metrics.push_back(desc);
     }
   } else {
     instrument_detail::QueryableDomain::ForEachInstrument(
         [&](const InstrumentMetadata::Description* desc) {
-          metrics_by_domain[desc->domain].push_back(desc);
+          domain_info_map[desc->domain].metrics.push_back(desc);
         });
   }
-  for (auto* storage_set : scope->GetStorageSets()) {
-    instrument_detail::QueryableDomain* domain = storage_set->domain();
-    if (domain == nullptr) continue;
-    auto it = metrics_by_domain.find(domain);
-    if (it == metrics_by_domain.end()) continue;
+  // Calculate list of storage objects, per domain, that have at least one
+  // desired metric.
+  scope->ForEachUniqueStorage([&](instrument_detail::DomainStorage* storage) {
+    auto it = domain_info_map.find(storage->domain());
+    if (it == domain_info_map.end()) return;
+    it->second.storage.push_back(storage);
+  });
+  for (const auto& pair : domain_info_map) {
+    instrument_detail::QueryableDomain* domain = pair.first;
+    const auto& metrics = pair.second.metrics;
+    const auto& storages = pair.second.storage;
+    GRPC_CHECK(!metrics.empty());
+    if (storages.empty()) continue;
     this->Apply(
         domain->label_names(),
         [&](MetricsSink& sink) {
-          storage_set->ExportMetrics(sink, it->second);
+          for (auto* storage : storages) {
+            const auto label = storage->label();
+            instrument_detail::GaugeStorage gauge_storage(storage->domain());
+            storage->FillGaugeStorage(gauge_storage);
+            for (const auto* metric : metrics) {
+              Match(
+                  metric->shape,
+                  [metric, &sink, storage,
+                   &label](InstrumentMetadata::CounterShape) {
+                    sink.Counter(label, metric->name,
+                                 storage->SumCounter(metric->offset));
+                  },
+                  [metric, &sink, storage,
+                   &label](InstrumentMetadata::HistogramShape bounds) {
+                    std::vector<uint64_t> counts(bounds.size());
+                    for (size_t i = 0; i < bounds.size(); ++i) {
+                      counts[i] = storage->SumCounter(metric->offset + i);
+                    }
+                    sink.Histogram(label, metric->name, bounds, counts);
+                  },
+                  [metric, &sink, &gauge_storage,
+                   &label](InstrumentMetadata::DoubleGaugeShape) {
+                    if (auto value = gauge_storage.GetDouble(metric->offset);
+                        value.has_value()) {
+                      sink.DoubleGauge(label, metric->name, *value);
+                    }
+                  },
+                  [metric, &sink, &gauge_storage,
+                   &label](InstrumentMetadata::IntGaugeShape) {
+                    if (auto value = gauge_storage.GetInt(metric->offset);
+                        value.has_value()) {
+                      sink.IntGauge(label, metric->name, *value);
+                    }
+                  },
+                  [metric, &sink, &gauge_storage,
+                   &label](InstrumentMetadata::UintGaugeShape) {
+                    if (auto value = gauge_storage.GetUint(metric->offset);
+                        value.has_value()) {
+                      sink.UintGauge(label, metric->name, *value);
+                    }
+                  });
+            }
+          }
         },
         sink);
   }
@@ -484,10 +576,7 @@ DomainStorage::DomainStorage(QueryableDomain* domain,
   SourceConstructed();
 }
 
-void DomainStorage::Orphaned() {
-  SourceDestructing();
-  domain_->DomainStorageOrphaned(this);
-}
+void DomainStorage::Orphaned() { SourceDestructing(); }
 
 void DomainStorage::AddData(channelz::DataSink sink) {
   sink.AddData(
@@ -618,15 +707,7 @@ size_t QueryableDomain::TestOnlyCountStorageHeld() const {
   return count;
 }
 
-void QueryableDomain::DomainStorageOrphaned(DomainStorage* storage) {
-  auto label = storage->label();
-  auto& map_shard = GetMapShard(label);
-  MutexLock lock(&map_shard.mu);
-  auto* found_storage = map_shard.storage_map.Lookup(label);
-  if (found_storage == nullptr) return;
-  if (found_storage->get() != storage) return;
-  map_shard.storage_map = map_shard.storage_map.Remove(label);
-}
+void QueryableDomain::DomainStorageOrphaned(DomainStorage* /*storage*/) {}
 
 QueryableDomain::MapShard& QueryableDomain::GetMapShard(
     absl::Span<const std::string> label) {
@@ -641,41 +722,9 @@ QueryableDomain::MapShard& QueryableDomain::GetMapShard(
   return map_shards_[shard];
 }
 
-std::unique_ptr<StorageSet> QueryableDomain::CreateStorageSet() {
-  return std::make_unique<StorageSet>(this, map_shards_size_);
-}
-
-void QueryableDomain::RegisterStorageSet(StorageSet* storage_set) {
-  // Now register the new set.
-  std::vector<RefCountedPtr<DomainStorage>> added_storage;
-  MutexLock lock(&active_storage_sets_mu_);
-  active_storage_sets_.push_back(storage_set);
-  for (size_t i = 0; i < map_shards_size_; ++i) {
-    MutexLock lock(&map_shards_[i].mu);
-    map_shards_[i].storage_map.ForEach(
-        [&](const auto&, const auto& weak_storage) {
-          // Only add storage that is not already orphaned.
-          if (auto storage = weak_storage->RefIfNonZero(); storage != nullptr) {
-            added_storage.emplace_back(storage);
-            storage_set->AddStorage(weak_storage);
-          }
-        });
-  }
-}
-
-void QueryableDomain::UnregisterStorageSet(StorageSet* storage_set) {
-  MutexLock lock(&active_storage_sets_mu_);
-  active_storage_sets_.erase(
-      std::remove(active_storage_sets_.begin(), active_storage_sets_.end(),
-                  storage_set),
-      active_storage_sets_.end());
-}
-
 void QueryableDomain::TestOnlyReset() {
   channelz_.Reset();
   map_shards_ = std::make_unique<MapShard[]>(map_shards_size_);
-  MutexLock lock(&active_storage_sets_mu_);
-  active_storage_sets_.clear();
 }
 
 const InstrumentMetadata::Description* QueryableDomain::AllocateCounter(
@@ -739,58 +788,33 @@ void QueryableDomain::TestOnlyResetAll() {
 }
 
 RefCountedPtr<DomainStorage> QueryableDomain::GetDomainStorage(
-    std::vector<std::string> label) {
-  MapShard& map_shard = GetMapShard(label);
-  // First try to get an existing storage.
-  map_shard.mu.Lock();
-  auto storage_map = map_shard.storage_map;
-  map_shard.mu.Unlock();
-  // With an AVL we can search outside the lock.
-  auto* weak_storage = storage_map.Lookup(label);
-  if (weak_storage != nullptr) {
-    // Found a weak pointer, try to upgrade it to a strong pointer.
-    RefCountedPtr<DomainStorage> strong_storage =
-        (*weak_storage)->RefIfNonZero();
-    if (strong_storage != nullptr) {
-      // Upgrade successful, return the strong pointer.
-      return strong_storage;
+    RefCountedPtr<CollectionScope> scope,
+    absl::Span<const std::string> label_values) {
+  auto key_labels =
+      FilterLabels(label_names_, scope->labels_of_interest_, label_values);
+  if (scope->parent_ != nullptr) {
+    auto parent_key_labels = FilterLabels(
+        label_names_, scope->parent_->labels_of_interest_, label_values);
+    if (key_labels == parent_key_labels) {
+      return GetDomainStorage(scope->parent_, label_values);
     }
   }
-  // No hit, or the storage is orphaned: now we lock and search again.
-  RefCountedPtr<DomainStorage> new_storage;
-  {
-    MutexLock lock(&map_shard.mu);
-    storage_map = map_shard.storage_map;
-    // We must look up the storage map again, as it may have been created
-    // by another thread while we were not holding the lock.
-    weak_storage = storage_map.Lookup(label);
-    if (weak_storage != nullptr) {
-      // Found a weak pointer, try to upgrade it to a strong pointer.
-      RefCountedPtr<DomainStorage> strong_storage =
-          (*weak_storage)->RefIfNonZero();
-      if (strong_storage != nullptr) {
-        // Upgrade successful, return the strong pointer.
-        return strong_storage;
-      }
-    }
-    // Still no hit or orphaned: with the lock held we allocate a new storage
-    // and insert it into the map.
-    new_storage = CreateDomainStorage(std::move(label));
-    auto new_weak_storage = new_storage->WeakRef();
-    map_shard.storage_map =
-        map_shard.storage_map.Add(new_weak_storage->label(), new_weak_storage);
+  size_t shard_idx = absl::HashOf(key_labels) % scope->storage_shards_.size();
+  auto& shard = scope->storage_shards_[shard_idx];
+  MutexLock lock(&shard.mu);
+  auto it = shard.storage.find({this, key_labels});
+  if (it != shard.storage.end()) {
+    return it->second;
   }
-  // Add to active storage sets
-  MutexLock lock(&active_storage_sets_mu_);
-  for (auto* storage_set : active_storage_sets_) {
-    storage_set->AddStorage(new_storage->WeakRef());
-  }
-  return new_storage;
+  auto storage = CreateDomainStorage(key_labels);
+  shard.storage.emplace(std::pair(this, key_labels), storage);
+  return storage;
 }
 
 }  // namespace instrument_detail
 
 void TestOnlyResetInstruments() {
+  GetGlobalScopeHolderImpl()->Reset();
   Hook* hook = hooks.load(std::memory_order_acquire);
   while (hook != nullptr) {
     Hook* next = hook->next;

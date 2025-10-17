@@ -22,9 +22,9 @@
 #include <tuple>
 #include <utility>
 
+#include "src/core/util/grpc_check.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
-#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 

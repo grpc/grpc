@@ -19,9 +19,6 @@
 #include <grpcpp/ext/otel_plugin.h>
 #include <grpcpp/grpcpp.h>
 
-#include "absl/synchronization/notification.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "opentelemetry/exporters/memory/in_memory_span_exporter_factory.h"
 #include "opentelemetry/sdk/trace/simple_processor_factory.h"
 #include "opentelemetry/sdk/trace/tracer.h"
@@ -29,6 +26,9 @@
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/synchronization/notification.h"
 #ifdef GRPC_POSIX_SOCKET_TCP
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
 #endif  // GRPC_POSIX_SOCKET_TCP

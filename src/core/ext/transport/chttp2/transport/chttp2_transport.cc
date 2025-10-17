@@ -44,18 +44,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/base/attributes.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/hash/hash.h"
-#include "absl/log/log.h"
-#include "absl/meta/type_traits.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/strings/cord.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/time.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/metadata_info.h"
 #include "src/core/channelz/property_list.h"
@@ -127,6 +115,18 @@
 #include "src/core/util/string.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
+#include "absl/base/attributes.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/hash/hash.h"
+#include "absl/log/log.h"
+#include "absl/meta/type_traits.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/strings/cord.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 
 using grpc_core::Json;
 

@@ -23,8 +23,6 @@
 #include <grpc/support/alloc.h>
 #include <sys/types.h>
 
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -33,6 +31,8 @@
 #include "src/core/util/useful.h"
 #include "test/core/iomgr/endpoint_tests.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 static gpr_mu* g_mu;
 static grpc_pollset* g_pollset;

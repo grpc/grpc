@@ -21,16 +21,20 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <cstddef>
 #include <cstdint>
+#include <memory>
+#include <optional>
+#include <string>
 #include <utility>
+#include <vector>
 
-#include "absl/container/flat_hash_set.h"
 #include "src/core/call/call_spine.h"
+#include "src/core/call/metadata.h"
+#include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
-#include "src/core/ext/transport/chttp2/transport/flow_control_manager.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/goaway.h"
-#include "src/core/ext/transport/chttp2/transport/header_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
@@ -39,21 +43,36 @@
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
-#include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
+#include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
 #include "src/core/ext/transport/chttp2/transport/writable_streams.h"
-#include "src/core/lib/promise/inter_activity_mutex.h"
-#include "src/core/lib/promise/loop.h"
-#include "src/core/lib/promise/mpsc.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/promise/if.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/party.h"
+#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/check_class_size.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "src/core/util/time.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -154,8 +173,8 @@ class Http2ClientTransport final : public ClientTransport,
   }
 
   template <typename Factory>
-  auto TestOnlySpawnPromise(absl::string_view name, Factory factory) {
-    return general_party_->Spawn(name, std::move(factory), [](auto) {});
+  void TestOnlySpawnPromise(absl::string_view name, Factory&& factory) {
+    general_party_->Spawn(name, std::forward<Factory>(factory), [](Empty) {});
   }
 
   int64_t TestOnlyTransportFlowControlWindow() {
@@ -199,9 +218,6 @@ class Http2ClientTransport final : public ClientTransport,
   // Returns a promise that will process one HTTP2 frame.
   auto ProcessOneFrame(Http2Frame frame);
 
-  // Returns a promise that will do the cleanup after the ReadLoop ends.
-  auto OnReadLoopEnded();
-
   // Writing to the endpoint.
 
   // Write time sensitive control frames to the endpoint. Frames sent from here
@@ -219,10 +235,6 @@ class Http2ClientTransport final : public ClientTransport,
   // Returns a promise to keep draining control frames and data frames from all
   // the writable streams and write to the endpoint.
   auto MultiplexerLoop();
-
-  // Returns a promise that will do the cleanup after the MultiplexerLoop
-  // ends.
-  auto OnMultiplexerLoopEnded();
 
   // Returns a promise to fetch data from the callhandler and pass it further
   // down towards the endpoint.
@@ -331,6 +343,16 @@ class Http2ClientTransport final : public ClientTransport,
                 std::move(promise));
   }
 
+  // Spawns an infallible promise on the transport party.
+  template <typename Factory>
+  void SpawnInfallibleTransportParty(absl::string_view name, Factory&& factory);
+
+  // Spawns a promise on the transport party. If the promise returns a non-ok
+  // status, it is handled by closing the transport with the corresponding
+  // status.
+  template <typename Factory>
+  void SpawnGuardedTransportParty(absl::string_view name, Factory&& factory);
+
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
       "http2_client", GRPC_CHANNEL_READY};
 
@@ -421,11 +443,11 @@ class Http2ClientTransport final : public ClientTransport,
   absl::Status HandleError(const std::optional<uint32_t> stream_id,
                            Http2Status status, DebugLocation whence = {}) {
     auto error_type = status.GetType();
-    DCHECK(error_type != Http2Status::Http2ErrorType::kOk);
+    GRPC_DCHECK(error_type != Http2Status::Http2ErrorType::kOk);
 
     if (error_type == Http2Status::Http2ErrorType::kStreamError) {
       GRPC_HTTP2_CLIENT_ERROR_DLOG << "Stream Error: " << status.DebugString();
-      DCHECK(stream_id.has_value());
+      GRPC_DCHECK(stream_id.has_value());
       BeginCloseStream(
           LookupStream(stream_id.value()),
           Http2ErrorCodeToFrameErrorCode(status.GetStreamErrorCode()),

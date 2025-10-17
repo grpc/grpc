@@ -19,7 +19,6 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_GOAWAY_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_GOAWAY_H
 
-#include "absl/status/status.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/promise/activity.h"
@@ -30,6 +29,7 @@
 #include "src/core/lib/promise/wait_set.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/status/status.h"
 
 // This file contains the promise based implementation details of HTTP2 GOAWAY
 // mechanism.

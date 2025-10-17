@@ -25,9 +25,9 @@
 #include <zconf.h>
 #include <zlib.h>
 
-#include "absl/log/log.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
 
 #define OUTPUT_BLOCK_SIZE 1024
 

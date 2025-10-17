@@ -33,11 +33,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/credentials/call/external/external_account_credentials.h"
 #include "src/core/credentials/call/jwt/json_token.h"
 #include "src/core/credentials/call/jwt/jwt_credentials.h"
@@ -73,6 +68,11 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/util/uri.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 using grpc_core::Json;
 
@@ -157,12 +157,6 @@ grpc_google_default_channel_credentials::create_security_connector(
                 .Remove(GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER);
   }
   return sc;
-}
-
-grpc_core::ChannelArgs
-grpc_google_default_channel_credentials::update_arguments(
-    grpc_core::ChannelArgs args) {
-  return args.SetIfUnset(GRPC_ARG_DNS_ENABLE_SRV_QUERIES, true);
 }
 
 grpc_core::UniqueTypeName grpc_google_default_channel_credentials::Type() {

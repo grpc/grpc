@@ -26,7 +26,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/strings/string_view.h"
 #include "src/core/credentials/call/oauth2/oauth2_credentials.h"
 #include "src/core/credentials/call/token_fetcher/token_fetcher_credentials.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -38,6 +37,7 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

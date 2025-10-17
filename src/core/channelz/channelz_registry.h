@@ -25,12 +25,12 @@
 #include <map>
 #include <string>
 
-#include "absl/container/btree_map.h"
-#include "absl/functional/function_ref.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "absl/container/btree_map.h"
+#include "absl/functional/function_ref.h"
 
 namespace grpc_core {
 namespace channelz {

@@ -28,13 +28,13 @@
 
 #include <memory>
 
+#include "opentelemetry/context/propagation/text_map_propagator.h"
+#include "opentelemetry/metrics/meter_provider.h"
+#include "opentelemetry/trace/tracer_provider.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "opentelemetry/context/propagation/text_map_propagator.h"
-#include "opentelemetry/metrics/meter_provider.h"
-#include "opentelemetry/trace/tracer_provider.h"
 
 namespace grpc {
 namespace internal {
