@@ -173,8 +173,8 @@ class Http2ClientTransport final : public ClientTransport,
   }
 
   template <typename Factory>
-  auto TestOnlySpawnPromise(absl::string_view name, Factory factory) {
-    return general_party_->Spawn(name, std::move(factory), [](auto) {});
+  void TestOnlySpawnPromise(absl::string_view name, Factory&& factory) {
+    general_party_->Spawn(name, std::forward<Factory>(factory), [](Empty) {});
   }
 
   int64_t TestOnlyTransportFlowControlWindow() {
@@ -218,9 +218,6 @@ class Http2ClientTransport final : public ClientTransport,
   // Returns a promise that will process one HTTP2 frame.
   auto ProcessOneFrame(Http2Frame frame);
 
-  // Returns a promise that will do the cleanup after the ReadLoop ends.
-  auto OnReadLoopEnded();
-
   // Writing to the endpoint.
 
   // Write time sensitive control frames to the endpoint. Frames sent from here
@@ -238,10 +235,6 @@ class Http2ClientTransport final : public ClientTransport,
   // Returns a promise to keep draining control frames and data frames from all
   // the writable streams and write to the endpoint.
   auto MultiplexerLoop();
-
-  // Returns a promise that will do the cleanup after the MultiplexerLoop
-  // ends.
-  auto OnMultiplexerLoopEnded();
 
   // Returns a promise to fetch data from the callhandler and pass it further
   // down towards the endpoint.
@@ -349,6 +342,16 @@ class Http2ClientTransport final : public ClientTransport,
                     }),
                 std::move(promise));
   }
+
+  // Spawns an infallible promise on the transport party.
+  template <typename Factory>
+  void SpawnInfallibleTransportParty(absl::string_view name, Factory&& factory);
+
+  // Spawns a promise on the transport party. If the promise returns a non-ok
+  // status, it is handled by closing the transport with the corresponding
+  // status.
+  template <typename Factory>
+  void SpawnGuardedTransportParty(absl::string_view name, Factory&& factory);
 
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
       "http2_client", GRPC_CHANNEL_READY};
