@@ -395,11 +395,12 @@ void Mpsc::ReleaseActiveTokens(bool wake_reader, uint64_t tokens) {
   auto prev_active =
       active_tokens_.fetch_sub(tokens, std::memory_order_relaxed);
   GRPC_DCHECK_GE(prev_active & kActiveTokensMask, tokens);
-  while ((prev_active & kActiveTokensWakerBit) != 0 &&
-         (prev_active & kActiveTokensMask) - tokens <= max_queued_) {
+  auto cur_active = prev_active - tokens;
+  while ((cur_active & kActiveTokensWakerBit) != 0 &&
+         (cur_active & kActiveTokensMask) <= max_queued_) {
     if (active_tokens_.compare_exchange_weak(
-            prev_active,
-            (prev_active & kActiveTokensMask) | kActiveTokensWakingBit,
+            cur_active,
+            (cur_active & kActiveTokensMask) | kActiveTokensWakingBit,
             std::memory_order_acquire, std::memory_order_relaxed)) {
       auto waker = std::move(active_tokens_waker_);
       GRPC_DCHECK(!waker.is_unwakeable());
