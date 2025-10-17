@@ -34,8 +34,7 @@ rm -rf input_artifacts
 mkdir -p input_artifacts
 cp -r artifacts/* input_artifacts/ || true
 
-# exit early if build_artifact fails
-# TODO(ssreenithi): remove before submitting
+# exit early if build_artifact fails, for faster test run time
 if [ "$FAILED" != "" ]
 then
   exit 1

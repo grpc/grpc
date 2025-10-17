@@ -36,7 +36,6 @@ from subprocess import PIPE
 import sys
 import sysconfig
 
-# import _metadata
 from setuptools import Extension
 from setuptools.command import egg_info
 
@@ -546,10 +545,6 @@ PACKAGE_DIRECTORIES = {
     "": PYTHON_STEM,
 }
 
-# this can be removed and replaced with `dependencies` in pyproject.toml
-# however since SETUP_REQUIRES also needs it, further updates to
-# typing-extensions version will have to be done in both places.
-# Hence keeping it in setup.py itself for a single place of update.
 INSTALL_REQUIRES = ("typing-extensions~=4.12",)
 
 EXTRAS_REQUIRES = {

@@ -38,8 +38,6 @@ if "%GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS%"=="" (
 mkdir -p %ARTIFACTS_OUT%
 set ARTIFACT_DIR=%cd%\%ARTIFACTS_OUT%
 
-@rem Set up gRPC Python tools
-python tools\distrib\python\make_grpcio_tools.py
 
 @rem use short temp directory to avoid linker command file errors caused by
 @rem exceeding 131071 characters.
@@ -48,17 +46,20 @@ set "GRPC_USE_SHORT_BUILD_TEMP=1"
 @rem Build gRPC Python distribution
 python -m build --wheel || goto :error
 
+@rem Set up gRPC Python tools
+python tools\distrib\python\make_grpcio_tools.py
+
 @rem Build grpcio-tools Python distribution
-@REM pushd tools\distrib\python\grpcio_tools
-@REM python -m build --wheel || goto :error
-@REM popd
+pushd tools\distrib\python\grpcio_tools
+python -m build --wheel || goto :error
+popd
 
-@REM @rem Ensure the generate artifacts are valid.
-@REM python -m pip install packaging==21.3 twine==5.0.0
-@REM python -m twine check dist\* tools\distrib\python\grpcio_tools\dist\* || goto :error
+@rem Ensure the generate artifacts are valid.
+python -m pip install packaging==21.3 twine==5.0.0
+python -m twine check dist\* tools\distrib\python\grpcio_tools\dist\* || goto :error
 
-@REM xcopy /Y /I /S dist\* %ARTIFACT_DIR% || goto :error
-@REM xcopy /Y /I /S tools\distrib\python\grpcio_tools\dist\* %ARTIFACT_DIR% || goto :error
+xcopy /Y /I /S dist\* %ARTIFACT_DIR% || goto :error
+xcopy /Y /I /S tools\distrib\python\grpcio_tools\dist\* %ARTIFACT_DIR% || goto :error
 
 goto :EOF
 

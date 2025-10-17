@@ -59,7 +59,6 @@ class GatherProto(setuptools.Command):
         except Exception as error:
             # We don't care if this command fails
             pass
-        print("Current working directory:", os.path.abspath(os.curdir))
         shutil.copytree(GRPC_PROTO_STEM, PROTO_STEM)
         for root, _, _ in os.walk(PYTHON_PROTO_TOP_LEVEL):
             path = os.path.join(root, "__init__.py")

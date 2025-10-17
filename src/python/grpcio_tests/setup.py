@@ -30,8 +30,6 @@ import grpc_version
 import python_version
 
 INSTALL_REQUIRES = (
-    # TODO(ssreenithi): increase version constraint when default coverage_core
-    # issue is solved.
     "coverage>=7.9.0",
     "grpcio>={version}".format(version=grpc_version.VERSION),
     "grpcio-channelz>={version}".format(version=grpc_version.VERSION),
