@@ -19,9 +19,6 @@
 #include <array>
 #include <string>
 
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
-#include "gtest/gtest.h"
 #include "src/core/client_channel/client_channel_service_config.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/service_config/service_config_impl.h"
@@ -29,6 +26,9 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/load_balancing/lb_policy_test_lib.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace testing {
