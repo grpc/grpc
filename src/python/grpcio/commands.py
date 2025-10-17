@@ -293,8 +293,14 @@ class BuildExt(build_ext.build_ext):
 
         use_short_temp = os.environ.get("GRPC_USE_SHORT_BUILD_TEMP", 0)
         if use_short_temp:
-            self.build_temp = tempfile.mkdtemp()
-            # os.environ["BUILD_EXT_TEMP"] = self.build_temp
+            if not os.path.exists("pyb"):
+                print("pyb directory not found!! Creating!!")
+                os.mkdir("pyb")
+            else:
+                print("Found pyb directory already created!!")
+
+            self.build_temp = tempfile.mkdtemp(dir="pyb")
+            print("Using temp directory:", self.build_temp)
 
         # This is to let UnixCompiler get either C or C++ compiler options depending on the source.
         # Note that this doesn't work for MSVCCompiler and will be handled by _spawn_patch.py.
