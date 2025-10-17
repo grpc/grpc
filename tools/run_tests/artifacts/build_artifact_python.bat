@@ -41,16 +41,14 @@ set ARTIFACT_DIR=%cd%\%ARTIFACTS_OUT%
 @rem Set up gRPC Python tools
 python tools\distrib\python\make_grpcio_tools.py
 
-@rem Creates a unique, short, and concurrency-safe directory like T:\b12345
-call :CreateAndGetUniqueTempDir
-set "GRPC_BUILD_EXT_TEMP=%SHORT_TMP_DIR%"
+@rem use short temp directory to avoid linker command file errors caused by
+@rem exceeding 131071 characters.
+set "GRPC_USE_SHORT_BUILD_TEMP=1"
 
 @rem Build gRPC Python distribution
 python -m build --wheel || goto :error
 
 @rem Build grpcio-tools Python distribution
-@REM call :CreateAndGetUniqueTempDir
-@REM set "GRPC_TOOLS_BUILD_EXT_TEMP=%SHORT_TMP_DIR%"
 @REM pushd tools\distrib\python\grpcio_tools
 @REM python -m build --wheel || goto :error
 @REM popd
@@ -67,18 +65,3 @@ goto :EOF
 :error
 popd
 exit /b 1
-
-:CreateAndGetUniqueTempDir
-  @rem Use time for randomness
-  set "CURRENT_TIME=%TIME%"
-  echo %CURRENT_TIME%
-
-  @rem remove : and . from the time
-  set "CLEAN_TIME=%CURRENT_TIME::=%"
-  set "CLEAN_TIME=%CLEAN_TIME:.=%"
-
-  @rem create a unique id using last 7 digits
-  set "UNIQUE_ID=%CLEAN_TIME:~-7%"
-
-  set "SHORT_TMP_DIR=T:\t%UNIQUE_ID%"
-  mkdir "%SHORT_TMP_DIR%"

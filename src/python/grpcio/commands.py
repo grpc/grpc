@@ -24,6 +24,7 @@ import shutil
 import subprocess
 import sys
 import sysconfig
+import tempfile
 import traceback
 
 from setuptools.command import build_ext
@@ -290,10 +291,9 @@ class BuildExt(build_ext.build_ext):
 
     def build_extensions(self):
 
-        grpc_temp_dir = os.getenv("GRPC_BUILD_EXT_TEMP", None)
-        if grpc_temp_dir is not None:
-            print(f"Overriding build_temp with environment variable: {grpc_temp_dir}")
-            self.build_temp = grpc_temp_dir
+        use_short_temp = os.getenv("GRPC_USE_SHORT_BUILD_TEMP", 0)
+        if not use_short_temp:
+            self.build_temp = tempfile.mkdtemp()
 
         # This is to let UnixCompiler get either C or C++ compiler options depending on the source.
         # Note that this doesn't work for MSVCCompiler and will be handled by _spawn_patch.py.
