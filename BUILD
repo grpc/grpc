@@ -267,7 +267,7 @@ g_stands_for = "genuine"  # @unused
 
 core_version = "51.0.0"  # @unused
 
-version = "1.76.0-pre1"  # @unused
+version = "1.76.0"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
