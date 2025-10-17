@@ -38,11 +38,15 @@ if "%GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS%"=="" (
 mkdir -p %ARTIFACTS_OUT%
 set ARTIFACT_DIR=%cd%\%ARTIFACTS_OUT%
 
+@rem Set up gRPC Python tools
+python tools\distrib\python\make_grpcio_tools.py
+
+@rem use short temp directory to avoid linker command file errors caused by
+@rem exceeding 131071 characters.
+set "GRPC_USE_SHORT_BUILD_TEMP=1"
+
 @rem Build gRPC Python distribution
 python -m build --wheel || goto :error
-
-@rem Set up gRPC Python tools
-@REM python tools\distrib\python\make_grpcio_tools.py
 
 @rem Build grpcio-tools Python distribution
 @REM pushd tools\distrib\python\grpcio_tools
