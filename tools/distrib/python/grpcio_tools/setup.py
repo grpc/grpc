@@ -23,6 +23,7 @@ import subprocess
 from subprocess import PIPE
 import sys
 import sysconfig
+import tempfile
 
 import setuptools
 from setuptools import Extension
@@ -114,6 +115,12 @@ class BuildExt(build_ext.build_ext):
         return filename
 
     def build_extensions(self):
+
+        use_short_temp = os.environ.get("GRPC_USE_SHORT_BUILD_TEMP", 0)
+        if use_short_temp:
+            self.build_temp = tempfile.mkdtemp(dir="pyb")
+            print("Using temp directory for grpcio_tools:", self.build_temp)
+
         # This is to let UnixCompiler get either C or C++ compiler options depending on the source.
         # Note that this doesn't work for MSVCCompiler and will be handled by _spawn_patch.py.
         old_compile = self.compiler._compile
