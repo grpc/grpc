@@ -161,10 +161,10 @@ class WritableStreams {
                         AddToPrioritizedQueue(batch.value());
                         std::optional<StreamPtr> stream =
                             prioritized_queue_.Pop(transport_tokens_available);
-                        // TODO(akshitpatel) : [PH2][P4] - This DCHECK should
-                        // ideally be fine. But in case if queue_.NextBatch
-                        // spuriously returns an empty batch, move to a Loop
-                        // to avoid this.
+                        // TODO(akshitpatel) : [PH2][P4] - This GRPC_DCHECK
+                        // should ideally be fine. But in case if
+                        // queue_.NextBatch spuriously returns an empty batch,
+                        // move to a Loop to avoid this.
                         GRPC_DCHECK(stream.has_value());
                         GRPC_WRITABLE_STREAMS_DEBUG
                             << "Next stream id: "
