@@ -22,8 +22,6 @@
 #include <cstdint>
 #include <memory>
 
-#include "absl/random/random.h"
-#include "absl/status/statusor.h"
 #include "src/core/client_channel/connector.h"
 #include "src/core/ext/transport/chaotic_good_legacy/config.h"
 #include "src/core/handshaker/handshaker.h"
@@ -43,6 +41,8 @@
 #include "src/core/util/notification.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "absl/random/random.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 namespace chaotic_good_legacy {

@@ -19,12 +19,12 @@
 #include <optional>
 #include <string>
 
-#include "absl/log/check.h"
-#include "absl/strings/string_view.h"
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/proto/grpc/channelz/v2/channelz.pb.h"
 #include "src/proto/grpc/channelz/v2/property_list.pb.h"
+#include "gtest/gtest.h"
+#include "absl/log/check.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_zviz {
 namespace {

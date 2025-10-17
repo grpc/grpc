@@ -27,9 +27,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "absl/log/log.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/useful.h"
+#include "absl/log/log.h"
 
 static long ncpus = 0;
 

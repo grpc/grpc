@@ -28,11 +28,11 @@
 #include <set>
 #include <tuple>
 
-#include "absl/log/log.h"
 #include "opencensus/tags/tag_key.h"
 #include "src/core/util/grpc_check.h"
 #include "src/cpp/server/load_reporter/constants.h"
 #include "src/cpp/server/load_reporter/get_cpu_stats.h"
+#include "absl/log/log.h"
 
 // IWYU pragma: no_include "google/protobuf/duration.pb.h"
 

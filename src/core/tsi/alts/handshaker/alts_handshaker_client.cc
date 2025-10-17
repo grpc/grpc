@@ -26,9 +26,6 @@
 #include <memory>
 #include <string>
 
-#include "absl/log/log.h"
-#include "absl/strings/numbers.h"
-#include "absl/strings/str_split.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h"
@@ -37,6 +34,9 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
 #include "upb/mem/arena.hpp"
+#include "absl/log/log.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/str_split.h"
 
 #define TSI_ALTS_INITIAL_BUFFER_SIZE 256
 

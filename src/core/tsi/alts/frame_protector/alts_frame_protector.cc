@@ -26,13 +26,13 @@
 #include <algorithm>
 #include <memory>
 
-#include "absl/log/log.h"
-#include "absl/types/span.h"
 #include "src/core/tsi/alts/crypt/gsec.h"
 #include "src/core/tsi/alts/frame_protector/alts_crypter.h"
 #include "src/core/tsi/alts/frame_protector/frame_handler.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/util/memory.h"
+#include "absl/log/log.h"
+#include "absl/types/span.h"
 
 constexpr size_t kMinFrameLength = 1024;
 constexpr size_t kDefaultFrameLength = 16 * 1024;

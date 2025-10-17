@@ -24,12 +24,12 @@
 #include <thread>
 #include <vector>
 
-#include "gtest/gtest.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/shared_bit_gen.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace channelz {

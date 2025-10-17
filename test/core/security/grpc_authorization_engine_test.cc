@@ -20,12 +20,12 @@
 
 #include <memory>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/util/json/json.h"
 #include "test/core/test_util/audit_logging_utils.h"
 #include "test/core/test_util/evaluate_args_test_util.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 

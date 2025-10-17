@@ -50,9 +50,6 @@
 
 #include <string>
 
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/extensions/supports_fd.h"
@@ -76,6 +73,9 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/strerror.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 static std::atomic<int64_t> num_dropped_connections{0};
 static constexpr grpc_core::Duration kRetryAcceptWaitTime{
@@ -91,7 +91,12 @@ using ::grpc_event_engine::experimental::SliceBuffer;
 static void finish_shutdown(grpc_tcp_server* s) {
   gpr_mu_lock(&s->mu);
   GRPC_CHECK(s->shutdown);
-  grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_ending);
+  if (grpc_core::ExecCtx::Get() == nullptr) {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_ending);
+  } else {
+    grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_ending);
+  }
   gpr_mu_unlock(&s->mu);
   if (s->shutdown_complete != nullptr) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, s->shutdown_complete,

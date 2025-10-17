@@ -21,10 +21,10 @@
 #include <grpc/support/log_windows.h>
 #include <winsock2.h>
 
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
-#include "src/core/lib/address_utils/sockaddr_utils.h"
 // We pull in ares.h transitively here, ares.h is not self-contained
 // w.r.t. windows headers though, so make sure pull them in above.
 #include "src/core/lib/event_engine/ares_resolver.h"

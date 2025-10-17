@@ -23,10 +23,10 @@
 #include <string>
 #include <unordered_set>
 
-#include "gtest/gtest.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 
