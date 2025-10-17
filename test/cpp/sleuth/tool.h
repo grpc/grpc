@@ -17,14 +17,69 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
+#include <functional>
+#include <iostream>
+#include <memory>
+#include <optional>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "absl/container/flat_hash_map.h"
 #include "absl/log/check.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 namespace grpc_sleuth {
 
-using ToolFn = absl::Status (*)(std::vector<std::string>);
+// Prints to stdout. New-line is not appended.
+inline void PrintStdout(std::string s) { std::cout << s; }
+
+inline std::function<void(std::string)> g_print_fn = PrintStdout;
+
+// Returns the print function. Not thread-safe.
+inline std::function<void(std::string)> GetPrintFn() { return g_print_fn; }
+
+// Sets the print function. Not thread-safe.
+inline void SetPrintFn(std::function<void(std::string)> p) {
+  g_print_fn = std::move(p);
+}
+
+class ToolArgs {
+ public:
+  static absl::StatusOr<std::unique_ptr<ToolArgs>> TryCreate(
+      const std::vector<std::string>& args);
+
+  template <typename T>
+  absl::StatusOr<T> TryGetFlag(
+      absl::string_view key,
+      std::optional<T> default_value = std::nullopt) const {
+    auto it = map_.find(key);
+    if (it != map_.end()) {
+      return ConvertValue<T>(key, it->second);
+    }
+    if (default_value.has_value()) {
+      return *default_value;
+    }
+    return absl::InvalidArgumentError(absl::StrCat(key, " is required"));
+  }
+
+ private:
+  explicit ToolArgs(absl::flat_hash_map<std::string, std::string> map)
+      : map_(std::move(map)) {}
+
+  template <typename T>
+  static absl::StatusOr<T> ConvertValue(absl::string_view key,
+                                        absl::string_view value);
+
+  absl::flat_hash_map<std::string, std::string> map_;
+};
+
+using ToolFn = absl::Status (*)(const ToolArgs&);
 
 class ToolRegistry {
  public:
@@ -73,12 +128,12 @@ class ToolRegistry {
 }  // namespace grpc_sleuth
 
 #define SLEUTH_TOOL(name, args_description, description)                  \
-  absl::Status name(std::vector<std::string> args);                       \
+  absl::Status name(const grpc_sleuth::ToolArgs& args);                   \
   namespace {                                                             \
   int registration_for_tool_##name =                                      \
       grpc_sleuth::ToolRegistry::Get()->Register(#name, args_description, \
                                                  description, name);      \
   }                                                                       \
-  absl::Status name(GRPC_UNUSED std::vector<std::string> args)
+  absl::Status name(GRPC_UNUSED const grpc_sleuth::ToolArgs& args)
 
 #endif  // GRPC_TEST_CPP_SLEUTH_TOOL_H
