@@ -249,6 +249,7 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
 
   const absl::string_view kMethodName = "grpc.testing.EchoTestService/Echo";
   const absl::string_view kGenericMethodName = "foo/bar";
+  bool initialized_ = false;
   std::map<
       grpc_core::ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey,
       grpc_core::RefCountedStringValue>
