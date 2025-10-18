@@ -34,6 +34,13 @@ rm -rf input_artifacts
 mkdir -p input_artifacts
 cp -r artifacts/* input_artifacts/ || true
 
+# exit early if build_artifact fails
+# TODO(ssreenithi): remove before submitting
+if [ "$FAILED" != "" ]
+then
+  exit 1
+fi
+
 # This step simply collects python artifacts from subdirectories of input_artifacts/ and copies them to artifacts/
 
 # PythonPackage targets do not support the `presubmit` label.
