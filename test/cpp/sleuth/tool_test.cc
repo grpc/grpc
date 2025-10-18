@@ -14,10 +14,7 @@
 
 #include "test/cpp/sleuth/tool_test.h"
 
-#include <iostream>
-#include <sstream>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "test/cpp/sleuth/tool.h"
@@ -36,19 +33,24 @@ absl::StatusOr<std::string> TestTool(absl::string_view tool_name,
     return absl::NotFoundError(absl::StrCat("Tool not found: ", tool_name));
   }
 
-  std::stringstream buffer;
-  auto old_cout_rdbuf = std::cout.rdbuf();
-  std::cout.rdbuf(buffer.rdbuf());
+  std::string output;
+  auto old_print_fn = GetPrintFn();
+  SetPrintFn([&output](std::string s) { output += s; });
 
-  absl::Status status = tool(std::move(args));
+  auto tool_args = ToolArgs::TryCreate(args);
+  if (!tool_args.ok()) {
+    SetPrintFn(old_print_fn);
+    return tool_args.status();
+  }
+  absl::Status status = tool(*tool_args.value());
 
-  std::cout.rdbuf(old_cout_rdbuf);
+  SetPrintFn(old_print_fn);
 
   if (!status.ok()) {
     return status;
   }
 
-  return buffer.str();
+  return output;
 }
 
 }  // namespace grpc_sleuth
