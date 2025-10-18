@@ -25,6 +25,7 @@ namespace {
 class LowContentionDomain : public InstrumentDomain<LowContentionDomain> {
  public:
   using Backend = LowContentionBackend;
+  static constexpr absl::string_view kName = "low_contention";
   static constexpr auto kLabels = std::tuple();
   static inline const auto kCounter =
       RegisterCounter("low_contention", "Desc", "unit");
@@ -33,13 +34,14 @@ class LowContentionDomain : public InstrumentDomain<LowContentionDomain> {
 class HighContentionDomain : public InstrumentDomain<HighContentionDomain> {
  public:
   using Backend = HighContentionBackend;
+  static constexpr absl::string_view kName = "high_contention";
   static constexpr auto kLabels = std::tuple();
   static inline const auto kCounter =
       RegisterCounter("high_contention", "Desc", "unit");
 };
 
 void BM_IncrementLowContentionInstrument(benchmark::State& state) {
-  auto storage = LowContentionDomain::GetStorage();
+  auto storage = LowContentionDomain::GetStorage(GetGlobalCollectionScope({}));
   for (auto _ : state) {
     storage->Increment(LowContentionDomain::kCounter);
   }
@@ -47,7 +49,7 @@ void BM_IncrementLowContentionInstrument(benchmark::State& state) {
 BENCHMARK(BM_IncrementLowContentionInstrument)->ThreadRange(1, 64);
 
 void BM_IncrementHighContentionInstrument(benchmark::State& state) {
-  auto storage = HighContentionDomain::GetStorage();
+  auto storage = HighContentionDomain::GetStorage(GetGlobalCollectionScope({}));
   for (auto _ : state) {
     storage->Increment(HighContentionDomain::kCounter);
   }

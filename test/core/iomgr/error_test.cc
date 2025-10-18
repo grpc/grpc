@@ -22,12 +22,12 @@
 #include <grpc/support/alloc.h>
 #include <string.h>
 
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "gmock/gmock.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/strerror.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 TEST(ErrorTest, SetGetInt) {
   grpc_error_handle error = GRPC_ERROR_CREATE("Test");

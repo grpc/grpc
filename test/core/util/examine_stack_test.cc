@@ -18,11 +18,11 @@
 
 #include "src/core/util/examine_stack.h"
 
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "absl/debugging/stacktrace.h"
 #include "absl/debugging/symbolize.h"
 #include "absl/log/log.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 
 namespace {
 

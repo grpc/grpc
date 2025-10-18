@@ -26,9 +26,9 @@
 #include <cstdint>
 #include <unordered_map>
 
-#include "absl/strings/string_view.h"
 #include "constants.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_observability {
 

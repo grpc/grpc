@@ -20,10 +20,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/time/time.h"
 #include "src/core/channelz/channelz_registry.h"
 #include "src/core/channelz/v2tov1/convert.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -31,6 +27,10 @@
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/time/time.h"
 
 // This file is a temporary compatibility layer between the v2 channelz data
 // model and the v1 C-API. It should be removed when the v1 C-API is removed.

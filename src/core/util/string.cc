@@ -29,10 +29,10 @@
 #include <string.h>
 #include <time.h>
 
-#include "absl/strings/str_cat.h"
-#include "absl/time/time.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/useful.h"
+#include "absl/strings/str_cat.h"
+#include "absl/time/time.h"
 
 char* gpr_strdup(const char* src) {
   char* dst;

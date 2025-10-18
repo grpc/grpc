@@ -20,14 +20,14 @@
 
 #include <string.h>
 
-#include "absl/log/log.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 constexpr absl::string_view kProtocol = "baz";
 

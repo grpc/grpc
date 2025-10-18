@@ -31,8 +31,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "src/core/call/call_finalization.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
@@ -74,6 +72,8 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 typedef struct connected_channel_channel_data {
   grpc_core::Transport* transport;

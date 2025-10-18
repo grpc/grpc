@@ -16,9 +16,9 @@
 
 #include <map>
 
+#include "src/core/util/grpc_check.h"
 #include "absl/algorithm/container.h"
 #include "absl/strings/ascii.h"
-#include "src/core/util/grpc_check.h"
 
 namespace grpc {
 namespace testing {

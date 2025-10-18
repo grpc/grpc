@@ -30,8 +30,6 @@
 #include <memory>
 #include <unordered_set>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/strings/str_format.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/sockaddr_windows.h"
@@ -39,6 +37,8 @@
 #include "src/core/lib/iomgr/tcp_windows.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/strings/str_format.h"
 // We pull in ares.h transitively here, ares.h is not self-contained
 // w.r.t. windows headers though, so make sure pull them in above.
 #include "src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h"

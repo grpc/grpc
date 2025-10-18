@@ -19,9 +19,9 @@
 #include <algorithm>
 #include <atomic>
 
+#include "src/core/util/grpc_check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 

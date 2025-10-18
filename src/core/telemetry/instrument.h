@@ -29,11 +29,20 @@
 //     unique  combination of label values within a domain creates a separate
 //     instance of the instrumentation storage.
 //
+// *   **Collection Scope:** Defines a scope for collecting metrics, identified
+//     by a set of labels of interest. Metric collection via
+//     `GetStorage`+`Increment` will be filtered according to these labels.
+//     Scopes can be hierarchical.
+//     On destruction, metrics collected in this scope are aggregated into the
+//     parent scope.
+//
 // *   **Storage:** An object holding the current values for all instruments
-//     within a domain, for a *specific combination* of label values. Storage
-//     objects are ref-counted and managed by the domain. You obtain a
-//     `RefCountedPtr<Storage>` using `Domain::GetStorage(...)`, passing the
-//     current label values.
+//     within a domain, for a *specific combination* of filtered label values.
+//     Its lifetime is managed by one or more `CollectionScope`s. You obtain a
+//     `RefCountedPtr<Storage>` using `Domain::GetStorage(scope, ...)`, passing
+//     the current label values. If a child scope's filtered labels match its
+//     parent's filtered labels for a given metric, the parent's `Storage`
+//     instance is reused (shared).
 //
 // *   **Backend:** Determines how the metric data is stored and aggregated
 //     within a Storage object. Examples include `LowContentionBackend` and
@@ -105,7 +114,8 @@
 //   };
 //
 // To increment the counter:
-//   auto storage = MyDomain::GetStorage("label_val1", "label_val2");
+//   auto scope = GetGlobalCollectionScope({}); // Or some other scope
+//   auto storage = MyDomain::GetStorage(scope, "label_val1", "label_val2");
 //   storage->Increment(MyDomain::kMyCounter);
 //
 // To set the gauge (inside a callback):
@@ -116,6 +126,9 @@
 // The `MetricsQuery` class is used to fetch metric data. You can filter by
 // label values, select specific metrics, and collapse labels (aggregate over
 // them). The results are emitted to a `MetricsSink` interface.
+// `MetricsQuery::Run(scope, sink)` operates on a given `CollectionScope`,
+// querying all unique storage instances reachable from that scope and its
+// children.
 //
 // ## Aggregability
 //
@@ -145,6 +158,15 @@
 #include <variant>
 #include <vector>
 
+#include "src/core/channelz/channelz.h"
+#include "src/core/telemetry/histogram.h"
+#include "src/core/util/avl.h"
+#include "src/core/util/dual_ref_counted.h"
+#include "src/core/util/match.h"
+#include "src/core/util/per_cpu.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/single_set_ptr.h"
+#include "src/core/util/sync.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
@@ -153,21 +175,16 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
-#include "src/core/telemetry/histogram.h"
-#include "src/core/util/avl.h"
-#include "src/core/util/dual_ref_counted.h"
-#include "src/core/util/match.h"
-#include "src/core/util/per_cpu.h"
-#include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/sync.h"
 
 namespace grpc_core {
 
 class InstrumentTest;
 
+static constexpr absl::string_view kOmittedLabel = "<omitted>";
+
 namespace instrument_detail {
 class QueryableDomain;
-class StorageSet;
+class DomainStorage;
 }  // namespace instrument_detail
 
 class CollectionScope;
@@ -218,20 +235,48 @@ using HistogramCollectionHook = absl::AnyInvocable<void(
     absl::Span<const std::string> labels, int64_t value)>;
 void RegisterHistogramCollectionHook(HistogramCollectionHook hook);
 
-// A CollectionScope ensures that all metric updates in its lifetime are visible
-// to a MetricsQuery.
-class CollectionScope {
+// Defines a scope for collecting metrics, identified by a set of labels of
+// interest. Metric collection via GetStorage+Increment will be filtered
+// according to these labels. Scopes can be hierarchical. On destruction,
+// metrics collected in this scope are aggregated into the parent scope.
+class CollectionScope : public RefCounted<CollectionScope> {
  public:
-  explicit CollectionScope(
-      std::vector<std::unique_ptr<instrument_detail::StorageSet>> storage_sets);
+  CollectionScope(RefCountedPtr<CollectionScope> parent,
+                  absl::Span<const std::string> labels,
+                  size_t child_shards_count, size_t storage_shards_count);
+  ~CollectionScope() override;
 
   size_t TestOnlyCountStorageHeld() const;
 
+  void ForEachUniqueStorage(
+      absl::FunctionRef<void(instrument_detail::DomainStorage*)> cb);
+
  private:
   friend class MetricsQuery;
-  std::vector<instrument_detail::StorageSet*> GetStorageSets();
+  friend class instrument_detail::QueryableDomain;
+  friend struct GlobalScopeHolder;
 
-  std::vector<std::unique_ptr<instrument_detail::StorageSet>> storage_sets_;
+  struct StorageShard {
+    mutable Mutex mu;
+    absl::flat_hash_map<std::pair<instrument_detail::QueryableDomain*,
+                                  std::vector<std::string>>,
+                        RefCountedPtr<instrument_detail::DomainStorage>>
+        storage ABSL_GUARDED_BY(mu);
+  };
+
+  struct ChildShard {
+    Mutex mu;
+    absl::flat_hash_set<CollectionScope*> children ABSL_GUARDED_BY(mu);
+  };
+
+  RefCountedPtr<CollectionScope> parent_;
+  absl::flat_hash_set<std::string> labels_of_interest_;
+  std::vector<ChildShard> child_shards_;
+  std::vector<StorageShard> storage_shards_;
+
+  void ForEachUniqueStorage(
+      absl::FunctionRef<void(instrument_detail::DomainStorage*)> cb,
+      absl::flat_hash_set<instrument_detail::DomainStorage*>& visited);
 };
 
 namespace instrument_detail {
@@ -276,51 +321,29 @@ class GaugeStorage {
   std::vector<std::optional<uint64_t>> uint_gauges_;
 };
 
-class DomainStorage : public DualRefCounted<DomainStorage> {
+class DomainStorage : public DualRefCounted<DomainStorage>,
+                      public channelz::DataSource {
  public:
   DomainStorage(QueryableDomain* domain, std::vector<std::string> label);
 
   void Orphaned() override;
 
   virtual uint64_t SumCounter(size_t index) = 0;
+  virtual void Add(DomainStorage* other) = 0;
 
+  // Returns the label values of the CollectionScope that owns this storage.
+  // This is the full set of labels published by the domain, with unused labels
+  // in the scope set to kOmittedLabel.
   absl::Span<const std::string> label() const { return label_; }
   QueryableDomain* domain() const { return domain_; }
 
   virtual void FillGaugeStorage(GaugeStorage& gauge_storage) = 0;
 
+  void AddData(channelz::DataSink sink) override;
+
  private:
   QueryableDomain* domain_;
   const std::vector<std::string> label_;
-};
-
-// Interface for a set of storage objects for a domain.
-// Each StorageSet is a collection of storage objects for a domain, one storage
-// object per unique set of labels.
-// The StorageSet subscribes to new label sets being created, so that all
-// storage in a time period can be exported.
-class StorageSet {
- public:
-  StorageSet(QueryableDomain* domain, size_t map_shards_size);
-  virtual ~StorageSet();
-  void ExportMetrics(
-      MetricsSink& sink,
-      absl::Span<const InstrumentMetadata::Description* const> metrics);
-  size_t TestOnlyCountStorageHeld() const;
-  QueryableDomain* domain() const { return domain_; }
-
-  void AddStorage(WeakRefCountedPtr<DomainStorage> storage);
-
- private:
-  struct MapShard {
-    mutable Mutex mu;
-    AVL<absl::Span<const std::string>, WeakRefCountedPtr<DomainStorage>>
-        storage_map ABSL_GUARDED_BY(mu);
-  };
-
-  QueryableDomain* domain_;
-  std::unique_ptr<MapShard[]> map_shards_;
-  const size_t map_shards_size_;
 };
 
 // A registry of metrics.
@@ -372,19 +395,43 @@ class QueryableDomain {
   // Reset the internal state of this domain. For test use only.
   void TestOnlyReset();
 
-  static std::unique_ptr<CollectionScope> CreateCollectionScope();
   size_t TestOnlyCountStorageHeld() const;
 
+  // Returns the number of slots allocated for each metric type.
+  uint64_t allocated_counter_slots() const { return allocated_counter_slots_; }
+  uint64_t allocated_double_gauge_slots() const {
+    return allocated_double_gauge_slots_;
+  }
+  uint64_t allocated_int_gauge_slots() const {
+    return allocated_int_gauge_slots_;
+  }
+  uint64_t allocated_uint_gauge_slots() const {
+    return allocated_uint_gauge_slots_;
+  }
+
+  RefCountedPtr<DomainStorage> GetDomainStorage(
+      RefCountedPtr<CollectionScope> scope,
+      absl::Span<const std::string> label);
+
+  absl::string_view name() const { return name_; }
+
+  RefCountedPtr<channelz::BaseNode> channelz_node() {
+    if (!channelz_.is_set()) {
+      return channelz_.Set(new ChannelzState(this))->channelz_node();
+    }
+    return channelz_->channelz_node();
+  }
+
  protected:
-  QueryableDomain(std::vector<std::string> label_names, size_t map_shards_size)
+  QueryableDomain(std::string name, std::vector<std::string> label_names,
+                  size_t map_shards_size)
       : label_names_(std::move(label_names)),
         map_shards_size_(label_names_.empty() ? 1 : map_shards_size),
-        map_shards_(std::make_unique<MapShard[]>(map_shards_size_)) {}
+        map_shards_(std::make_unique<MapShard[]>(map_shards_size_)),
+        name_(std::move(name)) {}
 
   // QueryableDomain should never be destroyed.
   ~QueryableDomain() { LOG(FATAL) << "QueryableDomain destroyed."; }
-
-  RefCountedPtr<DomainStorage> GetDomainStorage(std::vector<std::string> label);
 
   // Called by InstrumentDomain when construction is complete.
   void Constructed();
@@ -406,20 +453,7 @@ class QueryableDomain {
       absl::string_view name, absl::string_view description,
       absl::string_view unit);
 
-  // Returns the number of slots allocated for each metric type.
-  uint64_t allocated_counter_slots() const { return allocated_counter_slots_; }
-  uint64_t allocated_double_gauge_slots() const {
-    return allocated_double_gauge_slots_;
-  }
-  uint64_t allocated_int_gauge_slots() const {
-    return allocated_int_gauge_slots_;
-  }
-  uint64_t allocated_uint_gauge_slots() const {
-    return allocated_uint_gauge_slots_;
-  }
-
  private:
-  friend class StorageSet;
   friend class DomainStorage;
   friend class GaugeStorage;
 
@@ -429,14 +463,27 @@ class QueryableDomain {
         storage_map ABSL_GUARDED_BY(mu);
   };
 
-  void RegisterStorageSet(StorageSet* storage_set);
-  void UnregisterStorageSet(StorageSet* storage_set);
+  struct ChannelzState final : public channelz::DataSource {
+    explicit ChannelzState(QueryableDomain* domain)
+        : DataSource(MakeRefCounted<channelz::MetricsDomainNode>(
+              std::string(domain->name()))),
+          domain(domain) {
+      SourceConstructed();
+    }
+    ~ChannelzState() { SourceDestructing(); }
+    QueryableDomain* const domain;
+    void AddData(channelz::DataSink sink) override { domain->AddData(sink); }
+    RefCountedPtr<channelz::BaseNode> channelz_node() {
+      return DataSource::channelz_node();
+    }
+  };
 
-  std::unique_ptr<StorageSet> CreateStorageSet();
   virtual RefCountedPtr<DomainStorage> CreateDomainStorage(
       std::vector<std::string> label) = 0;
   void DomainStorageOrphaned(DomainStorage* storage);
   MapShard& GetMapShard(absl::Span<const std::string> label);
+
+  void AddData(channelz::DataSink sink);
 
   // Allocate `size` elements in the domain.
   // Counters will allocate one element. Histograms will allocate one per
@@ -459,15 +506,11 @@ class QueryableDomain {
   uint64_t allocated_int_gauge_slots_ = 0;
   uint64_t allocated_uint_gauge_slots_ = 0;
 
-  Mutex storage_sets_mu_;
-  std::vector<StorageSet*> storage_sets_ ABSL_GUARDED_BY(storage_sets_mu_);
-
   const size_t map_shards_size_;
   std::unique_ptr<MapShard[]> map_shards_;
 
-  mutable Mutex active_storage_sets_mu_;
-  std::vector<StorageSet*> active_storage_sets_
-      ABSL_GUARDED_BY(active_storage_sets_mu_);
+  std::string name_;
+  SingleSetPtr<ChannelzState> channelz_;
 };
 
 // An InstrumentDomain is a collection of metrics with a common set of labels.
@@ -523,9 +566,10 @@ class LowContentionBackend final {
  public:
   explicit LowContentionBackend(size_t size);
 
-  void Increment(size_t index) {
-    counters_[index].fetch_add(1, std::memory_order_relaxed);
+  void Add(size_t index, uint64_t amount) {
+    counters_[index].fetch_add(amount, std::memory_order_relaxed);
   }
+  void Increment(size_t index) { Add(index, 1); }
 
   uint64_t Sum(size_t index);
 
@@ -541,9 +585,10 @@ class HighContentionBackend final {
  public:
   explicit HighContentionBackend(size_t size);
 
-  void Increment(size_t index) {
-    counters_.this_cpu()[index].fetch_add(1, std::memory_order_relaxed);
+  void Add(size_t index, uint64_t amount) {
+    counters_.this_cpu()[index].fetch_add(amount, std::memory_order_relaxed);
   }
+  void Increment(size_t index) { Add(index, 1); }
 
   uint64_t Sum(size_t index);
 
@@ -602,7 +647,7 @@ class MetricsQuery {
              absl::FunctionRef<void(MetricsSink&)> fn, MetricsSink& sink) const;
 
   // Runs the query, outputting the results to `sink`.
-  void Run(std::unique_ptr<CollectionScope> scope, MetricsSink& sink) const;
+  void Run(RefCountedPtr<CollectionScope> scope, MetricsSink& sink) const;
 
  private:
   void ApplyLabelChecks(absl::Span<const std::string> label_names,
@@ -710,14 +755,22 @@ class InstrumentDomainImpl final : public QueryableDomain {
     // labels.
     void Increment(CounterHandle handle) {
       DCHECK_EQ(handle.instrument_domain_, domain());
-      backend_.Increment(handle.offset_);
+      backend_.Add(handle.offset_, 1);
+    }
+    void Add(DomainStorage* other) override {
+      DCHECK_EQ(domain(), other->domain());
+      for (size_t i = 0; i < domain()->allocated_counter_slots(); ++i) {
+        uint64_t amount = other->SumCounter(i);
+        if (amount == 0) continue;
+        backend_.Add(i, amount);
+      }
     }
 
     template <typename Shape>
     void Increment(const HistogramHandle<Shape>& handle, int64_t value) {
       DCHECK_EQ(handle.instrument_domain_, domain());
       CallHistogramCollectionHooks(handle.description_, label(), value);
-      backend_.Increment(handle.offset_ + handle.shape_->BucketFor(value));
+      backend_.Add(handle.offset_ + handle.shape_->BucketFor(value), 1);
     }
 
    private:
@@ -758,9 +811,9 @@ class InstrumentDomainImpl final : public QueryableDomain {
   };
 
   GPR_ATTRIBUTE_NOINLINE explicit InstrumentDomainImpl(
-      std::vector<std::string> label_names,
+      std::string name, std::vector<std::string> label_names,
       size_t map_shards = std::min(16u, gpr_cpu_num_cores()))
-      : QueryableDomain(std::move(label_names), map_shards) {
+      : QueryableDomain(std::move(name), std::move(label_names), map_shards) {
     CHECK_EQ(this->label_names().size(), N);
     Constructed();
   }
@@ -812,13 +865,14 @@ class InstrumentDomainImpl final : public QueryableDomain {
   // GetStorage: returns a pointer to the storage for the given key, creating
   // it if necessary.
   template <typename... Args>
-  RefCountedPtr<Storage> GetStorage(Args&&... labels) {
+  RefCountedPtr<Storage> GetStorage(RefCountedPtr<CollectionScope> scope,
+                                    Args&&... labels) {
     static_assert(sizeof...(Args) == N, "Incorrect number of labels provided");
-    std::vector<std::string> label_names;
-    label_names.reserve(N);
-    (label_names.emplace_back(absl::StrCat(labels)), ...);
+    std::vector<std::string> label_values;
+    label_values.reserve(N);
+    (label_values.emplace_back(absl::StrCat(labels)), ...);
     return DownCastRefCountedPtr<Storage>(
-        GetDomainStorage(std::move(label_names)));
+        GetDomainStorage(std::move(scope), label_values));
   }
 
   RefCountedPtr<DomainStorage> CreateDomainStorage(
@@ -852,14 +906,17 @@ class InstrumentDomain {
     static auto* domain = new instrument_detail::InstrumentDomainImpl<
         typename Derived::Backend,
         std::tuple_size_v<decltype(Derived::kLabels)>, Derived>(
+        absl::StrCat(Derived::kName),
         instrument_detail::MakeLabelFromTuple(Derived::kLabels));
     return domain;
   }
 
   // Returns an InstrumentStorageRefPtr<Derived>.
   template <typename... Args>
-  static auto GetStorage(Args&&... labels) {
-    return Domain()->GetStorage(std::forward<Args>(labels)...);
+  static auto GetStorage(RefCountedPtr<CollectionScope> scope,
+                         Args&&... labels) {
+    return Domain()->GetStorage(std::move(scope),
+                                std::forward<Args>(labels)...);
   }
 
  protected:
@@ -923,9 +980,24 @@ using GaugeProvider = typename InstrumentDomainImpl<DomainType>::GaugeProvider;
 // Reset all registered instruments. For test use only.
 void TestOnlyResetInstruments();
 
-inline std::unique_ptr<CollectionScope> CreateCollectionScope() {
-  return instrument_detail::QueryableDomain::CreateCollectionScope();
-}
+// Create a new collection scope.
+// `parent` is the parent scope, or nullptr for a root scope.
+// `labels` is a list of labels that this scope is interested in. The scope's
+// labels of interest will be the union of its own labels and its parent's
+// labels.
+// `child_shards_count` and `storage_shards_count` are performance tuning
+// parameters for sharding internal data structures.
+RefCountedPtr<CollectionScope> CreateCollectionScope(
+    RefCountedPtr<CollectionScope> parent, absl::Span<const std::string> labels,
+    size_t child_shards_count = 1, size_t storage_shards_count = 1);
+// Gets the global collection scope.
+// The global collection scope is a root scope that can be used for metrics
+// that do not belong to a specific sub-scope.
+// The labels of interest for the global scope are the union of all labels
+// passed to this function *until* the first storage is created in the global
+// scope, at which point the labels become fixed.
+RefCountedPtr<CollectionScope> GetGlobalCollectionScope(
+    absl::Span<const std::string> labels);
 
 }  // namespace grpc_core
 

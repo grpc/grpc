@@ -28,7 +28,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/functional/any_invocable.h"
 #include "src/core/call/call_filters.h"
 #include "src/core/call/interception_chain.h"
 #include "src/core/channelz/channelz.h"
@@ -40,6 +39,7 @@
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/unique_type_name.h"
+#include "absl/functional/any_invocable.h"
 
 /// This module provides a way for plugins (and the grpc core library itself)
 /// to register mutators for channel stacks.

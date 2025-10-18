@@ -615,7 +615,6 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/time:time",
-        "address_sorting",
         "absl/functional:any_invocable",
     ],
     public_hdrs = GRPC_PUBLIC_HDRS,
@@ -658,6 +657,7 @@ grpc_cc_library(
         "//src/core:slice",
         "//src/core:sync",
         "//src/core:tcp_connect_handshaker",
+        "//third_party/address_sorting",
     ],
 )
 
@@ -701,7 +701,6 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/time:time",
-        "address_sorting",
         "absl/functional:any_invocable",
     ],
     public_hdrs = GRPC_PUBLIC_HDRS,
@@ -777,6 +776,7 @@ grpc_cc_library(
         "//src/core:sync",
         "//src/core:tcp_connect_handshaker",
         "//src/core:useful",
+        "//third_party/address_sorting",
     ],
 )
 
@@ -4119,7 +4119,6 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
-        "address_sorting",
         "cares",
     ],
     deps = [
@@ -4159,6 +4158,7 @@ grpc_cc_library(
         "//src/core:status_helper",
         "//src/core:sync",
         "//src/core:time",
+        "//third_party/address_sorting",
     ],
 )
 

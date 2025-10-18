@@ -29,13 +29,13 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/strings/string_view.h"
 #include "google/logging/v2/logging.grpc.pb.h"
 #include "src/core/ext/filters/logging/logging_sink.h"
 #include "src/core/util/sync.h"
 #include "src/cpp/ext/gcp/environment_autodetect.h"
 #include "src/cpp/ext/gcp/observability_config.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 namespace internal {
