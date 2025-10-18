@@ -196,6 +196,9 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
       if (finish_when_cancelled_.joinable()) {
         finish_when_cancelled_.join();
       }
+      if (cancel_notifier_.joinable()) {
+        cancel_notifier_.join();
+      }
       delete this;
     }
 
@@ -254,6 +257,13 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
           service_->signal_client_ = true;
         }
         FinishWhenCancelledAsync();
+        cancel_notifier_ = std::thread([this] {
+          while (!ctx_->IsCancelled()) {
+            std::this_thread::sleep_for(std::chrono::microseconds(100));
+            std::lock_guard<std::mutex> l(cancel_mu_);
+            cancel_cv_.notify_all();
+          }
+        });
         return;
       } else if (req_->has_param() && req_->param().server_cancel_after_us()) {
         alarm_.Set(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
@@ -330,6 +340,7 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
     std::thread async_cancel_check_;
     std::thread rpc_wait_thread_;
     std::thread finish_when_cancelled_;
+    std::thread cancel_notifier_;
   };
 
   return new Reactor(this, context, request, response);
