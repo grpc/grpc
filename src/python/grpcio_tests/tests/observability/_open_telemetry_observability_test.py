@@ -18,7 +18,7 @@ import logging
 import os
 import sys
 import time
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any, Callable, Dict, List, Optional, Sequence, Set, Tuple
 import unittest
 
 import grpc
@@ -35,6 +35,16 @@ from opentelemetry.sdk.metrics.export import MetricExportResult
 from opentelemetry.sdk.metrics.export import MetricExporter
 from opentelemetry.sdk.metrics.export import MetricsData
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+from opentelemetry.sdk.trace import ReadableSpan
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+from opentelemetry.sdk.trace.export import SpanExporter
+from opentelemetry.sdk.trace.export.in_memory_span_exporter import (
+    InMemorySpanExporter,
+)
+from opentelemetry.trace.propagation.tracecontext import (
+    TraceContextTextMapPropagator,
+)
 
 from tests.observability import _test_server
 
@@ -115,12 +125,17 @@ class _ServerInterceptor(grpc.ServerInterceptor):
 class OpenTelemetryObservabilityTest(unittest.TestCase):
     def setUp(self):
         self.all_metrics = defaultdict(list)
-        otel_exporter = OTelMetricExporter(self.all_metrics)
-        reader = PeriodicExportingMetricReader(
-            exporter=otel_exporter,
+        otel_metric_exporter = OTelMetricExporter(self.all_metrics)
+        metric_reader = PeriodicExportingMetricReader(
+            exporter=otel_metric_exporter,
             export_interval_millis=OTEL_EXPORT_INTERVAL_S * 1000,
         )
-        self._provider = MeterProvider(metric_readers=[reader])
+        self._meter_provider = MeterProvider(metric_readers=[metric_reader])
+        otel_tracer_provider = TracerProvider()
+        self._span_exporter = InMemorySpanExporter()
+        span_processor = SimpleSpanProcessor(self._span_exporter)
+        otel_tracer_provider.add_span_processor(span_processor)
+        self._tracer_provider = otel_tracer_provider
         self._server = None
         self._port = None
 
@@ -128,9 +143,9 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         if self._server:
             self._server.stop(0)
 
-    def testRecordUnaryUnaryUseContextManager(self):
+    def testMetricsForUnaryUnaryCallWithContextManager(self):
         with grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._provider
+            meter_provider=self._meter_provider,
         ):
             server, port = _test_server.start_server()
             self._server = server
@@ -139,9 +154,108 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics.keys())
 
-    def testRecordUnaryUnaryUseGlobalInit(self):
+    def testTracesForUnaryUnaryCallWithContextManager(self):
+        with grpc_observability.OpenTelemetryPlugin(
+            tracer_provider=self._tracer_provider,
+            text_map_propagator=TraceContextTextMapPropagator(),
+        ):
+            server, port = _test_server.start_server()
+            self._server = server
+            _test_server.unary_unary_call(port=port)
+
+        self._validate_spans_exist(self._span_exporter)
+        self._validate_spans(
+            spans=self._span_exporter.get_finished_spans(),
+            expected_span_size=3,
+            expected_server_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+            ],
+            expected_attempt_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+            ],
+        )
+
+    def testTracesForTwoUnaryUnaryCallsWithContextManager(self):
+        with grpc_observability.OpenTelemetryPlugin(
+            tracer_provider=self._tracer_provider,
+            text_map_propagator=TraceContextTextMapPropagator(),
+        ):
+            server, port = _test_server.start_server()
+            self._server = server
+            _test_server.unary_unary_call(port=port)
+            _test_server.unary_unary_call(port=port)
+
+        # for each unary unary server call, 3 spans are created, which must be validated separately
+        first_rpc_spans = self._span_exporter.get_finished_spans()[0:3]
+        second_rpc_spans = self._span_exporter.get_finished_spans()[3:]
+
+        self._validate_spans_exist(self._span_exporter)
+        self._validate_spans(
+            spans=first_rpc_spans,
+            expected_span_size=3,
+            expected_server_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+            ],
+            expected_attempt_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+            ],
+        )
+        self._validate_spans(
+            spans=second_rpc_spans,
+            expected_span_size=3,
+            expected_server_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+            ],
+            expected_attempt_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+            ],
+        )
+
+    def testMetricsForUnaryUnaryCallWithGlobalInit(self):
         otel_plugin = grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._provider
+            meter_provider=self._meter_provider,
         )
         otel_plugin.register_global()
 
@@ -153,9 +267,47 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         self._validate_all_metrics_names(self.all_metrics.keys())
         otel_plugin.deregister_global()
 
+    def testTracesForUnaryUnaryCallWithGlobalInit(self):
+        otel_plugin = grpc_observability.OpenTelemetryPlugin(
+            tracer_provider=self._tracer_provider,
+            text_map_propagator=TraceContextTextMapPropagator(),
+        )
+        otel_plugin.register_global()
+
+        server, port = _test_server.start_server()
+        self._server = server
+        _test_server.unary_unary_call(port=port)
+
+        self._validate_spans_exist(self._span_exporter)
+        self._validate_spans(
+            spans=self._span_exporter.get_finished_spans(),
+            expected_span_size=3,
+            expected_server_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+            ],
+            expected_attempt_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+            ],
+        )
+        otel_plugin.deregister_global()
+
     def testCallGlobalInitThrowErrorWhenGlobalCalled(self):
         otel_plugin = grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._provider
+            meter_provider=self._meter_provider
         )
         otel_plugin.register_global()
         try:
@@ -169,11 +321,11 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
 
     def testCallGlobalInitThrowErrorWhenContextManagerCalled(self):
         with grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._provider
+            meter_provider=self._meter_provider
         ):
             try:
                 otel_plugin = grpc_observability.OpenTelemetryPlugin(
-                    meter_provider=self._provider
+                    meter_provider=self._meter_provider
                 )
                 otel_plugin.register_global()
             except RuntimeError as exp:
@@ -184,12 +336,12 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
 
     def testCallContextManagerThrowErrorWhenGlobalInitCalled(self):
         otel_plugin = grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._provider
+            meter_provider=self._meter_provider
         )
         otel_plugin.register_global()
         try:
             with grpc_observability.OpenTelemetryPlugin(
-                meter_provider=self._provider
+                meter_provider=self._meter_provider
             ):
                 pass
         except RuntimeError as exp:
@@ -200,11 +352,11 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
 
     def testContextManagerThrowErrorWhenContextManagerCalled(self):
         with grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._provider
+            meter_provider=self._meter_provider
         ):
             try:
                 with grpc_observability.OpenTelemetryPlugin(
-                    meter_provider=self._provider
+                    meter_provider=self._meter_provider
                 ):
                     pass
             except RuntimeError as exp:
@@ -215,23 +367,23 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
 
     def testNoErrorCallGlobalInitThenContextManager(self):
         otel_plugin = grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._provider
+            meter_provider=self._meter_provider
         )
         otel_plugin.register_global()
         otel_plugin.deregister_global()
 
         with grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._provider
+            meter_provider=self._meter_provider
         ):
             pass
 
     def testNoErrorCallContextManagerThenGlobalInit(self):
         with grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._provider
+            meter_provider=self._meter_provider
         ):
             pass
         otel_plugin = grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._provider
+            meter_provider=self._meter_provider
         )
         otel_plugin.register_global()
         otel_plugin.deregister_global()
@@ -239,7 +391,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
     def testRecordUnaryUnaryWithClientInterceptor(self):
         interceptor = _ClientUnaryUnaryInterceptor()
         with grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._provider
+            meter_provider=self._meter_provider
         ):
             server, port = _test_server.start_server()
             self._server = server
@@ -253,7 +405,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
     def testRecordUnaryUnaryWithServerInterceptor(self):
         interceptor = _ServerInterceptor()
         with grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._provider
+            meter_provider=self._meter_provider
         ):
             server, port = _test_server.start_server(interceptors=[interceptor])
             self._server = server
@@ -267,7 +419,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         self._server = server
 
         with grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._provider
+            meter_provider=self._meter_provider
         ):
             _test_server.unary_unary_call(port=port)
 
@@ -281,7 +433,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         server.stop(0)
 
         with grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._provider
+            meter_provider=self._meter_provider
         ):
             server, port = _test_server.start_server()
             self._server = server
@@ -292,7 +444,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
 
     def testNoRecordAfterExitUseContextManager(self):
         with grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._provider
+            meter_provider=self._meter_provider
         ):
             server, port = _test_server.start_server()
             self._server = server
@@ -309,7 +461,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
 
     def testNoRecordAfterExitUseGlobal(self):
         otel_plugin = grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._provider
+            meter_provider=self._meter_provider
         )
         otel_plugin.register_global()
 
@@ -327,9 +479,9 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         with self.assertRaisesRegex(AssertionError, "No metrics was exported"):
             self._validate_metrics_exist(self.all_metrics)
 
-    def testRecordUnaryStream(self):
+    def testMetricsForUnaryStreamCall(self):
         with grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._provider
+            meter_provider=self._meter_provider,
         ):
             server, port = _test_server.start_server()
             self._server = server
@@ -338,9 +490,76 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics.keys())
 
-    def testRecordStreamUnary(self):
+    def testTracesForUnaryStreamCall(self):
         with grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._provider
+            tracer_provider=self._tracer_provider,
+            text_map_propagator=TraceContextTextMapPropagator(),
+        ):
+            server, port = _test_server.start_server()
+            self._server = server
+            _test_server.unary_stream_call(port=port)
+
+        self._validate_spans_exist(self._span_exporter)
+        self._validate_spans(
+            spans=self._span_exporter.get_finished_spans(),
+            expected_span_size=3,
+            expected_server_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "1", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "2", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "3", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "4", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+            ],
+            expected_attempt_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "1", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "2", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "3", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "4", "message-size": "3"},
+                ),
+            ],
+        )
+
+    def testMetricsForStreamUnaryCall(self):
+        with grpc_observability.OpenTelemetryPlugin(
+            meter_provider=self._meter_provider,
         ):
             server, port = _test_server.start_server()
             self._server = server
@@ -349,9 +568,76 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics.keys())
 
-    def testRecordStreamStream(self):
+    def testTracesForStreamUnaryCall(self):
         with grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._provider
+            tracer_provider=self._tracer_provider,
+            text_map_propagator=TraceContextTextMapPropagator(),
+        ):
+            server, port = _test_server.start_server()
+            self._server = server
+            _test_server.stream_unary_call(port=port)
+
+        self._validate_spans_exist(self._span_exporter)
+        self._validate_spans(
+            spans=self._span_exporter.get_finished_spans(),
+            expected_span_size=3,
+            expected_server_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "1", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "2", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "3", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "4", "message-size": "3"},
+                ),
+            ],
+            expected_attempt_events=[
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "1", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "2", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "3", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "4", "message-size": "3"},
+                ),
+            ],
+        )
+
+    def testMetricsForStreamStreamCall(self):
+        with grpc_observability.OpenTelemetryPlugin(
+            meter_provider=self._meter_provider,
         ):
             server, port = _test_server.start_server()
             self._server = server
@@ -359,6 +645,105 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
 
         self._validate_metrics_exist(self.all_metrics)
         self._validate_all_metrics_names(self.all_metrics.keys())
+
+    def testTracesForStreamStreamCall(self):
+        with grpc_observability.OpenTelemetryPlugin(
+            tracer_provider=self._tracer_provider,
+            text_map_propagator=TraceContextTextMapPropagator(),
+        ):
+            server, port = _test_server.start_server()
+            self._server = server
+            _test_server.stream_stream_call(port=port)
+
+        self._validate_spans_exist(self._span_exporter)
+        self._validate_spans(
+            spans=self._span_exporter.get_finished_spans(),
+            expected_span_size=3,
+            expected_server_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "1", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "2", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "3", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "4", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "1", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "2", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "3", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "4", "message-size": "3"},
+                ),
+            ],
+            expected_attempt_events=[
+                (
+                    "Outbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "1", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "2", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "3", "message-size": "3"},
+                ),
+                (
+                    "Outbound message",
+                    {"sequence-number": "4", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "0", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "1", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "2", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "3", "message-size": "3"},
+                ),
+                (
+                    "Inbound message",
+                    {"sequence-number": "4", "message-size": "3"},
+                ),
+            ],
+        )
 
     def testTargetAttributeFilter(self):
         main_server, main_port = _test_server.start_server()
@@ -373,7 +758,8 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             return True
 
         with grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._provider, target_attribute_filter=target_filter
+            meter_provider=self._meter_provider,
+            target_attribute_filter=target_filter,
         ):
             _test_server.unary_unary_call(port=main_port)
             _test_server.unary_unary_call(port=backup_port)
@@ -402,7 +788,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
             return True
 
         with grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._provider,
+            meter_provider=self._meter_provider,
             generic_method_attribute_filter=method_filter,
         ):
             server, port = _test_server.start_server(register_method=False)
@@ -424,7 +810,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         UNARY_METHOD_NAME = "test/UnaryUnary"
 
         with grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._provider
+            meter_provider=self._meter_provider
         ):
             server, port = _test_server.start_server(register_method=True)
             self._server = server
@@ -453,7 +839,7 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
         UNARY_METHOD_NAME = "test/UnaryUnary"
 
         with grpc_observability.OpenTelemetryPlugin(
-            meter_provider=self._provider
+            meter_provider=self._meter_provider
         ):
             server, port = _test_server.start_server(register_method=False)
             self._server = server
@@ -521,6 +907,77 @@ class OpenTelemetryObservabilityTest(unittest.TestCase):
                     base_metric.name in metric_names,
                     msg=f"metric {base_metric.name} not found in exported metrics: {metric_names}!",
                 )
+
+    def _validate_spans_exist(self, span_exporter: SpanExporter):
+        # Sleep here to make sure we have at least one export from OTel SpanExporter.
+        self.assert_eventually(
+            lambda: len(span_exporter.get_finished_spans()) > 1,
+            message=lambda: f"No traces were exported",
+        )
+
+    def _validate_spans(
+        self,
+        spans: Sequence[ReadableSpan],
+        expected_span_size: int,
+        expected_server_events: Sequence[Tuple[str, Dict[str, str]]],
+        expected_attempt_events: Sequence[Tuple[str, Dict[str, str]]],
+    ) -> None:
+        self.assertTrue(
+            expr=(len(spans) == expected_span_size),
+            msg=f"Expected span size {expected_span_size}, got: {len(spans)}!",
+        )
+
+        client_span = next(
+            (span for span in spans if span.name.startswith("Sent.")), None
+        )
+        attempt_span = next(
+            (span for span in spans if span.name.startswith("Attempt.")), None
+        )
+        server_span = next(
+            (span for span in spans if span.name.startswith("Recv.")), None
+        )
+
+        # validate span statuses
+        self.assertTrue(attempt_span.status.is_ok)
+        self.assertTrue(server_span.status.is_ok)
+
+        # validate parent-child relationship
+        self.assertTrue(
+            client_span.get_span_context().trace_id
+            == attempt_span.get_span_context().trace_id
+        )
+        self.assertTrue(
+            attempt_span.parent.span_id
+            == client_span.get_span_context().span_id
+        )
+        self.assertTrue(
+            attempt_span.get_span_context().trace_id
+            == server_span.get_span_context().trace_id
+        )
+        self.assertTrue(
+            server_span.parent.span_id
+            == attempt_span.get_span_context().span_id
+        )
+
+        # validate server span traced events
+        server_span_events_packed = [
+            (ev.name, ev.attributes) for ev in server_span.events
+        ]
+        for expected_ev in expected_server_events:
+            self.assertTrue(
+                expr=(expected_ev in server_span_events_packed),
+                msg=f"Expected server event missing: {expected_ev}!",
+            )
+
+        # validate attempt span traced events
+        attempt_span_events_packed = [
+            (ev.name, ev.attributes) for ev in attempt_span.events
+        ]
+        for expected_ev in expected_attempt_events:
+            self.assertTrue(
+                expr=(expected_ev in attempt_span_events_packed),
+                msg=f"Expected attempt event missing: {expected_ev}!",
+            )
 
 
 if __name__ == "__main__":
