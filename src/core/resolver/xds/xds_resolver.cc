@@ -296,7 +296,7 @@ class XdsResolver final : public Resolver {
   class ClusterSelectionFilter final
       : public ImplementChannelFilter<ClusterSelectionFilter> {
    public:
-    const static grpc_channel_filter kFilter;
+    const static grpc_channel_filter kFilterVtable;
 
     static absl::string_view TypeName() { return "cluster_selection_filter"; }
 
@@ -460,7 +460,7 @@ void XdsResolver::RouteConfigData::BuildFilterChains(
         filter->UpdateBlackboard(*config, old_blackboard, new_blackboard);
         filter->AddFilter(builder, std::move(config));
       }
-      builder.Add<ClusterSelectionFilter>(nullptr);
+      builder.AddFilter<ClusterSelectionFilter>(nullptr);
       default_filter_chain = builder.Build();
       GRPC_TRACE_LOG(xds_resolver, INFO)
           << "Filter chain creation status: " << default_filter_chain.status();
@@ -504,7 +504,7 @@ void XdsResolver::RouteConfigData::BuildFilterChains(
             filter->UpdateBlackboard(*config, old_blackboard, new_blackboard);
             filter->AddFilter(builder, std::move(config));
           }
-          builder.Add<ClusterSelectionFilter>(nullptr);
+          builder.AddFilter<ClusterSelectionFilter>(nullptr);
           route_filter_chain = builder.Build();
           GRPC_TRACE_LOG(xds_resolver, INFO) << "Filter chain creation status: "
                                              << route_filter_chain.status();
@@ -555,7 +555,7 @@ void XdsResolver::RouteConfigData::BuildFilterChains(
             filter->UpdateBlackboard(*config, old_blackboard, new_blackboard);
             filter->AddFilter(builder, std::move(config));
           }
-          builder.Add<ClusterSelectionFilter>(nullptr);
+          builder.AddFilter<ClusterSelectionFilter>(nullptr);
           cluster_weight.filter_chain = builder.Build();
           GRPC_TRACE_LOG(xds_resolver, INFO)
               << "Filter chain creation status: "
@@ -934,7 +934,7 @@ XdsResolver::XdsRouteStateAttributeImpl::LockAndGetCluster(
 // XdsResolver::ClusterSelectionFilter
 //
 
-const grpc_channel_filter XdsResolver::ClusterSelectionFilter::kFilter =
+const grpc_channel_filter XdsResolver::ClusterSelectionFilter::kFilterVtable =
     MakePromiseBasedFilter<ClusterSelectionFilter, FilterEndpoint::kClient,
                            kFilterExaminesServerInitialMetadata>();
 
