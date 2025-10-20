@@ -39,10 +39,6 @@
 #include <optional>
 #include <utility>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_join.h"
 #include "src/core/credentials/call/json_util.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -53,6 +49,10 @@
 #include "src/core/util/load_file.h"
 #include "src/cpp/common/secure_auth_context.h"
 #include "src/cpp/server/thread_pool_interface.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_join.h"
 
 namespace grpc {
 
@@ -83,10 +83,14 @@ std::shared_ptr<WrappedChannelCredentials> WrapChannelCredentials(
 
 }  // namespace
 
-std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials() {
+std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials(
+    const GoogleDefaultCredentialsOptions& options) {
   grpc::internal::GrpcLibrary init;  // To call grpc_init().
+  grpc_google_default_credentials_options alts_options = {};
+  alts_options.create_hard_bound_credentials =
+      options.use_alts_call_credentials;
   return WrapChannelCredentials(
-      grpc_google_default_credentials_create(nullptr, nullptr));
+      grpc_google_default_credentials_create(nullptr, &alts_options));
 }
 
 std::shared_ptr<CallCredentials> ExternalAccountCredentials(

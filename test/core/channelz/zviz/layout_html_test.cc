@@ -14,8 +14,8 @@
 
 #include "src/core/channelz/zviz/layout_html.h"
 
-#include "gtest/gtest.h"
 #include "src/core/channelz/zviz/html.h"
+#include "gtest/gtest.h"
 
 namespace grpc_zviz::layout {
 namespace {

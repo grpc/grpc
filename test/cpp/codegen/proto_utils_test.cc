@@ -21,8 +21,8 @@
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/impl/proto_utils.h>
 
-#include "gtest/gtest.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 namespace grpc {
 

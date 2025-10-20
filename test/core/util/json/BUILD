@@ -36,6 +36,7 @@ grpc_fuzz_test(
         "//:gpr",
         "//:grpc",
         "//src/core:dump_args",
+        "//src/core:grpc_check",
         "//src/core:json_reader",
         "//src/core:json_writer",
         "//test/core/test_util:grpc_test_util",

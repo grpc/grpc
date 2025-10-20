@@ -14,9 +14,9 @@
 
 #include "test/cpp/sleuth/tool_options.h"
 
-#include "absl/flags/flag.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good.h"
 #include "test/cpp/sleuth/tool_credentials.h"
+#include "absl/flags/flag.h"
 
 ABSL_FLAG(std::string, channelz_protocol, "h2", "Channelz protocol to use");
 

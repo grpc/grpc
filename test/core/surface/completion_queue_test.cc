@@ -25,13 +25,13 @@
 
 #include <memory>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
 
 #define LOG_TEST(x) LOG(INFO) << x
 

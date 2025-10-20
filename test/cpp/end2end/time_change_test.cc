@@ -28,8 +28,6 @@
 
 #include <thread>
 
-#include "absl/memory/memory.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
@@ -38,6 +36,8 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/subprocess.h"
+#include "gtest/gtest.h"
+#include "absl/memory/memory.h"
 
 static std::string g_root;
 

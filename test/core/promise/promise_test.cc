@@ -17,13 +17,13 @@
 #include <memory>
 #include <utility>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/channelz/property_list.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/upb_utils.h"
 #include "src/proto/grpc/channelz/v2/promise.upb.h"
 #include "src/proto/grpc/channelz/v2/property_list.upb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 

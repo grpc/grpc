@@ -16,12 +16,12 @@
 //
 //
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/sleep.h"
 #include "test/core/call/yodel/yodel_test.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 
@@ -121,7 +121,7 @@ YODEL_TEST(SimpleQueueFuzzTest, EnqueueAndDequeueMultiPartyTest) {
              &queue]() -> LoopCtl<absl::Status> {
               if (++current_dequeue_count == dequeue_count) {
                 on_dequeue_done.Call(absl::OkStatus());
-                EXPECT_TRUE(queue.TestOnlyIsEmpty());
+                EXPECT_TRUE(queue.IsEmpty());
                 return absl::OkStatus();
               } else {
                 return Continue();
@@ -186,7 +186,9 @@ class StreamDataQueueFuzzTest : public YodelTest {
    public:
     explicit AssembleFrames(const uint32_t stream_id,
                             const bool allow_true_binary_metadata)
-        : header_assembler_(stream_id, allow_true_binary_metadata) {}
+        : header_assembler_(allow_true_binary_metadata) {
+      header_assembler_.SetStreamId(stream_id);
+    }
     void operator()(Http2HeaderFrame frame) {
       auto status = header_assembler_.AppendHeaderFrame(std::move(frame));
       EXPECT_TRUE(status.IsOk());
@@ -221,7 +223,7 @@ class StreamDataQueueFuzzTest : public YodelTest {
       Crash("UnknownFrame not expected");
     }
     ClientMetadataHandle GetMetadata() {
-      DCHECK(header_assembler_.IsReady());
+      GRPC_DCHECK(header_assembler_.IsReady());
       ValueOrHttp2Status<ClientMetadataHandle> status_or_metadata =
           header_assembler_.ReadMetadata(
               parser_, /*is_initial_metadata=*/true,
@@ -287,8 +289,8 @@ YODEL_TEST(StreamDataQueueFuzzTest, EnqueueDequeueMultiParty) {
   HPackCompressor encoder;
   StreamDataQueue<ClientMetadataHandle> stream_data_queue(
       /*is_client=*/true,
-      /*stream_id=*/stream_id,
       /*queue_size=*/queue_size, /*allow_true_binary_metadata=*/true);
+  stream_data_queue.SetStreamId(stream_id);
   std::vector<MessageHandle> messages_to_be_sent = TestMessages(num_messages);
   std::vector<MessageHandle> messages_copy = TestMessages(num_messages);
   std::vector<MessageHandle> dequeued_messages;
@@ -352,7 +354,8 @@ YODEL_TEST(StreamDataQueueFuzzTest, EnqueueDequeueMultiParty) {
             [this, &stream_data_queue, &assembler, &dequeued_messages] {
               typename StreamDataQueue<ClientMetadataHandle>::DequeueResult
                   frames = stream_data_queue.DequeueFrames(
-                      max_tokens, max_frame_length, GetEncoder());
+                      max_tokens, max_frame_length, GetEncoder(),
+                      /*can_send_reset_stream=*/true);
 
               for (auto& frame : frames.frames) {
                 std::visit(assembler, std::move(frame));

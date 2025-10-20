@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.76.0-dev'
+  version = '1.77.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -522,6 +522,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/frame_settings.h',
                       'src/core/ext/transport/chttp2/transport/frame_window_update.cc',
                       'src/core/ext/transport/chttp2/transport/frame_window_update.h',
+                      'src/core/ext/transport/chttp2/transport/goaway.cc',
+                      'src/core/ext/transport/chttp2/transport/goaway.h',
                       'src/core/ext/transport/chttp2/transport/header_assembler.h',
                       'src/core/ext/transport/chttp2/transport/hpack_constants.h',
                       'src/core/ext/transport/chttp2/transport/hpack_encoder.cc',
@@ -1788,8 +1790,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/resource_quota/periodic_update.h',
                       'src/core/lib/resource_quota/resource_quota.cc',
                       'src/core/lib/resource_quota/resource_quota.h',
-                      'src/core/lib/resource_quota/stream_quota.cc',
-                      'src/core/lib/resource_quota/stream_quota.h',
                       'src/core/lib/resource_quota/telemetry.h',
                       'src/core/lib/resource_quota/thread_quota.cc',
                       'src/core/lib/resource_quota/thread_quota.h',
@@ -2709,6 +2709,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/frame_security.h',
                               'src/core/ext/transport/chttp2/transport/frame_settings.h',
                               'src/core/ext/transport/chttp2/transport/frame_window_update.h',
+                              'src/core/ext/transport/chttp2/transport/goaway.h',
                               'src/core/ext/transport/chttp2/transport/header_assembler.h',
                               'src/core/ext/transport/chttp2/transport/hpack_constants.h',
                               'src/core/ext/transport/chttp2/transport/hpack_encoder.h',
@@ -3454,7 +3455,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/resource_quota/memory_quota.h',
                               'src/core/lib/resource_quota/periodic_update.h',
                               'src/core/lib/resource_quota/resource_quota.h',
-                              'src/core/lib/resource_quota/stream_quota.h',
                               'src/core/lib/resource_quota/telemetry.h',
                               'src/core/lib/resource_quota/thread_quota.h',
                               'src/core/lib/resource_tracker/resource_tracker.h',

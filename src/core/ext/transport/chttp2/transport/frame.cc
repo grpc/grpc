@@ -21,14 +21,14 @@
 #include <string>
 #include <utility>
 
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/memory_usage.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 // TODO(tjagtap) TODO(akshitpatel): [PH2][P3] : Write micro benchmarks for
 // framing code
@@ -699,10 +699,10 @@ http2::ValueOrHttp2Status<Http2Frame> ParseFramePayload(
   }
 }
 
-http2::Http2ErrorCode RstFrameErrorCodeToHttp2ErrorCode(
+http2::Http2ErrorCode FrameErrorCodeToHttp2ErrorCode(
     const uint32_t error_code) {
   if (GPR_UNLIKELY(error_code > http2::GetMaxHttp2ErrorCode())) {
-    LOG(ERROR) << "RstFrameErrorCodeToHttp2ErrorCode: Invalid error code "
+    LOG(ERROR) << "FrameErrorCodeToHttp2ErrorCode: Invalid error code "
                   "received from RST_STREAM frame: "
                << error_code;
     return http2::Http2ErrorCode::kInternalError;
@@ -710,9 +710,10 @@ http2::Http2ErrorCode RstFrameErrorCodeToHttp2ErrorCode(
   return static_cast<http2::Http2ErrorCode>(error_code);
 }
 
-uint32_t Http2ErrorCodeToRstFrameErrorCode(
+uint32_t Http2ErrorCodeToFrameErrorCode(
     const http2::Http2ErrorCode error_code) {
-  DCHECK_LE(static_cast<uint8_t>(error_code), http2::GetMaxHttp2ErrorCode());
+  GRPC_DCHECK_LE(static_cast<uint8_t>(error_code),
+                 http2::GetMaxHttp2ErrorCode());
   return static_cast<uint32_t>(error_code);
 }
 

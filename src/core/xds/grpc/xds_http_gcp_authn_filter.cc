@@ -20,8 +20,6 @@
 #include <utility>
 #include <variant>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb.h"
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.h"
 #include "src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h"
@@ -29,6 +27,8 @@
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -46,7 +46,7 @@ void XdsHttpGcpAuthnFilter::PopulateSymtab(upb_DefPool* symtab) const {
 }
 
 void XdsHttpGcpAuthnFilter::AddFilter(InterceptionChainBuilder& builder) const {
-  builder.Add<GcpAuthenticationFilter>();
+  builder.Add<GcpAuthenticationFilter>(nullptr);
 }
 
 void XdsHttpGcpAuthnFilter::AddFilter(

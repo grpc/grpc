@@ -38,12 +38,14 @@ class SendRate {
     std::optional<double> bytes_per_nanosecond;
   };
   // Called when Scheduler enqueues bytes to the reader.
-  void EnqueueToReader(const uint64_t bytes) {
+  void EnqueueToReader(const uint64_t bytes, const uint64_t now) {
+    timestamps_.last_scheduled_time = now;
     queued_bytes_.network_outstanding_bytes += bytes;
     queued_bytes_.reader_outstanding_bytes += bytes;
   }
   // Called when the Endpoint dequeues all the queued bytes from the reader.
-  void DequeueFromReader() {
+  void DequeueFromReader(const uint64_t now) {
+    timestamps_.last_reader_dequeued_time = now;
     queued_bytes_.endpoint_outstanding_bytes =
         queued_bytes_.reader_outstanding_bytes;
     queued_bytes_.reader_outstanding_bytes = 0;
@@ -57,6 +59,12 @@ class SendRate {
   void PerformRateProbe() { last_rate_measurement_ = Timestamp::Now(); }
 
   struct Timestamps {
+    // Time at which data was last scheduled on the endpoint. This is the time
+    // at which reader_outstanding_bytes was updated.
+    uint64_t last_scheduled_time = 0;
+    // Time at which data was last dequeued from the reader. This is the time at
+    // which endpoint_outstanding_bytes was updated.
+    uint64_t last_reader_dequeued_time = 0;
     // Time at which the currently measured network send started.
     uint64_t network_send_started_time = 0;
   };
@@ -78,6 +86,13 @@ class SendRate {
       // Tracks the unsent data in the TCP socket, updated every 100ms.
       uint64_t network_outstanding_bytes = 0;
     } queued_bytes;
+    struct RelativeTimestamps {
+      // The time in seconds since the last time when data was last scheduled on
+      // the endpoint.
+      double last_scheduled_time;
+      // Time in seconds since the last time data was dequeued from the reader.
+      double last_reader_dequeued_time;
+    } timestamps;
   };
   DeliveryData GetDeliveryData(uint64_t current_time) const;
 

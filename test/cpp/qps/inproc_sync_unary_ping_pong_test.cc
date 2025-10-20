@@ -19,7 +19,6 @@
 #include <optional>
 #include <set>
 
-#include "absl/log/log.h"
 #include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/qps/benchmark_config.h"
@@ -28,6 +27,7 @@
 #include "test/cpp/qps/server.h"
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace testing {

@@ -15,17 +15,16 @@
 
 #include "src/core/xds/grpc/xds_matcher.h"
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include <memory>
 #include <optional>
 #include <string>
 #include <vector>
 
-#include "absl/strings/string_view.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/matchers.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace testing {

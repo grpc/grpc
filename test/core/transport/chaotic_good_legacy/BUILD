@@ -84,6 +84,7 @@ grpc_cc_test(
     deps = [
         "//:channel_create",
         "//src/core:chaotic_good_legacy_frame",
+        "//src/core:grpc_check",
         "//src/core:memory_quota",
         "//src/core:resource_quota",
     ],
@@ -123,6 +124,7 @@ grpc_fuzz_test(
         "//src/core:chaotic_good_legacy_frame",
         "//src/core:chaotic_good_legacy_frame_header",
         "//src/core:event_engine_memory_allocator",
+        "//src/core:grpc_check",
         "//src/core:memory_quota",
         "//src/core:resource_quota",
         "//src/core:slice",

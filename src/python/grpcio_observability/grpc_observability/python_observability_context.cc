@@ -20,11 +20,11 @@
 #include <iostream>
 #include <new>
 
+#include "rpc_encoding.h"
+#include "src/core/lib/transport/transport.h"
 #include "absl/numeric/int128.h"
 #include "absl/random/random.h"
 #include "absl/strings/escaping.h"
-#include "rpc_encoding.h"
-#include "src/core/lib/transport/transport.h"
 
 namespace grpc_observability {
 

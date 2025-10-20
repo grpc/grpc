@@ -37,11 +37,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/escaping.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -71,6 +66,11 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/time_precise.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -205,7 +205,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
   }
 
   if (args->send_deadline != Timestamp::InfFuture()) {
-    call->UpdateDeadline(args->send_deadline);
+    call->UpdateDeadline(args->send_deadline).IgnoreError();
   }
 
   CSliceUnref(path);

@@ -46,8 +46,6 @@
 
 #include <string>
 
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_factory_posix.h"
@@ -55,6 +53,8 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/strerror.h"
 #include "src/core/util/string.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 // set a socket to use zerocopy
 grpc_error_handle grpc_set_socket_zerocopy(int fd) {

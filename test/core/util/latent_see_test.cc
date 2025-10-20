@@ -20,11 +20,11 @@
 #include <sstream>
 #include <thread>
 
-#include "absl/functional/function_ref.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/notification.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/functional/function_ref.h"
 
 using testing::IsEmpty;
 
@@ -96,22 +96,21 @@ namespace grpc_core {
 namespace {
 
 Json::Array RunAndReportJson(absl::FunctionRef<void()> fn,
-                             bool wait_for_appender_to_start = true) {
+                             Notification* wait_for_start = nullptr) {
   Notification finish_scopes;
   std::string json;
   std::thread t([&]() {
     std::ostringstream out;
     {
+      if (wait_for_start != nullptr) {
+        wait_for_start->WaitForNotification();
+      }
       latent_see::JsonOutput output(out);
       latent_see::Collect(&finish_scopes, absl::Hours(24),
                           std::numeric_limits<size_t>::max(), &output);
     }
     json = out.str();
   });
-  // wait for the collection to start
-  if (wait_for_appender_to_start) {
-    absl::SleepFor(absl::Seconds(2));
-  }
   fn();
   latent_see::Flush();
   // let the collection thread catch up
@@ -124,15 +123,27 @@ Json::Array RunAndReportJson(absl::FunctionRef<void()> fn,
   return a->array();
 }
 
+void WaitForCollector() {
+  while (true) {
+    latent_see::Appender appender;
+    if (appender.Enabled()) break;
+    absl::SleepFor(absl::Milliseconds(1));
+  }
+  // After collector is enabled, we still sleep for 2*kMaxBackoff.
+  absl::SleepFor(absl::Seconds(1));
+}
+
 TEST(LatentSeeTest, EmptyCollectionWorks) {
   EXPECT_THAT(RunAndReportJson([]() {}), IsEmpty());
 }
 
 TEST(LatentSeeTest, ScopeWorks) {
-  auto elems = RunAndReportJson([]() {
+  auto elems = RunAndReportJson([&]() {
+    WaitForCollector();
     GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("foo");
     absl::SleepFor(absl::Milliseconds(5));
   });
+
   ASSERT_EQ(elems.size(), 1);
   ASSERT_EQ(elems[0].type(), Json::Type::kObject);
   auto obj = elems[0].object();
@@ -148,8 +159,10 @@ TEST(LatentSeeTest, ScopeWorks) {
 }
 
 TEST(LatentSeeTest, MarkWorks) {
-  auto elems =
-      RunAndReportJson([]() { GRPC_LATENT_SEE_ALWAYS_ON_MARK("bar"); });
+  auto elems = RunAndReportJson([&]() {
+    WaitForCollector();
+    GRPC_LATENT_SEE_ALWAYS_ON_MARK("bar");
+  });
   ASSERT_EQ(elems.size(), 1);
   ASSERT_EQ(elems[0].type(), Json::Type::kObject);
   auto obj = elems[0].object();
@@ -161,7 +174,8 @@ TEST(LatentSeeTest, MarkWorks) {
 }
 
 TEST(LatentSeeTest, FlowWorks) {
-  auto elems = RunAndReportJson([]() {
+  auto elems = RunAndReportJson([&]() {
+    WaitForCollector();
     std::thread([f = std::make_unique<latent_see::Flow>(latent_see::Flow(
                      GRPC_LATENT_SEE_METADATA("foo")))]() mutable {
       f.reset();
@@ -187,18 +201,20 @@ TEST(LatentSeeTest, FlowWorks) {
 }
 
 TEST(LatentSeeTest, FlowWorksAppenderStartsLate) {
+  Notification wait_for_start;
   auto elems = RunAndReportJson(
-      []() {
-        std::thread([f = std::make_unique<latent_see::Flow>(latent_see::Flow(
-                         GRPC_LATENT_SEE_METADATA("foo")))]() mutable {
-          absl::SleepFor(absl::Seconds(2));
+      [&]() {
+        std::thread([&, f = std::make_unique<latent_see::Flow>(latent_see::Flow(
+                            GRPC_LATENT_SEE_METADATA("foo")))]() mutable {
+          wait_for_start.Notify();
+          WaitForCollector();
           f->Begin();
           f->End();
           f.reset();
           latent_see::Flush();
         }).join();
       },
-      /*wait_for_appender_to_start=*/false);
+      /*wait_for_start=*/&wait_for_start);
   ASSERT_EQ(elems.size(), 2);
 }
 

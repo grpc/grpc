@@ -31,8 +31,6 @@
 #include <sstream>
 #include <thread>
 
-#include "absl/flags/flag.h"
-#include "absl/log/log.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/string.h"
@@ -42,6 +40,8 @@
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/cpp/interop/server_helper.h"
 #include "test/cpp/util/test_config.h"
+#include "absl/flags/flag.h"
+#include "absl/log/log.h"
 
 ABSL_FLAG(bool, use_alts, false,
           "Whether to use alts. Enable alts will disable tls.");

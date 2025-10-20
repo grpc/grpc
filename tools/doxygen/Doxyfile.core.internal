@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 50.0.0
+PROJECT_NUMBER         = 51.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -1201,6 +1201,8 @@ src/core/ext/transport/chttp2/transport/frame_settings.cc \
 src/core/ext/transport/chttp2/transport/frame_settings.h \
 src/core/ext/transport/chttp2/transport/frame_window_update.cc \
 src/core/ext/transport/chttp2/transport/frame_window_update.h \
+src/core/ext/transport/chttp2/transport/goaway.cc \
+src/core/ext/transport/chttp2/transport/goaway.h \
 src/core/ext/transport/chttp2/transport/header_assembler.h \
 src/core/ext/transport/chttp2/transport/hpack_constants.h \
 src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
@@ -2486,8 +2488,6 @@ src/core/lib/resource_quota/periodic_update.cc \
 src/core/lib/resource_quota/periodic_update.h \
 src/core/lib/resource_quota/resource_quota.cc \
 src/core/lib/resource_quota/resource_quota.h \
-src/core/lib/resource_quota/stream_quota.cc \
-src/core/lib/resource_quota/stream_quota.h \
 src/core/lib/resource_quota/telemetry.h \
 src/core/lib/resource_quota/thread_quota.cc \
 src/core/lib/resource_quota/thread_quota.h \

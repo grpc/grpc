@@ -51,6 +51,7 @@ grpc_cc_test(
         "//:iomgr_timer",
         "//src/core:closure",
         "//src/core:error",
+        "//src/core:grpc_check",
         "//src/core:time",
         "//test/core/test_util:grpc_test_util",
     ],

@@ -24,8 +24,8 @@
 #include <stddef.h>
 #include <string.h>
 
-#include "gtest/gtest.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 TEST(StringTest, Strdup) {
   static const char* src1 = "hello world";

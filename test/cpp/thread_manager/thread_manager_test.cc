@@ -27,10 +27,10 @@
 #include <memory>
 #include <thread>
 
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
 #include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace {

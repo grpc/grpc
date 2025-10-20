@@ -29,7 +29,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "absl/log/log.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
@@ -42,6 +41,7 @@
 #include "src/core/util/memory.h"
 #include "src/core/util/sync.h"
 #include "upb/mem/arena.hpp"
+#include "absl/log/log.h"
 
 namespace {
 constexpr absl::string_view kUseGrpcExperimentalAltsHandshakerKeepaliveParams =
@@ -220,13 +220,15 @@ static tsi_result handshaker_result_create_zero_copy_grpc_protector(
   VLOG(2) << "After Frame Size Negotiation, maximum frame size used by frame "
              "protector equals "
           << *max_output_protected_frame_size;
+  bool is_integrity_only =
+      (result->record_protocol == ALTS_INTEGRITY_ONLY_RECORD_PROTOCOL);
   tsi_result ok = alts_zero_copy_grpc_protector_create(
-      grpc_core::GsecKeyFactory({reinterpret_cast<uint8_t*>(result->key_data),
-                                 kAltsAes128GcmRekeyKeyLength},
-                                /*is_rekey=*/true),
-      result->is_client,
-      /*is_integrity_only=*/
-      (result->record_protocol == ALTS_INTEGRITY_ONLY_RECORD_PROTOCOL),
+      grpc_core::GsecKeyFactory(
+          {reinterpret_cast<uint8_t*>(result->key_data),
+           is_integrity_only ? kAes128GcmKeyLength
+                             : kAltsAes128GcmRekeyKeyLength},
+          !is_integrity_only),
+      result->is_client, is_integrity_only,
       /*enable_extra_copy=*/false, max_output_protected_frame_size, protector);
   if (ok != TSI_OK) {
     LOG(ERROR) << "Failed to create zero-copy grpc protector";
