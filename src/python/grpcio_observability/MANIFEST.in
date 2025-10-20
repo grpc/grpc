@@ -5,5 +5,6 @@ graft third_party
 include _parallel_compile_patch.py
 include grpc_version.py
 include python_version.py
+include python_protobuf_version.py
 include observability_lib_deps.py
 include README.rst
