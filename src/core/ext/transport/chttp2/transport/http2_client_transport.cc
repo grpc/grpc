@@ -87,6 +87,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 
+
 namespace grpc_core {
 namespace http2 {
 
@@ -1024,7 +1025,9 @@ absl::Status Http2ClientTransport::AssignStreamId(
                             "Assigned stream id: "
                          << next_stream_id.value()
                          << " to stream: " << stream.get();
-  stream->SetStreamId(next_stream_id.value());
+  stream->Initialize(next_stream_id.value(),
+                     settings_.peer().allow_true_binary_metadata(),
+                     settings_.acked().allow_true_binary_metadata());
   return absl::OkStatus();
 }
 
@@ -1506,13 +1509,8 @@ bool Http2ClientTransport::SetOnDone(CallHandler call_handler,
 std::optional<RefCountedPtr<Stream>> Http2ClientTransport::MakeStream(
     CallHandler call_handler) {
   // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
-  RefCountedPtr<Stream> stream;
-  {
-    MutexLock lock(&transport_mutex_);
-    stream = MakeRefCounted<Stream>(
-        call_handler, settings_.peer().allow_true_binary_metadata(),
-        settings_.acked().allow_true_binary_metadata(), flow_control_);
-  }
+  RefCountedPtr<Stream> stream =
+      MakeRefCounted<Stream>(call_handler, flow_control_);
   const bool on_done_added = SetOnDone(call_handler, stream);
   if (!on_done_added) return std::nullopt;
   return stream;
