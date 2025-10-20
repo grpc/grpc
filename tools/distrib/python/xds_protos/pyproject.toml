@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel", "python_version", "build", "cython>=3.1.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xds-protos"
+version = "1.76.0.dev0"
+description = "Generated Python code for Envoy xDS protos"
+readme = "README.rst"
+requires-python = ">=3.9"
+license = {text = "Apache License 2.0"}
+keywords = ["grpc", "xds", "envoy", "protobuf"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+
+authors = [
+    { name = "The gRPC Authors", email = "grpc-io@googlegroups.com" }
+]
+
+dependencies = [
+    "protobuf>=6.31.1,<7.0.0",
+    "cython>=3.1.1",
+]
+
+[project.urls]
+Homepage = "https://grpc.io"
+Repository = "https://github.com/grpc/grpc"
+"Source Code" = "https://github.com/grpc/grpc/tree/master/tools/distrib/python/xds_protos"
+"Bug Tracker" = "https://github.com/grpc/grpc/issues"
+
+[tool.setuptools]
+packages = {find = {where = ["."], exclude = ["generated_file_import_test.py", "build.py"]}}
+
