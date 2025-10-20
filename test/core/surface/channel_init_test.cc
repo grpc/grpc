@@ -68,7 +68,7 @@ std::vector<std::string> GetFilterNames(const ChannelInit& init,
   ChannelStackBuilderImpl b("test", type, args);
   if (!init.CreateStack(&b)) return {};
   std::vector<std::string> names;
-  for (auto& [filter, config] : b.stack()) {
+  for (auto& [filter, _] : b.stack()) {
     names.push_back(std::string(filter->name.name()));
   }
   EXPECT_NE(names, std::vector<std::string>());
