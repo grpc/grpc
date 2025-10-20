@@ -37,6 +37,9 @@
 #include <string>
 #include <vector>
 
+#include "absl/memory/memory.h"
+#include "absl/strings/string_view.h"
+#include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -50,9 +53,6 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/grpc_check.h"
 #include "test/core/test_util/test_config.h"
-#include "gtest/gtest.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/string_view.h"
 
 namespace {
 class FakeTransport final : public grpc_core::Transport {
@@ -102,8 +102,8 @@ std::vector<std::string> MakeStack(const char* transport_name,
   }
 
   std::vector<std::string> parts;
-  for (const auto& entry : *builder.mutable_stack()) {
-    parts.push_back(std::string(entry->name.name()));
+  for (const auto& [filter, _] : *builder.mutable_stack()) {
+    parts.push_back(std::string(filter->name.name()));
   }
 
   return parts;
