@@ -728,20 +728,21 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
       if (s->traced && grpc_endpoint_can_track_err(t->ep.get())) {
         grpc_core::CopyContextFn copy_context_fn =
             grpc_core::GrpcHttp2GetCopyContextFn();
-        if (copy_context_fn != nullptr &&
-            grpc_core::GrpcHttp2GetWriteTimestampsCallback() != nullptr) {
-          // Old way of collecting TCP traces
-          t->context_list->emplace_back(
-              copy_context_fn(s->arena), outbuf_relative_start_pos,
-              num_stream_bytes, s->byte_counter, s->write_counter - 1);
-        } else if (s->call_tracer != nullptr &&
-                   grpc_event_engine::experimental::
-                       grpc_is_event_engine_endpoint(t->ep.get())) {
-          // New way of collecting TCP traces
+        if (s->call_tracer != nullptr &&
+            grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
+                t->ep.get())) {
+          // New way of collecting TCP traces.
           auto tcp_call_tracer = s->call_tracer->StartNewTcpTrace();
           if (tcp_call_tracer != nullptr) {
             ctx.AddTcpCallTracer(std::move(tcp_call_tracer), s->byte_counter);
           }
+        } else if (copy_context_fn != nullptr &&
+                   grpc_core::GrpcHttp2GetWriteTimestampsCallback() !=
+                       nullptr) {
+          // Old way of collecting TCP traces.
+          t->context_list->emplace_back(
+              copy_context_fn(s->arena), outbuf_relative_start_pos,
+              num_stream_bytes, s->byte_counter, s->write_counter - 1);
         }
       }
       outbuf_relative_start_pos += num_stream_bytes;
