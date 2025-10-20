@@ -120,7 +120,7 @@ ClientCall::ClientCall(grpc_call*, uint32_t, grpc_completion_queue* cq,
       reinterpret_cast<void*>(static_cast<uintptr_t>(registered_method)));
   if (deadline != Timestamp::InfFuture()) {
     send_initial_metadata_->Set(GrpcTimeoutMetadata(), deadline);
-    UpdateDeadline(deadline);
+    UpdateDeadline(deadline).IgnoreError();
   }
 }
 
