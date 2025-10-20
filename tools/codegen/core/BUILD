@@ -52,11 +52,11 @@ grpc_cc_library(
     external_deps = [
         "absl/strings",
         "absl/log",
+        "absl/container:flat_hash_map",
+        "@yaml-cpp//:yaml-cpp",
     ],
     deps = [
         "//:gpr",
-        "//third_party/absl/container:flat_hash_map",
-        "//third_party/yamlcpp",
     ],
 )
 

@@ -9,7 +9,7 @@ The tracing library provides a mechanism for logging trace messages from differe
 ## How to Add a New Trace Flag
 
 1.  Add a new entry to the `trace_flags.yaml` file. The entry should include the name of the trace flag and a brief description of what it does.
-2.  Run the `tools/codegen/core/gen_trace_flags.py` script to regenerate the `trace_flags.h` and `trace_flags.cc` files.
+2.  Run the `tools/codegen/core/generate_trace_flags_main.cc` script to regenerate the `trace_flags.h` and `trace_flags.cc` files.
 3.  Use the `GRPC_TRACE_FLAG_ENABLED` macro to check if the trace flag is enabled, and the `GRPC_TRACE_LOG`, `GRPC_TRACE_DLOG`, or `GRPC_TRACE_VLOG` macros to log trace messages.
 
 ## Files
