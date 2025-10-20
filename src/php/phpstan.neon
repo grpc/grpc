@@ -1,0 +1,18 @@
+parameters:
+  phpVersion: 70100
+  level: 5
+  fileExtensions:
+    - php
+  paths:
+    - lib
+  scanDirectories:
+     - ext/grpc
+  ignoreErrors:
+    -
+      message: '#Call to function is_a\(\)#'
+      path: lib/Grpc/BaseStub.php
+      count: 2
+    -
+      message: '#Call to function is_a\(\)#'
+      path: lib/Grpc/Internal/InterceptorChannel.php
+      count: 2
