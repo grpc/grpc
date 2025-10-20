@@ -252,16 +252,24 @@ void WorkStealingThreadPool::WorkStealingThreadPoolImpl::StartThread() {
   last_started_thread_.store(
       grpc_core::Timestamp::Now().milliseconds_after_process_epoch(),
       std::memory_order_relaxed);
-  grpc_core::Thread(
+  bool success = false;
+  ThreadState* thread_state = new ThreadState(shared_from_this());
+  grpc_core::Thread thread(
       "event_engine",
       [](void* arg) {
         ThreadState* worker = static_cast<ThreadState*>(arg);
         worker->ThreadBody();
         delete worker;
       },
-      new ThreadState(shared_from_this()), nullptr,
-      grpc_core::Thread::Options().set_tracked(false).set_joinable(false))
-      .Start();
+      thread_state, &success,
+      grpc_core::Thread::Options().set_tracked(false).set_joinable(false));
+
+  if (!success) {
+    delete thread_state;
+    return;
+  }
+
+  thread.Start();
 }
 
 void WorkStealingThreadPool::WorkStealingThreadPoolImpl::Quiesce() {
