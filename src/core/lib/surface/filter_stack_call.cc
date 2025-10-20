@@ -205,7 +205,7 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
   }
 
   if (args->send_deadline != Timestamp::InfFuture()) {
-    call->UpdateDeadline(args->send_deadline);
+    call->UpdateDeadline(args->send_deadline).IgnoreError();
   }
 
   CSliceUnref(path);
