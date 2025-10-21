@@ -38,8 +38,12 @@
 namespace grpc_core {
 
 struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
-  using TypedPerFilterConfig =
-      std::map<std::string, XdsHttpFilterImpl::FilterConfig>;
+  struct FilterConfigOverride {
+    absl::string_view config_proto_type;
+    XdsHttpFilterImpl::XdsFilterConfig old_config;
+    RefCountedPtr<const FilterConfig> config;
+  };
+  using TypedPerFilterConfig = std::map<std::string, FilterConfigOverride>;
 
   using ClusterSpecifierPluginMap =
       std::map<std::string /*cluster_specifier_plugin_name*/,
@@ -136,10 +140,7 @@ struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
         uint32_t weight;
         TypedPerFilterConfig typed_per_filter_config;
 
-        bool operator==(const ClusterWeight& other) const {
-          return name == other.name && weight == other.weight &&
-                 typed_per_filter_config == other.typed_per_filter_config;
-        }
+        bool operator==(const ClusterWeight& other) const;
         std::string ToString() const;
       };
 
@@ -186,10 +187,7 @@ struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
     std::variant<UnknownAction, RouteAction, NonForwardingAction> action;
     TypedPerFilterConfig typed_per_filter_config;
 
-    bool operator==(const Route& other) const {
-      return matchers == other.matchers && action == other.action &&
-             typed_per_filter_config == other.typed_per_filter_config;
-    }
+    bool operator==(const Route& other) const;
     std::string ToString() const;
   };
 
@@ -198,10 +196,7 @@ struct XdsRouteConfigResource : public XdsResourceType::ResourceData {
     std::vector<Route> routes;
     TypedPerFilterConfig typed_per_filter_config;
 
-    bool operator==(const VirtualHost& other) const {
-      return domains == other.domains && routes == other.routes &&
-             typed_per_filter_config == other.typed_per_filter_config;
-    }
+    bool operator==(const VirtualHost& other) const;
     std::string ToString() const;
   };
 

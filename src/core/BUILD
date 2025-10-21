@@ -3749,6 +3749,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "filter_chain",
+    hdrs = [
+        "filter/filter_chain.h",
+    ],
+    deps = [
+        "filter_args",
+        "interception_chain",
+        "ref_counted",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "fused_filters",
     srcs = [
         "filter/fused_filters.cc",
@@ -3838,6 +3851,7 @@ grpc_cc_library(
         "blackboard",
         "channel_fwd",
         "client_channel_internal_header",
+        "filter_chain",
         "grpc_check",
         "grpc_service_config",
         "interception_chain",
@@ -5999,6 +6013,9 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "xds_http_filter",
+    srcs = [
+        "xds/grpc/xds_http_filter.cc",
+    ],
     hdrs = [
         "xds/grpc/xds_http_filter.h",
     ],
@@ -6012,6 +6029,7 @@ grpc_cc_library(
         "blackboard",
         "channel_args",
         "channel_fwd",
+        "filter_chain",
         "interception_chain",
         "json",
         "json_writer",
@@ -6059,6 +6077,7 @@ grpc_cc_library(
     ],
     tags = ["nofixdeps"],
     deps = [
+        "filter_args",
         "match",
         "resolved_address",
         "time",

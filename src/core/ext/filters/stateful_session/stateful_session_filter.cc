@@ -59,7 +59,7 @@ UniqueTypeName XdsOverrideHostAttribute::TypeName() {
   return kFactory.Create();
 }
 
-const grpc_channel_filter StatefulSessionFilter::kFilter =
+const grpc_channel_filter StatefulSessionFilter::kFilterVtable =
     MakePromiseBasedFilter<StatefulSessionFilter, FilterEndpoint::kClient,
                            kFilterExaminesServerInitialMetadata>();
 

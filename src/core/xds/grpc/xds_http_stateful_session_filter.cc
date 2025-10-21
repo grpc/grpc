@@ -138,12 +138,12 @@ Json::Object ValidateStatefulSession(
 
 }  // namespace
 
-std::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::XdsFilterConfig>
 XdsHttpStatefulSessionFilter::GenerateFilterConfig(
     absl::string_view /*instance_name*/,
-    const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    ValidationErrors* errors) const {
-  absl::string_view* serialized_filter_config =
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  const absl::string_view* serialized_filter_config =
       std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse stateful session filter config");
@@ -157,17 +157,17 @@ XdsHttpStatefulSessionFilter::GenerateFilterConfig(
     errors->AddError("could not parse stateful session filter config");
     return std::nullopt;
   }
-  return FilterConfig{ConfigProtoName(),
-                      Json::FromObject(ValidateStatefulSession(
-                          context, stateful_session, errors))};
+  return XdsFilterConfig{ConfigProtoName(),
+                         Json::FromObject(ValidateStatefulSession(
+                             context, stateful_session, errors))};
 }
 
-std::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::XdsFilterConfig>
 XdsHttpStatefulSessionFilter::GenerateFilterConfigOverride(
     absl::string_view /*instance_name*/,
-    const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    ValidationErrors* errors) const {
-  absl::string_view* serialized_filter_config =
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  const absl::string_view* serialized_filter_config =
       std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse stateful session filter override config");
@@ -192,8 +192,8 @@ XdsHttpStatefulSessionFilter::GenerateFilterConfigOverride(
       config = ValidateStatefulSession(context, stateful_session, errors);
     }
   }
-  return FilterConfig{OverrideConfigProtoName(),
-                      Json::FromObject(std::move(config))};
+  return XdsFilterConfig{OverrideConfigProtoName(),
+                         Json::FromObject(std::move(config))};
 }
 
 void XdsHttpStatefulSessionFilter::AddFilter(
@@ -203,7 +203,13 @@ void XdsHttpStatefulSessionFilter::AddFilter(
 
 const grpc_channel_filter* XdsHttpStatefulSessionFilter::channel_filter()
     const {
-  return &StatefulSessionFilter::kFilter;
+  return &StatefulSessionFilter::kFilterVtable;
+}
+
+void XdsHttpStatefulSessionFilter::AddFilter(
+    FilterChainBuilder& builder,
+    RefCountedPtr<const FilterConfig> config) const {
+  builder.AddFilter<StatefulSessionFilter>(std::move(config));
 }
 
 ChannelArgs XdsHttpStatefulSessionFilter::ModifyChannelArgs(
@@ -213,8 +219,8 @@ ChannelArgs XdsHttpStatefulSessionFilter::ModifyChannelArgs(
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpStatefulSessionFilter::GenerateMethodConfig(
-    const FilterConfig& hcm_filter_config,
-    const FilterConfig* filter_config_override) const {
+    const XdsFilterConfig& hcm_filter_config,
+    const XdsFilterConfig* filter_config_override) const {
   const Json& config = filter_config_override != nullptr
                            ? filter_config_override->config
                            : hcm_filter_config.config;
@@ -223,8 +229,28 @@ XdsHttpStatefulSessionFilter::GenerateMethodConfig(
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpStatefulSessionFilter::GenerateServiceConfig(
-    const FilterConfig& /*hcm_filter_config*/) const {
+    const XdsFilterConfig& /*hcm_filter_config*/) const {
   return ServiceConfigJsonEntry{"", ""};
+}
+
+RefCountedPtr<const FilterConfig>
+XdsHttpStatefulSessionFilter::ParseTopLevelConfig(
+    absl::string_view /*instance_name*/,
+    const XdsResourceType::DecodeContext& /*context*/,
+    const XdsExtension& /*extension*/, ValidationErrors* /*errors*/) const {
+  // TODO(roth): Implement this as part of migrating to the new approach
+  // for passing xDS HTTP filter configs.
+  return nullptr;
+}
+
+RefCountedPtr<const FilterConfig>
+XdsHttpStatefulSessionFilter::ParseOverrideConfig(
+    absl::string_view /*instance_name*/,
+    const XdsResourceType::DecodeContext& /*context*/,
+    const XdsExtension& /*extension*/, ValidationErrors* /*errors*/) const {
+  // TODO(roth): Implement this as part of migrating to the new approach
+  // for passing xDS HTTP filter configs.
+  return nullptr;
 }
 
 }  // namespace grpc_core

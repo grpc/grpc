@@ -2109,6 +2109,7 @@ src/core/filter/auth/server_auth_filter.cc \
 src/core/filter/blackboard.cc \
 src/core/filter/blackboard.h \
 src/core/filter/filter_args.h \
+src/core/filter/filter_chain.h \
 src/core/filter/fused_filters.cc \
 src/core/handshaker/GEMINI.md \
 src/core/handshaker/endpoint_info/GEMINI.md \
@@ -2998,6 +2999,7 @@ src/core/xds/grpc/xds_health_status.cc \
 src/core/xds/grpc/xds_health_status.h \
 src/core/xds/grpc/xds_http_fault_filter.cc \
 src/core/xds/grpc/xds_http_fault_filter.h \
+src/core/xds/grpc/xds_http_filter.cc \
 src/core/xds/grpc/xds_http_filter.h \
 src/core/xds/grpc/xds_http_filter_registry.cc \
 src/core/xds/grpc/xds_http_filter_registry.h \

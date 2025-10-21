@@ -79,12 +79,12 @@ Json::Object ValidateFilterConfig(
 
 }  // namespace
 
-std::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::XdsFilterConfig>
 XdsHttpGcpAuthnFilter::GenerateFilterConfig(
     absl::string_view instance_name,
-    const XdsResourceType::DecodeContext& context, XdsExtension extension,
-    ValidationErrors* errors) const {
-  absl::string_view* serialized_filter_config =
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) const {
+  const absl::string_view* serialized_filter_config =
       std::get_if<absl::string_view>(&extension.value);
   if (serialized_filter_config == nullptr) {
     errors->AddError("could not parse GCP auth filter config");
@@ -98,15 +98,16 @@ XdsHttpGcpAuthnFilter::GenerateFilterConfig(
     errors->AddError("could not parse GCP auth filter config");
     return std::nullopt;
   }
-  return FilterConfig{ConfigProtoName(), Json::FromObject(ValidateFilterConfig(
-                                             instance_name, gcp_auth, errors))};
+  return XdsFilterConfig{
+      ConfigProtoName(),
+      Json::FromObject(ValidateFilterConfig(instance_name, gcp_auth, errors))};
 }
 
-std::optional<XdsHttpFilterImpl::FilterConfig>
+std::optional<XdsHttpFilterImpl::XdsFilterConfig>
 XdsHttpGcpAuthnFilter::GenerateFilterConfigOverride(
     absl::string_view /*instance_name*/,
     const XdsResourceType::DecodeContext& /*context*/,
-    XdsExtension /*extension*/, ValidationErrors* errors) const {
+    const XdsExtension& /*extension*/, ValidationErrors* errors) const {
   errors->AddError("GCP auth filter does not support config override");
   return std::nullopt;
 }
@@ -116,7 +117,13 @@ void XdsHttpGcpAuthnFilter::AddFilter(InterceptionChainBuilder& builder) const {
 }
 
 const grpc_channel_filter* XdsHttpGcpAuthnFilter::channel_filter() const {
-  return &GcpAuthenticationFilter::kFilter;
+  return &GcpAuthenticationFilter::kFilterVtable;
+}
+
+void XdsHttpGcpAuthnFilter::AddFilter(
+    FilterChainBuilder& builder,
+    RefCountedPtr<const FilterConfig> config) const {
+  builder.AddFilter<GcpAuthenticationFilter>(std::move(config));
 }
 
 ChannelArgs XdsHttpGcpAuthnFilter::ModifyChannelArgs(
@@ -126,20 +133,20 @@ ChannelArgs XdsHttpGcpAuthnFilter::ModifyChannelArgs(
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpGcpAuthnFilter::GenerateMethodConfig(
-    const FilterConfig& /*hcm_filter_config*/,
-    const FilterConfig* /*filter_config_override*/) const {
+    const XdsFilterConfig& /*hcm_filter_config*/,
+    const XdsFilterConfig* /*filter_config_override*/) const {
   return ServiceConfigJsonEntry{"", ""};
 }
 
 absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
 XdsHttpGcpAuthnFilter::GenerateServiceConfig(
-    const FilterConfig& hcm_filter_config) const {
+    const XdsFilterConfig& hcm_filter_config) const {
   return ServiceConfigJsonEntry{"gcp_authentication",
                                 JsonDump(hcm_filter_config.config)};
 }
 
 void XdsHttpGcpAuthnFilter::UpdateBlackboard(
-    const FilterConfig& hcm_filter_config, const Blackboard* old_blackboard,
+    const XdsFilterConfig& hcm_filter_config, const Blackboard* old_blackboard,
     Blackboard* new_blackboard) const {
   ValidationErrors errors;
   auto config = LoadFromJson<GcpAuthenticationParsedConfig::Config>(
@@ -158,6 +165,24 @@ void XdsHttpGcpAuthnFilter::UpdateBlackboard(
   }
   CHECK_NE(new_blackboard, nullptr);
   new_blackboard->Set(config.filter_instance_name, std::move(cache));
+}
+
+RefCountedPtr<const FilterConfig> XdsHttpGcpAuthnFilter::ParseTopLevelConfig(
+    absl::string_view /*instance_name*/,
+    const XdsResourceType::DecodeContext& /*context*/,
+    const XdsExtension& /*extension*/, ValidationErrors* /*errors*/) const {
+  // TODO(roth): Implement this as part of migrating to the new approach
+  // for passing xDS HTTP filter configs.
+  return nullptr;
+}
+
+RefCountedPtr<const FilterConfig> XdsHttpGcpAuthnFilter::ParseOverrideConfig(
+    absl::string_view /*instance_name*/,
+    const XdsResourceType::DecodeContext& /*context*/,
+    const XdsExtension& /*extension*/, ValidationErrors* /*errors*/) const {
+  // TODO(roth): Implement this as part of migrating to the new approach
+  // for passing xDS HTTP filter configs.
+  return nullptr;
 }
 
 }  // namespace grpc_core
