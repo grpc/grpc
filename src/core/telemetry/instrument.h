@@ -114,7 +114,7 @@
 //   };
 //
 // To increment the counter:
-//   auto scope = GetGlobalCollectionScope({}); // Or some other scope
+//   auto scope = CreateCollectionScope({}, {}); // Or some other scope
 //   auto storage = MyDomain::GetStorage(scope, "label_val1", "label_val2");
 //   storage->Increment(MyDomain::kMyCounter);
 //
@@ -241,7 +241,7 @@ void RegisterHistogramCollectionHook(HistogramCollectionHook hook);
 // metrics collected in this scope are aggregated into the parent scope.
 class CollectionScope : public RefCounted<CollectionScope> {
  public:
-  CollectionScope(RefCountedPtr<CollectionScope> parent,
+  CollectionScope(std::vector<RefCountedPtr<CollectionScope>> parents,
                   absl::Span<const std::string> labels,
                   size_t child_shards_count, size_t storage_shards_count);
   ~CollectionScope() override;
@@ -254,7 +254,6 @@ class CollectionScope : public RefCounted<CollectionScope> {
  private:
   friend class MetricsQuery;
   friend class instrument_detail::QueryableDomain;
-  friend struct GlobalScopeHolder;
 
   struct StorageShard {
     mutable Mutex mu;
@@ -269,7 +268,7 @@ class CollectionScope : public RefCounted<CollectionScope> {
     absl::flat_hash_set<CollectionScope*> children ABSL_GUARDED_BY(mu);
   };
 
-  RefCountedPtr<CollectionScope> parent_;
+  std::vector<RefCountedPtr<CollectionScope>> parents_;
   absl::flat_hash_set<std::string> labels_of_interest_;
   std::vector<ChildShard> child_shards_;
   std::vector<StorageShard> storage_shards_;
@@ -988,16 +987,9 @@ void TestOnlyResetInstruments();
 // `child_shards_count` and `storage_shards_count` are performance tuning
 // parameters for sharding internal data structures.
 RefCountedPtr<CollectionScope> CreateCollectionScope(
-    RefCountedPtr<CollectionScope> parent, absl::Span<const std::string> labels,
-    size_t child_shards_count = 1, size_t storage_shards_count = 1);
-// Gets the global collection scope.
-// The global collection scope is a root scope that can be used for metrics
-// that do not belong to a specific sub-scope.
-// The labels of interest for the global scope are the union of all labels
-// passed to this function *until* the first storage is created in the global
-// scope, at which point the labels become fixed.
-RefCountedPtr<CollectionScope> GetGlobalCollectionScope(
-    absl::Span<const std::string> labels);
+    std::vector<RefCountedPtr<CollectionScope>> parents,
+    absl::Span<const std::string> labels, size_t child_shards_count = 1,
+    size_t storage_shards_count = 1);
 
 }  // namespace grpc_core
 
