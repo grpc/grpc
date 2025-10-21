@@ -36,9 +36,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "gtest/gtest.h"
 #include "src/core/channelz/channelz_registry.h"
 #include "src/core/channelz/text_encode.h"
 #include "src/core/channelz/v2tov1/legacy_api.h"
@@ -60,6 +57,9 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/channel_trace_proto_helper.h"
 #include "upb/mem/arena.hpp"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 using grpc_event_engine::experimental::GetDefaultEventEngine;
 
@@ -485,12 +485,14 @@ class ChannelzRegistryBasedTest : public ::testing::TestWithParam<size_t> {
   void SetUp() override {
     WaitForSingleOwner(GetDefaultEventEngine());
     ResourceQuota::TestOnlyResetDefaultResourceQuota();
+    TestOnlyResetInstruments();
     ChannelzRegistry::TestOnlyReset();
   }
 
   void TearDown() override {
     WaitForSingleOwner(GetDefaultEventEngine());
     ResourceQuota::TestOnlyResetDefaultResourceQuota();
+    TestOnlyResetInstruments();
     ChannelzRegistry::TestOnlyReset();
   }
 };

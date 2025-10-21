@@ -18,9 +18,9 @@
 #include <memory>
 #include <utility>
 
-#include "absl/strings/string_view.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_event_engine::experimental {
 

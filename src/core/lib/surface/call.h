@@ -28,9 +28,6 @@
 
 #include <optional>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/functional/function_ref.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
@@ -48,6 +45,9 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "src/core/util/time_precise.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/functional/function_ref.h"
+#include "absl/strings/string_view.h"
 
 typedef void (*grpc_ioreq_completion_func)(grpc_call* call, int success,
                                            void* user_data);
@@ -102,7 +102,8 @@ class Call : public CppImplOf<Call, grpc_call>,
   virtual void InternalRef(const char* reason) = 0;
   virtual void InternalUnref(const char* reason) = 0;
 
-  void UpdateDeadline(Timestamp deadline) ABSL_LOCKS_EXCLUDED(deadline_mu_);
+  grpc_error_handle UpdateDeadline(Timestamp deadline)
+      ABSL_LOCKS_EXCLUDED(deadline_mu_);
   void ResetDeadline() ABSL_LOCKS_EXCLUDED(deadline_mu_);
   Timestamp deadline() {
     MutexLock lock(&deadline_mu_);

@@ -16,12 +16,12 @@
 //
 //
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/sleep.h"
 #include "test/core/call/yodel/yodel_test.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 
@@ -186,7 +186,9 @@ class StreamDataQueueFuzzTest : public YodelTest {
    public:
     explicit AssembleFrames(const uint32_t stream_id,
                             const bool allow_true_binary_metadata)
-        : header_assembler_(stream_id, allow_true_binary_metadata) {}
+        : header_assembler_(allow_true_binary_metadata) {
+      header_assembler_.SetStreamId(stream_id);
+    }
     void operator()(Http2HeaderFrame frame) {
       auto status = header_assembler_.AppendHeaderFrame(std::move(frame));
       EXPECT_TRUE(status.IsOk());
@@ -287,8 +289,8 @@ YODEL_TEST(StreamDataQueueFuzzTest, EnqueueDequeueMultiParty) {
   HPackCompressor encoder;
   StreamDataQueue<ClientMetadataHandle> stream_data_queue(
       /*is_client=*/true,
-      /*stream_id=*/stream_id,
       /*queue_size=*/queue_size, /*allow_true_binary_metadata=*/true);
+  stream_data_queue.SetStreamId(stream_id);
   std::vector<MessageHandle> messages_to_be_sent = TestMessages(num_messages);
   std::vector<MessageHandle> messages_copy = TestMessages(num_messages);
   std::vector<MessageHandle> dequeued_messages;

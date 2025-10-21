@@ -77,6 +77,11 @@ package_group(
 )
 
 package_group(
+    name = "sleuth",
+    packages = [],
+)
+
+package_group(
     name = "client_channel",
     packages = [],
 )
@@ -235,5 +240,10 @@ package_group(
 
 package_group(
     name = "socket_mutator",
+    packages = [],
+)
+
+package_group(
+    name = "transport_common",
     packages = [],
 )

@@ -20,8 +20,8 @@
 
 #include <random>
 
-#include "absl/container/btree_map.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "absl/container/btree_map.h"
 
 const char kKey[] = "a very long key";
 const char kValue[] = "a very long value";

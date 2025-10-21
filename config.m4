@@ -181,6 +181,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/transport/frame_security.cc \
     src/core/ext/transport/chttp2/transport/frame_settings.cc \
     src/core/ext/transport/chttp2/transport/frame_window_update.cc \
+    src/core/ext/transport/chttp2/transport/goaway.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc \
     src/core/ext/transport/chttp2/transport/hpack_parse_result.cc \
@@ -702,7 +703,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/resource_quota/memory_quota.cc \
     src/core/lib/resource_quota/periodic_update.cc \
     src/core/lib/resource_quota/resource_quota.cc \
-    src/core/lib/resource_quota/stream_quota.cc \
     src/core/lib/resource_quota/thread_quota.cc \
     src/core/lib/resource_tracker/resource_tracker.cc \
     src/core/lib/security/authorization/audit_logging.cc \
@@ -1475,7 +1475,7 @@ if test "$PHP_GRPC" != "no"; then
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
-    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.76.0dev\""')
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.77.0dev\""')
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/call)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz/v2tov1)

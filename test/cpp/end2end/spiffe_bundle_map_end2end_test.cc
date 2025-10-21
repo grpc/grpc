@@ -33,20 +33,20 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/synchronization/notification.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/testing/echo_messages.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/synchronization/notification.h"
 
 namespace grpc {
 namespace testing {
@@ -183,7 +183,9 @@ void DoRpc(const std::string& server_addr,
   } else {
     EXPECT_FALSE(result.ok());
     EXPECT_EQ(result.error_code(), failure_code);
-#if GTEST_USES_POSIX_RE
+// The expected failure message only matches when building against BoringSSL or
+// OpenSSL < 3.0.
+#if GTEST_USES_POSIX_RE && OPENSSL_VERSION_NUMBER < 0x30000000L
     EXPECT_THAT(result.error_message(),
                 ::testing::MatchesRegex(failure_message_regex));
 #endif

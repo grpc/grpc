@@ -21,8 +21,10 @@
 #include <memory>
 #include <vector>
 
-#include "absl/status/statusor.h"
+#include "src/core/util/latent_see.h"
+#include "src/proto/grpc/channelz/v2/latent_see.grpc.pb.h"
 #include "src/proto/grpc/channelz/v2/service.grpc.pb.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_sleuth {
 
@@ -46,12 +48,15 @@ class Client {
       absl::FunctionRef<
           void(size_t, absl::Span<const grpc::channelz::v2::TraceEvent* const>)>
           callback);
+  absl::Status FetchLatentSee(double sample_time,
+                              grpc_core::latent_see::Output* output);
 
  private:
   static grpc::ChannelArguments MakeChannelArguments(const Options& options);
 
   std::shared_ptr<grpc::Channel> channel_;
   std::unique_ptr<grpc::channelz::v2::Channelz::Stub> stub_;
+  std::unique_ptr<grpc::channelz::v2::LatentSee::Stub> latent_see_stub_;
 };
 
 }  // namespace grpc_sleuth

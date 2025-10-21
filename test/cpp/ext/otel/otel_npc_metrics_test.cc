@@ -24,9 +24,6 @@
 #include <ratio>
 #include <type_traits>
 
-#include "absl/functional/any_invocable.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "opentelemetry/common/timestamp.h"
 #include "opentelemetry/metrics/provider.h"
 #include "opentelemetry/nostd/variant.h"
@@ -43,6 +40,9 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/ext/otel/otel_test_library.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
 
 namespace grpc {
 namespace testing {

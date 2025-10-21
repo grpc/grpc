@@ -22,11 +22,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
@@ -36,6 +31,11 @@
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/core/tsi/transport_security_test_lib.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 extern "C" {
 #include <openssl/crypto.h>

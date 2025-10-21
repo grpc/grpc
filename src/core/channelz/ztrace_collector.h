@@ -21,8 +21,6 @@
 #include <tuple>
 #include <vector>
 
-#include "absl/container/flat_hash_set.h"
-#include "absl/status/status.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/any.upbdefs.h"
 #include "google/protobuf/timestamp.upb.h"
@@ -39,6 +37,8 @@
 #include "src/proto/grpc/channelz/v2/channelz.upb.h"
 #include "src/proto/grpc/channelz/v2/service.upb.h"
 #include "upb/mem/arena.hpp"
+#include "absl/container/flat_hash_set.h"
+#include "absl/status/status.h"
 
 #ifdef GRPC_NO_ZTRACE
 namespace grpc_core::channelz {
@@ -61,6 +61,8 @@ class StubImpl {
   std::unique_ptr<ZTrace> MakeZTrace() {
     return std::make_unique<ZTraceImpl>();
   }
+
+  bool IsActive() { return false; }
 };
 }  // namespace ztrace_collector_detail
 

@@ -14,17 +14,17 @@
 
 #include "src/core/channelz/property_list.h"
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "gmock/gmock.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/timestamp.upb.h"
-#include "gtest/gtest.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/upb_utils.h"
 #include "src/proto/grpc/channelz/v2/property_list.upb.h"
 #include "upb/mem/arena.hpp"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace channelz {
