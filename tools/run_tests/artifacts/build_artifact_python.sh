@@ -109,12 +109,12 @@ ${SETARCH_CMD} "${PYTHON}" -m build --sdist
 # https://bitbucket.org/pypa/wheel/issues/99/cannot-exclude-directory
 # shellcheck disable=SC2086
 
-WHEEL_PLAT_CONFIG_OPTION=""
+WHEEL_PLAT_CONFIG_OPTION=()
 if [[ -n "$WHEEL_PLAT_NAME_FLAG" ]]; then
-  WHEEL_PLAT_CONFIG_OPTION='-C--build-option="--plat-name=$WHEEL_PLAT_NAME_FLAG"'
+  WHEEL_PLAT_CONFIG_OPTION+=("-C--build-option=\"--plat-name=$WHEEL_PLAT_NAME_FLAG\"")
 fi
 
-${SETARCH_CMD} "${PYTHON}" -m build --wheel "${WHEEL_PLAT_CONFIG_OPTION}"
+${SETARCH_CMD} "${PYTHON}" -m build --wheel "${WHEEL_PLAT_CONFIG_OPTION[@]}"
 
 GRPCIO_STRIP_TEMPDIR=$(mktemp -d)
 GRPCIO_TAR_GZ_LIST=( dist/grpcio-*.tar.gz )
@@ -155,7 +155,7 @@ ${SETARCH_CMD} "${PYTHON}" -m build "tools/distrib/python/grpcio_tools" --sdist
 # Build gRPC tools package binary distribution
 # shellcheck disable=SC2086
 ${SETARCH_CMD} "${PYTHON}" -m build "tools/distrib/python/grpcio_tools" \
-  --wheel --no-isolation "${WHEEL_PLAT_CONFIG_OPTION}"
+  --wheel --no-isolation "${WHEEL_PLAT_CONFIG_OPTION[@]}"
 
 if [ "$GRPC_BUILD_MAC" == "" ]; then
   "${PYTHON}" src/python/grpcio_observability/make_grpcio_observability.py
@@ -163,7 +163,7 @@ if [ "$GRPC_BUILD_MAC" == "" ]; then
     --sdist
   # shellcheck disable=SC2086
   ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_observability" \
-    --wheel "${WHEEL_PLAT_CONFIG_OPTION}"
+    --wheel "${WHEEL_PLAT_CONFIG_OPTION[@]}"
 fi
 
 
