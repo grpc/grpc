@@ -214,7 +214,7 @@ class SpiffeSslTransportSecurityTest
 #endif
       tsi_peer peer;
       if (expect_client_success) {
-        EXPECT_EQ(
+        ASSERT_EQ(
             tsi_handshaker_result_extract_peer(base_.client_result, &peer),
             TSI_OK);
         tsi_peer_destruct(&peer);
@@ -222,7 +222,7 @@ class SpiffeSslTransportSecurityTest
         EXPECT_EQ(base_.client_result, nullptr);
       }
       if (expect_server_success) {
-        EXPECT_EQ(
+        ASSERT_EQ(
             tsi_handshaker_result_extract_peer(base_.server_result, &peer),
             TSI_OK);
         tsi_peer_destruct(&peer);
@@ -410,8 +410,15 @@ TEST_P(SpiffeSslTransportSecurityTest, InvalidUTF8Fails) {
   auto* fixture_pass = new SslTsiTestFixture(
       kServerKeyPath, kServerCertPath, kInvalidUtf8SanKeyPath,
       kInvalidUtf8SanCertPath, "", "", kCaPemPath,
+  // OpenSSL3 and above will fail the handshake because of the invalid
+  // UTF-8 URI SAN.
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+      /*expect_server_success=*/false,
+      /*expect_client_success_1_2=*/false,
+#else
       /*expect_server_success=*/true,
       /*expect_client_success_1_2=*/true,
+#endif
       /*expect_client_success_1_3=*/true);
   fixture_pass->Run();
   // Should fail SPIFFE verification because of multiple URI SANs.
