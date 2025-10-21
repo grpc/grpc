@@ -118,6 +118,12 @@ class BuildExt(build_ext.build_ext):
 
         use_short_temp = os.environ.get("GRPC_USE_SHORT_BUILD_TEMP", 0)
         if use_short_temp:
+            if not os.path.exists("pyb"):
+                print("pyb directory not found!! Creating!!")
+                os.mkdir("pyb")
+            else:
+                print("Found pyb directory already created!!")
+
             self.build_temp = tempfile.mkdtemp(dir="pyb")
             print("Using temp directory for grpcio_tools:", self.build_temp)
 
