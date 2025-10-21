@@ -4338,24 +4338,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "tdigest",
-    srcs = [
-        "util/tdigest.cc",
-    ],
-    hdrs = [
-        "util/tdigest.h",
-    ],
-    external_deps = [
-        "absl/log",
-        "absl/status",
-        "absl/strings",
-    ],
-    deps = [
-        "grpc_check",
-    ],
-)
-
-grpc_cc_library(
     name = "certificate_provider_factory",
     hdrs = [
         "credentials/transport/tls/certificate_provider_factory.h",
