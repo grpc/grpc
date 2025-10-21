@@ -349,7 +349,7 @@ setuptools.setup(
     install_requires=[
         "protobuf>=6.31.1,<7.0.0",
         "grpcio>={version}".format(version=grpc_version.VERSION),
-        "setuptools",
+        "setuptools>=77.0.1",
     ],
     package_data=package_data(),
     cmdclass={
