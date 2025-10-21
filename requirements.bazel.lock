@@ -115,8 +115,10 @@ zope-interface==7.2
     #   twisted
 
 # The following packages are considered to be unsafe in a requirements file:
-setuptools==75.3.0
+setuptools==80.9.0 ; python_version > "3.8" # Manually added for python > 3.8
+setuptools==75.3.2 ; python_version <= "3.8"
     # via
+    #   -r requirements.bazel.txt
     #   incremental
     #   zope-event
     #   zope-interface
