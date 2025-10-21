@@ -38,9 +38,9 @@
 #include "src/core/util/time.h"
 #include "src/proto/grpc/channelz/v2/channelz.upb.h"
 #include "src/proto/grpc/channelz/v2/service.upb.h"
-#include "absl/meta/type_traits.h"
 #include "upb/mem/arena.hpp"
 #include "absl/container/flat_hash_set.h"
+#include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 
 #ifdef GRPC_NO_ZTRACE
