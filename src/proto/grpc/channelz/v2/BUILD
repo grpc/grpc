@@ -66,6 +66,9 @@ grpc_internal_proto_library(
     name = "latent_see_proto",
     srcs = ["latent_see.proto"],
     has_services = True,
+    deps = [
+        ":property_list_proto",
+    ],
 )
 
 grpc_upb_proto_library(

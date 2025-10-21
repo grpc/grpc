@@ -89,6 +89,7 @@ grpc_cc_benchmark(
     ],
     monitoring = HISTORY,
     deps = [
+        "//src/core:http2_ztrace_collector",
         "//src/core:latent_see",
     ],
 )
@@ -99,16 +100,20 @@ grpc_cc_test(
     external_deps = [
         "absl/functional:function_ref",
         "absl/log:log",
+        "absl/strings",
         "gtest",
         "gtest_main",
     ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//src/core:function_signature",
+        "//src/core:http2_ztrace_collector",
         "//src/core:json",
         "//src/core:json_reader",
         "//src/core:latent_see",
         "//src/core:notification",
+        "//src/core:promise_factory",
     ],
 )
 

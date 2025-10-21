@@ -20,8 +20,11 @@
 
 namespace grpc {
 
+void ProcessLatentSeeTrace(const channelz::v2::LatentSeeTrace& trace,
+                           grpc_core::latent_see::Output* output);
+
 Status FetchLatentSee(channelz::v2::LatentSee::Stub* stub, double sample_time,
                       grpc_core::latent_see::Output* output);
-}
+}  // namespace grpc
 
 #endif  // GRPC_SRC_CPP_LATENT_SEE_LATENT_SEE_CLIENT_H
