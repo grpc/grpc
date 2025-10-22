@@ -4045,7 +4045,6 @@ grpc_cc_library(
         "//src/core:error_utils",
         "//src/core:exec_ctx_wakeup_scheduler",
         "//src/core:experiments",
-        "//src/core:filter_args",
         "//src/core:filter_chain",
         "//src/core:gpr_manual_constructor",
         "//src/core:grpc_backend_metric_data",

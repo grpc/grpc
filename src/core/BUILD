@@ -3851,6 +3851,7 @@ grpc_cc_library(
         "blackboard",
         "channel_fwd",
         "client_channel_internal_header",
+        "filter_chain",
         "grpc_check",
         "grpc_service_config",
         "interception_chain",
