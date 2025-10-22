@@ -175,10 +175,6 @@ class ClientChannelFilter::CallData {
   void AddCallToResolverQueuedCallsLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannelFilter::resolution_mu_);
 
-  // Called when adding the call to the resolver queue.
-  void OnAddToQueueLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannelFilter::resolution_mu_);
-
   // Applies service config to the call.  Must be invoked once we know
   // that the resolver has returned results to the channel.
   // If an error is returned, the error indicates the status with which
@@ -1749,6 +1745,52 @@ void ClientChannelFilter::RemoveConnectivityWatcher(
 }
 
 //
+// ClientChannelFilter::CallData::ResolverQueuedCallCanceller
+//
+
+// A class to handle the call combiner cancellation callback for a
+// queued pick.
+class ClientChannelFilter::CallData::ResolverQueuedCallCanceller final {
+ public:
+  explicit ResolverQueuedCallCanceller(CallData* calld) : calld_(calld) {
+    GRPC_CALL_STACK_REF(calld->owning_call_, "ResolverQueuedCallCanceller");
+    GRPC_CLOSURE_INIT(&closure_, &CancelLocked, this,
+                      grpc_schedule_on_exec_ctx);
+    calld->call_combiner_->SetNotifyOnCancel(&closure_);
+  }
+
+ private:
+  static void CancelLocked(void* arg, grpc_error_handle error) {
+    auto* self = static_cast<ResolverQueuedCallCanceller*>(arg);
+    auto* calld = self->calld_;
+    auto* chand = calld->chand();
+    {
+      MutexLock lock(&chand->resolution_mu_);
+      GRPC_TRACE_LOG(client_channel_call, INFO)
+          << "chand=" << chand << " calld=" << calld
+          << ": cancelling resolver queued pick: "
+             "error="
+          << StatusToString(error) << " self=" << self
+          << " calld->resolver_pick_canceller="
+          << calld->resolver_call_canceller_;
+      if (calld->resolver_call_canceller_ == self && !error.ok()) {
+        // Remove pick from list of queued picks.
+        calld->RemoveCallFromResolverQueuedCallsLocked();
+        chand->resolver_queued_calls_.erase(calld);
+        // Fail pending batches on the call.
+        calld->PendingBatchesFail(error,
+                                  YieldCallCombinerIfPendingBatchesFound);
+      }
+    }
+    GRPC_CALL_STACK_UNREF(calld->owning_call_, "ResolvingQueuedCallCanceller");
+    delete self;
+  }
+
+  CallData* calld_;
+  grpc_closure closure_;
+};
+
+//
 // CallData implementation
 //
 
@@ -1776,7 +1818,8 @@ void ClientChannelFilter::CallData::AddCallToResolverQueuedCallsLocked() {
                                          chand()->interested_parties_);
   // Add to queue.
   chand()->resolver_queued_calls_.insert(this);
-  OnAddToQueueLocked();
+  // Register call combiner cancellation callback.
+  resolver_call_canceller_ = new ResolverQueuedCallCanceller(this);
 }
 
 grpc_error_handle ClientChannelFilter::CallData::ApplyServiceConfigToCallLocked(
@@ -2134,48 +2177,6 @@ void ClientChannelFilter::CallData::PendingBatchesResume() {
   closures.RunClosures(call_combiner_);
 }
 
-// A class to handle the call combiner cancellation callback for a
-// queued pick.
-class ClientChannelFilter::CallData::ResolverQueuedCallCanceller final {
- public:
-  explicit ResolverQueuedCallCanceller(CallData* calld) : calld_(calld) {
-    GRPC_CALL_STACK_REF(calld->owning_call_, "ResolverQueuedCallCanceller");
-    GRPC_CLOSURE_INIT(&closure_, &CancelLocked, this,
-                      grpc_schedule_on_exec_ctx);
-    calld->call_combiner_->SetNotifyOnCancel(&closure_);
-  }
-
- private:
-  static void CancelLocked(void* arg, grpc_error_handle error) {
-    auto* self = static_cast<ResolverQueuedCallCanceller*>(arg);
-    auto* calld = self->calld_;
-    auto* chand = calld->chand();
-    {
-      MutexLock lock(&chand->resolution_mu_);
-      GRPC_TRACE_LOG(client_channel_call, INFO)
-          << "chand=" << chand << " calld=" << calld
-          << ": cancelling resolver queued pick: "
-             "error="
-          << StatusToString(error) << " self=" << self
-          << " calld->resolver_pick_canceller="
-          << calld->resolver_call_canceller_;
-      if (calld->resolver_call_canceller_ == self && !error.ok()) {
-        // Remove pick from list of queued picks.
-        calld->RemoveCallFromResolverQueuedCallsLocked();
-        chand->resolver_queued_calls_.erase(calld);
-        // Fail pending batches on the call.
-        calld->PendingBatchesFail(error,
-                                  YieldCallCombinerIfPendingBatchesFound);
-      }
-    }
-    GRPC_CALL_STACK_UNREF(calld->owning_call_, "ResolvingQueuedCallCanceller");
-    delete self;
-  }
-
-  CallData* calld_;
-  grpc_closure closure_;
-};
-
 void ClientChannelFilter::CallData::TryCheckResolution(bool was_queued) {
   auto result = CheckResolution(was_queued);
   if (result.has_value()) {
@@ -2185,11 +2186,6 @@ void ClientChannelFilter::CallData::TryCheckResolution(bool was_queued) {
     }
     CreateDynamicCall();
   }
-}
-
-void ClientChannelFilter::CallData::OnAddToQueueLocked() {
-  // Register call combiner cancellation callback.
-  resolver_call_canceller_ = new ResolverQueuedCallCanceller(this);
 }
 
 void ClientChannelFilter::CallData::RetryCheckResolutionLocked() {
@@ -2326,6 +2322,61 @@ class ClientChannelFilter::LoadBalancedCall::BackendMetricAccessor final
 };
 
 //
+// ClientChannelFilter::LoadBalancedCall::LbQueuedCallCanceller
+//
+
+// A class to handle the call combiner cancellation callback for a
+// queued pick.
+// TODO(roth): When we implement hedging support, we won't be able to
+// register a call combiner cancellation closure for each LB pick,
+// because there may be multiple LB picks happening in parallel.
+// Instead, we will probably need to maintain a list in the CallData
+// object of pending LB picks to be cancelled when the closure runs.
+class ClientChannelFilter::LoadBalancedCall::LbQueuedCallCanceller final {
+ public:
+  explicit LbQueuedCallCanceller(RefCountedPtr<LoadBalancedCall> lb_call)
+      : lb_call_(std::move(lb_call)) {
+    GRPC_CALL_STACK_REF(lb_call_->owning_call_, "LbQueuedCallCanceller");
+    GRPC_CLOSURE_INIT(&closure_, &CancelLocked, this, nullptr);
+    lb_call_->call_combiner_->SetNotifyOnCancel(&closure_);
+  }
+
+ private:
+  static void CancelLocked(void* arg, grpc_error_handle error) {
+    auto* self = static_cast<LbQueuedCallCanceller*>(arg);
+    auto* lb_call = self->lb_call_.get();
+    auto* chand = lb_call->chand_;
+    {
+      MutexLock lock(&chand->lb_mu_);
+      GRPC_TRACE_LOG(client_channel_lb_call, INFO)
+          << "chand=" << chand << " lb_call=" << lb_call
+          << ": cancelling queued pick: error=" << StatusToString(error)
+          << " self=" << self
+          << " calld->pick_canceller=" << lb_call->lb_call_canceller_;
+      if (lb_call->lb_call_canceller_ == self && !error.ok()) {
+        lb_call->Commit();
+        // Remove pick from list of queued picks.
+        lb_call->RemoveCallFromLbQueuedCallsLocked();
+        // Remove from queued picks list.
+        chand->lb_queued_calls_.erase(self->lb_call_);
+        // Fail pending batches on the call.
+        lb_call->PendingBatchesFail(error,
+                                    YieldCallCombinerIfPendingBatchesFound);
+      }
+    }
+    // Unref lb_call before unreffing the call stack, since unreffing
+    // the call stack may destroy the arena in which lb_call is allocated.
+    auto* owning_call = lb_call->owning_call_;
+    self->lb_call_.reset();
+    GRPC_CALL_STACK_UNREF(owning_call, "LbQueuedCallCanceller");
+    delete self;
+  }
+
+  RefCountedPtr<LoadBalancedCall> lb_call_;
+  grpc_closure closure_;
+};
+
+//
 // ClientChannelFilter::LoadBalancedCall
 //
 
@@ -2440,7 +2491,9 @@ void ClientChannelFilter::LoadBalancedCall::AddCallToLbQueuedCallsLocked() {
   grpc_polling_entity_add_to_pollset_set(pollent_, chand_->interested_parties_);
   // Add to queue.
   chand_->lb_queued_calls_.insert(Ref());
-  OnAddToQueueLocked();
+  // Register call combiner cancellation callback.
+  lb_call_canceller_ =
+      new LbQueuedCallCanceller(RefAsSubclass<LoadBalancedCall>());
 }
 
 std::optional<absl::Status>
@@ -2875,57 +2928,6 @@ void ClientChannelFilter::LoadBalancedCall::RecvTrailingMetadataReady(
                error);
 }
 
-// A class to handle the call combiner cancellation callback for a
-// queued pick.
-// TODO(roth): When we implement hedging support, we won't be able to
-// register a call combiner cancellation closure for each LB pick,
-// because there may be multiple LB picks happening in parallel.
-// Instead, we will probably need to maintain a list in the CallData
-// object of pending LB picks to be cancelled when the closure runs.
-class ClientChannelFilter::LoadBalancedCall::LbQueuedCallCanceller final {
- public:
-  explicit LbQueuedCallCanceller(RefCountedPtr<LoadBalancedCall> lb_call)
-      : lb_call_(std::move(lb_call)) {
-    GRPC_CALL_STACK_REF(lb_call_->owning_call_, "LbQueuedCallCanceller");
-    GRPC_CLOSURE_INIT(&closure_, &CancelLocked, this, nullptr);
-    lb_call_->call_combiner_->SetNotifyOnCancel(&closure_);
-  }
-
- private:
-  static void CancelLocked(void* arg, grpc_error_handle error) {
-    auto* self = static_cast<LbQueuedCallCanceller*>(arg);
-    auto* lb_call = self->lb_call_.get();
-    auto* chand = lb_call->chand_;
-    {
-      MutexLock lock(&chand->lb_mu_);
-      GRPC_TRACE_LOG(client_channel_lb_call, INFO)
-          << "chand=" << chand << " lb_call=" << lb_call
-          << ": cancelling queued pick: error=" << StatusToString(error)
-          << " self=" << self
-          << " calld->pick_canceller=" << lb_call->lb_call_canceller_;
-      if (lb_call->lb_call_canceller_ == self && !error.ok()) {
-        lb_call->Commit();
-        // Remove pick from list of queued picks.
-        lb_call->RemoveCallFromLbQueuedCallsLocked();
-        // Remove from queued picks list.
-        chand->lb_queued_calls_.erase(self->lb_call_);
-        // Fail pending batches on the call.
-        lb_call->PendingBatchesFail(error,
-                                    YieldCallCombinerIfPendingBatchesFound);
-      }
-    }
-    // Unref lb_call before unreffing the call stack, since unreffing
-    // the call stack may destroy the arena in which lb_call is allocated.
-    auto* owning_call = lb_call->owning_call_;
-    self->lb_call_.reset();
-    GRPC_CALL_STACK_UNREF(owning_call, "LbQueuedCallCanceller");
-    delete self;
-  }
-
-  RefCountedPtr<LoadBalancedCall> lb_call_;
-  grpc_closure closure_;
-};
-
 void ClientChannelFilter::LoadBalancedCall::TryPick(bool was_queued) {
   auto result = PickSubchannel(was_queued);
   if (result.has_value()) {
@@ -2935,12 +2937,6 @@ void ClientChannelFilter::LoadBalancedCall::TryPick(bool was_queued) {
     }
     CreateSubchannelCall();
   }
-}
-
-void ClientChannelFilter::LoadBalancedCall::OnAddToQueueLocked() {
-  // Register call combiner cancellation callback.
-  lb_call_canceller_ =
-      new LbQueuedCallCanceller(RefAsSubclass<LoadBalancedCall>());
 }
 
 void ClientChannelFilter::LoadBalancedCall::RetryPickLocked() {
