@@ -160,7 +160,12 @@ bool TypedPerFilterConfigsAreEqual(
     if (a_name != b_name) return false;
     if (a_config.config_proto_type != b_config.config_proto_type) return false;
     if (a_config.old_config != b_config.old_config) return false;
-    if (*a_config.config != *b_config.config) return false;
+    if (a_config.config == nullptr) {
+      if (b_config.config != nullptr) return false;
+    } else {
+      if (b_config.config == nullptr) return false;
+      if (*a_config.config != *b_config.config) return false;
+    }
     ++b_it;
   }
   return b_it == b.end();
