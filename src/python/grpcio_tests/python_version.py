@@ -1,5 +1,4 @@
-#!/bin/bash
-# Copyright 2015 gRPC authors.
+# Copyright 2024 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,19 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+# AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio_tests/python_version.py.template`!!!
 
-# change to grpc repo root
-cd "$(dirname "$0")/../../.."
+SUPPORTED_PYTHON_VERSIONS = ["3.9","3.10","3.11","3.12","3.13","3.14"]
 
-# TODO(jtattermusch): is the $(pwd) prefix actually useful?
-PYTHON="$(pwd)/${1:-py39/bin/python}"
-
-ROOT=$(pwd)
-
-# TODO(ssreenithi): find pyproject.toml/pytest equivalent
-$PYTHON "$ROOT/src/python/grpcio_tests/setup.py" "$2"
-
-mkdir -p "$ROOT/reports"
-rm -rf "$ROOT/reports/python-coverage"
-(mv -T "$ROOT/htmlcov" "$ROOT/reports/python-coverage") || true
+MIN_PYTHON_VERSION = 3.9
+MAX_PYTHON_VERSION = 3.14
