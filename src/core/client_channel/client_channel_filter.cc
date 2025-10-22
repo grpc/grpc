@@ -2215,8 +2215,8 @@ class ClientChannelFilter::LoadBalancedCall::LbQueuedCallCanceller final {
         // Remove from queued picks list.
         chand->lb_queued_calls_.erase(self->lb_call_);
         // Fail pending batches on the call.
-        lb_call->PendingBatchesFail(error,
-                                    YieldCallCombinerIfPendingBatchesFound);
+        lb_call->buffered_call_.Fail(
+            error, BufferedCall::YieldCallCombinerIfPendingBatchesFound);
       }
     }
     // Unref lb_call before unreffing the call stack, since unreffing
@@ -2264,7 +2264,8 @@ ClientChannelFilter::LoadBalancedCall::LoadBalancedCall(
       pollent_(pollent),
       on_call_destruction_complete_(on_call_destruction_complete),
       arena_(args.arena),
-      on_commit_(std::move(on_commit)) {
+      on_commit_(std::move(on_commit)),
+      buffered_call_(call_combiner_, &client_channel_lb_call_trace) {
   GRPC_TRACE_LOG(client_channel_lb_call, INFO)
       << "chand=" << chand_ << " lb_call=" << this << ": created";
 }
@@ -2272,10 +2273,6 @@ ClientChannelFilter::LoadBalancedCall::LoadBalancedCall(
 ClientChannelFilter::LoadBalancedCall::~LoadBalancedCall() {
   if (backend_metric_data_ != nullptr) {
     backend_metric_data_->BackendMetricData::~BackendMetricData();
-  }
-  // Make sure there are no remaining pending batches.
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
-    GRPC_CHECK_EQ(pending_batches_[i], nullptr);
   }
   if (on_call_destruction_complete_ != nullptr) {
     ExecCtx::Run(DEBUG_LOCATION, on_call_destruction_complete_,
@@ -2499,114 +2496,6 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
       });
 }
 
-size_t ClientChannelFilter::LoadBalancedCall::GetBatchIndex(
-    grpc_transport_stream_op_batch* batch) {
-  // Note: It is important the send_initial_metadata be the first entry
-  // here, since the code in PickSubchannelImpl() assumes it will be.
-  if (batch->send_initial_metadata) return 0;
-  if (batch->send_message) return 1;
-  if (batch->send_trailing_metadata) return 2;
-  if (batch->recv_initial_metadata) return 3;
-  if (batch->recv_message) return 4;
-  if (batch->recv_trailing_metadata) return 5;
-  GPR_UNREACHABLE_CODE(return (size_t)-1);
-}
-
-// This is called via the call combiner, so access to calld is synchronized.
-void ClientChannelFilter::LoadBalancedCall::PendingBatchesAdd(
-    grpc_transport_stream_op_batch* batch) {
-  const size_t idx = GetBatchIndex(batch);
-  GRPC_TRACE_LOG(client_channel_lb_call, INFO)
-      << "chand=" << chand_ << " lb_call=" << this
-      << ": adding pending batch at index " << idx;
-  GRPC_CHECK_EQ(pending_batches_[idx], nullptr);
-  pending_batches_[idx] = batch;
-}
-
-// This is called via the call combiner, so access to calld is synchronized.
-void ClientChannelFilter::LoadBalancedCall::FailPendingBatchInCallCombiner(
-    void* arg, grpc_error_handle error) {
-  grpc_transport_stream_op_batch* batch =
-      static_cast<grpc_transport_stream_op_batch*>(arg);
-  auto* self = static_cast<LoadBalancedCall*>(batch->handler_private.extra_arg);
-  // Note: This will release the call combiner.
-  grpc_transport_stream_op_batch_finish_with_failure(batch, error,
-                                                     self->call_combiner_);
-}
-
-// This is called via the call combiner, so access to calld is synchronized.
-void ClientChannelFilter::LoadBalancedCall::PendingBatchesFail(
-    grpc_error_handle error,
-    YieldCallCombinerPredicate yield_call_combiner_predicate) {
-  GRPC_CHECK(!error.ok());
-  failure_error_ = error;
-  if (GRPC_TRACE_FLAG_ENABLED(client_channel_lb_call)) {
-    size_t num_batches = 0;
-    for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
-      if (pending_batches_[i] != nullptr) ++num_batches;
-    }
-    LOG(INFO) << "chand=" << chand_ << " lb_call=" << this << ": failing "
-              << num_batches << " pending batches: " << StatusToString(error);
-  }
-  CallCombinerClosureList closures;
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
-    grpc_transport_stream_op_batch*& batch = pending_batches_[i];
-    if (batch != nullptr) {
-      batch->handler_private.extra_arg = this;
-      GRPC_CLOSURE_INIT(&batch->handler_private.closure,
-                        FailPendingBatchInCallCombiner, batch,
-                        grpc_schedule_on_exec_ctx);
-      closures.Add(&batch->handler_private.closure, error,
-                   "PendingBatchesFail");
-      batch = nullptr;
-    }
-  }
-  if (yield_call_combiner_predicate(closures)) {
-    closures.RunClosures(call_combiner_);
-  } else {
-    closures.RunClosuresWithoutYielding(call_combiner_);
-  }
-}
-
-// This is called via the call combiner, so access to calld is synchronized.
-void ClientChannelFilter::LoadBalancedCall::ResumePendingBatchInCallCombiner(
-    void* arg, grpc_error_handle /*ignored*/) {
-  grpc_transport_stream_op_batch* batch =
-      static_cast<grpc_transport_stream_op_batch*>(arg);
-  SubchannelCall* subchannel_call =
-      static_cast<SubchannelCall*>(batch->handler_private.extra_arg);
-  // Note: This will release the call combiner.
-  subchannel_call->StartTransportStreamOpBatch(batch);
-}
-
-// This is called via the call combiner, so access to calld is synchronized.
-void ClientChannelFilter::LoadBalancedCall::PendingBatchesResume() {
-  if (GRPC_TRACE_FLAG_ENABLED(client_channel_lb_call)) {
-    size_t num_batches = 0;
-    for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
-      if (pending_batches_[i] != nullptr) ++num_batches;
-    }
-    LOG(INFO) << "chand=" << chand_ << " lb_call=" << this << ": starting "
-              << num_batches << " pending batches on subchannel_call="
-              << subchannel_call_.get();
-  }
-  CallCombinerClosureList closures;
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
-    grpc_transport_stream_op_batch*& batch = pending_batches_[i];
-    if (batch != nullptr) {
-      batch->handler_private.extra_arg = subchannel_call_.get();
-      GRPC_CLOSURE_INIT(&batch->handler_private.closure,
-                        ResumePendingBatchInCallCombiner, batch,
-                        grpc_schedule_on_exec_ctx);
-      closures.Add(&batch->handler_private.closure, absl::OkStatus(),
-                   "resuming pending batch from LB call");
-      batch = nullptr;
-    }
-  }
-  // Note: This will release the call combiner.
-  closures.RunClosures(call_combiner_);
-}
-
 void ClientChannelFilter::LoadBalancedCall::StartTransportStreamOpBatch(
     grpc_transport_stream_op_batch* batch) {
   if (GRPC_TRACE_FLAG_ENABLED(client_channel_lb_call) ||
@@ -2692,14 +2581,14 @@ void ClientChannelFilter::LoadBalancedCall::StartTransportStreamOpBatch(
         << "chand=" << chand_ << " lb_call=" << this
         << ": recording cancel_error=" << StatusToString(cancel_error_).c_str();
     // Fail all pending batches.
-    PendingBatchesFail(cancel_error_, NoYieldCallCombiner);
+    buffered_call_.Fail(cancel_error_, BufferedCall::NoYieldCallCombiner);
     // Note: This will release the call combiner.
     grpc_transport_stream_op_batch_finish_with_failure(batch, cancel_error_,
                                                        call_combiner_);
     return;
   }
   // Add the batch to the pending list.
-  PendingBatchesAdd(batch);
+  buffered_call_.EnqueueBatch(batch);
   // For batches containing a send_initial_metadata op, acquire the
   // channel's LB mutex to pick a subchannel.
   if (GPR_LIKELY(batch->send_initial_metadata)) {
@@ -2787,7 +2676,7 @@ void ClientChannelFilter::LoadBalancedCall::TryPick(bool was_queued) {
   auto result = PickSubchannel(was_queued);
   if (result.has_value()) {
     if (!result->ok()) {
-      PendingBatchesFail(*result, YieldCallCombiner);
+      buffered_call_.Fail(*result, BufferedCall::YieldCallCombiner);
       return;
     }
     CreateSubchannelCall();
@@ -2841,9 +2730,13 @@ void ClientChannelFilter::LoadBalancedCall::CreateSubchannelCall() {
     on_call_destruction_complete_ = nullptr;
   }
   if (GPR_UNLIKELY(!error.ok())) {
-    PendingBatchesFail(error, YieldCallCombiner);
+    buffered_call_.Fail(error, BufferedCall::YieldCallCombiner);
   } else {
-    PendingBatchesResume();
+    buffered_call_.Resume([subchannel_call = subchannel_call_](
+                              grpc_transport_stream_op_batch* batch) {
+      // Note: This will release the call combiner.
+      subchannel_call->StartTransportStreamOpBatch(batch);
+    });
   }
 }
 

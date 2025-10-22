@@ -382,8 +382,7 @@ class ClientChannelFilter::LoadBalancedCall final
   class LbQueuedCallCanceller;
 
   grpc_metadata_batch* send_initial_metadata() const {
-    return pending_batches_[0]
-        ->payload->send_initial_metadata.send_initial_metadata;
+    return buffered_call_.send_initial_metadata();
   }
 
   void Commit() {
@@ -417,35 +416,6 @@ class ClientChannelFilter::LoadBalancedCall final
   // Adds the call to the channel's list of queued picks if not already present.
   void AddCallToLbQueuedCallsLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannelFilter::lb_mu_);
-
-  // Returns the index into pending_batches_ to be used for batch.
-  static size_t GetBatchIndex(grpc_transport_stream_op_batch* batch);
-  void PendingBatchesAdd(grpc_transport_stream_op_batch* batch);
-  static void FailPendingBatchInCallCombiner(void* arg,
-                                             grpc_error_handle error);
-  // A predicate type and some useful implementations for PendingBatchesFail().
-  typedef bool (*YieldCallCombinerPredicate)(
-      const CallCombinerClosureList& closures);
-  static bool YieldCallCombiner(const CallCombinerClosureList& /*closures*/) {
-    return true;
-  }
-  static bool NoYieldCallCombiner(const CallCombinerClosureList& /*closures*/) {
-    return false;
-  }
-  static bool YieldCallCombinerIfPendingBatchesFound(
-      const CallCombinerClosureList& closures) {
-    return closures.size() > 0;
-  }
-  // Fails all pending batches.
-  // If yield_call_combiner_predicate returns true, assumes responsibility for
-  // yielding the call combiner.
-  void PendingBatchesFail(
-      grpc_error_handle error,
-      YieldCallCombinerPredicate yield_call_combiner_predicate);
-  static void ResumePendingBatchInCallCombiner(void* arg,
-                                               grpc_error_handle ignored);
-  // Resumes all pending batches on subchannel_call_.
-  void PendingBatchesResume();
 
   static void SendInitialMetadataOnComplete(void* arg, grpc_error_handle error);
   static void RecvInitialMetadataReady(void* arg, grpc_error_handle error);
@@ -504,12 +474,7 @@ class ClientChannelFilter::LoadBalancedCall final
   grpc_closure recv_trailing_metadata_ready_;
   grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
 
-  // Batches are added to this list when received from above.
-  // They are removed when we are done handling the batch (i.e., when
-  // either we have invoked all of the batch's callbacks or we have
-  // passed the batch down to the subchannel call and are not
-  // intercepting any of its callbacks).
-  grpc_transport_stream_op_batch* pending_batches_[MAX_PENDING_BATCHES] = {};
+  BufferedCall buffered_call_;
 };
 
 }  // namespace grpc_core
