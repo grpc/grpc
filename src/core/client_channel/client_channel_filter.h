@@ -31,6 +31,7 @@
 
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/client_channel/buffered_call.h"
 #include "src/core/client_channel/client_channel_args.h"
 #include "src/core/client_channel/client_channel_factory.h"
 #include "src/core/client_channel/config_selector.h"
@@ -78,16 +79,6 @@
 //
 // Calls on a disconnected client channel are queued until a connection is
 // established.
-
-// Max number of batches that can be pending on a call at any given
-// time.  This includes one batch for each of the following ops:
-//   recv_initial_metadata
-//   send_initial_metadata
-//   recv_message
-//   send_message
-//   recv_trailing_metadata
-//   send_trailing_metadata
-#define MAX_PENDING_BATCHES 6
 
 namespace grpc_core {
 

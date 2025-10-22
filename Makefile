@@ -690,6 +690,7 @@ LIBGRPC_SRC = \
     src/core/channelz/v2tov1/legacy_api.cc \
     src/core/channelz/v2tov1/property_list.cc \
     src/core/client_channel/backup_poller.cc \
+    src/core/client_channel/buffered_call.cc \
     src/core/client_channel/client_channel.cc \
     src/core/client_channel/client_channel_factory.cc \
     src/core/client_channel/client_channel_filter.cc \

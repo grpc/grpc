@@ -181,6 +181,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/channelz/ztrace_collector.h )
   s.files += %w( src/core/client_channel/backup_poller.cc )
   s.files += %w( src/core/client_channel/backup_poller.h )
+  s.files += %w( src/core/client_channel/buffered_call.cc )
+  s.files += %w( src/core/client_channel/buffered_call.h )
   s.files += %w( src/core/client_channel/client_channel.cc )
   s.files += %w( src/core/client_channel/client_channel.h )
   s.files += %w( src/core/client_channel/client_channel_args.h )
