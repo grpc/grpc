@@ -150,7 +150,6 @@ class ClientChannelFilter final {
 
  private:
   class CallData;
-  class FilterBasedCallData;
   class ResolverResultHandler;
   class SubchannelWrapper;
   class ClientChannelControlHelper;
