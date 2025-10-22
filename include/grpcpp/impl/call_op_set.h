@@ -19,6 +19,7 @@
 #ifndef GRPCPP_IMPL_CALL_OP_SET_H
 #define GRPCPP_IMPL_CALL_OP_SET_H
 
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/compression_types.h>
 #include <grpc/impl/grpc_types.h>

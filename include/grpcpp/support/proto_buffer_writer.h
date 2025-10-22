@@ -20,6 +20,7 @@
 #define GRPCPP_SUPPORT_PROTO_BUFFER_WRITER_H
 
 #include <grpc/byte_buffer.h>
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
@@ -30,6 +31,7 @@
 
 #include <type_traits>
 
+#include "src/core/lib/experiments/experiments.h"
 #include "absl/log/absl_check.h"
 #include "absl/strings/cord.h"
 
