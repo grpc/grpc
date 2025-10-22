@@ -122,6 +122,35 @@ ClientCall::ClientCall(grpc_call*, uint32_t, grpc_completion_queue* cq,
     send_initial_metadata_->Set(GrpcTimeoutMetadata(), deadline);
     UpdateDeadline(deadline).IgnoreError();
   }
+  SourceConstructed();
+}
+
+void ClientCall::AddData(channelz::DataSink sink) {
+  Call::AddData(sink);
+  sink.AddData(
+      "client_call",
+      channelz::PropertyList()
+          .Set("call_state",
+               [this]() {
+                 switch (call_state_.load(std::memory_order_relaxed)) {
+                   case kUnstarted:
+                     return "Unstarted";
+                   case kStarted:
+                     return "Started";
+                   case kCancelled:
+                     return "Cancelled";
+                   default:
+                     return "StartedWithoutInitialMetadata";
+                 }
+               }())
+          .Set("cancel_status",
+               [this]() -> std::string {
+                 auto* p = cancel_status_.Get();
+                 if (p == nullptr) return "not cancelled";
+                 return p->ToString();
+               }())
+          .Set("saw_trailing_metadata",
+               saw_trailing_metadata_.load(std::memory_order_relaxed)));
 }
 
 grpc_call_error ClientCall::StartBatch(const grpc_op* ops, size_t nops,

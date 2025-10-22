@@ -86,6 +86,9 @@ ABSL_FLAG(
     "EXPERIMENTAL: If non-zero, extend the lifetime of channelz nodes past the "
     "underlying object lifetime, up to this many nodes. The value may be "
     "adjusted slightly to account for implementation limits.");
+ABSL_FLAG(absl::optional<bool>, grpc_channelz_call_tracer, {},
+          "EXPERIMENTAL: If true, channelz will allow inspecting calls as well "
+          "as channels.");
 ABSL_FLAG(absl::optional<double>, grpc_experimental_target_memory_pressure, {},
           "EXPERIMENTAL: The target pressure for the memory quota pressure "
           "controller. This is a value between 0 and 1.");
@@ -131,6 +134,9 @@ ConfigVars::ConfigVars(const Overrides& overrides)
           LoadConfig(FLAGS_grpc_cpp_experimental_disable_reflection,
                      "GRPC_CPP_EXPERIMENTAL_DISABLE_REFLECTION",
                      overrides.cpp_experimental_disable_reflection, false)),
+      channelz_call_tracer_(LoadConfig(FLAGS_grpc_channelz_call_tracer,
+                                       "GRPC_CHANNELZ_CALL_TRACER",
+                                       overrides.channelz_call_tracer, false)),
       dns_resolver_(LoadConfig(FLAGS_grpc_dns_resolver, "GRPC_DNS_RESOLVER",
                                overrides.dns_resolver, "")),
       verbosity_(LoadConfig(FLAGS_grpc_verbosity, "GRPC_VERBOSITY",
@@ -184,10 +190,10 @@ std::string ConfigVars::ToString() const {
       ", cpp_experimental_disable_reflection: ",
       CppExperimentalDisableReflection() ? "true" : "false",
       ", channelz_max_orphaned_nodes: ", ChannelzMaxOrphanedNodes(),
+      ", channelz_call_tracer: ", ChannelzCallTracer() ? "true" : "false",
       ", experimental_target_memory_pressure: ",
       ExperimentalTargetMemoryPressure(),
       ", experimental_memory_pressure_threshold: ",
       ExperimentalMemoryPressureThreshold());
 }
-
 }  // namespace grpc_core

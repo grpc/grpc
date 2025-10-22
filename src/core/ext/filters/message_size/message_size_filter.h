@@ -106,6 +106,9 @@ class ServerMessageSizeFilter final
     static inline const NoInterceptor OnClientToServerHalfClose;
     ServerMetadataHandle OnServerToClientMessage(
         const Message& message, ServerMessageSizeFilter* filter);
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList();
+    }
   };
 
  private:
@@ -135,6 +138,9 @@ class ClientMessageSizeFilter final
     ServerMetadataHandle OnClientToServerMessage(const Message& message);
     static inline const NoInterceptor OnClientToServerHalfClose;
     ServerMetadataHandle OnServerToClientMessage(const Message& message);
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList();
+    }
 
    private:
     MessageSizeParsedConfig limits_;
