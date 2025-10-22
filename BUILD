@@ -2782,6 +2782,7 @@ grpc_cc_library(
         "grpc++_public_hdrs",
         "grpc_base",
         "grpcpp_status",
+        "//src/core:experiments",
     ],
 )
 
