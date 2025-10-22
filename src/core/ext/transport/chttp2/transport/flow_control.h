@@ -23,6 +23,7 @@
 #include <limits.h>
 #include <stdint.h>
 
+#include <algorithm>
 #include <iosfwd>
 #include <optional>
 #include <string>
@@ -52,6 +53,10 @@ static constexpr const uint32_t kMaxInitialWindowSize = (1u << 30);
 // The maximum per-stream flow control window delta to advertise.
 static constexpr const int64_t kMaxWindowDelta = (1u << 20);
 static constexpr const int kDefaultPreferredRxCryptoFrameSize = INT_MAX;
+
+// TODO(tjagtap) [PH2][P2][BDP] Remove this static sleep when the BDP code is
+// done. This needs to be dynamic.
+constexpr Duration kFlowControlPeriodicUpdateTimer = Duration::Seconds(8);
 
 class TransportFlowControl;
 class StreamFlowControl;
