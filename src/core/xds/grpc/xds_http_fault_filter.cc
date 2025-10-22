@@ -211,8 +211,7 @@ XdsHttpFaultFilter::GenerateFilterConfigOverride(
     const XdsExtension& extension, ValidationErrors* errors) const {
   // HTTPFault filter has the same message type in HTTP connection manager's
   // filter config and in overriding filter config field.
-  return GenerateFilterConfig(instance_name, context, std::move(extension),
-                              errors);
+  return GenerateFilterConfig(instance_name, context, extension, errors);
 }
 
 void XdsHttpFaultFilter::AddFilter(InterceptionChainBuilder& builder) const {
