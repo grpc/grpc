@@ -20,6 +20,7 @@
 #include "src/core/util/latent_see.h"
 #include "src/proto/grpc/channelz/v2/property_list.upb.h"
 #include "upb/mem/arena.hpp"
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 
@@ -45,7 +46,8 @@ class StreamingOutput final : public grpc_core::latent_see::Output {
       size_t length;
       auto* bytes = grpc_channelz_v2_PropertyList_serialize(
           upb_proto, arena.ptr(), &length);
-      trace.mutable_mark()->mutable_properties()->ParseFromString(bytes);
+      trace.mutable_mark()->mutable_properties()->ParseFromString(
+          absl::string_view(bytes, length));
     }
     response_->Write(trace);
   }

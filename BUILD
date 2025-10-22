@@ -2956,6 +2956,7 @@ grpc_cc_library(
         "@com_google_protobuf//upb/mem",
         "protobuf_headers",
         "absl/log",
+        "absl/strings:string_view",
     ],
     tags = ["nofixdeps"],
     visibility = ["//bazel:latent_see"],
