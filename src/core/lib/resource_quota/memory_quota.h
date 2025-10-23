@@ -593,7 +593,7 @@ class MemoryQuota final
   explicit MemoryQuota(RefCountedPtr<channelz::ResourceQuotaNode> channelz_node)
       : memory_quota_(std::make_shared<BasicMemoryQuota>(
             std::move(channelz_node),
-            ResourceQuotaDomain::GetStorage(GetGlobalCollectionScope({}),
+            ResourceQuotaDomain::GetStorage(CreateCollectionScope({}, {}),
                                             channelz_node->name()))) {
     memory_quota_->Start();
   }
