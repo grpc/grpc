@@ -11378,6 +11378,7 @@ add_executable(channelz_tool_test
   test/cpp/sleuth/channelz_tool.cc
   test/cpp/sleuth/channelz_tool_test.cc
   test/cpp/sleuth/client.cc
+  test/cpp/sleuth/tool.cc
   test/cpp/sleuth/tool_credentials.cc
   test/cpp/sleuth/tool_options.cc
   test/cpp/sleuth/tool_test.cc
@@ -21480,6 +21481,7 @@ add_executable(info_tool_test
   src/core/util/work_serializer.cc
   test/cpp/sleuth/info_tool.cc
   test/cpp/sleuth/info_tool_test.cc
+  test/cpp/sleuth/tool.cc
   test/cpp/sleuth/tool_test.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
@@ -23080,6 +23082,7 @@ add_executable(latent_see_tool_test
   test/cpp/sleuth/client.cc
   test/cpp/sleuth/latent_see_tool.cc
   test/cpp/sleuth/latent_see_tool_test.cc
+  test/cpp/sleuth/tool.cc
   test/cpp/sleuth/tool_credentials.cc
   test/cpp/sleuth/tool_options.cc
   test/cpp/sleuth/tool_test.cc
@@ -35521,6 +35524,7 @@ add_executable(tool_test_test
   src/core/util/validation_errors.cc
   src/core/util/wait_for_single_owner.cc
   src/core/util/work_serializer.cc
+  test/cpp/sleuth/tool.cc
   test/cpp/sleuth/tool_test.cc
   test/cpp/sleuth/tool_test_test.cc
   third_party/googletest/googlemock/src/gmock_main.cc
