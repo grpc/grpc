@@ -16,6 +16,8 @@
 
 #include <grpc/support/time.h>
 
+#include <climits>
+#include <cstdint>
 #include <memory>
 #include <tuple>
 
@@ -91,13 +93,13 @@ TEST_F(FlowControlTest, NoOp) {
   TransportFlowControl tfc("test", true, &memory_owner_);
   StreamFlowControl sfc(&tfc);
   // Check initial values are per http2 spec
-  EXPECT_EQ(tfc.acked_init_window(), 65535);
+  EXPECT_EQ(tfc.test_only_acked_init_window(), 65535);
   EXPECT_EQ(tfc.remote_window(), 65535);
-  EXPECT_EQ(tfc.target_frame_size(), 16384);
-  EXPECT_EQ(tfc.target_preferred_rx_crypto_frame_size(), INT_MAX);
+  EXPECT_EQ(tfc.test_only_target_frame_size(), 16384);
+  EXPECT_EQ(tfc.test_only_target_preferred_rx_crypto_frame_size(), INT_MAX);
   EXPECT_EQ(sfc.remote_window_delta(), 0);
-  EXPECT_EQ(sfc.min_progress_size(), 0);
-  EXPECT_EQ(sfc.announced_window_delta(), 0);
+  EXPECT_EQ(sfc.test_only_min_progress_size(), 0);
+  EXPECT_EQ(sfc.test_only_announced_window_delta(), 0);
 }
 
 TEST_F(FlowControlTest, SendData) {
@@ -105,14 +107,14 @@ TEST_F(FlowControlTest, SendData) {
   TransportFlowControl tfc("test", true, &memory_owner_);
   StreamFlowControl sfc(&tfc);
   int64_t prev_preferred_rx_frame_size =
-      tfc.target_preferred_rx_crypto_frame_size();
+      tfc.test_only_target_preferred_rx_crypto_frame_size();
   {
     StreamFlowControl::OutgoingUpdateContext sfc_upd(&sfc);
     sfc_upd.SentData(1024);
   }
   EXPECT_EQ(sfc.remote_window_delta(), -1024);
   EXPECT_EQ(tfc.remote_window(), 65535 - 1024);
-  EXPECT_EQ(tfc.target_preferred_rx_crypto_frame_size(),
+  EXPECT_EQ(tfc.test_only_target_preferred_rx_crypto_frame_size(),
             prev_preferred_rx_frame_size);
 }
 
@@ -136,7 +138,7 @@ TEST_F(FlowControlTest, PeriodicUpdate) {
   TransportFlowControl tfc("test", true, &memory_owner_);
   constexpr int kNumPeriodicUpdates = 100;
   Timestamp next_ping = Timestamp::Now() + Duration::Milliseconds(1000);
-  uint32_t prev_max_frame_size = tfc.target_frame_size();
+  uint32_t prev_max_frame_size = tfc.test_only_target_frame_size();
   for (int i = 0; i < kNumPeriodicUpdates; i++) {
     BdpEstimator* bdp = tfc.bdp_estimator();
     bdp->AddIncomingBytes(1024 + (i * 100));
@@ -170,12 +172,12 @@ TEST_F(FlowControlTest, RecvData) {
   StreamFlowControl sfc(&tfc);
   StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
   int64_t prev_preferred_rx_frame_size =
-      tfc.target_preferred_rx_crypto_frame_size();
+      tfc.test_only_target_preferred_rx_crypto_frame_size();
   EXPECT_EQ(absl::OkStatus(), sfc_upd.RecvData(1024));
   std::ignore = sfc_upd.MakeAction();
-  EXPECT_EQ(tfc.announced_window(), 65535 - 1024);
-  EXPECT_EQ(sfc.announced_window_delta(), -1024);
-  EXPECT_EQ(tfc.target_preferred_rx_crypto_frame_size(),
+  EXPECT_EQ(tfc.test_only_announced_window(), 65535 - 1024);
+  EXPECT_EQ(sfc.test_only_announced_window_delta(), -1024);
+  EXPECT_EQ(tfc.test_only_target_preferred_rx_crypto_frame_size(),
             prev_preferred_rx_frame_size);
 }
 
@@ -188,31 +190,31 @@ TEST_F(FlowControlTest, TrackMinProgressSize) {
     sfc_upd.SetMinProgressSize(5);
     std::ignore = sfc_upd.MakeAction();
   }
-  EXPECT_EQ(sfc.min_progress_size(), 5);
+  EXPECT_EQ(sfc.test_only_min_progress_size(), 5);
   {
     StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
     sfc_upd.SetMinProgressSize(10);
     std::ignore = sfc_upd.MakeAction();
   }
-  EXPECT_EQ(sfc.min_progress_size(), 10);
+  EXPECT_EQ(sfc.test_only_min_progress_size(), 10);
   {
     StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
     EXPECT_EQ(absl::OkStatus(), sfc_upd.RecvData(5));
     std::ignore = sfc_upd.MakeAction();
   }
-  EXPECT_EQ(sfc.min_progress_size(), 5);
+  EXPECT_EQ(sfc.test_only_min_progress_size(), 5);
   {
     StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
     EXPECT_EQ(absl::OkStatus(), sfc_upd.RecvData(5));
     std::ignore = sfc_upd.MakeAction();
   }
-  EXPECT_EQ(sfc.min_progress_size(), 0);
+  EXPECT_EQ(sfc.test_only_min_progress_size(), 0);
   {
     StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
     EXPECT_EQ(absl::OkStatus(), sfc_upd.RecvData(5));
     std::ignore = sfc_upd.MakeAction();
   }
-  EXPECT_EQ(sfc.min_progress_size(), 0);
+  EXPECT_EQ(sfc.test_only_min_progress_size(), 0);
 }
 
 TEST_F(FlowControlTest, NoUpdateWithoutReader) {
@@ -229,7 +231,7 @@ TEST_F(FlowControlTest, NoUpdateWithoutReader) {
   {
     StreamFlowControl::IncomingUpdateContext sfc_upd(&sfc);
     sfc_upd.SetMinProgressSize(1);
-    EXPECT_EQ(sfc.min_progress_size(), 1);
+    EXPECT_EQ(sfc.test_only_min_progress_size(), 1);
     EXPECT_EQ(sfc_upd.MakeAction().send_stream_update(),
               FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
   }
