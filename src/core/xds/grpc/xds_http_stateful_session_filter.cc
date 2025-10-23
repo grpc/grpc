@@ -198,7 +198,7 @@ XdsHttpStatefulSessionFilter::GenerateFilterConfigOverride(
 
 void XdsHttpStatefulSessionFilter::AddFilter(
     InterceptionChainBuilder& builder) const {
-  builder.Add<StatefulSessionFilter>();
+  builder.Add<StatefulSessionFilter>(nullptr);
 }
 
 const grpc_channel_filter* XdsHttpStatefulSessionFilter::channel_filter()

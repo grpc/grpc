@@ -41,7 +41,7 @@ class RetryInterceptorTest : public YodelTest {
   void InitInterceptor(const ChannelArgs& args) {
     CHECK(destination_under_test_ == nullptr);
     InterceptionChainBuilder builder(args, nullptr);
-    builder.Add<RetryInterceptor>();
+    builder.Add<RetryInterceptor>(nullptr);
     destination_under_test_ = builder.Build(call_destination_).value();
   }
 

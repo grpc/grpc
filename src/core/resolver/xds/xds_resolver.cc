@@ -788,7 +788,7 @@ void XdsResolver::XdsConfigSelector::AddFilters(
     filter->UpdateBlackboard(hcm.http_filters[i].config, old_blackboard,
                              new_blackboard);
   }
-  builder.Add<ClusterSelectionFilter>();
+  builder.Add<ClusterSelectionFilter>(nullptr);
 }
 
 std::vector<const grpc_channel_filter*>

@@ -48,6 +48,7 @@
 #include <functional>
 #include <memory>
 
+#include "src/core/filter/filter_args.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/debug/trace.h"
@@ -76,6 +77,7 @@ struct grpc_channel_element_args {
   grpc_core::ChannelArgs channel_args;
   int is_first;
   int is_last;
+  grpc_core::RefCountedPtr<const grpc_core::FilterConfig> config;
   const grpc_core::Blackboard* blackboard;
 };
 struct grpc_call_element_args {
@@ -267,12 +269,12 @@ size_t grpc_channel_stack_filter_instance_number(
 grpc_call_element* grpc_call_stack_element(grpc_call_stack* stack, size_t i);
 
 // Determine memory required for a channel stack containing a set of filters
-size_t grpc_channel_stack_size(const grpc_channel_filter** filters,
-                               size_t filter_count);
+size_t grpc_channel_stack_size(
+    const std::vector<grpc_core::FilterAndConfig>& filters);
 // Initialize a channel stack given some filters
 grpc_error_handle grpc_channel_stack_init(
     int initial_refs, grpc_iomgr_cb_func destroy, void* destroy_arg,
-    const grpc_channel_filter** filters, size_t filter_count,
+    std::vector<grpc_core::FilterAndConfig> filters,
     const grpc_core::ChannelArgs& args, const char* name,
     grpc_channel_stack* stack,
     const grpc_core::Blackboard* blackboard = nullptr);

@@ -119,8 +119,8 @@ TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertion) {
     ASSERT_TRUE(CoreConfiguration::Get().channel_init().CreateStack(&builder));
   }
   std::vector<std::string> filters;
-  for (const auto& entry : *builder.mutable_stack()) {
-    filters.push_back(std::string(entry->name.name()));
+  for (const auto& [filter, _] : *builder.mutable_stack()) {
+    filters.push_back(std::string(filter->name.name()));
   }
   filters.resize(3);
   EXPECT_EQ(filters, std::vector<std::string>(

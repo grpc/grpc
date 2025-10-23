@@ -287,7 +287,7 @@ void ChannelInit::MergeFusedFilters(ChannelStackBuilder* builder,
   int j = 0;
   auto& stack = *builder->mutable_stack();
   std::vector<Node> filter_list;
-  for (const auto filter : stack) {
+  for (const auto& [filter, _] : stack) {
     filter_list.push_back({filter, ++i});
   }
   filter_list.back().next = -1;
