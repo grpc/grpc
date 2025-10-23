@@ -25,47 +25,47 @@ HEALTH_PROTO = "src/proto/grpc/health/v1/health.proto"
 LICENSE = "./LICENSE"
 
 
-class Preprocess(setuptools.Command):
-    """Command to copy proto modules from grpc/src/proto and LICENSE from
-    the root directory"""
+# class Preprocess(setuptools.Command):
+#     """Command to copy proto modules from grpc/src/proto and LICENSE from
+#     the root directory"""
 
-    description = ""
-    user_options = []
+#     description = ""
+#     user_options = []
 
-    def initialize_options(self):
-        pass
+#     def initialize_options(self):
+#         pass
 
-    def finalize_options(self):
-        pass
+#     def finalize_options(self):
+#         pass
 
-    def run(self):
-        # TODO: Can skip copy proto part.
-        if os.path.isfile(HEALTH_PROTO):
-            shutil.copyfile(
-                HEALTH_PROTO,
-                os.path.join(ROOT_REL_DIR, "grpc_health/v1/health.proto"),
-            )
-        if os.path.isfile(LICENSE):
-            shutil.copyfile(LICENSE, os.path.join(ROOT_REL_DIR, "LICENSE"))
+#     def run(self):
+#         # TODO: Can skip copy proto part.
+#         if os.path.isfile(HEALTH_PROTO):
+#             shutil.copyfile(
+#                 HEALTH_PROTO,
+#                 os.path.join(ROOT_REL_DIR, "grpc_health/v1/health.proto"),
+#             )
+#         if os.path.isfile(LICENSE):
+#             shutil.copyfile(LICENSE, os.path.join(ROOT_REL_DIR, "LICENSE"))
 
 
-class BuildPackageProtos(setuptools.Command):
-    """Command to generate project *_pb2.py modules from proto files."""
+# class BuildPackageProtos(setuptools.Command):
+#     """Command to generate project *_pb2.py modules from proto files."""
 
-    description = "build grpc protobuf modules"
-    user_options = []
+#     description = "build grpc protobuf modules"
+#     user_options = []
 
-    def initialize_options(self):
-        pass
+#     def initialize_options(self):
+#         pass
 
-    def finalize_options(self):
-        pass
+#     def finalize_options(self):
+#         pass
 
-    def run(self):
-        # due to limitations of the proto generator, we require that only *one*
-        # directory is provided as an 'include' directory. We assume it's the '' key
-        # to `self.distribution.package_dir` (and get a key error if it's not
-        # there).
-        from grpc_tools import command
+#     def run(self):
+#         # due to limitations of the proto generator, we require that only *one*
+#         # directory is provided as an 'include' directory. We assume it's the '' key
+#         # to `self.distribution.package_dir` (and get a key error if it's not
+#         # there).
+#         from grpc_tools import command
 
-        command.build_package_protos(self.distribution.package_dir[""])
+#         command.build_package_protos(self.distribution.package_dir[""])

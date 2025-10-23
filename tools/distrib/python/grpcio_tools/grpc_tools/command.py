@@ -16,7 +16,7 @@ import os
 import sys
 
 from grpc_tools import protoc
-import setuptools
+# import setuptools
 
 if sys.version_info >= (3, 9, 0):
     from importlib import resources
@@ -71,29 +71,29 @@ def build_package_protos(package_root, strict_mode=False):
                 sys.stderr.write("warning: {} failed".format(command))
 
 
-class BuildPackageProtos(setuptools.Command):
-    """Command to generate project *_pb2.py modules from proto files."""
+# class BuildPackageProtos(setuptools.Command):
+#     """Command to generate project *_pb2.py modules from proto files."""
 
-    description = "build grpc protobuf modules"
-    user_options = [
-        (
-            "strict-mode",
-            "s",
-            "exit with non-zero value if the proto compiling fails.",
-        )
-    ]
+#     description = "build grpc protobuf modules"
+#     user_options = [
+#         (
+#             "strict-mode",
+#             "s",
+#             "exit with non-zero value if the proto compiling fails.",
+#         )
+#     ]
 
-    def initialize_options(self):
-        self.strict_mode = False
+#     def initialize_options(self):
+#         self.strict_mode = False
 
-    def finalize_options(self):
-        pass
+#     def finalize_options(self):
+#         pass
 
-    def run(self):
-        # due to limitations of the proto generator, we require that only *one*
-        # directory is provided as an 'include' directory. We assume it's the '' key
-        # to `self.distribution.package_dir` (and get a key error if it's not
-        # there).
-        build_package_protos(
-            self.distribution.package_dir[""], self.strict_mode
-        )
+#     def run(self):
+#         # due to limitations of the proto generator, we require that only *one*
+#         # directory is provided as an 'include' directory. We assume it's the '' key
+#         # to `self.distribution.package_dir` (and get a key error if it's not
+#         # there).
+#         build_package_protos(
+#             self.distribution.package_dir[""], self.strict_mode
+#         )
