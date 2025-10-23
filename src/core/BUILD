@@ -1769,6 +1769,7 @@ grpc_cc_library(
         "exec_ctx_wakeup_scheduler",
         "experiments",
         "grpc_check",
+        "instrument",
         "loop",
         "map",
         "periodic_update",
