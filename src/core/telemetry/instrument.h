@@ -91,9 +91,10 @@
 //
 // 1.  `using Backend = ...;`: Specifies the backend type (e.g.,
 //      `LowContentionBackend`, `HighContentionBackend`).
-// 2.  `static constexpr auto kLabels = std::tuple(...);`: Defines the names
-//      of the labels for this domain. The types of the labels are inferred
-//      from the arguments passed to `GetStorage()`.
+// 2.  `GRPC_INSTRUMENT_DOMAIN_LABELS("label1", "label2", ...);`: Defines the
+//      names of the labels for this domain via a macro that generates a
+//      static `Labels()` method. The types of the labels are inferred from
+//      the arguments passed to `GetStorage()`.
 //
 // Instruments are registered as static members within the domain class using
 // the `Register*` methods.
@@ -102,7 +103,7 @@
 //   class MyDomain : public InstrumentDomain<MyDomain> {
 //    public:
 //     using Backend = LowContentionBackend;
-//     static constexpr auto kLabels = std::tuple("my_label", "another_label");
+//     GRPC_INSTRUMENT_DOMAIN_LABELS("my_label", "another_label");
 //
 //     // Register a counter:
 //     static inline const auto kMyCounter = RegisterCounter(
@@ -179,6 +180,7 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <initializer_list>
 #include <memory>
 #include <optional>
 #include <string>
@@ -191,6 +193,7 @@
 #include "src/core/channelz/channelz.h"
 #include "src/core/telemetry/histogram.h"
 #include "src/core/util/avl.h"
+#include "src/core/util/bitset.h"
 #include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/per_cpu.h"
@@ -221,6 +224,165 @@ namespace instrument_detail {
 class QueryableDomain;
 class DomainStorage;
 }  // namespace instrument_detail
+
+class InstrumentLabel {
+ public:
+  static constexpr size_t kMaxLabelsPerProcess = 63;
+  static constexpr size_t kMaxLabelsPerDomain = 15;
+
+  InstrumentLabel() : index_(kSentinelIndex) {}
+  explicit InstrumentLabel(absl::string_view label);
+  InstrumentLabel(const char* label)
+      : InstrumentLabel(absl::string_view(label)) {}
+
+  static InstrumentLabel FromIndex(uint8_t index) {
+    InstrumentLabel label;
+    label.index_ = index;
+    return label;
+  }
+
+  uint8_t index() const { return index_; }
+  absl::string_view label() const {
+    CHECK_NE(index_, kSentinelIndex);
+    std::atomic<const std::string*>* labels = GetLabels();
+    const std::string* label = labels[index_].load(std::memory_order_acquire);
+    CHECK_NE(label, nullptr)
+        << "Label index " << static_cast<int>(index_) << " is out of range";
+    return *label;
+  }
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, InstrumentLabel label) {
+    sink.Append(label.label());
+  }
+
+  template <typename H>
+  friend H AbslHashValue(H h, InstrumentLabel label) {
+    return H::combine(std::move(h), label.index_);
+  }
+
+  friend bool operator==(InstrumentLabel a, InstrumentLabel b) {
+    return a.index_ == b.index_;
+  }
+
+  friend bool operator!=(InstrumentLabel a, InstrumentLabel b) {
+    return a.index_ != b.index_;
+  }
+
+  friend bool operator<(InstrumentLabel a, InstrumentLabel b) {
+    return a.index_ < b.index_;
+  }
+
+  friend bool operator>(InstrumentLabel a, InstrumentLabel b) {
+    return a.index_ > b.index_;
+  }
+
+  static std::string RegistrationDebugString();
+  static std::atomic<const std::string*>* GetLabels();
+
+ private:
+  static constexpr uint8_t kSentinelIndex = 255;
+  uint8_t index_ = kSentinelIndex;
+};
+
+class InstrumentLabelList;
+
+class InstrumentLabelSet {
+ public:
+  InstrumentLabelSet() = default;
+  InstrumentLabelSet(std::initializer_list<absl::string_view> labels) {
+    for (const auto& label : labels) {
+      set_.set(InstrumentLabel(label).index());
+    }
+  }
+
+  void Set(InstrumentLabel label) { set_.set(label.index()); }
+  bool empty() const { return set_.none(); }
+  bool contains(InstrumentLabel label) const {
+    return set_.is_set(label.index());
+  }
+  void Merge(InstrumentLabelSet other) { set_.Merge(other.set_); }
+  InstrumentLabelList ToList() const;
+
+ private:
+  BitSet<InstrumentLabel::kMaxLabelsPerProcess> set_;
+};
+
+class InstrumentLabelList {
+ public:
+  InstrumentLabelList() = default;
+  InstrumentLabelList(std::initializer_list<absl::string_view> labels) {
+    for (const auto& label : labels) {
+      Append(InstrumentLabel(label));
+    }
+  }
+
+  void Append(InstrumentLabel label) {
+    GRPC_DCHECK_LT(count_, InstrumentLabel::kMaxLabelsPerProcess);
+    labels_[count_++] = label;
+  }
+
+  bool empty() const { return count_ == 0; }
+  size_t size() const { return count_; }
+
+  InstrumentLabel operator[](size_t i) const {
+    DCHECK_LT(i, count_);
+    return labels_[i];
+  }
+
+  InstrumentLabelList Remove(InstrumentLabelSet labels);
+
+  const InstrumentLabel* begin() const { return labels_; }
+  const InstrumentLabel* end() const { return labels_ + count_; }
+
+  std::string DebugString() const;
+
+ private:
+  uint8_t count_ = 0;
+  InstrumentLabel labels_[InstrumentLabel::kMaxLabelsPerProcess];
+};
+
+template <size_t kNumLabels>
+class FixedInstrumentLabelList {
+ public:
+  template <typename... Args>
+  explicit FixedInstrumentLabelList(Args&&... args)
+      : labels_{InstrumentLabel(std::forward<Args>(args))...} {
+    static_assert(kNumLabels == sizeof...(args));
+  }
+
+  InstrumentLabel operator[](size_t i) const {
+    CHECK_LT(i, kNumLabels);
+    return labels_[i];
+  }
+
+  static constexpr size_t count() { return kNumLabels; }
+
+  InstrumentLabelList ToList() const {
+    InstrumentLabelList list;
+    for (size_t i = 0; i < kNumLabels; ++i) {
+      list.Append(labels_[i]);
+    }
+    return list;
+  }
+
+ private:
+  InstrumentLabel labels_[kNumLabels];
+};
+
+template <>
+class FixedInstrumentLabelList<0> {
+ public:
+  explicit FixedInstrumentLabelList() {}
+
+  InstrumentLabel operator[](size_t i) const {
+    LOG(FATAL) << "Index out of bounds: " << i << " for label list of size 0";
+  }
+
+  static constexpr size_t count() { return 0; }
+
+  InstrumentLabelList ToList() const { return InstrumentLabelList(); }
+};
 
 class CollectionScope;
 
@@ -278,7 +440,7 @@ void RegisterHistogramCollectionHook(HistogramCollectionHook hook);
 class CollectionScope : public RefCounted<CollectionScope> {
  public:
   CollectionScope(std::vector<RefCountedPtr<CollectionScope>> parents,
-                  absl::Span<const std::string> labels,
+                  InstrumentLabelSet labels_of_interest,
                   size_t child_shards_count, size_t storage_shards_count);
   ~CollectionScope() override;
 
@@ -287,7 +449,7 @@ class CollectionScope : public RefCounted<CollectionScope> {
   void ForEachUniqueStorage(
       absl::FunctionRef<void(instrument_detail::DomainStorage*)> cb);
 
-  bool ObservesLabel(absl::string_view label) const {
+  bool ObservesLabel(InstrumentLabel label) const {
     return labels_of_interest_.contains(label);
   }
 
@@ -316,7 +478,7 @@ class CollectionScope : public RefCounted<CollectionScope> {
   }
 
   std::vector<RefCountedPtr<CollectionScope>> parents_;
-  absl::flat_hash_set<std::string> labels_of_interest_;
+  InstrumentLabelSet labels_of_interest_;
   std::vector<ChildShard> child_shards_;
   std::vector<StorageShard> storage_shards_;
 
@@ -378,14 +540,13 @@ class DomainStorage : public DualRefCounted<DomainStorage>,
 
   virtual uint64_t SumCounter(size_t index) = 0;
   virtual void Add(DomainStorage* other) = 0;
+  virtual void FillGaugeStorage(GaugeStorage& gauge_storage) = 0;
 
   // Returns the label values of the CollectionScope that owns this storage.
   // This is the full set of labels published by the domain, with unused labels
   // in the scope set to kOmittedLabel.
   absl::Span<const std::string> label() const { return label_; }
   QueryableDomain* domain() const { return domain_; }
-
-  virtual void FillGaugeStorage(GaugeStorage& gauge_storage) = 0;
 
   void AddData(channelz::DataSink sink) override;
 
@@ -436,7 +597,7 @@ class QueryableDomain {
       absl::FunctionRef<void(const InstrumentMetadata::Description*)> fn);
 
   // Returns the names of the labels in the domain.
-  absl::Span<const std::string> label_names() const { return label_names_; }
+  InstrumentLabelList label_names() const { return label_names_; }
 
   // Reset the internal state of all domains. For test use only.
   static void TestOnlyResetAll();
@@ -471,7 +632,7 @@ class QueryableDomain {
   }
 
  protected:
-  QueryableDomain(std::string name, std::vector<std::string> label_names,
+  QueryableDomain(std::string name, InstrumentLabelList label_names,
                   size_t map_shards_size)
       : label_names_(std::move(label_names)),
         map_shards_size_(label_names_.empty() ? 1 : map_shards_size),
@@ -550,7 +711,7 @@ class QueryableDomain {
   static inline QueryableDomain* last_ = nullptr;
   QueryableDomain* prev_ = nullptr;
 
-  const std::vector<std::string> label_names_;
+  const InstrumentLabelList label_names_;
   std::vector<const InstrumentMetadata::Description*> metrics_;
   uint64_t allocated_counter_slots_ = 0;
   uint64_t allocated_double_gauge_slots_ = 0;
@@ -587,6 +748,7 @@ class InstrumentHandle {
   absl::string_view name() const { return description_->name; }
   absl::string_view description() const { return description_->description; }
   absl::string_view unit() const { return description_->unit; }
+  uint64_t offset() const { return offset_; }
 
  private:
   friend Domain;
@@ -604,12 +766,6 @@ class InstrumentHandle {
   GPR_NO_UNIQUE_ADDRESS Shape shape_;
   const InstrumentMetadata::Description* description_ = nullptr;
 };
-
-template <typename T>
-using StdString = std::string;
-
-template <typename T>
-using AbslStringView = absl::string_view;
 
 }  // namespace instrument_detail
 
@@ -670,23 +826,23 @@ class MetricsSink {
  public:
   // Called once per label per metric, with the value of that metric for that
   // label.
-  virtual void Counter(absl::Span<const std::string> label_keys,
+  virtual void Counter(InstrumentLabelList label_keys,
                        absl::Span<const std::string> label_values,
                        absl::string_view name, uint64_t value) = 0;
-  virtual void UpDownCounter(absl::Span<const std::string> label_keys,
+  virtual void UpDownCounter(InstrumentLabelList label_keys,
                              absl::Span<const std::string> label_values,
                              absl::string_view name, uint64_t value) = 0;
-  virtual void Histogram(absl::Span<const std::string> label_keys,
+  virtual void Histogram(InstrumentLabelList label_keys,
                          absl::Span<const std::string> label_values,
                          absl::string_view name, HistogramBuckets bounds,
                          absl::Span<const uint64_t> counts) = 0;
-  virtual void DoubleGauge(absl::Span<const std::string> label_keys,
+  virtual void DoubleGauge(InstrumentLabelList label_keys,
                            absl::Span<const std::string> label_values,
                            absl::string_view name, double value) = 0;
-  virtual void IntGauge(absl::Span<const std::string> label_keys,
+  virtual void IntGauge(InstrumentLabelList label_keys,
                         absl::Span<const std::string> label_values,
                         absl::string_view name, int64_t value) = 0;
-  virtual void UintGauge(absl::Span<const std::string> label_keys,
+  virtual void UintGauge(InstrumentLabelList label_keys,
                          absl::Span<const std::string> label_values,
                          absl::string_view name, uint64_t value) = 0;
 
@@ -707,7 +863,7 @@ class MetricsQuery {
   MetricsQuery& WithLabelEq(absl::string_view label, std::string value);
   // Collapse labels, effectively omitting them. Counters are summed over the
   // remaining dimensions, etc.
-  MetricsQuery& CollapseLabels(absl::Span<const std::string> labels);
+  MetricsQuery& CollapseLabels(absl::Span<const InstrumentLabel> labels);
   // Only include metrics that are in `metrics`.
   MetricsQuery& OnlyMetrics(std::vector<std::string> metrics);
 
@@ -722,16 +878,17 @@ class MetricsQuery {
  private:
   // Adapts `sink` by including the filtering requested, and then calls `fn`
   // with the filtering sink. This is mainly an implementation detail.
-  void Apply(absl::Span<const std::string> label_names,
+  void Apply(InstrumentLabelList label_names,
              absl::FunctionRef<void(MetricsSink&)> fn, MetricsSink& sink) const;
 
-  void ApplyLabelChecks(absl::Span<const std::string> label_names,
+ private:
+  void ApplyLabelChecks(InstrumentLabelList label_names,
                         absl::FunctionRef<void(MetricsSink&)> fn,
                         MetricsSink& sink) const;
 
-  absl::flat_hash_map<absl::string_view, std::string> label_eqs_;
+  absl::flat_hash_map<InstrumentLabel, std::string> label_eqs_;
   std::optional<std::vector<std::string>> only_metrics_;
-  absl::flat_hash_set<std::string> collapsed_labels_;
+  InstrumentLabelSet collapsed_labels_;
 };
 
 namespace instrument_detail {
@@ -861,6 +1018,15 @@ class InstrumentDomainImpl final : public QueryableDomain {
       backend_.Add(handle.offset_ + handle.shape_->BucketFor(value), 1);
     }
 
+    uint64_t SumCounter(size_t offset) override { return backend_.Sum(offset); }
+    void FillGaugeStorage(GaugeStorage& storage) override {
+      GaugeSink sink(storage);
+      MutexLock lock(&gauge_providers_mu_);
+      for (auto* provider : gauge_providers_) {
+        provider->PopulateGaugeData(sink);
+      }
+    }
+
    private:
     friend class InstrumentDomainImpl<Backend, N, Tag>;
     friend class GaugeProvider;
@@ -869,8 +1035,6 @@ class InstrumentDomainImpl final : public QueryableDomain {
                      std::vector<std::string> labels)
         : DomainStorage(instrument_domain, std::move(labels)),
           backend_(instrument_domain->allocated_counter_slots()) {}
-
-    uint64_t SumCounter(size_t offset) override { return backend_.Sum(offset); }
 
     void RegisterGaugeProvider(GaugeProvider* provider) {
       MutexLock lock(&gauge_providers_mu_);
@@ -884,14 +1048,6 @@ class InstrumentDomainImpl final : public QueryableDomain {
                              gauge_providers_.end());
     }
 
-    void FillGaugeStorage(GaugeStorage& storage) override {
-      GaugeSink sink(storage);
-      MutexLock lock(&gauge_providers_mu_);
-      for (auto* provider : gauge_providers_) {
-        provider->PopulateGaugeData(sink);
-      }
-    }
-
     Backend backend_;
     Mutex gauge_providers_mu_;
     std::vector<GaugeProvider*> gauge_providers_
@@ -899,10 +1055,9 @@ class InstrumentDomainImpl final : public QueryableDomain {
   };
 
   GPR_ATTRIBUTE_NOINLINE explicit InstrumentDomainImpl(
-      std::string name, std::vector<std::string> label_names,
+      std::string name, FixedInstrumentLabelList<N> labels,
       size_t map_shards = std::min(16u, gpr_cpu_num_cores()))
-      : QueryableDomain(std::move(name), std::move(label_names), map_shards) {
-    GRPC_CHECK_EQ(this->label_names().size(), N);
+      : QueryableDomain(std::move(name), labels.ToList(), map_shards) {
     Constructed();
   }
 
@@ -980,30 +1135,20 @@ class InstrumentDomainImpl final : public QueryableDomain {
   ~InstrumentDomainImpl() = delete;
 };
 
-class MakeLabel {
- public:
-  template <typename... LabelNames>
-  auto operator()(LabelNames... t) {
-    return std::vector<std::string>{absl::StrCat(t)...};
-  }
-};
-
-template <typename... LabelNames>
-GPR_ATTRIBUTE_NOINLINE auto MakeLabelFromTuple(
-    std::tuple<LabelNames...> t) noexcept {
-  return std::apply(MakeLabel(), t);
-}
 }  // namespace instrument_detail
 
 template <class Derived>
 class InstrumentDomain {
  public:
   static auto* Domain() {
-    static auto* domain = new instrument_detail::InstrumentDomainImpl<
-        typename Derived::Backend,
-        std::tuple_size_v<decltype(Derived::kLabels)>, Derived>(
-        absl::StrCat(Derived::kName),
-        instrument_detail::MakeLabelFromTuple(Derived::kLabels));
+    static const auto labels = Derived::Labels();
+    static auto* domain =
+        new instrument_detail::InstrumentDomainImpl<typename Derived::Backend,
+                                                    labels.count(), Derived>(
+            absl::StrCat(Derived::kName), labels);
+    for (size_t i = 0; i < labels.count(); ++i) {
+      GRPC_DCHECK_EQ(domain->label_names()[i], labels[i]);
+    }
     return domain;
   }
 
@@ -1017,8 +1162,24 @@ class InstrumentDomain {
 
  protected:
   template <typename... Label>
-  static constexpr auto Labels(Label... labels) {
-    return std::tuple<instrument_detail::AbslStringView<Label>...>{labels...};
+  static const FixedInstrumentLabelList<sizeof...(Label)> MakeLabels(
+      Label... labels) {
+    InstrumentLabel l[] = {InstrumentLabel(labels)...};
+    for (size_t i = 0; i < sizeof...(Label); ++i) {
+      for (size_t j = i + 1; j < sizeof...(Label); ++j) {
+        GRPC_CHECK_NE(l[i], l[j]);
+      }
+    }
+    auto list = FixedInstrumentLabelList<sizeof...(Label)>(
+        std::forward<Label>(labels)...);
+    const std::vector<std::string> label_names{std::string(labels)...};
+    for (size_t i = 0; i < sizeof...(Label); ++i) {
+      CHECK_EQ(label_names[i], list[i].label());
+      for (size_t j = i + 1; j < sizeof...(Label); ++j) {
+        GRPC_CHECK_NE(list[i], list[j]);
+      }
+    }
+    return list;
   }
 
   static auto RegisterCounter(absl::string_view name,
@@ -1091,15 +1252,25 @@ void TestOnlyResetInstruments();
 // parameters for sharding internal data structures.
 RefCountedPtr<CollectionScope> CreateCollectionScope(
     std::vector<RefCountedPtr<CollectionScope>> parents,
-    absl::Span<const std::string> labels, size_t child_shards_count = 1,
+    InstrumentLabelSet labels, size_t child_shards_count = 1,
     size_t storage_shards_count = 1);
 
 RefCountedPtr<CollectionScope> CreateRootCollectionScope(
-    absl::Span<const std::string> labels, size_t child_shards_count = 1,
+    InstrumentLabelSet labels, size_t child_shards_count = 1,
     size_t storage_shards_count = 1);
 
 RefCountedPtr<CollectionScope> GlobalCollectionScope();
 
 }  // namespace grpc_core
+
+#define GRPC_INSTRUMENT_DOMAIN_LABELS_NUM_LABELS(...) \
+  (std::tuple_size<decltype(std::tuple(__VA_ARGS__))>::value)
+
+#define GRPC_INSTRUMENT_DOMAIN_LABELS(...)                   \
+  static grpc_core::FixedInstrumentLabelList<                \
+      GRPC_INSTRUMENT_DOMAIN_LABELS_NUM_LABELS(__VA_ARGS__)> \
+  Labels() {                                                 \
+    return MakeLabels(__VA_ARGS__);                          \
+  }
 
 #endif  // GRPC_SRC_CORE_TELEMETRY_INSTRUMENT_H
