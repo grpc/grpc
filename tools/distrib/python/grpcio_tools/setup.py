@@ -135,7 +135,9 @@ class BuildExt(build_ext.build_ext):
         # use short temp directory to avoid linker command file errors caused by
         # exceeding 131071 characters in Windows.
         # TODO(ssreenithi): Remove once we have a better solution: b/454497076
-        use_short_temp = os.environ.get("GRPC_PYTHON_BUILD_USE_SHORT_TEMP_DIR_NAME", 0)
+        use_short_temp = os.environ.get(
+            "GRPC_PYTHON_BUILD_USE_SHORT_TEMP_DIR_NAME", 0
+        )
         if use_short_temp == "1":
             if not os.path.exists("pyb"):
                 os.mkdir("pyb")
