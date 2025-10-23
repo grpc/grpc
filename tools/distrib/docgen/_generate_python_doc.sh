@@ -30,7 +30,9 @@ pip install -r tools/distrib/docgen/requirements.docs.lock
 tools/run_tests/run_tests.py -c opt -l python --compiler python3.9 --newline_on_success -j 8 --build_only
 # shellcheck disable=SC1091
 source py39/bin/activate
-pip install --upgrade Sphinx
+# pip install --upgrade Sphinx
 
 # Use direct sphinx-build CLI command instead of `python setup.py doc`
-sphinx-build -b html -W --keep-going "$SOURCE_DIR" "$TARGET_DIR"
+# sphinx-build -b html -W --keep-going "$SOURCE_DIR" "$TARGET_DIR"
+
+nox -s doc
