@@ -615,7 +615,6 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/time:time",
-        "address_sorting",
         "absl/functional:any_invocable",
     ],
     public_hdrs = GRPC_PUBLIC_HDRS,
@@ -658,6 +657,7 @@ grpc_cc_library(
         "//src/core:slice",
         "//src/core:sync",
         "//src/core:tcp_connect_handshaker",
+        "//third_party/address_sorting",
     ],
 )
 
@@ -701,7 +701,6 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/time:time",
-        "address_sorting",
         "absl/functional:any_invocable",
     ],
     public_hdrs = GRPC_PUBLIC_HDRS,
@@ -777,6 +776,7 @@ grpc_cc_library(
         "//src/core:sync",
         "//src/core:tcp_connect_handshaker",
         "//src/core:useful",
+        "//third_party/address_sorting",
     ],
 )
 
@@ -2954,8 +2954,10 @@ grpc_cc_library(
         "src/cpp/latent_see/latent_see_service.h",
     ],
     external_deps = [
+        "@com_google_protobuf//upb/mem",
         "protobuf_headers",
         "absl/log",
+        "absl/strings:string_view",
     ],
     tags = ["nofixdeps"],
     visibility = ["//bazel:latent_see"],
@@ -2964,8 +2966,11 @@ grpc_cc_library(
         "grpc",
         "grpc++",
         "grpc++_config_proto",
+        "//src/core:channelz_property_list",
         "//src/core:latent_see",
         "//src/proto/grpc/channelz/v2:latent_see_cc_grpc",
+        "//src/proto/grpc/channelz/v2:property_list_cc_proto",
+        "//src/proto/grpc/channelz/v2:property_list_upb_proto",
     ],
     alwayslink = 1,
 )
@@ -2989,7 +2994,9 @@ grpc_cc_library(
         "grpc",
         "grpc++",
         "grpc++_config_proto",
+        "//src/core:channelz_property_list",
         "//src/core:latent_see",
+        "//src/core:time",
         "//src/proto/grpc/channelz/v2:latent_see_cc_grpc",
     ],
     alwayslink = 1,
@@ -4046,7 +4053,6 @@ grpc_cc_library(
         "//src/core:error_utils",
         "//src/core:exec_ctx_wakeup_scheduler",
         "//src/core:experiments",
-        "//src/core:filter_args",
         "//src/core:filter_chain",
         "//src/core:gpr_manual_constructor",
         "//src/core:grpc_backend_metric_data",
@@ -4122,7 +4128,6 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
-        "address_sorting",
         "cares",
     ],
     deps = [
@@ -4162,6 +4167,7 @@ grpc_cc_library(
         "//src/core:status_helper",
         "//src/core:sync",
         "//src/core:time",
+        "//third_party/address_sorting",
     ],
 )
 

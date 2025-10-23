@@ -46,11 +46,11 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/util/grpc_check.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_event_engine {
 namespace experimental {

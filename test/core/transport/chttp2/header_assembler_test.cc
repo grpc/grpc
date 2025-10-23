@@ -25,10 +25,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/log.h"
-#include "absl/random/random.h"
-#include "absl/strings/string_view.h"
-#include "gtest/gtest.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
@@ -36,6 +32,10 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/grpc_check.h"
 #include "test/core/transport/chttp2/http2_common_test_inputs.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/random/random.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -359,14 +359,6 @@ TEST_P(HeaderAssemblerDisassemblerTest, ValidMultipleHeadersAndContinuations) {
   ValidateOneHeaderTwoContinuation(stream_id, parser, assembler,
                                    /*end_stream=*/true);
 }
-
-// TODO(tjagtap) : [PH2][P3] : Validate later. Edge case
-//  Is this a valid case?
-//  First we receive one HEADER frame with END_HEADER . This is initial metadata
-//  The stream has no Messages. Hence no DATA Frames
-//  Then we receive one HEADER frame with END_HEADER and END_STREAM.
-//  We Append both and parse both because we read them together.
-//  Is this a valid case?
 
 ///////////////////////////////////////////////////////////////////////////////
 // HeaderDisassembler - Helpers

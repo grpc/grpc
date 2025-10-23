@@ -24,14 +24,14 @@
 #include <string>
 #include <thread>  // NOLINT
 
-#include "absl/base/call_once.h"
-#include "absl/strings/str_cat.h"
 #include "opencensus/stats/stats.h"
 #include "src/core/config/core_configuration.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
+#include "absl/base/call_once.h"
+#include "absl/strings/str_cat.h"
 
 absl::once_flag once;
 void RegisterOnce() { absl::call_once(once, grpc::RegisterOpenCensusPlugin); }

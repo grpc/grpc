@@ -39,10 +39,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/cleanup/cleanup.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
 #include "src/core/call/interception_chain.h"
 #include "src/core/call/server_call.h"
 #include "src/core/channelz/channel_trace.h"
@@ -85,6 +81,10 @@
 #include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/useful.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 
@@ -2066,7 +2066,11 @@ void Server::CallData::RecvInitialMetadataReady(void* arg,
   auto op_deadline = calld->recv_initial_metadata_->get(GrpcTimeoutMetadata());
   if (op_deadline.has_value()) {
     calld->deadline_ = *op_deadline;
-    Call::FromC(calld->call_)->UpdateDeadline(*op_deadline);
+    if (IsFailRecvMetadataOnDeadlineExceededEnabled()) {
+      error = Call::FromC(calld->call_)->UpdateDeadline(*op_deadline);
+    } else {
+      Call::FromC(calld->call_)->UpdateDeadline(*op_deadline).IgnoreError();
+    }
   }
   if (calld->host_.has_value() && calld->path_.has_value()) {
     // do nothing

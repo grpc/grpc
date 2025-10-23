@@ -19,8 +19,8 @@
 #include <fstream>
 #include <string>
 
-#include "absl/strings/str_cat.h"
 #include "src/core/util/grpc_check.h"
+#include "absl/strings/str_cat.h"
 
 long GetMemUsage(std::optional<int> pid) {
   // Default is getting memory usage for self (calling process)

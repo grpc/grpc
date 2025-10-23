@@ -181,7 +181,7 @@ class InterceptionChainBuilder final {
   // call_filters.h.
   template <typename T>
   absl::enable_if_t<sizeof(typename T::Call) != 0, InterceptionChainBuilder&>
-  Add(RefCountedPtr<const FilterConfig> config = nullptr) {
+  Add(RefCountedPtr<const FilterConfig> config) {
     if (!status_.ok()) return *this;
     auto filter = T::Create(args_, {FilterInstanceId(FilterTypeId<T>()),
                                     std::move(config), blackboard_});
@@ -199,7 +199,7 @@ class InterceptionChainBuilder final {
   template <typename T>
   absl::enable_if_t<std::is_base_of<Interceptor, T>::value,
                     InterceptionChainBuilder&>
-  Add(RefCountedPtr<const FilterConfig> config = nullptr) {
+  Add(RefCountedPtr<const FilterConfig> config) {
     AddInterceptor(T::Create(args_, {FilterInstanceId(FilterTypeId<T>()),
                                      std::move(config), blackboard_}));
     return *this;

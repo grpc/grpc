@@ -21,7 +21,6 @@ licenses(["notice"])
 
 package(
     default_visibility = ["//visibility:public"],
-    features = ["-layering_check"],
 )
 
 exports_files(["LICENSE"])

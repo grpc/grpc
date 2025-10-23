@@ -30,11 +30,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/flags/flag.h"
-#include "absl/flags/parse.h"
-#include "absl/log/log.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good.h"
 #include "src/core/transport/endpoint_transport.h"
 #include "src/core/util/grpc_check.h"
@@ -43,6 +38,11 @@
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "test/core/memory_usage/memstats.h"
 #include "test/core/test_util/test_config.h"
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
+#include "absl/log/log.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
 
 ABSL_FLAG(std::string, target, "", "Target host:port");
 ABSL_FLAG(bool, secure, false, "Use SSL Credentials");

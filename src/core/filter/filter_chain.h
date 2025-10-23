@@ -65,7 +65,7 @@ class FilterChainBuilder {
 
   // Add a filter using a convenience template method.
   template <typename FilterType>
-  void AddFilter(RefCountedPtr<const FilterConfig> config = nullptr) {
+  void AddFilter(RefCountedPtr<const FilterConfig> config) {
     // TODO(roth): Once the v3 migration is done, this can directly call
     // InterceptionChainBuilder.
     AddFilter(FilterHandleImpl<FilterType>(), std::move(config));

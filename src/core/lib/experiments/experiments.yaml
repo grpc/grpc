@@ -139,9 +139,15 @@
 - name: event_engine_secure_endpoint
   description: Use EventEngine secure endpoint wrapper instead of iomgr when available
   expiry: 2026/01/22
-  owner: mlumish@google.com
+  owner: alishananda@google.com
   test_tags: ["core_end2end_test", "secure_endpoint_test", "posix_endpoint_test"]
   uses_polling: true
+  allow_in_fuzzing_config: false
+- name: fail_recv_metadata_on_deadline_exceeded
+  description: Fail recv initial metadata when the deadline is exceeded.
+  expiry: 2026/01/22
+  owner: vigneshbabu@google.com
+  test_tags: []
   allow_in_fuzzing_config: false
 - name: free_large_allocator
   description: If set, return all free bytes from a "big" allocator
@@ -153,6 +159,12 @@
   expiry: 2026/02/01
   owner: vigneshbabu@google.com
   test_tags: ["minimal_stack_test"]
+  allow_in_fuzzing_config: false
+- name: graceful_external_connection_failure
+  description: If set, handles external connection failures gracefully
+  expiry: 2026/02/01
+  owner: vigneshbabu@google.com
+  test_tags: []
   allow_in_fuzzing_config: false
 - name: keep_alive_ping_timer_batch
   description:

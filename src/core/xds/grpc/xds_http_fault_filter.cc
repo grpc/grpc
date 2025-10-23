@@ -25,9 +25,6 @@
 #include <utility>
 #include <variant>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "envoy/extensions/filters/common/fault/v3/fault.upb.h"
 #include "envoy/extensions/filters/http/fault/v3/fault.upb.h"
 #include "envoy/extensions/filters/http/fault/v3/fault.upbdefs.h"
@@ -44,6 +41,9 @@
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -83,7 +83,7 @@ void XdsHttpFaultFilter::PopulateSymtab(upb_DefPool* symtab) const {
 }
 
 void XdsHttpFaultFilter::AddFilter(InterceptionChainBuilder& builder) const {
-  builder.Add<FaultInjectionFilter>();
+  builder.Add<FaultInjectionFilter>(nullptr);
 }
 
 void XdsHttpFaultFilter::AddFilter(

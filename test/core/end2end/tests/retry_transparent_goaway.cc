@@ -21,8 +21,6 @@
 #include <new>
 #include <optional>
 
-#include "absl/status/status.h"
-#include "gtest/gtest.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -37,6 +35,8 @@
 #include "src/core/util/unique_type_name.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/test_util/fail_first_call_filter.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace {

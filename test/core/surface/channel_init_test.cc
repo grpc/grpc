@@ -20,8 +20,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/strings/string_view.h"
-#include "gtest/gtest.h"
 #include "src/core/call/call_arena_allocator.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
@@ -29,6 +27,8 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace {
@@ -68,7 +68,7 @@ std::vector<std::string> GetFilterNames(const ChannelInit& init,
   ChannelStackBuilderImpl b("test", type, args);
   if (!init.CreateStack(&b)) return {};
   std::vector<std::string> names;
-  for (auto& [filter, config] : b.stack()) {
+  for (auto& [filter, _] : b.stack()) {
     names.push_back(std::string(filter->name.name()));
   }
   EXPECT_NE(names, std::vector<std::string>());

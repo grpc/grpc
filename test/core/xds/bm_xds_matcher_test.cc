@@ -18,12 +18,12 @@
 #include <string>
 #include <vector>
 
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "benchmark/benchmark.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/matchers.h"
 #include "src/core/xds/grpc/xds_matcher.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace {

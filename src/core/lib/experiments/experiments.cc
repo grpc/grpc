@@ -82,12 +82,20 @@ const char* const additional_constraints_event_engine_poller_for_python = "{}";
 const char* const description_event_engine_secure_endpoint =
     "Use EventEngine secure endpoint wrapper instead of iomgr when available";
 const char* const additional_constraints_event_engine_secure_endpoint = "{}";
+const char* const description_fail_recv_metadata_on_deadline_exceeded =
+    "Fail recv initial metadata when the deadline is exceeded.";
+const char* const
+    additional_constraints_fail_recv_metadata_on_deadline_exceeded = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
 const char* const description_fuse_filters =
     "If set, individual filters are merged into fused filters";
 const char* const additional_constraints_fuse_filters = "{}";
+const char* const description_graceful_external_connection_failure =
+    "If set, handles external connection failures gracefully";
+const char* const additional_constraints_graceful_external_connection_failure =
+    "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -249,10 +257,18 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
      additional_constraints_event_engine_secure_endpoint, nullptr, 0, true,
      false},
+    {"fail_recv_metadata_on_deadline_exceeded",
+     description_fail_recv_metadata_on_deadline_exceeded,
+     additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
+     false, false},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"fuse_filters", description_fuse_filters,
      additional_constraints_fuse_filters, nullptr, 0, false, false},
+    {"graceful_external_connection_failure",
+     description_graceful_external_connection_failure,
+     additional_constraints_graceful_external_connection_failure, nullptr, 0,
+     true, false},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -405,12 +421,20 @@ const char* const additional_constraints_event_engine_poller_for_python = "{}";
 const char* const description_event_engine_secure_endpoint =
     "Use EventEngine secure endpoint wrapper instead of iomgr when available";
 const char* const additional_constraints_event_engine_secure_endpoint = "{}";
+const char* const description_fail_recv_metadata_on_deadline_exceeded =
+    "Fail recv initial metadata when the deadline is exceeded.";
+const char* const
+    additional_constraints_fail_recv_metadata_on_deadline_exceeded = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
 const char* const description_fuse_filters =
     "If set, individual filters are merged into fused filters";
 const char* const additional_constraints_fuse_filters = "{}";
+const char* const description_graceful_external_connection_failure =
+    "If set, handles external connection failures gracefully";
+const char* const additional_constraints_graceful_external_connection_failure =
+    "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -572,10 +596,18 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
      additional_constraints_event_engine_secure_endpoint, nullptr, 0, true,
      false},
+    {"fail_recv_metadata_on_deadline_exceeded",
+     description_fail_recv_metadata_on_deadline_exceeded,
+     additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
+     false, false},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"fuse_filters", description_fuse_filters,
      additional_constraints_fuse_filters, nullptr, 0, false, false},
+    {"graceful_external_connection_failure",
+     description_graceful_external_connection_failure,
+     additional_constraints_graceful_external_connection_failure, nullptr, 0,
+     true, false},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -728,12 +760,20 @@ const char* const additional_constraints_event_engine_poller_for_python = "{}";
 const char* const description_event_engine_secure_endpoint =
     "Use EventEngine secure endpoint wrapper instead of iomgr when available";
 const char* const additional_constraints_event_engine_secure_endpoint = "{}";
+const char* const description_fail_recv_metadata_on_deadline_exceeded =
+    "Fail recv initial metadata when the deadline is exceeded.";
+const char* const
+    additional_constraints_fail_recv_metadata_on_deadline_exceeded = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
 const char* const description_fuse_filters =
     "If set, individual filters are merged into fused filters";
 const char* const additional_constraints_fuse_filters = "{}";
+const char* const description_graceful_external_connection_failure =
+    "If set, handles external connection failures gracefully";
+const char* const additional_constraints_graceful_external_connection_failure =
+    "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -895,10 +935,18 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
      additional_constraints_event_engine_secure_endpoint, nullptr, 0, true,
      false},
+    {"fail_recv_metadata_on_deadline_exceeded",
+     description_fail_recv_metadata_on_deadline_exceeded,
+     additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
+     false, false},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"fuse_filters", description_fuse_filters,
      additional_constraints_fuse_filters, nullptr, 0, false, false},
+    {"graceful_external_connection_failure",
+     description_graceful_external_connection_failure,
+     additional_constraints_graceful_external_connection_failure, nullptr, 0,
+     true, false},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},

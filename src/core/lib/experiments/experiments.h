@@ -81,8 +81,11 @@ inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 inline bool IsEventEnginePollerForPythonEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_SECURE_ENDPOINT
 inline bool IsEventEngineSecureEndpointEnabled() { return true; }
+inline bool IsFailRecvMetadataOnDeadlineExceededEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsFuseFiltersEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_GRACEFUL_EXTERNAL_CONNECTION_FAILURE
+inline bool IsGracefulExternalConnectionFailureEnabled() { return true; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_AGE_FILTER_FLOAT_TO_TOP
@@ -138,8 +141,11 @@ inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 inline bool IsEventEnginePollerForPythonEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_SECURE_ENDPOINT
 inline bool IsEventEngineSecureEndpointEnabled() { return true; }
+inline bool IsFailRecvMetadataOnDeadlineExceededEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsFuseFiltersEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_GRACEFUL_EXTERNAL_CONNECTION_FAILURE
+inline bool IsGracefulExternalConnectionFailureEnabled() { return true; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_AGE_FILTER_FLOAT_TO_TOP
@@ -195,8 +201,11 @@ inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 inline bool IsEventEnginePollerForPythonEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_SECURE_ENDPOINT
 inline bool IsEventEngineSecureEndpointEnabled() { return true; }
+inline bool IsFailRecvMetadataOnDeadlineExceededEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsFuseFiltersEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_GRACEFUL_EXTERNAL_CONNECTION_FAILURE
+inline bool IsGracefulExternalConnectionFailureEnabled() { return true; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_AGE_FILTER_FLOAT_TO_TOP
@@ -245,8 +254,10 @@ enum ExperimentIds {
   kExperimentIdEventEngineForAllOtherEndpoints,
   kExperimentIdEventEnginePollerForPython,
   kExperimentIdEventEngineSecureEndpoint,
+  kExperimentIdFailRecvMetadataOnDeadlineExceeded,
   kExperimentIdFreeLargeAllocator,
   kExperimentIdFuseFilters,
+  kExperimentIdGracefulExternalConnectionFailure,
   kExperimentIdKeepAlivePingTimerBatch,
   kExperimentIdLocalConnectorSecure,
   kExperimentIdMaxAgeFilterFloatToTop,
@@ -335,6 +346,10 @@ inline bool IsEventEnginePollerForPythonEnabled() {
 inline bool IsEventEngineSecureEndpointEnabled() {
   return IsExperimentEnabled<kExperimentIdEventEngineSecureEndpoint>();
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_FAIL_RECV_METADATA_ON_DEADLINE_EXCEEDED
+inline bool IsFailRecvMetadataOnDeadlineExceededEnabled() {
+  return IsExperimentEnabled<kExperimentIdFailRecvMetadataOnDeadlineExceeded>();
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_FREE_LARGE_ALLOCATOR
 inline bool IsFreeLargeAllocatorEnabled() {
   return IsExperimentEnabled<kExperimentIdFreeLargeAllocator>();
@@ -342,6 +357,10 @@ inline bool IsFreeLargeAllocatorEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_FUSE_FILTERS
 inline bool IsFuseFiltersEnabled() {
   return IsExperimentEnabled<kExperimentIdFuseFilters>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_GRACEFUL_EXTERNAL_CONNECTION_FAILURE
+inline bool IsGracefulExternalConnectionFailureEnabled() {
+  return IsExperimentEnabled<kExperimentIdGracefulExternalConnectionFailure>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_KEEP_ALIVE_PING_TIMER_BATCH
 inline bool IsKeepAlivePingTimerBatchEnabled() {

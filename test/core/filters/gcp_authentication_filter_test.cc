@@ -17,11 +17,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/call/security_context.h"
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.h"
@@ -34,6 +29,11 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
 #include "test/core/filters/filter_test.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace {
@@ -146,9 +146,9 @@ TEST_F(GcpAuthenticationFilterTest, CreateFailsXdsConfigNotFoundInChannelArgs) {
   auto config = MakeFilterConfig(kFilterInstanceName);
   auto filter = GcpAuthenticationFilter::Create(
       ChannelArgs(), ChannelFilter::Args(/*instance_id=*/0, std::move(config)));
-  EXPECT_EQ(filter.status(),
-            absl::InvalidArgumentError(
-                "gcp_auth: xds config not found in channel args"));
+  EXPECT_EQ(
+      filter.status(),
+      absl::InternalError("gcp_auth: xds config not found in channel args"));
 }
 
 TEST_F(GcpAuthenticationFilterTest, FailsCallIfNoXdsClusterAttribute) {

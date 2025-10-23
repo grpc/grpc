@@ -20,7 +20,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/strings/str_cat.h"
 #include "src/core/call/security_context.h"
 #include "src/core/credentials/call/gcp_service_account_identity/gcp_service_account_identity_credentials.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -29,6 +28,7 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/resolver/xds/xds_resolver_attributes.h"
 #include "src/core/util/grpc_check.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 

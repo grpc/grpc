@@ -14,10 +14,10 @@
 
 #include "src/core/ext/transport/chaotic_good/chaotic_good.h"
 
-#include "absl/strings/string_view.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
 #include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core::chaotic_good {
 

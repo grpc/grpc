@@ -20,9 +20,9 @@
 #include <string>
 #include <vector>
 
+#include "src/core/util/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-#include "src/core/util/match.h"
 
 namespace grpc_core {
 

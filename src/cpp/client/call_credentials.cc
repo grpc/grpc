@@ -17,8 +17,8 @@
 #include <grpc/support/port_platform.h>
 #include <grpcpp/security/credentials.h>
 
-#include "absl/strings/str_cat.h"
 #include "src/core/util/grpc_check.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc {
 
