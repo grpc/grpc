@@ -145,7 +145,7 @@ then
 
   # python
   time pip install --user -r $DIR/requirements.macos.txt
-  time pip install --user --upgrade virtualenv Mako tox setuptools==44.1.1 twisted
+  time pip install --user --upgrade virtualenv Mako tox setuptools==77.0.1 twisted
 
   # Install Python 3.9 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.9" ]; then
@@ -202,7 +202,7 @@ then
   export NUGET_XMLDOC_MODE=skip
   export DOTNET_SKIP_FIRST_TIME_EXPERIENCE=true
   export DOTNET_CLI_TELEMETRY_OPTOUT=true
-  
+
   # Installed versions should be kept in sync with
   # templates/tools/dockerfile/csharp_dotnetcli_deps.include
   time curl -O https://download.visualstudio.microsoft.com/download/pr/e0fe8c99-e33c-4d75-bd4e-2478ed3ee35a/ff06e47afc7c13bdbbaa50a9713ac772/dotnet-sdk-3.1.415-osx-x64.pkg
