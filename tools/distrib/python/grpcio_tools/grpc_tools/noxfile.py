@@ -25,11 +25,9 @@ def build_package_protos(session: nox.Session):
     """Command to generate project *_pb2.py modules from proto files."""
     session.log("Running build_package_protos for grpcio-tools...")
 
-    # 1. Create the ArgumentParser
     # Note: We use exit_on_error=False to play nice with Nox
     parser = argparse.ArgumentParser(exit_on_error=False)
 
-    # 2. Define the exact same arguments
     parser.add_argument(
         "-s",
         "--strict-mode",
@@ -37,7 +35,7 @@ def build_package_protos(session: nox.Session):
         help="exit with non-zero value if the proto compiling fails.",
     )
 
-    # 3. Parse the arguments from session.posargs
+    # Parse the arguments from session.posargs
     # Any unknown args will be collected in 'unknown'
     args, unknown = parser.parse_known_args(session.posargs)
 
