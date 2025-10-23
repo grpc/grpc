@@ -1334,23 +1334,23 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                &server_to_client_messages]() mutable {
                 return TrySeq(
                     TrySeq(server_initial_metadata.receiver.Next(),
-                           [handler](std::optional<ServerMetadataHandle>
+                           [handler](NextResult<ServerMetadataHandle>
                                          metadata) mutable {
                              // FIXME: check if metadata.has_value()
                              return handler.PushServerInitialMetadata(
                                  std::move(*metadata));
                            }),
-                    ForEach(server_to_client_messages.receiver,
+                    ForEach(std::move(server_to_client_messages.receiver),
                             [handler](MessageHandle message) mutable {
                               return handler.PushMessage(std::move(message));
                             }));
               };
           // Now put it all together.
           return PrioritizedRace(next_promise_factory(std::move(call_args)),
-                                 initiator_client_to_server_promise,
-                                 initiator_server_to_client_promise,
-                                 handler_client_to_server_promise,
-                                 handler_server_to_client_promise);
+                                 std::move(initiator_client_to_server_promise),
+                                 std::move(initiator_server_to_client_promise),
+                                 std::move(handler_client_to_server_promise),
+                                 std::move(handler_server_to_client_promise));
         });
   }
 
