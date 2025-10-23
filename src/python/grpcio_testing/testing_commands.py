@@ -38,4 +38,4 @@ class Preprocess(setuptools.Command):
 
     def run(self):
         if os.path.isfile(LICENSE):
-            shutil.copyfile(LICENSE, os.path.join(ROOT_DIR, "LICENSE"))
+            shutil.copyfile(LICENSE, os.path.join(ROOT_REL_DIR, "LICENSE"))
