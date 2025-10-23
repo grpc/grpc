@@ -28,22 +28,6 @@ import grpc_version
 import python_version
 
 
-class _NoOpCommand(setuptools.Command):
-    """No-op command."""
-
-    description = ""
-    user_options = []
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        pass
-
-
 CLASSIFIERS = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
@@ -60,26 +44,10 @@ INSTALL_REQUIRES = (
     "googleapis-common-protos>=1.5.5",
 )
 
-try:
-    import status_commands as _status_commands
-
-    # we are in the build environment, otherwise the above import fails
-    COMMAND_CLASS = {
-        # Run preprocess from the repository *before* doing any packaging!
-        "preprocess": _status_commands.Preprocess,
-        "build_package_protos": _NoOpCommand,
-    }
-except ImportError:
-    COMMAND_CLASS = {
-        # wire up commands to no-op not to break the external dependencies
-        "preprocess": _NoOpCommand,
-        "build_package_protos": _NoOpCommand,
-    }
 
 if __name__ == "__main__":
     setuptools.setup(
         classifiers=CLASSIFIERS,
         python_requires=f">={python_version.MIN_PYTHON_VERSION}",
         install_requires=INSTALL_REQUIRES,
-        cmdclass=COMMAND_CLASS,
     )

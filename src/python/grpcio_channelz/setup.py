@@ -65,18 +65,8 @@ try:
     SETUP_REQUIRES = (
         "grpcio-tools=={version}".format(version=grpc_version.VERSION),
     )
-    COMMAND_CLASS = {
-        # Run preprocess from the repository *before* doing any packaging!
-        "preprocess": _channelz_commands.Preprocess,
-        "build_package_protos": _channelz_commands.BuildPackageProtos,
-    }
 except ImportError:
     SETUP_REQUIRES = ()
-    COMMAND_CLASS = {
-        # wire up commands to no-op not to break the external dependencies
-        "preprocess": _NoOpCommand,
-        "build_package_protos": _NoOpCommand,
-    }
 
 
 if __name__ == "__main__":
@@ -85,5 +75,4 @@ if __name__ == "__main__":
         python_requires=f">={python_version.MIN_PYTHON_VERSION}",
         install_requires=INSTALL_REQUIRES,
         setup_requires=SETUP_REQUIRES,
-        cmdclass=COMMAND_CLASS,
     )

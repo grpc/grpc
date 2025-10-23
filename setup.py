@@ -571,11 +571,11 @@ except ImportError:
         SETUP_REQUIRES += ("cython==3.1.1",)
 
 COMMAND_CLASS = {
-    "doc": commands.SphinxDocumentation,
+    # "doc": commands.SphinxDocumentation,
     "build_project_metadata": commands.BuildProjectMetadata,
     "build_py": commands.BuildPy,
     "build_ext": commands.BuildExt,
-    "gather": commands.Gather,
+    # "gather": commands.Gather,
     "clean": commands.Clean,
 }
 

@@ -86,34 +86,6 @@ def _get_grpc_custom_bdist(decorated_basename, target_bdist_basename):
     return bdist_path
 
 
-class SphinxDocumentation(setuptools.Command):
-    """Command to generate documentation via sphinx."""
-
-    description = "generate sphinx documentation"
-    user_options = []
-
-    def initialize_options(self):
-        pass
-
-    def finalize_options(self):
-        pass
-
-    def run(self):
-        # We import here to ensure that setup.py has had a chance to install the
-        # relevant package eggs first.
-        import sphinx.cmd.build
-
-        source_dir = os.path.join(GRPC_ROOT, "doc", "python", "sphinx")
-        target_dir = os.path.join(GRPC_ROOT, "doc", "build")
-        exit_code = sphinx.cmd.build.build_main(
-            ["-b", "html", "-W", "--keep-going", source_dir, target_dir]
-        )
-        if exit_code != 0:
-            raise CommandError(
-                "Documentation generation has warnings or errors"
-            )
-
-
 class BuildProjectMetadata(setuptools.Command):
     """Command to generate project metadata in a module."""
 
@@ -351,25 +323,25 @@ class BuildExt(build_ext.build_ext):
             )
 
 
-class Gather(setuptools.Command):
-    """Command to gather project dependencies."""
+# class Gather(setuptools.Command):
+#     """Command to gather project dependencies."""
 
-    description = "gather dependencies for grpcio"
-    user_options = [
-        ("test", "t", "flag indicating to gather test dependencies"),
-        ("install", "i", "flag indicating to gather install dependencies"),
-    ]
+#     description = "gather dependencies for grpcio"
+#     user_options = [
+#         ("test", "t", "flag indicating to gather test dependencies"),
+#         ("install", "i", "flag indicating to gather install dependencies"),
+#     ]
 
-    def initialize_options(self):
-        self.test = False
-        self.install = False
+#     def initialize_options(self):
+#         self.test = False
+#         self.install = False
 
-    def finalize_options(self):
-        # distutils requires this override.
-        pass
+#     def finalize_options(self):
+#         # distutils requires this override.
+#         pass
 
-    def run(self):
-        pass
+#     def run(self):
+#         pass
 
 
 class Clean(setuptools.Command):
