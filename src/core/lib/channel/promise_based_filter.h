@@ -1286,42 +1286,43 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
           auto initiator_client_to_server_promise =
               [initiator, client_to_server_messages_receiver]() mutable {
                 return ForEach(
-                    *client_to_server_messages_receiver,
-                    [initiator](NextResult<MessageHandle> message) mutable {
+                    std::move(*client_to_server_messages_receiver),
+                    [initiator](MessageHandle message) mutable {
                       // FIXME: check if message has a value
-                      return initiator.PushMessage(std::move(*message));
+                      return initiator.PushMessage(std::move(message));
                     });
               };
           // Initiator-side promise for server-to-client data.
           auto initiator_server_to_client_promise =
               [initiator, server_initial_metadata_sender,
                server_to_client_messages_sender]() mutable {
-                return TrySeq(TrySeq(initiator.PullServerInitialMetadata(),
-                                     [server_initial_metadata_sender](
-                                         std::optional<ServerMetadataHandle>
-                                             metadata) mutable {
-                                       // FIXME: check if metadata.has_value()
-                                       return server_initial_metadata_sender->
-                                           Push(std::move(*metadata));
-                                     }),
-                              ForEach(
-                                  MessagesFrom(initiator),
-                                  [server_to_client_messages_sender](
-                                      NextResult<MessageHandle> message) {
-                                    // FIXME: check if message has a value
-                                    return server_to_client_messages_sender->
-                                        Push(std::move(*message));
-                                  }));
+                return TrySeq(
+                    TrySeq(initiator.PullServerInitialMetadata(),
+                           [server_initial_metadata_sender](
+                               std::optional<ServerMetadataHandle>
+                                   metadata) mutable {
+                             // FIXME: check if metadata.has_value()
+                             return server_initial_metadata_sender->Push(
+                                 std::move(*metadata));
+                           }),
+                    ForEach(MessagesFrom(initiator),
+                            [server_to_client_messages_sender](
+                                MessageHandle message) {
+                              // FIXME: check if message has a value
+                              return Map(server_to_client_messages_sender->Push(
+                                             std::move(message)),
+                                         [](bool x) { return StatusFlag(x); });
+                            }));
               };
           // Handler-side promise for client-to-server data.
           auto handler_client_to_server_promise =
               [handler, &client_to_server_messages]() mutable {
                 return ForEach(
-                    MessagesFrom(handler),
-                    [&](NextResult<MessageHandle> message) {
+                    MessagesFrom(handler), [&](MessageHandle message) {
                       // FIXME: check if message has a value
-                      return client_to_server_messages.sender.Push(
-                          std::move(*message));
+                      return Map(client_to_server_messages.sender.Push(
+                                     std::move(message)),
+                                 [](bool x) { return StatusFlag(x); });
                     });
               };
           // Handler-side promise for server-to-client data.
@@ -1329,26 +1330,26 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
               [handler, &server_initial_metadata,
                &server_to_client_messages]() mutable {
                 return TrySeq(
-                    TrySeq(server_initial_metadata.receiver.Next(),
-                           [handler](std::optional<ServerMetadataHandle>
-                                         metadata) mutable {
-                             // FIXME: check if metadata.has_value()
-                             return handler.PushServerInitialMetadata(
-                                 std::move(*metadata));
-                           }),
-                    ForEach(
-                        server_to_client_messages.receiver,
-                        [handler](NextResult<MessageHandle> message) mutable {
-                          // FIXME: check if message has a value
-                          return handler.PushMessage(std::move(*message));
-                        }));
+                    TrySeq(
+                        server_initial_metadata.receiver.Next(),
+                        [handler](
+                            NextResult<ServerMetadataHandle> metadata) mutable {
+                          // FIXME: check if metadata.has_value()
+                          return handler.PushServerInitialMetadata(
+                              std::move(*metadata));
+                        }),
+                    ForEach(std::move(server_to_client_messages.receiver),
+                            [handler](MessageHandle message) mutable {
+                              // FIXME: check if message has a value
+                              return handler.PushMessage(std::move(message));
+                            }));
               };
           // Now put it all together.
           return PrioritizedRace(next_promise_factory(std::move(call_args)),
-                                 initiator_client_to_server_promise,
-                                 initiator_server_to_client_promise,
-                                 handler_client_to_server_promise,
-                                 handler_server_to_client_promise);
+                                 std::move(initiator_client_to_server_promise),
+                                 std::move(initiator_server_to_client_promise),
+                                 std::move(handler_client_to_server_promise),
+                                 std::move(handler_server_to_client_promise));
         });
   }
 
