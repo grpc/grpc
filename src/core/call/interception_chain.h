@@ -24,6 +24,7 @@
 #include "src/core/call/call_filters.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/call/metadata.h"
+#include "src/core/filter/filter_args.h"
 #include "src/core/util/ref_counted.h"
 
 namespace grpc_core {
@@ -171,10 +172,10 @@ class InterceptionChainBuilder final {
   // call_filters.h.
   template <typename T>
   absl::enable_if_t<sizeof(typename T::Call) != 0, InterceptionChainBuilder&>
-  Add() {
+  Add(RefCountedPtr<const FilterConfig> config) {
     if (!status_.ok()) return *this;
-    auto filter =
-        T::Create(args_, {FilterInstanceId(FilterTypeId<T>()), blackboard_});
+    auto filter = T::Create(args_, {FilterInstanceId(FilterTypeId<T>()),
+                                    std::move(config), blackboard_});
     if (!filter.ok()) {
       status_ = filter.status();
       return *this;
@@ -189,9 +190,9 @@ class InterceptionChainBuilder final {
   template <typename T>
   absl::enable_if_t<std::is_base_of<Interceptor, T>::value,
                     InterceptionChainBuilder&>
-  Add() {
-    AddInterceptor(
-        T::Create(args_, {FilterInstanceId(FilterTypeId<T>()), blackboard_}));
+  Add(RefCountedPtr<const FilterConfig> config) {
+    AddInterceptor(T::Create(args_, {FilterInstanceId(FilterTypeId<T>()),
+                                     std::move(config), blackboard_}));
     return *this;
   };
 

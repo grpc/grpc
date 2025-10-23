@@ -16,7 +16,14 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+#include <utility>
+
+#include "src/core/channelz/channelz.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/thread_quota.h"
 #include "src/core/util/no_destruct.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/single_set_ptr.h"
 
 namespace grpc_core {

@@ -1769,6 +1769,7 @@ grpc_cc_library(
         "exec_ctx_wakeup_scheduler",
         "experiments",
         "grpc_check",
+        "instrument",
         "loop",
         "map",
         "periodic_update",
@@ -3749,6 +3750,9 @@ grpc_cc_library(
         "blackboard",
         "channel_fwd",
         "match",
+        "ref_counted",
+        "unique_type_name",
+        "//:ref_counted_ptr",
     ],
 )
 
@@ -10128,6 +10132,7 @@ grpc_cc_library(
         "call_destination",
         "call_filters",
         "call_spine",
+        "filter_args",
         "match",
         "metadata",
         "ref_counted",
@@ -10818,6 +10823,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/status:statusor",
     ],
+    visibility = ["//bazel:channelz"],
     deps = [
         "zviz_strings",
         "//src/proto/grpc/channelz/v2:channelz_cc_proto",
@@ -10919,6 +10925,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/types:span",
     ],
+    visibility = ["//bazel:channelz"],
     deps = [
         "zviz_data",
         "zviz_environment",
@@ -10977,6 +10984,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
     ],
+    visibility = ["//bazel:channelz"],
     deps = [
         "zviz_layout",
     ],

@@ -41,7 +41,7 @@ set ARTIFACT_DIR=%cd%\%ARTIFACTS_OUT%
 
 @rem use short temp directory to avoid linker command file errors caused by
 @rem exceeding 131071 characters.
-set "GRPC_USE_SHORT_BUILD_TEMP=1"
+set "GRPC_PYTHON_BUILD_USE_SHORT_TEMP_DIR_NAME=1"
 
 @rem Build gRPC Python distribution
 python -m build --wheel || goto :error

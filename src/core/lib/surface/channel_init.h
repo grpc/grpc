@@ -324,7 +324,9 @@ class ChannelInit {
         grpc_channel_stack_type type, SourceLocation registration_source = {}) {
       return RegisterFilter(
           type, UniqueTypeNameFor<Filter>(), &Filter::kFilter,
-          [](InterceptionChainBuilder& builder) { builder.Add<Filter>(); },
+          [](InterceptionChainBuilder& builder) {
+            builder.Add<Filter>(nullptr);
+          },
           registration_source);
     }
 

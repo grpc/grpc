@@ -12,17 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TEST_CPP_SLEUTH_VERSION_H
-#define GRPC_TEST_CPP_SLEUTH_VERSION_H
+#include "test/cpp/sleuth/sleuth.h"
 
-#include <cstdint>
-
-namespace grpc_sleuth {
-
-// Version number for the sleuth tool. Update with the current epoch with each
-// change and keep it monotonically increasing.
-constexpr int64_t kSleuthVersion = 1760749250LL;
-
-}  // namespace grpc_sleuth
-
-#endif  // GRPC_TEST_CPP_SLEUTH_VERSION_H
+int main(int argc, char** argv) { return grpc_sleuth::RunSleuth(argc, argv); }

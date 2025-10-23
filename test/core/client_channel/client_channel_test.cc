@@ -322,7 +322,7 @@ class TestConfigSelector : public ConfigSelector {
   void AddFilters(InterceptionChainBuilder& builder,
                   const Blackboard* /*old_blackboard*/,
                   Blackboard* /*new_blackboard*/) override {
-    builder.Add<TestFilter>();
+    builder.Add<TestFilter>(nullptr);
   }
 
   absl::Status GetCallConfig(GetCallConfigArgs /*args*/) override {
