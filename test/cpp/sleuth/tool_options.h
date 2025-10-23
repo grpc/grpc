@@ -15,11 +15,17 @@
 #ifndef GRPC_TEST_CPP_SLEUTH_TOOL_OPTIONS_H
 #define GRPC_TEST_CPP_SLEUTH_TOOL_OPTIONS_H
 
+#include <optional>
+#include <string>
+
 #include "test/cpp/sleuth/client.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_sleuth {
 
-Client::Options ToolClientOptions();
+Client::Options ToolClientOptions(
+    absl::string_view protocol,
+    std::optional<std::string> channel_creds_type_opt);
 
 }  // namespace grpc_sleuth
 

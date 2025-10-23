@@ -135,12 +135,25 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_binary(
+grpc_cc_library(
     name = "sleuth",
     srcs = ["sleuth.cc"],
+    hdrs = ["sleuth.h"],
+    external_deps = [
+        "absl/status",
+    ],
+    deps = [
+        ":tool",
+        ":version",
+        "//test/cpp/util:test_config",
+    ],
+)
+
+grpc_cc_binary(
+    name = "sleuth_main",
+    srcs = ["sleuth_main.cc"],
     external_deps = [
         "absl/flags:parse",
-        "absl/status",
     ],
     visibility = [
         "//bazel:sleuth",
@@ -149,20 +162,21 @@ grpc_cc_binary(
         ":channelz_tool",
         ":info_tool",
         ":latent_see_tool",
-        ":tool",
-        ":version",
-        "//test/cpp/util:test_config",
+        ":sleuth",
     ],
 )
 
 grpc_cc_library(
     name = "tool",
+    srcs = ["tool.cc"],
     hdrs = ["tool.h"],
     external_deps = [
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
         "absl/log:check",
         "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
         "absl/strings:string_view",
     ],
     deps = [

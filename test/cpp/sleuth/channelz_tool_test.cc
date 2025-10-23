@@ -14,6 +14,7 @@
 
 #include <grpcpp/ext/channelz_service_plugin.h>
 #include <grpcpp/security/credentials.h>
+#include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
@@ -21,16 +22,9 @@
 #include <string>
 
 #include "test/core/test_util/port.h"
-#include "test/cpp/sleuth/tool.h"
 #include "test/cpp/sleuth/tool_test.h"
-#include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "absl/flags/declare.h"
-#include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
-
-ABSL_DECLARE_FLAG(std::optional<std::string>, channelz_target);
-ABSL_DECLARE_FLAG(std::string, channel_creds_type);
 
 namespace grpc_sleuth {
 namespace {
@@ -58,9 +52,9 @@ class ChannelzToolTest : public ::testing::Test {
 };
 
 TEST_F(ChannelzToolTest, DumpChannelz) {
-  absl::SetFlag(&FLAGS_channelz_target, server_address());
-  absl::SetFlag(&FLAGS_channel_creds_type, "insecure");
-  auto result = TestTool("dump_channelz", {});
+  auto result =
+      TestTool("dump_channelz", {absl::StrCat("target=", server_address()),
+                                 "channel_creds_type=insecure"});
   ASSERT_TRUE(result.ok()) << result.status();
   EXPECT_FALSE(result->empty());
 }

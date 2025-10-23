@@ -12,28 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <cstddef>
+#include <cstdint>
+#include <map>
+#include <optional>
+#include <string>
+#include <vector>
+
 #include "src/core/channelz/zviz/entity.h"
+#include "src/core/channelz/zviz/environment.h"
 #include "src/core/channelz/zviz/format_entity_list.h"
+#include "src/core/channelz/zviz/layout.h"
 #include "src/core/channelz/zviz/layout_text.h"
 #include "src/core/channelz/zviz/trace.h"
 #include "test/cpp/sleuth/client.h"
 #include "test/cpp/sleuth/tool.h"
 #include "test/cpp/sleuth/tool_options.h"
-#include "absl/flags/flag.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
-
-ABSL_FLAG(std::optional<std::string>, channelz_target, std::nullopt,
-          "Target to connect to for channelz");
-ABSL_FLAG(std::string, channelz_columns,
-          "ID@id,Kind@kind,Name@v1_compatibility.name",
-          "Comma separated list of columns to include. Format is "
-          "`[title@]path_to_property` -- ie "
-          "socket@v1_compatibility.name,call_counts.streams_started will print "
-          "two columns, one titled 'socket' containing the value of "
-          "v1_compatibility.name and one titled 'call_counts.streams_started' "
-          "containing the value of streams_started.");
+#include "absl/strings/string_view.h"
 
 namespace grpc_sleuth {
 
@@ -64,10 +63,10 @@ class SleuthEnvironment : public grpc_zviz::Environment {
   std::map<int64_t, grpc::channelz::v2::Entity> entities_;
 };
 
-absl::StatusOr<std::vector<grpc_zviz::EntityTableColumn>> ParseColumnsFlag() {
+absl::StatusOr<std::vector<grpc_zviz::EntityTableColumn>> ParseColumns(
+    absl::string_view columns) {
   std::vector<grpc_zviz::EntityTableColumn> result;
-  for (const auto& column :
-       absl::StrSplit(absl::GetFlag(FLAGS_channelz_columns), ',')) {
+  for (const auto& column : absl::StrSplit(columns, ',')) {
     std::vector<std::string> segments = absl::StrSplit(column, '@');
     switch (segments.size()) {
       case 1:
@@ -87,23 +86,26 @@ absl::StatusOr<std::vector<grpc_zviz::EntityTableColumn>> ParseColumnsFlag() {
 }
 }  // namespace
 
-SLEUTH_TOOL(dump_channelz, "[destination]",
+SLEUTH_TOOL(dump_channelz, "target=... [destination=...]",
             "Dumps all channelz data in human-readable text format; if "
             "destination is not specified, dumps to stdout.") {
-  if (args.size() > 1) {
-    return absl::InvalidArgumentError("Too many arguments");
-  }
-  if (args.size() == 1) {
+  auto target = args.TryGetFlag<std::string>("target");
+  if (!target.ok()) return target.status();
+  if (args.TryGetFlag<std::string>("destination").ok()) {
     return absl::UnimplementedError("Destination not implemented yet");
   }
-
-  auto target = absl::GetFlag(FLAGS_channelz_target);
-  if (!target.has_value()) {
-    return absl::InvalidArgumentError("--channelz_target is required");
+  std::optional<std::string> channel_creds_type;
+  auto channel_creds_type_arg =
+      args.TryGetFlag<std::string>("channel_creds_type");
+  if (channel_creds_type_arg.ok()) {
+    channel_creds_type = *channel_creds_type_arg;
   }
-
+  auto channelz_protocol = args.TryGetFlag<std::string>("channelz_protocol");
   auto response =
-      Client(*target, ToolClientOptions()).QueryAllChannelzEntities();
+      Client(*target, ToolClientOptions(
+                          channelz_protocol.ok() ? *channelz_protocol : "h2",
+                          channel_creds_type))
+          .QueryAllChannelzEntities();
   if (!response.ok()) return response.status();
 
   SleuthEnvironment env(*response);
@@ -111,60 +113,68 @@ SLEUTH_TOOL(dump_channelz, "[destination]",
   for (const auto& entity : *response) {
     grpc_zviz::Format(env, entity, root);
   }
-  std::cout << root.Render();
+  print_fn(root.Render());
 
   return absl::OkStatus();
 }
 
-SLEUTH_TOOL(ls, "[entity_kind]", "Lists all entities of the given kind.") {
-  if (args.size() > 1) {
-    return absl::InvalidArgumentError("Too many arguments");
-  }
+SLEUTH_TOOL(ls, "target=... [entity_kind=...]",
+            "Lists all entities of the given kind.") {
+  auto target = args.TryGetFlag<std::string>("target");
+  if (!target.ok()) return target.status();
   absl::StatusOr<std::vector<grpc::channelz::v2::Entity>> response;
-  auto target = absl::GetFlag(FLAGS_channelz_target);
-  if (!target.has_value()) {
-    return absl::InvalidArgumentError("--channelz_target is required");
-  }
-  auto columns = ParseColumnsFlag();
+  auto columns_str = args.TryGetFlag<std::string>("columns");
+  auto columns = ParseColumns(
+      columns_str.ok() ? *columns_str
+                       : "ID@id,Kind@kind,Name@v1_compatibility.name");
   if (!columns.ok()) return columns.status();
-  if (args.empty()) {
-    response = Client(*target, ToolClientOptions()).QueryAllChannelzEntities();
+  std::optional<std::string> channel_creds_type;
+  auto channel_creds_type_arg =
+      args.TryGetFlag<std::string>("channel_creds_type");
+  if (channel_creds_type_arg.ok()) {
+    channel_creds_type = *channel_creds_type_arg;
+  }
+  auto channelz_protocol = args.TryGetFlag<std::string>("channelz_protocol");
+  Client client(*target, ToolClientOptions(
+                             channelz_protocol.ok() ? *channelz_protocol : "h2",
+                             channel_creds_type));
+  auto entity_kind = args.TryGetFlag<std::string>("entity_kind");
+  if (!entity_kind.ok()) {
+    response = client.QueryAllChannelzEntities();
   } else {
-    std::string entity_kind = args[0];
-    response = Client(*target, ToolClientOptions())
-                   .QueryAllChannelzEntitiesOfKind(entity_kind);
+    response = client.QueryAllChannelzEntitiesOfKind(*entity_kind);
   }
   if (!response.ok()) return response.status();
   grpc_zviz::layout::TextElement root;
   SleuthEnvironment env(*response);
   grpc_zviz::FormatEntityList(env, *response, *columns, root);
-  std::cout << root.Render();
+  print_fn(root.Render());
   return absl::OkStatus();
 }
 
-SLEUTH_TOOL(ztrace, "entity [trace_name]",
+SLEUTH_TOOL(ztrace, "target=... entity_id=... [trace_name=...]",
             "Dumps a ztrace. If trace_name is not specified, defaults to "
             "'transport_frames'.") {
-  if (args.size() > 2) {
-    return absl::InvalidArgumentError("Too many arguments");
+  auto target = args.TryGetFlag<std::string>("target");
+  if (!target.ok()) return target.status();
+  auto entity_id = args.TryGetFlag<int64_t>("entity_id");
+  if (!entity_id.ok()) return entity_id.status();
+  auto trace_name = args.TryGetFlag<std::string>("trace_name");
+  std::optional<std::string> channel_creds_type;
+  auto channel_creds_type_arg =
+      args.TryGetFlag<std::string>("channel_creds_type");
+  if (channel_creds_type_arg.ok()) {
+    channel_creds_type = *channel_creds_type_arg;
   }
-  if (args.empty()) {
-    return absl::InvalidArgumentError("No entity id provided");
-  }
-  int64_t entity_id;
-  if (!absl::SimpleAtoi(args[0], &entity_id)) {
-    return absl::InvalidArgumentError("Invalid entity id");
-  }
-  std::string trace_name = args.size() == 2 ? args[1] : "transport_frames";
-
-  auto target = absl::GetFlag(FLAGS_channelz_target);
-  if (!target.has_value()) {
-    return absl::InvalidArgumentError("--channelz_target is required");
-  }
-  auto client = Client(*target, ToolClientOptions());
+  auto channelz_protocol = args.TryGetFlag<std::string>("channelz_protocol");
+  auto client = Client(
+      *target,
+      ToolClientOptions(channelz_protocol.ok() ? *channelz_protocol : "h2",
+                        channel_creds_type));
   SleuthEnvironment env({});
   return client.QueryTrace(
-      entity_id, trace_name, [&](size_t missed, const auto& events) {
+      *entity_id, trace_name.ok() ? *trace_name : "transport_frames",
+      [&](size_t missed, const auto& events) {
         grpc_zviz::layout::TextElement root;
         root.AppendText(grpc_zviz::layout::Intent::kNote,
                         absl::StrCat(missed, " events not displayed"));
@@ -178,7 +188,7 @@ SLEUTH_TOOL(ztrace, "entity [trace_name]",
           grpc_zviz::Format(env, *event, table);
           table.NewRow();
         }
-        std::cout << root.Render();
+        print_fn(root.Render());
       });
 }
 
