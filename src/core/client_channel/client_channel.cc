@@ -908,11 +908,11 @@ class FilterChainBuilderImpl final : public FilterChainBuilder {
   void InitBuilder() {
     builder_ =
         std::make_unique<InterceptionChainBuilder>(channel_args_, blackboard_);
-    CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
-        GRPC_CLIENT_CHANNEL, *builder_);
     if (on_server_trailing_metadata_ != nullptr) {
       builder_->AddOnServerTrailingMetadata(on_server_trailing_metadata_);
     }
+    CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
+        GRPC_CLIENT_CHANNEL, *builder_);
   }
 
   const bool enable_retries_;
