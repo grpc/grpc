@@ -33,6 +33,7 @@ cc_binary(
 
 cc_binary(
     name = "csm_greeter_server",
+    testonly = True,
     srcs = ["csm_greeter_server.cc"],
     defines = ["BAZEL_BUILD"],
     deps = [

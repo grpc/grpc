@@ -128,6 +128,7 @@ cc_binary(
 
 cc_binary(
     name = "xds_greeter_server",
+    testonly = True,
     srcs = ["xds_greeter_server.cc"],
     defines = ["BAZEL_BUILD"],
     deps = [

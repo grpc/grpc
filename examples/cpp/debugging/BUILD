@@ -29,6 +29,7 @@ cc_binary(
 
 cc_binary(
     name = "greeter_callback_server_admin",
+    testonly = True,
     srcs = ["greeter_callback_server_admin.cc"],
     defines = ["BAZEL_BUILD"],
     deps = [
