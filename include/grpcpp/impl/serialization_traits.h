@@ -19,6 +19,11 @@
 #ifndef GRPCPP_IMPL_SERIALIZATION_TRAITS_H
 #define GRPCPP_IMPL_SERIALIZATION_TRAITS_H
 
+#include <grpc/event_engine/memory_allocator.h>
+
+#include <type_traits>
+#include <utility>
+
 namespace grpc {
 
 /// Defines how to serialize and deserialize some type.
