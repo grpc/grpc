@@ -166,6 +166,52 @@ void Http2ClientTransport::StopConnectivityWatch(
   state_tracker_.RemoveWatcher(watcher);
 }
 
+void Http2ClientTransport::StartWatch(RefCountedPtr<StateWatcher> watcher) {
+  MutexLock lock(&transport_mutex_);
+  GRPC_CHECK_NE(watcher_, nullptr);
+  watcher_ = std::move(watcher);
+  if (is_transport_closed_) {
+    // TODO(roth, ctiller): Provide better status message and disconnect
+    // info here.
+    NotifyStateWatcherOnDisconnectLocked(
+        absl::UnknownError("transport closed before watcher started"),
+        {});
+  } else {
+    // TODO(tjagtap): Call
+    // NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked() with
+    // the current value of the peer's MAX_CONCURRENT_STREAMS setting.
+  }
+}
+
+void Http2ClientTransport::StopWatch(RefCountedPtr<StateWatcher> watcher) {
+  MutexLock lock(&transport_mutex_);
+  if (watcher_ == watcher) watcher_.reset();
+}
+
+void Http2ClientTransport::NotifyStateWatcherOnDisconnectLocked(
+    absl::Status status, StateWatcher::DisconnectInfo disconnect_info) {
+  if (watcher_ == nullptr) return;
+  general_party_->arena()->GetContext<EventEngine>()->Run(
+      [watcher = std::move(watcher_), status = std::move(status),
+       disconnect_info]() mutable {
+        grpc_core::ExecCtx exec_ctx;
+        watcher->OnDisconnect(std::move(status), disconnect_info);
+        watcher.reset();  // Before ExecCtx goes out of scope.
+      });
+}
+
+void
+Http2ClientTransport::NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked(
+    uint32_t max_concurrent_streams) {
+  if (watcher_ == nullptr) return;
+  general_party_->arena()->GetContext<EventEngine>()->Run(
+      [watcher = watcher_, max_concurrent_streams]() mutable {
+        grpc_core::ExecCtx exec_ctx;
+        watcher->OnPeerMaxConcurrentStreamsUpdate(max_concurrent_streams);
+        watcher.reset();  // Before ExecCtx goes out of scope.
+      });
+}
+
 void Http2ClientTransport::Orphan() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Orphan Begin";
   // Accessing general_party here is not advisable. It may so happen that
@@ -404,6 +450,8 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
     // TODO(tjagtap) : [PH2][P1]
     // Apply the new settings
     // Quickly send the ACK to the peer once the settings are applied
+    // When the peer changes MAX_CONCURRENT_STREAMS, call
+    // NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked().
   } else {
     // Process the SETTINGS ACK Frame
     if (settings_.AckLastSend()) {
@@ -1351,6 +1399,9 @@ void Http2ClientTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
   state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN,
                           http2_status.GetAbslConnectionError(),
                           "transport closed");
+  // TODO(roth, ctiller): Provide better disconnect info here.
+  NotifyStateWatcherOnDisconnectLocked(http2_status.GetAbslConnectionError(),
+                                       {});
   lock.Release();
 
   SpawnInfallibleTransportParty(

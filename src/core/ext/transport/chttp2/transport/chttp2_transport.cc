@@ -859,6 +859,8 @@ static void close_transport_locked(grpc_chttp2_transport* t,
     t->closed_with_error = error;
     connectivity_state_set(t, GRPC_CHANNEL_SHUTDOWN, absl::Status(),
                            "close_transport");
+    // TODO(roth, ctiller): Provide better disconnect info here.
+    t->NotifyStateWatcherOnDisconnectLocked(t->closed_with_error, {});
     if (t->keepalive_ping_timeout_handle != TaskHandle::kInvalid) {
       t->event_engine->Cancel(std::exchange(t->keepalive_ping_timeout_handle,
                                             TaskHandle::kInvalid));
@@ -1377,6 +1379,7 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
     }
   }
   absl::Status status = grpc_error_to_absl_status(t->goaway_error);
+  grpc_core::Transport::StateWatcher::DisconnectInfo disconnect_info;
   // When a client receives a GOAWAY with error code ENHANCE_YOUR_CALM and debug
   // data equal to "too_many_pings", it should log the occurrence at a log level
   // that is enabled by default and double the configured KEEPALIVE_TIME used
@@ -1398,6 +1401,10 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
             : t->keepalive_time.millis() * KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
     status.SetPayload(grpc_core::kKeepaliveThrottlingKey,
                       absl::Cord(std::to_string(throttled_keepalive_time)));
+    disconnect_info.reason = grpc_core::Transport::StateWatcher::kGoaway;
+    disconnect_info.http2_error_code = Http2ErrorCode::kEnhanceYourCalm;
+    disconnect_info.keepalive_time =
+        grpc_core::Duration::Milliseconds(throttled_keepalive_time);
   }
   // lie: use transient failure from the transport to indicate goaway has been
   // received.
@@ -1405,6 +1412,7 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
     connectivity_state_set(t, GRPC_CHANNEL_TRANSIENT_FAILURE, status,
                            "got_goaway");
   }
+  t->NotifyStateWatcherOnDisconnectLocked(std::move(status), disconnect_info);
 }
 
 static void maybe_start_some_streams(grpc_chttp2_transport* t) {
@@ -1431,10 +1439,12 @@ static void maybe_start_some_streams(grpc_chttp2_transport* t) {
     t->next_stream_id += 2;
 
     if (t->next_stream_id >= MAX_CLIENT_STREAM_ID) {
-      connectivity_state_set(t, GRPC_CHANNEL_TRANSIENT_FAILURE,
-                             absl::Status(absl::StatusCode::kUnavailable,
-                                          "Transport Stream IDs exhausted"),
+      absl::Status status =
+          absl::UnavailableError("Transport Stream IDs exhausted");
+      connectivity_state_set(t, GRPC_CHANNEL_TRANSIENT_FAILURE, status,
                              "no_more_stream_ids");
+      // TODO(roth, ctiller): Provide better disconnect info here.
+      t->NotifyStateWatcherOnDisconnectLocked(std::move(status), {});
     }
 
     t->stream_map.emplace(s->id, s);
@@ -3538,4 +3548,60 @@ void grpc_chttp2_transport_start_reading(
         read_action_locked(std::move(t), absl::OkStatus());
       }),
       absl::OkStatus());
+}
+
+void grpc_chttp2_transport::StartWatch(
+    grpc_core::RefCountedPtr<StateWatcher> watcher) {
+  combiner->Run(
+      grpc_core::NewClosure(
+          [t = RefAsSubclass<grpc_chttp2_transport>(),
+           watcher = std::move(watcher)](
+              grpc_error_handle) mutable {
+            GRPC_CHECK_EQ(t->watcher, nullptr);
+            t->watcher = std::move(watcher);
+            if (!t->closed_with_error.ok()) {
+              // TODO(roth, ctiller): Provide better disconnect info here.
+              t->NotifyStateWatcherOnDisconnectLocked(t->closed_with_error, {});
+            } else {
+              t->NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked(
+                  t->settings.peer().max_concurrent_streams());
+            }
+          }),
+          absl::OkStatus());
+}
+
+void grpc_chttp2_transport::StopWatch(
+    grpc_core::RefCountedPtr<StateWatcher> watcher) {
+  combiner->Run(
+      grpc_core::NewClosure(
+          [t = RefAsSubclass<grpc_chttp2_transport>(),
+           watcher = std::move(watcher)](
+              grpc_error_handle) {
+            if (t->watcher == watcher) t->watcher.reset();
+          }),
+          absl::OkStatus());
+}
+
+void grpc_chttp2_transport::NotifyStateWatcherOnDisconnectLocked(
+    absl::Status status, StateWatcher::DisconnectInfo disconnect_info) {
+  if (watcher == nullptr) return;
+  event_engine->Run(
+      [watcher = std::move(watcher), status = std::move(status),
+       disconnect_info]() mutable {
+        grpc_core::ExecCtx exec_ctx;
+        watcher->OnDisconnect(std::move(status), disconnect_info);
+        watcher.reset();  // Before ExecCtx goes out of scope.
+      });
+}
+
+void
+grpc_chttp2_transport::NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked(
+    uint32_t max_concurrent_streams) {
+  if (watcher == nullptr) return;
+  event_engine->Run(
+      [watcher = watcher, max_concurrent_streams]() mutable {
+        grpc_core::ExecCtx exec_ctx;
+        watcher->OnPeerMaxConcurrentStreamsUpdate(max_concurrent_streams);
+        watcher.reset();  // Before ExecCtx goes out of scope.
+      });
 }
