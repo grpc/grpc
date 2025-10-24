@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._call &#8212; gRPC Python 1.75.1 documentation</title>
+    <title>grpc.aio._call &#8212; gRPC Python 1.76.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5ecbeea2" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=f0f94f3a" />
-    <script src="../../../_static/documentation_options.js?v=ba39d8e0"></script>
+    <script src="../../../_static/documentation_options.js?v=8c3e8212"></script>
     <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -28,7 +28,7 @@
 
 
 
-<p class="blurb">1.75.1</p>
+<p class="blurb">1.76.0</p>
 
 
 
@@ -339,8 +339,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cython_call</span><span class="o">.</span><span class="n">done</span><span class="p">():</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_cython_call</span><span class="o">.</span><span class="n">cancel</span><span class="p">(</span><span class="n">details</span><span class="p">)</span>
             <span class="k">return</span> <span class="kc">True</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">False</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">cancel</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cancel</span><span class="p">(</span><span class="n">_LOCAL_CANCELLATION_DETAILS</span><span class="p">)</span>
@@ -411,8 +410,7 @@
         <span class="k">if</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">cancel</span><span class="p">():</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_call_response</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
             <span class="k">return</span> <span class="kc">True</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">False</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__await__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Wait till the ongoing RPC request finishes.&quot;&quot;&quot;</span>
@@ -464,8 +462,7 @@
         <span class="k">if</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">cancel</span><span class="p">():</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_preparation</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
             <span class="k">return</span> <span class="kc">True</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">False</span>
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_fetch_stream_responses</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ResponseType</span><span class="p">:</span>
         <span class="n">message</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read</span><span class="p">()</span>
@@ -496,10 +493,7 @@
 
         <span class="k">if</span> <span class="n">raw_response</span> <span class="ow">is</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">EOF</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">EOF</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">_common</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span>
-                <span class="n">raw_response</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span>
-            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">_common</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="n">raw_response</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span><span class="p">)</span>
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">EOFType</span><span class="p">,</span> <span class="n">ResponseType</span><span class="p">]:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">done</span><span class="p">():</span>
@@ -546,8 +540,7 @@
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_async_request_poller</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_async_request_poller</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
             <span class="k">return</span> <span class="kc">True</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="kc">False</span>
+        <span class="k">return</span> <span class="kc">False</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_metadata_sent_observer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_metadata_sent</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
@@ -706,8 +699,7 @@
             <span class="k">return</span> <span class="n">_common</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span>
                 <span class="n">serialized_response</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span>
             <span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">EOF</span>
+        <span class="k">return</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">EOF</span>
 
     <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">wait_for_connection</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_invocation_task</span>
@@ -820,8 +812,7 @@
             <span class="k">return</span> <span class="n">_common</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span>
                 <span class="n">serialized_response</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_response_deserializer</span>
             <span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">EOF</span>
+        <span class="k">return</span> <span class="n">cygrpc</span><span class="o">.</span><span class="n">EOF</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">StreamStreamCall</span><span class="p">(</span>

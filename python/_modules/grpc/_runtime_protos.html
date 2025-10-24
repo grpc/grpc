@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc._runtime_protos &#8212; gRPC Python 1.75.1 documentation</title>
+    <title>grpc._runtime_protos &#8212; gRPC Python 1.76.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=5ecbeea2" />
     <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=f0f94f3a" />
-    <script src="../../_static/documentation_options.js?v=ba39d8e0"></script>
+    <script src="../../_static/documentation_options.js?v=8c3e8212"></script>
     <script src="../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -28,7 +28,7 @@
 
 
 
-<p class="blurb">1.75.1</p>
+<p class="blurb">1.76.0</p>
 
 
 
@@ -157,8 +157,7 @@
         <span class="k">if</span> <span class="n">_has_runtime_proto_symbols</span><span class="p">(</span><span class="n">grpc_tools</span><span class="o">.</span><span class="n">protoc</span><span class="p">):</span>
             <span class="n">fn</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">grpc_tools</span><span class="o">.</span><span class="n">protoc</span><span class="p">,</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">fn_name</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">fn</span><span class="p">(</span><span class="n">protobuf_path</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="n">_UNINSTALLED_TEMPLATE</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fn_name</span><span class="p">))</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="n">_UNINSTALLED_TEMPLATE</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fn_name</span><span class="p">))</span>
 
 
 <div class="viewcode-block" id="protos">
