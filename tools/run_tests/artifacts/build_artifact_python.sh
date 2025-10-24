@@ -100,6 +100,12 @@ for directory in "${ancillary_package_dir[@]}"; do
   cp "LICENSE" "${directory}"
 done
 
+# Set build config option with WHEEL_PLAT_NAME_FLAG if it exists
+WHEEL_PLAT_CONFIG_OPTION=()
+if [[ -n "$WHEEL_PLAT_NAME_FLAG" ]]; then
+  WHEEL_PLAT_CONFIG_OPTION+=("-C--build-option=\"--plat-name=$WHEEL_PLAT_NAME_FLAG\"")
+fi
+
 # Build the source distribution first because MANIFEST.in cannot override
 # exclusion of built shared objects among package resources (for some
 # inexplicable reason).
@@ -107,13 +113,6 @@ ${SETARCH_CMD} "${PYTHON}" -m build --sdist
 
 # Wheel has a bug where directories don't get excluded.
 # https://bitbucket.org/pypa/wheel/issues/99/cannot-exclude-directory
-# shellcheck disable=SC2086
-
-WHEEL_PLAT_CONFIG_OPTION=()
-if [[ -n "$WHEEL_PLAT_NAME_FLAG" ]]; then
-  WHEEL_PLAT_CONFIG_OPTION+=("-C--build-option=\"--plat-name=$WHEEL_PLAT_NAME_FLAG\"")
-fi
-
 ${SETARCH_CMD} "${PYTHON}" -m build --wheel "${WHEEL_PLAT_CONFIG_OPTION[@]}"
 
 GRPCIO_STRIP_TEMPDIR=$(mktemp -d)
@@ -153,7 +152,6 @@ mv "${GRPCIO_STRIPPED_TAR_GZ}" "${GRPCIO_TAR_GZ}"
 ${SETARCH_CMD} "${PYTHON}" -m build "tools/distrib/python/grpcio_tools" --sdist
 
 # Build gRPC tools package binary distribution
-# shellcheck disable=SC2086
 ${SETARCH_CMD} "${PYTHON}" -m build "tools/distrib/python/grpcio_tools" \
   --wheel --no-isolation "${WHEEL_PLAT_CONFIG_OPTION[@]}"
 
@@ -161,7 +159,6 @@ if [ "$GRPC_BUILD_MAC" == "" ]; then
   "${PYTHON}" src/python/grpcio_observability/make_grpcio_observability.py
   ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_observability" \
     --sdist
-  # shellcheck disable=SC2086
   ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_observability" \
     --wheel "${WHEEL_PLAT_CONFIG_OPTION[@]}"
 fi

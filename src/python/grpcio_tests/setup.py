@@ -24,7 +24,6 @@ sys.path.insert(0, os.path.abspath("."))
 import grpc_tools.command
 import setuptools
 
-# Break import-style to ensure we can actually find our in-repo dependencies.
 import commands
 import grpc_version
 import python_version

@@ -83,7 +83,6 @@ README = os.path.join(PYTHON_STEM, "README.rst")
 # Ensure we're in the proper directory whether or not we're being used by pip.
 sys.path.insert(0, os.path.abspath(PYTHON_STEM))
 
-# Break import-style to ensure we can actually find our in-repo dependencies.
 import _parallel_compile_patch
 import _spawn_patch
 import grpc_core_dependencies
@@ -98,18 +97,14 @@ _spawn_patch.monkeypatch_spawn()
 
 LICENSE = "Apache License 2.0"
 
-CLASSIFIERS = (
-    [
-        "Development Status :: 5 - Production/Stable",
-        "Programming Language :: Python",
-        "Programming Language :: Python :: 3",
-    ]
-    + [
-        f"Programming Language :: Python :: {x}"
-        for x in python_version.SUPPORTED_PYTHON_VERSIONS
-    ]
-    # removed as License classifiers have been superseded by license expressions (see https://peps.python.org/pep-0639/)
-)
+CLASSIFIERS = [
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+] + [
+    f"Programming Language :: Python :: {x}"
+    for x in python_version.SUPPORTED_PYTHON_VERSIONS
+]
 
 
 def _env_bool_value(env_name, default):
@@ -540,10 +535,6 @@ def cython_extensions_and_necessity():
 
 
 CYTHON_EXTENSION_MODULES, need_cython = cython_extensions_and_necessity()
-
-PACKAGE_DIRECTORIES = {
-    "": PYTHON_STEM,
-}
 
 INSTALL_REQUIRES = ("typing-extensions~=4.12",)
 
