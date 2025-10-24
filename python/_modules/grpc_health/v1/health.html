@@ -4,10 +4,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc_health.v1.health &#8212; gRPC Python 1.75.1 documentation</title>
+    <title>grpc_health.v1.health &#8212; gRPC Python 1.76.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=5ecbeea2" />
     <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css?v=f0f94f3a" />
-    <script src="../../../_static/documentation_options.js?v=ba39d8e0"></script>
+    <script src="../../../_static/documentation_options.js?v=8c3e8212"></script>
     <script src="../../../_static/doctools.js?v=9a2dae69"></script>
     <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
@@ -28,7 +28,7 @@
 
 
 
-<p class="blurb">1.75.1</p>
+<p class="blurb">1.76.0</p>
 
 
 
@@ -135,8 +135,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_responses</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_responses</span><span class="o">.</span><span class="n">popleft</span><span class="p">()</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">StopIteration</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="ne">StopIteration</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_next</span><span class="p">()</span>
@@ -200,8 +199,7 @@
             <span class="k">if</span> <span class="n">status</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">context</span><span class="o">.</span><span class="n">set_code</span><span class="p">(</span><span class="n">grpc</span><span class="o">.</span><span class="n">StatusCode</span><span class="o">.</span><span class="n">NOT_FOUND</span><span class="p">)</span>
                 <span class="k">return</span> <span class="n">_health_pb2</span><span class="o">.</span><span class="n">HealthCheckResponse</span><span class="p">()</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">_health_pb2</span><span class="o">.</span><span class="n">HealthCheckResponse</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">status</span><span class="p">)</span></div>
+            <span class="k">return</span> <span class="n">_health_pb2</span><span class="o">.</span><span class="n">HealthCheckResponse</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">status</span><span class="p">)</span></div>
 
 
     <span class="c1"># pylint: disable=arguments-differ</span>
@@ -249,15 +247,14 @@
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gracefully_shutting_down</span><span class="p">:</span>
                 <span class="k">return</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_server_status</span><span class="p">[</span><span class="n">service</span><span class="p">]</span> <span class="o">=</span> <span class="n">status</span>
-                <span class="k">if</span> <span class="n">service</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_response_callbacks</span><span class="p">:</span>
-                    <span class="k">for</span> <span class="n">send_response_callback</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_response_callbacks</span><span class="p">[</span>
-                        <span class="n">service</span>
-                    <span class="p">]:</span>
-                        <span class="n">send_response_callback</span><span class="p">(</span>
-                            <span class="n">_health_pb2</span><span class="o">.</span><span class="n">HealthCheckResponse</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">status</span><span class="p">)</span>
-                        <span class="p">)</span></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_server_status</span><span class="p">[</span><span class="n">service</span><span class="p">]</span> <span class="o">=</span> <span class="n">status</span>
+            <span class="k">if</span> <span class="n">service</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_response_callbacks</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">send_response_callback</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_send_response_callbacks</span><span class="p">[</span>
+                    <span class="n">service</span>
+                <span class="p">]:</span>
+                    <span class="n">send_response_callback</span><span class="p">(</span>
+                        <span class="n">_health_pb2</span><span class="o">.</span><span class="n">HealthCheckResponse</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">status</span><span class="p">)</span>
+                    <span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="HealthServicer.enter_graceful_shutdown">
@@ -274,12 +271,11 @@
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lock</span><span class="p">:</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gracefully_shutting_down</span><span class="p">:</span>
                 <span class="k">return</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">service</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_server_status</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
-                        <span class="n">service</span><span class="p">,</span> <span class="n">_health_pb2</span><span class="o">.</span><span class="n">HealthCheckResponse</span><span class="o">.</span><span class="n">NOT_SERVING</span>
-                    <span class="p">)</span>  <span class="c1"># pylint: disable=no-member</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_gracefully_shutting_down</span> <span class="o">=</span> <span class="kc">True</span></div>
+            <span class="k">for</span> <span class="n">service</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_server_status</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
+                    <span class="n">service</span><span class="p">,</span> <span class="n">_health_pb2</span><span class="o">.</span><span class="n">HealthCheckResponse</span><span class="o">.</span><span class="n">NOT_SERVING</span>
+                <span class="p">)</span>  <span class="c1"># pylint: disable=no-member</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_gracefully_shutting_down</span> <span class="o">=</span> <span class="kc">True</span></div>
 </div>
 
 </pre></div>

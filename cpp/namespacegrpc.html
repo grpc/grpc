@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.75.1</span>
+   &#160;<span id="projectnumber">1.76.0</span>
    </div>
   </td>
  </tr>
@@ -205,6 +205,9 @@ Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_generic_server_context.html">GenericServerContext</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_global_callback_hook.html">GlobalCallbackHook</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc_1_1_google_default_credentials_options.html">GoogleDefaultCredentialsOptions</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Options used to build GoogleDefaultCredentials.  <a href="structgrpc_1_1_google_default_credentials_options.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_health_check_service_interface.html">HealthCheckServiceInterface</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">The gRPC server uses this interface to expose the health checking service without depending on protobuf.  <a href="classgrpc_1_1_health_check_service_interface.html#details">More...</a><br /></td></tr>
@@ -463,9 +466,9 @@ Functions</h2></td></tr>
 <tr class="memitem:a4dd034a2ba240d4fea11818160238c40"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a4dd034a2ba240d4fea11818160238c40">XdsCredentials</a> (const std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a> &gt; &amp;fallback_creds)</td></tr>
 <tr class="memdesc:a4dd034a2ba240d4fea11818160238c40"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds XDS Credentials.  <a href="namespacegrpc.html#a4dd034a2ba240d4fea11818160238c40">More...</a><br /></td></tr>
 <tr class="separator:a4dd034a2ba240d4fea11818160238c40"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a6beb3ac70ff94bd2ebbd89b8f21d1f61"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a6beb3ac70ff94bd2ebbd89b8f21d1f61">GoogleDefaultCredentials</a> ()</td></tr>
-<tr class="memdesc:a6beb3ac70ff94bd2ebbd89b8f21d1f61"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds credentials with reasonable defaults.  <a href="namespacegrpc.html#a6beb3ac70ff94bd2ebbd89b8f21d1f61">More...</a><br /></td></tr>
-<tr class="separator:a6beb3ac70ff94bd2ebbd89b8f21d1f61"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab6606f78a2c8d8e3ccc5a940f478aa6c"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#ab6606f78a2c8d8e3ccc5a940f478aa6c">GoogleDefaultCredentials</a> (const <a class="el" href="structgrpc_1_1_google_default_credentials_options.html">GoogleDefaultCredentialsOptions</a> &amp;options=<a class="el" href="structgrpc_1_1_google_default_credentials_options.html">GoogleDefaultCredentialsOptions</a>())</td></tr>
+<tr class="memdesc:ab6606f78a2c8d8e3ccc5a940f478aa6c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds google default credentials with the given options.  <a href="namespacegrpc.html#ab6606f78a2c8d8e3ccc5a940f478aa6c">More...</a><br /></td></tr>
+<tr class="separator:ab6606f78a2c8d8e3ccc5a940f478aa6c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a845b0382cdd2c71ba8ca715643c38b94"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a845b0382cdd2c71ba8ca715643c38b94">SslCredentials</a> (const <a class="el" href="structgrpc_1_1_ssl_credentials_options.html">SslCredentialsOptions</a> &amp;options)</td></tr>
 <tr class="memdesc:a845b0382cdd2c71ba8ca715643c38b94"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds SSL Credentials given SSL specific options.  <a href="namespacegrpc.html#a845b0382cdd2c71ba8ca715643c38b94">More...</a><br /></td></tr>
 <tr class="separator:a845b0382cdd2c71ba8ca715643c38b94"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -1193,8 +1196,8 @@ template&lt;class ProtoBufferWriter , class T &gt; </div>
 
 </div>
 </div>
-<a id="a6beb3ac70ff94bd2ebbd89b8f21d1f61"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6beb3ac70ff94bd2ebbd89b8f21d1f61">&#9670;&nbsp;</a></span>GoogleDefaultCredentials()</h2>
+<a id="ab6606f78a2c8d8e3ccc5a940f478aa6c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab6606f78a2c8d8e3ccc5a940f478aa6c">&#9670;&nbsp;</a></span>GoogleDefaultCredentials()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -1202,13 +1205,14 @@ template&lt;class ProtoBufferWriter , class T &gt; </div>
         <tr>
           <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_channel_credentials.html">ChannelCredentials</a>&gt; grpc::GoogleDefaultCredentials </td>
           <td>(</td>
-          <td class="paramname"></td><td>)</td>
+          <td class="paramtype">const <a class="el" href="structgrpc_1_1_google_default_credentials_options.html">GoogleDefaultCredentialsOptions</a> &amp;&#160;</td>
+          <td class="paramname"><em>options</em> = <code><a class="el" href="structgrpc_1_1_google_default_credentials_options.html">GoogleDefaultCredentialsOptions</a>()</code></td><td>)</td>
           <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Builds credentials with reasonable defaults. </p>
+<p>Builds google default credentials with the given options. </p>
 <dl class="section warning"><dt>Warning</dt><dd>Only use these credentials when connecting to a Google endpoint. Using these credentials to connect to any other service may result in this service being able to impersonate your client for requests to Google services. </dd></dl>
 
 </div>
@@ -2040,7 +2044,7 @@ template&lt;class ProtoBufferWriter , class T &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Oct 3 2025 00:28:30 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Oct 24 2025 21:46:32 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

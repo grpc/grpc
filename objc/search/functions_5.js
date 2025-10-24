@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['gettokenwithhandler_3a_473',['getTokenWithHandler:',['../category_g_i_d_sign_in_07_g_r_p_c_08.html#a1f6bb049786e24f41257535a28230b95',1,'GIDSignIn(GRPC)::getTokenWithHandler:()'],['../protocol_g_r_p_c_authorization_protocol-p.html#af3cebbb00be8ff9792e42cd73500d2c3',1,'GRPCAuthorizationProtocol-p::getTokenWithHandler:()']]],
+  ['gettokenwithhandler_3a_473',['getTokenWithHandler:',['../category_g_i_d_sign_in_07_g_r_p_c_08.html#a1f6bb049786e24f41257535a28230b95',1,'GIDSignIn(GRPC)::getTokenWithHandler:()'],['../protocol_g_r_p_c_authorization_protocol-p.html#a5fe148a21abcacb904338cbb757fa1c7',1,'GRPCAuthorizationProtocol-p::getTokenWithHandler:()']]],
   ['globalinterceptorfactory_474',['globalInterceptorFactory',['../category_g_r_p_c_call2_07_interceptor_08.html#a938d45561c3b20586412a61f2afdd996',1,'GRPCCall2(Interceptor)::globalInterceptorFactory()'],['../interface_g_r_p_c_call2.html#a938d45561c3b20586412a61f2afdd996',1,'GRPCCall2::globalInterceptorFactory()']]],
   ['grx_5fenumeratorwithcontainer_3a_475',['grx_enumeratorWithContainer:',['../category_n_s_enumerator_07_g_r_x_util_08.html#ac2cb4f08f57cf8958920ae26ca72e3fa',1,'NSEnumerator(GRXUtil)']]],
   ['grx_5fenumeratorwithsinglevalue_3a_476',['grx_enumeratorWithSingleValue:',['../category_n_s_enumerator_07_g_r_x_util_08.html#a46bca48053903355a1f70b692d17cf4d',1,'NSEnumerator(GRXUtil)']]],

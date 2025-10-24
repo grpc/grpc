@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Objective-C
-   &#160;<span id="projectnumber">1.75.1</span>
+   &#160;<span id="projectnumber">1.76.0</span>
    </div>
   </td>
  </tr>
@@ -93,6 +93,25 @@ Server</h1>
 <ul>
 <li>&ndash;address_type=IPV4|IPV6|IPV4_IPV6<ul>
 <li>Type of IP address to bind to. IPV4_IPV6 will use the wildcard address. IPV4 and IPV6 will cause server to bind to one non-localhost and the localhost address of the appropriate type</li>
+</ul>
+</li>
+</ul>
+<p>Servers that want to support metrics reporting for client side weighted round robin testing should also accept:</p>
+<ul>
+<li>&ndash;metrics_mode=NONE|IN_BAND|OUT_OF_BAND<ul>
+<li>When set to a value other than NONE, use the specified metrics reporting API to report metrics described in the other arguments. Defaults to NONE.</li>
+</ul>
+</li>
+<li>&ndash;report_qps=NUMBER<ul>
+<li>The QPS value to report.</li>
+</ul>
+</li>
+<li>&ndash;report_application_utilization=NUMBER<ul>
+<li>The application_utilization value to report.</li>
+</ul>
+</li>
+<li>&ndash;report_eps=NUMBER<ul>
+<li>The EPS value to report.</li>
 </ul>
 </li>
 </ul>
@@ -899,7 +918,7 @@ custom_lb</h2>
 </ol>
 <p>Load balancer configuration:</p>
 <p>One MIG with a single backend.</p>
-<p>The <code>backendService</code> will have the following <code>localityLbPolicies</code> entry: </p><div class="fragment"><div class="line">[ </div>
+<p>The <code>backendService</code> will have the following <code>localityLbPolicies</code> entry: </p><div class="fragment"><div class="line">[</div>
 <div class="line">  {</div>
 <div class="line">    &quot;customPolicy&quot;: {</div>
 <div class="line">      &quot;name&quot;: &quot;test.ThisLoadBalancerDoesNotExist&quot;,</div>
@@ -924,7 +943,7 @@ custom_lb</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Oct 3 2025 00:29:30 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Oct 24 2025 21:48:29 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
