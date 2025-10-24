@@ -14,10 +14,11 @@
 """Provides nox command classes for the GRPC Python setup process."""
 
 import glob
-import nox
 import os
 import os.path
 import shutil
+
+import nox
 
 PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
 GRPC_STEM = os.path.abspath(PYTHON_STEM + "../../../../")
@@ -27,6 +28,7 @@ PYTHON_REL_PATH = os.path.relpath(PYTHON_STEM, start=GRPC_STEM)
 
 class CommandError(Exception):
     """Simple exception class for GRPC custom commands."""
+
 
 @nox.session
 def doc(session: nox.Session):
@@ -44,9 +46,8 @@ def doc(session: nox.Session):
         ["-b", "html", "-W", "--keep-going", source_dir, target_dir]
     )
     if exit_code != 0:
-        raise CommandError(
-            "Documentation generation has warnings or errors"
-        )
+        raise CommandError("Documentation generation has warnings or errors")
+
 
 @nox.session
 def clean(session: nox.Session):
@@ -70,9 +71,7 @@ def clean(session: nox.Session):
         abs_paths = glob.glob(this_glob)
         for path in abs_paths:
             if not str(path).startswith(_CURRENT_DIRECTORY):
-                raise ValueError(
-                    "Cowardly refusing to delete {}.".format(path)
-                )
+                raise ValueError("Cowardly refusing to delete {}.".format(path))
             print("Removing {}".format(os.path.relpath(path)))
             if os.path.isfile(path):
                 os.remove(str(path))

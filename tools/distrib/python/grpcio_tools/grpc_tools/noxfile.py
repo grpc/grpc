@@ -14,8 +14,9 @@
 """Provides nox command classes for the GRPC Python setup process."""
 
 import argparse
-import nox
 import os
+
+import nox
 
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 
@@ -45,6 +46,4 @@ def build_package_protos(session: nox.Session):
     # which is the same directory as the pyproject.toml file
     from . import command
 
-    command.build_package_protos(
-        os.path.join(ROOT_DIR, ".."), args.strict_mode
-    )
+    command.build_package_protos(os.path.join(ROOT_DIR, ".."), args.strict_mode)

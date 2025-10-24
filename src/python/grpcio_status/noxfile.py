@@ -13,9 +13,10 @@
 # limitations under the License.
 """Provides nox command classes for the GRPC Python setup process."""
 
-import nox
 import os
 import shutil
+
+import nox
 
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 GRPC_ROOT_ABS_PATH = os.path.join(ROOT_DIR, "../../..")
@@ -23,6 +24,7 @@ STATUS_PROTO = "third_party/googleapis/google/rpc/status.proto"
 ROOT_REL_DIR = os.path.relpath(ROOT_DIR, start=GRPC_ROOT_ABS_PATH)
 PACKAGE_STATUS_PROTO_PATH = "grpc_status/google/rpc"
 LICENSE = "./LICENSE"
+
 
 @nox.session
 def preprocess(session: nox.Session):
@@ -47,6 +49,6 @@ def preprocess(session: nox.Session):
 
 @nox.session
 def build_package_protos(session: nox.Session):
-    """ NoOp Session """
+    """NoOp Session"""
     session.log("Running no-op build_package_protos for grpcio-status...")
     pass

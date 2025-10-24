@@ -13,15 +13,17 @@
 # limitations under the License.
 """Provides nox command classes for the GRPC Python setup process."""
 
-import nox
 import os
 import shutil
+
+import nox
 
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 GRPC_ROOT_ABS_PATH = os.path.join(ROOT_DIR, "../../..")
 ROOT_REL_DIR = os.path.relpath(ROOT_DIR, start=GRPC_ROOT_ABS_PATH)
 HEALTH_PROTO = "src/proto/grpc/health/v1/health.proto"
 LICENSE = "./LICENSE"
+
 
 @nox.session
 def preprocess(session: nox.Session):
@@ -41,9 +43,7 @@ def preprocess(session: nox.Session):
 
 
 # use this flag to use the pre-installed grpc_tools in the environment
-@nox.session(
-    venv_params=["--system-site-packages"]
-)
+@nox.session(venv_params=["--system-site-packages"])
 def build_package_protos(session: nox.Session):
     """Command to generate project *_pb2.py modules from proto files."""
     session.log("Running build_package_protos for grpcio-health-checking...")

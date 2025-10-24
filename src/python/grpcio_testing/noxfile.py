@@ -13,14 +13,16 @@
 # limitations under the License.
 """Provides nox command classes for the GRPC Python setup process."""
 
-import nox
 import os
 import shutil
+
+import nox
 
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 GRPC_ROOT_ABS_PATH = os.path.join(ROOT_DIR, "../../..")
 ROOT_REL_DIR = os.path.relpath(ROOT_DIR, start=GRPC_ROOT_ABS_PATH)
 LICENSE = "./LICENSE"
+
 
 @nox.session
 def preprocess(session: nox.Session):
@@ -29,7 +31,12 @@ def preprocess(session: nox.Session):
     """
     session.log("Running preprocess for grpcio-testing...")
     session.log("Current working directory:", os.path.abspath(os.curdir))
-    session.log("Current working directory contents:", os.listdir(os.path.abspath(os.curdir)))
-    session.log("ROOT_REL_DIR contents:", os.listdir(os.path.abspath(ROOT_REL_DIR)))
+    session.log(
+        "Current working directory contents:",
+        os.listdir(os.path.abspath(os.curdir)),
+    )
+    session.log(
+        "ROOT_REL_DIR contents:", os.listdir(os.path.abspath(ROOT_REL_DIR))
+    )
     if os.path.isfile(LICENSE):
         shutil.copyfile(LICENSE, os.path.join(ROOT_REL_DIR, "LICENSE"))

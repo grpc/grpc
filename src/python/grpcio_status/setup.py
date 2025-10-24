@@ -27,7 +27,6 @@ sys.path.insert(0, os.path.abspath("."))
 import grpc_version
 import python_version
 
-
 CLASSIFIERS = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",

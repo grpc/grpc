@@ -14,10 +14,10 @@
 """Provides nox command classes for the GRPC Python setup process."""
 
 import argparse
-import nox
 import os
 import shutil
 
+import nox
 
 PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
 GRPC_STEM = os.path.abspath(PYTHON_STEM + "../../../../")
@@ -25,6 +25,7 @@ PYTHON_REL_PATH = os.path.relpath(PYTHON_STEM, start=GRPC_STEM)
 GRPC_PROTO_STEM = os.path.join("src", "proto")
 PROTO_STEM = os.path.join(PYTHON_REL_PATH, "src", "proto")
 PYTHON_PROTO_TOP_LEVEL = os.path.join(PYTHON_REL_PATH, "src")
+
 
 @nox.session
 def preprocess(session: nox.Session):
@@ -43,9 +44,7 @@ def preprocess(session: nox.Session):
         open(path, "a").close()
 
 
-@nox.session(
-    venv_params=["--system-site-packages"]
-)
+@nox.session(venv_params=["--system-site-packages"])
 def build_package_protos(session: nox.Session):
     """Command to generate project *_pb2.py modules from proto files."""
     session.log("Running build_package_protos for grpcio-tools...")
