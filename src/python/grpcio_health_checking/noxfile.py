@@ -40,7 +40,10 @@ def preprocess(session: nox.Session):
         shutil.copyfile(LICENSE, os.path.join(ROOT_REL_DIR, "LICENSE"))
 
 
-@nox.session
+# use this flag to use the pre-installed grpc_tools in the environment
+@nox.session(
+    venv_params=["--system-site-packages"]
+)
 def build_package_protos(session: nox.Session):
     """Command to generate project *_pb2.py modules from proto files."""
     session.log("Running build_package_protos for grpcio-health-checking...")
