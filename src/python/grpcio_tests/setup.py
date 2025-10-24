@@ -47,8 +47,8 @@ INSTALL_REQUIRES = (
 
 COMMAND_CLASS = {
     # Run `preprocess` *before* doing any packaging!
-    "preprocess": commands.GatherProto,
-    "build_package_protos": grpc_tools.command.BuildPackageProtos,
+    # "preprocess": commands.GatherProto,
+    # "build_package_protos": grpc_tools.command.BuildPackageProtos,
     "build_py": commands.BuildPy,
     "run_fork": commands.RunFork,
     "run_interop": commands.RunInterop,
