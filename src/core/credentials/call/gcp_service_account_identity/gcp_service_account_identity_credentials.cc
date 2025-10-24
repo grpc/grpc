@@ -18,6 +18,7 @@
 
 #include "src/core/call/metadata.h"
 #include "src/core/credentials/call/jwt_util.h"
+#include "src/core/credentials/call/token_fetcher/token_fetcher_credentials.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/status_conversion.h"
@@ -36,78 +37,30 @@ namespace grpc_core {
 // JwtTokenFetcherCallCredentials
 //
 
-// State held for a pending HTTP request.
-class JwtTokenFetcherCallCredentials::HttpFetchRequest final
-    : public TokenFetcherCredentials::FetchRequest {
- public:
-  HttpFetchRequest(
-      JwtTokenFetcherCallCredentials* creds, Timestamp deadline,
-      absl::AnyInvocable<
-          void(absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
-          on_done)
-      : on_done_(std::move(on_done)) {
-    GRPC_CLOSURE_INIT(&on_http_response_, OnHttpResponse, this, nullptr);
-    Ref().release();  // Ref held by HTTP request callback.
-    http_request_ = creds->StartHttpRequest(creds->pollent(), deadline,
-                                            &response_, &on_http_response_);
-  }
-
-  ~HttpFetchRequest() override { grpc_http_response_destroy(&response_); }
-
-  void Orphan() override {
-    http_request_.reset();
-    Unref();
-  }
-
- private:
-  static void OnHttpResponse(void* arg, grpc_error_handle error) {
-    RefCountedPtr<HttpFetchRequest> self(static_cast<HttpFetchRequest*>(arg));
-    if (!error.ok()) {
-      // TODO(roth): It shouldn't be necessary to explicitly set the
-      // status to UNAVAILABLE here.  Once the HTTP client code is
-      // migrated to stop using legacy grpc_error APIs to create
-      // statuses, we should be able to just propagate the status as-is.
-      self->on_done_(absl::UnavailableError(StatusToString(error)));
-      return;
-    }
-    if (self->response_.status != 200) {
-      grpc_status_code status_code =
-          grpc_http2_status_to_grpc_status(self->response_.status);
-      if (status_code != GRPC_STATUS_UNAVAILABLE) {
-        status_code = GRPC_STATUS_UNAUTHENTICATED;
-      }
-      self->on_done_(absl::Status(static_cast<absl::StatusCode>(status_code),
-                                  absl::StrCat("JWT fetch failed with status ",
-                                               self->response_.status)));
-      return;
-    }
-    // Return token object.
-    absl::string_view body(self->response_.body, self->response_.body_length);
-    auto expiration_time = GetJwtExpirationTime(body);
-    if (!expiration_time.ok()) {
-      self->on_done_(expiration_time.status());
-      return;
-    }
-    self->on_done_(MakeRefCounted<Token>(
-        Slice::FromCopiedString(absl::StrCat("Bearer ", body)),
-        *expiration_time));
-  }
-
-  OrphanablePtr<HttpRequest> http_request_;
-  grpc_closure on_http_response_;
-  grpc_http_response response_;
-  absl::AnyInvocable<void(
-      absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
-      on_done_;
-};
-
 OrphanablePtr<TokenFetcherCredentials::FetchRequest>
 JwtTokenFetcherCallCredentials::FetchToken(
     Timestamp deadline,
     absl::AnyInvocable<
         void(absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
         on_done) {
-  return MakeOrphanable<HttpFetchRequest>(this, deadline, std::move(on_done));
+  return MakeOrphanable<HttpTokenFetcherCredentials::HttpFetchRequest>(
+      this, deadline,
+      [on_done = std::move(on_done)](
+          absl::StatusOr<grpc_http_response> response) mutable {
+        if (!response.ok()) {
+          on_done(response.status());
+          return;
+        }
+        absl::string_view body(response->body, response->body_length);
+        auto expiration_time = GetJwtExpirationTime(body);
+        if (!expiration_time.ok()) {
+          on_done(expiration_time.status());
+          return;
+        }
+        on_done(MakeRefCounted<Token>(
+            Slice::FromCopiedString(absl::StrCat("Bearer ", body)),
+            *expiration_time));
+      });
 }
 
 //
