@@ -84,9 +84,11 @@ zval *grpc_parse_metadata_array(grpc_metadata_array
     if (php_grpc_zend_hash_find(array_hash, str_key, key_len, (void **)&data)
         == SUCCESS) {
       if (Z_TYPE_P(data) != IS_ARRAY) {
-        zend_throw_exception(zend_exception_get_default(TSRMLS_C),
-                             "Metadata hash somehow contains wrong types.",
-                             1 TSRMLS_CC);
+        #if PHP_VERSION_ID >= 80500
+            zend_throw_exception(zend_ce_exception, "Metadata hash somehow contains wrong types.", 1);
+        #else
+            zend_throw_exception(zend_exception_get_default(TSRMLS_C), "Metadata hash somehow contains wrong types.", 1 TSRMLS_CC);
+        #endif
         efree(str_key);
         efree(str_val);
         PHP_GRPC_FREE_STD_ZVAL(array);
