@@ -143,6 +143,9 @@ grpc_cc_library(
         "absl/status",
     ],
     deps = [
+        ":channelz_tool",
+        ":info_tool",
+        ":latent_see_tool",
         ":tool",
         ":version",
         "//test/cpp/util:test_config",
@@ -159,9 +162,6 @@ grpc_cc_binary(
         "//bazel:sleuth",
     ],
     deps = [
-        ":channelz_tool",
-        ":info_tool",
-        ":latent_see_tool",
         ":sleuth",
     ],
 )
