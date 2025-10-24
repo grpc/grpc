@@ -1287,7 +1287,7 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked(
   if (enable_retries) {
     RetryInterceptor::UpdateBlackboard(*saved_service_config_,
                                        blackboard_.get(), new_blackboard.get());
-    builder.Add<RetryInterceptor>();
+    builder.Add<RetryInterceptor>(nullptr);
   }
   blackboard_ = std::move(new_blackboard);
   // Create call destination.
