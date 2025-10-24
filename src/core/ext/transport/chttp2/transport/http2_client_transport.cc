@@ -193,7 +193,7 @@ void Http2ClientTransport::NotifyStateWatcherOnDisconnectLocked(
   general_party_->arena()->GetContext<EventEngine>()->Run(
       [watcher = std::move(watcher_), status = std::move(status),
        disconnect_info]() mutable {
-        grpc_core::ExecCtx exec_ctx;
+        ExecCtx exec_ctx;
         watcher->OnDisconnect(std::move(status), disconnect_info);
         watcher.reset();  // Before ExecCtx goes out of scope.
       });
@@ -205,7 +205,7 @@ void Http2ClientTransport::
   if (watcher_ == nullptr) return;
   general_party_->arena()->GetContext<EventEngine>()->Run(
       [watcher = watcher_, max_concurrent_streams]() mutable {
-        grpc_core::ExecCtx exec_ctx;
+        ExecCtx exec_ctx;
         watcher->OnPeerMaxConcurrentStreamsUpdate(max_concurrent_streams);
         watcher.reset();  // Before ExecCtx goes out of scope.
       });

@@ -530,7 +530,7 @@ class Transport : public InternallyRefCounted<Transport> {
       std::optional<Duration> keepalive_time;
     };
 
-    virtual ~StateWatcher() = default;
+    ~StateWatcher() override = default;
 
     // Called on disconnection or GOAWAY.  The channel or server must
     // stop sending traffic to this transport.  The transport will
