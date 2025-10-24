@@ -121,18 +121,6 @@ class LegacyConnectedSubchannel : public ConnectedSubchannel {
     return channelz_node_.get();
   }
 
-  void StartWatch(
-      grpc_pollset_set* interested_parties,
-      OrphanablePtr<ConnectivityStateWatcherInterface> watcher) override {
-    grpc_transport_op* op = grpc_make_transport_op(nullptr);
-    op->start_connectivity_watch = std::move(watcher);
-    op->start_connectivity_watch_state = GRPC_CHANNEL_READY;
-    op->bind_pollset_set = interested_parties;
-    grpc_channel_element* elem =
-        grpc_channel_stack_element(channel_stack_.get(), 0);
-    elem->filter->start_transport_op(elem, op);
-  }
-
   void Ping(absl::AnyInvocable<void(absl::Status)>) override {
     Crash("call v3 ping method called in legacy impl");
   }
@@ -195,12 +183,6 @@ class NewConnectedSubchannel : public ConnectedSubchannel {
       : ConnectedSubchannel(args),
         call_destination_(std::move(call_destination)),
         transport_(std::move(transport)) {}
-
-  void StartWatch(
-      grpc_pollset_set*,
-      OrphanablePtr<ConnectivityStateWatcherInterface> watcher) override {
-    transport_->transport()->StartConnectivityWatch(std::move(watcher));
-  }
 
   void Ping(absl::AnyInvocable<void(absl::Status)>) override {
     // TODO(ctiller): add new transport API for this in v3 stack
@@ -384,70 +366,67 @@ void SubchannelCall::IncrementRefCount(const DebugLocation& /*location*/,
 }
 
 //
-// Subchannel::ConnectedSubchannelStateWatcher
+// Subchannel::ConnectionStateWatcher
 //
 
-class Subchannel::ConnectedSubchannelStateWatcher final
-    : public AsyncConnectivityStateWatcherInterface {
+class Subchannel::ConnectionStateWatcher final
+    : public Transport::StateWatcher {
  public:
-  // Must be instantiated while holding c->mu.
-  explicit ConnectedSubchannelStateWatcher(WeakRefCountedPtr<Subchannel> c)
-      : subchannel_(std::move(c)) {}
+  explicit ConnectionStateWatcher(WeakRefCountedPtr<Subchannel> subchannel)
+      : subchannel_(std::move(subchannel)) {}
 
-  ~ConnectedSubchannelStateWatcher() override {
+  ~ConnectionStateWatcher() override {
     subchannel_.reset(DEBUG_LOCATION, "state_watcher");
   }
 
- private:
-  void OnConnectivityStateChange(grpc_connectivity_state new_state,
-                                 const absl::Status& status) override {
-    Subchannel* c = subchannel_.get();
-    {
-      MutexLock lock(&c->mu_);
-      // If we're either shutting down or have already seen this connection
-      // failure (i.e., c->connected_subchannel_ is null), do nothing.
-      //
-      // The transport reports TRANSIENT_FAILURE upon GOAWAY but SHUTDOWN
-      // upon connection close.  So if the server gracefully shuts down,
-      // we will see TRANSIENT_FAILURE followed by SHUTDOWN, but if not, we
-      // will see only SHUTDOWN.  Either way, we react to the first one we
-      // see, ignoring anything that happens after that.
-      if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE ||
-          new_state == GRPC_CHANNEL_SHUTDOWN) {
-        RefCountedPtr<ConnectedSubchannel> connected_subchannel =
-            std::move(c->connected_subchannel_);
-        if (connected_subchannel == nullptr) return;
-        GRPC_TRACE_LOG(subchannel, INFO)
-            << "subchannel " << c << " " << c->key_.ToString()
-            << ": Connected subchannel " << connected_subchannel.get()
-            << " reports " << ConnectivityStateName(new_state) << ": "
-            << status;
-        if (c->channelz_node() != nullptr) {
-          if (connected_subchannel->channelz_node() != nullptr) {
-            connected_subchannel->channelz_node()->RemoveParent(
-                c->channelz_node());
-          }
-        }
-        // If the subchannel was created from an endpoint, then we report
-        // TRANSIENT_FAILURE here instead of IDLE. The subchannel will never
-        // leave TRANSIENT_FAILURE state, because there is no way for us to
-        // establish a new connection.
-        //
-        // Otherwise, we report IDLE here. Note that even though we're not
-        // reporting TRANSIENT_FAILURE, we pass along the status from the
-        // transport, since it may have keepalive info attached to it that the
-        // channel needs.
-        // TODO(roth): Consider whether there's a cleaner way to propagate the
-        // keepalive info.
-        c->SetConnectivityStateLocked(c->created_from_endpoint_
-                                          ? GRPC_CHANNEL_TRANSIENT_FAILURE
-                                          : GRPC_CHANNEL_IDLE,
-                                      status);
-        c->backoff_.Reset();
+  void OnDisconnect(absl::Status status,
+                    DisconnectInfo /*disconnect_info*/) override {
+    MutexLock lock(&subchannel_->mu_);
+    // We shouldn't ever see OnDisconnect() more than once for a given
+    // connection, but we'll be defensive just in case: if the connected
+    // subchannel has already been cleared, then this becomes a no-op.
+    RefCountedPtr<ConnectedSubchannel> connected_subchannel =
+        std::move(subchannel_->connected_subchannel_);
+    if (connected_subchannel == nullptr) return;
+    GRPC_TRACE_LOG(subchannel, INFO)
+        << "subchannel " << subchannel_.get() << " "
+        << subchannel_->key_.ToString() << ": connected subchannel "
+        << connected_subchannel.get() << " reports disconnection: " << status;
+    if (subchannel_->channelz_node() != nullptr) {
+      if (connected_subchannel->channelz_node() != nullptr) {
+        connected_subchannel->channelz_node()->RemoveParent(
+            subchannel_->channelz_node());
       }
     }
+    // If the subchannel was created from an endpoint, then we report
+    // TRANSIENT_FAILURE here instead of IDLE. The subchannel will never
+    // leave TRANSIENT_FAILURE state, because there is no way for us to
+    // establish a new connection.
+    //
+    // Otherwise, we report IDLE here. Note that even though we're not
+    // reporting TRANSIENT_FAILURE, we pass along the status from the
+    // transport, since it may have keepalive info attached to it that the
+    // channel needs.
+    // TODO(roth): Revamp watcher interface between channel and subchannel
+    // to provide a cleaner way to pass the keepalive info to the channel.
+    subchannel_->SetConnectivityStateLocked(
+        subchannel_->created_from_endpoint_
+            ? GRPC_CHANNEL_TRANSIENT_FAILURE
+            : GRPC_CHANNEL_IDLE,
+        status);
+    subchannel_->backoff_.Reset();
   }
 
+  void OnPeerMaxConcurrentStreamsUpdate(
+        uint32_t max_concurrent_streams) override {
+    // TODO(roth): Implement this as part of adding connection scaling.
+  }
+
+  grpc_pollset_set* interested_parties() const override {
+    return subchannel_->pollset_set_;
+  }
+
+ private:
   WeakRefCountedPtr<Subchannel> subchannel_;
 };
 
@@ -821,6 +800,9 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
 
 bool Subchannel::PublishTransportLocked() {
   auto socket_node = connecting_result_.transport->GetSocketNode();
+  connecting_result_.transport->StartWatch(
+      MakeRefCounted<ConnectionStateWatcher>(
+          WeakRef(DEBUG_LOCATION, "state_watcher")));
   if (connecting_result_.transport->filter_stack_transport() != nullptr) {
     // Construct channel stack.
     // Builder takes ownership of transport.
@@ -890,10 +872,6 @@ bool Subchannel::PublishTransportLocked() {
       socket_node->AddParent(channelz_node_.get());
     }
   }
-  // Start watching connected subchannel.
-  connected_subchannel_->StartWatch(
-      pollset_set_, MakeOrphanable<ConnectedSubchannelStateWatcher>(
-                        WeakRef(DEBUG_LOCATION, "state_watcher")));
   // Report initial state.
   SetConnectivityStateLocked(GRPC_CHANNEL_READY, absl::Status());
   return true;

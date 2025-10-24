@@ -543,6 +543,9 @@ class Transport : public InternallyRefCounted<Transport> {
     // Will then be called again whenever the peer changes this setting.
     virtual void OnPeerMaxConcurrentStreamsUpdate(
         uint32_t max_concurrent_streams) = 0;
+
+    // TODO(roth): Remove this as part of the EventEngine migration.
+    virtual grpc_pollset_set* interested_parties() const = 0;
   };
 
   struct RawPointerChannelArgTag {};
