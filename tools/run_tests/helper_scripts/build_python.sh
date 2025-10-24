@@ -196,23 +196,42 @@ else
 fi
 
 # Build/install Channelz
-nox -s preprocess -f "$ROOT/src/python/grpcio_channelz/noxfile.py"
-nox -s build_package_protos -f "$ROOT/src/python/grpcio_channelz/noxfile.py"
+$VENV_PYTHON -m nox -s preprocess -f \
+ "$ROOT/src/python/grpcio_channelz/noxfile.py"
+
+$VENV_PYTHON -m nox -s build_package_protos -f \
+ "$ROOT/src/python/grpcio_channelz/noxfile.py"
+
 pip_install_dir "$ROOT/src/python/grpcio_channelz"
 
+
 # Build/install health checking
-nox -s preprocess -f "$ROOT/src/python/grpcio_health_checking/noxfile.py"
-nox -s build_package_protos -f "$ROOT/src/python/grpcio_health_checking/noxfile.py"
+$VENV_PYTHON -m nox -s preprocess -f \
+ "$ROOT/src/python/grpcio_health_checking/noxfile.py"
+
+$VENV_PYTHON -m nox -s build_package_protos -f \
+ "$ROOT/src/python/grpcio_health_checking/noxfile.py"
+
 pip_install_dir "$ROOT/src/python/grpcio_health_checking"
 
+
 # Build/install reflection
-nox -s preprocess -f "$ROOT/src/python/grpcio_reflection/noxfile.py"
-nox -s build_package_protos -f "$ROOT/src/python/grpcio_reflection/noxfile.py"
+$VENV_PYTHON -m nox -s preprocess -f \
+ "$ROOT/src/python/grpcio_reflection/noxfile.py"
+
+$VENV_PYTHON -m nox -s build_package_protos -f \
+ "$ROOT/src/python/grpcio_reflection/noxfile.py"
+
 pip_install_dir "$ROOT/src/python/grpcio_reflection"
 
+
 # Build/install status proto mapping
-nox -s preprocess -f "$ROOT/src/python/grpcio_status/noxfile.py"
-nox -s build_package_protos -f "$ROOT/src/python/grpcio_status/noxfile.py"
+$VENV_PYTHON -m nox -s preprocess -f \
+ "$ROOT/src/python/grpcio_status/noxfile.py"
+
+$VENV_PYTHON -m nox -s build_package_protos -f \
+ "$ROOT/src/python/grpcio_status/noxfile.py"
+
 pip_install_dir "$ROOT/src/python/grpcio_status"
 
 
@@ -236,6 +255,10 @@ pip_install coverage>=7.9.0 oauth2client==4.1.0 \
             rsa==4.0 absl-py==1.4.0 \
             opentelemetry-sdk==1.21.0
 
-nox -s preprocess -f "$ROOT/src/python/grpcio_tests/noxfile.py"
-nox -s build_package_protos -f "$ROOT/src/python/grpcio_tests/noxfile.py"
+$VENV_PYTHON -m nox -s preprocess -f \
+ "$ROOT/src/python/grpcio_tests/noxfile.py"
+
+$VENV_PYTHON -m nox -s build_package_protos -f \
+ "$ROOT/src/python/grpcio_tests/noxfile.py"
+
 pip_install_dir "$ROOT/src/python/grpcio_tests"
