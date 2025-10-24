@@ -3553,47 +3553,43 @@ void grpc_chttp2_transport_start_reading(
 void grpc_chttp2_transport::StartWatch(
     grpc_core::RefCountedPtr<StateWatcher> watcher) {
   combiner->Run(
-      grpc_core::NewClosure(
-          [t = RefAsSubclass<grpc_chttp2_transport>(),
-           watcher = std::move(watcher)](
-              grpc_error_handle) mutable {
-            GRPC_CHECK_EQ(t->watcher, nullptr);
-            if (t->ep != nullptr) {
-              auto* interested_parties = watcher->interested_parties();
-              if (interested_parties != nullptr) {
-                grpc_endpoint_add_to_pollset_set(t->ep.get(),
-                                                 interested_parties);
-              }
-            }
-            t->watcher = std::move(watcher);
-            if (!t->closed_with_error.ok()) {
-              // TODO(roth, ctiller): Provide better disconnect info here.
-              t->NotifyStateWatcherOnDisconnectLocked(t->closed_with_error, {});
-            } else {
-              t->NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked(
-                  t->settings.peer().max_concurrent_streams());
-            }
-          }),
-          absl::OkStatus());
+      grpc_core::NewClosure([t = RefAsSubclass<grpc_chttp2_transport>(),
+                             watcher = std::move(watcher)](
+                                grpc_error_handle) mutable {
+        GRPC_CHECK_EQ(t->watcher, nullptr);
+        if (t->ep != nullptr) {
+          auto* interested_parties = watcher->interested_parties();
+          if (interested_parties != nullptr) {
+            grpc_endpoint_add_to_pollset_set(t->ep.get(), interested_parties);
+          }
+        }
+        t->watcher = std::move(watcher);
+        if (!t->closed_with_error.ok()) {
+          // TODO(roth, ctiller): Provide better disconnect info here.
+          t->NotifyStateWatcherOnDisconnectLocked(t->closed_with_error, {});
+        } else {
+          t->NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked(
+              t->settings.peer().max_concurrent_streams());
+        }
+      }),
+      absl::OkStatus());
 }
 
 void grpc_chttp2_transport::StopWatch(
     grpc_core::RefCountedPtr<StateWatcher> watcher) {
   combiner->Run(
-      grpc_core::NewClosure(
-          [t = RefAsSubclass<grpc_chttp2_transport>(),
-           watcher = std::move(watcher)](
-              grpc_error_handle) {
-            if (t->ep != nullptr) {
-              auto* interested_parties = watcher->interested_parties();
-              if (interested_parties != nullptr) {
-                grpc_endpoint_delete_from_pollset_set(t->ep.get(),
-                                                      interested_parties);
-              }
-            }
-            if (t->watcher == watcher) t->watcher.reset();
-          }),
-          absl::OkStatus());
+      grpc_core::NewClosure([t = RefAsSubclass<grpc_chttp2_transport>(),
+                             watcher = std::move(watcher)](grpc_error_handle) {
+        if (t->ep != nullptr) {
+          auto* interested_parties = watcher->interested_parties();
+          if (interested_parties != nullptr) {
+            grpc_endpoint_delete_from_pollset_set(t->ep.get(),
+                                                  interested_parties);
+          }
+        }
+        if (t->watcher == watcher) t->watcher.reset();
+      }),
+      absl::OkStatus());
 }
 
 void grpc_chttp2_transport::NotifyStateWatcherOnDisconnectLocked(
@@ -3602,27 +3598,24 @@ void grpc_chttp2_transport::NotifyStateWatcherOnDisconnectLocked(
   if (ep != nullptr) {
     auto* interested_parties = watcher->interested_parties();
     if (interested_parties != nullptr) {
-      grpc_endpoint_delete_from_pollset_set(ep.get(),
-                                            interested_parties);
+      grpc_endpoint_delete_from_pollset_set(ep.get(), interested_parties);
     }
   }
-  event_engine->Run(
-      [watcher = std::move(watcher), status = std::move(status),
-       disconnect_info]() mutable {
-        grpc_core::ExecCtx exec_ctx;
-        watcher->OnDisconnect(std::move(status), disconnect_info);
-        watcher.reset();  // Before ExecCtx goes out of scope.
-      });
+  event_engine->Run([watcher = std::move(watcher), status = std::move(status),
+                     disconnect_info]() mutable {
+    grpc_core::ExecCtx exec_ctx;
+    watcher->OnDisconnect(std::move(status), disconnect_info);
+    watcher.reset();  // Before ExecCtx goes out of scope.
+  });
 }
 
-void
-grpc_chttp2_transport::NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked(
-    uint32_t max_concurrent_streams) {
+void grpc_chttp2_transport::
+    NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked(
+        uint32_t max_concurrent_streams) {
   if (watcher == nullptr) return;
-  event_engine->Run(
-      [watcher = watcher, max_concurrent_streams]() mutable {
-        grpc_core::ExecCtx exec_ctx;
-        watcher->OnPeerMaxConcurrentStreamsUpdate(max_concurrent_streams);
-        watcher.reset();  // Before ExecCtx goes out of scope.
-      });
+  event_engine->Run([watcher = watcher, max_concurrent_streams]() mutable {
+    grpc_core::ExecCtx exec_ctx;
+    watcher->OnPeerMaxConcurrentStreamsUpdate(max_concurrent_streams);
+    watcher.reset();  // Before ExecCtx goes out of scope.
+  });
 }

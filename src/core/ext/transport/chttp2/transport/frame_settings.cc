@@ -211,7 +211,7 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
         }
         // Notify state watcher on MAX_CONCURRENT_STREAMS update.
         else if (parser->id ==
-                     grpc_core::Http2Settings::kMaxConcurrentStreamsWireId) {
+                 grpc_core::Http2Settings::kMaxConcurrentStreamsWireId) {
           t->NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked(
               parser->value);
         }

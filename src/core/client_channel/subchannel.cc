@@ -409,16 +409,15 @@ class Subchannel::ConnectionStateWatcher final
     // channel needs.
     // TODO(roth): Revamp watcher interface between channel and subchannel
     // to provide a cleaner way to pass the keepalive info to the channel.
-    subchannel_->SetConnectivityStateLocked(
-        subchannel_->created_from_endpoint_
-            ? GRPC_CHANNEL_TRANSIENT_FAILURE
-            : GRPC_CHANNEL_IDLE,
-        status);
+    subchannel_->SetConnectivityStateLocked(subchannel_->created_from_endpoint_
+                                                ? GRPC_CHANNEL_TRANSIENT_FAILURE
+                                                : GRPC_CHANNEL_IDLE,
+                                            status);
     subchannel_->backoff_.Reset();
   }
 
   void OnPeerMaxConcurrentStreamsUpdate(
-        uint32_t max_concurrent_streams) override {
+      uint32_t max_concurrent_streams) override {
     // TODO(roth): Implement this as part of adding connection scaling.
   }
 

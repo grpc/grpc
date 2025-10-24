@@ -174,8 +174,7 @@ void Http2ClientTransport::StartWatch(RefCountedPtr<StateWatcher> watcher) {
     // TODO(roth, ctiller): Provide better status message and disconnect
     // info here.
     NotifyStateWatcherOnDisconnectLocked(
-        absl::UnknownError("transport closed before watcher started"),
-        {});
+        absl::UnknownError("transport closed before watcher started"), {});
   } else {
     // TODO(tjagtap): Call
     // NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked() with
@@ -200,9 +199,9 @@ void Http2ClientTransport::NotifyStateWatcherOnDisconnectLocked(
       });
 }
 
-void
-Http2ClientTransport::NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked(
-    uint32_t max_concurrent_streams) {
+void Http2ClientTransport::
+    NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked(
+        uint32_t max_concurrent_streams) {
   if (watcher_ == nullptr) return;
   general_party_->arena()->GetContext<EventEngine>()->Run(
       [watcher = watcher_, max_concurrent_streams]() mutable {
