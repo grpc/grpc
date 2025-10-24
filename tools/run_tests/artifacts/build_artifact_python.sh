@@ -103,7 +103,7 @@ done
 # Set build config option with WHEEL_PLAT_NAME_FLAG if it exists
 WHEEL_PLAT_CONFIG_OPTION=()
 if [[ -n "$WHEEL_PLAT_NAME_FLAG" ]]; then
-  WHEEL_PLAT_CONFIG_OPTION+=("-C--build-option=\"--plat-name=$WHEEL_PLAT_NAME_FLAG\"")
+  WHEEL_PLAT_CONFIG_OPTION+=("-C--build-option=\"$WHEEL_PLAT_NAME_FLAG\"")
 fi
 
 # Build the source distribution first because MANIFEST.in cannot override
