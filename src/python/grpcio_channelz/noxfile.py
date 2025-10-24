@@ -32,7 +32,7 @@ def preprocess(session: nox.Session):
     the root directory
     """
     session.log("Running preprocess for grpcio-channelz...")
-    session.log("Current working directory:", os.path.abspath(os.curdir))
+    session.log(f"Current working directory: {os.path.abspath(os.curdir)}")
     # TODO: Can skip copy proto part.
     if os.path.isfile(CHANNELZ_PROTO):
         shutil.copyfile(

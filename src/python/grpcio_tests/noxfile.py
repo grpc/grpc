@@ -31,8 +31,7 @@ PYTHON_PROTO_TOP_LEVEL = os.path.join(PYTHON_REL_PATH, "src")
 def preprocess(session: nox.Session):
     """Session to gather proto dependencies"""
 
-    # TODO(atash) ensure that we're running from the repository directory when
-    # this command is used
+    session.cd(GRPC_STEM)
     try:
         shutil.rmtree(PROTO_STEM)
     except Exception as error:
