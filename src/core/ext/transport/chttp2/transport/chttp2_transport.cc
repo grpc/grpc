@@ -1380,6 +1380,8 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
   }
   absl::Status status = grpc_error_to_absl_status(t->goaway_error);
   grpc_core::Transport::StateWatcher::DisconnectInfo disconnect_info;
+  disconnect_info.reason = grpc_core::Transport::StateWatcher::kGoaway;
+  disconnect_info.http2_error_code = static_cast<Http2ErrorCode>(goaway_error);
   // When a client receives a GOAWAY with error code ENHANCE_YOUR_CALM and debug
   // data equal to "too_many_pings", it should log the occurrence at a log level
   // that is enabled by default and double the configured KEEPALIVE_TIME used
@@ -1401,8 +1403,6 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
             : t->keepalive_time.millis() * KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
     status.SetPayload(grpc_core::kKeepaliveThrottlingKey,
                       absl::Cord(std::to_string(throttled_keepalive_time)));
-    disconnect_info.reason = grpc_core::Transport::StateWatcher::kGoaway;
-    disconnect_info.http2_error_code = Http2ErrorCode::kEnhanceYourCalm;
     disconnect_info.keepalive_time =
         grpc_core::Duration::Milliseconds(throttled_keepalive_time);
   }
