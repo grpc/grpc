@@ -71,10 +71,6 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
  public:
   const ChannelArgs& args() const { return args_; }
 
-  virtual void StartWatch(
-      grpc_pollset_set* interested_parties,
-      OrphanablePtr<ConnectivityStateWatcherInterface> watcher) = 0;
-
   // Methods for v3 stack.
   virtual void Ping(absl::AnyInvocable<void(absl::Status)> on_ack) = 0;
   virtual RefCountedPtr<UnstartedCallDestination> unstarted_call_destination()
@@ -314,7 +310,7 @@ class Subchannel final : public DualRefCounted<Subchannel> {
         watchers_;
   };
 
-  class ConnectedSubchannelStateWatcher;
+  class ConnectionStateWatcher;
 
   // Sets the subchannel's connectivity state to \a state.
   void SetConnectivityStateLocked(grpc_connectivity_state state,
