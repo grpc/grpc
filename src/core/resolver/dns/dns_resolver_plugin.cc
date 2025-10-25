@@ -17,8 +17,6 @@
 
 #include <memory>
 
-#include "absl/log/log.h"
-#include "absl/strings/match.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/resolver/dns/c_ares/dns_resolver_ares.h"
@@ -26,6 +24,8 @@
 #include "src/core/resolver/dns/native/dns_resolver.h"
 #include "src/core/resolver/resolver_factory.h"
 #include "src/core/util/crash.h"
+#include "absl/log/log.h"
+#include "absl/strings/match.h"
 
 namespace grpc_core {
 
@@ -36,14 +36,17 @@ void RegisterDnsResolver(CoreConfiguration::Builder* builder) {
       std::make_unique<EventEngineClientChannelDNSResolverFactory>());
   return;
 #endif
-#ifndef GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
-  if (IsEventEngineDnsEnabled()) {
+#ifdef GRPC_PYTHON_BUILD
+  bool use_ee = IsEventEnginePollerForPythonEnabled();
+#else   // GRPC_PYTHON_BUILD
+  bool use_ee = true;
+#endif  // GRPC_PYTHON_BUILD
+  if (use_ee && IsEventEngineDnsEnabled()) {
     VLOG(2) << "Using EventEngine dns resolver";
     builder->resolver_registry()->RegisterResolverFactory(
         std::make_unique<EventEngineClientChannelDNSResolverFactory>());
     return;
   }
-#endif
   auto resolver = ConfigVars::Get().DnsResolver();
   // ---- Ares resolver ----
   if (ShouldUseAresDnsResolver(resolver)) {

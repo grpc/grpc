@@ -30,11 +30,8 @@
 #include <optional>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/handshaker/handshaker.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -51,6 +48,10 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/util/uri.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 // User agent this library reports
 #define GRPC_HTTPCLI_USER_AGENT "grpc-httpcli/0.0"
@@ -180,7 +181,9 @@ class HttpRequest : public InternallyRefCounted<HttpRequest> {
 
  private:
   void Finish(grpc_error_handle error) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    grpc_polling_entity_del_from_pollset_set(pollent_, pollset_set_);
+    if (!grpc_event_engine::experimental::UsePollsetAlternative()) {
+      grpc_polling_entity_del_from_pollset_set(pollent_, pollset_set_);
+    }
     ExecCtx::Run(DEBUG_LOCATION, on_done_, error);
   }
 

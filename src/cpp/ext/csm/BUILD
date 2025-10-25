@@ -41,7 +41,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:any_invocable",
-        "absl/log:check",
         "absl/log:log",
         "absl/status:statusor",
         "absl/strings",
@@ -49,11 +48,12 @@ grpc_cc_library(
         "otel/api",
         "otel/sdk/src/metrics",
         "otel/sdk:headers",
-        "@com_google_protobuf//upb:base",
-        "@com_google_protobuf//upb:mem",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
     ],
     tags = [
-        "grpc:broken-internally",
+        # TODO(b/332369798): Remove after fixing bug
+        "grpc:otel-namespace-calamity",
     ],
     visibility = ["//:__subpackages__"],
     deps = [
@@ -66,6 +66,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:env",
         "//src/core:error",
+        "//src/core:grpc_check",
         "//src/core:metadata_batch",
         "//src/core:slice",
         "//src/core:xds_enabled_server",

@@ -23,6 +23,7 @@ import subprocess
 from subprocess import PIPE
 import sys
 import sysconfig
+import tempfile
 
 import setuptools
 from setuptools import Extension
@@ -130,6 +131,20 @@ class BuildExt(build_ext.build_ext):
         return filename
 
     def build_extensions(self):
+
+        # use short temp directory to avoid linker command file errors caused by
+        # exceeding 131071 characters in Windows.
+        # TODO(ssreenithi): Remove once we have a better solution: b/454497076
+        use_short_temp = os.environ.get(
+            "GRPC_PYTHON_BUILD_USE_SHORT_TEMP_DIR_NAME", 0
+        )
+        if use_short_temp == "1":
+            if not os.path.exists("pyb"):
+                os.mkdir("pyb")
+
+            self.build_temp = tempfile.mkdtemp(dir="pyb")
+            print(f"Using temp build directory: {self.build_temp}")
+
         # This is to let UnixCompiler get either C or C++ compiler options depending on the source.
         # Note that this doesn't work for MSVCCompiler and will be handled by _spawn_patch.py.
         old_compile = self.compiler._compile
@@ -159,9 +174,13 @@ class BuildExt(build_ext.build_ext):
 if sys.platform == "darwin":
     if "MACOSX_DEPLOYMENT_TARGET" not in os.environ:
         target_ver = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET")
-        if target_ver == "" or tuple(int(p) for p in target_ver.split(".")) < (
-            10,
-            14,
+        if target_ver is not None and (
+            target_ver == ""
+            or tuple(int(p) for p in target_ver.split("."))
+            < (
+                10,
+                14,
+            )
         ):
             os.environ["MACOSX_DEPLOYMENT_TARGET"] = "11.0"
 
@@ -343,12 +362,17 @@ setuptools.setup(
     packages=setuptools.find_packages("."),
     python_requires=f">={python_version.MIN_PYTHON_VERSION}",
     install_requires=[
-        "protobuf>=6.30.0,<7.0dev",
+        "protobuf>=6.31.1,<7.0.0",
         "grpcio>={version}".format(version=grpc_version.VERSION),
-        "setuptools",
+        "setuptools>=77.0.1",
     ],
     package_data=package_data(),
     cmdclass={
         "build_ext": BuildExt,
+    },
+    entry_points={
+        "console_scripts": [
+            "python-grpc-tools-protoc = grpc_tools.protoc:entrypoint",
+        ],
     },
 )

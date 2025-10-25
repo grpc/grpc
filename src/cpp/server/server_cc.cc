@@ -63,20 +63,20 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/server/server.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/manual_constructor.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/cpp/server/external_connection_acceptor_impl.h"
 #include "src/cpp/server/health/default_health_check_service.h"
 #include "src/cpp/thread_manager/thread_manager.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
 
 namespace grpc {
 namespace {
@@ -105,11 +105,12 @@ class DefaultGlobalCallbacks final : public Server::GlobalCallbacks {
 };
 
 std::shared_ptr<Server::GlobalCallbacks> g_callbacks = nullptr;
+Server::GlobalCallbacks* g_raw_callbacks = nullptr;
 gpr_once g_once_init_callbacks = GPR_ONCE_INIT;
 
 void InitGlobalCallbacks() {
-  if (!g_callbacks) {
-    g_callbacks = std::make_shared<DefaultGlobalCallbacks>();
+  if (!g_raw_callbacks) {
+    g_raw_callbacks = new DefaultGlobalCallbacks;
   }
 }
 
@@ -238,10 +239,11 @@ void ServerInterface::RegisteredAsyncRequest::IssueRequest(
     ServerCompletionQueue* notification_cq) {
   // The following call_start_batch is internally-generated so no need for an
   // explanatory log on failure.
-  CHECK(grpc_server_request_registered_call(
-            server_->server(), registered_method, &call_, &context_->deadline_,
-            context_->client_metadata_.arr(), payload, call_cq_->cq(),
-            notification_cq->cq(), this) == GRPC_CALL_OK);
+  GRPC_CHECK(grpc_server_request_registered_call(
+                 server_->server(), registered_method, &call_,
+                 &context_->deadline_, context_->client_metadata_.arr(),
+                 payload, call_cq_->cq(), notification_cq->cq(),
+                 this) == GRPC_CALL_OK);
 }
 
 ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
@@ -252,8 +254,8 @@ ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
     : BaseAsyncRequest(server, context, stream, call_cq, notification_cq, tag,
                        delete_on_finalize) {
   grpc_call_details_init(&call_details_);
-  CHECK(notification_cq);
-  CHECK(call_cq);
+  GRPC_CHECK(notification_cq);
+  GRPC_CHECK(call_cq);
   if (issue_request) {
     IssueRequest();
   }
@@ -287,10 +289,10 @@ bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,
 void ServerInterface::GenericAsyncRequest::IssueRequest() {
   // The following call_start_batch is internally-generated so no need for an
   // explanatory log on failure.
-  CHECK(grpc_server_request_call(server_->server(), &call_, &call_details_,
-                                 context_->client_metadata_.arr(),
-                                 call_cq_->cq(), notification_cq_->cq(),
-                                 this) == GRPC_CALL_OK);
+  GRPC_CHECK(grpc_server_request_call(server_->server(), &call_, &call_details_,
+                                      context_->client_metadata_.arr(),
+                                      call_cq_->cq(), notification_cq_->cq(),
+                                      this) == GRPC_CALL_OK);
 }
 
 namespace {
@@ -299,9 +301,9 @@ class ShutdownCallback : public grpc_completion_queue_functor {
   ShutdownCallback() {
     functor_run = &ShutdownCallback::Run;
     // Set inlineable to true since this callback is trivial and thus does not
-    // need to be run from the executor (triggering a thread hop). This should
-    // only be used by internal callbacks like this and not by user application
-    // code.
+    // need to be run from the EventEngine (potentially triggering a thread
+    // hop). This should only be used by internal callbacks like this and not by
+    // user application code.
     inlineable = true;
   }
   // TakeCQ takes ownership of the cq into the shutdown callback
@@ -415,8 +417,7 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
     return true;
   }
 
-  void Run(const std::shared_ptr<GlobalCallbacks>& global_callbacks,
-           bool resources) {
+  void Run(bool resources) {
     ctx_.Init(deadline_, &request_metadata_);
     wrapped_call_.Init(
         call_, server_, &cq_, server_->max_receive_message_size(),
@@ -427,7 +428,6 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
     ctx_->ctx.cq_ = &cq_;
     request_metadata_.count = 0;
 
-    global_callbacks_ = global_callbacks;
     resources_ = resources;
 
     interceptor_methods_.SetCall(&*wrapped_call_);
@@ -463,13 +463,13 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
 
   void ContinueRunAfterInterception() {
     ctx_->ctx.BeginCompletionOp(&*wrapped_call_, nullptr, nullptr);
-    global_callbacks_->PreSynchronousRequest(&ctx_->ctx);
+    g_raw_callbacks->PreSynchronousRequest(&ctx_->ctx);
     auto* handler = resources_ ? method_->handler()
                                : server_->resource_exhausted_handler_.get();
     handler->RunHandler(grpc::internal::MethodHandler::HandlerParameter(
         &*wrapped_call_, &ctx_->ctx, deserialized_request_, request_status_,
         nullptr, nullptr));
-    global_callbacks_->PostSynchronousRequest(&ctx_->ctx);
+    g_raw_callbacks->PostSynchronousRequest(&ctx_->ctx);
 
     cq_.Shutdown();
 
@@ -478,7 +478,7 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
 
     // Ensure the cq_ is shutdown
     grpc::PhonyTag ignored_tag;
-    CHECK(cq_.Pluck(&ignored_tag) == false);
+    GRPC_CHECK(cq_.Pluck(&ignored_tag) == false);
 
     // Cleanup structures allocated during Run/ContinueRunAfterInterception
     wrapped_call_.Destroy();
@@ -524,7 +524,6 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
   grpc_byte_buffer* request_payload_ = nullptr;
   grpc::CompletionQueue cq_;
   grpc::Status request_status_;
-  std::shared_ptr<GlobalCallbacks> global_callbacks_;
   bool resources_;
   void* deserialized_request_ = nullptr;
   grpc::internal::InterceptorBatchMethodsImpl interceptor_methods_;
@@ -618,10 +617,10 @@ class Server::CallbackRequest final
       functor_run = &CallbackCallTag::StaticRun;
       // Set inlineable to true since this callback is internally-controlled
       // without taking any locks, and thus does not need to be run from the
-      // executor (which triggers a thread hop). This should only be used by
-      // internal callbacks like this and not by user application code. The work
-      // here is actually non-trivial, but there is no chance of having user
-      // locks conflict with each other so it's ok to run inlined.
+      // EventEngine (which may trigger a thread hop). This should only be used
+      // by internal callbacks like this and not by user application code. The
+      // work here is actually non-trivial, but there is no chance of having
+      // user locks conflict with each other so it's ok to run inlined.
       inlineable = true;
     }
 
@@ -640,8 +639,8 @@ class Server::CallbackRequest final
     void Run(bool ok) {
       void* ignored = req_;
       bool new_ok = ok;
-      CHECK(!req_->FinalizeResult(&ignored, &new_ok));
-      CHECK(ignored == req_);
+      GRPC_CHECK(!req_->FinalizeResult(&ignored, &new_ok));
+      GRPC_CHECK(ignored == req_);
 
       if (!ok) {
         // The call has been shutdown.
@@ -787,14 +786,12 @@ const char* Server::CallbackRequest<
 class Server::SyncRequestThreadManager : public grpc::ThreadManager {
  public:
   SyncRequestThreadManager(Server* server, grpc::CompletionQueue* server_cq,
-                           std::shared_ptr<GlobalCallbacks> global_callbacks,
                            grpc_resource_quota* rq, int min_pollers,
                            int max_pollers, int cq_timeout_msec)
       : ThreadManager("SyncServer", rq, min_pollers, max_pollers),
         server_(server),
         server_cq_(server_cq),
-        cq_timeout_msec_(cq_timeout_msec),
-        global_callbacks_(std::move(global_callbacks)) {}
+        cq_timeout_msec_(cq_timeout_msec) {}
 
   WorkStatus PollForWork(void** tag, bool* ok) override {
     *tag = nullptr;
@@ -822,10 +819,10 @@ class Server::SyncRequestThreadManager : public grpc::ThreadManager {
 
     // Under the AllocatingRequestMatcher model we will never see an invalid tag
     // here.
-    DCHECK_NE(sync_req, nullptr);
-    DCHECK(ok);
+    GRPC_DCHECK_NE(sync_req, nullptr);
+    GRPC_DCHECK(ok);
 
-    sync_req->Run(global_callbacks_, resources);
+    sync_req->Run(resources);
   }
 
   void AddSyncMethod(grpc::internal::RpcServiceMethod* method, void* tag) {
@@ -881,7 +878,6 @@ class Server::SyncRequestThreadManager : public grpc::ThreadManager {
   int cq_timeout_msec_;
   bool has_sync_method_ = false;
   std::unique_ptr<grpc::internal::RpcServiceMethod> unknown_method_;
-  std::shared_ptr<Server::GlobalCallbacks> global_callbacks_;
 };
 
 Server::Server(
@@ -909,8 +905,7 @@ Server::Server(
       health_check_service_disabled_(false),
       server_metric_recorder_(server_metric_recorder) {
   gpr_once_init(&grpc::g_once_init_callbacks, grpc::InitGlobalCallbacks);
-  global_callbacks_ = grpc::g_callbacks;
-  global_callbacks_->UpdateArguments(args);
+  g_raw_callbacks->UpdateArguments(args);
 
   if (sync_server_cqs_ != nullptr) {
     bool default_rq_created = false;
@@ -922,9 +917,9 @@ Server::Server(
     }
 
     for (const auto& it : *sync_server_cqs_) {
-      sync_req_mgrs_.emplace_back(new SyncRequestThreadManager(
-          this, it.get(), global_callbacks_, server_rq, min_pollers,
-          max_pollers, sync_cq_timeout_msec));
+      sync_req_mgrs_.emplace_back(
+          new SyncRequestThreadManager(this, it.get(), server_rq, min_pollers,
+                                       max_pollers, sync_cq_timeout_msec));
     }
 
     if (default_rq_created) {
@@ -995,9 +990,9 @@ Server::~Server() {
 }
 
 void Server::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
-  CHECK(!grpc::g_callbacks);
-  CHECK(callbacks);
-  grpc::g_callbacks.reset(callbacks);
+  GRPC_CHECK(!g_raw_callbacks);
+  GRPC_CHECK(callbacks);
+  g_raw_callbacks = callbacks;
 }
 
 grpc_server* Server::c_server() { return server_; }
@@ -1040,7 +1035,7 @@ static grpc_server_register_method_payload_handling PayloadHandlingForMethod(
 bool Server::RegisterService(const std::string* addr, grpc::Service* service) {
   bool has_async_methods = service->has_async_methods();
   if (has_async_methods) {
-    CHECK_EQ(service->server_, nullptr)
+    GRPC_CHECK_EQ(service->server_, nullptr)
         << "Can only register an asynchronous service against one server.";
     service->server_ = this;
   }
@@ -1097,7 +1092,7 @@ bool Server::RegisterService(const std::string* addr, grpc::Service* service) {
 }
 
 void Server::RegisterAsyncGenericService(grpc::AsyncGenericService* service) {
-  CHECK_EQ(service->server_, nullptr)
+  GRPC_CHECK_EQ(service->server_, nullptr)
       << "Can only register an async generic service against one server.";
   service->server_ = this;
   has_async_generic_service_ = true;
@@ -1105,7 +1100,7 @@ void Server::RegisterAsyncGenericService(grpc::AsyncGenericService* service) {
 
 void Server::RegisterCallbackGenericService(
     grpc::CallbackGenericService* service) {
-  CHECK_EQ(service->server_, nullptr)
+  GRPC_CHECK_EQ(service->server_, nullptr)
       << "Can only register a callback generic service against one server.";
   service->server_ = this;
   has_callback_generic_service_ = true;
@@ -1122,9 +1117,9 @@ void Server::RegisterCallbackGenericService(
 
 int Server::AddListeningPort(const std::string& addr,
                              grpc::ServerCredentials* creds) {
-  CHECK(!started_);
+  GRPC_CHECK(!started_);
   int port = creds->AddPortToServer(addr, server_);
-  global_callbacks_->AddPort(this, addr, creds, port);
+  g_raw_callbacks->AddPort(this, addr, creds, port);
   return port;
 }
 
@@ -1138,7 +1133,7 @@ void Server::UnrefWithPossibleNotify() {
     // No refs outstanding means that shutdown has been initiated and no more
     // callback requests are outstanding.
     grpc::internal::MutexLock lock(&mu_);
-    CHECK(shutdown_);
+    GRPC_CHECK(shutdown_);
     shutdown_done_ = true;
     shutdown_done_cv_.Signal();
   }
@@ -1156,8 +1151,8 @@ void Server::UnrefAndWaitLocked() {
 }
 
 void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
-  CHECK(!started_);
-  global_callbacks_->PreServerStart(this);
+  GRPC_CHECK(!started_);
+  g_raw_callbacks->PreServerStart(this);
   started_ = true;
 
   // Only create default health check service when user did not provide an

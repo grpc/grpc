@@ -51,17 +51,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/hash/hash.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/config/core_configuration.h"
@@ -90,6 +79,7 @@
 #include "src/core/util/backoff.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/dual_ref_counted.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
@@ -97,6 +87,7 @@
 #include "src/core/util/match.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
@@ -107,6 +98,16 @@
 #include "src/proto/grpc/lookup/v1/rls.upb.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
+#include "absl/base/thread_annotations.h"
+#include "absl/hash/hash.h"
+#include "absl/log/log.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 using ::grpc_event_engine::experimental::EventEngine;
 
@@ -401,7 +402,8 @@ class RlsLb final : public LoadBalancingPolicy {
       size_t Size() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
       // Pick subchannel for request based on the entry's state.
-      PickResult Pick(PickArgs args) ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
+      PickResult Pick(PickArgs args, absl::string_view lookup_service)
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
       // If the cache entry is in backoff state, resets the backoff and, if
       // applicable, its backoff timer. The method does not update the LB
@@ -693,6 +695,7 @@ class RlsLb final : public LoadBalancingPolicy {
 
   template <typename HandleType>
   void MaybeExportPickCount(HandleType handle, absl::string_view target,
+                            absl::string_view lookup_service,
                             const PickResult& pick_result);
 
   const std::string instance_uuid_;
@@ -794,7 +797,7 @@ void RlsLb::ChildPolicyWrapper::StartUpdate(
   auto child_policy_config = InsertOrUpdateChildPolicyField(
       lb_policy_->config_->child_policy_config_target_field_name(), target_,
       lb_policy_->config_->child_policy_config(), &errors);
-  CHECK(child_policy_config.has_value());
+  GRPC_CHECK(child_policy_config.has_value());
   GRPC_TRACE_LOG(rls_lb, INFO)
       << "[rlslb " << lb_policy_.get() << "] ChildPolicyWrapper=" << this
       << " [" << target_
@@ -871,7 +874,7 @@ void RlsLb::ChildPolicyWrapper::ChildPolicyHelper::UpdateState(
       return;
     }
     wrapper_->connectivity_state_ = state;
-    DCHECK(picker != nullptr);
+    GRPC_DCHECK(picker != nullptr);
     if (picker != nullptr) {
       // We want to unref the picker after we release the lock.
       wrapper_->picker_.swap(picker);
@@ -895,7 +898,7 @@ std::map<std::string, std::string> BuildKeyMap(
   if (it == key_builder_map.end()) {
     // Didn't find exact match, try method wildcard.
     last_slash_pos = path.rfind('/');
-    DCHECK(last_slash_pos != path.npos);
+    GRPC_DCHECK(last_slash_pos != path.npos);
     if (GPR_UNLIKELY(last_slash_pos == path.npos)) return {};
     std::string service(path.substr(0, last_slash_pos + 1));
     it = key_builder_map.find(service);
@@ -927,7 +930,7 @@ std::map<std::string, std::string> BuildKeyMap(
   if (!key_builder->service_key.empty()) {
     if (last_slash_pos == path.npos) {
       last_slash_pos = path.rfind('/');
-      DCHECK(last_slash_pos != path.npos);
+      GRPC_DCHECK(last_slash_pos != path.npos);
       if (GPR_UNLIKELY(last_slash_pos == path.npos)) return {};
     }
     key_map[key_builder->service_key] =
@@ -937,7 +940,7 @@ std::map<std::string, std::string> BuildKeyMap(
   if (!key_builder->method_key.empty()) {
     if (last_slash_pos == path.npos) {
       last_slash_pos = path.rfind('/');
-      DCHECK(last_slash_pos != path.npos);
+      GRPC_DCHECK(last_slash_pos != path.npos);
       if (GPR_UNLIKELY(last_slash_pos == path.npos)) return {};
     }
     key_map[key_builder->method_key] =
@@ -1000,7 +1003,7 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
       GRPC_TRACE_LOG(rls_lb, INFO)
           << "[rlslb " << lb_policy_.get() << "] picker=" << this
           << ": using cache entry " << entry;
-      return entry->Pick(args);
+      return entry->Pick(args, config_->lookup_service());
     }
     // If the entry is in backoff, then use the default target if set,
     // or else fail the pick.
@@ -1026,7 +1029,8 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::PickFromDefaultTargetOrFail(
         << reason << "; using default target";
     auto pick_result = default_child_policy_->Pick(args);
     lb_policy_->MaybeExportPickCount(kMetricDefaultTargetPicks,
-                                     config_->default_target(), pick_result);
+                                     config_->default_target(),
+                                     config_->lookup_service(), pick_result);
     return pick_result;
   }
   GRPC_TRACE_LOG(rls_lb, INFO)
@@ -1122,7 +1126,7 @@ void RlsLb::Cache::Entry::Orphan() {
   is_shutdown_ = true;
   lb_policy_->cache_.lru_list_.erase(lru_iterator_);
   lru_iterator_ = lb_policy_->cache_.lru_list_.end();  // Just in case.
-  CHECK(child_policy_wrappers_.empty());
+  GRPC_CHECK(child_policy_wrappers_.empty());
   backoff_state_.reset();
   if (backoff_timer_ != nullptr) {
     backoff_timer_.reset();
@@ -1133,11 +1137,12 @@ void RlsLb::Cache::Entry::Orphan() {
 
 size_t RlsLb::Cache::Entry::Size() const {
   // lru_iterator_ is not valid once we're shut down.
-  CHECK(!is_shutdown_);
+  GRPC_CHECK(!is_shutdown_);
   return lb_policy_->cache_.EntrySizeForKey(*lru_iterator_);
 }
 
-LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
+LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(
+    PickArgs args, absl::string_view lookup_service) {
   size_t i = 0;
   ChildPolicyWrapper* child_policy_wrapper = nullptr;
   // Skip targets before the last one that are in state TRANSIENT_FAILURE.
@@ -1167,7 +1172,8 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
       << "; delegating";
   auto pick_result = child_policy_wrapper->Pick(args);
   lb_policy_->MaybeExportPickCount(kMetricTargetPicks,
-                                   child_policy_wrapper->target(), pick_result);
+                                   child_policy_wrapper->target(),
+                                   lookup_service, pick_result);
   // Add header data.
   if (!header_data_.empty()) {
     auto* complete_pick =
@@ -1424,7 +1430,7 @@ void RlsLb::Cache::MaybeShrinkSize(
     auto lru_it = lru_list_.begin();
     if (GPR_UNLIKELY(lru_it == lru_list_.end())) break;
     auto map_it = map_.find(*lru_it);
-    CHECK(map_it != map_.end());
+    GRPC_CHECK(map_it != map_.end());
     auto& entry = map_it->second;
     if (!entry->CanEvict()) break;
     GRPC_TRACE_LOG(rls_lb, INFO)
@@ -1552,7 +1558,7 @@ RlsLb::RlsChannel::RlsChannel(RefCountedPtr<RlsLb> lb_policy)
     auto parent_channelz_node =
         lb_policy_->channel_args_.GetObjectRef<channelz::ChannelNode>();
     if (child_channelz_node != nullptr && parent_channelz_node != nullptr) {
-      parent_channelz_node->AddChildChannel(child_channelz_node->uuid());
+      child_channelz_node->AddParent(parent_channelz_node.get());
       parent_channelz_node_ = std::move(parent_channelz_node);
     }
     // Start connectivity watch.
@@ -1572,8 +1578,8 @@ void RlsLb::RlsChannel::Orphan() {
     // Remove channelz linkage.
     if (parent_channelz_node_ != nullptr) {
       channelz::ChannelNode* child_channelz_node = channel_->channelz_node();
-      CHECK_NE(child_channelz_node, nullptr);
-      parent_channelz_node_->RemoveChildChannel(child_channelz_node->uuid());
+      GRPC_CHECK_NE(child_channelz_node, nullptr);
+      child_channelz_node->RemoveParent(parent_channelz_node_.get());
     }
     // Stop connectivity watch.
     if (watcher_ != nullptr) {
@@ -1608,7 +1614,7 @@ void RlsLb::RlsChannel::ReportResponseLocked(bool response_succeeded) {
 }
 
 void RlsLb::RlsChannel::ResetBackoff() {
-  DCHECK(channel_ != nullptr);
+  GRPC_DCHECK(channel_ != nullptr);
   channel_->ResetConnectionBackoff();
 }
 
@@ -1641,7 +1647,7 @@ RlsLb::RlsRequest::RlsRequest(
       absl::OkStatus());
 }
 
-RlsLb::RlsRequest::~RlsRequest() { CHECK_EQ(call_, nullptr); }
+RlsLb::RlsRequest::~RlsRequest() { GRPC_CHECK_EQ(call_, nullptr); }
 
 void RlsLb::RlsRequest::Orphan() {
   if (call_ != nullptr) {
@@ -1701,7 +1707,7 @@ void RlsLb::RlsRequest::StartCallLocked() {
   Ref(DEBUG_LOCATION, "OnRlsCallComplete").release();
   auto call_error = grpc_call_start_batch_and_execute(
       call_, ops, static_cast<size_t>(op - ops), &call_complete_cb_);
-  CHECK_EQ(call_error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(call_error, GRPC_CALL_OK);
 }
 
 void RlsLb::RlsRequest::OnRlsCallComplete(void* arg, grpc_error_handle error) {
@@ -1847,9 +1853,9 @@ RlsLb::ResponseInfo RlsLb::RlsRequest::ParseResponseProto() {
 
 std::string GenerateUUID() {
   absl::uniform_int_distribution<uint64_t> distribution;
-  absl::BitGen bitgen;
-  uint64_t hi = distribution(bitgen);
-  uint64_t lo = distribution(bitgen);
+  SharedBitGen g;
+  uint64_t hi = distribution(g);
+  uint64_t lo = distribution(g);
   return GenerateUUIDv4(hi, lo);
 }
 
@@ -2114,6 +2120,7 @@ void RlsLb::UpdatePickerLocked() {
 
 template <typename HandleType>
 void RlsLb::MaybeExportPickCount(HandleType handle, absl::string_view target,
+                                 absl::string_view lookup_service,
                                  const PickResult& pick_result) {
   absl::string_view pick_result_string = Match(
       pick_result.result,
@@ -2125,11 +2132,10 @@ void RlsLb::MaybeExportPickCount(HandleType handle, absl::string_view target,
       [](const LoadBalancingPolicy::PickResult::Drop&) { return "drop"; });
   if (pick_result_string.empty()) return;  // Don't report queued picks.
   auto& stats_plugins = channel_control_helper()->GetStatsPluginGroup();
-  stats_plugins.AddCounter(
-      handle, 1,
-      {channel_control_helper()->GetTarget(), config_->lookup_service(), target,
-       pick_result_string},
-      {});
+  stats_plugins.AddCounter(handle, 1,
+                           {channel_control_helper()->GetTarget(),
+                            lookup_service, target, pick_result_string},
+                           {});
 }
 
 //

@@ -17,7 +17,7 @@ from typing import Sequence, Optional
 import unittest
 import sys
 import pkgutil
-
+import importlib.util
 
 class SingleLoader(object):
     def __init__(self, pattern: str, unittest_path: str):
@@ -27,8 +27,15 @@ class SingleLoader(object):
 
         for importer, module_name, is_package in pkgutil.walk_packages([unittest_path]):
             if pattern in module_name:
-                module = importer.find_module(module_name).load_module(module_name)
-                tests.append(loader.loadTestsFromModule(module))
+                try:
+                    spec = importer.find_spec(module_name)
+                    if spec is not None:
+                        module = importlib.util.module_from_spec(spec)
+                        spec.loader.exec_module(module)
+                        tests.append(loader.loadTestsFromModule(module))
+                except Exception as e:
+                  raise AssertionError(f"Error loading module {module_name}: {e}")
+
         if len(tests) != 1:            
             raise AssertionError("Expected only 1 test module. Found {}".format(tests))
         self.suite.addTest(tests[0])

@@ -18,11 +18,11 @@
 
 #include <memory>
 
-#include "gtest/gtest.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "test/core/event_engine/mock_event_engine.h"
 #include "test/core/event_engine/util/aborting_event_engine.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 namespace {
 using ::grpc_event_engine::experimental::AbortingEventEngine;
@@ -85,12 +85,12 @@ TEST_F(EventEngineFactoryTest, SharedPtrGlobalEventEngineLifetimesAreValid) {
     ASSERT_EQ(ee2.use_count(), 2);
   }
   // Ensure the first shared_ptr did not delete the global
-  ASSERT_TRUE(ee2.unique());
+  ASSERT_EQ(ee2.use_count(), 1);
   // destroy the global engine via the last shared_ptr, and create a new one.
   ee2.reset();
   ee2 = GetDefaultEventEngine();
   ASSERT_EQ(2, create_count);
-  ASSERT_TRUE(ee2.unique());
+  ASSERT_EQ(ee2.use_count(), 1);
 }
 
 }  // namespace

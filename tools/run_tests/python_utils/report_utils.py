@@ -129,14 +129,14 @@ def append_junit_xml_results(
                 xml_test.set("time", str(result.elapsed_time))
             filtered_msg = _filter_msg(result.message, "XML")
             if result.state == "FAILED":
-                ET.SubElement(
-                    xml_test, "failure", message="Failure"
-                ).text = filtered_msg
+                ET.SubElement(xml_test, "failure", message="Failure").text = (
+                    filtered_msg
+                )
                 failure_count += 1
             elif result.state == "TIMEOUT":
-                ET.SubElement(
-                    xml_test, "error", message="Timeout"
-                ).text = filtered_msg
+                ET.SubElement(xml_test, "error", message="Timeout").text = (
+                    filtered_msg
+                )
                 error_count += 1
             elif result.state == "SKIPPED":
                 ET.SubElement(xml_test, "skipped", message="Skipped")

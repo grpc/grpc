@@ -50,6 +50,8 @@ def generate_resolver_component_tests():
             ],
             tags = [
                 "no_windows",
+                # relies on ares
+                "grpc:broken-internally",
             ],
         )
 
@@ -79,7 +81,7 @@ def generate_resolver_component_tests():
                 "//src/core:ares_resolver",
                 "//test/cpp/util:test_config",
             ],
-            tags = ["no_windows"],
+            tags = ["no_windows", "grpc:broken-internally"],
         )
         grpc_cc_test(
             name = "resolver_component_tests_runner_invoker%s" %

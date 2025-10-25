@@ -39,6 +39,7 @@ class Preprocess(setuptools.Command):
         pass
 
     def run(self):
+        # TODO: Can skip copy proto part.
         if os.path.isfile(CHANNELZ_PROTO):
             shutil.copyfile(
                 CHANNELZ_PROTO,

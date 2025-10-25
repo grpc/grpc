@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# This script is meant to be ran in Docker instance of python:3.8.
+# This script is meant to be ran in Docker instance of python:3.9.
 
 set -ex
 
@@ -26,6 +26,6 @@ export HOME
 pip install -r tools/distrib/docgen/requirements.docs.lock
 tools/run_tests/run_tests.py -c opt -l python --compiler python3.9 --newline_on_success -j 8 --build_only
 # shellcheck disable=SC1091
-source py38/bin/activate
+source py39/bin/activate
 pip install --upgrade Sphinx
 python setup.py doc

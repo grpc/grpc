@@ -19,17 +19,17 @@
 #include "src/core/credentials/transport/channel_creds_registry.h"
 
 #include <grpc/grpc.h>
-#include <gtest/gtest.h>
 
 #include <optional>
 
-#include "gmock/gmock.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/composite/composite_channel_credentials.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/credentials/transport/insecure/insecure_credentials.h"
 #include "src/core/credentials/transport/tls/tls_credentials.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {
@@ -54,7 +54,7 @@ class TestChannelCredsFactory : public ChannelCredsFactory<> {
    public:
     absl::string_view type() const override { return Type(); }
     bool Equals(const ChannelCredsConfig&) const override { return true; }
-    Json ToJson() const override { return Json::FromObject({}); }
+    std::string ToString() const override { return "{}"; }
   };
 
   static absl::string_view Type() { return "test"; }

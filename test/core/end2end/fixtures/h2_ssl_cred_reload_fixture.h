@@ -24,10 +24,10 @@
 #include <grpc/status.h>
 #include <stddef.h>
 
-#include "absl/log/check.h"
 #include "src/core/credentials/transport/ssl/ssl_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
 #include "test/core/test_util/tls_utils.h"
@@ -90,7 +90,7 @@ class SslCredReloadFixture : public SecureFixture {
                                    size_t /*md_count*/,
                                    grpc_process_auth_metadata_done_cb cb,
                                    void* user_data) {
-    CHECK_EQ(state, nullptr);
+    GRPC_CHECK_EQ(state, nullptr);
     cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
   }
 

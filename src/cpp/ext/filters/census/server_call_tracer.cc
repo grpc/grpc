@@ -31,11 +31,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
 #include "opencensus/tags/tag_map.h"
@@ -43,18 +38,23 @@
 #include "opencensus/trace/span_context.h"
 #include "opencensus/trace/span_id.h"
 #include "opencensus/trace/trace_id.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/tcp_tracer.h"
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/measures.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 namespace grpc {
 namespace internal {
@@ -92,7 +92,7 @@ void FilterInitialMetadata(grpc_metadata_batch* b,
 
 // OpenCensusServerCallTracer implementation
 
-class OpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
+class OpenCensusServerCallTracer : public grpc_core::ServerCallTracerInterface {
  public:
   // Maximum size of server stats that are sent on the wire.
   static constexpr uint32_t kMaxServerStatsLen = 16;
@@ -181,7 +181,7 @@ class OpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
         break;
     }
   }
-  std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override {
+  std::shared_ptr<grpc_core::TcpCallTracer> StartNewTcpTrace() override {
     return nullptr;
   }
 
@@ -293,7 +293,7 @@ void OpenCensusServerCallTracer::RecordOutgoingBytes(
 // OpenCensusServerCallTracerFactory
 //
 
-grpc_core::ServerCallTracer*
+grpc_core::ServerCallTracerInterface*
 OpenCensusServerCallTracerFactory::CreateNewServerCallTracer(
     grpc_core::Arena* arena, const grpc_core::ChannelArgs& /*args*/) {
   return arena->ManagedNew<OpenCensusServerCallTracer>();

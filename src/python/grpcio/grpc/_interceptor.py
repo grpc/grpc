@@ -43,8 +43,7 @@ class _ServicePipeline(object):
             interceptor = self.interceptors[index]
             thunk = self._continuation(thunk, index + 1)
             return interceptor.intercept_service(thunk, context)
-        else:
-            return thunk(context)
+        return thunk(context)
 
     def execute(
         self, thunk: Callable, context: grpc.HandlerCallDetails
@@ -702,8 +701,7 @@ class _Channel(grpc.Channel):
         # pytype: enable=wrong-arg-count
         if isinstance(self._interceptor, grpc.UnaryUnaryClientInterceptor):
             return _UnaryUnaryMultiCallable(thunk, method, self._interceptor)
-        else:
-            return thunk(method)
+        return thunk(method)
 
     # pylint: disable=arguments-differ
     def unary_stream(
@@ -723,8 +721,7 @@ class _Channel(grpc.Channel):
         # pytype: enable=wrong-arg-count
         if isinstance(self._interceptor, grpc.UnaryStreamClientInterceptor):
             return _UnaryStreamMultiCallable(thunk, method, self._interceptor)
-        else:
-            return thunk(method)
+        return thunk(method)
 
     # pylint: disable=arguments-differ
     def stream_unary(
@@ -744,8 +741,7 @@ class _Channel(grpc.Channel):
         # pytype: enable=wrong-arg-count
         if isinstance(self._interceptor, grpc.StreamUnaryClientInterceptor):
             return _StreamUnaryMultiCallable(thunk, method, self._interceptor)
-        else:
-            return thunk(method)
+        return thunk(method)
 
     # pylint: disable=arguments-differ
     def stream_stream(
@@ -765,8 +761,7 @@ class _Channel(grpc.Channel):
         # pytype: enable=wrong-arg-count
         if isinstance(self._interceptor, grpc.StreamStreamClientInterceptor):
             return _StreamStreamMultiCallable(thunk, method, self._interceptor)
-        else:
-            return thunk(method)
+        return thunk(method)
 
     def _close(self):
         self._channel.close()
@@ -802,12 +797,13 @@ def intercept_channel(
             and not isinstance(interceptor, grpc.StreamUnaryClientInterceptor)
             and not isinstance(interceptor, grpc.StreamStreamClientInterceptor)
         ):
-            raise TypeError(
+            error_msg = (
                 "interceptor must be "
                 "grpc.UnaryUnaryClientInterceptor or "
                 "grpc.UnaryStreamClientInterceptor or "
                 "grpc.StreamUnaryClientInterceptor or "
-                "grpc.StreamStreamClientInterceptor or "
+                "grpc.StreamStreamClientInterceptor"
             )
+            raise TypeError(error_msg)
         channel = _Channel(channel, interceptor)
     return channel

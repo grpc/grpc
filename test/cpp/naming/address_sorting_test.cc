@@ -27,15 +27,11 @@
 
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "gmock/gmock.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/combiner.h"
-#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
@@ -43,12 +39,15 @@
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/string.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_config.h"
+#include "gmock/gmock.h"
+#include "absl/log/log.h"
 
 #ifndef GPR_WINDOWS
 #include <arpa/inet.h>
@@ -73,16 +72,16 @@ grpc_resolved_address TestAddressToGrpcResolvedAddress(TestAddress test_addr) {
     memset(&in_dest, 0, sizeof(sockaddr_in));
     in_dest.sin_port = htons(atoi(port.c_str()));
     in_dest.sin_family = AF_INET;
-    CHECK_EQ(inet_pton(AF_INET, host.c_str(), &in_dest.sin_addr), 1);
+    GRPC_CHECK_EQ(inet_pton(AF_INET, host.c_str(), &in_dest.sin_addr), 1);
     memcpy(&resolved_addr.addr, &in_dest, sizeof(sockaddr_in));
     resolved_addr.len = sizeof(sockaddr_in);
   } else {
-    CHECK(test_addr.family == AF_INET6);
+    GRPC_CHECK(test_addr.family == AF_INET6);
     sockaddr_in6 in6_dest;
     memset(&in6_dest, 0, sizeof(sockaddr_in6));
     in6_dest.sin6_port = htons(atoi(port.c_str()));
     in6_dest.sin6_family = AF_INET6;
-    CHECK_EQ(inet_pton(AF_INET6, host.c_str(), &in6_dest.sin6_addr), 1);
+    GRPC_CHECK_EQ(inet_pton(AF_INET6, host.c_str(), &in6_dest.sin6_addr), 1);
     memcpy(&resolved_addr.addr, &in6_dest, sizeof(sockaddr_in6));
     resolved_addr.len = sizeof(sockaddr_in6);
   }

@@ -136,6 +136,10 @@ UPB_INLINE envoy_config_core_v3_SubstitutionFormatString_format_oneofcases envoy
   return (envoy_config_core_v3_SubstitutionFormatString_format_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_config_core_v3_SubstitutionFormatString_clear_format(envoy_config_core_v3_SubstitutionFormatString* msg) {
+  const upb_MiniTableField field = {1, 32, UPB_SIZE(-21, -13), kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__config__core__v3__SubstitutionFormatString_msg_init, &field);
+}
 UPB_INLINE void envoy_config_core_v3_SubstitutionFormatString_clear_text_format(envoy_config_core_v3_SubstitutionFormatString* msg) {
   const upb_MiniTableField field = {1, 32, UPB_SIZE(-21, -13), kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);

@@ -25,9 +25,6 @@
 #include <thread>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -39,10 +36,14 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/json/json_writer.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
+#include "gtest/gtest.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 
@@ -1176,6 +1177,19 @@ TEST_F(PartyTest, SpawnSerializerSerializes) {
   notification.WaitForNotification();
   EXPECT_EQ(expect_next, 1000000);
   thd.join();
+}
+
+TEST_F(PartyTest, SimpleJson) {
+  auto party = MakeParty();
+  Notification notification;
+  party->ToJson([&](Json::Object json) {
+    LOG(INFO) << "json: " << JsonDump(Json::FromObject(json));
+    int refs;
+    ASSERT_TRUE(absl::SimpleAtoi(json["ref_count"].string(), &refs));
+    EXPECT_GE(refs, 1);
+    notification.Notify();
+  });
+  notification.WaitForNotification();
 }
 
 }  // namespace grpc_core

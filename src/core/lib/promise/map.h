@@ -22,11 +22,11 @@
 #include <type_traits>
 #include <utility>
 
+#include "src/core/lib/promise/detail/promise_like.h"
+#include "src/core/lib/promise/poll.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "src/core/lib/promise/detail/promise_like.h"
-#include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
 
@@ -156,6 +156,18 @@ class Map {
     return Pending();
   }
 
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* map_promise =
+        grpc_channelz_v2_Promise_mutable_map_promise(promise_proto, arena);
+    PromiseAsProto(
+        promise_,
+        grpc_channelz_v2_Promise_Map_mutable_promise(map_promise, arena),
+        arena);
+    grpc_channelz_v2_Promise_Map_set_map_fn(
+        map_promise, StdStringToUpbString(TypeName<Fn>()));
+  }
+
  private:
   template <typename SomeOtherPromise, typename SomeOtherFn>
   friend class Map;
@@ -193,6 +205,18 @@ class Map<Map<Promise, Fn0>, Fn1> {
       return fn_(std::move(*p));
     }
     return Pending();
+  }
+
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* map_promise =
+        grpc_channelz_v2_Promise_mutable_map_promise(promise_proto, arena);
+    PromiseAsProto(
+        promise_,
+        grpc_channelz_v2_Promise_Map_mutable_promise(map_promise, arena),
+        arena);
+    grpc_channelz_v2_Promise_Map_set_map_fn(
+        map_promise, StdStringToUpbString(TypeName<FusedFn>()));
   }
 
  private:
@@ -277,6 +301,18 @@ auto AddErrorPrefix(absl::string_view prefix, Promise promise) {
   });
 }
 
+template <typename Gen, typename Promise>
+auto AddGeneratedErrorPrefix(Gen prefix, Promise promise) {
+  return MapErrors(std::move(promise), [prefix](absl::Status status) {
+    absl::Status out(status.code(), absl::StrCat(prefix(), status.message()));
+    status.ForEachPayload(
+        [&out](absl::string_view name, const absl::Cord& value) {
+          out.SetPayload(name, value);
+        });
+    return out;
+  });
+}
+
 // Input : A promise that resolves to Type T
 // Returns : A Map promise which contains the input promise and then discards
 // the return value of the input promise. the main use case for DiscardResult is
@@ -305,12 +341,17 @@ template <typename Promise, typename... Values>
 auto TryStaple(Promise promise, Values&&... values) {
   return Map(
       std::move(promise),
-      [values = std::tuple(std::forward<Values>(values)...)](
-          auto first_value) mutable
-          -> absl::StatusOr<std::tuple<decltype(*first_value), Values...>> {
+      [values = std::tuple(std::forward<std::remove_reference_t<Values>>(
+           values)...)](auto first_value) mutable
+          -> absl::StatusOr<
+              std::tuple<std::remove_reference_t<decltype(*first_value)>,
+                         std::remove_reference_t<Values>...>> {
+        using FirstValueType = std::remove_reference_t<decltype(*first_value)>;
         if (!first_value.ok()) return first_value.status();
-        return std::tuple_cat(std::tuple(std::move(*first_value)),
-                              std::move(values));
+        return absl::StatusOr<
+            std::tuple<FirstValueType, std::remove_reference_t<Values>...>>(
+            std::tuple_cat(std::tuple<FirstValueType>(std::move(*first_value)),
+                           std::move(values)));
       });
 }
 

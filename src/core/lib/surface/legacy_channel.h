@@ -26,8 +26,9 @@
 #include <optional>
 #include <string>
 
-#include "absl/status/statusor.h"
+#include "src/core/call/call_arena_allocator.h"
 #include "src/core/client_channel/client_channel_filter.h"
+#include "src/core/filter/blackboard.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"  // IWYU pragma: keep
@@ -35,11 +36,11 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/call_arena_allocator.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 
@@ -47,7 +48,8 @@ class LegacyChannel final : public Channel {
  public:
   static absl::StatusOr<RefCountedPtr<Channel>> Create(
       std::string target, ChannelArgs args,
-      grpc_channel_stack_type channel_stack_type);
+      grpc_channel_stack_type channel_stack_type,
+      const Blackboard* blackboard = nullptr);
 
   // Do not instantiate directly -- use Create() instead.
   LegacyChannel(bool is_client, std::string target,

@@ -26,9 +26,8 @@
 #include <thread>  // NOLINT
 #include <vector>
 
-#include "absl/strings/str_cat.h"
-#include "gtest/gtest.h"
 #include "opencensus/stats/stats.h"
+#include "opencensus/stats/testing/test_utils.h"
 #include "opencensus/trace/exporter/span_exporter.h"
 #include "src/core/config/core_configuration.h"
 #include "src/cpp/client/client_stats_interceptor.h"
@@ -37,6 +36,8 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/test_lb_policies.h"
 #include "test/cpp/end2end/test_service_impl.h"
+#include "gtest/gtest.h"
+#include "absl/strings/str_cat.h"
 
 namespace opencensus {
 namespace trace {
@@ -116,9 +117,18 @@ class ExportedTracesRecorder
     is_recording_ = false;
   }
 
-  std::vector<::opencensus::trace::exporter::SpanData> GetAndClearSpans() {
-    grpc_core::MutexLock lock(&mutex_);
-    return std::move(recorded_spans_);
+  std::vector<::opencensus::trace::exporter::SpanData> GetAndClearSpans(
+      size_t expected_size = 0, absl::Duration timeout = absl::Seconds(10)) {
+    auto deadline = absl::Now() + timeout;
+    mutex_.Lock();
+    do {
+      mutex_.Unlock();
+      ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
+      mutex_.Lock();
+    } while (recorded_spans_.size() < expected_size && absl::Now() < deadline);
+    auto recorded_spans = std::move(recorded_spans_);
+    mutex_.Unlock();
+    return recorded_spans;
   }
 
  private:
@@ -136,7 +146,7 @@ class StatsPluginEnd2EndTest : public ::testing::Test {
  protected:
   static void SetUpTestSuite() {
     grpc_core::CoreConfiguration::Reset();
-    grpc_core::CoreConfiguration::RegisterBuilder(
+    grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
           grpc_core::RegisterQueueOnceLoadBalancingPolicy(builder);
         });
@@ -174,8 +184,9 @@ class StatsPluginEnd2EndTest : public ::testing::Test {
     stub_ = EchoTestService::NewStub(grpc::CreateChannel(
         server_address_, grpc::InsecureChannelCredentials()));
 
-    // Clear out any previous spans
+    // Clear out any previous spans and metrics
     ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
+    ::opencensus::stats::testing::TestUtils::Flush();
   }
 
   void ResetStub(std::shared_ptr<Channel> channel) {

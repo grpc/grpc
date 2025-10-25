@@ -20,11 +20,7 @@
 #include <string>
 #include <utility>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/credentials/transport/security_connector.h"
@@ -34,13 +30,17 @@
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/promise.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
 #include "test/core/filters/filter_test.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 // TODO(roth): Need to add a lot more tests here.  I created this file
 // as part of adding a feature, and I added tests only for the feature I

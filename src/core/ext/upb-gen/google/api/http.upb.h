@@ -198,6 +198,10 @@ UPB_INLINE google_api_HttpRule_pattern_oneofcases google_api_HttpRule_pattern_ca
   return (google_api_HttpRule_pattern_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void google_api_HttpRule_clear_pattern(google_api_HttpRule* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(40, 64), UPB_SIZE(-13, -9), kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &google__api__HttpRule_msg_init, &field);
+}
 UPB_INLINE void google_api_HttpRule_clear_selector(google_api_HttpRule* msg) {
   const upb_MiniTableField field = {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);

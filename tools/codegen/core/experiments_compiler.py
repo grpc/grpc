@@ -341,9 +341,9 @@ class ExperimentsCompiler(object):
                 % experiment_definition.name
             )
             return False
-        self._experiment_definitions[
-            experiment_definition.name
-        ] = experiment_definition
+        self._experiment_definitions[experiment_definition.name] = (
+            experiment_definition
+        )
         return True
 
     def AddRolloutSpecification(self, rollout_attributes):
@@ -355,10 +355,10 @@ class ExperimentsCompiler(object):
             return False
         if rollout_attributes["name"] not in self._experiment_definitions:
             print(
-                "WARNING: rollout for an undefined experiment: %s ignored"
+                "ERROR: rollout for an undefined experiment: %s ignored"
                 % rollout_attributes["name"]
             )
-            return True
+            return False
         return self._experiment_definitions[
             rollout_attributes["name"]
         ].AddRolloutSpecification(
@@ -529,7 +529,7 @@ class ExperimentsCompiler(object):
             if "kDefaultForDebugOnly" in have_defaults:
                 print("const bool kDefaultForDebugOnly = true;", file=file_desc)
             print("#endif", file=file_desc)
-        print("}", file=file_desc)
+        print("}  // namespace", file=file_desc)
         print(file=file_desc)
         print("namespace grpc_core {", file=file_desc)
         print(file=file_desc)
@@ -548,9 +548,11 @@ class ExperimentsCompiler(object):
                     ToCStr(exp.name),
                     exp.name,
                     exp.name,
-                    f"required_experiments_{exp.name}"
-                    if exp._requires
-                    else "nullptr",
+                    (
+                        f"required_experiments_{exp.name}"
+                        if exp._requires
+                        else "nullptr"
+                    ),
                     len(exp._requires),
                     self._defaults[exp.default(platform)],
                     "true" if exp.allow_in_fuzzing_config else "false",

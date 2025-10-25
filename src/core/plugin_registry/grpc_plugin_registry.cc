@@ -70,6 +70,8 @@ extern void RegisterHttpProxyMapper(CoreConfiguration::Builder* builder);
 extern void RegisterConnectedChannel(CoreConfiguration::Builder* builder);
 extern void RegisterLoadBalancedCallDestination(
     CoreConfiguration::Builder* builder);
+extern void RegisterChttp2Transport(CoreConfiguration::Builder* builder);
+extern void RegisterFusedFilters(CoreConfiguration::Builder* builder);
 #ifndef GRPC_NO_RLS
 extern void RegisterRlsLbPolicy(CoreConfiguration::Builder* builder);
 #endif  // !GRPC_NO_RLS
@@ -98,13 +100,18 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterEndpointInfoHandshaker(builder);
   RegisterHttpConnectHandshaker(builder);
   RegisterTCPConnectHandshaker(builder);
+  RegisterChttp2Transport(builder);
+#ifndef GRPC_MINIMAL_LB_POLICY
   RegisterPriorityLbPolicy(builder);
   RegisterOutlierDetectionLbPolicy(builder);
   RegisterWeightedTargetLbPolicy(builder);
+#endif
   RegisterPickFirstLbPolicy(builder);
+#ifndef GRPC_MINIMAL_LB_POLICY
   RegisterRoundRobinLbPolicy(builder);
   RegisterRingHashLbPolicy(builder);
   RegisterWeightedRoundRobinLbPolicy(builder);
+#endif
   BuildClientChannelConfiguration(builder);
   SecurityRegisterHandshakerFactories(builder);
   RegisterClientAuthorityFilter(builder);
@@ -129,6 +136,7 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterBackendMetricFilter(builder);
   RegisterSecurityFilters(builder);
   RegisterExtraFilters(builder);
+  RegisterFusedFilters(builder);
   RegisterBuiltins(builder);
 }
 

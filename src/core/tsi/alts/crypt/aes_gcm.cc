@@ -27,8 +27,8 @@
 
 #include <memory>
 
-#include "absl/types/span.h"
 #include "src/core/tsi/alts/crypt/gsec.h"
+#include "absl/types/span.h"
 
 constexpr size_t kKdfKeyLen = 32;
 constexpr size_t kKdfCounterLen = 6;

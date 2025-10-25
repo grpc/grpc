@@ -16,9 +16,9 @@
 //
 //
 
+#include <optional>
 #include <set>
 
-#include "absl/log/log.h"
 #include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/qps/benchmark_config.h"
@@ -27,6 +27,7 @@
 #include "test/cpp/qps/server.h"
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace testing {
@@ -50,9 +51,14 @@ static void RunQPS() {
   server_config.set_server_type(ASYNC_SERVER);
   server_config.set_async_server_threads(8);
 
-  const auto result =
-      RunScenario(client_config, 1, server_config, 1, WARMUP, BENCHMARK, -2, "",
-                  kInsecureCredentialsType, {}, false, 0);
+  RunScenarioOptions options(client_config, server_config);
+  options.set_num_clients(1)
+      .set_num_servers(1)
+      .set_warmup_seconds(WARMUP)
+      .set_benchmark_seconds(BENCHMARK)
+      .set_spawn_local_worker_count(-2)
+      .set_run_inproc(false);  // Explicitly false, though it's the default
+  const auto result = RunScenario(options);
 
   GetReporter()->ReportQPSPerCore(*result);
   GetReporter()->ReportLatency(*result);

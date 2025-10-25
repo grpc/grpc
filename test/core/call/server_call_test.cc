@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/surface/server_call.h"
+#include "src/core/call/server_call.h"
 
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 
 #include <atomic>
 
-#include "absl/status/status.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "test/core/call/batch_builder.h"
 #include "test/core/call/yodel/yodel_test.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 

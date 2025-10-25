@@ -23,6 +23,7 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
+python3 -m pip install six==1.16.0
 tools/run_tests/run_tests_matrix.py $RUN_TESTS_FLAGS || FAILED="true"
 
 # kill port_server.py to prevent the build from freezing

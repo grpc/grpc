@@ -1,0 +1,41 @@
+// $Id$
+// vim:ft=javascript
+
+ARG_WITH("grpc", "grpc support", "no");
+
+if (PHP_GRPC != "no") {
+  EXTENSION("grpc",
+## for src in php_config_w32.srcs
+    "{{src}} " +
+## endfor
+    ""
+    , null,
+    "/DOPENSSL_NO_ASM /D_GNU_SOURCE /DWIN32_LEAN_AND_MEAN "+
+    "/D_HAS_EXCEPTIONS=0 /DNOMINMAX /DGRPC_ARES=0 /D_WIN32_WINNT=0x600 "+
+    "/I"+configure_module_dirname+" "+
+    "/I"+configure_module_dirname+"\\include "+
+    "/I"+configure_module_dirname+"\\src\\core\\ext\\upb-gen "+
+    "/I"+configure_module_dirname+"\\src\\core\\ext\\upbdefs-gen "+
+    "/I"+configure_module_dirname+"\\src\\php\\ext\\grpc "+
+    "/I"+configure_module_dirname+"\\third_party\\abseil-cpp "+
+    "/I"+configure_module_dirname+"\\third_party\\address_sorting\\include "+
+    "/I"+configure_module_dirname+"\\third_party\\boringssl-with-bazel\\src\\include "+
+    "/I"+configure_module_dirname+"\\third_party\\re2 "+
+    "/I"+configure_module_dirname+"\\third_party\\upb "+
+    "/I"+configure_module_dirname+"\\third_party\\utf8_range "+
+    "/I"+configure_module_dirname+"\\third_party\\xxhash "+
+    "/I"+configure_module_dirname+"\\third_party\\zlib ");
+  base_dir = get_define('BUILD_DIR');
+  FSO.CreateFolder(base_dir+"\\ext");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc");
+## for dir in php_config_w32.dirs
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\{{dir}}");
+## endfor
+  _build_dirs = new Array();
+  for (i = 0; i < build_dirs.length; i++) {
+    if (build_dirs[i].indexOf('grpc') == -1) {
+      _build_dirs[_build_dirs.length] = build_dirs[i];
+    }
+  }
+  build_dirs = _build_dirs;
+}

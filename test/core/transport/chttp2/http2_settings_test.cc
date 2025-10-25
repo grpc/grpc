@@ -14,8 +14,11 @@
 
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 
+#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+
+using grpc_core::http2::Http2ErrorCode;
 
 namespace grpc_core {
 
@@ -416,81 +419,81 @@ TEST(Http2SettingsTest, WireIdToNameWorks) {
 
 TEST(Http2SettingsTest, ApplyHeaderTableSizeWorks) {
   Http2Settings settings;
-  EXPECT_EQ(settings.Apply(1, 1), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.Apply(1, 1), Http2ErrorCode::kNoError);
   EXPECT_EQ(settings.header_table_size(), 1u);
-  EXPECT_EQ(settings.Apply(1, 0x7fffffff), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.Apply(1, 0x7fffffff), Http2ErrorCode::kNoError);
   EXPECT_EQ(settings.header_table_size(), 0x7fffffffu);
 }
 
 TEST(Http2SettingsTest, ApplyEnablePushWorks) {
   Http2Settings settings;
-  EXPECT_EQ(settings.Apply(2, 0), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.Apply(2, 0), Http2ErrorCode::kNoError);
   EXPECT_EQ(settings.enable_push(), false);
-  EXPECT_EQ(settings.Apply(2, 1), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.Apply(2, 1), Http2ErrorCode::kNoError);
   EXPECT_EQ(settings.enable_push(), true);
-  EXPECT_EQ(settings.Apply(2, 2), GRPC_HTTP2_PROTOCOL_ERROR);
+  EXPECT_EQ(settings.Apply(2, 2), Http2ErrorCode::kProtocolError);
 }
 
 TEST(Http2SettingsTest, ApplyMaxConcurrentStreamsWorks) {
   Http2Settings settings;
-  EXPECT_EQ(settings.Apply(3, 1), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.Apply(3, 1), Http2ErrorCode::kNoError);
   EXPECT_EQ(settings.max_concurrent_streams(), 1u);
-  EXPECT_EQ(settings.Apply(3, 0x7fffffff), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.Apply(3, 0x7fffffff), Http2ErrorCode::kNoError);
   EXPECT_EQ(settings.max_concurrent_streams(), 0x7fffffffu);
 }
 
 TEST(Http2SettingsTest, ApplyInitialWindowSizeWorks) {
   Http2Settings settings;
-  EXPECT_EQ(settings.Apply(4, 1), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.Apply(4, 1), Http2ErrorCode::kNoError);
   EXPECT_EQ(settings.initial_window_size(), 1u);
-  EXPECT_EQ(settings.Apply(4, 0x7fffffff), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.Apply(4, 0x7fffffff), Http2ErrorCode::kNoError);
   EXPECT_EQ(settings.initial_window_size(), 0x7fffffffu);
 }
 
 TEST(Http2SettingsTest, ApplyMaxFrameSizeWorks) {
   Http2Settings settings;
-  EXPECT_EQ(settings.Apply(5, 16384), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.Apply(5, 16384), Http2ErrorCode::kNoError);
   EXPECT_EQ(settings.max_frame_size(), 16384u);
-  EXPECT_EQ(settings.Apply(5, 16777215), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.Apply(5, 16777215), Http2ErrorCode::kNoError);
   EXPECT_EQ(settings.max_frame_size(), 16777215);
-  EXPECT_EQ(settings.Apply(5, 16383), GRPC_HTTP2_PROTOCOL_ERROR);
-  EXPECT_EQ(settings.Apply(5, 16777216), GRPC_HTTP2_PROTOCOL_ERROR);
+  EXPECT_EQ(settings.Apply(5, 16383), Http2ErrorCode::kProtocolError);
+  EXPECT_EQ(settings.Apply(5, 16777216), Http2ErrorCode::kProtocolError);
 }
 
 TEST(Http2SettingsTest, ApplyMaxHeaderListSizeWorks) {
   Http2Settings settings;
-  EXPECT_EQ(settings.Apply(6, 1), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.Apply(6, 1), Http2ErrorCode::kNoError);
   EXPECT_EQ(settings.max_header_list_size(), 1u);
-  EXPECT_EQ(settings.Apply(6, 0x7fffffff), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.Apply(6, 0x7fffffff), Http2ErrorCode::kNoError);
   EXPECT_EQ(settings.max_header_list_size(), 16777216);
 }
 
 TEST(Http2SettingsTest, ApplyAllowTrueBinaryMetadataWorks) {
   Http2Settings settings;
-  EXPECT_EQ(settings.Apply(65027, 0), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.Apply(65027, 0), Http2ErrorCode::kNoError);
   EXPECT_EQ(settings.allow_true_binary_metadata(), false);
-  EXPECT_EQ(settings.Apply(65027, 1), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.Apply(65027, 1), Http2ErrorCode::kNoError);
   EXPECT_EQ(settings.allow_true_binary_metadata(), true);
-  EXPECT_EQ(settings.Apply(65027, 2), GRPC_HTTP2_PROTOCOL_ERROR);
+  EXPECT_EQ(settings.Apply(65027, 2), Http2ErrorCode::kProtocolError);
 }
 
 TEST(Http2SettingsTest, ApplyPreferredReceiveCryptoMessageSizeWorks) {
   Http2Settings settings;
-  EXPECT_EQ(settings.Apply(65028, 1), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.Apply(65028, 1), Http2ErrorCode::kNoError);
   EXPECT_EQ(settings.preferred_receive_crypto_message_size(), 16384u);
-  EXPECT_EQ(settings.Apply(65028, 0x7fffffff), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.Apply(65028, 0x7fffffff), Http2ErrorCode::kNoError);
   EXPECT_EQ(settings.preferred_receive_crypto_message_size(), 0x7fffffffu);
-  EXPECT_EQ(settings.Apply(65028, 0x80000000), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.Apply(65028, 0x80000000), Http2ErrorCode::kNoError);
   EXPECT_EQ(settings.preferred_receive_crypto_message_size(), 0x7fffffffu);
 }
 
 TEST(Http2SettingsTest, ApplyAllowSecurityFrameWorks) {
   Http2Settings settings;
-  EXPECT_EQ(settings.Apply(65029, 0), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.Apply(65029, 0), Http2ErrorCode::kNoError);
   EXPECT_EQ(settings.allow_security_frame(), false);
-  EXPECT_EQ(settings.Apply(65029, 1), GRPC_HTTP2_NO_ERROR);
+  EXPECT_EQ(settings.Apply(65029, 1), Http2ErrorCode::kNoError);
   EXPECT_EQ(settings.allow_security_frame(), true);
-  EXPECT_EQ(settings.Apply(65029, 2), GRPC_HTTP2_PROTOCOL_ERROR);
+  EXPECT_EQ(settings.Apply(65029, 2), Http2ErrorCode::kProtocolError);
 }
 
 namespace {
@@ -555,6 +558,84 @@ TEST(Http2SettingsManagerTest, AckAfterAckFails) {
               SettingsFrame(KeyValueVec{{4, 100000}}));
   EXPECT_TRUE(settings_manager.AckLastSend());
   EXPECT_FALSE(settings_manager.AckLastSend());
+}
+
+TEST(Http2SettingsManagerTest, ApplyIncomingSettingsEmpty) {
+  Http2SettingsManager settings_manager;
+  std::vector<Http2SettingsFrame::Setting> settings;
+  EXPECT_EQ(settings_manager.ApplyIncomingSettings(settings),
+            Http2ErrorCode::kNoError);
+}
+
+TEST(Http2SettingsManagerTest, ApplyIncomingSettingsValid) {
+  Http2SettingsManager settings_manager;
+  std::vector<Http2SettingsFrame::Setting> settings = {
+      {Http2Settings::kHeaderTableSizeWireId, 1000},
+      {Http2Settings::kMaxConcurrentStreamsWireId, 200}};
+  EXPECT_EQ(settings_manager.ApplyIncomingSettings(settings),
+            Http2ErrorCode::kNoError);
+  EXPECT_EQ(settings_manager.peer().header_table_size(), 1000u);
+  EXPECT_EQ(settings_manager.peer().max_concurrent_streams(), 200u);
+}
+
+TEST(Http2SettingsManagerTest, ApplyIncomingSettingsInvalidValue) {
+  Http2SettingsManager settings_manager;
+  // MaxFrameSize must be between 16384 and 16777215
+  std::vector<Http2SettingsFrame::Setting> settings = {
+      {Http2Settings::kMaxFrameSizeWireId, 16383}};
+  EXPECT_EQ(settings_manager.ApplyIncomingSettings(settings),
+            Http2ErrorCode::kProtocolError);
+  std::vector<Http2SettingsFrame::Setting> settings1 = {
+      {Http2Settings::kMaxFrameSizeWireId, 16777216}};
+  EXPECT_EQ(settings_manager.ApplyIncomingSettings(settings1),
+            Http2ErrorCode::kProtocolError);
+}
+
+TEST(Http2SettingsManagerTest,
+     ApplyIncomingSettingsAllowTrueBinaryMetadataTwice) {
+  Http2SettingsManager settings_manager;
+  std::vector<Http2SettingsFrame::Setting> settings = {
+      {Http2Settings::kGrpcAllowTrueBinaryMetadataWireId, 1}};
+  EXPECT_EQ(settings_manager.ApplyIncomingSettings(settings),
+            Http2ErrorCode::kNoError);
+  EXPECT_EQ(settings_manager.ApplyIncomingSettings(settings),
+            Http2ErrorCode::kNoError);
+}
+
+TEST(Http2SettingsManagerTest,
+     ApplyIncomingSettingsAllowTrueBinaryMetadataTwiceDifferentValue) {
+  Http2SettingsManager settings_manager;
+  std::vector<Http2SettingsFrame::Setting> settings1 = {
+      {Http2Settings::kGrpcAllowTrueBinaryMetadataWireId, 1}};
+  EXPECT_EQ(settings_manager.ApplyIncomingSettings(settings1),
+            Http2ErrorCode::kNoError);
+  std::vector<Http2SettingsFrame::Setting> settings2 = {
+      {Http2Settings::kGrpcAllowTrueBinaryMetadataWireId, 0}};
+  EXPECT_EQ(settings_manager.ApplyIncomingSettings(settings2),
+            Http2ErrorCode::kConnectError);
+}
+
+TEST(Http2SettingsManagerTest, ApplyIncomingSettingsAllowSecurityFrameTwice) {
+  Http2SettingsManager settings_manager;
+  std::vector<Http2SettingsFrame::Setting> settings = {
+      {Http2Settings::kGrpcAllowSecurityFrameWireId, 1}};
+  EXPECT_EQ(settings_manager.ApplyIncomingSettings(settings),
+            Http2ErrorCode::kNoError);
+  EXPECT_EQ(settings_manager.ApplyIncomingSettings(settings),
+            Http2ErrorCode::kNoError);
+}
+
+TEST(Http2SettingsManagerTest,
+     ApplyIncomingSettingsAllowSecurityFrameTwiceDifferentValue) {
+  Http2SettingsManager settings_manager;
+  std::vector<Http2SettingsFrame::Setting> settings1 = {
+      {Http2Settings::kGrpcAllowSecurityFrameWireId, 1}};
+  EXPECT_EQ(settings_manager.ApplyIncomingSettings(settings1),
+            Http2ErrorCode::kNoError);
+  std::vector<Http2SettingsFrame::Setting> settings2 = {
+      {Http2Settings::kGrpcAllowSecurityFrameWireId, 0}};
+  EXPECT_EQ(settings_manager.ApplyIncomingSettings(settings2),
+            Http2ErrorCode::kConnectError);
 }
 
 }  // namespace grpc_core

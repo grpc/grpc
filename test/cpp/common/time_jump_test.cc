@@ -24,18 +24,18 @@
 #include <thread>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/time/time.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/time/time.h"
 
 extern char** environ;
 
@@ -93,7 +93,7 @@ TEST_P(TimeJumpTest, TimerRunning) {
                   grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(3),
                   GRPC_CLOSURE_CREATE(
                       [](void*, grpc_error_handle error) {
-                        CHECK(error == absl::CancelledError());
+                        GRPC_CHECK(error == absl::CancelledError());
                       },
                       nullptr, grpc_schedule_on_exec_ctx));
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
@@ -104,7 +104,7 @@ TEST_P(TimeJumpTest, TimerRunning) {
   // We expect 1 wakeup/sec when there are not timer expiries
   int64_t wakeups = grpc_timer_manager_get_wakeups_testonly();
   VLOG(2) << "wakeups: " << wakeups;
-  CHECK_LE(wakeups, 3);
+  GRPC_CHECK_LE(wakeups, 3);
   grpc_timer_cancel(&timer);
 }
 
@@ -125,8 +125,9 @@ TEST_P(TimeJumpTest, TimedWait) {
     int32_t elapsed_ms = gpr_time_to_millis(gpr_time_sub(after, before));
     VLOG(2) << "After wait, timedout = " << timedout
             << " elapsed_ms = " << elapsed_ms;
-    CHECK_EQ(timedout, 1);
-    CHECK(1 == gpr_time_similar(gpr_time_sub(after, before),
+    GRPC_CHECK_EQ(timedout, 1);
+    GRPC_CHECK(1 ==
+               gpr_time_similar(gpr_time_sub(after, before),
                                 gpr_time_from_millis(kWaitTimeMs, GPR_TIMESPAN),
                                 gpr_time_from_millis(50, GPR_TIMESPAN)));
 
@@ -135,7 +136,7 @@ TEST_P(TimeJumpTest, TimedWait) {
   // We expect 1 wakeup/sec when there are not timer expiries
   int64_t wakeups = grpc_timer_manager_get_wakeups_testonly();
   VLOG(2) << "wakeups: " << wakeups;
-  CHECK_LE(wakeups, 3);
+  GRPC_CHECK_LE(wakeups, 3);
 }
 
 int main(int argc, char** argv) {

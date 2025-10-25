@@ -21,10 +21,10 @@
 
 #include <string>
 
-#include "absl/status/statusor.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
+#include "absl/status/statusor.h"
 
 #define GRPC_ARG_USE_V3_STACK "grpc.internal.use_v3_stack"
 
@@ -36,6 +36,10 @@ class Transport;
 absl::StatusOr<RefCountedPtr<Channel>> ChannelCreate(
     std::string target, ChannelArgs args,
     grpc_channel_stack_type channel_stack_type, Transport* optional_transport);
+
+absl::StatusOr<grpc_channel*> CreateClientEndpointChannel(
+    const char* target, grpc_channel_credentials* creds,
+    const ChannelArgs& args);
 
 }  // namespace grpc_core
 

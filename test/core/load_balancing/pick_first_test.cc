@@ -29,12 +29,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
-#include "absl/synchronization/notification.h"
-#include "absl/types/span.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/load_balancing/lb_policy.h"
@@ -49,6 +43,12 @@
 #include "test/core/load_balancing/lb_policy_test_lib.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "absl/synchronization/notification.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 namespace testing {
@@ -1283,6 +1283,63 @@ TEST_F(PickFirstTest,
               absl::UnavailableError("failed to connect to all addresses; "
                                      "last error: UNAVAILABLE: ugh2"));
   });
+}
+
+// This exercizes a bug seen in the wild that caused us to silently stop
+// triggering connection attempts at the end of the Happy Eyeballs pass.
+TEST_F(PickFirstTest,
+       SubchannelReportsTransientFailureButIsIdleForHappyEyeballs) {
+  constexpr std::array<absl::string_view, 2> kAddresses = {
+      "ipv4:127.0.0.1:443", "ipv4:127.0.0.1:444"};
+  // Pre-initialize the second subchannel to report CONNECTING as
+  // its initial state.
+  auto* subchannel2 = CreateSubchannel(kAddresses[1]);
+  subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // Send an update containing two addresses.
+  absl::Status status = ApplyUpdate(
+      BuildUpdate(kAddresses, MakePickFirstConfig(false)), lb_policy());
+  EXPECT_TRUE(status.ok()) << status;
+  // LB policy should have created a subchannel for the first address.
+  auto* subchannel = FindSubchannel(kAddresses[0]);
+  ASSERT_NE(subchannel, nullptr);
+  // When the LB policy receives the first subchannel's initial connectivity
+  // state notification (IDLE), it will request a connection.
+  EXPECT_TRUE(subchannel->ConnectionRequested());
+  // This causes the subchannel to start to connect, so it reports CONNECTING.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // LB policy should have reported CONNECTING state.
+  ExpectConnectingUpdate();
+  // Second subchannel reports TF.
+  subchannel2->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                    absl::UnavailableError("failed to connect"),
+                                    /*validate_state_transition=*/false);
+  // Second subchannel finishes backoff.
+  subchannel2->SetConnectivityState(GRPC_CHANNEL_IDLE);
+  // First subchannel fails.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                   absl::UnavailableError("ugh"));
+  // This triggers a connection attempt on the second subchannel.
+  EXPECT_TRUE(subchannel2->ConnectionRequested());
+  // This causes the subchannel to start to connect, so it reports CONNECTING.
+  subchannel2->SetConnectivityState(GRPC_CHANNEL_CONNECTING);
+  // LB policy should have reported CONNECTING state.
+  ExpectConnectingUpdate();
+  // First subchannel finishes backoff.
+  subchannel->SetConnectivityState(GRPC_CHANNEL_IDLE);
+  // Second subchannel fails.
+  subchannel2->SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                    absl::UnavailableError("ugh2"));
+  // The Happy Eyeballs pass is now complete.
+  // The LB policy should request re-resolution.
+  ExpectReresolutionRequest();
+  // The LB policy will report TRANSIENT_FAILURE.
+  WaitForConnectionFailed([&](const absl::Status& status) {
+    EXPECT_EQ(status,
+              absl::UnavailableError("failed to connect to all addresses; "
+                                     "last error: UNAVAILABLE: ugh2"));
+  });
+  // We should immediately start connecting on the first subchannel again.
+  EXPECT_TRUE(subchannel->ConnectionRequested());
 }
 
 TEST_F(PickFirstTest, WithShuffle) {

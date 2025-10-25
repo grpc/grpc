@@ -24,10 +24,10 @@
 
 #include <memory>
 
+#include "opentelemetry/metrics/meter_provider.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "opentelemetry/metrics/meter_provider.h"
 
 namespace grpc {
 

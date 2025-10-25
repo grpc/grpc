@@ -35,18 +35,14 @@
 #include <mutex>
 #include <thread>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/ascii.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_format.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/credentials/call/call_credentials.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
@@ -55,11 +51,17 @@
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/ascii.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_format.h"
 
 #ifdef GRPC_POSIX_SOCKET_EV
 #include "src/core/lib/iomgr/ev_posix.h"
 #endif  // GRPC_POSIX_SOCKET_EV
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 using std::chrono::system_clock;
@@ -1514,8 +1516,13 @@ TEST_P(End2endTest, ExpectErrorTest) {
     EXPECT_EQ(iter->code(), s.error_code());
     EXPECT_EQ(iter->error_message(), s.error_message());
     EXPECT_EQ(iter->binary_error_details(), s.error_details());
-    EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "status"));
-    EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "13"));
+    if (grpc_core::IsErrorFlattenEnabled()) {
+      EXPECT_THAT(context.debug_error_string(),
+                  ::testing::HasSubstr("INTERNAL"));
+    } else {
+      EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "status"));
+      EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "13"));
+    }
   }
 }
 
@@ -1679,7 +1686,7 @@ TEST_P(ProxyEnd2endTest, ClientCancelsRpc) {
   Status s = stub_->Echo(&context, request, &response);
   cancel_thread.join();
   EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
-  EXPECT_EQ(s.error_message(), "CANCELLED");
+  EXPECT_THAT(s.error_message(), ::testing::HasSubstr("CANCELLED"));
 }
 
 // Server cancels rpc after 1ms
@@ -1693,7 +1700,7 @@ TEST_P(ProxyEnd2endTest, ServerCancelsRpc) {
   ClientContext context;
   Status s = stub_->Echo(&context, request, &response);
   EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
-  EXPECT_TRUE(s.error_message().empty());
+  EXPECT_EQ(s.error_message(), "");
 }
 
 // Make the response larger than the flow control window.
@@ -1737,8 +1744,8 @@ TEST_P(ProxyEnd2endTest, Peer) {
 class SecureEnd2endTest : public End2endTest {
  protected:
   SecureEnd2endTest() {
-    CHECK(!GetParam().use_proxy());
-    CHECK(GetParam().credentials_type() != kInsecureCredentialsType);
+    GRPC_CHECK(!GetParam().use_proxy());
+    GRPC_CHECK(GetParam().credentials_type() != kInsecureCredentialsType);
   }
 };
 
@@ -2270,7 +2277,7 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
   }
 
   // Test callback with inproc or if the event-engine allows it
-  CHECK(!credentials_types.empty());
+  GRPC_CHECK(!credentials_types.empty());
   for (const auto& cred : credentials_types) {
     scenarios.emplace_back(false, false, false, cred, false);
     scenarios.emplace_back(true, false, false, cred, false);

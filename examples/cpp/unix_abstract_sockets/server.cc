@@ -21,6 +21,8 @@
 #include <string>
 
 #include "examples/protos/helloworld.grpc.pb.h"
+#include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -54,6 +56,8 @@ void RunServer() {
 }
 
 int main(int argc, char** argv) {
+  absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   RunServer();
 
   return 0;

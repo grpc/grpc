@@ -26,13 +26,13 @@
 
 #include <memory>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/status/status.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/util/sync.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
 
 struct iovec;
 
@@ -49,6 +49,10 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
   std::unique_ptr<GrpcPolledFd> NewGrpcPolledFdLocked(
       ares_socket_t as) override;
   void ConfigureAresChannelLocked(ares_channel channel) override;
+
+  std::unique_ptr<GrpcPolledFdFactory> NewEmptyInstance() const override {
+    return std::make_unique<GrpcPolledFdFactoryWindows>(iocp_);
+  }
 
  private:
   friend class CustomSockFuncs;

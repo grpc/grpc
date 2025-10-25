@@ -69,6 +69,7 @@ foreach(_target
     absl::flags
     absl::flags_parse
     absl::log
+    absl::log_initialize
     ${_REFLECTION}
     ${_GRPC_GRPCPP}
     ${_PROTOBUF_LIBPROTOBUF})

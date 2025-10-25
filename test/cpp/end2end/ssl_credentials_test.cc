@@ -25,14 +25,15 @@
 
 #include <memory>
 
-#include "absl/log/log.h"
-#include "absl/synchronization/notification.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "test/core/test_util/port.h"
+#include "test/core/test_util/postmortem.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/synchronization/notification.h"
 
 namespace grpc {
 namespace testing {
@@ -81,6 +82,7 @@ class SslCredentialsTest : public ::testing::Test {
   std::unique_ptr<Server> server_ = nullptr;
   std::thread* server_thread_ = nullptr;
   std::string server_addr_;
+  grpc_core::PostMortem post_mortem_;
 };
 
 void DoRpc(const std::string& server_addr,

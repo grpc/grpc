@@ -29,14 +29,14 @@
 
 #include <memory>
 
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_split.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/cpp/end2end/test_health_check_service_impl.h"
 #include "test/cpp/interop/pre_stop_hook_server.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
 
 namespace grpc {
 namespace testing {

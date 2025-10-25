@@ -28,13 +28,13 @@ CXX = g++
 CPPFLAGS += `pkg-config --cflags protobuf grpc absl_flags absl_flags_parse`
 CXXFLAGS += -std=c++17
 ifeq ($(SYSTEM),Darwin)
-LDFLAGS += -L/usr/local/lib `pkg-config --libs --static protobuf grpc++ absl_flags absl_flags_parse $(PROTOBUF_ABSL_DEPS)`\
+LDFLAGS += -L/usr/local/lib `pkg-config --libs --static protobuf grpc++ absl_flags absl_flags_parse absl_log_initialize $(PROTOBUF_ABSL_DEPS)`\
            $(PROTOBUF_UTF8_RANGE_LINK_LIBS) \
            -pthread\
            -lgrpc++_reflection\
            -ldl
 else
-LDFLAGS += -L/usr/local/lib `pkg-config --libs --static protobuf grpc++ absl_flags absl_flags_parse $(PROTOBUF_ABSL_DEPS)`\
+LDFLAGS += -L/usr/local/lib `pkg-config --libs --static protobuf grpc++ absl_flags absl_flags_parse absl_log_initialize $(PROTOBUF_ABSL_DEPS)`\
            $(PROTOBUF_UTF8_RANGE_LINK_LIBS) \
            -pthread\
            -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed\

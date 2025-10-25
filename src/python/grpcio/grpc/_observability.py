@@ -18,7 +18,16 @@ import abc
 import contextlib
 import logging
 import threading
-from typing import Any, Generator, Generic, List, Optional, TypeVar
+from typing import (
+    Any,
+    Generator,
+    Generic,
+    List,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 from grpc._cython import cygrpc as _cygrpc
 from grpc._typing import ChannelArgumentType
@@ -138,6 +147,7 @@ class ObservabilityPlugin(
 
         Args:
           xds: Whether the server is xds server.
+
         Returns:
           A PyCapsule which stores a ServerCallTracerFactory object. Or None if
         plugin decides not to create ServerCallTracerFactory.
@@ -225,10 +235,11 @@ def set_plugin(observability_plugin: Optional[ObservabilityPlugin]) -> None:
       ValueError: If an ObservabilityPlugin was already registered at the
     time of calling this method.
     """
-    global _OBSERVABILITY_PLUGIN  # pylint: disable=global-statement
+    global _OBSERVABILITY_PLUGIN  # pylint: disable=global-statement # noqa: PLW0603
     with _plugin_lock:
         if observability_plugin and _OBSERVABILITY_PLUGIN:
-            raise ValueError("observability_plugin was already set!")
+            error_msg = "observability_plugin was already set!"
+            raise ValueError(error_msg)
         _OBSERVABILITY_PLUGIN = observability_plugin
 
 
@@ -281,7 +292,9 @@ def maybe_record_rpc_latency(state: "_channel._RPCState") -> None:
             )
 
 
-def create_server_call_tracer_factory_option(xds: bool) -> ChannelArgumentType:
+def create_server_call_tracer_factory_option(
+    xds: bool,
+) -> Union[Tuple[ChannelArgumentType], Tuple[()]]:
     with get_plugin() as plugin:
         if plugin and plugin.stats_enabled:
             server_call_tracer_factory_address = (

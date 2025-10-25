@@ -25,9 +25,6 @@
 #include <utility>
 #include <variant>
 
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/rbac/v3/rbac.upb.h"
 #include "envoy/config/route/v3/route_components.upb.h"
@@ -55,6 +52,9 @@
 #include "upb/base/string_view.h"
 #include "upb/message/array.h"
 #include "upb/message/map.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -452,24 +452,17 @@ Json ParseHttpRbacToJson(const XdsResourceType::DecodeContext& context,
         "action", Json::FromNumber(envoy_config_rbac_v3_RBAC_action(rules)));
     if (envoy_config_rbac_v3_RBAC_policies_size(rules) != 0) {
       Json::Object policies_object;
-      // TODO(b/397931390): Clean up the code after gRPC OSS migrates to proto
-      // v30.0.
       envoy_config_rbac_v3_RBAC* rules_upb = (envoy_config_rbac_v3_RBAC*)rules;
-      const upb_Map* rules_upb_map =
-          _envoy_config_rbac_v3_RBAC_policies_upb_map(rules_upb);
-      if (rules_upb_map) {
-        size_t iter = kUpb_Map_Begin;
-        upb_MessageValue k, v;
-        while (upb_Map_Next(rules_upb_map, &k, &v, &iter)) {
-          upb_StringView key_view = k.str_val;
-          const envoy_config_rbac_v3_Policy* val =
-              (envoy_config_rbac_v3_Policy*)v.msg_val;
-          absl::string_view key = UpbStringToAbsl(key_view);
-          ValidationErrors::ScopedField field(
-              errors, absl::StrCat(".policies[", key, "]"));
-          Json policy = ParsePolicyToJson(val, errors);
-          policies_object.emplace(std::string(key), std::move(policy));
-        }
+      size_t iter = kUpb_Map_Begin;
+      upb_StringView key_view;
+      const envoy_config_rbac_v3_Policy* val;
+      while (envoy_config_rbac_v3_RBAC_policies_next(rules_upb, &key_view, &val,
+                                                     &iter)) {
+        absl::string_view key = UpbStringToAbsl(key_view);
+        ValidationErrors::ScopedField field(
+            errors, absl::StrCat(".policies[", key, "]"));
+        Json policy = ParsePolicyToJson(val, errors);
+        policies_object.emplace(key, std::move(policy));
       }
       inner_rbac_json.emplace("policies",
                               Json::FromObject(std::move(policies_object)));
@@ -577,7 +570,7 @@ XdsHttpRbacFilter::GenerateFilterConfigOverride(
 }
 
 void XdsHttpRbacFilter::AddFilter(InterceptionChainBuilder& builder) const {
-  builder.Add<RbacFilter>();
+  builder.Add<RbacFilter>(nullptr);
 }
 
 const grpc_channel_filter* XdsHttpRbacFilter::channel_filter() const {

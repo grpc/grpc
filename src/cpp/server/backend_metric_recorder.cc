@@ -26,9 +26,9 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/log.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/load_balancing/backend_metric_data.h"
+#include "absl/log/log.h"
 
 using grpc_core::BackendMetricData;
 

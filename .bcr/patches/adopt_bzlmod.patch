@@ -14,20 +14,19 @@ index dc2ef7a890..93e99962db 100644
              defines = defines,
              linkshared = 1,
          )
-+grpc_repo_deps_ext = module_extension(implementation = lambda ctx: grpc_deps(bzlmod = True))
 diff --git a/bazel/python_rules.bzl b/bazel/python_rules.bzl
-index f5fa1a0550..56b2a2d42c 100644
+index 8a34b14988..7a131eda0c 100644
 --- a/bazel/python_rules.bzl
 +++ b/bazel/python_rules.bzl
-@@ -191,11 +191,7 @@ def _generate_pb2_grpc_src_impl(context):
+@@ -211,11 +211,7 @@ def _generate_pb2_grpc_src_impl(context):
      arguments = []
      tools = [context.executable._protoc, context.executable._grpc_plugin]
      out_dir = get_out_dir(protos, context)
 -    if out_dir.import_path:
 -        # is virtual imports
--        out_path = out_dir.path
+-        out_path = get_include_directory(out_files[0])
 -    else:
--        out_path = context.genfiles_dir.path
+-        out_path = out_dir.path
 +    out_path = out_dir.path
      arguments += get_plugin_args(
          context.executable._grpc_plugin,

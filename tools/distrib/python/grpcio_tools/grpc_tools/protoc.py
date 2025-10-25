@@ -205,6 +205,11 @@ if sys.version_info >= (3, 5, 0):
     if not os.getenv(_DISABLE_DYNAMIC_STUBS):
         _maybe_install_proto_finders()
 
-if __name__ == "__main__":
+
+def entrypoint() -> None:
     proto_include = _get_resource_file_name("grpc_tools", "_proto")
     sys.exit(main(sys.argv + ["-I{}".format(proto_include)]))
+
+
+if __name__ == "__main__":
+    entrypoint()

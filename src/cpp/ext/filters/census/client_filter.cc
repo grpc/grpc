@@ -35,19 +35,13 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
 #include "opencensus/tags/tag_map.h"
 #include "opencensus/trace/span.h"
 #include "opencensus/trace/span_context.h"
 #include "opencensus/trace/status_code.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -56,14 +50,20 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/measures.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 namespace grpc {
 namespace internal {
@@ -101,9 +101,9 @@ OpenCensusClientFilter::MakeCallPromise(
       path != nullptr ? path->Ref() : grpc_core::Slice(),
       grpc_core::GetContext<grpc_core::Arena>(),
       OpenCensusTracingEnabled() && tracing_enabled_);
-  DCHECK_EQ(arena->GetContext<grpc_core::CallTracerAnnotationInterface>(),
-            nullptr);
-  grpc_core::SetContext<grpc_core::CallTracerAnnotationInterface>(tracer);
+  GRPC_DCHECK_EQ(arena->GetContext<grpc_core::CallSpan>(), nullptr);
+  grpc_core::SetContext<grpc_core::CallSpan>(
+      grpc_core::WrapClientCallTracer(tracer, arena));
   return next_promise_factory(std::move(call_args));
 }
 
@@ -247,8 +247,7 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordOutgoingBytes(
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordCancel(
     absl::Status /*cancel_error*/) {}
 
-void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
-    const gpr_timespec& /*latency*/) {
+void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd() {
   if (OpenCensusStatsEnabled()) {
     std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
         context_.tags().tags();
@@ -303,7 +302,7 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordAnnotation(
   }
 }
 
-std::shared_ptr<grpc_core::TcpTracerInterface>
+std::shared_ptr<grpc_core::TcpCallTracer>
 OpenCensusCallTracer::OpenCensusCallAttemptTracer::StartNewTcpTrace() {
   return nullptr;
 }
@@ -412,7 +411,7 @@ void OpenCensusCallTracer::RecordApiLatency(absl::Duration api_latency,
 
 CensusContext OpenCensusCallTracer::CreateCensusContextForCallAttempt() {
   if (!tracing_enabled_) return CensusContext(context_.tags());
-  DCHECK(context_.Context().IsValid());
+  GRPC_DCHECK(context_.Context().IsValid());
   auto context = CensusContext(absl::StrCat("Attempt.", method_),
                                &(context_.Span()), context_.tags());
   grpc::internal::OpenCensusRegistry::Get()
@@ -431,7 +430,8 @@ class OpenCensusClientInterceptor : public grpc::experimental::Interceptor {
             grpc::experimental::InterceptionHookPoints::POST_RECV_STATUS)) {
       auto* tracer = grpc_core::DownCast<OpenCensusCallTracer*>(
           grpc_call_get_arena(info_->client_context()->c_call())
-              ->GetContext<grpc_core::CallTracerAnnotationInterface>());
+              ->GetContext<grpc_core::CallSpan>()
+              ->span_impl());
       if (tracer != nullptr) {
         tracer->RecordApiLatency(absl::Now() - start_time_,
                                  static_cast<absl::StatusCode>(

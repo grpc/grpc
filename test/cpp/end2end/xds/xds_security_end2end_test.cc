@@ -34,13 +34,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/functional/function_ref.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/time/time.h"
 #include "envoy/config/cluster/v3/cluster.pb.h"
 #include "envoy/config/endpoint/v3/endpoint.pb.h"
 #include "envoy/config/listener/v3/listener.pb.h"
@@ -50,8 +43,6 @@
 #include "envoy/extensions/filters/http/router/v3/router.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
@@ -60,6 +51,7 @@
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
 #include "src/core/util/sync.h"
@@ -77,6 +69,14 @@
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/tls_test_utils.h"
 #include "xds/type/v3/typed_struct.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/functional/function_ref.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/time/time.h"
 
 namespace grpc {
 namespace testing {
@@ -153,15 +153,16 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
             "No certificates available for cert_name \"", cert_name, "\""));
         distributor_->SetErrorForCert(cert_name, error, error);
       } else {
-        std::optional<std::string> root_certificate;
+        std::shared_ptr<RootCertInfo> root_cert_info;
         std::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
         if (root_being_watched) {
-          root_certificate = it->second.root_certificate;
+          root_cert_info =
+              std::make_shared<RootCertInfo>(it->second.root_certificate);
         }
         if (identity_being_watched) {
           pem_key_cert_pairs = it->second.identity_key_cert_pairs;
         }
-        distributor_->SetKeyMaterials(cert_name, std::move(root_certificate),
+        distributor_->SetKeyMaterials(cert_name, std::move(root_cert_info),
                                       std::move(pem_key_cert_pairs));
       }
     });
@@ -211,7 +212,7 @@ class FakeCertificateProviderFactory
       absl::string_view name,
       FakeCertificateProvider::CertDataMapWrapper* cert_data_map)
       : name_(name), cert_data_map_(cert_data_map) {
-    CHECK_NE(cert_data_map, nullptr);
+    GRPC_CHECK_NE(cert_data_map, nullptr);
   }
 
   absl::string_view name() const override { return name_; }
@@ -228,7 +229,7 @@ class FakeCertificateProviderFactory
   CreateCertificateProvider(
       grpc_core::RefCountedPtr<grpc_core::CertificateProviderFactory::Config>
       /*config*/) override {
-    CHECK_NE(cert_data_map_, nullptr);
+    GRPC_CHECK_NE(cert_data_map_, nullptr);
     return grpc_core::MakeRefCounted<FakeCertificateProvider>(
         cert_data_map_->Get());
   }
@@ -455,8 +456,6 @@ TEST_P(XdsSecurityTest,
 }
 
 TEST_P(XdsSecurityTest, UseSystemRootCerts) {
-  grpc_core::testing::ScopedExperimentalEnvVar env1(
-      "GRPC_EXPERIMENTAL_XDS_SYSTEM_ROOT_CERTS");
   grpc_core::testing::ScopedEnvVar env2("GRPC_DEFAULT_SSL_ROOTS_FILE_PATH",
                                         kCaCertPath);
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
@@ -901,7 +900,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     options.set_verify_server_certs(true);
     options.set_certificate_verifier(std::move(verifier));
     auto channel_creds = grpc::experimental::TlsCredentials(options);
-    CHECK_NE(channel_creds.get(), nullptr);
+    GRPC_CHECK_NE(channel_creds.get(), nullptr);
     return CreateCustomChannel(uri, channel_creds, args);
   }
 
@@ -922,7 +921,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     options.set_verify_server_certs(true);
     options.set_certificate_verifier(std::move(verifier));
     auto channel_creds = grpc::experimental::TlsCredentials(options);
-    CHECK_NE(channel_creds.get(), nullptr);
+    GRPC_CHECK_NE(channel_creds.get(), nullptr);
     return CreateCustomChannel(uri, channel_creds, args);
   }
 
@@ -1073,7 +1072,7 @@ TEST_P(XdsServerSecurityTest, CertificatesNotAvailable) {
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
               "failed to connect to all addresses; last error: ",
-              /*has_resolution_note=*/false));
+              /*resolution_note=*/""));
 }
 
 TEST_P(XdsServerSecurityTest, TestMtls) {
@@ -1100,7 +1099,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithRootPluginUpdate) {
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
               "failed to connect to all addresses; last error: ",
-              /*has_resolution_note=*/false));
+              /*resolution_note=*/""));
 }
 
 TEST_P(XdsServerSecurityTest, TestMtlsWithIdentityPluginUpdate) {
@@ -1153,7 +1152,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithRootCertificateNameUpdate) {
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
               "failed to connect to all addresses; last error: ",
-              /*has_resolution_note=*/false));
+              /*resolution_note=*/""));
 }
 
 TEST_P(XdsServerSecurityTest, TestMtlsWithIdentityCertificateNameUpdate) {
@@ -1264,7 +1263,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsToTls) {
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
               "failed to connect to all addresses; last error: ",
-              /*has_resolution_note=*/false));
+              /*resolution_note=*/""));
   SetLdsUpdate("", "", "fake_plugin1", "", false);
   SendRpc([this]() { return CreateTlsChannel(); },
           RpcOptions().set_wait_for_ready(true), server_authenticated_identity_,
@@ -1284,7 +1283,7 @@ TEST_P(XdsServerSecurityTest, TestTlsToMtls) {
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
               "failed to connect to all addresses; last error: ",
-              /*has_resolution_note=*/false));
+              /*resolution_note=*/""));
 }
 
 TEST_P(XdsServerSecurityTest, TestMtlsToFallback) {
@@ -2643,7 +2642,7 @@ int main(int argc, char** argv) {
   grpc::testing::g_fake1_cert_data_map = &cert_data_map_1;
   grpc::testing::FakeCertificateProvider::CertDataMapWrapper cert_data_map_2;
   grpc::testing::g_fake2_cert_data_map = &cert_data_map_2;
-  grpc_core::CoreConfiguration::RegisterBuilder(
+  grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
       [](grpc_core::CoreConfiguration::Builder* builder) {
         builder->certificate_provider_registry()
             ->RegisterCertificateProviderFactory(

@@ -27,20 +27,21 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/call/metadata_compression_traits.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
+#include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/metadata_compression_traits.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/time.h"
+#include "absl/log/log.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -353,6 +354,7 @@ class HPackCompressor {
     bool use_true_binary_metadata;
     size_t max_frame_size;
     CallTracerInterface* call_tracer;
+    Http2ZTraceCollector* ztrace_collector;
   };
 
   template <typename HeaderSet>
@@ -367,8 +369,10 @@ class HPackCompressor {
   }
 
   template <typename HeaderSet>
-  bool EncodeRawHeaders(const HeaderSet& headers, SliceBuffer& output) {
-    hpack_encoder_detail::Encoder encoder(this, true, output);
+  bool EncodeRawHeaders(const HeaderSet& headers, SliceBuffer& output,
+                        bool allow_true_binary_metadata) {
+    hpack_encoder_detail::Encoder encoder(this, allow_true_binary_metadata,
+                                          output);
     headers.Encode(&encoder);
     return !encoder.saw_encoding_errors();
   }

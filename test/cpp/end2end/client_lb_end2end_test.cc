@@ -38,15 +38,6 @@
 #include <string>
 #include <thread>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/client_channel/config_selector.h"
 #include "src/core/client_channel/global_subchannel_pool.h"
@@ -66,6 +57,7 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
@@ -73,6 +65,7 @@
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
+#include "test/core/test_util/postmortem.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/test_lb_policies.h"
@@ -80,6 +73,14 @@
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/credentials.h"
 #include "xds/data/orca/v3/orca_load_report.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 namespace testing {
@@ -237,9 +238,9 @@ class FakeResolverResponseGeneratorWrapper {
     for (const int& port : ports) {
       absl::StatusOr<grpc_core::URI> lb_uri =
           grpc_core::URI::Parse(grpc_core::LocalIpUri(port));
-      CHECK_OK(lb_uri);
+      GRPC_CHECK_OK(lb_uri);
       grpc_resolved_address address;
-      CHECK(grpc_parse_uri(*lb_uri, &address));
+      GRPC_CHECK(grpc_parse_uri(*lb_uri, &address));
       result.addresses->emplace_back(address, per_address_args);
     }
     if (result.addresses->empty()) {
@@ -596,6 +597,11 @@ class ClientLbEnd2endTest : public ::testing::Test {
         // Prefixes added for context
         "(Failed to connect to remote host: )?"
         "(Timeout occurred: )?"
+        // Parenthetical wrappers
+        "( ?\\(*("
+        "Secure read failed|"
+        "Handshake (read|write) failed|"
+        "Delayed close due to in-progress write|"
         // Syscall
         "((connect|sendmsg|recvmsg|getsockopt\\(SO\\_ERROR\\)): ?)?"
         // strerror() output or other message
@@ -605,10 +611,13 @@ class ClientLbEnd2endTest : public ::testing::Test {
         "|FD shutdown"
         "|Endpoint closing)"
         // errno value
-        "( \\([0-9]+\\))?");
+        "( \\([0-9]+\\))?"
+        // close paren from wrappers above
+        ")\\)*)+");
   }
 
   std::vector<std::unique_ptr<ServerData>> servers_;
+  grpc_core::PostMortem port_mortem_;
 };
 
 TEST_F(ClientLbEnd2endTest, ChannelStateConnectingWhenResolving) {
@@ -675,7 +684,7 @@ class AuthorityOverrideTest : public ClientLbEnd2endTest {
  protected:
   static void SetUpTestSuite() {
     grpc_core::CoreConfiguration::Reset();
-    grpc_core::CoreConfiguration::RegisterBuilder(
+    grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
           grpc_core::RegisterAuthorityOverrideLoadBalancingPolicy(builder);
         });
@@ -1530,22 +1539,18 @@ TEST_F(RoundRobinTest, Basic) {
   auto stub = BuildStub(channel);
   response_generator.SetNextResolution(GetServersPorts());
   // Wait until all backends are ready.
-  do {
-    CheckRpcSendOk(DEBUG_LOCATION, stub);
-  } while (!SeenAllServers());
-  ResetCounters();
+  WaitForServers(DEBUG_LOCATION, stub);
   // "Sync" to the end of the list. Next sequence of picks will start at the
   // first server (index 0).
   WaitForServer(DEBUG_LOCATION, stub, servers_.size() - 1);
+  // Backends should be iterated over in the order in which the addresses were
+  // given.
   std::vector<int> connection_order;
   for (size_t i = 0; i < servers_.size(); ++i) {
     CheckRpcSendOk(DEBUG_LOCATION, stub);
     UpdateConnectionOrder(servers_, &connection_order);
   }
-  // Backends should be iterated over in the order in which the addresses were
-  // given.
-  const auto expected = std::vector<int>{0, 1, 2};
-  EXPECT_EQ(expected, connection_order);
+  EXPECT_THAT(connection_order, ::testing::ElementsAre(0, 1, 2));
   // Check LB policy name for the channel.
   EXPECT_EQ("round_robin", channel->GetLoadBalancingPolicyName());
 }
@@ -2299,7 +2304,7 @@ class ClientLbPickArgsTest : public ClientLbEnd2endTest {
 
   static void SetUpTestSuite() {
     grpc_core::CoreConfiguration::Reset();
-    grpc_core::CoreConfiguration::RegisterBuilder(
+    grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
           grpc_core::RegisterTestPickArgsLoadBalancingPolicy(builder,
                                                              SavePickArgs);
@@ -2482,7 +2487,7 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
 
   static void SetUpTestSuite() {
     grpc_core::CoreConfiguration::Reset();
-    grpc_core::CoreConfiguration::RegisterBuilder(
+    grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
           grpc_core::RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
               builder, ReportTrailerIntercepted);
@@ -2885,7 +2890,7 @@ class ClientLbAddressTest : public ClientLbEnd2endTest {
 
   static void SetUpTestSuite() {
     grpc_core::CoreConfiguration::Reset();
-    grpc_core::CoreConfiguration::RegisterBuilder(
+    grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
           grpc_core::RegisterAddressTestLoadBalancingPolicy(builder,
                                                             SaveAddress);
@@ -2954,7 +2959,7 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
 
   static void SetUpTestSuite() {
     grpc_core::CoreConfiguration::Reset();
-    grpc_core::CoreConfiguration::RegisterBuilder(
+    grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
           grpc_core::RegisterOobBackendMetricTestLoadBalancingPolicy(
               builder, BackendMetricCallback);
@@ -3075,7 +3080,7 @@ class ControlPlaneStatusRewritingTest : public ClientLbEnd2endTest {
  protected:
   static void SetUpTestSuite() {
     grpc_core::CoreConfiguration::Reset();
-    grpc_core::CoreConfiguration::RegisterBuilder(
+    grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
           grpc_core::RegisterFailLoadBalancingPolicy(
               builder, absl::AbortedError("nope"));
@@ -3201,7 +3206,7 @@ class WeightedRoundRobinTest : public ClientLbEnd2endTest {
       const std::unique_ptr<grpc::testing::EchoTestService::Stub>& stub,
       const std::vector<size_t>& expected_weights, size_t total_passes = 3,
       EchoRequest* request_ptr = nullptr, int timeout_ms = 15000) {
-    CHECK_EQ(expected_weights.size(), servers_.size());
+    GRPC_CHECK_EQ(expected_weights.size(), servers_.size());
     size_t total_picks_per_pass = 0;
     for (size_t picks : expected_weights) {
       total_picks_per_pass += picks;

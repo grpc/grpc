@@ -80,7 +80,12 @@ grpc_cc_library(
     ],
     deps = [
         "proto_parser_helper",
+        "//:gpr_platform",
         "//:grpc++_config_proto",
+        "@com_google_protobuf//src/google/protobuf/compiler:code_generator",
+        "@com_google_protobuf//src/google/protobuf/compiler:plugin",
+        "@com_google_protobuf//src/google/protobuf/io",
+        "@com_google_protobuf//src/google/protobuf/io:printer",
     ],
 )
 
@@ -105,7 +110,12 @@ grpc_proto_plugin(
 grpc_proto_plugin(
     name = "grpc_objective_c_plugin",
     srcs = ["objective_c_plugin.cc"],
-    deps = [":grpc_plugin_support"],
+    deps = [
+        ":grpc_plugin_support",
+        "@com_google_protobuf//:protobuf",
+        "@com_google_protobuf//src/google/protobuf/compiler:code_generator",
+        "@com_google_protobuf//src/google/protobuf/compiler/objectivec:names",
+    ],
 )
 
 grpc_proto_plugin(

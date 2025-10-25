@@ -39,6 +39,7 @@ class Preprocess(setuptools.Command):
         pass
 
     def run(self):
+        # TODO: Can skip copy proto part.
         if os.path.isfile(REFLECTION_PROTO):
             shutil.copyfile(
                 REFLECTION_PROTO,

@@ -14,7 +14,7 @@
 
 #include "src/core/util/tdigest.h"
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
@@ -42,9 +42,9 @@ size_t MaxCentroids(double compression) {
 
 double LinearInterpolate(double val1, double val2, double weight1,
                          double weight2) {
-  DCHECK_GE(weight1, 0);
-  DCHECK_GE(weight2, 0);
-  DCHECK_GT(weight1 + weight2, 0);
+  GRPC_DCHECK_GE(weight1, 0);
+  GRPC_DCHECK_GE(weight2, 0);
+  GRPC_DCHECK_GT(weight1 + weight2, 0);
   return (val1 * weight1 + val2 * weight2) / (weight1 + weight2);
 }
 
@@ -56,7 +56,7 @@ void TDigest::Reset(double compression) {
   compression_ = BoundedCompression(compression);
   // Set the default batch_size to 4 times the number of centroids.
   batch_size_ = static_cast<int64_t>(4 * MaxCentroids(compression_));
-  DCHECK(compression_ == 0.0 || batch_size_ > 0);
+  GRPC_DCHECK(compression_ == 0.0 || batch_size_ > 0);
   centroids_.reserve(MaxCentroids(compression_) + batch_size_);
   centroids_.clear();
   merged_ = 0;
@@ -77,7 +77,7 @@ void TDigest::Add(double val, int64_t count) {
 }
 
 void TDigest::AddUnmergedCentroid(const CentroidPod& centroid) {
-  DCHECK_LT(unmerged_, batch_size_);
+  GRPC_DCHECK_LT(unmerged_, batch_size_);
 
   centroids_.push_back(centroid);
   ++unmerged_;
@@ -117,7 +117,7 @@ void TDigest::DoMerge() {
 
   // We first sort the centroids, and assume the first centroid is merged,
   // and the rest are unmerged.
-  DCHECK(!centroids_.empty());
+  GRPC_DCHECK(!centroids_.empty());
   std::sort(centroids_.begin(), centroids_.end());
   unmerged_ += merged_ - 1;
   merged_ = 1;
@@ -170,7 +170,7 @@ void TDigest::DoMerge() {
     min_ = std::min(min_, centroids_.front().mean);
     max_ = std::max(max_, centroids_.back().mean);
   }
-  DCHECK_LE(centroids_.size(), MaxCentroids(compression_));
+  GRPC_DCHECK_LE(centroids_.size(), MaxCentroids(compression_));
 }
 
 // We use linear interpolation between mid points of centroids when calculating
@@ -213,7 +213,7 @@ double TDigest::Cdf(double val) {
   if (val >= max_) {
     return 1;
   }
-  DCHECK_NE(min_, max_);
+  GRPC_DCHECK_NE(min_, max_);
 
   if (merged_ == 1) {
     return (val - min_) / (min_ - max_);
@@ -264,8 +264,8 @@ double TDigest::Cdf(double val) {
 }
 
 double TDigest::Quantile(double quantile) {
-  DCHECK_LE(quantile, 1);
-  DCHECK_GE(quantile, 0);
+  GRPC_DCHECK_LE(quantile, 1);
+  GRPC_DCHECK_GE(quantile, 0);
 
   DoMerge();
 
@@ -407,7 +407,7 @@ absl::Status TDigest::FromString(absl::string_view string) {
   }
 
   // Validate min/max/sum/count.
-  DCHECK_LT(std::abs(sum - sum_), 1e-10) << "Invalid sum value.";
+  GRPC_DCHECK_LT(std::abs(sum - sum_), 1e-10) << "Invalid sum value.";
 
   if (count != count_) {
     return absl::InvalidArgumentError("Invalid count value.");

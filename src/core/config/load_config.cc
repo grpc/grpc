@@ -19,11 +19,11 @@
 
 #include <optional>
 
+#include "src/core/util/env.h"
 #include "absl/flags/marshalling.h"
 #include "absl/log/check.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_join.h"
-#include "src/core/util/env.h"
 
 namespace grpc_core {
 
@@ -46,6 +46,18 @@ int32_t LoadConfigFromEnv(absl::string_view environment_variable,
     int32_t out;
     if (absl::SimpleAtoi(*env, &out)) return out;
     fprintf(stderr, "Error reading int from %s: '%s' is not a number",
+            std::string(environment_variable).c_str(), env->c_str());
+  }
+  return default_value;
+}
+
+double LoadConfigFromEnv(absl::string_view environment_variable,
+                         double default_value) {
+  auto env = LoadEnv(environment_variable);
+  if (env.has_value()) {
+    double out;
+    if (absl::SimpleAtod(*env, &out)) return out;
+    fprintf(stderr, "Error reading double from %s: '%s' is not a double",
             std::string(environment_variable).c_str(), env->c_str());
   }
   return default_value;

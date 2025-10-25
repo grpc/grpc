@@ -30,11 +30,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_factory.h"
@@ -53,6 +48,11 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -318,12 +318,14 @@ void HttpConnectHandshaker::DoHandshake(
   gpr_free(header_strings);
   // Take a new ref to be held by the write callback.
   Ref().release();
+  grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs write_args;
+  write_args.set_max_frame_size(INT_MAX);
   grpc_endpoint_write(
       args->endpoint.get(), write_buffer_.c_slice_buffer(),
       GRPC_CLOSURE_INIT(&on_write_done_scheduler_,
                         &HttpConnectHandshaker::OnWriteDoneScheduler, this,
                         grpc_schedule_on_exec_ctx),
-      nullptr, /*max_frame_size=*/INT_MAX);
+      std::move(write_args));
 }
 
 HttpConnectHandshaker::HttpConnectHandshaker() {

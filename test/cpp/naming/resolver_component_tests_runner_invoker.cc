@@ -29,11 +29,11 @@
 #include <thread>
 #include <vector>
 
+#include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "absl/flags/flag.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
-#include "src/core/util/crash.h"
 
 #ifdef __FreeBSD__
 #include <sys/wait.h>
@@ -98,12 +98,12 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   grpc_init();
-  CHECK(!absl::GetFlag(FLAGS_test_bin_name).empty());
+  GRPC_CHECK(!absl::GetFlag(FLAGS_test_bin_name).empty());
   std::string my_bin = argv[0];
   int result = 0;
   if (absl::GetFlag(FLAGS_running_under_bazel)) {
-    CHECK(!absl::GetFlag(FLAGS_grpc_test_directory_relative_to_test_srcdir)
-               .empty());
+    GRPC_CHECK(!absl::GetFlag(FLAGS_grpc_test_directory_relative_to_test_srcdir)
+                    .empty());
     // Use bazel's TEST_SRCDIR environment variable to locate the "test data"
     // binaries.
     auto test_srcdir = grpc_core::GetEnv("TEST_SRCDIR");
@@ -168,5 +168,19 @@ int main(int argc, char** argv) {
         "test/cpp/naming/utils/tcp_connect.py");
   }
   grpc_shutdown();
+#ifndef GPR_WINDOWS
+  if (WIFEXITED(result)) {
+    if (WEXITSTATUS(result) != 0) {
+      int error_code = WEXITSTATUS(result);
+      LOG(FATAL) << "DNS test subprocess failed with code: " << error_code;
+    }
+  } else if (WIFSIGNALED(result)) {
+    int signal = WTERMSIG(result);
+    LOG(FATAL) << "DNS test subprocess killed by signal: " << signal;
+  } else {
+    LOG(FATAL) << "DNS test subprocess failed, neither WEXITSTATUS nor "
+                  "WTERMSIG is true";
+  }
+#endif
   return result;
 }

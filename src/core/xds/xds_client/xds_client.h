@@ -27,11 +27,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_set.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "envoy/admin/v3/config_dump_shared.upb.h"
 #include "envoy/service/status/v3/csds.upb.h"
 #include "src/core/lib/debug/trace.h"
@@ -50,6 +45,11 @@
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_transport.h"
 #include "upb/reflection/def.hpp"
+#include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -213,7 +213,9 @@ class XdsClient : public DualRefCounted<XdsClient> {
                            bool delay_unsubscription)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
-    absl::string_view server_uri() const { return server_.server_uri(); }
+    absl::string_view server_uri() const {
+      return server_.target()->server_uri();
+    }
 
    private:
     class ConnectivityFailureWatcher;

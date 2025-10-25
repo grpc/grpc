@@ -45,7 +45,7 @@ trap cleanup SIGINT SIGTERM EXIT
 
 # Deploy
 
-DEPLOY_OUTPUT=$(gcloud functions deploy "${FUNCTION_NAME}" --entry-point test_publish --runtime "${RUNTIME}" --trigger-http --allow-unauthenticated --no-gen2)
+DEPLOY_OUTPUT=$(gcloud functions deploy "${FUNCTION_NAME}" --entry-point test_publish --runtime "${RUNTIME}" --trigger-http --allow-unauthenticated)
 HTTP_URL=$(echo "${DEPLOY_OUTPUT}" | grep "url: " | awk '{print $2;}')
 
 # Send Requests

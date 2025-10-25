@@ -16,13 +16,13 @@
 
 #include <cstdint>
 
-#include "absl/log/check.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/grpc_check.h"
+#include "gtest/gtest.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "gtest/gtest.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/lib/resource_quota/resource_quota.h"
 
 namespace grpc_core {
 namespace chaotic_good_legacy {
@@ -40,8 +40,8 @@ void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   EXPECT_EQ(hdr.payload_length, output_buffer.Length());
   T output;
   auto deser = output.Deserialize(hdr, std::move(output_buffer));
-  CHECK_OK(deser);
-  CHECK_EQ(output.ToString(), input.ToString());
+  GRPC_CHECK_OK(deser);
+  GRPC_CHECK_EQ(output.ToString(), input.ToString());
 }
 
 TEST(FrameTest, SettingsFrameRoundTrips) {

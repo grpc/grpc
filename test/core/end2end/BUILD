@@ -19,6 +19,15 @@ licenses(["notice"])
 
 grpc_package(name = "test/core/end2end")
 
+# grpc_core_end2end_test_suite() currently needs to consume the source for tests directly.
+exports_files(
+    glob(["tests/**"]),
+    visibility = [
+        "//:__subpackages__",
+        "//bazel:core_end2end_tests",
+    ],
+)
+
 grpc_cc_library(
     name = "cq_verifier",
     testonly = 1,
@@ -38,8 +47,13 @@ grpc_cc_library(
         "//:debug_location",
         "//:gpr",
         "//:grpc",
+        "//:grpc_base",
+        "//:grpc_public_hdrs",
+        "//src/core:grpc_check",
         "//src/core:match",
+        "//src/core:postmortem",
         "//src/core:time",
+        "//test/core/test_util:build",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -58,6 +72,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "http_proxy",
+    testonly = 1,
     srcs = ["fixtures/http_proxy_fixture.cc"],
     hdrs = ["fixtures/http_proxy_fixture.h"],
     external_deps = [
@@ -66,6 +81,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/cleanup",
     ],
     visibility = ["//test/cpp/end2end/xds:__subpackages__"],
     deps = [
@@ -74,6 +90,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc",
         "//:httpcli",
+        "//:iomgr",
         "//:sockaddr_utils",
         "//src/core:channel_args",
         "//src/core:channel_args_endpoint_config",
@@ -81,6 +98,10 @@ grpc_cc_library(
         "//src/core:closure",
         "//src/core:default_event_engine",
         "//src/core:error",
+        "//src/core:event_engine_common",
+        "//src/core:event_engine_shim",
+        "//src/core:event_engine_utils",
+        "//src/core:grpc_check",
         "//src/core:iomgr_fwd",
         "//src/core:pollset_set",
         "//src/core:resolved_address",
@@ -93,18 +114,22 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "proxy",
+    testonly = 1,
     srcs = ["fixtures/proxy.cc"],
     hdrs = ["fixtures/proxy.h"],
     external_deps = [
         "absl/log:check",
         "absl/log:log",
+        "absl/cleanup",
     ],
     deps = [
         "//:channel_arg_names",
         "//:gpr",
         "//:grpc",
+        "//:grpc_base",
         "//:grpc_public_hdrs",
         "//src/core:channel_args",
+        "//src/core:grpc_check",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -159,6 +184,10 @@ grpc_cc_library(
             "absl/meta:type_traits",
             "absl/random",
             "absl/strings",
+            "absl/strings:str_format",
+            "absl/status",
+            "absl/base:core_headers",
+            "absl/status:statusor",
             "gtest",
         ] + (["fuzztest"] if fuzz else []),
         tags = ["no_windows"] if fuzz else [],
@@ -167,25 +196,58 @@ grpc_cc_library(
             "end2end_test_fuzzer_cc_proto",
             "http_proxy",
             "proxy",
+            "//:channel",
+            "//:channel_arg_names",
+            "//:channel_create",
+            "//:channelz",
             "//:config",
+            "//:config_vars",
             "//:debug_location",
+            "//:exec_ctx",
             "//:gpr",
             "//:grpc",
+            "//:grpc_base",
+            "//:grpc_core_credentials_header",
             "//:grpc_public_hdrs",
+            "//:grpc_security_base",
+            "//:grpc_trace",
+            "//:grpc_transport_chttp2",
+            "//:iomgr",
+            "//:iomgr_timer",
+            "//:ref_counted_ptr",
+            "//:server",
             "//src/core:bitset",
             "//src/core:channel_args",
+            "//src/core:channel_args_preconditioning",
+            "//src/core:channel_stack_type",
             "//src/core:chaotic_good_connector",
             "//src/core:chaotic_good_server",
             "//src/core:default_event_engine",
+            "//src/core:env",
+            "//src/core:error",
+            "//src/core:event_engine_shim",
+            "//src/core:experiments",
+            "//src/core:grpc_check",
+            "//src/core:grpc_fake_credentials",
+            "//src/core:grpc_ssl_credentials",
+            "//src/core:grpc_tls_credentials",
+            "//src/core:grpc_transport_inproc",
+            "//src/core:internal_channel_arg_names",
+            "//src/core:iomgr_port",
             "//src/core:no_destruct",
+            "//src/core:postmortem",
             "//src/core:slice",
+            "//src/core:sync",
             "//src/core:time",
+            "//src/core:wait_for_single_owner",
             "//test/core/call:batch_builder",
             "//test/core/event_engine:event_engine_test_utils",
             "//test/core/event_engine/fuzzing_event_engine",
             "//test/core/test_util:fuzz_config_vars",
             "//test/core/test_util:grpc_test_util",
+            "//test/core/test_util:postmortem",
             "//test/core/test_util:test_call_creds",
+            "@com_google_protobuf//:protobuf",
         ] + (["//test/core/test_util:fuzz_config_vars_helpers"] if fuzz else []),
         alwayslink = 1,
     )
@@ -291,6 +353,8 @@ grpc_cc_test(
     tags = [
         "requires-net:ipv4",
         "requires-net:loopback",
+        # relies on ares for dns resolution
+        "grpc:broken-internally",
     ],
     deps = [
         "cq_verifier",
@@ -311,6 +375,7 @@ grpc_cc_test(
         "//src/core:iomgr_fwd",
         "//src/core:resolved_address",
         "//src/core:time",
+        "//test/core/event_engine:delegating_event_engine",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -340,6 +405,7 @@ grpc_cc_test(
     deps = [
         "//:event_engine_base_hdrs",
         "//:gpr",
+        "//:grpc_core_credentials_header",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -359,11 +425,13 @@ grpc_cc_test(
         "//:endpoint_addresses",
         "//:exec_ctx",
         "//:gpr",
+        "//:grpc_core_credentials_header",
         "//:grpc_public_hdrs",
         "//:grpc_resolver",
         "//:grpc_resolver_fake",
         "//:ref_counted_ptr",
         "//src/core:channel_args",
+        "//src/core:grpc_check",
         "//src/core:grpc_service_config",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -389,19 +457,31 @@ grpc_cc_test(
         "cq_verifier",
         "end2end_test_lib_no_fuzztest_gtest",
         "ssl_test_data",
+        "//:channel",
         "//:channel_arg_names",
         "//:config_vars",
         "//:debug_location",
         "//:gpr",
         "//:grpc",
+        "//:grpc_base",
+        "//:grpc_core_credentials_header",
         "//:grpc_public_hdrs",
         "//:grpc_security_base",
         "//src/core:bitset",
         "//src/core:channel_args",
+        "//src/core:event_engine_shim",
+        "//src/core:experiments",
+        "//src/core:grpc_check",
+        "//src/core:internal_channel_arg_names",
         "//src/core:slice",
         "//src/core:time",
+        "//src/core:wait_for_single_owner",
+        "//test/core/call:batch_builder",
+        "//test/core/end2end:end2end_test_fuzzer_cc_proto",
         "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/test_util:fuzz_config_vars",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:postmortem",
     ],
 )
 
@@ -426,9 +506,11 @@ grpc_cc_test(
         "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:grpc_core_credentials_header",
         "//:grpc_public_hdrs",
         "//src/core:channel_args",
         "//src/core:error",
+        "//src/core:grpc_check",
         "//src/core:useful",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -455,9 +537,11 @@ grpc_cc_test(
         "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:grpc_core_credentials_header",
         "//:grpc_public_hdrs",
         "//src/core:channel_args",
         "//src/core:error",
+        "//src/core:grpc_check",
         "//src/core:useful",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -484,6 +568,17 @@ grpc_core_end2end_test_suite(
     tags = [
         "grpc:no-internal-poller",
     ],
+    deps = [
+        "//:iomgr",
+        "//src/core:arena",
+        "//src/core:chaotic_good_connector",
+        "//src/core:chaotic_good_server",
+        "//src/core:context",
+        "//src/core:env",
+        "//src/core:metrics",
+        "//src/core:slice_buffer",
+        "//src/core:sync",
+    ],
 )
 
 grpc_core_end2end_test_suite(
@@ -493,6 +588,17 @@ grpc_core_end2end_test_suite(
     tags = [
         "grpc:no-internal-poller",
     ],
+    deps = [
+        "//:iomgr",
+        "//src/core:arena",
+        "//src/core:chaotic_good_connector",
+        "//src/core:chaotic_good_server",
+        "//src/core:context",
+        "//src/core:env",
+        "//src/core:metrics",
+        "//src/core:slice_buffer",
+        "//src/core:sync",
+    ],
 )
 
 grpc_core_end2end_test_suite(
@@ -501,6 +607,19 @@ grpc_core_end2end_test_suite(
     flaky = True,
     tags = [
         "grpc:no-internal-poller",
+    ],
+    deps = [
+        "//:iomgr",
+        "//src/core:arena",
+        "//src/core:chaotic_good_connector",
+        "//src/core:chaotic_good_server",
+        "//src/core:context",
+        "//src/core:env",
+        "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:grpc_transport_chttp2_server",
+        "//src/core:metrics",
+        "//src/core:slice_buffer",
+        "//src/core:sync",
     ],
 )
 
@@ -512,6 +631,17 @@ grpc_core_end2end_test_suite(
         "grpc:no-internal-poller",
         "no_windows",
     ],
+    deps = [
+        "//:iomgr",
+        "//src/core:arena",
+        "//src/core:chaotic_good_connector",
+        "//src/core:chaotic_good_server",
+        "//src/core:context",
+        "//src/core:env",
+        "//src/core:metrics",
+        "//src/core:slice_buffer",
+        "//src/core:sync",
+    ],
 )
 
 grpc_core_end2end_test_suite(
@@ -520,5 +650,36 @@ grpc_core_end2end_test_suite(
     flaky = True,
     tags = [
         "grpc:no-internal-poller",
+    ],
+    deps = [
+        "//:iomgr",
+        "//src/core:arena",
+        "//src/core:chaotic_good_connector",
+        "//src/core:chaotic_good_server",
+        "//src/core:context",
+        "//src/core:env",
+        "//src/core:metrics",
+        "//src/core:slice_buffer",
+        "//src/core:sync",
+    ],
+)
+
+grpc_core_end2end_test_suite(
+    name = "end2end_ph2",
+    config_src = "end2end_ph2_config.cc",
+    flaky = True,
+    tags = [
+        "grpc:no-internal-poller",
+    ],
+    deps = [
+        "//:iomgr",
+        "//src/core:arena",
+        "//src/core:chaotic_good_connector",
+        "//src/core:chaotic_good_server",
+        "//src/core:context",
+        "//src/core:env",
+        "//src/core:metrics",
+        "//src/core:slice_buffer",
+        "//src/core:sync",
     ],
 )

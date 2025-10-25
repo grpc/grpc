@@ -55,16 +55,54 @@ const upb_MiniTable grpc__gcp__RpcProtocolVersions__Version_msg_init = {
 };
 
 const upb_MiniTable* grpc__gcp__RpcProtocolVersions__Version_msg_init_ptr = &grpc__gcp__RpcProtocolVersions__Version_msg_init;
-static const upb_MiniTable *messages_layout[2] = {
+static const upb_MiniTableField grpc_gcp_TransportProtocolPreferences__fields[1] = {
+  {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
+};
+
+const upb_MiniTable grpc__gcp__TransportProtocolPreferences_msg_init = {
+  NULL,
+  &grpc_gcp_TransportProtocolPreferences__fields[0],
+  16, 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "grpc.gcp.TransportProtocolPreferences",
+#endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000800003f00000a, &upb_prs_1bt},
+  })
+};
+
+const upb_MiniTable* grpc__gcp__TransportProtocolPreferences_msg_init_ptr = &grpc__gcp__TransportProtocolPreferences_msg_init;
+static const upb_MiniTableField grpc_gcp_NegotiatedTransportProtocol__fields[1] = {
+  {1, 8, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+};
+
+const upb_MiniTable grpc__gcp__NegotiatedTransportProtocol_msg_init = {
+  NULL,
+  &grpc_gcp_NegotiatedTransportProtocol__fields[0],
+  UPB_SIZE(16, 24), 1, kUpb_ExtMode_NonExtendable, 1, UPB_FASTTABLE_MASK(8), 0,
+#ifdef UPB_TRACING_ENABLED
+  "grpc.gcp.NegotiatedTransportProtocol",
+#endif
+  UPB_FASTTABLE_INIT({
+    {0x0000000000000000, &_upb_FastDecoder_DecodeGeneric},
+    {0x000800003f00000a, &upb_pss_1bt},
+  })
+};
+
+const upb_MiniTable* grpc__gcp__NegotiatedTransportProtocol_msg_init_ptr = &grpc__gcp__NegotiatedTransportProtocol_msg_init;
+static const upb_MiniTable *messages_layout[4] = {
   &grpc__gcp__RpcProtocolVersions_msg_init,
   &grpc__gcp__RpcProtocolVersions__Version_msg_init,
+  &grpc__gcp__TransportProtocolPreferences_msg_init,
+  &grpc__gcp__NegotiatedTransportProtocol_msg_init,
 };
 
 const upb_MiniTableFile src_proto_grpc_gcp_transport_security_common_proto_upb_file_layout = {
   messages_layout,
   NULL,
   NULL,
-  2,
+  4,
   0,
   0,
 };

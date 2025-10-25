@@ -19,13 +19,15 @@
 
 #include <cstdint>
 
-#include "absl/strings/string_view.h"
-#include "absl/types/span.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/http2_errors.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 namespace transport {
@@ -35,11 +37,25 @@ using EventEngineSlice = grpc_event_engine::experimental::Slice;
 
 class Http2FrameTestHelper {
  public:
+  uint32_t GetDefaultInitialWindowSize() {
+    return Http2Settings::max_initial_window_size() - 1;
+  }
+
   EventEngineSlice EventEngineSliceFromHttp2DataFrame(
       std::string_view payload, const uint32_t stream_id = 1,
       const bool end_stream = false) const {
+    SliceBuffer buffer;
+    AppendGrpcHeaderToSliceBuffer(buffer, 0, payload.size());
+    buffer.Append(Slice::FromCopiedString(payload));
     return EventEngineSliceFromHttp2Frame(
-        Http2DataFrame{stream_id, end_stream, SliceBufferFromString(payload)});
+        Http2DataFrame{stream_id, end_stream, std::move(buffer)});
+  }
+
+  EventEngineSlice EventEngineSliceFromEmptyHttp2DataFrame(
+      const uint32_t stream_id = 1, const bool end_stream = false) const {
+    SliceBuffer buffer;
+    return EventEngineSliceFromHttp2Frame(
+        Http2DataFrame{stream_id, end_stream, std::move(buffer)});
   }
 
   EventEngineSlice EventEngineSliceFromHttp2HeaderFrame(
@@ -51,14 +67,26 @@ class Http2FrameTestHelper {
 
   EventEngineSlice EventEngineSliceFromHttp2RstStreamFrame(
       const uint32_t stream_id = 1,
-      const uint32_t error_code = GRPC_HTTP2_CONNECT_ERROR) const {
+      const uint32_t error_code =
+          static_cast<uint32_t>(http2::Http2ErrorCode::kConnectError)) const {
     return EventEngineSliceFromHttp2Frame(
         Http2RstStreamFrame{stream_id, error_code});
   }
 
-  EventEngineSlice EventEngineSliceFromHttp2SettingsFrame(
-      const bool ack = false) const {
-    return EventEngineSliceFromHttp2Frame(Http2SettingsFrame{ack, {}});
+  EventEngineSlice EventEngineSliceFromHttp2SettingsFrameAck(
+      std::vector<Http2SettingsFrame::Setting> settings) const {
+    return EventEngineSliceFromHttp2Frame(Http2SettingsFrame{true, {}});
+  }
+
+  EventEngineSlice EventEngineSliceFromHttp2SettingsFrameDefault() const {
+    std::vector<Http2SettingsFrame::Setting> settings;
+    settings.push_back({Http2Settings::kEnablePushWireId, 0});
+    settings.push_back({Http2Settings::kMaxConcurrentStreamsWireId, 0u});
+    settings.push_back({Http2Settings::kInitialWindowSizeWireId, 65535u});
+    settings.push_back({Http2Settings::kMaxHeaderListSizeWireId, 16384u});
+    settings.push_back({Http2Settings::kGrpcAllowTrueBinaryMetadataWireId, 1u});
+    return EventEngineSliceFromHttp2Frame(
+        Http2SettingsFrame{false, std::move(settings)});
   }
 
   EventEngineSlice EventEngineSliceFromHttp2PingFrame(

@@ -22,7 +22,6 @@ extern "C" {
 #endif
 
 typedef struct google_protobuf_Struct { upb_Message UPB_PRIVATE(base); } google_protobuf_Struct;
-typedef struct google_protobuf_Struct_FieldsEntry { upb_Message UPB_PRIVATE(base); } google_protobuf_Struct_FieldsEntry;
 typedef struct google_protobuf_Value { upb_Message UPB_PRIVATE(base); } google_protobuf_Value;
 typedef struct google_protobuf_ListValue { upb_Message UPB_PRIVATE(base); } google_protobuf_ListValue;
 
@@ -134,27 +133,6 @@ UPB_INLINE bool google_protobuf_Struct_fields_delete(google_protobuf_Struct* msg
   return _upb_Map_Delete(map, &key, 0, NULL);
 }
 
-/* google.protobuf.Struct.FieldsEntry */
-
-UPB_INLINE upb_StringView google_protobuf_Struct_FieldsEntry_key(const google_protobuf_Struct_FieldsEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_key(msg, &ret, 0);
-  return ret;
-}
-UPB_INLINE const google_protobuf_Value* google_protobuf_Struct_FieldsEntry_value(const google_protobuf_Struct_FieldsEntry* msg) {
-  google_protobuf_Value* ret;
-  _upb_msg_map_value(msg, &ret, sizeof(ret));
-  return ret;
-}
-UPB_INLINE bool google_protobuf_Struct_FieldsEntry_has_value(const google_protobuf_Struct_FieldsEntry* msg) {
-  const upb_MiniTableField field = {2, 32, 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
-}
-
-UPB_INLINE void google_protobuf_Struct_FieldsEntry_set_value(google_protobuf_Struct_FieldsEntry *msg, google_protobuf_Value* value) {
-  _upb_msg_map_set_value(msg, &value, sizeof(google_protobuf_Value*));
-}
-
 /* google.protobuf.Value */
 
 UPB_INLINE google_protobuf_Value* google_protobuf_Value_new(upb_Arena* arena) {
@@ -204,6 +182,10 @@ UPB_INLINE google_protobuf_Value_kind_oneofcases google_protobuf_Value_kind_case
   const upb_MiniTableField field = {1, 16, -9, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
   return (google_protobuf_Value_kind_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void google_protobuf_Value_clear_kind(google_protobuf_Value* msg) {
+  const upb_MiniTableField field = {1, 16, -9, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &google__protobuf__Value_msg_init, &field);
 }
 UPB_INLINE void google_protobuf_Value_clear_null_value(google_protobuf_Value* msg) {
   const upb_MiniTableField field = {1, 16, -9, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};

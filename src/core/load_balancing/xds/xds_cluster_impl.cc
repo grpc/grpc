@@ -28,13 +28,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/xds/xds_credentials.h"
@@ -56,6 +49,7 @@
 #include "src/core/resolver/xds/xds_resolver_attributes.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
@@ -72,6 +66,12 @@
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_locality.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -333,7 +333,7 @@ class XdsClusterImplLb::Picker::SubchannelCallTracker final
     locality_stats_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
     call_counter_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
 #ifndef NDEBUG
-    DCHECK(!started_);
+    GRPC_DCHECK(!started_);
 #endif
   }
 
@@ -407,10 +407,11 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
   auto* call_attempt_tracer = call_state->GetCallAttemptTracer();
   if (call_attempt_tracer != nullptr) {
     call_attempt_tracer->SetOptionalLabel(
-        ClientCallTracer::CallAttemptTracer::OptionalLabelKey::kXdsServiceName,
+        ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey::
+            kXdsServiceName,
         service_telemetry_label_);
     call_attempt_tracer->SetOptionalLabel(
-        ClientCallTracer::CallAttemptTracer::OptionalLabelKey::
+        ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey::
             kXdsServiceNamespace,
         namespace_telemetry_label_);
   }
@@ -444,7 +445,8 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
     // Add locality label to per-call metrics if needed.
     if (call_attempt_tracer != nullptr) {
       call_attempt_tracer->SetOptionalLabel(
-          ClientCallTracer::CallAttemptTracer::OptionalLabelKey::kLocality,
+          ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey::
+              kLocality,
           subchannel_wrapper->locality());
     }
     // Handle load reporting.
@@ -559,7 +561,7 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
   // different priority child name if that happens, which means that this
   // policy instance will get replaced instead of being updated.
   if (config_ != nullptr) {
-    CHECK(config_->cluster_name() == new_config->cluster_name());
+    GRPC_CHECK(config_->cluster_name() == new_config->cluster_name());
   }
   // Get xDS config.
   auto new_xds_config = args.args.GetObjectRef<XdsConfig>();
