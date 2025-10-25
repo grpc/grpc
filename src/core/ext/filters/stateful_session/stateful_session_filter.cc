@@ -16,7 +16,6 @@
 
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 
-#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <algorithm>
@@ -28,8 +27,6 @@
 #include <vector>
 
 #include "src/core/call/metadata_batch.h"
-#include "src/core/config/core_configuration.h"
-#include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/context.h"
@@ -59,20 +56,45 @@ UniqueTypeName XdsOverrideHostAttribute::TypeName() {
   return kFactory.Create();
 }
 
-const grpc_channel_filter StatefulSessionFilter::kFilter =
+bool StatefulSessionFilter::Config::Equals(const FilterConfig& other) const {
+  const auto& o = DownCast<const Config&>(other);
+  return cookie_name == o.cookie_name && path == o.path && ttl == o.ttl;
+}
+
+std::string StatefulSessionFilter::Config::ToString() const {
+  std::vector<std::string> parts;
+  if (!cookie_name.empty()) {
+    parts.push_back(absl::StrCat("cookie_name=\"", cookie_name, "\""));
+  }
+  if (!path.empty()) {
+    parts.push_back(absl::StrCat("path=\"", path, "\""));
+  }
+  if (ttl != Duration::Zero()) {
+    parts.push_back(absl::StrCat("ttl=", ttl.ToString()));
+  }
+  return absl::StrCat("{", absl::StrJoin(parts, ", "), "}");
+}
+
+const grpc_channel_filter StatefulSessionFilter::kFilterVtable =
     MakePromiseBasedFilter<StatefulSessionFilter, FilterEndpoint::kClient,
                            kFilterExaminesServerInitialMetadata>();
 
 absl::StatusOr<std::unique_ptr<StatefulSessionFilter>>
 StatefulSessionFilter::Create(const ChannelArgs&,
                               ChannelFilter::Args filter_args) {
+  if (filter_args.config() == nullptr) {
+    return absl::InternalError("no config in stateful session filter");
+  }
+  if (filter_args.config()->type() != Config::Type()) {
+    return absl::InternalError(
+        absl::StrCat("wrong config type in stateful session filter: ",
+                     filter_args.config()->type().name()));
+  }
   return std::make_unique<StatefulSessionFilter>(filter_args);
 }
 
 StatefulSessionFilter::StatefulSessionFilter(ChannelFilter::Args filter_args)
-    : index_(filter_args.instance_id()),
-      service_config_parser_index_(
-          StatefulSessionServiceConfigParser::ParserIndex()) {}
+    : config_(filter_args.config().TakeAsSubclass<const Config>()) {}
 
 namespace {
 
@@ -92,9 +114,8 @@ absl::string_view AllocateStringOnArena(
 
 // Adds the set-cookie header to the server initial metadata if needed.
 void MaybeUpdateServerInitialMetadata(
-    const StatefulSessionMethodParsedConfig::CookieConfig* cookie_config,
-    bool cluster_changed, absl::string_view actual_cluster,
-    absl::string_view cookie_address_list,
+    const StatefulSessionFilter::Config& config, bool cluster_changed,
+    absl::string_view actual_cluster, absl::string_view cookie_address_list,
     XdsOverrideHostAttribute* override_host_attribute,
     ServerMetadata& server_initial_metadata) {
   // If cookie doesn't need to change, do nothing.
@@ -106,13 +127,13 @@ void MaybeUpdateServerInitialMetadata(
   std::string new_value = absl::StrCat(
       override_host_attribute->actual_address_list(), ";", actual_cluster);
   std::vector<std::string> parts = {absl::StrCat(
-      *cookie_config->name, "=", absl::Base64Escape(new_value), "; HttpOnly")};
-  if (!cookie_config->path.empty()) {
-    parts.emplace_back(absl::StrCat("Path=", cookie_config->path));
+      config.cookie_name, "=", absl::Base64Escape(new_value), "; HttpOnly")};
+  if (!config.path.empty()) {
+    parts.emplace_back(absl::StrCat("Path=", config.path));
   }
-  if (cookie_config->ttl > Duration::Zero()) {
+  if (config.ttl > Duration::Zero()) {
     parts.emplace_back(
-        absl::StrCat("Max-Age=", cookie_config->ttl.as_timespec().tv_sec));
+        absl::StrCat("Max-Age=", config.ttl.as_timespec().tv_sec));
   }
   server_initial_metadata.Append(
       "set-cookie", Slice::FromCopiedString(absl::StrJoin(parts, "; ")),
@@ -209,26 +230,18 @@ bool IsConfiguredPath(absl::string_view configured_path,
   return path.length() == configured_path.length() ||
          configured_path.back() == '/' || path[configured_path.length()] == '/';
 }
+
 }  // namespace
 
 void StatefulSessionFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, StatefulSessionFilter* filter) {
   GRPC_LATENT_SEE_SCOPE("StatefulSessionFilter::Call::OnClientInitialMetadata");
-  // Get config.
-  auto* service_config_call_data = GetContext<ServiceConfigCallData>();
-  GRPC_CHECK_NE(service_config_call_data, nullptr);
-  auto* method_params = static_cast<StatefulSessionMethodParsedConfig*>(
-      service_config_call_data->GetMethodParsedConfig(
-          filter->service_config_parser_index_));
-  GRPC_CHECK_NE(method_params, nullptr);
-  cookie_config_ = method_params->GetConfig(filter->index_);
-  GRPC_CHECK_NE(cookie_config_, nullptr);
-  if (!cookie_config_->name.has_value() ||
-      !IsConfiguredPath(cookie_config_->path, md)) {
+  if (filter->config_->cookie_name.empty() ||
+      !IsConfiguredPath(filter->config_->path, md)) {
     return;
   }
   // Base64-decode cookie value.
-  std::string cookie_value = GetCookieValue(md, *cookie_config_->name);
+  std::string cookie_value = GetCookieValue(md, filter->config_->cookie_name);
   // Cookie format is "host;cluster"
   std::pair<absl::string_view, absl::string_view> host_cluster =
       absl::StrSplit(cookie_value, absl::MaxSplits(';', 1));
@@ -237,6 +250,8 @@ void StatefulSessionFilter::Call::OnClientInitialMetadata(
     cookie_address_list_ = AllocateStringOnArena(host_cluster.first);
   }
   // Set override host attribute.
+  auto* service_config_call_data = GetContext<ServiceConfigCallData>();
+  GRPC_CHECK_NE(service_config_call_data, nullptr);
   override_host_attribute_ =
       GetContext<Arena>()->ManagedNew<XdsOverrideHostAttribute>(
           cookie_address_list_);
@@ -252,16 +267,18 @@ void StatefulSessionFilter::Call::OnClientInitialMetadata(
   perform_filtering_ = true;
 }
 
-void StatefulSessionFilter::Call::OnServerInitialMetadata(ServerMetadata& md) {
+void StatefulSessionFilter::Call::OnServerInitialMetadata(
+    ServerMetadata& md, StatefulSessionFilter* filter) {
   GRPC_LATENT_SEE_SCOPE("StatefulSessionFilter::Call::OnServerInitialMetadata");
   if (!perform_filtering_) return;
   // Add cookie to server initial metadata if needed.
-  MaybeUpdateServerInitialMetadata(cookie_config_, cluster_changed_,
+  MaybeUpdateServerInitialMetadata(*filter->config_, cluster_changed_,
                                    cluster_name_, cookie_address_list_,
                                    override_host_attribute_, md);
 }
 
-void StatefulSessionFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
+void StatefulSessionFilter::Call::OnServerTrailingMetadata(
+    ServerMetadata& md, StatefulSessionFilter* filter) {
   GRPC_LATENT_SEE_SCOPE(
       "StatefulSessionFilter::Call::OnServerTrailingMetadata");
   if (!perform_filtering_) return;
@@ -269,14 +286,10 @@ void StatefulSessionFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
   // cookie to the trailing metadata instead of the
   // initial metadata.
   if (md.get(GrpcTrailersOnly()).value_or(false)) {
-    MaybeUpdateServerInitialMetadata(cookie_config_, cluster_changed_,
+    MaybeUpdateServerInitialMetadata(*filter->config_, cluster_changed_,
                                      cluster_name_, cookie_address_list_,
                                      override_host_attribute_, md);
   }
-}
-
-void StatefulSessionFilterRegister(CoreConfiguration::Builder* builder) {
-  StatefulSessionServiceConfigParser::Register(builder);
 }
 
 }  // namespace grpc_core

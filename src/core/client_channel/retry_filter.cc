@@ -127,7 +127,7 @@ const RetryMethodConfig* RetryFilter::GetRetryPolicy(Arena* arena) {
       svc_cfg_call_data->GetMethodParsedConfig(service_config_parser_index_));
 }
 
-const grpc_channel_filter RetryFilter::kVtable = {
+const grpc_channel_filter RetryFilter::kFilterVtable = {
     RetryFilter::LegacyCallData::StartTransportStreamOpBatch,
     RetryFilter::StartTransportOp,
     sizeof(RetryFilter::LegacyCallData),
