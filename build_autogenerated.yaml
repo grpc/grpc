@@ -5690,8 +5690,8 @@ targets:
   language: c++
   headers:
   - src/cpp/server/csds/csds.h
+  - third_party/protoc-gen-validate/validate/validate.h
   src:
-  - src/proto/grpc/testing/xds/v3/csds.proto
   - third_party/envoy-api/envoy/admin/v3/certs.proto
   - third_party/envoy-api/envoy/admin/v3/clusters.proto
   - third_party/envoy-api/envoy/admin/v3/config_dump.proto
@@ -5761,6 +5761,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
+  - third_party/envoy-api/envoy/service/status/v3/csds.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
@@ -19924,13 +19925,13 @@ targets:
   - test/cpp/end2end/test_health_check_service_impl.h
   - test/cpp/interop/pre_stop_hook_server.h
   - test/cpp/interop/xds_interop_server_lib.h
+  - third_party/protoc-gen-validate/validate/validate.h
   src:
   - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/istio_echo.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
-  - src/proto/grpc/testing/xds/v3/csds.proto
   - third_party/envoy-api/envoy/admin/v3/certs.proto
   - third_party/envoy-api/envoy/admin/v3/clusters.proto
   - third_party/envoy-api/envoy/admin/v3/config_dump.proto
@@ -20000,6 +20001,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
+  - third_party/envoy-api/envoy/service/status/v3/csds.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
@@ -27226,9 +27228,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -27280,6 +27279,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -27515,9 +27517,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -27570,6 +27569,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -27995,9 +27997,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -28049,6 +28048,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -28173,10 +28175,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/csds.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/admin/v3/certs.proto
   - third_party/envoy-api/envoy/admin/v3/clusters.proto
   - third_party/envoy-api/envoy/admin/v3/config_dump.proto
@@ -28250,6 +28248,10 @@ targets:
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
+  - third_party/envoy-api/envoy/service/status/v3/csds.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -28345,9 +28347,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -28399,6 +28398,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -28581,9 +28583,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -28635,6 +28634,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -28728,9 +28730,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -28784,6 +28783,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -28876,9 +28878,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -28931,6 +28930,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -29025,9 +29027,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -29080,6 +29079,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -29850,9 +29852,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -29906,6 +29905,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -29999,9 +30001,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -30055,6 +30054,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/stateful_session/v3/stateful_session.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/extensions/http/stateful_session/cookie/v3/cookie.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -30178,9 +30180,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -30234,6 +30233,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -30330,9 +30332,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -30385,6 +30384,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -30482,9 +30484,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -30536,6 +30535,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -30745,9 +30747,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -30801,6 +30800,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -30896,9 +30898,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -30956,6 +30955,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -31052,9 +31054,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -31112,6 +31111,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -31197,11 +31199,11 @@ targets:
   - src/cpp/server/csds/csds.h
   - test/cpp/interop/rpc_behavior_lb_policy.h
   - test/cpp/interop/xds_stats_watcher.h
+  - third_party/protoc-gen-validate/validate/validate.h
   src:
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
-  - src/proto/grpc/testing/xds/v3/csds.proto
   - third_party/envoy-api/envoy/admin/v3/certs.proto
   - third_party/envoy-api/envoy/admin/v3/clusters.proto
   - third_party/envoy-api/envoy/admin/v3/config_dump.proto
@@ -31271,6 +31273,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
+  - third_party/envoy-api/envoy/service/status/v3/csds.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
@@ -31360,9 +31363,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -31416,6 +31416,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.proto
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto

@@ -77,7 +77,7 @@ TEST_F(AdminServicesTest, ValidateRegisteredServices) {
       ::testing::AllOf(
           ::testing::Contains("grpc.channelz.v1.Channelz"),
           ::testing::Contains("grpc.reflection.v1alpha.ServerReflection")));
-#if defined(GRPC_NO_XDS) || defined(DISABLED_XDS_PROTO_IN_CC)
+#if defined(GRPC_NO_XDS)
   EXPECT_THAT(GetServiceList(),
               ::testing::Not(::testing::Contains(
                   "envoy.service.status.v3.ClientStatusDiscoveryService")));
@@ -85,7 +85,7 @@ TEST_F(AdminServicesTest, ValidateRegisteredServices) {
   EXPECT_THAT(GetServiceList(),
               ::testing::Contains(
                   "envoy.service.status.v3.ClientStatusDiscoveryService"));
-#endif  // GRPC_NO_XDS or DISABLED_XDS_PROTO_IN_CC
+#endif  // GRPC_NO_XDS
 }
 
 }  // namespace testing
