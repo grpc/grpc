@@ -285,6 +285,8 @@ TEST_P(HttpConnectionManagerTest, MinimumValidConfig) {
   ASSERT_EQ(http_connection_manager->http_filters.size(), 1UL);
   auto& router = http_connection_manager->http_filters[0];
   EXPECT_EQ(router.name, "router");
+  EXPECT_EQ(router.config_proto_type,
+            "envoy.extensions.filters.http.router.v3.Router");
   EXPECT_EQ(router.config.config_proto_type_name,
             "envoy.extensions.filters.http.router.v3.Router");
   EXPECT_EQ(router.config.config, Json()) << JsonDump(router.config.config);
