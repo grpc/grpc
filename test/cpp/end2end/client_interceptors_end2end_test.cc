@@ -1252,6 +1252,8 @@ TEST_F(ClientGlobalInterceptorEnd2endTest, HijackingGlobalInterceptor) {
 }  // namespace testing
 }  // namespace grpc
 
+#if !defined(GRPC_CFSTREAM)
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
@@ -1260,3 +1262,5 @@ int main(int argc, char** argv) {
   GRPC_CHECK(grpc_wait_until_shutdown(10));
   return ret;
 }
+
+#endif  // !defined(GRPC_CFSTREAM)
