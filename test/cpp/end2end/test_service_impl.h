@@ -202,13 +202,7 @@ class TestMultipleServiceImpl : public RpcService {
         signal_client_ = true;
         ++rpcs_waiting_for_client_cancel_;
       }
-      while (!context->IsCancelled()) {
-        gpr_sleep_until(gpr_time_add(
-            gpr_now(GPR_CLOCK_REALTIME),
-            gpr_time_from_micros(request->param().client_cancel_after_us() *
-                                     grpc_test_slowdown_factor(),
-                                 GPR_TIMESPAN)));
-      }
+      WaitForCancellation(context);
       {
         std::unique_lock<std::mutex> lock(mu_);
         --rpcs_waiting_for_client_cancel_;
@@ -216,11 +210,7 @@ class TestMultipleServiceImpl : public RpcService {
       return Status::CANCELLED;
     } else if (request->has_param() &&
                request->param().server_cancel_after_us()) {
-      gpr_sleep_until(gpr_time_add(
-          gpr_now(GPR_CLOCK_REALTIME),
-          gpr_time_from_micros(request->param().server_cancel_after_us() *
-                                   grpc_test_slowdown_factor(),
-                               GPR_TIMESPAN)));
+      WaitForCancellation(context);
       return Status::CANCELLED;
     } else if (!request->has_param() ||
                !request->param().skip_cancelled_check()) {
@@ -479,10 +469,19 @@ class TestMultipleServiceImpl : public RpcService {
     std::unique_lock<std::mutex> lock(mu_);
     return rpcs_waiting_for_client_cancel_;
   }
+  void WaitForCancellation(ServerContext* context) {
+    std::unique_lock<std::mutex> lock(mu_);
+    cv_cancel_.wait(lock, [context]() { return context->IsCancelled(); });
+  }
+  void NotifyCancellationCheck() {
+    std::unique_lock<std::mutex> lock(mu_);
+    cv_cancel_.notify_all();
+  }
 
  private:
   bool signal_client_;
   std::mutex mu_;
+  std::condition_variable cv_cancel_;
   TestServiceSignaller signaller_;
   std::unique_ptr<std::string> host_;
   uint64_t rpcs_waiting_for_client_cancel_ = 0;
@@ -523,10 +522,19 @@ class CallbackTestServiceImpl
   }
   void SignalServerToContinue() { signaller_.SignalServerToContinue(); }
   void ResetSignaller() { signaller_.Reset(); }
+  void WaitForCancellation(CallbackServerContext* context) {
+    std::unique_lock<std::mutex> lock(mu_);
+    cv_cancel_.wait(lock, [context]() { return context->IsCancelled(); });
+  }
+  void NotifyCancellationCheck() {
+    std::unique_lock<std::mutex> lock(mu_);
+    cv_cancel_.notify_all();
+  }
 
  private:
   bool signal_client_;
   std::mutex mu_;
+  std::condition_variable cv_cancel_;
   TestServiceSignaller signaller_;
   std::unique_ptr<std::string> host_;
 };
