@@ -726,23 +726,28 @@ start the connecting process described above.  When this happens, it
 will report CONNECTING state with a picker that queues all picks.
 
 As soon as one of the subchannels becomes connected, pick\_first will
-report READY with a picker that always returns complete picks with that
-subchannel.  It will unref all of the other subchannels.  (But note that
-if pick\_first is reporting [health state](#subchannel-health-state)
-to a parent policy like round\_robin, it may instead report
-TRANSIENT\_FAILURE.)
+select that subchannel to use for all RPCs.  It will report READY with a
+picker that always returns complete picks with that subchannel.  It will
+unref all of the other subchannels.  (But note that if pick\_first
+is reporting [health state](#subchannel-health-state) to a parent
+policy like round\_robin, it may instead report TRANSIENT\_FAILURE.)
+The policy will stay in this state until either the selected subchannel
+leaves READY state or the policy receives a resolver update that does
+not include the address of the selected subchannel.
 
-It will stay in READY state until either the connection fails or it
-receives a resolver update that does not include the address of the
-subchannel it is connected to.  In either case, it will unref the
-subchannel and report IDLE with a picker that calls the LB policy's
-`ExitIdle()` method when it receives the first pick and then queues
-all picks.
+If the selected subchannel reports IDLE state or a resolver update
+removes the address of the selected subchannel, the policy will report
+IDLE with a picker that calls the LB policy's `ExitIdle()` method when
+it receives the first pick and then queues all picks.
 
 In IDLE state, when `ExitIdle()` is called, pick\_first will create a new
 list of subchannels using the last address list it saw from the resolver
 and start connecting to them, exactly as it does when it is first created.
 It will therefore report CONNECTING state with a picker that queues picks.
+
+If the selected subchannel reoports CONNECTING or TRANSIENT_FAILURE,
+the policy will immediately begin attempting to connecto all subchannels,
+as if it were in IDLE state and `ExitIdle()` had just been called.
 
 If pick\_first fails to connect to all subchannels, it will report
 TRANSIENT\_FAILURE state with a picker that fails picks.  The RPC
