@@ -154,19 +154,19 @@ pip_install --upgrade setuptools==77.0.1
 # pip-installs the directory specified. Used because on MSYS the vanilla Windows
 # Python gets confused when parsing paths.
 pip_install_dir() {
-  PWD=$(pwd)
+  WORKDIR=$(pwd)
   cd "$1"
   ($VENV_PYTHON setup.py build_ext -c "$TOOLCHAIN" || true)
-  $VENV_PYTHON -m pip install --no-deps .
-  cd "$PWD"
+  $VENV_PYTHON -m pip install --no-deps --no-build-isolation .
+  cd "$WORKDIR"
 }
 
 pip_install_dir_and_deps() {
-  PWD=$(pwd)
+  WORKDIR=$(pwd)
   cd "$1"
   ($VENV_PYTHON setup.py build_ext -c "$TOOLCHAIN" || true)
-  $VENV_PYTHON -m pip install .
-  cd "$PWD"
+  $VENV_PYTHON -m pip install --no-build-isolation .
+  cd "$WORKDIR"
 }
 
 pip_install -U gevent
@@ -216,7 +216,7 @@ pip_install_dir "$ROOT/src/python/grpcio_status"
 
 
 # Build/install status proto mapping
-# build.py is invoked as part of generate_projects.sh
+# build_xds_protos.py is invoked as part of generate_projects.sh
 pip_install_dir "$ROOT/tools/distrib/python/xds_protos"
 
 # Build/install csds
@@ -230,10 +230,11 @@ pip_install_dir "$ROOT/src/python/grpcio_testing"
 
 # Build/install tests
 # shellcheck disable=SC2261
-pip_install coverage==7.2.0 oauth2client==4.1.0 \
+pip_install coverage>=7.9.0 oauth2client==4.1.0 \
             google-auth>=1.35.0 requests==2.31.0 \
             rsa==4.0 absl-py==1.4.0 \
             opentelemetry-sdk==1.21.0
+
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" preprocess
 $VENV_PYTHON "$ROOT/src/python/grpcio_tests/setup.py" build_package_protos
 pip_install_dir "$ROOT/src/python/grpcio_tests"

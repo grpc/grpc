@@ -96,7 +96,7 @@ if [[ "${GRPC_GENERATE_PROJECTS_SKIP_XDS_PROTOS:-0}" != "1" ]]; then
   "${VENV_PIP}" list
 
   echo "[gRPC Python] Generating xds-protos"
-  "${VENV_PYTHON}" tools/distrib/python/xds_protos/build.py
+  "${VENV_PYTHON}" tools/distrib/python/xds_protos/build_xds_protos.py
 fi
 
 echo "[gRPC Python] Making other grpcio auxilary packages"
