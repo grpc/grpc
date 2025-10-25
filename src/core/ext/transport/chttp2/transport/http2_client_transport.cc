@@ -782,7 +782,6 @@ void Http2ClientTransport::NotifyControlFramesWriteDone() {
   // Notify Control modules that we have sent the frames.
   // All notifications are expected to be synchronous.
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport NotifyControlFramesWriteDone";
-  flow_control_.FlushedSettings();
   ping_manager_.NotifyPingSent(ping_timeout_);
   goaway_manager_.NotifyGoawaySent();
 }

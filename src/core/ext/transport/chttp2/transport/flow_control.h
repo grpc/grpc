@@ -295,7 +295,6 @@ class TransportFlowControl final {
   uint32_t sent_init_window() const { return sent_init_window_; }
 
   // Call after settings have been sent to peer.
-  // TODO(tjagtap) [PH2][P1] Check if usage of this is correct in PH2
   void FlushedSettings() { sent_init_window_ = queued_init_window(); }
 
   // Updates the initial window size that we have acknowledged from the peer.
