@@ -36,3 +36,10 @@ version = {attr = "grpc_version.VERSION"}
 
 [tool.setuptools.package-dir]
 "" = "."
+
+[tool.setuptools]
+# Exclude .py files like `third_party/abseil-cpp/absl/copts/copts.py` in
+# `third_party` directory from being included
+exclude-package-dirs = [
+    "third_party",
+]
