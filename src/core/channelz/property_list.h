@@ -20,9 +20,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/container/flat_hash_map.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "google/protobuf/any.upb.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/string.h"
@@ -32,6 +29,10 @@
 #include "src/proto/grpc/channelz/v2/property_list.upb.h"
 #include "upb/mem/arena.h"
 #include "upb/text/encode.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 
 namespace grpc_core::channelz {
 
@@ -44,7 +45,7 @@ class OtherPropertyValue {
 
 using PropertyValue =
     std::variant<absl::string_view, std::string, int64_t, uint64_t, double,
-                 bool, Duration, Timestamp, absl::Status,
+                 bool, Duration, Timestamp, absl::Status, absl::Time,
                  std::shared_ptr<OtherPropertyValue>>;
 
 namespace property_list_detail {
@@ -61,6 +62,14 @@ struct Wrapper<
     T, std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>>> {
   static std::optional<PropertyValue> Wrap(T value) {
     return PropertyValue(static_cast<uint64_t>(value));
+  }
+};
+
+template <typename T>
+struct Wrapper<absl::StatusOr<T>> {
+  static std::optional<PropertyValue> Wrap(absl::StatusOr<T> value) {
+    if (value.ok()) return Wrapper<T>::Wrap(*std::move(value));
+    return PropertyValue(std::move(value).status());
   }
 };
 
@@ -129,6 +138,8 @@ class PropertyList final : public OtherPropertyValue {
   }
 
   PropertyList& Merge(PropertyList other);
+
+  bool empty() const { return property_list_.empty(); }
 
   // TODO(ctiller): remove soon, switch to just FillUpbProto.
   Json::Object TakeJsonObject() override;

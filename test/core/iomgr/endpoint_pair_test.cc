@@ -25,9 +25,6 @@
 
 #include <chrono>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
@@ -35,11 +32,14 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/useful.h"
 #include "test/core/iomgr/endpoint_tests.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 using namespace std::chrono_literals;
 
@@ -59,7 +59,7 @@ grpc_endpoint_pair grpc_iomgr_event_engine_shim_endpoint_pair(
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
-  CHECK_OK(resolved_addr);
+  GRPC_CHECK_OK(resolved_addr);
   std::unique_ptr<EventEngine::Endpoint> client_endpoint;
   std::unique_ptr<EventEngine::Endpoint> server_endpoint;
   grpc_core::Notification client_signal;
@@ -83,13 +83,13 @@ grpc_endpoint_pair grpc_iomgr_event_engine_shim_endpoint_pair(
           grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
               "bar")));
 
-  CHECK_OK(listener->Bind(*resolved_addr));
-  CHECK_OK(listener->Start());
+  GRPC_CHECK_OK(listener->Bind(*resolved_addr));
+  GRPC_CHECK_OK(listener->Start());
 
   ee->Connect(
       [&client_endpoint, &client_signal](
           absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> endpoint) {
-        CHECK_OK(endpoint);
+        GRPC_CHECK_OK(endpoint);
         client_endpoint = std::move(*endpoint);
         client_signal.Notify();
       },

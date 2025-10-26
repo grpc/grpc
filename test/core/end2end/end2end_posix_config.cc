@@ -37,14 +37,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/meta/type_traits.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
-#include "gtest/gtest.h"
 #include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
 #include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
 #include "src/core/ext/transport/chttp2/server/chttp2_server.h"
@@ -55,6 +47,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/sync.h"
@@ -72,6 +65,13 @@
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "gtest/gtest.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/meta/type_traits.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
 
 // IWYU pragma: no_include <unistd.h>
 
@@ -143,11 +143,13 @@ class FdFixture : public CoreTestFixture {
     int flags;
     grpc_create_socketpair_if_unix(sv);
     flags = fcntl(sv[0], F_GETFL, 0);
-    CHECK_EQ(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK), 0);
+    GRPC_CHECK_EQ(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK), 0);
     flags = fcntl(sv[1], F_GETFL, 0);
-    CHECK_EQ(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK), 0);
-    CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[0]) == absl::OkStatus());
-    CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[1]) == absl::OkStatus());
+    GRPC_CHECK_EQ(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK), 0);
+    GRPC_CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[0]) ==
+               absl::OkStatus());
+    GRPC_CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[1]) ==
+               absl::OkStatus());
   }
 
   int fd_pair_[2];
@@ -188,11 +190,13 @@ class FdCredentialsFixture : public SslTlsFixture1_3 {
     int flags;
     grpc_create_socketpair_if_unix(sv);
     flags = fcntl(sv[0], F_GETFL, 0);
-    CHECK_EQ(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK), 0);
+    GRPC_CHECK_EQ(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK), 0);
     flags = fcntl(sv[1], F_GETFL, 0);
-    CHECK_EQ(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK), 0);
-    CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[0]) == absl::OkStatus());
-    CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[1]) == absl::OkStatus());
+    GRPC_CHECK_EQ(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK), 0);
+    GRPC_CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[0]) ==
+               absl::OkStatus());
+    GRPC_CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[1]) ==
+               absl::OkStatus());
   }
 
   int fd_pair_[2];

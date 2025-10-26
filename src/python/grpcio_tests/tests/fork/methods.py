@@ -202,7 +202,11 @@ class _ChildProcess(object):
 
     def finish(self):
         terminated = self.wait(_CHILD_FINISH_TIMEOUT_S)
-        sys.stderr.write("Exit code: {}\n".format(self._rc))
+
+        waitstatus = self._rc
+        exit_code = os.waitstatus_to_exitcode(waitstatus)
+        sys.stderr.write(f"Exit code: {exit_code} ({waitstatus=})\n")
+
         if not terminated:
             sys.stderr.write("Finishing child %d\n" % self._child_pid)
             debugger.print_backtraces(self._child_pid)
@@ -211,8 +215,8 @@ class _ChildProcess(object):
             )
         if self._rc != 0:
             raise ValueError(
-                "Child process %d failed with exitcode %d"
-                % (self._child_pid, self._rc)
+                f"Child process {self._child_pid} failed"
+                f" with {exit_code=} ({waitstatus=})"
             )
         try:
             exception = self._exceptions.get(block=False)
@@ -545,3 +549,15 @@ def dump_object_map():
         sys.stderr.write(f.read())
         sys.stderr.write("\n")
         sys.stderr.flush()
+
+
+def setup_logger():
+    logging.basicConfig(
+        level=logging.INFO,
+        style="{",
+        format=(
+            "{levelname[0]}{asctime}.{msecs:03.0f} {process}/{thread} "
+            "{filename}:{lineno}] {message}"
+        ),
+        datefmt="%m%d %H:%M:%S",
+    )

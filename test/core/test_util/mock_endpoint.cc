@@ -24,12 +24,12 @@
 
 #include <memory>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/util/down_cast.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -62,7 +62,7 @@ MockEndpointController::MockEndpointController(
 
 void MockEndpointController::TriggerReadEvent(Slice read_data) {
   grpc_core::MutexLock lock(&mu_);
-  CHECK(!reads_done_)
+  GRPC_CHECK(!reads_done_)
       << "Cannot trigger a read event after NoMoreReads has been called.";
   if (on_read_) {
     on_read_slice_buffer_->Append(std::move(read_data));
@@ -77,7 +77,7 @@ void MockEndpointController::TriggerReadEvent(Slice read_data) {
 
 void MockEndpointController::NoMoreReads() {
   grpc_core::MutexLock lock(&mu_);
-  CHECK(!std::exchange(reads_done_, true))
+  GRPC_CHECK(!std::exchange(reads_done_, true))
       << "NoMoreReads() can only be called once";
 }
 
@@ -85,8 +85,8 @@ void MockEndpointController::Read(
     absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer) {
   grpc_core::MutexLock lock(&mu_);
   if (read_buffer_.Count() > 0) {
-    CHECK(buffer->Count() == 0);
-    CHECK(!on_read_);
+    GRPC_CHECK(buffer->Count() == 0);
+    GRPC_CHECK(!on_read_);
     read_buffer_.Swap(*buffer);
     engine_->Run([cb = std::move(on_read)]() mutable { cb(absl::OkStatus()); });
   } else if (reads_done_) {
@@ -100,7 +100,7 @@ void MockEndpointController::Read(
 }
 
 grpc_endpoint* MockEndpointController::TakeCEndpoint() {
-  CHECK_NE(mock_grpc_endpoint_, nullptr)
+  GRPC_CHECK_NE(mock_grpc_endpoint_, nullptr)
       << "The endpoint has already been taken";
   grpc_core::DownCast<MockEndpoint*>(
       grpc_get_wrapped_event_engine_endpoint(mock_grpc_endpoint_))

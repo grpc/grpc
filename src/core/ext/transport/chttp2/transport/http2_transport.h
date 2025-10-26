@@ -24,8 +24,13 @@
 
 #include "src/core/call/call_spine.h"
 #include "src/core/call/metadata_info.h"
+#include "src/core/channelz/channelz.h"
+#include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/stream.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/transport/promise_endpoint.h"
@@ -46,28 +51,49 @@ namespace http2 {
 #define GRPC_HTTP2_CLIENT_DLOG \
   DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
 
+#define GRPC_HTTP2_CLIENT_ERROR_DLOG \
+  LOG_IF(ERROR, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
+
 #define GRPC_HTTP2_COMMON_DLOG \
   DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
 
-// Timeout for getting an ack back on settings changes
-#define GRPC_ARG_SETTINGS_TIMEOUT "grpc.http2.settings_timeout"
+constexpr uint32_t kMaxWriteSize = /*10 MB*/ 10u * 1024u * 1024u;
 
-// TODO(akshitpatel) : [PH2][P2] : Choose appropriate size later.
-constexpr int kMpscSize = 10;
+constexpr uint32_t kGoawaySendTimeoutSeconds = 5u;
 
-enum class HttpStreamState : uint8_t {
-  // https://www.rfc-editor.org/rfc/rfc9113.html#name-stream-states
-  kIdle,
-  kOpen,
-  kHalfClosedLocal,
-  kHalfClosedRemote,
-  kClosed,
-};
+///////////////////////////////////////////////////////////////////////////////
+// Settings and ChannelArgs helpers
 
 void InitLocalSettings(Http2Settings& settings, const bool is_client);
 
 void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
-                                 Http2Settings& settings, const bool is_client);
+                                 Http2Settings& local_settings,
+                                 chttp2::TransportFlowControl& flow_control,
+                                 const bool is_client);
+
+///////////////////////////////////////////////////////////////////////////////
+// ChannelZ helpers
+
+RefCountedPtr<channelz::SocketNode> CreateChannelzSocketNode(
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+        event_engine_endpoint,
+    const ChannelArgs& args);
+
+///////////////////////////////////////////////////////////////////////////////
+// Flow control helpers
+
+void ProcessOutgoingDataFrameFlowControl(
+    chttp2::StreamFlowControl& stream_flow_control,
+    uint32_t flow_control_tokens_consumed);
+
+ValueOrHttp2Status<chttp2::FlowControlAction>
+ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame,
+                                    chttp2::TransportFlowControl& flow_control,
+                                    RefCountedPtr<Stream> stream);
+
+void ProcessIncomingWindowUpdateFrameFlowControl(
+    const Http2WindowUpdateFrame& frame,
+    chttp2::TransportFlowControl& flow_control, RefCountedPtr<Stream> stream);
 
 }  // namespace http2
 }  // namespace grpc_core

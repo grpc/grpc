@@ -26,10 +26,6 @@
 #include <memory>
 #include <string>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/time.h"
 #include "opentelemetry/trace/span.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/iomgr/error.h"
@@ -41,22 +37,27 @@
 #include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/sync.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 
 namespace grpc {
 namespace internal {
 
-class OpenTelemetryPluginImpl::ClientCallTracer
-    : public grpc_core::ClientCallTracer {
+class OpenTelemetryPluginImpl::ClientCallTracerInterface
+    : public grpc_core::ClientCallTracerInterface {
  public:
   template <typename UnrefBehavior>
   class CallAttemptTracer
-      : public grpc_core::ClientCallTracer::CallAttemptTracer,
+      : public grpc_core::ClientCallTracerInterface::CallAttemptTracer,
         public grpc_core::RefCounted<CallAttemptTracer<UnrefBehavior>,
                                      grpc_core::NonPolymorphicRefCount,
                                      UnrefBehavior> {
    public:
-    CallAttemptTracer(OpenTelemetryPluginImpl::ClientCallTracer* const parent,
-                      uint64_t attempt_num, bool is_transparent_retry);
+    CallAttemptTracer(
+        OpenTelemetryPluginImpl::ClientCallTracerInterface* const parent,
+        uint64_t attempt_num, bool is_transparent_retry);
 
     ~CallAttemptTracer() override;
 
@@ -105,7 +106,7 @@ class OpenTelemetryPluginImpl::ClientCallTracer
 
     void PopulateLabelInjectors(grpc_metadata_batch* metadata);
 
-    ClientCallTracer* const parent_;
+    ClientCallTracerInterface* const parent_;
     // Start time (for measuring latency).
     absl::Time start_time_;
     std::unique_ptr<LabelsIterable> injected_labels_;
@@ -127,11 +128,11 @@ class OpenTelemetryPluginImpl::ClientCallTracer
     uint64_t recv_seq_num_ = 0;
   };
 
-  ClientCallTracer(
+  ClientCallTracerInterface(
       const grpc_core::Slice& path, grpc_core::Arena* arena,
       bool registered_method, OpenTelemetryPluginImpl* otel_plugin,
       std::shared_ptr<OpenTelemetryPluginImpl::ClientScopeConfig> scope_config);
-  ~ClientCallTracer() override;
+  ~ClientCallTracerInterface() override;
 
   std::string TraceId() override {
     return OTelSpanTraceIdToString(span_.get());
@@ -143,7 +144,7 @@ class OpenTelemetryPluginImpl::ClientCallTracer
     return span_ != nullptr && span_->GetContext().IsSampled();
   }
 
-  grpc_core::ClientCallTracer::CallAttemptTracer* StartNewAttempt(
+  grpc_core::ClientCallTracerInterface::CallAttemptTracer* StartNewAttempt(
       bool is_transparent_retry) override;
   void RecordAnnotation(absl::string_view annotation) override;
   void RecordAnnotation(const Annotation& /*annotation*/) override;

@@ -25,11 +25,11 @@
 
 #include <string>
 
-#include "absl/log/check.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/time.h"
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
-#include "src/core/lib/debug/trace.h"
-#include "src/core/util/time.h"
 
 namespace grpc_core {
 
@@ -50,7 +50,7 @@ class BdpEstimator {
     GRPC_TRACE_LOG(bdp_estimator, INFO)
         << "bdp[" << name_ << "]:sched acc=" << accumulator_
         << " est=" << estimate_;
-    CHECK(ping_state_ == PingState::UNSCHEDULED);
+    GRPC_CHECK(ping_state_ == PingState::UNSCHEDULED);
     ping_state_ = PingState::SCHEDULED;
     accumulator_ = 0;
   }
@@ -62,7 +62,7 @@ class BdpEstimator {
     GRPC_TRACE_LOG(bdp_estimator, INFO)
         << "bdp[" << name_ << "]:start acc=" << accumulator_
         << " est=" << estimate_;
-    CHECK(ping_state_ == PingState::SCHEDULED);
+    GRPC_CHECK(ping_state_ == PingState::SCHEDULED);
     ping_state_ = PingState::STARTED;
     ping_start_time_ = gpr_now(GPR_CLOCK_MONOTONIC);
   }

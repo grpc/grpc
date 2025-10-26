@@ -21,26 +21,26 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/strings/strip.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
+#include "absl/strings/strip.h"
 
 namespace grpc {
 namespace internal {
 
-// OpenTelemetryPluginImpl::ServerCallTracer implementation
-class OpenTelemetryPluginImpl::ServerCallTracer
-    : public grpc_core::ServerCallTracer,
-      public grpc_core::RefCounted<ServerCallTracer,
+// OpenTelemetryPluginImpl::ServerCallTracerInterface implementation
+class OpenTelemetryPluginImpl::ServerCallTracerInterface
+    : public grpc_core::ServerCallTracerInterface,
+      public grpc_core::RefCounted<ServerCallTracerInterface,
                                    grpc_core::NonPolymorphicRefCount,
                                    grpc_core::UnrefCallDtor> {
  public:
-  ServerCallTracer(
+  ServerCallTracerInterface(
       OpenTelemetryPluginImpl* otel_plugin, grpc_core::Arena* arena,
       std::shared_ptr<OpenTelemetryPluginImpl::ServerScopeConfig> scope_config);
 
-  ~ServerCallTracer() override;
+  ~ServerCallTracerInterface() override;
 
   std::string TraceId() override {
     return OTelSpanTraceIdToString(span_.get());

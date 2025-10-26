@@ -29,8 +29,8 @@
 #include <unordered_set>
 #include <vector>
 
-#include "absl/strings/string_view.h"
 #include "src/compiler/python_generator.h"
+#include "absl/strings/string_view.h"
 
 using ::google::protobuf::FileDescriptor;
 using ::google::protobuf::compiler::CodeGenerator;

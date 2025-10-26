@@ -20,8 +20,6 @@
 
 #include <atomic>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
 #include "src/core/credentials/call/call_creds_registry.h"
 #include "src/core/credentials/transport/channel_creds_registry.h"
 #include "src/core/credentials/transport/tls/certificate_provider_registry.h"
@@ -35,6 +33,8 @@
 #include "src/core/transport/auth_context_comparator_registry.h"
 #include "src/core/transport/endpoint_transport.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/functional/any_invocable.h"
 
 namespace grpc_core {
 
@@ -172,12 +172,12 @@ class GRPC_DLL CoreConfiguration {
     ~WithSubstituteBuilder() {
       // Reset and restore.
       Reset();
-      CHECK(CoreConfiguration::config_.exchange(
-                config_restore_, std::memory_order_acquire) == nullptr);
-      CHECK(CoreConfiguration::builders_[static_cast<size_t>(
-                                             BuilderScope::kEphemeral)]
-                .exchange(builders_restore_, std::memory_order_acquire) ==
-            nullptr);
+      GRPC_CHECK(CoreConfiguration::config_.exchange(
+                     config_restore_, std::memory_order_acquire) == nullptr);
+      GRPC_CHECK(CoreConfiguration::builders_[static_cast<size_t>(
+                                                  BuilderScope::kEphemeral)]
+                     .exchange(builders_restore_, std::memory_order_acquire) ==
+                 nullptr);
     }
 
    private:

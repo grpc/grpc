@@ -33,11 +33,10 @@
 #include <unordered_map>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "google/protobuf/timestamp.pb.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/cpp/latent_see/latent_see_client.h"
 #include "src/proto/grpc/channelz/v2/latent_see.grpc.pb.h"
@@ -49,6 +48,7 @@
 #include "test/cpp/qps/qps_worker.h"
 #include "test/cpp/qps/stats.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "absl/log/log.h"
 
 using std::deque;
 using std::list;
@@ -277,7 +277,7 @@ static void ReceiveFinalStatusFromClients(
       // long on some scenarios (e.g. unconstrained streaming_from_server). See
       // https://github.com/grpc/grpc/blob/3bd0cd208ea549760a2daf595f79b91b247fe240/test/cpp/qps/server_async.cc#L176
       // where the shutdown delay pretty much determines the wait here.
-      CHECK(!client->stream->Read(&client_status));
+      GRPC_CHECK(!client->stream->Read(&client_status));
     } else {
       grpc_core::Crash(
           absl::StrFormat("Couldn't get final status from client %zu", i));
@@ -329,7 +329,7 @@ static void ReceiveFinalStatusFromServer(const std::vector<ServerData>& servers,
       result.add_server_stats()->CopyFrom(server_status.stats());
       result.add_server_cores(server_status.cores());
       // That final status should be the last message on the server stream
-      CHECK(!server->stream->Read(&server_status));
+      GRPC_CHECK(!server->stream->Read(&server_status));
     } else {
       grpc_core::Crash(
           absl::StrFormat("Couldn't get final status from server %zu", i));
@@ -407,7 +407,7 @@ std::unique_ptr<ScenarioResult> RunScenario(const RunScenarioOptions& options) {
       workers.push_back(addr);
     }
   }
-  CHECK(!workers.empty());
+  GRPC_CHECK(!workers.empty());
 
   // if num_clients is set to <=0, do dynamic sizing: all workers
   // except for servers are clients
@@ -419,7 +419,7 @@ std::unique_ptr<ScenarioResult> RunScenario(const RunScenarioOptions& options) {
   // TODO(ctiller): support running multiple configurations, and binpack
   // client/server pairs
   // to available workers
-  CHECK_GE(workers.size(), num_clients_to_use + options.num_servers);
+  GRPC_CHECK_GE(workers.size(), num_clients_to_use + options.num_servers);
 
   // Trim to just what we need
   workers.resize(num_clients_to_use + options.num_servers);
@@ -475,7 +475,7 @@ std::unique_ptr<ScenarioResult> RunScenario(const RunScenarioOptions& options) {
   if (!options.qps_server_target_override.empty()) {
     // overriding the qps server target only makes since if there is <= 1
     // servers
-    CHECK_LE(options.num_servers, 1u);
+    GRPC_CHECK_LE(options.num_servers, 1u);
     client_config.clear_server_targets();
     client_config.add_server_targets(options.qps_server_target_override);
   }

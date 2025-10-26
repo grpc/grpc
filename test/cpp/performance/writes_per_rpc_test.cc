@@ -27,9 +27,6 @@
 #include <chrono>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -43,12 +40,15 @@
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/server/server.h"
 #include "src/core/telemetry/stats.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace testing {
@@ -80,7 +80,7 @@ class InProcessCHTTP2 {
           listener_endpoint = std::move(ep);
           listener_started.Notify();
         },
-        [](absl::Status status) { CHECK(status.ok()); }, config,
+        [](absl::Status status) { GRPC_CHECK(status.ok()); }, config,
         std::make_unique<grpc_core::MemoryQuota>(
             grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
                 "bar")));
@@ -89,9 +89,9 @@ class InProcessCHTTP2 {
                                     listener.status().ToString()));
     }
     auto target_addr = URIToResolvedAddress(addr);
-    CHECK(target_addr.ok());
-    CHECK((*listener)->Bind(*target_addr).ok());
-    CHECK((*listener)->Start().ok());
+    GRPC_CHECK(target_addr.ok());
+    GRPC_CHECK((*listener)->Bind(*target_addr).ok());
+    GRPC_CHECK((*listener)->Start().ok());
     // Creating the client
     std::unique_ptr<EventEngine::Endpoint> client_endpoint;
     grpc_core::Notification client_connected;
@@ -100,7 +100,7 @@ class InProcessCHTTP2 {
             "client"));
     std::ignore = fuzzing_engine->Connect(
         [&](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> endpoint) {
-          CHECK(endpoint.ok());
+          GRPC_CHECK(endpoint.ok());
           client_endpoint = std::move(*endpoint);
           client_connected.Notify();
         },
@@ -128,7 +128,7 @@ class InProcessCHTTP2 {
       grpc_core::Transport* transport = grpc_create_chttp2_transport(
           core_server->channel_args(), std::move(iomgr_server_endpoint),
           /*is_client=*/false);
-      CHECK(GRPC_LOG_IF_ERROR(
+      GRPC_CHECK(GRPC_LOG_IF_ERROR(
           "SetupTransport",
           core_server->SetupTransport(transport, nullptr,
                                       core_server->channel_args())));
@@ -149,7 +149,7 @@ class InProcessCHTTP2 {
           grpc_event_engine_endpoint_create(std::move(client_endpoint)));
       grpc_core::Transport* transport = grpc_create_chttp2_transport(
           args, std::move(endpoint), /*is_client=*/true);
-      CHECK(transport);
+      GRPC_CHECK(transport);
       grpc_channel* channel =
           grpc_core::ChannelCreate("target", args, GRPC_CLIENT_DIRECT_CHANNEL,
                                    transport)
@@ -247,20 +247,20 @@ static double UnaryPingPong(ThreadedFuzzingEventEngine* fuzzing_engine,
     void* t;
     bool ok;
     response_reader->Finish(&recv_response, &recv_status, tag(4));
-    CHECK(fixture->cq()->Next(&t, &ok));
-    CHECK(ok);
-    CHECK(t == tag(0) || t == tag(1)) << "Found unexpected tag " << t;
+    GRPC_CHECK(fixture->cq()->Next(&t, &ok));
+    GRPC_CHECK(ok);
+    GRPC_CHECK(t == tag(0) || t == tag(1)) << "Found unexpected tag " << t;
     intptr_t slot = reinterpret_cast<intptr_t>(t);
     ServerEnv* senv = server_env[slot];
     senv->response_writer.Finish(send_response, Status::OK, tag(3));
     for (int i = (1 << 3) | (1 << 4); i != 0;) {
-      CHECK(fixture->cq()->Next(&t, &ok));
-      CHECK(ok);
+      GRPC_CHECK(fixture->cq()->Next(&t, &ok));
+      GRPC_CHECK(ok);
       int tagnum = static_cast<int>(reinterpret_cast<intptr_t>(t));
-      CHECK(i & (1 << tagnum));
+      GRPC_CHECK(i & (1 << tagnum));
       i -= 1 << tagnum;
     }
-    CHECK(recv_status.ok());
+    GRPC_CHECK(recv_status.ok());
 
     senv->~ServerEnv();
     senv = new (senv) ServerEnv();

@@ -29,15 +29,6 @@
 #include <type_traits>
 #include <vector>
 
-#include "absl/cleanup/cleanup.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
-#include "absl/strings/strip.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/service/discovery/v3/discovery.upb.h"
 #include "envoy/service/discovery/v3/discovery.upbdefs.h"
@@ -48,6 +39,7 @@
 #include "src/core/util/backoff.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
@@ -61,6 +53,14 @@
 #include "upb/mem/arena.h"
 #include "upb/reflection/def.h"
 #include "upb/text/encode.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/log/log.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 
 #define GRPC_XDS_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_XDS_RECONNECT_BACKOFF_MULTIPLIER 1.6
@@ -423,7 +423,7 @@ XdsClient::XdsChannel::XdsChannel(WeakRefCountedPtr<XdsClient> xds_client,
   absl::Status status;
   transport_ =
       xds_client_->transport_factory_->GetTransport(*server.target(), &status);
-  CHECK(transport_ != nullptr);
+  GRPC_CHECK(transport_ != nullptr);
   if (!status.ok()) {
     SetChannelStatusLocked(std::move(status));
   } else {
@@ -662,8 +662,8 @@ void XdsClient::XdsChannel::RetryableCall<T>::OnCallFinishedLocked() {
 template <typename T>
 void XdsClient::XdsChannel::RetryableCall<T>::StartNewCallLocked() {
   if (shutting_down_) return;
-  CHECK(xds_channel_->transport_ != nullptr);
-  CHECK(call_ == nullptr);
+  GRPC_CHECK(xds_channel_->transport_ != nullptr);
+  GRPC_CHECK(call_ == nullptr);
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[xds_client " << xds_channel()->xds_client() << "] xds server "
       << xds_channel()->server_uri() << ": start new call from retryable call "
@@ -732,7 +732,7 @@ XdsClient::XdsChannel::AdsCall::AdsCall(
     : InternallyRefCounted<AdsCall>(
           GRPC_TRACE_FLAG_ENABLED(xds_client_refcount) ? "AdsCall" : nullptr),
       retryable_call_(std::move(retryable_call)) {
-  CHECK_NE(xds_client(), nullptr);
+  GRPC_CHECK_NE(xds_client(), nullptr);
   // Init the ADS call.
   const char* method =
       "/envoy.service.discovery.v3.AggregatedDiscoveryService/"
@@ -742,7 +742,7 @@ XdsClient::XdsChannel::AdsCall::AdsCall(
                   // Passing the initial ref here.  This ref will go away when
                   // the StreamEventHandler is destroyed.
                   RefCountedPtr<AdsCall>(this)));
-  CHECK(streaming_call_ != nullptr);
+  GRPC_CHECK(streaming_call_ != nullptr);
   // Start the call.
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[xds_client " << xds_client() << "] xds server "
@@ -1622,7 +1622,7 @@ XdsClient::XdsClient(
       metrics_reporter_(std::move(metrics_reporter)) {
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[xds_client " << this << "] creating xds client";
-  CHECK(bootstrap_ != nullptr);
+  GRPC_CHECK(bootstrap_ != nullptr);
   if (bootstrap_->node() != nullptr) {
     GRPC_TRACE_LOG(xds_client, INFO)
         << "[xds_client " << this
@@ -1852,7 +1852,7 @@ void XdsClient::MaybeRegisterResourceTypeLocked(
     const XdsResourceType* resource_type) {
   auto it = resource_types_.find(resource_type->type_url());
   if (it != resource_types_.end()) {
-    CHECK(it->second == resource_type);
+    GRPC_CHECK(it->second == resource_type);
     return;
   }
   resource_types_.emplace(resource_type->type_url(), resource_type);
@@ -1903,7 +1903,7 @@ std::string XdsClient::ConstructFullXdsResourceName(
     auto uri = URI::Create("xdstp", /*user_info=*/"", std::string(authority),
                            absl::StrCat("/", resource_type, "/", key.id),
                            key.query_params, /*fragment=*/"");
-    CHECK(uri.ok());
+    GRPC_CHECK(uri.ok());
     return uri->ToString();
   }
   // Old-style name.

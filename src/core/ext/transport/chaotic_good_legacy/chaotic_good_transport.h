@@ -22,12 +22,12 @@
 #include <memory>
 #include <utility>
 
-#include "absl/strings/escaping.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/ext/transport/chaotic_good_legacy/control_endpoint.h"
 #include "src/core/ext/transport/chaotic_good_legacy/data_endpoints.h"
 #include "src/core/ext/transport/chaotic_good_legacy/frame.h"
 #include "src/core/ext/transport/chaotic_good_legacy/frame_header.h"
+#include "src/core/ext/transport/chaotic_good_legacy/legacy_ztrace_collector.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -38,6 +38,7 @@
 #include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "absl/strings/escaping.h"
 
 namespace grpc_core {
 namespace chaotic_good_legacy {
@@ -84,7 +85,8 @@ class IncomingFrame {
   size_t remove_padding_;
 };
 
-class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
+class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport>,
+                             public channelz::DataSource {
  public:
   struct Options {
     uint32_t encode_alignment = 64;
@@ -99,12 +101,20 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
           event_engine,
       std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
           stats_plugin_group,
-      Options options, bool enable_tracing)
-      : event_engine_(std::move(event_engine)),
-        control_endpoint_(std::move(control_endpoint), event_engine_.get()),
+      Options options, bool enable_tracing,
+      RefCountedPtr<channelz::SocketNode> socket_node)
+      : channelz::DataSource(socket_node),
+        event_engine_(std::move(event_engine)),
+        control_endpoint_(std::move(control_endpoint), event_engine_.get(),
+                          ztrace_collector_, socket_node),
         data_endpoints_(std::move(pending_data_endpoints), event_engine_.get(),
-                        std::move(stats_plugin_group), enable_tracing),
-        options_(options) {}
+                        std::move(stats_plugin_group), enable_tracing,
+                        ztrace_collector_, socket_node),
+        options_(options) {
+    SourceConstructed();
+  }
+
+  ~ChaoticGoodTransport() override { SourceDestructing(); }
 
   auto WriteFrame(const FrameInterface& frame) {
     FrameHeader header = frame.MakeHeader();
@@ -121,6 +131,7 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
         [this, &header, &frame]() {
           SliceBuffer output;
           header.Serialize(output.AddTiny(FrameHeader::kFrameHeaderSize));
+          ztrace_collector_->Append(WriteFrameTrace{header});
           frame.SerializePayload(output);
           return control_endpoint_.Write(std::move(output));
         },
@@ -129,6 +140,7 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
           SliceBuffer payload;
           // Temporarily give a bogus connection id to get padding right
           header.payload_connection_id = 1;
+          ztrace_collector_->Append(WriteFrameTrace{header});
           const size_t padding = header.Padding(options_.encode_alignment);
           frame.SerializePayload(payload);
           GRPC_TRACE_LOG(chaotic_good, INFO)
@@ -192,6 +204,7 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
           return frame_header;
         },
         [this](FrameHeader frame_header) {
+          ztrace_collector_->Append(ReadFrameTrace{frame_header});
           return If(
               // If the payload is on the connection frame
               frame_header.payload_connection_id == 0,
@@ -241,8 +254,25 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
     return std::move(s);
   }
 
+  std::unique_ptr<channelz::ZTrace> GetZTrace(absl::string_view name) override {
+    if (name == "transport_frames") return ztrace_collector_->MakeZTrace();
+    return nullptr;
+  }
+
+  void AddData(channelz::DataSink sink) override {
+    sink.AddData("transport_options",
+                 channelz::PropertyList()
+                     .Set("encode_alignment", options_.encode_alignment)
+                     .Set("decode_alignment", options_.decode_alignment)
+                     .Set("inlined_payload_size_threshold",
+                          options_.inlined_payload_size_threshold));
+    data_endpoints_.AddData(sink);
+  }
+
  private:
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+  std::shared_ptr<LegacyZTraceCollector> ztrace_collector_ =
+      std::make_shared<LegacyZTraceCollector>();
   ControlEndpoint control_endpoint_;
   DataEndpoints data_endpoints_;
   const Options options_;

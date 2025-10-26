@@ -35,16 +35,7 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -59,6 +50,7 @@
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/data/ssl_test_data.h"
@@ -70,6 +62,14 @@
 #include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/test_util/fuzzing_channel_args.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 
@@ -86,7 +86,8 @@ static void finish_resolve(addr_req r) {
   if (0 == strcmp(r.addr, "server")) {
     *r.addresses = std::make_unique<grpc_core::EndpointAddressesList>();
     grpc_resolved_address fake_resolved_address;
-    CHECK(grpc_parse_ipv4_hostport("1.2.3.4:5", &fake_resolved_address, false));
+    GRPC_CHECK(
+        grpc_parse_ipv4_hostport("1.2.3.4:5", &fake_resolved_address, false));
     (*r.addresses)
         ->emplace_back(fake_resolved_address, grpc_core::ChannelArgs());
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, r.on_done, absl::OkStatus());
@@ -237,7 +238,7 @@ grpc_ares_request* my_dns_lookup_srv_ares(
 }
 
 static void my_cancel_ares_request(grpc_ares_request* request) {
-  CHECK_NE(request, nullptr);
+  GRPC_CHECK_NE(request, nullptr);
 }
 #endif
 
@@ -414,13 +415,13 @@ ApiFuzzer::ApiFuzzer(const fuzzing_event_engine::Actions& actions)
   grpc_cancel_ares_request = my_cancel_ares_request;
 #endif
 
-  CHECK_EQ(channel_, nullptr);
-  CHECK_EQ(server_, nullptr);
+  GRPC_CHECK_EQ(channel_, nullptr);
+  GRPC_CHECK_EQ(server_, nullptr);
 }
 
 ApiFuzzer::~ApiFuzzer() {
-  CHECK_EQ(channel_, nullptr);
-  CHECK_EQ(server_, nullptr);
+  GRPC_CHECK_EQ(channel_, nullptr);
+  GRPC_CHECK_EQ(server_, nullptr);
 }
 
 void ApiFuzzer::Tick() {
@@ -468,7 +469,7 @@ ApiFuzzer::Result ApiFuzzer::CreateChannel(
                             creds, args.ToC().get());
     grpc_channel_credentials_release(creds);
   }
-  CHECK_NE(channel_, nullptr);
+  GRPC_CHECK_NE(channel_, nullptr);
   channel_force_delete_ = false;
   return Result::kComplete;
 }
@@ -483,7 +484,7 @@ ApiFuzzer::Result ApiFuzzer::CreateServer(
     ChannelArgs args = testing::CreateChannelArgsFromFuzzingConfiguration(
         create_server.channel_args(), fuzzing_env);
     server_ = grpc_server_create(args.ToC().get(), nullptr);
-    CHECK_NE(server_, nullptr);
+    GRPC_CHECK_NE(server_, nullptr);
     grpc_server_register_completion_queue(server_, cq(), nullptr);
     for (const auto& http2_port : create_server.http2_ports()) {
       auto* creds = ReadServerCreds(http2_port.server_creds());
@@ -520,7 +521,7 @@ FUZZ_TEST(MyTestSuite, RunApiFuzzer)
 
 auto ParseTestProto(const std::string& proto) {
   api_fuzzer::Msg msg;
-  CHECK(google::protobuf::TextFormat::ParseFromString(proto, &msg));
+  GRPC_CHECK(google::protobuf::TextFormat::ParseFromString(proto, &msg));
   return msg;
 }
 

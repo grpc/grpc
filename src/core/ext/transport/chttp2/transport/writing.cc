@@ -30,10 +30,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/container/flat_hash_map.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
@@ -69,12 +65,16 @@
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
 
 // IWYU pragma: no_include "src/core/util/orphanable.h"
 
@@ -273,7 +273,7 @@ class WriteContext {
       grpc_core::Http2Frame frame(std::move(*update));
       Serialize(absl::Span<grpc_core::Http2Frame>(&frame, 1), t_->outbuf);
       if (t_->keepalive_timeout != grpc_core::Duration::Infinity()) {
-        CHECK(
+        GRPC_CHECK(
             t_->settings_ack_watchdog ==
             grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid);
         // We base settings timeout on keepalive timeout, but double it to allow
@@ -293,7 +293,7 @@ class WriteContext {
     // simple writes are queued to qbuf, and flushed here
     grpc_slice_buffer_move_into(&t_->qbuf, t_->outbuf.c_slice_buffer());
     t_->num_pending_induced_frames = 0;
-    CHECK_EQ(t_->qbuf.count, 0u);
+    GRPC_CHECK_EQ(t_->qbuf.count, 0u);
   }
 
   void FlushWindowUpdates() {
@@ -738,8 +738,10 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
                    grpc_event_engine::experimental::
                        grpc_is_event_engine_endpoint(t->ep.get())) {
           // New way of collecting TCP traces
-          ctx.AddTcpCallTracer(s->call_tracer->StartNewTcpTrace(),
-                               s->byte_counter);
+          auto tcp_call_tracer = s->call_tracer->StartNewTcpTrace();
+          if (tcp_call_tracer != nullptr) {
+            ctx.AddTcpCallTracer(std::move(tcp_call_tracer), s->byte_counter);
+          }
         }
       }
       outbuf_relative_start_pos += num_stream_bytes;

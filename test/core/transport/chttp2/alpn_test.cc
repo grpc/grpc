@@ -20,8 +20,8 @@
 
 #include <memory>
 
-#include "gtest/gtest.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 TEST(AlpnTest, TestAlpnSuccess) {
   ASSERT_TRUE(grpc_chttp2_is_alpn_version_supported("h2", 2));

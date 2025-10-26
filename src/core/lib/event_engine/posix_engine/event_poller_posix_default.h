@@ -22,11 +22,12 @@
 namespace grpc_event_engine::experimental {
 
 class PosixEventPoller;
-class Scheduler;
+class ThreadPool;
 
 // Return an instance of an event poller which is tied to the specified
 // scheduler.
-std::shared_ptr<PosixEventPoller> MakeDefaultPoller(Scheduler* scheduler);
+std::shared_ptr<PosixEventPoller> MakeDefaultPoller(
+    std::shared_ptr<ThreadPool> thread_pool);
 
 }  // namespace grpc_event_engine::experimental
 

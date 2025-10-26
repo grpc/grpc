@@ -30,16 +30,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/meta/type_traits.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -54,6 +44,7 @@
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
@@ -64,6 +55,15 @@
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/util/work_serializer.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
+#include "absl/meta/type_traits.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 // IWYU pragma: no_include <type_traits>
 
@@ -265,7 +265,7 @@ WeightedTargetLb::PickResult WeightedTargetLb::WeightedPicker::Pick(
     }
   }
   if (index == 0) index = start_index;
-  CHECK(pickers_[index].first > key);
+  GRPC_CHECK(pickers_[index].first > key);
   // Delegate to the child picker.
   return pickers_[index].second->Pick(args);
 }
@@ -394,7 +394,7 @@ void WeightedTargetLb::UpdateStateLocked() {
         << " weight=" << child->weight() << " picker=" << child_picker.get();
     switch (child->connectivity_state()) {
       case GRPC_CHANNEL_READY: {
-        CHECK_GT(child->weight(), 0u);
+        GRPC_CHECK_GT(child->weight(), 0u);
         ready_end += child->weight();
         ready_picker_list.emplace_back(ready_end, std::move(child_picker));
         break;
@@ -408,7 +408,7 @@ void WeightedTargetLb::UpdateStateLocked() {
         break;
       }
       case GRPC_CHANNEL_TRANSIENT_FAILURE: {
-        CHECK_GT(child->weight(), 0u);
+        GRPC_CHECK_GT(child->weight(), 0u);
         tf_end += child->weight();
         tf_picker_list.emplace_back(tf_end, std::move(child_picker));
         break;
@@ -482,7 +482,7 @@ void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::Orphan() {
 }
 
 void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::OnTimerLocked() {
-  CHECK(timer_handle_.has_value());
+  GRPC_CHECK(timer_handle_.has_value());
   timer_handle_.reset();
   weighted_child_->weighted_target_policy_->targets_.erase(
       weighted_child_->name_);

@@ -23,8 +23,6 @@
 #include <utility>
 #include <variant>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/extensions/filters/http/stateful_session/v3/stateful_session.upb.h"
 #include "envoy/extensions/filters/http/stateful_session/v3/stateful_session.upbdefs.h"
@@ -42,6 +40,8 @@
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -198,7 +198,7 @@ XdsHttpStatefulSessionFilter::GenerateFilterConfigOverride(
 
 void XdsHttpStatefulSessionFilter::AddFilter(
     InterceptionChainBuilder& builder) const {
-  builder.Add<StatefulSessionFilter>();
+  builder.Add<StatefulSessionFilter>(nullptr);
 }
 
 const grpc_channel_filter* XdsHttpStatefulSessionFilter::channel_filter()

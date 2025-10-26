@@ -45,7 +45,7 @@ class GlobalCallbackHook {
 
 class DefaultGlobalCallbackHook final : public GlobalCallbackHook {
  public:
-  void RunCallback(grpc_call* call,
+  void RunCallback(grpc_call* /* call */,
                    absl::FunctionRef<void()> callback) override {
     CatchingCallback(callback);
   }

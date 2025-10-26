@@ -27,9 +27,6 @@
 
 #include <memory>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/event_engine/extensions/supports_win_sockets.h"
 #include "src/core/lib/event_engine/handle_containers.h"
@@ -40,6 +37,9 @@
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_event_engine::experimental {
 

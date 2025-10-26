@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from dataclasses import field
 import json
 import os
+import pathlib
 from typing import Mapping, Optional
 
 GRPC_GCP_OBSERVABILITY_CONFIG_FILE_ENV = "GRPC_GCP_OBSERVABILITY_CONFIG_FILE"
@@ -52,8 +53,8 @@ class GcpObservabilityConfig:
 
         self.project_id = config_json.get("project_id", "")
         self.labels = config_json.get("labels", {})
-        self.stats_enabled = "cloud_monitoring" in config_json.keys()
-        self.tracing_enabled = "cloud_trace" in config_json.keys()
+        self.stats_enabled = "cloud_monitoring" in config_json
+        self.tracing_enabled = "cloud_trace" in config_json
         tracing_config = config_json.get("cloud_trace", {})
         self.sampling_rate = tracing_config.get("sampling_rate", 0.0)
 
@@ -118,7 +119,7 @@ def _get_gcp_observability_config_contents() -> str:
     # First try get config from GRPC_GCP_OBSERVABILITY_CONFIG_FILE_ENV.
     config_path = os.getenv(GRPC_GCP_OBSERVABILITY_CONFIG_FILE_ENV)
     if config_path:
-        with open(config_path, "r") as f:
+        with pathlib.Path(config_path).open("r") as f:
             contents_str = f.read()
 
     # Next, try GRPC_GCP_OBSERVABILITY_CONFIG_ENV env var.

@@ -32,12 +32,12 @@
 #include <atomic>
 #include <chrono>
 #include <memory>
+#include <optional>
+#include <string>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "gtest/gtest.h"
 #include "src/core/channelz/channelz_registry.h"
+#include "src/core/channelz/text_encode.h"
 #include "src/core/channelz/v2tov1/legacy_api.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
@@ -51,9 +51,15 @@
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/useful.h"
 #include "src/core/util/wait_for_single_owner.h"
+#include "src/proto/grpc/channelz/v2/channelz.upb.h"
+#include "src/proto/grpc/channelz/v2/channelz.upbdefs.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/channel_trace_proto_helper.h"
+#include "upb/mem/arena.hpp"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 using grpc_event_engine::experimental::GetDefaultEventEngine;
 
@@ -302,7 +308,7 @@ TEST_P(ChannelzChannelTest, BasicChannelProto) {
       grpc_channel_get_channelz_node(channel.channel());
   upb_Arena* arena = upb_Arena_New();
   grpc_channelz_v2_Entity* entity = grpc_channelz_v2_Entity_new(arena);
-  channelz_channel->SerializeEntity(entity, arena);
+  channelz_channel->SerializeEntity(entity, arena, absl::Milliseconds(100));
   EXPECT_EQ(grpc_channelz_v2_Entity_id(entity), channelz_channel->uuid());
   EXPECT_EQ(UpbStringToStdString(grpc_channelz_v2_Entity_kind(entity)),
             "channel");
@@ -326,14 +332,14 @@ TEST_P(ChannelzChannelTest, BasicChannelProto) {
 
 class TestZTrace final : public ZTrace {
  public:
-  void Run(Timestamp deadline, std::map<std::string, std::string> args,
+  void Run(Args args,
            std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
-           absl::AnyInvocable<void(Json)> callback) override {
+           Callback callback) override {
     engine->RunAfter(Duration::Milliseconds(100),
                      [callback = std::move(callback)]() mutable {
                        Json::Object object;
                        object["test"] = Json::FromString("yes");
-                       callback(Json::FromObject(std::move(object)));
+                       callback(JsonDump(Json::FromObject(std::move(object))));
                      });
   }
 };
@@ -401,9 +407,12 @@ TEST_P(ChannelzChannelTest, ZTrace) {
   Notification done;
   std::string json_text;
   channelz_channel->RunZTrace(
-      "test_ztrace", Timestamp::Now() + Duration::Milliseconds(300), {},
-      grpc_event_engine::experimental::GetDefaultEventEngine(), [&](Json json) {
-        json_text = JsonDump(json);
+      "test_ztrace", {},
+      grpc_event_engine::experimental::GetDefaultEventEngine(),
+      [&](absl::StatusOr<std::optional<std::string>> result) {
+        ASSERT_TRUE(result.ok());
+        ASSERT_TRUE(result->has_value());
+        json_text = **result;
         done.Notify();
       });
   done.WaitForNotification();
@@ -476,12 +485,14 @@ class ChannelzRegistryBasedTest : public ::testing::TestWithParam<size_t> {
   void SetUp() override {
     WaitForSingleOwner(GetDefaultEventEngine());
     ResourceQuota::TestOnlyResetDefaultResourceQuota();
+    TestOnlyResetInstruments();
     ChannelzRegistry::TestOnlyReset();
   }
 
   void TearDown() override {
     WaitForSingleOwner(GetDefaultEventEngine());
     ResourceQuota::TestOnlyResetDefaultResourceQuota();
+    TestOnlyResetInstruments();
     ChannelzRegistry::TestOnlyReset();
   }
 };
@@ -613,6 +624,19 @@ TEST_F(ChannelzRegistryBasedTest, ManyServersTest) {
 
 INSTANTIATE_TEST_SUITE_P(ChannelzChannelTestSweep, ChannelzChannelTest,
                          ::testing::Values(0, 8, 64, 1024, 1024 * 1024));
+
+TEST(ChannelzTextEncodeTest, BasicTraceEvent) {
+  upb::Arena arena;
+  grpc_channelz_v2_TraceEvent* event =
+      grpc_channelz_v2_TraceEvent_new(arena.ptr());
+  grpc_channelz_v2_TraceEvent_set_description(
+      event, upb_StringView_FromString("Test Event"));
+  // Just calling TextEncode to see if it crashes.
+  std::string encoded =
+      channelz::TextEncode(reinterpret_cast<upb_Message*>(event),
+                           grpc_channelz_v2_TraceEvent_getmsgdef);
+  EXPECT_NE(encoded.length(), 0) << encoded;
+}
 
 }  // namespace testing
 }  // namespace channelz

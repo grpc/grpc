@@ -19,6 +19,7 @@
 #include <map>
 #include <string>
 
+#include "src/core/channelz/property_list.h"
 #include "src/core/channelz/ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 
@@ -27,7 +28,7 @@ namespace http2_ztrace_collector_detail {
 
 class Config {
  public:
-  explicit Config(std::map<std::string, std::string>) {}
+  explicit Config(const channelz::ZTrace::Args&) {}
 
   template <typename T>
   bool Finishes(const T&) {
@@ -43,12 +44,13 @@ struct H2DataTrace {
   bool end_stream;
   uint32_t payload_length;
 
-  void RenderJson(Json::Object& json) const {
-    json["read"] = Json::FromBool(kRead);
-    json["frame_type"] = Json::FromString("DATA");
-    json["stream_id"] = Json::FromNumber(stream_id);
-    json["end_stream"] = Json::FromBool(end_stream);
-    json["payload_length"] = Json::FromNumber(payload_length);
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("read", kRead)
+        .Set("frame_type", "DATA")
+        .Set("stream_id", stream_id)
+        .Set("end_stream", end_stream)
+        .Set("payload_length", payload_length);
   }
 };
 
@@ -60,14 +62,14 @@ struct H2HeaderTrace {
   bool continuation;
   uint32_t payload_length;
 
-  void RenderJson(Json::Object& json) const {
-    json["read"] = Json::FromBool(kRead);
-    json["frame_type"] = continuation ? Json::FromString("CONTINUATION")
-                                      : Json::FromString("HEADERS");
-    json["stream_id"] = Json::FromNumber(stream_id);
-    json["end_headers"] = Json::FromBool(end_headers);
-    json["end_stream"] = Json::FromBool(end_stream);
-    json["payload_length"] = Json::FromNumber(payload_length);
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("read", kRead)
+        .Set("frame_type", continuation ? "CONTINUATION" : "HEADERS")
+        .Set("stream_id", stream_id)
+        .Set("end_headers", end_headers)
+        .Set("end_stream", end_stream)
+        .Set("payload_length", payload_length);
   }
 };
 
@@ -76,11 +78,12 @@ struct H2RstStreamTrace {
   uint32_t stream_id;
   uint32_t error_code;
 
-  void RenderJson(Json::Object& json) const {
-    json["read"] = Json::FromBool(kRead);
-    json["frame_type"] = Json::FromString("RST_STREAM");
-    json["stream_id"] = Json::FromNumber(stream_id);
-    json["error_code"] = Json::FromNumber(error_code);
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("read", kRead)
+        .Set("frame_type", "RST_STREAM")
+        .Set("stream_id", stream_id)
+        .Set("error_code", error_code);
   }
 };
 
@@ -89,18 +92,20 @@ struct H2SettingsTrace {
   bool ack;
   std::vector<Http2SettingsFrame::Setting> settings;
 
-  void RenderJson(Json::Object& json) const {
-    json["read"] = Json::FromBool(kRead);
-    json["frame_type"] = Json::FromString("SETTINGS");
-    json["ack"] = Json::FromBool(ack);
-    Json::Array settings_array;
-    for (const auto& setting : settings) {
-      Json::Object setting_object;
-      setting_object["id"] = Json::FromNumber(setting.id);
-      setting_object["value"] = Json::FromNumber(setting.value);
-      settings_array.push_back(Json::FromObject(std::move(setting_object)));
-    }
-    json["settings"] = Json::FromArray(std::move(settings_array));
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("read", kRead)
+        .Set("frame_type", "SETTINGS")
+        .Set("ack", ack)
+        .Set("settings", [this]() {
+          channelz::PropertyTable table;
+          for (const auto& setting : settings) {
+            table.AppendRow(channelz::PropertyList()
+                                .Set("id", setting.id)
+                                .Set("value", setting.value));
+          }
+          return table;
+        }());
   }
 };
 
@@ -109,11 +114,12 @@ struct H2PingTrace {
   bool ack;
   uint64_t opaque;
 
-  void RenderJson(Json::Object& json) const {
-    json["read"] = Json::FromBool(kRead);
-    json["frame_type"] = Json::FromString("PING");
-    json["ack"] = Json::FromBool(ack);
-    json["opaque"] = Json::FromNumber(opaque);
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("read", kRead)
+        .Set("frame_type", "PING")
+        .Set("ack", ack)
+        .Set("opaque", opaque);
   }
 };
 
@@ -123,12 +129,13 @@ struct H2GoAwayTrace {
   uint32_t error_code;
   std::string debug_data;
 
-  void RenderJson(Json::Object& json) const {
-    json["read"] = Json::FromBool(kRead);
-    json["frame_type"] = Json::FromString("GOAWAY");
-    json["last_stream_id"] = Json::FromNumber(last_stream_id);
-    json["error_code"] = Json::FromNumber(error_code);
-    json["debug_data"] = Json::FromString(debug_data);
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("read", kRead)
+        .Set("frame_type", "GOAWAY")
+        .Set("last_stream_id", last_stream_id)
+        .Set("error_code", error_code)
+        .Set("debug_data", debug_data);
   }
 };
 
@@ -137,11 +144,12 @@ struct H2WindowUpdateTrace {
   uint32_t stream_id;
   uint32_t window_size_increment;
 
-  void RenderJson(Json::Object& json) const {
-    json["read"] = Json::FromBool(kRead);
-    json["frame_type"] = Json::FromString("WINDOW_UPDATE");
-    json["stream_id"] = Json::FromNumber(stream_id);
-    json["window_size_increment"] = Json::FromNumber(window_size_increment);
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("read", kRead)
+        .Set("frame_type", "WINDOW_UPDATE")
+        .Set("stream_id", stream_id)
+        .Set("window_size_increment", window_size_increment);
   }
 };
 
@@ -149,10 +157,11 @@ template <bool kRead>
 struct H2SecurityTrace {
   uint32_t payload_length;
 
-  void RenderJson(Json::Object& json) const {
-    json["read"] = Json::FromBool(kRead);
-    json["frame_type"] = Json::FromString("SECURITY");
-    json["payload_length"] = Json::FromNumber(payload_length);
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("read", kRead)
+        .Set("frame_type", "SECURITY")
+        .Set("payload_length", payload_length);
   }
 };
 
@@ -162,12 +171,13 @@ struct H2UnknownFrameTrace {
   uint32_t stream_id;
   uint32_t payload_length;
 
-  void RenderJson(Json::Object& json) const {
-    json["frame_type"] = Json::FromString("UNKNOWN");
-    json["type"] = Json::FromNumber(type);
-    json["flags"] = Json::FromNumber(flags);
-    json["stream_id"] = Json::FromNumber(stream_id);
-    json["payload_length"] = Json::FromNumber(payload_length);
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("frame_type", "UNKNOWN")
+        .Set("type", type)
+        .Set("flags", flags)
+        .Set("stream_id", stream_id)
+        .Set("payload_length", payload_length);
   }
 };
 
@@ -176,35 +186,94 @@ struct H2FlowControlStall {
   int64_t stream_window;
   uint32_t stream_id;
 
-  void RenderJson(Json::Object& json) const {
-    json["metadata_type"] = Json::FromString("FLOW_CONTROL_STALL");
-    json["transport_window"] = Json::FromNumber(transport_window);
-    json["stream_window"] = Json::FromNumber(stream_window);
-    json["stream_id"] = Json::FromNumber(stream_id);
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("frame_type", "FLOW_CONTROL_STALL")
+        .Set("transport_window", transport_window)
+        .Set("stream_window", stream_window)
+        .Set("stream_id", stream_id);
   }
 };
 
 struct H2BeginWriteCycle {
   uint32_t target_size;
 
-  void RenderJson(Json::Object& json) const {
-    json["metadata_type"] = Json::FromString("BEGIN_WRITE_CYCLE");
-    json["target_size"] = Json::FromNumber(target_size);
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("frame_type", "BEGIN_WRITE_CYCLE")
+        .Set("target_size", target_size);
   }
 };
 
 struct H2BeginEndpointWrite {
   uint32_t write_size;
 
-  void RenderJson(Json::Object& json) const {
-    json["metadata_type"] = Json::FromString("BEGIN_ENDPOINT_WRITE");
-    json["write_size"] = Json::FromNumber(write_size);
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("frame_type", "BEGIN_ENDPOINT_WRITE")
+        .Set("write_size", write_size);
   }
 };
 
 struct H2EndWriteCycle {
-  void RenderJson(Json::Object& json) const {
-    json["metadata_type"] = Json::FromString("END_WRITE_CYCLE");
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList().Set("frame_type", "END_WRITE_CYCLE");
+  }
+};
+
+struct H2TcpMetricsTrace {
+  std::shared_ptr<
+      grpc_event_engine::experimental::EventEngine::Endpoint::TelemetryInfo>
+      telemetry_info;
+  grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent event;
+  std::vector<
+      grpc_event_engine::experimental::EventEngine::Endpoint::WriteMetric>
+      metrics;
+  absl::Time timestamp;
+
+  size_t MemoryUsage() const {
+    return sizeof(H2TcpMetricsTrace) + metrics.capacity() * sizeof(metrics[0]);
+  }
+
+  channelz::PropertyList ChannelzProperties() const {
+    absl::string_view event_string = "unknown";
+    switch (event) {
+      case grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent::
+          kSendMsg:
+        event_string = "send_msg";
+        break;
+      case grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent::
+          kScheduled:
+        event_string = "scheduled";
+        break;
+      case grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent::
+          kSent:
+        event_string = "sent";
+        break;
+      case grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent::
+          kAcked:
+        event_string = "acked";
+        break;
+      case grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent::
+          kClosed:
+        event_string = "closed";
+        break;
+      default:
+        break;
+    }
+    return channelz::PropertyList()
+        .Set("event", event_string)
+        .Set("tcp_event_timestamp", timestamp)
+        .Merge([this]() {
+          channelz::PropertyList props;
+          for (const auto& metric : metrics) {
+            if (auto key = telemetry_info->GetMetricName(metric.key);
+                key.has_value()) {
+              props.Set(*key, metric.value);
+            }
+          }
+          return props;
+        }());
   }
 };
 
@@ -216,7 +285,38 @@ using Http2ZTraceCollector = channelz::ZTraceCollector<
     H2RstStreamTrace<true>, H2SettingsTrace<true>, H2PingTrace<true>,
     H2GoAwayTrace<true>, H2WindowUpdateTrace<true>, H2SecurityTrace<true>,
     H2UnknownFrameTrace, H2FlowControlStall, H2BeginWriteCycle, H2EndWriteCycle,
-    H2BeginEndpointWrite>;
+    H2BeginEndpointWrite, H2TcpMetricsTrace>;
+
+struct PromiseEndpointReadTrace {
+  uint64_t bytes;
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList().Set("read_bytes", bytes);
+  }
+};
+
+struct PromiseEndpointWriteTrace {
+  uint64_t bytes;
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList().Set("written_bytes", bytes);
+  }
+};
+
+namespace promise_http2_ztrace_collector_detail {
+class Config {
+ public:
+  explicit Config(const channelz::ZTrace::Args&) {}
+
+  template <typename T>
+  bool Finishes(const T&) {
+    return false;
+  }
+};
+}  // namespace promise_http2_ztrace_collector_detail
+
+using PromiseHttp2ZTraceCollector =
+    channelz::ZTraceCollector<promise_http2_ztrace_collector_detail::Config,
+                              PromiseEndpointReadTrace,
+                              PromiseEndpointWriteTrace>;
 
 }  // namespace grpc_core
 

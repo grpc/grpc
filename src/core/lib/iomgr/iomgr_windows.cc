@@ -22,7 +22,6 @@
 
 #ifdef GRPC_WINSOCK_SOCKET
 
-#include "absl/log/check.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -35,6 +34,7 @@
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 
 extern grpc_tcp_server_vtable grpc_windows_tcp_server_vtable;
 extern grpc_tcp_server_vtable grpc_windows_event_engine_tcp_server_vtable;
@@ -50,12 +50,12 @@ extern grpc_pollset_set_vtable grpc_windows_pollset_set_vtable;
 static void winsock_init(void) {
   WSADATA wsaData;
   int status = WSAStartup(MAKEWORD(2, 0), &wsaData);
-  CHECK_EQ(status, 0);
+  GRPC_CHECK_EQ(status, 0);
 }
 
 static void winsock_shutdown(void) {
   int status = WSACleanup();
-  CHECK_EQ(status, 0);
+  GRPC_CHECK_EQ(status, 0);
 }
 
 static void iomgr_platform_init(void) {

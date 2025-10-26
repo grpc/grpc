@@ -26,19 +26,11 @@
 #include <thread>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
 #include "envoy/extensions/filters/http/router/v3/router.pb.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/server/server.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/tmpfile.h"
 #include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/xds_client/xds_channel_args.h"
@@ -46,6 +38,14 @@
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/util/credentials.h"
 #include "test/cpp/util/tls_test_utils.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 namespace testing {
@@ -155,7 +155,7 @@ XdsEnd2endTest::ServerThread::ServerThread(
 
 void XdsEnd2endTest::ServerThread::Start() {
   LOG(INFO) << "starting " << Type() << " server on port " << port_;
-  CHECK(!running_);
+  GRPC_CHECK(!running_);
   running_ = true;
   StartAllServices();
   grpc_core::Mutex mu;
@@ -376,6 +376,13 @@ const char XdsEnd2endTest::kServerCertPath[] =
     "src/core/tsi/test_creds/server1.pem";
 const char XdsEnd2endTest::kServerKeyPath[] =
     "src/core/tsi/test_creds/server1.key";
+
+const char XdsEnd2endTest::kSpiffeCaCertPath[] =
+    "test/core/tsi/test_creds/spiffe_end2end/ca.pem";
+const char XdsEnd2endTest::kSpiffeServerCertPath[] =
+    "test/core/tsi/test_creds/spiffe_end2end/server_spiffe.pem";
+const char XdsEnd2endTest::kSpiffeServerKeyPath[] =
+    "test/core/tsi/test_creds/spiffe_end2end/server.key";
 
 const char XdsEnd2endTest::kRequestMessage[] = "Live long and prosper.";
 
@@ -918,9 +925,23 @@ XdsEnd2endTest::MakeIdentityKeyCertPairForTlsCreds() {
   return {{std::move(private_key), std::move(identity_cert)}};
 }
 
+std::vector<experimental::IdentityKeyCertPair>
+XdsEnd2endTest::MakeIdentityKeyCertPairForSpiffeMtlsCreds() {
+  std::string identity_cert =
+      grpc_core::testing::GetFileContents(kSpiffeServerCertPath);
+  std::string private_key =
+      grpc_core::testing::GetFileContents(kSpiffeServerKeyPath);
+  return {{std::move(private_key), std::move(identity_cert)}};
+}
+
 std::shared_ptr<ChannelCredentials>
 XdsEnd2endTest::CreateXdsChannelCredentials() {
   return XdsCredentials(CreateTlsChannelCredentials());
+}
+
+std::shared_ptr<ChannelCredentials>
+XdsEnd2endTest::CreateSpiffeXdsChannelCredentials() {
+  return XdsCredentials(CreateSpiffeTlsChannelCredentials());
 }
 
 std::shared_ptr<ChannelCredentials>
@@ -928,6 +949,23 @@ XdsEnd2endTest::CreateTlsChannelCredentials() {
   auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
       grpc_core::testing::GetFileContents(kCaCertPath),
       MakeIdentityKeyCertPairForTlsCreds());
+  grpc::experimental::TlsChannelCredentialsOptions options;
+  options.set_certificate_provider(std::move(certificate_provider));
+  options.watch_root_certs();
+  options.watch_identity_key_cert_pairs();
+  auto verifier =
+      ExternalCertificateVerifier::Create<SyncCertificateVerifier>(true);
+  options.set_certificate_verifier(std::move(verifier));
+  options.set_verify_server_certs(true);
+  options.set_check_call_host(false);
+  return grpc::experimental::TlsCredentials(options);
+}
+
+std::shared_ptr<ChannelCredentials>
+XdsEnd2endTest::CreateSpiffeTlsChannelCredentials() {
+  auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
+      grpc_core::testing::GetFileContents(kSpiffeCaCertPath),
+      MakeIdentityKeyCertPairForSpiffeMtlsCreds());
   grpc::experimental::TlsChannelCredentialsOptions options;
   options.set_certificate_provider(std::move(certificate_provider));
   options.watch_root_certs();
@@ -968,6 +1006,22 @@ XdsEnd2endTest::CreateTlsServerCredentials() {
   grpc::experimental::TlsServerCredentialsOptions options(
       std::move(certificate_provider));
   options.watch_identity_key_cert_pairs();
+  return grpc::experimental::TlsServerCredentials(options);
+}
+
+std::shared_ptr<ServerCredentials>
+XdsEnd2endTest::CreateMtlsSpiffeServerCredentials() {
+  std::string root_cert =
+      grpc_core::testing::GetFileContents(kSpiffeCaCertPath);
+  auto certificate_provider =
+      std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
+          std::move(root_cert), MakeIdentityKeyCertPairForSpiffeMtlsCreds());
+  grpc::experimental::TlsServerCredentialsOptions options(
+      std::move(certificate_provider));
+  options.watch_root_certs();
+  options.watch_identity_key_cert_pairs();
+  options.set_cert_request_type(
+      GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   return grpc::experimental::TlsServerCredentials(options);
 }
 

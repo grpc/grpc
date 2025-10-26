@@ -23,6 +23,7 @@
 #include <stddef.h>
 
 #include <cstdint>
+#include <type_traits>
 #include <vector>
 
 #include "src/core/util/no_destruct.h"
@@ -74,6 +75,31 @@ class BaseConnectionContextPropertiesTraits {
   }
 };
 
+template <class T, typename Ignored = void>
+struct HasRef {
+  static constexpr bool value = false;
+};
+
+template <class T>
+struct HasRef<T, std::enable_if_t<std::is_same<
+                     const T*, decltype(std::declval<T>().Ref())>::value>> {
+  static constexpr bool value = true;
+};
+
+template <class T, typename Ignored = void>
+struct HasUnref {
+  static constexpr bool value = false;
+};
+
+template <class T>
+struct HasUnref<T, std::enable_if_t<std::is_same<
+                       void, decltype(std::declval<T>().Unref())>::value>> {
+  static constexpr bool value = true;
+};
+
+template <class T>
+constexpr bool IsRefCounted = HasRef<T>::value && HasUnref<T>::value;
+
 template <typename T>
 class ConnectionContextPropertiesTraits
     : public BaseConnectionContextPropertiesTraits {
@@ -83,7 +109,13 @@ class ConnectionContextPropertiesTraits
   static T* Construct(Args&&... args) {
     return new T(std::forward<Args>(args)...);
   }
-  static void Destruct(void* p) { delete reinterpret_cast<T*>(p); }
+  static void Destruct(void* p) {
+    if constexpr (IsRefCounted<T>) {
+      reinterpret_cast<T*>(p)->Unref();
+    } else {
+      delete reinterpret_cast<T*>(p);
+    }
+  }
 
  protected:
   static const uint16_t id_;
@@ -132,11 +164,22 @@ class ConnectionContext final : public Orphanable {
   // Returns the value of a registered property. If the property is not set,
   // returns nullptr.
   template <typename Which>
-  const Which* Get() {
+  Which* Get() {
     return static_cast<Which*>(
         registered_properties()
             [connection_context_detail::ConnectionContextPropertiesTraits<
                 Which>::id()]);
+  }
+
+  // Takes ownership of the value which is set.
+  template <typename Which>
+  void Set(Which* value) {
+    if constexpr (connection_context_detail::IsRefCounted<Which>) {
+      value->Ref();
+    }
+    registered_properties()
+        [connection_context_detail::ConnectionContextPropertiesTraits<
+            Which>::id()] = value;
   }
 
   void Orphan() override;

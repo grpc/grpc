@@ -22,13 +22,13 @@
 #include <grpc/support/port_platform.h>
 #include <string.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
 
 // Main struct for alts_grpc_integrity_only_record_protocol.
 typedef struct alts_grpc_integrity_only_record_protocol {
@@ -141,14 +141,14 @@ static tsi_result alts_grpc_integrity_only_unprotect(
   grpc_slice_buffer_reset_and_unref(&rp->header_sb);
   grpc_slice_buffer_move_first(protected_slices, rp->header_length,
                                &rp->header_sb);
-  CHECK(rp->header_sb.length == rp->header_length);
+  GRPC_CHECK(rp->header_sb.length == rp->header_length);
   iovec_t header_iovec = alts_grpc_record_protocol_get_header_iovec(rp);
   // Moves protected slices data to data_sb and leaves the remaining tag.
   grpc_slice_buffer_reset_and_unref(&integrity_only_record_protocol->data_sb);
   grpc_slice_buffer_move_first(protected_slices,
                                protected_slices->length - rp->tag_length,
                                &integrity_only_record_protocol->data_sb);
-  CHECK(protected_slices->length == rp->tag_length);
+  GRPC_CHECK(protected_slices->length == rp->tag_length);
   iovec_t tag_iovec = {nullptr, rp->tag_length};
   if (protected_slices->count == 1) {
     tag_iovec.iov_base = GRPC_SLICE_START_PTR(protected_slices->slices[0]);

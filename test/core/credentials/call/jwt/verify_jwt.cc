@@ -24,11 +24,11 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "absl/log/check.h"
 #include "src/core/credentials/call/jwt/jwt_verifier.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json_writer.h"
 #include "test/core/test_util/cmdline.h"
 
@@ -54,13 +54,13 @@ static void on_jwt_verification_done(void* user_data,
 
   sync->success = (status == GRPC_JWT_VERIFIER_OK);
   if (sync->success) {
-    CHECK_NE(claims, nullptr);
+    GRPC_CHECK_NE(claims, nullptr);
     std::string claims_str =
         grpc_core::JsonDump(*grpc_jwt_claims_json(claims), /*indent=*/2);
     printf("Claims: \n\n%s\n", claims_str.c_str());
     grpc_jwt_claims_destroy(claims);
   } else {
-    CHECK_EQ(claims, nullptr);
+    GRPC_CHECK_EQ(claims, nullptr);
     fprintf(stderr, "Verification failed with error %s\n",
             grpc_jwt_verifier_status_to_string(status));
     fflush(stderr);

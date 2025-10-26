@@ -20,8 +20,8 @@
 
 #include <cstdint>
 
+#include "src/core/channelz/property_list.h"
 #include "absl/status/statusor.h"
-#include "src/core/util/bitset.h"
 
 namespace grpc_core {
 namespace chaotic_good_legacy {
@@ -55,6 +55,14 @@ struct FrameHeader {
   uint16_t payload_connection_id = 0;
   uint32_t stream_id = 0;
   uint32_t payload_length = 0;
+
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("type", FrameTypeString(type))
+        .Set("payload_connection_id", payload_connection_id)
+        .Set("stream_id", stream_id)
+        .Set("payload_length", payload_length);
+  }
 
   // Parses a frame header from a buffer of 12 bytes. All 12 bytes are consumed.
   static absl::StatusOr<FrameHeader> Parse(const uint8_t* data);

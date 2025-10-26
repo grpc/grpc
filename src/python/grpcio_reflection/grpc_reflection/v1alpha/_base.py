@@ -47,9 +47,9 @@ def _file_descriptor_response(descriptor, original_request):
 
     # serialize all descriptors
     serialized_proto_list = []
-    for d_key in descriptors:
+    for d_value in descriptors.values():
         proto = descriptor_pb2.FileDescriptorProto()
-        descriptors[d_key].CopyToProto(proto)
+        d_value.CopyToProto(proto)
         serialized_proto_list.append(proto.SerializeToString())
 
     return _reflection_pb2.ServerReflectionResponse(

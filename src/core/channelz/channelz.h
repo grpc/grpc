@@ -35,10 +35,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_set.h"
-#include "absl/container/inlined_vector.h"
-#include "absl/strings/string_view.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/dual_ref_counted.h"
@@ -52,6 +48,11 @@
 #include "src/core/util/time_precise.h"
 #include "src/core/util/useful.h"
 #include "src/proto/grpc/channelz/v2/channelz.upb.h"
+#include "src/proto/grpc/channelz/v2/service.upb.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/strings/string_view.h"
 
 // Channel arg key for channelz node.
 #define GRPC_ARG_CHANNELZ_CHANNEL_NODE \
@@ -91,6 +92,29 @@ class CallCountingHelperPeer;
 class SubchannelNodePeer;
 }  // namespace testing
 
+class ZTrace {
+ public:
+  virtual ~ZTrace() = default;
+
+  using Args = std::map<std::string, std::variant<int64_t, std::string, bool>>;
+  // Callback is called periodically with the latest results from the ztrace.
+  // The format is a StatusOr<optional<string>>.
+  // - If the status is not-OK, then the ztrace encountered an error and this
+  //   will be the last callback.
+  // - If the status is OK but the optional<string> is empty, then the ztrace is
+  //   completed (successfully).
+  // - If the status is OK and the optional<string> is non-empty, then the
+  //   ztrace is still running and the string is the latest output - a
+  //   serialized QueryTraceResponse proto.
+  using Callback =
+      absl::AnyInvocable<void(absl::StatusOr<std::optional<std::string>>)>;
+
+  virtual void Run(Args args,
+                   std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+                       event_engine,
+                   Callback callback) = 0;
+};
+
 // base class for all channelz entities
 class BaseNode : public DualRefCounted<BaseNode> {
  public:
@@ -106,6 +130,8 @@ class BaseNode : public DualRefCounted<BaseNode> {
     kSocket,
     kCall,
     kResourceQuota,
+    kMetricsDomain,
+    kMetricsDomainStorage,
   };
 
   static absl::string_view EntityTypeString(EntityType type) {
@@ -126,6 +152,10 @@ class BaseNode : public DualRefCounted<BaseNode> {
         return "call";
       case EntityType::kResourceQuota:
         return "resource_quota";
+      case EntityType::kMetricsDomain:
+        return "metrics_domain";
+      case EntityType::kMetricsDomainStorage:
+        return "metrics_domain_storage";
     }
     return "unknown";
   }
@@ -148,6 +178,10 @@ class BaseNode : public DualRefCounted<BaseNode> {
         return "call";
       case EntityType::kResourceQuota:
         return "resource_quota";
+      case EntityType::kMetricsDomain:
+        return "metrics_domain";
+      case EntityType::kMetricsDomainStorage:
+        return "metrics_domain_storage";
     }
   }
 
@@ -160,6 +194,10 @@ class BaseNode : public DualRefCounted<BaseNode> {
     if (kind == "socket") return EntityType::kSocket;
     if (kind == "call") return EntityType::kCall;
     if (kind == "resource_quota") return EntityType::kResourceQuota;
+    if (kind == "metrics_domain") return EntityType::kMetricsDomain;
+    if (kind == "metrics_domain_storage") {
+      return EntityType::kMetricsDomainStorage;
+    }
     return std::nullopt;
   }
 
@@ -210,11 +248,11 @@ class BaseNode : public DualRefCounted<BaseNode> {
   }
   const std::string& name() const { return name_; }
 
-  void RunZTrace(absl::string_view name, Timestamp deadline,
-                 std::map<std::string, std::string> args,
-                 std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-                     event_engine,
-                 absl::AnyInvocable<void(Json output)> callback);
+  std::unique_ptr<ZTrace> RunZTrace(
+      absl::string_view name, ZTrace::Args args,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine,
+      ZTrace::Callback callback);
   Json::Object AdditionalInfo();
 
   const ChannelTrace& trace() const { return trace_; }
@@ -224,9 +262,10 @@ class BaseNode : public DualRefCounted<BaseNode> {
   }
   ChannelTrace& mutable_trace() { return trace_; }
 
-  void SerializeEntity(grpc_channelz_v2_Entity* entity, upb_Arena* arena);
+  void SerializeEntity(grpc_channelz_v2_Entity* entity, upb_Arena* arena,
+                       absl::Duration timeout);
 
-  std::string SerializeEntityToString();
+  std::string SerializeEntityToString(absl::Duration timeout);
 
  protected:
   void PopulateJsonFromDataSources(Json::Object& json);
@@ -275,15 +314,6 @@ LogOutputFrom(const RefCountedPtr<N>& n) {
   return LogOutputFrom(n.get());
 }
 }  // namespace detail
-
-class ZTrace {
- public:
-  virtual ~ZTrace() = default;
-  virtual void Run(Timestamp deadline, std::map<std::string, std::string> args,
-                   std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-                       event_engine,
-                   absl::AnyInvocable<void(Json)>) = 0;
-};
 
 // This class is used to collect additional information about the channelz
 // node. It's the backing implementation for DataSink. channelz users should
@@ -788,6 +818,28 @@ class ResourceQuotaNode final : public BaseNode {
   }
 
   Json RenderJson() override { return Json::FromString("ResourceQuota"); }
+};
+
+class MetricsDomainNode final : public BaseNode {
+ public:
+  explicit MetricsDomainNode(std::string name)
+      : BaseNode(EntityType::kMetricsDomain, 0, std::move(name)) {
+    NodeConstructed();
+  }
+
+  Json RenderJson() override { return Json::FromString("MetricsDomain"); }
+};
+
+class MetricsDomainStorageNode final : public BaseNode {
+ public:
+  explicit MetricsDomainStorageNode(std::string name)
+      : BaseNode(EntityType::kMetricsDomainStorage, 0, std::move(name)) {
+    NodeConstructed();
+  }
+
+  Json RenderJson() override {
+    return Json::FromString("MetricsDomainStorage");
+  }
 };
 
 }  // namespace channelz

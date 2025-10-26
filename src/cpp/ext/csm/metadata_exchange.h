@@ -26,13 +26,13 @@
 #include <utility>
 #include <vector>
 
-#include "absl/strings/string_view.h"
 #include "google/protobuf/struct.upb.h"
 #include "opentelemetry/sdk/common/attribute_utils.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
 #include "upb/mem/arena.hpp"
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 namespace internal {

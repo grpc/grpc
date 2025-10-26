@@ -24,9 +24,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/interception_chain.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/client_channel/client_channel_internal.h"
@@ -35,10 +32,13 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/service_config/service_config.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 // Channel arg key for ConfigSelector.
 #define GRPC_ARG_CONFIG_SELECTOR "grpc.internal.config_selector"
@@ -100,7 +100,7 @@ class DefaultConfigSelector final : public ConfigSelector {
     // The client channel code ensures that this will never be null.
     // If neither the resolver nor the client application provide a
     // config, a default empty config will be used.
-    DCHECK(service_config_ != nullptr);
+    GRPC_DCHECK(service_config_ != nullptr);
   }
 
   UniqueTypeName name() const override {
@@ -110,7 +110,7 @@ class DefaultConfigSelector final : public ConfigSelector {
 
   absl::Status GetCallConfig(GetCallConfigArgs args) override {
     Slice* path = args.initial_metadata->get_pointer(HttpPathMetadata());
-    CHECK_NE(path, nullptr);
+    GRPC_CHECK_NE(path, nullptr);
     auto* parsed_method_configs =
         service_config_->GetMethodParsedConfigVector(path->c_slice());
     args.service_config_call_data->SetServiceConfig(service_config_,

@@ -17,10 +17,10 @@
 
 #include <string>
 
-#include "absl/strings/str_cat.h"
 #include "google/protobuf/duration.pb.h"
 #include "google/protobuf/timestamp.pb.h"
 #include "src/core/channelz/zviz/environment.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_zviz::layout {
 
@@ -36,6 +36,7 @@ enum class Intent {
   kNote,
   kKey,
   kValue,
+  kWarning,
 };
 
 template <typename Sink>
@@ -73,6 +74,9 @@ void AbslStringify(Sink& sink, Intent intent) {
       break;
     case Intent::kValue:
       sink.Append("value");
+      break;
+    case Intent::kWarning:
+      sink.Append("warning");
       break;
   }
 }

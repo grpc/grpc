@@ -20,10 +20,10 @@
 #include <memory>
 #include <queue>
 
-#include "absl/strings/string_view.h"
+#include "test/core/call/yodel/yodel_test.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "test/core/call/yodel/yodel_test.h"
+#include "absl/strings/string_view.h"
 
 using testing::StrictMock;
 

@@ -20,9 +20,9 @@
 #include <memory>
 #include <string>
 
+#include "examples/protos/helloworld.grpc.pb.h"
 #include "absl/flags/parse.h"
 #include "absl/log/initialize.h"
-#include "examples/protos/helloworld.grpc.pb.h"
 
 using grpc::Server;
 using grpc::ServerBuilder;

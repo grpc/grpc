@@ -31,20 +31,28 @@ grpc_cc_library(
         "otel_test_library.h",
     ],
     external_deps = [
+        "absl/functional:any_invocable",
         "gtest",
         "otel/api",
         "otel/sdk/src/metrics",
+        "otel/sdk:headers",
     ],
     tags = [
         # TODO(b/332369798): Remove after fixing bug
         "grpc:otel-namespace-calamity",
     ],
     deps = [
+        "//:call_tracer",
+        "//:config",
+        "//:gpr",
         "//:grpc++",
+        "//:grpc_base",
+        "//src/core:notification",
         "//src/cpp/ext/otel:otel_plugin",
         "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/end2end:test_service_impl",
+        "//test/cpp/util:test_util",
     ],
 )
 
@@ -57,6 +65,8 @@ grpc_cc_test(
         "gtest",
         "otel/api",
         "otel/sdk/src/metrics",
+        "absl/functional:any_invocable",
+        "otel/sdk:headers",
     ],
     tags = [
         # Incompatible with internal tracing
@@ -66,11 +76,16 @@ grpc_cc_test(
     ],
     deps = [
         ":otel_test_library",
+        "//:call_tracer",
+        "//:config",
         "//:grpc++",
+        "//src/core:channel_args_endpoint_config",
         "//src/cpp/ext/otel:otel_plugin",
         "//test/core/promise:test_context",
         "//test/core/test_util:fail_first_call_filter",
+        "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
+        "//test/cpp/end2end:test_service_impl",
     ],
 )
 
@@ -83,6 +98,8 @@ grpc_cc_test(
         "gtest",
         "otel/api",
         "otel/sdk/src/metrics",
+        "absl/functional:any_invocable",
+        "otel/sdk:headers",
     ],
     tags = [
         # Incompatible with internal tracing
@@ -92,10 +109,15 @@ grpc_cc_test(
     ],
     deps = [
         ":otel_test_library",
+        "//:call_tracer",
+        "//:config",
         "//:grpc++",
+        "//src/core:channel_args_endpoint_config",
         "//src/cpp/ext/otel:otel_plugin",
         "//test/core/promise:test_context",
+        "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
+        "//test/cpp/end2end:test_service_impl",
     ],
 )
 
@@ -108,6 +130,8 @@ grpc_cc_test(
         "gtest",
         "otel/api",
         "otel/sdk/src/metrics",
+        "otel/sdk:headers",
+        "absl/functional:any_invocable",
     ],
     tags = [
         # TODO(b/332369798): Remove after fixing bug
@@ -115,10 +139,17 @@ grpc_cc_test(
     ],
     deps = [
         ":otel_test_library",
+        "//:call_tracer",
+        "//:config",
         "//:grpc++",
+        "//:grpc++_base",
+        "//:grpc_base",
+        "//src/core:channel_args_endpoint_config",
         "//src/cpp/ext/otel:otel_plugin",
         "//test/core/promise:test_context",
+        "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
+        "//test/cpp/end2end:test_service_impl",
     ],
 )
 
@@ -134,6 +165,7 @@ grpc_cc_test(
     tags = [],
     deps = [
         "//:grpc++",
+        "//src/core:metadata_batch",
         "//src/cpp/ext/otel:otel_plugin",
         "//test/core/promise:test_context",
         "//test/core/test_util:grpc_test_util",
@@ -155,6 +187,7 @@ grpc_cc_test(
     ],
     deps = [
         "//:grpc++",
+        "//src/core:metadata_batch",
         "//src/cpp/ext/otel:otel_plugin",
         "//test/core/promise:test_context",
         "//test/core/test_util:grpc_test_util",
@@ -171,6 +204,8 @@ grpc_cc_test(
         "otel/api",
         "otel/exporters/memory:in_memory_span_exporter",
         "otel/sdk/src/trace",
+        "otel/sdk:headers",
+        "absl/synchronization",
     ],
     tags = [
         # Incompatible with internal tracing
@@ -180,11 +215,18 @@ grpc_cc_test(
     ],
     deps = [
         ":otel_test_library",
+        "//:call_tracer",
+        "//:config",
+        "//:gpr",
         "//:grpc++",
+        "//:grpc_transport_chttp2",
+        "//src/core:posix_event_engine_event_poller",
         "//src/core:posix_event_engine_poller_posix_default",
         "//src/cpp/ext/otel:otel_plugin",
         "//test/core/promise:test_context",
         "//test/core/test_util:fail_first_call_filter",
+        "//test/core/test_util:fake_stats_plugin",
         "//test/core/test_util:grpc_test_util",
+        "//test/cpp/end2end:test_service_impl",
     ],
 )

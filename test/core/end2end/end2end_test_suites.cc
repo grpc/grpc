@@ -35,14 +35,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/meta/type_traits.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
-#include "gtest/gtest.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
 #include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
@@ -52,6 +44,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/sync.h"
@@ -69,6 +62,13 @@
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "gtest/gtest.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/meta/type_traits.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
 
 // IWYU pragma: no_include <unistd.h>
 
@@ -95,10 +95,10 @@ std::vector<CoreTestConfiguration> AllConfigs() {
   std::vector<CoreTestConfiguration> configs = End2endTestConfigs();
   for (const auto& config : configs) {
     // Setting both no gtest && no fuzz == no config -- better to delete it
-    CHECK_NE(config.feature_mask &
-                 (FEATURE_MASK_DO_NOT_FUZZ | FEATURE_MASK_DO_NOT_GTEST),
-             static_cast<uint32_t>(FEATURE_MASK_DO_NOT_FUZZ |
-                                   FEATURE_MASK_DO_NOT_GTEST))
+    GRPC_CHECK_NE(config.feature_mask &
+                      (FEATURE_MASK_DO_NOT_FUZZ | FEATURE_MASK_DO_NOT_GTEST),
+                  static_cast<uint32_t>(FEATURE_MASK_DO_NOT_FUZZ |
+                                        FEATURE_MASK_DO_NOT_GTEST))
         << "Config specified with no fuzz, no gtest: " << config.name;
   }
   std::sort(configs.begin(), configs.end(),

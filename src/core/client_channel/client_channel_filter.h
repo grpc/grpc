@@ -29,11 +29,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_set.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_args.h"
@@ -67,6 +62,11 @@
 #include "src/core/util/time.h"
 #include "src/core/util/time_precise.h"
 #include "src/core/util/work_serializer.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 //
 // Client channel filter
@@ -373,7 +373,7 @@ class ClientChannelFilter::LoadBalancedCall
 
  protected:
   ClientChannelFilter* chand() const { return chand_; }
-  ClientCallTracer::CallAttemptTracer* call_attempt_tracer() const {
+  CallAttemptTracer* call_attempt_tracer() const {
     return call_attempt_tracer_;
   }
   ConnectedSubchannel* connected_subchannel() const {
@@ -434,7 +434,7 @@ class ClientChannelFilter::LoadBalancedCall
   // previous attempt yet leading to a situation where we have two active call
   // attempt tracers, and so we cannot rely on the arena to give us the right
   // tracer when performing cleanup.
-  ClientCallTracer::CallAttemptTracer* call_attempt_tracer_;
+  CallAttemptTracer* call_attempt_tracer_;
 
   absl::AnyInvocable<void()> on_commit_;
 

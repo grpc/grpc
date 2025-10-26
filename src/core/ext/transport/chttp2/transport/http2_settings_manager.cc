@@ -22,15 +22,18 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/strings/str_cat.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/util/useful.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
 std::optional<Http2SettingsFrame> Http2SettingsManager::MaybeSendUpdate() {
+  if (!IsPreviousSettingsPromiseResolved()) {
+    return std::nullopt;
+  }
   switch (update_state_) {
     case UpdateState::kSending:
       return std::nullopt;
@@ -41,8 +44,9 @@ std::optional<Http2SettingsFrame> Http2SettingsManager::MaybeSendUpdate() {
       break;
   }
   Http2SettingsFrame frame;
-  local_.Diff(update_state_ == UpdateState::kFirst, sent_,
-              [&frame](uint16_t key, uint32_t value) {
+  local_.Diff(/*is_first_send=*/update_state_ == UpdateState::kFirst,
+              /*old_setting=*/sent_,
+              /*cb=*/[&frame](uint16_t key, uint32_t value) {
                 frame.settings.emplace_back(key, value);
               });
   sent_ = local_;

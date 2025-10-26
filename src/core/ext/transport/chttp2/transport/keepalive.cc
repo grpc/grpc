@@ -23,6 +23,7 @@
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -59,8 +60,8 @@ auto KeepaliveManager::WaitForKeepAliveTimeout() {
       }));
 }
 auto KeepaliveManager::TimeoutAndSendPing() {
-  DCHECK(!data_received_in_last_cycle_);
-  DCHECK(keepalive_timeout_ != Duration::Infinity());
+  GRPC_DCHECK(!data_received_in_last_cycle_);
+  GRPC_DCHECK(keepalive_timeout_ != Duration::Infinity());
 
   return AllOk<absl::Status>(Race(WaitForData(), WaitForKeepAliveTimeout()),
                              SendPingAndWaitForAck());

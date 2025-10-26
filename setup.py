@@ -263,6 +263,12 @@ if sys.platform == "darwin":
 EXTRA_ENV_COMPILE_ARGS = os.environ.get("GRPC_PYTHON_CFLAGS", None)
 EXTRA_ENV_LINK_ARGS = os.environ.get("GRPC_PYTHON_LDFLAGS", None)
 if EXTRA_ENV_COMPILE_ARGS is None:
+
+    # NOTE: Keep in sync with c- and cpp-specific arg filters!
+    #       For Linux and Darwin args, update
+    #       BuildExt.build_extensions#new_compile() in commands.py
+    #       For Windows, update _commandfile_spawn() in _spawn_patch.py.
+
     EXTRA_ENV_COMPILE_ARGS = ""
     if "win32" in sys.platform:
         # MSVC by defaults uses C++14 and C89 so both needs to be configured.
@@ -458,7 +464,7 @@ else:
 
 # Fix for multiprocessing support on Apple devices.
 # TODO(vigneshbabu): Remove this once the poll poller gets fork support.
-DEFINE_MACROS += (("GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER", 1),)
+DEFINE_MACROS += (("GRPC_PYTHON_BUILD", 1),)
 
 # Fix for Cython build issue in aarch64.
 # It's required to define this macro before include <inttypes.h>.

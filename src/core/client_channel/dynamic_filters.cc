@@ -22,9 +22,6 @@
 #include <new>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
@@ -32,7 +29,10 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/util/alloc.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/status_helper.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
 
 // Conversion between call and call stack.
 #define CALL_TO_CALL_STACK(call)                                     \
@@ -80,8 +80,8 @@ void DynamicFilters::Call::StartTransportStreamOpBatch(
 }
 
 void DynamicFilters::Call::SetAfterCallStackDestroy(grpc_closure* closure) {
-  CHECK_EQ(after_call_stack_destroy_, nullptr);
-  CHECK_NE(closure, nullptr);
+  GRPC_CHECK_EQ(after_call_stack_destroy_, nullptr);
+  GRPC_CHECK_NE(closure, nullptr);
   after_call_stack_destroy_ = closure;
 }
 

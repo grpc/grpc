@@ -26,9 +26,6 @@
 #include <atomic>
 #include <thread>
 
-#include "absl/functional/any_invocable.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "opentelemetry/metrics/provider.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "opentelemetry/sdk/metrics/metric_reader.h"
@@ -38,6 +35,9 @@
 #include "src/cpp/ext/otel/otel_plugin.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
 
 OPENTELEMETRY_BEGIN_NAMESPACE
 namespace sdk {
@@ -91,9 +91,9 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
     }
 
     Options& set_labels_to_inject(
-        std::map<
-            grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
-            grpc_core::RefCountedStringValue>
+        std::map<grpc_core::ClientCallTracerInterface::CallAttemptTracer::
+                     OptionalLabelKey,
+                 grpc_core::RefCountedStringValue>
             labels) {
       labels_to_inject = std::move(labels);
       return *this;
@@ -165,7 +165,8 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
             opentelemetry::sdk::resource::Resource::Create({}));
     std::unique_ptr<grpc::internal::LabelsInjector> labels_injector;
     bool use_meter_provider = true;
-    std::map<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
+    std::map<grpc_core::ClientCallTracerInterface::CallAttemptTracer::
+                 OptionalLabelKey,
              grpc_core::RefCountedStringValue>
         labels_to_inject;
     std::string service_config;
@@ -248,8 +249,9 @@ class OpenTelemetryPluginEnd2EndTest : public ::testing::Test {
 
   const absl::string_view kMethodName = "grpc.testing.EchoTestService/Echo";
   const absl::string_view kGenericMethodName = "foo/bar";
-  std::map<grpc_core::ClientCallTracer::CallAttemptTracer::OptionalLabelKey,
-           grpc_core::RefCountedStringValue>
+  std::map<
+      grpc_core::ClientCallTracerInterface::CallAttemptTracer::OptionalLabelKey,
+      grpc_core::RefCountedStringValue>
       labels_to_inject_;
   std::shared_ptr<opentelemetry::sdk::metrics::MetricReader> reader_;
   std::string server_address_;

@@ -21,13 +21,14 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/memory_usage.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 // TODO(tjagtap) TODO(akshitpatel): [PH2][P3] : Write micro benchmarks for
 // framing code
@@ -119,7 +120,7 @@ uint16_t Read2b(const uint8_t* input) {
 }
 
 void Write3b(uint32_t x, uint8_t* output) {
-  CHECK_LT(x, 16777216u);
+  GRPC_CHECK_LT(x, 16777216u);
   output[0] = static_cast<uint8_t>(x >> 16);
   output[1] = static_cast<uint8_t>(x >> 8);
   output[2] = static_cast<uint8_t>(x);
@@ -206,9 +207,11 @@ class SerializeExtraBytesRequired {
 
 class SerializeHeaderAndPayload {
  public:
-  SerializeHeaderAndPayload(size_t extra_bytes, SliceBuffer& out)
+  SerializeHeaderAndPayload(size_t extra_bytes, SliceBuffer& out,
+                            SerializeReturn& serialize_return)
       : out_(out),
-        extra_bytes_(MutableSlice::CreateUninitialized(extra_bytes)) {}
+        extra_bytes_(MutableSlice::CreateUninitialized(extra_bytes)),
+        serialize_return_(serialize_return) {}
 
   void operator()(Http2DataFrame& frame) {
     auto hdr = extra_bytes_.TakeFirst(kFrameHeaderSize);
@@ -219,6 +222,7 @@ class SerializeHeaderAndPayload {
         .Serialize(hdr.begin());
     out_.AppendIndexed(Slice(std::move(hdr)));
     out_.TakeAndAppend(frame.payload);
+    serialize_return_.should_reset_ping_clock = true;
   }
 
   void operator()(Http2HeaderFrame& frame) {
@@ -232,6 +236,7 @@ class SerializeHeaderAndPayload {
         .Serialize(hdr.begin());
     out_.AppendIndexed(Slice(std::move(hdr)));
     out_.TakeAndAppend(frame.payload);
+    serialize_return_.should_reset_ping_clock = true;
   }
 
   void operator()(Http2ContinuationFrame& frame) {
@@ -244,6 +249,7 @@ class SerializeHeaderAndPayload {
         .Serialize(hdr.begin());
     out_.AppendIndexed(Slice(std::move(hdr)));
     out_.TakeAndAppend(frame.payload);
+    serialize_return_.should_reset_ping_clock = true;
   }
 
   void operator()(Http2RstStreamFrame& frame) {
@@ -311,6 +317,7 @@ class SerializeHeaderAndPayload {
     }
     Write31bits(frame.increment, hdr_and_payload.begin() + kFrameHeaderSize);
     out_.AppendIndexed(Slice(std::move(hdr_and_payload)));
+    serialize_return_.should_reset_ping_clock = true;
   }
 
   void operator()(Http2SecurityFrame& frame) {
@@ -329,6 +336,7 @@ class SerializeHeaderAndPayload {
  private:
   SliceBuffer& out_;
   MutableSlice extra_bytes_;
+  SerializeReturn& serialize_return_;
 };
 
 Http2Status StripPadding(const Http2FrameHeader& hdr, SliceBuffer& payload) {
@@ -642,23 +650,26 @@ std::string Http2FrameHeader::ToString() const {
                       ", length=", length, "}");
 }
 
-void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out) {
+SerializeReturn Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out) {
   size_t buffer_needed = 0;
+  SerializeReturn serialize_return{/*should_reset_ping_clock=*/false};
   for (auto& frame : frames) {
     // Bytes needed for framing
     buffer_needed += kFrameHeaderSize;
     // Bytes needed for frame payload
     buffer_needed += std::visit(SerializeExtraBytesRequired(), frame);
   }
-  SerializeHeaderAndPayload serialize(buffer_needed, out);
+  SerializeHeaderAndPayload serialize(buffer_needed, out, serialize_return);
   for (auto& frame : frames) {
     std::visit(serialize, frame);
   }
+
+  return serialize_return;
 }
 
 http2::ValueOrHttp2Status<Http2Frame> ParseFramePayload(
     const Http2FrameHeader& hdr, SliceBuffer payload) {
-  CHECK(payload.Length() == hdr.length);
+  GRPC_CHECK(payload.Length() == hdr.length);
 
   switch (static_cast<FrameType>(hdr.type)) {
     case FrameType::kData:
@@ -688,9 +699,10 @@ http2::ValueOrHttp2Status<Http2Frame> ParseFramePayload(
   }
 }
 
-http2::Http2ErrorCode Http2ErrorCodeFromRstFrameErrorCode(uint32_t error_code) {
+http2::Http2ErrorCode FrameErrorCodeToHttp2ErrorCode(
+    const uint32_t error_code) {
   if (GPR_UNLIKELY(error_code > http2::GetMaxHttp2ErrorCode())) {
-    LOG(ERROR) << "Http2ErrorCodeFromRstFrameErrorCode: Invalid error code "
+    LOG(ERROR) << "FrameErrorCodeToHttp2ErrorCode: Invalid error code "
                   "received from RST_STREAM frame: "
                << error_code;
     return http2::Http2ErrorCode::kInternalError;
@@ -698,11 +710,22 @@ http2::Http2ErrorCode Http2ErrorCodeFromRstFrameErrorCode(uint32_t error_code) {
   return static_cast<http2::Http2ErrorCode>(error_code);
 }
 
+uint32_t Http2ErrorCodeToFrameErrorCode(
+    const http2::Http2ErrorCode error_code) {
+  GRPC_DCHECK_LE(static_cast<uint8_t>(error_code),
+                 http2::GetMaxHttp2ErrorCode());
+  return static_cast<uint32_t>(error_code);
+}
+
+size_t GetFrameMemoryUsage(const Http2Frame& frame) {
+  return MemoryUsageOf(frame);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // GRPC Header
 
 GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload) {
-  CHECK_GE(payload.Length(), kGrpcHeaderSizeInBytes);
+  GRPC_CHECK_GE(payload.Length(), kGrpcHeaderSizeInBytes);
   uint8_t buffer[kGrpcHeaderSizeInBytes];
   payload.CopyFirstNBytesIntoBuffer(kGrpcHeaderSizeInBytes, buffer);
   GrpcMessageHeader header;

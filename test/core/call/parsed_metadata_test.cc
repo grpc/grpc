@@ -18,12 +18,12 @@
 
 #include <memory>
 
-#include "absl/log/check.h"
-#include "absl/strings/numbers.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/util/grpc_check.h"
+#include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "src/core/call/metadata_batch.h"
-#include "test/core/test_util/test_config.h"
+#include "absl/strings/numbers.h"
 
 namespace grpc_core {
 namespace testing {
@@ -53,7 +53,7 @@ struct Int32Trait {
   static int32_t MementoToValue(int32_t memento) { return memento; }
   static int32_t ParseMemento(Slice slice, bool, MetadataParseErrorFn) {
     int32_t out;
-    CHECK(absl::SimpleAtoi(slice.as_string_view(), &out));
+    GRPC_CHECK(absl::SimpleAtoi(slice.as_string_view(), &out));
     return out;
   }
   static std::string DisplayValue(int32_t value) {
@@ -73,7 +73,7 @@ struct Int64Trait {
   static int64_t MementoToValue(int64_t memento) { return -memento; }
   static int64_t ParseMemento(Slice slice, bool, MetadataParseErrorFn) {
     int64_t out;
-    CHECK(absl::SimpleAtoi(slice.as_string_view(), &out));
+    GRPC_CHECK(absl::SimpleAtoi(slice.as_string_view(), &out));
     return out;
   }
   static std::string DisplayValue(int64_t value) {
@@ -93,7 +93,7 @@ struct IntptrTrait {
   static intptr_t MementoToValue(intptr_t memento) { return memento / 2; }
   static intptr_t ParseMemento(Slice slice, bool, MetadataParseErrorFn) {
     intptr_t out;
-    CHECK(absl::SimpleAtoi(slice.as_string_view(), &out));
+    GRPC_CHECK(absl::SimpleAtoi(slice.as_string_view(), &out));
     return out;
   }
   static std::string DisplayValue(intptr_t value) {

@@ -25,10 +25,10 @@
 #include <optional>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/util/grpc_check.h"
 #include "absl/log/log.h"
 #include "absl/time/time.h"
-#include "src/core/lib/debug/trace.h"
 
 static thread_local bool g_timer_thread;
 
@@ -65,7 +65,7 @@ void TimerManager::MainLoop() {
   grpc_core::Timestamp next = grpc_core::Timestamp::InfFuture();
   std::optional<std::vector<experimental::EventEngine::Closure*>> check_result =
       timer_list_->TimerCheck(&next);
-  CHECK(check_result.has_value())
+  GRPC_CHECK(check_result.has_value())
       << "ERROR: More than one MainLoop is running.";
   bool timers_found = !check_result->empty();
   if (timers_found) {
@@ -126,7 +126,7 @@ void TimerManager::Kick() {
 
 void TimerManager::RestartPostFork() {
   grpc_core::MutexLock lock(&mu_);
-  CHECK(state_ != TimerManager::State::kRunning);
+  GRPC_CHECK(state_ != TimerManager::State::kRunning);
   GRPC_TRACE_VLOG(timer, 2)
       << "TimerManager::" << this << " restarting after suspend";
   if (state_ == TimerManager::State::kSuspended) {

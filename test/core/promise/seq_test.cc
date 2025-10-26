@@ -18,10 +18,10 @@
 #include <string>
 #include <vector>
 
-#include "absl/strings/str_cat.h"
-#include "gtest/gtest.h"
 #include "src/proto/grpc/channelz/v2/promise.upb.h"
 #include "upb/mem/arena.hpp"
+#include "gtest/gtest.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 

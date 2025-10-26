@@ -21,7 +21,7 @@ set PATH=C:\msys64\mingw%2\bin;C:\tools\msys64\mingw%2\bin;%PATH%
 
 python -m pip install --upgrade pip six
 @rem Ping to a single version to make sure we're building the same artifacts
-python -m pip install setuptools==69.5.1 wheel==0.43.0
+python -m pip install setuptools==77.0.1 wheel==0.43.0
 python -m pip install --upgrade "cython==3.1.1"
 python -m pip install -rrequirements.txt --user
 
@@ -38,11 +38,16 @@ if "%GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS%"=="" (
 mkdir -p %ARTIFACTS_OUT%
 set ARTIFACT_DIR=%cd%\%ARTIFACTS_OUT%
 
-@rem Set up gRPC Python tools
-python tools\distrib\python\make_grpcio_tools.py
+@rem use short temp directory to avoid linker command file errors caused by
+@rem exceeding 131071 characters.
+@rem TODO(ssreenithi): Remove once we have a better solution: b/454497076
+set "GRPC_PYTHON_BUILD_USE_SHORT_TEMP_DIR_NAME=1"
 
 @rem Build gRPC Python extensions
 python setup.py build_ext -c %EXT_COMPILER% || goto :error
+
+@rem Set up and build gRPC Python tools
+python tools\distrib\python\make_grpcio_tools.py
 
 pushd tools\distrib\python\grpcio_tools
 python setup.py build_ext -c %EXT_COMPILER% || goto :error
