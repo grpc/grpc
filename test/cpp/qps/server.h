@@ -27,7 +27,6 @@
 
 #include <vector>
 
-#include "absl/log/log.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good.h"
 #include "src/core/transport/endpoint_transport.h"
 #include "src/core/util/crash.h"
@@ -37,6 +36,7 @@
 #include "test/core/test_util/port.h"
 #include "test/cpp/qps/usage_timer.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace testing {

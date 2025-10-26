@@ -37,12 +37,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/span.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -59,10 +53,16 @@
 #include "src/core/tsi/transport_security_grpc.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 #define STAGING_BUFFER_SIZE 8192
 
@@ -102,6 +102,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
       write_staging_buffer_ =
           memory_owner_.MakeSlice(MemoryRequest(STAGING_BUFFER_SIZE));
     }
+    is_zero_copy_protector_ = (zero_copy_protector_ != nullptr);
   }
 
   ~FrameProtector() override {
@@ -289,6 +290,8 @@ class FrameProtector : public RefCounted<FrameProtector> {
     grpc_slice_buffer_reset_and_unref(read_buffer_);
   }
 
+  bool IsZeroCopyProtector() const { return is_zero_copy_protector_; }
+
   bool MaybeCompleteReadImmediately() {
     GRPC_TRACE_LOG(secure_endpoint, INFO)
         << "MaybeCompleteReadImmediately: " << this
@@ -456,6 +459,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
   int min_progress_size_ = 1;
   SliceBuffer protector_staging_buffer_;
   bool shutdown_ = false;
+  bool is_zero_copy_protector_ = false;
 };
 }  // namespace
 }  // namespace grpc_core
@@ -795,9 +799,12 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       if (frame_protector_.MaybeCompleteReadImmediately()) {
         return MaybeFinishReadImmediately();
       }
-      args.set_read_hint_bytes(frame_protector_.min_progress_size());
+      if (frame_protector_.IsZeroCopyProtector()) {
+        args.set_read_hint_bytes(frame_protector_.min_progress_size());
+      }
       bool read_completed_immediately = wrapped_ep_->Read(
           [impl = Ref()](absl::Status status) mutable {
+            grpc_core::ExecCtx exec_ctx;
             FinishAsyncRead(std::move(impl), std::move(status));
           },
           frame_protector_.source_buffer(), std::move(args));
@@ -832,7 +839,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
           // in the FinishAsyncWrites path, and EventEngine insists that one
           // write finishes before a second begins, we should never see a Write
           // call here with a non-null pending_writes_.
-          CHECK(pending_writes_ == nullptr);
+          GRPC_CHECK(pending_writes_ == nullptr);
           pending_writes_ = std::make_unique<SliceBuffer>(std::move(*data));
           frame_protector_.TraceOp("Pending",
                                    pending_writes_->c_slice_buffer());
@@ -844,6 +851,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
           if (!*writing_) {
             writing_ = true;
             event_engine_->Run([impl = Ref()]() mutable {
+              grpc_core::ExecCtx exec_ctx;
               FinishAsyncWrite(std::move(impl));
             });
           }
@@ -917,6 +925,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       if (grpc_core::IsSecureEndpointOffloadLargeReadsEnabled() &&
           frame_protector_.source_buffer()->Length() > large_read_threshold_) {
         event_engine_->Run([impl = Ref()]() mutable {
+          grpc_core::ExecCtx exec_ctx;
           FinishAsyncRead(std::move(impl), absl::OkStatus());
         });
         return false;
@@ -982,7 +991,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
           grpc_core::ReleasableMutexLock lock(&impl->write_queue_mu_);
           if (impl->pending_writes_ == nullptr) {
             impl->writing_ = false;
-            DCHECK(impl->on_write_ == nullptr);
+            GRPC_DCHECK(impl->on_write_ == nullptr);
             lock.Release();
             return;
           }
@@ -990,7 +999,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
           data = std::move(impl->pending_writes_);
           impl->frame_protector_.TraceOp("data", data->c_slice_buffer());
           args = std::move(impl->last_write_args_);
-          DCHECK(impl->on_write_ != nullptr);
+          GRPC_DCHECK(impl->on_write_ != nullptr);
         }
         impl->event_engine_->Run(
             [on_write = std::move(impl->on_write_)]() mutable {
@@ -1022,6 +1031,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
         // immediately, in which case we'll loop.
         const bool write_finished_immediately = impl->wrapped_ep_->Write(
             [impl](absl::Status status) mutable {
+              grpc_core::ExecCtx exec_ctx;
               // Async completion path: if we completed successfully then loop
               // back into FinishAsyncWrite to see if there's more writing to
               // do.
@@ -1075,7 +1085,7 @@ grpc_core::OrphanablePtr<grpc_endpoint> grpc_secure_endpoint_create(
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         event_engine_endpoint = grpc_event_engine::experimental::
             grpc_take_wrapped_event_engine_endpoint(to_wrap.release());
-    CHECK(event_engine_endpoint != nullptr);
+    GRPC_CHECK(event_engine_endpoint != nullptr);
     if (grpc_core::IsPipelinedReadSecureEndpointEnabled()) {
       return grpc_pipelined_secure_endpoint_create(
           protector, zero_copy_protector, std::move(event_engine_endpoint),

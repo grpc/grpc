@@ -38,13 +38,18 @@ CLASSIFIERS = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: Apache Software License",
 ]
+
+# Keep this in sync with XDS_PROTOS_GENCODE_GRPC_VERSION
+# in tools/buildgen/generate_projects.sh.
+XDS_PROTOS_GENCODE_GRPC_VERSION = "1.74.0"
+
 INSTALL_REQUIRES = [
-    "grpcio>=1.49.0",
+    f"grpcio>={XDS_PROTOS_GENCODE_GRPC_VERSION}",
     "protobuf>=6.31.1,<7.0.0",
 ]
-
-SETUP_REQUIRES = INSTALL_REQUIRES + ["grpcio-tools>=1.49.0"]
-
+SETUP_REQUIRES = INSTALL_REQUIRES + [
+    f"grpcio-tools>={XDS_PROTOS_GENCODE_GRPC_VERSION}"
+]
 
 setuptools.setup(
     name="xds-protos",

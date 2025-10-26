@@ -19,14 +19,16 @@
 #include <initializer_list>
 #include <memory>
 #include <optional>
+#include <tuple>
 #include <utility>
 
+#include "src/core/ext/transport/chaotic_good/send_rate.h"
+#include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "absl/log/log.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
-#include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
-#include "src/core/util/shared_bit_gen.h"
 
 namespace grpc_core::chaotic_good {
 
@@ -49,6 +51,12 @@ class ParseConfig {
   ParseConfig& Var(absl::string_view name, double& value) {
     if (parsed_ || name != name_) return *this;
     parsed_ = absl::SimpleAtod(value_, &value);
+    return *this;
+  }
+
+  ParseConfig& Var(absl::string_view name, uint64_t& value) {
+    if (parsed_ || name != name_) return *this;
+    parsed_ = absl::SimpleAtoi(value_, &value);
     return *this;
   }
 
@@ -87,15 +95,19 @@ class ParseConfig {
 // override ChooseChannel.
 class SimpleScheduler : public Scheduler {
  public:
-  void NewStep(double, double) override { channels_.clear(); }
+  void NewStep(double, double) override {
+    channels_.clear();
+    scheduled_bytes_per_channel_.clear();
+  }
 
   void SetConfig(absl::string_view name, absl::string_view value) override {
     LOG(ERROR) << "SimpleScheduler::SetConfig: " << name << "=" << value;
   }
 
-  void AddChannel(uint32_t id, bool ready, double start_time,
-                  double bytes_per_second) override {
-    channels_.emplace_back(Channel{id, ready, start_time, bytes_per_second});
+  void AddChannel(uint32_t id, bool ready,
+                  const SendRate::DeliveryData& delivery_data) override {
+    channels_.emplace_back(Channel{id, ready, delivery_data});
+    scheduled_bytes_per_channel_.push_back(0);
   }
 
   void MakePlan(TcpZTraceCollector&) override {
@@ -106,7 +118,9 @@ class SimpleScheduler : public Scheduler {
 
   std::optional<uint32_t> AllocateMessage(uint64_t bytes) override {
     const Channel* c = ChooseChannel(bytes);
-    if (c == nullptr || !c->ready) return std::nullopt;
+
+    if (c == nullptr) return std::nullopt;
+    scheduled_bytes_per_channel_[c->id] += bytes;
     return c->id;
   }
 
@@ -114,8 +128,7 @@ class SimpleScheduler : public Scheduler {
   struct Channel {
     uint32_t id;
     bool ready;
-    double start_time;
-    double bytes_per_second;
+    SendRate::DeliveryData delivery_data;
   };
 
   virtual const Channel* ChooseChannel(uint64_t bytes) = 0;
@@ -131,11 +144,16 @@ class SimpleScheduler : public Scheduler {
   size_t num_ready() const { return num_ready_; }
   size_t num_channels() const { return channels_.size(); }
 
+  uint64_t scheduled_bytes_per_channel(uint32_t id) const {
+    return scheduled_bytes_per_channel_[id];
+  }
+
   std::string BaseConfig() const { return ""; }
 
  private:
   size_t num_ready_;
   std::vector<Channel> channels_;
+  std::vector<uint64_t> scheduled_bytes_per_channel_;
 };
 
 // Choose a random channel from the given list of channels.
@@ -166,6 +184,130 @@ const Channel* RandomChannel(absl::Span<const Channel> channels, uint64_t bytes,
   return nullptr;
 }
 
+// PickBestScheduler is a Comparative Scheduler that chooses the channel with
+// the best comparative function.
+//
+// The comparative function is:
+//   Compare(const Channel* a, const Channel* b, uint64_t bytes) -> bool.
+// If true, a is considered better than b.
+//
+// The available comparative functions are:
+//   outstanding_bytes_and_scheduled_time -
+//     (reader_outstanding_bytes + endpoint_outstanding_bytes +
+//     scheduled_bytes_per_channel(a)) and last_scheduled_time
+//   outstanding_bytes_and_dequeued_time -
+//     (reader_outstanding_bytes + endpoint_outstanding_bytes +
+//     scheduled_bytes_per_channel(a)) and last_dequeued_time
+//
+// The scheduler also supports a filter function that can be applied to
+// channels before the comparative function is used. The available filter
+// functions are:
+//   none - no filtering is applied
+//   ready - only ready channels are considered
+//   max_unwritten_bytes - only channels with less than max_unwritten_bytes are
+//     considered. Unwritten bytes are reader_outstanding_bytes +
+//     scheduled_bytes_per_channel(a).
+class PickBestScheduler : public SimpleScheduler {
+ public:
+  void SetConfig(absl::string_view name, absl::string_view value) override {
+    ParseConfig(name, value)
+        .Var("filter", filter_fn_,
+             {{"none", FilterFn::kNone},
+              {"ready", FilterFn::kReady},
+              {"max_unwritten_bytes", FilterFn::kMaxUnWrittenBytes}})
+        .Var("max_unwritten_bytes", max_unwritten_bytes_)
+        .Var("cmp", comparative_fn_,
+             {{"outstanding_bytes_and_scheduled_time",
+               ComparativeFn::kOutstandingBytesAndScheduledTime},
+              {"outstanding_bytes_and_dequeued_time",
+               ComparativeFn::kOutstandingBytesAndDequeuedTime}})
+        .Check();
+  }
+
+  std::string Config() const override {
+    return absl::StrCat(
+        "pick_best:filter=", filter_fn_,
+        filter_fn_ == FilterFn::kMaxUnWrittenBytes
+            ? absl::StrCat(":max_unwritten_bytes=", max_unwritten_bytes_)
+            : "",
+        ":cmp=", comparative_fn_, BaseConfig());
+  }
+
+  const Channel* ChooseChannel(uint64_t bytes) override {
+    const Channel* best_channel = nullptr;
+    for (const Channel& c : channels()) {
+      if (!IsChannelEligible(&c, bytes)) continue;
+      if (best_channel == nullptr || Compare(&c, best_channel, bytes)) {
+        best_channel = &c;
+      }
+    }
+    return best_channel;
+  }
+
+ private:
+  enum class FilterFn {
+    kNone,
+    kReady,
+    kMaxUnWrittenBytes,
+  };
+
+  enum class ComparativeFn {
+    kOutstandingBytesAndScheduledTime,
+    kOutstandingBytesAndDequeuedTime,
+  };
+
+  FilterFn filter_fn_ = FilterFn::kNone;
+  uint64_t max_unwritten_bytes_ = 1024 * 1024;  // 1MB by default. == CGv1
+
+  ComparativeFn comparative_fn_ =
+      ComparativeFn::kOutstandingBytesAndScheduledTime;
+
+  // bytes parameter is currently unused, but may be used in the future.
+  // Removing the parameter name to satisfy the linter.
+  bool IsChannelEligible(const Channel* c, uint64_t) {
+    switch (filter_fn_) {
+      case FilterFn::kNone:
+        return true;
+      case FilterFn::kReady:
+        return c->ready;
+      case FilterFn::kMaxUnWrittenBytes:
+        return (c->delivery_data.queued_bytes.reader_outstanding_bytes +
+                scheduled_bytes_per_channel(c->id)) < max_unwritten_bytes_;
+    }
+    return false;
+  }
+
+  auto OutstandingBytesAndScheduledTimeTuple(const Channel* c) {
+    return std::tuple(
+        c->delivery_data.queued_bytes.reader_outstanding_bytes +
+            c->delivery_data.queued_bytes.endpoint_outstanding_bytes +
+            scheduled_bytes_per_channel(c->id),
+        c->delivery_data.timestamps.last_scheduled_time);
+  }
+
+  auto OutstandingBytesAndDequeuedTimeTuple(const Channel* c) {
+    return std::tuple(
+        c->delivery_data.queued_bytes.reader_outstanding_bytes +
+            c->delivery_data.queued_bytes.endpoint_outstanding_bytes +
+            scheduled_bytes_per_channel(c->id),
+        c->delivery_data.timestamps.last_reader_dequeued_time);
+  }
+
+  // bytes parameter is currently unused, but may be used in the future.
+  // Removing the parameter name to satisfy the linter.
+  bool Compare(const Channel* a, const Channel* b, uint64_t) {
+    switch (comparative_fn_) {
+      case ComparativeFn::kOutstandingBytesAndScheduledTime:
+        return OutstandingBytesAndScheduledTimeTuple(a) <
+               OutstandingBytesAndScheduledTimeTuple(b);
+      case ComparativeFn::kOutstandingBytesAndDequeuedTime:
+        return OutstandingBytesAndDequeuedTimeTuple(a) <
+               OutstandingBytesAndDequeuedTimeTuple(b);
+    }
+    return false;
+  }
+};
+
 // RandomChoiceScheduler is a scheduler that chooses a channel at random,
 // weighted by a function of the channel's state.
 // It's name is "rand" and takes a single parameter "weight" which is one of:
@@ -174,20 +316,23 @@ const Channel* RandomChannel(absl::Span<const Channel> channels, uint64_t bytes,
 //     its receive time
 //   ready_inverse_receive_time - choose a random ready channel weighted by
 //     the inverse of its receive time
+//   inverse_outstanding_bytes - choose a random channel weighted by the
+//     inverse of its outstanding bytes
 class RandomChoiceScheduler final : public SimpleScheduler {
  public:
   void SetConfig(absl::string_view name, absl::string_view value) override {
     ParseConfig(name, value)
-        .Var("weight", weight_fn_,
-             {{"any_ready", WeightFn::kAnyReady},
-              {"inverse_receive_time", WeightFn::kInverseReceiveTime},
-              {"ready_inverse_receive_time",
-               WeightFn::kReadyInverseReceiveTime}})
+        .Var(
+            "weight", weight_fn_,
+            {{"any_ready", WeightFn::kAnyReady},
+             {"inverse_receive_time", WeightFn::kInverseReceiveTime},
+             {"ready_inverse_receive_time", WeightFn::kReadyInverseReceiveTime},
+             {"inverse_outstanding_bytes", WeightFn::kInverseOutstandingBytes}})
         .Check();
   }
 
   std::string Config() const override {
-    return absl::StrCat("rand:weight=", weight_fn_, BaseConfig());
+    return absl::StrCat(":weight=", weight_fn_, BaseConfig());
   }
 
  private:
@@ -195,6 +340,7 @@ class RandomChoiceScheduler final : public SimpleScheduler {
     kAnyReady,
     kInverseReceiveTime,
     kReadyInverseReceiveTime,
+    kInverseOutstandingBytes,
   };
 
   template <typename Sink>
@@ -209,6 +355,9 @@ class RandomChoiceScheduler final : public SimpleScheduler {
       case WeightFn::kReadyInverseReceiveTime:
         sink.Append("ready_inverse_receive_time");
         break;
+      case WeightFn::kInverseOutstandingBytes:
+        sink.Append("inverse_outstanding_bytes");
+        break;
     }
   }
 
@@ -222,12 +371,22 @@ class RandomChoiceScheduler final : public SimpleScheduler {
       case WeightFn::kInverseReceiveTime:
         return RandomChannel(
             channels(), bytes, [](const Channel* c, uint64_t bytes) {
-              return 1.0 / (c->start_time + bytes / c->bytes_per_second);
+              return 1.0 / (c->delivery_data.start_time +
+                            bytes / c->delivery_data.bytes_per_second);
             });
       case WeightFn::kReadyInverseReceiveTime:
         return RandomChannel(
             ready_channels(), bytes, [](const Channel* c, uint64_t bytes) {
-              return 1.0 / (c->start_time + bytes / c->bytes_per_second);
+              return 1.0 / (c->delivery_data.start_time +
+                            bytes / c->delivery_data.bytes_per_second);
+            });
+      case WeightFn::kInverseOutstandingBytes:
+        return RandomChannel(
+            channels(), bytes, [this](const Channel* c, uint64_t bytes) {
+              return 1.0 /
+                     (c->delivery_data.queued_bytes.reader_outstanding_bytes +
+                      c->delivery_data.queued_bytes.endpoint_outstanding_bytes +
+                      scheduled_bytes_per_channel(c->id) + bytes);
             });
     }
     return nullptr;
@@ -252,8 +411,8 @@ class SpanScheduler : public Scheduler {
 
   void SetConfig(absl::string_view name, absl::string_view value) override;
 
-  void AddChannel(uint32_t id, bool ready, double start_time,
-                  double bytes_per_second) override;
+  void AddChannel(uint32_t id, bool ready,
+                  const SendRate::DeliveryData& delivery_data) override;
 
   // Transition: Make a plan for the outstanding work.
   void MakePlan(TcpZTraceCollector& ztrace_collector) override;
@@ -318,9 +477,10 @@ void SpanScheduler::NewStep(double outstanding_bytes, double min_tokens) {
   channels_.clear();
 }
 
-void SpanScheduler::AddChannel(uint32_t id, bool ready, double start_time,
-                               double bytes_per_second) {
-  channels_.emplace_back(id, ready, start_time, bytes_per_second);
+void SpanScheduler::AddChannel(uint32_t id, bool ready,
+                               const SendRate::DeliveryData& delivery_data) {
+  channels_.emplace_back(id, ready, delivery_data.start_time,
+                         delivery_data.bytes_per_second);
 }
 
 void SpanScheduler::MakePlan(TcpZTraceCollector& ztrace_collector) {
@@ -546,6 +706,8 @@ std::unique_ptr<Scheduler> MakeScheduler(absl::string_view config) {
     scheduler = std::make_unique<SpanRoundRobinScheduler>();
   } else if (name == "rand") {
     scheduler = std::make_unique<RandomChoiceScheduler>();
+  } else if (name == "pick_best") {
+    scheduler = std::make_unique<PickBestScheduler>();
   } else {
     LOG(ERROR) << "Unknown scheduler type: " << name
                << " using spanrr scheduler";

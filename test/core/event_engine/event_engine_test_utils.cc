@@ -28,21 +28,21 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/event_engine/shim.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/time.h"
+#include "test/core/test_util/build.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/event_engine/shim.h"
-#include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/util/crash.h"
-#include "src/core/util/notification.h"
-#include "src/core/util/time.h"
-#include "test/core/test_util/build.h"
 
 // IWYU pragma: no_include <sys/socket.h>
 
@@ -95,9 +95,10 @@ std::string ExtractSliceBufferIntoString(SliceBuffer* buf) {
 
 absl::Status SendValidatePayload(absl::string_view data,
                                  EventEngine::Endpoint* send_endpoint,
-                                 EventEngine::Endpoint* receive_endpoint) {
-  CHECK_NE(receive_endpoint, nullptr);
-  CHECK_NE(send_endpoint, nullptr);
+                                 EventEngine::Endpoint* receive_endpoint,
+                                 int read_hint_bytes) {
+  GRPC_CHECK_NE(receive_endpoint, nullptr);
+  GRPC_CHECK_NE(send_endpoint, nullptr);
   int num_bytes_written = data.size();
   grpc_core::Notification read_signal;
   grpc_core::Notification write_signal;
@@ -116,7 +117,7 @@ absl::Status SendValidatePayload(absl::string_view data,
   std::function<void(absl::Status)> read_cb;
   read_cb = [receive_endpoint, &read_slice_buf, &read_store_buf, &read_cb,
              &read_signal, &num_bytes_remaining](absl::Status status) {
-    CHECK_OK(status);
+    GRPC_CHECK_OK(status);
     if (read_slice_buf.Length() == num_bytes_remaining) {
       read_slice_buf.MoveFirstNBytesIntoSliceBuffer(read_slice_buf.Length(),
                                                     read_store_buf);
@@ -129,20 +130,20 @@ absl::Status SendValidatePayload(absl::string_view data,
     EventEngine::Endpoint::ReadArgs args;
     args.set_read_hint_bytes(num_bytes_remaining);
     if (receive_endpoint->Read(read_cb, &read_slice_buf, std::move(args))) {
-      CHECK_NE(read_slice_buf.Length(), 0u);
       read_cb(absl::OkStatus());
     }
   };
   // Start asynchronous reading at the receive_endpoint.
   EventEngine::Endpoint::ReadArgs args;
-  args.set_read_hint_bytes(num_bytes_written);
+  args.set_read_hint_bytes(
+      (read_hint_bytes == -1 ? num_bytes_written : read_hint_bytes));
   if (receive_endpoint->Read(read_cb, &read_slice_buf, std::move(args))) {
     read_cb(absl::OkStatus());
   }
   // Start asynchronous writing at the send_endpoint.
   if (send_endpoint->Write(
           [&write_signal](absl::Status status) {
-            CHECK_OK(status);
+            GRPC_CHECK_OK(status);
             write_signal.Notify();
           },
           &write_slice_buf, EventEngine::Endpoint::WriteArgs())) {
@@ -185,8 +186,11 @@ absl::Status ConnectionManager::BindAndStartListener(
 
   ChannelArgsEndpointConfig config;
   auto status = event_engine->CreateListener(
-      std::move(accept_cb), [](absl::Status status) { CHECK_OK(status); },
-      config, std::make_unique<grpc_core::MemoryQuota>("foo"));
+      std::move(accept_cb), [](absl::Status status) { GRPC_CHECK_OK(status); },
+      config,
+      std::make_unique<grpc_core::MemoryQuota>(
+          grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+              "foo")));
   if (!status.ok()) {
     return status.status();
   }
@@ -200,7 +204,7 @@ absl::Status ConnectionManager::BindAndStartListener(
       return bind_status.status();
     }
   }
-  CHECK_OK(listener->Start());
+  GRPC_CHECK_OK(listener->Start());
   // Insert same listener pointer for all bind addresses after the listener
   // has started successfully.
   for (auto& addr : addrs) {
@@ -239,7 +243,7 @@ ConnectionManager::CreateConnection(std::string target_addr,
     // There is a listener for the specified address. Wait until it
     // creates a ServerEndpoint after accepting the connection.
     auto server_endpoint = last_in_progress_connection_.GetServerEndpoint();
-    CHECK(server_endpoint != nullptr);
+    GRPC_CHECK(server_endpoint != nullptr);
     // Set last_in_progress_connection_ to nullptr
     return std::tuple(std::move(client_endpoint), std::move(server_endpoint));
   }

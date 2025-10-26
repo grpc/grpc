@@ -30,8 +30,6 @@
 
 #include <string>
 
-#include "absl/log/check.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/extensions/supports_fd.h"
@@ -44,6 +42,8 @@
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/strings/str_cat.h"
 
 namespace {
 using grpc_event_engine::experimental::ChannelArgsEndpointConfig;
@@ -56,11 +56,11 @@ void create_sockets(int sv[2]) {
   int flags;
   grpc_create_socketpair_if_unix(sv);
   flags = fcntl(sv[0], F_GETFL, 0);
-  CHECK_EQ(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK), 0);
+  GRPC_CHECK_EQ(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK), 0);
   flags = fcntl(sv[1], F_GETFL, 0);
-  CHECK_EQ(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK), 0);
-  CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[0]) == absl::OkStatus());
-  CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[1]) == absl::OkStatus());
+  GRPC_CHECK_EQ(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK), 0);
+  GRPC_CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[0]) == absl::OkStatus());
+  GRPC_CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[1]) == absl::OkStatus());
 }
 
 }  // namespace

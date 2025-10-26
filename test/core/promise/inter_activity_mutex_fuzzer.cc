@@ -20,7 +20,6 @@
 #include <thread>
 
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/promise/inter_activity_mutex.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/promise.h"
@@ -29,6 +28,7 @@
 #include "src/core/util/notification.h"
 #include "test/core/promise/inter_activity_mutex_fuzzer.pb.h"
 #include "test/core/promise/poll_matcher.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {

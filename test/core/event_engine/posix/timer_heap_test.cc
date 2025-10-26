@@ -24,11 +24,11 @@
 #include <algorithm>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/util/bitset.h"
+#include "src/core/util/grpc_check.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 using testing::Contains;
 using testing::Not;
@@ -167,7 +167,7 @@ TEST(TimerHeapTest, RandomMutations) {
         pq.Pop();
         for (size_t i = 0; i < elems_size; i++) {
           if (top == &elems[i].elem) {
-            CHECK(elems[i].inserted);
+            GRPC_CHECK(elems[i].inserted);
             elems[i].inserted = false;
           }
         }
@@ -189,7 +189,7 @@ TEST(TimerHeapTest, RandomMutations) {
           }
         }
       }
-      CHECK(pq.Top()->deadline == *min_deadline);
+      GRPC_CHECK(pq.Top()->deadline == *min_deadline);
     }
   }
 }

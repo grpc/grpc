@@ -105,7 +105,11 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:promise",
+        "//src/core:channelz_property_list",
         "//src/core:json_writer",
+        "//src/core:upb_utils",
+        "//src/proto/grpc/channelz/v2:promise_upb_proto",
+        "//src/proto/grpc/channelz/v2:property_list_upb_proto",
     ],
 )
 
@@ -159,6 +163,7 @@ grpc_cc_test(
     srcs = ["match_promise_test.cc"],
     external_deps = [
         "absl/functional:any_invocable",
+        "absl/strings",
         "gtest",
     ],
     tags = ["promise_test"],
@@ -229,7 +234,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "switch_test",
     srcs = ["switch_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/strings",
+    ],
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
@@ -303,11 +311,16 @@ grpc_cc_test(
 grpc_cc_test(
     name = "seq_test",
     srcs = ["seq_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/strings",
+        "@com_google_protobuf//upb/mem",
+    ],
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:promise_upb",
         "//src/core:json_writer",
         "//src/core:seq",
     ],
@@ -316,7 +329,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "try_seq_test",
     srcs = ["try_seq_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "@com_google_protobuf//upb/mem",
+    ],
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
@@ -324,6 +340,7 @@ grpc_cc_test(
         "poll_matcher",
         "//src/core:json_writer",
         "//src/core:try_seq",
+        "//src/proto/grpc/channelz/v2:promise_upb_proto",
     ],
 )
 
@@ -340,6 +357,7 @@ grpc_cc_test(
         "//:ref_counted_ptr",
         "//src/core:arena",
         "//src/core:memory_quota",
+        "//src/core:metadata_batch",
         "//src/core:poll",
         "//src/core:resource_quota",
         "//src/core:try_seq",
@@ -449,6 +467,7 @@ grpc_cc_test(
         "test_wakeup_schedulers",
         "//:gpr",
         "//:grpc",
+        "//:grpc_base",
         "//:ref_counted_ptr",
         "//src/core:activity",
         "//src/core:event_engine_memory_allocator",
@@ -513,6 +532,7 @@ grpc_fuzz_test(
         "//:promise",
         "//src/core:activity",
         "//src/core:mpsc",
+        "//src/core:status_flag",
     ],
 )
 
@@ -544,6 +564,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "poll_matcher",
+        "//:gpr",
         "//src/core:loop",
         "//src/core:map",
         "//src/core:notification",
@@ -577,6 +598,7 @@ grpc_fuzz_test(
         "//:gpr",
         "//:promise",
         "//src/core:activity",
+        "//src/core:grpc_check",
         "//src/core:join",
         "//src/core:map",
         "//src/core:poll",
@@ -632,6 +654,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:event_engine_base_hdrs",
         "//:grpc",
         "//src/core:activity",
         "//src/core:event_engine_wakeup_scheduler",
@@ -654,6 +677,7 @@ grpc_cc_test(
         "test_wakeup_schedulers",
         "//:exec_ctx",
         "//:grpc",
+        "//:grpc_base",
         "//:orphanable",
         "//src/core:arena",
         "//src/core:default_event_engine",
@@ -705,21 +729,26 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_unsecure",
         "//:ref_counted_ptr",
         "//src/core:1999",
+        "//src/core:arena",
         "//src/core:context",
         "//src/core:default_event_engine",
+        "//src/core:event_engine_context",
         "//src/core:event_engine_memory_allocator",
         "//src/core:inter_activity_latch",
+        "//src/core:json_writer",
         "//src/core:memory_quota",
         "//src/core:notification",
         "//src/core:poll",
         "//src/core:resource_quota",
         "//src/core:seq",
         "//src/core:sleep",
+        "//src/core:sync",
         "//src/core:time",
     ],
 )
@@ -731,6 +760,7 @@ grpc_cc_test(
         "absl/base:core_headers",
         "absl/log:log",
         "absl/strings",
+        "absl/strings:str_format",
         "gtest",
     ],
     tags = [
@@ -741,20 +771,25 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "poll_matcher",
+        "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_unsecure",
         "//:ref_counted_ptr",
         "//src/core:1999",
+        "//src/core:arena",
         "//src/core:context",
         "//src/core:default_event_engine",
         "//src/core:event_engine_memory_allocator",
+        "//src/core:json_writer",
+        "//src/core:loop",
         "//src/core:memory_quota",
         "//src/core:mpsc",
         "//src/core:notification",
         "//src/core:poll",
         "//src/core:resource_quota",
         "//src/core:seq",
+        "//src/core:shared_bit_gen",
         "//src/core:sleep",
         "//src/core:time",
     ],
@@ -783,12 +818,15 @@ grpc_fuzz_test(
         "inter_activity_mutex_fuzzer_cc_proto",
         "poll_matcher",
         "//:grpc",
+        "//:promise",
         "//src/core:1999",
+        "//src/core:arena",
         "//src/core:inter_activity_mutex",
         "//src/core:notification",
         "//src/core:resource_quota",
         "//src/core:seq",
         "//src/core:time",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 
@@ -803,7 +841,10 @@ grpc_cc_test(
     deps = [
         "poll_matcher",
         "//:grpc",
+        "//:grpc_base",
+        "//:promise",
         "//src/core:1999",
+        "//src/core:arena",
         "//src/core:inter_activity_mutex",
         "//src/core:notification",
         "//src/core:resource_quota",
@@ -819,6 +860,7 @@ grpc_cc_benchmark(
     deps = [
         "//:grpc",
         "//src/core:1999",
+        "//src/core:arena",
         "//src/core:default_event_engine",
     ],
 )

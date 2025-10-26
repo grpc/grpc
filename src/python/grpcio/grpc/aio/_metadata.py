@@ -21,8 +21,7 @@ from typing_extensions import Self
 MetadataKey = Union[str, bytes]
 MetadataValue = Union[str, bytes]
 
-
-class Metadata(abc.Collection):
+class Metadata(abc.Collection):  # noqa: PLW1641
     """Metadata abstraction for the asynchronous calls and interceptors.
 
     The metadata is a mapping from str -> List[str]
@@ -121,7 +120,7 @@ class Metadata(abc.Collection):
     def __contains__(self, key: MetadataKey) -> bool:
         return key in self._metadata
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
             return self._metadata == other._metadata
         if isinstance(other, tuple):

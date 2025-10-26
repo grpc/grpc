@@ -26,9 +26,6 @@
 #include <ratio>
 #include <type_traits>
 
-#include "absl/functional/any_invocable.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "opentelemetry/common/timestamp.h"
 #include "opentelemetry/metrics/provider.h"
 #include "opentelemetry/nostd/variant.h"
@@ -45,6 +42,9 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/ext/otel/otel_test_library.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
 
 namespace grpc {
 namespace testing {
@@ -883,22 +883,26 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
   EXPECT_EQ(*status_value, "UNIMPLEMENTED");
 }
 
-TEST_F(OpenTelemetryPluginEnd2EndTest, OptionalPerCallLocalityLabel) {
-  Init(
-      std::move(Options()
-                    .set_metric_names({grpc::OpenTelemetryPluginBuilder::
-                                           kClientAttemptStartedInstrumentName,
-                                       grpc::OpenTelemetryPluginBuilder::
-                                           kClientAttemptDurationInstrumentName,
-                                       grpc::OpenTelemetryPluginBuilder::
-                                           kServerCallStartedInstrumentName,
-                                       grpc::OpenTelemetryPluginBuilder::
-                                           kServerCallDurationInstrumentName})
-                    .add_optional_label("grpc.lb.locality")
-                    .set_labels_to_inject(
-                        {{grpc_core::ClientCallTracer::CallAttemptTracer::
-                              OptionalLabelKey::kLocality,
-                          grpc_core::RefCountedStringValue("locality")}})));
+TEST_F(OpenTelemetryPluginEnd2EndTest, OptionalPerCallLabels) {
+  Init(std::move(
+      Options()
+          .set_metric_names({grpc::OpenTelemetryPluginBuilder::
+                                 kClientAttemptStartedInstrumentName,
+                             grpc::OpenTelemetryPluginBuilder::
+                                 kClientAttemptDurationInstrumentName,
+                             grpc::OpenTelemetryPluginBuilder::
+                                 kServerCallStartedInstrumentName,
+                             grpc::OpenTelemetryPluginBuilder::
+                                 kServerCallDurationInstrumentName})
+          .add_optional_label("grpc.lb.locality")
+          .add_optional_label("grpc.lb.backend_service")
+          .set_labels_to_inject(
+              {{grpc_core::ClientCallTracerInterface::CallAttemptTracer::
+                    OptionalLabelKey::kLocality,
+                grpc_core::RefCountedStringValue("locality")},
+               {grpc_core::ClientCallTracerInterface::CallAttemptTracer::
+                    OptionalLabelKey::kBackendService,
+                grpc_core::RefCountedStringValue("backend_service")}})));
   SendRPC();
   auto data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<
@@ -917,7 +921,10 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, OptionalPerCallLocalityLabel) {
       data["grpc.client.attempt.started"][0].attributes.GetAttributes();
   EXPECT_THAT(
       client_attributes,
-      ::testing::Not(::testing::Contains(::testing::Key("grpc.lb.locality"))));
+      ::testing::AllOf(::testing::Not(::testing::Contains(
+                           ::testing::Key("grpc.lb.locality"))),
+                       ::testing::Not(::testing::Contains(
+                           ::testing::Key("grpc.lb.backend_service")))));
   // Verify client side metric (grpc.client.attempt.duration) sees this label.
   ASSERT_EQ(data["grpc.client.attempt.duration"].size(), 1);
   const auto& client_duration_attributes =
@@ -925,31 +932,40 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, OptionalPerCallLocalityLabel) {
   EXPECT_EQ(
       std::get<std::string>(client_duration_attributes.at("grpc.lb.locality")),
       "locality");
+  EXPECT_EQ(std::get<std::string>(
+                client_duration_attributes.at("grpc.lb.backend_service")),
+            "backend_service");
   // Verify server metric (grpc.server.call.started) does not see this label
   ASSERT_EQ(data["grpc.server.call.started"].size(), 1);
   const auto& server_attributes =
       data["grpc.server.call.started"][0].attributes.GetAttributes();
   EXPECT_THAT(
       server_attributes,
-      ::testing::Not(::testing::Contains(::testing::Key("grpc.lb.locality"))));
+      ::testing::AllOf(::testing::Not(::testing::Contains(
+                           ::testing::Key("grpc.lb.locality"))),
+                       ::testing::Not(::testing::Contains(
+                           ::testing::Key("grpc.lb.backend_service")))));
   // Verify server metric (grpc.server.call.duration) does not see this label
   ASSERT_EQ(data["grpc.server.call.duration"].size(), 1);
   const auto& server_duration_attributes =
       data["grpc.server.call.duration"][0].attributes.GetAttributes();
   EXPECT_THAT(
       server_duration_attributes,
-      ::testing::Not(::testing::Contains(::testing::Key("grpc.lb.locality"))));
+      ::testing::AllOf(::testing::Not(::testing::Contains(
+                           ::testing::Key("grpc.lb.locality"))),
+                       ::testing::Not(::testing::Contains(
+                           ::testing::Key("grpc.lb.backend_service")))));
 }
 
-// Tests that when locality label is enabled on the plugin but not provided by
-// gRPC, an empty value is recorded.
-TEST_F(OpenTelemetryPluginEnd2EndTest,
-       OptionalPerCallLocalityLabelWhenNotAvailable) {
+// Tests that when optional labels are enabled on the plugin but not provided
+// by gRPC, an empty values are recorded.
+TEST_F(OpenTelemetryPluginEnd2EndTest, OptionalPerCallLabelsWhenNotAvailable) {
   Init(std::move(
       Options()
           .set_metric_names({grpc::OpenTelemetryPluginBuilder::
                                  kClientAttemptDurationInstrumentName})
-          .add_optional_label("grpc.lb.locality")));
+          .add_optional_label("grpc.lb.locality")
+          .add_optional_label("grpc.lb.backend_service")));
   SendRPC();
   auto data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<
@@ -964,20 +980,26 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
   EXPECT_EQ(
       std::get<std::string>(client_duration_attributes.at("grpc.lb.locality")),
       "");
+  EXPECT_EQ(std::get<std::string>(
+                client_duration_attributes.at("grpc.lb.backend_service")),
+            "");
 }
 
-// Tests that when locality label is injected but not enabled by the plugin, the
-// label is not recorded.
+// Tests that when optional labels are injected but not enabled by the
+// plugin, the labels are not recorded.
 TEST_F(OpenTelemetryPluginEnd2EndTest,
-       OptionalPerCallLocalityLabelNotRecordedWhenNotEnabled) {
+       OptionalPerCallLabelsNotRecordedWhenNotEnabled) {
   Init(std::move(
       Options()
           .set_metric_names({grpc::OpenTelemetryPluginBuilder::
                                  kClientAttemptDurationInstrumentName})
           .set_labels_to_inject(
-              {{grpc_core::ClientCallTracer::CallAttemptTracer::
+              {{grpc_core::ClientCallTracerInterface::CallAttemptTracer::
                     OptionalLabelKey::kLocality,
-                grpc_core::RefCountedStringValue("locality")}})));
+                grpc_core::RefCountedStringValue("locality")},
+               {grpc_core::ClientCallTracerInterface::CallAttemptTracer::
+                    OptionalLabelKey::kBackendService,
+                grpc_core::RefCountedStringValue("backend_service")}})));
   SendRPC();
   auto data = ReadCurrentMetricsData(
       [&](const absl::flat_hash_map<
@@ -991,7 +1013,10 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
       data["grpc.client.attempt.duration"][0].attributes.GetAttributes();
   EXPECT_THAT(
       client_duration_attributes,
-      ::testing::Not(::testing::Contains(::testing::Key("grpc.lb.locality"))));
+      ::testing::AllOf(::testing::Not(::testing::Contains(
+                           ::testing::Key("grpc.lb.locality"))),
+                       ::testing::Not(::testing::Contains(
+                           ::testing::Key("grpc.lb.backend_service")))));
 }
 
 TEST_F(OpenTelemetryPluginEnd2EndTest,
@@ -1036,9 +1061,8 @@ TEST_F(OpenTelemetryPluginEnd2EndTest,
   ASSERT_EQ(data["grpc.server.call.started"].size(), 1);
   const auto& server_attributes =
       data["grpc.server.call.started"][0].attributes.GetAttributes();
-  EXPECT_THAT(
-      server_attributes,
-      ::testing::Not(::testing::Contains(::testing::Key("grpc.lb.locality"))));
+  EXPECT_THAT(server_attributes,
+              ::testing::Not(::testing::Contains(::testing::Key("unknown"))));
   // Verify server metric (grpc.server.call.duration) does not see this label
   ASSERT_EQ(data["grpc.server.call.duration"].size(), 1);
   const auto& server_duration_attributes =

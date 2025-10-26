@@ -26,14 +26,14 @@
 #include <cctype>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/matchers.h"
+#include "src/core/xds/grpc/xds_http_filter.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/util/matchers.h"
-#include "src/core/xds/grpc/xds_http_filter.h"
 
 namespace grpc_core {
 
@@ -115,7 +115,7 @@ std::optional<size_t> XdsRouting::FindVirtualHostForDomain(
       // than current match.
       const MatchType match_type = DomainPatternMatchType(domain_pattern);
       // This should be caught by RouteConfigParse().
-      CHECK(match_type != INVALID_MATCH);
+      GRPC_CHECK(match_type != INVALID_MATCH);
       if (match_type > best_match_type) continue;
       if (match_type == best_match_type &&
           domain_pattern.size() <= longest_match) {
@@ -231,7 +231,7 @@ GeneratePerHTTPFilterConfigs(
     const XdsHttpFilterImpl* filter_impl =
         http_filter_registry.GetFilterForType(
             http_filter.config.config_proto_type_name);
-    CHECK_NE(filter_impl, nullptr);
+    GRPC_CHECK_NE(filter_impl, nullptr);
     // If there is not actually any C-core filter associated with this
     // xDS filter, then it won't need any config, so skip it.
     if (filter_impl->channel_filter() == nullptr) continue;

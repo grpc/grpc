@@ -24,9 +24,9 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 
@@ -78,15 +78,15 @@ absl::string_view ServerCallTracerFactory::ChannelArgName() {
   return kServerCallTracerFactoryChannelArgName;
 }
 
-class DelegatingClientCallTracer : public ClientCallTracer {
+class DelegatingClientCallTracer : public ClientCallTracerInterface {
  public:
   class DelegatingClientCallAttemptTracer
-      : public ClientCallTracer::CallAttemptTracer {
+      : public ClientCallTracerInterface::CallAttemptTracer {
    public:
     explicit DelegatingClientCallAttemptTracer(
         std::vector<CallAttemptTracer*> tracers)
         : tracers_(std::move(tracers)) {
-      DCHECK(!tracers_.empty());
+      GRPC_DCHECK(!tracers_.empty());
     }
     ~DelegatingClientCallAttemptTracer() override {}
     void RecordSendInitialMetadata(
@@ -190,15 +190,18 @@ class DelegatingClientCallTracer : public ClientCallTracer {
     // call at any moment).
     std::vector<CallAttemptTracer*> tracers_;
   };
-  explicit DelegatingClientCallTracer(ClientCallTracer* tracer)
+  explicit DelegatingClientCallTracer(ClientCallTracerInterface* tracer)
       : tracers_{tracer} {}
+  explicit DelegatingClientCallTracer(
+      absl::Span<ClientCallTracerInterface* const> tracers)
+      : tracers_(tracers.begin(), tracers.end()) {}
   ~DelegatingClientCallTracer() override {}
   CallAttemptTracer* StartNewAttempt(bool is_transparent_retry) override {
     std::vector<CallAttemptTracer*> attempt_tracers;
     attempt_tracers.reserve(tracers_.size());
     for (auto* tracer : tracers_) {
       auto* attempt_tracer = tracer->StartNewAttempt(is_transparent_retry);
-      DCHECK_NE(attempt_tracer, nullptr);
+      GRPC_DCHECK_NE(attempt_tracer, nullptr);
       attempt_tracers.push_back(attempt_tracer);
     }
     return GetContext<Arena>()->ManagedNew<DelegatingClientCallAttemptTracer>(
@@ -224,16 +227,21 @@ class DelegatingClientCallTracer : public ClientCallTracer {
   // will be adding call tracers to the context and these are already
   // synchronized through promises/call combiners (single promise running per
   // call at any moment).
-  void AddTracer(ClientCallTracer* tracer) { tracers_.push_back(tracer); }
+  void AddTracer(ClientCallTracerInterface* tracer) {
+    tracers_.push_back(tracer);
+  }
 
  private:
-  std::vector<ClientCallTracer*> tracers_;
+  std::vector<ClientCallTracerInterface*> tracers_;
 };
 
-class DelegatingServerCallTracer : public ServerCallTracer {
+class DelegatingServerCallTracer : public ServerCallTracerInterface {
  public:
-  explicit DelegatingServerCallTracer(ServerCallTracer* tracer)
+  explicit DelegatingServerCallTracer(ServerCallTracerInterface* tracer)
       : tracers_{tracer} {}
+  explicit DelegatingServerCallTracer(
+      absl::Span<ServerCallTracerInterface* const> tracers)
+      : tracers_(tracers.begin(), tracers.end()) {}
   ~DelegatingServerCallTracer() override {}
   void RecordSendInitialMetadata(
       grpc_metadata_batch* send_initial_metadata) override {
@@ -319,65 +327,53 @@ class DelegatingServerCallTracer : public ServerCallTracer {
   bool IsSampled() override { return tracers_[0]->IsSampled(); }
   bool IsDelegatingTracer() override { return true; }
 
-  void AddTracer(ServerCallTracer* tracer) { tracers_.push_back(tracer); }
+  void AddTracer(ServerCallTracerInterface* tracer) {
+    tracers_.push_back(tracer);
+  }
 
  private:
   // The ServerCallTracerFilter will be responsible for making sure that the
   // tracers are added in a thread-safe manner. It is imagined that the filter
   // will just invoke the factories in the server call tracer factory list
   // sequentially, removing the need for any synchronization.
-  std::vector<ServerCallTracer*> tracers_;
+  std::vector<ServerCallTracerInterface*> tracers_;
 };
 
-void AddClientCallTracerToContext(Arena* arena, ClientCallTracer* tracer) {
-  if (arena->GetContext<CallTracerAnnotationInterface>() == nullptr) {
-    // This is the first call tracer. Set it directly.
-    arena->SetContext<CallTracerAnnotationInterface>(tracer);
-  } else {
-    // There was already a call tracer present.
-    auto* orig_tracer = DownCast<ClientCallTracer*>(
-        arena->GetContext<CallTracerAnnotationInterface>());
-    if (orig_tracer->IsDelegatingTracer()) {
-      // We already created a delegating tracer. Just add the new tracer to the
-      // list.
-      DownCast<DelegatingClientCallTracer*>(orig_tracer)->AddTracer(tracer);
-    } else {
-      // Create a new delegating tracer and add the first tracer and the new
-      // tracer to the list.
+void SetClientCallTracer(Arena* arena,
+                         absl::Span<ClientCallTracerInterface* const> tracer) {
+  GRPC_DCHECK_EQ(arena->GetContext<CallSpan>(), nullptr);
+  switch (tracer.size()) {
+    case 0:
+      return;
+    case 1:
+      arena->SetContext<CallSpan>(WrapClientCallTracer(tracer[0], arena));
+      return;
+    default:
       auto* delegating_tracer =
-          GetContext<Arena>()->ManagedNew<DelegatingClientCallTracer>(
-              orig_tracer);
-      arena->SetContext<CallTracerAnnotationInterface>(delegating_tracer);
-      delegating_tracer->AddTracer(tracer);
-    }
+          GetContext<Arena>()->ManagedNew<DelegatingClientCallTracer>(tracer);
+      arena->SetContext<CallSpan>(
+          WrapClientCallTracer(delegating_tracer, arena));
+      break;
   }
 }
 
-void AddServerCallTracerToContext(Arena* arena, ServerCallTracer* tracer) {
-  DCHECK_EQ(arena->GetContext<CallTracerInterface>(),
-            arena->GetContext<CallTracerAnnotationInterface>());
-  if (arena->GetContext<CallTracerAnnotationInterface>() == nullptr) {
-    // This is the first call tracer. Set it directly.
-    arena->SetContext<CallTracerAnnotationInterface>(tracer);
-    arena->SetContext<CallTracerInterface>(tracer);
-  } else {
-    // There was already a call tracer present.
-    auto* orig_tracer = DownCast<ServerCallTracer*>(
-        arena->GetContext<CallTracerAnnotationInterface>());
-    if (orig_tracer->IsDelegatingTracer()) {
-      // We already created a delegating tracer. Just add the new tracer to the
-      // list.
-      DownCast<DelegatingServerCallTracer*>(orig_tracer)->AddTracer(tracer);
-    } else {
-      // Create a new delegating tracer and add the first tracer and the new
-      // tracer to the list.
+void SetServerCallTracer(Arena* arena,
+                         absl::Span<ServerCallTracerInterface* const> tracer) {
+  GRPC_DCHECK_EQ(arena->GetContext<CallSpan>(), nullptr);
+  switch (tracer.size()) {
+    case 0:
+      return;
+    case 1:
+      arena->SetContext<CallSpan>(WrapServerCallTracer(tracer[0], arena));
+      arena->SetContext<CallTracer>(WrapServerCallTracer(tracer[0], arena));
+      return;
+    default:
       auto* delegating_tracer =
-          GetContext<Arena>()->ManagedNew<DelegatingServerCallTracer>(
-              orig_tracer);
-      arena->SetContext<CallTracerAnnotationInterface>(delegating_tracer);
-      arena->SetContext<CallTracerInterface>(delegating_tracer);
-      delegating_tracer->AddTracer(tracer);
-    }
+          GetContext<Arena>()->ManagedNew<DelegatingServerCallTracer>(tracer);
+      auto* wrapper = WrapServerCallTracer(delegating_tracer, arena);
+      arena->SetContext<CallSpan>(wrapper);
+      arena->SetContext<CallTracer>(wrapper);
+      break;
   }
 }
 

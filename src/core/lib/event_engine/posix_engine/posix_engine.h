@@ -25,13 +25,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/container/inlined_vector.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/posix.h"
@@ -42,6 +35,13 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
@@ -94,28 +94,6 @@ class AsyncConnect {
   bool connect_cancelled_;
 };
 
-// A helper class to manager lifetime of the poller associated with the
-// posix EventEngine.
-class PosixEnginePollerManager
-    : public grpc_event_engine::experimental::Scheduler {
- public:
-  explicit PosixEnginePollerManager(std::shared_ptr<ThreadPool> executor);
-  explicit PosixEnginePollerManager(
-      std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
-          poller);
-
-  grpc_event_engine::experimental::PosixEventPoller* Poller() const {
-    return poller_.get();
-  }
-
-  void Run(experimental::EventEngine::Closure* closure) override;
-  void Run(absl::AnyInvocable<void()>) override;
-
- private:
-  std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller> poller_;
-  std::shared_ptr<ThreadPool> executor_;
-};
-
 #endif  // GRPC_POSIX_SOCKET_TCP
 
 // An iomgr-based Posix EventEngine implementation.
@@ -142,10 +120,10 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
 
   ~PosixEventEngine() override;
 
-  std::unique_ptr<EventEngine::Endpoint> CreatePosixEndpointFromFd(
-      int fd, const EndpointConfig& config,
-      MemoryAllocator memory_allocator) override;
-  std::unique_ptr<EventEngine::Endpoint> CreateEndpointFromFd(
+  absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>>
+  CreatePosixEndpointFromFd(int fd, const EndpointConfig& config,
+                            MemoryAllocator memory_allocator) override;
+  absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> CreateEndpointFromFd(
       int fd, const EndpointConfig& config) override;
 
   ConnectionHandle CreateEndpointFromUnconnectedFd(
@@ -216,12 +194,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
   explicit PosixEventEngine(
       std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
           poller);
-#endif  // GRPC_POSIX_SOCKET_TCP
 
-  EventEngine::TaskHandle RunAfterInternal(Duration when,
-                                           absl::AnyInvocable<void()> cb);
-
-#ifdef GRPC_POSIX_SOCKET_TCP
   friend class AsyncConnect;
   struct ConnectionShard {
     grpc_core::Mutex mu;
@@ -229,17 +202,47 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
         ABSL_GUARDED_BY(&mu);
   };
 
+  void OnConnectFinishInternal(int connection_handle);
+
+  // RAII wrapper for a polling cycle. Starts a new one in ctor and stops
+  // in dtor.
+  class PollingCycle {
+   public:
+    explicit PollingCycle(
+        std::shared_ptr<ThreadPool> executor,
+        std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>
+            poller);
+    ~PollingCycle();
+
+   private:
+    void PollerWorkInternal();
+
+    std::shared_ptr<ThreadPool> executor_;
+    std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller> poller_;
+    grpc_core::Mutex mu_;
+    std::atomic_bool done_{false};
+    int is_scheduled_ ABSL_GUARDED_BY(&mu_) = 0;
+    grpc_core::CondVar cond_;
+  };
+
+  void SchedulePoller();
+  void ResetPollCycle();
+
   ConnectionHandle CreateEndpointFromUnconnectedFdInternal(
       const FileDescriptor& fd, EventEngine::OnConnectCallback on_connect,
       const EventEngine::ResolvedAddress& addr, const PosixTcpOptions& options,
       MemoryAllocator memory_allocator, EventEngine::Duration timeout);
 
-  void OnConnectFinishInternal(int connection_handle);
-
   std::vector<ConnectionShard> connection_shards_;
   std::atomic<int64_t> last_connection_id_{1};
+  std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller> poller_;
 
+  // Ensures there's ever only one of these.
+  std::optional<PollingCycle> polling_cycle_ ABSL_GUARDED_BY(&mu_);
 #endif  // GRPC_POSIX_SOCKET_TCP
+
+  EventEngine::TaskHandle RunAfterInternal(Duration when,
+                                           absl::AnyInvocable<void()> cb);
 
 #if GRPC_ENABLE_FORK_SUPPORT
   void AfterForkInChild();
@@ -260,38 +263,6 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport {
 #endif  // GRPC_ENABLE_FORK_SUPPORT
 #endif  // GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
   std::shared_ptr<ThreadPool> executor_;
-
-#if defined(GRPC_POSIX_SOCKET_TCP) && \
-    !defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
-
-  // RAII wrapper for a polling cycle. Starts a new one in ctor and stops
-  // in dtor.
-  class PollingCycle {
-   public:
-    explicit PollingCycle(PosixEnginePollerManager* poller_manager);
-    ~PollingCycle();
-
-   private:
-    void PollerWorkInternal();
-
-    PosixEnginePollerManager* poller_manager_;
-    grpc_core::Mutex mu_;
-    std::atomic_bool done_{false};
-    int is_scheduled_ ABSL_GUARDED_BY(&mu_) = 0;
-    grpc_core::CondVar cond_;
-  };
-
-  void SchedulePoller();
-  void ResetPollCycle();
-
-  PosixEnginePollerManager poller_manager_;
-
-  // Ensures there's ever only one of these.
-  std::optional<PollingCycle> polling_cycle_ ABSL_GUARDED_BY(&mu_);
-
-#endif  // defined(GRPC_POSIX_SOCKET_TCP) &&
-        // !defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
-
   std::shared_ptr<TimerManager> timer_manager_;
 };
 

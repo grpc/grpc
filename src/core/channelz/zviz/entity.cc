@@ -14,10 +14,10 @@
 
 #include "src/core/channelz/zviz/entity.h"
 
-#include "absl/strings/str_cat.h"
 #include "src/core/channelz/zviz/data.h"
 #include "src/core/channelz/zviz/strings.h"
 #include "src/core/channelz/zviz/trace.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_zviz {
 

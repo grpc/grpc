@@ -27,10 +27,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/tls/spiffe_utils.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/debug/trace.h"
@@ -39,10 +35,14 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/ssl_transport_security_utils.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/load_file.h"
 #include "src/core/util/match.h"
 #include "src/core/util/stat.h"
 #include "src/core/util/status_helper.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace {
@@ -216,17 +216,17 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     refresh_interval_sec_ = kMinimumFileWatcherRefreshIntervalSeconds;
   }
   // Private key and identity cert files must be both set or both unset.
-  CHECK(private_key_path_.empty() == identity_certificate_path_.empty());
+  GRPC_CHECK(private_key_path_.empty() == identity_certificate_path_.empty());
   // Must be watching either root or identity certs.
   bool watching_root =
       !root_cert_path_.empty() || !spiffe_bundle_map_path_.empty();
-  CHECK(!private_key_path_.empty() || watching_root);
+  GRPC_CHECK(!private_key_path_.empty() || watching_root);
   gpr_event_init(&shutdown_event_);
   ForceUpdate();
   auto thread_lambda = [](void* arg) {
     FileWatcherCertificateProvider* provider =
         static_cast<FileWatcherCertificateProvider*>(arg);
-    CHECK_NE(provider, nullptr);
+    GRPC_CHECK_NE(provider, nullptr);
     while (true) {
       void* value = gpr_event_wait(
           &provider->shutdown_event_,
@@ -494,7 +494,7 @@ int64_t FileWatcherCertificateProvider::TestOnlyGetRefreshIntervalSecond()
 
 grpc_tls_certificate_provider* grpc_tls_certificate_provider_static_data_create(
     const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs) {
-  CHECK(root_certificate != nullptr || pem_key_cert_pairs != nullptr);
+  GRPC_CHECK(root_certificate != nullptr || pem_key_cert_pairs != nullptr);
   grpc_core::ExecCtx exec_ctx;
   grpc_core::PemKeyCertPairList identity_pairs_core;
   if (pem_key_cert_pairs != nullptr) {
@@ -509,17 +509,18 @@ grpc_tls_certificate_provider* grpc_tls_certificate_provider_static_data_create(
       std::move(root_cert_core), std::move(identity_pairs_core));
 }
 
-// TODO(gtcooke94): Add a parameter to set the spiffe_bundle_map_path
 grpc_tls_certificate_provider*
 grpc_tls_certificate_provider_file_watcher_create(
     const char* private_key_path, const char* identity_certificate_path,
-    const char* root_cert_path, unsigned int refresh_interval_sec) {
+    const char* root_cert_path, const char* spiffe_bundle_map_path,
+    unsigned int refresh_interval_sec) {
   grpc_core::ExecCtx exec_ctx;
   return new grpc_core::FileWatcherCertificateProvider(
       private_key_path == nullptr ? "" : private_key_path,
       identity_certificate_path == nullptr ? "" : identity_certificate_path,
       root_cert_path == nullptr ? "" : root_cert_path,
-      /*spiffe_bundle_map_path=*/"", refresh_interval_sec);
+      spiffe_bundle_map_path == nullptr ? "" : spiffe_bundle_map_path,
+      refresh_interval_sec);
 }
 
 void grpc_tls_certificate_provider_release(

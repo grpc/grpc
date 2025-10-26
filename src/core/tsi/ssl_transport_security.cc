@@ -53,13 +53,6 @@
 #include <optional>
 #include <string>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/match.h"
-#include "absl/strings/numbers.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/tls/grpc_tls_crl_provider.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/surface/init.h"
@@ -71,9 +64,16 @@
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
+#include "absl/log/log.h"
+#include "absl/strings/match.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 
 // Name of the environment variable controlling OpenSSL cleanup timeout.
 // This variable allows users to specify the timeout (in seconds) for OpenSSL
@@ -253,6 +253,7 @@ int ServerHandshakerFactoryAlpnCallback(SSL* /*ssl*/, const unsigned char** out,
 static gpr_once g_init_openssl_once = GPR_ONCE_INIT;
 static int g_ssl_ctx_ex_factory_index = -1;
 static int g_ssl_ctx_ex_crl_provider_index = -1;
+static int g_ssl_ctx_ex_spiffe_bundle_map_index = -1;
 static const unsigned char kSslSessionIdContext[] = {'g', 'r', 'p', 'c'};
 static int g_ssl_ex_verified_root_cert_index = -1;
 #if !defined(OPENSSL_IS_BORINGSSL) && !defined(OPENSSL_NO_ENGINE)
@@ -323,7 +324,7 @@ static void init_openssl(void) {
 #if OPENSSL_VERSION_NUMBER < 0x10100000
   if (!CRYPTO_get_locking_callback()) {
     int num_locks = CRYPTO_num_locks();
-    CHECK_GT(num_locks, 0);
+    GRPC_CHECK_GT(num_locks, 0);
     g_openssl_mutexes = static_cast<gpr_mu*>(
         gpr_malloc(static_cast<size_t>(num_locks) * sizeof(gpr_mu)));
     for (int i = 0; i < num_locks; i++) {
@@ -337,15 +338,19 @@ static void init_openssl(void) {
 #endif
   g_ssl_ctx_ex_factory_index =
       SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
-  CHECK_NE(g_ssl_ctx_ex_factory_index, -1);
+  GRPC_CHECK_NE(g_ssl_ctx_ex_factory_index, -1);
 
   g_ssl_ctx_ex_crl_provider_index =
       SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
-  CHECK_NE(g_ssl_ctx_ex_crl_provider_index, -1);
+  GRPC_CHECK_NE(g_ssl_ctx_ex_crl_provider_index, -1);
+
+  g_ssl_ctx_ex_spiffe_bundle_map_index =
+      SSL_CTX_get_ex_new_index(0, nullptr, nullptr, nullptr, nullptr);
+  GRPC_CHECK_NE(g_ssl_ctx_ex_spiffe_bundle_map_index, -1);
 
   g_ssl_ex_verified_root_cert_index = SSL_get_ex_new_index(
       0, nullptr, nullptr, nullptr, verified_root_cert_free);
-  CHECK_NE(g_ssl_ex_verified_root_cert_index, -1);
+  GRPC_CHECK_NE(g_ssl_ex_verified_root_cert_index, -1);
 }
 
 // --- Ssl utils. ---
@@ -603,7 +608,7 @@ static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
           : 0;
   size_t property_count;
   tsi_result result;
-  CHECK_GE(subject_alt_name_count, 0);
+  GRPC_CHECK_GE(subject_alt_name_count, 0);
   property_count = (include_certificate_type ? size_t{1} : 0) +
                    3 /* subject, common name, certificate */ +
                    static_cast<size_t>(subject_alt_name_count);
@@ -658,7 +663,7 @@ static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
   }
   if (result != TSI_OK) tsi_peer_destruct(peer);
 
-  CHECK((int)peer->property_count == current_insert_index);
+  GRPC_CHECK((int)peer->property_count == current_insert_index);
   return result;
 }
 
@@ -669,7 +674,7 @@ static tsi_result ssl_ctx_use_certificate_chain(SSL_CTX* context,
   tsi_result result = TSI_OK;
   X509* certificate = nullptr;
   BIO* pem;
-  CHECK_LE(pem_cert_chain_size, static_cast<size_t>(INT_MAX));
+  GRPC_CHECK_LE(pem_cert_chain_size, static_cast<size_t>(INT_MAX));
   pem = BIO_new_mem_buf(pem_cert_chain, static_cast<int>(pem_cert_chain_size));
   if (pem == nullptr) return TSI_OUT_OF_RESOURCES;
 
@@ -789,7 +794,7 @@ static tsi_result ssl_ctx_use_pem_private_key(SSL_CTX* context,
   tsi_result result = TSI_OK;
   EVP_PKEY* private_key = nullptr;
   BIO* pem;
-  CHECK_LE(pem_key_size, static_cast<size_t>(INT_MAX));
+  GRPC_CHECK_LE(pem_key_size, static_cast<size_t>(INT_MAX));
   pem = BIO_new_mem_buf(pem_key, static_cast<int>(pem_key_size));
   if (pem == nullptr) return TSI_OUT_OF_RESOURCES;
   do {
@@ -834,7 +839,7 @@ static tsi_result x509_store_load_certs(X509_STORE* cert_store,
   X509* root = nullptr;
   X509_NAME* root_name = nullptr;
   BIO* pem;
-  CHECK_LE(pem_roots_size, static_cast<size_t>(INT_MAX));
+  GRPC_CHECK_LE(pem_roots_size, static_cast<size_t>(INT_MAX));
   pem = BIO_new_mem_buf(pem_roots, static_cast<int>(pem_roots_size));
   if (cert_store == nullptr) return TSI_INVALID_ARGUMENT;
   if (pem == nullptr) return TSI_OUT_OF_RESOURCES;
@@ -1234,6 +1239,114 @@ static int CheckChainRevocation(
   return 1;
 }
 
+static grpc_core::SpiffeBundleMap* GetSpiffeBundleMap(X509_STORE_CTX* ctx) {
+  GRPC_CHECK(ctx != nullptr);
+  ERR_clear_error();
+  int ssl_index = SSL_get_ex_data_X509_STORE_CTX_idx();
+  if (ssl_index < 0) {
+    char err_str[256];
+    ERR_error_string_n(ERR_get_error(), err_str, sizeof(err_str));
+    GRPC_TRACE_LOG(tsi, INFO)
+        << "error getting the SSL index from the X509_STORE_CTX while getting "
+           "the SPIFFE Bundle Map: "
+        << err_str;
+    return nullptr;
+  }
+  SSL* ssl = static_cast<SSL*>(X509_STORE_CTX_get_ex_data(ctx, ssl_index));
+  if (ssl == nullptr) {
+    GRPC_TRACE_LOG(tsi, INFO)
+        << "error while fetching SPIFFE Bundle Map. SSL object is null";
+    return nullptr;
+  }
+  SSL_CTX* ssl_ctx = SSL_get_SSL_CTX(ssl);
+  return static_cast<grpc_core::SpiffeBundleMap*>(
+      SSL_CTX_get_ex_data(ssl_ctx, g_ssl_ctx_ex_spiffe_bundle_map_index));
+}
+
+static absl::StatusOr<std::string> GetSpiffeUriFromCert(X509* cert) {
+  GRPC_CHECK(cert != nullptr);
+  GENERAL_NAMES* subject_alt_names = static_cast<GENERAL_NAMES*>(
+      X509_get_ext_d2i(cert, NID_subject_alt_name, nullptr, nullptr));
+  int uri_count = 0;
+  absl::StatusOr<std::string> spiffe_uri = absl::InvalidArgumentError(
+      "spiffe: no SPIFFE ID found in leaf certificate.");
+  if (subject_alt_names != nullptr) {
+    size_t subject_alt_name_count = sk_GENERAL_NAME_num(subject_alt_names);
+    for (size_t i = 0; i < subject_alt_name_count; i++) {
+      GENERAL_NAME* subject_alt_name =
+          sk_GENERAL_NAME_value(subject_alt_names, TSI_SIZE_AS_SIZE(i));
+      if (subject_alt_name == nullptr) {
+        continue;
+      }
+      if (subject_alt_name->type == GEN_URI) {
+        uri_count++;
+        if (uri_count > 1) {
+          sk_GENERAL_NAME_pop_free(subject_alt_names, GENERAL_NAME_free);
+          return absl::InvalidArgumentError(
+              "spiffe: more than one SAN URI found while doing SPIFFE "
+              "validation. Must "
+              "have exactly one URI SAN that is the SPIFFE ID.");
+        }
+        spiffe_uri = grpc_core::ParseUriString(subject_alt_name);
+      }
+    }
+  }
+  sk_GENERAL_NAME_pop_free(subject_alt_names, GENERAL_NAME_free);
+  GRPC_RETURN_IF_ERROR(spiffe_uri.status());
+  if (spiffe_uri->empty()) {
+    return absl::InvalidArgumentError(
+        "spiffe: no URI SAN found in leaf certificate");
+  }
+  return spiffe_uri;
+}
+
+static absl::StatusOr<std::string> SpiffeTrustDomainFromCert(X509* cert) {
+  GRPC_CHECK(cert != nullptr);
+  auto subject_name = GetSpiffeUriFromCert(cert);
+  GRPC_RETURN_IF_ERROR(subject_name.status());
+  auto spiffe_id = grpc_core::SpiffeId::FromString(*subject_name);
+  GRPC_RETURN_IF_ERROR(spiffe_id.status());
+  return std::string(spiffe_id->trust_domain());
+}
+
+// Fills ctx's trusted roots with the roots in the SPIFFE Bundle Map that
+// are associated with the to-be-verified leaf certificate's trust domain.
+// For more detail see
+// https://github.com/grpc/proposal/blob/master/A87-mtls-spiffe-support.md
+absl::Status ConfigureSpiffeRoots(
+    X509_STORE_CTX* ctx, grpc_core::SpiffeBundleMap* spiffe_bundle_map) {
+  GRPC_CHECK(ctx != nullptr);
+  if (spiffe_bundle_map == nullptr) {
+    return absl::InvalidArgumentError(
+        "cannot configure spiffe roots with a nullptr spiffe_bundle_map.");
+  }
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+  X509* leaf_cert = X509_STORE_CTX_get0_cert(ctx);
+#else
+  X509* leaf_cert = ctx->cert;
+#endif
+  if (leaf_cert == nullptr) {
+    return absl::InvalidArgumentError(
+        "A SPIFFE bundle map was configured but the leaf cert is null");
+  }
+  absl::StatusOr<std::string> trust_domain =
+      SpiffeTrustDomainFromCert(leaf_cert);
+  GRPC_RETURN_IF_ERROR(trust_domain.status());
+  auto root_stack = spiffe_bundle_map->GetRootStack(*trust_domain);
+  GRPC_RETURN_IF_ERROR(root_stack.status());
+  if (*root_stack == nullptr) {
+    return absl::InvalidArgumentError(
+        "spiffe: root stack in the SPIFFE Bundle Map is nullptr.");
+  }
+// the boringSSL library objective-C used did not have this function defined
+#if OPENSSL_VERSION_NUMBER >= 0x10100000L && !defined(OPENSSL_APPLE)
+  X509_STORE_CTX_set0_trusted_stack(ctx, *root_stack);
+#else
+  X509_STORE_CTX_trusted_stack(ctx, *root_stack);
+#endif
+  return absl::OkStatus();
+}
+
 // The custom verification function to set in OpenSSL using
 // X509_set_cert_verify_callback. This calls the standard OpenSSL procedure
 // (X509_verify_cert), then also extracts the root certificate in the built
@@ -1241,12 +1354,24 @@ static int CheckChainRevocation(
 // returns 1 on success, indicating a trusted chain to a root of trust was
 // found, 0 if a trusted chain could not be built.
 static int CustomVerificationFunction(X509_STORE_CTX* ctx, void* arg) {
+  GRPC_CHECK(ctx != nullptr);
+  grpc_core::SpiffeBundleMap* spiffe_bundle_map = GetSpiffeBundleMap(ctx);
+  if (spiffe_bundle_map != nullptr) {
+    // If a SPIFFE Bundle Map is configured, we'll use
+    // X509_STORE_CTX_set0_trusted_stack to then configure these as the roots
+    // for verification.
+    absl::Status status = ConfigureSpiffeRoots(ctx, spiffe_bundle_map);
+    if (!status.ok()) {
+      VLOG(2) << "Failed to configure SPIFFE roots: " << status;
+      return -1;
+    }
+  }
   int ret = X509_verify_cert(ctx);
   if (ret <= 0) {
     VLOG(2) << "Failed to verify cert chain.";
     // Verification failed. We shouldn't expect to have a verified chain, so
-    // there is no need to attempt to extract the root cert from it, check for
-    // revocation, or check anything else.
+    // there is no need to attempt to extract the root cert from it, check
+    // for revocation, or check anything else.
     return ret;
   }
   grpc_core::experimental::CrlProvider* provider = GetCrlProvider(ctx);
@@ -1260,9 +1385,9 @@ static int CustomVerificationFunction(X509_STORE_CTX* ctx, void* arg) {
   return RootCertExtractCallback(ctx, arg);
 }
 
-// Sets the min and max TLS version of |ssl_context| to |min_tls_version| and
-// |max_tls_version|, respectively. Calling this method is a no-op when using
-// OpenSSL versions < 1.1.
+// Sets the min and max TLS version of |ssl_context| to |min_tls_version|
+// and |max_tls_version|, respectively. Calling this method is a no-op when
+// using OpenSSL versions < 1.1.
 static tsi_result tsi_set_min_and_max_tls_versions(
     SSL_CTX* ssl_context, tsi_tls_version min_tls_version,
     tsi_tls_version max_tls_version) {
@@ -1473,7 +1598,7 @@ static tsi_ssl_handshaker_factory_vtable handshaker_factory_vtable = {nullptr};
 // allocating memory for the factory.
 static void tsi_ssl_handshaker_factory_init(
     tsi_ssl_handshaker_factory* factory) {
-  CHECK_NE(factory, nullptr);
+  GRPC_CHECK_NE(factory, nullptr);
 
   factory->vtable = &handshaker_factory_vtable;
   gpr_ref_init(&factory->refcount, 1);
@@ -1700,7 +1825,7 @@ static tsi_result ssl_handshaker_get_bytes_to_send_to_peer(
     if (error != nullptr) *error = "invalid argument";
     return TSI_INVALID_ARGUMENT;
   }
-  CHECK_LE(*bytes_size, static_cast<size_t>(INT_MAX));
+  GRPC_CHECK_LE(*bytes_size, static_cast<size_t>(INT_MAX));
   bytes_read_from_ssl =
       BIO_read(impl->network_io, bytes, static_cast<int>(*bytes_size));
   if (bytes_read_from_ssl < 0) {
@@ -1778,7 +1903,7 @@ static tsi_result ssl_handshaker_process_bytes_from_peer(
     if (error != nullptr) *error = "invalid argument";
     return TSI_INVALID_ARGUMENT;
   }
-  CHECK_LE(*bytes_size, static_cast<size_t>(INT_MAX));
+  GRPC_CHECK_LE(*bytes_size, static_cast<size_t>(INT_MAX));
   bytes_written_into_ssl_size =
       BIO_write(impl->network_io, bytes, static_cast<int>(*bytes_size));
   if (bytes_written_into_ssl_size < 0) {
@@ -2277,7 +2402,7 @@ static int server_handshaker_factory_npn_advertised_callback(
   tsi_ssl_server_handshaker_factory* factory =
       static_cast<tsi_ssl_server_handshaker_factory*>(arg);
   *out = factory->alpn_protocol_list;
-  CHECK(factory->alpn_protocol_list_length <= UINT_MAX);
+  GRPC_CHECK(factory->alpn_protocol_list_length <= UINT_MAX);
   *outlen = static_cast<unsigned int>(factory->alpn_protocol_list_length);
   return SSL_TLSEXT_ERR_OK;
 }
@@ -2312,7 +2437,7 @@ static int server_handshaker_factory_new_session_callback(
 template <typename T>
 static void ssl_keylogging_callback(const SSL* ssl, const char* info) {
   SSL_CTX* ssl_context = SSL_get_SSL_CTX(ssl);
-  CHECK_NE(ssl_context, nullptr);
+  GRPC_CHECK_NE(ssl_context, nullptr);
   void* arg = SSL_CTX_get_ex_data(ssl_context, g_ssl_ctx_ex_factory_index);
   T* factory = static_cast<T*>(arg);
   factory->key_logger->LogSessionKeys(ssl_context, info);
@@ -2429,12 +2554,14 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
                 ssl_context, pem_root_certs.c_str(), pem_root_certs.size(),
                 nullptr);
           },
-          [&](const grpc_core::SpiffeBundleMap&) {
-            // TODO(gtcooke94) - implement SPIFFE Bundle Map verification. Crash
-            // until this is done.
-            grpc_core::Crash(
-                "spiffe bundle maps were configured but are not fully "
-                "implemented.");
+          [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
+            X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context);
+            X509_STORE_set_flags(cert_store, X509_V_FLAG_PARTIAL_CHAIN |
+                                                 X509_V_FLAG_TRUSTED_FIRST);
+            const void* p = &spiffe_bundle_map;
+            void* map = const_cast<void*>(p);
+            SSL_CTX_set_ex_data(ssl_context,
+                                g_ssl_ctx_ex_spiffe_bundle_map_index, map);
           });
       X509_STORE* cert_store = SSL_CTX_get_cert_store(ssl_context);
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
@@ -2461,7 +2588,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
         break;
       }
 #if TSI_OPENSSL_ALPN_SUPPORT
-      CHECK(impl->alpn_protocol_list_length < UINT_MAX);
+      GRPC_CHECK(impl->alpn_protocol_list_length < UINT_MAX);
       if (SSL_CTX_set_alpn_protos(
               ssl_context, impl->alpn_protocol_list,
               static_cast<unsigned int>(impl->alpn_protocol_list_length))) {
@@ -2657,12 +2784,15 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
                 SSL_CTX_set_client_CA_list(impl->ssl_contexts[i], root_names);
               }
             },
-            [&](const grpc_core::SpiffeBundleMap&) {
-              // TODO(gtcooke94) - implement SPIFFE Bundle Map verification.
-              // Crash until this is done.
-              grpc_core::Crash(
-                  "spiffe bundle maps were configured but are not fully "
-                  "implemented.");
+            [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
+              X509_STORE* cert_store =
+                  SSL_CTX_get_cert_store(impl->ssl_contexts[i]);
+              X509_STORE_set_flags(cert_store, X509_V_FLAG_PARTIAL_CHAIN |
+                                                   X509_V_FLAG_TRUSTED_FIRST);
+              const void* p = &spiffe_bundle_map;
+              void* map = const_cast<void*>(p);
+              SSL_CTX_set_ex_data(impl->ssl_contexts[i],
+                                  g_ssl_ctx_ex_spiffe_bundle_map_index, map);
             });
         if (result != TSI_OK) {
           break;
@@ -2815,8 +2945,8 @@ bool IsRootCertInfoEmpty(const RootCertInfo* root_cert_info) {
 const tsi_ssl_handshaker_factory_vtable* tsi_ssl_handshaker_factory_swap_vtable(
     tsi_ssl_handshaker_factory* factory,
     tsi_ssl_handshaker_factory_vtable* new_vtable) {
-  CHECK_NE(factory, nullptr);
-  CHECK_NE(factory->vtable, nullptr);
+  GRPC_CHECK_NE(factory, nullptr);
+  GRPC_CHECK_NE(factory->vtable, nullptr);
 
   const tsi_ssl_handshaker_factory_vtable* orig_vtable = factory->vtable;
   factory->vtable = new_vtable;

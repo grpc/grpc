@@ -23,8 +23,6 @@
 #include <grpc/support/sync.h>
 #include <inttypes.h>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -34,6 +32,8 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/util/memory.h"
 #include "src/core/util/time.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
 
 #define DEFAULT_POLL_INTERVAL_MS 5000
 
@@ -62,14 +62,13 @@ static grpc_core::Duration g_poll_interval =
 static bool g_backup_polling_disabled;
 
 void grpc_client_channel_global_init_backup_polling() {
-#ifndef GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
-  // Disable backup polling if EventEngine is used everywhere.
   g_backup_polling_disabled = grpc_core::IsEventEngineClientEnabled() &&
                               grpc_core::IsEventEngineListenerEnabled() &&
                               grpc_core::IsEventEngineDnsEnabled();
-#else
-  // EventEngine polling not supported, keep using the backup poller.
-  g_backup_polling_disabled = false;
+#ifdef GRPC_PYTHON_BUILD
+  if (!grpc_core::IsEventEnginePollerForPythonEnabled()) {
+    g_backup_polling_disabled = false;
+  }
 #endif
   if (g_backup_polling_disabled) {
     return;
@@ -161,7 +160,7 @@ static void g_poller_init_locked() {
 }
 
 static bool g_can_poll_in_background() {
-#ifndef GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
+#ifndef GRPC_PYTHON_BUILD
   return grpc_iomgr_run_in_background();
 #else
   // No iomgr "event_engines" (not to be confused with the new EventEngine)

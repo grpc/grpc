@@ -42,7 +42,7 @@ struct JoinState<Traits, ${",".join(f"P{i}" for i in range(0,n))}> {
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
-    DCHECK(other.ready.none());
+    GRPC_DCHECK(other.ready.none());
 % for i in range(0,n):
     Construct(&promise${i}, std::move(other.promise${i}));
 % endfor
@@ -95,7 +95,6 @@ front_matter = """
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 
 #include "src/core/lib/debug/trace.h"
@@ -103,6 +102,7 @@ front_matter = """
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/util/bitset.h"
+#include "src/core/util/grpc_check.h"
 #include <tuple>
 #include <type_traits>
 #include <utility>

@@ -20,11 +20,11 @@
 
 #include <memory>
 
-#include "absl/log/check.h"
-#include "gtest/gtest.h"
 #include "src/core/server/server.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/bad_client/bad_client.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 #define HEADER_FRAME_ID_1                                                  \
   "\x00\x00\xc9\x01\x05\x00\x00\x00\x01" /* headers: generated from        \
@@ -79,9 +79,9 @@ namespace {
 void verifier(grpc_server* server, grpc_completion_queue* cq,
               void* /*registered_method*/) {
   while (grpc_core::Server::FromC(server)->HasOpenConnections()) {
-    CHECK(grpc_completion_queue_next(
-              cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
-              .type == GRPC_QUEUE_TIMEOUT);
+    GRPC_CHECK(grpc_completion_queue_next(
+                   cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
+                   .type == GRPC_QUEUE_TIMEOUT);
   }
 }
 

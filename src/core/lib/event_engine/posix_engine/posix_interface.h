@@ -23,10 +23,10 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
 #include "src/core/lib/event_engine/posix_engine/file_descriptor_collection.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/status/status.h"
 
 namespace grpc_event_engine::experimental {
 

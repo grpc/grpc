@@ -26,19 +26,19 @@
 #include <optional>
 #include <string>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/credentials/transport/tls/spiffe_utils.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/thd.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 // Interface for a grpc_tls_certificate_provider that handles the process to
 // fetch credentials and validation contexts. Implementations are free to rely
@@ -64,7 +64,7 @@ struct grpc_tls_certificate_provider
   // be reused when two different `grpc_tls_certificate_provider` objects are
   // used but they compare as equal (assuming other channel args match).
   int Compare(const grpc_tls_certificate_provider* other) const {
-    CHECK_NE(other, nullptr);
+    GRPC_CHECK_NE(other, nullptr);
     int r = type().Compare(other->type());
     if (r != 0) return r;
     return CompareImpl(other);

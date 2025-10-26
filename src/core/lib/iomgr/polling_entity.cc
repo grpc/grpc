@@ -21,9 +21,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/check.h"
-#include "absl/strings/str_format.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/strings/str_format.h"
 
 grpc_polling_entity grpc_polling_entity_create_from_pollset_set(
     grpc_pollset_set* pollset_set) {
@@ -72,7 +72,7 @@ void grpc_polling_entity_add_to_pollset_set(grpc_polling_entity* pollent,
       grpc_pollset_set_add_pollset(pss_dst, pollent->pollent.pollset);
     }
   } else if (pollent->tag == GRPC_POLLS_POLLSET_SET) {
-    CHECK_NE(pollent->pollent.pollset_set, nullptr);
+    GRPC_CHECK_NE(pollent->pollent.pollset_set, nullptr);
     grpc_pollset_set_add_pollset_set(pss_dst, pollent->pollent.pollset_set);
   } else if (pollent->tag == GRPC_POLLS_NONE) {
     // Do nothing.
@@ -90,7 +90,7 @@ void grpc_polling_entity_del_from_pollset_set(grpc_polling_entity* pollent,
       grpc_pollset_set_del_pollset(pss_dst, pollent->pollent.pollset);
     }
   } else if (pollent->tag == GRPC_POLLS_POLLSET_SET) {
-    CHECK_NE(pollent->pollent.pollset_set, nullptr);
+    GRPC_CHECK_NE(pollent->pollent.pollset_set, nullptr);
     grpc_pollset_set_del_pollset_set(pss_dst, pollent->pollent.pollset_set);
   } else if (pollent->tag == GRPC_POLLS_NONE) {
     // Do nothing.

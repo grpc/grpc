@@ -28,8 +28,8 @@
 #include <iostream>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc {
 namespace testing {
@@ -81,7 +81,7 @@ CliCall::CliCall(const std::shared_ptr<grpc::Channel>& channel,
   void* got_tag;
   bool ok;
   cq_.Next(&got_tag, &ok);
-  CHECK(ok);
+  GRPC_CHECK(ok);
 }
 
 CliCall::~CliCall() {
@@ -98,7 +98,7 @@ void CliCall::Write(const std::string& request) {
   grpc::ByteBuffer send_buffer(&req_slice, 1);
   call_->Write(send_buffer, tag(2));
   cq_.Next(&got_tag, &ok);
-  CHECK(ok);
+  GRPC_CHECK(ok);
 }
 
 bool CliCall::Read(std::string* response,
@@ -113,7 +113,7 @@ bool CliCall::Read(std::string* response,
     return false;
   }
   std::vector<grpc::Slice> slices;
-  CHECK(recv_buffer.Dump(&slices).ok());
+  GRPC_CHECK(recv_buffer.Dump(&slices).ok());
 
   response->clear();
   for (size_t i = 0; i < slices.size(); i++) {
@@ -132,7 +132,7 @@ void CliCall::WritesDone() {
 
   call_->WritesDone(tag(4));
   cq_.Next(&got_tag, &ok);
-  CHECK(ok);
+  GRPC_CHECK(ok);
 }
 
 void CliCall::WriteAndWait(const std::string& request) {
@@ -175,7 +175,7 @@ bool CliCall::ReadAndMaybeNotifyWrite(
 
     cq_result = cq_.Next(&got_tag, &ok);
     if (got_tag == tag(2)) {
-      CHECK(ok);
+      GRPC_CHECK(ok);
     }
   }
 
@@ -186,7 +186,7 @@ bool CliCall::ReadAndMaybeNotifyWrite(
       gpr_mu_lock(&write_mu_);
       if (!write_done_) {
         cq_.Next(&got_tag, &ok);
-        CHECK(got_tag != tag(2));
+        GRPC_CHECK(got_tag != tag(2));
         write_done_ = true;
         gpr_cv_signal(&write_cv_);
       }
@@ -196,7 +196,7 @@ bool CliCall::ReadAndMaybeNotifyWrite(
   }
 
   std::vector<grpc::Slice> slices;
-  CHECK(recv_buffer.Dump(&slices).ok());
+  GRPC_CHECK(recv_buffer.Dump(&slices).ok());
   response->clear();
   for (size_t i = 0; i < slices.size(); i++) {
     response->append(reinterpret_cast<const char*>(slices[i].begin()),
@@ -215,7 +215,7 @@ Status CliCall::Finish(IncomingMetadataContainer* server_trailing_metadata) {
 
   call_->Finish(&status, tag(5));
   cq_.Next(&got_tag, &ok);
-  CHECK(ok);
+  GRPC_CHECK(ok);
   if (server_trailing_metadata) {
     *server_trailing_metadata = ctx_.GetServerTrailingMetadata();
   }

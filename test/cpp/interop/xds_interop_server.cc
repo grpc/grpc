@@ -22,8 +22,6 @@
 
 #include <iostream>
 
-#include "absl/flags/flag.h"
-#include "absl/log/log.h"
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
@@ -31,6 +29,8 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/interop/xds_interop_server_lib.h"
 #include "test/cpp/util/test_config.h"
+#include "absl/flags/flag.h"
+#include "absl/log/log.h"
 
 ABSL_FLAG(int32_t, port, 8080, "Server port for service.");
 ABSL_FLAG(int32_t, maintenance_port, 8081,

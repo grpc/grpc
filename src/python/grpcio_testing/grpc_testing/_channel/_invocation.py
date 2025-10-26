@@ -119,10 +119,9 @@ def _next(handler):
     read = handler.take_response()
     if read.code is None:
         return read.response
-    elif read.code is grpc.StatusCode.OK:
+    if read.code is grpc.StatusCode.OK:
         raise StopIteration()
-    else:
-        raise _RpcErrorCall(handler)
+    raise _RpcErrorCall(handler)
 
 
 class _HandlerExtras(object):
@@ -137,8 +136,7 @@ def _with_extras_cancel(handler, extras):
         if handler.cancel(grpc.StatusCode.CANCELLED, "Locally cancelled!"):
             extras.cancelled = True
             return True
-        else:
-            return False
+        return False
 
 
 def _extras_without_cancelled(extras):
@@ -161,18 +159,18 @@ def _with_extras_unary_response(handler, extras):
             if read.code is None:
                 extras.unary_response = read.response
                 return read.response
-            else:
-                raise _RpcErrorCall(handler)
-        else:
-            return extras.unary_response
+            raise _RpcErrorCall(handler)
+        return extras.unary_response
 
 
 def _exception(unused_handler):
-    raise NotImplementedError("TODO!")
+    error_msg = "TODO!"
+    raise NotImplementedError(error_msg)
 
 
 def _traceback(unused_handler):
-    raise NotImplementedError("TODO!")
+    error_msg = "TODO!"
+    raise NotImplementedError(error_msg)
 
 
 def _add_done_callback(handler, callback, future):
@@ -258,10 +256,8 @@ def blocking_unary_response(handler):
         unused_trailing_metadata, code, unused_details = handler.termination()
         if code is grpc.StatusCode.OK:
             return read.response
-        else:
-            raise _RpcErrorCall(handler)
-    else:
         raise _RpcErrorCall(handler)
+    raise _RpcErrorCall(handler)
 
 
 def blocking_unary_response_with_call(handler):
@@ -270,10 +266,8 @@ def blocking_unary_response_with_call(handler):
         unused_trailing_metadata, code, unused_details = handler.termination()
         if code is grpc.StatusCode.OK:
             return read.response, _Call(handler)
-        else:
-            raise _RpcErrorCall(handler)
-    else:
         raise _RpcErrorCall(handler)
+    raise _RpcErrorCall(handler)
 
 
 def future_call(handler):

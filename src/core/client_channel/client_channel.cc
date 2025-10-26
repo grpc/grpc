@@ -36,15 +36,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/cleanup/cleanup.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/cord.h"
-#include "absl/strings/numbers.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/call/client_call.h"
 #include "src/core/call/metadata_batch.h"
@@ -94,6 +85,15 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
 #include "src/core/util/work_serializer.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/cord.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -220,7 +220,7 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
   WatcherWrapper(
       std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
           watcher,
-      RefCountedPtr<SubchannelWrapper> subchannel_wrapper)
+      WeakRefCountedPtr<SubchannelWrapper> subchannel_wrapper)
       : watcher_(std::move(watcher)),
         subchannel_wrapper_(std::move(subchannel_wrapper)) {}
 
@@ -233,9 +233,7 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
     GRPC_TRACE_LOG(client_channel, INFO)
         << "client_channel=" << subchannel_wrapper_->client_channel_.get()
         << ": connectivity change for subchannel wrapper "
-        << subchannel_wrapper_.get() << " subchannel "
-        << subchannel_wrapper_->subchannel_.get()
-        << "; hopping into work_serializer";
+        << subchannel_wrapper_.get() << "; hopping into work_serializer";
     auto self = RefAsSubclass<WatcherWrapper>();
     subchannel_wrapper_->client_channel_->work_serializer_->Run(
         [self, state, status]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
@@ -298,7 +296,7 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
 
   std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
       watcher_;
-  RefCountedPtr<SubchannelWrapper> subchannel_wrapper_;
+  WeakRefCountedPtr<SubchannelWrapper> subchannel_wrapper_;
 };
 
 ClientChannel::SubchannelWrapper::SubchannelWrapper(
@@ -363,6 +361,20 @@ void ClientChannel::SubchannelWrapper::Orphaned() {
             }
           }
         }
+        if (IsSubchannelWrapperCleanupOnOrphanEnabled()) {
+          // We need to make sure that the internal subchannel gets unreffed
+          // inside of the WorkSerializer, so that updates to the local
+          // subchannel pool are properly synchronized.  To that end, we
+          // drop our ref to the internal subchannel here.  We also cancel
+          // any watchers that were not properly cancelled, in case any of
+          // them are holding a ref to the internal subchannel.
+          for (const auto& [_, watcher] : self->watcher_map_) {
+            self->subchannel_->CancelConnectivityStateWatch(watcher);
+          }
+          self->watcher_map_.clear();
+          self->data_watchers_.clear();
+          self->subchannel_.reset();
+        }
       });
 }
 
@@ -372,7 +384,7 @@ void ClientChannel::SubchannelWrapper::WatchConnectivityState(
   CHECK(watcher_wrapper == nullptr);
   watcher_wrapper = new WatcherWrapper(
       std::move(watcher),
-      RefAsSubclass<SubchannelWrapper>(DEBUG_LOCATION, "WatcherWrapper"));
+      WeakRefAsSubclass<SubchannelWrapper>(DEBUG_LOCATION, "WatcherWrapper"));
   subchannel_->WatchConnectivityState(
       RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface>(
           watcher_wrapper));
@@ -516,11 +528,7 @@ RefCountedPtr<SubchannelPoolInterface> GetSubchannelPool(
   if (args.GetBool(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL).value_or(false)) {
     return MakeRefCounted<LocalSubchannelPool>();
   }
-  if (IsShardGlobalConnectionPoolEnabled()) {
-    return GlobalSubchannelPool::instance();
-  } else {
-    return LegacyGlobalSubchannelPool::instance();
-  }
+  return GlobalSubchannelPool::instance();
 }
 
 }  // namespace
@@ -896,8 +904,7 @@ void ClientChannel::StartCall(UnstartedCallHandler unstarted_handler) {
               if (!status.ok()) return status;
               // If the call was queued, add trace annotation.
               if (was_queued) {
-                auto* call_tracer =
-                    MaybeGetContext<CallTracerAnnotationInterface>();
+                auto* call_tracer = MaybeGetContext<CallSpan>();
                 if (call_tracer != nullptr) {
                   call_tracer->RecordAnnotation(
                       "Delayed name resolution complete.");
@@ -1280,7 +1287,7 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked(
   if (enable_retries) {
     RetryInterceptor::UpdateBlackboard(*saved_service_config_,
                                        blackboard_.get(), new_blackboard.get());
-    builder.Add<RetryInterceptor>();
+    builder.Add<RetryInterceptor>(nullptr);
   }
   blackboard_ = std::move(new_blackboard);
   // Create call destination.
@@ -1396,7 +1403,7 @@ absl::Status ClientChannel::ApplyServiceConfigToCall(
       const Timestamp per_method_deadline =
           Timestamp::FromCycleCounterRoundUp(call->start_time()) +
           method_params->timeout();
-      call->UpdateDeadline(per_method_deadline);
+      call->UpdateDeadline(per_method_deadline).IgnoreError();
     }
     // If the service config set wait_for_ready and the application
     // did not explicitly set it, use the value from the service config.

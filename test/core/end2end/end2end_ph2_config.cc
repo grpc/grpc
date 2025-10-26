@@ -34,46 +34,110 @@
 
 namespace grpc_core {
 
-#define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST                     \
-  "CoreClientChannelTests.DeadlineAfterAcceptWithServiceConfig"            \
-  "|CoreClientChannelTests.DeadlineAfterRoundTripWithServiceConfig"        \
-  "|CoreDeadlineSingleHopTests."                                           \
-  "TimeoutBeforeRequestCallWithRegisteredMethodWithPayload"                \
-  "|CoreEnd2endTests.BinaryMetadataServerHttp2FallbackClientHttp2Fallback" \
-  "|CoreEnd2endTests.BinaryMetadataServerHttp2FallbackClientTrueBinary"    \
-  "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientHttp2Fallback"    \
-  "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientTrueBinary"       \
-  "|CoreEnd2endTests.CancelAfterInvoke3"                                   \
-  "|CoreEnd2endTests.CancelAfterInvoke4"                                   \
-  "|CoreEnd2endTests.CancelAfterInvoke5"                                   \
-  "|CoreEnd2endTests.CancelAfterInvoke6"                                   \
-  "|CoreEnd2endTests.DeadlineAfterInvoke3"                                 \
-  "|CoreEnd2endTests.DeadlineAfterInvoke4"                                 \
-  "|CoreEnd2endTests.DeadlineAfterInvoke5"                                 \
-  "|CoreEnd2endTests.DeadlineAfterInvoke6"                                 \
-  "|CoreEnd2endTests.CancelWithStatus1"                                    \
-  "|CoreEnd2endTests.CancelWithStatus2"                                    \
-  "|CoreEnd2endTests.CancelWithStatus3"                                    \
-  "|CoreEnd2endTests.CancelWithStatus4"                                    \
-  "|CoreEnd2endTests.MaxMessageLengthOnClientOnResponseViaChannelArg"      \
-  "|CoreEnd2endTests."                                                     \
-  "MaxMessageLengthOnClientOnResponseViaServiceConfigWithIntegerJsonValue" \
-  "|CoreEnd2endTests."                                                     \
-  "MaxMessageLengthOnClientOnResponseViaServiceConfigWithStringJsonValue"  \
-  "|CoreEnd2endTests.SimpleMetadata"                                       \
-  "|CoreEnd2endTests.StreamingErrorResponse"                               \
-  "|CoreEnd2endTests.StreamingErrorResponse"                               \
-  "|CoreEnd2endTests.StreamingErrorResponseRequestStatusEarly"             \
-  "|CoreEnd2endTests.StreamingErrorResponseRequestStatusEarly"             \
-  "|CoreEnd2endTests."                                                     \
-  "StreamingErrorResponseRequestStatusEarlyAndRecvMessageSeparately"       \
-  "|CoreEnd2endTests.TrailingMetadata"                                     \
-  "|CoreLargeSendTests.RequestResponseWithPayload"                         \
-  "|CoreLargeSendTests.RequestResponseWithPayload10Times"
+class Ph2InsecureFixture : public InsecureFixture {
+ public:
+  Ph2InsecureFixture() {
+    // At Least one of the 2 peers MUST be a PH2
+    GRPC_DCHECK(IsPromiseBasedHttp2ClientTransportEnabled() ||
+                IsPromiseBasedHttp2ServerTransportEnabled());
+  }
 
-#define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE    \
-  "CoreEnd2endTests|CoreDeadlineTests|CoreLargeSendTests|" \
-  "CoreClientChannelTests|CoreDeadlineSingleHopTests|"
+  ChannelArgs MutateClientArgs(ChannelArgs args) override {
+    return args.Set(GRPC_ARG_ENABLE_CHANNELZ, true);
+  }
+
+  ChannelArgs MutateServerArgs(ChannelArgs args) override {
+    return args.Set(GRPC_ARG_ENABLE_CHANNELZ, true);
+  }
+};
+
+#define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST                         \
+  "CoreClientChannelTests.DeadlineAfterAcceptWithServiceConfig"                \
+  "|CoreClientChannelTests.DeadlineAfterRoundTripWithServiceConfig"            \
+  "|CoreDeadlineTests.DeadlineAfterRoundTrip"                                  \
+  "|CoreDeadlineSingleHopTests."                                               \
+  "TimeoutBeforeRequestCallWithRegisteredMethodWithPayload"                    \
+  "|CoreEnd2endTests.BinaryMetadataServerHttp2FallbackClientHttp2Fallback"     \
+  "|CoreEnd2endTests.BinaryMetadataServerHttp2FallbackClientTrueBinary"        \
+  "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientTrueBinary"           \
+  "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientHttp2Fallback"        \
+  "|CoreEnd2endTests.CancelAfterAccept"                                        \
+  "|CoreEnd2endTests.CancelAfterClientDone"                                    \
+  "|CoreEnd2endTests.CancelAfterInvoke3"                                       \
+  "|CoreEnd2endTests.CancelAfterInvoke4"                                       \
+  "|CoreEnd2endTests.CancelAfterInvoke5"                                       \
+  "|CoreEnd2endTests.CancelAfterInvoke6"                                       \
+  "|CoreEnd2endTests.CancelAfterRoundTrip"                                     \
+  "|CoreEnd2endTests.CancelWithStatus1"                                        \
+  "|CoreEnd2endTests.CancelWithStatus2"                                        \
+  "|CoreEnd2endTests.CancelWithStatus3"                                        \
+  "|CoreEnd2endTests.CancelWithStatus4"                                        \
+  "|CoreEnd2endTests.DeadlineAfterInvoke3"                                     \
+  "|CoreEnd2endTests.DeadlineAfterInvoke4"                                     \
+  "|CoreEnd2endTests.DeadlineAfterInvoke5"                                     \
+  "|CoreEnd2endTests.DeadlineAfterInvoke6"                                     \
+  "|CoreEnd2endTests.MaxMessageLengthOnClientOnResponseViaChannelArg"          \
+  "|CoreEnd2endTests."                                                         \
+  "MaxMessageLengthOnClientOnResponseViaServiceConfigWithIntegerJsonValue"     \
+  "|CoreEnd2endTests."                                                         \
+  "MaxMessageLengthOnClientOnResponseViaServiceConfigWithStringJsonValue"      \
+  "|CoreLargeSendTests.RequestResponseWithPayload"                             \
+  "|CoreLargeSendTests.RequestResponseWithPayload10Times"                      \
+  "|Http2SingleHopTests.DisabledAlgorithmDecompressInCore"                     \
+  "|Http2SingleHopTests.DisabledAlgorithmDecompressInApp"                      \
+  "|Http2SingleHopTests."                                                      \
+  "RequestWithExceptionallyUncompressedPayloadDecompressInCore"                \
+  "|Http2SingleHopTests."                                                      \
+  "RequestWithExceptionallyUncompressedPayloadDecompressInApp"                 \
+  "|Http2SingleHopTests.RequestWithUncompressedPayloadDecompressInCore"        \
+  "|Http2SingleHopTests.RequestWithUncompressedPayloadDecompressInApp"         \
+  "|Http2SingleHopTests.RequestWithCompressedPayloadDecompressInCore"          \
+  "|Http2SingleHopTests.RequestWithCompressedPayloadDecompressInApp"           \
+  "|Http2SingleHopTests."                                                      \
+  "RequestWithSendMessageBeforeInitialMetadataDecompressInCore"                \
+  "|Http2SingleHopTests."                                                      \
+  "RequestWithSendMessageBeforeInitialMetadataDecompressInApp"                 \
+  "|Http2SingleHopTests.RequestWithServerLevelDecompressInCore"                \
+  "|Http2SingleHopTests.RequestWithServerLevelDecompressInApp"                 \
+  "|Http2SingleHopTests."                                                      \
+  "RequestWithCompressedPayloadMetadataOverrideNoneToGzipDecompressInCore"     \
+  "|Http2SingleHopTests."                                                      \
+  "RequestWithCompressedPayloadMetadataOverrideNoneToGzipDecompressInApp"      \
+  "|Http2SingleHopTests."                                                      \
+  "RequestWithCompressedPayloadMetadataOverrideDeflateToGzipDecompressInCore"  \
+  "|Http2SingleHopTests."                                                      \
+  "RequestWithCompressedPayloadMetadataOverrideDeflateToGzipDecompressInApp"   \
+  "|Http2SingleHopTests."                                                      \
+  "RequestWithCompressedPayloadMetadataOverrideDeflateToIdentityDecompressInC" \
+  "ore"                                                                        \
+  "|Http2SingleHopTests."                                                      \
+  "RequestWithCompressedPayloadMetadataOverrideDeflateToIdentityDecompressInA" \
+  "pp"                                                                         \
+  "|Http2SingleHopTests.RequestWithDefaultHighLevelDecompressInCore"           \
+  "|Http2SingleHopTests.RequestWithDefaultMediumLevelDecompressInCore"         \
+  "|Http2SingleHopTests.RequestWithDefaultLowLevelDecompressInCore"            \
+  "|Http2SingleHopTests.RequestWithDefaultNoneLevelDecompressInCore"           \
+  "|Http2SingleHopTests.InvokeLargeRequest"                                    \
+  "|Http2SingleHopTests.KeepaliveTimeout"                                      \
+  "|Http2SingleHopTests.ReadDelaysKeepalive"                                   \
+  "|Http2SingleHopTests.RequestWithLargeMetadataUnderSoftLimit"                \
+  "|Http2SingleHopTests.RequestWithLargeMetadataBetweenSoftAndHardLimits"      \
+  "|Http2SingleHopTests.RequestWithLargeMetadataAboveHardLimit"                \
+  "|Http2SingleHopTests.RequestWithLargeMetadataSoftLimitAboveHardLimit"       \
+  "|Http2SingleHopTests.RequestWithLargeMetadataSoftLimitOverridesDefaultHard" \
+  "|Http2SingleHopTests.RequestWithLargeMetadataHardLimitOverridesDefaultSoft" \
+  "|Http2SingleHopTests.RequestWithLargeMetadataHardLimitBelowDefaultHard"     \
+  "|Http2SingleHopTests.RequestWithLargeMetadataSoftLimitBelowDefaultSoft"     \
+  "|Http2SingleHopTests.MaxConcurrentStreams"                                  \
+  "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnFirst"                    \
+  "|Http2SingleHopTests.MaxConcurrentStreamsTimeoutOnSecond"                   \
+  "|Http2SingleHopTests.MaxConcurrentStreamsRejectOnClient"                    \
+  "|Http2SingleHopTests.SimpleDelayedRequestShort"
+
+#define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE               \
+  "CoreEnd2endTests|CoreDeadlineTests|CoreLargeSendTests|"            \
+  "CoreClientChannelTests|CoreDeadlineSingleHopTests|NoLoggingTests|" \
+  "Http2SingleHopTests"
 
 std::vector<CoreTestConfiguration> End2endTestConfigs() {
   std::vector<CoreTestConfiguration> list_of_configs;
@@ -92,7 +156,7 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
         /*create_fixture=*/
         [](const ChannelArgs& /*client_args*/,
            const ChannelArgs& /*server_args*/) {
-          return std::make_unique<InsecureFixture>();
+          return std::make_unique<Ph2InsecureFixture>();
         },
         /* include_test_suites */
         GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE,

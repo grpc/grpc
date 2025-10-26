@@ -21,11 +21,11 @@
 #include <grpc/support/port_platform.h>
 #include <inttypes.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 
@@ -84,7 +84,7 @@ void CallCombiner::TsanClosure(void* arg, grpc_error_handle error) {
   if (lock != nullptr) {
     TSAN_ANNOTATE_RWLOCK_RELEASED(&lock->taken, true);
     bool prev = true;
-    CHECK(lock->taken.compare_exchange_strong(prev, false));
+    GRPC_CHECK(lock->taken.compare_exchange_strong(prev, false));
   }
 }
 #endif
@@ -141,7 +141,7 @@ void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
       static_cast<size_t>(gpr_atm_full_fetch_add(&size_, (gpr_atm)-1));
   GRPC_TRACE_LOG(call_combiner, INFO)
       << "  size: " << prev_size << " -> " << prev_size - 1;
-  CHECK_GE(prev_size, 1u);
+  GRPC_CHECK_GE(prev_size, 1u);
   if (prev_size > 1) {
     while (true) {
       GRPC_TRACE_LOG(call_combiner, INFO) << "  checking queue";

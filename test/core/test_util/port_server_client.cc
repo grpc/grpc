@@ -34,10 +34,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -45,6 +41,7 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/http_client/parser.h"
 #include "src/core/util/orphanable.h"
@@ -53,6 +50,9 @@
 #include "src/core/util/time.h"
 #include "src/core/util/uri.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 
 typedef struct freereq {
   gpr_mu* mu = nullptr;
@@ -107,7 +107,7 @@ void grpc_free_port_using_server(int port) {
     auto uri = grpc_core::URI::Create("https", /*user_info=*/"",
                                       get_port_server_address(), path,
                                       {} /* query params */, "" /* fragment */);
-    CHECK_OK(uri);
+    GRPC_CHECK_OK(uri);
     auto http_request = grpc_core::HttpRequest::Get(
         std::move(*uri), nullptr /* channel args */, &pr.pops, &req,
         grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(30),
@@ -178,7 +178,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
       gpr_mu_unlock(pr->mu);
       return;
     }
-    CHECK(pr->retries < 10);
+    GRPC_CHECK(pr->retries < 10);
     gpr_sleep_until(gpr_time_add(
         gpr_now(GPR_CLOCK_REALTIME),
         gpr_time_from_millis(
@@ -191,7 +191,7 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
     auto uri =
         grpc_core::URI::Create("http", /*user_info=*/"", pr->server, "/get",
                                {} /* query params */, "" /* fragment */);
-    CHECK_OK(uri);
+    GRPC_CHECK_OK(uri);
     pr->http_request = grpc_core::HttpRequest::Get(
         std::move(*uri), nullptr /* channel args */, &pr->pops, &req,
         grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(30),
@@ -203,14 +203,14 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
     pr->http_request->Start();
     return;
   }
-  CHECK(response);
-  CHECK_EQ(response->status, 200);
+  GRPC_CHECK(response);
+  GRPC_CHECK_EQ(response->status, 200);
   for (i = 0; i < response->body_length; i++) {
-    CHECK(response->body[i] >= '0');
-    CHECK(response->body[i] <= '9');
+    GRPC_CHECK(response->body[i] >= '0');
+    GRPC_CHECK(response->body[i] <= '9');
     port = port * 10 + response->body[i] - '0';
   }
-  CHECK(port > 1024);
+  GRPC_CHECK(port > 1024);
   gpr_mu_lock(pr->mu);
   pr->port = port;
   GRPC_LOG_IF_ERROR(
@@ -240,7 +240,7 @@ int grpc_pick_port_using_server(void) {
     auto uri =
         grpc_core::URI::Create("http", /*user_info=*/"", pr.server, "/get",
                                {} /* query params */, "" /* fragment */);
-    CHECK_OK(uri);
+    GRPC_CHECK_OK(uri);
     auto http_request = grpc_core::HttpRequest::Get(
         std::move(*uri), nullptr /* channel args */, &pr.pops, &req,
         grpc_core::Timestamp::Now() + grpc_core::Duration::Seconds(30),

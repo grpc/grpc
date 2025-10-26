@@ -27,10 +27,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/metadata_compression_traits.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
@@ -42,6 +38,10 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/time.h"
+#include "absl/log/log.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -369,8 +369,10 @@ class HPackCompressor {
   }
 
   template <typename HeaderSet>
-  bool EncodeRawHeaders(const HeaderSet& headers, SliceBuffer& output) {
-    hpack_encoder_detail::Encoder encoder(this, true, output);
+  bool EncodeRawHeaders(const HeaderSet& headers, SliceBuffer& output,
+                        bool allow_true_binary_metadata) {
+    hpack_encoder_detail::Encoder encoder(this, allow_true_binary_metadata,
+                                          output);
     headers.Encode(&encoder);
     return !encoder.saw_encoding_errors();
   }

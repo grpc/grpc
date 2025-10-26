@@ -38,10 +38,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/call_combiner.h"
@@ -56,8 +52,12 @@
 #include "src/core/server/server_interface.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/alloc.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -110,7 +110,7 @@ class FilterStackCall final : public Call {
 
   bool is_trailers_only() const override {
     bool result = is_trailers_only_;
-    DCHECK(!result || recv_initial_metadata_.TransportSize() == 0);
+    GRPC_DCHECK(!result || recv_initial_metadata_.TransportSize() == 0);
     return result;
   }
 
@@ -184,7 +184,6 @@ class FilterStackCall final : public Call {
   }
   struct BatchControl {
     FilterStackCall* call_ = nullptr;
-    CallTracerAnnotationInterface* call_tracer_ = nullptr;
     grpc_transport_stream_op_batch op_;
     // Share memory for cq_completion and notify_tag as they are never needed
     // simultaneously. Each byte used in this data structure count as six bytes
@@ -219,7 +218,7 @@ class FilterStackCall final : public Call {
           << "BATCH:" << this << " COMPLETE:" << PendingOpString(mask)
           << " REMAINING:" << PendingOpString(r & ~mask)
           << " (tag:" << completion_data_.notify_tag.tag << ")";
-      CHECK_NE((r & mask), 0);
+      GRPC_CHECK_NE((r & mask), 0);
       return r == mask;
     }
 

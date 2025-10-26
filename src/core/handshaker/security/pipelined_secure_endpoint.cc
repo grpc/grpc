@@ -34,14 +34,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/span.h"
 #include "src/core/handshaker/security/secure_endpoint.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -56,12 +48,20 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/tsi/transport_security_grpc.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/latent_see.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 #define STAGING_BUFFER_SIZE 8192
 
@@ -98,6 +98,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
       write_staging_buffer_ =
           memory_owner_.MakeSlice(MemoryRequest(STAGING_BUFFER_SIZE));
     }
+    is_zero_copy_protector_ = zero_copy_protector_ != nullptr;
   }
 
   ~FrameProtector() override {
@@ -179,6 +180,8 @@ class FrameProtector : public RefCounted<FrameProtector> {
     if (!ok) grpc_slice_buffer_reset_and_unref(read_buffer_);
     read_buffer_ = nullptr;
   }
+
+  bool IsZeroCopyProtector() const { return is_zero_copy_protector_; }
 
   absl::Status Unprotect(absl::Status read_status)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_) {
@@ -451,6 +454,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
   int min_progress_size_ = 1;
   SliceBuffer protector_staging_buffer_;
   bool shutdown_ = false;
+  bool is_zero_copy_protector_ = false;
 };
 }  // namespace
 }  // namespace grpc_core
@@ -597,15 +601,17 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
         // called again once that read completes.
         if (unprotecting_.value()) {
           lock.Release();
-          event_engine_->Run(
-              [impl = Ref()]() mutable { ContinueUnprotect(std::move(impl)); });
+          event_engine_->Run([impl = Ref()]() mutable {
+            grpc_core::ExecCtx exec_ctx;
+            ContinueUnprotect(std::move(impl));
+          });
         }
         return true;
       }
 
       // If we're already unprotecting on another thread, we need to store the
       // buffer until we have some unprotected bytes to give it.
-      CHECK(on_read_ == nullptr);
+      GRPC_CHECK(on_read_ == nullptr);
       pending_output_buffer_ = buffer;
       on_read_ = std::move(on_read);
       last_read_args_ = std::move(args);
@@ -672,8 +678,8 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
     void StartFirstRead() ABSL_LOCKS_EXCLUDED(read_queue_mu_) {
       grpc_core::ReleasableMutexLock lock(&read_queue_mu_);
       unprotecting_ = true;
-      CHECK(protected_data_buffer_ == nullptr);
-      CHECK(unprotected_data_buffer_ == nullptr);
+      GRPC_CHECK(protected_data_buffer_ == nullptr);
+      GRPC_CHECK(unprotected_data_buffer_ == nullptr);
       // First, check if there are any leftover bytes to unprotect. If there
       // are, we can immediately start unprotecting those bytes.
       if (frame_protector_.MaybeReadLeftoverBytes(
@@ -690,6 +696,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
       args.set_read_hint_bytes(frame_protector_.min_progress_size());
       lock.Release();
       event_engine_->Run([impl = Ref(), args = std::move(args)]() mutable {
+        grpc_core::ExecCtx exec_ctx;
         // If the endpoint closed whilst waiting for this callback, then
         // fail out the read and we're done.
         grpc_core::ReleasableMutexLock lock(impl->frame_protector_.read_mu());
@@ -701,6 +708,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
         }
         const bool read_finished_immediately = impl->wrapped_ep_->Read(
             [impl = impl->Ref()](absl::Status status) mutable {
+              grpc_core::ExecCtx exec_ctx;
               FinishFirstRead(std::move(impl), status);
             },
             impl->staging_protected_data_buffer_.get(), std::move(args));
@@ -803,20 +811,34 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
           impl->frame_protector_.TraceOp("data",
                                          source_buffer->c_slice_buffer());
           args = std::move(impl->last_read_args_);
-          args.set_read_hint_bytes(impl->frame_protector_.min_progress_size());
+          if (impl->frame_protector_.IsZeroCopyProtector()) {
+            // We currently only track min progress size for zero copy
+            // protectors. Once we add this for non-zero copy protectors, we
+            // should remove the if condition.
+            // Since we start unprotecting after the first read, the min
+            // progress size does not account for the bytes we have already read
+            // in the previous read, so we need to subtract them here.
+            args.set_read_hint_bytes(
+                std::max<size_t>(1, impl->frame_protector_.min_progress_size() -
+                                        source_buffer->Length()));
+          } else if (args.read_hint_bytes() > 0) {
+            args.set_read_hint_bytes(std::max<size_t>(
+                1, args.read_hint_bytes() - source_buffer->Length()));
+          }
         }
 
         // Kick off the next read in another thread while we unprotect in this
         // thread.
         impl->event_engine_->Run(
             [impl = impl->Ref(), args = std::move(args)]() mutable {
+              grpc_core::ExecCtx exec_ctx;
               StartAsyncRead(std::move(impl), std::move(args));
             });
 
         {
           grpc_core::ReleasableMutexLock lock(impl->frame_protector_.read_mu());
           // Unprotect the bytes.
-          CHECK(read_buffer == nullptr);
+          GRPC_CHECK(read_buffer == nullptr);
           impl->frame_protector_.SetSourceBuffer(std::move(source_buffer));
           read_buffer = std::make_unique<SliceBuffer>();
           impl->frame_protector_.BeginRead(read_buffer->c_slice_buffer());
@@ -864,6 +886,7 @@ class PipelinedSecureEndpoint final : public EventEngine::Endpoint {
       }
       const bool read_finished_immediately = impl->wrapped_ep_->Read(
           [impl = impl->Ref()](absl::Status status) mutable {
+            grpc_core::ExecCtx exec_ctx;
             FinishAsyncRead(std::move(impl), status);
           },
           impl->staging_protected_data_buffer_.get(), std::move(args));

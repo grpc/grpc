@@ -66,11 +66,18 @@ package_group(
 
 package_group(
     name = "channelz",
-    packages = [],
+    packages = [
+        "//...",
+    ],
 )
 
 package_group(
     name = "cli",
+    packages = [],
+)
+
+package_group(
+    name = "sleuth",
     packages = [],
 )
 
@@ -229,4 +236,14 @@ package_group(
     name = "end2end_test_utils",
     packages = [
     ],
+)
+
+package_group(
+    name = "socket_mutator",
+    packages = [],
+)
+
+package_group(
+    name = "transport_common",
+    packages = [],
 )

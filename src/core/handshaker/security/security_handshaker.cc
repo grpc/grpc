@@ -35,12 +35,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/base/attributes.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/handshaker.h"
@@ -61,9 +55,15 @@
 #include "src/core/transport/auth_context.h"
 #include "src/core/tsi/transport_security_grpc.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/unique_type_name.h"
+#include "absl/base/attributes.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 #define GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE 256
 
@@ -345,7 +345,7 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
   }
   // Read more if we need to.
   if (result == TSI_INCOMPLETE_DATA) {
-    CHECK_EQ(bytes_to_send_size, 0u);
+    GRPC_CHECK_EQ(bytes_to_send_size, 0u);
     grpc_endpoint_read(
         args_->endpoint.get(), args_->read_buffer.c_slice_buffer(),
         NewClosure([self = RefAsSubclass<SecurityHandshaker>()](
@@ -365,7 +365,7 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
   }
   // Update handshaker result.
   if (handshaker_result != nullptr) {
-    CHECK_EQ(handshaker_result_, nullptr);
+    GRPC_CHECK_EQ(handshaker_result_, nullptr);
     handshaker_result_ = handshaker_result;
   }
   if (bytes_to_send_size > 0) {

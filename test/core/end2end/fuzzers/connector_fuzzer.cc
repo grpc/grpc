@@ -17,7 +17,6 @@
 #include <memory>
 
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/credentials/transport/fake/fake_security_connector.h"
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
@@ -30,6 +29,7 @@
 #include "test/core/end2end/fuzzers/network_input.h"
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
@@ -71,7 +71,8 @@ class ConnectorFuzzer {
                   network_inputs_.pop();
                 },
                 [](absl::Status) {}, ChannelArgsEndpointConfig(ChannelArgs{}),
-                std::make_unique<MemoryQuota>("foo"))
+                std::make_unique<MemoryQuota>(
+                    MakeRefCounted<channelz::ResourceQuotaNode>("bar")))
             .value();
     if (msg.has_shutdown_connector() &&
         msg.shutdown_connector().delay_ms() > 0) {

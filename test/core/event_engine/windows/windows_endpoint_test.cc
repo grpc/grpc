@@ -19,8 +19,6 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 
-#include "absl/status/status.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
@@ -29,6 +27,8 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/util/notification.h"
 #include "test/core/event_engine/windows/create_sockpair.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -42,7 +42,9 @@ TEST_F(WindowsEndpointTest, BasicCommunication) {
   // Setup
   auto thread_pool = MakeThreadPool(8);
   IOCP iocp(thread_pool.get());
-  grpc_core::MemoryQuota quota("endpoint_test");
+  grpc_core::MemoryQuota quota(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+          "endpoint_test"));
   SOCKET sockpair[2];
   CreateSockpair(sockpair, IOCP::GetDefaultSocketFlags());
   auto wrapped_client_socket = iocp.Watch(sockpair[0]);
@@ -88,7 +90,9 @@ TEST_F(WindowsEndpointTest, Conversation) {
   // Setup
   auto thread_pool = MakeThreadPool(8);
   IOCP iocp(thread_pool.get());
-  grpc_core::MemoryQuota quota("endpoint_test");
+  grpc_core::MemoryQuota quota(
+      grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+          "endpoint_test"));
   SOCKET sockpair[2];
   CreateSockpair(sockpair, IOCP::GetDefaultSocketFlags());
   sockaddr_in loopback_addr = GetSomeIpv4LoopbackAddress();

@@ -23,9 +23,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/lib/promise/context.h"
@@ -34,8 +31,11 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/bitset.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/status_helper.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -51,13 +51,13 @@ absl::Status ReadProto(SliceBuffer payload,
 void WriteProto(const google::protobuf::MessageLite& msg, SliceBuffer& output) {
   auto length = msg.ByteSizeLong();
   auto slice = MutableSlice::CreateUninitialized(length);
-  CHECK(msg.SerializeToArray(slice.data(), length));
+  GRPC_CHECK(msg.SerializeToArray(slice.data(), length));
   output.AppendIndexed(Slice(std::move(slice)));
 }
 
 uint32_t ProtoPayloadSize(const google::protobuf::MessageLite& msg) {
   auto length = msg.ByteSizeLong();
-  CHECK_LE(length, std::numeric_limits<uint32_t>::max());
+  GRPC_CHECK_LE(length, std::numeric_limits<uint32_t>::max());
   return static_cast<uint32_t>(length);
 }
 
@@ -230,7 +230,7 @@ absl::StatusOr<ServerMetadataHandle> ServerMetadataGrpcFromProto(
 
 absl::Status MessageFrame::Deserialize(const FrameHeader& header,
                                        SliceBuffer payload) {
-  CHECK_EQ(header.type, FrameType::kMessage);
+  GRPC_CHECK_EQ(header.type, FrameType::kMessage);
   if (header.stream_id == 0) {
     return absl::InternalError("Expected non-zero stream id");
   }
@@ -241,13 +241,13 @@ absl::Status MessageFrame::Deserialize(const FrameHeader& header,
 
 FrameHeader MessageFrame::MakeHeader() const {
   auto length = message->payload()->Length();
-  CHECK_LE(length, std::numeric_limits<uint32_t>::max());
+  GRPC_CHECK_LE(length, std::numeric_limits<uint32_t>::max());
   return FrameHeader{FrameType::kMessage, stream_id,
                      static_cast<uint32_t>(length)};
 }
 
 void MessageFrame::SerializePayload(SliceBuffer& payload) const {
-  CHECK_NE(stream_id, 0u);
+  GRPC_CHECK_NE(stream_id, 0u);
   payload.Append(*message->payload());
 }
 
@@ -262,7 +262,7 @@ std::string MessageFrame::ToString() const {
 
 absl::Status MessageChunkFrame::Deserialize(const FrameHeader& header,
                                             SliceBuffer payload) {
-  CHECK_EQ(header.type, FrameType::kMessageChunk);
+  GRPC_CHECK_EQ(header.type, FrameType::kMessageChunk);
   if (header.stream_id == 0) {
     return absl::InternalError("Expected non-zero stream id");
   }
@@ -273,13 +273,13 @@ absl::Status MessageChunkFrame::Deserialize(const FrameHeader& header,
 
 FrameHeader MessageChunkFrame::MakeHeader() const {
   auto length = payload.Length();
-  CHECK_LE(length, std::numeric_limits<uint32_t>::max());
+  GRPC_CHECK_LE(length, std::numeric_limits<uint32_t>::max());
   return FrameHeader{FrameType::kMessageChunk, stream_id,
                      static_cast<uint32_t>(length)};
 }
 
 void MessageChunkFrame::SerializePayload(SliceBuffer& payload) const {
-  CHECK_NE(stream_id, 0u);
+  GRPC_CHECK_NE(stream_id, 0u);
   payload.Append(this->payload);
 }
 
@@ -296,7 +296,7 @@ absl::StatusOr<Frame> DeserializeFrame(const FrameHeader& header,
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD: Deserialize " << header << " with payload "
       << absl::CEscape(payload.JoinIntoString());
-  CHECK_EQ(header.payload_length, payload.Length());
+  GRPC_CHECK_EQ(header.payload_length, payload.Length());
   auto s = frame.Deserialize(header, std::move(payload));
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD: DeserializeFrame "

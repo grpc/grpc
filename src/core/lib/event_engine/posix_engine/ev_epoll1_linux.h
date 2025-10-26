@@ -21,17 +21,18 @@
 #include <memory>
 #include <string>
 
+#include "src/core/lib/event_engine/poller.h"
+#include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
+#include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
+#include "src/core/lib/event_engine/thread_pool/thread_pool.h"
+#include "src/core/lib/iomgr/port.h"
+#include "src/core/util/sync.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
-#include "src/core/lib/event_engine/poller.h"
-#include "src/core/lib/event_engine/posix_engine/event_poller.h"
-#include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
-#include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
-#include "src/core/lib/iomgr/port.h"
-#include "src/core/util/sync.h"
 
 #ifdef GRPC_LINUX_EPOLL
 #include <sys/epoll.h>
@@ -46,7 +47,7 @@ class Epoll1EventHandle;
 // Definition of epoll1 based poller.
 class Epoll1Poller : public PosixEventPoller {
  public:
-  explicit Epoll1Poller(Scheduler* scheduler);
+  explicit Epoll1Poller(std::shared_ptr<ThreadPool> thread_pool);
   EventHandle* CreateHandle(FileDescriptor fd, absl::string_view name,
                             bool track_err) override;
   Poller::WorkResult Work(
@@ -54,7 +55,7 @@ class Epoll1Poller : public PosixEventPoller {
       absl::FunctionRef<void()> schedule_poll_again) override;
   std::string Name() override { return "epoll1"; }
   void Kick() override;
-  Scheduler* GetScheduler() { return scheduler_; }
+  ThreadPool* GetThreadPool() { return thread_pool_.get(); }
   bool CanTrackErrors() const override {
 #ifdef GRPC_POSIX_SOCKET_TCP
     return KernelSupportsErrqueue();
@@ -109,7 +110,7 @@ class Epoll1Poller : public PosixEventPoller {
   struct EpollSet {};
 #endif
   grpc_core::Mutex mu_;
-  Scheduler* scheduler_;
+  std::shared_ptr<ThreadPool> thread_pool_;
   // A singleton epoll set
   EpollSet g_epoll_set_;
   bool was_kicked_ ABSL_GUARDED_BY(mu_);
@@ -123,7 +124,8 @@ class Epoll1Poller : public PosixEventPoller {
 
 // Return an instance of a epoll1 based poller tied to the specified event
 // engine.
-std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(Scheduler* scheduler);
+std::shared_ptr<Epoll1Poller> MakeEpoll1Poller(
+    std::shared_ptr<ThreadPool> thread_pool);
 
 }  // namespace grpc_event_engine::experimental
 

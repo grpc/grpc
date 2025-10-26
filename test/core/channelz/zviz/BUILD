@@ -66,6 +66,7 @@ grpc_cc_test(
         "gtest_main",
     ],
     deps = [
+        "//src/core:zviz_environment",
         "//src/core:zviz_layout",
     ],
 )
@@ -91,6 +92,7 @@ grpc_fuzz_test(
         "environment_fake",
         "layout_log",
         "//src/core:zviz_data",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 
@@ -100,6 +102,7 @@ grpc_fuzz_test(
     external_deps = [
         "absl/log:check",
         "absl/container:flat_hash_map",
+        "absl/strings",
         "fuzztest",
         "fuzztest_main",
     ],
@@ -107,6 +110,8 @@ grpc_fuzz_test(
         "environment_fake",
         "layout_log",
         "//src/core:zviz_trace",
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 
@@ -115,6 +120,8 @@ grpc_fuzz_test(
     srcs = ["entity_test.cc"],
     external_deps = [
         "absl/log:check",
+        "absl/container:flat_hash_map",
+        "absl/strings",
         "fuzztest",
         "fuzztest_main",
     ],
@@ -122,6 +129,9 @@ grpc_fuzz_test(
         "environment_fake",
         "layout_log",
         "//src/core:zviz_entity",
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+        "//src/proto/grpc/channelz/v2:property_list_cc_proto",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 
@@ -153,12 +163,25 @@ grpc_fuzz_test(
 )
 
 grpc_fuzz_test(
+    name = "layout_text_test",
+    srcs = ["layout_text_test.cc"],
+    external_deps = [
+        "gtest",
+        "gtest_main",
+    ],
+    deps = [
+        "//src/core:zviz_layout_text",
+    ],
+)
+
+grpc_fuzz_test(
     name = "html_integration_test",
     srcs = ["html_integration_test.cc"],
     external_deps = [
         "absl/log:check",
         "fuzztest",
         "fuzztest_main",
+        "absl/container:flat_hash_map",
     ],
     deps = [
         "environment_fake",
@@ -167,5 +190,45 @@ grpc_fuzz_test(
         "//src/core:zviz_layout",
         "//src/core:zviz_layout_html",
         "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "property_list_test",
+    srcs = ["property_list_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "absl/strings",
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        "//src/core:zviz_property_list",
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+        "//src/proto/grpc/channelz/v2:property_list_cc_proto",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "format_entity_list_test",
+    srcs = ["format_entity_list_test.cc"],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/log:check",
+        "absl/strings",
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        "environment_fake",
+        "layout_log",
+        "//src/core:zviz_format_entity_list",
+        "//src/core:zviz_layout_html",
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+        "@com_google_protobuf//:protobuf",
     ],
 )

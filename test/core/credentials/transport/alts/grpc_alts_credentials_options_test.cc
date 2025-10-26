@@ -23,13 +23,26 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "gtest/gtest.h"
+#include <memory>
+
 #include "src/core/util/crash.h"
+#include "gtest/gtest.h"
 
 #define ALTS_CLIENT_OPTIONS_TEST_TARGET_SERVICE_ACCOUNT_1 "abc@google.com"
 #define ALTS_CLIENT_OPTIONS_TEST_TARGET_SERVICE_ACCOUNT_2 "def@google.com"
 
+namespace {
+
 const size_t kTargetServiceAccountNum = 2;
+
+class FakeTokenFetcher final : public grpc::alts::TokenFetcher {
+ public:
+  ~FakeTokenFetcher() override = default;
+
+  absl::StatusOr<std::string> GetToken() override { return "fake_token"; }
+};
+
+}  // namespace
 
 TEST(GrpcAltsCredentialsOptionsTest, CopyClientOptionsFailure) {
   // Initialization.
@@ -85,6 +98,24 @@ TEST(GrpcAltsCredentialsOptionsTest, ClientOptionsApiSuccess) {
   // Cleanup.
   grpc_alts_credentials_options_destroy(options);
   grpc_alts_credentials_options_destroy(new_options);
+}
+
+TEST(GrpcAltsCredentialsOptionsTest, ClientOptionsWithTokenFetcher) {
+  // Initialization.
+  grpc_alts_credentials_options* options =
+      grpc_alts_credentials_client_options_create();
+
+  // Set the token fetcher and check success.
+  std::shared_ptr<FakeTokenFetcher> token_fetcher =
+      std::make_shared<FakeTokenFetcher>();
+  grpc_alts_credentials_client_options_set_token_fetcher(options,
+                                                         token_fetcher);
+  auto client_options =
+      reinterpret_cast<grpc_alts_credentials_client_options*>(options);
+  ASSERT_NE(client_options->token_fetcher, nullptr);
+
+  // Cleanup.
+  grpc_alts_credentials_options_destroy(options);
 }
 
 int main(int argc, char** argv) {

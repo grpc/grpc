@@ -18,8 +18,8 @@
 #include <grpc/support/port_platform.h>
 #include <string.h>
 
-#include "absl/log/check.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
+#include "src/core/util/grpc_check.h"
 
 // IWYU pragma: no_include <sys/socket.h>
 
@@ -28,8 +28,8 @@ namespace grpc_event_engine::experimental {
 EventEngine::ResolvedAddress::ResolvedAddress(const sockaddr* address,
                                               socklen_t size)
     : size_(size) {
-  DCHECK_GE(size, 0u);
-  CHECK(static_cast<size_t>(size) <= sizeof(address_));
+  GRPC_DCHECK_GE(size, 0u);
+  GRPC_CHECK(static_cast<size_t>(size) <= sizeof(address_));
   memcpy(&address_, address, size);
 }
 

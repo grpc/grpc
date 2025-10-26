@@ -18,9 +18,9 @@
 
 #include <memory>
 
-#include "gtest/gtest.h"
 #include "test/core/handshake/server_ssl_common.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 TEST(ServerSslTest, MainTest) {
   // Handshake succeeds when the client supplies only h2 as the ALPN list. This

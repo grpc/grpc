@@ -30,18 +30,18 @@
 #include <optional>
 #include <string>
 
-#include "absl/log/check.h"
-#include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/useful.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "gtest/gtest.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define CLIENT_CERT_PATH "src/core/tsi/test_creds/client.pem"
@@ -68,7 +68,7 @@ grpc_server* server_create(grpc_completion_queue* cq, const char* server_addr) {
 
   grpc_server* server = grpc_server_create(nullptr, nullptr);
   grpc_server_register_completion_queue(server, cq, nullptr);
-  CHECK(grpc_server_add_http2_port(server, server_addr, server_creds));
+  GRPC_CHECK(grpc_server_add_http2_port(server, server_addr, server_creds));
   grpc_server_credentials_release(server_creds);
   grpc_server_start(server);
   return server;
@@ -97,7 +97,7 @@ grpc_channel* client_create(const char* server_addr,
 
   grpc_channel* client =
       grpc_channel_create(server_addr, client_creds, client_args);
-  CHECK_NE(client, nullptr);
+  GRPC_CHECK_NE(client, nullptr);
   grpc_channel_credentials_release(client_creds);
 
   {
@@ -129,7 +129,7 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
   grpc_call* c = grpc_channel_create_call(
       client, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
       grpc_slice_from_static_string("/foo"), nullptr, deadline, nullptr);
-  CHECK(c);
+  GRPC_CHECK(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
   grpc_metadata_array_init(&trailing_metadata_recv);
@@ -161,13 +161,13 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
                                 grpc_core::CqVerifier::tag(1), nullptr);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(error, GRPC_CALL_OK);
 
   grpc_call* s;
   error = grpc_server_request_call(server, &s, &call_details,
                                    &request_metadata_recv, cq, cq,
                                    grpc_core::CqVerifier::tag(101));
-  CHECK_EQ(error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(error, GRPC_CALL_OK);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
@@ -175,11 +175,11 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
       auth, GRPC_SSL_SESSION_REUSED_PROPERTY);
   const grpc_auth_property* property = grpc_auth_property_iterator_next(&it);
-  CHECK_NE(property, nullptr);
+  GRPC_CHECK_NE(property, nullptr);
   if (expect_session_reuse) {
-    CHECK_EQ(strcmp(property->value, "true"), 0);
+    GRPC_CHECK_EQ(strcmp(property->value, "true"), 0);
   } else {
-    CHECK_EQ(strcmp(property->value, "false"), 0);
+    GRPC_CHECK_EQ(strcmp(property->value, "false"), 0);
   }
   grpc_auth_context_release(auth);
 
@@ -203,7 +203,7 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
   op++;
   error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
                                 grpc_core::CqVerifier::tag(103), nullptr);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(error, GRPC_CALL_OK);
 
   cqv.Expect(grpc_core::CqVerifier::tag(103), true);
   cqv.Expect(grpc_core::CqVerifier::tag(1), true);
@@ -243,9 +243,9 @@ TEST(H2SessionReuseTest, SingleReuse) {
 
   grpc_ssl_session_cache_destroy(cache);
 
-  CHECK(grpc_completion_queue_next(
-            cq, grpc_timeout_milliseconds_to_deadline(100), nullptr)
-            .type == GRPC_QUEUE_TIMEOUT);
+  GRPC_CHECK(grpc_completion_queue_next(
+                 cq, grpc_timeout_milliseconds_to_deadline(100), nullptr)
+                 .type == GRPC_QUEUE_TIMEOUT);
 
   grpc_server_shutdown_and_notify(server, cq, grpc_core::CqVerifier::tag(1000));
   grpc_event ev;

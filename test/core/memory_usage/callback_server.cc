@@ -27,16 +27,16 @@
 #include <memory>
 #include <string>
 
-#include "absl/flags/flag.h"
-#include "absl/flags/parse.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good.h"
 #include "src/core/transport/endpoint_transport.h"
+#include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "test/core/memory_usage/memstats.h"
 #include "test/core/test_util/test_config.h"
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
+#include "absl/log/log.h"
 
 ABSL_FLAG(std::string, bind, "", "Bind host:port");
 ABSL_FLAG(bool, secure, false, "Use SSL Credentials");
@@ -79,7 +79,7 @@ static void sigint_handler(int /*x*/) { _exit(0); }
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
   char* fake_argv[1];
-  CHECK_GE(argc, 1);
+  GRPC_CHECK_GE(argc, 1);
   fake_argv[0] = argv[0];
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();

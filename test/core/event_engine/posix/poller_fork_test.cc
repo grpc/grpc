@@ -14,11 +14,9 @@
 
 #include <arpa/inet.h>
 #include <fcntl.h>
-#include <gmock/gmock.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/status.h>
-#include <gtest/gtest.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -37,9 +35,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
@@ -47,6 +42,11 @@
 #include "src/core/util/wait_for_single_owner.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_event_engine::experimental {
 
@@ -236,7 +236,9 @@ class PollerForkTest : public ::testing::Test {
     std::vector<std::unique_ptr<EventEngine::Endpoint>> endpoints;
     auto listener = ee()->CreateListener(
         std::move(on_accept), std::move(on_shutdown), config,
-        std::make_unique<grpc_core::MemoryQuota>("foo"));
+        std::make_unique<grpc_core::MemoryQuota>(
+            grpc_core::MakeRefCounted<grpc_core::channelz::ResourceQuotaNode>(
+                "bar")));
     if (!listener.ok()) {
       return std::move(listener).status();
     }
