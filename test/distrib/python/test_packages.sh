@@ -42,7 +42,7 @@ TESTING_ARCHIVES=("$EXTERNAL_GIT_ROOT"/input_artifacts/grpcio[_-]*testing[-_0-9a
 VIRTUAL_ENV=$(mktemp -d)
 python3 -m virtualenv "$VIRTUAL_ENV"
 PYTHON=$VIRTUAL_ENV/bin/python
-"$PYTHON" -m pip install --upgrade six pip wheel setuptools
+"$PYTHON" -m pip install --upgrade six pip==25.2 wheel setuptools
 
 function validate_wheel_hashes() {
   for file in "$@"; do

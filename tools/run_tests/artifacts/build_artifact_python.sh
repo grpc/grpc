@@ -26,7 +26,7 @@ export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
 source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc
 
 # Needed for building binary distribution wheels -- bdist_wheel
-"${PYTHON}" -m pip install --upgrade pip
+"${PYTHON}" -m pip install --upgrade pip==25.2
 # Ping to a single version to make sure we're building the same artifacts
 "${PYTHON}" -m pip install setuptools==77.0.1 wheel==0.43.0
 
