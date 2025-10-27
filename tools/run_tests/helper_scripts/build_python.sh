@@ -156,7 +156,6 @@ pip_install --upgrade setuptools==77.0.1
 pip_install_dir() {
   WORKDIR=$(pwd)
   cd "$1"
-  ($VENV_PYTHON setup.py build_ext -c "$TOOLCHAIN" || true)
   $VENV_PYTHON -m pip install --no-deps --no-build-isolation .
   cd "$WORKDIR"
 }
@@ -164,7 +163,6 @@ pip_install_dir() {
 pip_install_dir_and_deps() {
   WORKDIR=$(pwd)
   cd "$1"
-  ($VENV_PYTHON setup.py build_ext -c "$TOOLCHAIN" || true)
   $VENV_PYTHON -m pip install --no-build-isolation .
   cd "$WORKDIR"
 }
