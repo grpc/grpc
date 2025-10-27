@@ -28,18 +28,16 @@ Homepage = "https://grpc.io"
 [project.scripts]
 "python-grpc-tools-protoc" = "grpc_tools.protoc:entrypoint"
 
-[tool.setuptools.packages]
-find = {}
+[tool.setuptools.packages.find]
+where = ["."]
+# Exclude .py files like `third_party/abseil-cpp/absl/copts/copts.py` in
+# `third_party` directory from being included in the wheel
+exclude = [
+    "third_party",
+]
 
 [tool.setuptools.dynamic]
 version = {attr = "grpc_version.VERSION"}
 
 [tool.setuptools.package-dir]
 "" = "."
-
-[tool.setuptools]
-# Exclude .py files like `third_party/abseil-cpp/absl/copts/copts.py` in
-# `third_party` directory from being included
-exclude-package-dirs = [
-    "third_party",
-]
