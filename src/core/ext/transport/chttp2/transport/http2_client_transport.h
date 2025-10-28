@@ -528,6 +528,7 @@ class Http2ClientTransport final : public ClientTransport,
     std::optional<Http2Frame> settings_frame = settings_.MaybeSendUpdate();
     if (settings_frame.has_value()) {
       Serialize(absl::Span<Http2Frame>(&settings_frame.value(), 1), output_buf);
+      flow_control_.FlushedSettings();
     }
   }
 
