@@ -100,6 +100,7 @@ _GRPC_BAZEL_ONLY_DEPS = [
     "rules_shell",
     "rules_java",
     "yaml-cpp",
+    "com_google_cel-spec",
 ]
 
 
