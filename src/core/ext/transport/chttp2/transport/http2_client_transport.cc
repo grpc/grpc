@@ -1318,6 +1318,15 @@ void Http2ClientTransport::CloseTransport() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseTransport";
 
   transport_closed_latch_.Set();
+  // If some scenario causes the transport to close without ever receiving
+  // settings, we need to still invoke the closure passed to the transport.
+  // Additionally, as this function will always run on the transport party, it
+  // cannot race with reading a settings frame.
+  if (on_receive_settings_ != nullptr) {
+    ExecCtx::Run(DEBUG_LOCATION, on_receive_settings_, absl::OkStatus());
+    on_receive_settings_ = nullptr;
+  }
+
   // This is the only place where the general_party_ is
   // reset.
   general_party_.reset();
@@ -1413,6 +1422,8 @@ bool Http2ClientTransport::CanCloseTransportLocked() const {
 Http2ClientTransport::~Http2ClientTransport() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Destructor Begin";
   GRPC_DCHECK(stream_list_.empty());
+  GRPC_DCHECK(general_party_ == nullptr);
+  GRPC_DCHECK(on_receive_settings_ == nullptr);
   memory_owner_.Reset();
   SourceDestructing();
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Destructor End";
