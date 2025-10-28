@@ -51,6 +51,8 @@
 namespace grpc_core {
 namespace chaotic_good {
 
+using grpc_event_engine::experimental::EventEngine;
+
 ChaoticGoodClientTransport::StreamDispatch::StreamDispatch(
     MpscSender<OutgoingFrame> outgoing_frames)
     : outgoing_frames_(std::move(outgoing_frames)) {}
@@ -172,6 +174,15 @@ void ChaoticGoodClientTransport::StreamDispatch::OnFrameTransportClosed(
   state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN,
                           absl::UnavailableError("transport closed"),
                           "transport closed");
+  if (watcher_ != nullptr) {
+    party_arena->GetContext<EventEngine>()->Run(
+        [watcher = watcher_, status]() mutable {
+          ExecCtx exec_ctx;
+          // TODO(ctiller): Provide better disconnect info here.
+          watcher->OnDisconnect(std::move(status), {});
+          watcher.reset();  // While ExecCtx is in scope.
+        });
+  }
   lock.Release();
   for (auto& pair : stream_map) {
     auto stream = std::move(pair.second);
@@ -219,6 +230,21 @@ void ChaoticGoodClientTransport::StreamDispatch::StopConnectivityWatch(
   state_tracker_.RemoveWatcher(watcher);
 }
 
+void ChaoticGoodClientTransport::StreamDispatch::StartWatch(
+    RefCountedPtr<StateWatcher> watcher) {
+  MutexLock lock(&mu_);
+  GRPC_CHECK_NE(watcher_, nullptr);
+  watcher_ = std::move(watcher);
+  // TODO(ctiller): Report MAX_CONCURRENT_STREAMS to watcher here, and
+  // whenever the peer's setting changes.
+}
+
+void ChaoticGoodClientTransport::StreamDispatch::StopWatch(
+    RefCountedPtr<StateWatcher> watcher) {
+  MutexLock lock(&mu_);
+  watcher_.reset();
+}
+
 ChaoticGoodClientTransport::ChaoticGoodClientTransport(
     const ChannelArgs& args, OrphanablePtr<FrameTransport> frame_transport,
     MessageChunker message_chunker)
@@ -231,8 +257,7 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
       frame_transport_(std::move(frame_transport)) {
   GRPC_CHECK(ctx_ != nullptr);
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
-  party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
-      ctx_->event_engine.get());
+  party_arena->SetContext<EventEngine>(ctx_->event_engine.get());
   party_ = Party::Make(std::move(party_arena));
   MpscReceiver<OutgoingFrame> outgoing_frames{256 * 1024 * 1024};
   outgoing_frames_ = outgoing_frames.MakeSender();

@@ -89,11 +89,11 @@ class ChaoticGoodClientTransport final : public ClientTransport,
 
   void StartCall(CallHandler call_handler) override;
 
-  void StartWatch(RefCountedPtr<StateWatcher>) override {
-    // FIXME: Implement.
+  void StartWatch(RefCountedPtr<StateWatcher> watcher) override {
+    stream_dispatch_->StartWatch(std::move(watcher));
   }
-  void StopWatch(RefCountedPtr<StateWatcher>) override {
-    // FIXME: Implement.
+  void StopWatch(RefCountedPtr<StateWatcher> watcher) override {
+    stream_dispatch_->StopWatch(std::move(watcher));
   }
 
  private:
@@ -122,6 +122,9 @@ class ChaoticGoodClientTransport final : public ClientTransport,
         OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
     void StopConnectivityWatch(ConnectivityStateWatcherInterface* watcher);
 
+    void StartWatch(RefCountedPtr<StateWatcher> watcher);
+    void StopWatch(RefCountedPtr<StateWatcher> watcher);
+
    private:
     template <typename T>
     void DispatchFrame(IncomingFrame incoming_frame);
@@ -149,6 +152,7 @@ class ChaoticGoodClientTransport final : public ClientTransport,
     StreamMap stream_map_ ABSL_GUARDED_BY(mu_);
     ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
         "chaotic_good_client", GRPC_CHANNEL_READY};
+    RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(mu_);
     MpscSender<OutgoingFrame> outgoing_frames_;
   };
 
