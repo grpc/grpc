@@ -69,6 +69,13 @@ class Http2ServerTransport final : public ServerTransport {
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
 
+  void StartWatch(RefCountedPtr<StateWatcher>) override {
+    // TODO(roth): Implement.
+  }
+  void StopWatch(RefCountedPtr<StateWatcher>) override {
+    // TODO(roth): Implement.
+  }
+
   void SetCallDestination(
       RefCountedPtr<UnstartedCallDestination> call_destination) override;
 
