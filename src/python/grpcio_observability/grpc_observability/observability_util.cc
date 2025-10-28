@@ -96,7 +96,7 @@ void RecordSpan(const SpanCensusData& span_census_data) {
 void NativeObservabilityInit() {
   g_census_data_buffer = new std::queue<CensusData>;
   // Forces linking of instrument library
-  grpc_core::CreateCollectionScope(nullptr, {});
+  grpc_core::CreateCollectionScope({}, {});
 }
 
 void* CreateClientCallTracer(const char* method, const char* target,

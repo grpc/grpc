@@ -1369,6 +1369,7 @@ grpc_cc_library(
         "@com_google_protobuf//upb/base",
         "@com_google_protobuf//upb/mem",
     ],
+    visibility = ["//bazel:channelz"],
     deps = [
         "channelz_service_upb",
         "channelz_upb",
@@ -2953,8 +2954,10 @@ grpc_cc_library(
         "src/cpp/latent_see/latent_see_service.h",
     ],
     external_deps = [
+        "@com_google_protobuf//upb/mem",
         "protobuf_headers",
         "absl/log",
+        "absl/strings:string_view",
     ],
     tags = ["nofixdeps"],
     visibility = ["//bazel:latent_see"],
@@ -2963,8 +2966,11 @@ grpc_cc_library(
         "grpc",
         "grpc++",
         "grpc++_config_proto",
+        "//src/core:channelz_property_list",
         "//src/core:latent_see",
         "//src/proto/grpc/channelz/v2:latent_see_cc_grpc",
+        "//src/proto/grpc/channelz/v2:property_list_cc_proto",
+        "//src/proto/grpc/channelz/v2:property_list_upb_proto",
     ],
     alwayslink = 1,
 )
@@ -2988,7 +2994,9 @@ grpc_cc_library(
         "grpc",
         "grpc++",
         "grpc++_config_proto",
+        "//src/core:channelz_property_list",
         "//src/core:latent_see",
+        "//src/core:time",
         "//src/proto/grpc/channelz/v2:latent_see_cc_grpc",
     ],
     alwayslink = 1,
@@ -3011,7 +3019,7 @@ grpc_cc_library(
         "gpr",
         "grpc",
         "grpc++_base",
-        "//src/proto/grpc/testing/xds/v3:csds_cc_grpc",
+        "@envoy_api//envoy/service/status/v3:pkg_cc_grpc",
     ],
     alwayslink = 1,
 )
@@ -3763,6 +3771,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_fwd",
         "//src/core:channel_stack_type",
+        "//src/core:filter_args",
     ],
 )
 

@@ -308,7 +308,7 @@ setuptools.setup(
     python_requires=f">={python_version.MIN_PYTHON_VERSION}",
     install_requires=[
         "grpcio=={version}".format(version=grpc_version.VERSION),
-        "setuptools>=59.6.0",
+        "setuptools>=77.0.1",
         "opentelemetry-api>=1.21.0",
     ],
     cmdclass={

@@ -106,6 +106,43 @@ class GRPC_MUST_USE_RESULT FlowControlAction {
     return preferred_rx_crypto_frame_size_;
   }
 
+  FlowControlAction& test_only_set_send_initial_window_update(Urgency u,
+                                                              uint32_t update) {
+    return set_send_initial_window_update(u, update);
+  }
+  FlowControlAction& test_only_set_send_max_frame_size_update(Urgency u,
+                                                              uint32_t update) {
+    return set_send_max_frame_size_update(u, update);
+  }
+  FlowControlAction& test_only_set_preferred_rx_crypto_frame_size_update(
+      Urgency u, uint32_t update) {
+    return set_preferred_rx_crypto_frame_size_update(u, update);
+  }
+
+  static const char* UrgencyString(Urgency u);
+  std::string DebugString() const;
+
+  void AssertEmpty() { GRPC_CHECK(*this == FlowControlAction()); }
+
+  bool operator==(const FlowControlAction& other) const {
+    return send_stream_update_ == other.send_stream_update_ &&
+           send_transport_update_ == other.send_transport_update_ &&
+           send_initial_window_update_ == other.send_initial_window_update_ &&
+           send_max_frame_size_update_ == other.send_max_frame_size_update_ &&
+           (send_initial_window_update_ == Urgency::NO_ACTION_NEEDED ||
+            initial_window_size_ == other.initial_window_size_) &&
+           (send_max_frame_size_update_ == Urgency::NO_ACTION_NEEDED ||
+            max_frame_size_ == other.max_frame_size_) &&
+           (preferred_rx_crypto_frame_size_update_ ==
+                Urgency::NO_ACTION_NEEDED ||
+            preferred_rx_crypto_frame_size_ ==
+                other.preferred_rx_crypto_frame_size_);
+  }
+
+ private:
+  friend class StreamFlowControl;
+  friend class TransportFlowControl;
+
   FlowControlAction& set_send_stream_update(Urgency u) {
     send_stream_update_ = u;
     return *this;
@@ -133,27 +170,6 @@ class GRPC_MUST_USE_RESULT FlowControlAction {
     return *this;
   }
 
-  static const char* UrgencyString(Urgency u);
-  std::string DebugString() const;
-
-  void AssertEmpty() { GRPC_CHECK(*this == FlowControlAction()); }
-
-  bool operator==(const FlowControlAction& other) const {
-    return send_stream_update_ == other.send_stream_update_ &&
-           send_transport_update_ == other.send_transport_update_ &&
-           send_initial_window_update_ == other.send_initial_window_update_ &&
-           send_max_frame_size_update_ == other.send_max_frame_size_update_ &&
-           (send_initial_window_update_ == Urgency::NO_ACTION_NEEDED ||
-            initial_window_size_ == other.initial_window_size_) &&
-           (send_max_frame_size_update_ == Urgency::NO_ACTION_NEEDED ||
-            max_frame_size_ == other.max_frame_size_) &&
-           (preferred_rx_crypto_frame_size_update_ ==
-                Urgency::NO_ACTION_NEEDED ||
-            preferred_rx_crypto_frame_size_ ==
-                other.preferred_rx_crypto_frame_size_);
-  }
-
- private:
   Urgency send_stream_update_ = Urgency::NO_ACTION_NEEDED;
   Urgency send_transport_update_ = Urgency::NO_ACTION_NEEDED;
   Urgency send_initial_window_update_ = Urgency::NO_ACTION_NEEDED;
@@ -282,17 +298,16 @@ class TransportFlowControl final {
   // TODO(tjagtap) [PH2][P1] Plumb with PH2 flow control.
   FlowControlAction PeriodicUpdate();
 
-  int64_t target_window() const;
-  int64_t target_frame_size() const { return target_frame_size_; }
-  int64_t target_preferred_rx_crypto_frame_size() const {
-    return target_preferred_rx_crypto_frame_size_;
+  int64_t test_only_target_window() const { return target_window(); }
+  int64_t test_only_target_frame_size() const { return target_frame_size(); }
+  int64_t test_only_target_preferred_rx_crypto_frame_size() const {
+    return target_preferred_rx_crypto_frame_size();
   }
 
   BdpEstimator* bdp_estimator() { return &bdp_estimator_; }
 
-  uint32_t acked_init_window() const { return acked_init_window_; }
-  uint32_t queued_init_window() const { return target_initial_window_size_; }
-  uint32_t sent_init_window() const { return sent_init_window_; }
+  uint32_t test_only_acked_init_window() const { return acked_init_window(); }
+  uint32_t test_only_sent_init_window() const { return sent_init_window(); }
 
   // Call after settings have been sent to peer.
   // TODO(tjagtap) [PH2][P1] Check if usage of this is correct in PH2
@@ -311,10 +326,10 @@ class TransportFlowControl final {
 
   // Getters
   int64_t remote_window() const { return remote_window_; }
-  int64_t announced_window() const { return announced_window_; }
+  int64_t test_only_announced_window() const { return announced_window(); }
 
-  int64_t announced_stream_total_over_incoming_window() const {
-    return announced_stream_total_over_incoming_window_;
+  int64_t test_only_announced_stream_total_over_incoming_window() const {
+    return announced_stream_total_over_incoming_window();
   }
 
   // A snapshot of the flow control stats to export.
@@ -382,6 +397,18 @@ class TransportFlowControl final {
   }
 
   double TargetInitialWindowSizeBasedOnMemoryPressureAndBdp() const;
+  int64_t target_window() const;
+  int64_t target_frame_size() const { return target_frame_size_; }
+  int64_t target_preferred_rx_crypto_frame_size() const {
+    return target_preferred_rx_crypto_frame_size_;
+  }
+  uint32_t acked_init_window() const { return acked_init_window_; }
+  uint32_t queued_init_window() const { return target_initial_window_size_; }
+  uint32_t sent_init_window() const { return sent_init_window_; }
+  int64_t announced_window() const { return announced_window_; }
+  int64_t announced_stream_total_over_incoming_window() const {
+    return announced_stream_total_over_incoming_window_;
+  }
 
   static void UpdateSetting(absl::string_view name, int64_t* desired_value,
                             uint32_t new_desired_value,
@@ -513,8 +540,10 @@ class StreamFlowControl final {
   }
 
   int64_t remote_window_delta() const { return remote_window_delta_; }
-  int64_t announced_window_delta() const { return announced_window_delta_; }
-  int64_t min_progress_size() const { return min_progress_size_; }
+  int64_t test_only_announced_window_delta() const {
+    return announced_window_delta_;
+  }
+  int64_t test_only_min_progress_size() const { return min_progress_size_; }
 
   // A snapshot of the flow control stats to export.
   struct Stats {
@@ -528,9 +557,9 @@ class StreamFlowControl final {
 
   Stats stats() const {
     Stats stats;
-    stats.min_progress_size = min_progress_size();
+    stats.min_progress_size = min_progress_size_;
     stats.remote_window_delta = remote_window_delta();
-    stats.announced_window_delta = announced_window_delta();
+    stats.announced_window_delta = announced_window_delta_;
     stats.pending_size = pending_size_;
     return stats;
   }

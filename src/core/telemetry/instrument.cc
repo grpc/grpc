@@ -24,14 +24,24 @@
 #include <string>
 #include <tuple>
 #include <utility>
+#include <variant>
 #include <vector>
 
+#include "src/core/channelz/channelz.h"
 #include "src/core/channelz/property_list.h"
+#include "src/core/telemetry/histogram.h"
 #include "src/core/util/grpc_check.h"
-#include "src/core/util/no_destruct.h"
+#include "src/core/util/match.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/single_set_ptr.h"
+#include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/functional/function_ref.h"
+#include "absl/hash/hash.h"
 #include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
@@ -87,32 +97,35 @@ std::vector<std::string> FilterLabels(
 }
 }  // namespace
 
-CollectionScope::CollectionScope(RefCountedPtr<CollectionScope> parent,
-                                 absl::Span<const std::string> labels,
-                                 size_t child_shards_count,
-                                 size_t storage_shards_count)
-    : parent_(std::move(parent)),
+CollectionScope::CollectionScope(
+    std::vector<RefCountedPtr<CollectionScope>> parents,
+    absl::Span<const std::string> labels, size_t child_shards_count,
+    size_t storage_shards_count)
+    : parents_(std::move(parents)),
       labels_of_interest_(labels.begin(), labels.end()),
       child_shards_(child_shards_count),
       storage_shards_(storage_shards_count) {
-  if (parent_ != nullptr) {
-    labels_of_interest_.insert(parent_->labels_of_interest_.begin(),
-                               parent_->labels_of_interest_.end());
-    auto& shard =
-        parent_
-            ->child_shards_[absl::HashOf(this) % parent_->child_shards_.size()];
-    MutexLock lock(&shard.mu);
-    shard.children.insert(this);
+  // Sort parents (by address) and then remove any duplicates.
+  std::sort(parents_.begin(), parents_.end());
+  parents_.erase(std::unique(parents_.begin(), parents_.end()), parents_.end());
+  for (const auto& parent : parents_) {
+    if (parent != nullptr) {
+      labels_of_interest_.insert(parent->labels_of_interest_.begin(),
+                                 parent->labels_of_interest_.end());
+      auto& shard = parent->child_shard(this);
+      MutexLock lock(&shard.mu);
+      shard.children.insert(this);
+    }
   }
 }
 
 CollectionScope::~CollectionScope() {
-  if (parent_ != nullptr) {
-    auto& shard =
-        parent_
-            ->child_shards_[absl::HashOf(this) % parent_->child_shards_.size()];
-    MutexLock lock(&shard.mu);
-    shard.children.erase(this);
+  for (const auto& parent : parents_) {
+    if (parent != nullptr) {
+      auto& shard = parent->child_shard(this);
+      MutexLock lock(&shard.mu);
+      shard.children.erase(this);
+    }
   }
   for (auto& shard : storage_shards_) {
     // TODO(ctiller): Consider a different entry point than GetDomainStorage
@@ -120,10 +133,12 @@ CollectionScope::~CollectionScope() {
     // accessing full_labels.
     MutexLock lock(&shard.mu);
     for (auto& storage_pair : shard.storage) {
-      if (parent_ != nullptr) {
-        storage_pair.second->domain()
-            ->GetDomainStorage(parent_, storage_pair.second->label())
-            ->Add(storage_pair.second.get());
+      for (const auto& parent : parents_) {
+        if (parent != nullptr) {
+          storage_pair.second->domain()
+              ->GetDomainStorage(parent, storage_pair.second->label())
+              ->Add(storage_pair.second.get());
+        }
       }
     }
   }
@@ -163,71 +178,12 @@ void CollectionScope::ForEachUniqueStorage(
   }
 }
 
-struct GlobalScopeHolder {
-  Mutex mu;
-  SingleSetRefCountedPtr<CollectionScope> scope;
-  std::atomic<bool> frozen{false};
-
-  RefCountedPtr<CollectionScope> Get(absl::Span<const std::string> labels);
-  void Reset() {
-    MutexLock lock(&mu);
-    scope.Reset();
-    frozen.store(false, std::memory_order_relaxed);
-  }
-};
-
-namespace {
-GlobalScopeHolder* GetGlobalScopeHolderImpl() {
-  static NoDestruct<GlobalScopeHolder> g_scope_holder;
-  return g_scope_holder.get();
-}
-}  // namespace
-
-RefCountedPtr<CollectionScope> GlobalScopeHolder::Get(
-    absl::Span<const std::string> labels) {
-  if (labels.empty() && scope.is_set()) return scope.Get()->Ref();
-  MutexLock lock(&mu);
-  if (!scope.is_set()) {
-    scope.Set(MakeRefCounted<CollectionScope>(nullptr, labels, 1, 16));
-  } else if (!frozen.load(std::memory_order_relaxed)) {
-    bool has_storage = false;
-    for (size_t i = 0; i < scope.Get()->storage_shards_.size(); ++i) {
-      MutexLock lock(&scope.Get()->storage_shards_[i].mu);
-      if (!scope.Get()->storage_shards_[i].storage.empty()) {
-        has_storage = true;
-        break;
-      }
-    }
-    if (has_storage) {
-      frozen.store(true, std::memory_order_release);
-    } else {
-      for (const auto& label : labels) {
-        scope.Get()->labels_of_interest_.insert(label);
-      }
-    }
-  }
-  if (frozen.load(std::memory_order_relaxed)) {
-    for (const auto& label : labels) {
-      if (!scope.Get()->labels_of_interest_.contains(label)) {
-        LOG(WARNING)
-            << "Attempt to add label '" << label
-            << "' to global collection scope after labels were frozen.";
-      }
-    }
-  }
-  return scope.Get()->Ref();
-}
-
-RefCountedPtr<CollectionScope> GetGlobalCollectionScope(
-    absl::Span<const std::string> labels) {
-  return GetGlobalScopeHolderImpl()->Get(labels);
-}
-
 RefCountedPtr<CollectionScope> CreateCollectionScope(
-    RefCountedPtr<CollectionScope> parent, absl::Span<const std::string> labels,
-    size_t child_shards_count, size_t storage_shards_count) {
+    std::vector<RefCountedPtr<CollectionScope>> parents,
+    absl::Span<const std::string> labels, size_t child_shards_count,
+    size_t storage_shards_count) {
   return MakeRefCounted<CollectionScope>(
-      std::move(parent), labels, child_shards_count, storage_shards_count);
+      std::move(parents), labels, child_shards_count, storage_shards_count);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -792,11 +748,11 @@ RefCountedPtr<DomainStorage> QueryableDomain::GetDomainStorage(
     absl::Span<const std::string> label_values) {
   auto key_labels =
       FilterLabels(label_names_, scope->labels_of_interest_, label_values);
-  if (scope->parent_ != nullptr) {
+  if (scope->parents_.size() == 1 && scope->parents_[0] != nullptr) {
     auto parent_key_labels = FilterLabels(
-        label_names_, scope->parent_->labels_of_interest_, label_values);
+        label_names_, scope->parents_[0]->labels_of_interest_, label_values);
     if (key_labels == parent_key_labels) {
-      return GetDomainStorage(scope->parent_, label_values);
+      return GetDomainStorage(scope->parents_[0], label_values);
     }
   }
   size_t shard_idx = absl::HashOf(key_labels) % scope->storage_shards_.size();
@@ -812,18 +768,6 @@ RefCountedPtr<DomainStorage> QueryableDomain::GetDomainStorage(
 }
 
 }  // namespace instrument_detail
-
-void TestOnlyResetInstruments() {
-  GetGlobalScopeHolderImpl()->Reset();
-  Hook* hook = hooks.load(std::memory_order_acquire);
-  while (hook != nullptr) {
-    Hook* next = hook->next;
-    delete hook;
-    hook = next;
-  }
-  hooks.store(nullptr, std::memory_order_release);
-  instrument_detail::QueryableDomain::TestOnlyResetAll();
-}
 
 LowContentionBackend::LowContentionBackend(size_t size)
     : counters_(new std::atomic<uint64_t>[size]) {
@@ -852,4 +796,120 @@ uint64_t HighContentionBackend::Sum(size_t index) {
   }
   return sum;
 }
+
+namespace {
+
+class GlobalCollectionScopeManager {
+ public:
+  GlobalCollectionScopeManager(const GlobalCollectionScopeManager&) = delete;
+  GlobalCollectionScopeManager& operator=(const GlobalCollectionScopeManager&) =
+      delete;
+
+  static GlobalCollectionScopeManager& Get() {
+    static GlobalCollectionScopeManager* manager =
+        new GlobalCollectionScopeManager();
+    return *manager;
+  }
+
+  RefCountedPtr<CollectionScope> CreateRootScope(
+      absl::Span<const std::string> labels, size_t child_shards_count,
+      size_t storage_shards_count) {
+    MutexLock lock(&mu_);
+    if (auto* building = std::get_if<Building>(&state_); building != nullptr) {
+      auto scope = CreateCollectionScope({}, labels, child_shards_count,
+                                         storage_shards_count);
+      building->root_scopes.push_back(scope);
+      return scope;
+    } else {
+      // Global scope is already created, we can no longer subset labels.
+      auto& published = std::get<Published>(state_);
+      std::vector<std::string> missing_labels;
+      for (const auto& label : labels) {
+        if (!published.global_scope->ObservesLabel(label)) {
+          missing_labels.push_back(label);
+        }
+      }
+      if (missing_labels.empty()) {
+        LOG(ERROR) << "Attempt to create a root scope with labels ["
+                   << absl::StrJoin(labels, ", ")
+                   << "] after the global scope was already created.  "
+                      "All requested labels are collected by the global scope, "
+                      "so this scope will be returned instead.  "
+                      "To eliminate this message, ensure the root scope "
+                      "creation that triggered it occurs before the first call "
+                      "to GlobalCollectionScope().";
+      } else {
+        LOG(ERROR) << "Attempt to create a root scope with labels ["
+                   << absl::StrJoin(labels, ", ")
+                   << "] after the global scope was already created.  "
+                      "The following labels are not collected by the global "
+                      "scope, and so will not be available: ["
+                   << absl::StrJoin(missing_labels, ", ")
+                   << "]."
+                      "To eliminate this message, ensure the root scope "
+                      "creation that triggered it occurs before the first call "
+                      "to GlobalCollectionScope().";
+      }
+      return published.global_scope;
+    }
+  }
+
+  RefCountedPtr<CollectionScope> GetGlobalScope() {
+    MutexLock lock(&mu_);
+    if (auto* building = std::get_if<Building>(&state_); building != nullptr) {
+      auto global_scope =
+          CreateCollectionScope(building->root_scopes, {}, 32, 32);
+      state_ = Published{global_scope};
+      return global_scope;
+    } else {
+      return std::get<Published>(state_).global_scope;
+    }
+  }
+
+  void TestOnlyReset() {
+    std::variant<Building, Published> state;
+    MutexLock lock(&mu_);
+    state = std::exchange(state_, Building{});
+  }
+
+ private:
+  GlobalCollectionScopeManager() = default;
+
+  struct Building {
+    std::vector<RefCountedPtr<CollectionScope>> root_scopes;
+  };
+
+  struct Published {
+    RefCountedPtr<CollectionScope> global_scope;
+  };
+
+  Mutex mu_;
+  std::variant<Building, Published> state_ ABSL_GUARDED_BY(mu_);
+};
+
+}  // namespace
+
+RefCountedPtr<CollectionScope> CreateRootCollectionScope(
+    absl::Span<const std::string> labels, size_t child_shards_count,
+    size_t storage_shards_count) {
+  return GlobalCollectionScopeManager::Get().CreateRootScope(
+      labels, child_shards_count, storage_shards_count);
+}
+
+RefCountedPtr<CollectionScope> GlobalCollectionScope() {
+  return GlobalCollectionScopeManager::Get().GetGlobalScope();
+}
+
+void TestOnlyResetInstruments() {
+  Hook* hook = hooks.load(std::memory_order_acquire);
+  while (hook != nullptr) {
+    Hook* next = hook->next;
+    delete hook;
+    hook = next;
+  }
+  hooks.store(nullptr, std::memory_order_release);
+  instrument_detail::QueryableDomain::TestOnlyResetAll();
+  GlobalCollectionScopeManager::Get().TestOnlyReset();
+}
+
 }  // namespace grpc_core
