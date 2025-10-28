@@ -257,10 +257,6 @@ class Http2ClientTransport final : public ClientTransport,
       absl::Status status, StateWatcher::DisconnectInfo disconnect_info)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&transport_mutex_);
 
-  void NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked(
-      uint32_t max_concurrent_streams)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&transport_mutex_);
-
   RefCountedPtr<Party> general_party_;
 
   PromiseEndpoint endpoint_;

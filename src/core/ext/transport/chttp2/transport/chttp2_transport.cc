@@ -3568,8 +3568,7 @@ void grpc_chttp2_transport::StartWatch(
           // TODO(roth, ctiller): Provide better disconnect info here.
           t->NotifyStateWatcherOnDisconnectLocked(t->closed_with_error, {});
         } else {
-          t->NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked(
-              t->settings.peer().max_concurrent_streams());
+          t->NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked();
         }
       }),
       absl::OkStatus());
@@ -3609,13 +3608,41 @@ void grpc_chttp2_transport::NotifyStateWatcherOnDisconnectLocked(
   });
 }
 
+void grpc_chttp2_transport::OnPeerMaxConcurrentStreamsUpdateComplete() {
+  combiner->Run(
+      grpc_core::NewClosure(
+          [t = RefAsSubclass<grpc_chttp2_transport>()](grpc_error_handle) {
+            t->max_concurrent_streams_notification_in_flight = false;
+            t->MaybeNotifyStateWatcherOfPeerMaxConcurrentStreamsLocked();
+          }),
+      absl::OkStatus());
+}
+
 void grpc_chttp2_transport::
-    NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked(
-        uint32_t max_concurrent_streams) {
+    MaybeNotifyStateWatcherOfPeerMaxConcurrentStreamsLocked() {
+  if (last_reported_max_concurrent_streams ==
+      settings.peer().max_concurrent_streams()) {
+    return;
+  }
+  if (max_concurrent_streams_notification_in_flight) return;
+  NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked();
+}
+
+void grpc_chttp2_transport::
+    NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked() {
   if (watcher == nullptr) return;
-  event_engine->Run([watcher = watcher, max_concurrent_streams]() mutable {
+  last_reported_max_concurrent_streams =
+      settings.peer().max_concurrent_streams();
+  max_concurrent_streams_notification_in_flight = true;
+  event_engine->Run([t = RefAsSubclass<grpc_chttp2_transport>(),
+                     watcher = watcher,
+                     max_concurrent_streams =
+                         settings.peer().max_concurrent_streams()]() mutable {
     grpc_core::ExecCtx exec_ctx;
-    watcher->OnPeerMaxConcurrentStreamsUpdate(max_concurrent_streams);
+    watcher->OnPeerMaxConcurrentStreamsUpdate(
+        max_concurrent_streams, [t = std::move(t)]() {
+          t->OnPeerMaxConcurrentStreamsUpdateComplete();
+        });
     watcher.reset();  // Before ExecCtx goes out of scope.
   });
 }

@@ -176,9 +176,8 @@ void Http2ClientTransport::StartWatch(RefCountedPtr<StateWatcher> watcher) {
     NotifyStateWatcherOnDisconnectLocked(
         absl::UnknownError("transport closed before watcher started"), {});
   } else {
-    // TODO(tjagtap): Call
-    // NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked() with
-    // the current value of the peer's MAX_CONCURRENT_STREAMS setting.
+    // TODO(tjagtap): Notify the state watcher of the current value of
+    // the peer's MAX_CONCURRENT_STREAMS setting.
   }
 }
 
@@ -195,18 +194,6 @@ void Http2ClientTransport::NotifyStateWatcherOnDisconnectLocked(
        disconnect_info]() mutable {
         ExecCtx exec_ctx;
         watcher->OnDisconnect(std::move(status), disconnect_info);
-        watcher.reset();  // Before ExecCtx goes out of scope.
-      });
-}
-
-void Http2ClientTransport::
-    NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked(
-        uint32_t max_concurrent_streams) {
-  if (watcher_ == nullptr) return;
-  general_party_->arena()->GetContext<EventEngine>()->Run(
-      [watcher = watcher_, max_concurrent_streams]() mutable {
-        ExecCtx exec_ctx;
-        watcher->OnPeerMaxConcurrentStreamsUpdate(max_concurrent_streams);
         watcher.reset();  // Before ExecCtx goes out of scope.
       });
 }
@@ -449,8 +436,7 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
     // TODO(tjagtap) : [PH2][P1]
     // Apply the new settings
     // Quickly send the ACK to the peer once the settings are applied
-    // When the peer changes MAX_CONCURRENT_STREAMS, call
-    // NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked().
+    // When the peer changes MAX_CONCURRENT_STREAMS, notify the state watcher.
   } else {
     // Process the SETTINGS ACK Frame
     if (settings_.AckLastSend()) {

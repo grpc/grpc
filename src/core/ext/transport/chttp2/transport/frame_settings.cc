@@ -135,6 +135,7 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
             t->http2_ztrace_collector.Append(
                 []() { return grpc_core::H2SettingsTrace<false>{true, {}}; });
             *parser->target_settings = *parser->incoming_settings;
+            t->MaybeNotifyStateWatcherOfPeerMaxConcurrentStreamsLocked();
             t->num_pending_induced_frames++;
             grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_settings_ack_create());
             grpc_chttp2_initiate_write(t,
@@ -208,12 +209,6 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
                       << "] adding " << t->initial_window_update
                       << " for initial_window change";
           }
-        }
-        // Notify state watcher on MAX_CONCURRENT_STREAMS update.
-        else if (parser->id ==
-                 grpc_core::Http2Settings::kMaxConcurrentStreamsWireId) {
-          t->NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked(
-              parser->value);
         }
         auto error =
             parser->incoming_settings->Apply(parser->id, parser->value);

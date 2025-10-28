@@ -541,8 +541,11 @@ class Transport : public InternallyRefCounted<Transport> {
     // Will be called once as soon as the watch is started to indicate
     // the current value of the peer's MAX_CONCURRENT_STREAMS setting.
     // Will then be called again whenever the peer changes this setting.
+    // The on_done callback must be invoked when the implementation is
+    // done processing the update.
     virtual void OnPeerMaxConcurrentStreamsUpdate(
-        uint32_t max_concurrent_streams) = 0;
+        uint32_t max_concurrent_streams,
+        absl::AnyInvocable<void()> on_done) = 0;
 
     // TODO(roth): Remove this as part of the EventEngine migration.
     virtual grpc_pollset_set* interested_parties() const = 0;
