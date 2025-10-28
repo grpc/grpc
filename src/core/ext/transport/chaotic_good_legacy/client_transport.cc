@@ -262,7 +262,7 @@ void ChaoticGoodClientTransport::AbortWithError() {
                           absl::UnavailableError("transport closed"),
                           "transport closed");
   if (watcher_ != nullptr) {
-    party_arena->GetContext<EventEngine>()->Run(
+    party_->arena()->GetContext<EventEngine>()->Run(
         [watcher = watcher_]() mutable {
           ExecCtx exec_ctx;
           // TODO(ctiller): Provide better disconnect info here.
