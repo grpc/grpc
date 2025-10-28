@@ -1299,8 +1299,10 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                     TrySeq(initiator.PullServerInitialMetadata(),
                            [server_initial_metadata_sender](
                                std::optional<ServerMetadataHandle>
-                                   metadata) mutable {
-                             // FIXME: check if metadata.has_value()
+                                   metadata) mutable
+                               -> ValueOrFailure<
+                                   PipeSender<ServerMetadataHandle>::PushType> {
+                             if (!metadata.has_value()) return Failure{};
                              return server_initial_metadata_sender->Push(
                                  std::move(*metadata));
                            }),
@@ -1329,14 +1331,13 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
               [handler, &server_initial_metadata,
                &server_to_client_messages]() mutable {
                 return TrySeq(
-                    TrySeq(
-                        server_initial_metadata.receiver.Next(),
-                        [handler](
-                            NextResult<ServerMetadataHandle> metadata) mutable {
-                          // FIXME: check if metadata.has_value()
-                          return handler.PushServerInitialMetadata(
-                              std::move(*metadata));
-                        }),
+                    TrySeq(server_initial_metadata.receiver.Next(),
+                           [handler](NextResult<ServerMetadataHandle>
+                                         metadata) mutable -> StatusFlag {
+                             if (!metadata.has_value()) return Failure{};
+                             return handler.PushServerInitialMetadata(
+                                 std::move(*metadata));
+                           }),
                     ForEach(std::move(server_to_client_messages.receiver),
                             [handler](MessageHandle message) mutable {
                               return handler.PushMessage(std::move(message));
