@@ -157,6 +157,15 @@ grpc_cc_library(
     ],
 )
 
+# Shared library for gRPC Sleuth Python extension.
+grpc_cc_binary(
+    name = "sleuth.so",
+    linkshared = True,
+    deps = [
+        ":sleuth",
+    ],
+)
+
 grpc_cc_binary(
     name = "sleuth_main",
     srcs = ["sleuth_main.cc"],
