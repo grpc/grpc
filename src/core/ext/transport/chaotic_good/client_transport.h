@@ -110,7 +110,10 @@ class ChaoticGoodClientTransport final : public ClientTransport,
 
   class StreamDispatch final : public FrameTransportSink {
    public:
-    explicit StreamDispatch(MpscSender<OutgoingFrame> outgoing_frames);
+    StreamDispatch(
+        MpscSender<OutgoingFrame> outgoing_frames,
+        std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+            event_engine);
 
     void OnIncomingFrame(IncomingFrame incoming_frame) override;
     void OnFrameTransportClosed(absl::Status status) override;
@@ -154,6 +157,7 @@ class ChaoticGoodClientTransport final : public ClientTransport,
         "chaotic_good_client", GRPC_CHANNEL_READY};
     RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(mu_);
     MpscSender<OutgoingFrame> outgoing_frames_;
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
   };
 
   auto CallOutboundLoop(uint32_t stream_id, CallHandler call_handler);

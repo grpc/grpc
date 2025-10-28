@@ -54,8 +54,10 @@ namespace chaotic_good {
 using grpc_event_engine::experimental::EventEngine;
 
 ChaoticGoodClientTransport::StreamDispatch::StreamDispatch(
-    MpscSender<OutgoingFrame> outgoing_frames)
-    : outgoing_frames_(std::move(outgoing_frames)) {}
+    MpscSender<OutgoingFrame> outgoing_frames,
+    std::shared_ptr<EventEngine> event_engine)
+    : outgoing_frames_(std::move(outgoing_frames)),
+      event_engine_(std::move(event_engine)) {}
 
 RefCountedPtr<ChaoticGoodClientTransport::Stream>
 ChaoticGoodClientTransport::StreamDispatch::LookupStream(uint32_t stream_id) {
@@ -175,7 +177,7 @@ void ChaoticGoodClientTransport::StreamDispatch::OnFrameTransportClosed(
                           absl::UnavailableError("transport closed"),
                           "transport closed");
   if (watcher_ != nullptr) {
-    party_->arena()->GetContext<EventEngine>()->Run(
+    event_engine_->Run(
         [watcher = watcher_, status]() mutable {
           ExecCtx exec_ctx;
           // TODO(ctiller): Provide better disconnect info here.
@@ -233,7 +235,7 @@ void ChaoticGoodClientTransport::StreamDispatch::StopConnectivityWatch(
 void ChaoticGoodClientTransport::StreamDispatch::StartWatch(
     RefCountedPtr<StateWatcher> watcher) {
   MutexLock lock(&mu_);
-  GRPC_CHECK_NE(watcher_, nullptr);
+  GRPC_CHECK(watcher_ == nullptr);
   watcher_ = std::move(watcher);
   // TODO(ctiller): Report MAX_CONCURRENT_STREAMS to watcher here, and
   // whenever the peer's setting changes.
@@ -261,8 +263,8 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
   party_ = Party::Make(std::move(party_arena));
   MpscReceiver<OutgoingFrame> outgoing_frames{256 * 1024 * 1024};
   outgoing_frames_ = outgoing_frames.MakeSender();
-  stream_dispatch_ =
-      MakeRefCounted<StreamDispatch>(outgoing_frames.MakeSender());
+  stream_dispatch_ = MakeRefCounted<StreamDispatch>(
+      outgoing_frames.MakeSender(), ctx_->event_engine);
   frame_transport_->Start(party_.get(), std::move(outgoing_frames),
                           stream_dispatch_);
   SourceConstructed();
