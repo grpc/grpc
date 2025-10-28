@@ -63,14 +63,12 @@ grpc_cc_test(
         "absl/strings",
     ],
     deps = [
-        "@com_google_protobuf//:duration_upb_proto",
-        # TODO(rishesh): Re-enable this once the proto is available in OSS.
-        # "//google/protobuf:timestamp_upb_proto",
         "//:channelz_property_list_upb",
         "//src/core:channelz_property_list",
         "//src/core:json",
         "//src/core:json_writer",
         "//src/core:upb_utils",
+        "@com_google_protobuf//:duration_upb_proto",
     ],
 )
 

@@ -244,6 +244,7 @@ class Http2ClientTransport final : public ClientTransport,
   auto CallOutboundLoop(CallHandler call_handler, RefCountedPtr<Stream> stream,
                         ClientMetadataHandle metadata);
 
+  // TODO(akshitpatel) : [PH2][P3] : Make this a synchronous function.
   // Force triggers a transport write cycle
   auto TriggerWriteCycle() {
     return Immediate(writable_stream_list_.ForceReadyForWrite());
@@ -537,6 +538,7 @@ class Http2ClientTransport final : public ClientTransport,
     std::optional<Http2Frame> settings_frame = settings_.MaybeSendUpdate();
     if (settings_frame.has_value()) {
       Serialize(absl::Span<Http2Frame>(&settings_frame.value(), 1), output_buf);
+      flow_control_.FlushedSettings();
     }
   }
 

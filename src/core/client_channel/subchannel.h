@@ -168,8 +168,6 @@ class SubchannelCall final {
 // (SubchannelWrapper) that "converts" between the two.
 class Subchannel final : public DualRefCounted<Subchannel> {
  public:
-  // TODO(roth): Once we remove pollset_set, consider whether this can
-  // just use the normal AsyncConnectivityStateWatcherInterface API.
   class ConnectivityStateWatcherInterface
       : public RefCounted<ConnectivityStateWatcherInterface> {
    public:
@@ -178,6 +176,9 @@ class Subchannel final : public DualRefCounted<Subchannel> {
     // instance at any given time.
     virtual void OnConnectivityStateChange(grpc_connectivity_state state,
                                            const absl::Status& status) = 0;
+
+    // Invoked to report updated keepalive time.
+    virtual void OnKeepaliveUpdate(int keepalive_time_ms) = 0;
 
     virtual grpc_pollset_set* interested_parties() = 0;
   };
