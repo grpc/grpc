@@ -177,13 +177,12 @@ void ChaoticGoodClientTransport::StreamDispatch::OnFrameTransportClosed(
                           absl::UnavailableError("transport closed"),
                           "transport closed");
   if (watcher_ != nullptr) {
-    event_engine_->Run(
-        [watcher = watcher_, status]() mutable {
-          ExecCtx exec_ctx;
-          // TODO(ctiller): Provide better disconnect info here.
-          watcher->OnDisconnect(std::move(status), {});
-          watcher.reset();  // While ExecCtx is in scope.
-        });
+    event_engine_->Run([watcher = watcher_, status]() mutable {
+      ExecCtx exec_ctx;
+      // TODO(ctiller): Provide better disconnect info here.
+      watcher->OnDisconnect(std::move(status), {});
+      watcher.reset();  // While ExecCtx is in scope.
+    });
   }
   lock.Release();
   for (auto& pair : stream_map) {

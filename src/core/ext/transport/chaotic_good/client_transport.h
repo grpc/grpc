@@ -110,10 +110,9 @@ class ChaoticGoodClientTransport final : public ClientTransport,
 
   class StreamDispatch final : public FrameTransportSink {
    public:
-    StreamDispatch(
-        MpscSender<OutgoingFrame> outgoing_frames,
-        std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-            event_engine);
+    StreamDispatch(MpscSender<OutgoingFrame> outgoing_frames,
+                   std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+                       event_engine);
 
     void OnIncomingFrame(IncomingFrame incoming_frame) override;
     void OnFrameTransportClosed(absl::Status status) override;
