@@ -44,14 +44,14 @@ set ARTIFACT_DIR=%cd%\%ARTIFACTS_OUT%
 set "GRPC_PYTHON_BUILD_USE_SHORT_TEMP_DIR_NAME=1"
 
 @rem Build gRPC Python distribution
-python -m build --wheel || goto :error
+python -m build || goto :error
 
 @rem Set up gRPC Python tools
 python tools\distrib\python\make_grpcio_tools.py
 
 @rem Build grpcio-tools Python distribution
 pushd tools\distrib\python\grpcio_tools
-python -m build --wheel || goto :error
+python -m build || goto :error
 popd
 
 @rem Ensure the generate artifacts are valid.
