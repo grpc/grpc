@@ -1222,12 +1222,7 @@ class ImplementChannelFilter : public ChannelFilter,
 };
 
 struct V3InterceptorToV2State {
-  // A wrapper struct, needed to default-construct CallHandler.
-  struct HandlerWrapper {
-    CallHandler handler{nullptr};
-  };
-
-  InterActivityLatch<HandlerWrapper> call_handler_latch;
+  InterActivityLatch<CallHandler> call_handler_latch;
 };
 
 template <>
@@ -1268,13 +1263,11 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
     // Inject the unstarted handler into the interceptor.
     StartCall(std::move(unstarted_handler));
     // Now return a promise that does all the things.
-    // FIXME: need to propagate cancellation somehow?
     return TrySeq(
         state->call_handler_latch.Wait(),
         [initiator = std::move(initiator), call_args = std::move(call_args),
-         next_promise_factory = std::move(next_promise_factory)](
-            V3InterceptorToV2State::HandlerWrapper handler_wrapper) mutable {
-          CallHandler handler = std::move(handler_wrapper.handler);
+         next_promise_factory =
+             std::move(next_promise_factory)](CallHandler handler) mutable {
           // Intercept all pipes from v2 API.
           Pipe<MessageHandle> client_to_server_messages;
           auto* client_to_server_messages_receiver =
@@ -1373,7 +1366,7 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
       // Start the call.
       CallHandler handler = unstarted_call_handler.StartCall();
       // Pass call handler to the latch.
-      state->call_handler_latch.Set({std::move(handler)});
+      state->call_handler_latch.Set(std::move(handler));
     }
 
     void Orphaned() override {}
