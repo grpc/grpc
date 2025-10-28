@@ -202,6 +202,9 @@ const char* const additional_constraints_tcp_rcv_lowat = "{}";
 const char* const description_track_writes_in_resource_quota =
     "Track the Write memory in Resource Quota.";
 const char* const additional_constraints_track_writes_in_resource_quota = "{}";
+const char* const description_transport_state_watcher =
+    "New state watcher API between transport and subchannel.";
+const char* const additional_constraints_transport_state_watcher = "{}";
 const char* const description_tsi_frame_protector_without_locks =
     "Do not hold locks while using the tsi_frame_protector.";
 const char* const additional_constraints_tsi_frame_protector_without_locks =
@@ -348,6 +351,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_track_writes_in_resource_quota,
      additional_constraints_track_writes_in_resource_quota, nullptr, 0, false,
      true},
+    {"transport_state_watcher", description_transport_state_watcher,
+     additional_constraints_transport_state_watcher, nullptr, 0, false, true},
     {"tsi_frame_protector_without_locks",
      description_tsi_frame_protector_without_locks,
      additional_constraints_tsi_frame_protector_without_locks, nullptr, 0,
@@ -541,6 +546,9 @@ const char* const additional_constraints_tcp_rcv_lowat = "{}";
 const char* const description_track_writes_in_resource_quota =
     "Track the Write memory in Resource Quota.";
 const char* const additional_constraints_track_writes_in_resource_quota = "{}";
+const char* const description_transport_state_watcher =
+    "New state watcher API between transport and subchannel.";
+const char* const additional_constraints_transport_state_watcher = "{}";
 const char* const description_tsi_frame_protector_without_locks =
     "Do not hold locks while using the tsi_frame_protector.";
 const char* const additional_constraints_tsi_frame_protector_without_locks =
@@ -687,6 +695,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_track_writes_in_resource_quota,
      additional_constraints_track_writes_in_resource_quota, nullptr, 0, false,
      true},
+    {"transport_state_watcher", description_transport_state_watcher,
+     additional_constraints_transport_state_watcher, nullptr, 0, false, true},
     {"tsi_frame_protector_without_locks",
      description_tsi_frame_protector_without_locks,
      additional_constraints_tsi_frame_protector_without_locks, nullptr, 0,
@@ -880,6 +890,9 @@ const char* const additional_constraints_tcp_rcv_lowat = "{}";
 const char* const description_track_writes_in_resource_quota =
     "Track the Write memory in Resource Quota.";
 const char* const additional_constraints_track_writes_in_resource_quota = "{}";
+const char* const description_transport_state_watcher =
+    "New state watcher API between transport and subchannel.";
+const char* const additional_constraints_transport_state_watcher = "{}";
 const char* const description_tsi_frame_protector_without_locks =
     "Do not hold locks while using the tsi_frame_protector.";
 const char* const additional_constraints_tsi_frame_protector_without_locks =
@@ -1026,6 +1039,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_track_writes_in_resource_quota,
      additional_constraints_track_writes_in_resource_quota, nullptr, 0, false,
      true},
+    {"transport_state_watcher", description_transport_state_watcher,
+     additional_constraints_transport_state_watcher, nullptr, 0, false, true},
     {"tsi_frame_protector_without_locks",
      description_tsi_frame_protector_without_locks,
      additional_constraints_tsi_frame_protector_without_locks, nullptr, 0,

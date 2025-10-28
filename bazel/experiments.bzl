@@ -60,6 +60,7 @@ EXPERIMENT_ENABLES = {
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
     "track_writes_in_resource_quota": "track_writes_in_resource_quota",
+    "transport_state_watcher": "transport_state_watcher",
     "tsi_frame_protector_without_locks": "tsi_frame_protector_without_locks",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
 }
@@ -103,6 +104,7 @@ EXPERIMENTS = {
             ],
             "cpp_lb_end2end_test": [
                 "rr_wrr_connect_from_random_index",
+                "transport_state_watcher",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -200,6 +202,7 @@ EXPERIMENTS = {
             ],
             "cpp_lb_end2end_test": [
                 "rr_wrr_connect_from_random_index",
+                "transport_state_watcher",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -297,6 +300,7 @@ EXPERIMENTS = {
             ],
             "cpp_lb_end2end_test": [
                 "rr_wrr_connect_from_random_index",
+                "transport_state_watcher",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",

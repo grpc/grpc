@@ -71,6 +71,11 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
  public:
   const ChannelArgs& args() const { return args_; }
 
+  // TODO(roth): Remove this when transport_state_watcher experiment is removed.
+  virtual void StartWatch(
+      grpc_pollset_set* interested_parties,
+      OrphanablePtr<ConnectivityStateWatcherInterface> watcher) = 0;
+
   // Methods for v3 stack.
   virtual void Ping(absl::AnyInvocable<void(absl::Status)> on_ack) = 0;
   virtual RefCountedPtr<UnstartedCallDestination> unstarted_call_destination()
@@ -309,6 +314,9 @@ class Subchannel final : public DualRefCounted<Subchannel> {
                         RefCountedPtrEq<ConnectivityStateWatcherInterface>>
         watchers_;
   };
+
+  // TODO(roth): Remove this when transport_state_watcher experiment is removed.
+  class ConnectedSubchannelStateWatcher;
 
   class ConnectionStateWatcher;
 
