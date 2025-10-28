@@ -703,14 +703,12 @@ class ClientChannelFilter::SubchannelWrapper final
       if (new_keepalive_time_ms > parent_->chand_->keepalive_time_) {
         parent_->chand_->keepalive_time_ = new_keepalive_time_ms;
         GRPC_TRACE_LOG(client_channel, INFO)
-            << "chand=" << parent_->chand_
-            << ": throttling keepalive time to "
+            << "chand=" << parent_->chand_ << ": throttling keepalive time to "
             << parent_->chand_->keepalive_time_;
         // Propagate the new keepalive time to all subchannels. This is so
         // that new transports created by any subchannel (and not just the
         // subchannel that received the GOAWAY), use the new keepalive time.
-        for (auto* subchannel_wrapper :
-             parent_->chand_->subchannel_wrappers_) {
+        for (auto* subchannel_wrapper : parent_->chand_->subchannel_wrappers_) {
           subchannel_wrapper->ThrottleKeepaliveTime(new_keepalive_time_ms);
         }
       }

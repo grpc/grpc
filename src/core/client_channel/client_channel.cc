@@ -251,8 +251,7 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
     subchannel_wrapper_->client_channel_->work_serializer_->Run(
         [self, new_keepalive_time_ms]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
             *self->subchannel_wrapper_->client_channel_->work_serializer_) {
-          self->ApplyKeepaliveThrottlingInWorkSerializer(
-              new_keepalive_time_ms);
+          self->ApplyKeepaliveThrottlingInWorkSerializer(new_keepalive_time_ms);
         });
   }
 
