@@ -3581,6 +3581,7 @@ void grpc_chttp2_transport::StopWatch(
   combiner->Run(
       grpc_core::NewClosure([t = RefAsSubclass<grpc_chttp2_transport>(),
                              watcher = std::move(watcher)](grpc_error_handle) {
+        if (t->watcher != watcher) return;
         if (t->ep != nullptr) {
           auto* interested_parties = watcher->interested_parties();
           if (interested_parties != nullptr) {
@@ -3588,7 +3589,7 @@ void grpc_chttp2_transport::StopWatch(
                                                   interested_parties);
           }
         }
-        if (t->watcher == watcher) t->watcher.reset();
+        t->watcher.reset();
       }),
       absl::OkStatus());
 }

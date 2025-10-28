@@ -422,7 +422,7 @@ void ChaoticGoodClientTransport::StartWatch(
 void ChaoticGoodClientTransport::StopWatch(
     RefCountedPtr<StateWatcher> watcher) {
   MutexLock lock(&mu_);
-  watcher_.reset();
+  if (watcher_ == watcher) watcher_.reset();
 }
 
 void ChaoticGoodClientTransport::ChannelzDataSource::AddData(
