@@ -304,6 +304,9 @@ class Subchannel final : public DualRefCounted<Subchannel> {
     void NotifyLocked(grpc_connectivity_state state,
                       const absl::Status& status);
 
+    // Notifies all watchers about a keepalive update.
+    void NotifyOnKeepaliveUpdateLocked(int new_keepalive_time_ms);
+
     void Clear() { watchers_.clear(); }
 
     bool empty() const { return watchers_.empty(); }

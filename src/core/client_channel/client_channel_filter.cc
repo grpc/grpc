@@ -675,17 +675,18 @@ class ClientChannelFilter::SubchannelWrapper final
           << parent_.get() << " subchannel " << parent_->subchannel_.get()
           << " watcher=" << watcher_.get()
           << " state=" << ConnectivityStateName(state) << " status=" << status;
-      // TODO(roth): Remove this once we're using the new code path.
-      auto keepalive_throttling = status.GetPayload(kKeepaliveThrottlingKey);
-      if (keepalive_throttling.has_value()) {
-        int new_keepalive_time = -1;
-        if (absl::SimpleAtoi(std::string(keepalive_throttling.value()),
-                             &new_keepalive_time)) {
-          ApplyKeepaliveThrottlingInWorkSerializer(new_keepalive_time);
-        } else {
-          LOG(ERROR) << "chand=" << parent_->chand_
-                     << ": Illegal keepalive throttling value "
-                     << std::string(keepalive_throttling.value());
+      if (!IsTransportStateWatcherEnabled()) {
+        auto keepalive_throttling = status.GetPayload(kKeepaliveThrottlingKey);
+        if (keepalive_throttling.has_value()) {
+          int new_keepalive_time = -1;
+          if (absl::SimpleAtoi(std::string(keepalive_throttling.value()),
+                               &new_keepalive_time)) {
+            ApplyKeepaliveThrottlingInWorkSerializer(new_keepalive_time);
+          } else {
+            LOG(ERROR) << "chand=" << parent_->chand_
+                       << ": Illegal keepalive throttling value "
+                       << std::string(keepalive_throttling.value());
+          }
         }
       }
       // Propagate status only in state TF.
@@ -697,7 +698,8 @@ class ClientChannelFilter::SubchannelWrapper final
           state == GRPC_CHANNEL_TRANSIENT_FAILURE ? status : absl::OkStatus());
     }
 
-    void ApplyKeepaliveThrottlingInWorkSerializer(int new_keepalive_time_ms) {
+    void ApplyKeepaliveThrottlingInWorkSerializer(int new_keepalive_time_ms)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(*parent_->chand_->work_serializer_) {
       if (new_keepalive_time_ms > parent_->chand_->keepalive_time_) {
         parent_->chand_->keepalive_time_ = new_keepalive_time_ms;
         GRPC_TRACE_LOG(client_channel, INFO)
@@ -709,7 +711,7 @@ class ClientChannelFilter::SubchannelWrapper final
         // subchannel that received the GOAWAY), use the new keepalive time.
         for (auto* subchannel_wrapper :
              parent_->chand_->subchannel_wrappers_) {
-          subchannel_wrapper->ThrottleKeepaliveTime(new_keepalive_time);
+          subchannel_wrapper->ThrottleKeepaliveTime(new_keepalive_time_ms);
         }
       }
     }

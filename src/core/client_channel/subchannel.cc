@@ -466,8 +466,13 @@ class Subchannel::ConnectionStateWatcher final
   }
 
   void OnDisconnect(absl::Status status,
-                    DisconnectInfo /*disconnect_info*/) override {
+                    DisconnectInfo disconnect_info) override {
     MutexLock lock(&subchannel_->mu_);
+    // Handle keepalive update.
+    if (disconnect_info.keepalive_time.has_value()) {
+      subchannel_->watcher_list_.NotifyOnKeepaliveUpdateLocked(
+          disconnect_info.keepalive_time->millis());
+    }
     // We shouldn't ever see OnDisconnect() more than once for a given
     // connection, but we'll be defensive just in case: if the connected
     // subchannel has already been cleared, then this becomes a no-op.
@@ -487,18 +492,14 @@ class Subchannel::ConnectionStateWatcher final
     // If the subchannel was created from an endpoint, then we report
     // TRANSIENT_FAILURE here instead of IDLE. The subchannel will never
     // leave TRANSIENT_FAILURE state, because there is no way for us to
-    // establish a new connection.
-    //
-    // Otherwise, we report IDLE here. Note that even though we're not
-    // reporting TRANSIENT_FAILURE, we pass along the status from the
-    // transport, since it may have keepalive info attached to it that the
-    // channel needs.
-    // TODO(roth): Revamp watcher interface between channel and subchannel
-    // to provide a cleaner way to pass the keepalive info to the channel.
-    subchannel_->SetConnectivityStateLocked(subchannel_->created_from_endpoint_
-                                                ? GRPC_CHANNEL_TRANSIENT_FAILURE
-                                                : GRPC_CHANNEL_IDLE,
-                                            status);
+    // establish a new connection.  Otherwise, we report IDLE here.
+    if (subchannel_->created_from_endpoint_) {
+      subchannel_->SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                              status);
+    } else {
+      subchannel_->SetConnectivityStateLocked(GRPC_CHANNEL_IDLE,
+                                              absl::OkStatus());
+    }
     subchannel_->backoff_.Reset();
   }
 
@@ -536,6 +537,15 @@ void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
   for (const auto& watcher : watchers_) {
     subchannel_->work_serializer_.Run([watcher, state, status]() {
       watcher->OnConnectivityStateChange(state, status);
+    });
+  }
+}
+
+void Subchannel::ConnectivityStateWatcherList::NotifyOnKeepaliveUpdateLocked(
+    int new_keepalive_time_ms) {
+  for (const auto& watcher : watchers_) {
+    subchannel_->work_serializer_.Run([watcher, new_keepalive_time_ms]() {
+      watcher->OnKeepaliveUpdate(new_keepalive_time_ms);
     });
   }
 }

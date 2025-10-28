@@ -1401,8 +1401,10 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
         t->keepalive_time.millis() > max_keepalive_time_millis
             ? INT_MAX
             : t->keepalive_time.millis() * KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
-    status.SetPayload(grpc_core::kKeepaliveThrottlingKey,
-                      absl::Cord(std::to_string(throttled_keepalive_time)));
+    if (!grpc_core::IsTransportStateWatcherEnabled()) {
+      status.SetPayload(grpc_core::kKeepaliveThrottlingKey,
+                        absl::Cord(std::to_string(throttled_keepalive_time)));
+    }
     disconnect_info.keepalive_time =
         grpc_core::Duration::Milliseconds(throttled_keepalive_time);
   }
