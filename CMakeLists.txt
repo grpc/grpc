@@ -21409,6 +21409,7 @@ add_executable(info_tool_test
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
+  src/core/lib/promise/wait_set.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/memory_quota.cc
