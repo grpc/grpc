@@ -16,7 +16,6 @@
 
 #include "src/core/xds/grpc/xds_http_composite_filter.h"
 
-#include "absl/strings/string_view.h"
 #include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/extensions/common/matching/v3/extension_matcher.upb.h"
 #include "envoy/extensions/common/matching/v3/extension_matcher.upbdefs.h"
@@ -35,6 +34,7 @@
 #include "src/core/xds/grpc/xds_matcher_context.h"
 #include "src/core/xds/grpc/xds_matcher_parse.h"
 #include "src/core/xds/xds_client/xds_client.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

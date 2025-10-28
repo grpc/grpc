@@ -16,9 +16,6 @@
 
 #include "src/core/filter/composite/composite_filter.h"
 
-#include "absl/random/random.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
 #include "src/core/call/interception_chain.h"
 #include "src/core/filter/filter_chain.h"
 #include "src/core/lib/promise/context.h"
@@ -26,6 +23,9 @@
 #include "src/core/util/shared_bit_gen.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
 #include "src/core/xds/grpc/xds_matcher_context.h"
+#include "absl/random/random.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 
 namespace grpc_core {
 
