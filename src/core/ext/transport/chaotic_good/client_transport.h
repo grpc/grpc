@@ -89,6 +89,13 @@ class ChaoticGoodClientTransport final : public ClientTransport,
 
   void StartCall(CallHandler call_handler) override;
 
+  void StartWatch(RefCountedPtr<StateWatcher>) override {
+    // FIXME: Implement.
+  }
+  void StopWatch(RefCountedPtr<StateWatcher>) override {
+    // FIXME: Implement.
+  }
+
  private:
   struct Stream : public RefCounted<Stream> {
     explicit Stream(CallHandler call)

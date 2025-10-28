@@ -83,6 +83,12 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
     return socket_node_;
   }
+  void StartWatch(RefCountedPtr<StateWatcher>) override {
+    // FIXME: Implement.
+  }
+  void StopWatch(RefCountedPtr<StateWatcher>) override {
+    // FIXME: Implement.
+  }
 
   void StartCall(CallHandler call_handler) override;
   void AbortWithError();
