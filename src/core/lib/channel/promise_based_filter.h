@@ -1282,16 +1282,17 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
               std::exchange(call_args.server_to_client_messages,
                             &server_to_client_messages.sender);
           // Initiator-side promise for client-to-server data.
-          auto initiator_client_to_server_promise =
+          auto initiator_client_to_server_promise = Map(
               [initiator, client_to_server_messages_receiver]() mutable {
                 return ForEach(
                     std::move(*client_to_server_messages_receiver),
                     [initiator](MessageHandle message) mutable {
                       return initiator.PushMessage(std::move(message));
                     });
-              };
+              },
+              [](auto) { return ServerMetadataHandle(); });
           // Initiator-side promise for server-to-client data.
-          auto initiator_server_to_client_promise =
+          auto initiator_server_to_client_promise = Map(
               [initiator, server_initial_metadata_sender,
                server_to_client_messages_sender]() mutable {
                 return TrySeq(
@@ -1310,9 +1311,10 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                                              std::move(message)),
                                          [](bool x) { return StatusFlag(x); });
                             }));
-              };
+              },
+              [](auto) { return ServerMetadataHandle(); });
           // Handler-side promise for client-to-server data.
-          auto handler_client_to_server_promise =
+          auto handler_client_to_server_promise = Map(
               [handler, &client_to_server_messages]() mutable {
                 return ForEach(
                     MessagesFrom(handler), [&](MessageHandle message) {
@@ -1320,9 +1322,10 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                                      std::move(message)),
                                  [](bool x) { return StatusFlag(x); });
                     });
-              };
+              },
+              [](auto) { return ServerMetadataHandle(); });
           // Handler-side promise for server-to-client data.
-          auto handler_server_to_client_promise =
+          auto handler_server_to_client_promise = Map(
               [handler, &server_initial_metadata,
                &server_to_client_messages]() mutable {
                 return TrySeq(
@@ -1338,7 +1341,8 @@ class V3InterceptorToV2Bridge : public ChannelFilter, public Interceptor {
                             [handler](MessageHandle message) mutable {
                               return handler.PushMessage(std::move(message));
                             }));
-              };
+              },
+              [](auto) { return ServerMetadataHandle(); });
           // Now put it all together.
           return PrioritizedRace(next_promise_factory(std::move(call_args)),
                                  std::move(initiator_client_to_server_promise),

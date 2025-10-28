@@ -59,7 +59,7 @@ void XdsHttpCompositeFilter::PopulateSymtab(upb_DefPool* symtab) const {
 
 void XdsHttpCompositeFilter::AddFilter(
     InterceptionChainBuilder& builder) const {
-  builder.Add<CompositeFilter>();
+  builder.Add<CompositeFilter>(nullptr);
 }
 
 void XdsHttpCompositeFilter::AddFilter(
