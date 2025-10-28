@@ -30,7 +30,7 @@ where = ["."]
 # Exclude .py files like `third_party/abseil-cpp/absl/copts/copts.py` in
 # `third_party` directory from being included in the wheel
 exclude = [
-    "third_party",
+    "third_party*",
 ]
 
 [tool.setuptools.dynamic]

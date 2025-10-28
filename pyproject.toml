@@ -42,9 +42,9 @@ version = {attr = "grpc_version.VERSION"}
 
 [tool.setuptools.exclude-package-data]
 # Exclude cython source and intermediate files from the .whl file
-"grpc" = [
-    "**/*.pyx",
-    "**/*.cpp",
-    "**/*.pxd",
-    "**/*.pxi",
+"*" = [
+    "*.pyx",
+    "*.cpp",
+    "*.pxd",
+    "*.pxi",
 ]

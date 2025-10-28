@@ -109,11 +109,10 @@ fi
 # Build the source distribution first because MANIFEST.in cannot override
 # exclusion of built shared objects among package resources (for some
 # inexplicable reason).
-${SETARCH_CMD} "${PYTHON}" -m build --sdist
 
 # Wheel has a bug where directories don't get excluded.
 # https://bitbucket.org/pypa/wheel/issues/99/cannot-exclude-directory
-${SETARCH_CMD} "${PYTHON}" -m build --wheel "${WHEEL_PLAT_CONFIG_OPTION[@]}"
+${SETARCH_CMD} "${PYTHON}" -m build "${WHEEL_PLAT_CONFIG_OPTION[@]}"
 
 GRPCIO_STRIP_TEMPDIR=$(mktemp -d)
 GRPCIO_TAR_GZ_LIST=( dist/grpcio-*.tar.gz )
@@ -148,19 +147,14 @@ mv "${GRPCIO_STRIPPED_TAR_GZ}" "${GRPCIO_TAR_GZ}"
 # Build gRPC tools package distribution
 "${PYTHON}" tools/distrib/python/make_grpcio_tools.py
 
-# Build gRPC tools package source distribution
-${SETARCH_CMD} "${PYTHON}" -m build "tools/distrib/python/grpcio_tools" --sdist
-
-# Build gRPC tools package binary distribution
+# Build gRPC tools package source and binary distribution
 ${SETARCH_CMD} "${PYTHON}" -m build "tools/distrib/python/grpcio_tools" \
-  --wheel --no-isolation "${WHEEL_PLAT_CONFIG_OPTION[@]}"
+  "${WHEEL_PLAT_CONFIG_OPTION[@]}"
 
 if [ "$GRPC_BUILD_MAC" == "" ]; then
   "${PYTHON}" src/python/grpcio_observability/make_grpcio_observability.py
   ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_observability" \
-    --sdist
-  ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_observability" \
-    --wheel "${WHEEL_PLAT_CONFIG_OPTION[@]}"
+    "${WHEEL_PLAT_CONFIG_OPTION[@]}"
 fi
 
 
@@ -250,8 +244,7 @@ if [ "$GRPC_BUILD_MAC" == "" ]; then
 
   # Build grpcio_csm_observability distribution
   if [ "$GRPC_BUILD_MAC" == "" ]; then
-    ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_csm_observability" \
-        --sdist --wheel
+    ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_csm_observability"
     cp -r src/python/grpcio_csm_observability/dist/* "$ARTIFACT_DIR"
   fi
 fi
@@ -281,13 +274,13 @@ then
   # Build xds_protos source distribution
   # build.py is invoked as part of generate_projects.
   ${SETARCH_CMD} "${PYTHON}" -m build "tools/distrib/python/xds_protos" \
-      --sdist --wheel --no-isolation
+      --no-isolation
   cp -r tools/distrib/python/xds_protos/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_testing source distribution
   # TODO(ssreenithi): find pyproject.toml/nox equivalent
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_testing/setup.py preprocess
-  ${SETARCH_CMD} "${PYTHON}" -m build src/python/grpcio_testing --sdist --wheel
+  ${SETARCH_CMD} "${PYTHON}" -m build src/python/grpcio_testing
   cp -r src/python/grpcio_testing/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_channelz source distribution
@@ -295,7 +288,7 @@ then
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_channelz/setup.py \
       preprocess build_package_protos
   ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_channelz" \
-    --sdist --wheel --no-isolation
+    --no-isolation
   cp -r src/python/grpcio_channelz/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_health_checking source distribution
@@ -303,7 +296,7 @@ then
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_health_checking/setup.py \
       preprocess build_package_protos
   ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_health_checking" \
-    --sdist --wheel --no-isolation
+    --no-isolation
   cp -r src/python/grpcio_health_checking/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_reflection source distribution
@@ -311,15 +304,14 @@ then
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_reflection/setup.py \
       preprocess build_package_protos
   ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_reflection" \
-    --sdist --wheel --no-isolation
+    --no-isolation
   cp -r src/python/grpcio_reflection/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_status source distribution
   # TODO(ssreenithi): find pyproject.toml/nox equivalent
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_status/setup.py \
       preprocess
-  ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_status" \
-    --sdist --wheel
+  ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_status"
   cp -r src/python/grpcio_status/dist/* "$ARTIFACT_DIR"
 
   # Install xds-protos as a dependency of grpcio-csds
@@ -327,7 +319,7 @@ then
 
   # Build grpcio_csds source distribution
   ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_csds" \
-      --sdist --wheel --no-isolation
+      --no-isolation
   cp -r src/python/grpcio_csds/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_admin source distribution and it needs the cutting-edge version
@@ -335,7 +327,7 @@ then
   "${PYTHON}" -m pip install grpcio-channelz --no-index --find-links "file://$ARTIFACT_DIR/"
   "${PYTHON}" -m pip install grpcio-csds --no-index --find-links "file://$ARTIFACT_DIR/"
   ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_admin" \
-      --sdist --wheel --no-isolation
+      --no-isolation
   cp -r src/python/grpcio_admin/dist/* "$ARTIFACT_DIR"
 
 fi
