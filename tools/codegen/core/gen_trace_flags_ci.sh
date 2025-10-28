@@ -17,9 +17,17 @@ set -ex
 dir=$(dirname "${0}")
 cd "${dir}/../../.."
 
-VIRTUALENV=venv_gen_trace_flags_ci
-python3 -m virtualenv $VIRTUALENV
-source $VIRTUALENV/bin/activate
+tools/bazel run --cxxopt='-std=c++17' tools/codegen/core:generate_trace_flags -- \
+ --trace_flags_yaml=$(pwd)/src/core/lib/debug/trace_flags.yaml \
+ --header_path=$(pwd)/src/core/lib/debug/trace_flags.h \
+ --cpp_path=$(pwd)/src/core/lib/debug/trace_flags.cc \
+ --markdown_path=$(pwd)/doc/trace_flags.md
 
-python3 -m pip install absl-py mako pyyaml
-python3 ${dir}/gen_trace_flags.py --check
+TEST="" tools/distrib/clang_format_code.sh
+
+output=$(git diff)
+if [[ -n "$output" ]]; then
+    echo "Trace flags need to be generated. Please run tools/codegen/core/generate_trace_flags_main.cc"
+    echo $output
+    exit 1
+fi

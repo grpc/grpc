@@ -51,12 +51,13 @@ grpc_cc_library(
     hdrs = ["generate_trace_flags.h"],
     external_deps = [
         "absl/strings",
+        "absl/strings:str_format",
         "absl/log",
+        "absl/container:flat_hash_map",
+        "@yaml-cpp//:yaml-cpp",
     ],
     deps = [
         "//:gpr",
-        "//third_party/absl/container:flat_hash_map",
-        "//third_party/yamlcpp",
     ],
 )
 
