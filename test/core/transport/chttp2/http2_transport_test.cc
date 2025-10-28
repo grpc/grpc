@@ -192,14 +192,14 @@ TEST(Http2CommonTransportTest, ProcessIncomingDataFrameFlowControlNullStream) {
   frame_header.flags = 0;
   frame_header.stream_id = 1;
 
-  EXPECT_EQ(flow_control.announced_window(), chttp2::kDefaultWindow);
+  EXPECT_EQ(flow_control.test_only_announced_window(), chttp2::kDefaultWindow);
 
   // First DATA frame of size frame_payload_size
   ValueOrHttp2Status<chttp2::FlowControlAction> action1 =
       ProcessIncomingDataFrameFlowControl(frame_header, flow_control,
                                           /*stream=*/nullptr);
   EXPECT_TRUE(action1.IsOk());
-  EXPECT_EQ(flow_control.announced_window(),
+  EXPECT_EQ(flow_control.test_only_announced_window(),
             chttp2::kDefaultWindow - frame_payload_size);
 
   // 2nd DATA frame of size frame_payload_size
@@ -207,7 +207,7 @@ TEST(Http2CommonTransportTest, ProcessIncomingDataFrameFlowControlNullStream) {
       ProcessIncomingDataFrameFlowControl(frame_header, flow_control,
                                           /*stream=*/nullptr);
   EXPECT_TRUE(action2.IsOk());
-  EXPECT_EQ(flow_control.announced_window(),
+  EXPECT_EQ(flow_control.test_only_announced_window(),
             chttp2::kDefaultWindow - 2 * frame_payload_size);
 
   // 3rd DATA frame of size frame_payload_size
@@ -215,7 +215,7 @@ TEST(Http2CommonTransportTest, ProcessIncomingDataFrameFlowControlNullStream) {
       ProcessIncomingDataFrameFlowControl(frame_header, flow_control,
                                           /*stream=*/nullptr);
   EXPECT_TRUE(action3.IsOk());
-  EXPECT_EQ(flow_control.announced_window(),
+  EXPECT_EQ(flow_control.test_only_announced_window(),
             chttp2::kDefaultWindow - 3 * frame_payload_size);
 
   // 4th DATA frame of size frame_payload_size.
@@ -245,14 +245,14 @@ TEST(Http2CommonTransportTest, ProcessIncomingDataFrameFlowControlNullStream1) {
   frame_header.flags = 0;
   frame_header.stream_id = 1;
 
-  EXPECT_EQ(flow_control.announced_window(), chttp2::kDefaultWindow);
+  EXPECT_EQ(flow_control.test_only_announced_window(), chttp2::kDefaultWindow);
 
   // Receive first large DATA frame.
   ValueOrHttp2Status<chttp2::FlowControlAction> action1 =
       ProcessIncomingDataFrameFlowControl(frame_header, flow_control,
                                           /*stream=*/nullptr);
   EXPECT_TRUE(action1.IsOk());
-  EXPECT_EQ(flow_control.announced_window(),
+  EXPECT_EQ(flow_control.test_only_announced_window(),
             chttp2::kDefaultWindow - frame_payload_size);
 
   // Send the flow control update to peer
@@ -264,7 +264,7 @@ TEST(Http2CommonTransportTest, ProcessIncomingDataFrameFlowControlNullStream1) {
       ProcessIncomingDataFrameFlowControl(frame_header, flow_control,
                                           /*stream=*/nullptr);
   EXPECT_TRUE(action2.IsOk());
-  EXPECT_EQ(flow_control.announced_window(),
+  EXPECT_EQ(flow_control.test_only_announced_window(),
             (chttp2::kDefaultWindow + increment) - 2 * frame_payload_size);
 
   // For an empty DATA frame the flow control window must not change.
@@ -275,7 +275,7 @@ TEST(Http2CommonTransportTest, ProcessIncomingDataFrameFlowControlNullStream1) {
         ProcessIncomingDataFrameFlowControl(frame_header, flow_control,
                                             /*stream=*/nullptr);
     EXPECT_TRUE(action3.IsOk());
-    EXPECT_EQ(flow_control.announced_window(),
+    EXPECT_EQ(flow_control.test_only_announced_window(),
               (chttp2::kDefaultWindow + increment) - 2 * frame_payload_size);
   }
 }
@@ -290,17 +290,18 @@ TEST_F(TestsNeedingStreamObjects,
   frame_header.flags = 0;
   frame_header.stream_id = 1;
 
-  EXPECT_EQ(transport_flow_control_.announced_window(), chttp2::kDefaultWindow);
-  EXPECT_EQ(stream->flow_control.announced_window_delta(), 0);
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
+            chttp2::kDefaultWindow);
+  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(), 0);
 
   // First DATA frame of size frame_payload_size
   ValueOrHttp2Status<chttp2::FlowControlAction> action1 =
       ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
                                           stream);
   EXPECT_TRUE(action1.IsOk());
-  EXPECT_EQ(transport_flow_control_.announced_window(),
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             chttp2::kDefaultWindow - frame_payload_size);
-  EXPECT_EQ(stream->flow_control.announced_window_delta(),
+  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(),
             -static_cast<int64_t>(frame_payload_size));
 
   // 2nd DATA frame of size frame_payload_size
@@ -308,9 +309,9 @@ TEST_F(TestsNeedingStreamObjects,
       ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
                                           stream);
   EXPECT_TRUE(action2.IsOk());
-  EXPECT_EQ(transport_flow_control_.announced_window(),
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             chttp2::kDefaultWindow - 2 * frame_payload_size);
-  EXPECT_EQ(stream->flow_control.announced_window_delta(),
+  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(),
             -2 * static_cast<int64_t>(frame_payload_size));
 
   // 3rd DATA frame of size frame_payload_size
@@ -318,9 +319,9 @@ TEST_F(TestsNeedingStreamObjects,
       ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
                                           stream);
   EXPECT_TRUE(action3.IsOk());
-  EXPECT_EQ(transport_flow_control_.announced_window(),
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             chttp2::kDefaultWindow - 3 * frame_payload_size);
-  EXPECT_EQ(stream->flow_control.announced_window_delta(),
+  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(),
             -3 * static_cast<int64_t>(frame_payload_size));
 
   // 4th DATA frame of size frame_payload_size.
@@ -349,24 +350,25 @@ TEST_F(TestsNeedingStreamObjects,
   frame_header.flags = 0;
   frame_header.stream_id = 1;
 
-  EXPECT_EQ(transport_flow_control_.announced_window(), chttp2::kDefaultWindow);
-  EXPECT_EQ(stream->flow_control.announced_window_delta(), 0);
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
+            chttp2::kDefaultWindow);
+  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(), 0);
 
   // Receive first large DATA frame.
   ValueOrHttp2Status<chttp2::FlowControlAction> action1 =
       ProcessIncomingDataFrameFlowControl(frame_header, transport_flow_control_,
                                           stream);
   EXPECT_TRUE(action1.IsOk());
-  EXPECT_EQ(transport_flow_control_.announced_window(),
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             chttp2::kDefaultWindow - frame_payload_size);
-  EXPECT_EQ(stream->flow_control.announced_window_delta(),
+  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(),
             -static_cast<int64_t>(frame_payload_size));
 
   // Send the flow control update to peer for transport
   uint32_t increment =
       transport_flow_control_.MaybeSendUpdate(/*writing_anyway=*/true);
   EXPECT_GT(increment, 0);
-  EXPECT_EQ(transport_flow_control_.announced_window(),
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             chttp2::kDefaultWindow - frame_payload_size + increment);
 
   // Receive 2nd large DATA frame.
@@ -397,9 +399,9 @@ TEST_F(TestsNeedingStreamObjects,
   int64_t expected_announced_window = chttp2::kDefaultWindow;
   int64_t expected_announced_window_delta = 0;
 
-  EXPECT_EQ(transport_flow_control_.announced_window(),
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             expected_announced_window);
-  EXPECT_EQ(stream->flow_control.announced_window_delta(),
+  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(),
             expected_announced_window_delta);
 
   // Receive first large DATA frame.
@@ -409,9 +411,9 @@ TEST_F(TestsNeedingStreamObjects,
   expected_announced_window -= frame_payload_size;
   expected_announced_window_delta -= frame_payload_size;
   EXPECT_TRUE(action1.IsOk());
-  EXPECT_EQ(transport_flow_control_.announced_window(),
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             expected_announced_window);
-  EXPECT_EQ(stream->flow_control.announced_window_delta(),
+  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(),
             expected_announced_window_delta);
 
   chttp2::StreamFlowControl::IncomingUpdateContext stream_flow_control_context(
@@ -429,9 +431,9 @@ TEST_F(TestsNeedingStreamObjects,
   EXPECT_GT(stream_increment, 0);
   expected_announced_window += transport_increment;
   expected_announced_window_delta += stream_increment;
-  EXPECT_EQ(transport_flow_control_.announced_window(),
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             expected_announced_window);
-  EXPECT_EQ(stream->flow_control.announced_window_delta(),
+  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(),
             expected_announced_window_delta);
 
   // Receive 2nd large DATA frame.
@@ -441,9 +443,9 @@ TEST_F(TestsNeedingStreamObjects,
   EXPECT_TRUE(action2.IsOk());
   expected_announced_window -= frame_payload_size;
   expected_announced_window_delta -= frame_payload_size;
-  EXPECT_EQ(transport_flow_control_.announced_window(),
+  EXPECT_EQ(transport_flow_control_.test_only_announced_window(),
             expected_announced_window);
-  EXPECT_EQ(stream->flow_control.announced_window_delta(),
+  EXPECT_EQ(stream->flow_control.test_only_announced_window_delta(),
             expected_announced_window_delta);
 }
 
