@@ -149,7 +149,7 @@ class SubchannelStreamClient final
     // The streaming call to the backend. Always non-null.
     // Refs are tracked manually; when the last ref is released, the
     // CallState object will be automatically destroyed.
-    SubchannelCall* call_;
+    ConnectedSubchannel::Call* call_;
 
     grpc_transport_stream_op_batch_payload payload_;
     grpc_transport_stream_op_batch batch_;

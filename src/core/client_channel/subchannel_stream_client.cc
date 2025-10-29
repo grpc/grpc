@@ -189,8 +189,7 @@ void SubchannelStreamClient::CallState::Orphan() {
 }
 
 void SubchannelStreamClient::CallState::StartCallLocked() {
-  SubchannelCall::Args args = {
-      subchannel_stream_client_->connected_subchannel_,
+  ConnectedSubchannel::CreateCallArgs args = {
       &pollent_,
       gpr_get_cycle_counter(),  // start_time
       Timestamp::InfFuture(),   // deadline
@@ -198,7 +197,9 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
       &call_combiner_,
   };
   grpc_error_handle error;
-  call_ = SubchannelCall::Create(std::move(args), &error).release();
+  call_ = subchannel_stream_client_->connected_subchannel_
+              ->CreateCall(std::move(args), &error)
+              .release();
   // Register after-destruction callback.
   GRPC_CLOSURE_INIT(&after_call_stack_destruction_, AfterCallStackDestruction,
                     this, grpc_schedule_on_exec_ctx);
@@ -276,7 +277,8 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
 void SubchannelStreamClient::CallState::StartBatchInCallCombiner(
     void* arg, grpc_error_handle /*error*/) {
   auto* batch = static_cast<grpc_transport_stream_op_batch*>(arg);
-  auto* call = static_cast<SubchannelCall*>(batch->handler_private.extra_arg);
+  auto* call =
+      static_cast<ConnectedSubchannel::Call*>(batch->handler_private.extra_arg);
   call->StartTransportStreamOpBatch(batch);
 }
 

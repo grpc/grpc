@@ -371,7 +371,7 @@ class ClientChannelFilter::LoadBalancedCall final
   void RetryPickLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannelFilter::lb_mu_);
 
-  RefCountedPtr<SubchannelCall> subchannel_call() const {
+  RefCountedPtr<ConnectedSubchannel::Call> subchannel_call() const {
     return subchannel_call_;
   }
 
@@ -461,7 +461,7 @@ class ClientChannelFilter::LoadBalancedCall final
   LbQueuedCallCanceller* lb_call_canceller_
       ABSL_GUARDED_BY(&ClientChannelFilter::lb_mu_) = nullptr;
 
-  RefCountedPtr<SubchannelCall> subchannel_call_;
+  RefCountedPtr<ConnectedSubchannel::Call> subchannel_call_;
 
   // For intercepting recv_initial_metadata_ready.
   grpc_metadata_batch* recv_initial_metadata_ = nullptr;

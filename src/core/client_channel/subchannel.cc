@@ -101,11 +101,74 @@ ConnectedSubchannel::ConnectedSubchannel(const ChannelArgs& args)
       args_(args) {}
 
 //
+// ConnectedSubchannel::Call
+//
+
+RefCountedPtr<ConnectedSubchannel::Call> ConnectedSubchannel::Call::Ref() {
+  IncrementRefCount();
+  return RefCountedPtr<ConnectedSubchannel::Call>(this);
+}
+
+RefCountedPtr<ConnectedSubchannel::Call> ConnectedSubchannel::Call::Ref(
+    const DebugLocation& location, const char* reason) {
+  IncrementRefCount(location, reason);
+  return RefCountedPtr<ConnectedSubchannel::Call>(this);
+}
+
+//
 // LegacyConnectedSubchannel
 //
 
 class LegacyConnectedSubchannel : public ConnectedSubchannel {
  public:
+  class SubchannelCall final : public Call {
+   public:
+    SubchannelCall(
+        RefCountedPtr<LegacyConnectedSubchannel> connected_subchannel,
+        CreateCallArgs args, grpc_error_handle* error);
+
+    // Continues processing a transport stream op batch.
+    void StartTransportStreamOpBatch(
+        grpc_transport_stream_op_batch* batch) override;
+
+    // Sets the 'then_schedule_closure' argument for call stack destruction.
+    // Must be called once per call.
+    void SetAfterCallStackDestroy(grpc_closure* closure) override;
+
+    // Interface of RefCounted<>.
+    // When refcount drops to 0, destroys itself and the associated call stack,
+    // but does NOT free the memory because it's in the call arena.
+    void Unref() override;
+    void Unref(const DebugLocation& location, const char* reason) override;
+
+   private:
+    // Allow RefCountedPtr<> to access IncrementRefCount().
+    template <typename T>
+    friend class RefCountedPtr;
+
+    // If channelz is enabled, intercepts recv_trailing so that we may check the
+    // status and associate it to a subchannel.
+    void MaybeInterceptRecvTrailingMetadata(
+        grpc_transport_stream_op_batch* batch);
+
+    static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error);
+
+    // Interface of RefCounted<>.
+    void IncrementRefCount() override;
+    void IncrementRefCount(const DebugLocation& location,
+                           const char* reason) override;
+
+    static void Destroy(void* arg, grpc_error_handle error);
+
+    RefCountedPtr<LegacyConnectedSubchannel> connected_subchannel_;
+    grpc_closure* after_call_stack_destroy_ = nullptr;
+    // State needed to support channelz interception of recv trailing metadata.
+    grpc_closure recv_trailing_metadata_ready_;
+    grpc_closure* original_recv_trailing_metadata_ = nullptr;
+    grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
+    Timestamp deadline_;
+  };
+
   LegacyConnectedSubchannel(
       RefCountedPtr<grpc_channel_stack> channel_stack, const ChannelArgs& args,
       RefCountedPtr<channelz::SubchannelNode> channelz_node)
@@ -146,9 +209,14 @@ class LegacyConnectedSubchannel : public ConnectedSubchannel {
     return channel_stack_.get();
   }
 
-  size_t GetInitialCallSizeEstimate() const override {
-    return GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)) +
-           channel_stack_->call_stack_size;
+  RefCountedPtr<Call> CreateCall(CreateCallArgs args,
+                                 grpc_error_handle* error) override {
+    const size_t allocation_size = GetInitialCallSizeEstimate();
+    Arena* arena = args.arena;
+    return RefCountedPtr<SubchannelCall>(
+        new (arena->Alloc(allocation_size))
+            SubchannelCall(RefAsSubclass<LegacyConnectedSubchannel>(),
+                           std::move(args), error));
   }
 
   void Ping(grpc_closure* on_initiate, grpc_closure* on_ack) override {
@@ -161,9 +229,145 @@ class LegacyConnectedSubchannel : public ConnectedSubchannel {
   }
 
  private:
+  size_t GetInitialCallSizeEstimate() const {
+    return GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)) +
+           channel_stack_->call_stack_size;
+  }
+
   RefCountedPtr<channelz::SubchannelNode> channelz_node_;
   RefCountedPtr<grpc_channel_stack> channel_stack_;
 };
+
+LegacyConnectedSubchannel::SubchannelCall::SubchannelCall(
+    RefCountedPtr<LegacyConnectedSubchannel> connected_subchannel,
+    ConnectedSubchannel::CreateCallArgs args, grpc_error_handle* error)
+    : connected_subchannel_(std::move(connected_subchannel)),
+      deadline_(args.deadline) {
+  grpc_call_stack* callstk = SUBCHANNEL_CALL_TO_CALL_STACK(this);
+  const grpc_call_element_args call_args = {
+      callstk,            // call_stack
+      nullptr,            // server_transport_data
+      args.start_time,    // start_time
+      args.deadline,      // deadline
+      args.arena,         // arena
+      args.call_combiner  // call_combiner
+  };
+  *error = grpc_call_stack_init(connected_subchannel_->channel_stack(), 1,
+                                SubchannelCall::Destroy, this, &call_args);
+  if (GPR_UNLIKELY(!error->ok())) {
+    LOG(ERROR) << "error: " << StatusToString(*error);
+    return;
+  }
+  grpc_call_stack_set_pollset_or_pollset_set(callstk, args.pollent);
+  auto* channelz_node = connected_subchannel_->channelz_node();
+  if (channelz_node != nullptr) {
+    channelz_node->RecordCallStarted();
+  }
+}
+
+void LegacyConnectedSubchannel::SubchannelCall::StartTransportStreamOpBatch(
+    grpc_transport_stream_op_batch* batch) {
+  MaybeInterceptRecvTrailingMetadata(batch);
+  grpc_call_stack* call_stack = SUBCHANNEL_CALL_TO_CALL_STACK(this);
+  grpc_call_element* top_elem = grpc_call_stack_element(call_stack, 0);
+  GRPC_TRACE_LOG(channel, INFO)
+      << "OP[" << top_elem->filter->name << ":" << top_elem
+      << "]: " << grpc_transport_stream_op_batch_string(batch, false);
+  top_elem->filter->start_transport_stream_op_batch(top_elem, batch);
+}
+
+void LegacyConnectedSubchannel::SubchannelCall::SetAfterCallStackDestroy(
+    grpc_closure* closure) {
+  GRPC_CHECK_EQ(after_call_stack_destroy_, nullptr);
+  GRPC_CHECK_NE(closure, nullptr);
+  after_call_stack_destroy_ = closure;
+}
+
+void LegacyConnectedSubchannel::SubchannelCall::Unref() {
+  GRPC_CALL_STACK_UNREF(SUBCHANNEL_CALL_TO_CALL_STACK(this), "");
+}
+
+void LegacyConnectedSubchannel::SubchannelCall::Unref(
+    const DebugLocation& /*location*/, const char* reason) {
+  GRPC_CALL_STACK_UNREF(SUBCHANNEL_CALL_TO_CALL_STACK(this), reason);
+}
+
+void LegacyConnectedSubchannel::SubchannelCall::Destroy(
+    void* arg, grpc_error_handle /*error*/) {
+  SubchannelCall* self = static_cast<SubchannelCall*>(arg);
+  // Keep some members before destroying the subchannel call.
+  grpc_closure* after_call_stack_destroy = self->after_call_stack_destroy_;
+  RefCountedPtr<ConnectedSubchannel> connected_subchannel =
+      std::move(self->connected_subchannel_);
+  // Destroy the subchannel call.
+  self->~SubchannelCall();
+  // Destroy the call stack. This should be after destroying the subchannel
+  // call, because call->after_call_stack_destroy(), if not null, will free
+  // the call arena.
+  grpc_call_stack_destroy(SUBCHANNEL_CALL_TO_CALL_STACK(self), nullptr,
+                          after_call_stack_destroy);
+  // Automatically reset connected_subchannel. This should be after destroying
+  // the call stack, because destroying call stack needs access to the channel
+  // stack.
+}
+
+void LegacyConnectedSubchannel::SubchannelCall::
+    MaybeInterceptRecvTrailingMetadata(grpc_transport_stream_op_batch* batch) {
+  // only intercept payloads with recv trailing.
+  if (!batch->recv_trailing_metadata) return;
+  // only add interceptor is channelz is enabled.
+  if (connected_subchannel_->channelz_node() == nullptr) return;
+  GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_, RecvTrailingMetadataReady,
+                    this, grpc_schedule_on_exec_ctx);
+  // save some state needed for the interception callback.
+  GRPC_CHECK_EQ(recv_trailing_metadata_, nullptr);
+  recv_trailing_metadata_ =
+      batch->payload->recv_trailing_metadata.recv_trailing_metadata;
+  original_recv_trailing_metadata_ =
+      batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
+  batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
+      &recv_trailing_metadata_ready_;
+}
+
+namespace {
+
+// Sets *status based on the rest of the parameters.
+void GetCallStatus(grpc_status_code* status, Timestamp deadline,
+                   grpc_metadata_batch* md_batch, grpc_error_handle error) {
+  if (!error.ok()) {
+    grpc_error_get_status(error, deadline, status, nullptr, nullptr, nullptr);
+  } else {
+    *status = md_batch->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
+  }
+}
+
+}  // namespace
+
+void LegacyConnectedSubchannel::SubchannelCall::RecvTrailingMetadataReady(
+    void* arg, grpc_error_handle error) {
+  SubchannelCall* call = static_cast<SubchannelCall*>(arg);
+  GRPC_CHECK_NE(call->recv_trailing_metadata_, nullptr);
+  grpc_status_code status = GRPC_STATUS_OK;
+  GetCallStatus(&status, call->deadline_, call->recv_trailing_metadata_, error);
+  channelz::SubchannelNode* channelz_node =
+      call->connected_subchannel_->channelz_node();
+  GRPC_CHECK_NE(channelz_node, nullptr);
+  if (status == GRPC_STATUS_OK) {
+    channelz_node->RecordCallSucceeded();
+  } else {
+    channelz_node->RecordCallFailed();
+  }
+  Closure::Run(DEBUG_LOCATION, call->original_recv_trailing_metadata_, error);
+}
+
+void LegacyConnectedSubchannel::SubchannelCall::IncrementRefCount() {
+  GRPC_CALL_STACK_REF(SUBCHANNEL_CALL_TO_CALL_STACK(this), "");
+}
+
+void LegacyConnectedSubchannel::SubchannelCall::IncrementRefCount(
+    const DebugLocation& /*location*/, const char* reason) {
+  GRPC_CALL_STACK_REF(SUBCHANNEL_CALL_TO_CALL_STACK(this), reason);
+}
 
 //
 // NewConnectedSubchannel
@@ -214,7 +418,10 @@ class NewConnectedSubchannel : public ConnectedSubchannel {
 
   grpc_channel_stack* channel_stack() const override { return nullptr; }
 
-  size_t GetInitialCallSizeEstimate() const override { return 0; }
+  RefCountedPtr<Call> CreateCall(CreateCallArgs args,
+                                 grpc_error_handle* error) override {
+    return nullptr;
+  }
 
   void Ping(grpc_closure*, grpc_closure*) override {
     Crash("legacy ping method called in call v3 impl");
@@ -226,158 +433,6 @@ class NewConnectedSubchannel : public ConnectedSubchannel {
   RefCountedPtr<UnstartedCallDestination> call_destination_;
   RefCountedPtr<TransportCallDestination> transport_;
 };
-
-//
-// SubchannelCall
-//
-
-RefCountedPtr<SubchannelCall> SubchannelCall::Create(Args args,
-                                                     grpc_error_handle* error) {
-  const size_t allocation_size =
-      args.connected_subchannel->GetInitialCallSizeEstimate();
-  Arena* arena = args.arena;
-  return RefCountedPtr<SubchannelCall>(new (
-      arena->Alloc(allocation_size)) SubchannelCall(std::move(args), error));
-}
-
-SubchannelCall::SubchannelCall(Args args, grpc_error_handle* error)
-    : connected_subchannel_(args.connected_subchannel
-                                .TakeAsSubclass<LegacyConnectedSubchannel>()),
-      deadline_(args.deadline) {
-  grpc_call_stack* callstk = SUBCHANNEL_CALL_TO_CALL_STACK(this);
-  const grpc_call_element_args call_args = {
-      callstk,            // call_stack
-      nullptr,            // server_transport_data
-      args.start_time,    // start_time
-      args.deadline,      // deadline
-      args.arena,         // arena
-      args.call_combiner  // call_combiner
-  };
-  *error = grpc_call_stack_init(connected_subchannel_->channel_stack(), 1,
-                                SubchannelCall::Destroy, this, &call_args);
-  if (GPR_UNLIKELY(!error->ok())) {
-    LOG(ERROR) << "error: " << StatusToString(*error);
-    return;
-  }
-  grpc_call_stack_set_pollset_or_pollset_set(callstk, args.pollent);
-  auto* channelz_node = connected_subchannel_->channelz_node();
-  if (channelz_node != nullptr) {
-    channelz_node->RecordCallStarted();
-  }
-}
-
-void SubchannelCall::StartTransportStreamOpBatch(
-    grpc_transport_stream_op_batch* batch) {
-  MaybeInterceptRecvTrailingMetadata(batch);
-  grpc_call_stack* call_stack = SUBCHANNEL_CALL_TO_CALL_STACK(this);
-  grpc_call_element* top_elem = grpc_call_stack_element(call_stack, 0);
-  GRPC_TRACE_LOG(channel, INFO)
-      << "OP[" << top_elem->filter->name << ":" << top_elem
-      << "]: " << grpc_transport_stream_op_batch_string(batch, false);
-  top_elem->filter->start_transport_stream_op_batch(top_elem, batch);
-}
-
-void SubchannelCall::SetAfterCallStackDestroy(grpc_closure* closure) {
-  GRPC_CHECK_EQ(after_call_stack_destroy_, nullptr);
-  GRPC_CHECK_NE(closure, nullptr);
-  after_call_stack_destroy_ = closure;
-}
-
-RefCountedPtr<SubchannelCall> SubchannelCall::Ref() {
-  IncrementRefCount();
-  return RefCountedPtr<SubchannelCall>(this);
-}
-
-RefCountedPtr<SubchannelCall> SubchannelCall::Ref(const DebugLocation& location,
-                                                  const char* reason) {
-  IncrementRefCount(location, reason);
-  return RefCountedPtr<SubchannelCall>(this);
-}
-
-void SubchannelCall::Unref() {
-  GRPC_CALL_STACK_UNREF(SUBCHANNEL_CALL_TO_CALL_STACK(this), "");
-}
-
-void SubchannelCall::Unref(const DebugLocation& /*location*/,
-                           const char* reason) {
-  GRPC_CALL_STACK_UNREF(SUBCHANNEL_CALL_TO_CALL_STACK(this), reason);
-}
-
-void SubchannelCall::Destroy(void* arg, grpc_error_handle /*error*/) {
-  SubchannelCall* self = static_cast<SubchannelCall*>(arg);
-  // Keep some members before destroying the subchannel call.
-  grpc_closure* after_call_stack_destroy = self->after_call_stack_destroy_;
-  RefCountedPtr<ConnectedSubchannel> connected_subchannel =
-      std::move(self->connected_subchannel_);
-  // Destroy the subchannel call.
-  self->~SubchannelCall();
-  // Destroy the call stack. This should be after destroying the subchannel
-  // call, because call->after_call_stack_destroy(), if not null, will free
-  // the call arena.
-  grpc_call_stack_destroy(SUBCHANNEL_CALL_TO_CALL_STACK(self), nullptr,
-                          after_call_stack_destroy);
-  // Automatically reset connected_subchannel. This should be after destroying
-  // the call stack, because destroying call stack needs access to the channel
-  // stack.
-}
-
-void SubchannelCall::MaybeInterceptRecvTrailingMetadata(
-    grpc_transport_stream_op_batch* batch) {
-  // only intercept payloads with recv trailing.
-  if (!batch->recv_trailing_metadata) return;
-  // only add interceptor is channelz is enabled.
-  if (connected_subchannel_->channelz_node() == nullptr) return;
-  GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_, RecvTrailingMetadataReady,
-                    this, grpc_schedule_on_exec_ctx);
-  // save some state needed for the interception callback.
-  GRPC_CHECK_EQ(recv_trailing_metadata_, nullptr);
-  recv_trailing_metadata_ =
-      batch->payload->recv_trailing_metadata.recv_trailing_metadata;
-  original_recv_trailing_metadata_ =
-      batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
-  batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
-      &recv_trailing_metadata_ready_;
-}
-
-namespace {
-
-// Sets *status based on the rest of the parameters.
-void GetCallStatus(grpc_status_code* status, Timestamp deadline,
-                   grpc_metadata_batch* md_batch, grpc_error_handle error) {
-  if (!error.ok()) {
-    grpc_error_get_status(error, deadline, status, nullptr, nullptr, nullptr);
-  } else {
-    *status = md_batch->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
-  }
-}
-
-}  // namespace
-
-void SubchannelCall::RecvTrailingMetadataReady(void* arg,
-                                               grpc_error_handle error) {
-  SubchannelCall* call = static_cast<SubchannelCall*>(arg);
-  GRPC_CHECK_NE(call->recv_trailing_metadata_, nullptr);
-  grpc_status_code status = GRPC_STATUS_OK;
-  GetCallStatus(&status, call->deadline_, call->recv_trailing_metadata_, error);
-  channelz::SubchannelNode* channelz_node =
-      call->connected_subchannel_->channelz_node();
-  GRPC_CHECK_NE(channelz_node, nullptr);
-  if (status == GRPC_STATUS_OK) {
-    channelz_node->RecordCallSucceeded();
-  } else {
-    channelz_node->RecordCallFailed();
-  }
-  Closure::Run(DEBUG_LOCATION, call->original_recv_trailing_metadata_, error);
-}
-
-void SubchannelCall::IncrementRefCount() {
-  GRPC_CALL_STACK_REF(SUBCHANNEL_CALL_TO_CALL_STACK(this), "");
-}
-
-void SubchannelCall::IncrementRefCount(const DebugLocation& /*location*/,
-                                       const char* reason) {
-  GRPC_CALL_STACK_REF(SUBCHANNEL_CALL_TO_CALL_STACK(this), reason);
-}
 
 //
 // Subchannel::ConnectedSubchannelStateWatcher

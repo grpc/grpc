@@ -300,7 +300,7 @@ class DynamicTerminationFilter::CallData final {
                       const grpc_call_final_info* /*final_info*/,
                       grpc_closure* then_schedule_closure) {
     auto* calld = static_cast<CallData*>(elem->call_data);
-    RefCountedPtr<SubchannelCall> subchannel_call;
+    RefCountedPtr<ConnectedSubchannel::Call> subchannel_call;
     if (GPR_LIKELY(calld->lb_call_ != nullptr)) {
       subchannel_call = calld->lb_call_->subchannel_call();
     }
@@ -2713,14 +2713,14 @@ void ClientChannelFilter::LoadBalancedCall::RetryPickLocked() {
 }
 
 void ClientChannelFilter::LoadBalancedCall::CreateSubchannelCall() {
-  SubchannelCall::Args call_args = {
-      connected_subchannel_->Ref(), pollent_, /*start_time=*/0,
-      arena_->GetContext<Call>()->deadline(),
+  ConnectedSubchannel::CreateCallArgs call_args = {
+      pollent_, /*start_time=*/0, arena_->GetContext<Call>()->deadline(),
       // TODO(roth): When we implement hedging support, we will probably
       // need to use a separate call arena for each subchannel call.
       arena_, call_combiner_};
   grpc_error_handle error;
-  subchannel_call_ = SubchannelCall::Create(std::move(call_args), &error);
+  subchannel_call_ =
+      connected_subchannel_->CreateCall(std::move(call_args), &error);
   GRPC_TRACE_LOG(client_channel_lb_call, INFO)
       << "chand=" << chand_ << " lb_call=" << this
       << ": create subchannel_call=" << subchannel_call_.get()
