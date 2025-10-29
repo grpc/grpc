@@ -173,6 +173,7 @@ std::pair<std::string, std::string> GetExternalLink(const std::string& file) {
       {"@com_google_googleapis//", ""},
       {"@com_github_cncf_xds//", ""},
       {"@com_envoyproxy_protoc_gen_validate//", ""},
+      {"@dev_cel//", ""},
       {"@envoy_api//", ""},
       {"@opencensus_proto//", ""},
   };
