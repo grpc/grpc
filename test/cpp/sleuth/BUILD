@@ -155,6 +155,7 @@ grpc_cc_library(
         ":version",
         "//test/cpp/util:test_config",
     ],
+    alwayslink = True,
 )
 
 # Shared library for gRPC Sleuth Python extension.
