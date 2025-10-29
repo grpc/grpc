@@ -168,7 +168,7 @@ void Http2ClientTransport::StopConnectivityWatch(
 
 void Http2ClientTransport::StartWatch(RefCountedPtr<StateWatcher> watcher) {
   MutexLock lock(&transport_mutex_);
-  GRPC_CHECK_NE(watcher_, nullptr);
+  GRPC_CHECK(watcher_ == nullptr);
   watcher_ = std::move(watcher);
   if (is_transport_closed_) {
     // TODO(roth, ctiller): Provide better status message and disconnect
