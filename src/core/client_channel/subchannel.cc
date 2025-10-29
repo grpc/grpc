@@ -277,10 +277,6 @@ void SubchannelCall::StartTransportStreamOpBatch(
   top_elem->filter->start_transport_stream_op_batch(top_elem, batch);
 }
 
-grpc_call_stack* SubchannelCall::GetCallStack() {
-  return SUBCHANNEL_CALL_TO_CALL_STACK(this);
-}
-
 void SubchannelCall::SetAfterCallStackDestroy(grpc_closure* closure) {
   GRPC_CHECK_EQ(after_call_stack_destroy_, nullptr);
   GRPC_CHECK_NE(closure, nullptr);

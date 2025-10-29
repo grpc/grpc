@@ -58,14 +58,11 @@
 #include "absl/container/flat_hash_set.h"
 #include "absl/status/status.h"
 
-/** This arg is intended for internal use only, primarily
- *  for passing endpoint information during subchannel creation or connection.
- */
+// This arg is intended for internal use only, primarily for passing
+// endpoint information during subchannel creation or connection.
 #define GRPC_ARG_SUBCHANNEL_ENDPOINT "grpc.internal.subchannel_endpoint"
 
 namespace grpc_core {
-
-class SubchannelCall;
 
 class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
  public:
@@ -112,9 +109,6 @@ class SubchannelCall final {
 
   // Continues processing a transport stream op batch.
   void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
-
-  // Returns the call stack of the subchannel call.
-  grpc_call_stack* GetCallStack();
 
   // Sets the 'then_schedule_closure' argument for call stack destruction.
   // Must be called once per call.
