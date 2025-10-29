@@ -371,6 +371,15 @@ def grpc_deps():
             ],
         )
 
+    if "com_google_cel-spec" not in native.existing_rules():
+        http_archive(
+            name = "com_google_cel-spec",
+            sha256 = "5cba6b0029e727d1f4d8fd134de4e747cecc0bc293d026017d7edc48058d09f7",
+            urls = [
+                "https://github.com/google/cel-spec/archive/refs/tags/v0.24.0.tar.gz",
+            ],
+        )
+
     # Building grpc with openssl is only supported when using bzlmod. Workspaces
     # are deprecated, so just create a dummy repo so that the grpc targets build
     # when using workspaces.
