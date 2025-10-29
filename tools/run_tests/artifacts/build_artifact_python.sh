@@ -266,15 +266,15 @@ then
   "${PYTHON}" -m pip install grpcio --no-index --find-links "file://$ARTIFACT_DIR/"
   "${PYTHON}" -m pip install grpcio-tools --no-index --find-links "file://$ARTIFACT_DIR/"
 
-  # Note(lidiz) setuptools's "sdist" command creates a source tarball, which
-  # demands an extra step of building the wheel. The building step is merely ran
-  # through setup.py, but we can optimize it with "bdist_wheel" command, which
-  # skips the wheel building step.
+  # Ancillary packages below require source-built grpcio/grpcio_tools packages
+  # (unavailable on PyPI). `--no-isolation` prevents setuptools from failing to
+  # find these dependencies in PyPi and use the pre-built packages in the env
 
   # Build xds_protos source distribution
   # build.py is invoked as part of generate_projects.
-  ${SETARCH_CMD} "${PYTHON}" -m build "tools/distrib/python/xds_protos" \
-      --no-isolation
+  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation \
+    "tools/distrib/python/xds_protos"
+
   cp -r tools/distrib/python/xds_protos/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_testing source distribution
@@ -287,24 +287,27 @@ then
   # TODO(ssreenithi): find pyproject.toml/nox equivalent
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_channelz/setup.py \
       preprocess build_package_protos
-  ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_channelz" \
-    --no-isolation
+  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation \
+    "src/python/grpcio_channelz"
+
   cp -r src/python/grpcio_channelz/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_health_checking source distribution
   # TODO(ssreenithi): find pyproject.toml/nox equivalent
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_health_checking/setup.py \
       preprocess build_package_protos
-  ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_health_checking" \
-    --no-isolation
+  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation \
+    "src/python/grpcio_health_checking"
+
   cp -r src/python/grpcio_health_checking/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_reflection source distribution
   # TODO(ssreenithi): find pyproject.toml/nox equivalent
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_reflection/setup.py \
       preprocess build_package_protos
-  ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_reflection" \
-    --no-isolation
+  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation \
+    "src/python/grpcio_reflection"
+
   cp -r src/python/grpcio_reflection/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_status source distribution
@@ -318,16 +321,16 @@ then
   "${PYTHON}" -m pip install xds-protos --no-index --find-links "file://$ARTIFACT_DIR/"
 
   # Build grpcio_csds source distribution
-  ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_csds" \
-      --no-isolation
+  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation "src/python/grpcio_csds"
+
   cp -r src/python/grpcio_csds/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_admin source distribution and it needs the cutting-edge version
   # of Channelz and CSDS to be installed.
   "${PYTHON}" -m pip install grpcio-channelz --no-index --find-links "file://$ARTIFACT_DIR/"
   "${PYTHON}" -m pip install grpcio-csds --no-index --find-links "file://$ARTIFACT_DIR/"
-  ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_admin" \
-      --no-isolation
+  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation "src/python/grpcio_admin"
+
   cp -r src/python/grpcio_admin/dist/* "$ARTIFACT_DIR"
 
 fi

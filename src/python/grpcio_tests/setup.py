@@ -62,7 +62,6 @@ TEST_RUNNER = "tests:Runner"
 TESTS_REQUIRE = INSTALL_REQUIRES
 
 CLASSIFIERS = [
-    "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
 ]

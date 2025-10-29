@@ -20,9 +20,9 @@ import setuptools
 
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
 GRPC_ROOT_ABS_PATH = os.path.join(ROOT_DIR, "../../..")
-STATUS_PROTO = "third_party/googleapis/google/rpc/status.proto"
 ROOT_REL_DIR = os.path.relpath(ROOT_DIR, start=GRPC_ROOT_ABS_PATH)
-PACKAGE_STATUS_PROTO_PATH = "grpc_status/google/rpc"
+STATUS_PROTO = "third_party/googleapis/google/rpc/status.proto"
+PACKAGE_STATUS_PROTO_DIR = "grpc_status/google/rpc"
 LICENSE = "./LICENSE"
 
 
@@ -40,7 +40,7 @@ class Preprocess(setuptools.Command):
 
     def run(self):
         package_status_proto_rel_path = os.path.join(
-            ROOT_REL_DIR, PACKAGE_STATUS_PROTO_PATH
+            ROOT_REL_DIR, PACKAGE_STATUS_PROTO_DIR
         )
 
         if os.path.isfile(STATUS_PROTO):

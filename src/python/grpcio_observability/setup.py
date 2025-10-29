@@ -287,7 +287,5 @@ if __name__ == "__main__":
             "setuptools>=77.0.1",
             "opentelemetry-api>=1.21.0",
         ],
-        cmdclass={
-            "build_ext": BuildExt,
-        },
+        cmdclass={"build_ext": BuildExt},
     )
