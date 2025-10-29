@@ -143,7 +143,6 @@ def compile_protos(proto_root: str, sub_dir: str = ".") -> None:
                     )
                     add_test_import(proto_package_path, file_name, service=False)
                 if return_code != 0:
-                    print('proto_root:' + proto_root + ' package_path: ' + proto_package_path + ' file_name: ' + file_name)
                     raise Exception("error: {} failed".format(COMPILE_BOTH))
     # Ensure a deterministic order.
     TEST_IMPORTS.sort()
