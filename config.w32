@@ -299,6 +299,8 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upb-gen\\google\\protobuf\\timestamp.upb_minitable.c " +
     "src\\core\\ext\\upb-gen\\google\\protobuf\\wrappers.upb_minitable.c " +
     "src\\core\\ext\\upb-gen\\google\\rpc\\status.upb_minitable.c " +
+    "src\\core\\ext\\upb-gen\\proto\\cel\\expr\\checked.upb_minitable.c " +
+    "src\\core\\ext\\upb-gen\\proto\\cel\\expr\\syntax.upb_minitable.c " +
     "src\\core\\ext\\upb-gen\\src\\proto\\grpc\\channelz\\channelz.upb_minitable.c " +
     "src\\core\\ext\\upb-gen\\src\\proto\\grpc\\channelz\\v2\\channelz.upb_minitable.c " +
     "src\\core\\ext\\upb-gen\\src\\proto\\grpc\\channelz\\v2\\promise.upb_minitable.c " +
@@ -466,6 +468,8 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upbdefs-gen\\google\\protobuf\\timestamp.upbdefs.c " +
     "src\\core\\ext\\upbdefs-gen\\google\\protobuf\\wrappers.upbdefs.c " +
     "src\\core\\ext\\upbdefs-gen\\google\\rpc\\status.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-gen\\proto\\cel\\expr\\checked.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-gen\\proto\\cel\\expr\\syntax.upbdefs.c " +
     "src\\core\\ext\\upbdefs-gen\\src\\proto\\grpc\\channelz\\channelz.upbdefs.c " +
     "src\\core\\ext\\upbdefs-gen\\src\\proto\\grpc\\channelz\\v2\\channelz.upbdefs.c " +
     "src\\core\\ext\\upbdefs-gen\\src\\proto\\grpc\\channelz\\v2\\promise.upbdefs.c " +
@@ -1619,6 +1623,9 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\google\\api\\expr\\v1alpha1");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\google\\protobuf");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\google\\rpc");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\proto");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\proto\\cel");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\proto\\cel\\expr");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\src");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\src\\proto");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\src\\proto\\grpc");
@@ -1742,6 +1749,9 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\google\\api\\expr\\v1alpha1");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\google\\protobuf");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\google\\rpc");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\proto");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\proto\\cel");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\proto\\cel\\expr");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\src");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\src\\proto");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\src\\proto\\grpc");
