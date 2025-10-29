@@ -413,7 +413,7 @@ void ChaoticGoodClientTransport::PerformOp(grpc_transport_op* op) {
 void ChaoticGoodClientTransport::StartWatch(
     RefCountedPtr<StateWatcher> watcher) {
   MutexLock lock(&mu_);
-  GRPC_CHECK_NE(watcher_, nullptr);
+  GRPC_CHECK(watcher_ == nullptr);
   watcher_ = std::move(watcher);
   // TODO(ctiller): Report MAX_CONCURRENT_STREAMS to watcher here, and
   // whenever the peer's setting changes.

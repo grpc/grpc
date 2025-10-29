@@ -3558,7 +3558,7 @@ void grpc_chttp2_transport::StartWatch(
       grpc_core::NewClosure([t = RefAsSubclass<grpc_chttp2_transport>(),
                              watcher = std::move(watcher)](
                                 grpc_error_handle) mutable {
-        GRPC_CHECK_EQ(t->watcher, nullptr);
+        GRPC_CHECK(t->watcher == nullptr);
         if (t->ep != nullptr) {
           auto* interested_parties = watcher->interested_parties();
           if (interested_parties != nullptr) {
