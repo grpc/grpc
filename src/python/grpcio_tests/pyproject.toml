@@ -1,0 +1,52 @@
+[build-system]
+requires = [
+    "setuptools>=77.0.1",
+    "wheel",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "grpcio-tests"
+license = "Apache-2.0"
+
+dynamic = ["dependencies", "version", "optional-dependencies", "classifiers", "requires-python"]
+
+[project.urls]
+Homepage = "https://grpc.io"
+
+[tool.setuptools.packages]
+find = {}
+
+[tool.setuptools.dynamic]
+version = {attr = "grpc_version.VERSION"}
+
+
+[tool.setuptools.package-dir]
+"" = "."
+
+[tool.setuptools.package-data]
+"tests.interop" = [
+    "credentials/ca.pem",
+    "credentials/server1.key",
+    "credentials/server1.pem",
+]
+"tests.protoc_plugin.protos.invocation_testing" = [
+    "same.proto",
+    "compiler.proto",
+]
+"tests.protoc_plugin.protos.invocation_testing.split_messages" = [
+    "messages.proto",
+]
+"tests.protoc_plugin.protos.invocation_testing.split_services" = [
+    "services.proto",
+]
+"tests.testing.proto" = [
+    "requests.proto",
+    "services.proto",
+]
+"tests.unit" = [
+    "credentials/ca.pem",
+    "credentials/server1.key",
+    "credentials/server1.pem",
+]
+"tests" = ["tests.json"]
