@@ -3623,6 +3623,7 @@ void grpc_chttp2_transport::OnPeerMaxConcurrentStreamsUpdateComplete() {
 
 void grpc_chttp2_transport::
     MaybeNotifyStateWatcherOfPeerMaxConcurrentStreamsLocked() {
+  if (watcher == nullptr) return;
   if (last_reported_max_concurrent_streams ==
       settings.peer().max_concurrent_streams()) {
     return;
@@ -3633,7 +3634,6 @@ void grpc_chttp2_transport::
 
 void grpc_chttp2_transport::
     NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked() {
-  if (watcher == nullptr) return;
   last_reported_max_concurrent_streams =
       settings.peer().max_concurrent_streams();
   max_concurrent_streams_notification_in_flight = true;
