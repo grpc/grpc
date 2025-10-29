@@ -31,7 +31,6 @@
 
 #include <type_traits>
 
-#include "src/core/lib/experiments/experiments.h"
 #include "absl/log/absl_check.h"
 #include "absl/strings/cord.h"
 

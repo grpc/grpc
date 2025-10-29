@@ -983,7 +983,6 @@ grpc_cc_library(
         "grpc++_config_proto",
         "grpc_core_credentials_header",
         "grpc_public_hdrs",
-        "//src/core:experiments",
         "//src/core:gpr_atm",
         "//src/core:grpc_check",
         "@com_google_protobuf//:any_cc_proto",
@@ -2782,7 +2781,6 @@ grpc_cc_library(
         "grpc++_public_hdrs",
         "grpc_base",
         "grpcpp_status",
-        "//src/core:experiments",
     ],
 )
 
