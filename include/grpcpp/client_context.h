@@ -175,6 +175,13 @@ class PropagationOptions {
   uint32_t propagate_;
 };
 
+#ifndef METADATA_MAP_REF_DEFINED
+#define METADATA_MAP_REF_DEFINED
+struct MetadataMapRef {
+  const std::multimap<grpc::string_ref, grpc::string_ref>& metadata;
+};
+#endif  // METADATA_MAP_REF_DEFINED
+
 /// A ClientContext allows the person implementing a service client to:
 ///
 /// - Add custom metadata key-value pairs that will propagated to the server
@@ -245,10 +252,9 @@ class ClientContext {
   /// ClientReaderInterface::WaitForInitialMetadata().
   ///
   /// \return A multimap of initial metadata key-value pairs from the server.
-  const std::multimap<grpc::string_ref, grpc::string_ref>&
-  GetServerInitialMetadata() const {
+  MetadataMapRef GetServerInitialMetadata() const {
     ABSL_CHECK(initial_metadata_received_);
-    return *recv_initial_metadata_.map();
+    return MetadataMapRef{.metadata = *recv_initial_metadata_.map()};
   }
 
   /// Return a collection of trailing metadata key-value pairs. Note that keys
@@ -257,10 +263,9 @@ class ClientContext {
   /// \warning This method is only callable once the stream has finished.
   ///
   /// \return A multimap of metadata trailing key-value pairs from the server.
-  const std::multimap<grpc::string_ref, grpc::string_ref>&
-  GetServerTrailingMetadata() const {
+  MetadataMapRef GetServerTrailingMetadata() const {
     // TODO(yangg) check finished
-    return *trailing_metadata_.map();
+    return MetadataMapRef{.metadata = *trailing_metadata_.map()};
   }
 
   /// Set the deadline for the client call.
