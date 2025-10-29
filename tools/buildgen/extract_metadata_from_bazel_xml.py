@@ -81,6 +81,10 @@ EXTERNAL_PROTO_LIBRARIES = {
         destination="third_party/envoy-api",
         proto_prefix="third_party/envoy-api/",
     ),
+    "dev_cel": ExternalProtoLibrary(
+        destination="third_party/cel-spec",
+        proto_prefix="third_party/cel-spec/",
+    ),
     "com_google_googleapis": ExternalProtoLibrary(
         destination="third_party/googleapis",
         proto_prefix="third_party/googleapis/",
@@ -1385,6 +1389,7 @@ _BAZEL_DEPS_QUERIES = [
     'kind(alias, "//third_party:*")',
     # The ^ is needed to differentiate proto_library from go_proto_library
     'deps(kind("^proto_library", @envoy_api//envoy/...))',
+    'deps(kind("^proto_library", @dev_cel//proto/...))',
     # Make sure we have source info for all the targets that _expand_upb_proto_library_rules artificially adds
     # as upb_c_proto_library dependencies.
     'deps("@com_google_protobuf//upb:generated_code_support")',

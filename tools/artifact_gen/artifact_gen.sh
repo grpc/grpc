@@ -23,6 +23,7 @@ tools/bazel query --noimplicit_deps --output=xml 'deps(//:all)' > tools/artifact
 tools/bazel query --noimplicit_deps --output=xml 'deps(//src/compiler/...)' > tools/artifact_gen/compiler_deps.xml
 tools/bazel query --noimplicit_deps --output=xml 'kind(alias, "//third_party:*")' > tools/artifact_gen/third_party_alias_deps.xml
 tools/bazel query --noimplicit_deps --output=xml 'deps(kind("^proto_library", @envoy_api//envoy/...))' > tools/artifact_gen/envoy_api_proto_deps.xml
+tools/bazel query --noimplicit_deps --output=xml 'deps(kind("^proto_library", @dev_cel//proto/...))' > tools/artifact_gen/dev_cel_proto_deps.xml
 tools/bazel query --noimplicit_deps --output=xml 'deps("@com_google_protobuf//upb:generated_code_support")' > tools/artifact_gen/upb_deps.xml
 tools/bazel query --noimplicit_deps --output=xml 'kind(http_archive, //external:*)' > tools/artifact_gen/external_http_archive_deps.xml
 
@@ -30,7 +31,7 @@ tools/bazel query --noimplicit_deps --output=xml 'kind(http_archive, //external:
 cd tools/artifact_gen
 ../../tools/bazel build -c opt :artifact_gen 
 bazel-bin/artifact_gen \
-	--target_query=`pwd`/test_deps.xml,`pwd`/root_all_deps.xml,`pwd`/compiler_deps.xml,`pwd`/third_party_alias_deps.xml,`pwd`/envoy_api_proto_deps.xml,`pwd`/upb_deps.xml \
+	--target_query=`pwd`/test_deps.xml,`pwd`/root_all_deps.xml,`pwd`/compiler_deps.xml,`pwd`/third_party_alias_deps.xml,`pwd`/envoy_api_proto_deps.xml,`pwd`/dev_cel_proto_deps.xml,`pwd`/upb_deps.xml \
 	--external_http_archive_query=`pwd`/external_http_archive_deps.xml \
 	--extra_build_yaml=`pwd`/../../build_handwritten.yaml \
 	--templates_dir=`pwd`/../../templates \
