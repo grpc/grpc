@@ -436,6 +436,7 @@ class ArtifactGen {
         {"@com_google_googleapis//", ""},
         {"@com_github_cncf_xds//", ""},
         {"@com_envoyproxy_protoc_gen_validate//", ""},
+        {"@dev_cel//", ""},
         {"@envoy_api//", ""},
         {"@opencensus_proto//", ""},
     };
@@ -1170,6 +1171,11 @@ class ArtifactGen {
         {
             "third_party/envoy-api",
             "third_party/envoy-api/",
+        }},
+       {"dev_cel",
+        {
+            "third_party/cel-spec",
+            "third_party/cel-spec/",
         }},
        {"com_google_googleapis",
         {

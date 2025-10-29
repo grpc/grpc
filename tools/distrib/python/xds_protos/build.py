@@ -60,6 +60,7 @@ EXCLUDE_PROTO_PACKAGES_LIST = tuple(
 WORK_DIR = os.path.dirname(os.path.abspath(__file__))
 GRPC_ROOT = os.path.abspath(os.path.join(WORK_DIR, "..", "..", "..", ".."))
 ENVOY_API_PROTO_ROOT = os.path.join(GRPC_ROOT, "third_party", "envoy-api")
+CEL_PROTO_ROOT = os.path.join(GRPC_ROOT, "third_party", "cel-spec", "proto")
 XDS_PROTO_ROOT = os.path.join(GRPC_ROOT, "third_party", "xds")
 GOOGLEAPIS_ROOT = os.path.join(GRPC_ROOT, "third_party", "googleapis")
 VALIDATE_ROOT = os.path.join(GRPC_ROOT, "third_party", "protoc-gen-validate")
@@ -104,6 +105,7 @@ def add_test_import(proto_package_path: str, file_name: str, service: bool = Fal
 COMPILE_PROTO_ONLY = [
     "grpc_tools.protoc",
     "--proto_path={}".format(ENVOY_API_PROTO_ROOT),
+    "--proto_path={}".format(CEL_PROTO_ROOT),
     "--proto_path={}".format(XDS_PROTO_ROOT),
     "--proto_path={}".format(GOOGLEAPIS_ROOT),
     "--proto_path={}".format(VALIDATE_ROOT),
@@ -141,6 +143,7 @@ def compile_protos(proto_root: str, sub_dir: str = ".") -> None:
                     )
                     add_test_import(proto_package_path, file_name, service=False)
                 if return_code != 0:
+                    print('proto_root:' + proto_root + ' package_path: ' + proto_package_path + ' file_name: ' + file_name)
                     raise Exception("error: {} failed".format(COMPILE_BOTH))
     # Ensure a deterministic order.
     TEST_IMPORTS.sort()
@@ -164,6 +167,7 @@ def create_init_file(path: str, package_path: str = "") -> None:
 def main():
     # Compile xDS protos
     compile_protos(ENVOY_API_PROTO_ROOT)
+    compile_protos(CEL_PROTO_ROOT)
     compile_protos(XDS_PROTO_ROOT)
     # We don't want to compile the entire GCP surface API, just the essential ones
     compile_protos(GOOGLEAPIS_ROOT, os.path.join("google", "api"))
