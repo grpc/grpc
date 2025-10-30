@@ -20,6 +20,7 @@
 #define GRPCPP_SERVER_H
 
 #include <grpc/compression.h>
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
 #include <grpcpp/channel.h>

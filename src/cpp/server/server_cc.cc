@@ -16,6 +16,7 @@
 //
 
 #include <grpc/byte_buffer.h>
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>

@@ -18,6 +18,7 @@
 #define GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_H
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/compression_types.h>
 #include <grpc/support/port_platform.h>
