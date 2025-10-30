@@ -145,6 +145,7 @@ grpc_cc_test(
         "//:grpc++_base",
         "//:grpc_base",
         "//src/core:channel_args_endpoint_config",
+        "//src/core:instrument",
         "//src/cpp/ext/otel:otel_plugin",
         "//test/core/promise:test_context",
         "//test/core/test_util:fake_stats_plugin",
