@@ -332,15 +332,17 @@ std::string TransportFlowControl::Stats::ToString() const {
                       " bdp_bw_est: ", bdp_bw_est);
 }
 
-void StreamFlowControl::SentUpdate(uint32_t announce) {
+void StreamFlowControl::SentUpdate(uint32_t announce,
+                                   Http2ZTraceCollector* ztrace) {
   TransportFlowControl::IncomingUpdateContext tfc_upd(tfc_);
   pending_size_ = std::nullopt;
   tfc_upd.UpdateAnnouncedWindowDelta(&announced_window_delta_, announce);
-  GRPC_CHECK_EQ(DesiredAnnounceSize(), 0u);
-  std::ignore = tfc_upd.MakeAction();
+  GRPC_CHECK_EQ(DesiredAnnounceSize(ztrace), 0u);
+  std::ignore = tfc_upd.MakeAction(ztrace);
 }
 
-uint32_t StreamFlowControl::DesiredAnnounceSize() const {
+uint32_t StreamFlowControl::DesiredAnnounceSize(
+    Http2ZTraceCollector* ztrace) const {
   int64_t desired_window_delta = [this]() {
     if (min_progress_size_ == 0) {
       if (pending_size_.has_value() &&
@@ -353,12 +355,20 @@ uint32_t StreamFlowControl::DesiredAnnounceSize() const {
       return std::min(min_progress_size_, kMaxWindowDelta);
     }
   }();
+  ztrace->Append(H2EvaluateStreamFlowControl{
+      min_progress_size_,
+      pending_size_,
+      announced_window_delta_,
+      remote_window_delta_,
+      desired_window_delta,
+  });
   return Clamp(desired_window_delta - announced_window_delta_, int64_t{0},
                kMaxWindowUpdateSize);
 }
 
-FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
-  const int64_t desired_announce_size = DesiredAnnounceSize();
+FlowControlAction StreamFlowControl::UpdateAction(
+    FlowControlAction action, Http2ZTraceCollector* ztrace) {
+  const int64_t desired_announce_size = DesiredAnnounceSize(ztrace);
   if (desired_announce_size > 0) {
     FlowControlAction::Urgency urgency =
         FlowControlAction::Urgency::QUEUE_UPDATE;
@@ -380,6 +390,14 @@ FlowControlAction StreamFlowControl::UpdateAction(FlowControlAction action) {
       }
     }
     action.set_send_stream_update(urgency);
+    ztrace->Append(H2StreamFlowControlUpdateAction{
+        urgency == FlowControlAction::Urgency::UPDATE_IMMEDIATELY,
+        hurry_up_size,
+        announced_window_delta_,
+        min_progress_size_,
+        tfc_->queued_init_window(),
+        tfc_->sent_init_window(),
+    });
   }
   return action;
 }

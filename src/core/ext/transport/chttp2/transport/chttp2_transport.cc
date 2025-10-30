@@ -2355,7 +2355,8 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
   }();
 
   upd.SetPendingSize(s->frame_storage.length);
-  grpc_chttp2_act_on_flowctl_action(upd.MakeAction(), t, s);
+  grpc_chttp2_act_on_flowctl_action(upd.MakeAction(&t->http2_ztrace_collector),
+                                    t, s);
 }
 
 void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,

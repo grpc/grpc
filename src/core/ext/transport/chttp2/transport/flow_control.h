@@ -31,6 +31,7 @@
 #include "src/core/channelz/property_list.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
+#include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/transport/bdp_estimator.h"
@@ -226,7 +227,7 @@ class TransportFlowControl final {
 
     // Reads the flow control data and returns an actionable struct that will
     // tell the transport exactly what it needs to do.
-    FlowControlAction MakeAction() {
+    FlowControlAction MakeAction(Http2ZTraceCollector* ztrace) {
       return std::exchange(tfc_, nullptr)->UpdateAction(FlowControlAction());
     }
 
@@ -463,8 +464,8 @@ class StreamFlowControl final {
     explicit IncomingUpdateContext(StreamFlowControl* sfc)
         : tfc_upd_(sfc->tfc_), sfc_(sfc) {}
 
-    FlowControlAction MakeAction() {
-      return sfc_->UpdateAction(tfc_upd_.MakeAction());
+    FlowControlAction MakeAction(Http2ZTraceCollector* ztrace) {
+      return sfc_->UpdateAction(tfc_upd_.MakeAction(ztrace), ztrace);
     }
 
     // We have received data from the wire.
@@ -524,18 +525,18 @@ class StreamFlowControl final {
 
   // Returns a non-zero announce if we should send a stream update to our
   // peer, else returns zero;
-  uint32_t DesiredAnnounceSize() const;
+  uint32_t DesiredAnnounceSize(Http2ZTraceCollector* ztrace) const;
 
   // Call after sending stream-level WINDOW_UPDATE to peer to update internal
   // state. Argument should be value previously returned by
   // `DesiredAnnounceSize`.
-  void SentUpdate(uint32_t announce);
+  void SentUpdate(uint32_t announce, Http2ZTraceCollector* ztrace);
 
   // Convenience method that combines `DesiredAnnounceSize` and `SentUpdate`.
   // Call to get window increment and update state in one go.
-  uint32_t MaybeSendUpdate() {
-    uint32_t n = DesiredAnnounceSize();
-    SentUpdate(n);
+  uint32_t MaybeSendUpdate(Http2ZTraceCollector* ztrace) {
+    uint32_t n = DesiredAnnounceSize(ztrace);
+    SentUpdate(n, ztrace);
     return n;
   }
 
@@ -571,7 +572,8 @@ class StreamFlowControl final {
   int64_t announced_window_delta_ = 0;
   std::optional<int64_t> pending_size_;
 
-  FlowControlAction UpdateAction(FlowControlAction action);
+  FlowControlAction UpdateAction(FlowControlAction action,
+                                 Http2ZTraceCollector* ztrace);
 };
 
 class TestOnlyTransportTargetWindowEstimatesMocker {

@@ -527,7 +527,8 @@ class StreamWriteContext {
     if (s_->read_closed) return;
 
     // send any window updates
-    const uint32_t stream_announce = s_->flow_control.MaybeSendUpdate();
+    const uint32_t stream_announce =
+        s_->flow_control.MaybeSendUpdate(&t_->http2_ztrace_collector);
     if (stream_announce == 0) return;
 
     t_->http2_ztrace_collector.Append(
@@ -553,14 +554,18 @@ class StreamWriteContext {
       if (t_->flow_control.remote_window() <= 0) {
         t_->http2_ztrace_collector.Append(grpc_core::H2FlowControlStall{
             t_->flow_control.remote_window(),
-            data_send_context.stream_remote_window(), s_->id});
+            data_send_context.stream_remote_window(),
+            static_cast<int64_t>(t_->settings.peer().initial_window_size()),
+            s_->id});
         t_->http2_stats->IncrementHttp2TransportStalls();
         report_stall(t_, s_, "transport");
         grpc_chttp2_list_add_stalled_by_transport(t_, s_);
       } else if (data_send_context.stream_remote_window() <= 0) {
         t_->http2_ztrace_collector.Append(grpc_core::H2FlowControlStall{
             t_->flow_control.remote_window(),
-            data_send_context.stream_remote_window(), s_->id});
+            data_send_context.stream_remote_window(),
+            static_cast<int64_t>(t_->settings.peer().initial_window_size()),
+            s_->id});
         t_->http2_stats->IncrementHttp2StreamStalls();
         report_stall(t_, s_, "stream");
         grpc_chttp2_list_add_stalled_by_stream(t_, s_);

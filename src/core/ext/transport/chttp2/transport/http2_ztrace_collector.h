@@ -153,6 +153,43 @@ struct H2WindowUpdateTrace {
   }
 };
 
+struct H2EvaluateStreamFlowControl {
+  int64_t min_progress_size;
+  std::optional<int64_t> pending_size;
+  int64_t announced_window_delta;
+  int64_t remote_window_delta;
+  int64_t desired_window_delta;
+
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("frame_type", "EVALUATE_STREAM_FLOW_CONTROL")
+        .Set("min_progress_size", min_progress_size)
+        .Set("pending_size", pending_size)
+        .Set("announced_window_delta", announced_window_delta)
+        .Set("remote_window_delta", remote_window_delta)
+        .Set("desired_window_delta", desired_window_delta);
+  }
+};
+
+struct H2StreamFlowControlUpdateAction {
+  bool update_immediately;
+  int64_t hurry_up_size;
+  int64_t announced_window_delta;
+  int64_t min_progress_size;
+  int64_t queued_init_window;
+  int64_t sent_init_window;
+
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("update_immediately", update_immediately)
+        .Set("hurry_up_size", hurry_up_size)
+        .Set("announced_window_delta", announced_window_delta)
+        .Set("min_progress_size", min_progress_size)
+        .Set("queued_init_window", queued_init_window)
+        .Set("sent_init_window", sent_init_window);
+  }
+};
+
 template <bool kRead>
 struct H2SecurityTrace {
   uint32_t payload_length;
@@ -184,6 +221,7 @@ struct H2UnknownFrameTrace {
 struct H2FlowControlStall {
   int64_t transport_window;
   int64_t stream_window;
+  int64_t initial_window_size;
   uint32_t stream_id;
 
   channelz::PropertyList ChannelzProperties() const {
@@ -191,6 +229,7 @@ struct H2FlowControlStall {
         .Set("frame_type", "FLOW_CONTROL_STALL")
         .Set("transport_window", transport_window)
         .Set("stream_window", stream_window)
+        .Set("initial_window_size", initial_window_size)
         .Set("stream_id", stream_id);
   }
 };
@@ -284,6 +323,7 @@ using Http2ZTraceCollector = channelz::ZTraceCollector<
     H2SecurityTrace<false>, H2DataTrace<true>, H2HeaderTrace<true>,
     H2RstStreamTrace<true>, H2SettingsTrace<true>, H2PingTrace<true>,
     H2GoAwayTrace<true>, H2WindowUpdateTrace<true>, H2SecurityTrace<true>,
+    H2EvaluateStreamFlowControl, H2StreamFlowControlUpdateAction,
     H2UnknownFrameTrace, H2FlowControlStall, H2BeginWriteCycle, H2EndWriteCycle,
     H2BeginEndpointWrite, H2TcpMetricsTrace>;
 

@@ -562,12 +562,12 @@ static grpc_error_handle init_data_frame_parser(grpc_chttp2_transport* t) {
     grpc_core::chttp2::TransportFlowControl::IncomingUpdateContext upd(
         &t->flow_control);
     status = upd.RecvData(t->incoming_frame_size);
-    action = upd.MakeAction();
+    action = upd.MakeAction(&t->http2_ztrace_collector);
   } else {
     grpc_core::chttp2::StreamFlowControl::IncomingUpdateContext upd(
         &s->flow_control);
     status = upd.RecvData(t->incoming_frame_size);
-    action = upd.MakeAction();
+    action = upd.MakeAction(&t->http2_ztrace_collector);
   }
   grpc_chttp2_act_on_flowctl_action(action, t, s);
   if (!status.ok()) {
@@ -582,7 +582,7 @@ static grpc_error_handle init_data_frame_parser(grpc_chttp2_transport* t) {
     return init_non_header_skip_frame_parser(t);
   }
   status =
-      grpc_chttp2_data_parser_begin_frame(t->incoming_frame_flags, s->id, s);
+      grpc_chttp2_data_parser_begin_frame(t, t->incoming_frame_flags, s->id, s);
 error_handler:
   if (status.ok()) {
     t->incoming_stream = s;

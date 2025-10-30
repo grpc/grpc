@@ -187,7 +187,7 @@ ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
       chttp2::TransportFlowControl::IncomingUpdateContext transport_fc(
           &flow_control);
       absl::Status fc_status = transport_fc.RecvData(frame_header.length);
-      chttp2::FlowControlAction action = transport_fc.MakeAction();
+      chttp2::FlowControlAction action = transport_fc.MakeAction(nullptr);
       if (!fc_status.ok()) {
         LOG(ERROR) << "Flow control error: " << fc_status.message();
         // RFC9113 : A receiver MAY respond with a stream error or connection
@@ -201,7 +201,7 @@ ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
       chttp2::StreamFlowControl::IncomingUpdateContext stream_fc(
           &stream->flow_control);
       absl::Status fc_status = stream_fc.RecvData(frame_header.length);
-      chttp2::FlowControlAction action = stream_fc.MakeAction();
+      chttp2::FlowControlAction action = stream_fc.MakeAction(nullptr);
       if (!fc_status.ok()) {
         LOG(ERROR) << "Flow control error: " << fc_status.message();
         // RFC9113 : A receiver MAY respond with a stream error or connection

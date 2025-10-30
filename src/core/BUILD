@@ -8043,6 +8043,7 @@ grpc_cc_library(
         "http2_settings",
         "http2_settings_manager",
         "memory_quota",
+        "http2_ztrace_collector",
         "time",
         "useful",
         "//:gpr",

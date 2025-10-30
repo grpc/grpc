@@ -1051,7 +1051,7 @@ void Http2ClientTransport::MaybeGetWindowUpdateFrames(SliceBuffer& output_buf) {
   for (const uint32_t stream_id : window_update_list_) {
     RefCountedPtr<Stream> stream = LookupStream(stream_id);
     if (stream != nullptr && stream->CanSendWindowUpdateFrames()) {
-      const uint32_t increment = stream->flow_control.MaybeSendUpdate();
+      const uint32_t increment = stream->flow_control.MaybeSendUpdate(nullptr);
       if (increment > 0) {
         GRPC_HTTP2_CLIENT_DLOG << "Stream Window Update { " << stream_id << ", "
                                << window_size << " }";
