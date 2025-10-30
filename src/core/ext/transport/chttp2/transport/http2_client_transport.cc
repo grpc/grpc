@@ -406,7 +406,10 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
   } else {
     // Process the SETTINGS ACK Frame
     if (settings_.AckLastSend()) {
-      transport_settings_.OnSettingsAckReceived();
+      // TODO(tjagtap) [PH2][P1][Settings] Fix this bug ASAP.
+      // Causing DCHECKS to fail because of incomplete plumbing.
+      // This is a bug.
+      // transport_settings_.OnSettingsAckReceived();
     } else {
       // TODO(tjagtap) [PH2][P4] : The RFC does not say anything about what
       // should happen if we receive an unsolicited SETTINGS ACK. Decide if we
@@ -698,6 +701,43 @@ auto Http2ClientTransport::ReadLoop() {
                             << "Http2ClientTransport ReadLoop Continue";
                         return Continue();
                       });
+      }));
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Flow Control for the Transport
+
+auto Http2ClientTransport::FlowControlPeriodicUpdateLoop() {
+  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport PeriodicUpdateLoop Factory";
+  return AssertResultType<absl::Status>(
+      Loop([self = RefAsSubclass<Http2ClientTransport>()]() {
+        GRPC_HTTP2_CLIENT_DLOG
+            << "Http2ClientTransport FlowControlPeriodicUpdateLoop Loop";
+        return TrySeq(
+            // TODO(tjagtap) [PH2][P2][BDP] Remove this static sleep when the
+            // BDP code is done.
+            Sleep(chttp2::kFlowControlPeriodicUpdateTimer),
+            [self]() -> Poll<absl::Status> {
+              GRPC_HTTP2_CLIENT_DLOG
+                  << "Http2ClientTransport FlowControl PeriodicUpdate()";
+              chttp2::FlowControlAction action =
+                  self->flow_control_.PeriodicUpdate();
+              bool is_action_empty = action == chttp2::FlowControlAction();
+              // This may trigger a write cycle
+              self->ActOnFlowControlAction(action, nullptr);
+              if (is_action_empty) {
+                // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is
+                // done. We must continue to do PeriodicUpdate once BDP is in
+                // place.
+                MutexLock lock(&self->transport_mutex_);
+                if (self->GetActiveStreamCount() == 0) {
+                  self->AddPeriodicUpdatePromiseWaker();
+                  return Pending{};
+                }
+              }
+              return absl::OkStatus();
+            },
+            [self]() -> LoopCtl<absl::Status> { return Continue{}; });
       }));
 }
 
@@ -1030,13 +1070,25 @@ absl::Status Http2ClientTransport::AssignStreamId(
 }
 
 void Http2ClientTransport::AddToStreamList(RefCountedPtr<Stream> stream) {
-  MutexLock lock(&transport_mutex_);
-  GRPC_DCHECK(stream != nullptr) << "stream is null";
-  GRPC_DCHECK_GT(stream->GetStreamId(), 0u) << "stream id is invalid";
-  GRPC_HTTP2_CLIENT_DLOG
-      << "Http2ClientTransport AddToStreamList for stream id: "
-      << stream->GetStreamId();
-  stream_list_.emplace(stream->GetStreamId(), stream);
+  bool should_wake_periodic_updates = false;
+  {
+    MutexLock lock(&transport_mutex_);
+    GRPC_DCHECK(stream != nullptr) << "stream is null";
+    GRPC_DCHECK_GT(stream->GetStreamId(), 0u) << "stream id is invalid";
+    GRPC_HTTP2_CLIENT_DLOG
+        << "Http2ClientTransport AddToStreamList for stream id: "
+        << stream->GetStreamId();
+    stream_list_.emplace(stream->GetStreamId(), stream);
+    // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
+    if (GetActiveStreamCount() == 1) {
+      should_wake_periodic_updates = true;
+    }
+  }
+  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
+  if (should_wake_periodic_updates) {
+    // Release the lock before you wake up another promise on the party.
+    WakeupPeriodicUpdatePromise();
+  }
 }
 
 void Http2ClientTransport::MaybeGetWindowUpdateFrames(SliceBuffer& output_buf) {
@@ -1166,6 +1218,9 @@ Http2ClientTransport::Http2ClientTransport(
   SpawnGuardedTransportParty("ReadLoop", UntilTransportClosed(ReadLoop()));
   SpawnGuardedTransportParty("MultiplexerLoop",
                              UntilTransportClosed(MultiplexerLoop()));
+  SpawnGuardedTransportParty(
+      "FlowControlPeriodicUpdateLoop",
+      UntilTransportClosed(FlowControlPeriodicUpdateLoop()));
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor End";
 }
 
