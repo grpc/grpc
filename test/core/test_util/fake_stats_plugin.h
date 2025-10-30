@@ -259,6 +259,10 @@ class FakeStatsPlugin : public StatsPlugin {
         });
   }
 
+  RefCountedPtr<CollectionScope> GetCollectionScope() const override {
+    return collection_scope_;
+  }
+
   std::pair<bool, std::shared_ptr<StatsPlugin::ScopeConfig>>
   IsEnabledForChannel(
       const experimental::StatsPluginChannelScope& scope) const override {
@@ -632,6 +636,8 @@ class FakeStatsPlugin : public StatsPlugin {
   absl::flat_hash_map<uint32_t, Gauge<double>> double_callback_gauges_
       ABSL_GUARDED_BY(&callback_mu_);
   std::set<RegisteredMetricCallback*> callbacks_ ABSL_GUARDED_BY(&callback_mu_);
+  RefCountedPtr<CollectionScope> collection_scope_ =
+      CreateCollectionScope({}, {});
 };
 
 class FakeStatsPluginBuilder {
