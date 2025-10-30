@@ -370,6 +370,132 @@ void LegacyConnectedSubchannel::SubchannelCall::IncrementRefCount(
 }
 
 //
+// Subchannel::QueuingConnectedSubchannel::QueuedCall
+//
+
+class Subchannel::QueuingConnectedSubchannel::QueuedCall::Canceller final {
+ public:
+  explicit Canceller(RefCountedPtr<QueuedCall> call) : call_(std::move(call)) {
+    GRPC_CLOSURE_INIT(&cancel_, CancelLocked, this, nullptr);
+    call_->args_.call_combiner->SetNotifyOnCancel(&cancel_);
+  }
+
+ private:
+  static void CancelLocked(void* arg, grpc_error_handle error) {
+    auto* self = static_cast<Canceller*>(arg);
+    {
+      MutexLock lock(&self->call_->subchannel_->mu_);
+      if (self->call_->canceller_ == self && !error.ok()) {
+        // Remove pick from list of queued picks.
+        self->call_->subchannel_->queued_calls_.erase(self->call_.get());
+        // Fail pending batches on the call.
+        self->call_->buffered_call_.Fail(
+            error, BufferedCall::YieldCallCombinerIfPendingBatchesFound);
+      }
+    }
+    delete self;
+  }
+
+  RefCountedPtr<QueuedCall> call_;
+  grpc_closure cancel_;
+};
+
+Subchannel::QueuingConnectedSubchannel::QueuedCall::QueuedCall(
+    WeakRefCountedPtr<Subchannel> subchannel, CreateCallArgs args)
+    : subchannel_(std::move(subchannel)),
+      args_(std::move(args)),
+      buffered_call_(args_.call_combiner, &subchannel_call_queue_trace) {
+  canceller_ = new Canceller(Ref().TakeAsSubclass<QueuedCall>());
+  subchannel_->queued_calls_.insert(this);
+}
+
+Subchannel::QueuingConnectedSubchannel::QueuedCall::~QueuedCall() {
+  if (after_call_stack_destroy_ != nullptr) {
+    ExecCtx::Run(DEBUG_LOCATION, after_call_stack_destroy_, absl::OkStatus());
+  }
+}
+
+void Subchannel::QueuingConnectedSubchannel::QueuedCall::
+    SetAfterCallStackDestroy(grpc_closure* closure) {
+  GRPC_CHECK_EQ(after_call_stack_destroy_, nullptr);
+  GRPC_CHECK_NE(closure, nullptr);
+  after_call_stack_destroy_ = closure;
+}
+
+void Subchannel::QueuingConnectedSubchannel::QueuedCall::
+    StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch) {
+  // If we already have a real subchannel call, pass the batch down to it.
+  if (subchannel_call_ != nullptr) {
+    subchannel_call_->StartTransportStreamOpBatch(batch);
+    return;
+  }
+  // If we've previously been cancelled, immediately fail the new batch.
+  if (!cancel_error_.ok()) {
+    // Note: This will release the call combiner.
+    grpc_transport_stream_op_batch_finish_with_failure(batch, cancel_error_,
+                                                       args_.call_combiner);
+    return;
+  }
+  // Handle cancellation batches.
+  if (batch->cancel_stream) {
+    cancel_error_ = batch->payload->cancel_stream.cancel_error;
+    buffered_call_.Fail(cancel_error_, BufferedCall::NoYieldCallCombiner);
+    // Note: This will release the call combiner.
+    grpc_transport_stream_op_batch_finish_with_failure(batch, cancel_error_,
+                                                       args_.call_combiner);
+    return;
+  }
+  // Enqueue the batch.
+  buffered_call_.EnqueueBatch(batch);
+  // We hang on to the call combiner for the send_initial_metadata batch,
+  // but yield it for other batches.  This ensures that we are holding on
+  // to the call combiner exactly once when we are ready to resume.
+  if (!batch->send_initial_metadata) {
+    GRPC_CALL_COMBINER_STOP(args_.call_combiner,
+                            "batch does not include send_initial_metadata");
+  }
+}
+
+void Subchannel::QueuingConnectedSubchannel::QueuedCall::
+    ResumeOnConnectionLocked(ConnectedSubchannel* connected_subchannel) {
+  canceller_ = nullptr;
+  subchannel_->queued_calls_.erase(this);
+  grpc_error_handle error;
+  subchannel_call_ = connected_subchannel->CreateCall(std::move(args_), &error);
+  if (!error.ok()) {
+    buffered_call_.Fail(error, BufferedCall::YieldCallCombiner);
+  } else {
+    if (after_call_stack_destroy_ != nullptr) {
+      subchannel_call_->SetAfterCallStackDestroy(after_call_stack_destroy_);
+      after_call_stack_destroy_ = nullptr;
+    }
+    buffered_call_.Resume([subchannel_call = subchannel_call_](
+                              grpc_transport_stream_op_batch* batch) {
+      // This will release the call combiner.
+      subchannel_call->StartTransportStreamOpBatch(batch);
+    });
+  }
+}
+
+//
+// Subchannel::QueuingConnectedSubchannel
+//
+
+RefCountedPtr<ConnectedSubchannel::Call>
+Subchannel::QueuingConnectedSubchannel::CreateCall(CreateCallArgs args,
+                                                   grpc_error_handle* error) {
+  MutexLock lock(&subchannel_->mu_);
+  // FIXME: need to go through connection picking logic here
+  if (subchannel_->connected_subchannel_ != nullptr) {
+    return subchannel_->connected_subchannel_->CreateCall(std::move(args),
+                                                          error);
+  }
+  // No connection available for this call, so we returning a queueing call.
+  return RefCountedPtr<QueuedCall>(
+      args.arena->New<QueuedCall>(subchannel_, std::move(args)));
+}
+
+//
 // NewConnectedSubchannel
 //
 

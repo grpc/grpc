@@ -27,6 +27,7 @@
 #include <memory>
 
 #include "src/core/call/metadata_batch.h"
+#include "src/core/client_channel/buffered_call.h"
 #include "src/core/client_channel/connector.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -255,9 +256,6 @@ class Subchannel final : public DualRefCounted<Subchannel> {
       const std::string& channel_default_authority);
 
  private:
-  // Tears down any existing connection, and arranges for destruction
-  void Orphaned() override ABSL_LOCKS_EXCLUDED(mu_);
-
   // A linked list of ConnectivityStateWatcherInterfaces that are monitoring
   // the subchannel's state.
   class ConnectivityStateWatcherList final {
@@ -287,7 +285,94 @@ class Subchannel final : public DualRefCounted<Subchannel> {
         watchers_;
   };
 
+  class QueuingConnectedSubchannel : public ConnectedSubchannel {
+   public:
+    class QueuedCall final : public Call {
+     public:
+      QueuedCall(WeakRefCountedPtr<Subchannel> subchannel, CreateCallArgs args);
+      ~QueuedCall() override;
+
+      void StartTransportStreamOpBatch(
+          grpc_transport_stream_op_batch* batch) override;
+
+      void SetAfterCallStackDestroy(grpc_closure* closure) override;
+
+      // Interface of RefCounted<>.
+      // When refcount drops to 0, the dtor is called, but we do not
+      // free memory, because it's allocated on the arena.
+      void Unref() override {
+        if (ref_count_.Unref()) this->~QueuedCall();
+      }
+      void Unref(const DebugLocation& location, const char* reason) override {
+        if (ref_count_.Unref(location, reason)) this->~QueuedCall();
+      }
+
+      void ResumeOnConnectionLocked(ConnectedSubchannel* connected_subchannel)
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Subchannel::mu_);
+
+     private:
+      // Allow RefCountedPtr<> to access IncrementRefCount().
+      template <typename T>
+      friend class RefCountedPtr;
+
+      class Canceller;
+
+      // Interface of RefCounted<>.
+      void IncrementRefCount() override { ref_count_.Ref(); }
+      void IncrementRefCount(const DebugLocation& location,
+                             const char* reason) override {
+        ref_count_.Ref(location, reason);
+      }
+
+      RefCount ref_count_;
+      WeakRefCountedPtr<Subchannel> subchannel_;
+      CreateCallArgs args_;
+      grpc_closure* after_call_stack_destroy_ = nullptr;
+      grpc_error_handle cancel_error_;
+      BufferedCall buffered_call_;
+      Canceller* canceller_ ABSL_GUARDED_BY(&Subchannel::mu_);
+      RefCountedPtr<Call> subchannel_call_;
+    };
+
+    QueuingConnectedSubchannel(WeakRefCountedPtr<Subchannel> subchannel,
+                               const ChannelArgs& args)
+        : ConnectedSubchannel(args), subchannel_(std::move(subchannel)) {}
+
+    channelz::SubchannelNode* channelz_node() const override { return nullptr; }
+
+    void StartWatch(
+        grpc_pollset_set* /*interested_parties*/,
+        OrphanablePtr<grpc_core::ConnectivityStateWatcherInterface> /*watcher*/)
+        override {
+      Crash("QueuingConnectedSubchannel::StartWatch() should never be called");
+    }
+
+    void Ping(absl::AnyInvocable<void(absl::Status)>) override {
+      Crash("call v3 ping method called in legacy impl");
+    }
+
+    RefCountedPtr<UnstartedCallDestination> unstarted_call_destination()
+        const override {
+      Crash("call v3 unstarted_call_destination method called in legacy impl");
+    }
+
+    grpc_channel_stack* channel_stack() const override { return nullptr; }
+
+    RefCountedPtr<Call> CreateCall(CreateCallArgs args,
+                                   grpc_error_handle* error) override;
+
+    void Ping(grpc_closure* on_initiate, grpc_closure* on_ack) override {
+      Crash("QueuingConnectedSubchannel::Ping() should never be called");
+    }
+
+   private:
+    WeakRefCountedPtr<Subchannel> subchannel_;
+  };
+
   class ConnectedSubchannelStateWatcher;
+
+  // Tears down any existing connection, and arranges for destruction
+  void Orphaned() override ABSL_LOCKS_EXCLUDED(mu_);
 
   // Sets the subchannel's connectivity state to \a state.
   void SetConnectivityStateLocked(grpc_connectivity_state state,
@@ -363,6 +448,10 @@ class Subchannel final : public DualRefCounted<Subchannel> {
   std::map<UniqueTypeName, DataProducerInterface*> data_producer_map_
       ABSL_GUARDED_BY(mu_);
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
+
+  // FIXME: this isn't the right data structure
+  absl::flat_hash_set<QueuingConnectedSubchannel::QueuedCall*> queued_calls_
+      ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace grpc_core
