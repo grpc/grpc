@@ -508,7 +508,11 @@ Http2Status Http2ClientTransport::ProcessHttp2WindowUpdateFrame(
   if (frame.stream_id != 0) {
     stream = LookupStream(frame.stream_id);
   }
-  ProcessIncomingWindowUpdateFrameFlowControl(frame, flow_control_, stream);
+  bool should_trigger_write =
+      ProcessIncomingWindowUpdateFrameFlowControl(frame, flow_control_, stream);
+  if (should_trigger_write) {
+    SpawnGuardedTransportParty("TransportTokensAvailable", TriggerWriteCycle());
+  }
   return Http2Status::Ok();
 }
 
@@ -722,7 +726,7 @@ void Http2ClientTransport::ActOnFlowControlAction(
       /*enable_preferred_rx_crypto_frame_advertisement=*/true);
 
   if (action.AnyUpdateImmediately()) {
-    TriggerWriteCycle();
+    SpawnGuardedTransportParty("SendControlFrames", TriggerWriteCycle());
   }
 }
 
