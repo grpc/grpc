@@ -272,7 +272,7 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
         "absl/time",
     ],
-    visibility = ["//bazel:latent_see"],
+    visibility = ["//visibility:public"],
     deps = [
         "channelz_property_list",
         "function_signature",
@@ -2274,6 +2274,7 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/container:flat_hash_set",
         "absl/functional:any_invocable",
+        "absl/random",
         "absl/log",
         "absl/time",
     ],
@@ -3467,6 +3468,7 @@ grpc_cc_library(
     srcs = ["telemetry/stats_data.cc"],
     hdrs = ["telemetry/stats_data.h"],
     external_deps = ["absl/strings"],
+    visibility = ["//visibility:public"],
     deps = [
         "histogram_view",
         "no_destruct",

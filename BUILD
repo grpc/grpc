@@ -3740,9 +3740,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/types:span",
     ],
-    visibility = [
-        "//bazel:alt_grpc_base_legacy",
-    ],
+    visibility = ["//visibility:public"],
     deps = [
         "gpr",
         "//src/core:histogram_view",

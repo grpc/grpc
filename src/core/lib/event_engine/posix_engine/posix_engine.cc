@@ -233,14 +233,17 @@ void PosixEventEngine::PollingCycle::PollerWorkInternal() {
   // TODO(vigneshbabu): The timeout specified here is arbitrary. For
   // instance, this can be improved by setting the timeout to the next
   // expiring timer.
-  auto result = poller_->Work(24h, [&]() { again = true; });
+  auto result = poller_->Work(24h, [&, this]() {
+    again = true;
+    executor_->Run([this]() { PollerWorkInternal(); });
+  });
   if (result == Poller::WorkResult::kDeadlineExceeded) {
     // The EventEngine is not shutting down but the next asynchronous
     // PollerWorkInternal did not get scheduled. Schedule it now.
     again = true;
+    executor_->Run([this]() { PollerWorkInternal(); });
   }
   if (!done_ && again) {
-    executor_->Run([this]() { PollerWorkInternal(); });
     ++is_scheduled_;
   }
   cond_.SignalAll();

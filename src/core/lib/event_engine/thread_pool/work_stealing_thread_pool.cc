@@ -42,6 +42,7 @@
 #include "src/core/util/time.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
+#include "absl/random/random.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
@@ -195,20 +196,28 @@ void WorkStealingThreadPool::Run(EventEngine::Closure* closure) {
 
 void WorkStealingThreadPool::TheftRegistry::Enroll(WorkQueue* queue) {
   grpc_core::MutexLock lock(&mu_);
-  queues_.emplace(queue);
+  queues_.push_back(queue);
 }
 
 void WorkStealingThreadPool::TheftRegistry::Unenroll(WorkQueue* queue) {
   grpc_core::MutexLock lock(&mu_);
-  queues_.erase(queue);
+  auto it = std::find(queues_.begin(), queues_.end(), queue);
+  if (it != queues_.end()) {
+    queues_.erase(it);
+  }
 }
 
 EventEngine::Closure* WorkStealingThreadPool::TheftRegistry::StealOne() {
   grpc_core::MutexLock lock(&mu_);
   EventEngine::Closure* closure;
-  for (auto* queue : queues_) {
-    closure = queue->PopMostRecent();
+  static absl::BitGen bitgen;
+  int len = 0;
+  int num_queues = queues_.size();
+  int idx = absl::Uniform(bitgen, 0u, static_cast<unsigned int>(num_queues));
+  while (len++ < num_queues) {
+    closure = queues_[idx]->PopOldest();
     if (closure != nullptr) return closure;
+    idx = (idx + 1) % num_queues;
   }
   return nullptr;
 }

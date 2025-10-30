@@ -38,6 +38,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 
+#define GRPC_EXTRA_LATENT_SEE 1
+
 namespace grpc_core {
 namespace latent_see {
 
@@ -250,7 +252,7 @@ class Sink {
 class Appender {
  public:
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Appender()
-      : Appender(active_sink_.load(std::memory_order_acquire)) {};
+      : Appender(active_sink_.load(std::memory_order_acquire)){};
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Appender(Sink* sink)
       : sink_(sink) {}
   Appender(const Appender&) = delete;

@@ -37,6 +37,86 @@ class Config {
 };
 
 }  // namespace http2_ztrace_collector_detail
+struct H2PostRecvInitialMetadataOpTrace {
+  uint32_t stream_id;
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList().Set("stream_id", stream_id);
+  }
+};
+
+struct H2PostRecvTrailingMetadataOpTrace {
+  uint32_t stream_id;
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList().Set("stream_id", stream_id);
+  }
+};
+
+struct H2PostRecvMessageOpTrace {
+  uint32_t stream_id;
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList().Set("stream_id", stream_id);
+  }
+};
+
+struct H2PostSendInitialMetadataOpTrace {
+  uint32_t stream_id;
+  uint32_t metadata_size;
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("stream_id", stream_id)
+        .Set("metadata_size", metadata_size);
+  }
+};
+
+struct H2CompleteRecvInitialMetadataOpTrace {
+  uint32_t stream_id;
+  uint32_t metadata_size;
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("stream_id", stream_id)
+        .Set("metadata_size", metadata_size);
+  }
+};
+
+struct H2PostSendTrailingMetadataOpTrace {
+  uint32_t stream_id;
+  uint32_t metadata_size;
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("stream_id", stream_id)
+        .Set("metadata_size", metadata_size);
+  }
+};
+
+struct H2CompleteRecvTrailingMetadataOpTrace {
+  uint32_t stream_id;
+  uint32_t metadata_size;
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("stream_id", stream_id)
+        .Set("metadata_size", metadata_size);
+  }
+};
+
+struct H2PostSendMessageOpTrace {
+  uint32_t stream_id;
+  uint32_t message_size;
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("stream_id", stream_id)
+        .Set("message_size", message_size);
+  }
+};
+
+struct H2CompleteRecvMessageOpTrace {
+  uint32_t stream_id;
+  uint32_t message_size;
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("stream_id", stream_id)
+        .Set("message_size", message_size);
+  }
+};
 
 template <bool kRead>
 struct H2DataTrace {
@@ -285,7 +365,11 @@ using Http2ZTraceCollector = channelz::ZTraceCollector<
     H2RstStreamTrace<true>, H2SettingsTrace<true>, H2PingTrace<true>,
     H2GoAwayTrace<true>, H2WindowUpdateTrace<true>, H2SecurityTrace<true>,
     H2UnknownFrameTrace, H2FlowControlStall, H2BeginWriteCycle, H2EndWriteCycle,
-    H2BeginEndpointWrite, H2TcpMetricsTrace>;
+    H2BeginEndpointWrite, H2TcpMetricsTrace, H2PostSendInitialMetadataOpTrace,
+    H2CompleteRecvInitialMetadataOpTrace, H2PostSendMessageOpTrace,
+    H2CompleteRecvMessageOpTrace, H2PostSendTrailingMetadataOpTrace,
+    H2CompleteRecvTrailingMetadataOpTrace, H2PostRecvInitialMetadataOpTrace,
+    H2PostRecvTrailingMetadataOpTrace, H2PostRecvMessageOpTrace>;
 
 struct PromiseEndpointReadTrace {
   uint64_t bytes;

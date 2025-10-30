@@ -475,6 +475,7 @@ const absl::string_view
         "chaotic_good_tcp_read_offer_control",
         "chaotic_good_tcp_write_size_data",
         "chaotic_good_tcp_write_size_control",
+        "big_table_backend_request_latency",
 };
 const absl::string_view GlobalStats::histogram_doc[static_cast<int>(
     Histogram::COUNT)] = {
@@ -505,6 +506,7 @@ const absl::string_view GlobalStats::histogram_doc[static_cast<int>(
     "Number of bytes offered to each syscall_read in the control channel",
     "Number of bytes offered to each syscall_write in the data channel",
     "Number of bytes offered to each syscall_write in the control channel",
+    "Big table backend request latency",
 };
 GlobalStats::GlobalStats()
     : client_calls_created{0},
@@ -617,6 +619,9 @@ HistogramView GlobalStats::histogram(Histogram which) const {
     case Histogram::kChaoticGoodTcpWriteSizeControl:
       return HistogramView{&Histogram_16777216_20_64::BucketFor, kStatsTable14,
                            20, chaotic_good_tcp_write_size_control.buckets()};
+    case Histogram::kBigTableBackendRequestLatency:
+      return HistogramView{&Histogram_16777216_20_64::BucketFor, kStatsTable14,
+                           20, big_table_backend_request_latency.buckets()};
   }
 }
 std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
@@ -714,6 +719,8 @@ std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
         &result->chaotic_good_tcp_write_size_data);
     data.chaotic_good_tcp_write_size_control.Collect(
         &result->chaotic_good_tcp_write_size_control);
+    data.big_table_backend_request_latency.Collect(
+        &result->big_table_backend_request_latency);
   }
   return result;
 }
@@ -815,6 +822,9 @@ std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {
   result->chaotic_good_tcp_write_size_control =
       chaotic_good_tcp_write_size_control -
       other.chaotic_good_tcp_write_size_control;
+  result->big_table_backend_request_latency =
+      big_table_backend_request_latency -
+      other.big_table_backend_request_latency;
   return result;
 }
 const absl::string_view
