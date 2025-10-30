@@ -215,7 +215,7 @@ XdsHttpFaultFilter::GenerateFilterConfigOverride(
 }
 
 void XdsHttpFaultFilter::AddFilter(InterceptionChainBuilder& builder) const {
-  builder.Add<FaultInjectionFilter>();
+  builder.Add<FaultInjectionFilter>(nullptr);
 }
 
 const grpc_channel_filter* XdsHttpFaultFilter::channel_filter() const {
