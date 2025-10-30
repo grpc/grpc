@@ -49,9 +49,6 @@ def build_package_protos(package_root, strict_mode=False):
             if filename.endswith(".proto"):
                 proto_files.append(os.path.join(root, filename))
 
-    print(f"Package root: {package_root}")
-    print(f"Found proto files: {proto_files}")
-
     well_known_protos_include = _get_resource_file_name("grpc_tools", "_proto")
 
     for proto_file in proto_files:

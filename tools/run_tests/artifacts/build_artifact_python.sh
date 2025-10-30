@@ -264,16 +264,6 @@ then
   # (unavailable on PyPI). `--no-isolation` prevents setuptools from failing to
   # find these dependencies in PyPi and use the pre-built packages in the env
 
-  # Build grpcio_channelz source distribution
-  # TODO(ssreenithi): find pyproject.toml/nox equivalent
-  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_channelz/setup.py \
-      preprocess build_package_protos
-  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation \
-    "src/python/grpcio_channelz"
-
-  cp -r src/python/grpcio_channelz/dist/* "$ARTIFACT_DIR"
-  exit 1
-
   # Build xds_protos source distribution
   # build_xds_protos.py is invoked as part of generate_projects.
   ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation \
@@ -287,6 +277,14 @@ then
   ${SETARCH_CMD} "${PYTHON}" -m build src/python/grpcio_testing
   cp -r src/python/grpcio_testing/dist/* "$ARTIFACT_DIR"
 
+  # Build grpcio_channelz source distribution
+  # TODO(ssreenithi): find pyproject.toml/nox equivalent
+  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_channelz/setup.py \
+      preprocess build_package_protos
+  ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation \
+    "src/python/grpcio_channelz"
+
+  cp -r src/python/grpcio_channelz/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_health_checking source distribution
   # TODO(ssreenithi): find pyproject.toml/nox equivalent
