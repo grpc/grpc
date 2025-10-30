@@ -52,6 +52,7 @@ where = ["."]
 exclude = [
     "third_party*",
     "grpc_root*",
+    "test*"
 ]
 
 [tool.setuptools.package-dir]
