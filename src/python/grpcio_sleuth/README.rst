@@ -1,13 +1,13 @@
 gRPC Python Sleuth Package
 ==========================
 
-This package contains the gRPC Sleuth for Python. Sleuth is a commnand tool
-to debug gRPC applications at runtime. See //test/cpp/sleuth for more.
+This package contains the gRPC Sleuth for Python. Sleuth is a command-line tool
+to debug gRPC applications at runtime. See //test/cpp/sleuth for more details.
 
 Installation
 ------------
 
-Currently gRPC Sleuth is only available for Linux on x86.
+Currently, gRPC Sleuth is only available for Linux on x86.
 
 Installing From PyPI
 ~~~~~~~~~~~~~~~~~~~~
@@ -20,7 +20,7 @@ Installing From PyPI
 Installing From Source
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Building from source requires bazel.
+Building from source requires Bazel.
 
 ::
 
@@ -34,14 +34,14 @@ Building from source requires bazel.
 Usage
 -----
 
-You can run the gRPC Sleuth CLI.
+You can run the gRPC Sleuth CLI:
 
 ::
 
   $ grpc_sleuth help
 
 You can also call it programmatically.
-Run this outside of src/python/grpcio_sleuth to avoid shadowing.
+Run this outside of src/python/grpcio_sleuth to avoid import issues.
 
 ::
 
