@@ -41,17 +41,25 @@ def _get_resource_file_name(
 
 
 def build_package_protos(package_root, strict_mode=False):
+
+    # Temporarily force set to true to catch failures
+    # TODO(ssreenithi): remove before submitting
+    strict_mode=True
+
     proto_files = []
     inclusion_root_abs = os.path.abspath(package_root)
     project_root = os.path.abspath(os.path.join("../../.."))
     inclusion_root = os.path.relpath(inclusion_root_abs, start=project_root)
 
+    print(f"Inclusion root: {inclusion_root}")
     for root, _, files in os.walk(inclusion_root):
         for filename in files:
             if filename.endswith(".proto"):
                 proto_files.append(
                     os.path.abspath(os.path.join(root, filename))
                 )
+
+    print(f"Found proto files: {proto_files}")
 
     well_known_protos_include = _get_resource_file_name("grpc_tools", "_proto")
 
