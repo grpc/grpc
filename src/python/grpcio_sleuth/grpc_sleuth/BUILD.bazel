@@ -19,7 +19,7 @@ pyx_library(
     name = "sleuth_lib_pyx",
     srcs = ["sleuth_lib.pyx"],
     cc_deps = [
-        "//test/cpp/sleuth:sleuth",
+        "//test/cpp/sleuth",
     ],
 )
 

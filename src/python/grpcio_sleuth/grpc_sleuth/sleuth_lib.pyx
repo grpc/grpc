@@ -15,6 +15,7 @@
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
+
 cdef extern from "../../../test/cpp/sleuth/sleuth.h" namespace "grpc_sleuth":
     cdef int RunSleuth_Wrapper "grpc_sleuth::RunSleuth_Wrapper"(
         vector[string] args, void* python_print,

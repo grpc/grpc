@@ -18,13 +18,11 @@ import shutil
 import subprocess
 import sys
 
+import python_version
 import setuptools
 from setuptools import Extension
 from setuptools.command.build_ext import build_ext
-
-# Break import-style to ensure we can actually find our local modules.
 import grpc_version
-import python_version
 
 _PACKAGE_PATH = os.path.realpath(os.path.dirname(__file__))
 _README_PATH = os.path.join(_PACKAGE_PATH, "README.rst")

@@ -15,7 +15,9 @@
 """CLI entry point for gRPC Sleuth."""
 
 import sys
+
 from . import sleuth_lib
+
 
 def main():
     """Main function for the sleuth CLI."""
