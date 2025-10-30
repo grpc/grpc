@@ -27,18 +27,12 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 source tools/internal_ci/helper_scripts/prepare_ccache_rc
 
 # Build all python linux artifacts (this step actually builds all the binary wheels and source archives)
-tools/run_tests/task_runner.py -f artifact linux python ${TASK_RUNNER_EXTRA_FILTERS} -j 12 -x build_artifacts/sponge_log.xml || FAILED="true"
+tools/run_tests/task_runner.py -f artifact linux python ${TASK_RUNNER_EXTRA_FILTERS} -j 12 -x build_artifacts/sponge_log.xml || BUILD_ARTIFACT_FAILED="true"
 
 # the next step expects to find the artifacts from the previous step in the "input_artifacts" folder.
 rm -rf input_artifacts
 mkdir -p input_artifacts
 cp -r artifacts/* input_artifacts/ || true
-
-# exit early if build_artifact fails, for faster test run time
-if [ "$FAILED" != "" ]
-then
-  exit 1
-fi
 
 # This step simply collects python artifacts from subdirectories of input_artifacts/ and copies them to artifacts/
 
@@ -57,10 +51,13 @@ rm -rf input_artifacts
 mkdir -p input_artifacts
 cp -r artifacts/* input_artifacts/ || true
 
-# Run all python linux distribtests
-# We run the distribtests even if some of the artifacts have failed to build, since that gives
-# a better signal about which distribtest are affected by the currently broken artifact builds.
+# exit early if build_artifact or package task fails, for faster test run time
+if [[ "$BUILD_ARTIFACT_FAILED" != "" || "$FAILED" != "" ]]; then
+then
+  exit 1
+fi
 
+# Run all python linux distribtests
 
 tools/run_tests/task_runner.py -f distribtest linux python ${TASK_RUNNER_EXTRA_FILTERS} -j 12 -x distribtests/sponge_log.xml || FAILED="true"
 
