@@ -23,6 +23,7 @@
 #include <limits.h>
 #include <stdint.h>
 
+#include <algorithm>
 #include <iosfwd>
 #include <optional>
 #include <string>
@@ -52,6 +53,10 @@ static constexpr const uint32_t kMaxInitialWindowSize = (1u << 30);
 // The maximum per-stream flow control window delta to advertise.
 static constexpr const int64_t kMaxWindowDelta = (1u << 20);
 static constexpr const int kDefaultPreferredRxCryptoFrameSize = INT_MAX;
+
+// TODO(tjagtap) [PH2][P2][BDP] Remove this static sleep when the BDP code is
+// done. This needs to be dynamic.
+constexpr Duration kFlowControlPeriodicUpdateTimer = Duration::Seconds(8);
 
 class TransportFlowControl;
 class StreamFlowControl;
@@ -223,6 +228,8 @@ class TransportFlowControl final {
 
     IncomingUpdateContext(const IncomingUpdateContext&) = delete;
     IncomingUpdateContext& operator=(const IncomingUpdateContext&) = delete;
+    IncomingUpdateContext(IncomingUpdateContext&&) = delete;
+    IncomingUpdateContext& operator=(IncomingUpdateContext&&) = delete;
 
     // Reads the flow control data and returns an actionable struct that will
     // tell the transport exactly what it needs to do.
@@ -269,12 +276,16 @@ class TransportFlowControl final {
    public:
     explicit OutgoingUpdateContext(TransportFlowControl* tfc) : tfc_(tfc) {}
 
+    OutgoingUpdateContext(const OutgoingUpdateContext&) = delete;
+    OutgoingUpdateContext& operator=(const OutgoingUpdateContext&) = delete;
+    OutgoingUpdateContext(OutgoingUpdateContext&&) = delete;
+    OutgoingUpdateContext& operator=(OutgoingUpdateContext&&) = delete;
+
     // Call this function when a transport-level WINDOW_UPDATE frame is received
     // from peer to increase remote window.
     void RecvUpdate(uint32_t size) { tfc_->remote_window_ += size; }
 
     // Finish the update and check whether we became stalled or unstalled.
-    // TODO(tjagtap) [PH2][P1] Plumb with PH2 flow control.
     StallEdge Finish() {
       bool is_stalled = tfc_->remote_window_ <= 0;
       if (is_stalled != was_stalled_) {
@@ -295,7 +306,7 @@ class TransportFlowControl final {
   // Call periodically (at a low-ish rate, 100ms - 10s makes sense)
   // to perform more complex flow control calculations and return an action
   // to let the transport change its parameters.
-  // TODO(tjagtap) [PH2][P1] Plumb with PH2 flow control.
+  // TODO(tjagtap) [PH2][P2] Plumb with PH2 flow control.
   FlowControlAction PeriodicUpdate();
 
   int64_t test_only_target_window() const { return target_window(); }
@@ -462,6 +473,11 @@ class StreamFlowControl final {
     explicit IncomingUpdateContext(StreamFlowControl* sfc)
         : tfc_upd_(sfc->tfc_), sfc_(sfc) {}
 
+    IncomingUpdateContext(const IncomingUpdateContext&) = delete;
+    IncomingUpdateContext& operator=(const IncomingUpdateContext&) = delete;
+    IncomingUpdateContext(IncomingUpdateContext&&) = delete;
+    IncomingUpdateContext& operator=(IncomingUpdateContext&&) = delete;
+
     FlowControlAction MakeAction() {
       return sfc_->UpdateAction(tfc_upd_.MakeAction());
     }
@@ -481,7 +497,7 @@ class StreamFlowControl final {
     // `min_progress_size` bytes to make progress on reading the current stream.
     // An example usage of this would be, say we receive the first 1000 bytes of
     // a 2000 byte gRPC message, we can call SetMinProgressSize(1000)
-    // TODO(tjagtap) [PH2][P1] Plumb with PH2 flow control.
+    // TODO(tjagtap) [PH2][P2] Plumb with PH2 flow control.
     void SetMinProgressSize(int64_t min_progress_size) {
       sfc_->min_progress_size_ = min_progress_size;
     }
@@ -490,7 +506,7 @@ class StreamFlowControl final {
     // for application to read. Call this when a complete message is assembled
     // but not yet pulled by the application. This helps flow control decide
     // whether to send a WINDOW_UPDATE to the peer.
-    // TODO(tjagtap) [PH2][P1] Plumb with PH2 flow control.
+    // TODO(tjagtap) [PH2][P2] Plumb with PH2 flow control.
     void SetPendingSize(int64_t pending_size);
 
    private:
@@ -504,6 +520,11 @@ class StreamFlowControl final {
    public:
     explicit OutgoingUpdateContext(StreamFlowControl* sfc)
         : tfc_upd_(sfc->tfc_), sfc_(sfc) {}
+
+    OutgoingUpdateContext(const OutgoingUpdateContext&) = delete;
+    OutgoingUpdateContext& operator=(const OutgoingUpdateContext&) = delete;
+    OutgoingUpdateContext(OutgoingUpdateContext&&) = delete;
+    OutgoingUpdateContext& operator=(OutgoingUpdateContext&&) = delete;
 
     // Call this when a WINDOW_UPDATE frame is received from peer for this
     // stream, to increase send window.
