@@ -257,12 +257,6 @@ if [ "$GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS" != "" ]
 then
   "${PYTHON}" -m pip install -r requirements.txt
 
-  if [ "$("$PYTHON" -c "import sys; print(sys.version_info[0])")" == "2" ]
-  then
-    # shellcheck disable=SC2261
-    "${PYTHON}" -m pip install futures>=2.2.0 enum34>=1.0.4
-  fi
-
   "${PYTHON}" -m pip install grpcio --no-index --find-links "file://$ARTIFACT_DIR/"
   "${PYTHON}" -m pip install grpcio-tools --no-index --find-links "file://$ARTIFACT_DIR/"
 

@@ -76,6 +76,25 @@ class BuildPy(build_py.build_py):
         build_py.build_py.run(self)
 
 
+class BuildPackageProtos(setuptools.Command):
+    """Command to generate project *_pb2.py modules from proto files."""
+
+    description = "build grpc protobuf modules"
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        from grpc_tools import command
+
+        # find and build all protos in the current package
+        command.build_package_protos(PYTHON_REL_PATH)
+
+
 class TestLite(setuptools.Command):
     """Command to run tests without fetching or building anything."""
 
