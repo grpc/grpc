@@ -425,7 +425,7 @@ class ClientChannelFilter::LoadBalancedCall final
   // and when it is queued and the channel gets a new picker.
   void TryPick(bool was_queued);
 
-  void CreateSubchannelCall();
+  void StartSubchannelCall();
 
   ClientChannelFilter* chand_;
   // When we start a new attempt for a call, we might not have cleaned up the
@@ -445,7 +445,6 @@ class ClientChannelFilter::LoadBalancedCall final
 
   absl::AnyInvocable<void()> on_commit_;
 
-  RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   const BackendMetricData* backend_metric_data_ = nullptr;
   std::unique_ptr<LoadBalancingPolicy::SubchannelCallTrackerInterface>
       lb_subchannel_call_tracker_;

@@ -369,10 +369,10 @@ void LegacyConnectedSubchannel::SubchannelCall::IncrementRefCount(
 }
 
 //
-// Subchannel::QueuingConnectedSubchannel::QueuedCall
+// Subchannel::QueuedCall
 //
 
-class Subchannel::QueuingConnectedSubchannel::QueuedCall::Canceller final {
+class Subchannel::QueuedCall::Canceller final {
  public:
   explicit Canceller(RefCountedPtr<QueuedCall> call) : call_(std::move(call)) {
     GRPC_CLOSURE_INIT(&cancel_, CancelLocked, this, nullptr);
@@ -382,15 +382,20 @@ class Subchannel::QueuingConnectedSubchannel::QueuedCall::Canceller final {
  private:
   static void CancelLocked(void* arg, grpc_error_handle error) {
     auto* self = static_cast<Canceller*>(arg);
+    bool cancelled = false;
     {
       MutexLock lock(&self->call_->subchannel_->mu_);
       if (self->call_->canceller_ == self && !error.ok()) {
         // Remove from queue.
         self->call_->queue_entry_.reset();
-        // Fail pending batches on the call.
-        self->call_->buffered_call_.Fail(
-            error, BufferedCall::YieldCallCombinerIfPendingBatchesFound);
+        cancelled = true;
       }
+    }
+    if (cancelled) {
+      MutexLock lock(&self->call_->mu_);
+      // Fail pending batches on the call.
+      self->call_->buffered_call_.Fail(
+          error, BufferedCall::YieldCallCombinerIfPendingBatchesFound);
     }
     delete self;
   }
@@ -399,8 +404,8 @@ class Subchannel::QueuingConnectedSubchannel::QueuedCall::Canceller final {
   grpc_closure cancel_;
 };
 
-Subchannel::QueuingConnectedSubchannel::QueuedCall::QueuedCall(
-    WeakRefCountedPtr<Subchannel> subchannel, CreateCallArgs args)
+Subchannel::QueuedCall::QueuedCall(WeakRefCountedPtr<Subchannel> subchannel,
+                                   ConnectedSubchannel::CreateCallArgs args)
     : subchannel_(std::move(subchannel)),
       args_(args),
       buffered_call_(args_.call_combiner, &subchannel_call_queue_trace),
@@ -408,21 +413,21 @@ Subchannel::QueuingConnectedSubchannel::QueuedCall::QueuedCall(
   canceller_ = new Canceller(Ref().TakeAsSubclass<QueuedCall>());
 }
 
-Subchannel::QueuingConnectedSubchannel::QueuedCall::~QueuedCall() {
+Subchannel::QueuedCall::~QueuedCall() {
   if (after_call_stack_destroy_ != nullptr) {
     ExecCtx::Run(DEBUG_LOCATION, after_call_stack_destroy_, absl::OkStatus());
   }
 }
 
-void Subchannel::QueuingConnectedSubchannel::QueuedCall::
-    SetAfterCallStackDestroy(grpc_closure* closure) {
+void Subchannel::QueuedCall::SetAfterCallStackDestroy(grpc_closure* closure) {
   GRPC_CHECK_EQ(after_call_stack_destroy_, nullptr);
   GRPC_CHECK_NE(closure, nullptr);
   after_call_stack_destroy_ = closure;
 }
 
-void Subchannel::QueuingConnectedSubchannel::QueuedCall::
-    StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch) {
+void Subchannel::QueuedCall::StartTransportStreamOpBatch(
+    grpc_transport_stream_op_batch* batch) {
+  MutexLock lock(&mu_);
   // If we already have a real subchannel call, pass the batch down to it.
   if (subchannel_call_ != nullptr) {
     subchannel_call_->StartTransportStreamOpBatch(batch);
@@ -455,10 +460,11 @@ void Subchannel::QueuingConnectedSubchannel::QueuedCall::
   }
 }
 
-void Subchannel::QueuingConnectedSubchannel::QueuedCall::
-    ResumeOnConnectionLocked(ConnectedSubchannel* connected_subchannel) {
+void Subchannel::QueuedCall::ResumeOnConnectionLocked(
+    ConnectedSubchannel* connected_subchannel) {
   canceller_ = nullptr;
   queue_entry_.reset();
+  MutexLock lock(&mu_);
   grpc_error_handle error;
   subchannel_call_ = connected_subchannel->CreateCall(args_, &error);
   if (!error.ok()) {
@@ -474,23 +480,6 @@ void Subchannel::QueuingConnectedSubchannel::QueuedCall::
       subchannel_call->StartTransportStreamOpBatch(batch);
     });
   }
-}
-
-//
-// Subchannel::QueuingConnectedSubchannel
-//
-
-RefCountedPtr<ConnectedSubchannel::Call>
-Subchannel::QueuingConnectedSubchannel::CreateCall(CreateCallArgs args,
-                                                   grpc_error_handle* error) {
-  MutexLock lock(&subchannel_->mu_);
-  // FIXME: need to go through connection picking logic here
-  if (subchannel_->connected_subchannel_ != nullptr) {
-    return subchannel_->connected_subchannel_->CreateCall(args, error);
-  }
-  // No connection available for this call, so we returning a queueing call.
-  return RefCountedPtr<QueuedCall>(
-      args.arena->New<QueuedCall>(subchannel_, std::move(args)));
 }
 
 //
@@ -795,6 +784,26 @@ void Subchannel::ThrottleKeepaliveTime(int new_keepalive_time) {
         << ": throttling keepalive time to " << new_keepalive_time;
     args_ = args_.Set(GRPC_ARG_KEEPALIVE_TIME_MS, new_keepalive_time);
   }
+}
+
+absl::StatusOr<RefCountedPtr<ConnectedSubchannel::Call>> Subchannel::CreateCall(
+    ConnectedSubchannel::CreateCallArgs args) {
+  RefCountedPtr<ConnectedSubchannel> connected_subchannel;
+  {
+    MutexLock lock(&mu_);
+    if (connected_subchannel_ == nullptr) {
+      return nullptr;
+      // FIXME
+      //      return RefCountedPtr<QueueudCall>(
+      //          args.arena->New<QueuedCall>(WeakRef(), args));
+    }
+    connected_subchannel = connected_subchannel_;
+  }
+  if (connected_subchannel == nullptr) return nullptr;
+  grpc_error_handle error;
+  auto subchannel_call = connected_subchannel->CreateCall(args, &error);
+  if (!error.ok()) return error;
+  return subchannel_call;
 }
 
 channelz::SubchannelNode* Subchannel::channelz_node() {

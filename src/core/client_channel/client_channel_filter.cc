@@ -509,6 +509,11 @@ class ClientChannelFilter::SubchannelWrapper final
     return subchannel_->connected_subchannel();
   }
 
+  absl::StatusOr<RefCountedPtr<ConnectedSubchannel::Call>> CreateCall(
+      ConnectedSubchannel::CreateCallArgs args) {
+    return subchannel_->CreateCall(args);
+  }
+
   void RequestConnection() override { subchannel_->RequestConnection(); }
 
   void ResetBackoff() override { subchannel_->ResetBackoff(); }
@@ -2411,7 +2416,7 @@ ClientChannelFilter::LoadBalancedCall::PickSubchannel(bool was_queued) {
 
 bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
     LoadBalancingPolicy::SubchannelPicker* picker, grpc_error_handle* error) {
-  GRPC_CHECK(connected_subchannel_ == nullptr);
+  GRPC_CHECK(subchannel_call_ == nullptr);
   // Perform LB pick.
   LoadBalancingPolicy::PickArgs pick_args;
   Slice* path = send_initial_metadata()->get_pointer(HttpPathMetadata());
@@ -2425,7 +2430,7 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
   return HandlePickResult<bool>(
       &result,
       // CompletePick
-      [this](LoadBalancingPolicy::PickResult::Complete* complete_pick) {
+      [this, &error](LoadBalancingPolicy::PickResult::Complete* complete_pick) {
         GRPC_TRACE_LOG(client_channel_lb_call, INFO)
             << "chand=" << chand_ << " lb_call=" << this
             << ": LB pick succeeded: subchannel="
@@ -2435,18 +2440,28 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
         // holding the data plane mutex.
         SubchannelWrapper* subchannel =
             static_cast<SubchannelWrapper*>(complete_pick->subchannel.get());
-        connected_subchannel_ = subchannel->connected_subchannel();
+        ConnectedSubchannel::CreateCallArgs call_args = {
+            pollent_, /*start_time=*/0, arena_->GetContext<Call>()->deadline(),
+            // TODO(roth): When we implement hedging support, we will probably
+            // need to use a separate call arena for each subchannel call.
+            arena_, call_combiner_};
+        auto subchannel_call = subchannel->CreateCall(call_args);
+        if (!subchannel_call.ok()) {
+          *error = subchannel_call.status();
+          return true;
+        }
         // If the subchannel has no connected subchannel (e.g., if the
         // subchannel has moved out of state READY but the LB policy hasn't
         // yet seen that change and given us a new picker), then just
         // queue the pick.  We'll try again as soon as we get a new picker.
-        if (connected_subchannel_ == nullptr) {
+        if (*subchannel_call == nullptr) {
           GRPC_TRACE_LOG(client_channel_lb_call, INFO)
               << "chand=" << chand_ << " lb_call=" << this
               << ": subchannel returned by LB picker "
                  "has no connected subchannel; queueing pick";
           return false;
         }
+        subchannel_call_ = std::move(*subchannel_call);
         lb_subchannel_call_tracker_ =
             std::move(complete_pick->subchannel_call_tracker);
         if (lb_subchannel_call_tracker_ != nullptr) {
@@ -2679,7 +2694,7 @@ void ClientChannelFilter::LoadBalancedCall::TryPick(bool was_queued) {
       buffered_call_.Fail(*result, BufferedCall::YieldCallCombiner);
       return;
     }
-    CreateSubchannelCall();
+    StartSubchannelCall();
   }
 }
 
@@ -2712,31 +2727,16 @@ void ClientChannelFilter::LoadBalancedCall::RetryPickLocked() {
                absl::OkStatus());
 }
 
-void ClientChannelFilter::LoadBalancedCall::CreateSubchannelCall() {
-  ConnectedSubchannel::CreateCallArgs call_args = {
-      pollent_, /*start_time=*/0, arena_->GetContext<Call>()->deadline(),
-      // TODO(roth): When we implement hedging support, we will probably
-      // need to use a separate call arena for each subchannel call.
-      arena_, call_combiner_};
-  grpc_error_handle error;
-  subchannel_call_ = connected_subchannel_->CreateCall(call_args, &error);
-  GRPC_TRACE_LOG(client_channel_lb_call, INFO)
-      << "chand=" << chand_ << " lb_call=" << this
-      << ": create subchannel_call=" << subchannel_call_.get()
-      << ": error=" << StatusToString(error);
+void ClientChannelFilter::LoadBalancedCall::StartSubchannelCall() {
   if (on_call_destruction_complete_ != nullptr) {
     subchannel_call_->SetAfterCallStackDestroy(on_call_destruction_complete_);
     on_call_destruction_complete_ = nullptr;
   }
-  if (GPR_UNLIKELY(!error.ok())) {
-    buffered_call_.Fail(error, BufferedCall::YieldCallCombiner);
-  } else {
-    buffered_call_.Resume([subchannel_call = subchannel_call_](
-                              grpc_transport_stream_op_batch* batch) {
-      // Note: This will release the call combiner.
-      subchannel_call->StartTransportStreamOpBatch(batch);
-    });
-  }
+  buffered_call_.Resume([subchannel_call = subchannel_call_](
+                            grpc_transport_stream_op_batch* batch) {
+    // Note: This will release the call combiner.
+    subchannel_call->StartTransportStreamOpBatch(batch);
+  });
 }
 
 }  // namespace grpc_core
