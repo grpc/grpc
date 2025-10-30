@@ -22,6 +22,7 @@ import python_version
 import setuptools
 from setuptools import Extension
 from setuptools.command.build_ext import build_ext
+
 import grpc_version
 
 _PACKAGE_PATH = os.path.realpath(os.path.dirname(__file__))
