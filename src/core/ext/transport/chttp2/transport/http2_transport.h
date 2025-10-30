@@ -91,7 +91,8 @@ ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame,
                                     chttp2::TransportFlowControl& flow_control,
                                     RefCountedPtr<Stream> stream);
 
-void ProcessIncomingWindowUpdateFrameFlowControl(
+// Returns true if a write should be triggered
+bool ProcessIncomingWindowUpdateFrameFlowControl(
     const Http2WindowUpdateFrame& frame,
     chttp2::TransportFlowControl& flow_control, RefCountedPtr<Stream> stream);
 

@@ -19,7 +19,11 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_WRITABLE_STREAMS_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_WRITABLE_STREAMS_H
 
+#include <cstdint>
+#include <limits>
+#include <optional>
 #include <queue>
+#include <vector>
 
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/promise/if.h"

@@ -216,7 +216,7 @@ ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
   return chttp2::FlowControlAction();
 }
 
-void ProcessIncomingWindowUpdateFrameFlowControl(
+bool ProcessIncomingWindowUpdateFrameFlowControl(
     const Http2WindowUpdateFrame& frame,
     chttp2::TransportFlowControl& flow_control, RefCountedPtr<Stream> stream) {
   if (frame.stream_id != 0) {
@@ -232,7 +232,11 @@ void ProcessIncomingWindowUpdateFrameFlowControl(
     chttp2::TransportFlowControl::OutgoingUpdateContext fc_update(
         &flow_control);
     fc_update.RecvUpdate(frame.increment);
+    if (fc_update.Finish() == chttp2::StallEdge::kUnstalled) {
+      return true;
+    }
   }
+  return false;
 }
 
 }  // namespace http2
