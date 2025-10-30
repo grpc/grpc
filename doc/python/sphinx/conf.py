@@ -74,16 +74,15 @@ autodoc_typehints = 'description'
 
 # -- HTML Configuration -------------------------------------------------
 
-html_theme = 'alabaster'
+html_theme = "sphinx_rtd_theme"
 html_theme_options = {
-    'fixed_sidebar': True,
-    'page_width': 'auto',
-    'show_related': True,
+    "navigation_depth": 4,
     'analytics_id': 'UA-60127042-1',
-    'description': grpc_version.VERSION,
-    'show_powered_by': False,
+    "collapse_navigation": True,
+    "style_external_links": True,
 }
 html_static_path = ["_static"]
+html_css_files = ["custom.css"]
 
 # -- Options for manual page output ------------------------------------------
 

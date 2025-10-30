@@ -1,43 +1,103 @@
-dl.field-list > dt {
-    word-break: keep-all !important;
-}
-.document {
-  width: 90% !important;
-  margin: 0 auto;
-  display: flex;
-}
-.sphinxsidebar {
-    overflow-y: scroll;
-    top: 0;
-    bottom: 0;
-    width: 35% !important;
-    flex-shrink: 0 !important;
-    min-width: 340px !important;
-    position: unset !important;
-}
-.bodywrapper {
-  margin: auto !important;
-}
-.body {
-  max-width: 100% !important;
-  min-width: 800px !important;
-}
-.footer {
-  margin: 20px 50px 30px auto !important;
+
+.wy-nav-content {
+  max-width: 1200px !important;
+  margin: 0 auto !important;
+  font-size: 16px !important;
+  padding-left: 90px;
+  background-color: #ffffff !important;
 }
 
-@media (max-width: 875px) {
-  .document {
-    flex-direction: column;
-  }
-  .sphinxsidebar {
-    width: 100% !important;
-    background: white !important;
-  }
-  .sphinxsidebar a {
-    color: #444 !important;
-  }
-  .sphinxsidebar h3, .sphinxsidebar h4, .sphinxsidebar p, .sphinxsidebar h3 a {
-    color: #444 !important;
-  }
+html {
+    font-size: 20px;
+}
+.wy-nav-side {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    padding-bottom: 0px;
+    width: 350px;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    min-height: 100%;
+    color: #9b9b9b;
+    background: #343131;
+    z-index: 200;
+}
+
+.wy-side-scroll {
+    width: 350px;
+    position: relative;
+    overflow-x: auto;
+    overflow-y: auto;
+    height: 100%;
+}
+
+.wy-side-nav-search {
+    display: block;
+    width: 350px;
+    padding-right: 10px;
+    padding-left: 10px;
+    padding: .809em;
+    margin-bottom: .809em;
+    z-index: 200;
+    background-color: #2980b9;
+    text-align: center;
+    color: #fcfcfc;
+}
+
+.wy-side-nav-search .wy-dropdown>a, .wy-side-nav-search>a {
+    color: #fcfcfc;
+    font-size: 25px;
+    width: 350.888px;
+    font-weight: 700;
+    display: inline-block;
+    padding: 4px 6px;
+    margin-bottom: .809em;
+    max-width: 100%;
+}
+
+.wy-side-nav-search input[type=text] {
+    width: 275.6px;
+    border-radius: 50px;
+    padding: 6px 12px;
+    border-color: #2472a4;
+}
+.wy-menu-vertical {
+    width: 350px;
+}
+
+.wy-menu-vertical header, .wy-menu-vertical p.caption {
+    color: #55a5d9;
+    height: 32px;
+    line-height: 32px;
+    padding: 0 1.618em;
+    margin: 12px 0 0;
+    display: block;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 85%;
+    white-space: nowrap;
+    width: 350px;
+    padding-right: 22px;
+    padding-left: 22px;
+}
+
+.wy-menu-vertical li.toctree-l1.current>a { 
+    border-bottom: 1px solid #c9c9c9;
+    border-top: 1px solid #c9c9c9;
+    padding-left: 20px;
+    padding-right: 20px;
+    width: 350px;
+}
+
+.wy-menu-vertical a {
+    line-height: 18px;
+    padding: .4045em 1.618em;
+    display: block;
+    position: relative;
+    color: #d9d9d9;
+    width: 350px;
+    padding-left: 20px;
+    padding-right: 20px;
 }
