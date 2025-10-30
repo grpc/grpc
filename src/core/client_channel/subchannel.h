@@ -342,8 +342,7 @@ class Subchannel final : public DualRefCounted<Subchannel> {
 
     void StartWatch(
         grpc_pollset_set* /*interested_parties*/,
-        OrphanablePtr<grpc_core::ConnectivityStateWatcherInterface> /*watcher*/)
-        override {
+        OrphanablePtr<ConnectivityStateWatcherInterface> /*watcher*/) override {
       Crash("QueuingConnectedSubchannel::StartWatch() should never be called");
     }
 

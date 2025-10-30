@@ -197,9 +197,9 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
       &call_combiner_,
   };
   grpc_error_handle error;
-  call_ = subchannel_stream_client_->connected_subchannel_
-              ->CreateCall(std::move(args), &error)
-              .release();
+  call_ =
+      subchannel_stream_client_->connected_subchannel_->CreateCall(args, &error)
+          .release();
   // Register after-destruction callback.
   GRPC_CLOSURE_INIT(&after_call_stack_destruction_, AfterCallStackDestruction,
                     this, grpc_schedule_on_exec_ctx);

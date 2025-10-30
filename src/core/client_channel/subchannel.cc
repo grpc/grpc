@@ -214,9 +214,8 @@ class LegacyConnectedSubchannel : public ConnectedSubchannel {
     const size_t allocation_size = GetInitialCallSizeEstimate();
     Arena* arena = args.arena;
     return RefCountedPtr<SubchannelCall>(
-        new (arena->Alloc(allocation_size))
-            SubchannelCall(RefAsSubclass<LegacyConnectedSubchannel>(),
-                           std::move(args), error));
+        new (arena->Alloc(allocation_size)) SubchannelCall(
+            RefAsSubclass<LegacyConnectedSubchannel>(), args, error));
   }
 
   void Ping(grpc_closure* on_initiate, grpc_closure* on_ack) override {
@@ -403,7 +402,7 @@ class Subchannel::QueuingConnectedSubchannel::QueuedCall::Canceller final {
 Subchannel::QueuingConnectedSubchannel::QueuedCall::QueuedCall(
     WeakRefCountedPtr<Subchannel> subchannel, CreateCallArgs args)
     : subchannel_(std::move(subchannel)),
-      args_(std::move(args)),
+      args_(args),
       buffered_call_(args_.call_combiner, &subchannel_call_queue_trace) {
   canceller_ = new Canceller(Ref().TakeAsSubclass<QueuedCall>());
   subchannel_->queued_calls_.insert(this);
@@ -461,7 +460,7 @@ void Subchannel::QueuingConnectedSubchannel::QueuedCall::
   canceller_ = nullptr;
   subchannel_->queued_calls_.erase(this);
   grpc_error_handle error;
-  subchannel_call_ = connected_subchannel->CreateCall(std::move(args_), &error);
+  subchannel_call_ = connected_subchannel->CreateCall(args_, &error);
   if (!error.ok()) {
     buffered_call_.Fail(error, BufferedCall::YieldCallCombiner);
   } else {
@@ -487,8 +486,7 @@ Subchannel::QueuingConnectedSubchannel::CreateCall(CreateCallArgs args,
   MutexLock lock(&subchannel_->mu_);
   // FIXME: need to go through connection picking logic here
   if (subchannel_->connected_subchannel_ != nullptr) {
-    return subchannel_->connected_subchannel_->CreateCall(std::move(args),
-                                                          error);
+    return subchannel_->connected_subchannel_->CreateCall(args, error);
   }
   // No connection available for this call, so we returning a queueing call.
   return RefCountedPtr<QueuedCall>(

@@ -2719,8 +2719,7 @@ void ClientChannelFilter::LoadBalancedCall::CreateSubchannelCall() {
       // need to use a separate call arena for each subchannel call.
       arena_, call_combiner_};
   grpc_error_handle error;
-  subchannel_call_ =
-      connected_subchannel_->CreateCall(std::move(call_args), &error);
+  subchannel_call_ = connected_subchannel_->CreateCall(call_args, &error);
   GRPC_TRACE_LOG(client_channel_lb_call, INFO)
       << "chand=" << chand_ << " lb_call=" << this
       << ": create subchannel_call=" << subchannel_call_.get()
