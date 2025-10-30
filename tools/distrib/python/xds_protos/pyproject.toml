@@ -26,7 +26,7 @@ description = "Generated Python code from envoyproxy/data-plane-api"
 readme = {file = "README.rst", content-type = "text/x-rst"}
 authors = [{name = "The gRPC Authors", email = "grpc-io@googlegroups.com"}]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 3 - Alpha",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
 ]
@@ -44,6 +44,8 @@ where = ["."]
 exclude = [
     "generated_file_import_test.py",
     "build_xds_protos.py",
+    "bazel*",
+    "contrib*"
 ]
 
 [tool.setuptools.package-dir]

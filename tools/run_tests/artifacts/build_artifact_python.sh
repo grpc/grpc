@@ -271,7 +271,7 @@ then
   # find these dependencies in PyPi and use the pre-built packages in the env
 
   # Build xds_protos source distribution
-  # build.py is invoked as part of generate_projects.
+  # build_xds_protos.py is invoked as part of generate_projects.
   ${SETARCH_CMD} "${PYTHON}" -m build --no-isolation \
     "tools/distrib/python/xds_protos"
 

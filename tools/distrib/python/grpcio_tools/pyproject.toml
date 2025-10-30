@@ -51,6 +51,7 @@ where = ["."]
 # `third_party` directory from being included in the wheel
 exclude = [
     "third_party*",
+    "grpc_root*",
 ]
 
 [tool.setuptools.package-dir]
