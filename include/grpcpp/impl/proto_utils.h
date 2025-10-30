@@ -20,7 +20,6 @@
 #define GRPCPP_IMPL_PROTO_UTILS_H
 
 #include <grpc/byte_buffer_reader.h>
-#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
