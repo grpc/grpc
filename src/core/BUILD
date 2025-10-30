@@ -8366,6 +8366,7 @@ grpc_cc_library(
     ],
     deps = [
         "1999",
+        "activity",
         "arena",
         "call_spine",
         "channel_args",
@@ -10427,6 +10428,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "grpc_check",
+        "instrument",
         "no_destruct",
         "slice",
         "sync",
