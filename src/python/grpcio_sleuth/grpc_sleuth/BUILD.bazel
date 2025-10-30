@@ -18,7 +18,7 @@ load("//bazel:cython_library.bzl", "pyx_library")
 pyx_library(
     name = "sleuth_lib_pyx",
     srcs = ["sleuth_lib.pyx"],
-    cc_deps = [
+    deps = [
         "//test/cpp/sleuth",
     ],
 )
