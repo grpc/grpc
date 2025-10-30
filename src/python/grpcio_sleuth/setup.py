@@ -92,7 +92,7 @@ INSTALL_REQUIRES = [
     "protobuf>=6.31.1,<7.0.0",
     "absl-py>=1.4.0",
 ]
-SETUP_REQUIRES = ["Cython>=0.29.21"]
+SETUP_REQUIRES = ["cython==3.1.1"]
 
 extensions = [
     Extension(
