@@ -106,12 +106,10 @@ if [[ -n "$WHEEL_PLAT_NAME_FLAG" ]]; then
   WHEEL_PLAT_CONFIG_OPTION+=("-C--build-option=\"$WHEEL_PLAT_NAME_FLAG\"")
 fi
 
-# Build the source distribution first because MANIFEST.in cannot override
-# exclusion of built shared objects among package resources (for some
-# inexplicable reason).
-
-# Wheel has a bug where directories don't get excluded.
-# https://bitbucket.org/pypa/wheel/issues/99/cannot-exclude-directory
+# Build without setting explicit flags like --sdist or --wheel so that `build`
+# package first builds the sdist and use that as the source to build the wheel.
+# This is necessary as the file exclusions mentioned in pyproject.toml are
+# otherwise not respected when directly building the wheel.
 ${SETARCH_CMD} "${PYTHON}" -m build "${WHEEL_PLAT_CONFIG_OPTION[@]}"
 
 GRPCIO_STRIP_TEMPDIR=$(mktemp -d)
