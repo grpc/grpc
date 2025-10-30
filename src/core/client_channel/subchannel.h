@@ -330,6 +330,7 @@ class Subchannel final : public DualRefCounted<Subchannel> {
       grpc_closure* after_call_stack_destroy_ = nullptr;
       grpc_error_handle cancel_error_;
       BufferedCall buffered_call_;
+      std::optional<QueuedCall*>& queue_entry_;
       Canceller* canceller_ ABSL_GUARDED_BY(&Subchannel::mu_);
       RefCountedPtr<Call> subchannel_call_;
     };
@@ -342,7 +343,7 @@ class Subchannel final : public DualRefCounted<Subchannel> {
 
     void StartWatch(
         grpc_pollset_set* /*interested_parties*/,
-        OrphanablePtr<ConnectivityStateWatcherInterface> /*watcher*/) override {
+        OrphanablePtr<grpc_core::ConnectivityStateWatcherInterface> /*watcher*/) override {
       Crash("QueuingConnectedSubchannel::StartWatch() should never be called");
     }
 
@@ -448,9 +449,8 @@ class Subchannel final : public DualRefCounted<Subchannel> {
       ABSL_GUARDED_BY(mu_);
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
-  // FIXME: this isn't the right data structure
-  absl::flat_hash_set<QueuingConnectedSubchannel::QueuedCall*> queued_calls_
-      ABSL_GUARDED_BY(mu_);
+  std::deque<std::optional<QueuingConnectedSubchannel::QueuedCall*>>
+      queued_calls_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace grpc_core

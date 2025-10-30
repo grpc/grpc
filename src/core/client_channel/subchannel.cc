@@ -385,8 +385,8 @@ class Subchannel::QueuingConnectedSubchannel::QueuedCall::Canceller final {
     {
       MutexLock lock(&self->call_->subchannel_->mu_);
       if (self->call_->canceller_ == self && !error.ok()) {
-        // Remove pick from list of queued picks.
-        self->call_->subchannel_->queued_calls_.erase(self->call_.get());
+        // Remove from queue.
+        self->call_->queue_entry_.reset();
         // Fail pending batches on the call.
         self->call_->buffered_call_.Fail(
             error, BufferedCall::YieldCallCombinerIfPendingBatchesFound);
@@ -403,9 +403,9 @@ Subchannel::QueuingConnectedSubchannel::QueuedCall::QueuedCall(
     WeakRefCountedPtr<Subchannel> subchannel, CreateCallArgs args)
     : subchannel_(std::move(subchannel)),
       args_(args),
-      buffered_call_(args_.call_combiner, &subchannel_call_queue_trace) {
+      buffered_call_(args_.call_combiner, &subchannel_call_queue_trace),
+      queue_entry_(subchannel_->queued_calls_.emplace_back(this)) {
   canceller_ = new Canceller(Ref().TakeAsSubclass<QueuedCall>());
-  subchannel_->queued_calls_.insert(this);
 }
 
 Subchannel::QueuingConnectedSubchannel::QueuedCall::~QueuedCall() {
@@ -458,7 +458,7 @@ void Subchannel::QueuingConnectedSubchannel::QueuedCall::
 void Subchannel::QueuingConnectedSubchannel::QueuedCall::
     ResumeOnConnectionLocked(ConnectedSubchannel* connected_subchannel) {
   canceller_ = nullptr;
-  subchannel_->queued_calls_.erase(this);
+  queue_entry_.reset();
   grpc_error_handle error;
   subchannel_call_ = connected_subchannel->CreateCall(args_, &error);
   if (!error.ok()) {
