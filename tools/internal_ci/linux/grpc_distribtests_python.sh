@@ -53,7 +53,6 @@ cp -r artifacts/* input_artifacts/ || true
 
 # exit early if build_artifact or package task fails, for faster test run time
 if [[ "$BUILD_ARTIFACT_FAILED" != "" || "$FAILED" != "" ]]; then
-then
   exit 1
 fi
 
