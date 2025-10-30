@@ -149,6 +149,17 @@ class TestMultipleServiceImpl : public RpcService {
   explicit TestMultipleServiceImpl(const std::string& host)
       : signal_client_(false), host_(new std::string(host)) {}
 
+  void WaitUntilRpcStarted() {
+    std::unique_lock<std::mutex> lock(mu_);
+    cv_cancel_.wait(lock, [this]() { return signal_client_; });
+  }
+
+  void NotifyRpcStarted() {
+    std::unique_lock<std::mutex> lock(mu_);
+    signal_client_ = true;
+    cv_cancel_.notify_all();
+  }
+
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) {
     if (request->has_param() &&
@@ -197,9 +208,10 @@ class TestMultipleServiceImpl : public RpcService {
       response->mutable_param()->set_host(std::move(authority_str));
     }
     if (request->has_param() && request->param().client_cancel_after_us()) {
+      // Signal client-side CancelRpc thread that the RPC has started.
+      NotifyRpcStarted();
       {
         std::unique_lock<std::mutex> lock(mu_);
-        signal_client_ = true;
         ++rpcs_waiting_for_client_cancel_;
       }
       WaitForCancellation(context);
@@ -493,6 +505,20 @@ class CallbackTestServiceImpl
   CallbackTestServiceImpl() : signal_client_(false), host_() {}
   explicit CallbackTestServiceImpl(const std::string& host)
       : signal_client_(false), host_(new std::string(host)) {}
+
+  // Wait until the server observes that the RPC has started and signals
+  // the client test thread.
+  void WaitUntilRpcStarted() {
+    std::unique_lock<std::mutex> lock(mu_);
+    cv_cancel_.wait(lock, [this]() { return signal_client_; });
+  }
+
+  // Notify that the RPC has started (wakes CancelRpc waiters).
+  void NotifyRpcStarted() {
+    std::unique_lock<std::mutex> lock(mu_);
+    signal_client_ = true;
+    cv_cancel_.notify_all();
+  }
 
   ServerUnaryReactor* Echo(CallbackServerContext* context,
                            const EchoRequest* request,

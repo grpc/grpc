@@ -252,10 +252,8 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
         resp_->mutable_param()->set_host(std::move(authority_str));
       }
       if (req_->has_param() && req_->param().client_cancel_after_us()) {
-        {
-          std::unique_lock<std::mutex> lock(service_->mu_);
-          service_->signal_client_ = true;
-        }
+        // Signal client-side CancelRpc thread that the RPC has started.
+        service_->NotifyRpcStarted();
         FinishWhenCancelledAsync();
         cancel_notifier_ = std::thread([this] {
           while (!ctx_->IsCancelled()) {
@@ -382,7 +380,7 @@ ServerReadReactor<EchoRequest>* CallbackTestServiceImpl::RequestStream(
     // Don't need to provide a reactor since the RPC is canceled
     return nullptr;
   }
-
+//09/30, 04/30, 03/18, 05/6
   class Reactor : public grpc::ServerReadReactor<EchoRequest> {
    public:
     Reactor(CallbackServerContext* ctx, EchoResponse* response,

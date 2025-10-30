@@ -1170,8 +1170,10 @@ TEST_P(End2endTest, DiffPackageServices) {
 
 template <class ServiceType>
 void CancelRpc(ClientContext* context, int delay_us, ServiceType* service) {
-  while (!service->signal_client()) {
-  }
+  // Wait until the server signals that the RPC has actually started.
+  service->WaitUntilRpcStarted();
+
+  // Perform client-side cancellation and notify the server-side waiter.
   context->TryCancel();
   service->NotifyCancellationCheck();
 }
