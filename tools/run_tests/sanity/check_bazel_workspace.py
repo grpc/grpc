@@ -72,6 +72,7 @@ _GRPC_DEP_NAMES = [
     "rules_shell",
     "rules_java",
     "yaml-cpp",
+    "com_google_cel-spec",
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
@@ -99,6 +100,7 @@ _GRPC_BAZEL_ONLY_DEPS = [
     "rules_shell",
     "rules_java",
     "yaml-cpp",
+    "com_google_cel-spec",
 ]
 
 

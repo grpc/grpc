@@ -274,6 +274,10 @@ grpc_cc_library(
     ],
     visibility = ["//bazel:latent_see"],
     deps = [
+        "channelz_property_list",
+        "function_signature",
+        "json",
+        "json_writer",
         "notification",
         "sync",
         "//:backoff",
@@ -1765,6 +1769,7 @@ grpc_cc_library(
         "exec_ctx_wakeup_scheduler",
         "experiments",
         "grpc_check",
+        "instrument",
         "loop",
         "map",
         "periodic_update",
@@ -3745,6 +3750,9 @@ grpc_cc_library(
         "blackboard",
         "channel_fwd",
         "match",
+        "ref_counted",
+        "unique_type_name",
+        "//:ref_counted_ptr",
     ],
 )
 
@@ -10124,6 +10132,7 @@ grpc_cc_library(
         "call_destination",
         "call_filters",
         "call_spine",
+        "filter_args",
         "match",
         "metadata",
         "ref_counted",
@@ -10418,6 +10427,7 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "grpc_check",
+        "instrument",
         "no_destruct",
         "slice",
         "sync",
@@ -10622,6 +10632,7 @@ grpc_cc_library(
     }),
     external_deps = [
         "absl/container:flat_hash_set",
+        "absl/meta:type_traits",
         "absl/status",
         "@com_google_protobuf//upb/mem",
     ],
@@ -10629,6 +10640,7 @@ grpc_cc_library(
         "channelz_text_encode",
         "function_signature",
         "json_writer",
+        "latent_see",
         "memory_usage",
         "single_set_ptr",
         "sync",
@@ -10812,6 +10824,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/status:statusor",
     ],
+    visibility = ["//bazel:channelz"],
     deps = [
         "zviz_strings",
         "//src/proto/grpc/channelz/v2:channelz_cc_proto",
@@ -10913,6 +10926,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/types:span",
     ],
+    visibility = ["//bazel:channelz"],
     deps = [
         "zviz_data",
         "zviz_environment",
@@ -10971,6 +10985,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
     ],
+    visibility = ["//bazel:channelz"],
     deps = [
         "zviz_layout",
     ],
