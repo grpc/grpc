@@ -66,7 +66,9 @@ class custom_build_ext(build_ext):
         # This makes the .so available during the extension build process.
         build_lib_dest_dir = os.path.join(self.build_lib, "grpc_sleuth", "lib")
         os.makedirs(build_lib_dest_dir, exist_ok=True)
-        shutil.copy(_SLEUTH_SO_SRC, os.path.join(build_lib_dest_dir, "libsleuth.so"))
+        shutil.copy(
+            _SLEUTH_SO_SRC, os.path.join(build_lib_dest_dir, "libsleuth.so")
+        )
 
         # Add the library directory for the current build to find libsleuth.so during extension linking
         for ext in self.extensions:
@@ -104,7 +106,7 @@ extensions = [
         language="c++",
         extra_compile_args=["-std=c++17"],
         libraries=["sleuth"],
-        runtime_library_dirs=["$ORIGIN/lib"]
+        runtime_library_dirs=["$ORIGIN/lib"],
     )
 ]
 
@@ -125,13 +127,13 @@ setuptools.setup(
     setup_requires=SETUP_REQUIRES,
     ext_modules=extensions,
     cmdclass={
-        'build_ext': custom_build_ext,
+        "build_ext": custom_build_ext,
     },
     entry_points={
-        'console_scripts': [
-            'grpc_sleuth=grpc_sleuth.sleuth_cli:main',
+        "console_scripts": [
+            "grpc_sleuth=grpc_sleuth.sleuth_cli:main",
         ],
     },
-    package_data={'grpc_sleuth': ['lib/*.so']},
+    package_data={"grpc_sleuth": ["lib/*.so"]},
     include_package_data=True,
 )

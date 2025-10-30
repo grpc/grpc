@@ -25,6 +25,6 @@ def main():
     exit_code = sleuth_lib.run_sleuth(sys.argv[1:])
     sys.exit(exit_code)
 
+
 if __name__ == "__main__":
     main()
-
