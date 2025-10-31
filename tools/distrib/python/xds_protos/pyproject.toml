@@ -44,9 +44,7 @@ where = ["."]
 exclude = [
     "generated_file_import_test.py",
     "build_xds_protos.py",
+    "dist*",
     "bazel*",
     "contrib*"
 ]
-
-[tool.setuptools.package-dir]
-"" = "."
