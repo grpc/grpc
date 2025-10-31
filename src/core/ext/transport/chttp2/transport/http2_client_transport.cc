@@ -1130,6 +1130,7 @@ Http2ClientTransport::Http2ClientTransport(
     grpc_closure* on_receive_settings)
     : channelz::DataSource(http2::CreateChannelzSocketNode(
           endpoint.GetEventEngineEndpoint(), channel_args)),
+      event_engine_(std::move(event_engine)),
       endpoint_(std::move(endpoint)),
       next_stream_id_(/*Initial Stream ID*/ 1),
       should_reset_ping_clock_(false),
@@ -1162,7 +1163,7 @@ Http2ClientTransport::Http2ClientTransport(
                             ? Duration::Infinity()
                             : Duration::Minutes(1)))),
       ping_manager_(channel_args, PingSystemInterfaceImpl::Make(this),
-                    event_engine),
+                    event_engine_),
       keepalive_manager_(
           KeepAliveInterfaceImpl::Make(this),
           ((keepalive_timeout_ < ping_timeout_) ? keepalive_timeout_
@@ -1193,7 +1194,7 @@ Http2ClientTransport::Http2ClientTransport(
 
   // Initialize the general party and write party.
   auto general_party_arena = SimpleArenaAllocator(0)->MakeArena();
-  general_party_arena->SetContext<EventEngine>(event_engine.get());
+  general_party_arena->SetContext<EventEngine>(event_engine_.get());
   general_party_ = Party::Make(std::move(general_party_arena));
 
   // The keepalive loop is only spawned if the keepalive time is not infinity.
@@ -1231,10 +1232,10 @@ Http2ClientTransport::Http2ClientTransport(
 void Http2ClientTransport::CloseStream(RefCountedPtr<Stream> stream,
                                        CloseStreamArgs args,
                                        DebugLocation whence) {
-  // TODO(akshitpatel) : [PH2][P3] : Measure the impact of holding mutex
-  // throughout this function.
   bool close_transport = false;
   {
+    // TODO(akshitpatel) : [PH2][P3] : Measure the impact of holding mutex
+    // throughout this function.
     MutexLock lock(&transport_mutex_);
     GRPC_DCHECK(stream != nullptr) << "stream is null";
     GRPC_HTTP2_CLIENT_DLOG
@@ -1388,6 +1389,7 @@ void Http2ClientTransport::CloseTransport() {
     on_receive_settings_ = nullptr;
   }
 
+  MutexLock lock(&transport_mutex_);
   // This is the only place where the general_party_ is
   // reset.
   general_party_.reset();
@@ -1490,8 +1492,7 @@ Http2ClientTransport::~Http2ClientTransport() {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Destructor End";
 }
 
-void Http2ClientTransport::AddData(channelz::DataSink sink) {
-  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::AddData Begin";
+void Http2ClientTransport::SpawnAddChannelzData(channelz::DataSink sink) {
   SpawnInfallibleTransportParty(
       "AddData", [self = RefAsSubclass<Http2ClientTransport>(),
                   sink = std::move(sink)]() mutable {
@@ -1512,6 +1513,39 @@ void Http2ClientTransport::AddData(channelz::DataSink sink) {
         GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::AddData End";
         return Empty{};
       });
+}
+
+void Http2ClientTransport::AddData(channelz::DataSink sink) {
+  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport::AddData Begin";
+
+  event_engine_->Run([self = RefAsSubclass<Http2ClientTransport>(),
+                      sink = std::move(sink)]() mutable {
+    {
+      // Apart from CloseTransport, this is the only place where a lock is taken
+      // to access general_party_. All other access to general_party_ happens
+      // on the general party itself and hence do not race with CloseTransport.
+      // TODO(akshitpatel) : [PH2][P4] : Check if a new mutex is needed to
+      // protect general_party_. Curently transport_mutex_ can is used in
+      // these places:
+      // 1. In promises running on the transport party
+      // 2. In AddData promise
+      // 3. In Orphan function.
+      // 4. Stream creation (this will be removed soon).
+      // Given that #1 is already serialized (guaranteed by party), #2 is on
+      // demand and #3 happens once for the lifetime of the transport while
+      // closing the transport, the contention should be minimal.
+      MutexLock lock(&self->transport_mutex_);
+      if (self->general_party_ == nullptr) {
+        GRPC_HTTP2_CLIENT_DLOG
+            << "Http2ClientTransport::AddData general_party_ is "
+               "null. Transport is closed.";
+        return;
+      }
+    }
+
+    ExecCtx exec_ctx;
+    self->SpawnAddChannelzData(std::move(sink));
+  });
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1577,6 +1611,8 @@ std::optional<RefCountedPtr<Stream>> Http2ClientTransport::MakeStream(
   // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
   RefCountedPtr<Stream> stream;
   {
+    // TODO(akshitpatel) : [PH2][P3] : Remove this mutex once settings is in
+    // place.
     MutexLock lock(&transport_mutex_);
     stream = MakeRefCounted<Stream>(
         call_handler, settings_.peer().allow_true_binary_metadata(),
