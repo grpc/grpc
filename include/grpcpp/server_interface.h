@@ -111,6 +111,9 @@ class ServerInterface : public internal::CallHook {
   /// call \a Shutdown for this function to ever return.
   virtual void Wait() = 0;
 
+  virtual grpc_event_engine::experimental::MemoryAllocator*
+  memory_allocator() = 0;
+
  protected:
   friend class grpc::Service;
 

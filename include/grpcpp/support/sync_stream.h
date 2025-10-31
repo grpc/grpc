@@ -665,7 +665,9 @@ class ServerWriter final : public ServerWriterInterface<W> {
       options.set_buffer_hint();
     }
 
-    if (!ctx_->pending_ops_.SendMessagePtr(&msg, options, nullptr).ok()) {
+    if (!ctx_->pending_ops_
+             .SendMessagePtr(&msg, options, ctx_->memory_allocator())
+             .ok()) {
       return false;
     }
     if (!ctx_->sent_initial_metadata_) {
@@ -748,7 +750,9 @@ class ServerReaderWriterBody final {
     if (options.is_last_message()) {
       options.set_buffer_hint();
     }
-    if (!ctx_->pending_ops_.SendMessagePtr(&msg, options, nullptr).ok()) {
+    if (!ctx_->pending_ops_
+             .SendMessagePtr(&msg, options, ctx_->memory_allocator())
+             .ok()) {
       return false;
     }
     if (!ctx_->sent_initial_metadata_) {

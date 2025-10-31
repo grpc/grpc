@@ -755,8 +755,9 @@ class ServerAsyncReader final : public ServerAsyncReaderInterface<W, R> {
     }
     // The response is dropped if the status is not OK.
     if (status.ok()) {
-      finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_,
-                                   finish_ops_.SendMessage(msg, nullptr));
+      finish_ops_.ServerSendStatus(
+          &ctx_->trailing_metadata_,
+          finish_ops_.SendMessage(msg, ctx_->memory_allocator()));
     } else {
       finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, status);
     }
@@ -879,7 +880,7 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
     write_ops_.set_output_tag(tag);
     EnsureInitialMetadataSent(&write_ops_);
     // TODO(ctiller): don't assert
-    ABSL_CHECK(write_ops_.SendMessage(msg, /*allocator=*/nullptr).ok());
+    ABSL_CHECK(write_ops_.SendMessage(msg, ctx_->memory_allocator()).ok());
     call_.PerformOps(&write_ops_);
   }
 
@@ -892,7 +893,7 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
     EnsureInitialMetadataSent(&write_ops_);
     // TODO(ctiller): don't assert
     ABSL_CHECK(
-        write_ops_.SendMessage(msg, options, /*allocator=*/nullptr).ok());
+        write_ops_.SendMessage(msg, options, ctx_->memory_allocator()).ok());
     call_.PerformOps(&write_ops_);
   }
 
@@ -912,7 +913,7 @@ class ServerAsyncWriter final : public ServerAsyncWriterInterface<W> {
     EnsureInitialMetadataSent(&write_ops_);
     options.set_buffer_hint();
     ABSL_CHECK(
-        write_ops_.SendMessage(msg, options, /*allocator=*/nullptr).ok());
+        write_ops_.SendMessage(msg, options, ctx_->memory_allocator()).ok());
     write_ops_.ServerSendStatus(&ctx_->trailing_metadata_, status);
     call_.PerformOps(&write_ops_);
   }
@@ -1053,7 +1054,7 @@ class ServerAsyncReaderWriter final
     write_ops_.set_output_tag(tag);
     EnsureInitialMetadataSent(&write_ops_);
     // TODO(ctiller): don't assert
-    ABSL_CHECK(write_ops_.SendMessage(msg, /*allocator=*/nullptr).ok());
+    ABSL_CHECK(write_ops_.SendMessage(msg, ctx_->memory_allocator()).ok());
     call_.PerformOps(&write_ops_);
   }
 
@@ -1064,7 +1065,7 @@ class ServerAsyncReaderWriter final
     }
     EnsureInitialMetadataSent(&write_ops_);
     ABSL_CHECK(
-        write_ops_.SendMessage(msg, options, /*allocator=*/nullptr).ok());
+        write_ops_.SendMessage(msg, options, ctx_->memory_allocator()).ok());
     call_.PerformOps(&write_ops_);
   }
 
@@ -1085,7 +1086,7 @@ class ServerAsyncReaderWriter final
     EnsureInitialMetadataSent(&write_ops_);
     options.set_buffer_hint();
     ABSL_CHECK(
-        write_ops_.SendMessage(msg, options, /*allocator=*/nullptr).ok());
+        write_ops_.SendMessage(msg, options, ctx_->memory_allocator()).ok());
     write_ops_.ServerSendStatus(&ctx_->trailing_metadata_, status);
     call_.PerformOps(&write_ops_);
   }

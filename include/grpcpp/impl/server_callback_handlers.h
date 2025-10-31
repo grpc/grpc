@@ -139,7 +139,7 @@ class CallbackUnaryHandler : public grpc::internal::MethodHandler {
       if (s.ok()) {
         finish_ops_.ServerSendStatus(
             &ctx_->trailing_metadata_,
-            finish_ops_.SendMessagePtr(response(), /*allocator=*/nullptr));
+            finish_ops_.SendMessagePtr(response(), ctx_->memory_allocator()));
       } else {
         finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, s);
       }
@@ -328,7 +328,7 @@ class CallbackClientStreamingHandler : public grpc::internal::MethodHandler {
       if (s.ok()) {
         finish_ops_.ServerSendStatus(
             &ctx_->trailing_metadata_,
-            finish_ops_.SendMessagePtr(&resp_, /*allocator=*/nullptr));
+            finish_ops_.SendMessagePtr(&resp_, ctx_->memory_allocator()));
       } else {
         finish_ops_.ServerSendStatus(&ctx_->trailing_metadata_, s);
       }
@@ -579,7 +579,8 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
       }
       // TODO(vjpai): don't assert
       ABSL_CHECK(
-          write_ops_.SendMessagePtr(resp, options, /*allocator=*/nullptr).ok());
+          write_ops_.SendMessagePtr(resp, options, ctx_->memory_allocator())
+              .ok());
       call_.PerformOps(&write_ops_);
     }
 
@@ -588,7 +589,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
       // This combines the write into the finish callback
       // TODO(vjpai): don't assert
       ABSL_CHECK(
-          finish_ops_.SendMessagePtr(resp, options, /*allocator=*/nullptr)
+          finish_ops_.SendMessagePtr(resp, options, ctx_->memory_allocator())
               .ok());
       Finish(std::move(s));
     }
@@ -794,7 +795,8 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
       }
       // TODO(vjpai): don't assert
       ABSL_CHECK(
-          write_ops_.SendMessagePtr(resp, options, /*allocator=*/nullptr).ok());
+          write_ops_.SendMessagePtr(resp, options, ctx_->memory_allocator())
+              .ok());
       call_.PerformOps(&write_ops_);
     }
 
@@ -802,7 +804,7 @@ class CallbackBidiHandler : public grpc::internal::MethodHandler {
                         grpc::Status s) override {
       // TODO(vjpai): don't assert
       ABSL_CHECK(
-          finish_ops_.SendMessagePtr(resp, options, /*allocator=*/nullptr)
+          finish_ops_.SendMessagePtr(resp, options, ctx_->memory_allocator())
               .ok());
       Finish(std::move(s));
     }

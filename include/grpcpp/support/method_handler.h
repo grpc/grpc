@@ -69,7 +69,7 @@ void UnaryRunHandlerHelper(const MethodHandler::HandlerParameter& param,
     ops.set_compression_level(param.server_context->compression_level());
   }
   if (status.ok()) {
-    status = ops.SendMessagePtr(rsp, /*allocator=*/nullptr);
+    status = ops.SendMessagePtr(rsp, param.server_context->memory_allocator());
   }
   ops.ServerSendStatus(&param.server_context->trailing_metadata_, status);
   param.call->PerformOps(&ops);
@@ -170,7 +170,8 @@ class ClientStreamingHandler : public grpc::internal::MethodHandler {
       }
     }
     if (status.ok()) {
-      status = ops.SendMessagePtr(&rsp, /*allocator=*/nullptr);
+      status =
+          ops.SendMessagePtr(&rsp, param.server_context->memory_allocator());
     }
     ops.ServerSendStatus(&param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);
