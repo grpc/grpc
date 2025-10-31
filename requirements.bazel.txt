@@ -47,11 +47,11 @@ opentelemetry-sdk
 protobuf
 pyyaml  # for DNS test
 requests
+setuptools>=77.0.1; python_version > "3.8"
+setuptools>=75.3.2; python_version <= "3.8"
 # Currently our CI uses Python < 3.8, hence <4.4.1 was added
 # TODO(asheshvidyut): remove the <4.4.1, when CI uses python >= 3.9
 typeguard~=4.2.0,<4.4.1
 typing-extensions==4.12.2
 twisted  # for DNS test
 urllib3
-setuptools>=77.0.1; python_version > "3.8"
-setuptools>=75.3.2; python_version <= "3.8"
