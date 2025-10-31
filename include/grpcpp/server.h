@@ -20,6 +20,7 @@
 #define GRPCPP_SERVER_H
 
 #include <grpc/compression.h>
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
 #include <grpcpp/channel.h>
@@ -208,6 +209,8 @@ class Server : public ServerInterface, private internal::GrpcLibrary {
     return health_check_service_disabled_;
   }
 
+  grpc_event_engine::experimental::MemoryAllocator* memory_allocator() override;
+
  private:
   std::vector<std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>*
   interceptor_creators() override {
@@ -297,8 +300,11 @@ class Server : public ServerInterface, private internal::GrpcLibrary {
   /// the \a sync_server_cqs)
   std::vector<std::unique_ptr<SyncRequestThreadManager>> sync_req_mgrs_;
 
+  // Memory allocator for the server.
+  grpc_event_engine::experimental::MemoryAllocator memory_allocator_;
+
   // Server status
-  internal::Mutex mu_;
+  mutable internal::Mutex mu_;
   bool started_;
   bool shutdown_ ABSL_GUARDED_BY(mu_);
   bool shutdown_notified_

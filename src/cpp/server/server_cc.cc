@@ -16,6 +16,7 @@
 //
 
 #include <grpc/byte_buffer.h>
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
@@ -64,9 +65,11 @@
 #include <vector>
 
 #include "src/core/ext/transport/inproc/inproc_transport.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/resource_quota/api.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/server/server.h"
 #include "src/core/util/grpc_check.h"
@@ -175,7 +178,7 @@ bool ServerInterface::BaseAsyncRequest::FinalizeResult(void** tag,
     return true;
   }
   context_->set_call(call_, call_metric_recording_enabled_,
-                     server_metric_recorder_);
+                     server_metric_recorder_, server_->memory_allocator());
   context_->cq_ = call_cq_;
   if (call_wrapper_.call() == nullptr) {
     // Fill it since it is empty.
@@ -424,7 +427,8 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
         ctx_->ctx.set_server_rpc_info(method_->name(), method_->method_type(),
                                       server_->interceptor_creators_));
     ctx_->ctx.set_call(call_, server_->call_metric_recording_enabled(),
-                       server_->server_metric_recorder());
+                       server_->server_metric_recorder(),
+                       server_->memory_allocator());
     ctx_->ctx.cq_ = &cq_;
     request_metadata_.count = 0;
 
@@ -652,7 +656,8 @@ class Server::CallbackRequest final
       // Bind the call, deadline, and metadata from what we got
       req_->ctx_->set_call(req_->call_,
                            req_->server_->call_metric_recording_enabled(),
-                           req_->server_->server_metric_recorder());
+                           req_->server_->server_metric_recorder(),
+                           req_->server_->memory_allocator());
       req_->ctx_->cq_ = req_->cq_;
       req_->ctx_->BindDeadlineAndMetadata(req_->deadline_,
                                           &req_->request_metadata_);
@@ -924,6 +929,7 @@ Server::Server(
 
     if (default_rq_created) {
       grpc_resource_quota_unref(server_rq);
+      server_rq = nullptr;
     }
   }
 
@@ -956,6 +962,13 @@ Server::Server(
   }
   server_ = grpc_server_create(&channel_args, nullptr);
   grpc_server_set_config_fetcher(server_, server_config_fetcher);
+
+  if (server_rq != nullptr &&
+      grpc_core::IsTrackWritesInResourceQuotaEnabled()) {
+    memory_allocator_ = grpc_core::ResourceQuota::FromC(server_rq)
+                            ->memory_quota()
+                            ->CreateMemoryAllocator("server writer endpoint");
+  }
 }
 
 Server::~Server() {
@@ -1383,6 +1396,13 @@ grpc::CompletionQueue* Server::CallbackCQ() {
 
   callback_cq_.store(callback_cq, std::memory_order_release);
   return callback_cq;
+}
+
+grpc_event_engine::experimental::MemoryAllocator* Server::memory_allocator() {
+  if (memory_allocator_.IsValid()) {
+    return &memory_allocator_;
+  }
+  return nullptr;
 }
 
 }  // namespace grpc

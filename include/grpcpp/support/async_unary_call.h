@@ -350,8 +350,9 @@ class ServerAsyncResponseWriter final
     }
     // The response is dropped if the status is not OK.
     if (status.ok()) {
-      finish_buf_.ServerSendStatus(&ctx_->trailing_metadata_,
-                                   finish_buf_.SendMessage(msg, nullptr));
+      finish_buf_.ServerSendStatus(
+          &ctx_->trailing_metadata_,
+          finish_buf_.SendMessage(msg, ctx_->memory_allocator()));
     } else {
       finish_buf_.ServerSendStatus(&ctx_->trailing_metadata_, status);
     }
