@@ -1,0 +1,70 @@
+# Copyright 2025 gRPC authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+[build-system]
+requires = [
+    "setuptools>=77.0.1",
+    "wheel",
+    "cython==3.1.1"
+]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "grpcio"
+license = "Apache-2.0"
+description = "HTTP/2-based RPC framework"
+readme = {file = "src/python/grpcio/README.rst", content-type = "text/x-rst"}
+authors = [{name = "The gRPC Authors", email = "grpc-io@googlegroups.com"}]
+
+dynamic = [
+    "classifiers",
+    "dependencies",
+    "optional-dependencies",
+    "requires-python",
+    "version",
+]
+
+[project.urls]
+Homepage = "https://grpc.io"
+"Source Code" = "https://github.com/grpc/grpc"
+"Bug Tracker" = "https://github.com/grpc/grpc/issues"
+Documentation = "https://grpc.github.io/grpc/python"
+
+[tool.setuptools.dynamic]
+version = {attr = "grpc_version.VERSION"}
+
+[tool.setuptools.packages.find]
+where = ["src/python/grpcio"]
+
+[tool.setuptools.package-dir]
+"" = "src/python/grpcio"
+
+[tool.setuptools.package-data]
+# Binaries that may or may not be present in the final installation, but are
+# mentioned here for completeness.
+"grpc._cython" = [
+    "_credentials/roots.pem",
+    "_windows/grpc_c.32.python",
+    "_windows/grpc_c.64.python",
+]
+
+[tool.setuptools.exclude-package-data]
+# Exclude cython source and intermediate files from the .whl file
+"*" = [
+    "*.pyx",
+    "*.cpp",
+    "*.pxd",
+    "*.pxi",
+]
