@@ -1282,7 +1282,7 @@ class Sanity(object):
                 environ["DISABLE_BAZEL_WRAPPER"] = "true"
             return [
                 self.config.job_spec(
-                    cmd["script"].split() + self.args.script_extra_args.split(),
+                    cmd["script"].split() + self.args.script_extra_args,
                     timeout_seconds=90 * 60,
                     environ=environ,
                     cpu_cost=cmd.get("cpu_cost", 1),
@@ -1848,9 +1848,8 @@ argp.add_argument(
 )
 argp.add_argument(
     "--script_extra_args",
-    default="",
-    type=str,
-    nargs="+",
+    default=[],
+    nargs="*",
     help="Extra arguments that will be passed to the underlying test scripts. Currently only works for Sanity scripts.",
 )
 args = argp.parse_args()
