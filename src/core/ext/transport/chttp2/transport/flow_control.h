@@ -38,6 +38,7 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
 #include "absl/functional/function_ref.h"
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 
@@ -62,6 +63,9 @@ class TransportFlowControl;
 class StreamFlowControl;
 
 enum class StallEdge { kNoChange, kStalled, kUnstalled };
+
+#define GRPC_HTTP2_FLOW_CONTROL_DLOG \
+  DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
 
 // Encapsulates a collections of actions the transport needs to take with
 // regard to flow control. Each action comes with urgencies that tell the
@@ -582,6 +586,25 @@ class StreamFlowControl final {
     stats.announced_window_delta = announced_window_delta_;
     stats.pending_size = pending_size_;
     return stats;
+  }
+
+  void ReportIfStalled(bool is_client, uint32_t stream_id,
+                       const Http2Settings& peer_settings) const {
+    if (remote_window_delta() + peer_settings.initial_window_size() <= 0 ||
+        tfc_->remote_window_ == 0) {
+      GRPC_HTTP2_FLOW_CONTROL_DLOG
+          << "PH2 " << (is_client ? "CLIENT" : "SERVER")
+          << " Flow Control Stalled :"
+          << " Settings { peer initial window size="
+          << peer_settings.initial_window_size()
+          << "}, Transport {remote_window=" << tfc_->remote_window()
+          << ", transport announced_window=" << tfc_->announced_window()
+          << "}, Stream {stream_id=" << stream_id
+          << ", remote_window_delta=" << remote_window_delta()
+          << ", remote_window_delta() + peer_settings.initial_window_size() ="
+          << (remote_window_delta() + peer_settings.initial_window_size())
+          << " }";
+    }
   }
 
  private:

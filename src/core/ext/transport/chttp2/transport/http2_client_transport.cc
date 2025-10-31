@@ -857,6 +857,8 @@ Http2ClientTransport::DequeueStreamFrames(RefCountedPtr<Stream> stream) {
   const uint32_t max_dequeue_size =
       GetMaxPermittedDequeue(flow_control_, stream->flow_control,
                              write_bytes_remaining_, settings_.peer());
+  stream->flow_control.ReportIfStalled(
+      /*is_client=*/true, stream->GetStreamId(), settings_.peer());
   StreamDataQueue<ClientMetadataHandle>::DequeueResult result =
       stream->DequeueFrames(max_dequeue_size, settings_.peer().max_frame_size(),
                             encoder_);
