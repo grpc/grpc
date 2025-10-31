@@ -52,6 +52,14 @@ where = ["."]
 exclude = [
     "dist*",
     "grpc_root*",
-    "grpc_tools/test*",
     "third_party*",
+]
+
+[tool.setuptools.exclude-package-data]
+# Exclude cython source and intermediate files from the .whl file
+"*" = [
+    "*.pyx",
+    "*.cpp",
+    "*.cc",
+    "*.h",
 ]

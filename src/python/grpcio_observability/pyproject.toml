@@ -51,6 +51,3 @@ exclude = [
     "third_party*",
     "grpc_root*",
 ]
-
-[tool.setuptools.package-dir]
-"" = "."
