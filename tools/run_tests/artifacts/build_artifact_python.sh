@@ -93,6 +93,7 @@ ancillary_package_dir=(
   "src/python/grpcio_testing/"
   "src/python/grpcio_observability/"
   "src/python/grpcio_csm_observability/"
+  "src/python/grpcio_sleuth/"
 )
 
 # Copy license to ancillary package directories so it will be distributed.
@@ -318,5 +319,10 @@ then
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_admin/setup.py \
       sdist bdist_wheel
   cp -r src/python/grpcio_admin/dist/* "$ARTIFACT_DIR"
+
+  # Build grpcio_sleuth source distribution
+  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_sleuth/setup.py \
+      sdist bdist_wheel
+  cp -r src/python/grpcio_sleuth/dist/* "$ARTIFACT_DIR"
 
 fi

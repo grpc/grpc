@@ -185,13 +185,14 @@ $VENV_PYTHON "$ROOT/tools/distrib/python/make_grpcio_tools.py"
 pip_install_dir_and_deps "$ROOT/tools/distrib/python/grpcio_tools"
 
 # Build/install Observability
-# Observability does not support Windows and MacOS.
+# Observability and Sleuth does not support Windows and MacOS.
 if [ "$(is_mingw)" ] || [ "$(is_darwin)" ]; then
   echo "Skip building grpcio_observability for Windows or MacOS"
 else
   $VENV_PYTHON "$ROOT/src/python/grpcio_observability/make_grpcio_observability.py"
   pip_install_dir_and_deps "$ROOT/src/python/grpcio_observability"
   pip_install_dir_and_deps "$ROOT/src/python/grpcio_csm_observability"
+  pip_install_dir_and_deps "$ROOT/src/python/grpcio_sleuth"
 fi
 
 # Build/install Channelz
@@ -227,6 +228,7 @@ pip_install_dir "$ROOT/src/python/grpcio_admin"
 
 # Install testing
 pip_install_dir "$ROOT/src/python/grpcio_testing"
+
 
 # Build/install tests
 # shellcheck disable=SC2261

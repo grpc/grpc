@@ -1,0 +1,8 @@
+include LICENSE
+include README.rst
+include grpc_version.py
+include python_version.py
+
+graft grpc_sleuth
+
+global-exclude *.pyc
