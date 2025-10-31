@@ -8373,6 +8373,7 @@ grpc_cc_library(
         "check_class_size",
         "closure",
         "connectivity_state",
+        "context",
         "flow_control_manager",
         "for_each",
         "goaway",

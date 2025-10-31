@@ -25,7 +25,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
-#include <limits>
 #include <memory>
 #include <optional>
 #include <string>
@@ -55,6 +54,8 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
@@ -688,6 +689,13 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
               }
               return absl::OkStatus();
             }));
+      },
+      [self = RefAsSubclass<Http2ClientTransport>()]() -> Poll<absl::Status> {
+        if (self->should_stall_read_loop_) {
+          self->read_loop_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+          return Pending{};
+        }
+        return absl::OkStatus();
       }));
 }
 
@@ -766,6 +774,12 @@ void Http2ClientTransport::ActOnFlowControlAction(
       /*enable_preferred_rx_crypto_frame_advertisement=*/true);
 
   if (action.AnyUpdateImmediately()) {
+    // Prioritize sending flow control updates over reading data. If we
+    // continue reading while urgent flow control updates are pending, we might
+    // exhaust the flow control window. This prevents us from sending window
+    // updates to the peer, causing the peer to block unnecessarily while
+    // waiting for flow control tokens.
+    should_stall_read_loop_ = true;
     SpawnGuardedTransportParty("SendControlFrames", TriggerWriteCycle());
   }
 }
@@ -966,6 +980,10 @@ auto Http2ClientTransport::MultiplexerLoop() {
                      "write control frames with status: "
                   << status;
               return status;
+            }
+            if (self->should_stall_read_loop_) {
+              self->should_stall_read_loop_ = false;
+              self->read_loop_waker_.Wakeup();
             }
             self->NotifyControlFramesWriteDone();
             return absl::OkStatus();
@@ -1184,7 +1202,8 @@ Http2ClientTransport::Http2ClientTransport(
           "PH2_Client",
           channel_args.GetBool(GRPC_ARG_HTTP2_BDP_PROBE).value_or(true),
           &memory_owner_),
-      ztrace_collector_(std::make_shared<PromiseHttp2ZTraceCollector>()) {
+      ztrace_collector_(std::make_shared<PromiseHttp2ZTraceCollector>()),
+      should_stall_read_loop_(false) {
   GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor Begin";
   SourceConstructed();
 
