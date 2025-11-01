@@ -48,8 +48,9 @@ class SimpleQueueFuzzTest : public YodelTest {
   auto EnqueueAndCheckSuccess(SimpleQueue<int>& queue, int data, int tokens) {
     return Map([&queue, data,
                 tokens]() mutable { return queue.Enqueue(data, tokens); },
-               [](absl::StatusOr<bool> result) {
-                 EXPECT_EQ(result.status(), absl::OkStatus());
+               [data, tokens](bool result) {
+                 LOG(INFO) << "Enqueue done for data with tokens: " << data
+                           << " tokens: " << tokens << " result: " << result;
                });
   }
 
@@ -355,7 +356,8 @@ YODEL_TEST(StreamDataQueueFuzzTest, EnqueueDequeueMultiParty) {
               typename StreamDataQueue<ClientMetadataHandle>::DequeueResult
                   frames = stream_data_queue.DequeueFrames(
                       max_tokens, max_frame_length, GetEncoder(),
-                      /*can_send_reset_stream=*/true);
+                      /*can_send_reset_stream=*/true, /*stream_fc_tokens=*/
+                      std::numeric_limits<uint32_t>::max());
 
               for (auto& frame : frames.frames) {
                 std::visit(assembler, std::move(frame));
