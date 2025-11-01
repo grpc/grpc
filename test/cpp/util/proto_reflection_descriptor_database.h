@@ -22,8 +22,14 @@
 #include <grpcpp/impl/codegen/config_protobuf.h>
 
 #include <mutex>
-#include <unordered_map>
-#include <unordered_set>
+// copybara:google3_begin
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
+// copybara:google3_end
+// copybara:oss_begin
+// #include <unordered_map>
+// #include <unordered_set>
+// copybara:oss_end
 #include <vector>
 
 #include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
@@ -98,10 +104,19 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
   std::shared_ptr<ClientStream> stream_;
   grpc::ClientContext ctx_;
   std::unique_ptr<grpc::reflection::v1alpha::ServerReflection::Stub> stub_;
-  std::unordered_set<string> known_files_;
-  std::unordered_set<string> missing_symbols_;
-  std::unordered_map<string, std::unordered_set<int>> missing_extensions_;
-  std::unordered_map<string, std::vector<int>> cached_extension_numbers_;
+  // copybara:google3_begin
+  absl::flat_hash_set<std::string> known_files_;
+  absl::flat_hash_set<std::string> missing_symbols_;
+  absl::flat_hash_map<std::string, absl::flat_hash_set<int>>
+      missing_extensions_;
+  absl::flat_hash_map<std::string, std::vector<int>> cached_extension_numbers_;
+  // copybara:google3_end
+  // copybara:oss_begin
+  // std::unordered_set<string> known_files_;
+  // std::unordered_set<string> missing_symbols_;
+  // std::unordered_map<string, std::unordered_set<int>> missing_extensions_;
+  // std::unordered_map<string, std::vector<int>> cached_extension_numbers_;
+  // copybara:oss_end
   std::mutex stream_mutex_;
 
   protobuf::SimpleDescriptorDatabase cached_db_;
