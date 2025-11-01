@@ -63,6 +63,8 @@ class HttpClientFilterTraits {
     RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
       return nullptr;
     }
+    void StartWatch(RefCountedPtr<StateWatcher>) override {}
+    void StopWatch(RefCountedPtr<StateWatcher>) override {}
   };
 
   FakeTransport transport_;

@@ -149,6 +149,9 @@ class Http2ClientTransport final : public ClientTransport,
       OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
   void StopConnectivityWatch(ConnectivityStateWatcherInterface* watcher);
 
+  void StartWatch(RefCountedPtr<StateWatcher> watcher) override;
+  void StopWatch(RefCountedPtr<StateWatcher> watcher) override;
+
   void Orphan() override;
 
   RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
@@ -261,6 +264,10 @@ class Http2ClientTransport final : public ClientTransport,
   void ActOnFlowControlAction(const chttp2::FlowControlAction& action,
                               RefCountedPtr<Stream> stream);
 
+  void NotifyStateWatcherOnDisconnectLocked(
+      absl::Status status, StateWatcher::DisconnectInfo disconnect_info)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&transport_mutex_);
+
   RefCountedPtr<Party> general_party_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
@@ -367,6 +374,8 @@ class Http2ClientTransport final : public ClientTransport,
 
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
       "http2_client", GRPC_CHANNEL_READY};
+
+  RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(transport_mutex_);
 
   // Runs on the call party.
   std::optional<RefCountedPtr<Stream>> MakeStream(CallHandler call_handler);

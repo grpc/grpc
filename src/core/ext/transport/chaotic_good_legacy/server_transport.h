@@ -92,6 +92,12 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
     return socket_node_;
   }
+  void StartWatch(RefCountedPtr<StateWatcher>) override {
+    // FIXME: implement
+  }
+  void StopWatch(RefCountedPtr<StateWatcher>) override {
+    // FIXME: implement
+  }
 
   void SetCallDestination(
       RefCountedPtr<UnstartedCallDestination> call_destination) override;
