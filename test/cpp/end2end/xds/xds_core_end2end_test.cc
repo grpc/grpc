@@ -52,22 +52,10 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsClientTest,
 TEST_P(XdsClientTest, ResourceWrappedInResourceMessage) {
   CreateAndStartBackends(1);
   balancer_->ads_service()->set_wrap_resources(true);
-  const size_t kNumRpcsPerAddress = 100;
-  EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends()},
-  });
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Make sure that trying to connect works without a call.
-  channel_->GetState(true /* try_to_connect */);
-  // We need to wait for all backends to come online.
-  WaitForAllBackends(DEBUG_LOCATION);
-  // Send kNumRpcsPerAddress RPCs per server.
-  CheckRpcSendOk(DEBUG_LOCATION, kNumRpcsPerAddress * backends_.size());
-  // Each backend should have gotten 100 requests.
-  for (size_t i = 0; i < backends_.size(); ++i) {
-    EXPECT_EQ(kNumRpcsPerAddress,
-              backends_[i]->backend_service()->request_count());
-  }
+  CheckRpcSendOk(DEBUG_LOCATION);
+  EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
   // Check LB policy name for the channel.
   EXPECT_EQ("xds_cluster_manager_experimental",
             channel_->GetLoadBalancingPolicyName());

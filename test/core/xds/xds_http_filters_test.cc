@@ -46,13 +46,10 @@
 #include "envoy/type/v3/percent.pb.h"
 #include "envoy/type/v3/range.pb.h"
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
-#include "src/core/ext/filters/fault_injection/fault_injection_service_config_parser.h"
 #include "src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h"
-#include "src/core/ext/filters/gcp_authentication/gcp_authentication_service_config_parser.h"
 #include "src/core/ext/filters/rbac/rbac_filter.h"
 #include "src/core/ext/filters/rbac/rbac_service_config_parser.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
-#include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
@@ -67,6 +64,7 @@
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
 #include "xds/type/v3/typed_struct.pb.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
@@ -140,7 +138,7 @@ class XdsHttpFilterTest : public ::testing::Test {
   }
 
   const XdsHttpFilterImpl* GetFilter(absl::string_view type) {
-    return registry_.GetFilterForType(
+    return registry_.GetFilterForTopLevelType(
         absl::StripPrefix(type, "type.googleapis.com/"));
   }
 
@@ -211,8 +209,8 @@ TEST_F(XdsRouterFilterTest, Accessors) {
 
 TEST_F(XdsRouterFilterTest, GenerateFilterConfig) {
   XdsExtension extension = MakeXdsExtension(Router());
-  auto config = filter_->GenerateFilterConfig("", decode_context_,
-                                              std::move(extension), &errors_);
+  auto config =
+      filter_->GenerateFilterConfig("", decode_context_, extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
@@ -223,8 +221,8 @@ TEST_F(XdsRouterFilterTest, GenerateFilterConfig) {
 TEST_F(XdsRouterFilterTest, GenerateFilterConfigTypedStruct) {
   XdsExtension extension = MakeXdsExtension(Router());
   extension.value = Json();
-  auto config = filter_->GenerateFilterConfig("", decode_context_,
-                                              std::move(extension), &errors_);
+  auto config =
+      filter_->GenerateFilterConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -240,8 +238,8 @@ TEST_F(XdsRouterFilterTest, GenerateFilterConfigUnparsable) {
   XdsExtension extension = MakeXdsExtension(Router());
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
-  auto config = filter_->GenerateFilterConfig("", decode_context_,
-                                              std::move(extension), &errors_);
+  auto config =
+      filter_->GenerateFilterConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -255,8 +253,8 @@ TEST_F(XdsRouterFilterTest, GenerateFilterConfigUnparsable) {
 
 TEST_F(XdsRouterFilterTest, GenerateFilterConfigOverride) {
   XdsExtension extension = MakeXdsExtension(Router());
-  auto config = filter_->GenerateFilterConfigOverride(
-      "", decode_context_, std::move(extension), &errors_);
+  auto config = filter_->GenerateFilterConfigOverride("", decode_context_,
+                                                      extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -286,66 +284,74 @@ class XdsFaultInjectionFilterTest : public XdsHttpFilterTest {
 TEST_F(XdsFaultInjectionFilterTest, Accessors) {
   EXPECT_EQ(filter_->ConfigProtoName(),
             "envoy.extensions.filters.http.fault.v3.HTTPFault");
-  EXPECT_EQ(filter_->OverrideConfigProtoName(), "");
-  EXPECT_EQ(filter_->channel_filter(), &FaultInjectionFilter::kFilter);
+  EXPECT_EQ(filter_->OverrideConfigProtoName(),
+            "envoy.extensions.filters.http.fault.v3.HTTPFault");
+  EXPECT_EQ(filter_->channel_filter(), &FaultInjectionFilter::kFilterVtable);
   EXPECT_TRUE(filter_->IsSupportedOnClients());
   EXPECT_FALSE(filter_->IsSupportedOnServers());
   EXPECT_FALSE(filter_->IsTerminalFilter());
 }
 
-TEST_F(XdsFaultInjectionFilterTest, ModifyChannelArgs) {
-  ChannelArgs args = filter_->ModifyChannelArgs(ChannelArgs());
-  auto value = args.GetInt(GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG);
-  ASSERT_TRUE(value.has_value());
-  EXPECT_EQ(*value, 1);
+TEST_F(XdsFaultInjectionFilterTest, MergeConfigs) {
+  // Top-level config: UNAVAILABLE.
+  HTTPFault fault;
+  auto* abort = fault.mutable_abort();
+  abort->set_grpc_status(GRPC_STATUS_UNAVAILABLE);
+  auto top_level_config = filter_->ParseTopLevelConfig(
+      "", decode_context_, MakeXdsExtension(fault), &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  // VirtualHost-level config: ABORTED.
+  abort->set_grpc_status(GRPC_STATUS_ABORTED);
+  auto vhost_config = filter_->ParseOverrideConfig(
+      "", decode_context_, MakeXdsExtension(fault), &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  // Route-level config: UNKNOWN.
+  abort->set_grpc_status(GRPC_STATUS_UNKNOWN);
+  auto route_config = filter_->ParseOverrideConfig(
+      "", decode_context_, MakeXdsExtension(fault), &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  // ClusterWeight-level config: FAILED_PRECONDITION.
+  abort->set_grpc_status(GRPC_STATUS_FAILED_PRECONDITION);
+  auto cluster_weight_config = filter_->ParseOverrideConfig(
+      "", decode_context_, MakeXdsExtension(fault), &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  // Merging all 4 should return the ClusterWeight config.
+  auto config = filter_->MergeConfigs(top_level_config, vhost_config,
+                                      route_config, cluster_weight_config);
+  EXPECT_THAT(config->ToString(),
+              ::testing::HasSubstr("abort_code=FAILED_PRECONDITION"));
+  // Merging only the top 3 should return the route-level config.
+  config = filter_->MergeConfigs(top_level_config, vhost_config, route_config,
+                                 nullptr);
+  EXPECT_THAT(config->ToString(), ::testing::HasSubstr("abort_code=UNKNOWN"));
+  // Merging only the top 2 should return the vhost-level config.
+  config =
+      filter_->MergeConfigs(top_level_config, vhost_config, nullptr, nullptr);
+  EXPECT_THAT(config->ToString(), ::testing::HasSubstr("abort_code=ABORTED"));
+  // Merging only the top-level config returns the top-level config.
+  config = filter_->MergeConfigs(top_level_config, nullptr, nullptr, nullptr);
+  EXPECT_THAT(config->ToString(),
+              ::testing::HasSubstr("abort_code=UNAVAILABLE"));
 }
 
-TEST_F(XdsFaultInjectionFilterTest, GenerateMethodConfigTopLevelConfig) {
-  XdsHttpFilterImpl::FilterConfig config;
-  config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
-  auto service_config = filter_->GenerateMethodConfig(config, nullptr);
-  ASSERT_TRUE(service_config.ok()) << service_config.status();
-  EXPECT_EQ(service_config->service_config_field_name, "faultInjectionPolicy");
-  EXPECT_EQ(service_config->element, "{\"foo\":\"bar\"}");
-}
-
-TEST_F(XdsFaultInjectionFilterTest, GenerateMethodConfigOverrideConfig) {
-  XdsHttpFilterImpl::FilterConfig top_config;
-  top_config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
-  XdsHttpFilterImpl::FilterConfig override_config;
-  override_config.config =
-      Json::FromObject({{"baz", Json::FromString("quux")}});
-  auto service_config =
-      filter_->GenerateMethodConfig(top_config, &override_config);
-  ASSERT_TRUE(service_config.ok()) << service_config.status();
-  EXPECT_EQ(service_config->service_config_field_name, "faultInjectionPolicy");
-  EXPECT_EQ(service_config->element, "{\"baz\":\"quux\"}");
-}
-
-TEST_F(XdsFaultInjectionFilterTest, GenerateServiceConfig) {
-  XdsHttpFilterImpl::FilterConfig config;
-  config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
-  auto service_config = filter_->GenerateServiceConfig(config);
-  ASSERT_TRUE(service_config.ok()) << service_config.status();
-  EXPECT_EQ(service_config->service_config_field_name, "");
-  EXPECT_EQ(service_config->element, "");
-}
-
-// For the fault injection filter, GenerateFilterConfig() and
-// GenerateFilterConfigOverride() accept the same input, so we want to
-// run all tests for both.
+// For the fault injection filter, ParseTopLevelConfig() and
+// ParseOverrideConfig() accept the same input, so we want to run all
+// tests for both.
 class XdsFaultInjectionFilterConfigTest
     : public XdsFaultInjectionFilterTest,
       public ::testing::WithParamInterface<bool> {
  protected:
-  std::optional<XdsHttpFilterImpl::FilterConfig> GenerateConfig(
-      XdsExtension extension) {
+  RefCountedPtr<const FilterConfig> GenerateConfig(XdsExtension extension) {
     if (GetParam()) {
-      return filter_->GenerateFilterConfigOverride(
-          "", decode_context_, std::move(extension), &errors_);
+      return filter_->ParseTopLevelConfig("", decode_context_, extension,
+                                          &errors_);
     }
-    return filter_->GenerateFilterConfig("", decode_context_,
-                                         std::move(extension), &errors_);
+    return filter_->ParseOverrideConfig("", decode_context_, extension,
+                                        &errors_);
   }
 };
 
@@ -357,9 +363,9 @@ TEST_P(XdsFaultInjectionFilterConfigTest, EmptyConfig) {
   auto config = GenerateConfig(std::move(extension));
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
-  ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
-  EXPECT_EQ(config->config, Json::FromObject({})) << JsonDump(config->config);
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->type(), FaultInjectionFilter::Config::Type());
+  EXPECT_EQ(config->ToString(), "{max_faults=4294967295}");
 }
 
 TEST_P(XdsFaultInjectionFilterConfigTest, BasicConfig) {
@@ -377,16 +383,17 @@ TEST_P(XdsFaultInjectionFilterConfigTest, BasicConfig) {
   auto config = GenerateConfig(std::move(extension));
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
-  ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
-  EXPECT_EQ(JsonDump(config->config),
-            "{\"abortCode\":\"UNAVAILABLE\","
-            "\"abortPercentageDenominator\":100,"
-            "\"abortPercentageNumerator\":75,"
-            "\"delay\":\"1.500000000s\","
-            "\"delayPercentageDenominator\":100,"
-            "\"delayPercentageNumerator\":25,"
-            "\"maxFaults\":10}");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->type(), FaultInjectionFilter::Config::Type());
+  EXPECT_EQ(config->ToString(),
+            "{abort_code=UNAVAILABLE, "
+            "abort_message=\"Fault injected\", "
+            "abort_percentage_numerator=75, "
+            "abort_percentage_denominator=100, "
+            "delay=1500ms, "
+            "delay_percentage_numerator=25, "
+            "delay_percentage_denominator=100, "
+            "max_faults=10}");
 }
 
 TEST_P(XdsFaultInjectionFilterConfigTest, HttpAbortCode) {
@@ -397,9 +404,12 @@ TEST_P(XdsFaultInjectionFilterConfigTest, HttpAbortCode) {
   auto config = GenerateConfig(std::move(extension));
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
-  ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
-  EXPECT_EQ(JsonDump(config->config), "{\"abortCode\":\"UNIMPLEMENTED\"}");
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->type(), FaultInjectionFilter::Config::Type());
+  EXPECT_EQ(config->ToString(),
+            "{abort_code=UNIMPLEMENTED, "
+            "abort_message=\"Fault injected\", "
+            "max_faults=4294967295}");
 }
 
 TEST_P(XdsFaultInjectionFilterConfigTest, HeaderAbortAndDelay) {
@@ -410,15 +420,16 @@ TEST_P(XdsFaultInjectionFilterConfigTest, HeaderAbortAndDelay) {
   auto config = GenerateConfig(std::move(extension));
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
-  ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->type(), FaultInjectionFilter::Config::Type());
   EXPECT_EQ(
-      JsonDump(config->config),
-      "{\"abortCode\":\"OK\","
-      "\"abortCodeHeader\":\"x-envoy-fault-abort-grpc-request\","
-      "\"abortPercentageHeader\":\"x-envoy-fault-abort-percentage\","
-      "\"delayHeader\":\"x-envoy-fault-delay-request\","
-      "\"delayPercentageHeader\":\"x-envoy-fault-delay-request-percentage\"}");
+      config->ToString(),
+      "{abort_code_header=\"x-envoy-fault-abort-grpc-request\", "
+      "abort_message=\"Fault injected\", "
+      "abort_percentage_header=\"x-envoy-fault-abort-percentage\", "
+      "delay_header=\"x-envoy-fault-delay-request\", "
+      "delay_percentage_header=\"x-envoy-fault-delay-request-percentage\", "
+      "max_faults=4294967295}");
 }
 
 TEST_P(XdsFaultInjectionFilterConfigTest, InvalidGrpcStatusCode) {
@@ -517,8 +528,8 @@ TEST_F(XdsRbacFilterTest, ModifyChannelArgs) {
 
 TEST_F(XdsRbacFilterTest, GenerateFilterConfig) {
   XdsExtension extension = MakeXdsExtension(RBAC());
-  auto config = filter_->GenerateFilterConfig("", decode_context_,
-                                              std::move(extension), &errors_);
+  auto config =
+      filter_->GenerateFilterConfig("", decode_context_, extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
@@ -529,8 +540,8 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfig) {
 TEST_F(XdsRbacFilterTest, GenerateFilterConfigTypedStruct) {
   XdsExtension extension = MakeXdsExtension(RBAC());
   extension.value = Json();
-  auto config = filter_->GenerateFilterConfig("", decode_context_,
-                                              std::move(extension), &errors_);
+  auto config =
+      filter_->GenerateFilterConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -546,8 +557,8 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfigUnparsable) {
   XdsExtension extension = MakeXdsExtension(RBAC());
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
-  auto config = filter_->GenerateFilterConfig("", decode_context_,
-                                              std::move(extension), &errors_);
+  auto config =
+      filter_->GenerateFilterConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -561,8 +572,8 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfigUnparsable) {
 
 TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverride) {
   XdsExtension extension = MakeXdsExtension(RBACPerRoute());
-  auto config = filter_->GenerateFilterConfigOverride(
-      "", decode_context_, std::move(extension), &errors_);
+  auto config = filter_->GenerateFilterConfigOverride("", decode_context_,
+                                                      extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
   ASSERT_TRUE(config.has_value());
@@ -573,8 +584,8 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverride) {
 TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverrideTypedStruct) {
   XdsExtension extension = MakeXdsExtension(RBACPerRoute());
   extension.value = Json();
-  auto config = filter_->GenerateFilterConfigOverride(
-      "", decode_context_, std::move(extension), &errors_);
+  auto config = filter_->GenerateFilterConfigOverride("", decode_context_,
+                                                      extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -589,8 +600,8 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverrideUnparsable) {
   XdsExtension extension = MakeXdsExtension(RBACPerRoute());
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
-  auto config = filter_->GenerateFilterConfigOverride(
-      "", decode_context_, std::move(extension), &errors_);
+  auto config = filter_->GenerateFilterConfigOverride("", decode_context_,
+                                                      extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -602,7 +613,7 @@ TEST_F(XdsRbacFilterTest, GenerateFilterConfigOverrideUnparsable) {
 }
 
 TEST_F(XdsRbacFilterTest, GenerateMethodConfig) {
-  XdsHttpFilterImpl::FilterConfig hcm_config = {
+  XdsHttpFilterImpl::XdsFilterConfig hcm_config = {
       filter_->ConfigProtoName(),
       Json::FromObject({{"name", Json::FromString("foo")}})};
   auto config = filter_->GenerateMethodConfig(hcm_config, nullptr);
@@ -613,7 +624,7 @@ TEST_F(XdsRbacFilterTest, GenerateMethodConfig) {
 }
 
 TEST_F(XdsRbacFilterTest, GenerateServiceConfig) {
-  XdsHttpFilterImpl::FilterConfig config;
+  XdsHttpFilterImpl::XdsFilterConfig config;
   config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
   auto service_config = filter_->GenerateServiceConfig(config);
   ASSERT_TRUE(service_config.ok()) << service_config.status();
@@ -627,17 +638,17 @@ TEST_F(XdsRbacFilterTest, GenerateServiceConfig) {
 class XdsRbacFilterConfigTest : public XdsRbacFilterTest,
                                 public ::testing::WithParamInterface<bool> {
  protected:
-  std::optional<XdsHttpFilterImpl::FilterConfig> GenerateConfig(RBAC rbac) {
+  std::optional<XdsHttpFilterImpl::XdsFilterConfig> GenerateConfig(RBAC rbac) {
     if (GetParam()) {
       RBACPerRoute rbac_per_route;
       *rbac_per_route.mutable_rbac() = rbac;
       XdsExtension extension = MakeXdsExtension(rbac_per_route);
-      return filter_->GenerateFilterConfigOverride(
-          "", decode_context_, std::move(extension), &errors_);
+      return filter_->GenerateFilterConfigOverride("", decode_context_,
+                                                   extension, &errors_);
     }
     XdsExtension extension = MakeXdsExtension(rbac);
-    return filter_->GenerateFilterConfig("", decode_context_,
-                                         std::move(extension), &errors_);
+    return filter_->GenerateFilterConfig("", decode_context_, extension,
+                                         &errors_);
   }
 
   std::string FieldPrefix() {
@@ -1140,71 +1151,93 @@ TEST_F(XdsStatefulSessionFilterTest, Accessors) {
   EXPECT_EQ(filter_->OverrideConfigProtoName(),
             "envoy.extensions.filters.http.stateful_session.v3"
             ".StatefulSessionPerRoute");
-  EXPECT_EQ(filter_->channel_filter(), &StatefulSessionFilter::kFilter);
+  EXPECT_EQ(filter_->channel_filter(), &StatefulSessionFilter::kFilterVtable);
   EXPECT_TRUE(filter_->IsSupportedOnClients());
   EXPECT_FALSE(filter_->IsSupportedOnServers());
   EXPECT_FALSE(filter_->IsTerminalFilter());
 }
 
-TEST_F(XdsStatefulSessionFilterTest, ModifyChannelArgs) {
-  ChannelArgs args = filter_->ModifyChannelArgs(ChannelArgs());
-  auto value = args.GetInt(GRPC_ARG_PARSE_STATEFUL_SESSION_METHOD_CONFIG);
-  ASSERT_TRUE(value.has_value());
-  EXPECT_EQ(*value, 1);
+TEST_F(XdsStatefulSessionFilterTest, MergeConfigs) {
+  // Top-level config: foo.
+  CookieBasedSessionState cookie_state;
+  cookie_state.mutable_cookie()->set_name("foo");
+  StatefulSession stateful_session;
+  stateful_session.mutable_session_state()->mutable_typed_config()->PackFrom(
+      cookie_state);
+  auto top_level_config = filter_->ParseTopLevelConfig(
+      "", decode_context_, MakeXdsExtension(stateful_session), &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  // VirtualHost-level config: bar.
+  cookie_state.mutable_cookie()->set_name("bar");
+  stateful_session.mutable_session_state()->mutable_typed_config()->PackFrom(
+      cookie_state);
+  StatefulSessionPerRoute stateful_session_per_route;
+  *stateful_session_per_route.mutable_stateful_session() = stateful_session;
+  auto vhost_config = filter_->ParseOverrideConfig(
+      "", decode_context_, MakeXdsExtension(stateful_session_per_route),
+      &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  // Route-level config: baz.
+  cookie_state.mutable_cookie()->set_name("baz");
+  stateful_session.mutable_session_state()->mutable_typed_config()->PackFrom(
+      cookie_state);
+  *stateful_session_per_route.mutable_stateful_session() = stateful_session;
+  auto route_config = filter_->ParseOverrideConfig(
+      "", decode_context_, MakeXdsExtension(stateful_session_per_route),
+      &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  // ClusterWeight-level config: quux.
+  cookie_state.mutable_cookie()->set_name("quux");
+  stateful_session.mutable_session_state()->mutable_typed_config()->PackFrom(
+      cookie_state);
+  *stateful_session_per_route.mutable_stateful_session() = stateful_session;
+  auto cluster_weight_config = filter_->ParseOverrideConfig(
+      "", decode_context_, MakeXdsExtension(stateful_session_per_route),
+      &errors_);
+  ASSERT_TRUE(errors_.ok()) << errors_.status(
+      absl::StatusCode::kInvalidArgument, "unexpected errors");
+  // Merging all 4 should return the ClusterWeight config.
+  auto config = filter_->MergeConfigs(top_level_config, vhost_config,
+                                      route_config, cluster_weight_config);
+  EXPECT_EQ(config->type(), StatefulSessionFilter::Config::Type());
+  EXPECT_EQ(config->ToString(), "{cookie_name=\"quux\"}");
+  // Merging only the top 3 should return the route-level config.
+  config = filter_->MergeConfigs(top_level_config, vhost_config, route_config,
+                                 nullptr);
+  EXPECT_EQ(config->type(), StatefulSessionFilter::Config::Type());
+  EXPECT_EQ(config->ToString(), "{cookie_name=\"baz\"}");
+  // Merging only the top 2 should return the vhost-level config.
+  config =
+      filter_->MergeConfigs(top_level_config, vhost_config, nullptr, nullptr);
+  EXPECT_EQ(config->type(), StatefulSessionFilter::Config::Type());
+  EXPECT_EQ(config->ToString(), "{cookie_name=\"bar\"}");
+  // Merging only the top-level config returns the top-level config.
+  config = filter_->MergeConfigs(top_level_config, nullptr, nullptr, nullptr);
+  EXPECT_EQ(config->type(), StatefulSessionFilter::Config::Type());
+  EXPECT_EQ(config->ToString(), "{cookie_name=\"foo\"}");
 }
 
-TEST_F(XdsStatefulSessionFilterTest, OverrideConfigDisabled) {
+TEST_F(XdsStatefulSessionFilterTest, ParseOverrideConfigDisabled) {
   StatefulSessionPerRoute stateful_session_per_route;
   stateful_session_per_route.set_disabled(true);
   XdsExtension extension = MakeXdsExtension(stateful_session_per_route);
-  auto config = filter_->GenerateFilterConfigOverride(
-      "", decode_context_, std::move(extension), &errors_);
+  auto config =
+      filter_->ParseOverrideConfig("", decode_context_, extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
-  ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name, filter_->OverrideConfigProtoName());
-  EXPECT_EQ(config->config, Json::FromObject({})) << JsonDump(config->config);
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->type(), StatefulSessionFilter::Config::Type());
+  EXPECT_EQ(config->ToString(), "{}");
 }
 
-TEST_F(XdsStatefulSessionFilterTest, GenerateMethodConfigNoOverride) {
-  XdsHttpFilterImpl::FilterConfig hcm_config = {
-      filter_->ConfigProtoName(),
-      Json::FromObject({{"name", Json::FromString("foo")}})};
-  auto config = filter_->GenerateMethodConfig(hcm_config, nullptr);
-  ASSERT_TRUE(config.ok()) << config.status();
-  EXPECT_EQ(config->service_config_field_name, "stateful_session");
-  EXPECT_EQ(config->element,
-            JsonDump(Json::FromObject({{"name", Json::FromString("foo")}})));
-}
-
-TEST_F(XdsStatefulSessionFilterTest, GenerateMethodConfigWithOverride) {
-  XdsHttpFilterImpl::FilterConfig hcm_config = {
-      filter_->ConfigProtoName(),
-      Json::FromObject({{"name", Json::FromString("foo")}})};
-  XdsHttpFilterImpl::FilterConfig override_config = {
-      filter_->OverrideConfigProtoName(),
-      Json::FromObject({{"name", Json::FromString("bar")}})};
-  auto config = filter_->GenerateMethodConfig(hcm_config, &override_config);
-  ASSERT_TRUE(config.ok()) << config.status();
-  EXPECT_EQ(config->service_config_field_name, "stateful_session");
-  EXPECT_EQ(config->element,
-            JsonDump(Json::FromObject({{"name", Json::FromString("bar")}})));
-}
-
-TEST_F(XdsStatefulSessionFilterTest, GenerateServiceConfig) {
-  XdsHttpFilterImpl::FilterConfig config;
-  config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
-  auto service_config = filter_->GenerateServiceConfig(config);
-  ASSERT_TRUE(service_config.ok()) << service_config.status();
-  EXPECT_EQ(service_config->service_config_field_name, "");
-  EXPECT_EQ(service_config->element, "");
-}
-
-TEST_F(XdsStatefulSessionFilterTest, GenerateFilterConfigTypedStruct) {
+TEST_F(XdsStatefulSessionFilterTest, ParseTopLevelConfigTypedStruct) {
   XdsExtension extension = MakeXdsExtension(StatefulSession());
   extension.value = Json();
-  auto config = filter_->GenerateFilterConfig("", decode_context_,
-                                              std::move(extension), &errors_);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -1217,12 +1250,12 @@ TEST_F(XdsStatefulSessionFilterTest, GenerateFilterConfigTypedStruct) {
       << status;
 }
 
-TEST_F(XdsStatefulSessionFilterTest, GenerateFilterConfigUnparsable) {
+TEST_F(XdsStatefulSessionFilterTest, ParseTopLevelConfigUnparsable) {
   XdsExtension extension = MakeXdsExtension(StatefulSession());
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
-  auto config = filter_->GenerateFilterConfig("", decode_context_,
-                                              std::move(extension), &errors_);
+  auto config =
+      filter_->ParseTopLevelConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -1235,11 +1268,11 @@ TEST_F(XdsStatefulSessionFilterTest, GenerateFilterConfigUnparsable) {
       << status;
 }
 
-TEST_F(XdsStatefulSessionFilterTest, GenerateFilterConfigOverrideTypedStruct) {
+TEST_F(XdsStatefulSessionFilterTest, ParseOverrideConfigTypedStruct) {
   XdsExtension extension = MakeXdsExtension(StatefulSessionPerRoute());
   extension.value = Json();
-  auto config = filter_->GenerateFilterConfigOverride(
-      "", decode_context_, std::move(extension), &errors_);
+  auto config =
+      filter_->ParseOverrideConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -1252,12 +1285,12 @@ TEST_F(XdsStatefulSessionFilterTest, GenerateFilterConfigOverrideTypedStruct) {
       << status;
 }
 
-TEST_F(XdsStatefulSessionFilterTest, GenerateFilterConfigOverrideUnparsable) {
+TEST_F(XdsStatefulSessionFilterTest, ParseOverrideConfigUnparsable) {
   XdsExtension extension = MakeXdsExtension(StatefulSessionPerRoute());
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
-  auto config = filter_->GenerateFilterConfigOverride(
-      "", decode_context_, std::move(extension), &errors_);
+  auto config =
+      filter_->ParseOverrideConfig("", decode_context_, extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -1277,18 +1310,18 @@ class XdsStatefulSessionFilterConfigTest
     : public XdsStatefulSessionFilterTest,
       public ::testing::WithParamInterface<bool> {
  protected:
-  std::optional<XdsHttpFilterImpl::FilterConfig> GenerateConfig(
+  RefCountedPtr<const FilterConfig> GenerateConfig(
       StatefulSession stateful_session) {
     if (GetParam()) {
       StatefulSessionPerRoute stateful_session_per_route;
       *stateful_session_per_route.mutable_stateful_session() = stateful_session;
       XdsExtension extension = MakeXdsExtension(stateful_session_per_route);
-      return filter_->GenerateFilterConfigOverride(
-          "", decode_context_, std::move(extension), &errors_);
+      return filter_->ParseOverrideConfig("", decode_context_, extension,
+                                          &errors_);
     }
     XdsExtension extension = MakeXdsExtension(stateful_session);
-    return filter_->GenerateFilterConfig("", decode_context_,
-                                         std::move(extension), &errors_);
+    return filter_->ParseTopLevelConfig("", decode_context_, extension,
+                                        &errors_);
   }
 
   std::string FieldPrefix() {
@@ -1311,13 +1344,9 @@ TEST_P(XdsStatefulSessionFilterConfigTest, MinimalConfig) {
   auto config = GenerateConfig(stateful_session);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
-  ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name,
-            GetParam() ? filter_->OverrideConfigProtoName()
-                       : filter_->ConfigProtoName());
-  EXPECT_EQ(config->config,
-            Json::FromObject({{"name", Json::FromString("foo")}}))
-      << JsonDump(config->config);
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->type(), StatefulSessionFilter::Config::Type());
+  EXPECT_EQ(config->ToString(), "{cookie_name=\"foo\"}");
 }
 
 TEST_P(XdsStatefulSessionFilterConfigTest, PathAndTtl) {
@@ -1332,27 +1361,19 @@ TEST_P(XdsStatefulSessionFilterConfigTest, PathAndTtl) {
   auto config = GenerateConfig(stateful_session);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
-  ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name,
-            GetParam() ? filter_->OverrideConfigProtoName()
-                       : filter_->ConfigProtoName());
-  EXPECT_EQ(config->config, Json::FromObject({
-                                {"name", Json::FromString("foo")},
-                                {"path", Json::FromString("/service/method")},
-                                {"ttl", Json::FromString("3.000000000s")},
-                            }))
-      << JsonDump(config->config);
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->type(), StatefulSessionFilter::Config::Type());
+  EXPECT_EQ(config->ToString(),
+            "{cookie_name=\"foo\", path=\"/service/method\", ttl=3000ms}");
 }
 
 TEST_P(XdsStatefulSessionFilterConfigTest, SessionStateUnset) {
   auto config = GenerateConfig(StatefulSession());
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
-  ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name,
-            GetParam() ? filter_->OverrideConfigProtoName()
-                       : filter_->ConfigProtoName());
-  EXPECT_EQ(config->config, Json::FromObject({})) << JsonDump(config->config);
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->type(), StatefulSessionFilter::Config::Type());
+  EXPECT_EQ(config->ToString(), "{}");
 }
 
 TEST_P(XdsStatefulSessionFilterConfigTest, CookieNotPresent) {
@@ -1494,66 +1515,56 @@ TEST_F(XdsGcpAuthnFilterTest, Accessors) {
   EXPECT_EQ(filter_->ConfigProtoName(),
             "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig");
   EXPECT_EQ(filter_->OverrideConfigProtoName(), "");
-  EXPECT_EQ(filter_->channel_filter(), &GcpAuthenticationFilter::kFilter);
+  EXPECT_EQ(filter_->channel_filter(), &GcpAuthenticationFilter::kFilterVtable);
   EXPECT_TRUE(filter_->IsSupportedOnClients());
   EXPECT_FALSE(filter_->IsSupportedOnServers());
   EXPECT_FALSE(filter_->IsTerminalFilter());
 }
 
-TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigEmpty) {
+TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigEmpty) {
   XdsExtension extension = MakeXdsExtension(GcpAuthnFilterConfig());
-  auto config = filter_->GenerateFilterConfig("enterprise", decode_context_,
-                                              std::move(extension), &errors_);
+  auto config = filter_->ParseTopLevelConfig("enterprise", decode_context_,
+                                             extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
-  ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
-  EXPECT_EQ(config->config,
-            Json::FromObject(
-                {{"filter_instance_name", Json::FromString("enterprise")}}))
-      << JsonDump(config->config);
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->type(), GcpAuthenticationFilter::Config::Type());
+  EXPECT_EQ(config->ToString(),
+            "{instance_name=\"enterprise\", cache_size=10}");
 }
 
-TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigCacheSizeDefault) {
+TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigCacheSizeDefault) {
   GcpAuthnFilterConfig proto;
   proto.mutable_cache_config();
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config = filter_->GenerateFilterConfig("yorktown", decode_context_,
-                                              std::move(extension), &errors_);
+  auto config = filter_->ParseTopLevelConfig("yorktown", decode_context_,
+                                             extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
-  ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
-  EXPECT_EQ(
-      config->config,
-      Json::FromObject({{"filter_instance_name", Json::FromString("yorktown")},
-                        {"cache_size", Json::FromNumber(10)}}))
-      << JsonDump(config->config);
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->type(), GcpAuthenticationFilter::Config::Type());
+  EXPECT_EQ(config->ToString(), "{instance_name=\"yorktown\", cache_size=10}");
 }
 
-TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigCacheSize) {
+TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigCacheSize) {
   GcpAuthnFilterConfig proto;
   proto.mutable_cache_config()->mutable_cache_size()->set_value(6);
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config = filter_->GenerateFilterConfig("hornet", decode_context_,
-                                              std::move(extension), &errors_);
+  auto config = filter_->ParseTopLevelConfig("hornet", decode_context_,
+                                             extension, &errors_);
   ASSERT_TRUE(errors_.ok()) << errors_.status(
       absl::StatusCode::kInvalidArgument, "unexpected errors");
-  ASSERT_TRUE(config.has_value());
-  EXPECT_EQ(config->config_proto_type_name, filter_->ConfigProtoName());
-  EXPECT_EQ(
-      config->config,
-      Json::FromObject({{"filter_instance_name", Json::FromString("hornet")},
-                        {"cache_size", Json::FromNumber(6)}}))
-      << JsonDump(config->config);
+  ASSERT_NE(config, nullptr);
+  EXPECT_EQ(config->type(), GcpAuthenticationFilter::Config::Type());
+  EXPECT_EQ(config->ToString(), "{instance_name=\"hornet\", cache_size=6}");
 }
 
-TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigCacheSizeZero) {
+TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigCacheSizeZero) {
   GcpAuthnFilterConfig proto;
   proto.mutable_cache_config()->mutable_cache_size()->set_value(0);
   XdsExtension extension = MakeXdsExtension(proto);
-  auto config = filter_->GenerateFilterConfig("ranger", decode_context_,
-                                              std::move(extension), &errors_);
+  auto config = filter_->ParseTopLevelConfig("ranger", decode_context_,
+                                             extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -1566,11 +1577,11 @@ TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigCacheSizeZero) {
       << status;
 }
 
-TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigTypedStruct) {
+TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigTypedStruct) {
   XdsExtension extension = MakeXdsExtension(GcpAuthnFilterConfig());
   extension.value = Json();
-  auto config = filter_->GenerateFilterConfig("lexington", decode_context_,
-                                              std::move(extension), &errors_);
+  auto config = filter_->ParseTopLevelConfig("lexington", decode_context_,
+                                             extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -1582,12 +1593,12 @@ TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigTypedStruct) {
       << status;
 }
 
-TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigUnparseable) {
+TEST_F(XdsGcpAuthnFilterTest, ParseTopLevelConfigUnparseable) {
   XdsExtension extension = MakeXdsExtension(GcpAuthnFilterConfig());
   std::string serialized_resource("\0", 1);
   extension.value = absl::string_view(serialized_resource);
-  auto config = filter_->GenerateFilterConfig("saratoga", decode_context_,
-                                              std::move(extension), &errors_);
+  auto config = filter_->ParseTopLevelConfig("saratoga", decode_context_,
+                                             extension, &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -1599,10 +1610,10 @@ TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigUnparseable) {
       << status;
 }
 
-TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigOverride) {
+TEST_F(XdsGcpAuthnFilterTest, ParseOverrideConfig) {
   XdsExtension extension = MakeXdsExtension(GcpAuthnFilterConfig());
-  auto config = filter_->GenerateFilterConfigOverride(
-      "wasp", decode_context_, std::move(extension), &errors_);
+  auto config = filter_->ParseOverrideConfig("wasp", decode_context_, extension,
+                                             &errors_);
   absl::Status status = errors_.status(absl::StatusCode::kInvalidArgument,
                                        "errors validating filter config");
   EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
@@ -1612,24 +1623,6 @@ TEST_F(XdsGcpAuthnFilterTest, GenerateFilterConfigOverride) {
             "envoy.extensions.filters.http.gcp_authn.v3.GcpAuthnFilterConfig] "
             "error:GCP auth filter does not support config override]")
       << status;
-}
-
-TEST_F(XdsGcpAuthnFilterTest, GenerateMethodConfig) {
-  XdsHttpFilterImpl::FilterConfig config;
-  config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
-  auto service_config = filter_->GenerateMethodConfig(config, nullptr);
-  ASSERT_TRUE(service_config.ok()) << service_config.status();
-  EXPECT_EQ(service_config->service_config_field_name, "");
-  EXPECT_EQ(service_config->element, "");
-}
-
-TEST_F(XdsGcpAuthnFilterTest, GenerateServiceConfig) {
-  XdsHttpFilterImpl::FilterConfig config;
-  config.config = Json::FromObject({{"foo", Json::FromString("bar")}});
-  auto service_config = filter_->GenerateServiceConfig(config);
-  ASSERT_TRUE(service_config.ok()) << service_config.status();
-  EXPECT_EQ(service_config->service_config_field_name, "gcp_authentication");
-  EXPECT_EQ(service_config->element, "{\"foo\":\"bar\"}");
 }
 
 }  // namespace
