@@ -22,6 +22,7 @@ import unittest
 
 import grpc
 from grpc.experimental import aio
+from typeguard import suppress_type_checks
 
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
@@ -133,12 +134,13 @@ class TestChannelArgument(AioTestBase):
 
     async def test_invalid_client_args(self):
         for invalid_arg in _INVALID_TEST_CHANNEL_ARGS:
-            self.assertRaises(
-                (ValueError, TypeError),
-                aio.insecure_channel,
-                "[::]:0",
-                options=invalid_arg,
-            )
+            with suppress_type_checks():
+                self.assertRaises(
+                    (ValueError, TypeError),
+                    aio.insecure_channel,
+                    "[::]:0",
+                    options=invalid_arg,
+                )
 
     async def test_max_message_length_applied(self):
         address, server = await start_test_server()

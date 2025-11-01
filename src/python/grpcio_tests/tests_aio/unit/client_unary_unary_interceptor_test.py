@@ -17,6 +17,7 @@ import unittest
 
 import grpc
 from grpc.experimental import aio
+from typeguard import suppress_type_checks
 
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
@@ -43,11 +44,13 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
         await self._server.stop(None)
 
     def test_invalid_interceptor(self):
-        class InvalidInterceptor:
-            """Just an invalid Interceptor"""
+        with suppress_type_checks():
 
-        with self.assertRaises(ValueError):
-            aio.insecure_channel("", interceptors=[InvalidInterceptor()])
+            class InvalidInterceptor:
+                """Just an invalid Interceptor"""
+
+            with self.assertRaises(ValueError):
+                aio.insecure_channel("", interceptors=[InvalidInterceptor()])
 
     async def test_executed_right_order(self):
         interceptors_executed = []
