@@ -126,7 +126,7 @@ class _BaseMultiCallable:
         if not isinstance(metadata, Metadata) and isinstance(
             metadata, Sequence
         ):
-            metadata = Metadata.from_tuple(tuple(metadata))
+            metadata = Metadata.from_tuple_or_cls(tuple(metadata))
         if compression:
             metadata = Metadata(
                 *_compression.augment_metadata(metadata, compression)
@@ -327,7 +327,7 @@ class Channel(_base_channel.Channel):
         self,
         target: str,
         options: ChannelArgumentType,
-        credentials: Optional[grpc.ChannelCredentials],
+        credentials: Optional[cygrpc.ChannelCredentials],
         compression: Optional[grpc.Compression],
         interceptors: Optional[Sequence[ClientInterceptor]],
     ):
