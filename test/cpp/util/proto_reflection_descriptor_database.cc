@@ -18,6 +18,7 @@
 
 #include "test/cpp/util/proto_reflection_descriptor_database.h"
 
+#include <string>
 #include <vector>
 
 #include "src/core/util/crash.h"
@@ -66,7 +67,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileByName(
     return true;
   }
 
-  if (known_files_.find(filename) != known_files_.end()) {
+  if (known_files_.find(std::string(filename)) != known_files_.end()) {
     return false;
   }
 
@@ -109,7 +110,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbol(
     return true;
   }
 
-  if (missing_symbols_.find(symbol_name) != missing_symbols_.end()) {
+  if (missing_symbols_.find(std::string(symbol_name)) != missing_symbols_.end()) {
     return false;
   }
 
@@ -128,7 +129,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbol(
              ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
     const ErrorResponse& error = response.error_response();
     if (error.error_code() == StatusCode::NOT_FOUND) {
-      missing_symbols_.insert(symbol_name);
+      missing_symbols_.emplace(symbol_name);
       LOG(INFO) << "NOT_FOUND from server for FindFileContainingSymbol("
                 << symbol_name << ")";
     } else {
@@ -154,9 +155,9 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingExtension(
     return true;
   }
 
-  if (missing_extensions_.find(containing_type) != missing_extensions_.end() &&
-      missing_extensions_[containing_type].find(field_number) !=
-          missing_extensions_[containing_type].end()) {
+  if (missing_extensions_.find(std::string(containing_type)) != missing_extensions_.end() &&
+      missing_extensions_[std::string(containing_type)].find(field_number) !=
+          missing_extensions_[std::string(containing_type)].end()) {
     LOG(INFO) << "nested map.";
     return false;
   }
@@ -206,9 +207,9 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingExtension(
 
 bool ProtoReflectionDescriptorDatabase::FindAllExtensionNumbers(
     const string& extendee_type, std::vector<int>* output) {
-  if (cached_extension_numbers_.find(extendee_type) !=
+  if (cached_extension_numbers_.find(std::string(extendee_type)) !=
       cached_extension_numbers_.end()) {
-    *output = cached_extension_numbers_[extendee_type];
+    *output = cached_extension_numbers_[std::string(extendee_type)];
     return true;
   }
 
@@ -225,7 +226,7 @@ bool ProtoReflectionDescriptorDatabase::FindAllExtensionNumbers(
           kAllExtensionNumbersResponse) {
     auto number = response.all_extension_numbers_response().extension_number();
     *output = std::vector<int>(number.begin(), number.end());
-    cached_extension_numbers_[extendee_type] = *output;
+    cached_extension_numbers_[std::string(extendee_type)] = *output;
     return true;
   } else if (response.message_response_case() ==
              ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
