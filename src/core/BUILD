@@ -3757,6 +3757,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "filter_chain",
+    hdrs = [
+        "filter/filter_chain.h",
+    ],
+    deps = [
+        "filter_args",
+        "interception_chain",
+        "ref_counted",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "fused_filters",
     srcs = [
         "filter/fused_filters.cc",
@@ -3846,6 +3859,7 @@ grpc_cc_library(
         "blackboard",
         "channel_fwd",
         "client_channel_internal_header",
+        "filter_chain",
         "grpc_check",
         "grpc_service_config",
         "interception_chain",
@@ -5451,11 +5465,9 @@ grpc_cc_library(
     name = "grpc_fault_injection_filter",
     srcs = [
         "ext/filters/fault_injection/fault_injection_filter.cc",
-        "ext/filters/fault_injection/fault_injection_service_config_parser.cc",
     ],
     hdrs = [
         "ext/filters/fault_injection/fault_injection_filter.h",
-        "ext/filters/fault_injection/fault_injection_service_config_parser.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -5471,18 +5483,12 @@ grpc_cc_library(
         "channel_args",
         "channel_fwd",
         "context",
-        "grpc_service_config",
-        "json",
-        "json_args",
-        "json_object_loader",
+        "filter_args",
         "metadata_batch",
-        "service_config_parser",
         "sleep",
         "sync",
         "time",
         "try_seq",
-        "validation_errors",
-        "//:config",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_public_hdrs",
@@ -5536,11 +5542,9 @@ grpc_cc_library(
     name = "grpc_stateful_session_filter",
     srcs = [
         "ext/filters/stateful_session/stateful_session_filter.cc",
-        "ext/filters/stateful_session/stateful_session_service_config_parser.cc",
     ],
     hdrs = [
         "ext/filters/stateful_session/stateful_session_filter.h",
-        "ext/filters/stateful_session/stateful_session_service_config_parser.h",
     ],
     external_deps = [
         "absl/status:statusor",
@@ -5555,20 +5559,15 @@ grpc_cc_library(
         "grpc_check",
         "grpc_resolver_xds_attributes",
         "grpc_service_config",
-        "json",
-        "json_args",
-        "json_object_loader",
         "latent_see",
         "map",
         "metadata_batch",
         "pipe",
         "ref_counted_string",
-        "service_config_parser",
         "slice",
         "time",
         "unique_type_name",
         "validation_errors",
-        "//:config",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_trace",
@@ -5579,11 +5578,9 @@ grpc_cc_library(
     name = "gcp_authentication_filter",
     srcs = [
         "ext/filters/gcp_authentication/gcp_authentication_filter.cc",
-        "ext/filters/gcp_authentication/gcp_authentication_service_config_parser.cc",
     ],
     hdrs = [
         "ext/filters/gcp_authentication/gcp_authentication_filter.h",
-        "ext/filters/gcp_authentication/gcp_authentication_service_config_parser.h",
     ],
     external_deps = [
         "absl/status",
@@ -5599,16 +5596,10 @@ grpc_cc_library(
         "gcp_service_account_identity_credentials",
         "grpc_check",
         "grpc_resolver_xds_attributes",
-        "grpc_service_config",
-        "json",
-        "json_args",
-        "json_object_loader",
         "lru_cache",
-        "service_config_parser",
         "sync",
         "validation_errors",
         "xds_config",
-        "//:config",
         "//:gpr",
         "//:grpc_base",
         "//:grpc_security_base",
@@ -6007,6 +5998,9 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "xds_http_filter",
+    srcs = [
+        "xds/grpc/xds_http_filter.cc",
+    ],
     hdrs = [
         "xds/grpc/xds_http_filter.h",
     ],
@@ -6020,6 +6014,7 @@ grpc_cc_library(
         "blackboard",
         "channel_args",
         "channel_fwd",
+        "filter_chain",
         "interception_chain",
         "json",
         "json_writer",
@@ -6067,6 +6062,7 @@ grpc_cc_library(
     ],
     tags = ["nofixdeps"],
     deps = [
+        "filter_args",
         "match",
         "resolved_address",
         "time",
