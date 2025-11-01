@@ -233,7 +233,7 @@ def build_all_images_for_release(lang, release):
     build_jobs = []
 
     env = {}
-    # If we not using current tree or the sibling for grpc stack, do checkout.
+    # If we're not using current tree or the sibling for grpc stack, do checkout.
     stack_base = ""
     if args.git_checkout:
         stack_base = checkout_grpc_stack(lang, release)

@@ -17,7 +17,7 @@ set -ex
 
 # ARGUMENTS
 # $1 - python version in "3.X.Y" format
-# $2 - python tags (as in manylinx images) e.g. "/opt/python/cp37-cp37m"
+# $2 - python tags (as in manylinux images) e.g. "/opt/python/cp37-cp37m"
 PYTHON_VERSION="$1"
 PYTHON_RELEASE="$2"
 PYTHON_PREFIX="$3"
