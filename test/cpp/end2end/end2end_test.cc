@@ -1170,11 +1170,12 @@ TEST_P(End2endTest, DiffPackageServices) {
 
 template <class ServiceType>
 void CancelRpc(ClientContext* context, int delay_us, ServiceType* service) {
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                               gpr_time_from_micros(delay_us, GPR_TIMESPAN)));
-  while (!service->signal_client()) {
-  }
+  // Wait until the server signals that the RPC has actually started.
+  service->WaitUntilRpcStarted();
+
+  // Perform client-side cancellation and notify the server-side waiter.
   context->TryCancel();
+  service->NotifyCancellationCheck();
 }
 
 TEST_P(End2endTest, CancelRpcBeforeStart) {
