@@ -884,8 +884,8 @@ TEST_F(CredentialsTest, TestComputeEngineCredsFailure) {
       "GoogleComputeEngineTokenFetcherCredentials{"
       "OAuth2TokenFetcherCredentials}";
   auto state = RequestMetadataState::NewInstance(
-      // TODO(roth): This should return UNAUTHENTICATED.
-      absl::UnavailableError("error parsing oauth2 token"), {});
+      absl::UnauthenticatedError("HTTP token fetch failed with status 403"),
+      {});
   grpc_call_credentials* creds =
       grpc_google_compute_engine_credentials_create(nullptr);
   HttpRequest::SetOverride(compute_engine_httpcli_get_failure_override,
@@ -905,8 +905,8 @@ TEST_F(CredentialsTest, TestComputeEngineCredsWithAltsFailure) {
       "GoogleComputeEngineTokenFetcherCredentials{"
       "OAuth2TokenFetcherCredentials}";
   auto state = RequestMetadataState::NewInstance(
-      // TODO(roth): This should return UNAUTHENTICATED.
-      absl::UnavailableError("error parsing oauth2 token"), {});
+      absl::UnauthenticatedError("HTTP token fetch failed with status 403"),
+      {});
   grpc_google_compute_engine_credentials_options options;
   options.alts_hard_bound = true;
   grpc_call_credentials* creds =
@@ -1000,8 +1000,8 @@ TEST_F(CredentialsTest, TestRefreshTokenCredsFailure) {
       "GoogleRefreshToken{ClientID:32555999999.apps.googleusercontent.com,"
       "OAuth2TokenFetcherCredentials}";
   auto state = RequestMetadataState::NewInstance(
-      // TODO(roth): This should return UNAUTHENTICATED.
-      absl::UnavailableError("error parsing oauth2 token"), {});
+      absl::UnauthenticatedError("HTTP token fetch failed with status 403"),
+      {});
   grpc_call_credentials* creds = grpc_google_refresh_token_credentials_create(
       test_refresh_token_str, nullptr);
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
@@ -1252,9 +1252,8 @@ TEST_F(CredentialsTest, TestStsCredsTokenFileNotFound) {
   GRPC_CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
 
   auto state = RequestMetadataState::NewInstance(
-      // TODO(roth): This should return UNAVAILABLE.
-      absl::InternalError(
-          "Failed to load file: /some/completely/random/path due to "
+      absl::UnavailableError(
+          "INTERNAL:Failed to load file: /some/completely/random/path due to "
           "error(fdopen): No such file or directory"),
       {});
   HttpRequest::SetOverride(httpcli_get_should_not_be_called,
@@ -1324,9 +1323,9 @@ TEST_F(CredentialsTest, TestStsCredsLoadTokenFailure) {
       "token-exchange,Authority:foo.com:5555,OAuth2TokenFetcherCredentials}";
   ExecCtx exec_ctx;
   auto state = RequestMetadataState::NewInstance(
-      // TODO(roth): This should return UNAVAILABLE.
-      absl::InternalError("Failed to load file: invalid_path due to "
-                          "error(fdopen): No such file or directory"),
+      absl::UnavailableError(
+          "INTERNAL:Failed to load file: invalid_path due to "
+          "error(fdopen): No such file or directory"),
       {});
   char* test_signed_jwt_path = write_tmp_jwt_file(test_signed_jwt);
   grpc_sts_credentials_options options = {
@@ -1360,8 +1359,8 @@ TEST_F(CredentialsTest, TestStsCredsHttpFailure) {
       "token-exchange,Authority:foo.com:5555,OAuth2TokenFetcherCredentials}";
   ExecCtx exec_ctx;
   auto state = RequestMetadataState::NewInstance(
-      // TODO(roth): This should return UNAUTHENTICATED.
-      absl::UnavailableError("error parsing oauth2 token"), {});
+      absl::UnauthenticatedError("HTTP token fetch failed with status 403"),
+      {});
   char* test_signed_jwt_path = write_tmp_jwt_file(test_signed_jwt);
   grpc_sts_credentials_options valid_options = {
       test_sts_endpoint_url,       // sts_endpoint_url
@@ -4515,7 +4514,7 @@ TEST_F(GcpServiceAccountIdentityCredentialsTest, FailsWithHttpStatus429) {
       MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
   GRPC_CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
-      absl::UnavailableError("JWT fetch failed with status 429"), "");
+      absl::UnavailableError("HTTP token fetch failed with status 429"), "");
   state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
@@ -4532,7 +4531,8 @@ TEST_F(GcpServiceAccountIdentityCredentialsTest, FailsWithHttpStatus400) {
       MakeRefCounted<GcpServiceAccountIdentityCallCredentials>(g_audience);
   GRPC_CHECK_EQ(creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   auto state = RequestMetadataState::NewInstance(
-      absl::UnauthenticatedError("JWT fetch failed with status 400"), "");
+      absl::UnauthenticatedError("HTTP token fetch failed with status 400"),
+      "");
   state->RunRequestMetadataTest(creds.get(), kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
