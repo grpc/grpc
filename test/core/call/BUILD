@@ -207,7 +207,9 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:channelz",
         "//src/core:call_filters",
+        "//src/proto/grpc/channelz/v2:property_list_cc_proto",
         "//test/core/promise:poll_matcher",
     ],
 )

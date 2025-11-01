@@ -75,6 +75,9 @@ class GcpAuthenticationFilter
     static inline const NoInterceptor OnServerToClientMessage;
     static inline const NoInterceptor OnServerTrailingMetadata;
     static inline const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList();
+    }
   };
 
  private:

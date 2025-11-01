@@ -394,7 +394,14 @@ class Party : public Activity, private Wakeable {
   void ToJson(absl::AnyInvocable<void(Json::Object)>);
 
   // Export the party to channelz.
-  void ExportToChannelz(std::string name, channelz::DataSink sink);
+  // The final argument is called whilst the party is locked, and so can be used
+  // to export contextual data alongside the party.
+  void ExportToChannelz(
+      std::string name, channelz::DataSink sink,
+      absl::AnyInvocable<channelz::PropertyList()> export_context = []() {
+        // The default implementation does nothing.
+        return channelz::PropertyList();
+      });
 
  protected:
   friend class Arena;

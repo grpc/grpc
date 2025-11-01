@@ -630,6 +630,8 @@ struct GrpcTarPit {
   static absl::string_view DisplayValue(Empty) { return "tarpit"; }
 };
 
+bool IsMetadataKeyAllowedInDebugOutput(absl::string_view key);
+
 namespace metadata_detail {
 
 // Build a key/value formatted debug string.
@@ -646,7 +648,6 @@ class DebugStringBuilder {
   std::string TakeOutput() { return std::move(out_); }
 
  private:
-  bool IsAllowListed(absl::string_view key) const;
   void Add(absl::string_view key, absl::string_view value);
   std::string out_;
 };

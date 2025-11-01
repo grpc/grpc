@@ -82,6 +82,10 @@ class ServerCallTracerFilter
     static inline const NoInterceptor OnClientToServerMessage;
     static inline const NoInterceptor OnClientToServerHalfClose;
     static inline const NoInterceptor OnServerToClientMessage;
+
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList();
+    }
   };
 };
 

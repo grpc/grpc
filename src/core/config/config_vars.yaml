@@ -134,6 +134,12 @@
   description: "EXPERIMENTAL: \
     If non-zero, extend the lifetime of channelz nodes past the underlying object lifetime, up to this many nodes. \
     The value may be adjusted slightly to account for implementation limits."
+- name: channelz_call_tracer
+  type: bool
+  default: false
+  fuzz: true
+  description: "EXPERIMENTAL: \
+    If true, channelz will allow inspecting calls as well as channels."
 - name: experimental_target_memory_pressure
   type: double
   default: 0.95

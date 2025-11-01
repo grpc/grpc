@@ -43,6 +43,7 @@ class GPR_DLL ConfigVars {
     absl::optional<bool> use_system_roots_over_language_callback;
     absl::optional<bool> not_use_system_ssl_roots;
     absl::optional<bool> cpp_experimental_disable_reflection;
+    absl::optional<bool> channelz_call_tracer;
     absl::optional<std::string> dns_resolver;
     absl::optional<std::string> verbosity;
     absl::optional<std::string> poll_strategy;
@@ -118,6 +119,9 @@ class GPR_DLL ConfigVars {
   int32_t ChannelzMaxOrphanedNodes() const {
     return channelz_max_orphaned_nodes_;
   }
+  // EXPERIMENTAL: If true, channelz will allow inspecting calls as well as
+  // channels.
+  bool ChannelzCallTracer() const { return channelz_call_tracer_; }
   // EXPERIMENTAL: The target pressure for the memory quota pressure controller.
   // This is a value between 0 and 1.
   double ExperimentalTargetMemoryPressure() const {
@@ -143,6 +147,7 @@ class GPR_DLL ConfigVars {
   bool use_system_roots_over_language_callback_;
   bool not_use_system_ssl_roots_;
   bool cpp_experimental_disable_reflection_;
+  bool channelz_call_tracer_;
   std::string dns_resolver_;
   std::string verbosity_;
   std::string poll_strategy_;

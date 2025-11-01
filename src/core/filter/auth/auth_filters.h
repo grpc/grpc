@@ -117,6 +117,9 @@ class ClientAuthFilter final : public ImplementChannelFilter<ClientAuthFilter> {
     static const inline NoInterceptor OnServerToClientMessage;
     static const inline NoInterceptor OnServerTrailingMetadata;
     static const inline NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList();
+    }
   };
 
  private:
@@ -186,6 +189,9 @@ class ServerAuthFilter final : public ImplementChannelFilter<ServerAuthFilter> {
     static inline const NoInterceptor OnServerToClientMessage;
     static inline const NoInterceptor OnServerTrailingMetadata;
     static inline const NoInterceptor OnFinalize;
+    channelz::PropertyList ChannelzProperties() {
+      return channelz::PropertyList();
+    }
   };
 
  private:
