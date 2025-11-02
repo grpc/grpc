@@ -32,6 +32,8 @@
 #include "opencensus/stats/testing/test_utils.h"
 #include "opencensus/tags/tag_map.h"
 #include "opencensus/tags/with_tag_map.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
@@ -50,6 +52,87 @@ using ::opencensus::stats::View;
 using ::opencensus::stats::ViewDescriptor;
 using ::opencensus::stats::testing::TestUtils;
 using ::opencensus::tags::WithTagMap;
+
+namespace {
+
+absl::Duration DefaultTimeout() {
+  // Scale timeout by slowdown factor for sanitizers/slow CI
+  return absl::Milliseconds(static_cast<int64_t>(10000 * grpc_test_slowdown_factor()));
+}
+
+const absl::Duration kPollInterval = absl::Milliseconds(10);
+
+template <typename KeyContainer>
+bool KeysEqual(const KeyContainer& actual, const std::vector<std::string>& expected) {
+  if (actual.size() != expected.size()) return false;
+  auto it_a = actual.begin();
+  auto it_b = expected.begin();
+  for (; it_a != actual.end(); ++it_a, ++it_b) {
+    if (std::string(*it_a) != *it_b) return false;
+  }
+  return true;
+}
+
+// Wait until the view's int_data contains the given key with value == expected.
+bool WaitForIntValueEq(View& view, const std::vector<std::string>& key,
+                       int64_t expected, absl::Duration timeout = DefaultTimeout()) {
+  const absl::Time deadline = absl::Now() + timeout;
+  while (true) {
+    const auto data = view.GetData().int_data();
+    for (const auto& kv : data) {
+      if (KeysEqual(kv.first, key) && kv.second == expected) return true;
+    }
+    if (absl::Now() >= deadline) return false;
+    TestUtils::Flush();
+    absl::SleepFor(kPollInterval);
+  }
+}
+
+// Wait until the view's int_data contains the given key with value >= min_value.
+bool WaitForIntAtLeast(View& view, const std::vector<std::string>& key,
+                       int64_t min_value, absl::Duration timeout = DefaultTimeout()) {
+  const absl::Time deadline = absl::Now() + timeout;
+  while (true) {
+    const auto data = view.GetData().int_data();
+    for (const auto& kv : data) {
+      if (KeysEqual(kv.first, key) && kv.second >= min_value) return true;
+    }
+    if (absl::Now() >= deadline) return false;
+    TestUtils::Flush();
+    absl::SleepFor(kPollInterval);
+  }
+}
+
+// Wait until int_data() has at least expected_size entries.
+bool WaitForIntEntriesSizeAtLeast(View& view, size_t expected_size,
+                                  absl::Duration timeout = DefaultTimeout()) {
+  const absl::Time deadline = absl::Now() + timeout;
+  while (true) {
+    const auto data = view.GetData().int_data();
+    if (data.size() >= expected_size) return true;
+    if (absl::Now() >= deadline) return false;
+    TestUtils::Flush();
+    absl::SleepFor(kPollInterval);
+  }
+}
+
+// Wait until the view's distribution_data contains the given key with count >= expected_count.
+bool WaitForDistCountAtLeast(View& view, const std::vector<std::string>& key,
+                             int64_t expected_count,
+                             absl::Duration timeout = DefaultTimeout()) {
+  const absl::Time deadline = absl::Now() + timeout;
+  while (true) {
+    const auto data = view.GetData().distribution_data();
+    for (const auto& kv : data) {
+      if (KeysEqual(kv.first, key) && kv.second.count() >= expected_count) return true;
+    }
+    if (absl::Now() >= deadline) return false;
+    TestUtils::Flush();
+    absl::SleepFor(kPollInterval);
+  }
+}
+
+}  // namespace
 
 TEST_F(StatsPluginEnd2EndTest, ErrorCount) {
   const auto client_method_descriptor =
@@ -97,8 +180,11 @@ TEST_F(StatsPluginEnd2EndTest, ErrorCount) {
       grpc::Status status = stub_->Echo(&context, request, &response);
     }
   }
-  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
-  TestUtils::Flush();
+  ASSERT_TRUE(WaitForIntValueEq(client_method_view,
+                                {client_method_name_, TEST_TAG_VALUE}, 17));
+  ASSERT_TRUE(WaitForIntValueEq(server_method_view, {server_method_name_}, 17));
+  ASSERT_TRUE(WaitForIntEntriesSizeAtLeast(client_status_view, 17));
+  ASSERT_TRUE(WaitForIntEntriesSizeAtLeast(server_status_view, 17));
 
   // Client side views can be tagged with custom tags.
   EXPECT_THAT(
@@ -184,8 +270,14 @@ TEST_F(StatsPluginEnd2EndTest, RequestReceivedBytesPerRpc) {
     ASSERT_TRUE(status.ok());
     EXPECT_EQ("foo", response.message());
   }
-  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
-  TestUtils::Flush();
+  ASSERT_TRUE(WaitForDistCountAtLeast(client_received_bytes_per_rpc_view,
+                                      {client_method_name_}, 1));
+  ASSERT_TRUE(WaitForDistCountAtLeast(client_sent_bytes_per_rpc_view,
+                                      {client_method_name_}, 1));
+  ASSERT_TRUE(WaitForDistCountAtLeast(server_received_bytes_per_rpc_view,
+                                      {server_method_name_}, 1));
+  ASSERT_TRUE(WaitForDistCountAtLeast(server_sent_bytes_per_rpc_view,
+                                      {server_method_name_}, 1));
 
   EXPECT_THAT(client_received_bytes_per_rpc_view.GetData().distribution_data(),
               ::testing::UnorderedElementsAre(::testing::Pair(
@@ -234,8 +326,14 @@ TEST_F(StatsPluginEnd2EndTest, Latency) {
   // entire time spent making the RPC.
   const double max_time = absl::ToDoubleMilliseconds(absl::Now() - start_time);
 
-  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
-  TestUtils::Flush();
+  ASSERT_TRUE(WaitForDistCountAtLeast(client_latency_view,
+                                      {client_method_name_}, 1));
+  ASSERT_TRUE(WaitForDistCountAtLeast(client_server_latency_view,
+                                      {client_method_name_}, 1));
+  ASSERT_TRUE(WaitForDistCountAtLeast(client_api_latency_view,
+                                      {client_method_name_, "OK"}, 1));
+  ASSERT_TRUE(WaitForDistCountAtLeast(server_server_latency_view,
+                                      {server_method_name_}, 1));
 
   EXPECT_THAT(
       client_latency_view.GetData().distribution_data(),
@@ -305,8 +403,10 @@ TEST_F(StatsPluginEnd2EndTest, StartedRpcs) {
       ASSERT_TRUE(status.ok());
       EXPECT_EQ("foo", response.message());
     }
-    absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
-    TestUtils::Flush();
+    ASSERT_TRUE(WaitForIntValueEq(client_started_rpcs_view,
+                                  {client_method_name_}, i + 1));
+    ASSERT_TRUE(WaitForIntValueEq(server_started_rpcs_view,
+                                  {server_method_name_}, i + 1));
 
     EXPECT_THAT(client_started_rpcs_view.GetData().int_data(),
                 ::testing::UnorderedElementsAre(::testing::Pair(
@@ -320,8 +420,12 @@ TEST_F(StatsPluginEnd2EndTest, StartedRpcs) {
   {
     ClientContext ctx;
     auto stream = stub_->BidiStream(&ctx);
-    absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
-    TestUtils::Flush();
+    ASSERT_TRUE(WaitForIntAtLeast(
+        client_started_rpcs_view,
+        {"grpc.testing.EchoTestService/BidiStream"}, 1));
+    ASSERT_TRUE(WaitForIntAtLeast(
+        server_started_rpcs_view,
+        {"grpc.testing.EchoTestService/BidiStream"}, 1));
     EXPECT_THAT(
         client_started_rpcs_view.GetData().int_data(),
         ::testing::Contains(::testing::Pair(
@@ -334,8 +438,6 @@ TEST_F(StatsPluginEnd2EndTest, StartedRpcs) {
             1)));
     ctx.TryCancel();
   }
-  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
-  TestUtils::Flush();
 }
 
 TEST_F(StatsPluginEnd2EndTest, CompletedRpcs) {
@@ -353,8 +455,10 @@ TEST_F(StatsPluginEnd2EndTest, CompletedRpcs) {
       ASSERT_TRUE(status.ok());
       EXPECT_EQ("foo", response.message());
     }
-    absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
-    TestUtils::Flush();
+    ASSERT_TRUE(WaitForIntValueEq(client_completed_rpcs_view,
+                                  {client_method_name_, "OK"}, i + 1));
+    ASSERT_TRUE(WaitForIntValueEq(server_completed_rpcs_view,
+                                  {server_method_name_, "OK"}, i + 1));
 
     EXPECT_THAT(client_completed_rpcs_view.GetData().int_data(),
                 ::testing::UnorderedElementsAre(::testing::Pair(
@@ -370,8 +474,10 @@ TEST_F(StatsPluginEnd2EndTest, CompletedRpcs) {
     auto stream = stub_->BidiStream(&ctx);
     ctx.TryCancel();
   }
-  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
-  TestUtils::Flush();
+  ASSERT_TRUE(WaitForIntAtLeast(client_completed_rpcs_view,
+                                {"grpc.testing.EchoTestService/BidiStream",
+                                 "CANCELLED"},
+                                1));
   EXPECT_THAT(client_completed_rpcs_view.GetData().int_data(),
               ::testing::Contains(::testing::Pair(
                   ::testing::ElementsAre(
@@ -401,8 +507,14 @@ TEST_F(StatsPluginEnd2EndTest, RequestReceivedMessagesPerRpc) {
       ASSERT_TRUE(status.ok());
       EXPECT_EQ("foo", response.message());
     }
-    absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
-    TestUtils::Flush();
+  ASSERT_TRUE(WaitForDistCountAtLeast(
+    client_received_messages_per_rpc_view, {client_method_name_}, i + 1));
+  ASSERT_TRUE(WaitForDistCountAtLeast(
+    client_sent_messages_per_rpc_view, {client_method_name_}, i + 1));
+  ASSERT_TRUE(WaitForDistCountAtLeast(
+    server_received_messages_per_rpc_view, {server_method_name_}, i + 1));
+  ASSERT_TRUE(WaitForDistCountAtLeast(
+    server_sent_messages_per_rpc_view, {server_method_name_}, i + 1));
 
     EXPECT_THAT(
         client_received_messages_per_rpc_view.GetData().distribution_data(),
@@ -451,8 +563,13 @@ TEST_F(StatsPluginEnd2EndTest, TestRetryStatsWithoutAdditionalRetries) {
       ASSERT_TRUE(status.ok());
       EXPECT_EQ("foo", response.message());
     }
-    absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
-    TestUtils::Flush();
+    // Ensure the metrics are present before asserting
+    ASSERT_TRUE(WaitForIntValueEq(client_retries_cumulative_view,
+                                  {client_method_name_}, 0));
+    ASSERT_TRUE(WaitForIntValueEq(client_transparent_retries_cumulative_view,
+                                  {client_method_name_}, 0));
+    ASSERT_TRUE(WaitForDistCountAtLeast(client_retry_delay_per_call_view,
+                                        {client_method_name_}, i + 1));
     EXPECT_THAT(
         client_retries_cumulative_view.GetData().int_data(),
         ::testing::UnorderedElementsAre(::testing::Pair(
@@ -505,8 +622,12 @@ TEST_F(StatsPluginEnd2EndTest, TestRetryStatsWithAdditionalRetries) {
       grpc::Status status = stub_->Echo(&context, request, &response);
       EXPECT_EQ(status.error_code(), StatusCode::ABORTED);
     }
-    absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
-    TestUtils::Flush();
+    ASSERT_TRUE(WaitForIntValueEq(client_retries_cumulative_view,
+                                  {client_method_name_}, (i + 1) * 2));
+    ASSERT_TRUE(WaitForIntValueEq(client_transparent_retries_cumulative_view,
+                                  {client_method_name_}, 0));
+    ASSERT_TRUE(WaitForDistCountAtLeast(client_retry_delay_per_call_view,
+                                        {client_method_name_}, i + 1));
     EXPECT_THAT(client_retries_cumulative_view.GetData().int_data(),
                 ::testing::UnorderedElementsAre(
                     ::testing::Pair(::testing::ElementsAre(client_method_name_),
