@@ -359,6 +359,18 @@ TEST_F(SpiffeBundleMapTest, ServerSpiffeReload) {
           MakeConnectionFailureRegex(expected_message_start), expected_status);
   });
   tmp_bundle_map.RewriteFile(client_bundle_map);
+  server_->Shutdown();
+  server_thread_->join();
+  delete server_thread_;
+  server_thread_ = nullptr;
+  {
+    absl::Notification notification2;
+    server_thread_ = new std::thread([&]() {
+      RunServer(&notification2, kServerChainKeyPath, kServerChainCertPath, "",
+                tmp_bundle_map.name());
+    });
+    notification2.WaitForNotification();
+  }
   {
     std::lock_guard<std::mutex> lock(mu);
     start = true;
@@ -407,11 +419,25 @@ TEST_F(SpiffeBundleMapTest, ClientSpiffeReload) {
   std::thread t2([&]() {
     std::unique_lock<std::mutex> lock(mu2);
     cv2.wait(lock, [&] { return start2; });
-    constexpr absl::string_view expected_message_start =
-        "failed to connect to all addresses; last error: ";
-    const StatusCode expected_status = StatusCode::UNAVAILABLE;
-    DoRpc(server_addr_, options, false,
-          MakeTlsHandshakeFailureRegex(expected_message_start), expected_status);
+  auto new_certificate_provider =
+    std::make_shared<experimental::FileWatcherCertificateProvider>(
+      std::string(kClientKeyPath), std::string(kClientCertPath),
+      "", tmp_bundle_map.name(), 1);
+  grpc::experimental::TlsChannelCredentialsOptions new_options;
+  new_options.set_certificate_provider(new_certificate_provider);
+  new_options.watch_root_certs();
+  new_options.set_root_cert_name("root");
+  new_options.watch_identity_key_cert_pairs();
+  new_options.set_identity_cert_name("identity");
+  new_options.set_check_call_host(false);
+  auto new_verifier = std::make_shared<experimental::NoOpCertificateVerifier>();
+  new_options.set_certificate_verifier(new_verifier);
+
+  constexpr absl::string_view expected_message_start =
+    "failed to connect to all addresses; last error: ";
+  const StatusCode expected_status = StatusCode::UNAVAILABLE;
+  DoRpc(server_addr_, new_options, false,
+      MakeTlsHandshakeFailureRegex(expected_message_start), expected_status);
   });
   tmp_bundle_map.RewriteFile(server_bundle_map);
   {
