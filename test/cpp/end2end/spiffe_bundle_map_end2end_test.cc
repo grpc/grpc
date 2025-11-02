@@ -32,6 +32,9 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
@@ -340,16 +343,29 @@ TEST_F(SpiffeBundleMapTest, ServerSpiffeReload) {
   options.set_certificate_verifier(verifier);
   DoRpc(server_addr_, options, true);
 
-  // Update the spiffe bundle map to something that will fail
+  // Update the spiffe bundle map to something that will fail, then start the
+  // next RPC after this point deterministically using a condition variable.
+  std::mutex mu;
+  std::condition_variable cv;
+  bool start = false;
+  std::thread t([&]() {
+    std::unique_lock<std::mutex> lock(mu);
+    cv.wait(lock, [&] { return start; });
+    // Now perform the RPC which we expect to fail.
+    constexpr absl::string_view expected_message_start =
+        "failed to connect to all addresses; last error: ";
+    const StatusCode expected_status = StatusCode::UNAVAILABLE;
+    DoRpc(server_addr_, options, false,
+          MakeConnectionFailureRegex(expected_message_start), expected_status);
+  });
   tmp_bundle_map.RewriteFile(client_bundle_map);
-  // Wait 2 seconds to ensure a refresh happens
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
-  constexpr absl::string_view expected_message_start =
-      "failed to connect to all addresses; last error: ";
-  const StatusCode expected_status = StatusCode::UNAVAILABLE;
-  DoRpc(server_addr_, options, false,
-        MakeConnectionFailureRegex(expected_message_start), expected_status);
+  {
+    std::lock_guard<std::mutex> lock(mu);
+    start = true;
+  }
+  cv.notify_one();
+  t.join();
+  
 }
 
 TEST_F(SpiffeBundleMapTest, ClientSpiffeReload) {
@@ -383,16 +399,27 @@ TEST_F(SpiffeBundleMapTest, ClientSpiffeReload) {
   options.set_certificate_verifier(verifier);
   DoRpc(server_addr_, options, true);
 
-  // Update the spiffe bundle map to something that will fail
+  // Update the spiffe bundle map to something that will fail, then start the
+  // next RPC after this point deterministically using a condition variable.
+  std::mutex mu2;
+  std::condition_variable cv2;
+  bool start2 = false;
+  std::thread t2([&]() {
+    std::unique_lock<std::mutex> lock(mu2);
+    cv2.wait(lock, [&] { return start2; });
+    constexpr absl::string_view expected_message_start =
+        "failed to connect to all addresses; last error: ";
+    const StatusCode expected_status = StatusCode::UNAVAILABLE;
+    DoRpc(server_addr_, options, false,
+          MakeTlsHandshakeFailureRegex(expected_message_start), expected_status);
+  });
   tmp_bundle_map.RewriteFile(server_bundle_map);
-  // Wait 2 seconds to ensure a refresh happens
-  gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                               gpr_time_from_seconds(2, GPR_TIMESPAN)));
-  constexpr absl::string_view expected_message_start =
-      "failed to connect to all addresses; last error: ";
-  const StatusCode expected_status = StatusCode::UNAVAILABLE;
-  DoRpc(server_addr_, options, false,
-        MakeTlsHandshakeFailureRegex(expected_message_start), expected_status);
+  {
+    std::lock_guard<std::mutex> lock(mu2);
+    start2 = true;
+  }
+  cv2.notify_one();
+  t2.join();
 }
 
 TEST_F(SpiffeBundleMapTest, ServerSideSpiffeVerificationFailure) {
