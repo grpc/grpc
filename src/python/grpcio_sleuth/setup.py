@@ -75,7 +75,8 @@ class custom_build_ext(build_ext):
             _SLEUTH_SO_SRC, os.path.join(build_lib_dest_dir, "libsleuth.so")
         )
 
-        # Add the library directory for the current build to find libsleuth.so during extension linking
+        # Add the library directory for the current build to find libsleuth.so
+        # during extension linking
         for ext in self.extensions:
             ext.library_dirs.append(build_lib_dest_dir)
 
