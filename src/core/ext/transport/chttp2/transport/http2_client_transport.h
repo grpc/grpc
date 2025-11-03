@@ -744,6 +744,12 @@ class Http2ClientTransport final : public ClientTransport,
 
   // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
   Waker periodic_updates_waker_;
+
+  // TODO(tjagtap) [PH2][P2][Settings] Set this to true when we receive settings
+  // that appear "Urgent". Example - initial window size 0 is urgent because it
+  // indicates extreme memory pressure on the server.
+  bool should_stall_read_loop_;
+  Waker read_loop_waker_;
 };
 
 // Since the corresponding class in CHTTP2 is about 3.9KB, our goal is to
