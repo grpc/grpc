@@ -18,6 +18,11 @@ import shutil
 import subprocess
 import sys
 
+
+# Manually insert the source directory into the Python path for local module
+# imports to succeed
+sys.path.insert(0, os.path.abspath("."))
+
 import python_version
 import setuptools
 from setuptools import Extension
@@ -77,17 +82,6 @@ class custom_build_ext(build_ext):
         super().run()
 
 
-CLASSIFIERS = [
-    "Development Status :: 5 - Production/Stable",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: Apache Software License",
-]
-
-PACKAGE_DIRECTORIES = {
-    "": ".",
-}
-
 INSTALL_REQUIRES = [
     "protobuf>=6.31.1,<7.0.0",
     "absl-py>=1.4.0",
@@ -111,17 +105,6 @@ extensions = [
 ]
 
 setuptools.setup(
-    name="grpcio-sleuth",
-    version=grpc_version.VERSION,
-    description="gRPC Sleuth tool",
-    long_description=open(_README_PATH, "r").read(),
-    author="The gRPC Authors",
-    author_email="grpc-io@googlegroups.com",
-    url="https://grpc.io",
-    license="Apache License 2.0",
-    classifiers=CLASSIFIERS,
-    package_dir=PACKAGE_DIRECTORIES,
-    packages=setuptools.find_packages("."),
     python_requires=f">={python_version.MIN_PYTHON_VERSION}",
     install_requires=INSTALL_REQUIRES,
     setup_requires=SETUP_REQUIRES,
@@ -129,11 +112,4 @@ setuptools.setup(
     cmdclass={
         "build_ext": custom_build_ext,
     },
-    entry_points={
-        "console_scripts": [
-            "grpc_sleuth=grpc_sleuth.sleuth_cli:main",
-        ],
-    },
-    package_data={"grpc_sleuth": ["lib/*.so"]},
-    include_package_data=True,
 )
