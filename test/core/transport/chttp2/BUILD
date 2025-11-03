@@ -1164,6 +1164,7 @@ grpc_cc_test(
     ],
     deps = [
         ":http2_common_test_inputs",
+        "//:debug_location",
         "//src/core:loop",
         "//src/core:sleep",
         "//src/core:stream_data_queue",
