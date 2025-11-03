@@ -142,7 +142,7 @@ build:python_poller_engine --test_env="GRPC_ASYNCIO_ENGINE=poller"
 build:python --copt=-DGRPC_PYTHON_BUILD
 
 # Compile database generation config
-build:compdb --build_tag_filters=-nocompdb --features=-layering_check
+build:compdb --build_tag_filters=-nocompdb
 
 try-import %workspace%/tools/fuzztest.bazelrc
 
