@@ -323,7 +323,15 @@ class Http2ClientTransport final : public ClientTransport,
 
     // RFC9113 : Streams initiated by a client MUST use odd-numbered stream
     // identifiers.
-    return std::exchange(next_stream_id_, next_stream_id_ + 2);
+    uint32_t new_stream_id =
+        std::exchange(next_stream_id_, next_stream_id_ + 2);
+    if (GPR_UNLIKELY(next_stream_id_ > GetMaxAllowedStreamId())) {
+      SetConnectivityState(
+          GRPC_CHANNEL_TRANSIENT_FAILURE,
+          absl::ResourceExhaustedError("Transport Stream IDs exhausted"),
+          "no_more_stream_ids");
+    }
+    return new_stream_id;
   }
 
   // Returns the next stream id without incrementing it. MUST be called from the
@@ -546,6 +554,9 @@ class Http2ClientTransport final : public ClientTransport,
 
   void MaybeGetWindowUpdateFrames(SliceBuffer& output_buf);
 
+  void SetConnectivityState(grpc_connectivity_state state,
+                            const absl::Status& status, const char* reason);
+
   // Ping Helper functions
   Duration NextAllowedPingInterval() {
     MutexLock lock(&transport_mutex_);
@@ -594,9 +605,7 @@ class Http2ClientTransport final : public ClientTransport,
     }
 
     Promise<absl::Status> PingTimeout() override {
-      // TODO(akshitpatel) : [PH2][P2] : Trigger goaway here.
-      // Returns a promise that resolves once goaway is sent.
-      LOG(INFO) << "Ping timeout at time: " << Timestamp::Now();
+      GRPC_HTTP2_CLIENT_DLOG << "Ping timeout at time: " << Timestamp::Now();
 
       // TODO(akshitpatel) : [PH2][P2] : The error code here has been chosen
       // based on CHTTP2's usage of GRPC_STATUS_UNAVAILABLE (which corresponds
@@ -635,8 +644,7 @@ class Http2ClientTransport final : public ClientTransport,
       });
     }
     Promise<absl::Status> OnKeepAliveTimeout() override {
-      // TODO(akshitpatel) : [PH2][P2] : Trigger goaway here.
-      LOG(INFO) << "Keepalive timeout triggered";
+      GRPC_HTTP2_CLIENT_DLOG << "Keepalive timeout triggered";
 
       // TODO(akshitpatel) : [PH2][P2] : The error code here has been chosen
       // based on CHTTP2's usage of GRPC_STATUS_UNAVAILABLE (which corresponds

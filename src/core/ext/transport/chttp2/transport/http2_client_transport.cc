@@ -19,13 +19,14 @@
 #include "src/core/ext/transport/chttp2/transport/http2_client_transport.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
+#include <limits.h>
 
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
-#include <limits>
 #include <memory>
 #include <optional>
 #include <string>
@@ -83,6 +84,7 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/strings/cord.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
@@ -164,6 +166,17 @@ void Http2ClientTransport::StopConnectivityWatch(
     ConnectivityStateWatcherInterface* watcher) {
   MutexLock lock(&transport_mutex_);
   state_tracker_.RemoveWatcher(watcher);
+}
+
+void Http2ClientTransport::SetConnectivityState(grpc_connectivity_state state,
+                                                const absl::Status& status,
+                                                const char* reason) {
+  MutexLock lock(&transport_mutex_);
+  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport SetConnectivityState "
+                         << " set connectivity_state=" << state
+                         << "; status=" << status.ToString()
+                         << "; reason=" << reason;
+  state_tracker_.SetState(state, status, reason);
 }
 
 void Http2ClientTransport::Orphan() {
@@ -466,6 +479,9 @@ Http2Status Http2ClientTransport::ProcessHttp2GoawayFrame(
       << " and debug data: " << frame.debug_data.as_string_view();
 
   uint32_t last_stream_id = 0;
+  absl::Status status(ErrorCodeToAbslStatusCode(
+                          FrameErrorCodeToHttp2ErrorCode(frame.error_code)),
+                      frame.debug_data.as_string_view());
   if (frame.error_code == static_cast<uint32_t>(Http2ErrorCode::kNoError) &&
       frame.last_stream_id == RFC9113::kMaxStreamId31Bit) {
     const uint32_t next_stream_id = PeekNextStreamId();
@@ -485,6 +501,26 @@ Http2Status Http2ClientTransport::ProcessHttp2GoawayFrame(
     }
   }
 
+  // Throttle keepalive time if the server sends a GOAWAY with error code
+  // ENHANCE_YOUR_CALM and debug data equal to "too_many_pings". This will
+  // apply to any new transport created on by any subchannel of this channel.
+  if (GPR_UNLIKELY(frame.error_code == static_cast<uint32_t>(
+                                           Http2ErrorCode::kEnhanceYourCalm) &&
+                   frame.debug_data == "too_many_pings")) {
+    LOG(ERROR) << ": Received a GOAWAY with error code ENHANCE_YOUR_CALM and "
+                  "debug data equal to \"too_many_pings\". Current keepalive "
+                  "time (before throttling): "
+               << keepalive_time_.ToString();
+    constexpr int max_keepalive_time_millis =
+        INT_MAX / KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
+    uint64_t throttled_keepalive_time =
+        keepalive_time_.millis() > max_keepalive_time_millis
+            ? INT_MAX
+            : keepalive_time_.millis() * KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
+    status.SetPayload(kKeepaliveThrottlingKey,
+                      absl::Cord(std::to_string(throttled_keepalive_time)));
+  }
+
   if (close_transport) {
     // TODO(akshitpatel) : [PH2][P3] : Ideally the error here should be
     // kNoError. However, Http2Status does not support kNoError. We should
@@ -497,6 +533,10 @@ Http2Status Http2ClientTransport::ProcessHttp2GoawayFrame(
                 : frame.error_code)),
         std::string(frame.debug_data.as_string_view())));
   }
+
+  // lie: use transient failure from the transport to indicate goaway has been
+  // received.
+  SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE, status, "got_goaway");
   return Http2Status::Ok();
 }
 
