@@ -159,3 +159,23 @@ void grpc_tls_credentials_options_set_max_tls_version(
   GRPC_CHECK_NE(options, nullptr);
   options->set_max_tls_version(max_tls_version);
 }
+
+void grpc_tls_credentials_options_set_identity_certificate_provider(
+    grpc_tls_credentials_options* options,
+    grpc_tls_certificate_provider* provider) {
+  GRPC_CHECK_NE(options, nullptr);
+  GRPC_CHECK_NE(provider, nullptr);
+  grpc_core::ExecCtx exec_ctx;
+  options->set_identity_certificate_provider(
+      provider->Ref(DEBUG_LOCATION, "set_identity_certificate_provider"));
+}
+
+void grpc_tls_credentials_options_set_root_certificate_provider(
+    grpc_tls_credentials_options* options,
+    grpc_tls_certificate_provider* provider) {
+  GRPC_CHECK_NE(options, nullptr);
+  GRPC_CHECK_NE(provider, nullptr);
+  grpc_core::ExecCtx exec_ctx;
+  options->set_root_certificate_provider(
+      provider->Ref(DEBUG_LOCATION, "set_root_certificate_provider"));
+}
