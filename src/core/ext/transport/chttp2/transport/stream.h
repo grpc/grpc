@@ -123,11 +123,14 @@ struct Stream : public RefCounted<Stream> {
                      HPackCompressor& encoder) {
     HttpStreamState state = GetStreamState();
     // Reset stream MUST not be sent if the stream is idle or closed.
-    return data_queue->DequeueFrames(transport_tokens, max_frame_length,
-                                     encoder,
-                                     /*can_send_reset_stream=*/
-                                     !(state == HttpStreamState::kIdle ||
-                                       state == HttpStreamState::kClosed));
+    // TODO(tjagtap) : [PH2][P1][FlowControl] : Populate the correct stream flow
+    // control tokens.
+    return data_queue->DequeueFrames(
+        transport_tokens, max_frame_length,
+        /*stream_fc_tokens=*/std::numeric_limits<uint32_t>::max(), encoder,
+        /*can_send_reset_stream=*/
+        !(state == HttpStreamState::kIdle ||
+          state == HttpStreamState::kClosed));
   }
 
   ////////////////////////////////////////////////////////////////////////////
