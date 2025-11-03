@@ -16,6 +16,7 @@
 #define GRPCPP_IMPL_GENERIC_SERIALIZE_H
 
 #include <grpc/byte_buffer_reader.h>
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
@@ -40,8 +41,9 @@ namespace grpc {
 
 // ProtoBufferWriter must be a subclass of ::protobuf::io::ZeroCopyOutputStream.
 template <class ProtoBufferWriter, class T>
-Status GenericSerialize(const grpc::protobuf::MessageLite& msg, ByteBuffer* bb,
-                        bool* own_buffer) {
+Status GenericSerialize(
+    const grpc::protobuf::MessageLite& msg, ByteBuffer* bb, bool* own_buffer,
+    grpc_event_engine::experimental::MemoryAllocator* allocator = nullptr) {
   static_assert(std::is_base_of<protobuf::io::ZeroCopyOutputStream,
                                 ProtoBufferWriter>::value,
                 "ProtoBufferWriter must be a subclass of "
@@ -64,7 +66,7 @@ Status GenericSerialize(const grpc::protobuf::MessageLite& msg, ByteBuffer* bb,
     return grpc::Status::OK;
   }
   ProtoBufferWriter writer(bb, kProtoBufferWriterMaxBufferLength,
-                           static_cast<int>(byte_size));
+                           static_cast<int>(byte_size), allocator);
   protobuf::io::CodedOutputStream cs(&writer);
   msg.SerializeWithCachedSizes(&cs);
   return !cs.HadError()

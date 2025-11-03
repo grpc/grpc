@@ -297,6 +297,10 @@ class ServerContextBase {
     return call_metric_recorder_;
   }
 
+  grpc_event_engine::experimental::MemoryAllocator* memory_allocator() {
+    return memory_allocator_;
+  }
+
   /// EXPERIMENTAL API
   /// Returns the call's authority.
   grpc::string_ref ExperimentalGetAuthority() const;
@@ -419,12 +423,15 @@ class ServerContextBase {
   /// Return the tag queued by BeginCompletionOp()
   grpc::internal::CompletionQueueTag* GetCompletionOpTag();
 
-  void set_call(grpc_call* call, bool call_metric_recording_enabled,
-                experimental::ServerMetricRecorder* server_metric_recorder) {
+  void set_call(
+      grpc_call* call, bool call_metric_recording_enabled,
+      experimental::ServerMetricRecorder* server_metric_recorder,
+      grpc_event_engine::experimental::MemoryAllocator* memory_allocator) {
     call_.call = call;
     if (call_metric_recording_enabled) {
       CreateCallMetricRecorder(server_metric_recorder);
     }
+    memory_allocator_ = memory_allocator;
   }
 
   void BindDeadlineAndMetadata(gpr_timespec deadline, grpc_metadata_array* arr);
@@ -495,6 +502,7 @@ class ServerContextBase {
   RpcAllocatorState* message_allocator_state_ = nullptr;
   ContextAllocator* context_allocator_ = nullptr;
   experimental::CallMetricRecorder* call_metric_recorder_ = nullptr;
+  grpc_event_engine::experimental::MemoryAllocator* memory_allocator_ = nullptr;
 
   class Reactor : public grpc::ServerUnaryReactor {
    public:

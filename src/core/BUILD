@@ -8326,7 +8326,9 @@ grpc_cc_library(
         "message",
         "message_assembler",
         "metadata_batch",
+        "poll",
         "transport_common",
+        "//:chttp2_frame",
     ],
 )
 
@@ -8363,15 +8365,18 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/types:span",
+        "absl/strings:cord",
     ],
     deps = [
         "1999",
+        "activity",
         "arena",
         "call_spine",
         "channel_args",
         "check_class_size",
         "closure",
         "connectivity_state",
+        "context",
         "flow_control_manager",
         "for_each",
         "goaway",
