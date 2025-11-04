@@ -144,8 +144,6 @@ class HealthProducer final : public Subchannel::DataProducerInterface {
   Mutex mu_;
   std::optional<grpc_connectivity_state> state_ ABSL_GUARDED_BY(&mu_);
   absl::Status status_ ABSL_GUARDED_BY(&mu_);
-  RefCountedPtr<ConnectedSubchannel> connected_subchannel_
-      ABSL_GUARDED_BY(&mu_);
   std::map<std::string /*health_check_service_name*/,
            OrphanablePtr<HealthChecker>>
       health_checkers_ ABSL_GUARDED_BY(&mu_);
