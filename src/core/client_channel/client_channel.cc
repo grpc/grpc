@@ -272,16 +272,34 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
     if (!IsTransportStateWatcherEnabled()) {
       auto keepalive_throttling = status.GetPayload(kKeepaliveThrottlingKey);
       if (keepalive_throttling.has_value()) {
-        int new_keepalive_time = -1;
+        int new_keepalive_time_ms = -1;
         if (absl::SimpleAtoi(std::string(keepalive_throttling.value()),
-                             &new_keepalive_time)) {
-          ApplyKeepaliveThrottlingInWorkSerializer(
-              Duration::Milliseconds(new_keepalive_time));
+                             &new_keepalive_time_ms)) {
+          Duration new_keepalive_time =
+              Duration::Milliseconds(new_keepalive_time_ms);
+          if (new_keepalive_time >
+              subchannel_wrapper_->client_channel_->keepalive_time_) {
+            subchannel_wrapper_->client_channel_->keepalive_time_ =
+                new_keepalive_time;
+            GRPC_TRACE_LOG(client_channel, INFO)
+                << "client_channel="
+                << subchannel_wrapper_->client_channel_.get()
+                << ": throttling keepalive time to "
+                << subchannel_wrapper_->client_channel_->keepalive_time_;
+            // Propagate the new keepalive time to all subchannels. This is so
+            // that new transports created by any subchannel (and not just the
+            // subchannel that received the GOAWAY), use the new keepalive time.
+            for (auto* subchannel_wrapper :
+                 subchannel_wrapper_->client_channel_->subchannel_wrappers_) {
+              subchannel_wrapper->subchannel_->ThrottleKeepaliveTime(
+                  new_keepalive_time);
+            }
+          }
         } else {
           LOG(ERROR) << "client_channel="
                      << subchannel_wrapper_->client_channel_.get()
                      << ": Illegal keepalive throttling value "
-                     << std::string(*keepalive_throttling);
+                     << std::string(keepalive_throttling.value());
         }
       }
     }
@@ -310,10 +328,7 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
       // subchannel that received the GOAWAY), use the new keepalive time.
       for (auto& [subchannel, _] :
            subchannel_wrapper_->client_channel_->subchannel_refcount_map_) {
-        if (IsTransportStateWatcherEnabled() &&
-            subchannel_wrapper_->subchannel_ == subchannel) {
-          continue;
-        }
+        if (subchannel_wrapper_->subchannel_ == subchannel) continue;
         subchannel->ThrottleKeepaliveTime(new_keepalive_time);
       }
     }
