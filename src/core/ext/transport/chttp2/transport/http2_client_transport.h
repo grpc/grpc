@@ -333,9 +333,9 @@ class Http2ClientTransport final : public ClientTransport,
     uint32_t new_stream_id =
         std::exchange(next_stream_id_, next_stream_id_ + 2);
     if (GPR_UNLIKELY(next_stream_id_ > GetMaxAllowedStreamId())) {
-      SetConnectivityState(
-          GRPC_CHANNEL_TRANSIENT_FAILURE,
+      ReportDisconnection(
           absl::ResourceExhaustedError("Transport Stream IDs exhausted"),
+          {},  // TODO(tjagtap): Report better disconnect info.
           "no_more_stream_ids");
     }
     return new_stream_id;
@@ -563,8 +563,14 @@ class Http2ClientTransport final : public ClientTransport,
 
   void MaybeGetWindowUpdateFrames(SliceBuffer& output_buf);
 
-  void SetConnectivityState(grpc_connectivity_state state,
-                            const absl::Status& status, const char* reason);
+  void ReportDisconnection(const absl::Status& status,
+                           StateWatcher::DisconnectInfo disconnect_info,
+                           const char* reason);
+
+  void ReportDisconnectionLocked(const absl::Status& status,
+                                 StateWatcher::DisconnectInfo disconnect_info,
+                                 const char* reason)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&transport_mutex_);
 
   // Ping Helper functions
   Duration NextAllowedPingInterval() {

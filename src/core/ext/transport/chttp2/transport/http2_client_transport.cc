@@ -170,15 +170,20 @@ void Http2ClientTransport::StopConnectivityWatch(
   state_tracker_.RemoveWatcher(watcher);
 }
 
-void Http2ClientTransport::SetConnectivityState(grpc_connectivity_state state,
-                                                const absl::Status& status,
-                                                const char* reason) {
+void Http2ClientTransport::ReportDisconnection(
+    const absl::Status& status, StateWatcher::DisconnectInfo disconnect_info,
+    const char* reason) {
   MutexLock lock(&transport_mutex_);
-  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport SetConnectivityState "
-                         << " set connectivity_state=" << state
-                         << "; status=" << status.ToString()
-                         << "; reason=" << reason;
-  state_tracker_.SetState(state, status, reason);
+  ReportDisconnectionLocked(status, disconnect_info, reason);
+}
+
+void Http2ClientTransport::ReportDisconnectionLocked(
+    const absl::Status& status, StateWatcher::DisconnectInfo disconnect_info,
+    const char* reason) {
+  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport ReportDisconnection: status="
+                         << status.ToString() << "; reason=" << reason;
+  state_tracker_.SetState(GRPC_CHANNEL_TRANSIENT_FAILURE, status, reason);
+  NotifyStateWatcherOnDisconnectLocked(status, disconnect_info);
 }
 
 void Http2ClientTransport::StartWatch(RefCountedPtr<StateWatcher> watcher) {
@@ -204,13 +209,12 @@ void Http2ClientTransport::StopWatch(RefCountedPtr<StateWatcher> watcher) {
 void Http2ClientTransport::NotifyStateWatcherOnDisconnectLocked(
     absl::Status status, StateWatcher::DisconnectInfo disconnect_info) {
   if (watcher_ == nullptr) return;
-  event_engine_->Run(
-      [watcher = std::move(watcher_), status = std::move(status),
-       disconnect_info]() mutable {
-        ExecCtx exec_ctx;
-        watcher->OnDisconnect(std::move(status), disconnect_info);
-        watcher.reset();  // Before ExecCtx goes out of scope.
-      });
+  event_engine_->Run([watcher = std::move(watcher_), status = std::move(status),
+                      disconnect_info]() mutable {
+    ExecCtx exec_ctx;
+    watcher->OnDisconnect(std::move(status), disconnect_info);
+    watcher.reset();  // Before ExecCtx goes out of scope.
+  });
 }
 
 void Http2ClientTransport::Orphan() {
@@ -580,8 +584,7 @@ Http2Status Http2ClientTransport::ProcessHttp2GoawayFrame(
 
   // lie: use transient failure from the transport to indicate goaway has been
   // received.
-  SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE, status, "got_goaway");
-  NotifyStateWatcherOnDisconnectLocked(status, disconnect_info);
+  ReportDisconnection(status, disconnect_info, "got_goaway");
   return Http2Status::Ok();
 }
 
@@ -1520,12 +1523,9 @@ void Http2ClientTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list =
       std::move(stream_list_);
   stream_list_.clear();
-  state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN,
-                          http2_status.GetAbslConnectionError(),
-                          "transport closed");
   // TODO(tjagtap): Provide better disconnect info here.
-  NotifyStateWatcherOnDisconnectLocked(http2_status.GetAbslConnectionError(),
-                                       {});
+  ReportDisconnectionLocked(http2_status.GetAbslConnectionError(), {},
+                            "transport closed");
   lock.Release();
 
   SpawnInfallibleTransportParty(
