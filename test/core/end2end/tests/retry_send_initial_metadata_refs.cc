@@ -23,10 +23,10 @@
 #include <optional>
 #include <string>
 
-#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {
@@ -38,7 +38,7 @@ namespace {
 // - second attempt returns OK
 CORE_END2END_TEST(RetryTests, RetrySendInitialMetadataRefs) {
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       "{\n"
@@ -117,7 +117,7 @@ CORE_END2END_TEST(RetryTests, RetrySendInitialMetadataRefs) {
   Expect(2, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
   EXPECT_EQ(s.method(), "/service/method");
   EXPECT_FALSE(client_close.was_cancelled());
 }

@@ -25,17 +25,12 @@
 #include <utility>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/type/matcher/v3/regex.pb.h"
 #include "envoy/type/matcher/v3/string.pb.h"
-#include "gmock/gmock.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
-#include "gtest/gtest.h"
 #include "re2/re2.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/util/crash.h"
@@ -50,13 +45,17 @@
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
-#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/config_grpc_cli.h"
 #include "udpa/type/v1/typed_struct.pb.h"
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
 #include "xds/type/v3/typed_struct.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 
 using CommonTlsContextProto =
     envoy::extensions::transport_sockets::tls::v3::CommonTlsContext;
@@ -277,7 +276,6 @@ TEST_F(CommonTlsConfigTest, CaCertProviderInValidationContext) {
 }
 
 TEST_F(CommonTlsConfigTest, SystemRootCerts) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_SYSTEM_ROOT_CERTS");
   // Construct proto.
   CommonTlsContextProto common_tls_context_proto;
   common_tls_context_proto.mutable_validation_context()
@@ -299,7 +297,6 @@ TEST_F(CommonTlsConfigTest, SystemRootCerts) {
 }
 
 TEST_F(CommonTlsConfigTest, CaCertProviderTakesPrecedenceOverSystemRootCerts) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_SYSTEM_ROOT_CERTS");
   // Construct proto.
   CommonTlsContextProto common_tls_context_proto;
   auto* cert_provider = common_tls_context_proto.mutable_validation_context()
@@ -320,26 +317,6 @@ TEST_F(CommonTlsConfigTest, CaCertProviderTakesPrecedenceOverSystemRootCerts) {
   ASSERT_NE(ca_cert_provider, nullptr);
   EXPECT_EQ(ca_cert_provider->instance_name, "provider1");
   EXPECT_EQ(ca_cert_provider->certificate_name, "cert_name");
-  EXPECT_THAT(common_tls_context->certificate_validation_context
-                  .match_subject_alt_names,
-              ::testing::ElementsAre());
-  EXPECT_TRUE(common_tls_context->tls_certificate_provider_instance.Empty())
-      << common_tls_context->tls_certificate_provider_instance.ToString();
-}
-
-TEST_F(CommonTlsConfigTest, SystemRootCertsIgnoredWithoutEnvVar) {
-  // Construct proto.
-  CommonTlsContextProto common_tls_context_proto;
-  common_tls_context_proto.mutable_validation_context()
-      ->mutable_system_root_certs();
-  // Convert to upb.
-  const auto* upb_proto = ConvertToUpb(common_tls_context_proto);
-  ASSERT_NE(upb_proto, nullptr);
-  // Run test.
-  auto common_tls_context = Parse(upb_proto);
-  ASSERT_TRUE(common_tls_context.ok()) << common_tls_context.status();
-  EXPECT_TRUE(std::holds_alternative<std::monostate>(
-      common_tls_context->certificate_validation_context.ca_certs));
   EXPECT_THAT(common_tls_context->certificate_validation_context
                   .match_subject_alt_names,
               ::testing::ElementsAre());
@@ -583,7 +560,7 @@ TEST_F(CommonTlsConfigTest, MatchSubjectAltNamesInvalid) {
             "field:validation_context.match_subject_alt_names[0].ignore_case "
             "error:not supported for regex matcher; "
             "field:validation_context.match_subject_alt_names[1] "
-            "error:invalid StringMatcher specified]")
+            "error:invalid string matcher]")
       << common_tls_context.status();
 }
 

@@ -17,8 +17,6 @@
 
 #include <memory>
 
-#include "absl/log/absl_check.h"
-#include "absl/strings/string_view.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/telemetry/metrics.h"
@@ -26,6 +24,8 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
+#include "absl/log/absl_check.h"
+#include "absl/strings/string_view.h"
 
 namespace {
 
@@ -56,7 +56,7 @@ void BM_AddCounterWithFakeStatsPlugin(benchmark::State& state) {
           grpc_core::experimental::StatsPluginChannelScope("", "",
                                                            endpoint_config));
   for (auto _ : state) {
-    stats_plugin_group.AddCounter(kCounterHandle, 1, {}, {});
+    stats_plugin_group->AddCounter(kCounterHandle, 1, {}, {});
   }
 }
 BENCHMARK(BM_AddCounterWithFakeStatsPlugin);
@@ -71,9 +71,9 @@ void BM_AddCounterWithLabelsWithFakeStatsPlugin(benchmark::State& state) {
           grpc_core::experimental::StatsPluginChannelScope("", "",
                                                            endpoint_config));
   for (auto _ : state) {
-    stats_plugin_group.AddCounter(kCounterWithLabelsHandle, 1,
-                                  {"val1", "val2", "val3"},
-                                  {"opt_val1", "opt_val2", "opt_val3"});
+    stats_plugin_group->AddCounter(kCounterWithLabelsHandle, 1,
+                                   {"val1", "val2", "val3"},
+                                   {"opt_val1", "opt_val2", "opt_val3"});
   }
 }
 BENCHMARK(BM_AddCounterWithLabelsWithFakeStatsPlugin);
@@ -94,7 +94,7 @@ void BM_AddCounterWithOTelPlugin(benchmark::State& state) {
           grpc_core::experimental::StatsPluginChannelScope("", "",
                                                            endpoint_config));
   for (auto _ : state) {
-    stats_plugin_group.AddCounter(kCounterHandle, 1, {}, {});
+    stats_plugin_group->AddCounter(kCounterHandle, 1, {}, {});
   }
 }
 BENCHMARK(BM_AddCounterWithOTelPlugin);
@@ -115,9 +115,9 @@ void BM_AddCounterWithLabelsWithOTelPlugin(benchmark::State& state) {
           grpc_core::experimental::StatsPluginChannelScope("", "",
                                                            endpoint_config));
   for (auto _ : state) {
-    stats_plugin_group.AddCounter(kCounterWithLabelsHandle, 1,
-                                  {"val1", "val2", "val3"},
-                                  {"opt_val1", "opt_val2", "opt_val3"});
+    stats_plugin_group->AddCounter(kCounterWithLabelsHandle, 1,
+                                   {"val1", "val2", "val3"},
+                                   {"opt_val1", "opt_val2", "opt_val3"});
   }
 }
 BENCHMARK(BM_AddCounterWithLabelsWithOTelPlugin);
@@ -131,7 +131,7 @@ void BM_AddCounterWithNoPlugin(benchmark::State& state) {
           grpc_core::experimental::StatsPluginChannelScope("", "",
                                                            endpoint_config));
   for (auto _ : state) {
-    stats_plugin_group.AddCounter(kCounterHandle, 1, {}, {});
+    stats_plugin_group->AddCounter(kCounterHandle, 1, {}, {});
   }
 }
 BENCHMARK(BM_AddCounterWithNoPlugin);
@@ -145,9 +145,9 @@ void BM_AddCounterWithLabelsWithNoPlugin(benchmark::State& state) {
           grpc_core::experimental::StatsPluginChannelScope("", "",
                                                            endpoint_config));
   for (auto _ : state) {
-    stats_plugin_group.AddCounter(kCounterWithLabelsHandle, 1,
-                                  {"val1", "val2", "val3"},
-                                  {"opt_val1", "opt_val2", "opt_val3"});
+    stats_plugin_group->AddCounter(kCounterWithLabelsHandle, 1,
+                                   {"val1", "val2", "val3"},
+                                   {"opt_val1", "opt_val2", "opt_val3"});
   }
 }
 BENCHMARK(BM_AddCounterWithLabelsWithNoPlugin);

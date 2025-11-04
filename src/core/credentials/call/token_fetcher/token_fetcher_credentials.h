@@ -24,13 +24,10 @@
 #include <utility>
 #include <variant>
 
-#include "absl/container/flat_hash_set.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/status/statusor.h"
+#include "src/core/call/metadata.h"
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/transport/metadata.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/orphanable.h"
@@ -39,6 +36,9 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 

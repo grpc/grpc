@@ -25,14 +25,14 @@
 
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/thd.h"
 #include "src/core/util/useful.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace {
@@ -85,7 +85,7 @@ struct CallbackAlternativeCQ {
                                    gpr_time_from_millis(100, GPR_TIMESPAN)));
                   continue;
                 }
-                DCHECK(ev.type == GRPC_OP_COMPLETE);
+                GRPC_DCHECK(ev.type == GRPC_OP_COMPLETE);
                 // We can always execute the callback inline rather than
                 // pushing it to another Executor thread because this
                 // thread is definitely running on a background thread, does not
@@ -170,7 +170,7 @@ CompletionQueue::CompletionQueueTLSCache::CompletionQueueTLSCache(
 }
 
 CompletionQueue::CompletionQueueTLSCache::~CompletionQueueTLSCache() {
-  CHECK(flushed_);
+  GRPC_CHECK(flushed_);
 }
 
 bool CompletionQueue::CompletionQueueTLSCache::Flush(void** tag, bool* ok) {
@@ -203,7 +203,7 @@ void CompletionQueue::ReleaseCallbackAlternativeCQ(CompletionQueue* cq)
   (void)cq;
   // This accesses g_callback_alternative_cq without acquiring the mutex
   // but it's considered safe because it just reads the pointer address.
-  DCHECK(cq == g_callback_alternative_cq.cq);
+  GRPC_DCHECK(cq == g_callback_alternative_cq.cq);
   g_callback_alternative_cq.Unref();
 }
 

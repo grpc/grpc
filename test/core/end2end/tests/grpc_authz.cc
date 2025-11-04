@@ -19,16 +19,16 @@
 
 #include <string>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/authorization/authorization_policy_provider.h"
 #include "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/test_util/tls_utils.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace {
@@ -73,7 +73,7 @@ void TestDenyUnauthorizedRequest(CoreEnd2endTest& test) {
 
 void InitWithPolicy(CoreEnd2endTest& test,
                     grpc_authorization_policy_provider* provider) {
-  test.InitServer(ChannelArgs().Set(
+  test.InitServer(CoreEnd2endTest::DefaultServerArgs().Set(
       GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER,
       ChannelArgs::Pointer(provider,
                            grpc_authorization_policy_provider_arg_vtable())));
@@ -99,7 +99,7 @@ class InitWithTempFile {
     provider_ = grpc_authorization_policy_provider_file_watcher_create(
         tmp_file_.name().c_str(), /*refresh_interval_sec=*/1, &code,
         &error_details);
-    CHECK_EQ(code, GRPC_STATUS_OK);
+    GRPC_CHECK_EQ(code, GRPC_STATUS_OK);
     InitWithPolicy(test, provider_);
   }
 

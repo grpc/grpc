@@ -24,12 +24,12 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/strings/string_view.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/validation_errors.h"
+#include "absl/strings/string_view.h"
 
 struct grpc_channel_credentials;
 
@@ -41,7 +41,7 @@ class ChannelCredsConfig : public RefCounted<ChannelCredsConfig> {
 
   virtual bool Equals(const ChannelCredsConfig& other) const = 0;
 
-  virtual Json ToJson() const = 0;
+  virtual std::string ToString() const = 0;
 };
 
 template <typename T = grpc_channel_credentials>

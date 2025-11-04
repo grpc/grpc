@@ -21,11 +21,11 @@
 #include <utility>
 #include <variant>
 
-#include "absl/status/statusor.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/util/construct_destruct.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 
@@ -217,6 +217,26 @@ class If<bool, T, F> {
     } else {
       return if_false_();
     }
+  }
+
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* if_proto =
+        grpc_channelz_v2_Promise_mutable_if_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_If_set_condition(if_proto, condition_);
+    if (condition_) {
+      PromiseAsProto(
+          if_true_,
+          grpc_channelz_v2_Promise_If_mutable_promise(if_proto, arena), arena);
+    } else {
+      PromiseAsProto(
+          if_false_,
+          grpc_channelz_v2_Promise_If_mutable_promise(if_proto, arena), arena);
+    }
+    grpc_channelz_v2_Promise_If_set_true_factory(
+        if_proto, StdStringToUpbString(TypeName<TruePromise>()));
+    grpc_channelz_v2_Promise_If_set_false_factory(
+        if_proto, StdStringToUpbString(TypeName<FalsePromise>()));
   }
 
  private:

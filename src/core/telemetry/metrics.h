@@ -23,16 +23,17 @@
 #include <type_traits>
 #include <vector>
 
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/instrument.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/slice/slice.h"
-#include "src/core/telemetry/call_tracer.h"
-#include "src/core/util/no_destruct.h"
-#include "src/core/util/sync.h"
-#include "src/core/util/time.h"
 
 namespace grpc_core {
 
@@ -275,18 +276,22 @@ class StatsPlugin {
   class ScopeConfig {
    public:
     virtual ~ScopeConfig() = default;
+
+    // NOTE: This is safe to invoke ONLY if both ScopeConfig objects
+    // come from the same StatsPlugin.
+    virtual int Compare(const ScopeConfig& other) const = 0;
   };
 
   virtual ~StatsPlugin() = default;
 
   // Whether this stats plugin is enabled for the channel specified by \a scope.
   // Returns true and a channel-specific ScopeConfig which may then be used to
-  // configure the ClientCallTracer in GetClientCallTracer().
+  // configure the ClientCallTracerInterface in GetClientCallTracer().
   virtual std::pair<bool, std::shared_ptr<ScopeConfig>> IsEnabledForChannel(
       const experimental::StatsPluginChannelScope& scope) const = 0;
   // Whether this stats plugin is enabled for the server specified by \a args.
   // Returns true and a server-specific ScopeConfig which may then be used to
-  // configure the ServerCallTracer in GetServerCallTracer().
+  // configure the ServerCallTracerInterface in GetServerCallTracer().
   virtual std::pair<bool, std::shared_ptr<ScopeConfig>> IsEnabledForServer(
       const ChannelArgs& args) const = 0;
   // Gets a scope config for the client channel specified by \a scope. Note that
@@ -297,6 +302,12 @@ class StatsPlugin {
   // stats plugin should have been enabled for the server.
   virtual std::shared_ptr<StatsPlugin::ScopeConfig> GetServerScopeConfig(
       const ChannelArgs& args) const = 0;
+
+  // Fetch the collection scope for this stats plugin. The scope allows creating
+  // instrument storage objects for the instrument domains, and partitions
+  // the instrument collection so that different stats plugins only see the
+  // subset of metrics they're allowed to see.
+  virtual RefCountedPtr<CollectionScope> GetCollectionScope() const = 0;
 
   // Adds \a value to the uint64 counter specified by \a handle. \a label_values
   // and \a optional_label_values specify attributes that are associated with
@@ -340,14 +351,14 @@ class StatsPlugin {
   virtual bool IsInstrumentEnabled(
       GlobalInstrumentsRegistry::GlobalInstrumentHandle handle) const = 0;
 
-  // Gets a ClientCallTracer associated with this stats plugin which can be used
-  // in a call.
-  virtual ClientCallTracer* GetClientCallTracer(
+  // Gets a ClientCallTracerInterface associated with this stats plugin which
+  // can be used in a call.
+  virtual ClientCallTracerInterface* GetClientCallTracer(
       const Slice& path, bool registered_method,
       std::shared_ptr<ScopeConfig> scope_config) = 0;
-  // Gets a ServerCallTracer associated with this stats plugin which can be used
-  // in a call.
-  virtual ServerCallTracer* GetServerCallTracer(
+  // Gets a ServerCallTracerInterface associated with this stats plugin which
+  // can be used in a call.
+  virtual ServerCallTracerInterface* GetServerCallTracer(
       std::shared_ptr<ScopeConfig> scope_config) = 0;
 
   // TODO(yijiem): This is an optimization for the StatsPlugin to create its own
@@ -369,7 +380,8 @@ class GlobalStatsPluginRegistry {
   // stats plugins. They got a stats plugin group which contains all the stats
   // plugins for a specific scope and all operations on the stats plugin group
   // will be applied to all the stats plugins within the group.
-  class StatsPluginGroup {
+  class StatsPluginGroup
+      : public std::enable_shared_from_this<StatsPluginGroup> {
    public:
     // Adds a stats plugin and a scope config (per-channel or per-server) to the
     // group.
@@ -379,6 +391,18 @@ class GlobalStatsPluginRegistry {
       plugin_state.plugin = std::move(plugin);
       plugin_state.scope_config = std::move(config);
       plugins_state_.push_back(std::move(plugin_state));
+    }
+    // Finish construction: must be called after all plugins have been added.
+    void Finish() {
+      std::vector<RefCountedPtr<CollectionScope>> collection_scopes;
+      collection_scopes.reserve(plugins_state_.size());
+      for (auto& state : plugins_state_) {
+        if (auto scope = state.plugin->GetCollectionScope(); scope != nullptr) {
+          collection_scopes.push_back(scope);
+        }
+      }
+      collection_scope_ =
+          CreateCollectionScope(std::move(collection_scopes), {});
     }
     // Adds a counter in all stats plugins within the group. See the StatsPlugin
     // interface for more documentation and valid types.
@@ -469,7 +493,20 @@ class GlobalStatsPluginRegistry {
                               Arena* arena);
     // Adds all available server call tracers associated with the stats plugins
     // within the group to \a call_context.
-    void AddServerCallTracers(Arena* arena);
+    void AddServerCallTracers(
+        Arena* arena,
+        absl::Span<ServerCallTracerInterface* const> additional_tracers);
+
+    static absl::string_view ChannelArgName() {
+      return "grpc.internal.stats_plugin_group";
+    }
+    static int ChannelArgsCompare(const StatsPluginGroup* a,
+                                  const StatsPluginGroup* b);
+
+    RefCountedPtr<CollectionScope> GetCollectionScope() const {
+      CHECK_NE(collection_scope_.get(), nullptr);
+      return collection_scope_;
+    }
 
    private:
     friend class RegisteredMetricCallback;
@@ -492,6 +529,7 @@ class GlobalStatsPluginRegistry {
     }
 
     std::vector<PluginState> plugins_state_;
+    RefCountedPtr<CollectionScope> collection_scope_;
   };
 
   // Registers a stats plugin with the global stats plugin registry.
@@ -499,9 +537,10 @@ class GlobalStatsPluginRegistry {
 
   // The following functions can be invoked to get a StatsPluginGroup for
   // a specified scope.
-  static StatsPluginGroup GetStatsPluginsForChannel(
+  static std::shared_ptr<StatsPluginGroup> GetStatsPluginsForChannel(
       const experimental::StatsPluginChannelScope& scope);
-  static StatsPluginGroup GetStatsPluginsForServer(const ChannelArgs& args);
+  static std::shared_ptr<StatsPluginGroup> GetStatsPluginsForServer(
+      const ChannelArgs& args);
 
  private:
   struct GlobalStatsPluginNode {

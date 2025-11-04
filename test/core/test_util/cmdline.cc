@@ -27,11 +27,11 @@
 #include <algorithm>
 #include <vector>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-#include "src/core/util/memory.h"
 
 typedef enum { ARGTYPE_INT, ARGTYPE_BOOL, ARGTYPE_STRING } argtype;
 
@@ -88,7 +88,7 @@ static void add_arg(gpr_cmdline* cl, const char* name, const char* help,
   arg* a;
 
   for (a = cl->args; a; a = a->next) {
-    CHECK_NE(strcmp(a->name, name), 0);
+    GRPC_CHECK_NE(strcmp(a->name, name), 0);
   }
 
   a = static_cast<arg*>(gpr_zalloc(sizeof(arg)));
@@ -118,8 +118,8 @@ void gpr_cmdline_add_string(gpr_cmdline* cl, const char* name, const char* help,
 void gpr_cmdline_on_extra_arg(
     gpr_cmdline* cl, const char* name, const char* help,
     void (*on_extra_arg)(void* user_data, const char* arg), void* user_data) {
-  CHECK(!cl->extra_arg);
-  CHECK(on_extra_arg);
+  GRPC_CHECK(!cl->extra_arg);
+  GRPC_CHECK(on_extra_arg);
 
   cl->extra_arg = on_extra_arg;
   cl->extra_arg_user_data = user_data;
@@ -201,7 +201,7 @@ static int value_state(gpr_cmdline* cl, char* str) {
   long intval;
   char* end;
 
-  CHECK(cl->cur_arg);
+  GRPC_CHECK(cl->cur_arg);
 
   switch (cl->cur_arg->type) {
     case ARGTYPE_INT:
@@ -307,7 +307,7 @@ static int normal_state(gpr_cmdline* cl, char* str) {
 int gpr_cmdline_parse(gpr_cmdline* cl, int argc, char** argv) {
   int i;
 
-  CHECK_GE(argc, 1);
+  GRPC_CHECK_GE(argc, 1);
   cl->argv0 = argv[0];
 
   for (i = 1; i < argc; i++) {

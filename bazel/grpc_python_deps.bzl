@@ -22,9 +22,9 @@ def grpc_python_deps():
     if "rules_python" not in native.existing_rules():
         http_archive(
             name = "rules_python",
-            sha256 = "4f7e2aa1eb9aa722d96498f5ef514f426c1f55161c3c9ae628c857a7128ceb07",
-            strip_prefix = "rules_python-1.0.0",
-            url = "https://github.com/bazelbuild/rules_python/releases/download/1.0.0/rules_python-1.0.0.tar.gz",
+            sha256 = "13671d304cfe43350302213a60d93a5fc0b763b0a6de17397e3e239253b61b73",
+            strip_prefix = "rules_python-1.5.4",
+            url = "https://github.com/bazel-contrib/rules_python/releases/download/1.5.4/rules_python-1.5.4.tar.gz",
         )
 
     python_configure(name = "local_config_python")
@@ -32,6 +32,15 @@ def grpc_python_deps():
     native.bind(
         name = "python_headers",
         actual = "@local_config_python//:python_headers",
+    )
+
+    # This version should be same as that in G3
+    http_archive(
+        name = "typing_extensions",
+        build_file = "@com_github_grpc_grpc//third_party:typing_extensions.BUILD",
+        sha256 = "bf6f56b36d8bc9156e518eb1cc37a146284082fa53522033f772aefbecfd15fc",
+        strip_prefix = "typing_extensions-4.12.2",
+        url = "https://github.com/python/typing_extensions/archive/4.12.2.tar.gz",
     )
 
     if "cython" not in native.existing_rules():

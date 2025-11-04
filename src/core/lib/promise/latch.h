@@ -22,12 +22,12 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
@@ -54,12 +54,12 @@ class Latch {
   Latch(Latch&& other) noexcept
       : value_(std::move(other.value_)), has_value_(other.has_value_) {
 #ifndef NDEBUG
-    DCHECK(!other.has_had_waiters_);
+    GRPC_DCHECK(!other.has_had_waiters_);
 #endif
   }
   Latch& operator=(Latch&& other) noexcept {
 #ifndef NDEBUG
-    DCHECK(!other.has_had_waiters_);
+    GRPC_DCHECK(!other.has_had_waiters_);
 #endif
     value_ = std::move(other.value_);
     has_value_ = other.has_value_;
@@ -104,7 +104,7 @@ class Latch {
   void Set(T value) {
     GRPC_TRACE_LOG(promise_primitives, INFO)
         << DebugTag() << "Set " << StateString();
-    DCHECK(!has_value_);
+    GRPC_DCHECK(!has_value_);
     value_ = std::move(value);
     has_value_ = true;
     waiter_.Wake();
@@ -147,12 +147,12 @@ class Latch<void> {
   Latch& operator=(const Latch&) = delete;
   Latch(Latch&& other) noexcept : is_set_(other.is_set_) {
 #ifndef NDEBUG
-    DCHECK(!other.has_had_waiters_);
+    GRPC_DCHECK(!other.has_had_waiters_);
 #endif
   }
   Latch& operator=(Latch&& other) noexcept {
 #ifndef NDEBUG
-    DCHECK(!other.has_had_waiters_);
+    GRPC_DCHECK(!other.has_had_waiters_);
 #endif
     is_set_ = other.is_set_;
     return *this;
@@ -178,7 +178,7 @@ class Latch<void> {
   void Set() {
     GRPC_TRACE_LOG(promise_primitives, INFO)
         << DebugTag() << "Set " << StateString();
-    DCHECK(!is_set_);
+    GRPC_DCHECK(!is_set_);
     is_set_ = true;
     waiter_.Wake();
   }

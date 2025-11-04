@@ -102,6 +102,20 @@ template <typename T>
 const uint16_t ArenaContextTraits<T>::id_ =
     BaseArenaContextTraits::MakeId(DestroyArenaContext<T>);
 
+template <typename T, typename SfinaeVoid = void>
+struct GetContextId {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static uint16_t id() {
+    return ArenaContextTraits<T>::id();
+  }
+};
+
+template <typename T>
+struct GetContextId<T, std::void_t<typename ContextSubclass<T>::Base>> {
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static uint16_t id() {
+    return GetContextId<typename ContextSubclass<T>::Base>::id();
+  }
+};
+
 template <typename T, typename A, typename B>
 struct IfArray {
   using Result = A;
@@ -292,8 +306,7 @@ class Arena final : public RefCounted<Arena, NonPolymorphicRefCount,
   // often needs to access these directly.
   template <typename T>
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T* GetContext() {
-    return static_cast<T*>(
-        contexts()[arena_detail::ArenaContextTraits<T>::id()]);
+    return static_cast<T*>(contexts()[arena_detail::GetContextId<T>::id()]);
   }
 
   template <typename T>
@@ -407,6 +420,25 @@ class ArenaSpsc {
     Destruct(&next->value);
     tail_.store(next, std::memory_order_release);
     return result;
+  }
+
+  T* Peek() {
+    Node* n = tail_.load(std::memory_order_relaxed);
+    Node* next = n->next.load(std::memory_order_acquire);
+    if (next == nullptr) return nullptr;
+    return &next->value;
+  }
+
+  // Iterate over queued nodes. At most one thread can be calling this at a
+  // time, and no other thread can be calling Pop().
+  template <typename F>
+  void ForEach(F f) {
+    Node* tail = tail_.load(std::memory_order_relaxed);
+    Node* n = tail->next.load(std::memory_order_acquire);
+    while (n != nullptr) {
+      f(n->value);
+      n = n->next.load(std::memory_order_acquire);
+    }
   }
 
  private:

@@ -53,13 +53,13 @@ void CallbackUnaryCall(grpc::ChannelInterface* channel,
                        const grpc::internal::RpcMethod& method,
                        grpc::ClientContext* context,
                        const InputMessage* request, OutputMessage* result,
-                       std::function<void(grpc::Status)> on_completion) {
+                       std::function<void(grpc::Status)>&& on_completion) {
   static_assert(std::is_base_of<BaseInputMessage, InputMessage>::value,
                 "Invalid input message specification");
   static_assert(std::is_base_of<BaseOutputMessage, OutputMessage>::value,
                 "Invalid output message specification");
   CallbackUnaryCallImpl<BaseInputMessage, BaseOutputMessage> x(
-      channel, method, context, request, result, on_completion);
+      channel, method, context, request, result, std::move(on_completion));
 }
 
 template <class InputMessage, class OutputMessage>
@@ -69,7 +69,7 @@ class CallbackUnaryCallImpl {
                         const grpc::internal::RpcMethod& method,
                         grpc::ClientContext* context,
                         const InputMessage* request, OutputMessage* result,
-                        std::function<void(grpc::Status)> on_completion) {
+                        std::function<void(grpc::Status)>&& on_completion) {
     grpc::CompletionQueue* cq = channel->CallbackCQ();
     ABSL_CHECK_NE(cq, nullptr);
     grpc::internal::Call call(channel->CreateCall(method, context, cq));
@@ -90,11 +90,11 @@ class CallbackUnaryCallImpl {
     auto* const alloced =
         static_cast<OpSetAndTag*>(grpc_call_arena_alloc(call.call(), alloc_sz));
     auto* ops = new (&alloced->opset) FullCallOpSet;
-    auto* tag = new (&alloced->tag)
-        grpc::internal::CallbackWithStatusTag(call.call(), on_completion, ops);
+    auto* tag = new (&alloced->tag) grpc::internal::CallbackWithStatusTag(
+        call.call(), std::move(on_completion), ops);
 
     // TODO(vjpai): Unify code with sync API as much as possible
-    grpc::Status s = ops->SendMessagePtr(request);
+    grpc::Status s = ops->SendMessagePtr(request, /*allocator=*/nullptr);
     if (!s.ok()) {
       tag->force_run(s);
       return;
@@ -530,8 +530,9 @@ class ClientCallbackReaderWriterImpl
       options.set_buffer_hint();
       write_ops_.ClientSendClose();
     }
+
     // TODO(vjpai): don't assert
-    ABSL_CHECK(write_ops_.SendMessagePtr(msg, options).ok());
+    ABSL_CHECK(write_ops_.SendMessagePtr(msg, options, nullptr).ok());
     callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
     if (GPR_UNLIKELY(corked_write_needed_)) {
       write_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
@@ -636,8 +637,8 @@ class ClientCallbackReaderWriterImpl
   // like StartCall or RemoveHold. If this is the last operation or hold on this
   // object, it will invoke the OnDone reaction. If MaybeFinish was called from
   // a reaction, it can call OnDone directly. If not, it would need to schedule
-  // OnDone onto an executor thread to avoid the possibility of deadlocking with
-  // any locks in the user code that invoked it.
+  // OnDone onto an EventEngine thread to avoid the possibility of deadlocking
+  // with any locks in the user code that invoked it.
   void MaybeFinish(bool from_reaction) {
     if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
                          1, std::memory_order_acq_rel) == 1)) {
@@ -808,7 +809,7 @@ class ClientCallbackReaderImpl : public ClientCallbackReader<Response> {
       : context_(context), call_(call), reactor_(reactor) {
     this->BindReactor(reactor);
     // TODO(vjpai): don't assert
-    ABSL_CHECK(start_ops_.SendMessagePtr(request).ok());
+    ABSL_CHECK(start_ops_.SendMessagePtr(request, /*allocator=*/nullptr).ok());
     start_ops_.ClientSendClose();
   }
 
@@ -932,8 +933,9 @@ class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
       options.set_buffer_hint();
       write_ops_.ClientSendClose();
     }
+
     // TODO(vjpai): don't assert
-    ABSL_CHECK(write_ops_.SendMessagePtr(msg, options).ok());
+    ABSL_CHECK(write_ops_.SendMessagePtr(msg, options, nullptr).ok());
     callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
 
     if (GPR_UNLIKELY(corked_write_needed_)) {
@@ -1160,8 +1162,9 @@ class ClientCallbackUnaryImpl final : public ClientCallbackUnary {
                           Response* response, ClientUnaryReactor* reactor)
       : context_(context), call_(call), reactor_(reactor) {
     this->BindReactor(reactor);
+
     // TODO(vjpai): don't assert
-    ABSL_CHECK(start_ops_.SendMessagePtr(request).ok());
+    ABSL_CHECK(start_ops_.SendMessagePtr(request, /*allocator=*/nullptr).ok());
     start_ops_.ClientSendClose();
     finish_ops_.RecvMessage(response);
     finish_ops_.AllowNoMessage();

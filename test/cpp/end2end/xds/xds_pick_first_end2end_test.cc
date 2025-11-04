@@ -13,10 +13,8 @@
 // limitations under the License.
 //
 
-#include "gmock/gmock.h"
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpcpp/support/status.h>
-#include "gtest/gtest.h"
 #include <unistd.h>
 
 #include <cstddef>
@@ -25,7 +23,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/strings/str_cat.h"
 #include "envoy/config/cluster/v3/cluster.pb.h"
 #include "envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.pb.h"
 #include "src/core/client_channel/backup_poller.h"
@@ -37,6 +34,9 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc {
 namespace testing {

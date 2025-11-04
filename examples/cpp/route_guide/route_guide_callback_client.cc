@@ -33,6 +33,8 @@
 #include <thread>
 
 #include "helper.h"
+#include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
 #ifdef BAZEL_BUILD
 #include "examples/protos/route_guide.grpc.pb.h"
 #else
@@ -344,6 +346,8 @@ class RouteGuideClient {
 };
 
 int main(int argc, char** argv) {
+  absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   // Expect only arg: --db_path=path/to/route_guide_db.json.
   std::string db = routeguide::GetDbFileContent(argc, argv);
   RouteGuideClient guide(

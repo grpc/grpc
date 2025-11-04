@@ -25,17 +25,12 @@
 #include <string>
 #include <vector>
 
-#include "absl/strings/string_view.h"
-#include "absl/types/span.h"
 #include "src/core/telemetry/histogram_view.h"
 #include "src/core/telemetry/stats_data.h"
-#include "src/core/util/no_destruct.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
-
-inline GlobalStatsCollector& global_stats() {
-  return *NoDestructSingleton<GlobalStatsCollector>::Get();
-}
 
 namespace stats_detail {
 std::string StatsAsJson(absl::Span<const uint64_t> counters,

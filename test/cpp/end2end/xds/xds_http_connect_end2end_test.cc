@@ -14,15 +14,9 @@
 // limitations under the License.
 //
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-
 #include <string>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
 #include "envoy/config/core/v3/address.pb.h"
 #include "envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.pb.h"
 #include "src/core/client_channel/backup_poller.h"
@@ -31,6 +25,11 @@
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc {
 namespace testing {

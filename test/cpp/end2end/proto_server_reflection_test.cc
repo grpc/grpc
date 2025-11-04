@@ -16,7 +16,6 @@
 //
 //
 
-#include <gmock/gmock-matchers.h>
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -27,7 +26,6 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
-#include "gtest/gtest.h"
 
 #include <memory>
 #include <vector>
@@ -40,6 +38,8 @@
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/proto_reflection_descriptor_database.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc {
 namespace testing {

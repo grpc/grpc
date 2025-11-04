@@ -33,6 +33,7 @@ load("@build_bazel_rules_apple//apple/testing/default_runner:ios_test_runner.bzl
 load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
 load("@com_google_protobuf//bazel:upb_proto_library.bzl", "upb_proto_library", "upb_proto_reflection_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_python//python:defs.bzl", "py_binary")
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//bazel:copts.bzl", "GRPC_DEFAULT_COPTS")
 load("//bazel:experiments.bzl", "EXPERIMENTS", "EXPERIMENT_ENABLES", "EXPERIMENT_POLLERS")
@@ -63,8 +64,6 @@ def _get_external_deps(external_deps):
     for dep in external_deps:
         if dep.startswith("@"):
             ret.append(dep)
-        elif dep == "address_sorting":
-            ret.append("//third_party/address_sorting")
         elif dep == "xxhash":
             ret.append("//third_party/xxhash")
         elif dep == "cares":
@@ -72,8 +71,6 @@ def _get_external_deps(external_deps):
                 "//:grpc_no_ares": [],
                 "//conditions:default": ["//third_party:cares"],
             })
-        elif dep == "cronet_c_for_grpc":
-            ret.append("//third_party/objective_c/Cronet:cronet_c_for_grpc")
         elif dep.startswith("absl/"):
             ret.append("@com_google_absl//" + dep)
         elif dep.startswith("google/"):
@@ -92,59 +89,12 @@ def _update_visibility(visibility):
     if visibility == None:
         return None
 
-    # Visibility rules prefixed with '@grpc:' are used to flag different visibility rule
-    # classes upstream.
-    PUBLIC = ["//visibility:public"]
-    PRIVATE = ["//:__subpackages__"]
-    VISIBILITY_TARGETS = {
-        "alt_grpc++_base_legacy": PRIVATE,
-        "alt_grpc_base_legacy": PRIVATE,
-        "alt_grpc++_base_unsecure_legacy": PRIVATE,
-        "alts_frame_protector": PRIVATE,
-        "channelz": PRIVATE,
-        "chaotic_good": PRIVATE,
-        "client_channel": PRIVATE,
-        "cli": PRIVATE,
-        "core_credentials": PRIVATE,
-        "debug_location": PRIVATE,
-        "endpoint_tests": PRIVATE,
-        "exec_ctx": PRIVATE,
-        "gpr_public_hdrs": PRIVATE,
-        "grpclb": PRIVATE,
-        "grpc_experiments": PRIVATE,
-        "grpc_opencensus_plugin": PUBLIC,
-        "grpc_public_hdrs": PRIVATE,
-        "grpcpp_gcp_observability": PUBLIC,
-        "grpc_resolver_fake": PRIVATE,
-        "grpc++_public_hdrs": PRIVATE,
-        "http": PRIVATE,
-        "httpcli": PRIVATE,
-        "iomgr_internal_errqueue": PRIVATE,
-        "iomgr_buffer_list": PRIVATE,
-        "json_reader_legacy": PRIVATE,
-        "latent_see": PRIVATE,
-        "otel_plugin": PRIVATE,
-        "public": PUBLIC,
-        "ref_counted_ptr": PRIVATE,
-        "tcp_tracer": PRIVATE,
-        "trace": PRIVATE,
-        "tsi_interface": PRIVATE,
-        "tsi": PRIVATE,
-        "xds": PRIVATE,
-        "xds_client_core": PRIVATE,
-        "xds_end2end_test_utils": PRIVATE,
-        "grpc_python_observability": PRIVATE,
-        "event_engine_base_hdrs": PRIVATE,
-        "useful": PRIVATE,
-    }
-    final_visibility = []
-    for rule in visibility:
-        if rule.startswith("@grpc:"):
-            for replacement in VISIBILITY_TARGETS[rule[len("@grpc:"):]]:
-                final_visibility.append(replacement)
-        else:
-            final_visibility.append(rule)
-    return [x for x in final_visibility]
+    final_visibility = list(visibility)
+    if (final_visibility != ["//visibility:public"] and
+        final_visibility != ["//visibility:private"] and
+        "//:__subpackages__" not in final_visibility):
+        final_visibility.append("//:__subpackages__")
+    return final_visibility
 
 def _include_prefix():
     include_prefix = ""
@@ -247,13 +197,15 @@ def grpc_proto_plugin(name, srcs = [], deps = []):
         name = name + "_universal",
         binary = name + "_native",
     )
+
+    # In order to avoid warnings from Bazel, names of the rule and its output file must differ.
     native.genrule(
         name = name,
         srcs = select({
             "@platforms//os:macos": [name + "_universal"],
             "//conditions:default": [name + "_native"],
         }),
-        outs = [name],
+        outs = [name + "_binary"],
         cmd = "cp $< $@",
         executable = True,
     )
@@ -355,7 +307,7 @@ def ios_cc_test(
             size = kwargs.get("size"),
             data = kwargs.get("data"),
             tags = ios_tags,
-            minimum_os_version = "11.0",
+            minimum_os_version = "15.0",
             runner = test_runner,
             deps = ios_test_deps,
         )
@@ -708,7 +660,7 @@ def grpc_generate_objc_one_off_targets():
 def grpc_generate_one_off_internal_targets():
     pass
 
-def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, exclude_pollers = [], uses_event_engine = True):
+def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, size = "medium", timeout = None, tags = [], env = {}, exec_compatible_with = [], exec_properties = {}, shard_count = None, flaky = None, exclude_pollers = [], uses_event_engine = True):
     """Execute an sh_test for every <poller> x <EventEngine> combination
 
     Args:
@@ -720,6 +672,7 @@ def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, siz
         size: The size of the test.
         timeout: The test timeout.
         tags: The tags for the test.
+        env: Environment variables to set for the test.
         exec_compatible_with: A list of constraint values that must be
             satisfied for the platform.
         exec_properties: A dictionary of strings that will be added to the
@@ -746,7 +699,7 @@ def grpc_sh_test(name, srcs = [], args = [], data = [], uses_polling = True, siz
             deps = poller_config["deps"],
             tags = poller_config["tags"],
             args = poller_config["args"],
-            env = poller_config["env"],
+            env = poller_config["env"] | env,
             flaky = poller_config["flaky"],
             **test_args
         )
@@ -767,7 +720,7 @@ def grpc_py_binary(
         testonly = False,
         python_version = "PY2",
         **kwargs):
-    native.py_binary(
+    py_binary(
         name = name,
         srcs = srcs,
         testonly = testonly,
@@ -791,6 +744,8 @@ def grpc_package(name, visibility = "private", features = []):
         visibility = ["//visibility:public"]
     elif visibility == "private":
         visibility = []
+    elif visibility == "grpc":
+        visibility = ["//:__subpackages__"]
     else:
         fail("Unknown visibility " + visibility)
 
@@ -859,6 +814,18 @@ def grpc_upb_proto_library(name, deps):
 
 def grpc_upb_proto_reflection_library(name, deps):
     upb_proto_reflection_library(name = name, deps = deps)
+
+def grpc_add_well_known_proto_upb_targets(targets):
+    """Adds well-known proto upb targets to the given targets."""
+    for target in targets:
+        grpc_upb_proto_library(
+            name = "protobuf_" + target + "_upb",
+            deps = ["@com_google_protobuf//:" + target + "_proto"],
+        )
+        grpc_upb_proto_reflection_library(
+            name = "protobuf_" + target + "_upbdefs",
+            deps = ["@com_google_protobuf//:" + target + "_proto"],
+        )
 
 # buildifier: disable=unnamed-macro
 def python_config_settings():

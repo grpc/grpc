@@ -21,7 +21,6 @@
 //   fires; request is processed at that point
 // - find some deterministic way to exercise adaptive throttler code
 
-#include "gmock/gmock.h"
 #include <grpc/credentials.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
@@ -29,17 +28,12 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/channel_arguments.h>
-#include "gtest/gtest.h"
 
 #include <deque>
 #include <map>
 #include <optional>
 #include <thread>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
@@ -50,6 +44,7 @@
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/service_config/service_config_impl.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/time.h"
 #include "src/core/util/uri.h"
@@ -70,6 +65,11 @@
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/credentials.h"
 #include "test/cpp/util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 
 using ::grpc::lookup::v1::RouteLookupRequest;
 
@@ -170,7 +170,7 @@ class RlsEnd2endTest : public ::testing::Test {
     grpc_core::ConfigVars::Overrides overrides;
     overrides.client_channel_backup_poll_interval_ms = 1;
     grpc_core::ConfigVars::SetOverrides(overrides);
-    grpc_core::CoreConfiguration::RegisterBuilder(
+    grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
         grpc_core::RegisterFixedAddressLoadBalancingPolicy);
     grpc_init();
   }
@@ -419,7 +419,7 @@ class RlsEnd2endTest : public ::testing::Test {
 
     void Start() {
       LOG(INFO) << "starting " << type_ << " server on port " << port_;
-      CHECK(!running_);
+      GRPC_CHECK(!running_);
       running_ = true;
       service_.Start();
       grpc::internal::Mutex mu;

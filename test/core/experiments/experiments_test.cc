@@ -20,8 +20,8 @@
 
 #include <memory>
 
-#include "gtest/gtest.h"
 #include "src/core/lib/experiments/config.h"
+#include "gtest/gtest.h"
 
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
 

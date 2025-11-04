@@ -23,13 +23,6 @@
 #include <string>
 #include <tuple>
 
-#include "absl/cleanup/cleanup.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/random/bit_gen_ref.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h"
 #include "src/core/ext/transport/chaotic_good_legacy/frame.h"
 #include "src/core/ext/transport/chaotic_good_legacy/frame_header.h"
@@ -46,7 +39,15 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/telemetry/metrics.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/log/log.h"
+#include "absl/random/bit_gen_ref.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 namespace chaotic_good_legacy {
@@ -123,15 +124,15 @@ auto ChaoticGoodServerTransport::DispatchFrame(
 
 namespace {
 auto BooleanSuccessToTransportErrorCapturingInitiator(CallInitiator initiator) {
-  return [initiator = std::move(initiator)](bool success) {
-    return success ? absl::OkStatus()
-                   : absl::UnavailableError("Transport closed.");
+  return [initiator = std::move(initiator)](StatusFlag success) {
+    return success.ok() ? absl::OkStatus()
+                        : absl::UnavailableError("Transport closed.");
   };
 }
 }  // namespace
 
 auto ChaoticGoodServerTransport::SendFrame(
-    ServerFrame frame, MpscSender<ServerFrame> outgoing_frames,
+    ServerFrame frame, LockBasedMpscSender<ServerFrame> outgoing_frames,
     CallInitiator call_initiator) {
   // Capture the call_initiator to ensure the underlying call spine is alive
   // until the outgoing_frames.Send promise completes.
@@ -141,7 +142,7 @@ auto ChaoticGoodServerTransport::SendFrame(
 }
 
 auto ChaoticGoodServerTransport::SendFrameAcked(
-    ServerFrame frame, MpscSender<ServerFrame> outgoing_frames,
+    ServerFrame frame, LockBasedMpscSender<ServerFrame> outgoing_frames,
     CallInitiator call_initiator) {
   // Capture the call_initiator to ensure the underlying call spine is alive
   // until the outgoing_frames.Send promise completes.
@@ -151,7 +152,7 @@ auto ChaoticGoodServerTransport::SendFrameAcked(
 }
 
 auto ChaoticGoodServerTransport::SendCallBody(
-    uint32_t stream_id, MpscSender<ServerFrame> outgoing_frames,
+    uint32_t stream_id, LockBasedMpscSender<ServerFrame> outgoing_frames,
     CallInitiator call_initiator) {
   // Continuously send client frame with client to server messages.
   return ForEach(MessagesFrom(call_initiator),
@@ -165,7 +166,7 @@ auto ChaoticGoodServerTransport::SendCallBody(
 }
 
 auto ChaoticGoodServerTransport::SendCallInitialMetadataAndBody(
-    uint32_t stream_id, MpscSender<ServerFrame> outgoing_frames,
+    uint32_t stream_id, LockBasedMpscSender<ServerFrame> outgoing_frames,
     CallInitiator call_initiator) {
   return TrySeq(
       // Wait for initial metadata then send it out.
@@ -217,7 +218,7 @@ auto ChaoticGoodServerTransport::CallOutboundLoop(
 absl::Status ChaoticGoodServerTransport::NewStream(
     ChaoticGoodTransport& transport, const FrameHeader& header,
     SliceBuffer payload) {
-  CHECK_EQ(header.payload_length, payload.Length());
+  GRPC_CHECK_EQ(header.payload_length, payload.Length());
   auto client_initial_metadata_frame =
       transport.DeserializeFrame<ClientInitialMetadataFrame>(
           header, std::move(payload));
@@ -341,9 +342,21 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
           args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
       outgoing_frames_(4),
       message_chunker_(config.MakeMessageChunker()) {
+  std::string peer_string =
+      grpc_event_engine::experimental::ResolvedAddressToString(
+          control_endpoint.GetPeerAddress())
+          .value_or("unknown");
+  socket_node_ = MakeRefCounted<channelz::SocketNode>(
+      grpc_event_engine::experimental::ResolvedAddressToString(
+          control_endpoint.GetLocalAddress())
+          .value_or("unknown"),
+      peer_string, absl::StrCat("chaotic-good server", peer_string),
+      args.GetObjectRef<channelz::SocketNode::Security>());
   auto transport = MakeRefCounted<ChaoticGoodTransport>(
       std::move(control_endpoint), config.TakePendingDataEndpoints(),
-      event_engine_, config.MakeTransportOptions(), false);
+      event_engine_,
+      args.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>(),
+      config.MakeTransportOptions(), false, socket_node_);
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine_.get());
@@ -361,8 +374,8 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
 
 void ChaoticGoodServerTransport::SetCallDestination(
     RefCountedPtr<UnstartedCallDestination> call_destination) {
-  CHECK(call_destination_ == nullptr);
-  CHECK(call_destination != nullptr);
+  GRPC_CHECK(call_destination_ == nullptr);
+  GRPC_CHECK(call_destination != nullptr);
   call_destination_ = call_destination;
   got_acceptor_.Set();
 }
@@ -499,5 +512,13 @@ void ChaoticGoodServerTransport::PerformOp(grpc_transport_op* op) {
   ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
 }
 
+void ChaoticGoodServerTransport::ChannelzDataSource::AddData(
+    channelz::DataSink sink) {
+  transport_->party_->ExportToChannelz("party", sink);
+  MutexLock lock(&transport_->mu_);
+  sink.AddData(
+      "client_transport",
+      channelz::PropertyList().Set("streams", transport_->stream_map_.size()));
+}
 }  // namespace chaotic_good_legacy
 }  // namespace grpc_core

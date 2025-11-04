@@ -26,7 +26,6 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/client_interceptor.h>
-#include "gtest/gtest.h"
 
 #include <memory>
 #include <vector>
@@ -37,6 +36,7 @@
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
 #include "test/cpp/util/string_ref_helper.h"
+#include "gtest/gtest.h"
 
 namespace grpc {
 namespace testing {

@@ -21,18 +21,18 @@
 #include <atomic>
 #include <string>
 
+#include "metadata_exchange.h"
+#include "python_observability_context.h"
+#include "src/core/telemetry/call_tracer.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
-#include "metadata_exchange.h"
-#include "python_observability_context.h"
-#include "src/core/telemetry/call_tracer.h"
 
 namespace grpc_observability {
 
-class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
+class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracerInterface {
  public:
   class PythonOpenCensusCallAttemptTracer : public CallAttemptTracer {
    public:
@@ -72,10 +72,10 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
     void RecordOutgoingBytes(
         const TransportByteSize& transport_byte_size) override;
     void RecordCancel(grpc_error_handle cancel_error) override;
-    void RecordEnd(const gpr_timespec& /*latency*/) override;
+    void RecordEnd() override;
     void RecordAnnotation(absl::string_view annotation) override;
     void RecordAnnotation(const Annotation& annotation) override;
-    std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override;
+    std::shared_ptr<grpc_core::TcpCallTracer> StartNewTcpTrace() override;
     void SetOptionalLabel(OptionalLabelKey key,
                           grpc_core::RefCountedStringValue value) override;
 

@@ -24,7 +24,6 @@
 
 #include <optional>
 
-#include "absl/base/thread_annotations.h"
 #include "src/core/client_channel/connector.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -32,6 +31,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
 
 namespace grpc_core {
 
@@ -71,6 +71,9 @@ class Chttp2Connector : public SubchannelConnector {
   std::optional<grpc_error_handle> notify_error_;
   RefCountedPtr<HandshakeManager> handshake_mgr_;
 };
+
+absl::StatusOr<grpc_channel*> CreateHttp2Channel(std::string target,
+                                                 const ChannelArgs& args);
 
 }  // namespace grpc_core
 

@@ -20,6 +20,7 @@
 #include <set>
 #include <string>
 
+#include "src/core/credentials/call/call_creds_registry.h"
 #include "src/core/credentials/transport/channel_creds_registry.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
@@ -31,33 +32,50 @@
 
 namespace grpc_core {
 
-class GrpcXdsServer final : public GrpcXdsServerInterface {
+class GrpcXdsServerTarget final : public GrpcXdsServerInterface {
  public:
-  const std::string& server_uri() const override { return server_uri_; }
+  explicit GrpcXdsServerTarget(
+      std::string server_uri,
+      RefCountedPtr<ChannelCredsConfig> channel_creds_config,
+      std::vector<RefCountedPtr<CallCredsConfig>> call_creds_configs)
+      : server_uri_(std::move(server_uri)),
+        channel_creds_config_(std::move(channel_creds_config)),
+        call_creds_configs_(std::move(call_creds_configs)) {}
 
-  bool IgnoreResourceDeletion() const override;
-  bool FailOnDataErrors() const override;
-  bool ResourceTimerIsTransientFailure() const override;
-
-  bool TrustedXdsServer() const;
-
-  bool Equals(const XdsServer& other) const override;
-
+  bool Equals(const XdsServerTarget& other) const override;
   std::string Key() const override;
-
+  const std::string& server_uri() const override { return server_uri_; }
   RefCountedPtr<ChannelCredsConfig> channel_creds_config() const override {
     return channel_creds_config_;
   }
-
-  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-  void JsonPostLoad(const Json& json, const JsonArgs& args,
-                    ValidationErrors* errors);
-
-  Json ToJson() const;
+  const std::vector<RefCountedPtr<CallCredsConfig>>& call_creds_configs()
+      const override {
+    return call_creds_configs_;
+  }
 
  private:
   std::string server_uri_;
   RefCountedPtr<ChannelCredsConfig> channel_creds_config_;
+  std::vector<RefCountedPtr<CallCredsConfig>> call_creds_configs_;
+};
+
+class GrpcXdsServer final : public XdsBootstrap::XdsServer {
+ public:
+  bool IgnoreResourceDeletion() const override;
+  bool FailOnDataErrors() const override;
+  bool ResourceTimerIsTransientFailure() const override;
+  bool TrustedXdsServer() const;
+  bool Equals(const XdsServer& other) const override;
+  std::string Key() const override;
+  std::shared_ptr<const XdsBootstrap::XdsServerTarget> target() const override {
+    return server_target_;
+  }
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
+  void JsonPostLoad(const Json& json, const JsonArgs& args,
+                    ValidationErrors* errors);
+
+ private:
+  std::shared_ptr<GrpcXdsServerTarget> server_target_;
   std::set<std::string> server_features_;
 };
 

@@ -22,12 +22,12 @@
 #include <optional>
 #include <string>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "upb/mem/arena.h"
 #include "upb/reflection/def.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -87,8 +87,7 @@ class XdsResourceType {
   // properly in logs.
   // Note: This won't actually work properly until upb adds support for
   // Any fields in textproto printing (internal b/178821188).
-  virtual void InitUpbSymtab(XdsClient* xds_client,
-                             upb_DefPool* symtab) const = 0;
+  virtual void InitUpbSymtab(XdsClient*, upb_DefPool*) const {}
 };
 
 }  // namespace grpc_core

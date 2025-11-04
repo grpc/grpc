@@ -35,9 +35,6 @@ def generate_bazel_distribtests(name):
 
     for bazel_version in SUPPORTED_BAZEL_VERSIONS:
         for shard_name in _TEST_SHARDS:
-            # TODO(https://github.com/grpc/grpc/issues/35391): Fix bazel 7 or later + distribtest_python test
-            if shard_name == "distribtest_python":
-                continue
             test_name = "bazel_distribtest_%s_%s" % (bazel_version, shard_name)
             grpc_run_bazel_distribtest_test(
                 name = test_name,

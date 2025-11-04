@@ -35,12 +35,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/base/attributes.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/handshaker.h"
@@ -61,9 +55,15 @@
 #include "src/core/transport/auth_context.h"
 #include "src/core/tsi/transport_security_grpc.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/unique_type_name.h"
+#include "absl/base/attributes.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 #define GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE 256
 
@@ -281,13 +281,13 @@ void SecurityHandshaker::OnPeerCheckedFn(grpc_error_handle error) {
       grpc_slice slice = grpc_slice_from_copied_buffer(
           reinterpret_cast<const char*>(unused_bytes), unused_bytes_size);
       args_->endpoint = grpc_secure_endpoint_create(
-          protector, zero_copy_protector, std::move(args_->endpoint), &slice,
-          args_->args.ToC().get(), 1);
+          protector, zero_copy_protector, std::move(args_->endpoint), &slice, 1,
+          args_->args);
       CSliceUnref(slice);
     } else {
       args_->endpoint = grpc_secure_endpoint_create(
           protector, zero_copy_protector, std::move(args_->endpoint), nullptr,
-          args_->args.ToC().get(), 0);
+          0, args_->args);
     }
   } else if (unused_bytes_size > 0) {
     // Not wrapping the endpoint, so just pass along unused bytes.
@@ -345,7 +345,7 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
   }
   // Read more if we need to.
   if (result == TSI_INCOMPLETE_DATA) {
-    CHECK_EQ(bytes_to_send_size, 0u);
+    GRPC_CHECK_EQ(bytes_to_send_size, 0u);
     grpc_endpoint_read(
         args_->endpoint.get(), args_->read_buffer.c_slice_buffer(),
         NewClosure([self = RefAsSubclass<SecurityHandshaker>()](
@@ -365,7 +365,7 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
   }
   // Update handshaker result.
   if (handshaker_result != nullptr) {
-    CHECK_EQ(handshaker_result_, nullptr);
+    GRPC_CHECK_EQ(handshaker_result_, nullptr);
     handshaker_result_ = handshaker_result;
   }
   if (bytes_to_send_size > 0) {
@@ -373,13 +373,16 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
     outgoing_.Clear();
     outgoing_.Append(Slice::FromCopiedBuffer(
         reinterpret_cast<const char*>(bytes_to_send), bytes_to_send_size));
+    grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs
+        write_args;
+    write_args.set_max_frame_size(INT_MAX);
     grpc_endpoint_write(
         args_->endpoint.get(), outgoing_.c_slice_buffer(),
         NewClosure(
             [self = RefAsSubclass<SecurityHandshaker>()](absl::Status status) {
               self->OnHandshakeDataSentToPeerFnScheduler(std::move(status));
             }),
-        nullptr, /*max_frame_size=*/INT_MAX);
+        std::move(write_args));
   } else if (handshaker_result == nullptr) {
     // There is nothing to send, but need to read from peer.
     grpc_endpoint_read(

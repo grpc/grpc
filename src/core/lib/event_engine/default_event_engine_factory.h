@@ -23,7 +23,7 @@
 namespace grpc_event_engine::experimental {
 
 /// Create an EventEngine using the default factory provided at link time.
-std::unique_ptr<EventEngine> DefaultEventEngineFactory();
+std::shared_ptr<EventEngine> DefaultEventEngineFactory();
 
 }  // namespace grpc_event_engine::experimental
 

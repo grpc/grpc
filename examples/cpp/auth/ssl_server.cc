@@ -18,10 +18,11 @@
 #include <memory>
 #include <string>
 
+#include "helper.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
 #include "absl/strings/str_format.h"
-#include "helper.h"
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
@@ -89,6 +90,7 @@ void RunServer(uint16_t port) {
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   RunServer(absl::GetFlag(FLAGS_port));
   return 0;
 }

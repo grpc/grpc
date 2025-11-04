@@ -27,6 +27,8 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:grpc_fake_credentials",
+        "//src/core:grpc_insecure_credentials",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -40,6 +42,10 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:transport_auth_context",
+        "//:tsi_base",
+        "//:tsi_ssl_credentials",
+        "//src/core:grpc_insecure_credentials",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],

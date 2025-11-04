@@ -23,11 +23,11 @@
 #include <algorithm>
 #include <memory>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {
@@ -52,9 +52,6 @@ TEST(BackOffTest, ConstantBackOff) {
 }
 
 TEST(BackOffTest, InitialBackoffCappedByMaxBackoff) {
-  if (!IsBackoffCapInitialAtMaxEnabled()) {
-    GTEST_SKIP() << "test requires backoff_cap_initial_at_max experiment";
-  }
   const auto kInitialBackoff = Duration::Seconds(2);
   const auto kMaxBackoff = Duration::Seconds(1);
   const double kMultiplier = 1.0;

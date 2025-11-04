@@ -27,9 +27,8 @@
 #include <optional>
 #include <string>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
+#include "src/core/call/call_arena_allocator.h"
+#include "src/core/call/call_destination.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
@@ -37,14 +36,15 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/call_arena_allocator.h"
-#include "src/core/lib/transport/call_destination.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/util/cpp_impl_of.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 // Forward declaration to avoid dependency loop.
 struct grpc_channel_stack;

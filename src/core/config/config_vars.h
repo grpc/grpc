@@ -35,8 +35,12 @@ class GPR_DLL ConfigVars {
  public:
   struct Overrides {
     absl::optional<int32_t> client_channel_backup_poll_interval_ms;
+    absl::optional<int32_t> channelz_max_orphaned_nodes;
+    absl::optional<double> experimental_target_memory_pressure;
+    absl::optional<double> experimental_memory_pressure_threshold;
     absl::optional<bool> enable_fork_support;
     absl::optional<bool> abort_on_leaks;
+    absl::optional<bool> use_system_roots_over_language_callback;
     absl::optional<bool> not_use_system_ssl_roots;
     absl::optional<bool> cpp_experimental_disable_reflection;
     absl::optional<std::string> dns_resolver;
@@ -94,6 +98,10 @@ class GPR_DLL ConfigVars {
   std::string SystemSslRootsDir() const;
   // Path to the default SSL roots file.
   std::string DefaultSslRootsFilePath() const;
+  // Prefer loading system root certificates over language callback.
+  bool UseSystemRootsOverLanguageCallback() const {
+    return use_system_roots_over_language_callback_;
+  }
   // Disable loading system root certificates.
   bool NotUseSystemSslRoots() const { return not_use_system_ssl_roots_; }
   // A colon separated list of cipher suites to use with OpenSSL
@@ -104,14 +112,35 @@ class GPR_DLL ConfigVars {
   bool CppExperimentalDisableReflection() const {
     return cpp_experimental_disable_reflection_;
   }
+  // EXPERIMENTAL: If non-zero, extend the lifetime of channelz nodes past the
+  // underlying object lifetime, up to this many nodes. The value may be
+  // adjusted slightly to account for implementation limits.
+  int32_t ChannelzMaxOrphanedNodes() const {
+    return channelz_max_orphaned_nodes_;
+  }
+  // EXPERIMENTAL: The target pressure for the memory quota pressure controller.
+  // This is a value between 0 and 1.
+  double ExperimentalTargetMemoryPressure() const {
+    return experimental_target_memory_pressure_;
+  }
+  // EXPERIMENTAL: The threshold for the memory quota pressure controller. This
+  // is a value between 0 and 1, and must always be greater than the target
+  // pressure.
+  double ExperimentalMemoryPressureThreshold() const {
+    return experimental_memory_pressure_threshold_;
+  }
 
  private:
   explicit ConfigVars(const Overrides& overrides);
   static const ConfigVars& Load();
   static std::atomic<ConfigVars*> config_vars_;
   int32_t client_channel_backup_poll_interval_ms_;
+  int32_t channelz_max_orphaned_nodes_;
+  double experimental_target_memory_pressure_;
+  double experimental_memory_pressure_threshold_;
   bool enable_fork_support_;
   bool abort_on_leaks_;
+  bool use_system_roots_over_language_callback_;
   bool not_use_system_ssl_roots_;
   bool cpp_experimental_disable_reflection_;
   std::string dns_resolver_;

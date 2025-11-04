@@ -1,0 +1,9 @@
+{
+    "integrity": "",
+    "strip_prefix": "{REPO}-{VERSION}",
+    "url": "https://github.com/{OWNER}/{REPO}/archive/refs/tags/{TAG}.tar.gz",
+    "patch_strip": 1,
+    "patches": {
+        "adopt_bzlmod.patch": "sha256-MJbyswKT9oNCKHkNt1RvOcHnHOU5WyJGk3EhE2vxszQ="
+    }
+}

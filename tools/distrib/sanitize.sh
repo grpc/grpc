@@ -27,10 +27,19 @@ tools/run_tests/sanity/check_include_style.py --fix || true
 tools/distrib/check_namespace_qualification.py --fix
 tools/distrib/black_code.sh
 tools/distrib/isort_code.sh
+tools/distrib/ruff_code.sh --fix
 tools/distrib/check_redundant_namespace_qualifiers.py || true
 tools/codegen/core/gen_grpc_tls_credentials_options.py
 tools/distrib/gen_experiments_and_format.sh
-tools/codegen/core/gen_trace_flags.py
+tools/bazel run --cxxopt='-std=c++17' tools/codegen/core:generate_trace_flags -- \
+ --trace_flags_yaml=$(pwd)/src/core/lib/debug/trace_flags.yaml \
+ --header_path=$(pwd)/src/core/lib/debug/trace_flags.h \
+ --cpp_path=$(pwd)/src/core/lib/debug/trace_flags.cc \
+ --markdown_path=$(pwd)/doc/trace_flags.md
+tools/bazel run --cxxopt='-std=c++17' -c opt tools/codegen/core/gen_stats:gen_stats_data -- \
+    --stats_data_yaml=$(pwd)/src/core/telemetry/stats_data.yaml \
+    --header_path=$(pwd)/src/core/telemetry/stats_data.h \
+    --cpp_path=$(pwd)/src/core/telemetry/stats_data.cc
 
 # Formatters should always run last
 tools/distrib/clang_format_code.sh
