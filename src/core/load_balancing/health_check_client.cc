@@ -283,7 +283,7 @@ class HealthProducer::ConnectivityWatcher final
     producer_->OnConnectivityStateChange(state, status);
   }
 
-  void OnKeepaliveUpdate(int) override {}
+  void OnKeepaliveUpdate(Duration) override {}
 
   grpc_pollset_set* interested_parties() override {
     return producer_->interested_parties_;

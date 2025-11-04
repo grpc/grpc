@@ -470,8 +470,9 @@ class Subchannel::ConnectionStateWatcher final
     MutexLock lock(&subchannel_->mu_);
     // Handle keepalive update.
     if (disconnect_info.keepalive_time.has_value()) {
+      subchannel_->ThrottleKeepaliveTimeLocked(*disconnect_info.keepalive_time);
       subchannel_->watcher_list_.NotifyOnKeepaliveUpdateLocked(
-          disconnect_info.keepalive_time->millis());
+          *disconnect_info.keepalive_time);
     }
     // We shouldn't ever see OnDisconnect() more than once for a given
     // connection, but we'll be defensive just in case: if the connected
@@ -541,10 +542,10 @@ void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
 }
 
 void Subchannel::ConnectivityStateWatcherList::NotifyOnKeepaliveUpdateLocked(
-    int new_keepalive_time_ms) {
+    Duration new_keepalive_time) {
   for (const auto& watcher : watchers_) {
-    subchannel_->work_serializer_.Run([watcher, new_keepalive_time_ms]() {
-      watcher->OnKeepaliveUpdate(new_keepalive_time_ms);
+    subchannel_->work_serializer_.Run([watcher, new_keepalive_time]() {
+      watcher->OnKeepaliveUpdate(new_keepalive_time);
     });
   }
 }
@@ -685,15 +686,19 @@ RefCountedPtr<Subchannel> Subchannel::Create(
   return registered;
 }
 
-void Subchannel::ThrottleKeepaliveTime(int new_keepalive_time) {
+void Subchannel::ThrottleKeepaliveTime(Duration new_keepalive_time) {
   MutexLock lock(&mu_);
+  ThrottleKeepaliveTimeLocked(new_keepalive_time);
+}
+
+void Subchannel::ThrottleKeepaliveTimeLocked(Duration new_keepalive_time) {
   // Only update the value if the new keepalive time is larger.
   if (new_keepalive_time > keepalive_time_) {
     keepalive_time_ = new_keepalive_time;
     GRPC_TRACE_LOG(subchannel, INFO)
         << "subchannel " << this << " " << key_.ToString()
         << ": throttling keepalive time to " << new_keepalive_time;
-    args_ = args_.Set(GRPC_ARG_KEEPALIVE_TIME_MS, new_keepalive_time);
+    args_ = args_.Set(GRPC_ARG_KEEPALIVE_TIME_MS, new_keepalive_time.millis());
   }
 }
 

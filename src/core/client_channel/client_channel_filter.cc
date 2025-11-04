@@ -600,10 +600,6 @@ class ClientChannelFilter::SubchannelWrapper final
     if (it != data_watchers_.end()) data_watchers_.erase(it);
   }
 
-  void ThrottleKeepaliveTime(int new_keepalive_time) {
-    subchannel_->ThrottleKeepaliveTime(new_keepalive_time);
-  }
-
   std::string address() const override { return subchannel_->address(); }
 
  private:
@@ -646,17 +642,16 @@ class ClientChannelFilter::SubchannelWrapper final
           });
     }
 
-    void OnKeepaliveUpdate(int new_keepalive_time_ms) override {
+    void OnKeepaliveUpdate(Duration new_keepalive_time) override {
       GRPC_TRACE_LOG(client_channel, INFO)
           << "chand=" << parent_->chand_
           << ": keepalive update for subchannel wrapper " << parent_.get()
           << "hopping into work_serializer";
       auto self = RefAsSubclass<WatcherWrapper>();
       parent_->chand_->work_serializer_->Run(
-          [self, new_keepalive_time_ms]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+          [self, new_keepalive_time]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
               *self->parent_->chand_->work_serializer_) {
-            self->ApplyKeepaliveThrottlingInWorkSerializer(
-                new_keepalive_time_ms);
+            self->ApplyKeepaliveThrottlingInWorkSerializer(new_keepalive_time);
           });
     }
 
@@ -681,11 +676,12 @@ class ClientChannelFilter::SubchannelWrapper final
           int new_keepalive_time = -1;
           if (absl::SimpleAtoi(std::string(keepalive_throttling.value()),
                                &new_keepalive_time)) {
-            ApplyKeepaliveThrottlingInWorkSerializer(new_keepalive_time);
+            ApplyKeepaliveThrottlingInWorkSerializer(
+                Duration::Milliseconds(new_keepalive_time));
           } else {
             LOG(ERROR) << "chand=" << parent_->chand_
                        << ": Illegal keepalive throttling value "
-                       << std::string(keepalive_throttling.value());
+                       << std::string(*keepalive_throttling);
           }
         }
       }
@@ -698,18 +694,23 @@ class ClientChannelFilter::SubchannelWrapper final
           state == GRPC_CHANNEL_TRANSIENT_FAILURE ? status : absl::OkStatus());
     }
 
-    void ApplyKeepaliveThrottlingInWorkSerializer(int new_keepalive_time_ms)
+    void ApplyKeepaliveThrottlingInWorkSerializer(Duration new_keepalive_time)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(*parent_->chand_->work_serializer_) {
-      if (new_keepalive_time_ms > parent_->chand_->keepalive_time_) {
-        parent_->chand_->keepalive_time_ = new_keepalive_time_ms;
+      if (new_keepalive_time > parent_->chand_->keepalive_time_) {
+        parent_->chand_->keepalive_time_ = new_keepalive_time;
         GRPC_TRACE_LOG(client_channel, INFO)
             << "chand=" << parent_->chand_ << ": throttling keepalive time to "
             << parent_->chand_->keepalive_time_;
         // Propagate the new keepalive time to all subchannels. This is so
         // that new transports created by any subchannel (and not just the
         // subchannel that received the GOAWAY), use the new keepalive time.
-        for (auto* subchannel_wrapper : parent_->chand_->subchannel_wrappers_) {
-          subchannel_wrapper->ThrottleKeepaliveTime(new_keepalive_time_ms);
+        for (auto& [subchannel, _] :
+             parent_->chand_->subchannel_refcount_map_) {
+          if (IsTransportStateWatcherEnabled() &&
+              parent_->subchannel_ == subchannel) {
+            continue;
+          }
+          subchannel->ThrottleKeepaliveTime(new_keepalive_time);
         }
       }
     }
@@ -1119,9 +1120,7 @@ ClientChannelFilter::ClientChannelFilter(grpc_channel_element_args* args,
   // Set initial keepalive time.
   auto keepalive_arg = channel_args_.GetInt(GRPC_ARG_KEEPALIVE_TIME_MS);
   if (keepalive_arg.has_value()) {
-    keepalive_time_ = Clamp(*keepalive_arg, 1, INT_MAX);
-  } else {
-    keepalive_time_ = -1;  // unset
+    keepalive_time_ = Duration::Milliseconds(Clamp(*keepalive_arg, 1, INT_MAX));
   }
   // Set default authority.
   std::optional<std::string> default_authority =

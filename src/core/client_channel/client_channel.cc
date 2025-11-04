@@ -165,7 +165,6 @@ class ClientChannel::SubchannelWrapper
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_);
   void CancelDataWatcher(DataWatcherInterface* watcher) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_);
-  void ThrottleKeepaliveTime(int new_keepalive_time);
   std::string address() const override { return subchannel_->address(); }
 
  private:
@@ -242,16 +241,16 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
         });
   }
 
-  void OnKeepaliveUpdate(int new_keepalive_time_ms) override {
+  void OnKeepaliveUpdate(Duration new_keepalive_time) override {
     GRPC_TRACE_LOG(client_channel, INFO)
         << "client_channel=" << subchannel_wrapper_->client_channel_.get()
         << ": keepalive update for subchannel wrapper "
         << subchannel_wrapper_.get() << "; hopping into work_serializer";
     auto self = RefAsSubclass<WatcherWrapper>();
     subchannel_wrapper_->client_channel_->work_serializer_->Run(
-        [self, new_keepalive_time_ms]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+        [self, new_keepalive_time]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
             *self->subchannel_wrapper_->client_channel_->work_serializer_) {
-          self->ApplyKeepaliveThrottlingInWorkSerializer(new_keepalive_time_ms);
+          self->ApplyKeepaliveThrottlingInWorkSerializer(new_keepalive_time);
         });
   }
 
@@ -276,12 +275,13 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
         int new_keepalive_time = -1;
         if (absl::SimpleAtoi(std::string(keepalive_throttling.value()),
                              &new_keepalive_time)) {
-          ApplyKeepaliveThrottlingInWorkSerializer(new_keepalive_time);
+          ApplyKeepaliveThrottlingInWorkSerializer(
+              Duration::Milliseconds(new_keepalive_time));
         } else {
           LOG(ERROR) << "client_channel="
                      << subchannel_wrapper_->client_channel_.get()
                      << ": Illegal keepalive throttling value "
-                     << std::string(keepalive_throttling.value());
+                     << std::string(*keepalive_throttling);
         }
       }
     }
@@ -294,13 +294,13 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
         state == GRPC_CHANNEL_TRANSIENT_FAILURE ? status : absl::OkStatus());
   }
 
-  void ApplyKeepaliveThrottlingInWorkSerializer(int new_keepalive_time_ms)
+  void ApplyKeepaliveThrottlingInWorkSerializer(Duration new_keepalive_time)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(
           *subchannel_wrapper_->client_channel_->work_serializer_) {
-    if (new_keepalive_time_ms >
+    if (new_keepalive_time >
         subchannel_wrapper_->client_channel_->keepalive_time_) {
       subchannel_wrapper_->client_channel_->keepalive_time_ =
-          new_keepalive_time_ms;
+          new_keepalive_time;
       GRPC_TRACE_LOG(client_channel, INFO)
           << "client_channel=" << subchannel_wrapper_->client_channel_.get()
           << ": throttling keepalive time to "
@@ -308,9 +308,13 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
       // Propagate the new keepalive time to all subchannels. This is so
       // that new transports created by any subchannel (and not just the
       // subchannel that received the GOAWAY), use the new keepalive time.
-      for (auto* subchannel_wrapper :
-           subchannel_wrapper_->client_channel_->subchannel_wrappers_) {
-        subchannel_wrapper->ThrottleKeepaliveTime(new_keepalive_time_ms);
+      for (auto& [subchannel, _] :
+           subchannel_wrapper_->client_channel_->subchannel_refcount_map_) {
+        if (IsTransportStateWatcherEnabled() &&
+            subchannel_wrapper_->subchannel_ == subchannel) {
+          continue;
+        }
+        subchannel->ThrottleKeepaliveTime(new_keepalive_time);
       }
     }
   }
@@ -430,11 +434,6 @@ void ClientChannel::SubchannelWrapper::CancelDataWatcher(
     DataWatcherInterface* watcher) {
   auto it = data_watchers_.find(watcher);
   if (it != data_watchers_.end()) data_watchers_.erase(it);
-}
-
-void ClientChannel::SubchannelWrapper::ThrottleKeepaliveTime(
-    int new_keepalive_time) {
-  subchannel_->ThrottleKeepaliveTime(new_keepalive_time);
 }
 
 //
@@ -664,9 +663,7 @@ ClientChannel::ClientChannel(
   // Set initial keepalive time.
   auto keepalive_arg = channel_args_.GetInt(GRPC_ARG_KEEPALIVE_TIME_MS);
   if (keepalive_arg.has_value()) {
-    keepalive_time_ = Clamp(*keepalive_arg, 1, INT_MAX);
-  } else {
-    keepalive_time_ = -1;  // unset
+    keepalive_time_ = Duration::Milliseconds(Clamp(*keepalive_arg, 1, INT_MAX));
   }
 }
 
