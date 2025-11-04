@@ -3632,6 +3632,26 @@ void grpc_chttp2_transport::
   NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked();
 }
 
+namespace {
+
+class MaxConcurrentStreamsUpdateOnDone final
+    : public grpc_core::Transport::StateWatcher::
+          MaxConcurrentStreamsUpdateDoneHandle {
+ public:
+  explicit MaxConcurrentStreamsUpdateOnDone(
+      grpc_core::RefCountedPtr<grpc_chttp2_transport> transport)
+      : transport_(std::move(transport)) {}
+
+  ~MaxConcurrentStreamsUpdateOnDone() override {
+    transport_->OnPeerMaxConcurrentStreamsUpdateComplete();
+  }
+
+ private:
+  grpc_core::RefCountedPtr<grpc_chttp2_transport> transport_;
+};
+
+}  // namespace
+
 void grpc_chttp2_transport::
     NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked() {
   last_reported_max_concurrent_streams =
@@ -3643,9 +3663,8 @@ void grpc_chttp2_transport::
                          settings.peer().max_concurrent_streams()]() mutable {
     grpc_core::ExecCtx exec_ctx;
     watcher->OnPeerMaxConcurrentStreamsUpdate(
-        max_concurrent_streams, [t = std::move(t)]() {
-          t->OnPeerMaxConcurrentStreamsUpdateComplete();
-        });
+        max_concurrent_streams,
+        std::make_unique<MaxConcurrentStreamsUpdateOnDone>(std::move(t)));
     watcher.reset();  // Before ExecCtx goes out of scope.
   });
 }

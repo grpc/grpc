@@ -505,9 +505,8 @@ class Subchannel::ConnectionStateWatcher final
 
   void OnPeerMaxConcurrentStreamsUpdate(
       uint32_t /*max_concurrent_streams*/,
-      absl::AnyInvocable<void()> on_done) override {
+      std::unique_ptr<MaxConcurrentStreamsUpdateDoneHandle> on_done) override {
     // TODO(roth): Implement this as part of adding connection scaling.
-    on_done();
   }
 
   grpc_pollset_set* interested_parties() const override {

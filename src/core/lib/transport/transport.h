@@ -511,6 +511,8 @@ class Transport : public InternallyRefCounted<Transport> {
   // An interface used by channels or servers to watch the transport's state.
   class StateWatcher : public RefCounted<StateWatcher> {
    public:
+    ~StateWatcher() override = default;
+
     // The list of reasons is defined in
     // https://github.com/grpc/proposal/blob/master/A94-subchannel-otel-metrics.md.
     // Note that we do not include the "subchannel shutdown" reason
@@ -530,22 +532,28 @@ class Transport : public InternallyRefCounted<Transport> {
       std::optional<Duration> keepalive_time;
     };
 
-    ~StateWatcher() override = default;
-
     // Called on disconnection or GOAWAY.  The channel or server must
     // stop sending traffic to this transport.  The transport will
     // automatically stop the watch after this.
     virtual void OnDisconnect(absl::Status status,
                               DisconnectInfo disconnect_info) = 0;
 
+    // A handle passed to the subchannel by the transport via
+    // OnPeerMaxConcurrentStreamsUpdate().  The subchannel must delete
+    // this handle when it has finished processing the update.
+    class MaxConcurrentStreamsUpdateDoneHandle {
+     public:
+      virtual ~MaxConcurrentStreamsUpdateDoneHandle() = default;
+    };
+
     // Will be called once as soon as the watch is started to indicate
     // the current value of the peer's MAX_CONCURRENT_STREAMS setting.
     // Will then be called again whenever the peer changes this setting.
-    // The on_done callback must be invoked when the implementation is
+    // The on_done handle must be deleted when the implementation is
     // done processing the update.
     virtual void OnPeerMaxConcurrentStreamsUpdate(
         uint32_t max_concurrent_streams,
-        absl::AnyInvocable<void()> on_done) = 0;
+        std::unique_ptr<MaxConcurrentStreamsUpdateDoneHandle> on_done) = 0;
 
     // TODO(roth): Remove this as part of the EventEngine migration.
     virtual grpc_pollset_set* interested_parties() const = 0;
