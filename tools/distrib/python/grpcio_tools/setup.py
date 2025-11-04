@@ -203,7 +203,7 @@ if EXTRA_ENV_LINK_ARGS is None:
     # This is needed for protobuf/main.cc
     if "win32" in sys.platform:
         EXTRA_ENV_LINK_ARGS += " Shell32.lib"
-    # NOTE(rbellevi): Clang on Mac OS will make all static symbols (both
+    # NOTE(rbellevi): Clang on MacOS will make all static symbols (both
     # variables and objects) global weak symbols. When a process loads the
     # protobuf wheel's shared object library before loading *this* C extension,
     # the runtime linker will prefer the protobuf module's version of symbols.
