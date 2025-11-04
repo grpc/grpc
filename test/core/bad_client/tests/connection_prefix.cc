@@ -18,17 +18,17 @@
 
 #include <grpc/grpc.h>
 
-#include "absl/log/check.h"
 #include "src/core/server/server.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/bad_client/bad_client.h"
 #include "test/core/test_util/test_config.h"
 
 static void verifier(grpc_server* server, grpc_completion_queue* cq,
                      void* /*registered_method*/) {
   while (grpc_core::Server::FromC(server)->HasOpenConnections()) {
-    CHECK(grpc_completion_queue_next(
-              cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
-              .type == GRPC_QUEUE_TIMEOUT);
+    GRPC_CHECK(grpc_completion_queue_next(
+                   cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
+                   .type == GRPC_QUEUE_TIMEOUT);
   }
 }
 

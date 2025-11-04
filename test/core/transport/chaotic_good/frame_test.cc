@@ -16,14 +16,14 @@
 
 #include <cstdint>
 
-#include "absl/log/check.h"
+#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/grpc_check.h"
+#include "test/core/transport/chaotic_good/test_frame.h"
+#include "gtest/gtest.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "gtest/gtest.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/lib/resource_quota/resource_quota.h"
-#include "test/core/transport/chaotic_good/test_frame.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -39,9 +39,10 @@ void AssertRoundTrips(const Frame& input) {
   input_interface.SerializePayload(output_buffer);
   EXPECT_EQ(hdr.payload_length, output_buffer.Length());
   absl::StatusOr<Frame> output = ParseFrame(hdr, std::move(output_buffer));
-  CHECK_OK(output);
-  CHECK_EQ(absl::ConvertVariantTo<const FrameInterface&>(*output).ToString(),
-           input_interface.ToString());
+  GRPC_CHECK_OK(output);
+  GRPC_CHECK_EQ(
+      absl::ConvertVariantTo<const FrameInterface&>(*output).ToString(),
+      input_interface.ToString());
 }
 FUZZ_TEST(FrameTest, AssertRoundTrips).WithDomains(AnyFrame());
 

@@ -22,8 +22,6 @@
 
 #include <memory>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/resolver/endpoint_addresses.h"
@@ -36,6 +34,8 @@
 #include "src/core/xds/xds_client/lrs_client.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_transport.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -45,8 +45,11 @@ class GrpcXdsClient final : public XdsClient {
   static constexpr absl::string_view kServerKey = "#server";
 
   // Factory function to get or create the global XdsClient instance.
+  // If bootstrap_override is null, the default bootstrap is used based
+  // on environment variables, channel args, etc.
   static absl::StatusOr<RefCountedPtr<GrpcXdsClient>> GetOrCreate(
-      absl::string_view key, const ChannelArgs& args, const char* reason);
+      absl::string_view key, const ChannelArgs& args, const char* reason,
+      std::shared_ptr<GrpcXdsBootstrap> bootstrap_override = nullptr);
 
   // Do not instantiate directly -- use GetOrCreate() instead.
   // TODO(roth): The transport factory is injectable here to support

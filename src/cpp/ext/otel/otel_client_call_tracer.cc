@@ -31,15 +31,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "absl/strings/strip.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
-#include "absl/types/span.h"
 #include "opentelemetry/context/context.h"
 #include "opentelemetry/metrics/sync_instruments.h"
 #include "opentelemetry/trace/context.h"
@@ -57,9 +48,18 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
 #include "src/cpp/ext/otel/key_value_iterable.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
+#include "absl/types/span.h"
 
 namespace grpc {
 namespace internal {
@@ -80,8 +80,7 @@ class OpenTelemetryPluginImpl::ClientCallTracerInterface::CallAttemptTracer<
         ->template GetContext<grpc_core::Call>()
         ->InternalRef(
             "OpenTelemetryPluginImpl::ClientCallTracerInterface::"
-            "CallAttemptTracer::"
-            "TcpCallTracer");
+            "CallAttemptTracer::TcpCallTracer");
   }
 
   ~TcpCallTracer() override {
@@ -91,9 +90,8 @@ class OpenTelemetryPluginImpl::ClientCallTracerInterface::CallAttemptTracer<
     // reset before unreffing the call.
     call_attempt_tracer_.reset();
     arena->template GetContext<grpc_core::Call>()->InternalUnref(
-        "OpenTelemetryPluginImpl::ClientCallTracerInterface::CallAttemptTracer:"
-        ":~"
-        "TcpCallTracer");
+        "OpenTelemetryPluginImpl::ClientCallTracerInterface::"
+        "CallAttemptTracer::~TcpCallTracer");
   }
 
   void RecordEvent(grpc_event_engine::experimental::internal::WriteEvent type,
@@ -395,7 +393,7 @@ template <typename UnrefBehavior>
 void OpenTelemetryPluginImpl::ClientCallTracerInterface::CallAttemptTracer<
     UnrefBehavior>::SetOptionalLabel(OptionalLabelKey key,
                                      grpc_core::RefCountedStringValue value) {
-  CHECK(key < OptionalLabelKey::kSize);
+  GRPC_CHECK(key < OptionalLabelKey::kSize);
   optional_labels_[static_cast<size_t>(key)] = std::move(value);
 }
 

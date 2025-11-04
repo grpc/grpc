@@ -30,11 +30,11 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
-#include "absl/log/check.h"
+#include "src/core/tsi/transport_security_interface.h"
+#include "src/core/util/grpc_check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "src/core/tsi/transport_security_interface.h"
 
 namespace grpc_core {
 
@@ -74,7 +74,7 @@ void LogSslErrorStack(void) {
 
 tsi_result DoSslWrite(SSL* ssl, unsigned char* unprotected_bytes,
                       size_t unprotected_bytes_size) {
-  CHECK_LE(unprotected_bytes_size, static_cast<size_t>(INT_MAX));
+  GRPC_CHECK_LE(unprotected_bytes_size, static_cast<size_t>(INT_MAX));
   ERR_clear_error();
   int ssl_write_result = SSL_write(ssl, unprotected_bytes,
                                    static_cast<int>(unprotected_bytes_size));
@@ -95,7 +95,7 @@ tsi_result DoSslWrite(SSL* ssl, unsigned char* unprotected_bytes,
 
 tsi_result DoSslRead(SSL* ssl, unsigned char* unprotected_bytes,
                      size_t* unprotected_bytes_size) {
-  CHECK_LE(*unprotected_bytes_size, static_cast<size_t>(INT_MAX));
+  GRPC_CHECK_LE(*unprotected_bytes_size, static_cast<size_t>(INT_MAX));
   ERR_clear_error();
   int read_from_ssl = SSL_read(ssl, unprotected_bytes,
                                static_cast<int>(*unprotected_bytes_size));
@@ -139,7 +139,7 @@ tsi_result SslProtectorProtect(const unsigned char* unprotected_bytes,
   int pending_in_ssl = static_cast<int>(BIO_pending(network_io));
   if (pending_in_ssl > 0) {
     *unprotected_bytes_size = 0;
-    CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
+    GRPC_CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
     read_from_ssl = BIO_read(network_io, protected_output_frames,
                              static_cast<int>(*protected_output_frames_size));
     if (read_from_ssl < 0) {
@@ -165,7 +165,7 @@ tsi_result SslProtectorProtect(const unsigned char* unprotected_bytes,
   result = DoSslWrite(ssl, buffer, buffer_size);
   if (result != TSI_OK) return result;
 
-  CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
+  GRPC_CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
   read_from_ssl = BIO_read(network_io, protected_output_frames,
                            static_cast<int>(*protected_output_frames_size));
   if (read_from_ssl < 0) {
@@ -195,11 +195,11 @@ tsi_result SslProtectorProtectFlush(size_t& buffer_offset,
   }
 
   pending = static_cast<int>(BIO_pending(network_io));
-  CHECK_GE(pending, 0);
+  GRPC_CHECK_GE(pending, 0);
   *still_pending_size = static_cast<size_t>(pending);
   if (*still_pending_size == 0) return TSI_OK;
 
-  CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
+  GRPC_CHECK_LE(*protected_output_frames_size, static_cast<size_t>(INT_MAX));
   read_from_ssl = BIO_read(network_io, protected_output_frames,
                            static_cast<int>(*protected_output_frames_size));
   if (read_from_ssl <= 0) {
@@ -208,7 +208,7 @@ tsi_result SslProtectorProtectFlush(size_t& buffer_offset,
   }
   *protected_output_frames_size = static_cast<size_t>(read_from_ssl);
   pending = static_cast<int>(BIO_pending(network_io));
-  CHECK_GE(pending, 0);
+  GRPC_CHECK_GE(pending, 0);
   *still_pending_size = static_cast<size_t>(pending);
   return TSI_OK;
 }
@@ -236,7 +236,7 @@ tsi_result SslProtectorUnprotect(const unsigned char* protected_frames_bytes,
   *unprotected_bytes_size = output_bytes_size - output_bytes_offset;
 
   // Then, try to write some data to ssl.
-  CHECK_LE(*protected_frames_bytes_size, static_cast<size_t>(INT_MAX));
+  GRPC_CHECK_LE(*protected_frames_bytes_size, static_cast<size_t>(INT_MAX));
   written_into_ssl = BIO_write(network_io, protected_frames_bytes,
                                static_cast<int>(*protected_frames_bytes_size));
   if (written_into_ssl < 0) {

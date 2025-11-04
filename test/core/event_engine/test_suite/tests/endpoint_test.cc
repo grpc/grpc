@@ -22,22 +22,22 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/time/time.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
 #include "test/core/test_util/port.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/time/time.h"
 
 class EventEngineEndpointTest : public EventEngineTest {};
 
@@ -74,7 +74,7 @@ TEST_F(EventEngineEndpointTest, WriteEventCallbackEndpointValidityTest) {
   std::string target_addr = absl::StrCat(
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
-  CHECK_OK(resolved_addr);
+  GRPC_CHECK_OK(resolved_addr);
   std::unique_ptr<EventEngine::Endpoint> client_endpoint;
   std::unique_ptr<EventEngine::Endpoint> server_endpoint;
   std::unique_ptr<grpc_core::Notification> server_signal;

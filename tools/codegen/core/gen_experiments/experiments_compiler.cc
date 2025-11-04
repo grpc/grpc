@@ -40,10 +40,10 @@
 #include "absl/time/civil_time.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "third_party/yamlcpp/include/yaml-cpp/node/emit.h"
-#include "third_party/yamlcpp/include/yaml-cpp/node/node.h"
-#include "third_party/yamlcpp/include/yaml-cpp/node/parse.h"
-#include "third_party/yamlcpp/include/yaml-cpp/yaml.h"  // IWYU pragma: keep
+#include "include/yaml-cpp/node/emit.h"
+#include "include/yaml-cpp/node/node.h"
+#include "include/yaml-cpp/node/parse.h"
+#include "include/yaml-cpp/yaml.h"  // IWYU pragma: keep
 
 namespace grpc_core {
 

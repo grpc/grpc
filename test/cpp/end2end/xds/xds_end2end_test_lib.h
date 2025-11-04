@@ -31,19 +31,13 @@
 #include <thread>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "envoy/config/rbac/v3/rbac.pb.h"
 #include "envoy/extensions/filters/http/rbac/v3/rbac.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
+#include "src/core/util/grpc_check.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.pb.h"
 #include "test/core/test_util/port.h"
@@ -53,6 +47,12 @@
 #include "test/cpp/end2end/xds/xds_server.h"
 #include "test/cpp/end2end/xds/xds_utils.h"
 #include "xds/data/orca/v3/orca_load_report.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 namespace testing {
@@ -251,7 +251,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     virtual ~ServerThread() {
       // Shutdown should be called manually. Shutdown calls virtual methods and
       // can't be called from the base class destructor.
-      CHECK(!running_);
+      GRPC_CHECK(!running_);
     }
 
     void Start();
@@ -646,7 +646,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     int client_cancel_after_us = 0;
     bool skip_cancelled_check = false;
     StatusCode server_expected_error = StatusCode::OK;
-    std::optional<xds::data::orca::v3::OrcaLoadReport> backend_metrics;
+    std::optional<::xds::data::orca::v3::OrcaLoadReport> backend_metrics;
     bool server_notify_client_when_started = false;
     bool echo_host_from_authority_header = false;
     bool echo_metadata_initially = false;
@@ -710,7 +710,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     }
 
     RpcOptions& set_backend_metrics(
-        std::optional<xds::data::orca::v3::OrcaLoadReport> metrics) {
+        std::optional<::xds::data::orca::v3::OrcaLoadReport> metrics) {
       backend_metrics = std::move(metrics);
       return *this;
     }
@@ -1003,8 +1003,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // use a uniform distribution instead. We need a better estimate of how many
   // RPCs are needed with what error tolerance.
   static size_t ComputeIdealNumRpcs(double p, double error_tolerance) {
-    CHECK_GE(p, 0);
-    CHECK_LE(p, 1);
+    GRPC_CHECK_GE(p, 0);
+    GRPC_CHECK_LE(p, 1);
     size_t num_rpcs =
         ceil(p * (1 - p) * 5.00 * 5.00 / error_tolerance / error_tolerance);
     num_rpcs += 1000;  // Add 1K as a buffer to avoid flakiness.

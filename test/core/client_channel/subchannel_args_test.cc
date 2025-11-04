@@ -20,12 +20,12 @@
 #include <memory>
 #include <optional>
 
-#include "gtest/gtest.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {

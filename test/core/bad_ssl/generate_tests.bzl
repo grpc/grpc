@@ -42,6 +42,7 @@ def grpc_bad_ssl_tests():
             "//test/core/test_util:grpc_test_util_base",
             "//:grpc",
             "//:gpr",
+            "//src/core:grpc_check",
         ],
     )
     for t in BAD_SSL_TESTS:
@@ -56,8 +57,11 @@ def grpc_bad_ssl_tests():
                 ":bad_ssl_test_server",
                 "//:alts_util",
                 "//:gpr",
+                "//:grpc_base",
                 "//:grpc_core_credentials_header",
+                "//:grpc_slice",
                 "//src/core:error",
+                "//src/core:grpc_check",
                 "//src/core:grpc_transport_chttp2_alpn",
                 "//src/core:useful",
                 "//test/core/test_util:grpc_test_util",

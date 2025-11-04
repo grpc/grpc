@@ -25,12 +25,12 @@
 #include <memory>
 #include <vector>
 
-#include "absl/strings/str_cat.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/channelz/channelz_registry.h"
 #include "src/core/channelz/v2tov1/convert.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/notification.h"
+#include "absl/strings/str_cat.h"
 
 using grpc_core::channelz::BaseNode;
 
@@ -386,7 +386,7 @@ Status ChannelzV2Service::QueryEntities(
     channelz::v2::QueryEntitiesResponse* response) {
   std::optional<BaseNode::EntityType> type =
       BaseNode::KindToEntityType(request->kind());
-  if (!type.has_value()) {
+  if (!type.has_value() && !request->kind().empty()) {
     return Status(StatusCode::INVALID_ARGUMENT,
                   absl::StrCat("Invalid entity kind: ", request->kind()));
   }
@@ -398,12 +398,25 @@ Status ChannelzV2Service::QueryEntities(
                     "No object found for parent EntityId");
     }
   }
-  const auto [nodes, end] =
-      parent != nullptr
-          ? grpc_core::channelz::ChannelzRegistry::GetChildrenOfType(
-                request->start_entity_id(), parent.get(), *type, kMaxResults)
-          : grpc_core::channelz::ChannelzRegistry::GetNodesOfType(
-                request->start_entity_id(), *type, kMaxResults);
+  const auto [nodes, end] = [&]() {
+    if (parent != nullptr) {
+      if (type.has_value()) {
+        return grpc_core::channelz::ChannelzRegistry::GetChildrenOfType(
+            request->start_entity_id(), parent.get(), *type, kMaxResults);
+      } else {
+        return grpc_core::channelz::ChannelzRegistry::GetNodes(
+            request->start_entity_id(), kMaxResults);
+      }
+    } else {
+      if (type.has_value()) {
+        return grpc_core::channelz::ChannelzRegistry::GetNodesOfType(
+            request->start_entity_id(), *type, kMaxResults);
+      } else {
+        return grpc_core::channelz::ChannelzRegistry::GetNodes(
+            request->start_entity_id(), kMaxResults);
+      }
+    }
+  }();
   response->set_end(end);
   for (const auto& node : nodes) {
     response->add_entities()->ParseFromString(
@@ -457,7 +470,7 @@ Status ChannelzV2Service::QueryTrace(
   auto ztrace = node->RunZTrace(
       request->name(), std::move(args),
       grpc_event_engine::experimental::GetDefaultEventEngine(),
-      [&state, writer](absl::StatusOr<std::optional<std::string>> response) {
+      [state, writer](absl::StatusOr<std::optional<std::string>> response) {
         if (state->done.HasBeenNotified()) return;
         grpc_core::MutexLock lock(&state->mu);
         if (!response.ok()) {

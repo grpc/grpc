@@ -35,13 +35,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
 #include "opencensus/tags/tag_map.h"
@@ -59,11 +52,18 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/measures.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 namespace grpc {
 namespace internal {
@@ -101,7 +101,7 @@ OpenCensusClientFilter::MakeCallPromise(
       path != nullptr ? path->Ref() : grpc_core::Slice(),
       grpc_core::GetContext<grpc_core::Arena>(),
       OpenCensusTracingEnabled() && tracing_enabled_);
-  DCHECK_EQ(arena->GetContext<grpc_core::CallSpan>(), nullptr);
+  GRPC_DCHECK_EQ(arena->GetContext<grpc_core::CallSpan>(), nullptr);
   grpc_core::SetContext<grpc_core::CallSpan>(
       grpc_core::WrapClientCallTracer(tracer, arena));
   return next_promise_factory(std::move(call_args));
@@ -411,7 +411,7 @@ void OpenCensusCallTracer::RecordApiLatency(absl::Duration api_latency,
 
 CensusContext OpenCensusCallTracer::CreateCensusContextForCallAttempt() {
   if (!tracing_enabled_) return CensusContext(context_.tags());
-  DCHECK(context_.Context().IsValid());
+  GRPC_DCHECK(context_.Context().IsValid());
   auto context = CensusContext(absl::StrCat("Attempt.", method_),
                                &(context_.Span()), context_.tags());
   grpc::internal::OpenCensusRegistry::Get()

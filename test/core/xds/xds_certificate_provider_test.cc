@@ -22,11 +22,6 @@
 
 #include <optional>
 
-#include "absl/base/no_destructor.h"
-#include "absl/functional/overload.h"
-#include "absl/status/status.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/match.h"
@@ -34,6 +29,11 @@
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/base/no_destructor.h"
+#include "absl/functional/overload.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace testing {

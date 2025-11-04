@@ -33,12 +33,14 @@ grpc_cc_library(
         "gtest",
     ],
     deps = [
+        "//:debug_location",
         "//:event_engine_base_hdrs",
         "//:grpc",
         "//src/core:event_engine_tcp_socket_utils",
         "//src/core:grpc_promise_endpoint",
         "//src/core:notification",
         "//src/core:transport_framing_endpoint_extension",
+        "//src/core:useful",
     ],
 )
 

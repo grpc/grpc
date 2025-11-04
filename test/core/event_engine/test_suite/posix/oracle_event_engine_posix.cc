@@ -25,17 +25,17 @@
 #include <cstring>
 #include <memory>
 
-#include "absl/log/check.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/strerror.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/util/crash.h"
-#include "src/core/util/strerror.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -100,10 +100,13 @@ absl::Status BlockUntilWritableWithTimeout(int fd, absl::Duration timeout) {
 absl::Status BlockUntilWritable(int fd) {
   return BlockUntilWritableWithTimeout(fd, absl::InfiniteDuration());
 }
+}  // namespace
 
 // Tries to read upto num_expected_bytes from the socket. It returns early if
 // specified data is not yet available.
-std::string TryReadBytes(int sockfd, int& saved_errno, int num_expected_bytes) {
+std::string PosixOracleReadWriteHelper::TryReadBytes(int sockfd,
+                                                     int& saved_errno,
+                                                     int num_expected_bytes) {
   int ret = 0;
   static constexpr int kDefaultNumExpectedBytes = 1024;
   if (num_expected_bytes <= 0) {
@@ -129,15 +132,20 @@ std::string TryReadBytes(int sockfd, int& saved_errno, int num_expected_bytes) {
 // puts the read bytes into a string and returns the string. If it encounters an
 // error, it returns an empty string and updates saved_errno with the
 // appropriate errno.
-std::string ReadBytes(int sockfd, int& saved_errno, int num_expected_bytes) {
+std::string PosixOracleReadWriteHelper::ReadBytes(int sockfd, int& saved_errno,
+                                                  int num_expected_bytes) {
   std::string read_data;
   do {
+    if (shutdown_) {
+      read_data.clear();
+      break;
+    }
     saved_errno = 0;
     read_data += TryReadBytes(sockfd, saved_errno,
                               num_expected_bytes - read_data.length());
     if (saved_errno == EAGAIN &&
         read_data.length() < static_cast<size_t>(num_expected_bytes)) {
-      CHECK_OK(BlockUntilReadable(sockfd));
+      GRPC_CHECK_OK(BlockUntilReadable(sockfd));
     } else if (saved_errno != 0 && num_expected_bytes > 0) {
       read_data.clear();
       break;
@@ -148,7 +156,8 @@ std::string ReadBytes(int sockfd, int& saved_errno, int num_expected_bytes) {
 
 // Tries to write the specified bytes over the socket. It returns the number of
 // bytes actually written.
-int TryWriteBytes(int sockfd, int& saved_errno, std::string write_bytes) {
+int PosixOracleReadWriteHelper::TryWriteBytes(int sockfd, int& saved_errno,
+                                              std::string write_bytes) {
   int ret = 0;
   int pending_bytes = write_bytes.length();
   do {
@@ -169,24 +178,24 @@ int TryWriteBytes(int sockfd, int& saved_errno, std::string write_bytes) {
 // bytes to write are specified as a string. If it encounters an error, it
 // returns an empty string and updates saved_errno with the appropriate errno
 // and returns a value less than zero.
-int WriteBytes(int sockfd, int& saved_errno, std::string write_bytes) {
+int PosixOracleReadWriteHelper::WriteBytes(int sockfd, int& saved_errno,
+                                           std::string write_bytes) {
   int ret = 0;
   int original_write_length = write_bytes.length();
   do {
     saved_errno = 0;
     ret = TryWriteBytes(sockfd, saved_errno, write_bytes);
     if (saved_errno == EAGAIN && ret < static_cast<int>(write_bytes.length())) {
-      CHECK_GE(ret, 0);
-      CHECK_OK(BlockUntilWritable(sockfd));
+      GRPC_CHECK_GE(ret, 0);
+      GRPC_CHECK_OK(BlockUntilWritable(sockfd));
     } else if (saved_errno != 0) {
-      CHECK_LT(ret, 0);
+      GRPC_CHECK_LT(ret, 0);
       return ret;
     }
     write_bytes = write_bytes.substr(ret, std::string::npos);
   } while (!write_bytes.empty());
   return original_write_length;
 }
-}  // namespace
 
 PosixOracleEndpoint::PosixOracleEndpoint(int socket_fd)
     : socket_fd_(socket_fd) {
@@ -212,6 +221,9 @@ void PosixOracleEndpoint::Shutdown() {
   }
   {
     grpc_core::MutexLock lock(&mu_);
+    // We need to signal the read thread to exit on shutdown so we don't
+    // continue reading indefinitely.
+    read_write_helper_.SetShutdown();
     read_ops_channel_ = ReadOperation();
     write_ops_channel_ = WriteOperation();
     read_op_signal_->Notify();
@@ -227,14 +239,15 @@ std::unique_ptr<PosixOracleEndpoint> PosixOracleEndpoint::Create(
 }
 
 PosixOracleEndpoint::~PosixOracleEndpoint() {
+  // Shut down the socket so any pending reads return.
+  shutdown(socket_fd_, SHUT_RDWR);
   Shutdown();
-  close(socket_fd_);
 }
 
 bool PosixOracleEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                                SliceBuffer* buffer, ReadArgs args) {
   grpc_core::MutexLock lock(&mu_);
-  CHECK_NE(buffer, nullptr);
+  GRPC_CHECK_NE(buffer, nullptr);
   int read_hint_bytes = std::max(1, static_cast<int>(args.read_hint_bytes()));
   read_ops_channel_ =
       ReadOperation(read_hint_bytes, buffer, std::move(on_read));
@@ -246,7 +259,7 @@ bool PosixOracleEndpoint::Write(
     absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
     WriteArgs /*args*/) {
   grpc_core::MutexLock lock(&mu_);
-  CHECK_NE(data, nullptr);
+  GRPC_CHECK_NE(data, nullptr);
   write_ops_channel_ = WriteOperation(data, std::move(on_writable));
   write_op_signal_->Notify();
   return false;
@@ -272,8 +285,8 @@ void PosixOracleEndpoint::ProcessReadOperations() {
       break;
     }
     int saved_errno;
-    std::string read_data =
-        ReadBytes(socket_fd_, saved_errno, read_op.GetNumBytesToRead());
+    std::string read_data = read_write_helper_.ReadBytes(
+        socket_fd_, saved_errno, read_op.GetNumBytesToRead());
     read_op(read_data, read_data.empty()
                            ? absl::CancelledError(
                                  absl::StrCat("Read failed with error = ",
@@ -303,7 +316,8 @@ void PosixOracleEndpoint::ProcessWriteOperations() {
       break;
     }
     int saved_errno;
-    int ret = WriteBytes(socket_fd_, saved_errno, write_op.GetBytesToWrite());
+    int ret = read_write_helper_.WriteBytes(socket_fd_, saved_errno,
+                                            write_op.GetBytesToWrite());
     write_op(ret < 0 ? absl::CancelledError(
                            absl::StrCat("Write failed with error = ",
                                         grpc_core::StrError(saved_errno)))
@@ -327,7 +341,7 @@ PosixOracleListener::PosixOracleListener(
 
 absl::Status PosixOracleListener::Start() {
   grpc_core::MutexLock lock(&mu_);
-  CHECK(!listener_fds_.empty());
+  GRPC_CHECK(!listener_fds_.empty());
   if (std::exchange(is_started_, true)) {
     return absl::InternalError("Cannot start listener more than once ...");
   }
@@ -351,14 +365,14 @@ PosixOracleListener::~PosixOracleListener() {
     shutdown(listener_fds_[i], SHUT_RDWR);
   }
   // Send a STOP message over the pipe.
-  CHECK(write(pipefd_[1], kStopMessage, strlen(kStopMessage)) != -1);
+  GRPC_CHECK(write(pipefd_[1], kStopMessage, strlen(kStopMessage)) != -1);
   serve_.Join();
   on_shutdown_(absl::OkStatus());
 }
 
 void PosixOracleListener::HandleIncomingConnections() {
   LOG(INFO) << "Starting accept thread ...";
-  CHECK(!listener_fds_.empty());
+  GRPC_CHECK(!listener_fds_.empty());
   int nfds = listener_fds_.size();
   // Add one extra file descriptor to poll the pipe fd.
   ++nfds;
@@ -376,7 +390,8 @@ void PosixOracleListener::HandleIncomingConnections() {
     }
     int saved_errno = 0;
     if ((pfds[nfds - 1].revents & POLLIN) &&
-        ReadBytes(pipefd_[0], saved_errno, strlen(kStopMessage)) ==
+        read_write_helper_.ReadBytes(pipefd_[0], saved_errno,
+                                     strlen(kStopMessage)) ==
             std::string(kStopMessage)) {
       break;
     }

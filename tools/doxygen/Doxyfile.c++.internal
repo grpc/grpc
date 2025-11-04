@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.76.0-dev
+PROJECT_NUMBER         = 1.77.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -66,7 +66,7 @@ OUTPUT_DIRECTORY       = doc/ref/c++.internal
 # directories (in 2 levels) under the output directory of each output format and
 # will distribute the generated files over these directories. Enabling this
 # option can be useful when feeding doxygen a huge amount of source files, where
-# putting all generated files in the same directory would otherwise causes
+# putting all generated files in the same directory would otherwise cause
 # performance problems for the file system.
 # The default value is: NO.
 
@@ -450,7 +450,7 @@ EXTRACT_LOCAL_METHODS  = NO
 # If this flag is set to YES, the members of anonymous namespaces will be
 # extracted and appear in the documentation as a namespace called
 # 'anonymous_namespace{file}', where file will be replaced with the base name of
-# the file that contains the anonymous namespace. By default anonymous namespace
+# the file that contains the anonymous namespace. By default anonymous namespaces
 # are hidden.
 # The default value is: NO.
 
@@ -1378,6 +1378,8 @@ src/core/ext/transport/chttp2/transport/frame_settings.cc \
 src/core/ext/transport/chttp2/transport/frame_settings.h \
 src/core/ext/transport/chttp2/transport/frame_window_update.cc \
 src/core/ext/transport/chttp2/transport/frame_window_update.h \
+src/core/ext/transport/chttp2/transport/goaway.cc \
+src/core/ext/transport/chttp2/transport/goaway.h \
 src/core/ext/transport/chttp2/transport/header_assembler.h \
 src/core/ext/transport/chttp2/transport/hpack_constants.h \
 src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
@@ -1420,6 +1422,7 @@ src/core/ext/transport/chttp2/transport/ping_promise.cc \
 src/core/ext/transport/chttp2/transport/ping_promise.h \
 src/core/ext/transport/chttp2/transport/ping_rate_policy.cc \
 src/core/ext/transport/chttp2/transport/ping_rate_policy.h \
+src/core/ext/transport/chttp2/transport/stream.h \
 src/core/ext/transport/chttp2/transport/stream_data_queue.h \
 src/core/ext/transport/chttp2/transport/stream_lists.cc \
 src/core/ext/transport/chttp2/transport/stream_lists.h \
@@ -2645,6 +2648,8 @@ src/core/lib/resource_quota/resource_quota.h \
 src/core/lib/resource_quota/telemetry.h \
 src/core/lib/resource_quota/thread_quota.cc \
 src/core/lib/resource_quota/thread_quota.h \
+src/core/lib/resource_tracker/resource_tracker.cc \
+src/core/lib/resource_tracker/resource_tracker.h \
 src/core/lib/security/authorization/audit_logging.cc \
 src/core/lib/security/authorization/audit_logging.h \
 src/core/lib/security/authorization/authorization_engine.h \
@@ -2964,6 +2969,8 @@ src/core/util/gethostname_sysconf.cc \
 src/core/util/glob.cc \
 src/core/util/glob.h \
 src/core/util/gpr_time.cc \
+src/core/util/grpc_check.cc \
+src/core/util/grpc_check.h \
 src/core/util/grpc_if_nametoindex.h \
 src/core/util/grpc_if_nametoindex_posix.cc \
 src/core/util/grpc_if_nametoindex_unsupported.cc \
@@ -3023,6 +3030,8 @@ src/core/util/posix/sync.cc \
 src/core/util/posix/thd.cc \
 src/core/util/posix/time.cc \
 src/core/util/posix/tmpfile.cc \
+src/core/util/postmortem_emit.cc \
+src/core/util/postmortem_emit.h \
 src/core/util/random_early_detection.cc \
 src/core/util/random_early_detection.h \
 src/core/util/ref_counted.h \

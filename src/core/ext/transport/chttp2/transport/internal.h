@@ -34,10 +34,6 @@
 #include <utility>
 #include <variant>
 
-#include "absl/container/flat_hash_map.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
@@ -83,6 +79,10 @@
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 // Flag that this closure barrier may be covering a write in a pollset, and so
 //   we should not complete this closure until we can prove that the write got
@@ -115,6 +115,7 @@ typedef enum {
   GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE,
 } grpc_chttp2_write_state;
 
+// Not getting used anywhere AFAIK
 typedef enum {
   GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY,
   GRPC_CHTTP2_OPTIMIZE_FOR_THROUGHPUT,
@@ -301,6 +302,8 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   grpc_core::MemoryOwner memory_owner;
   const grpc_core::MemoryAllocator::Reservation self_reservation;
   grpc_core::ReclamationSweep active_reclamation;
+  grpc_core::InstrumentStorageRefPtr<grpc_core::ResourceQuotaDomain>
+      resource_quota_telemetry_storage;
 
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
   grpc_core::Combiner* combiner;
@@ -590,6 +593,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
 
   std::shared_ptr<grpc_core::Http2StatsCollector> http2_stats;
   grpc_core::Http2ZTraceCollector http2_ztrace_collector;
+  grpc_core::Timestamp last_ztrace_time = grpc_core::Timestamp::InfPast();
 
   GPR_NO_UNIQUE_ADDRESS grpc_core::latent_see::Flow write_flow;
 };
@@ -739,17 +743,6 @@ struct grpc_chttp2_stream {
   grpc_core::Timestamp last_window_update_time =
       grpc_core::Timestamp::InfPast();
 };
-
-// EXPERIMENTAL: provide protection against overloading a server with too many
-// requests: wait for streams to be deallocated before they stop counting
-// against MAX_CONCURRENT_STREAMS
-#define GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION \
-  "grpc.http.overload_protection"
-
-// EXPERIMENTAL: Fail requests at the client if the client is over max
-// concurrent streams, so they may be retried elsewhere.
-#define GRPC_ARG_MAX_CONCURRENT_STREAMS_REJECT_ON_CLIENT \
-  "grpc.http.max_concurrent_streams_reject_on_client"
 
 /// Transport writing call flow:
 /// grpc_chttp2_initiate_write() is called anywhere that we know bytes need to

@@ -21,8 +21,6 @@
 #include <CoreFoundation/CoreFoundation.h>
 #include <grpc/support/cpu.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/lib/event_engine/cf_engine/cf_engine.h"
 #include "src/core/lib/event_engine/cf_engine/cfsocket_listener.h"
 #include "src/core/lib/event_engine/cf_engine/cfstream_endpoint.h"
@@ -32,7 +30,9 @@
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/useful.h"
+#include "absl/log/log.h"
 
 #ifndef GRPC_CFSTREAM_MAX_THREADPOOL_SIZE
 #define GRPC_CFSTREAM_MAX_THREADPOOL_SIZE 16u
@@ -74,7 +74,7 @@ CFEventEngine::~CFEventEngine() {
                    << HandleToString(handle);
       }
     }
-    CHECK(GPR_LIKELY(known_handles_.empty()));
+    GRPC_CHECK(GPR_LIKELY(known_handles_.empty()));
     timer_manager_.Shutdown();
   }
   thread_pool_->Quiesce();

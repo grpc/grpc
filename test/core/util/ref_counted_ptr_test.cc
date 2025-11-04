@@ -20,12 +20,12 @@
 
 #include <memory>
 
-#include "absl/container/flat_hash_set.h"
-#include "absl/log/check.h"
-#include "gtest/gtest.h"
 #include "src/core/util/dual_ref_counted.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/container/flat_hash_set.h"
 
 namespace grpc_core {
 namespace testing {
@@ -272,7 +272,7 @@ class Bar : public DualRefCounted<Bar> {
 
   explicit Bar(int value) : value_(value) {}
 
-  ~Bar() override { CHECK(shutting_down_); }
+  ~Bar() override { GRPC_CHECK(shutting_down_); }
 
   void Orphaned() override { shutting_down_ = true; }
 
@@ -428,7 +428,7 @@ class BarWithTracing : public DualRefCounted<BarWithTracing> {
  public:
   BarWithTracing() : DualRefCounted("BarWithTracing") {}
 
-  ~BarWithTracing() override { CHECK(shutting_down_); }
+  ~BarWithTracing() override { GRPC_CHECK(shutting_down_); }
 
   void Orphaned() override { shutting_down_ = true; }
 
@@ -451,7 +451,7 @@ class WeakBaseClass : public DualRefCounted<WeakBaseClass> {
  public:
   WeakBaseClass() {}
 
-  ~WeakBaseClass() override { CHECK(shutting_down_); }
+  ~WeakBaseClass() override { GRPC_CHECK(shutting_down_); }
 
   void Orphaned() override { shutting_down_ = true; }
 

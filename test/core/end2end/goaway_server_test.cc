@@ -33,19 +33,19 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/check.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/socket_utils.h"
+#include "src/core/util/grpc_check.h"
+#include "test/core/end2end/cq_verifier.h"
+#include "test/core/event_engine/util/delegating_event_engine.h"
+#include "test/core/test_util/port.h"
+#include "test/core/test_util/test_config.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/socket_utils.h"
-#include "test/core/end2end/cq_verifier.h"
-#include "test/core/event_engine/util/delegating_event_engine.h"
-#include "test/core/test_util/port.h"
-#include "test/core/test_util/test_config.h"
 
 static gpr_mu g_mu;
 static int g_resolve_port = -1;
@@ -69,7 +69,7 @@ class TestDNSResolver : public EventEngine::DNSResolver {
 
   void LookupHostname(LookupHostnameCallback on_resolve, absl::string_view name,
                       absl::string_view default_port) override {
-    CHECK(default_resolver_.ok());
+    GRPC_CHECK(default_resolver_.ok());
     if (name != "test") {
       return (*default_resolver_)
           ->LookupHostname(std::move(on_resolve), name, default_port);
@@ -98,12 +98,12 @@ class TestDNSResolver : public EventEngine::DNSResolver {
   }
   void LookupSRV(LookupSRVCallback on_resolve,
                  absl::string_view name) override {
-    CHECK(default_resolver_.ok());
+    GRPC_CHECK(default_resolver_.ok());
     return (*default_resolver_)->LookupSRV(std::move(on_resolve), name);
   }
   void LookupTXT(LookupTXTCallback on_resolve,
                  absl::string_view name) override {
-    CHECK(default_resolver_.ok());
+    GRPC_CHECK(default_resolver_.ok());
     return (*default_resolver_)->LookupTXT(std::move(on_resolve), name);
   }
 
@@ -203,9 +203,9 @@ int main(int argc, char** argv) {
   op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
   op->reserved = nullptr;
   op++;
-  CHECK_EQ(GRPC_CALL_OK,
-           grpc_call_start_batch(call1, ops, (size_t)(op - ops),
-                                 grpc_core::CqVerifier::tag(0x101), nullptr));
+  GRPC_CHECK_EQ(GRPC_CALL_OK, grpc_call_start_batch(
+                                  call1, ops, (size_t)(op - ops),
+                                  grpc_core::CqVerifier::tag(0x101), nullptr));
   // and receive status to probe termination
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -216,9 +216,9 @@ int main(int argc, char** argv) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK_EQ(GRPC_CALL_OK,
-           grpc_call_start_batch(call1, ops, (size_t)(op - ops),
-                                 grpc_core::CqVerifier::tag(0x102), nullptr));
+  GRPC_CHECK_EQ(GRPC_CALL_OK, grpc_call_start_batch(
+                                  call1, ops, (size_t)(op - ops),
+                                  grpc_core::CqVerifier::tag(0x102), nullptr));
 
   // bring a server up on the first port
   grpc_server* server1 = grpc_server_create(nullptr, nullptr);
@@ -232,10 +232,10 @@ int main(int argc, char** argv) {
 
   // request a call to the server
   grpc_call* server_call1;
-  CHECK_EQ(GRPC_CALL_OK,
-           grpc_server_request_call(server1, &server_call1, &request_details1,
-                                    &request_metadata1, cq, cq,
-                                    grpc_core::CqVerifier::tag(0x301)));
+  GRPC_CHECK_EQ(GRPC_CALL_OK, grpc_server_request_call(
+                                  server1, &server_call1, &request_details1,
+                                  &request_metadata1, cq, cq,
+                                  grpc_core::CqVerifier::tag(0x301)));
 
   set_resolve_port(port1);
 
@@ -244,7 +244,8 @@ int main(int argc, char** argv) {
   cqv.Expect(grpc_core::CqVerifier::tag(0x301), true);
   cqv.Verify();
 
-  CHECK(GRPC_CHANNEL_READY == grpc_channel_check_connectivity_state(chan, 0));
+  GRPC_CHECK(GRPC_CHANNEL_READY ==
+             grpc_channel_check_connectivity_state(chan, 0));
   grpc_channel_watch_connectivity_state(chan, GRPC_CHANNEL_READY,
                                         gpr_inf_future(GPR_CLOCK_REALTIME), cq,
                                         grpc_core::CqVerifier::tag(0x9999));
@@ -256,9 +257,9 @@ int main(int argc, char** argv) {
   op->data.recv_close_on_server.cancelled = &was_cancelled1;
   op->flags = 0;
   op++;
-  CHECK_EQ(GRPC_CALL_OK,
-           grpc_call_start_batch(server_call1, ops, (size_t)(op - ops),
-                                 grpc_core::CqVerifier::tag(0x302), nullptr));
+  GRPC_CHECK_EQ(GRPC_CALL_OK, grpc_call_start_batch(
+                                  server_call1, ops, (size_t)(op - ops),
+                                  grpc_core::CqVerifier::tag(0x302), nullptr));
 
   // shutdown first server:
   // we should see a connectivity change and then nothing
@@ -282,9 +283,9 @@ int main(int argc, char** argv) {
   op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
   op->reserved = nullptr;
   op++;
-  CHECK_EQ(GRPC_CALL_OK,
-           grpc_call_start_batch(call2, ops, (size_t)(op - ops),
-                                 grpc_core::CqVerifier::tag(0x201), nullptr));
+  GRPC_CHECK_EQ(GRPC_CALL_OK, grpc_call_start_batch(
+                                  call2, ops, (size_t)(op - ops),
+                                  grpc_core::CqVerifier::tag(0x201), nullptr));
   // and receive status to probe termination
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -295,9 +296,9 @@ int main(int argc, char** argv) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK_EQ(GRPC_CALL_OK,
-           grpc_call_start_batch(call2, ops, (size_t)(op - ops),
-                                 grpc_core::CqVerifier::tag(0x202), nullptr));
+  GRPC_CHECK_EQ(GRPC_CALL_OK, grpc_call_start_batch(
+                                  call2, ops, (size_t)(op - ops),
+                                  grpc_core::CqVerifier::tag(0x202), nullptr));
 
   // and bring up second server
   set_resolve_port(port2);
@@ -312,10 +313,10 @@ int main(int argc, char** argv) {
 
   // request a call to the server
   grpc_call* server_call2;
-  CHECK_EQ(GRPC_CALL_OK,
-           grpc_server_request_call(server2, &server_call2, &request_details2,
-                                    &request_metadata2, cq, cq,
-                                    grpc_core::CqVerifier::tag(0x401)));
+  GRPC_CHECK_EQ(GRPC_CALL_OK, grpc_server_request_call(
+                                  server2, &server_call2, &request_details2,
+                                  &request_metadata2, cq, cq,
+                                  grpc_core::CqVerifier::tag(0x401)));
 
   // second call should now start
   cqv.Expect(grpc_core::CqVerifier::tag(0x201), true);
@@ -329,9 +330,9 @@ int main(int argc, char** argv) {
   op->data.recv_close_on_server.cancelled = &was_cancelled2;
   op->flags = 0;
   op++;
-  CHECK_EQ(GRPC_CALL_OK,
-           grpc_call_start_batch(server_call2, ops, (size_t)(op - ops),
-                                 grpc_core::CqVerifier::tag(0x402), nullptr));
+  GRPC_CHECK_EQ(GRPC_CALL_OK, grpc_call_start_batch(
+                                  server_call2, ops, (size_t)(op - ops),
+                                  grpc_core::CqVerifier::tag(0x402), nullptr));
 
   // shutdown second server: we should see nothing
   grpc_server_shutdown_and_notify(server2, cq,

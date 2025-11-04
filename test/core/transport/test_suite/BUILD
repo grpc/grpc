@@ -50,6 +50,7 @@ grpc_cc_library(
         "//src/core:chaotic_good_server_transport",
         "//src/core:event_engine_memory_allocator_factory",
         "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:grpc_check",
         "//src/core:grpc_promise_endpoint",
         "//src/core:resource_quota",
     ],

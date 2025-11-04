@@ -30,18 +30,18 @@
 #include <type_traits>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/channelz/property_list.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/unique_type_name.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -185,9 +185,8 @@ class ChannelInit::DependencyTracker {
 
   FilterRegistration* Next() {
     if (ready_dependencies_.empty()) {
-      CHECK_EQ(nodes_taken_, nodes_.size()) << "Unresolvable graph of channel "
-                                               "filters:\n"
-                                            << GraphString();
+      GRPC_CHECK_EQ(nodes_taken_, nodes_.size())
+          << "Unresolvable graph of channel filters :\n " << GraphString();
       return nullptr;
     }
     auto next = ready_dependencies_.top();
@@ -197,13 +196,13 @@ class ChannelInit::DependencyTracker {
       // Constraint: if we use ordering other than default, then we must have an
       // unambiguous pick. If there is ambiguity, we must fix it by adding
       // explicit ordering constraints.
-      CHECK_NE(next.node->ordering(),
-               ready_dependencies_.top().node->ordering())
+      GRPC_CHECK_NE(next.node->ordering(),
+                    ready_dependencies_.top().node->ordering())
           << "Ambiguous ordering between " << next.node->name() << " and "
           << ready_dependencies_.top().node->name();
     }
     for (Node* dependent : next.node->dependents) {
-      CHECK_GT(dependent->waiting_dependencies, 0u);
+      GRPC_CHECK_GT(dependent->waiting_dependencies, 0u);
       --dependent->waiting_dependencies;
       if (dependent->waiting_dependencies == 0) {
         ready_dependencies_.emplace(dependent);
@@ -228,7 +227,7 @@ class ChannelInit::DependencyTracker {
 
   absl::Span<const UniqueTypeName> DependenciesFor(UniqueTypeName name) const {
     auto it = nodes_.find(name);
-    CHECK(it != nodes_.end()) << "Filter " << name.name() << " not found";
+    GRPC_CHECK(it != nodes_.end()) << "Filter " << name.name() << " not found";
     return it->second.all_dependencies;
   }
 
@@ -288,7 +287,7 @@ void ChannelInit::MergeFusedFilters(ChannelStackBuilder* builder,
   int j = 0;
   auto& stack = *builder->mutable_stack();
   std::vector<Node> filter_list;
-  for (const auto filter : stack) {
+  for (const auto& [filter, _] : stack) {
     filter_list.push_back({filter, ++i});
   }
   filter_list.back().next = -1;
@@ -345,10 +344,10 @@ ChannelInit::SortFilterRegistrationsByDependencies(
   std::vector<Filter> terminal_filters;
   for (const auto& registration : filter_registrations) {
     if (registration->terminal_) {
-      CHECK(registration->after_.empty());
-      CHECK(registration->before_.empty());
-      CHECK(!registration->before_all_);
-      CHECK_EQ(registration->ordering_, Ordering::kDefault);
+      GRPC_CHECK(registration->after_.empty());
+      GRPC_CHECK(registration->before_.empty());
+      GRPC_CHECK(!registration->before_all_);
+      GRPC_CHECK_EQ(registration->ordering_, Ordering::kDefault);
       terminal_filters.emplace_back(
           registration->name_, registration->filter_, nullptr,
           std::move(registration->predicates_), registration->version_,
@@ -412,7 +411,7 @@ std::vector<ChannelInit::Filter> ChannelInit::SortFusedFilterRegistrations(
   std::vector<FilterRegistration*> fused_filter_registrations;
   std::vector<Filter> filters;
   for (const auto& registration : filter_registrations) {
-    CHECK(!registration->terminal_);
+    GRPC_CHECK(!registration->terminal_);
     fused_filter_registrations.push_back(registration.get());
   }
   std::sort(fused_filter_registrations.begin(),

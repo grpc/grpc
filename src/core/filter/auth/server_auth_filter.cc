@@ -30,10 +30,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/security_context.h"
 #include "src/core/credentials/transport/transport_credentials.h"
@@ -56,8 +52,12 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 
@@ -199,7 +199,7 @@ ServerAuthFilter::ServerAuthFilter(
 absl::StatusOr<std::unique_ptr<ServerAuthFilter>> ServerAuthFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args) {
   auto auth_context = args.GetObjectRef<grpc_auth_context>();
-  CHECK(auth_context != nullptr);
+  GRPC_CHECK(auth_context != nullptr);
   auto creds = args.GetObjectRef<grpc_server_credentials>();
   return std::make_unique<ServerAuthFilter>(std::move(creds),
                                             std::move(auth_context));

@@ -30,13 +30,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -51,6 +44,7 @@
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
@@ -60,6 +54,12 @@
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/util/work_serializer.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -404,7 +404,7 @@ void PriorityLb::ChoosePriorityLocked() {
           RefAsSubclass<PriorityLb>(DEBUG_LOCATION, "ChildPriority"),
           child_name);
       auto child_config = config_->children().find(child_name);
-      DCHECK(child_config != config_->children().end());
+      GRPC_DCHECK(child_config != config_->children().end());
       // If the child policy returns a non-OK status, request re-resolution.
       // Note that this will initially cause fixed backoff delay in the
       // resolver instead of exponential delay.  However, once the
@@ -454,7 +454,7 @@ void PriorityLb::ChoosePriorityLocked() {
         << "[priority_lb " << this << "] trying priority " << priority
         << ", child " << child_name;
     auto& child = children_[child_name];
-    CHECK(child != nullptr);
+    GRPC_CHECK(child != nullptr);
     if (child->connectivity_state() == GRPC_CHANNEL_CONNECTING) {
       SetCurrentPriorityLocked(priority, /*deactivate_lower_priorities=*/false,
                                "CONNECTING (pass 2)");
@@ -483,7 +483,7 @@ void PriorityLb::SetCurrentPriorityLocked(int32_t priority,
     }
   }
   auto& child = children_[config_->priorities()[priority]];
-  CHECK(child != nullptr);
+  GRPC_CHECK(child != nullptr);
   channel_control_helper()->UpdateState(child->connectivity_state(),
                                         child->connectivity_status(),
                                         child->GetPicker());

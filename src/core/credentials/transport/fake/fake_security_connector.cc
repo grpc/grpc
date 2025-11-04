@@ -30,12 +30,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/handshaker/handshaker.h"
@@ -54,10 +48,16 @@
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
 #include "src/core/util/useful.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
 namespace {
 class grpc_fake_channel_security_connector final
@@ -140,7 +140,7 @@ class grpc_fake_channel_security_connector final
 
  private:
   bool fake_check_target(const char* target, const char* set_str) const {
-    CHECK_NE(target, nullptr);
+    GRPC_CHECK_NE(target, nullptr);
     char** set = nullptr;
     size_t set_size = 0;
     gpr_string_split(set_str, ",", &set, &set_size);

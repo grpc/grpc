@@ -181,6 +181,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/transport/chttp2/transport/frame_security.cc \
     src/core/ext/transport/chttp2/transport/frame_settings.cc \
     src/core/ext/transport/chttp2/transport/frame_window_update.cc \
+    src/core/ext/transport/chttp2/transport/goaway.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder.cc \
     src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc \
     src/core/ext/transport/chttp2/transport/hpack_parse_result.cc \
@@ -703,6 +704,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/resource_quota/periodic_update.cc \
     src/core/lib/resource_quota/resource_quota.cc \
     src/core/lib/resource_quota/thread_quota.cc \
+    src/core/lib/resource_tracker/resource_tracker.cc \
     src/core/lib/security/authorization/audit_logging.cc \
     src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \
     src/core/lib/security/authorization/evaluate_args.cc \
@@ -858,6 +860,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/util/gethostname_sysconf.cc \
     src/core/util/glob.cc \
     src/core/util/gpr_time.cc \
+    src/core/util/grpc_check.cc \
     src/core/util/grpc_if_nametoindex_posix.cc \
     src/core/util/grpc_if_nametoindex_unsupported.cc \
     src/core/util/host_port.cc \
@@ -888,6 +891,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/util/posix/thd.cc \
     src/core/util/posix/time.cc \
     src/core/util/posix/tmpfile.cc \
+    src/core/util/postmortem_emit.cc \
     src/core/util/random_early_detection.cc \
     src/core/util/ref_counted_string.cc \
     src/core/util/shared_bit_gen.cc \
@@ -1471,7 +1475,7 @@ if test "$PHP_GRPC" != "no"; then
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
     -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1 \
     -DGRPC_XDS_USER_AGENT_NAME_SUFFIX='"\"PHP\""' \
-    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.76.0dev\""')
+    -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX='"\"1.77.0dev\""')
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/call)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/channelz/v2tov1)
@@ -1646,6 +1650,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/iomgr/event_engine_shims)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/promise)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/resource_quota)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/resource_tracker)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/security/authorization)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/slice)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/surface)

@@ -39,7 +39,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'simplecov',          '~> 0.22'
   s.add_development_dependency 'rake',               '~> 13.0'
   s.add_development_dependency 'rake-compiler',      '~> 1.2.1'
-  s.add_development_dependency 'rake-compiler-dock', '~> 1.9'
+  s.add_development_dependency 'rake-compiler-dock', '= 1.9.1'
   s.add_development_dependency 'rspec',              '~> 3.6'
   s.add_development_dependency 'rubocop',            '~> 1.41.0'
   s.add_development_dependency 'signet',             '~> 0.7'
@@ -411,6 +411,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/frame_settings.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/frame_window_update.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/frame_window_update.h )
+  s.files += %w( src/core/ext/transport/chttp2/transport/goaway.cc )
+  s.files += %w( src/core/ext/transport/chttp2/transport/goaway.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/header_assembler.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/hpack_constants.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/hpack_encoder.cc )
@@ -453,6 +455,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/ping_promise.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/ping_rate_policy.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/ping_rate_policy.h )
+  s.files += %w( src/core/ext/transport/chttp2/transport/stream.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/stream_data_queue.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/stream_lists.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/stream_lists.h )
@@ -1678,6 +1681,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/resource_quota/telemetry.h )
   s.files += %w( src/core/lib/resource_quota/thread_quota.cc )
   s.files += %w( src/core/lib/resource_quota/thread_quota.h )
+  s.files += %w( src/core/lib/resource_tracker/resource_tracker.cc )
+  s.files += %w( src/core/lib/resource_tracker/resource_tracker.h )
   s.files += %w( src/core/lib/security/authorization/audit_logging.cc )
   s.files += %w( src/core/lib/security/authorization/audit_logging.h )
   s.files += %w( src/core/lib/security/authorization/authorization_engine.h )
@@ -1997,6 +2002,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/util/glob.cc )
   s.files += %w( src/core/util/glob.h )
   s.files += %w( src/core/util/gpr_time.cc )
+  s.files += %w( src/core/util/grpc_check.cc )
+  s.files += %w( src/core/util/grpc_check.h )
   s.files += %w( src/core/util/grpc_if_nametoindex.h )
   s.files += %w( src/core/util/grpc_if_nametoindex_posix.cc )
   s.files += %w( src/core/util/grpc_if_nametoindex_unsupported.cc )
@@ -2056,6 +2063,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/util/posix/thd.cc )
   s.files += %w( src/core/util/posix/time.cc )
   s.files += %w( src/core/util/posix/tmpfile.cc )
+  s.files += %w( src/core/util/postmortem_emit.cc )
+  s.files += %w( src/core/util/postmortem_emit.h )
   s.files += %w( src/core/util/random_early_detection.cc )
   s.files += %w( src/core/util/random_early_detection.h )
   s.files += %w( src/core/util/ref_counted.h )

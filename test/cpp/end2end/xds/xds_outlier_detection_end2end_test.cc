@@ -17,17 +17,17 @@
 #include <thread>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "envoy/config/cluster/v3/cluster.pb.h"
 #include "envoy/config/cluster/v3/outlier_detection.pb.h"
 #include "envoy/extensions/filters/http/fault/v3/fault.pb.h"
 #include "envoy/extensions/filters/http/router/v3/router.pb.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/config_vars.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc {
 namespace testing {
@@ -202,7 +202,7 @@ TEST_P(OutlierDetectionTest, SuccessRateMaxPercent) {
     } else if (backends_[i]->backend_service()->request_count() == 100) {
       ++regular_load_backend_count;
     } else {
-      CHECK(1);
+      GRPC_CHECK(1);
     }
   }
   EXPECT_EQ(1, empty_load_backend_count);
@@ -616,7 +616,7 @@ TEST_P(OutlierDetectionTest, FailurePercentageMaxPercentage) {
     } else if (backends_[i]->backend_service()->request_count() == 100) {
       ++regular_load_backend_count;
     } else {
-      CHECK(1);
+      GRPC_CHECK(1);
     }
   }
   EXPECT_EQ(1, empty_load_backend_count);
@@ -984,7 +984,7 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentage) {
       // The extra load could go to 2 remaining backends or just 1 of them.
       ++double_load_backend_count;
     } else if (backends_[i]->backend_service()->request_count() > 300) {
-      CHECK(1);
+      GRPC_CHECK(1);
     }
   }
   EXPECT_EQ(2, empty_load_backend_count);

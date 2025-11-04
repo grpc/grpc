@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.76.0-dev'
+  version = '1.77.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -422,6 +422,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/frame_security.h',
                       'src/core/ext/transport/chttp2/transport/frame_settings.h',
                       'src/core/ext/transport/chttp2/transport/frame_window_update.h',
+                      'src/core/ext/transport/chttp2/transport/goaway.h',
                       'src/core/ext/transport/chttp2/transport/header_assembler.h',
                       'src/core/ext/transport/chttp2/transport/hpack_constants.h',
                       'src/core/ext/transport/chttp2/transport/hpack_encoder.h',
@@ -447,6 +448,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/ping_callbacks.h',
                       'src/core/ext/transport/chttp2/transport/ping_promise.h',
                       'src/core/ext/transport/chttp2/transport/ping_rate_policy.h',
+                      'src/core/ext/transport/chttp2/transport/stream.h',
                       'src/core/ext/transport/chttp2/transport/stream_data_queue.h',
                       'src/core/ext/transport/chttp2/transport/stream_lists.h',
                       'src/core/ext/transport/chttp2/transport/transport_common.h',
@@ -1167,6 +1169,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/resource_quota/resource_quota.h',
                       'src/core/lib/resource_quota/telemetry.h',
                       'src/core/lib/resource_quota/thread_quota.h',
+                      'src/core/lib/resource_tracker/resource_tracker.h',
                       'src/core/lib/security/authorization/audit_logging.h',
                       'src/core/lib/security/authorization/authorization_engine.h',
                       'src/core/lib/security/authorization/authorization_policy_provider.h',
@@ -1331,6 +1334,7 @@ Pod::Spec.new do |s|
                       'src/core/util/gcp_metadata_query.h',
                       'src/core/util/gethostname.h',
                       'src/core/util/glob.h',
+                      'src/core/util/grpc_check.h',
                       'src/core/util/grpc_if_nametoindex.h',
                       'src/core/util/host_port.h',
                       'src/core/util/http_client/format_request.h',
@@ -1360,6 +1364,7 @@ Pod::Spec.new do |s|
                       'src/core/util/overload.h',
                       'src/core/util/packed_table.h',
                       'src/core/util/per_cpu.h',
+                      'src/core/util/postmortem_emit.h',
                       'src/core/util/random_early_detection.h',
                       'src/core/util/ref_counted.h',
                       'src/core/util/ref_counted_ptr.h',
@@ -1800,6 +1805,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/frame_security.h',
                               'src/core/ext/transport/chttp2/transport/frame_settings.h',
                               'src/core/ext/transport/chttp2/transport/frame_window_update.h',
+                              'src/core/ext/transport/chttp2/transport/goaway.h',
                               'src/core/ext/transport/chttp2/transport/header_assembler.h',
                               'src/core/ext/transport/chttp2/transport/hpack_constants.h',
                               'src/core/ext/transport/chttp2/transport/hpack_encoder.h',
@@ -1825,6 +1831,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/ping_callbacks.h',
                               'src/core/ext/transport/chttp2/transport/ping_promise.h',
                               'src/core/ext/transport/chttp2/transport/ping_rate_policy.h',
+                              'src/core/ext/transport/chttp2/transport/stream.h',
                               'src/core/ext/transport/chttp2/transport/stream_data_queue.h',
                               'src/core/ext/transport/chttp2/transport/stream_lists.h',
                               'src/core/ext/transport/chttp2/transport/transport_common.h',
@@ -2545,6 +2552,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/resource_quota/resource_quota.h',
                               'src/core/lib/resource_quota/telemetry.h',
                               'src/core/lib/resource_quota/thread_quota.h',
+                              'src/core/lib/resource_tracker/resource_tracker.h',
                               'src/core/lib/security/authorization/audit_logging.h',
                               'src/core/lib/security/authorization/authorization_engine.h',
                               'src/core/lib/security/authorization/authorization_policy_provider.h',
@@ -2709,6 +2717,7 @@ Pod::Spec.new do |s|
                               'src/core/util/gcp_metadata_query.h',
                               'src/core/util/gethostname.h',
                               'src/core/util/glob.h',
+                              'src/core/util/grpc_check.h',
                               'src/core/util/grpc_if_nametoindex.h',
                               'src/core/util/host_port.h',
                               'src/core/util/http_client/format_request.h',
@@ -2738,6 +2747,7 @@ Pod::Spec.new do |s|
                               'src/core/util/overload.h',
                               'src/core/util/packed_table.h',
                               'src/core/util/per_cpu.h',
+                              'src/core/util/postmortem_emit.h',
                               'src/core/util/random_early_detection.h',
                               'src/core/util/ref_counted.h',
                               'src/core/util/ref_counted_ptr.h',

@@ -21,12 +21,12 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
+#include "absl/log/log.h"
 
 namespace tsi {
 
@@ -112,7 +112,7 @@ void SslSessionLRUCache::Put(const char* key, SslSessionPtr session) {
   entry_by_key_.emplace(key, node);
   AssertInvariants();
   if (use_order_list_size_ > capacity_) {
-    CHECK(use_order_list_tail_);
+    GRPC_CHECK(use_order_list_tail_);
     node = use_order_list_tail_;
     Remove(node);
     // Order matters, key is destroyed after deleting node.
@@ -143,7 +143,7 @@ void SslSessionLRUCache::Remove(SslSessionLRUCache::Node* node) {
   } else {
     node->next_->prev_ = node->prev_;
   }
-  CHECK_GE(use_order_list_size_, 1u);
+  GRPC_CHECK_GE(use_order_list_size_, 1u);
   use_order_list_size_--;
 }
 
@@ -169,16 +169,16 @@ void SslSessionLRUCache::AssertInvariants() {
   Node* current = use_order_list_head_;
   while (current != nullptr) {
     size++;
-    CHECK(current->prev_ == prev);
+    GRPC_CHECK(current->prev_ == prev);
     auto it = entry_by_key_.find(current->key());
-    CHECK(it != entry_by_key_.end());
-    CHECK(it->second == current);
+    GRPC_CHECK(it != entry_by_key_.end());
+    GRPC_CHECK(it->second == current);
     prev = current;
     current = current->next_;
   }
-  CHECK(prev == use_order_list_tail_);
-  CHECK(size == use_order_list_size_);
-  CHECK(entry_by_key_.size() == use_order_list_size_);
+  GRPC_CHECK(prev == use_order_list_tail_);
+  GRPC_CHECK(size == use_order_list_size_);
+  GRPC_CHECK(entry_by_key_.size() == use_order_list_size_);
 }
 #else
 void SslSessionLRUCache::AssertInvariants() {}

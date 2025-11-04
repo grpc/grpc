@@ -22,7 +22,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/strings/string_view.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/thread_quota.h"
@@ -30,6 +29,7 @@
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/useful.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

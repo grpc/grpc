@@ -19,8 +19,8 @@
 #include <memory>
 #include <optional>
 
-#include "absl/log/check.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 
@@ -50,7 +50,7 @@ GlobalInstrumentsRegistry::RegisterInstrument(
     }
   }
   InstrumentID index = instruments.size();
-  CHECK_LT(index, std::numeric_limits<uint32_t>::max());
+  GRPC_CHECK_LT(index, std::numeric_limits<uint32_t>::max());
   GlobalInstrumentDescriptor descriptor;
   descriptor.value_type = value_type;
   descriptor.instrument_type = instrument_type;
@@ -174,6 +174,7 @@ GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       group->AddStatsPlugin(node->plugin, std::move(config));
     }
   }
+  group->Finish();
   return group;
 }
 
@@ -187,6 +188,7 @@ GlobalStatsPluginRegistry::GetStatsPluginsForServer(const ChannelArgs& args) {
       group->AddStatsPlugin(node->plugin, std::move(config));
     }
   }
+  group->Finish();
   return group;
 }
 

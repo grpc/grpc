@@ -24,10 +24,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/cleanup/cleanup.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/string_view.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/endpoint/v3/load_report.upb.h"
 #include "envoy/service/load_stats/v3/lrs.upb.h"
@@ -38,6 +34,7 @@
 #include "src/core/util/backoff.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
@@ -51,6 +48,9 @@
 #include "upb/mem/arena.h"
 #include "upb/reflection/def.h"
 #include "upb/text/encode.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/log/log.h"
+#include "absl/strings/string_view.h"
 
 #define GRPC_XDS_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_XDS_RECONNECT_BACKOFF_MULTIPLIER 1.6
@@ -400,7 +400,7 @@ LrsClient::LrsChannel::LrsChannel(
       << " for server " << server_->server_uri();
   absl::Status status;
   transport_ = lrs_client_->transport_factory_->GetTransport(*server_, &status);
-  CHECK(transport_ != nullptr);
+  GRPC_CHECK(transport_ != nullptr);
   if (!status.ok()) {
     LOG(ERROR) << "Error creating LRS channel to " << server_->server_uri()
                << ": " << status;
@@ -484,8 +484,8 @@ void LrsClient::LrsChannel::RetryableCall<T>::OnCallFinishedLocked() {
 template <typename T>
 void LrsClient::LrsChannel::RetryableCall<T>::StartNewCallLocked() {
   if (shutting_down_) return;
-  CHECK(lrs_channel_->transport_ != nullptr);
-  CHECK(call_ == nullptr);
+  GRPC_CHECK(lrs_channel_->transport_ != nullptr);
+  GRPC_CHECK(call_ == nullptr);
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[lrs_client " << lrs_channel()->lrs_client() << "] lrs server "
       << lrs_channel()->server_->server_uri()
@@ -569,7 +569,7 @@ LrsClient::LrsChannel::LrsCall::LrsCall(
   // Init the LRS call. Note that the call will progress every time there's
   // activity in lrs_client()->interested_parties_, which is comprised of
   // the polling entities from client_channel.
-  CHECK_NE(lrs_client(), nullptr);
+  GRPC_CHECK_NE(lrs_client(), nullptr);
   const char* method =
       "/envoy.service.load_stats.v3.LoadReportingService/StreamLoadStats";
   streaming_call_ = lrs_channel()->transport_->CreateStreamingCall(
@@ -577,7 +577,7 @@ LrsClient::LrsChannel::LrsCall::LrsCall(
                   // Passing the initial ref here.  This ref will go away when
                   // the StreamEventHandler is destroyed.
                   RefCountedPtr<LrsCall>(this)));
-  CHECK(streaming_call_ != nullptr);
+  GRPC_CHECK(streaming_call_ != nullptr);
   // Start the call.
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[lrs_client " << lrs_client() << "] lrs server "

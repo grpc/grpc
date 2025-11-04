@@ -31,10 +31,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/container/flat_hash_map.h"
-#include "absl/container/flat_hash_set.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/strings/string_view.h"
 #include "opentelemetry/metrics/async_instruments.h"
 #include "opentelemetry/metrics/meter_provider.h"
 #include "opentelemetry/metrics/observer_result.h"
@@ -43,11 +39,18 @@
 #include "opentelemetry/trace/tracer.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/telemetry/instrument.h"
 #include "src/core/telemetry/metrics.h"
 #include "src/core/util/down_cast.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 namespace internal {
+
+bool IsOpenTelemetryLabelOptional(absl::string_view label_key);
 
 // An iterable container interface that can be used as a return type for the
 // OpenTelemetry plugin's label injector.
@@ -240,11 +243,21 @@ class OpenTelemetryPluginImpl
           channel_scope_filter);
   ~OpenTelemetryPluginImpl() override;
 
+  grpc_core::RefCountedPtr<grpc_core::CollectionScope> GetCollectionScope()
+      const override {
+    return collection_scope_;
+  }
+
  private:
   class ClientCallTracerInterface;
   class KeyValueIterable;
   class NPCMetricsKeyValueIterable;
   class ServerCallTracerInterface;
+  class ExporterCallback;
+  template <class Exporter>
+  class ExporterCallbackImpl;
+  class CounterExporter;
+  class ExportedMetricKeyValueIterable;
 
   // Creates a convenience wrapper to help iterate over only those plugin
   // options that are active over a given channel/server.
@@ -478,6 +491,9 @@ class OpenTelemetryPluginImpl
       grpc_core::GlobalInstrumentsRegistry::GlobalInstrumentHandle handle)
       const override;
 
+  void QueryMetrics(absl::Span<const absl::string_view> metrics,
+                    grpc_core::MetricsSink& sink);
+
   const absl::AnyInvocable<bool(const grpc_core::ChannelArgs& /*args*/) const>&
   server_selector() const {
     return server_selector_;
@@ -565,6 +581,9 @@ class OpenTelemetryPluginImpl
   absl::AnyInvocable<bool(
       const OpenTelemetryPluginBuilder::ChannelScope& /*scope*/) const>
       channel_scope_filter_;
+  std::vector<std::string> collapse_labels_;  // const after init
+  std::vector<std::unique_ptr<ExporterCallback>> exporter_callbacks_;
+  grpc_core::RefCountedPtr<grpc_core::CollectionScope> collection_scope_;
 };
 
 class GrpcTextMapCarrier

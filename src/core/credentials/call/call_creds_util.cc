@@ -20,14 +20,14 @@
 #include <grpc/support/string_util.h>
 #include <string.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/transport/auth_context.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -41,7 +41,7 @@ struct ServiceUrlAndMethod {
 ServiceUrlAndMethod MakeServiceUrlAndMethod(
     const ClientMetadataHandle& initial_metadata,
     const grpc_call_credentials::GetRequestMetadataArgs* args) {
-  DCHECK(initial_metadata->get_pointer(HttpPathMetadata()) != nullptr);
+  GRPC_DCHECK(initial_metadata->get_pointer(HttpPathMetadata()) != nullptr);
   auto service =
       initial_metadata->get_pointer(HttpPathMetadata())->as_string_view();
   auto last_slash = service.find_last_of('/');
@@ -56,7 +56,8 @@ ServiceUrlAndMethod MakeServiceUrlAndMethod(
     method_name = service.substr(last_slash + 1);
     service = service.substr(0, last_slash);
   }
-  DCHECK(initial_metadata->get_pointer(HttpAuthorityMetadata()) != nullptr);
+  GRPC_DCHECK(initial_metadata->get_pointer(HttpAuthorityMetadata()) !=
+              nullptr);
   auto host_and_port =
       initial_metadata->get_pointer(HttpAuthorityMetadata())->as_string_view();
   absl::string_view url_scheme = args->security_connector->url_scheme();

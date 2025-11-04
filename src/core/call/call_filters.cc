@@ -16,10 +16,10 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/call/metadata.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 // Call data for those calls that don't have any call data
@@ -30,7 +30,7 @@ char CallFilters::g_empty_call_data_;
 // CallFilters
 
 void CallFilters::Start() {
-  CHECK_EQ(call_data_, nullptr);
+  GRPC_CHECK_EQ(call_data_, nullptr);
   size_t call_data_alignment = 1;
   for (const auto& stack : stacks_) {
     call_data_alignment =
@@ -83,11 +83,11 @@ void CallFilters::CancelDueToFailedPipeOperation(SourceLocation but_where) {
 }
 
 void CallFilters::PushServerTrailingMetadata(ServerMetadataHandle md) {
-  CHECK(md != nullptr);
+  GRPC_CHECK(md != nullptr);
   GRPC_TRACE_LOG(call, INFO)
       << GetContext<Activity>()->DebugTag() << " PushServerTrailingMetadata["
       << this << "]: " << md->DebugString() << " into " << DebugString();
-  CHECK(md != nullptr);
+  GRPC_CHECK(md != nullptr);
   if (call_state_.PushServerTrailingMetadata(
           md->get(GrpcCallWasCancelled()).value_or(false))) {
     push_server_trailing_metadata_ = std::move(md);

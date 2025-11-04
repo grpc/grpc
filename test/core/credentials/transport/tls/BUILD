@@ -87,6 +87,7 @@ grpc_cc_test(
         "//:transport_auth_context",
         "//:tsi_base",
         "//src/core:channel_args",
+        "//src/core:grpc_check",
         "//src/core:grpc_tls_credentials",
         "//src/core:unique_type_name",
         "//test/core/test_util:grpc_test_util",
@@ -148,6 +149,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:grpc_check",
         "//src/core:grpc_tls_credentials",
         "//src/core:match",
         "//src/core:slice",
@@ -182,6 +184,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:grpc_check",
         "//src/core:grpc_tls_credentials",
         "//src/core:match",
         "//src/core:slice",

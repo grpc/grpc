@@ -32,15 +32,15 @@
 #include <string>
 #include <utility>
 
-#include "absl/cleanup/cleanup.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/thd.h"
 #include "test/core/test_util/port.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/log/log.h"
 
 struct grpc_end2end_proxy {
   grpc_end2end_proxy()
@@ -233,7 +233,7 @@ static void on_p2s_recv_initial_metadata(void* arg, int /*success*/) {
   err = grpc_call_start_batch(pc->c2p, op, op_count,
                               new_closure(on_c2p_sent_initial_metadata, pc),
                               nullptr);
-  CHECK_EQ(err, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(err, GRPC_CALL_OK);
 }
 
 static void on_p2s_sent_initial_metadata(void* arg, int /*success*/) {
@@ -257,7 +257,7 @@ static void on_p2s_sent_message(void* arg, int success) {
     refpc(pc, "on_c2p_recv_msg");
     err = grpc_call_start_batch(pc->c2p, &op, 1,
                                 new_closure(on_c2p_recv_msg, pc), nullptr);
-    CHECK_EQ(err, GRPC_CALL_OK);
+    GRPC_CHECK_EQ(err, GRPC_CALL_OK);
   }
 
   unrefpc(pc, "on_p2s_sent_message");
@@ -282,7 +282,7 @@ static void on_c2p_recv_msg(void* arg, int success) {
       refpc(pc, "on_p2s_sent_message");
       err = grpc_call_start_batch(
           pc->p2s, &op, 1, new_closure(on_p2s_sent_message, pc), nullptr);
-      CHECK_EQ(err, GRPC_CALL_OK);
+      GRPC_CHECK_EQ(err, GRPC_CALL_OK);
     } else {
       op.op = GRPC_OP_SEND_CLOSE_FROM_CLIENT;
       op.flags = 0;
@@ -290,7 +290,7 @@ static void on_c2p_recv_msg(void* arg, int success) {
       refpc(pc, "on_p2s_sent_close");
       err = grpc_call_start_batch(pc->p2s, &op, 1,
                                   new_closure(on_p2s_sent_close, pc), nullptr);
-      CHECK_EQ(err, GRPC_CALL_OK);
+      GRPC_CHECK_EQ(err, GRPC_CALL_OK);
     }
   } else {
     if (pc->c2p_msg != nullptr) {
@@ -317,7 +317,7 @@ static void on_c2p_sent_message(void* arg, int success) {
     refpc(pc, "on_p2s_recv_msg");
     err = grpc_call_start_batch(pc->p2s, &op, 1,
                                 new_closure(on_p2s_recv_msg, pc), nullptr);
-    CHECK_EQ(err, GRPC_CALL_OK);
+    GRPC_CHECK_EQ(err, GRPC_CALL_OK);
   }
 
   unrefpc(pc, "on_c2p_sent_message");
@@ -336,7 +336,7 @@ static void on_p2s_recv_msg(void* arg, int success) {
     refpc(pc, "on_c2p_sent_message");
     err = grpc_call_start_batch(pc->c2p, &op, 1,
                                 new_closure(on_c2p_sent_message, pc), nullptr);
-    CHECK_EQ(err, GRPC_CALL_OK);
+    GRPC_CHECK_EQ(err, GRPC_CALL_OK);
   } else {
     grpc_byte_buffer_destroy(pc->p2s_msg);
   }
@@ -351,7 +351,7 @@ static void on_p2s_status(void* arg, int success) {
   if (pc->proxy->shutdown) {
     return;
   }
-  CHECK(success);
+  GRPC_CHECK(success);
   // TODO(ctiller): The current core implementation requires initial
   // metadata batches to be started *after* initial metadata batches have
   // been completed. The C++ Callback API does this accounting too, for
@@ -383,7 +383,7 @@ static void on_p2s_status(void* arg, int success) {
   refpc(pc, "on_c2p_sent_status");
   err = grpc_call_start_batch(pc->c2p, op, op_count,
                               new_closure(on_c2p_sent_status, pc), nullptr);
-  CHECK_EQ(err, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(err, GRPC_CALL_OK);
 }
 
 static void on_c2p_closed(void* arg, int /*success*/) {
@@ -425,7 +425,7 @@ static void on_new_call(void* arg, int success) {
     err = grpc_call_start_batch(pc->p2s, &op, 1,
                                 new_closure(on_p2s_recv_initial_metadata, pc),
                                 nullptr);
-    CHECK_EQ(err, GRPC_CALL_OK);
+    GRPC_CHECK_EQ(err, GRPC_CALL_OK);
 
     // Proxy: send initial metadata to the server
     op.op = GRPC_OP_SEND_INITIAL_METADATA;
@@ -436,7 +436,7 @@ static void on_new_call(void* arg, int success) {
     err = grpc_call_start_batch(pc->p2s, &op, 1,
                                 new_closure(on_p2s_sent_initial_metadata, pc),
                                 nullptr);
-    CHECK_EQ(err, GRPC_CALL_OK);
+    GRPC_CHECK_EQ(err, GRPC_CALL_OK);
 
     // Client: receive message from the proxy
     op.op = GRPC_OP_RECV_MESSAGE;
@@ -445,7 +445,7 @@ static void on_new_call(void* arg, int success) {
     refpc(pc, "on_c2p_recv_msg");
     err = grpc_call_start_batch(pc->c2p, &op, 1,
                                 new_closure(on_c2p_recv_msg, pc), nullptr);
-    CHECK_EQ(err, GRPC_CALL_OK);
+    GRPC_CHECK_EQ(err, GRPC_CALL_OK);
 
     // Proxy: receive message from the server
     op.op = GRPC_OP_RECV_MESSAGE;
@@ -454,7 +454,7 @@ static void on_new_call(void* arg, int success) {
     refpc(pc, "on_p2s_recv_msg");
     err = grpc_call_start_batch(pc->p2s, &op, 1,
                                 new_closure(on_p2s_recv_msg, pc), nullptr);
-    CHECK_EQ(err, GRPC_CALL_OK);
+    GRPC_CHECK_EQ(err, GRPC_CALL_OK);
 
     // Proxy: receive status from the server
     op.op = GRPC_OP_RECV_STATUS_ON_CLIENT;
@@ -466,7 +466,7 @@ static void on_new_call(void* arg, int success) {
     refpc(pc, "on_p2s_status");
     err = grpc_call_start_batch(pc->p2s, &op, 1, new_closure(on_p2s_status, pc),
                                 nullptr);
-    CHECK_EQ(err, GRPC_CALL_OK);
+    GRPC_CHECK_EQ(err, GRPC_CALL_OK);
 
     // Client: receive close-ack from the proxy
     op.op = GRPC_OP_RECV_CLOSE_ON_SERVER;
@@ -475,7 +475,7 @@ static void on_new_call(void* arg, int success) {
     refpc(pc, "on_c2p_closed");
     err = grpc_call_start_batch(pc->c2p, &op, 1, new_closure(on_c2p_closed, pc),
                                 nullptr);
-    CHECK_EQ(err, GRPC_CALL_OK);
+    GRPC_CHECK_EQ(err, GRPC_CALL_OK);
 
     request_call(proxy);
 
@@ -484,14 +484,14 @@ static void on_new_call(void* arg, int success) {
 
     unrefpc(pc, "init");
   } else {
-    CHECK_EQ(proxy->new_call, nullptr);
+    GRPC_CHECK_EQ(proxy->new_call, nullptr);
   }
 }
 
 static void request_call(grpc_end2end_proxy* proxy) {
   proxy->new_call = nullptr;
-  CHECK(GRPC_CALL_OK ==
-        grpc_server_request_call(proxy->server, &proxy->new_call,
+  GRPC_CHECK(GRPC_CALL_OK == grpc_server_request_call(
+                                 proxy->server, &proxy->new_call,
                                  &proxy->new_call_details,
                                  &proxy->new_call_metadata, proxy->cq,
                                  proxy->cq, new_closure(on_new_call, proxy)));

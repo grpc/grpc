@@ -26,9 +26,6 @@
 #include <optional>
 #include <queue>
 
-#include "absl/functional/function_ref.h"
-#include "absl/log/check.h"
-#include "absl/strings/string_view.h"
 #include "src/core/channelz/property_list.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
@@ -38,8 +35,11 @@
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
+#include "absl/functional/function_ref.h"
+#include "absl/strings/string_view.h"
 namespace grpc_core {
 
 // Timeout for getting an ack back on settings changes
@@ -84,7 +84,7 @@ class SettingsTimeoutManager {
               // This Promise will "win" the race if we receive the SETTINGS
               // ACK from the peer within the timeout time.
               if (DidReceiveAck()) {
-                DCHECK(
+                GRPC_DCHECK(
                 sent_time_ +
                     (timeout_ *
                      1.1 /* 10% grace time for this promise to be scheduled*/) >
@@ -117,8 +117,8 @@ class SettingsTimeoutManager {
            "did_register_waker_ "
         << did_register_waker_
         << " number_of_acks_unprocessed_ : " << number_of_acks_unprocessed_;
-    DCHECK_EQ(number_of_acks_unprocessed_, 0);
-    DCHECK(!did_register_waker_);
+    GRPC_DCHECK_EQ(number_of_acks_unprocessed_, 0);
+    GRPC_DCHECK(!did_register_waker_);
     sent_time_ = Timestamp::Now();
   }
   inline bool DidReceiveAck() {
@@ -134,18 +134,18 @@ class SettingsTimeoutManager {
         << did_register_waker_
         << " number_of_acks_unprocessed_ : " << number_of_acks_unprocessed_;
     if (!did_register_waker_) {
-      DCHECK_EQ(number_of_acks_unprocessed_, 0);
+      GRPC_DCHECK_EQ(number_of_acks_unprocessed_, 0);
       waker_ = GetContext<Activity>()->MakeNonOwningWaker();
       did_register_waker_ = true;
     }
-    DCHECK(did_register_waker_);
+    GRPC_DCHECK(did_register_waker_);
   }
   inline void RecordReceivedAck() {
     GRPC_SETTINGS_TIMEOUT_DLOG
         << "SettingsTimeoutManager::RecordReceivedAck did_register_waker_ "
         << did_register_waker_
         << " number_of_acks_unprocessed_ : " << number_of_acks_unprocessed_;
-    DCHECK_EQ(number_of_acks_unprocessed_, 0);
+    GRPC_DCHECK_EQ(number_of_acks_unprocessed_, 0);
     ++number_of_acks_unprocessed_;
     if (did_register_waker_) {
       // It is possible that we receive the ACK before WaitForSettingsTimeout is
@@ -153,7 +153,7 @@ class SettingsTimeoutManager {
       waker_.Wakeup();
       did_register_waker_ = false;
     }
-    DCHECK(!did_register_waker_);
+    GRPC_DCHECK(!did_register_waker_);
   }
   inline void RemoveReceivedAck() {
     GRPC_SETTINGS_TIMEOUT_DLOG
@@ -161,8 +161,8 @@ class SettingsTimeoutManager {
         << did_register_waker_
         << " number_of_acks_unprocessed_ : " << number_of_acks_unprocessed_;
     --number_of_acks_unprocessed_;
-    DCHECK_EQ(number_of_acks_unprocessed_, 0);
-    DCHECK(!did_register_waker_);
+    GRPC_DCHECK_EQ(number_of_acks_unprocessed_, 0);
+    GRPC_DCHECK(!did_register_waker_);
   }
 
   Duration timeout_;

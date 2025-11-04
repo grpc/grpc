@@ -15,7 +15,7 @@
 #include <grpc/support/port_platform.h>
 #include <stdlib.h>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 
 // The echo client wraps an EventEngine::Connect and EventEngine::Endpoint
 // implementations, allowing third-party TCP listeners to interact with your
@@ -39,13 +39,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/flags/flag.h"
-#include "absl/flags/parse.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
@@ -54,6 +47,13 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/util/notification.h"
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 
 extern absl::AnyInvocable<
     std::shared_ptr<grpc_event_engine::experimental::EventEngine>(void)>
@@ -78,7 +78,7 @@ void SendMessage(EventEngine::Endpoint* endpoint, int message_id) {
   grpc_core::Notification write_done;
   endpoint->Write(
       [&](absl::Status status) {
-        CHECK_OK(status);
+        GRPC_CHECK_OK(status);
         write_done.Notify();
       },
       &buf, EventEngine::Endpoint::WriteArgs());
@@ -117,7 +117,7 @@ void RunUntilInterrupted() {
           .resolver_registry()
           .AddDefaultPrefixIfNeeded(absl::GetFlag(FLAGS_target));
   auto addr = URIToResolvedAddress(canonical_target);
-  CHECK_OK(addr);
+  GRPC_CHECK_OK(addr);
   engine->Connect(
       [&](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep) {
         if (!ep.ok()) {
@@ -129,7 +129,7 @@ void RunUntilInterrupted() {
       },
       *addr, config, memory_quota->CreateMemoryAllocator("client"), 2h);
   connected.WaitForNotification();
-  CHECK_NE(endpoint.get(), nullptr);
+  GRPC_CHECK_NE(endpoint.get(), nullptr);
   VLOG(2) << "peer addr: "
           << ResolvedAddressToString(endpoint->GetPeerAddress());
   VLOG(2) << "local addr: "

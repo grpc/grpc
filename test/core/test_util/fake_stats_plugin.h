@@ -21,18 +21,18 @@
 #include <type_traits>
 #include <vector>
 
+#include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/metrics.h"
+#include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/ref_counted.h"
+#include "gmock/gmock.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
-#include "gmock/gmock.h"
-#include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/telemetry/call_tracer.h"
-#include "src/core/telemetry/metrics.h"
-#include "src/core/telemetry/tcp_tracer.h"
-#include "src/core/util/ref_counted.h"
 
 namespace grpc_core {
 
@@ -257,6 +257,10 @@ class FakeStatsPlugin : public StatsPlugin {
               Crash("unknown instrument type");
           }
         });
+  }
+
+  RefCountedPtr<CollectionScope> GetCollectionScope() const override {
+    return collection_scope_;
   }
 
   std::pair<bool, std::shared_ptr<StatsPlugin::ScopeConfig>>
@@ -632,6 +636,8 @@ class FakeStatsPlugin : public StatsPlugin {
   absl::flat_hash_map<uint32_t, Gauge<double>> double_callback_gauges_
       ABSL_GUARDED_BY(&callback_mu_);
   std::set<RegisteredMetricCallback*> callbacks_ ABSL_GUARDED_BY(&callback_mu_);
+  RefCountedPtr<CollectionScope> collection_scope_ =
+      CreateCollectionScope({}, {});
 };
 
 class FakeStatsPluginBuilder {

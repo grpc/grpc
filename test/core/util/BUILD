@@ -89,6 +89,7 @@ grpc_cc_benchmark(
     ],
     monitoring = HISTORY,
     deps = [
+        "//src/core:http2_ztrace_collector",
         "//src/core:latent_see",
     ],
 )
@@ -99,16 +100,20 @@ grpc_cc_test(
     external_deps = [
         "absl/functional:function_ref",
         "absl/log:log",
+        "absl/strings",
         "gtest",
         "gtest_main",
     ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//src/core:function_signature",
+        "//src/core:http2_ztrace_collector",
         "//src/core:json",
         "//src/core:json_reader",
         "//src/core:latent_see",
         "//src/core:notification",
+        "//src/core:promise_factory",
     ],
 )
 
@@ -305,6 +310,7 @@ grpc_cc_test(
     deps = [
         "//src/core:dual_ref_counted",
         "//src/core:gpr_manual_constructor",
+        "//src/core:grpc_check",
         "//src/core:ref_counted",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -321,6 +327,7 @@ grpc_cc_test(
     deps = [
         "//:ref_counted_ptr",
         "//src/core:dual_ref_counted",
+        "//src/core:grpc_check",
         "//src/core:ref_counted",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -445,6 +452,7 @@ grpc_fuzz_test(
         "//src/core:arena",
         "//src/core:chunked_vector",
         "//src/core:event_engine_memory_allocator",
+        "//src/core:grpc_check",
         "//src/core:memory_quota",
         "//src/core:resource_quota",
         "//test/core/test_util:grpc_test_util",
@@ -599,6 +607,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//:gpr",
+        "//:grpc",
         "//src/core:glob",
         "//src/core:useful",
         "//test/core/test_util:grpc_test_util",
@@ -871,6 +880,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//src/core:grpc_check",
         "//src/core:lru_cache",
     ],
 )

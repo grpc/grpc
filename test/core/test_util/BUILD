@@ -106,6 +106,7 @@ grpc_cc_library(
         "//src/core:event_engine_utils",
         "//src/core:experiments",
         "//src/core:grpc_authorization_base",
+        "//src/core:grpc_check",
         "//src/core:grpc_sockaddr",
         "//src/core:iomgr_fwd",
         "//src/core:memory_quota",
@@ -138,7 +139,6 @@ grpc_cc_library(
     deps = [
         "build",
         "grpc_test_util_base",
-        "postmortem_emit",
         "stack_tracer",
         "//:config",
         "//:exec_ctx",
@@ -160,10 +160,12 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:experiments",
         "//src/core:gpr_atm",
+        "//src/core:grpc_check",
         "//src/core:grpc_sockaddr",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
         "//src/core:load_file",
+        "//src/core:postmortem",
         "//src/core:resolved_address",
         "//src/core:slice",
         "//src/core:slice_refcount",
@@ -194,7 +196,6 @@ grpc_cc_library(
     deps = [
         "build",
         "grpc_test_util_base",
-        "postmortem_emit",
         "stack_tracer",
         "//:config",
         "//:exec_ctx",
@@ -213,9 +214,11 @@ grpc_cc_library(
         "//src/core:closure",
         "//src/core:error",
         "//src/core:gpr_atm",
+        "//src/core:grpc_check",
         "//src/core:grpc_sockaddr",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
+        "//src/core:postmortem",
         "//src/core:resolved_address",
         "//src/core:status_helper",
         "//src/core:sync",
@@ -349,6 +352,7 @@ grpc_cc_library(
         "//src/core:down_cast",
         "//src/core:error",
         "//src/core:grpc_backend_metric_data",
+        "//src/core:grpc_check",
         "//src/core:json",
         "//src/core:json_util",
         "//src/core:lb_metadata",
@@ -378,6 +382,7 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc",
         "//:sockaddr_utils",
+        "//src/core:grpc_check",
         "//src/core:grpc_sockaddr",
         "//src/core:resolved_address",
     ],
@@ -567,6 +572,7 @@ grpc_cc_library(
         "//:grpc",
         "//:grpc_base",
         "//src/core:examine_stack",
+        "//src/core:grpc_check",
         "//src/core:metrics",
         "//src/core:ref_counted",
         "//src/core:tcp_tracer",
@@ -626,16 +632,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "postmortem_emit",
-    srcs = ["postmortem_emit.cc"],
-    hdrs = ["postmortem_emit.h"],
-    deps = [
-        "//:channelz",
-        "//:stats",
-    ],
-)
-
-grpc_cc_library(
     name = "postmortem",
     testonly = 1,
     hdrs = ["postmortem.h"],
@@ -643,6 +639,6 @@ grpc_cc_library(
         "gtest",
     ],
     deps = [
-        "postmortem_emit",
+        "//src/core:postmortem",
     ],
 )

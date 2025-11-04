@@ -20,8 +20,6 @@
 
 #include <memory>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "src/core/ext/filters/channel_idle/idle_filter_state.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -35,6 +33,8 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/single_set_ptr.h"
 #include "src/core/util/time.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 

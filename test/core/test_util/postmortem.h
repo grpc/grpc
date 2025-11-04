@@ -15,8 +15,8 @@
 #ifndef GRPC_TEST_CORE_TEST_UTIL_POSTMORTEM_H
 #define GRPC_TEST_CORE_TEST_UTIL_POSTMORTEM_H
 
+#include "src/core/util/postmortem_emit.h"
 #include "gtest/gtest.h"
-#include "test/core/test_util/postmortem_emit.h"
 
 namespace grpc_core {
 

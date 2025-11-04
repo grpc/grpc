@@ -34,6 +34,23 @@
 
 namespace grpc_core {
 
+class Ph2InsecureFixture : public InsecureFixture {
+ public:
+  Ph2InsecureFixture() {
+    // At Least one of the 2 peers MUST be a PH2
+    GRPC_DCHECK(IsPromiseBasedHttp2ClientTransportEnabled() ||
+                IsPromiseBasedHttp2ServerTransportEnabled());
+  }
+
+  ChannelArgs MutateClientArgs(ChannelArgs args) override {
+    return args.Set(GRPC_ARG_ENABLE_CHANNELZ, true);
+  }
+
+  ChannelArgs MutateServerArgs(ChannelArgs args) override {
+    return args.Set(GRPC_ARG_ENABLE_CHANNELZ, true);
+  }
+};
+
 #define GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_AVOID_LIST                         \
   "CoreClientChannelTests.DeadlineAfterAcceptWithServiceConfig"                \
   "|CoreClientChannelTests.DeadlineAfterRoundTripWithServiceConfig"            \
@@ -41,22 +58,9 @@ namespace grpc_core {
   "|CoreDeadlineSingleHopTests."                                               \
   "TimeoutBeforeRequestCallWithRegisteredMethodWithPayload"                    \
   "|CoreEnd2endTests.BinaryMetadataServerHttp2FallbackClientHttp2Fallback"     \
+  "|CoreEnd2endTests.BinaryMetadataServerHttp2FallbackClientTrueBinary"        \
+  "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientTrueBinary"           \
   "|CoreEnd2endTests.BinaryMetadataServerTrueBinaryClientHttp2Fallback"        \
-  "|CoreEnd2endTests.CancelAfterAccept"                                        \
-  "|CoreEnd2endTests.CancelAfterClientDone"                                    \
-  "|CoreEnd2endTests.CancelAfterInvoke3"                                       \
-  "|CoreEnd2endTests.CancelAfterInvoke4"                                       \
-  "|CoreEnd2endTests.CancelAfterInvoke5"                                       \
-  "|CoreEnd2endTests.CancelAfterInvoke6"                                       \
-  "|CoreEnd2endTests.CancelAfterRoundTrip"                                     \
-  "|CoreEnd2endTests.CancelWithStatus1"                                        \
-  "|CoreEnd2endTests.CancelWithStatus2"                                        \
-  "|CoreEnd2endTests.CancelWithStatus3"                                        \
-  "|CoreEnd2endTests.CancelWithStatus4"                                        \
-  "|CoreEnd2endTests.DeadlineAfterInvoke3"                                     \
-  "|CoreEnd2endTests.DeadlineAfterInvoke4"                                     \
-  "|CoreEnd2endTests.DeadlineAfterInvoke5"                                     \
-  "|CoreEnd2endTests.DeadlineAfterInvoke6"                                     \
   "|CoreEnd2endTests.MaxMessageLengthOnClientOnResponseViaChannelArg"          \
   "|CoreEnd2endTests."                                                         \
   "MaxMessageLengthOnClientOnResponseViaServiceConfigWithIntegerJsonValue"     \
@@ -137,7 +141,7 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
         /*create_fixture=*/
         [](const ChannelArgs& /*client_args*/,
            const ChannelArgs& /*server_args*/) {
-          return std::make_unique<InsecureFixture>();
+          return std::make_unique<Ph2InsecureFixture>();
         },
         /* include_test_suites */
         GRPC_HTTP2_PROMISE_CLIENT_TRANSPORT_ALLOW_SUITE,

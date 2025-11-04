@@ -31,11 +31,6 @@
 #include <optional>
 #include <utility>
 
-#include "absl/log/log.h"
-#include "absl/numeric/int128.h"
-#include "absl/strings/escaping.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_format.h"
 #include "google/api/monitored_resource.pb.h"
 #include "google/logging/v2/log_entry.pb.h"
 #include "google/logging/v2/logging.grpc.pb.h"
@@ -47,6 +42,11 @@
 #include "src/core/util/time.h"
 #include "src/core/util/uuid_v4.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
+#include "absl/log/log.h"
+#include "absl/numeric/int128.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_format.h"
 
 // IWYU pragma: no_include "google/protobuf/struct.pb.h"
 // IWYU pragma: no_include "google/protobuf/timestamp.pb.h"

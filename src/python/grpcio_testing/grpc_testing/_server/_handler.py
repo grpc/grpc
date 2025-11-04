@@ -78,10 +78,9 @@ class _Handler(Handler):
                         request = self._requests.pop(0)
                         self._condition.notify_all()
                         return _common.ServerRpcRead(request, False, False)
-                    elif self._requests_closed:
+                    if self._requests_closed:
                         return _common.REQUESTS_CLOSED
-                    else:
-                        self._condition.wait()
+                    self._condition.wait()
                 else:
                     return _common.TERMINATED
 
@@ -108,8 +107,7 @@ class _Handler(Handler):
             if self._code is None:
                 self._termination_callbacks.append(callback)
                 return True
-            else:
-                return False
+            return False
 
     def initial_metadata(self):
         with self._condition:
@@ -135,7 +133,7 @@ class _Handler(Handler):
                     response = self._responses.pop(0)
                     self._condition.notify_all()
                     return response
-                elif self._code is None:
+                if self._code is None:
                     self._condition.wait()
                 else:
                     error_msg = "No more responses!"
@@ -165,12 +163,11 @@ class _Handler(Handler):
                 if self._code is _CLIENT_INACTIVE:
                     error_msg = "Huh? Cancelled but wanting status?"
                     raise ValueError(error_msg)
-                elif self._code is None:
+                if self._code is None:
                     self._condition.wait()
                 else:
-                    if self._unary_response is None:
-                        if self._responses:
-                            self._unary_response = self._responses.pop(0)
+                    if self._unary_response is None and self._responses:
+                        self._unary_response = self._responses.pop(0)
                     return (
                         self._unary_response,
                         self._trailing_metadata,
@@ -184,7 +181,7 @@ class _Handler(Handler):
                 if self._code is _CLIENT_INACTIVE:
                     error_msg = "Huh? Cancelled but wanting status?"
                     raise ValueError(error_msg)
-                elif self._code is None:
+                if self._code is None:
                     self._condition.wait()
                 else:
                     return self._trailing_metadata, self._code, self._details

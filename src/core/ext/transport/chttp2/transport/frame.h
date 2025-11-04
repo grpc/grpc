@@ -22,13 +22,13 @@
 #include <variant>
 #include <vector>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/span.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 
@@ -242,7 +242,8 @@ http2::ValueOrHttp2Status<Http2Frame> ParseFramePayload(
 // move things out of frames)
 SerializeReturn Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out);
 
-http2::Http2ErrorCode Http2ErrorCodeFromRstFrameErrorCode(uint32_t error_code);
+http2::Http2ErrorCode FrameErrorCodeToHttp2ErrorCode(uint32_t error_code);
+uint32_t Http2ErrorCodeToFrameErrorCode(http2::Http2ErrorCode error_code);
 
 // Returns approximate memory usage of the frame.
 size_t GetFrameMemoryUsage(const Http2Frame& frame);
@@ -372,6 +373,9 @@ inline constexpr uint32_t kMaxStreamId31Bit = 0x7fffffffu;
 inline constexpr uint32_t kMaxSize31Bit = 0x7fffffffu;
 inline constexpr uint32_t kMinimumFrameSize = 16384;
 inline constexpr uint32_t kMaximumFrameSize = 16777215;
+
+// Default Initial Window Size as per RFC 9113 Section 6.5.2
+inline constexpr uint32_t kHttp2InitialWindowSize = 65535u;
 
 }  // namespace RFC9113
 }  // namespace grpc_core

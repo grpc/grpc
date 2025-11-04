@@ -22,7 +22,7 @@
 
 #include <memory>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc {
 class XdsChannelCredentialsImpl final : public ChannelCredentials {
@@ -31,13 +31,13 @@ class XdsChannelCredentialsImpl final : public ChannelCredentials {
       const std::shared_ptr<ChannelCredentials>& fallback_creds)
       : ChannelCredentials(
             grpc_xds_credentials_create(fallback_creds->c_creds_)) {
-    CHECK_NE(fallback_creds->c_creds_, nullptr);
+    GRPC_CHECK_NE(fallback_creds->c_creds_, nullptr);
   }
 };
 
 std::shared_ptr<ChannelCredentials> XdsCredentials(
     const std::shared_ptr<ChannelCredentials>& fallback_creds) {
-  CHECK_NE(fallback_creds, nullptr);
+  GRPC_CHECK_NE(fallback_creds, nullptr);
   return std::make_shared<XdsChannelCredentialsImpl>(fallback_creds);
 }
 
