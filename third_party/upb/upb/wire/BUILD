@@ -29,8 +29,8 @@ cc_library(
         ":eps_copy_input_stream",
         ":reader",
         "//third_party/utf8_range",
-        "//upb:base",
-        "//upb:mem",
+        "//upb/base",
+        "//upb/mem",
         "//upb:message",
         "//upb:mini_table",
         "//upb:port",
@@ -38,6 +38,7 @@ cc_library(
         "//upb/hash",
         "//upb/mem:internal",
         "//upb/message:internal",
+        "//upb/message:iterator",
         "//upb/message:types",
         "//upb/mini_table:internal",
     ],
@@ -67,7 +68,7 @@ cc_library(
     hdrs = ["byte_size.h"],
     visibility = ["//visibility:public"],
     deps = [
-        "//upb:mem",
+        "//upb/mem",
         "//upb:message",
         "//upb:mini_table",
         "//upb:port",
@@ -80,13 +81,13 @@ cc_test(
     srcs = ["byte_size_test.cc"],
     deps = [
         ":byte_size",
-        "//upb:base",
-        "//upb:mem",
+        "//upb/base",
+        "//upb/mem",
         "//upb:mini_table",
         "//upb/test:test_messages_proto2_upb_minitable",
         "//upb/test:test_messages_proto2_upb_proto",
-        "@com_google_googletest//:gtest",
-        "@com_google_googletest//:gtest_main",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 
@@ -96,7 +97,7 @@ cc_library(
     hdrs = ["eps_copy_input_stream.h"],
     visibility = ["//visibility:public"],
     deps = [
-        "//upb:mem",
+        "//upb/mem",
         "//upb:port",
     ],
 )
@@ -106,9 +107,9 @@ cc_test(
     srcs = ["eps_copy_input_stream_test.cc"],
     deps = [
         ":eps_copy_input_stream",
-        "//upb:mem",
-        "@com_google_googletest//:gtest",
-        "@com_google_googletest//:gtest_main",
+        "//upb/mem",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )
 

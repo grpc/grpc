@@ -130,8 +130,9 @@ class ClientAsyncResponseReaderHelper {
     SingleBufType* single_buf =
         new (grpc_call_arena_alloc(call, sizeof(SingleBufType))) SingleBufType;
     *single_buf_ptr = single_buf;
+
     // TODO(ctiller): don't assert
-    ABSL_CHECK(single_buf->SendMessage(request).ok());
+    ABSL_CHECK(single_buf->SendMessage(request, /*allocator=*/nullptr).ok());
     single_buf->ClientSendClose();
 
     // The purpose of the following functions is to type-erase the actual
@@ -349,8 +350,9 @@ class ServerAsyncResponseWriter final
     }
     // The response is dropped if the status is not OK.
     if (status.ok()) {
-      finish_buf_.ServerSendStatus(&ctx_->trailing_metadata_,
-                                   finish_buf_.SendMessage(msg));
+      finish_buf_.ServerSendStatus(
+          &ctx_->trailing_metadata_,
+          finish_buf_.SendMessage(msg, ctx_->memory_allocator()));
     } else {
       finish_buf_.ServerSendStatus(&ctx_->trailing_metadata_, status);
     }

@@ -25,7 +25,6 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
-#include "gtest/gtest.h"
 
 #include <memory>
 #include <mutex>
@@ -40,6 +39,7 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_health_check_service_impl.h"
 #include "test/cpp/end2end/test_service_impl.h"
+#include "gtest/gtest.h"
 
 using grpc::health::v1::Health;
 using grpc::health::v1::HealthCheckRequest;

@@ -301,13 +301,13 @@ UPB_INLINE upb_Array* _envoy_config_listener_v3_QuicProtocolOptions_save_cmsg_co
   return arr;
 }
 UPB_INLINE void envoy_config_listener_v3_QuicProtocolOptions_clear_reject_new_connections(envoy_config_listener_v3_QuicProtocolOptions* msg) {
-  const upb_MiniTableField field = {13, UPB_SIZE(60, 10), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {13, 10, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE bool envoy_config_listener_v3_QuicProtocolOptions_reject_new_connections(const envoy_config_listener_v3_QuicProtocolOptions* msg) {
   bool default_val = false;
   bool ret;
-  const upb_MiniTableField field = {13, UPB_SIZE(60, 10), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {13, 10, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -489,7 +489,7 @@ UPB_INLINE struct envoy_config_core_v3_SocketCmsgHeaders* envoy_config_listener_
   return sub;
 }
 UPB_INLINE void envoy_config_listener_v3_QuicProtocolOptions_set_reject_new_connections(envoy_config_listener_v3_QuicProtocolOptions *msg, bool value) {
-  const upb_MiniTableField field = {13, UPB_SIZE(60, 10), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {13, 10, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 

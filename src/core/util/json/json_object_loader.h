@@ -25,18 +25,18 @@
 #include <string>
 #include <vector>
 
-#include "absl/meta/type_traits.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/numbers.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
+#include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 // Provides a means to load JSON objects into C++ objects, with the aim of
 // minimizing object code size.
@@ -373,11 +373,11 @@ class AutoLoader<std::vector<bool>> final : public LoaderInterface {
 };
 
 // Specializations of AutoLoader for maps.
-template <typename T>
-class AutoLoader<std::map<std::string, T>> final : public LoadMap {
+template <typename T, typename C>
+class AutoLoader<std::map<std::string, T, C>> final : public LoadMap {
  private:
   void* Insert(const std::string& name, void* dst) const final {
-    return &static_cast<std::map<std::string, T>*>(dst)
+    return &static_cast<std::map<std::string, T, C>*>(dst)
                 ->emplace(name, T())
                 .first->second;
   };

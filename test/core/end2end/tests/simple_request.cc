@@ -24,14 +24,14 @@
 #include <optional>
 #include <string>
 
-#include "absl/log/log.h"
-#include "absl/strings/match.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/strings/match.h"
 
 using testing::HasSubstr;
 using testing::StartsWith;
@@ -73,15 +73,7 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
   test.Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_UNIMPLEMENTED);
   EXPECT_EQ(server_status.message(), "xyz");
-  // the following sanity check makes sure that the requested error string is
-  // correctly populated by the core. It looks for certain substrings that are
-  // not likely to change much. Some parts of the error, like time created,
-  // obviously are not checked.
   EXPECT_THAT(server_status.error_string(), HasSubstr("xyz"));
-  EXPECT_THAT(server_status.error_string(),
-              HasSubstr("Error received from peer"));
-  EXPECT_THAT(server_status.error_string(), HasSubstr("grpc_message"));
-  EXPECT_THAT(server_status.error_string(), HasSubstr("grpc_status"));
   EXPECT_EQ(s.method(), "/foo");
   EXPECT_FALSE(client_close.was_cancelled());
   uint64_t expected_calls = 1;

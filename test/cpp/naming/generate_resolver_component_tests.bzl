@@ -50,6 +50,8 @@ def generate_resolver_component_tests():
             ],
             tags = [
                 "no_windows",
+                # relies on ares
+                "grpc:broken-internally",
             ],
         )
 
@@ -79,7 +81,7 @@ def generate_resolver_component_tests():
                 "//src/core:ares_resolver",
                 "//test/cpp/util:test_config",
             ],
-            tags = ["no_windows"],
+            tags = ["no_windows", "grpc:broken-internally"],
         )
         grpc_cc_test(
             name = "resolver_component_tests_runner_invoker%s" %
@@ -91,6 +93,8 @@ def generate_resolver_component_tests():
                 "absl/flags:flag",
                 "absl/log:check",
                 "absl/strings",
+                "absl/log",
+                "absl/strings:str_format",
             ],
             deps = [
                 "//test/cpp/util:test_util%s" %
@@ -100,6 +104,7 @@ def generate_resolver_component_tests():
                 "//:grpc++%s" % unsecure_build_config_suffix,
                 "//:grpc%s" % unsecure_build_config_suffix,
                 "//:gpr",
+                "//src/core:env",
                 "//test/cpp/util:test_config",
                 "//test/cpp/util/windows:manifest_file",
             ],
@@ -121,5 +126,6 @@ def generate_resolver_component_tests():
                 "requires-net:ipv4",
                 "requires-net:loopback",
                 "resolver_component_tests_runner_invoker",
+                "grpc:broken-internally",
             ],
         )

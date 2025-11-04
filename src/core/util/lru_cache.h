@@ -22,9 +22,9 @@
 #include <tuple>
 #include <utility>
 
+#include "src/core/util/grpc_check.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
 
 namespace grpc_core {
 
@@ -35,7 +35,7 @@ template <typename Key, typename Value>
 class LruCache {
  public:
   explicit LruCache(size_t max_size) : max_size_(max_size) {
-    CHECK_GT(max_size, 0UL);
+    GRPC_CHECK_GT(max_size, 0UL);
   }
 
   // Returns the value for key, or nullopt if not present.
@@ -110,9 +110,9 @@ void LruCache<Key, Value>::SetMaxSize(size_t max_size) {
 template <typename Key, typename Value>
 void LruCache<Key, Value>::RemoveOldestEntry() {
   auto lru_it = lru_list_.begin();
-  CHECK(lru_it != lru_list_.end());
+  GRPC_CHECK(lru_it != lru_list_.end());
   auto cache_it = cache_.find(*lru_it);
-  CHECK(cache_it != cache_.end());
+  GRPC_CHECK(cache_it != cache_.end());
   cache_.erase(cache_it);
   lru_list_.pop_front();
 }

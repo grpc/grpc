@@ -22,7 +22,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/container/flat_hash_map.h"
 #include "src/core/load_balancing/outlier_detection/outlier_detection.h"
 #include "src/core/util/json/json.h"
 #include "src/core/xds/grpc/xds_common_types.h"
@@ -32,12 +31,13 @@
 #include "src/core/xds/xds_client/xds_backend_metric_propagation.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_resource_type_impl.h"
+#include "absl/container/flat_hash_map.h"
 
 namespace grpc_core {
 
 inline bool LrsServersEqual(
-    const std::shared_ptr<const GrpcXdsServer>& lrs_server1,
-    const std::shared_ptr<const GrpcXdsServer>& lrs_server2) {
+    const std::shared_ptr<const GrpcXdsServerTarget>& lrs_server1,
+    const std::shared_ptr<const GrpcXdsServerTarget>& lrs_server2) {
   if (lrs_server1 == nullptr) return lrs_server2 == nullptr;
   if (lrs_server2 == nullptr) return false;
   // Neither one is null, so compare them.
@@ -90,7 +90,7 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
 
   // The LRS server to use for load reporting.
   // If null, load reporting will be disabled.
-  std::shared_ptr<const GrpcXdsServer> lrs_load_reporting_server;
+  std::shared_ptr<const GrpcXdsServerTarget> lrs_load_reporting_server;
   // The set of metrics to propagate from ORCA to LRS.
   RefCountedPtr<const BackendMetricPropagation> lrs_backend_metric_propagation;
 

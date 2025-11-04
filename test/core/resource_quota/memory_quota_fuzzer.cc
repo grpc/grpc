@@ -25,10 +25,7 @@
 #include <optional>
 #include <utility>
 
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -42,6 +39,9 @@
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace testing {
@@ -82,8 +82,10 @@ class Fuzzer {
           ExecCtx::Get()->Flush();
           break;
         case memory_quota_fuzzer::Action::kCreateQuota:
-          memory_quotas_.emplace(action.quota(),
-                                 MemoryQuota(absl::StrCat("quota-step-", i)));
+          memory_quotas_.emplace(
+              action.quota(),
+              MemoryQuota(MakeRefCounted<channelz::ResourceQuotaNode>(
+                  absl::StrCat("quota-step-", i))));
           break;
         case memory_quota_fuzzer::Action::kDeleteQuota:
           memory_quotas_.erase(action.quota());

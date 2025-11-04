@@ -17,7 +17,6 @@
 
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
-#include "gtest/gtest.h"
 #include <stddef.h>
 #include <stdint.h>
 
@@ -28,22 +27,23 @@
 #include <string>
 #include <utility>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/escaping.h"
-#include "absl/strings/string_view.h"
-#include "gmock/gmock.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/filters/filter_test.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/string_view.h"
 
 // gmock matcher to ensure that metadata has a key/value pair.
 MATCHER_P2(HasMetadataKeyValue, key, value, "") {
@@ -218,8 +218,11 @@ class FilterTest : public FilterTestBase {
     using FilterTestBase::Channel::Channel;
   };
 
-  absl::StatusOr<Channel> MakeChannel(const ChannelArgs& args) {
-    auto filter = Filter::Create(args, ChannelFilter::Args(/*instance_id=*/0));
+  absl::StatusOr<Channel> MakeChannel(const ChannelArgs& args,
+                                      const Blackboard* blackboard = nullptr) {
+    auto filter = Filter::Create(
+        args,
+        ChannelFilter::Args(/*instance_id=*/0, /*config=*/nullptr, blackboard));
     if (!filter.ok()) return filter.status();
     return Channel(std::move(*filter), this);
   }

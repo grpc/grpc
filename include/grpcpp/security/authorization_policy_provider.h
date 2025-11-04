@@ -17,7 +17,7 @@
 
 #include <grpc/grpc_security.h>
 #include <grpc/status.h>
-#include <grpcpp/impl/codegen/status.h>
+#include <grpcpp/support/status.h>
 
 #include <memory>
 

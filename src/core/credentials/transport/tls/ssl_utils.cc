@@ -33,11 +33,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_split.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/credentials/transport/tls/load_system_roots.h"
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
@@ -45,10 +40,15 @@
 #include "src/core/transport/auth_context.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/load_file.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/useful.h"
+#include "absl/log/log.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
 
 // -- Constants. --
 
@@ -190,12 +190,30 @@ absl::Status SslCheckCallHost(absl::string_view host,
 }  // namespace grpc_core
 
 const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols) {
-  CHECK_NE(num_alpn_protocols, nullptr);
+  GRPC_CHECK_NE(num_alpn_protocols, nullptr);
   *num_alpn_protocols = grpc_chttp2_num_alpn_versions();
   const char** alpn_protocol_strings = static_cast<const char**>(
       gpr_malloc(sizeof(const char*) * (*num_alpn_protocols)));
   for (size_t i = 0; i < *num_alpn_protocols; i++) {
     alpn_protocol_strings[i] = grpc_chttp2_get_alpn_version_index(i);
+  }
+  return alpn_protocol_strings;
+}
+
+const char** ParseAlpnStringIntoArray(absl::string_view preferred_protocols_raw,
+                                      size_t* num_alpn_protocols) {
+  GRPC_CHECK_NE(num_alpn_protocols, nullptr);
+  std::vector<std::string> preferred_protocols;
+  preferred_protocols =
+      absl::StrSplit(preferred_protocols_raw, ',', absl::SkipWhitespace());
+  *num_alpn_protocols = preferred_protocols.size();
+  const char** alpn_protocol_strings = nullptr;
+  if (*num_alpn_protocols != 0) {
+    alpn_protocol_strings = static_cast<const char**>(
+        gpr_malloc(sizeof(const char*) * (*num_alpn_protocols)));
+    for (size_t i = 0; i < *num_alpn_protocols; i++) {
+      alpn_protocol_strings[i] = gpr_strdup(preferred_protocols[i].c_str());
+    }
   }
   return alpn_protocol_strings;
 }
@@ -253,7 +271,7 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
   const char* peer_identity_property_name = nullptr;
 
   // The caller has checked the certificate type property.
-  CHECK_GE(peer->property_count, 1u);
+  GRPC_CHECK_GE(peer->property_count, 1u);
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
   grpc_auth_context_add_cstring_property(
@@ -320,14 +338,14 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
     }
   }
   if (peer_identity_property_name != nullptr) {
-    CHECK(grpc_auth_context_set_peer_identity_property_name(
-              ctx.get(), peer_identity_property_name) == 1);
+    GRPC_CHECK(grpc_auth_context_set_peer_identity_property_name(
+                   ctx.get(), peer_identity_property_name) == 1);
   }
   // A valid SPIFFE certificate can only have exact one URI SAN field.
   if (has_spiffe_id) {
     if (uri_count == 1) {
-      CHECK_GT(spiffe_length, 0u);
-      CHECK_NE(spiffe_data, nullptr);
+      GRPC_CHECK_GT(spiffe_length, 0u);
+      GRPC_CHECK_NE(spiffe_data, nullptr);
       grpc_auth_context_add_property(ctx.get(),
                                      GRPC_PEER_SPIFFE_ID_PROPERTY_NAME,
                                      spiffe_data, spiffe_length);
@@ -409,16 +427,19 @@ void grpc_shallow_peer_destruct(tsi_peer* peer) {
 }
 
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
-    tsi_ssl_pem_key_cert_pair* pem_key_cert_pair, const char* pem_root_certs,
+    tsi_ssl_pem_key_cert_pair* pem_key_cert_pair,
+    std::shared_ptr<RootCertInfo> root_cert_info,
     bool skip_server_certificate_verification, tsi_tls_version min_tls_version,
     tsi_tls_version max_tls_version, tsi_ssl_session_cache* ssl_session_cache,
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
     const char* crl_directory,
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
     tsi_ssl_client_handshaker_factory** handshaker_factory) {
-  const char* root_certs;
-  const tsi_ssl_root_certs_store* root_store;
-  if (pem_root_certs == nullptr && !skip_server_certificate_verification) {
+  const char* root_certs = nullptr;
+  const tsi_ssl_root_certs_store* root_store = nullptr;
+  tsi_ssl_client_handshaker_options options;
+  bool roots_are_configured = root_cert_info != nullptr;
+  if (!roots_are_configured && !skip_server_certificate_verification) {
     GRPC_TRACE_LOG(tsi, INFO)
         << "No root certificates specified; use ones stored in system "
            "default locations instead";
@@ -429,15 +450,13 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
       return GRPC_SECURITY_ERROR;
     }
     root_store = grpc_core::DefaultSslRootStore::GetRootStore();
+    options.root_cert_info = std::make_shared<RootCertInfo>(root_certs);
   } else {
-    root_certs = pem_root_certs;
-    root_store = nullptr;
+    options.root_cert_info = std::move(root_cert_info);
   }
   bool has_key_cert_pair = pem_key_cert_pair != nullptr &&
                            pem_key_cert_pair->private_key != nullptr &&
                            pem_key_cert_pair->cert_chain != nullptr;
-  tsi_ssl_client_handshaker_options options;
-  options.pem_root_certs = root_certs;
   options.root_store = root_store;
   options.alpn_protocols =
       grpc_fill_alpn_protocol_strings(&options.num_alpn_protocols);
@@ -467,7 +486,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
 
 grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs, size_t num_key_cert_pairs,
-    const char* pem_root_certs,
+    std::shared_ptr<RootCertInfo> root_cert_info,
     grpc_ssl_client_certificate_request_type client_certificate_request,
     tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
@@ -480,7 +499,6 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
   tsi_ssl_server_handshaker_options options;
   options.pem_key_cert_pairs = pem_key_cert_pairs;
   options.num_key_cert_pairs = num_key_cert_pairs;
-  options.pem_client_root_certs = pem_root_certs;
   options.client_certificate_request =
       grpc_get_tsi_client_certificate_request_type(client_certificate_request);
   options.cipher_suites = grpc_get_ssl_cipher_suites();
@@ -492,6 +510,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
   options.crl_directory = crl_directory;
   options.crl_provider = std::move(crl_provider);
   options.send_client_ca_list = send_client_ca_list;
+  options.root_cert_info = std::move(root_cert_info);
   const tsi_result result =
       tsi_create_ssl_server_handshaker_factory_with_options(&options,
                                                             handshaker_factory);
@@ -581,13 +600,18 @@ grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
       result = std::move(*slice);
     }
   }
+  // Try loading roots from OS trust store if preferred over callback.
+  if (result.empty() &&
+      ConfigVars::Get().UseSystemRootsOverLanguageCallback()) {
+    result = Slice(LoadSystemRootCerts());
+  }
   // Try overridden roots if needed.
   grpc_ssl_roots_override_result ovrd_res = GRPC_SSL_ROOTS_OVERRIDE_FAIL;
   if (result.empty() && ssl_roots_override_cb != nullptr) {
     char* pem_root_certs = nullptr;
     ovrd_res = ssl_roots_override_cb(&pem_root_certs);
     if (ovrd_res == GRPC_SSL_ROOTS_OVERRIDE_OK) {
-      CHECK_NE(pem_root_certs, nullptr);
+      GRPC_CHECK_NE(pem_root_certs, nullptr);
       result = Slice::FromCopiedBuffer(
           pem_root_certs,
           strlen(pem_root_certs) + 1);  // nullptr terminator.

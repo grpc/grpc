@@ -20,14 +20,14 @@
 #include <algorithm>
 #include <vector>
 
-#include "absl/strings/str_cat.h"
-#include "absl/time/clock.h"
 #include "constants.h"
 #include "metadata_exchange.h"
 #include "observability_util.h"
 #include "python_observability_context.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/slice/slice.h"
+#include "absl/strings/str_cat.h"
+#include "absl/time/clock.h"
 
 namespace grpc_observability {
 
@@ -210,7 +210,7 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
   ++recv_message_count_;
 }
 
-std::shared_ptr<grpc_core::TcpTracerInterface> PythonOpenCensusCallTracer::
+std::shared_ptr<grpc_core::TcpCallTracer> PythonOpenCensusCallTracer::
     PythonOpenCensusCallAttemptTracer::StartNewTcpTrace() {
   return nullptr;
 }
@@ -317,8 +317,8 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     RecordCancel(absl::Status /*cancel_error*/) {}
 
-void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::RecordEnd(
-    const gpr_timespec& /*latency*/) {
+void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
+    RecordEnd() {
   if (PythonCensusStatsEnabled()) {
     context_.Labels().emplace_back(kClientMethod, parent_->method_);
     context_.Labels().emplace_back(kClientStatus,

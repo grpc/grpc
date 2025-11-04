@@ -24,16 +24,16 @@
 
 #include <string>
 
-#include "absl/container/inlined_vector.h"
-#include "absl/log/check.h"
-#include "absl/strings/ascii.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_split.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/ref_counted_string.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/strings/ascii.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_split.h"
 
 namespace grpc_core {
 
@@ -118,7 +118,7 @@ CompressionAlgorithmSet::CompressionAlgorithmForLevel(
     return GRPC_COMPRESS_NONE;
   }
 
-  CHECK_GT(level, 0);
+  GRPC_CHECK_GT(level, 0);
 
   // Establish a "ranking" or compression algorithms in increasing order of
   // compression.

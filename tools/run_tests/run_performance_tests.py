@@ -526,7 +526,7 @@ profile_output_files = []
 
 # Collect perf text reports and flamegraphs if perf_cmd was used
 # Note the base names of perf text reports are used when creating and processing
-# perf data. The scenario name uniqifies the output name in the final
+# perf data. The scenario name uniquifies the output name in the final
 # perf reports directory.
 # Also, the perf profiles need to be fetched and processed after each scenario
 # in order to avoid clobbering the output files.
@@ -803,9 +803,9 @@ def main():
                         raise Exception(
                             "using perf buf perf report filename is unspecified"
                         )
-                    workers_and_base_names[
-                        worker.host_and_port
-                    ] = worker.perf_file_base_name
+                    workers_and_base_names[worker.host_and_port] = (
+                        worker.perf_file_base_name
+                    )
                 perf_report_failures += run_collect_perf_profile_jobs(
                     workers_and_base_names,
                     scenario.name,

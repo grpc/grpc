@@ -27,9 +27,7 @@
 #include <memory>
 #include <optional>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -40,12 +38,14 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -202,7 +202,7 @@ class SubchannelStreamClient final
   Mutex mu_;
   std::unique_ptr<CallEventHandler> event_handler_ ABSL_GUARDED_BY(mu_);
 
-  // The data associated with the current health check call.  It holds a ref
+  // The data associated with the current call.  It holds a ref
   // to this SubchannelStreamClient object.
   OrphanablePtr<CallState> call_state_ ABSL_GUARDED_BY(mu_);
 

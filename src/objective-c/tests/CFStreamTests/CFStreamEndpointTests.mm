@@ -174,7 +174,8 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
   slice = grpc_slice_from_static_buffer(write_buffer, kBufferSize);
   grpc_slice_buffer_add(&write_slices, slice);
   init_event_closure(&write_done, &write_promise);
-  grpc_endpoint_write(ep_, &write_slices, &write_done, nullptr, /*max_frame_size=*/INT_MAX);
+  grpc_endpoint_write(ep_, &write_slices, &write_done,
+                      grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs());
 
   std::future<grpc_error_handle> write_future = write_promise.get_future();
   XCTAssertEqual([self waitForEvent:&write_future timeout:kWriteTimeout], YES);
@@ -235,7 +236,8 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
   slice = grpc_slice_from_static_buffer(write_buffer, kBufferSize);
   grpc_slice_buffer_add(&write_slices, slice);
   init_event_closure(&write_done, &write_promise);
-  grpc_endpoint_write(ep_, &write_slices, &write_done, nullptr, /*max_frame_size=*/INT_MAX);
+  grpc_endpoint_write(ep_, &write_slices, &write_done,
+                      grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs());
 
   std::future<grpc_error_handle> write_future = write_promise.get_future();
   XCTAssertEqual([self waitForEvent:&write_future timeout:kWriteTimeout], YES);
@@ -289,7 +291,8 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
   grpc_slice_buffer_add(&write_slices, slice);
 
   init_event_closure(&write_done, &write_promise);
-  grpc_endpoint_write(ep_, &write_slices, &write_done, nullptr, /*max_frame_size=*/INT_MAX);
+  grpc_endpoint_write(ep_, &write_slices, &write_done,
+                      grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs());
 
   std::future<grpc_error_handle> write_future = write_promise.get_future();
   XCTAssertEqual([self waitForEvent:&write_future timeout:kWriteTimeout], YES);

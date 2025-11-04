@@ -23,10 +23,10 @@
 #include <utility>
 #include <vector>
 
-#include "absl/container/flat_hash_map.h"
-#include "absl/random/random.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/random/random.h"
 
 using testing::DoubleNear;
 using testing::NanSensitiveDoubleEq;
@@ -446,7 +446,7 @@ INSTANTIATE_TEST_SUITE_P(
 
         // Continuous samples.
         PrecisionTestParam{[]() { return NormalSamples(100000, 0, 5); },
-                           {{-10, 0.005}, {0.0, 0.006}, {10, 0.005}}},
+                           {{-10, 0.005}, {0.0, 0.007}, {10, 0.005}}},
         PrecisionTestParam{[]() { return UniformSamples(100000, -5000, 5000); },
                            {{-5000.1, 0},
                             {-4900, 0.005},

@@ -29,8 +29,13 @@ grpc_fuzz_test(
     ],
     tags = ["no_windows"],
     deps = [
+        "//:alts_util",
         "//:gpr",
         "//:grpc",
+        "//:grpc_alts_credentials",
+        "//:grpc_core_credentials_header",
+        "//src/core:env",
+        "//src/core:grpc_check",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
@@ -41,6 +46,7 @@ grpc_cc_test(
     srcs = ["grpc_alts_credentials_options_test.cc"],
     external_deps = ["gtest"],
     deps = [
+        "//:alts_util",
         "//:gpr",
         "//:grpc",
         "//test/core/test_util:grpc_test_util",
@@ -58,7 +64,11 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:grpc_alts_credentials",
         "//:grpc_base",
+        "//:transport_auth_context",
+        "//:tsi_alts_credentials",
+        "//:tsi_base",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
@@ -69,6 +79,7 @@ grpc_cc_test(
     srcs = ["check_gcp_environment_linux_test.cc"],
     external_deps = ["gtest"],
     deps = [
+        "//:alts_util",
         "//:gpr",
         "//:grpc",
         "//test/core/test_util:grpc_test_util",
@@ -81,6 +92,7 @@ grpc_cc_test(
     srcs = ["check_gcp_environment_windows_test.cc"],
     external_deps = ["gtest"],
     deps = [
+        "//:alts_util",
         "//:gpr",
         "//:grpc",
         "//test/core/test_util:grpc_test_util",

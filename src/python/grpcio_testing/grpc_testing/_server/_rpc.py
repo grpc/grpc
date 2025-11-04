@@ -66,10 +66,11 @@ class Rpc(object):
             trailing_metadata = _common.FUSSED_EMPTY_METADATA
         else:
             trailing_metadata = self._pending_trailing_metadata
-        if self._pending_code is None:
-            code = grpc.StatusCode.OK
-        else:
-            code = self._pending_code
+        code = (
+            self._pending_code
+            if self._pending_code is not None
+            else grpc.StatusCode.OK
+        )
         details = "" if self._pending_details is None else self._pending_details
         self._terminate(trailing_metadata, code, details)
 
@@ -123,10 +124,9 @@ class Rpc(object):
         with self._condition:
             if self._initial_metadata_sent:
                 return False
-            else:
-                self._handler.send_initial_metadata(initial_metadata)
-                self._initial_metadata_sent = True
-                return True
+            self._handler.send_initial_metadata(initial_metadata)
+            self._initial_metadata_sent = True
+            return True
 
     def is_active(self):
         with self._condition:
@@ -136,9 +136,8 @@ class Rpc(object):
         with self._condition:
             if self._callbacks is None:
                 return False
-            else:
-                self._callbacks.append(callback)
-                return True
+            self._callbacks.append(callback)
+            return True
 
     def invocation_metadata(self):
         with self._condition:

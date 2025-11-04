@@ -24,23 +24,23 @@
 #include <utility>
 #include <vector>
 
-#include "absl/strings/escaping.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
 #include "constants.h"
 #include "observability_util.h"
 #include "python_observability_context.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 namespace grpc_observability {
 
@@ -221,8 +221,8 @@ void PythonOpenCensusServerCallTracer::RecordEnd(
     }
   }
 
-  // After RecordEnd, Core will make no further usage of this ServerCallTracer,
-  // so we are free it here.
+  // After RecordEnd, Core will make no further usage of this
+  // ServerCallTracerInterface, so we are free it here.
   delete this;
 }
 
@@ -261,7 +261,7 @@ void PythonOpenCensusServerCallTracer::RecordAnnotation(
   }
 }
 
-std::shared_ptr<grpc_core::TcpTracerInterface>
+std::shared_ptr<grpc_core::TcpCallTracer>
 PythonOpenCensusServerCallTracer::StartNewTcpTrace() {
   return nullptr;
 }
@@ -284,7 +284,7 @@ bool PythonOpenCensusServerCallTracer::IsSampled() {
 // PythonOpenCensusServerCallTracerFactory
 //
 
-grpc_core::ServerCallTracer*
+grpc_core::ServerCallTracerInterface*
 PythonOpenCensusServerCallTracerFactory::CreateNewServerCallTracer(
     grpc_core::Arena* arena, const grpc_core::ChannelArgs& channel_args) {
   // We don't use arena here to to ensure that memory is allocated and freed in

@@ -32,7 +32,53 @@
 #include <variant>
 #include <vector>
 
-#include "absl/log/check.h"
+#include "re2/re2.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/call/status_util.h"
+#include "src/core/client_channel/client_channel_internal.h"
+#include "src/core/client_channel/config_selector.h"
+#include "src/core/config/core_configuration.h"
+#include "src/core/filter/blackboard.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channel_fwd.h"
+#include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/promise/arena_promise.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/resource_quota/arena.h"
+#include "src/core/lib/slice/slice.h"
+#include "src/core/lib/transport/transport.h"
+#include "src/core/load_balancing/ring_hash/ring_hash.h"
+#include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/resolver/resolver.h"
+#include "src/core/resolver/resolver_factory.h"
+#include "src/core/resolver/xds/xds_dependency_manager.h"
+#include "src/core/resolver/xds/xds_resolver_attributes.h"
+#include "src/core/service_config/service_config.h"
+#include "src/core/service_config/service_config_impl.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/dual_ref_counted.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/match.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/shared_bit_gen.h"
+#include "src/core/util/time.h"
+#include "src/core/util/uri.h"
+#include "src/core/util/work_serializer.h"
+#include "src/core/util/xxhash_inline.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/grpc/xds_client_grpc.h"
+#include "src/core/xds/grpc/xds_http_filter.h"
+#include "src/core/xds/grpc/xds_listener.h"
+#include "src/core/xds/grpc/xds_route_config.h"
+#include "src/core/xds/grpc/xds_routing.h"
+#include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "absl/log/log.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
@@ -45,50 +91,6 @@
 #include "absl/strings/str_replace.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-#include "re2/re2.h"
-#include "src/core/client_channel/client_channel_internal.h"
-#include "src/core/client_channel/config_selector.h"
-#include "src/core/config/core_configuration.h"
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/channel_fwd.h"
-#include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/debug/trace.h"
-#include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/iomgr/iomgr_fwd.h"
-#include "src/core/lib/iomgr/pollset_set.h"
-#include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/promise/context.h"
-#include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/metadata_batch.h"
-#include "src/core/lib/transport/transport.h"
-#include "src/core/load_balancing/ring_hash/ring_hash.h"
-#include "src/core/resolver/endpoint_addresses.h"
-#include "src/core/resolver/resolver.h"
-#include "src/core/resolver/resolver_factory.h"
-#include "src/core/resolver/xds/xds_dependency_manager.h"
-#include "src/core/resolver/xds/xds_resolver_attributes.h"
-#include "src/core/service_config/service_config.h"
-#include "src/core/service_config/service_config_impl.h"
-#include "src/core/util/debug_location.h"
-#include "src/core/util/dual_ref_counted.h"
-#include "src/core/util/match.h"
-#include "src/core/util/orphanable.h"
-#include "src/core/util/ref_counted.h"
-#include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/time.h"
-#include "src/core/util/uri.h"
-#include "src/core/util/work_serializer.h"
-#include "src/core/util/xxhash_inline.h"
-#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
-#include "src/core/xds/grpc/xds_client_grpc.h"
-#include "src/core/xds/grpc/xds_http_filter.h"
-#include "src/core/xds/grpc/xds_listener.h"
-#include "src/core/xds/grpc/xds_route_config.h"
-#include "src/core/xds/grpc/xds_routing.h"
-#include "src/core/xds/xds_client/xds_bootstrap.h"
 
 namespace grpc_core {
 
@@ -273,12 +275,16 @@ class XdsResolver final : public Resolver {
 
     absl::Status GetCallConfig(GetCallConfigArgs args) override;
 
-    void AddFilters(InterceptionChainBuilder& builder) override;
+    void AddFilters(InterceptionChainBuilder& builder,
+                    const Blackboard* old_blackboard,
+                    Blackboard* new_blackboard) override;
 
-    std::vector<const grpc_channel_filter*> GetFilters() override;
+    std::vector<const grpc_channel_filter*> GetFilters(
+        const Blackboard* old_blackboard, Blackboard* new_blackboard) override;
 
    private:
     RefCountedPtr<XdsResolver> resolver_;
+    std::shared_ptr<const XdsListenerResource> listener_;
     RefCountedPtr<RouteConfigData> route_config_data_;
     std::vector<const XdsHttpFilterImpl*> filters_;
   };
@@ -516,7 +522,7 @@ absl::Status XdsResolver::RouteConfigData::AddRouteEntry(
     XdsResolver* resolver, const XdsRouteConfigResource::Route& route,
     const Duration& default_max_stream_duration) {
   GRPC_TRACE_LOG(xds_resolver, INFO)
-      << "[xds_resolver " << resolver << "] XdsConfigSelector " << this
+      << "[xds_resolver " << resolver << "] RouteConfigData " << this
       << ": route: " << route.ToString();
   routes_.emplace_back(route);
   auto* route_entry = &routes_.back();
@@ -605,22 +611,23 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     RefCountedPtr<XdsResolver> resolver,
     RefCountedPtr<RouteConfigData> route_config_data)
     : resolver_(std::move(resolver)),
+      listener_(resolver_->current_config_->listener),
       route_config_data_(std::move(route_config_data)) {
   GRPC_TRACE_LOG(xds_resolver, INFO) << "[xds_resolver " << resolver_.get()
                                      << "] creating XdsConfigSelector " << this;
   // Populate filter list.
   const auto& http_filter_registry =
-      static_cast<const GrpcXdsBootstrap&>(resolver_->xds_client_->bootstrap())
+      DownCast<const GrpcXdsBootstrap&>(resolver_->xds_client_->bootstrap())
           .http_filter_registry();
-  const auto& hcm = std::get<XdsListenerResource::HttpConnectionManager>(
-      resolver_->current_config_->listener->listener);
+  const auto& hcm =
+      std::get<XdsListenerResource::HttpConnectionManager>(listener_->listener);
   for (const auto& http_filter : hcm.http_filters) {
     // Find filter.  This is guaranteed to succeed, because it's checked
-    // at config validation time in the XdsApi code.
+    // at config validation time.
     const XdsHttpFilterImpl* filter_impl =
         http_filter_registry.GetFilterForType(
             http_filter.config.config_proto_type_name);
-    CHECK_NE(filter_impl, nullptr);
+    GRPC_CHECK_NE(filter_impl, nullptr);
     // Add filter to list.
     filters_.push_back(filter_impl);
   }
@@ -660,7 +667,7 @@ std::optional<uint64_t> HeaderHashHelper(
 absl::Status XdsResolver::XdsConfigSelector::GetCallConfig(
     GetCallConfigArgs args) {
   Slice* path = args.initial_metadata->get_pointer(HttpPathMetadata());
-  CHECK_NE(path, nullptr);
+  GRPC_CHECK_NE(path, nullptr);
   auto* entry = route_config_data_->GetRouteForRequest(path->as_string_view(),
                                                        args.initial_metadata);
   if (entry == nullptr) {
@@ -690,7 +697,7 @@ absl::Status XdsResolver::XdsConfigSelector::GetCallConfig(
           XdsRouteConfigResource::Route::RouteAction::ClusterWeight>&
           /*weighted_clusters*/) {
         const uint32_t key = absl::Uniform<uint32_t>(
-            absl::BitGen(), 0, entry->weighted_cluster_state.back().range_end);
+            SharedBitGen(), 0, entry->weighted_cluster_state.back().range_end);
         // Find the index in weighted clusters corresponding to key.
         size_t mid = 0;
         size_t start_index = 0;
@@ -708,7 +715,7 @@ absl::Status XdsResolver::XdsConfigSelector::GetCallConfig(
           }
         }
         if (index == 0) index = start_index;
-        CHECK(entry->weighted_cluster_state[index].range_end > key);
+        GRPC_CHECK(entry->weighted_cluster_state[index].range_end > key);
         cluster_name = absl::StrCat(
             "cluster:", entry->weighted_cluster_state[index].cluster);
         method_config = entry->weighted_cluster_state[index].method_config;
@@ -722,7 +729,7 @@ absl::Status XdsResolver::XdsConfigSelector::GetCallConfig(
         method_config = entry->method_config;
       });
   auto cluster = route_config_data_->FindClusterRef(cluster_name);
-  CHECK(cluster != nullptr);
+  GRPC_CHECK(cluster != nullptr);
   // Generate a hash.
   std::optional<uint64_t> hash;
   for (const auto& hash_policy : route_action->hash_policies) {
@@ -770,20 +777,34 @@ absl::Status XdsResolver::XdsConfigSelector::GetCallConfig(
 }
 
 void XdsResolver::XdsConfigSelector::AddFilters(
-    InterceptionChainBuilder& builder) {
-  for (const XdsHttpFilterImpl* filter : filters_) {
+    InterceptionChainBuilder& builder, const Blackboard* old_blackboard,
+    Blackboard* new_blackboard) {
+  const auto& hcm =
+      std::get<XdsListenerResource::HttpConnectionManager>(listener_->listener);
+  GRPC_CHECK_EQ(filters_.size(), hcm.http_filters.size());
+  for (size_t i = 0; i < filters_.size(); ++i) {
+    auto* filter = filters_[i];
     filter->AddFilter(builder);
+    filter->UpdateBlackboard(hcm.http_filters[i].config, old_blackboard,
+                             new_blackboard);
   }
-  builder.Add<ClusterSelectionFilter>();
+  builder.Add<ClusterSelectionFilter>(nullptr);
 }
 
 std::vector<const grpc_channel_filter*>
-XdsResolver::XdsConfigSelector::GetFilters() {
+XdsResolver::XdsConfigSelector::GetFilters(const Blackboard* old_blackboard,
+                                           Blackboard* new_blackboard) {
+  const auto& hcm =
+      std::get<XdsListenerResource::HttpConnectionManager>(listener_->listener);
+  GRPC_CHECK_EQ(filters_.size(), hcm.http_filters.size());
   std::vector<const grpc_channel_filter*> filters;
-  for (const XdsHttpFilterImpl* filter : filters_) {
+  for (size_t i = 0; i < filters_.size(); ++i) {
+    auto* filter = filters_[i];
     if (filter->channel_filter() != nullptr) {
       filters.push_back(filter->channel_filter());
     }
+    filter->UpdateBlackboard(hcm.http_filters[i].config, old_blackboard,
+                             new_blackboard);
   }
   filters.push_back(&ClusterSelectionFilter::kFilter);
   return filters;
@@ -842,7 +863,7 @@ void XdsResolver::ClusterSelectionFilter::Call::OnClientInitialMetadata(
     ClientMetadata&) {
   auto* service_config_call_data =
       GetContext<ClientChannelServiceConfigCallData>();
-  CHECK_NE(service_config_call_data, nullptr);
+  GRPC_CHECK_NE(service_config_call_data, nullptr);
   auto* route_state_attribute = static_cast<XdsRouteStateAttributeImpl*>(
       service_config_call_data->GetCallAttribute<XdsRouteStateAttribute>());
   auto* cluster_name_attribute =
@@ -1047,7 +1068,7 @@ void XdsResolver::GenerateErrorResult(std::string error) {
   Result result;
   result.addresses.emplace();
   result.service_config = ServiceConfigImpl::Create(args_, "{}");
-  CHECK(result.service_config.ok());
+  GRPC_CHECK(result.service_config.ok());
   result.resolution_note = std::move(error);
   result.args = args_;
   result_handler_->ReportResult(std::move(result));

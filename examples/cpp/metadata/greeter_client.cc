@@ -27,6 +27,8 @@
 #else
 #include "helloworld.grpc.pb.h"
 #endif
+#include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -89,6 +91,8 @@ class CustomHeaderClient {
 };
 
 int main(int argc, char** argv) {
+  absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   // Instantiate the client. It requires a channel, out of which the actual RPCs
   // are created. This channel models a connection to an endpoint (in this case,
   // localhost at port 50051). We indicate that the channel isn't authenticated

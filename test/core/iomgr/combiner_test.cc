@@ -20,7 +20,6 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include "gtest/gtest.h"
 
 #include <thread>
 
@@ -29,6 +28,7 @@
 #include "src/core/util/thd.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 TEST(CombinerTest, TestNoOp) {
   grpc_core::ExecCtx exec_ctx;

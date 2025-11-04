@@ -29,15 +29,15 @@
 #include <mutex>
 #include <sstream>
 
-#include "absl/flags/flag.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/core/test_util/reconnect_server.h"
 #include "test/cpp/util/test_config.h"
+#include "absl/flags/flag.h"
+#include "absl/log/log.h"
 
 ABSL_FLAG(int32_t, control_port, 0, "Server port for controlling the server.");
 ABSL_FLAG(int32_t, retry_port, 0,
@@ -178,8 +178,8 @@ int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
   signal(SIGINT, sigint_handler);
 
-  CHECK_NE(absl::GetFlag(FLAGS_control_port), 0);
-  CHECK_NE(absl::GetFlag(FLAGS_retry_port), 0);
+  GRPC_CHECK_NE(absl::GetFlag(FLAGS_control_port), 0);
+  GRPC_CHECK_NE(absl::GetFlag(FLAGS_retry_port), 0);
   RunServer();
 
   return 0;

@@ -28,21 +28,21 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/attributes.h"
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_join.h"
 #include "fuzztest/fuzztest.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/transport/bdp_estimator.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/transport/chttp2/flow_control_fuzzer.pb.h"
+#include "absl/base/attributes.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_join.h"
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 
@@ -58,7 +58,7 @@ constexpr uint64_t kMaxAdvanceTimeMillis = 24ull * 365 * 3600 * 1000;
 
 gpr_timespec g_now;
 gpr_timespec now_impl(gpr_clock_type clock_type) {
-  CHECK(clock_type != GPR_TIMESPAN);
+  GRPC_CHECK(clock_type != GPR_TIMESPAN);
   gpr_timespec ts = g_now;
   ts.clock_type = clock_type;
   return ts;
@@ -132,7 +132,8 @@ class FlowControlFuzzer {
     return &it->second;
   }
 
-  MemoryQuotaRefPtr memory_quota_ = MakeMemoryQuota("fuzzer");
+  MemoryQuotaRefPtr memory_quota_ =
+      MakeMemoryQuota(MakeRefCounted<channelz::ResourceQuotaNode>("fuzzer"));
   MemoryOwner memory_owner_ = memory_quota_->CreateMemoryOwner();
   std::unique_ptr<TransportFlowControl> tfc_;
   std::optional<uint32_t> queued_initial_window_size_;
@@ -192,9 +193,9 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
         send_from_remote.ack_initial_window_size =
             sent_to_remote.initial_window_size;
         for (const auto& id_stream : streams_) {
-          CHECK(id_stream.second.window_delta +
-                    *sent_to_remote.initial_window_size <=
-                (1u << 31) - 1);
+          GRPC_CHECK(id_stream.second.window_delta +
+                         *sent_to_remote.initial_window_size <=
+                     (1u << 31) - 1);
         }
         remote_initial_window_size_ = *sent_to_remote.initial_window_size;
         send_from_remote_.push_back(send_from_remote);
@@ -213,7 +214,7 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
                   stream_update.id, stream_update.size, s->window_delta);
         }
         s->window_delta += stream_update.size;
-        CHECK(s->window_delta <= chttp2::kMaxWindowDelta);
+        GRPC_CHECK(s->window_delta <= chttp2::kMaxWindowDelta);
       }
       remote_transport_window_size_ += sent_to_remote.transport_window_update;
       send_to_remote_.pop_front();
@@ -244,7 +245,7 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
           bdp->AddIncomingBytes(stream_write.size);
         }
         StreamFlowControl::IncomingUpdateContext upd(&stream->fc);
-        CHECK_OK(upd.RecvData(stream_write.size));
+        GRPC_CHECK_OK(upd.RecvData(stream_write.size));
         PerformAction(upd.MakeAction(), stream);
       }
       send_from_remote_.pop_front();
@@ -367,7 +368,7 @@ void FlowControlFuzzer::PerformAction(FlowControlAction action,
                [this, stream]() { streams_to_update_.push_back(stream->id); });
   with_urgency(action.send_transport_update(), []() {});
   with_urgency(action.send_initial_window_update(), [this, &action]() {
-    CHECK(action.initial_window_size() <= chttp2::kMaxInitialWindowSize);
+    GRPC_CHECK(action.initial_window_size() <= chttp2::kMaxInitialWindowSize);
     queued_initial_window_size_ = action.initial_window_size();
   });
   with_urgency(action.send_max_frame_size_update(), [this, &action]() {
@@ -376,7 +377,7 @@ void FlowControlFuzzer::PerformAction(FlowControlAction action,
 }
 
 void FlowControlFuzzer::AssertNoneStuck() const {
-  CHECK(!scheduled_write_);
+  GRPC_CHECK(!scheduled_write_);
 
   // Reconcile all the values to get the view of the remote that is knowable to
   // the flow control system.
@@ -430,24 +431,24 @@ void FlowControlFuzzer::AssertNoneStuck() const {
   // Finally, if a stream has indicated it's willing to read, the reconciled
   // remote *MUST* be in a state where it could send at least one byte.
   for (const auto& id_stream : streams_) {
-    if (id_stream.second.fc.min_progress_size() == 0) continue;
+    if (id_stream.second.fc.test_only_min_progress_size() == 0) continue;
     int64_t stream_window =
         reconciled_stream_deltas[id_stream.first] + reconciled_initial_window;
     if (stream_window <= 0 || reconciled_transport_window <= 0) {
-      fprintf(stderr,
-              "FAILED: stream %d has stream_window=%" PRId64
-              ", transport_window=%" PRId64 ", delta=%" PRId64
-              ", init_window_size=%" PRId64 ", min_progress_size=%" PRId64
-              ", transport announced_stream_total_over_incoming_window=%" PRId64
-              ", transport announced_window=%" PRId64
-              " transport target_window=%" PRId64 " sent_init_window=%d\n",
-              id_stream.first, stream_window, reconciled_transport_window,
-              reconciled_stream_deltas[id_stream.first],
-              reconciled_initial_window,
-              (id_stream.second.fc.min_progress_size()),
-              tfc_->announced_stream_total_over_incoming_window(),
-              tfc_->announced_window(), tfc_->target_window(),
-              tfc_->sent_init_window());
+      fprintf(
+          stderr,
+          "FAILED: stream %d has stream_window=%" PRId64
+          ", transport_window=%" PRId64 ", delta=%" PRId64
+          ", init_window_size=%" PRId64 ", min_progress_size=%" PRId64
+          ", transport announced_stream_total_over_incoming_window=%" PRId64
+          ", transport announced_window=%" PRId64
+          " transport target_window=%" PRId64 " sent_init_window=%d\n",
+          id_stream.first, stream_window, reconciled_transport_window,
+          reconciled_stream_deltas[id_stream.first], reconciled_initial_window,
+          (id_stream.second.fc.test_only_min_progress_size()),
+          tfc_->test_only_announced_stream_total_over_incoming_window(),
+          tfc_->test_only_announced_window(), tfc_->test_only_target_window(),
+          tfc_->test_only_sent_init_window());
       fprintf(stderr,
               "initial_window breakdown: remote=%" PRId32 ", in-flight={%s}\n",
               remote_initial_window_size_,
@@ -462,13 +463,13 @@ void FlowControlFuzzer::AssertAnnouncedOverInitialWindowSizeCorrect() const {
 
   for (const auto& id_stream : streams_) {
     const auto& stream = id_stream.second;
-    if (stream.fc.announced_window_delta() > 0) {
-      value_from_streams += stream.fc.announced_window_delta();
+    if (stream.fc.test_only_announced_window_delta() > 0) {
+      value_from_streams += stream.fc.test_only_announced_window_delta();
     }
   }
 
-  CHECK(value_from_streams ==
-        tfc_->announced_stream_total_over_incoming_window());
+  GRPC_CHECK(value_from_streams ==
+             tfc_->test_only_announced_stream_total_over_incoming_window());
 }
 
 void Test(flow_control_fuzzer::Msg msg) {

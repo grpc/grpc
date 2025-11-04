@@ -20,9 +20,24 @@
 
 namespace grpc_event_engine::experimental {
 
+// Returns true if the EventEngine client shim should be used.
+// This is based on the experiment state, and compile-time configurations that
+// may disable the poller in some builds.
 bool UseEventEngineClient();
 
+// Returns true if the EventEngine listener shim should be used.
+// This is based on the experiment state, and compile-time configurations that
+// may disable the poller in some builds.
 bool UseEventEngineListener();
+
+// Returns true if the pollset alternative experiment should be used.
+// This is based on the experiment state, and compile-time configurations that
+// may disable the poller in some builds.
+bool UsePollsetAlternative();
+
+// Returns true if the poller is disabled by build configuration or experiment
+// flags.
+bool EventEngineExperimentDisabledForPython();
 
 }  // namespace grpc_event_engine::experimental
 

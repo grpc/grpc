@@ -14,12 +14,11 @@
 
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
-#include "gtest/gtest.h"
-
 #include <chrono>
 
 #include "test/core/event_engine/test_suite/event_engine_test_framework.h"
 #include "test/core/event_engine/test_suite/tests/timer_test.h"
+#include "gtest/gtest.h"
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);

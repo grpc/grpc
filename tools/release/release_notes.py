@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Generate draft and release notes in Markdown from Github PRs.
+"""Generate draft and release notes in Markdown from GitHub PRs.
 
 You'll need a github API token to avoid being rate-limited. See
 https://help.github.com/articles/creating-a-personal-access-token-for-the-command-line/
@@ -93,6 +93,9 @@ def get_commit_detail(commit):
     glg_command = [
         "git",
         "log",
+        "--no-abbrev-commit",
+        "--no-color",
+        "--pretty=full",
         "-n 1",
         "%s" % commit,
     ]
@@ -125,6 +128,8 @@ def get_commit_log(prevRelLabel, relBranch):
     glg_command = [
         "git",
         "log",
+        "--no-abbrev-commit",
+        "--no-color",
         "--pretty=oneline",
         "%s..%s" % (prevRelLabel, relBranch),
     ]
@@ -168,7 +173,7 @@ def get_pr_titles(gitLogs):
     print(prlist_merge_pr)
     print("\n")
 
-    # PRs using Github's squash & merge feature
+    # PRs using GitHub's squash & merge feature
     match_sq = "^([a-fA-F0-9]+) .*\(#(\d+)\)$"
     matches = re.findall(match_sq, gitLogs, re.MULTILINE)
     if matches:

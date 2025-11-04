@@ -23,6 +23,8 @@ os.chdir(os.path.join(os.path.dirname(sys.argv[0]), "../../.."))
 BAD_REGEXES = [
     (r'\n#include "include/(.*)"', r"\n#include <\1>"),
     (r'\n#include "grpc(.*)"', r"\n#include <grpc\1>"),
+    (r"\n#include <gtest(.*)>", r'\n#include "gtest\1"'),
+    (r"\n#include <gmock(.*)>", r'\n#include "gmock\1"'),
 ]
 
 fix = sys.argv[1:] == ["--fix"]
@@ -52,7 +54,15 @@ def check_include_style(directory_root):
             for regex, replace in BAD_REGEXES:
                 text = re.sub(regex, replace, text)
             if text != original:
-                bad_files.append(path)
+                bad_lines = []
+                for line_number, (original_line, text_line) in enumerate(
+                    zip(original.splitlines(), text.splitlines())
+                ):
+                    if original_line != text_line:
+                        bad_lines.append(
+                            (line_number + 1, original_line, text_line)
+                        )
+                bad_files.append((path, bad_lines))
                 if fix:
                     with open(path, "w") as f:
                         f.write(text)
@@ -68,6 +78,10 @@ all_bad_files += check_include_style(os.path.join("include", "grpc"))
 all_bad_files += check_include_style(os.path.join("include", "grpcpp"))
 
 if all_bad_files:
-    for f in all_bad_files:
-        print("%s has badly formed grpc system header files" % f)
+    for f, bad_lines in all_bad_files:
+        print("%s has badly formed grpc system header files:" % f)
+        for line_number, original_line, text_line in bad_lines:
+            print(
+                "\tline %d: %s -> %s" % (line_number, original_line, text_line)
+            )
     sys.exit(1)

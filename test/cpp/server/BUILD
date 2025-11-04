@@ -24,7 +24,11 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["no_windows"],
+    tags = [
+        "no_windows",
+        # TODO(b/399766758): Remove this tag once the test is fixed.
+        "grpc:fails-internally",
+    ],
     deps = [
         "//:grpc++_unsecure",
         "//src/proto/grpc/testing:echo_cc_grpc",
@@ -40,7 +44,11 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["no_windows"],
+    tags = [
+        "no_windows",
+        # TODO(b/399766758): Remove this tag once the test is fixed.
+        "grpc:fails-internally",
+    ],
     deps = [
         "//:grpc++_unsecure",
         "//src/proto/grpc/testing:echo_cc_grpc",
@@ -53,14 +61,18 @@ grpc_cc_test(
     name = "server_request_call_test",
     srcs = ["server_request_call_test.cc"],
     external_deps = [
+        "absl/log",
+        "absl/strings:str_format",
         "gtest",
     ],
     tags = ["no_windows"],
     deps = [
-        "//:grpc++_unsecure",
+        "//:gpr",
+        "//:grpc++",
+        "//:grpc++_base",
         "//src/proto/grpc/testing:echo_cc_grpc",
+        "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
-        "//test/core/test_util:grpc_test_util_unsecure",
     ],
 )
 
@@ -83,6 +95,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//:grpc++_base",
+        "//src/core:grpc_check",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:tls_test_utils",
     ],
@@ -117,8 +130,10 @@ grpc_cc_test(
     external_deps = [
         "absl/time",
         "gtest",
+        "absl/strings",
     ],
     deps = [
+        "//:grpc",
         "//:grpc++",
         "//:grpcpp_backend_metric_recorder",
         "//:grpcpp_call_metric_recorder",

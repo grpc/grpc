@@ -67,8 +67,7 @@ _ERROR_MESSAGE_PORT_BINDING_FAILED = (
 def encode(s: AnyStr) -> bytes:
     if isinstance(s, bytes):
         return s
-    else:
-        return s.encode("utf8")
+    return s.encode("utf8")
 
 
 def decode(b: AnyStr) -> str:
@@ -84,12 +83,11 @@ def _transform(
 ) -> Any:
     if transformer is None:
         return message
-    else:
-        try:
-            return transformer(message)
-        except Exception:  # pylint: disable=broad-except
-            _LOGGER.exception(exception_message)
-            return None
+    try:
+        return transformer(message)
+    except Exception:  # pylint: disable=broad-except
+        _LOGGER.exception(exception_message)
+        return None
 
 
 def serialize(message: Any, serializer: Optional[SerializingFunction]) -> bytes:
@@ -179,5 +177,4 @@ def validate_port_binding_result(address: str, port: int) -> int:
         # The Core API doesn't return a failure message. The best we can do
         # is raising an exception to prevent further confusion.
         raise RuntimeError(_ERROR_MESSAGE_PORT_BINDING_FAILED % address)
-    else:
-        return port
+    return port

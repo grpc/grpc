@@ -19,10 +19,10 @@
 #include <thread>
 #include <vector>
 
-#include "absl/functional/any_invocable.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/functional/any_invocable.h"
 
 // TODO(hork): parameterize these tests for other WorkQueue implementations.
 

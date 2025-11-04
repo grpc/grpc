@@ -27,7 +27,7 @@ source tools/internal_ci/helper_scripts/prepare_build_macos_interop_rc
 # build C++ interop client and server
 mkdir -p cmake/build
 pushd cmake/build
-cmake -DgRPC_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17 ../..
+cmake -DgRPC_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17 -DCMAKE_POLICY_VERSION_MINIMUM=3.5 ../..
 make interop_client interop_server -j4
 popd
 

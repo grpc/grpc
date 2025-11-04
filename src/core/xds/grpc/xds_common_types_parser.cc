@@ -24,16 +24,10 @@
 #include <map>
 #include <utility>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/type/matcher/v3/regex.upb.h"
-#include "envoy/type/matcher/v3/string.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/struct.upbdefs.h"
@@ -48,7 +42,13 @@
 #include "upb/base/status.hpp"
 #include "upb/json/encode.h"
 #include "upb/mem/arena.h"
+#include "xds/type/matcher/v3/regex.upb.h"
 #include "xds/type/v3/typed_struct.upb.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 
 namespace grpc_core {
 
@@ -108,18 +108,144 @@ std::optional<grpc_resolved_address> ParseXdsAddress(
 }
 
 //
-// CommonTlsContextParse()
+// StringMatcherParse()
 //
 
 namespace {
 
-bool XdsSystemRootCertsEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_SYSTEM_ROOT_CERTS");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
+class StringMatcherProtoAccessor {
+ public:
+  virtual ~StringMatcherProtoAccessor() = default;
+
+  virtual bool IsPresent() const = 0;
+  virtual bool HasExact() const = 0;
+  virtual upb_StringView GetExact() const = 0;
+  virtual bool HasPrefix() const = 0;
+  virtual upb_StringView GetPrefix() const = 0;
+  virtual bool HasSuffix() const = 0;
+  virtual upb_StringView GetSuffix() const = 0;
+  virtual bool HasContains() const = 0;
+  virtual upb_StringView GetContains() const = 0;
+  virtual bool HasSafeRegex() const = 0;
+  virtual upb_StringView GetSafeRegex() const = 0;
+  virtual bool IgnoreCase() const = 0;
+};
+
+#define GRPC_STRING_MATCHER_PROTO_ACCESSOR_CLASS(prefix)                    \
+  class ProtoAccessor final : public StringMatcherProtoAccessor {           \
+   public:                                                                  \
+    explicit ProtoAccessor(                                                 \
+        const prefix##_type_matcher_v3_StringMatcher* proto)                \
+        : proto_(proto) {}                                                  \
+                                                                            \
+    bool IsPresent() const override { return proto_ != nullptr; }           \
+    bool HasExact() const override {                                        \
+      return prefix##_type_matcher_v3_StringMatcher_has_exact(proto_);      \
+    }                                                                       \
+    upb_StringView GetExact() const override {                              \
+      return prefix##_type_matcher_v3_StringMatcher_exact(proto_);          \
+    }                                                                       \
+    bool HasPrefix() const override {                                       \
+      return prefix##_type_matcher_v3_StringMatcher_has_prefix(proto_);     \
+    }                                                                       \
+    upb_StringView GetPrefix() const override {                             \
+      return prefix##_type_matcher_v3_StringMatcher_prefix(proto_);         \
+    }                                                                       \
+    bool HasSuffix() const override {                                       \
+      return prefix##_type_matcher_v3_StringMatcher_has_suffix(proto_);     \
+    }                                                                       \
+    upb_StringView GetSuffix() const override {                             \
+      return prefix##_type_matcher_v3_StringMatcher_suffix(proto_);         \
+    }                                                                       \
+    bool HasContains() const override {                                     \
+      return prefix##_type_matcher_v3_StringMatcher_has_contains(proto_);   \
+    }                                                                       \
+    upb_StringView GetContains() const override {                           \
+      return prefix##_type_matcher_v3_StringMatcher_contains(proto_);       \
+    }                                                                       \
+    bool HasSafeRegex() const override {                                    \
+      return prefix##_type_matcher_v3_StringMatcher_has_safe_regex(proto_); \
+    }                                                                       \
+    upb_StringView GetSafeRegex() const override {                          \
+      auto* regex_matcher =                                                 \
+          prefix##_type_matcher_v3_StringMatcher_safe_regex(proto_);        \
+      return prefix##_type_matcher_v3_RegexMatcher_regex(regex_matcher);    \
+    }                                                                       \
+    bool IgnoreCase() const override {                                      \
+      return prefix##_type_matcher_v3_StringMatcher_ignore_case(proto_);    \
+    }                                                                       \
+                                                                            \
+   private:                                                                 \
+    const prefix##_type_matcher_v3_StringMatcher* proto_;                   \
+  };
+
+StringMatcher StringMatcherParseInternal(
+    const StringMatcherProtoAccessor& proto, ValidationErrors* errors) {
+  if (!proto.IsPresent()) {
+    errors->AddError("field not present");
+    return StringMatcher();
+  }
+  StringMatcher::Type type;
+  std::string matcher;
+  if (proto.HasExact()) {
+    type = StringMatcher::Type::kExact;
+    matcher = UpbStringToStdString(proto.GetExact());
+  } else if (proto.HasPrefix()) {
+    type = StringMatcher::Type::kPrefix;
+    matcher = UpbStringToStdString(proto.GetPrefix());
+  } else if (proto.HasSuffix()) {
+    type = StringMatcher::Type::kSuffix;
+    matcher = UpbStringToStdString(proto.GetSuffix());
+  } else if (proto.HasContains()) {
+    type = StringMatcher::Type::kContains;
+    matcher = UpbStringToStdString(proto.GetContains());
+  } else if (proto.HasSafeRegex()) {
+    type = StringMatcher::Type::kSafeRegex;
+    matcher = UpbStringToStdString(proto.GetSafeRegex());
+  } else {
+    errors->AddError("invalid string matcher");
+    return StringMatcher();
+  }
+  const bool ignore_case = proto.IgnoreCase();
+  absl::StatusOr<StringMatcher> string_matcher =
+      StringMatcher::Create(type, matcher,
+                            /*case_sensitive=*/!ignore_case);
+  if (!string_matcher.ok()) {
+    errors->AddError(string_matcher.status().message());
+    return StringMatcher();
+  }
+  if (type == StringMatcher::Type::kSafeRegex && ignore_case) {
+    ValidationErrors::ScopedField field(errors, ".ignore_case");
+    errors->AddError("not supported for regex matcher");
+  }
+  return std::move(*string_matcher);
 }
+
+}  // namespace
+
+StringMatcher StringMatcherParse(
+    const XdsResourceType::DecodeContext& /*context*/,
+    const envoy_type_matcher_v3_StringMatcher* matcher_proto,
+    ValidationErrors* errors) {
+  GRPC_STRING_MATCHER_PROTO_ACCESSOR_CLASS(envoy);
+  ProtoAccessor proto_accessor(matcher_proto);
+  return StringMatcherParseInternal(proto_accessor, errors);
+}
+
+StringMatcher StringMatcherParse(
+    const XdsResourceType::DecodeContext& /*context*/,
+    const xds_type_matcher_v3_StringMatcher* matcher_proto,
+    ValidationErrors* errors) {
+  GRPC_STRING_MATCHER_PROTO_ACCESSOR_CLASS(xds);
+  ProtoAccessor proto_accessor(matcher_proto);
+  return StringMatcherParseInternal(proto_accessor, errors);
+}
+
+//
+// CommonTlsContextParse()
+//
+
+namespace {
 
 // CertificateProviderInstance is deprecated but we are still supporting it for
 // backward compatibility reasons. Note that we still parse the data into the
@@ -190,56 +316,10 @@ CertificateValidationContextParse(
   for (size_t i = 0; i < len; ++i) {
     ValidationErrors::ScopedField field(
         errors, absl::StrCat(".match_subject_alt_names[", i, "]"));
-    StringMatcher::Type type;
-    std::string matcher;
-    if (envoy_type_matcher_v3_StringMatcher_has_exact(
-            subject_alt_names_matchers[i])) {
-      type = StringMatcher::Type::kExact;
-      matcher = UpbStringToStdString(envoy_type_matcher_v3_StringMatcher_exact(
-          subject_alt_names_matchers[i]));
-    } else if (envoy_type_matcher_v3_StringMatcher_has_prefix(
-                   subject_alt_names_matchers[i])) {
-      type = StringMatcher::Type::kPrefix;
-      matcher = UpbStringToStdString(envoy_type_matcher_v3_StringMatcher_prefix(
-          subject_alt_names_matchers[i]));
-    } else if (envoy_type_matcher_v3_StringMatcher_has_suffix(
-                   subject_alt_names_matchers[i])) {
-      type = StringMatcher::Type::kSuffix;
-      matcher = UpbStringToStdString(envoy_type_matcher_v3_StringMatcher_suffix(
-          subject_alt_names_matchers[i]));
-    } else if (envoy_type_matcher_v3_StringMatcher_has_contains(
-                   subject_alt_names_matchers[i])) {
-      type = StringMatcher::Type::kContains;
-      matcher =
-          UpbStringToStdString(envoy_type_matcher_v3_StringMatcher_contains(
-              subject_alt_names_matchers[i]));
-    } else if (envoy_type_matcher_v3_StringMatcher_has_safe_regex(
-                   subject_alt_names_matchers[i])) {
-      type = StringMatcher::Type::kSafeRegex;
-      auto* regex_matcher = envoy_type_matcher_v3_StringMatcher_safe_regex(
-          subject_alt_names_matchers[i]);
-      matcher = UpbStringToStdString(
-          envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
-    } else {
-      errors->AddError("invalid StringMatcher specified");
-      continue;
-    }
-    bool ignore_case = envoy_type_matcher_v3_StringMatcher_ignore_case(
-        subject_alt_names_matchers[i]);
-    absl::StatusOr<StringMatcher> string_matcher =
-        StringMatcher::Create(type, matcher,
-                              /*case_sensitive=*/!ignore_case);
-    if (!string_matcher.ok()) {
-      errors->AddError(string_matcher.status().message());
-      continue;
-    }
-    if (type == StringMatcher::Type::kSafeRegex && ignore_case) {
-      ValidationErrors::ScopedField field(errors, ".ignore_case");
-      errors->AddError("not supported for regex matcher");
-      continue;
-    }
+    auto string_matcher =
+        StringMatcherParse(context, subject_alt_names_matchers[i], errors);
     certificate_validation_context.match_subject_alt_names.push_back(
-        std::move(string_matcher.value()));
+        std::move(string_matcher));
   }
   auto* ca_certificate_provider_instance =
       envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_ca_certificate_provider_instance(
@@ -250,7 +330,7 @@ CertificateValidationContextParse(
     certificate_validation_context.ca_certs =
         CertificateProviderPluginInstanceParse(
             context, ca_certificate_provider_instance, errors);
-  } else if (XdsSystemRootCertsEnabled()) {
+  } else {
     auto* system_root_certs =
         envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_system_root_certs(
             certificate_validation_context_proto);
