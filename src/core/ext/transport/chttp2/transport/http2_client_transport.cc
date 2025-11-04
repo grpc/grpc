@@ -541,7 +541,7 @@ Http2Status Http2ClientTransport::ProcessHttp2GoawayFrame(
   }
 
   StateWatcher::DisconnectInfo disconnect_info;
-  disconnect_info.reason = grpc_core::Transport::StateWatcher::kGoaway;
+  disconnect_info.reason = Transport::StateWatcher::kGoaway;
   disconnect_info.http2_error_code =
       static_cast<Http2ErrorCode>(frame.error_code);
 
@@ -561,12 +561,12 @@ Http2Status Http2ClientTransport::ProcessHttp2GoawayFrame(
         keepalive_time_.millis() > max_keepalive_time_millis
             ? INT_MAX
             : keepalive_time_.millis() * KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
-    if (!grpc_core::IsTransportStateWatcherEnabled()) {
+    if (!IsTransportStateWatcherEnabled()) {
       status.SetPayload(kKeepaliveThrottlingKey,
                         absl::Cord(std::to_string(throttled_keepalive_time)));
     }
     disconnect_info.keepalive_time =
-        grpc_core::Duration::Milliseconds(throttled_keepalive_time);
+        Duration::Milliseconds(throttled_keepalive_time);
   }
 
   if (close_transport) {
