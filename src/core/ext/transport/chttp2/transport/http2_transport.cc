@@ -216,7 +216,7 @@ ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
   return chttp2::FlowControlAction();
 }
 
-void ProcessIncomingWindowUpdateFrameFlowControl(
+bool ProcessIncomingWindowUpdateFrameFlowControl(
     const Http2WindowUpdateFrame& frame,
     chttp2::TransportFlowControl& flow_control, RefCountedPtr<Stream> stream) {
   if (frame.stream_id != 0) {
@@ -226,13 +226,22 @@ void ProcessIncomingWindowUpdateFrameFlowControl(
       fc_update.RecvUpdate(frame.increment);
     } else {
       // If stream id is non zero, and stream is nullptr, maybe the stream was
-      // closed. Ignore this WINDOW_UPDATE frame. Do nothing.
+      // closed. Ignore this WINDOW_UPDATE frame.
     }
   } else {
     chttp2::TransportFlowControl::OutgoingUpdateContext fc_update(
         &flow_control);
     fc_update.RecvUpdate(frame.increment);
+    if (fc_update.Finish() == chttp2::StallEdge::kUnstalled) {
+      // If transport moves from kStalled to kUnstalled, streams blocked by
+      // transport flow control will become writable. Return true to trigger a
+      // write cycle and attempt to send data from these streams.
+      // Although it's possible no streams were blocked, triggering an
+      // unnecessary write cycle in that super-rare case is acceptable.
+      return true;
+    }
   }
+  return false;
 }
 
 }  // namespace http2

@@ -174,6 +174,7 @@ GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       group->AddStatsPlugin(node->plugin, std::move(config));
     }
   }
+  group->Finish();
   return group;
 }
 
@@ -187,6 +188,7 @@ GlobalStatsPluginRegistry::GetStatsPluginsForServer(const ChannelArgs& args) {
       group->AddStatsPlugin(node->plugin, std::move(config));
     }
   }
+  group->Finish();
   return group;
 }
 

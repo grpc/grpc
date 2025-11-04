@@ -19,7 +19,9 @@ import shutil
 import setuptools
 
 ROOT_DIR = os.path.abspath(os.path.dirname(os.path.abspath(__file__)))
-LICENSE = os.path.join(ROOT_DIR, "../../../LICENSE")
+GRPC_ROOT_ABS_PATH = os.path.join(ROOT_DIR, "../../..")
+ROOT_REL_DIR = os.path.relpath(ROOT_DIR, start=GRPC_ROOT_ABS_PATH)
+LICENSE = "./LICENSE"
 
 
 class Preprocess(setuptools.Command):
@@ -36,4 +38,4 @@ class Preprocess(setuptools.Command):
 
     def run(self):
         if os.path.isfile(LICENSE):
-            shutil.copyfile(LICENSE, os.path.join(ROOT_DIR, "LICENSE"))
+            shutil.copyfile(LICENSE, os.path.join(ROOT_REL_DIR, "LICENSE"))
