@@ -4785,6 +4785,7 @@ grpc_cc_library(
         "//src/core:ext/transport/chttp2/transport/frame.h",
     ],
     external_deps = [
+        "absl/log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4792,6 +4793,7 @@ grpc_cc_library(
     ],
     deps = [
         "gpr",
+        "grpc_trace",
         "//src/core:grpc_check",
         "//src/core:http2_settings",
         "//src/core:http2_status",
