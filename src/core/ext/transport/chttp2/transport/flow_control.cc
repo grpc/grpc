@@ -371,7 +371,7 @@ FlowControlAction StreamFlowControl::UpdateAction(
   const int64_t desired_announce_size = DesiredAnnounceSize(ztrace);
   if (desired_announce_size > 0) {
     FlowControlAction::Urgency urgency =
-        FlowControlAction::Urgency::QUEUE_UPDATE;
+        FlowControlAction::Urgency::UPDATE_IMMEDIATELY;
     // Size at which we probably want to wake up and write regardless of whether
     // we *have* to.
     // Currently set at half the initial window size or 8kb (whichever is

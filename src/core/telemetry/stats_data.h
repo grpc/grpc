@@ -327,6 +327,7 @@ struct GlobalStats {
     kChaoticGoodTcpReadOfferControl,
     kChaoticGoodTcpWriteSizeData,
     kChaoticGoodTcpWriteSizeControl,
+    kBigTableBackendRequestLatency,
     COUNT
   };
   GlobalStats();
@@ -394,6 +395,7 @@ struct GlobalStats {
   Histogram_16777216_20_64 chaotic_good_tcp_read_offer_control;
   Histogram_16777216_20_64 chaotic_good_tcp_write_size_data;
   Histogram_16777216_20_64 chaotic_good_tcp_write_size_control;
+  Histogram_16777216_20_64 big_table_backend_request_latency;
   HistogramView histogram(Histogram which) const;
   std::unique_ptr<GlobalStats> Diff(const GlobalStats& other) const;
 };
@@ -571,6 +573,9 @@ class GlobalStatsCollector {
   void IncrementChaoticGoodTcpWriteSizeControl(int value) {
     data_.this_cpu().chaotic_good_tcp_write_size_control.Increment(value);
   }
+  void IncrementBigTableBackendRequestLatency(int value) {
+    data_.this_cpu().big_table_backend_request_latency.Increment(value);
+  }
 
  private:
   friend class Http2GlobalStatsCollector;
@@ -629,6 +634,7 @@ class GlobalStatsCollector {
     HistogramCollector_16777216_20_64 chaotic_good_tcp_read_offer_control;
     HistogramCollector_16777216_20_64 chaotic_good_tcp_write_size_data;
     HistogramCollector_16777216_20_64 chaotic_good_tcp_write_size_control;
+    HistogramCollector_16777216_20_64 big_table_backend_request_latency;
   };
   PerCpu<Data> data_{PerCpuOptions().SetCpusPerShard(4).SetMaxShards(32)};
 };

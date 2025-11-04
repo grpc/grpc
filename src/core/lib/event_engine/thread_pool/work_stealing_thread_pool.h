@@ -92,7 +92,7 @@ class WorkStealingThreadPool final : public ThreadPool {
 
    private:
     grpc_core::Mutex mu_;
-    absl::flat_hash_set<WorkQueue*> queues_ ABSL_GUARDED_BY(mu_);
+    std::vector<WorkQueue*> queues_ ABSL_GUARDED_BY(mu_);
   };
 
   // An implementation of the ThreadPool

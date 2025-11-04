@@ -64,7 +64,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 
-#define STAGING_BUFFER_SIZE 8192
+#define STAGING_BUFFER_SIZE 16384
 
 static void on_read(void* user_data, grpc_error_handle error);
 static void on_write(void* user_data, grpc_error_handle error);
