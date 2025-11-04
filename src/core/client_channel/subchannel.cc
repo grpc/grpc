@@ -91,7 +91,7 @@ namespace grpc_core {
 using ::grpc_event_engine::experimental::EventEngine;
 
 // To avoid a naming conflict between
-// grpc_core::ConnectivityStateWatcherInterface and
+// ConnectivityStateWatcherInterface and
 // Subchannel::ConnectivityStateWatcherInterface.
 using TransportConnectivityStateWatcher = ConnectivityStateWatcherInterface;
 
@@ -194,9 +194,8 @@ class Subchannel::LegacyConnectedSubchannel final : public ConnectedSubchannel {
     Arena* arena = args.arena;
     absl::Status error;
     RefCountedPtr<SubchannelCall> call(
-        new (arena->Alloc(allocation_size))
-            SubchannelCall(RefAsSubclass<LegacyConnectedSubchannel>(),
-                           std::move(args), &error));
+        new (arena->Alloc(allocation_size)) SubchannelCall(
+            RefAsSubclass<LegacyConnectedSubchannel>(), args, &error));
     if (!error.ok()) return error;
     return call;
   }
