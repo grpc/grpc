@@ -160,7 +160,7 @@ def _read_test_cases_file(lang, runtime, release):
         testcases_file = "%s__master" % lang
 
     # For csharp, the testcases file used depends on the runtime
-    # TODO(jtattermusch): remove this odd specialcase
+    # TODO(jtattermusch): remove this odd special case
     if lang == "csharp" and runtime == "csharpcoreclr":
         testcases_file = testcases_file.replace("csharp_", "csharpcoreclr_")
 

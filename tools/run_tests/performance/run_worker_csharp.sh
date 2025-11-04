@@ -17,7 +17,7 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 
-# needed to correctly locate testca
+# needed to correctly locate testcase
 cd src/csharp/Grpc.IntegrationTesting.QpsWorker/bin/Release/netcoreapp3.1
 
 dotnet exec Grpc.IntegrationTesting.QpsWorker.dll "$@"

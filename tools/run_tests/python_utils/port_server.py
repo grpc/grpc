@@ -82,7 +82,7 @@ def can_bind_ipv6():
 
 
 def can_connect(port):
-    # this test is only really useful on unices where SO_REUSE_PORT is available
+    # this test is only really useful on systems where SO_REUSE_PORT is available
     # so on Windows, where this test is expensive, skip it
     if platform.system() == "Windows":
         return False

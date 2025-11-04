@@ -26,7 +26,7 @@ as follows:
 us-docker.pkg.dev/grpc-testing/testing-images-public/cxx_debian11_x64:[CURRENT_CHECKSUM]@sha256:[CURRENT_SHA256_DIGEST]
 ```
 This info can be passed directly to `docker run` command to get an environment
-that's identical what what we use when testing on CI.
+that's identical to what we use when testing on CI.
 
 ## Updating the images
 
