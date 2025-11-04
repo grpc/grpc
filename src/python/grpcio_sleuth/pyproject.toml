@@ -35,7 +35,6 @@ dynamic = ["dependencies", "version", "requires-python"]
 
 [project.urls]
 Homepage = "https://grpc.io"
-Documentation = "https://grpc.github.io/grpc/python/grpc_sleuth.html"
 
 [project.scripts]
 grpc_sleuth = "grpc_sleuth.sleuth_cli:main"

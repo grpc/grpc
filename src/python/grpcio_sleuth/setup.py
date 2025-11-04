@@ -18,17 +18,16 @@ import shutil
 import subprocess
 import sys
 
-
 # Manually insert the source directory into the Python path for local module
 # imports to succeed
 sys.path.insert(0, os.path.abspath("."))
 
-import python_version
 import setuptools
 from setuptools import Extension
 from setuptools.command.build_ext import build_ext
 
 import grpc_version
+import python_version
 
 _PACKAGE_PATH = os.path.realpath(os.path.dirname(__file__))
 _README_PATH = os.path.join(_PACKAGE_PATH, "README.rst")

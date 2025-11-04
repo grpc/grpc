@@ -327,8 +327,8 @@ then
   cp -r src/python/grpcio_admin/dist/* "$ARTIFACT_DIR"
 
   # Build grpcio_sleuth source distribution
-  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_sleuth/setup.py \
-      sdist bdist_wheel
-  cp -r src/python/grpcio_sleuth/dist/* "$ARTIFACT_DIR"
-
+  if [ "$GRPC_BUILD_MAC" == "" ]; then
+    ${SETARCH_CMD} "${PYTHON}" -m build "src/python/grpcio_sleuth"
+    cp -r src/python/grpcio_sleuth/dist/* "$ARTIFACT_DIR"
+  fi
 fi
