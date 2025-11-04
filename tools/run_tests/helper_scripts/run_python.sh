@@ -19,10 +19,11 @@ set -ex
 cd "$(dirname "$0")/../../.."
 
 # TODO(jtattermusch): is the $(pwd) prefix actually useful?
-PYTHON="$(pwd)/${1:-py38/bin/python}"
+PYTHON="$(pwd)/${1:-py39/bin/python}"
 
 ROOT=$(pwd)
 
+# TODO(ssreenithi): find pyproject.toml/pytest equivalent
 $PYTHON "$ROOT/src/python/grpcio_tests/setup.py" "$2"
 
 mkdir -p "$ROOT/reports"

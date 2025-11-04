@@ -30,12 +30,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/subchannel.h"
@@ -53,6 +47,7 @@
 #include "src/core/load_balancing/health_check_client_internal.h"
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
@@ -60,6 +55,11 @@
 #include "src/proto/grpc/health/v1/health.upb.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -104,7 +104,7 @@ void HealthProducer::HealthChecker::OnConnectivityStateChangeLocked(
       state_ = GRPC_CHANNEL_CONNECTING;
       status_ = absl::OkStatus();
     } else {
-      CHECK(state_ == GRPC_CHANNEL_CONNECTING);
+      GRPC_CHECK(state_ == GRPC_CHANNEL_CONNECTING);
     }
     // Start the health watch stream.
     StartHealthStreamLocked();
@@ -221,11 +221,7 @@ class HealthProducer::HealthChecker::HealthStreamEventHandler final
       LOG(ERROR) << kErrorMessage;
       auto* channelz_node =
           health_checker_->producer_->subchannel_->channelz_node();
-      if (channelz_node != nullptr) {
-        channelz_node->AddTraceEvent(
-            channelz::ChannelTrace::Error,
-            grpc_slice_from_static_string(kErrorMessage));
-      }
+      GRPC_CHANNELZ_LOG(channelz_node) << kErrorMessage;
       SetHealthStatusLocked(client, GRPC_CHANNEL_READY, kErrorMessage);
     }
   }
@@ -282,11 +278,9 @@ class HealthProducer::ConnectivityWatcher final
   explicit ConnectivityWatcher(WeakRefCountedPtr<HealthProducer> producer)
       : producer_(std::move(producer)) {}
 
-  void OnConnectivityStateChange(
-      RefCountedPtr<ConnectivityStateWatcherInterface> self,
-      grpc_connectivity_state state, const absl::Status& status) override {
+  void OnConnectivityStateChange(grpc_connectivity_state state,
+                                 const absl::Status& status) override {
     producer_->OnConnectivityStateChange(state, status);
-    self.reset();
   }
 
   grpc_pollset_set* interested_parties() override {
@@ -301,7 +295,7 @@ class HealthProducer::ConnectivityWatcher final
 // HealthProducer
 //
 
-void HealthProducer::Start(RefCountedPtr<Subchannel> subchannel) {
+void HealthProducer::Start(WeakRefCountedPtr<Subchannel> subchannel) {
   GRPC_TRACE_LOG(health_check_client, INFO)
       << "HealthProducer " << this << ": starting with subchannel "
       << subchannel.get();
@@ -425,7 +419,7 @@ void HealthWatcher::SetSubchannel(Subchannel* subchannel) {
   // This needs to be done outside of the lambda passed to
   // GetOrAddDataProducer() to avoid deadlocking by re-acquiring the
   // subchannel lock while already holding it.
-  if (created) producer_->Start(subchannel->Ref());
+  if (created) producer_->Start(subchannel->WeakRef());
   // Register ourself with the producer.
   producer_->AddWatcher(this, health_check_service_name_);
   GRPC_TRACE_LOG(health_check_client, INFO)

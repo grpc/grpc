@@ -28,11 +28,11 @@
 #include <set>
 #include <tuple>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "opencensus/tags/tag_key.h"
+#include "src/core/util/grpc_check.h"
 #include "src/cpp/server/load_reporter/constants.h"
 #include "src/cpp/server/load_reporter/get_cpu_stats.h"
+#include "absl/log/log.h"
 
 // IWYU pragma: no_include "google/protobuf/duration.pb.h"
 
@@ -167,10 +167,11 @@ double CensusViewProvider::GetRelatedViewDataRowDouble(
     const ViewDataMap& view_data_map, const char* view_name,
     size_t view_name_len, const std::vector<std::string>& tag_values) {
   auto it_vd = view_data_map.find(std::string(view_name, view_name_len));
-  CHECK(it_vd != view_data_map.end());
-  CHECK(it_vd->second.type() == ::opencensus::stats::ViewData::Type::kDouble);
+  GRPC_CHECK(it_vd != view_data_map.end());
+  GRPC_CHECK(it_vd->second.type() ==
+             ::opencensus::stats::ViewData::Type::kDouble);
   auto it_row = it_vd->second.double_data().find(tag_values);
-  CHECK(it_row != it_vd->second.double_data().end());
+  GRPC_CHECK(it_row != it_vd->second.double_data().end());
   return it_row->second;
 }
 
@@ -178,11 +179,12 @@ uint64_t CensusViewProvider::GetRelatedViewDataRowInt(
     const ViewDataMap& view_data_map, const char* view_name,
     size_t view_name_len, const std::vector<std::string>& tag_values) {
   auto it_vd = view_data_map.find(std::string(view_name, view_name_len));
-  CHECK(it_vd != view_data_map.end());
-  CHECK(it_vd->second.type() == ::opencensus::stats::ViewData::Type::kInt64);
+  GRPC_CHECK(it_vd != view_data_map.end());
+  GRPC_CHECK(it_vd->second.type() ==
+             ::opencensus::stats::ViewData::Type::kInt64);
   auto it_row = it_vd->second.int_data().find(tag_values);
-  CHECK(it_row != it_vd->second.int_data().end());
-  CHECK_GE(it_row->second, 0);
+  GRPC_CHECK(it_row != it_vd->second.int_data().end());
+  GRPC_CHECK_GE(it_row->second, 0);
   return it_row->second;
 }
 
@@ -226,7 +228,7 @@ std::string LoadReporter::GenerateLbId() {
     }
     int64_t lb_id = next_lb_id_++;
     // Overflow should never happen.
-    CHECK_GE(lb_id, 0);
+    GRPC_CHECK_GE(lb_id, 0);
     // Convert to padded hex string for a 32-bit LB ID. E.g, "0000ca5b".
     char buf[kLbIdLength + 1];
     snprintf(buf, sizeof(buf), "%08" PRIx64, lb_id);
@@ -295,11 +297,11 @@ LoadReporter::GenerateLoads(const std::string& hostname,
                             const std::string& lb_id) {
   grpc_core::MutexLock lock(&store_mu_);
   auto assigned_stores = load_data_store_.GetAssignedStores(hostname, lb_id);
-  CHECK_NE(assigned_stores, nullptr);
-  CHECK(!assigned_stores->empty());
+  GRPC_CHECK_NE(assigned_stores, nullptr);
+  GRPC_CHECK(!assigned_stores->empty());
   ::google::protobuf::RepeatedPtrField<grpc::lb::v1::Load> loads;
   for (PerBalancerStore* per_balancer_store : *assigned_stores) {
-    CHECK(!per_balancer_store->IsSuspended());
+    GRPC_CHECK(!per_balancer_store->IsSuspended());
     if (!per_balancer_store->load_record_map().empty()) {
       for (const auto& p : per_balancer_store->load_record_map()) {
         const auto& key = p.first;

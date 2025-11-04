@@ -24,15 +24,8 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/time.h"
 #include "envoy/service/discovery/v3/discovery.pb.h"
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -53,6 +46,13 @@
 #include "test/core/xds/xds_client_fuzzer.pb.h"
 #include "test/core/xds/xds_client_test_peer.h"
 #include "test/core/xds/xds_transport_fake.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 
 using grpc_event_engine::experimental::FuzzingEventEngine;
 
@@ -271,7 +271,7 @@ class Fuzzer {
               << "): " << status;
     const auto* xds_server = GetServer(authority);
     if (xds_server == nullptr) return;
-    transport_factory_->TriggerConnectionFailure(*xds_server,
+    transport_factory_->TriggerConnectionFailure(*xds_server->target(),
                                                  std::move(status));
   }
 
@@ -293,7 +293,7 @@ class Fuzzer {
     if (xds_server == nullptr) return nullptr;
     const char* method = StreamIdMethod(stream_id);
     if (method == nullptr) return nullptr;
-    return transport_factory_->WaitForStream(*xds_server, method);
+    return transport_factory_->WaitForStream(*xds_server->target(), method);
   }
 
   static std::string StreamIdString(

@@ -26,7 +26,11 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/time.h"
+#include "test/core/end2end/end2end_tests.h"
+#include "gtest/gtest.h"
 #include "absl/log/globals.h"
 #include "absl/log/log.h"
 #include "absl/log/log_entry.h"
@@ -34,10 +38,6 @@
 #include "absl/log/log_sink_registry.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "gtest/gtest.h"
-#include "src/core/lib/debug/trace.h"
-#include "src/core/util/time.h"
-#include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
 
@@ -55,7 +55,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
   }
 
   ~VerifyLogNoiseLogSink() override {
-    CHECK(log_noise_absent_)
+    GRPC_CHECK(log_noise_absent_)
         << "Unwanted logs present. This will cause log noise. Either user a "
            "tracer (example GRPC_TRACE_LOG or GRPC_TRACE_VLOG) or convert the "
            "statement to VLOG(2).";
@@ -71,6 +71,10 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
 
   VerifyLogNoiseLogSink(const VerifyLogNoiseLogSink& other) = delete;
   VerifyLogNoiseLogSink& operator=(const VerifyLogNoiseLogSink& other) = delete;
+
+  void AllowNonErrorLogs(bool allow) {
+    allow_non_error_logs_.store(allow, std::memory_order_relaxed);
+  }
 
  private:
   bool IsVlogWithVerbosityMoreThan1(const absl::LogEntry& entry) const {
@@ -103,9 +107,16 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
           std::regex(
               "Only [0-9]+ addresses added out of total [0-9]+ resolved")},
          {"trace.cc", std::regex("Unknown tracer:.*")},
-         {"config.cc", std::regex("gRPC experiments enabled:.*")},
+         {"config.cc", std::regex("gRPC experiments.*")},
          // logs from fixtures are never a production issue
-         {"http_proxy_fixture.cc", std::regex(".*")}});
+         {"http_proxy_fixture.cc", std::regex(".*")},
+         {"http_connect_handshaker.cc",
+          std::regex("HTTP proxy handshake with .* failed:.*")}});
+
+    if (allow_non_error_logs_.load(std::memory_order_relaxed) &&
+        entry.log_severity() != absl::LogSeverity::kError) {
+      return;
+    }
 
     if (IsVlogWithVerbosityMoreThan1(entry)) {
       return;
@@ -137,6 +148,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
   int saved_absl_verbosity_;
   SavedTraceFlags saved_trace_flags_;
   bool log_noise_absent_;
+  std::atomic<bool> allow_non_error_logs_{false};
 };
 
 void SimpleRequest(CoreEnd2endTest& test) {
@@ -179,6 +191,13 @@ CORE_END2END_TEST(NoLoggingTests, NoLoggingTest) {
   }
 #endif
   VerifyLogNoiseLogSink nolog_verifier(absl::LogSeverityAtLeast::kInfo, 2);
+  // Allow info logs, but not error logs on the first request.
+  // This allows connection warnings to be printed, and potentially some
+  // initialization noise - we tolerate that - this test is about not spamming
+  // on the per-RPC path.
+  nolog_verifier.AllowNonErrorLogs(true);
+  SimpleRequest(*this);
+  nolog_verifier.AllowNonErrorLogs(false);
   for (int i = 0; i < 10; i++) {
     SimpleRequest(*this);
   }

@@ -26,9 +26,6 @@
 #include <memory>
 #include <new>
 
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/for_each.h"
@@ -37,6 +34,9 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/util/time.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 void grpc_stream_destroy(grpc_stream_refcount* refcount) {
   if ((grpc_core::ExecCtx::Get()->flags() &
@@ -46,8 +46,8 @@ void grpc_stream_destroy(grpc_stream_refcount* refcount) {
     // If that's the case, destroying the call-stack MAY try to destroy the
     // thread, which is a tangled mess that we just don't want to ever have to
     // cope with.
-    // Throw this over to the executor (on a core-owned thread) and process it
-    // there.
+    // Throw this over to the EventEngine (on a core-owned thread) and process
+    // it there.
     grpc_event_engine::experimental::GetDefaultEventEngine()->Run([refcount] {
       grpc_core::ExecCtx exec_ctx;
       grpc_core::ExecCtx::Run(DEBUG_LOCATION, &refcount->destroy,

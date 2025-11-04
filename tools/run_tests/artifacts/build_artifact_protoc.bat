@@ -35,7 +35,16 @@ echo on
 
 @rem Select MSVC compiler (cl.exe) explicitly to make sure we don't end up gcc from mingw or cygwin
 @rem (both are on path in kokoro win workers)
-cmake -G Ninja -DCMAKE_C_COMPILER="cl.exe" -DCMAKE_CXX_COMPILER="cl.exe" -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17 -DgRPC_BUILD_TESTS=OFF -DgRPC_MSVC_STATIC_RUNTIME=ON ../../.. || goto :error
+cmake -G Ninja ^
+  -DCMAKE_C_COMPILER="cl.exe" ^
+  -DCMAKE_CXX_COMPILER="cl.exe" ^
+  -DCMAKE_BUILD_TYPE=Release ^
+  -DCMAKE_CXX_STANDARD=17 ^
+  -DgRPC_BUILD_TESTS=OFF ^
+  -DgRPC_MSVC_STATIC_RUNTIME=ON ^
+  -Dprotobuf_MSVC_STATIC_RUNTIME=ON ^
+  -DABSL_MSVC_STATIC_RUNTIME=ON ^
+  ../../.. || goto :error
 
 ninja -j%GRPC_PROTOC_BUILD_COMPILER_JOBS% protoc plugins || goto :error
 cd ..\..

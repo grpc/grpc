@@ -2,14 +2,14 @@
 # Bazel installation
 
 # Must be in sync with tools/bazel
-ENV BAZEL_VERSION ${primary_bazel_version}
+ENV BAZEL_VERSION {{primary_bazel_version}}
 
 # The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
 ENV DISABLE_BAZEL_WRAPPER 1
 
 # Download the correct bazel version and make sure it's on path.
-RUN BAZEL_ARCH_SUFFIX="$(uname -m | sed s/aarch64/arm64/)" ${'\\'}
-  && curl -sSL --fail -o /usr/local/bin/bazel "https://github.com/bazelbuild/bazel/releases/download/$BAZEL_VERSION/bazel-$BAZEL_VERSION-linux-$BAZEL_ARCH_SUFFIX" ${'\\'}
+RUN BAZEL_ARCH_SUFFIX="$(uname -m | sed s/aarch64/arm64/)" \
+  && curl -sSL --fail -o /usr/local/bin/bazel "https://github.com/bazelbuild/bazel/releases/download/$BAZEL_VERSION/bazel-$BAZEL_VERSION-linux-$BAZEL_ARCH_SUFFIX" \
   && chmod a+x /usr/local/bin/bazel
 
 # Normally we would run "bazel --version" here to make sure bazel

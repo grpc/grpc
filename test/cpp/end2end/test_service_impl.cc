@@ -21,17 +21,17 @@
 #include <grpcpp/alarm.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_context.h>
-#include "gtest/gtest.h"
 
 #include <string>
 #include <thread>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/util/string_ref_helper.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 using std::chrono::system_clock;
 
@@ -208,7 +208,7 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
       }
       if (req_->has_param() && req_->param().server_die()) {
         LOG(ERROR) << "The request should not reach application handler.";
-        CHECK(0);
+        GRPC_CHECK(0);
       }
       if (req_->has_param() && req_->param().has_expected_error()) {
         const auto& error = req_->param().expected_error();
@@ -228,6 +228,15 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
         LOG(INFO) << "Server called TryCancel() to cancel the request";
         FinishWhenCancelledAsync();
         return;
+      }
+      if (req_->has_param() &&
+          req_->param().compression_algorithm() != RequestParams::NONE) {
+        if (req_->param().compression_algorithm() == RequestParams::DEFLATE) {
+          ctx_->set_compression_algorithm(GRPC_COMPRESS_DEFLATE);
+        } else if (req_->param().compression_algorithm() ==
+                   RequestParams::GZIP) {
+          ctx_->set_compression_algorithm(GRPC_COMPRESS_GZIP);
+        }
       }
       resp_->set_message(req_->message());
       internal::MaybeEchoDeadline(ctx_, req_, resp_);

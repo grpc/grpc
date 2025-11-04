@@ -34,14 +34,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/meta/type_traits.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -62,14 +54,23 @@
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/validation_errors.h"
 #include "src/core/util/work_serializer.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
+#include "absl/meta/type_traits.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -328,7 +329,7 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
           --multiplier_;
         }
       } else {
-        CHECK(ejection_time_.has_value());
+        GRPC_CHECK(ejection_time_.has_value());
         auto change_time = ejection_time_.value() +
                            Duration::Milliseconds(std::min(
                                base_ejection_time_in_millis * multiplier_,
@@ -407,7 +408,6 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
     RefCountedPtr<OutlierDetectionLb> parent_;
     std::optional<EventEngine::TaskHandle> timer_handle_;
     Timestamp start_time_;
-    absl::BitGen bit_gen_;
   };
 
   ~OutlierDetectionLb() override;
@@ -924,7 +924,8 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
           << "] checking candidate " << endpoint_state
           << ": success_rate=" << success_rate;
       if (success_rate < ejection_threshold) {
-        uint32_t random_key = absl::Uniform(bit_gen_, 1, 100);
+        SharedBitGen bit_gen;
+        uint32_t random_key = absl::Uniform(bit_gen, 1, 100);
         double current_percent =
             100.0 * ejected_host_count / parent_->endpoint_state_map_.size();
         GRPC_TRACE_LOG(outlier_detection_lb, INFO)
@@ -967,7 +968,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
       if (endpoint_state->ejection_time().has_value()) continue;
       if ((100.0 - success_rate) >
           config.failure_percentage_ejection->threshold) {
-        uint32_t random_key = absl::Uniform(bit_gen_, 1, 100);
+        uint32_t random_key = absl::Uniform(SharedBitGen(), 1, 100);
         double current_percent =
             100.0 * ejected_host_count / parent_->endpoint_state_map_.size();
         GRPC_TRACE_LOG(outlier_detection_lb, INFO)

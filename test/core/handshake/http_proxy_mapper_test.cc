@@ -22,17 +22,17 @@
 
 #include <optional>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/handshaker/http_connect/http_connect_handshaker.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc_core {
 namespace testing {
@@ -222,6 +222,28 @@ TEST(ProxyForAddressTest, BadProxy) {
   ASSERT_TRUE(address.ok()) << address.status();
   EXPECT_EQ(HttpProxyMapper().MapAddress(*address, &args), std::nullopt);
   EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), std::nullopt);
+}
+
+TEST(ProxyForAddressTest, UserInfo) {
+  auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY,
+                                "http://username:password@proxy.google.com");
+  EXPECT_EQ(HttpProxyMapper().MapName("dns:///test.google.com:443", &args),
+            "proxy.google.com");
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER),
+            "test.google.com:443");
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_HEADERS),
+            "Proxy-Authorization:Basic dXNlcm5hbWU6cGFzc3dvcmQ=");
+}
+
+TEST(ProxyForAddressTest, PctEncodedUserInfo) {
+  auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY,
+                                "http://usern%40me:password@proxy.google.com");
+  EXPECT_EQ(HttpProxyMapper().MapName("dns:///test.google.com:443", &args),
+            "proxy.google.com");
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER),
+            "test.google.com:443");
+  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_HEADERS),
+            "Proxy-Authorization:Basic dXNlcm5AbWU6cGFzc3dvcmQ=");
 }
 
 class IncludedAddressesTest

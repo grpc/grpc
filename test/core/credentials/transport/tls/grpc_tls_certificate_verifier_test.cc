@@ -18,7 +18,6 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-#include <gtest/gtest.h>
 
 #include <deque>
 #include <list>
@@ -30,6 +29,7 @@
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "absl/log/log.h"
 
 namespace grpc_core {

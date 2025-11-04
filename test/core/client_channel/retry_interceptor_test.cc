@@ -20,11 +20,11 @@
 #include <memory>
 #include <queue>
 
-#include "absl/strings/string_view.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "test/core/call/yodel/yodel_test.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -40,8 +40,8 @@ class RetryInterceptorTest : public YodelTest {
 
   void InitInterceptor(const ChannelArgs& args) {
     CHECK(destination_under_test_ == nullptr);
-    InterceptionChainBuilder builder(args, nullptr, nullptr);
-    builder.Add<RetryInterceptor>();
+    InterceptionChainBuilder builder(args, nullptr);
+    builder.Add<RetryInterceptor>(nullptr);
     destination_under_test_ = builder.Build(call_destination_).value();
   }
 

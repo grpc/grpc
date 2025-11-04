@@ -20,7 +20,7 @@ MetadataKey = str
 MetadataValue = Union[str, bytes]
 
 
-class Metadata(abc.Collection):
+class Metadata(abc.Collection):  # noqa: PLW1641
     """Metadata abstraction for the asynchronous calls and interceptors.
 
     The metadata is a mapping from str -> List[str]
@@ -61,7 +61,8 @@ class Metadata(abc.Collection):
         try:
             return self._metadata[key][0]
         except (ValueError, IndexError) as e:
-            raise KeyError("{0!r}".format(key)) from e
+            error_msg = f"{key!r}"
+            raise KeyError(error_msg) from e
 
     def __setitem__(self, key: MetadataKey, value: MetadataValue) -> None:
         """Calling metadata[<key>] = <value>
@@ -118,7 +119,7 @@ class Metadata(abc.Collection):
     def __contains__(self, key: MetadataKey) -> bool:
         return key in self._metadata
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
             return self._metadata == other._metadata
         if isinstance(other, tuple):

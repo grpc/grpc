@@ -22,8 +22,6 @@
 #include <utility>
 #include <variant>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upb.h"
 #include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.upbdefs.h"
 #include "src/core/ext/filters/gcp_authentication/gcp_authentication_filter.h"
@@ -35,6 +33,8 @@
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -112,7 +112,7 @@ XdsHttpGcpAuthnFilter::GenerateFilterConfigOverride(
 }
 
 void XdsHttpGcpAuthnFilter::AddFilter(InterceptionChainBuilder& builder) const {
-  builder.Add<GcpAuthenticationFilter>();
+  builder.Add<GcpAuthenticationFilter>(nullptr);
 }
 
 const grpc_channel_filter* XdsHttpGcpAuthnFilter::channel_filter() const {
@@ -136,6 +136,28 @@ XdsHttpGcpAuthnFilter::GenerateServiceConfig(
     const FilterConfig& hcm_filter_config) const {
   return ServiceConfigJsonEntry{"gcp_authentication",
                                 JsonDump(hcm_filter_config.config)};
+}
+
+void XdsHttpGcpAuthnFilter::UpdateBlackboard(
+    const FilterConfig& hcm_filter_config, const Blackboard* old_blackboard,
+    Blackboard* new_blackboard) const {
+  ValidationErrors errors;
+  auto config = LoadFromJson<GcpAuthenticationParsedConfig::Config>(
+      hcm_filter_config.config, JsonArgs(), &errors);
+  CHECK(errors.ok()) << errors.message("filter config validation failed");
+  RefCountedPtr<GcpAuthenticationFilter::CallCredentialsCache> cache;
+  if (old_blackboard != nullptr) {
+    cache = old_blackboard->Get<GcpAuthenticationFilter::CallCredentialsCache>(
+        config.filter_instance_name);
+  }
+  if (cache != nullptr) {
+    cache->SetMaxSize(config.cache_size);
+  } else {
+    cache = MakeRefCounted<GcpAuthenticationFilter::CallCredentialsCache>(
+        config.cache_size);
+  }
+  CHECK_NE(new_blackboard, nullptr);
+  new_blackboard->Set(config.filter_instance_name, std::move(cache));
 }
 
 }  // namespace grpc_core

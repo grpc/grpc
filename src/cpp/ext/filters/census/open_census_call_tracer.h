@@ -28,23 +28,23 @@
 #include <memory>
 #include <string>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/time.h"
 #include "opencensus/trace/span.h"
 #include "opencensus/trace/span_context.h"
 #include "opencensus/trace/span_id.h"
 #include "opencensus/trace/trace_id.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 
 // TODO(yashykt): This might not be the right place for this channel arg, but we
 // don't have a better place for this right now.
@@ -61,7 +61,7 @@
 namespace grpc {
 namespace internal {
 
-class OpenCensusCallTracer : public grpc_core::ClientCallTracer {
+class OpenCensusCallTracer : public grpc_core::ClientCallTracerInterface {
  public:
   class OpenCensusCallAttemptTracer : public CallAttemptTracer {
    public:
@@ -99,10 +99,10 @@ class OpenCensusCallTracer : public grpc_core::ClientCallTracer {
     void RecordOutgoingBytes(
         const TransportByteSize& transport_byte_size) override;
     void RecordCancel(grpc_error_handle cancel_error) override;
-    void RecordEnd(const gpr_timespec& /*latency*/) override;
+    void RecordEnd() override;
     void RecordAnnotation(absl::string_view annotation) override;
     void RecordAnnotation(const Annotation& annotation) override;
-    std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override;
+    std::shared_ptr<grpc_core::TcpCallTracer> StartNewTcpTrace() override;
     void SetOptionalLabel(OptionalLabelKey,
                           grpc_core::RefCountedStringValue) override {}
 

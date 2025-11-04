@@ -16,10 +16,6 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_package")
 
 grpc_package(
     name = "test/core/network_benchmarks",
-    features = [
-        "-layering_check",
-        "-parse_headers",
-    ],
 )
 
 licenses(["notice"])
@@ -35,6 +31,12 @@ grpc_cc_binary(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:iomgr",
+        "//src/core:error",
+        "//src/core:grpc_check",
+        "//src/core:grpc_sockaddr",
+        "//src/core:strerror",
+        "//src/core:useful",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],

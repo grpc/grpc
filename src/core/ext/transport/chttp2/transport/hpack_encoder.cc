@@ -25,8 +25,6 @@
 #include <algorithm>
 #include <cstdint>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
@@ -36,6 +34,8 @@
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 
@@ -61,7 +61,7 @@ static void FillHeader(uint8_t* p, uint8_t type, uint32_t id, size_t len,
   // max_frame_size is derived from GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
   // which has a max allowable value of 16777215 (see chttp_transport.cc).
   // Thus, the following assert can be a debug assert.
-  DCHECK_LE(len, 16777216u);
+  GRPC_DCHECK_LE(len, 16777216u);
   *p++ = static_cast<uint8_t>(len >> 16);
   *p++ = static_cast<uint8_t>(len >> 8);
   *p++ = static_cast<uint8_t>(len);
@@ -101,6 +101,13 @@ void HPackCompressor::Frame(const EncodeHeaderOptions& options,
     FillHeader(grpc_slice_buffer_tiny_add(output, kHeadersFrameHeaderSize),
                frame_type, options.stream_id, len, flags);
     options.call_tracer->RecordOutgoingBytes({kHeadersFrameHeaderSize, 0, 0});
+    options.ztrace_collector->Append([&]() {
+      return H2HeaderTrace<false>{
+          options.stream_id, (flags & GRPC_CHTTP2_DATA_FLAG_END_HEADERS) != 0,
+          (flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM) != 0,
+          frame_type == GRPC_CHTTP2_FRAME_CONTINUATION,
+          static_cast<uint32_t>(len)};
+    });
     grpc_slice_buffer_move_first(raw.c_slice_buffer(), len, output);
 
     frame_type = GRPC_CHTTP2_FRAME_CONTINUATION;

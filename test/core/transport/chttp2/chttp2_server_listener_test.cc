@@ -17,11 +17,9 @@
 //
 
 #include <grpc/grpc.h>
-#include "gtest/gtest.h"
 
 #include <thread>
 
-#include "absl/synchronization/notification.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/insecure/insecure_credentials.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
@@ -35,6 +33,8 @@
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "gtest/gtest.h"
+#include "absl/synchronization/notification.h"
 
 using grpc_event_engine::experimental::EventEngine;
 
@@ -455,7 +455,6 @@ TEST_F(Chttp2ActiveConnectionTest, CloseAfterSettingsFrame) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-  grpc_core::ForceEnableExperiment("server_listener", true);
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc_init();

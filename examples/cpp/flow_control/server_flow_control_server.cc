@@ -27,6 +27,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
 #include "absl/strings/str_cat.h"
 
 #ifdef BAZEL_BUILD
@@ -115,6 +116,7 @@ class GreeterService final : public helloworld::Greeter::CallbackService {
 
 int main(int argc, char* argv[]) {
   absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   std::string server_address =
       absl::StrCat("0.0.0.0:", absl::GetFlag(FLAGS_port));
   grpc::EnableDefaultHealthCheckService(true);

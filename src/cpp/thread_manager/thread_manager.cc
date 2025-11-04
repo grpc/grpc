@@ -20,13 +20,13 @@
 
 #include <climits>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_format.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/thd.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc {
 
@@ -67,7 +67,7 @@ ThreadManager::ThreadManager(const char*, grpc_resource_quota* resource_quota,
 ThreadManager::~ThreadManager() {
   {
     grpc_core::MutexLock lock(&mu_);
-    CHECK_EQ(num_threads_, 0);
+    GRPC_CHECK_EQ(num_threads_, 0);
   }
 
   CleanupCompletedThreads();
@@ -141,7 +141,7 @@ void ThreadManager::Initialize() {
 
   for (int i = 0; i < min_pollers_; i++) {
     WorkerThread* worker = new WorkerThread(this);
-    CHECK(worker->created());  // Must be able to create the minimum
+    GRPC_CHECK(worker->created());  // Must be able to create the minimum
     worker->Start();
   }
 }

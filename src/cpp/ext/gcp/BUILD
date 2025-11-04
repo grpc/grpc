@@ -49,6 +49,10 @@ grpc_cc_library(
         "opencensus-trace",
         "opencensus-trace-stackdriver_exporter",
     ],
+    tags = [
+        # uses OSS specific libraries
+        "grpc:broken-internally",
+    ],
     visibility = ["//:__subpackages__"],
     deps = [
         "environment_autodetect",
@@ -78,8 +82,8 @@ grpc_cc_library(
         "absl/strings",
     ],
     visibility = [
+        "//bazel:grpc_python_observability",
         "//test:__subpackages__",
-        "@grpc:grpc_python_observability",
     ],
     deps = [
         "//:gpr",
@@ -118,6 +122,10 @@ grpc_cc_library(
         "googleapis_logging_grpc_service",
         "protobuf_headers",
     ],
+    tags = [
+        # uses OSS specific libraries
+        "grpc:broken-internally",
+    ],
     visibility = ["//test:__subpackages__"],
     deps = [
         "environment_autodetect",
@@ -151,7 +159,6 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
         "absl/log",
-        "absl/log:check",
         "absl/status",
         "absl/status:statusor",
     ],
@@ -172,7 +179,9 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:env",
         "//src/core:error",
+        "//src/core:event_engine_shim",
         "//src/core:gcp_metadata_query",
+        "//src/core:grpc_check",
         "//src/core:iomgr_fwd",
         "//src/core:load_file",
         "//src/core:slice",

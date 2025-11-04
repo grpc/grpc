@@ -22,8 +22,6 @@
 #include <cstdint>
 #include <memory>
 
-#include "absl/random/random.h"
-#include "absl/status/statusor.h"
 #include "src/core/client_channel/connector.h"
 #include "src/core/ext/transport/chaotic_good/config.h"
 #include "src/core/handshaker/handshaker.h"
@@ -43,6 +41,9 @@
 #include "src/core/util/notification.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -92,10 +93,11 @@ class ChaoticGoodConnector final : public SubchannelConnector {
   bool is_shutdown_ ABSL_GUARDED_BY(mu_) = false;
   ActivityPtr connect_activity_ ABSL_GUARDED_BY(mu_);
 };
+
+absl::StatusOr<grpc_channel*> CreateChaoticGoodChannel(std::string target,
+                                                       const ChannelArgs& args);
+
 }  // namespace chaotic_good
 }  // namespace grpc_core
-
-grpc_channel* grpc_chaotic_good_channel_create(const char* target,
-                                               const grpc_channel_args* args);
 
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CLIENT_CHAOTIC_GOOD_CONNECTOR_H

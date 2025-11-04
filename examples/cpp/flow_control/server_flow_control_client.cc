@@ -25,6 +25,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
@@ -80,6 +81,7 @@ class Reader final : public grpc::ClientReadReactor<helloworld::HelloReply> {
 
 int main(int argc, char* argv[]) {
   absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   grpc::ChannelArguments channel_arguments;
   grpc::ResourceQuota quota;
   quota.Resize(absl::GetFlag(FLAGS_quota) * 1024 * 1024);

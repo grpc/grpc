@@ -24,8 +24,6 @@
 
 #include <atomic>
 
-#include "absl/base/attributes.h"
-#include "absl/strings/string_view.h"
 #include "opencensus/tags/tag_key.h"
 #include "opencensus/trace/span.h"
 #include "src/core/config/core_configuration.h"
@@ -35,13 +33,15 @@
 #include "src/cpp/ext/filters/census/client_filter.h"
 #include "src/cpp/ext/filters/census/measures.h"
 #include "src/cpp/ext/filters/census/server_call_tracer.h"
+#include "absl/base/attributes.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 
 void RegisterOpenCensusPlugin() {
   grpc_core::ServerCallTracerFactory::RegisterGlobal(
       new grpc::internal::OpenCensusServerCallTracerFactory);
-  grpc_core::CoreConfiguration::RegisterBuilder(
+  grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
       [](grpc_core::CoreConfiguration::Builder* builder) {
         builder->channel_init()
             ->RegisterFilter(GRPC_CLIENT_CHANNEL,

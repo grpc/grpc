@@ -22,11 +22,6 @@
 #include <memory>
 #include <string>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -36,6 +31,11 @@
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -102,23 +102,22 @@ class ChildPolicyHandler::Helper final
     parent()->channel_control_helper()->RequestReresolution();
   }
 
-  void AddTraceEvent(TraceSeverity severity,
-                     absl::string_view message) override {
+  void AddTraceEvent(absl::string_view message) override {
     if (parent()->shutting_down_) return;
     if (!CalledByPendingChild() && !CalledByCurrentChild()) return;
-    parent()->channel_control_helper()->AddTraceEvent(severity, message);
+    parent()->channel_control_helper()->AddTraceEvent(message);
   }
 
   void set_child(LoadBalancingPolicy* child) { child_ = child; }
 
  private:
   bool CalledByPendingChild() const {
-    CHECK_NE(child_, nullptr);
+    GRPC_CHECK_NE(child_, nullptr);
     return child_ == parent()->pending_child_policy_.get();
   }
 
   bool CalledByCurrentChild() const {
-    CHECK_NE(child_, nullptr);
+    GRPC_CHECK_NE(child_, nullptr);
     return child_ == parent()->child_policy_.get();
   };
 
@@ -238,7 +237,7 @@ absl::Status ChildPolicyHandler::UpdateLocked(UpdateArgs args) {
                            ? pending_child_policy_.get()
                            : child_policy_.get();
   }
-  CHECK_NE(policy_to_update, nullptr);
+  GRPC_CHECK_NE(policy_to_update, nullptr);
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED_OBJ(*tracer_)) {
     LOG(INFO) << "[child_policy_handler " << this << "] updating "
@@ -289,7 +288,6 @@ OrphanablePtr<LoadBalancingPolicy> ChildPolicyHandler::CreateChildPolicy(
               << lb_policy.get() << ")";
   }
   channel_control_helper()->AddTraceEvent(
-      ChannelControlHelper::TRACE_INFO,
       absl::StrCat("Created new LB policy \"", child_policy_name, "\""));
   grpc_pollset_set_add_pollset_set(lb_policy->interested_parties(),
                                    interested_parties());

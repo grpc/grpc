@@ -18,16 +18,16 @@
 
 #include "src/core/lib/iomgr/error.h"
 
-#include "gmock/gmock.h"
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <string.h>
 
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/strerror.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 TEST(ErrorTest, SetGetInt) {
   grpc_error_handle error = GRPC_ERROR_CREATE("Test");
@@ -49,16 +49,12 @@ TEST(ErrorTest, SetGetInt) {
 TEST(ErrorTest, SetGetStr) {
   grpc_error_handle error = GRPC_ERROR_CREATE("Test");
 
-  std::string str;
-  EXPECT_TRUE(grpc_error_get_str(
-      error, grpc_core::StatusStrProperty::kDescription, &str));
-  EXPECT_EQ(str, "Test");
-
   error = grpc_error_set_str(error, grpc_core::StatusStrProperty::kGrpcMessage,
                              "longer message");
+  std::string str;
   EXPECT_TRUE(grpc_error_get_str(
       error, grpc_core::StatusStrProperty::kGrpcMessage, &str));
-  EXPECT_EQ(str, "longer message");
+  EXPECT_THAT(str, ::testing::StartsWith("longer message"));
 }
 
 TEST(ErrorTest, CopyAndUnRef) {

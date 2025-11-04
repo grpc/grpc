@@ -236,7 +236,7 @@ def _populate_metadata_from_file(scenario_result, test_metadata_file):
 
         annotations = test_metadata.get("annotations", {})
 
-        # if use kubectl apply ..., kubectl will append current configuration to
+        # if using kubectl apply ..., kubectl will append current configuration to
         # annotation, the field is deleted since it includes a lot of irrelevant
         # information
         if "kubectl.kubernetes.io/last-applied-configuration" in annotations:
@@ -307,9 +307,9 @@ def _populate_prometheus_query_results_from_file(
                             "memoryMean": container_data["memoryMean"],
                         }
                         containersPrometheusData.append(containerPrometheusData)
-                    clientPrometheusData[
-                        "containers"
-                    ] = containersPrometheusData
+                    clientPrometheusData["containers"] = (
+                        containersPrometheusData
+                    )
                     clientsPrometheusData.append(clientPrometheusData)
                 scenario_result["clientsPrometheusData"] = clientsPrometheusData
 
@@ -327,9 +327,9 @@ def _populate_prometheus_query_results_from_file(
                             "memoryMean": container_data["memoryMean"],
                         }
                         containersPrometheusData.append(containerPrometheusData)
-                    serverPrometheusData[
-                        "containers"
-                    ] = containersPrometheusData
+                    serverPrometheusData["containers"] = (
+                        containersPrometheusData
+                    )
                     serversPrometheusData.append(serverPrometheusData)
             scenario_result["serversPrometheusData"] = serversPrometheusData
 

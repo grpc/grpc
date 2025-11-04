@@ -26,13 +26,13 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "test/core/test_util/test_config.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 
@@ -49,7 +49,7 @@ FakeXdsTransportFactory::FakeStreamingCall::~FakeStreamingCall() {
         LOG(ERROR) << "[" << transport_->server()->server_uri() << "] " << this
                    << " From client message left in queue: " << message;
       }
-      CHECK(from_client_messages_.empty());
+      GRPC_CHECK(from_client_messages_.empty());
     }
   }
   // Can't call event_handler_->OnStatusReceived() or unref event_handler_
@@ -76,7 +76,7 @@ void FakeXdsTransportFactory::FakeStreamingCall::Orphan() {
 void FakeXdsTransportFactory::FakeStreamingCall::SendMessage(
     std::string payload) {
   MutexLock lock(&mu_);
-  CHECK(!orphaned_);
+  GRPC_CHECK(!orphaned_);
   from_client_messages_.push_back(std::move(payload));
   if (transport_->auto_complete_messages_from_client()) {
     CompleteSendMessageFromClientLocked(/*ok=*/true);
@@ -118,7 +118,7 @@ void FakeXdsTransportFactory::FakeStreamingCall::
 
 void FakeXdsTransportFactory::FakeStreamingCall::CompleteSendMessageFromClient(
     bool ok) {
-  CHECK(!transport_->auto_complete_messages_from_client());
+  GRPC_CHECK(!transport_->auto_complete_messages_from_client());
   MutexLock lock(&mu_);
   CompleteSendMessageFromClientLocked(ok);
 }
@@ -289,8 +289,8 @@ constexpr char FakeXdsTransportFactory::kAdsMethod[];
 constexpr char FakeXdsTransportFactory::kLrsMethod[];
 
 RefCountedPtr<XdsTransportFactory::XdsTransport>
-FakeXdsTransportFactory::GetTransport(const XdsBootstrap::XdsServer& server,
-                                      absl::Status* /*status*/) {
+FakeXdsTransportFactory::GetTransport(
+    const XdsBootstrap::XdsServerTarget& server, absl::Status* /*status*/) {
   std::string key = server.Key();
   MutexLock lock(&mu_);
   auto transport = GetTransportLocked(key);
@@ -304,7 +304,7 @@ FakeXdsTransportFactory::GetTransport(const XdsBootstrap::XdsServer& server,
 }
 
 void FakeXdsTransportFactory::TriggerConnectionFailure(
-    const XdsBootstrap::XdsServer& server, absl::Status status) {
+    const XdsBootstrap::XdsServerTarget& server, absl::Status status) {
   auto transport = GetTransport(server);
   if (transport == nullptr) return;
   transport->TriggerConnectionFailure(std::move(status));
@@ -321,8 +321,8 @@ void FakeXdsTransportFactory::SetAbortOnUndrainedMessages(bool value) {
 }
 
 RefCountedPtr<FakeXdsTransportFactory::FakeStreamingCall>
-FakeXdsTransportFactory::WaitForStream(const XdsBootstrap::XdsServer& server,
-                                       const char* method) {
+FakeXdsTransportFactory::WaitForStream(
+    const XdsBootstrap::XdsServerTarget& server, const char* method) {
   auto transport = GetTransport(server);
   if (transport == nullptr) return nullptr;
   return transport->WaitForStream(method);
@@ -331,7 +331,8 @@ FakeXdsTransportFactory::WaitForStream(const XdsBootstrap::XdsServer& server,
 void FakeXdsTransportFactory::Orphaned() { event_engine_.reset(); }
 
 RefCountedPtr<FakeXdsTransportFactory::FakeXdsTransport>
-FakeXdsTransportFactory::GetTransport(const XdsBootstrap::XdsServer& server) {
+FakeXdsTransportFactory::GetTransport(
+    const XdsBootstrap::XdsServerTarget& server) {
   std::string key = server.Key();
   MutexLock lock(&mu_);
   return GetTransportLocked(key);

@@ -27,13 +27,18 @@ grpc_cc_library(
     srcs = ["library.cc"],
     hdrs = ["library.h"],
     external_deps = [
+        "absl/strings",
         "gtest",
+        "opencensus-stats",
         "opencensus-stats-test",
         "opencensus-tags",
+        "opencensus-trace",
         "opencensus-with-tag-map",
     ],
     deps = [
+        "//:config",
         "//:grpc++",
+        "//:grpc++_base",
         "//:grpc_opencensus_plugin",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:grpc_test_util",
@@ -55,6 +60,8 @@ grpc_cc_test(
         "opencensus-stats-test",
         "opencensus-tags",
         "opencensus-with-tag-map",
+        "absl/strings",
+        "opencensus-stats",
     ],
     flaky = True,
     linkstatic = True,
@@ -62,12 +69,14 @@ grpc_cc_test(
         "census_test",
         # Incompatible with internal stats engine.
         "grpc:no-internal-poller",
+        "grpc:no-internal-test",
         "no_windows",
     ],  # TODO(jtattermusch): fix test on windows
     deps = [
         "library",
         "//:grpc++",
         "//:grpc_opencensus_plugin",
+        "//src/core:experiments",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
@@ -81,7 +90,9 @@ grpc_cc_test(
         "constant_labels_test.cc",
     ],
     external_deps = [
+        "absl/strings",
         "gtest",
+        "opencensus-stats",
         "opencensus-stats-test",
         "opencensus-tags",
         "opencensus-with-tag-map",

@@ -24,12 +24,13 @@
 #include <thread>
 #include <vector>
 
-#include "absl/flags/flag.h"
+#include "src/core/lib/experiments/config.h"
 #include "src/core/telemetry/stats.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/qps/qps_worker.h"
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "absl/flags/flag.h"
 
 ABSL_FLAG(int32_t, driver_port, 0, "Port for communication with driver");
 ABSL_FLAG(int32_t, server_port, 0,
@@ -62,6 +63,7 @@ static void RunServer() {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
+  grpc_core::ForceEnableExperiment("chaotic_good_framing_layer", true);
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
 

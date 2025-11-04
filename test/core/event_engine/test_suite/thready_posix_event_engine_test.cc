@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include <grpc/grpc.h>
-#include "gtest/gtest.h"
 
 #include <memory>
 
@@ -24,6 +23,7 @@
 #include "test/core/event_engine/test_suite/tests/server_test.h"
 #include "test/core/event_engine/test_suite/tests/timer_test.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
@@ -32,8 +32,8 @@ int main(int argc, char** argv) {
       []() {
         return std::make_unique<
             grpc_event_engine::experimental::ThreadyEventEngine>(
-            std::make_unique<
-                grpc_event_engine::experimental::PosixEventEngine>());
+            grpc_event_engine::experimental::PosixEventEngine::
+                MakePosixEventEngine());
       },
       []() {
         return std::make_unique<

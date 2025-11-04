@@ -21,6 +21,8 @@
 #include <memory>
 #include <string>
 
+#include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
 #include "absl/strings/string_view.h"
 
 #ifdef BAZEL_BUILD
@@ -85,7 +87,9 @@ class GreeterClient {
   std::unique_ptr<Greeter::Stub> stub_;
 };
 
-int main() {
+int main(int argc, char** argv) {
+  absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   auto channel_args = grpc::ChannelArguments();
   channel_args.SetServiceConfigJSON(std::string(kRetryPolicy));
   GreeterClient greeter(grpc::CreateCustomChannel(

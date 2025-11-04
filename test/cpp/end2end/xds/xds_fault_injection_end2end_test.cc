@@ -13,9 +13,6 @@
 // limitations under the License.
 //
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-
 #include <string>
 #include <vector>
 
@@ -27,6 +24,8 @@
 #include "src/core/config/config_vars.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc {
 namespace testing {

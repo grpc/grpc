@@ -17,9 +17,6 @@
 #ifndef GRPC_SRC_CORE_RESOLVER_XDS_XDS_DEPENDENCY_MANAGER_H
 #define GRPC_SRC_CORE_RESOLVER_XDS_XDS_DEPENDENCY_MANAGER_H
 
-#include "absl/container/flat_hash_map.h"
-#include "absl/container/flat_hash_set.h"
-#include "absl/strings/string_view.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/xds/xds_config.h"
 #include "src/core/util/ref_counted.h"
@@ -28,6 +25,9 @@
 #include "src/core/xds/grpc/xds_endpoint.h"
 #include "src/core/xds/grpc/xds_listener.h"
 #include "src/core/xds/grpc/xds_route_config.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -172,7 +172,8 @@ class XdsDependencyManager final : public RefCounted<XdsDependencyManager>,
           cluster_config_map,
       std::set<absl::string_view>* eds_resources_seen,
       std::set<absl::string_view>* dns_names_seen,
-      absl::StatusOr<std::vector<absl::string_view>>* leaf_clusters = nullptr);
+      absl::StatusOr<std::vector<absl::string_view>>* leaf_clusters = nullptr,
+      std::vector<std::string>* resolution_notes = nullptr);
 
   // Called when an external cluster subscription is unreffed.
   void OnClusterSubscriptionUnref(absl::string_view cluster_name,

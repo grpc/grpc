@@ -26,9 +26,6 @@
 #include <utility>
 #include <variant>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
 #include "envoy/config/cluster/v3/cluster.pb.h"
 #include "envoy/config/cluster/v3/outlier_detection.pb.h"
 #include "envoy/config/core/v3/address.pb.h"
@@ -44,8 +41,6 @@
 #include "envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.pb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
 #include "envoy/extensions/upstreams/http/v3/http_protocol_options.pb.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/load_balancing/outlier_detection/outlier_detection.h"
@@ -67,6 +62,11 @@
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
 #include "xds/type/v3/typed_struct.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 
 using envoy::config::cluster::v3::Cluster;
 using envoy::extensions::clusters::aggregate::v3::ClusterConfig;
@@ -944,7 +944,6 @@ TEST_F(TlsConfigTest, MinimumValidConfig) {
 }
 
 TEST_F(TlsConfigTest, SystemRootCerts) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_SYSTEM_ROOT_CERTS");
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -1386,7 +1385,7 @@ TEST_F(LrsTest, Valid) {
       static_cast<const XdsClusterResource&>(**decode_result.resource);
   ASSERT_NE(resource.lrs_load_reporting_server, nullptr);
   EXPECT_EQ(*resource.lrs_load_reporting_server,
-            *xds_client_->bootstrap().servers().front());
+            *xds_client_->bootstrap().servers().front()->target());
 }
 
 TEST_F(LrsTest, NotSelfConfigSource) {
@@ -1430,7 +1429,7 @@ TEST_F(LrsTest, IgnoresPropagationWithoutEnvVar) {
       static_cast<const XdsClusterResource&>(**decode_result.resource);
   ASSERT_NE(resource.lrs_load_reporting_server, nullptr);
   EXPECT_EQ(*resource.lrs_load_reporting_server,
-            *xds_client_->bootstrap().servers().front());
+            *xds_client_->bootstrap().servers().front()->target());
   ASSERT_NE(resource.lrs_backend_metric_propagation, nullptr);
   EXPECT_EQ(resource.lrs_backend_metric_propagation->AsString(), "{}");
 }
@@ -1461,7 +1460,7 @@ TEST_F(LrsTest, Propagation) {
       static_cast<const XdsClusterResource&>(**decode_result.resource);
   ASSERT_NE(resource.lrs_load_reporting_server, nullptr);
   EXPECT_EQ(*resource.lrs_load_reporting_server,
-            *xds_client_->bootstrap().servers().front());
+            *xds_client_->bootstrap().servers().front()->target());
   ASSERT_NE(resource.lrs_backend_metric_propagation, nullptr);
   EXPECT_EQ(resource.lrs_backend_metric_propagation->AsString(),
             "{cpu_utilization,mem_utilization,application_utilization,"
@@ -1490,7 +1489,7 @@ TEST_F(LrsTest, PropagationNamedMetricsAll) {
       static_cast<const XdsClusterResource&>(**decode_result.resource);
   ASSERT_NE(resource.lrs_load_reporting_server, nullptr);
   EXPECT_EQ(*resource.lrs_load_reporting_server,
-            *xds_client_->bootstrap().servers().front());
+            *xds_client_->bootstrap().servers().front()->target());
   ASSERT_NE(resource.lrs_backend_metric_propagation, nullptr);
   EXPECT_EQ(resource.lrs_backend_metric_propagation->AsString(),
             "{cpu_utilization,named_metrics.*}");
@@ -2016,8 +2015,6 @@ TEST_F(MetadataTest, UntypedMetadata) {
 // they're being passed through.  A complete set of tests for metadata
 // validation is in xds_metadata_test.cc.
 TEST_F(MetadataTest, MetadataUnparseable) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_XDS_GCP_AUTHENTICATION_FILTER");
   Cluster cluster;
   cluster.set_type(cluster.EDS);
   cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();

@@ -23,7 +23,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 
 // Helpers for hpack varint encoding
 
@@ -49,7 +49,7 @@ class VarintWriter {
   explicit VarintWriter(size_t value)
       : value_(value),
         length_(value < kMaxInPrefix ? 1 : VarintLength(value - kMaxInPrefix)) {
-    CHECK(value <= UINT32_MAX);
+    GRPC_CHECK(value <= UINT32_MAX);
   }
 
   size_t value() const { return value_; }
