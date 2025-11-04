@@ -95,10 +95,12 @@ class ChaoticGoodServerTransport final : public ServerTransport {
     return frame_transport_->ctx()->socket_node;
   }
   void StartWatch(RefCountedPtr<StateWatcher>) override {
-    // FIXME: implement
+    // TODO(roth): Implement as part of migrating server side to new
+    // watcher API.
   }
   void StopWatch(RefCountedPtr<StateWatcher>) override {
-    // FIXME: implement
+    // TODO(roth): Implement as part of migrating server side to new
+    // watcher API.
   }
 
   void SetCallDestination(

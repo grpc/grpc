@@ -70,10 +70,12 @@ class Http2ServerTransport final : public ServerTransport {
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
 
   void StartWatch(RefCountedPtr<StateWatcher>) override {
-    // TODO(roth): Implement.
+    // TODO(roth): Implement as part of migrating server side to new
+    // watcher API.
   }
   void StopWatch(RefCountedPtr<StateWatcher>) override {
-    // TODO(roth): Implement.
+    // TODO(roth): Implement as part of migrating server side to new
+    // watcher API.
   }
 
   void SetCallDestination(

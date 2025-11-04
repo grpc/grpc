@@ -546,6 +546,7 @@ class Transport : public InternallyRefCounted<Transport> {
       virtual ~MaxConcurrentStreamsUpdateDoneHandle() = default;
     };
 
+    // Used on client transports only.
     // Will be called once as soon as the watch is started to indicate
     // the current value of the peer's MAX_CONCURRENT_STREAMS setting.
     // Will then be called again whenever the peer changes this setting.
