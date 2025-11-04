@@ -15,6 +15,8 @@
 
 set -ex
 
+PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
+
 cd "$(dirname "$0")/../../.."
 
 export GRPC_PYTHON_BUILD_WITH_CYTHON=1

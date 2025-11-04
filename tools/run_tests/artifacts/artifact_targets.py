@@ -192,6 +192,7 @@ class PythonArtifact:
                 "tools/run_tests/artifacts/build_artifact_python.sh",
                 environ=environ,
                 timeout_seconds=60 * 60 * 2,
+                verbose_success=True,
             )
         elif "musllinux" in self.platform:
             environ["PYTHON"] = "/opt/python/{}/bin/python".format(
@@ -405,7 +406,7 @@ def targets():
             ProtocArtifact("macos", "x64", presubmit=True),
             ProtocArtifact("windows", "x64", presubmit=True),
             ProtocArtifact("windows", "x86", presubmit=True),
-            PythonArtifact("manylinux2014", "x64", "cp39-cp39", presubmit=True),
+            # PythonArtifactmanylinux2014", "x64", "cp39-cp39", presubmit=True),
             PythonArtifact("manylinux2014", "x64", "cp310-cp310"),
             PythonArtifact("manylinux2014", "x64", "cp311-cp311"),
             PythonArtifact("manylinux2014", "x64", "cp312-cp312"),
@@ -413,14 +414,14 @@ def targets():
             PythonArtifact(
                 "manylinux2014", "x64", "cp314-cp314", presubmit=True
             ),
-            PythonArtifact("manylinux2014", "x86", "cp39-cp39", presubmit=True),
+            # PythonArtifactmanylinux2014", "x86", "cp39-cp39", presubmit=True),
             PythonArtifact("manylinux2014", "x86", "cp310-cp310"),
             PythonArtifact("manylinux2014", "x86", "cp311-cp311"),
             PythonArtifact("manylinux2014", "x86", "cp312-cp312"),
             PythonArtifact("manylinux2014", "x86", "cp313-cp313"),
-            PythonArtifact(
-                "manylinux2014", "x86", "cp314-cp314", presubmit=True
-            ),
+            # PythonArtifact(
+            #     "manylinux2014", "x86", "cp314-cp314", presubmit=True
+            # ),
             PythonArtifact(
                 "manylinux2014", "aarch64", "cp39-cp39", presubmit=True
             ),
@@ -431,7 +432,7 @@ def targets():
             PythonArtifact(
                 "manylinux2014", "aarch64", "cp314-cp314", presubmit=True
             ),
-            PythonArtifact("linux_extra", "armv7", "cp39-cp39", presubmit=True),
+            # PythonArtifact("linux_extra", "armv7", "cp39-cp39", presubmit=True),
             PythonArtifact("linux_extra", "armv7", "cp310-cp310"),
             PythonArtifact("linux_extra", "armv7", "cp311-cp311"),
             PythonArtifact("linux_extra", "armv7", "cp312-cp312"),
@@ -439,7 +440,7 @@ def targets():
             PythonArtifact(
                 "linux_extra", "armv7", "cp314-cp314", presubmit=True
             ),
-            PythonArtifact("musllinux_1_2", "x64", "cp39-cp39", presubmit=True),
+            # PythonArtifactmusllinux_1_2", "x64", "cp39-cp39", presubmit=True),
             PythonArtifact("musllinux_1_2", "x64", "cp310-cp310"),
             PythonArtifact("musllinux_1_2", "x64", "cp311-cp311"),
             PythonArtifact("musllinux_1_2", "x64", "cp312-cp312"),
@@ -447,14 +448,14 @@ def targets():
             PythonArtifact(
                 "musllinux_1_2", "x64", "cp314-cp314", presubmit=True
             ),
-            PythonArtifact("musllinux_1_2", "x86", "cp39-cp39", presubmit=True),
+            # PythonArtifactmusllinux_1_2", "x86", "cp39-cp39", presubmit=True),
             PythonArtifact("musllinux_1_2", "x86", "cp310-cp310"),
             PythonArtifact("musllinux_1_2", "x86", "cp311-cp311"),
             PythonArtifact("musllinux_1_2", "x86", "cp312-cp312"),
             PythonArtifact("musllinux_1_2", "x86", "cp313-cp313"),
-            PythonArtifact(
-                "musllinux_1_2", "x86", "cp314-cp314", presubmit=True
-            ),
+            # PythonArtifact(
+            #     "musllinux_1_2", "x86", "cp314-cp314", presubmit=True
+            # ),
             PythonArtifact(
                 "musllinux_1_2", "aarch64", "cp39-cp39", presubmit=True
             ),

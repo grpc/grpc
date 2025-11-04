@@ -18,6 +18,8 @@
 # All cmdline args will be executed as a command.
 set -ex
 
+PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
+
 cd "$(dirname "$0")/../../.."
 repo_root=$(pwd)
 export repo_root
