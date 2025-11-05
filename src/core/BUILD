@@ -30,6 +30,7 @@ package(
     default_visibility = ["//:__subpackages__"],
     features = [
         "layering_check",
+        "parse_headers",
     ],
 )
 
