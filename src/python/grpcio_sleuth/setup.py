@@ -34,6 +34,7 @@ _README_PATH = os.path.join(_PACKAGE_PATH, "README.rst")
 GRPC_ROOT = os.path.abspath(os.path.join(_PACKAGE_PATH, "../../.."))
 # Path to the directory containing sleuth.so
 _SLEUTH_SO_SRC = os.path.join(GRPC_ROOT, "bazel-bin/test/cpp/sleuth/sleuth.so")
+_BAZEL_PATH = os.path.join(GRPC_ROOT, "tools/bazel")
 
 # Relative directory paths from GRPC_ROOT
 SLEUTH_HDR_PATTERNS = [
@@ -48,7 +49,7 @@ for pattern in SLEUTH_HDR_PATTERNS:
 class custom_build_ext(build_ext):
     def run(self):
         # Run the bazel build command
-        bazel_cmd = ["bazel", "build", "//test/cpp/sleuth:sleuth.so"]
+        bazel_cmd = [_BAZEL_PATH, "build", "//test/cpp/sleuth:sleuth.so"]
         print(f"Running command: {' '.join(bazel_cmd)}")
         result = subprocess.run(bazel_cmd, cwd=GRPC_ROOT, check=False)
         if result.returncode != 0:
