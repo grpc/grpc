@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/credentials/transport")
+grpc_package(
+    name = "test/core/credentials/transport",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "security_connector_test",

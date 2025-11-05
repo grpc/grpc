@@ -18,7 +18,13 @@ load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/transport/chttp2")
+grpc_package(
+    name = "test/core/transport/chttp2",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_internal_proto_library(
     name = "hpack_parser_fuzzer_proto",

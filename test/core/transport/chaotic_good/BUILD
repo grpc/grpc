@@ -19,6 +19,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/core/transport/chaotic_good",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "tests",
 )
 

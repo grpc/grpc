@@ -26,6 +26,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "src/proto/grpc/channelz/v2",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "grpc",
 )
 
