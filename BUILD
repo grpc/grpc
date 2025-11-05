@@ -1748,6 +1748,7 @@ grpc_cc_library(
         "//src/core:channel_stack_type",
         "//src/core:compression",
         "//src/core:connectivity_state",
+        "//src/core:experiments",
         "//src/core:grpc_check",
         "//src/core:iomgr_fwd",
         "//src/core:ref_counted",
