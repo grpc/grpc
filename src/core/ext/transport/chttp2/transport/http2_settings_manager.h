@@ -22,15 +22,12 @@
 
 #include <cstdint>
 #include <optional>
-#include <queue>
+#include <vector>
 
 #include "src/core/channelz/property_list.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
-#include "src/core/lib/channel/channel_args.h"
-#include "src/core/util/useful.h"
-#include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_core {
