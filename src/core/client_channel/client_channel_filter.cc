@@ -300,7 +300,7 @@ class DynamicTerminationFilter::CallData final {
                       const grpc_call_final_info* /*final_info*/,
                       grpc_closure* then_schedule_closure) {
     auto* calld = static_cast<CallData*>(elem->call_data);
-    RefCountedPtr<ConnectedSubchannel::Call> subchannel_call;
+    RefCountedPtr<Subchannel::Call> subchannel_call;
     if (GPR_LIKELY(calld->lb_call_ != nullptr)) {
       subchannel_call = calld->lb_call_->subchannel_call();
     }
@@ -505,12 +505,12 @@ class ClientChannelFilter::SubchannelWrapper final
     watcher_map_.erase(it);
   }
 
-  RefCountedPtr<ConnectedSubchannel> connected_subchannel() const {
-    return subchannel_->connected_subchannel();
+  absl::Status Ping(grpc_closure* on_initiate, grpc_closure* on_ack) {
+    return subchannel_->Ping(on_initiate, on_ack);
   }
 
-  absl::StatusOr<RefCountedPtr<ConnectedSubchannel::Call>> CreateCall(
-      ConnectedSubchannel::CreateCallArgs args) {
+  absl::StatusOr<RefCountedPtr<Subchannel::Call>> CreateCall(
+      Subchannel::CreateCallArgs args) {
     return subchannel_->CreateCall(args);
   }
 
@@ -1559,17 +1559,11 @@ grpc_error_handle ClientChannelFilter::DoPingLocked(grpc_transport_op* op) {
       // Complete pick.
       [op](LoadBalancingPolicy::PickResult::Complete* complete_pick)
           ABSL_EXCLUSIVE_LOCKS_REQUIRED(
-              *ClientChannelFilter::work_serializer_) {
-            SubchannelWrapper* subchannel = static_cast<SubchannelWrapper*>(
-                complete_pick->subchannel.get());
-            RefCountedPtr<ConnectedSubchannel> connected_subchannel =
-                subchannel->connected_subchannel();
-            if (connected_subchannel == nullptr) {
-              return GRPC_ERROR_CREATE("LB pick for ping not connected");
-            }
-            connected_subchannel->Ping(op->send_ping.on_initiate,
-                                       op->send_ping.on_ack);
-            return absl::OkStatus();
+              *ClientChannelFilter::work_serializer_) -> grpc_error_handle {
+            SubchannelWrapper* subchannel =
+                DownCast<SubchannelWrapper*>(complete_pick->subchannel.get());
+            return subchannel->Ping(op->send_ping.on_initiate,
+                                    op->send_ping.on_ack);
           },
       // Queue pick.
       [](LoadBalancingPolicy::PickResult::Queue* /*queue_pick*/) {
@@ -2440,7 +2434,7 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
         // holding the data plane mutex.
         SubchannelWrapper* subchannel =
             static_cast<SubchannelWrapper*>(complete_pick->subchannel.get());
-        ConnectedSubchannel::CreateCallArgs call_args = {
+        Subchannel::CreateCallArgs call_args = {
             pollent_, /*start_time=*/0, arena_->GetContext<Call>()->deadline(),
             // TODO(roth): When we implement hedging support, we will probably
             // need to use a separate call arena for each subchannel call.
@@ -2728,6 +2722,9 @@ void ClientChannelFilter::LoadBalancedCall::RetryPickLocked() {
 }
 
 void ClientChannelFilter::LoadBalancedCall::StartSubchannelCall() {
+  GRPC_TRACE_LOG(client_channel_lb_call, INFO)
+      << "chand=" << chand_ << " lb_call=" << this
+      << ": starting subchannel_call=" << subchannel_call_.get();
   if (on_call_destruction_complete_ != nullptr) {
     subchannel_call_->SetAfterCallStackDestroy(on_call_destruction_complete_);
     on_call_destruction_complete_ = nullptr;

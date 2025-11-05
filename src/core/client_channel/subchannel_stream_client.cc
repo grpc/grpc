@@ -49,15 +49,13 @@ using ::grpc_event_engine::experimental::EventEngine;
 //
 
 SubchannelStreamClient::SubchannelStreamClient(
-    RefCountedPtr<ConnectedSubchannel> connected_subchannel,
-    grpc_pollset_set* interested_parties,
+    WeakRefCountedPtr<Subchannel> subchannel,
     std::unique_ptr<CallEventHandler> event_handler, const char* tracer)
     : InternallyRefCounted<SubchannelStreamClient>(tracer),
-      connected_subchannel_(std::move(connected_subchannel)),
-      interested_parties_(interested_parties),
+      subchannel_(std::move(subchannel)),
       tracer_(tracer),
       call_allocator_(MakeRefCounted<CallArenaAllocator>(
-          connected_subchannel_->args()
+          subchannel_->args()
               .GetObject<ResourceQuota>()
               ->memory_quota()
               ->CreateMemoryAllocator(
@@ -72,7 +70,7 @@ SubchannelStreamClient::SubchannelStreamClient(
               .set_jitter(SUBCHANNEL_STREAM_RECONNECT_JITTER)
               .set_max_backoff(Duration::Seconds(
                   SUBCHANNEL_STREAM_RECONNECT_MAX_BACKOFF_SECONDS))),
-      event_engine_(connected_subchannel_->args().GetObject<EventEngine>()) {
+      event_engine_(subchannel_->args().GetObject<EventEngine>()) {
   if (GPR_UNLIKELY(tracer_ != nullptr)) {
     LOG(INFO) << tracer_ << " " << this << ": created SubchannelStreamClient";
   }
@@ -114,13 +112,18 @@ void SubchannelStreamClient::StartCallLocked() {
   if (event_handler_ != nullptr) {
     event_handler_->OnCallStartLocked(this);
   }
-  call_state_ = MakeOrphanable<CallState>(Ref(), interested_parties_);
+  call_state_ = MakeOrphanable<CallState>(Ref(), subchannel_->pollset_set());
   if (GPR_UNLIKELY(tracer_ != nullptr)) {
     LOG(INFO) << tracer_ << " " << this
               << ": SubchannelStreamClient created CallState "
               << call_state_.get();
   }
-  call_state_->StartCallLocked();
+  absl::Status status = call_state_->StartCallLocked();
+  // If we could not create the call due to the subchannel loosing its
+  // connection, then manually destroy the CallState object, and don't
+  // do any retry.  The caller will recreate the SubchannelStreamClient
+  // when the connection is reestablished.
+  if (!status.ok()) delete call_state_.release();
 }
 
 void SubchannelStreamClient::StartRetryTimerLocked() {
@@ -188,31 +191,31 @@ void SubchannelStreamClient::CallState::Orphan() {
   Cancel();
 }
 
-void SubchannelStreamClient::CallState::StartCallLocked() {
-  ConnectedSubchannel::CreateCallArgs args = {
+absl::Status SubchannelStreamClient::CallState::StartCallLocked() {
+  Subchannel::CreateCallArgs args = {
       &pollent_,
       gpr_get_cycle_counter(),  // start_time
       Timestamp::InfFuture(),   // deadline
       arena_.get(),
       &call_combiner_,
   };
-  grpc_error_handle error;
-  call_ =
-      subchannel_stream_client_->connected_subchannel_->CreateCall(args, &error)
-          .release();
+  auto call = subchannel_stream_client_->subchannel_->CreateCall(args);
+  // Check if creation failed.
+  if (call.ok() && *call == nullptr) {
+    return absl::UnavailableError("failed to create call on subchannel");
+  }
+  if (!call.ok() || subchannel_stream_client_->event_handler_ == nullptr) {
+    LOG(ERROR) << "SubchannelStreamClient " << subchannel_stream_client_.get()
+               << " CallState " << this << ": error creating "
+               << "stream on subchannel (" << call.status() << "); will retry";
+    CallEndedLocked(/*retry=*/true);
+    return absl::OkStatus();
+  }
+  call_ = call->release();
   // Register after-destruction callback.
   GRPC_CLOSURE_INIT(&after_call_stack_destruction_, AfterCallStackDestruction,
                     this, grpc_schedule_on_exec_ctx);
   call_->SetAfterCallStackDestroy(&after_call_stack_destruction_);
-  // Check if creation failed.
-  if (!error.ok() || subchannel_stream_client_->event_handler_ == nullptr) {
-    LOG(ERROR) << "SubchannelStreamClient " << subchannel_stream_client_.get()
-               << " CallState " << this << ": error creating "
-               << "stream on subchannel (" << StatusToString(error)
-               << "); will retry";
-    CallEndedLocked(/*retry=*/true);
-    return;
-  }
   // Initialize payload and batch.
   batch_.payload = &payload_;
   // on_complete callback takes ref, handled manually.
@@ -223,7 +226,6 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
   send_initial_metadata_.Set(
       HttpPathMetadata(),
       subchannel_stream_client_->event_handler_->GetPathLocked());
-  GRPC_CHECK(error.ok());
   payload_.send_initial_metadata.send_initial_metadata =
       &send_initial_metadata_;
   batch_.send_initial_metadata = true;
@@ -272,13 +274,13 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
   recv_trailing_metadata_batch_.recv_trailing_metadata = true;
   // Start recv_trailing_metadata batch.
   StartBatch(&recv_trailing_metadata_batch_);
+  return absl::OkStatus();
 }
 
 void SubchannelStreamClient::CallState::StartBatchInCallCombiner(
     void* arg, grpc_error_handle /*error*/) {
   auto* batch = static_cast<grpc_transport_stream_op_batch*>(arg);
-  auto* call =
-      static_cast<ConnectedSubchannel::Call*>(batch->handler_private.extra_arg);
+  auto* call = static_cast<Subchannel::Call*>(batch->handler_private.extra_arg);
   call->StartTransportStreamOpBatch(batch);
 }
 
