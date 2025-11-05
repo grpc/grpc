@@ -509,9 +509,9 @@ class ClientChannelFilter::SubchannelWrapper final
     return subchannel_->Ping(on_initiate, on_ack);
   }
 
-  absl::StatusOr<RefCountedPtr<Subchannel::Call>> CreateCall(
-      Subchannel::CreateCallArgs args) {
-    return subchannel_->CreateCall(args);
+  RefCountedPtr<Subchannel::Call> CreateCall(Subchannel::CreateCallArgs args,
+                                             grpc_error_handle* error) {
+    return subchannel_->CreateCall(args, error);
   }
 
   void RequestConnection() override { subchannel_->RequestConnection(); }
@@ -2439,23 +2439,24 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
             // TODO(roth): When we implement hedging support, we will probably
             // need to use a separate call arena for each subchannel call.
             arena_, call_combiner_};
-        auto subchannel_call = subchannel->CreateCall(call_args);
-        if (!subchannel_call.ok()) {
-          *error = subchannel_call.status();
-          return true;
+        subchannel_call_ = subchannel->CreateCall(call_args, error);
+        if (on_call_destruction_complete_ != nullptr) {
+          subchannel_call_->SetAfterCallStackDestroy(
+              on_call_destruction_complete_);
+          on_call_destruction_complete_ = nullptr;
         }
+        if (!error->ok()) return true;
         // If the subchannel has no connected subchannel (e.g., if the
         // subchannel has moved out of state READY but the LB policy hasn't
         // yet seen that change and given us a new picker), then just
         // queue the pick.  We'll try again as soon as we get a new picker.
-        if (*subchannel_call == nullptr) {
+        if (subchannel_call_ == nullptr) {
           GRPC_TRACE_LOG(client_channel_lb_call, INFO)
               << "chand=" << chand_ << " lb_call=" << this
               << ": subchannel returned by LB picker "
                  "has no connected subchannel; queueing pick";
           return false;
         }
-        subchannel_call_ = std::move(*subchannel_call);
         lb_subchannel_call_tracker_ =
             std::move(complete_pick->subchannel_call_tracker);
         if (lb_subchannel_call_tracker_ != nullptr) {
@@ -2725,10 +2726,6 @@ void ClientChannelFilter::LoadBalancedCall::StartSubchannelCall() {
   GRPC_TRACE_LOG(client_channel_lb_call, INFO)
       << "chand=" << chand_ << " lb_call=" << this
       << ": starting subchannel_call=" << subchannel_call_.get();
-  if (on_call_destruction_complete_ != nullptr) {
-    subchannel_call_->SetAfterCallStackDestroy(on_call_destruction_complete_);
-    on_call_destruction_complete_ = nullptr;
-  }
   buffered_call_.Resume([subchannel_call = subchannel_call_](
                             grpc_transport_stream_op_batch* batch) {
     // Note: This will release the call combiner.

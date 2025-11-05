@@ -129,8 +129,8 @@ class Subchannel::ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
       const = 0;
 
   // Methods for legacy stack.
-  virtual absl::StatusOr<RefCountedPtr<Call>> CreateCall(
-      CreateCallArgs args) = 0;
+  virtual RefCountedPtr<Call> CreateCall(CreateCallArgs args,
+                                         grpc_error_handle* error) = 0;
   virtual void Ping(grpc_closure* on_initiate, grpc_closure* on_ack) = 0;
 
   virtual channelz::SubchannelNode* channelz_node() const = 0;
@@ -188,17 +188,15 @@ class Subchannel::LegacyConnectedSubchannel final : public ConnectedSubchannel {
     Crash("call v3 unstarted_call_destination method called in legacy impl");
   }
 
-  absl::StatusOr<RefCountedPtr<Call>> CreateCall(CreateCallArgs args) override {
+  RefCountedPtr<Call> CreateCall(CreateCallArgs args,
+                                 grpc_error_handle* error) override {
     const size_t allocation_size =
         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(SubchannelCall)) +
         channel_stack_->call_stack_size;
     Arena* arena = args.arena;
-    absl::Status error;
-    RefCountedPtr<SubchannelCall> call(
+    return RefCountedPtr<SubchannelCall>(
         new (arena->Alloc(allocation_size)) SubchannelCall(
-            RefAsSubclass<LegacyConnectedSubchannel>(), args, &error));
-    if (!error.ok()) return error;
-    return call;
+            RefAsSubclass<LegacyConnectedSubchannel>(), args, error));
   }
 
   void Ping(grpc_closure* on_initiate, grpc_closure* on_ack) override {
@@ -602,7 +600,7 @@ class Subchannel::NewConnectedSubchannel final : public ConnectedSubchannel {
     return call_destination_;
   }
 
-  absl::StatusOr<RefCountedPtr<Call>> CreateCall(CreateCallArgs) override {
+  RefCountedPtr<Call> CreateCall(CreateCallArgs, grpc_error_handle*) override {
     Crash("legacy CreateCall() called on v3 impl");
   }
 
@@ -1133,14 +1131,14 @@ bool Subchannel::PublishTransportLocked() {
   return true;
 }
 
-absl::StatusOr<RefCountedPtr<Subchannel::Call>> Subchannel::CreateCall(
-    CreateCallArgs args) {
+RefCountedPtr<Subchannel::Call> Subchannel::CreateCall(
+    CreateCallArgs args, grpc_error_handle* error) {
   auto connected_subchannel = GetConnectedSubchannel();
   if (connected_subchannel == nullptr) return nullptr;
   // FIXME: return QueuedCall if we can't find a connection
   // return RefCountedPtr<QueueudCall>(
   //     args.arena->New<QueuedCall>(WeakRef(), args));
-  return connected_subchannel->CreateCall(args);
+  return connected_subchannel->CreateCall(args, error);
 }
 
 RefCountedPtr<UnstartedCallDestination> Subchannel::call_destination() {
