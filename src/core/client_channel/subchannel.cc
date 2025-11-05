@@ -437,7 +437,7 @@ class Subchannel::NewConnectedSubchannel final : public ConnectedSubchannel {
     return call_destination_;
   }
 
-  absl::StatusOr<RefCountedPtr<Call>> CreateCall(CreateCallArgs args) override {
+  absl::StatusOr<RefCountedPtr<Call>> CreateCall(CreateCallArgs) override {
     Crash("legacy CreateCall() called on v3 impl");
   }
 
