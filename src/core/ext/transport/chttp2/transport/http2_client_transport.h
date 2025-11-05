@@ -335,7 +335,7 @@ class Http2ClientTransport final : public ClientTransport,
     if (GPR_UNLIKELY(next_stream_id_ > GetMaxAllowedStreamId())) {
       ReportDisconnection(
           absl::ResourceExhaustedError("Transport Stream IDs exhausted"),
-          {},  // TODO(tjagtap): Report better disconnect info.
+          {},  // TODO(tjagtap) : [PH2][P2] : Report better disconnect info.
           "no_more_stream_ids");
     }
     return new_stream_id;

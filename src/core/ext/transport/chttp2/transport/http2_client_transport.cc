@@ -191,13 +191,13 @@ void Http2ClientTransport::StartWatch(RefCountedPtr<StateWatcher> watcher) {
   GRPC_CHECK(watcher_ == nullptr);
   watcher_ = std::move(watcher);
   if (is_transport_closed_) {
-    // TODO(tjagtap): Provide better status message and disconnect
-    // info here.
+    // TODO(tjagtap) : [PH2][P2] : Provide better status message and
+    // disconnect info here.
     NotifyStateWatcherOnDisconnectLocked(
         absl::UnknownError("transport closed before watcher started"), {});
   } else {
-    // TODO(tjagtap): Notify the state watcher of the current value of
-    // the peer's MAX_CONCURRENT_STREAMS setting.
+    // TODO(tjagtap) : [PH2][P2] : Notify the state watcher of the current
+    // value of the peer's MAX_CONCURRENT_STREAMS setting.
   }
 }
 
@@ -1523,7 +1523,7 @@ void Http2ClientTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list =
       std::move(stream_list_);
   stream_list_.clear();
-  // TODO(tjagtap): Provide better disconnect info here.
+  // TODO(tjagtap) : [PH2][P2] : Provide better disconnect info here.
   ReportDisconnectionLocked(http2_status.GetAbslConnectionError(), {},
                             "transport closed");
   lock.Release();
