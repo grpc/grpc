@@ -19,20 +19,35 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_STREAM_DATA_QUEUE_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_STREAM_DATA_QUEUE_H
 
+#include <grpc/support/port_platform.h>
+
 #include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <limits>
 #include <optional>
 #include <queue>
+#include <string>
+#include <utility>
 #include <variant>
 #include <vector>
 
 #include "src/core/call/message.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/sync.h"
 #include "absl/log/log.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -820,7 +835,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
                           << static_cast<uint8_t>(reset_stream_state_);
     }
 
-    GPR_UNREACHABLE_CODE("Invalid reset stream state");
+    GPR_UNREACHABLE_CODE(return false);
   }
 
   uint32_t stream_id_;

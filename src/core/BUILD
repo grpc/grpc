@@ -8317,9 +8317,12 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log",
+        "absl/status",
     ],
     deps = [
+        "activity",
         "arena",
+        "context",
         "grpc_check",
         "header_assembler",
         "http2_status",
@@ -8327,8 +8330,14 @@ grpc_cc_library(
         "message_assembler",
         "metadata_batch",
         "poll",
+        "ref_counted",
+        "sync",
         "transport_common",
+        ":slice_buffer",
         "//:chttp2_frame",
+        "//:gpr_platform",
+        "//:hpack_encoder",
+        "//:ref_counted_ptr",
     ],
 )
 
@@ -8342,8 +8351,16 @@ grpc_cc_library(
     ],
     deps = [
         "call_spine",
+        "grpc_check",
+        "header_assembler",
+        "message",
+        "message_assembler",
+        "metadata",
+        "ref_counted",
         "stream_data_queue",
         ":chttp2_flow_control",
+        "//:gpr_platform",
+        "//:hpack_encoder",
         "//:ref_counted_ptr",
     ],
 )
