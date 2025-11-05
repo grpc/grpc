@@ -50,18 +50,24 @@ for pattern in SLEUTH_HDR_PATTERNS:
 class custom_build_ext(build_ext):
     def run(self):
         # Discover the compiler.
-        compiler_path = shutil.which('gcc') or shutil.which('clang') or shutil.which('cc')
+        compiler_path = (
+            shutil.which("gcc") or shutil.which("clang") or shutil.which("cc")
+        )
         bazel_env = os.environ.copy()
         if compiler_path:
             print(f"Setting CC={compiler_path} for Bazel build")
-            bazel_env['CC'] = compiler_path
+            bazel_env["CC"] = compiler_path
         else:
-            print("Warning: Could not find C compiler (gcc, clang, or cc) in PATH for Bazel")
+            print(
+                "Warning: Could not find C compiler (gcc, clang, or cc) in PATH for Bazel"
+            )
 
         # Run the bazel build command
         bazel_cmd = [_BAZEL_PATH, "build", "//test/cpp/sleuth:sleuth.so"]
         print(f"Running command: {' '.join(bazel_cmd)}")
-        result = subprocess.run(bazel_cmd, cwd=GRPC_ROOT, check=False, env=bazel_env)
+        result = subprocess.run(
+            bazel_cmd, cwd=GRPC_ROOT, check=False, env=bazel_env
+        )
         if result.returncode != 0:
             print("Bazel build failed!")
             sys.exit(result.returncode)
