@@ -14,6 +14,7 @@
 """Generates and compiles C++ grpc stubs from proto_library rules."""
 
 load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("//bazel:generate_cc.bzl", "generate_cc")
 load("//bazel:protobuf.bzl", "well_known_proto_libs")
@@ -111,8 +112,7 @@ def cc_grpc_library(
             allow_deprecated = allow_deprecated,
             **kwargs
         )
-
-        native.cc_library(
+        cc_library(
             name = name,
             srcs = [":" + codegen_grpc_target],
             hdrs = [":" + codegen_grpc_target],
