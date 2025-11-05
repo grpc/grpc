@@ -192,7 +192,7 @@ class ClientAsyncReaderFactory {
     grpc::internal::Call call = channel->CreateCall(method, context, cq);
     return new (
         grpc_call_arena_alloc(call.call(), sizeof(ClientAsyncReader<R>)))
-        ClientAsyncReader<R>(call, context, request, start, tag);
+        ClientAsyncReader<R>(channel, call, context, request, start, tag);
   }
 };
 }  // namespace internal
@@ -266,11 +266,13 @@ class ClientAsyncReader final : public ClientAsyncReaderInterface<R> {
  private:
   friend class internal::ClientAsyncReaderFactory<R>;
   template <class W>
-  ClientAsyncReader(grpc::internal::Call call, grpc::ClientContext* context,
-                    const W& request, bool start, void* tag)
-      : context_(context), call_(call), started_(start) {
+  ClientAsyncReader(grpc::ChannelInterface* channel, grpc::internal::Call call,
+                    grpc::ClientContext* context, const W& request, bool start,
+                    void* tag)
+      : channel_(channel), context_(context), call_(call), started_(start) {
     // TODO(ctiller): don't assert
-    ABSL_CHECK(init_ops_.SendMessage(request, /*allocator=*/nullptr).ok());
+    ABSL_CHECK(
+        init_ops_.SendMessage(request, channel_->memory_allocator()).ok());
     init_ops_.ClientSendClose();
     if (start) {
       StartCallInternal(tag);
@@ -286,6 +288,7 @@ class ClientAsyncReader final : public ClientAsyncReaderInterface<R> {
     call_.PerformOps(&init_ops_);
   }
 
+  grpc::ChannelInterface* channel_;
   grpc::ClientContext* context_;
   grpc::internal::Call call_;
   bool started_;
@@ -340,7 +343,7 @@ class ClientAsyncWriterFactory {
     grpc::internal::Call call = channel->CreateCall(method, context, cq);
     return new (
         grpc_call_arena_alloc(call.call(), sizeof(ClientAsyncWriter<W>)))
-        ClientAsyncWriter<W>(call, context, response, start, tag);
+        ClientAsyncWriter<W>(channel, call, context, response, start, tag);
   }
 };
 }  // namespace internal
@@ -389,7 +392,7 @@ class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
     ABSL_CHECK(started_);
     write_ops_.set_output_tag(tag);
     // TODO(ctiller): don't assert
-    ABSL_CHECK(write_ops_.SendMessage(msg, /*allocator=*/nullptr).ok());
+    ABSL_CHECK(write_ops_.SendMessage(msg, channel_->memory_allocator()).ok());
     call_.PerformOps(&write_ops_);
   }
 
@@ -403,7 +406,8 @@ class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
 
     // TODO(ctiller): don't assert
     ABSL_CHECK(
-        write_ops_.SendMessage(msg, options, /*allocator=*/nullptr).ok());
+        write_ops_.SendMessage(msg, options, channel_->memory_allocator())
+            .ok());
     call_.PerformOps(&write_ops_);
   }
 
@@ -434,9 +438,10 @@ class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
  private:
   friend class internal::ClientAsyncWriterFactory<W>;
   template <class R>
-  ClientAsyncWriter(grpc::internal::Call call, grpc::ClientContext* context,
-                    R* response, bool start, void* tag)
-      : context_(context), call_(call), started_(start) {
+  ClientAsyncWriter(grpc::ChannelInterface* channel, grpc::internal::Call call,
+                    grpc::ClientContext* context, R* response, bool start,
+                    void* tag)
+      : channel_(channel), context_(context), call_(call), started_(start) {
     finish_ops_.RecvMessage(response);
     finish_ops_.AllowNoMessage();
     if (start) {
@@ -457,6 +462,7 @@ class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
     }
   }
 
+  grpc::ChannelInterface* channel_;
   grpc::ClientContext* context_;
   grpc::internal::Call call_;
   bool started_;
@@ -507,7 +513,7 @@ class ClientAsyncReaderWriterFactory {
 
     return new (grpc_call_arena_alloc(call.call(),
                                       sizeof(ClientAsyncReaderWriter<W, R>)))
-        ClientAsyncReaderWriter<W, R>(call, context, start, tag);
+        ClientAsyncReaderWriter<W, R>(channel, call, context, start, tag);
   }
 };
 }  // namespace internal
@@ -568,7 +574,7 @@ class ClientAsyncReaderWriter final
     ABSL_CHECK(started_);
     write_ops_.set_output_tag(tag);
     // TODO(ctiller): don't assert
-    ABSL_CHECK(write_ops_.SendMessage(msg, /*allocator=*/nullptr).ok());
+    ABSL_CHECK(write_ops_.SendMessage(msg, channel_->memory_allocator()).ok());
     call_.PerformOps(&write_ops_);
   }
 
@@ -581,7 +587,8 @@ class ClientAsyncReaderWriter final
     }
     // TODO(ctiller): don't assert
     ABSL_CHECK(
-        write_ops_.SendMessage(msg, options, /*allocator=*/nullptr).ok());
+        write_ops_.SendMessage(msg, options, channel_->memory_allocator())
+            .ok());
     call_.PerformOps(&write_ops_);
   }
 
@@ -608,9 +615,10 @@ class ClientAsyncReaderWriter final
 
  private:
   friend class internal::ClientAsyncReaderWriterFactory<W, R>;
-  ClientAsyncReaderWriter(grpc::internal::Call call,
+  ClientAsyncReaderWriter(grpc::ChannelInterface* channel,
+                          grpc::internal::Call call,
                           grpc::ClientContext* context, bool start, void* tag)
-      : context_(context), call_(call), started_(start) {
+      : channel_(channel), context_(context), call_(call), started_(start) {
     if (start) {
       StartCallInternal(tag);
     } else {
@@ -629,6 +637,7 @@ class ClientAsyncReaderWriter final
     }
   }
 
+  grpc::ChannelInterface* channel_;
   grpc::ClientContext* context_;
   grpc::internal::Call call_;
   bool started_;

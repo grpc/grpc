@@ -18,6 +18,7 @@
 #define GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_H
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/compression_types.h>
 #include <grpc/support/port_platform.h>
@@ -31,6 +32,7 @@
 #include "src/core/call/call_destination.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -130,6 +132,13 @@ class Channel : public UnstartedCallDestination,
     return call_arena_allocator_.get();
   }
 
+  grpc_event_engine::experimental::MemoryAllocator* memory_allocator() const {
+    if (IsTrackWritesInResourceQuotaEnabled()) {
+      return memory_allocator_;
+    }
+    return nullptr;
+  }
+
  protected:
   Channel(std::string target, const ChannelArgs& channel_args);
 
@@ -145,6 +154,7 @@ class Channel : public UnstartedCallDestination,
   std::map<std::pair<std::string, std::string>, RegisteredCall>
       registration_table_ ABSL_GUARDED_BY(mu_);
   const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
+  grpc_event_engine::experimental::MemoryAllocator* memory_allocator_ = nullptr;
 };
 
 }  // namespace grpc_core

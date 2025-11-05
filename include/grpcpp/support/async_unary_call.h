@@ -99,9 +99,10 @@ class ClientAsyncResponseReaderHelper {
     ClientAsyncResponseReader<R>* result = new (grpc_call_arena_alloc(
         call.call(), sizeof(ClientAsyncResponseReader<R>)))
         ClientAsyncResponseReader<R>(call, context);
-    SetupRequest<BaseR, BaseW>(
-        call.call(), &result->single_buf_, &result->read_initial_metadata_,
-        &result->finish_, static_cast<const BaseW&>(request));
+    SetupRequest<BaseR, BaseW>(channel, call.call(), &result->single_buf_,
+                               &result->read_initial_metadata_,
+                               &result->finish_,
+                               static_cast<const BaseW&>(request));
 
     return result;
   }
@@ -110,7 +111,7 @@ class ClientAsyncResponseReaderHelper {
 
   template <class R, class W>
   static void SetupRequest(
-      grpc_call* call,
+      grpc::ChannelInterface* channel, grpc_call* call,
       grpc::internal::CallOpSendInitialMetadata** single_buf_ptr,
       std::function<void(ClientContext*, internal::Call*,
                          internal::CallOpSendInitialMetadata*, void*)>*
@@ -132,7 +133,8 @@ class ClientAsyncResponseReaderHelper {
     *single_buf_ptr = single_buf;
 
     // TODO(ctiller): don't assert
-    ABSL_CHECK(single_buf->SendMessage(request, /*allocator=*/nullptr).ok());
+    ABSL_CHECK(
+        single_buf->SendMessage(request, channel->memory_allocator()).ok());
     single_buf->ClientSendClose();
 
     // The purpose of the following functions is to type-erase the actual

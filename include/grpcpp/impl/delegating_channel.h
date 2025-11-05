@@ -38,6 +38,11 @@ class DelegatingChannel : public grpc::ChannelInterface {
     return delegate_channel()->GetState(try_to_connect);
   }
 
+  grpc_event_engine::experimental::MemoryAllocator* memory_allocator()
+      const override {
+    return delegate_channel_->memory_allocator();
+  }
+
   std::shared_ptr<grpc::ChannelInterface> delegate_channel() {
     return delegate_channel_;
   }

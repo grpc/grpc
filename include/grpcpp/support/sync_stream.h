@@ -260,7 +260,7 @@ class ClientReader final : public ClientReaderInterface<R> {
     ops.SendInitialMetadata(&context->send_initial_metadata_,
                             context->initial_metadata_flags());
     // TODO(ctiller): don't assert
-    ABSL_CHECK(ops.SendMessagePtr(&request, /*allocator=*/nullptr).ok());
+    ABSL_CHECK(ops.SendMessagePtr(&request, channel->memory_allocator()).ok());
     ops.ClientSendClose();
     call_.PerformOps(&ops);
     cq_.Pluck(&ops);
@@ -337,7 +337,7 @@ class ClientWriter : public ClientWriterInterface<W> {
                               context_->initial_metadata_flags());
       context_->set_initial_metadata_corked(false);
     }
-    if (!ops.SendMessagePtr(&msg, options, /*allocator=*/nullptr).ok()) {
+    if (!ops.SendMessagePtr(&msg, options, channel_->memory_allocator()).ok()) {
       return false;
     }
 
@@ -381,7 +381,8 @@ class ClientWriter : public ClientWriterInterface<W> {
   ClientWriter(grpc::ChannelInterface* channel,
                const grpc::internal::RpcMethod& method,
                grpc::ClientContext* context, R* response)
-      : context_(context),
+      : channel_(channel),
+        context_(context),
         cq_(grpc_completion_queue_attributes{
             GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
             nullptr}),  // Pluckable cq
@@ -398,6 +399,7 @@ class ClientWriter : public ClientWriterInterface<W> {
     }
   }
 
+  grpc::ChannelInterface* channel_;
   grpc::ClientContext* context_;
   grpc::internal::CallOpSet<grpc::internal::CallOpRecvInitialMetadata,
                             grpc::internal::CallOpGenericRecvMessage,
@@ -507,7 +509,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
                               context_->initial_metadata_flags());
       context_->set_initial_metadata_corked(false);
     }
-    if (!ops.SendMessagePtr(&msg, options, /*allocator=*/nullptr).ok()) {
+    if (!ops.SendMessagePtr(&msg, options, channel_->memory_allocator()).ok()) {
       return false;
     }
 
@@ -544,6 +546,7 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
  private:
   friend class internal::ClientReaderWriterFactory<W, R>;
 
+  grpc::ChannelInterface* channel_;
   grpc::ClientContext* context_;
   grpc::CompletionQueue cq_;
   grpc::internal::Call call_;
@@ -554,7 +557,8 @@ class ClientReaderWriter final : public ClientReaderWriterInterface<W, R> {
   ClientReaderWriter(grpc::ChannelInterface* channel,
                      const grpc::internal::RpcMethod& method,
                      grpc::ClientContext* context)
-      : context_(context),
+      : channel_(channel),
+        context_(context),
         cq_(grpc_completion_queue_attributes{
             GRPC_CQ_CURRENT_VERSION, GRPC_CQ_PLUCK, GRPC_CQ_DEFAULT_POLLING,
             nullptr}),  // Pluckable cq
