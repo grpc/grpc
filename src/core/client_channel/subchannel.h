@@ -184,7 +184,7 @@ class Subchannel final : public DualRefCounted<Subchannel> {
     Arena* arena;
     CallCombiner* call_combiner;
   };
-  absl::StatusOr<RefCountedPtr<Call>> CreateCall(CreateCallArgs args);
+  RefCountedPtr<Call> CreateCall(CreateCallArgs args, grpc_error_handle* error);
 
   RefCountedPtr<UnstartedCallDestination> call_destination();
 

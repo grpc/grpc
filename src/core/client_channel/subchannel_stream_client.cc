@@ -199,19 +199,20 @@ absl::Status SubchannelStreamClient::CallState::StartCallLocked() {
       arena_.get(),
       &call_combiner_,
   };
-  auto call = subchannel_stream_client_->subchannel_->CreateCall(args);
+  grpc_error_handle error;
+  call_ = subchannel_stream_client_->subchannel_->CreateCall(args, &error)
+              .release();
   // Check if creation failed.
-  if (call.ok() && *call == nullptr) {
+  if (call_ == nullptr) {
     return absl::UnavailableError("failed to create call on subchannel");
   }
-  if (!call.ok() || subchannel_stream_client_->event_handler_ == nullptr) {
+  if (!error.ok() || subchannel_stream_client_->event_handler_ == nullptr) {
     LOG(ERROR) << "SubchannelStreamClient " << subchannel_stream_client_.get()
                << " CallState " << this << ": error creating "
-               << "stream on subchannel (" << call.status() << "); will retry";
+               << "stream on subchannel (" << error << "); will retry";
     CallEndedLocked(/*retry=*/true);
     return absl::OkStatus();
   }
-  call_ = call->release();
   // Register after-destruction callback.
   GRPC_CLOSURE_INIT(&after_call_stack_destruction_, AfterCallStackDestruction,
                     this, grpc_schedule_on_exec_ctx);
