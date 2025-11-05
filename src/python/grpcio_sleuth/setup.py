@@ -17,6 +17,7 @@ import os
 import shutil
 import subprocess
 import sys
+import sysconfig
 
 # Manually insert the source directory into the Python path for local module
 # imports to succeed
@@ -48,10 +49,22 @@ for pattern in SLEUTH_HDR_PATTERNS:
 
 class custom_build_ext(build_ext):
     def run(self):
+        # Discover the compiler.
+        compiler = sysconfig.get_config_var('CC')
+        if not compiler or compiler == 'gcc':
+             compiler = shutil.which('gcc') or shutil.which('clang') or shutil.which('cc')
+
+        bazel_env = os.environ.copy()
+        if compiler:
+            print(f"Setting CC={compiler} for Bazel build")
+            bazel_env['CC'] = compiler
+        else:
+            print("Warning: Could not find C compiler for Bazel")
+
         # Run the bazel build command
         bazel_cmd = [_BAZEL_PATH, "build", "//test/cpp/sleuth:sleuth.so"]
         print(f"Running command: {' '.join(bazel_cmd)}")
-        result = subprocess.run(bazel_cmd, cwd=GRPC_ROOT, check=False)
+        result = subprocess.run(bazel_cmd, cwd=GRPC_ROOT, check=False, env=bazel_env)
         if result.returncode != 0:
             print("Bazel build failed!")
             sys.exit(result.returncode)
