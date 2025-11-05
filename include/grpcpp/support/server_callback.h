@@ -49,6 +49,8 @@ class CallbackServerStreamingHandler;
 template <class Request, class Response>
 class CallbackBidiHandler;
 
+bool ReturnPreexistingErrors();
+
 class ServerReactor {
  public:
   virtual ~ServerReactor() = default;
