@@ -154,7 +154,7 @@ class DefaultSslRootStore {
 };
 
 using PrivateKey =
-    std::variant<absl::string_view, std::unique_ptr<CustomPrivateKeySign>>;
+    std::variant<absl::string_view, std::shared_ptr<CustomPrivateKeySign>>;
 
 class PemKeyCertPair {
  public:
@@ -163,7 +163,7 @@ class PemKeyCertPair {
     if (const auto* key_view = std::get_if<absl::string_view>(&private_key)) {
       private_key_ = std::string(*key_view);
     } else if (auto* key_sign_ptr =
-                   std::get_if<std::unique_ptr<CustomPrivateKeySign>>(
+                   std::get_if<std::shared_ptr<CustomPrivateKeySign>>(
                        &private_key)) {
       private_key_sign_ = std::move(*key_sign_ptr);
     }
@@ -176,10 +176,12 @@ class PemKeyCertPair {
   PemKeyCertPair(PemKeyCertPair&& other) noexcept {
     private_key_ = std::move(other.private_key_);
     cert_chain_ = std::move(other.cert_chain_);
+    private_key_sign_ = std::move(other.private_key_sign_);
   }
   PemKeyCertPair& operator=(PemKeyCertPair&& other) noexcept {
     private_key_ = std::move(other.private_key_);
     cert_chain_ = std::move(other.cert_chain_);
+    private_key_sign_ = std::move(other.private_key_sign_);
     return *this;
   }
 
@@ -189,17 +191,19 @@ class PemKeyCertPair {
   PemKeyCertPair& operator=(const PemKeyCertPair& other) {
     private_key_ = other.private_key();
     cert_chain_ = other.cert_chain();
+    private_key_sign_ = other.private_key_sign_;
     return *this;
   }
 
   bool operator==(const PemKeyCertPair& other) const {
     return this->private_key() == other.private_key() &&
-           this->cert_chain() == other.cert_chain();
+           this->cert_chain() == other.cert_chain() &&
+           this->private_key_sign() == other.private_key_sign();
   }
 
   const std::string& private_key() const { return private_key_; }
   const std::string& cert_chain() const { return cert_chain_; }
-  const CustomPrivateKeySign* private_key_sign() {
+  const CustomPrivateKeySign* private_key_sign() const {
     return private_key_sign_.get();
   }
 
@@ -208,7 +212,7 @@ class PemKeyCertPair {
   std::string cert_chain_;
   // Asynchronous private key signing function. Mutually exclusive with
   // private_key.
-  std::unique_ptr<CustomPrivateKeySign> private_key_sign_;
+  std::shared_ptr<CustomPrivateKeySign> private_key_sign_;
 };
 
 using PemKeyCertPairList = std::vector<PemKeyCertPair>;
