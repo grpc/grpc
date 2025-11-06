@@ -90,6 +90,8 @@ class SubchannelTest : public YodelTest {
       state_ = state;
     }
 
+    void OnKeepaliveUpdate(Duration) override {}
+
     grpc_pollset_set* interested_parties() override { return nullptr; }
 
     grpc_connectivity_state state() const { return state_; }
