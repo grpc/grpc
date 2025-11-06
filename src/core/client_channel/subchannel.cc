@@ -109,9 +109,11 @@ class StreamCounts final {
   bool SetMaxConcurrentStreams(uint32_t max_concurrent_streams) {
     uint64_t prev_stream_counts =
         stream_counts_.load(std::memory_order_acquire);
+    uint32_t rpcs_in_flight;
     do {
-      const uint32_t rpcs_in_flight = GetRpcsInFlight(prev_stream_counts);
-    } while (!stream_counts_.compare_exchange_weak(                                     prev_stream_counts,
+      rpcs_in_flight = GetRpcsInFlight(prev_stream_counts);
+    } while (!stream_counts_.compare_exchange_weak(
+        prev_stream_counts,
         MakeStreamCounts(max_concurrent_streams, rpcs_in_flight),
         std::memory_order_acq_rel, std::memory_order_acquire));
     return rpcs_in_flight < max_concurrent_streams;
@@ -135,7 +137,8 @@ class StreamCounts final {
   // Returns true if there is quota for another RPC to start on this
   // connection.
   bool FinishRpc() {
-    prev_stream_counts = stream_counts_.fetch_sub(MakeStreamCounts(0, 1));
+    const uint64_t prev_stream_counts =
+        stream_counts_.fetch_sub(MakeStreamCounts(0, 1));
     return GetRpcsInFlight(prev_stream_counts) ==
            GetMaxConcurrentStreams(prev_stream_counts);
   }
@@ -600,16 +603,15 @@ void Subchannel::QueuedCall::ResumeOnConnectionLocked(
   canceller_ = nullptr;
   queue_entry_.reset();
   MutexLock lock(&mu_);
-  auto subchannel_call = connected_subchannel->CreateCall(args_);
-  if (!subchannel_call.ok()) {
-    buffered_call_.Fail(subchannel_call.status(),
-                        BufferedCall::YieldCallCombiner);
+  grpc_error_handle error;
+  subchannel_call_ = connected_subchannel->CreateCall(args_, &error);
+  if (after_call_stack_destroy_ != nullptr) {
+    subchannel_call_->SetAfterCallStackDestroy(after_call_stack_destroy_);
+    after_call_stack_destroy_ = nullptr;
+  }
+  if (!error.ok()) {
+    buffered_call_.Fail(error, BufferedCall::YieldCallCombiner);
   } else {
-    subchannel_call_ = std::move(*subchannel_call);
-    if (after_call_stack_destroy_ != nullptr) {
-      subchannel_call_->SetAfterCallStackDestroy(after_call_stack_destroy_);
-      after_call_stack_destroy_ = nullptr;
-    }
     buffered_call_.Resume([subchannel_call = subchannel_call_](
                               grpc_transport_stream_op_batch* batch) {
       // This will release the call combiner.
@@ -749,6 +751,74 @@ class Subchannel::ConnectedSubchannelStateWatcher final
 };
 
 //
+// Subchannel::ConnectionStateWatcher
+//
+
+class Subchannel::ConnectionStateWatcher final
+    : public Transport::StateWatcher {
+ public:
+  explicit ConnectionStateWatcher(WeakRefCountedPtr<Subchannel> subchannel)
+      : subchannel_(std::move(subchannel)) {}
+
+  ~ConnectionStateWatcher() override {
+    subchannel_.reset(DEBUG_LOCATION, "state_watcher");
+  }
+
+  void OnDisconnect(absl::Status status,
+                    DisconnectInfo disconnect_info) override {
+    MutexLock lock(&subchannel_->mu_);
+    // Handle keepalive update.
+    if (disconnect_info.keepalive_time.has_value()) {
+      subchannel_->ThrottleKeepaliveTimeLocked(*disconnect_info.keepalive_time);
+      subchannel_->watcher_list_.NotifyOnKeepaliveUpdateLocked(
+          *disconnect_info.keepalive_time);
+    }
+    // We shouldn't ever see OnDisconnect() more than once for a given
+    // connection, but we'll be defensive just in case: if the connected
+    // subchannel has already been cleared, then this becomes a no-op.
+    RefCountedPtr<ConnectedSubchannel> connected_subchannel =
+        std::move(subchannel_->connected_subchannel_);
+    if (connected_subchannel == nullptr) return;
+    GRPC_TRACE_LOG(subchannel, INFO)
+        << "subchannel " << subchannel_.get() << " "
+        << subchannel_->key_.ToString() << ": connected subchannel "
+        << connected_subchannel.get() << " reports disconnection: " << status;
+    if (subchannel_->channelz_node() != nullptr) {
+      if (connected_subchannel->channelz_node() != nullptr) {
+        connected_subchannel->channelz_node()->RemoveParent(
+            subchannel_->channelz_node());
+      }
+    }
+    // If the subchannel was created from an endpoint, then we report
+    // TRANSIENT_FAILURE here instead of IDLE. The subchannel will never
+    // leave TRANSIENT_FAILURE state, because there is no way for us to
+    // establish a new connection.  Otherwise, we report IDLE here.
+    if (subchannel_->created_from_endpoint_) {
+      subchannel_->SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                              status);
+    } else {
+      subchannel_->SetConnectivityStateLocked(GRPC_CHANNEL_IDLE,
+                                              absl::OkStatus());
+    }
+    subchannel_->backoff_.Reset();
+  }
+
+  void OnPeerMaxConcurrentStreamsUpdate(
+      uint32_t /*max_concurrent_streams*/,
+      std::unique_ptr<MaxConcurrentStreamsUpdateDoneHandle> /*on_done*/)
+      override {
+    // TODO(roth): Implement this as part of adding connection scaling.
+  }
+
+  grpc_pollset_set* interested_parties() const override {
+    return subchannel_->pollset_set_;
+  }
+
+ private:
+  WeakRefCountedPtr<Subchannel> subchannel_;
+};
+
+//
 // Subchannel::ConnectivityStateWatcherList
 //
 
@@ -767,6 +837,15 @@ void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
   for (const auto& watcher : watchers_) {
     subchannel_->work_serializer_.Run([watcher, state, status]() {
       watcher->OnConnectivityStateChange(state, status);
+    });
+  }
+}
+
+void Subchannel::ConnectivityStateWatcherList::NotifyOnKeepaliveUpdateLocked(
+    Duration new_keepalive_time) {
+  for (const auto& watcher : watchers_) {
+    subchannel_->work_serializer_.Run([watcher, new_keepalive_time]() {
+      watcher->OnKeepaliveUpdate(new_keepalive_time);
     });
   }
 }
@@ -907,15 +986,19 @@ RefCountedPtr<Subchannel> Subchannel::Create(
   return registered;
 }
 
-void Subchannel::ThrottleKeepaliveTime(int new_keepalive_time) {
+void Subchannel::ThrottleKeepaliveTime(Duration new_keepalive_time) {
   MutexLock lock(&mu_);
+  ThrottleKeepaliveTimeLocked(new_keepalive_time);
+}
+
+void Subchannel::ThrottleKeepaliveTimeLocked(Duration new_keepalive_time) {
   // Only update the value if the new keepalive time is larger.
   if (new_keepalive_time > keepalive_time_) {
     keepalive_time_ = new_keepalive_time;
     GRPC_TRACE_LOG(subchannel, INFO)
         << "subchannel " << this << " " << key_.ToString()
         << ": throttling keepalive time to " << new_keepalive_time;
-    args_ = args_.Set(GRPC_ARG_KEEPALIVE_TIME_MS, new_keepalive_time);
+    args_ = args_.Set(GRPC_ARG_KEEPALIVE_TIME_MS, new_keepalive_time.millis());
   }
 }
 
@@ -1118,6 +1201,11 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
 
 bool Subchannel::PublishTransportLocked() {
   auto socket_node = connecting_result_.transport->GetSocketNode();
+  if (IsTransportStateWatcherEnabled()) {
+    connecting_result_.transport->StartWatch(
+        MakeRefCounted<ConnectionStateWatcher>(
+            WeakRef(DEBUG_LOCATION, "state_watcher")));
+  }
   if (connecting_result_.transport->filter_stack_transport() != nullptr) {
     // Construct channel stack.
     // Builder takes ownership of transport.
@@ -1187,10 +1275,11 @@ bool Subchannel::PublishTransportLocked() {
       socket_node->AddParent(channelz_node_.get());
     }
   }
-  // Start watching connected subchannel.
-  connected_subchannel_->StartWatch(
-      pollset_set_, MakeOrphanable<ConnectedSubchannelStateWatcher>(
-                        WeakRef(DEBUG_LOCATION, "state_watcher")));
+  if (!IsTransportStateWatcherEnabled()) {
+    connected_subchannel_->StartWatch(
+        pollset_set_, MakeOrphanable<ConnectedSubchannelStateWatcher>(
+                          WeakRef(DEBUG_LOCATION, "state_watcher")));
+  }
   // Report initial state.
   SetConnectivityStateLocked(GRPC_CHANNEL_READY, absl::Status());
   return true;

@@ -81,6 +81,7 @@ grpc_cc_library(
         "//src/core:event_engine_utils",
         "//src/core:experiments",
         "//src/core:grpc_check",
+        "//src/core:instrument",
         "//src/core:match",
         "//src/core:metadata_batch",
         "//src/core:metrics",

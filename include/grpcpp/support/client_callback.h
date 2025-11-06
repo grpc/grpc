@@ -94,7 +94,7 @@ class CallbackUnaryCallImpl {
         call.call(), std::move(on_completion), ops);
 
     // TODO(vjpai): Unify code with sync API as much as possible
-    grpc::Status s = ops->SendMessagePtr(request);
+    grpc::Status s = ops->SendMessagePtr(request, /*allocator=*/nullptr);
     if (!s.ok()) {
       tag->force_run(s);
       return;
@@ -530,8 +530,9 @@ class ClientCallbackReaderWriterImpl
       options.set_buffer_hint();
       write_ops_.ClientSendClose();
     }
+
     // TODO(vjpai): don't assert
-    ABSL_CHECK(write_ops_.SendMessagePtr(msg, options).ok());
+    ABSL_CHECK(write_ops_.SendMessagePtr(msg, options, nullptr).ok());
     callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
     if (GPR_UNLIKELY(corked_write_needed_)) {
       write_ops_.SendInitialMetadata(&context_->send_initial_metadata_,
@@ -808,7 +809,7 @@ class ClientCallbackReaderImpl : public ClientCallbackReader<Response> {
       : context_(context), call_(call), reactor_(reactor) {
     this->BindReactor(reactor);
     // TODO(vjpai): don't assert
-    ABSL_CHECK(start_ops_.SendMessagePtr(request).ok());
+    ABSL_CHECK(start_ops_.SendMessagePtr(request, /*allocator=*/nullptr).ok());
     start_ops_.ClientSendClose();
   }
 
@@ -932,8 +933,9 @@ class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
       options.set_buffer_hint();
       write_ops_.ClientSendClose();
     }
+
     // TODO(vjpai): don't assert
-    ABSL_CHECK(write_ops_.SendMessagePtr(msg, options).ok());
+    ABSL_CHECK(write_ops_.SendMessagePtr(msg, options, nullptr).ok());
     callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed);
 
     if (GPR_UNLIKELY(corked_write_needed_)) {
@@ -1160,8 +1162,9 @@ class ClientCallbackUnaryImpl final : public ClientCallbackUnary {
                           Response* response, ClientUnaryReactor* reactor)
       : context_(context), call_(call), reactor_(reactor) {
     this->BindReactor(reactor);
+
     // TODO(vjpai): don't assert
-    ABSL_CHECK(start_ops_.SendMessagePtr(request).ok());
+    ABSL_CHECK(start_ops_.SendMessagePtr(request, /*allocator=*/nullptr).ok());
     start_ops_.ClientSendClose();
     finish_ops_.RecvMessage(response);
     finish_ops_.AllowNoMessage();

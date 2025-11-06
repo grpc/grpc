@@ -77,6 +77,8 @@ class OrcaProducer::ConnectivityWatcher final
     producer_->OnConnectivityStateChange(state);
   }
 
+  void OnKeepaliveUpdate(Duration) override {}
+
   grpc_pollset_set* interested_parties() override {
     return interested_parties_;
   }

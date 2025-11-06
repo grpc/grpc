@@ -315,7 +315,7 @@ class ClientChannelFilter final {
   // work_serializer when the SubchannelWrappers are created and destroyed.
   absl::flat_hash_set<SubchannelWrapper*> subchannel_wrappers_
       ABSL_GUARDED_BY(*work_serializer_);
-  int keepalive_time_ ABSL_GUARDED_BY(*work_serializer_) = -1;
+  Duration keepalive_time_ ABSL_GUARDED_BY(*work_serializer_);
   grpc_error_handle disconnect_error_ ABSL_GUARDED_BY(*work_serializer_);
 
   //
