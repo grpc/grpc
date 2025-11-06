@@ -25,13 +25,14 @@
 #include <openssl/x509.h>
 
 #include <string>
+#include <utility>
 
 #include "src/core/tsi/transport_security_interface.h"
 #include "absl/functional/bind_front.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 
-static int g_tls_private_key_offload_ex_index = -1;
+static int g_ssl_ex_private_key_offload_ex_index = -1;
 
 namespace grpc_core {
 // Enum class representing TLS signature algorithm identifiers from BoringSSL.
@@ -47,6 +48,15 @@ enum class SignatureAlgorithm : uint16_t {
   kRsaPssRsaeSha384 = 0x0805,      // SSL_SIGN_RSA_PSS_RSAE_SHA384
   kRsaPssRsaeSha512 = 0x0806,      // SSL_SIGN_RSA_PSS_RSAE_SHA512
 };
+
+static void SetPrivateKeyOffloadIndex(int index) {
+  g_ssl_ex_private_key_offload_ex_index = index;
+  GRPC_CHECK_NE(g_ssl_ex_private_key_offload_ex_index, -1);
+}
+
+static int GetPrivateKeyOffloadIndex() {
+  return g_ssl_ex_private_key_offload_ex_index;
+}
 
 // A user's implementation MUST invoke `done_callback` with the signed bytes.
 // This will let gRPC take control when the async operation is complete. MUST
@@ -100,7 +110,7 @@ static enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
     SSL* ssl, uint8_t* out, size_t* out_len, size_t max_out,
     uint16_t signature_algorithm, const uint8_t* in, size_t in_len) {
   TlsPrivateKeyOffloadContext* ctx = static_cast<TlsPrivateKeyOffloadContext*>(
-      SSL_get_ex_data(ssl, g_tls_private_key_offload_ex_index));
+      SSL_get_ex_data(ssl, g_ssl_ex_private_key_offload_ex_index));
   // Create the completion callback by binding the current context.
   auto done_callback = absl::bind_front(TlsOffloadSignDoneCallback, ctx);
 
@@ -118,7 +128,7 @@ static enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
 static enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(
     SSL* ssl, uint8_t* out, size_t* out_len, size_t max_out) {
   TlsPrivateKeyOffloadContext* ctx = static_cast<TlsPrivateKeyOffloadContext*>(
-      SSL_get_ex_data(ssl, g_tls_private_key_offload_ex_index));
+      SSL_get_ex_data(ssl, g_ssl_ex_private_key_offload_ex_index));
 
   if (!ctx->signed_bytes.ok()) {
     return ssl_private_key_failure;
@@ -134,6 +144,11 @@ static enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(
   // Tell BoringSSL we're done
   return ssl_private_key_success;
 }
+
+static const SSL_PRIVATE_KEY_METHOD TlsOffloadPrivateKeyMethod = {
+    TlsPrivateKeySignWrapper,
+    nullptr,  // decrypt not implemented for this use case
+    TlsPrivateKeyOffloadComplete};
 
 }  // namespace grpc_core
 

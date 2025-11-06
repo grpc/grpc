@@ -288,6 +288,12 @@ static void verified_root_cert_free(void* /*parent*/, void* ptr,
   X509_free(static_cast<X509*>(ptr));
 }
 
+static void private_key_offloading_free(void* /*parent*/, void* ptr,
+                                    CRYPTO_EX_DATA* /*ad*/, int /*index*/,
+                                    long /*argl*/, void* /*argp*/) {
+  X509_free(static_cast<X509*>(ptr));
+}
+
 static void init_openssl(void) {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   OPENSSL_init_ssl(0, nullptr);
@@ -351,6 +357,9 @@ static void init_openssl(void) {
   g_ssl_ex_verified_root_cert_index = SSL_get_ex_new_index(
       0, nullptr, nullptr, nullptr, verified_root_cert_free);
   GRPC_CHECK_NE(g_ssl_ex_verified_root_cert_index, -1);
+
+  grpc_core::SetPrivateKeyOffloadIndex(SSL_get_ex_new_index(
+      0, nullptr, nullptr, nullptr, private_key_offloading_free));
 }
 
 // --- Ssl utils. ---
@@ -2075,6 +2084,15 @@ static tsi_result ssl_handshaker_next(tsi_handshaker* self,
               "SSL Cipher Version: %s Name: %s", SSL_CIPHER_get_version(cipher),
               SSL_CIPHER_get_name(cipher));
         }
+        grpc_core::TlsPrivateKeyOffloadContext private_key_offload_context;
+        // TODO (ansalazar): Pipe Callback.
+        private_key_offload_context.private_key_sign = std::move(callback);
+        private_key_offload_context.handshaker = self;
+
+        SSL_set_ex_data(result->ssl, grpc_core::GetPrivateKeyOffloadIndex(),
+                        &private_key_offload_context);
+        SSL_set_private_key_method(result->ssl,
+                                   &grpc_core::TlsOffloadPrivateKeyMethod);
       }
     }
   }
