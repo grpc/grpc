@@ -2471,7 +2471,8 @@ bool ClientChannelFilter::LoadBalancedCall::PickSubchannelImpl(
             // need to use a separate call arena for each subchannel call.
             arena_, call_combiner_};
         subchannel_call_ = subchannel->CreateCall(call_args, error);
-        if (on_call_destruction_complete_ != nullptr) {
+        if (subchannel_call_ != nullptr &&
+            on_call_destruction_complete_ != nullptr) {
           subchannel_call_->SetAfterCallStackDestroy(
               on_call_destruction_complete_);
           on_call_destruction_complete_ = nullptr;
