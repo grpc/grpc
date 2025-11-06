@@ -490,17 +490,61 @@ int64_t FileWatcherCertificateProvider::TestOnlyGetRefreshIntervalSecond()
 
 InMemoryCertificateProvider::InMemoryCertificateProvider(
     std::string root_certificates, PemKeyCertPairList pem_key_cert_pairs)
-    : root_certificates_(root_certificates),
-      pem_key_cert_pairs_(std::move(pem_key_cert_pairs)) {}
+    : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
+      pem_key_cert_pairs_(std::move(pem_key_cert_pairs)),
+      root_certificates_(root_certificates) {
+  distributor_->SetWatchStatusCallback([this](std::string cert_name,
+                                              bool root_being_watched,
+                                              bool identity_being_watched) {
+    MutexLock lock(&mu_);
+    std::shared_ptr<RootCertInfo> root_cert_info;
+    std::optional<PemKeyCertPairList> pem_key_cert_pairs;
+    InMemoryCertificateProvider::WatcherInfo& info = watcher_info_[cert_name];
+    if (!info.root_being_watched && root_being_watched &&
+        !IsRootCertInfoEmpty(root_cert_info_.get())) {
+      root_cert_info = root_cert_info_;
+    }
+    info.root_being_watched = root_being_watched;
+    if (!info.identity_being_watched && identity_being_watched &&
+        !pem_key_cert_pairs_.empty()) {
+      pem_key_cert_pairs = pem_key_cert_pairs_;
+    }
+    info.identity_being_watched = identity_being_watched;
+    if (!info.root_being_watched && !info.identity_being_watched) {
+      watcher_info_.erase(cert_name);
+    }
+    const bool root_has_update = root_cert_info != nullptr;
+    const bool identity_has_update = pem_key_cert_pairs.has_value();
+    if (root_has_update || identity_has_update) {
+      distributor_->SetKeyMaterials(cert_name, std::move(root_cert_info),
+                                    std::move(pem_key_cert_pairs));
+    }
+    grpc_error_handle root_cert_error;
+    grpc_error_handle identity_cert_error;
+    if (root_being_watched && !root_has_update) {
+      root_cert_error =
+          GRPC_ERROR_CREATE("Unable to get latest root certificates.");
+    }
+    if (identity_being_watched && !identity_has_update) {
+      identity_cert_error =
+          GRPC_ERROR_CREATE("Unable to get latest identity certificates.");
+    }
+    if (!root_cert_error.ok() || !identity_cert_error.ok()) {
+      distributor_->SetErrorForCert(cert_name, root_cert_error,
+                                    identity_cert_error);
+    }
+  });
+}
 
 void InMemoryCertificateProvider::UpdateRoot(std::string root_certificates) {
   MutexLock lock(&mu_);
   root_certificates_ = root_certificates;
 }
 
-void UpdateIdentity(PemKeyCertPairList pem_key_cert_pairs) {
+void InMemoryCertificateProvider::UpdateIdentity(
+    PemKeyCertPairList pem_key_cert_pairs) {
   MutexLock lock(&mu_);
-  pem_key_cert_pairs_.reset(std::move(pem_key_cert_pairs));
+  pem_key_cert_pairs_ = std::move(pem_key_cert_pairs);
 }
 
 }  // namespace grpc_core
