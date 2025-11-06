@@ -24,14 +24,17 @@
 #include <grpc/grpc_security_constants.h>
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
+#include <openssl/x509.h>
 #include <stddef.h>
 
 #include <memory>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "src/core/credentials/transport/security_connector.h"
+#include "src/core/credentials/transport/tls/private_key_offload_util.h"
 #include "src/core/credentials/transport/tls/spiffe_utils.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
@@ -150,8 +153,22 @@ class DefaultSslRootStore {
   static grpc_slice default_pem_root_certs_;
 };
 
+using PrivateKey =
+    std::variant<absl::string_view, std::unique_ptr<CustomPrivateKeySign>>;
+
 class PemKeyCertPair {
  public:
+  PemKeyCertPair(PrivateKey private_key, absl::string_view cert_chain)
+      : cert_chain_(cert_chain) {
+    if (const auto* key_view = std::get_if<absl::string_view>(&private_key)) {
+      private_key_ = std::string(*key_view);
+    } else if (auto* key_sign_ptr =
+                   std::get_if<std::unique_ptr<CustomPrivateKeySign>>(
+                       &private_key)) {
+      private_key_sign_ = std::move(*key_sign_ptr);
+    }
+  }
+
   PemKeyCertPair(absl::string_view private_key, absl::string_view cert_chain)
       : private_key_(private_key), cert_chain_(cert_chain) {}
 
@@ -182,10 +199,16 @@ class PemKeyCertPair {
 
   const std::string& private_key() const { return private_key_; }
   const std::string& cert_chain() const { return cert_chain_; }
+  const CustomPrivateKeySign* private_key_sign() {
+    return private_key_sign_.get();
+  }
 
  private:
   std::string private_key_;
   std::string cert_chain_;
+  // Asynchronous private key signing function. Mutually exclusive with
+  // private_key.
+  std::unique_ptr<CustomPrivateKeySign> private_key_sign_;
 };
 
 using PemKeyCertPairList = std::vector<PemKeyCertPair>;

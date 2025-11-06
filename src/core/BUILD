@@ -10614,6 +10614,25 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "private_key_offload_util",
+    srcs = [],
+    hdrs = [
+        "//src/core:credentials/transport/tls/private_key_offload_util.h",
+    ],
+    external_deps = [
+        "absl/functional:bind_front",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+        "libssl",
+    ],
+    deps = [
+        "ssl_transport_security_utils",
+    ],
+)
+
+grpc_cc_library(
     name = "ztrace_collector",
     hdrs = ["channelz/ztrace_collector.h"],
     defines = select({

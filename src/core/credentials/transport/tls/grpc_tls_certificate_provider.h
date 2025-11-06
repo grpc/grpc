@@ -213,10 +213,15 @@ class FileWatcherCertificateProvider final
 // thread-safe manner.
 class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
  public:
+  InMemoryCertificateProvider(const InMemoryCertificateProvider&) = default;
+  InMemoryCertificateProvider(InMemoryCertificateProvider&&) = default;
+  InMemoryCertificateProvider& operator=(const InMemoryCertificateProvider&) =
+      default;
+  InMemoryCertificateProvider& operator=(InMemoryCertificateProvider&&) =
+      default;
   InMemoryCertificateProvider(std::string root_certificates,
                               PemKeyCertPairList pem_key_cert_pairs);
 
-  // thread safe updates
   void UpdateRoot(std::string root_certificates);
   void UpdateIdentity(PemKeyCertPairList pem_key_cert_pairs);
 
@@ -226,15 +231,14 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
   // The most-recent credential data. It will be empty if the most recent read
   // attempt failed.
   PemKeyCertPairList pem_key_cert_pairs_ ABSL_GUARDED_BY(mu_);
-  std::string root_certificates_;
+  std::string root_certificates_ ABSL_GUARDED_BY(mu_);
+};
 
-}
 //  Checks if the private key matches the certificate's public key.
 //  Returns a not-OK status on failure, or a bool indicating
 //  whether the key/cert pair matches.
-absl::StatusOr<bool>
-PrivateKeyAndCertificateMatch(absl::string_view private_key,
-                              absl::string_view cert_chain);
+absl::StatusOr<bool> PrivateKeyAndCertificateMatch(
+    absl::string_view private_key, absl::string_view cert_chain);
 
 }  // namespace grpc_core
 

@@ -4550,6 +4550,7 @@ grpc_cc_library(
         "//src/core:ref_counted",
         "//src/core:slice",
         "//src/core:spiffe_utils",
+        "//src/core:private_key_offload_util",
         "//src/core:ssl_key_logging",
         "//src/core:ssl_transport_security_utils",
         "//src/core:sync",

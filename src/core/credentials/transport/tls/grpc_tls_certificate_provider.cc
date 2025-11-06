@@ -491,13 +491,15 @@ int64_t FileWatcherCertificateProvider::TestOnlyGetRefreshIntervalSecond()
 InMemoryCertificateProvider::InMemoryCertificateProvider(
     std::string root_certificates, PemKeyCertPairList pem_key_cert_pairs)
     : root_certificates_(root_certificates),
-          pem_key_cert_pairs_(std::move(pem_key_cert_pairs)) { }
+      pem_key_cert_pairs_(std::move(pem_key_cert_pairs)) {}
 
-void InMemoryCertificateProvider::UpdateRoot(std::string root_certificates){
+void InMemoryCertificateProvider::UpdateRoot(std::string root_certificates) {
+  MutexLock lock(&mu_);
   root_certificates_ = root_certificates;
 }
 
-void UpdateIdentity(PemKeyCertPairList pem_key_cert_pairs){
+void UpdateIdentity(PemKeyCertPairList pem_key_cert_pairs) {
+  MutexLock lock(&mu_);
   pem_key_cert_pairs_.reset(std::move(pem_key_cert_pairs));
 }
 

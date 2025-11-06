@@ -974,8 +974,8 @@ GRPCAPI void grpc_tls_credentials_options_set_identity_certificate_provider(
  * The |options| will implicitly take a new ref to the |provider|.
  */
 GRPCAPI void grpc_tls_credentials_options_set_root_certificate_provider(
-    grpc_tls_credentials_options* options, grpc_tls_certificate_provider* provider);
-
+    grpc_tls_credentials_options* options,
+    grpc_tls_certificate_provider* provider);
 /**
  * EXPERIMENTAL API - Subject to change
  *
