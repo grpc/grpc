@@ -23,6 +23,7 @@
 #include <utility>
 
 #include "src/core/load_balancing/lb_policy_registry.h"
+#include "src/core/util/env.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"
@@ -33,6 +34,37 @@
 
 namespace grpc_core {
 namespace internal {
+
+namespace {
+
+bool ConnectionScalingEnabled() {
+  auto value =
+      GetEnv("GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
+
+class ConnectionScalingJsonArgs final : public JsonArgs {
+ public:
+  ConnectionScalingJsonArgs(const ChannelArgs& args) : args_(args) {}
+
+  bool IsEnabled(absl::string_view key) const override {
+    if (key == "connection_scaling") return ConnectionScalingEnabled();
+    return true;
+  }
+
+  uint32_t GetMaxConnectionsPerSubchannelCap() const {
+    return args_.GetInt(GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL_CAP)
+        .value_or(10);
+  }
+
+ private:
+  const ChannelArgs& args_;
+};
+
+}  // namespace
 
 //
 // ClientChannelGlobalParsedConfig::HealthCheckConfig
@@ -46,6 +78,29 @@ ClientChannelGlobalParsedConfig::HealthCheckConfig::JsonLoader(
           .OptionalField("serviceName", &HealthCheckConfig::service_name)
           .Finish();
   return loader;
+}
+
+//
+// ClientChannelGlobalParsedConfig::ConnectionScaling
+//
+
+const JsonLoaderInterface*
+ClientChannelGlobalParsedConfig::ConnectionScaling::JsonLoader(
+    const JsonArgs&) {
+  static const auto* loader =
+      JsonObjectLoader<ConnectionScaling>()
+          .OptionalField("maxConnectionsPerSubchannel",
+                         &ConnectionScaling::max_connections_per_subchannel)
+          .Finish();
+  return loader;
+}
+
+void ClientChannelGlobalParsedConfig::ConnectionScaling::JsonPostLoad(
+    const Json& json, const JsonArgs& args, ValidationErrors*) {
+  const auto& cc_args = DownCast<const ConnectionScalingJsonArgs&>(args);
+  max_connections_per_subchannel =
+      std::min(max_connections_per_subchannel,
+               cc_args.GetMaxConnectionsPerSubchannelCap());
 }
 
 //
@@ -63,6 +118,9 @@ const JsonLoaderInterface* ClientChannelGlobalParsedConfig::JsonLoader(
               &ClientChannelGlobalParsedConfig::parsed_deprecated_lb_policy_)
           .OptionalField("healthCheckConfig",
                          &ClientChannelGlobalParsedConfig::health_check_config_)
+          .OptionalField("connectionScaling",
+                         &ClientChannelGlobalParsedConfig::connection_scaling_,
+                         "connection_scaling")
           .Finish();
   return loader;
 }
@@ -134,18 +192,18 @@ void ClientChannelServiceConfigParser::Register(
 }
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
-ClientChannelServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
+ClientChannelServiceConfigParser::ParseGlobalParams(const ChannelArgs& args,
                                                     const Json& json,
                                                     ValidationErrors* errors) {
   return LoadFromJson<std::unique_ptr<ClientChannelGlobalParsedConfig>>(
-      json, JsonArgs(), errors);
+      json, ConnectionScalingJsonArgs(args), errors);
 }
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
 ClientChannelServiceConfigParser::ParsePerMethodParams(
-    const ChannelArgs& /*args*/, const Json& json, ValidationErrors* errors) {
+    const ChannelArgs& args, const Json& json, ValidationErrors* errors) {
   return LoadFromJson<std::unique_ptr<ClientChannelMethodParsedConfig>>(
-      json, JsonArgs(), errors);
+      json, ConnectionScalingJsonArgs(args), errors);
 }
 
 }  // namespace internal
