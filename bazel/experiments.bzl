@@ -87,6 +87,9 @@ EXPERIMENTS = {
                 "channelz_use_v2_for_v1_api",
                 "channelz_use_v2_for_v1_service",
             ],
+            "chttp2_keepalive_tests": [
+                "transport_state_watcher",
+            ],
             "core_end2end_test": [
                 "chttp2_bound_write_size",
                 "error_flatten",
@@ -186,6 +189,9 @@ EXPERIMENTS = {
                 "channelz_use_v2_for_v1_api",
                 "channelz_use_v2_for_v1_service",
             ],
+            "chttp2_keepalive_tests": [
+                "transport_state_watcher",
+            ],
             "core_end2end_test": [
                 "chttp2_bound_write_size",
                 "error_flatten",
@@ -284,6 +290,9 @@ EXPERIMENTS = {
             "channelz_test": [
                 "channelz_use_v2_for_v1_api",
                 "channelz_use_v2_for_v1_service",
+            ],
+            "chttp2_keepalive_tests": [
+                "transport_state_watcher",
             ],
             "core_end2end_test": [
                 "chttp2_bound_write_size",
