@@ -281,7 +281,9 @@ class Subchannel final : public DualRefCounted<Subchannel> {
 
   RefCountedPtr<ConnectedSubchannel> ChooseConnectionLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  void RetryQueuedRpcs();
+  void RetryQueuedRpcs() ABSL_LOCKS_EXCLUDED(mu_);
+  void RetryQueuedRpcsLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void FailAllQueuedRpcsLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // Updates the subchannel's connectivity state.
   void SetLastFailureLocked(const absl::Status& status)

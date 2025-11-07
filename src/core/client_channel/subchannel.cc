@@ -165,8 +165,7 @@ class Subchannel::ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
     return true;
   }
 
-  // Returns true if there is quota for another RPC to start on this
-  // connection.
+  // Returns true if this RPC finishing brought the connection below quota.
   bool ReturnQuotaForRpc() {
     const uint64_t prev_stream_counts =
         stream_counts_.fetch_sub(MakeStreamCounts(0, 1));
@@ -369,6 +368,11 @@ void Subchannel::LegacyConnectedSubchannel::SubchannelCall::Unref(
 void Subchannel::LegacyConnectedSubchannel::SubchannelCall::Destroy(
     void* arg, grpc_error_handle /*error*/) {
   SubchannelCall* self = static_cast<SubchannelCall*>(arg);
+  // Return the quota for this RPC.  If that brought the connection
+  // below quota, then try to drain the queue.
+  if (self->connected_subchannel_->ReturnQuotaForRpc()) {
+// FIXME: need to call subchannel_->RetryQueuedRpcs() asynchronously
+  }
   // Keep some members before destroying the subchannel call.
   grpc_closure* after_call_stack_destroy = self->after_call_stack_destroy_;
   RefCountedPtr<ConnectedSubchannel> connected_subchannel =
@@ -469,6 +473,9 @@ class Subchannel::QueuedCall final : public Subchannel::Call {
   }
 
   void ResumeOnConnectionLocked(ConnectedSubchannel* connected_subchannel)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Subchannel::mu_);
+
+  void Fail(absl::Status status)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Subchannel::mu_);
 
  private:
@@ -597,14 +604,24 @@ void Subchannel::QueuedCall::ResumeOnConnectionLocked(
     after_call_stack_destroy_ = nullptr;
   }
   if (!error.ok()) {
-    buffered_call_.Fail(error, BufferedCall::YieldCallCombiner);
+    buffered_call_.Fail(
+        error, BufferedCall::YieldCallCombinerIfPendingBatchesFound);
   } else {
+// FIXME: yield call combiner only if pending batches are found?
     buffered_call_.Resume([subchannel_call = subchannel_call_](
                               grpc_transport_stream_op_batch* batch) {
       // This will release the call combiner.
       subchannel_call->StartTransportStreamOpBatch(batch);
     });
   }
+}
+
+void Subchannel::QueuedCall::Fail(absl::Status status) {
+  canceller_ = nullptr;
+  queue_entry_ = nullptr;
+  MutexLock lock(&mu_);
+  buffered_call_.Fail(
+      status, BufferedCall::YieldCallCombinerIfPendingBatchesFound);
 }
 
 //
@@ -771,8 +788,16 @@ class Subchannel::ConnectionStateWatcher final
             subchannel_->channelz_node());
       }
     }
-    // If the connectivity state has changed, report the change.
-    subchannel_->MaybeUpdateConnectivityStateLocked();
+    // If this was the last connection, then fail all queued RPCs and
+    // update the connectivity state.
+    if (subchannel_->connections_.empty()) {
+      subchannel_->FailAllQueuedRpcsLocked();
+      subchannel_->MaybeUpdateConnectivityStateLocked();
+    } else {
+      // Otherwise, retry queued RPCs, which may trigger a new
+      // connection attempt.
+      subchannel_->RetryQueuedRpcsLocked();
+    }
     // Reset backoff.
     subchannel_->backoff_.Reset();
   }
@@ -1016,6 +1041,9 @@ void Subchannel::WatchConnectivityState(
       },
       DEBUG_LOCATION);
   watcher_list_.AddWatcherLocked(std::move(watcher));
+  // The max_connections_per_subchannel setting may have changed, so
+  // this may trigger another connection attempt.
+  RetryQueuedRpcsLocked();
 }
 
 void Subchannel::CancelConnectivityStateWatch(
@@ -1188,6 +1216,7 @@ void Subchannel::OnRetryTimerLocked() {
   GRPC_TRACE_LOG(subchannel, INFO)
       << "subchannel " << this << " " << key_.ToString()
       << ": backoff delay elapsed";
+  RetryQueuedRpcsLocked();  // May trigger another connection attempt.
   MaybeUpdateConnectivityStateLocked();
 }
 
@@ -1346,7 +1375,7 @@ bool Subchannel::PublishTransportLocked() {
                           connected_subchannel));
   }
   connections_.push_back(std::move(connected_subchannel));
-  // Update connectivity state if needed.
+  RetryQueuedRpcsLocked();
   MaybeUpdateConnectivityStateLocked();
   return true;
 }
@@ -1404,15 +1433,33 @@ Subchannel::ChooseConnectionLocked() {
 
 void Subchannel::RetryQueuedRpcs() {
   MutexLock lock(&mu_);
+  RetryQueuedRpcsLocked();
+}
+
+void Subchannel::RetryQueuedRpcsLocked() {
   while (!queued_calls_.empty()) {
     QueuedCall* queued_call = queued_calls_.front();
     if (queued_call != nullptr) {
       auto connected_subchannel = ChooseConnectionLocked();
+      // If we don't have a connection to dispatch this RPC on, then
+      // we've drained as much from the queue as we can, so stop here.
       if (connected_subchannel == nullptr) return;
       queued_call->ResumeOnConnectionLocked(connected_subchannel.get());
     }
     queued_calls_.pop_front();
   }
+}
+
+void Subchannel::FailAllQueuedRpcsLocked() {
+// FIXME: need to indicate somehow that this is eligible for transparent retries
+// (maybe handle this by modifying the recv_trailing_metadata batch
+// inside of QueuedCall::Fail()?)
+  absl::Status status =
+      absl::UnavailableError("subchannel lost all connections");
+  for (QueuedCall* queued_call : queued_calls_) {
+    if (queued_call != nullptr) queued_call->Fail(status);
+  }
+  queued_calls_.clear();
 }
 
 void Subchannel::Ping(absl::AnyInvocable<void(absl::Status)>) {
