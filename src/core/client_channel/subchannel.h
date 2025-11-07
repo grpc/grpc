@@ -186,6 +186,7 @@ class Subchannel final : public DualRefCounted<Subchannel> {
   };
   RefCountedPtr<Call> CreateCall(CreateCallArgs args, grpc_error_handle* error);
 
+  // Used for calls in the v3 stack.
   RefCountedPtr<UnstartedCallDestination> call_destination();
 
   // Attempt to connect to the backend.  Has no effect if already connected.
@@ -217,7 +218,9 @@ class Subchannel final : public DualRefCounted<Subchannel> {
     return event_engine_;
   }
 
+  // Ping API for v3 stack.
   void Ping(absl::AnyInvocable<void(absl::Status)> on_ack);
+  // Ping API for v1 stack.
   // TODO(roth): Remove this when v3 migration is done.
   absl::Status Ping(grpc_closure* on_initiate, grpc_closure* on_ack);
 
