@@ -177,7 +177,7 @@ void ChaoticGoodClientTransport::StreamDispatch::OnFrameTransportClosed(
                           absl::UnavailableError("transport closed"),
                           "transport closed");
   if (watcher_ != nullptr) {
-    event_engine_->Run([watcher = watcher_, status]() mutable {
+    event_engine_->Run([watcher = std::move(watcher_), status]() mutable {
       ExecCtx exec_ctx;
       // TODO(ctiller): Provide better disconnect info here.
       watcher->OnDisconnect(std::move(status), {});
