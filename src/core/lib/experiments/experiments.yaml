@@ -207,6 +207,13 @@
   description: Ignore empty resolutions in pick_first
   expiry: 2026/02/02
   owner: ctiller@google.com
+- name: pick_first_ready_to_connecting
+  description:
+    When the subchannel goes from READY to CONNECTING or TRANSIENT_FAILURE,
+    pick_first goes to CONNECTING and starts a new Happy Eyeballs pass.
+  expiry: 2026/02/01
+  owner: roth@google.com
+  test_tags: ["lb_unit_test", "cpp_lb_end2end_test"]
 - name: pipelined_read_secure_endpoint
   description: Enable pipelined reads for EventEngine secure endpoints
   expiry: 2025/10/30
