@@ -74,6 +74,7 @@ struct TlsPrivateKeyOffloadContext {
   // TSI handshake state needed to resume.
   tsi_handshaker* handshaker;
   tsi_handshaker_on_next_done_cb notify_cb;
+  tsi_handshaker_result** handshaker_result;
 
   void* notify_user_data;
 };
@@ -93,7 +94,7 @@ static void TlsOffloadSignDoneCallback(
       const unsigned char* bytes_to_send_ptr =
           reinterpret_cast<const unsigned char*>(bytes_to_send.c_str());
       ctx->notify_cb(TSI_OK, ctx->notify_user_data, bytes_to_send_ptr,
-                     bytes_to_send.length(), /*handshaker_result=*/nullptr);
+                     bytes_to_send.length(), *ctx->handshaker_result);
     }
   } else {
     ctx->signed_bytes = signed_data.status();
@@ -101,7 +102,7 @@ static void TlsOffloadSignDoneCallback(
     // This call is thread-safe as per TSI requirements for the callback.
     if (ctx->notify_cb) {
       ctx->notify_cb(TSI_INTERNAL_ERROR, ctx->notify_user_data, nullptr, 0,
-                     /*handshaker_result=*/nullptr);
+                     *ctx->handshaker_result);
     }
   }
 }

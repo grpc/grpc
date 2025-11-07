@@ -23,6 +23,7 @@
 #include <string.h>
 
 #include <cstdlib>
+#include <utility>
 
 // TODO(jboeuf): refactor inet_ntop into a portability header.
 // Note: for whomever reads this and tries to refactor this, this
@@ -55,6 +56,7 @@
 
 #include "src/core/credentials/transport/tls/grpc_tls_crl_provider.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
+#include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/surface/init.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
@@ -2000,8 +2002,8 @@ static tsi_result ssl_handshaker_next(tsi_handshaker* self,
                                       const unsigned char** bytes_to_send,
                                       size_t* bytes_to_send_size,
                                       tsi_handshaker_result** handshaker_result,
-                                      tsi_handshaker_on_next_done_cb /*cb*/,
-                                      void* /*user_data*/, std::string* error) {
+                                      tsi_handshaker_on_next_done_cb cb,
+                                      void* user_data, std::string* error) {
   // Input sanity check.
   if ((received_bytes_size > 0 && received_bytes == nullptr) ||
       bytes_to_send == nullptr || bytes_to_send_size == nullptr ||
@@ -2085,9 +2087,12 @@ static tsi_result ssl_handshaker_next(tsi_handshaker* self,
               SSL_CIPHER_get_name(cipher));
         }
         grpc_core::TlsPrivateKeyOffloadContext private_key_offload_context;
-        // TODO (ansalazar): Pipe Callback.
+        // TODO (ansalazar): Pipe User defined Callback.
         private_key_offload_context.private_key_sign = std::move(callback);
         private_key_offload_context.handshaker = self;
+        private_key_offload_context.notify_cb = cb;
+        private_key_offload_context.notify_user_data = user_data;
+        private_key_offload_context.handshaker_result = handshaker_result;
 
         SSL_set_ex_data(result->ssl, grpc_core::GetPrivateKeyOffloadIndex(),
                         &private_key_offload_context);
