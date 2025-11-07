@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/event_engine/test_suite/tools")
+grpc_package(
+    name = "test/core/event_engine/test_suite/tools",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 # -- Implementations --
 
