@@ -48,20 +48,10 @@ bool ConnectionScalingEnabled() {
 
 class ConnectionScalingJsonArgs final : public JsonArgs {
  public:
-  ConnectionScalingJsonArgs(const ChannelArgs& args) : args_(args) {}
-
   bool IsEnabled(absl::string_view key) const override {
     if (key == "connection_scaling") return ConnectionScalingEnabled();
     return true;
   }
-
-  uint32_t GetMaxConnectionsPerSubchannelCap() const {
-    return args_.GetInt(GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL_CAP)
-        .value_or(10);
-  }
-
- private:
-  const ChannelArgs& args_;
 };
 
 }  // namespace
@@ -93,14 +83,6 @@ ClientChannelGlobalParsedConfig::ConnectionScaling::JsonLoader(
                          &ConnectionScaling::max_connections_per_subchannel)
           .Finish();
   return loader;
-}
-
-void ClientChannelGlobalParsedConfig::ConnectionScaling::JsonPostLoad(
-    const Json& json, const JsonArgs& args, ValidationErrors*) {
-  const auto& cc_args = DownCast<const ConnectionScalingJsonArgs&>(args);
-  max_connections_per_subchannel =
-      std::min(max_connections_per_subchannel,
-               cc_args.GetMaxConnectionsPerSubchannelCap());
 }
 
 //
@@ -192,18 +174,18 @@ void ClientChannelServiceConfigParser::Register(
 }
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
-ClientChannelServiceConfigParser::ParseGlobalParams(const ChannelArgs& args,
+ClientChannelServiceConfigParser::ParseGlobalParams(const ChannelArgs& /*args*/,
                                                     const Json& json,
                                                     ValidationErrors* errors) {
   return LoadFromJson<std::unique_ptr<ClientChannelGlobalParsedConfig>>(
-      json, ConnectionScalingJsonArgs(args), errors);
+      json, ConnectionScalingJsonArgs(), errors);
 }
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
 ClientChannelServiceConfigParser::ParsePerMethodParams(
-    const ChannelArgs& args, const Json& json, ValidationErrors* errors) {
+    const ChannelArgs& /*args*/, const Json& json, ValidationErrors* errors) {
   return LoadFromJson<std::unique_ptr<ClientChannelMethodParsedConfig>>(
-      json, ConnectionScalingJsonArgs(args), errors);
+      json, ConnectionScalingJsonArgs(), errors);
 }
 
 }  // namespace internal

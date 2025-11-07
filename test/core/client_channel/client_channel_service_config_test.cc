@@ -295,44 +295,6 @@ TEST_F(ClientChannelParserTest, ConnectionScaling) {
   EXPECT_EQ(parsed_config->max_connections_per_subchannel(), 7);
 }
 
-TEST_F(ClientChannelParserTest, ConnectionScalingDefaultCap) {
-  ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
-  const char* test_json =
-      "{\n"
-      "  \"connectionScaling\": {\n"
-      "    \"maxConnectionsPerSubchannel\": 11\n"
-      "  }\n"
-      "}";
-  auto service_config = ServiceConfigImpl::Create(ChannelArgs(), test_json);
-  ASSERT_TRUE(service_config.ok()) << service_config.status();
-  const auto* parsed_config =
-      static_cast<internal::ClientChannelGlobalParsedConfig*>(
-          (*service_config)->GetGlobalParsedConfig(parser_index_));
-  ASSERT_NE(parsed_config, nullptr);
-  EXPECT_EQ(parsed_config->max_connections_per_subchannel(), 10);
-}
-
-TEST_F(ClientChannelParserTest, ConnectionScalingCustomCap) {
-  ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
-  const char* test_json =
-      "{\n"
-      "  \"connectionScaling\": {\n"
-      "    \"maxConnectionsPerSubchannel\": 11\n"
-      "  }\n"
-      "}";
-  auto service_config = ServiceConfigImpl::Create(
-      ChannelArgs().Set(GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL_CAP, 4),
-      test_json);
-  ASSERT_TRUE(service_config.ok()) << service_config.status();
-  const auto* parsed_config =
-      static_cast<internal::ClientChannelGlobalParsedConfig*>(
-          (*service_config)->GetGlobalParsedConfig(parser_index_));
-  ASSERT_NE(parsed_config, nullptr);
-  EXPECT_EQ(parsed_config->max_connections_per_subchannel(), 4);
-}
-
 // TODO(roth): Remove this test once the env var guard goes away.
 TEST_F(ClientChannelParserTest, ConnectionScalingNotEnabled) {
   const char* test_json =

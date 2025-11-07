@@ -73,8 +73,6 @@ class ClientChannelGlobalParsedConfig final
     uint32_t max_connections_per_subchannel = 0;
 
     static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
-    void JsonPostLoad(const Json& json, const JsonArgs& args,
-                      ValidationErrors*);
   };
 
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config_;
