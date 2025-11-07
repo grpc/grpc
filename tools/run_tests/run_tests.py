@@ -166,14 +166,11 @@ class Config:
         )
 
     def __repr__(self):
-        build_config = self.build_config
-        environ = self.environ
-        tool_prefix = self.tool_prefix
-        timeout_multiplier = self.timeout_multiplier
-        iomgr_platform = self.iomgr_platform
         return (
-            f"<Config {build_config=} {environ=} {tool_prefix=}"
-            f" {timeout_multiplier=} {iomgr_platform=}>"
+            f"<Config build_config={self.build_config}"
+            f" environ={self.environ} tool_prefix={self.tool_prefix}"
+            f" timeout_multiplier={self.timeout_multiplier}"
+            f" iomgr_platform={self.iomgr_platform}>"
         )
 
 
