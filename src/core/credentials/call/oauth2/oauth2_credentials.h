@@ -90,7 +90,7 @@ namespace grpc_core {
 
 // A base class for oauth2 token fetching credentials.
 // Subclasses must implement StartHttpRequest().
-class Oauth2TokenFetcherCredentials : public TokenFetcherCredentials {
+class Oauth2TokenFetcherCredentials : public HttpTokenFetcherCredentials {
  public:
   std::string debug_string() override;
 
@@ -102,13 +102,7 @@ class Oauth2TokenFetcherCredentials : public TokenFetcherCredentials {
           void(absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
           on_done) final;
 
-  virtual OrphanablePtr<HttpRequest> StartHttpRequest(
-      grpc_polling_entity* pollent, Timestamp deadline,
-      grpc_http_response* response, grpc_closure* on_complete) = 0;
-
  private:
-  class HttpFetchRequest;
-
   int cmp_impl(const grpc_call_credentials* other) const override {
     // TODO(yashykt): Check if we can do something better here
     return QsortCompare(static_cast<const grpc_call_credentials*>(this), other);
