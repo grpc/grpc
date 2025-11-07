@@ -586,6 +586,11 @@ class ClientChannelFilter::SubchannelWrapper final
           });
     }
 
+    uint32_t max_connections_per_subchannel() const override {
+      // TODO(roth): Add config plumbing to set this for real.
+      return 1;
+    }
+
     grpc_pollset_set* interested_parties() override {
       return watcher_->interested_parties();
     }

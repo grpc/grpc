@@ -85,6 +85,8 @@ class Subchannel final : public DualRefCounted<Subchannel> {
     // Invoked to report updated keepalive time.
     virtual void OnKeepaliveUpdate(Duration keepalive_time) = 0;
 
+    virtual uint32_t max_connections_per_subchannel() const = 0;
+
     virtual grpc_pollset_set* interested_parties() = 0;
   };
 
@@ -253,6 +255,8 @@ class Subchannel final : public DualRefCounted<Subchannel> {
 
     bool empty() const { return watchers_.empty(); }
 
+    uint32_t GetMaxConnectionsPerSubchannel() const;
+
    private:
     Subchannel* subchannel_;
     absl::flat_hash_set<RefCountedPtr<ConnectivityStateWatcherInterface>,
@@ -275,11 +279,22 @@ class Subchannel final : public DualRefCounted<Subchannel> {
   // Tears down any existing connection, and arranges for destruction
   void Orphaned() override ABSL_LOCKS_EXCLUDED(mu_);
 
-  RefCountedPtr<ConnectedSubchannel> GetConnectedSubchannel();
+  RefCountedPtr<ConnectedSubchannel> ChooseConnectionLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void RetryQueuedRpcs();
 
-  // Sets the subchannel's connectivity state to \a state.
-  void SetConnectivityStateLocked(grpc_connectivity_state state,
-                                  const absl::Status& status)
+  // Updates the subchannel's connectivity state.
+  void SetLastFailureLocked(const absl::Status& status)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  grpc_connectivity_state ComputeConnectivityStateLocked() const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  absl::Status ConnectivityStatusToReportLocked() const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void MaybeUpdateConnectivityStateLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+  // Returns true if the connection was removed.
+  bool RemoveConnectionLocked(
+      RefCountedPtr<ConnectedSubchannel> connected_subchannel)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   void ThrottleKeepaliveTimeLocked(Duration new_keepalive_time)
@@ -322,6 +337,7 @@ class Subchannel final : public DualRefCounted<Subchannel> {
   // Protects the other members.
   Mutex mu_;
 
+  bool connection_attempt_in_flight_ ABSL_GUARDED_BY(mu_) = false;
   bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
 
   // Connectivity state tracking.
@@ -332,20 +348,21 @@ class Subchannel final : public DualRefCounted<Subchannel> {
   // - READY: connection attempt succeeded, connected_subchannel_ created
   // - TRANSIENT_FAILURE: connection attempt failed, retry timer pending
   grpc_connectivity_state state_ ABSL_GUARDED_BY(mu_) = GRPC_CHANNEL_IDLE;
-  absl::Status status_ ABSL_GUARDED_BY(mu_);
+  absl::Status last_failure_status_ ABSL_GUARDED_BY(mu_);
   // The list of connectivity state watchers.
   ConnectivityStateWatcherList watcher_list_ ABSL_GUARDED_BY(mu_);
   // Used for sending connectivity state notifications.
   WorkSerializer work_serializer_;
 
-  // Active connection, or null.
-  RefCountedPtr<ConnectedSubchannel> connected_subchannel_ ABSL_GUARDED_BY(mu_);
+  // Established connections.
+  std::vector<RefCountedPtr<ConnectedSubchannel>> connections_
+      ABSL_GUARDED_BY(mu_);
 
   // Backoff state.
   BackOff backoff_ ABSL_GUARDED_BY(mu_);
   Timestamp next_attempt_time_ ABSL_GUARDED_BY(mu_);
-  grpc_event_engine::experimental::EventEngine::TaskHandle retry_timer_handle_
-      ABSL_GUARDED_BY(mu_);
+  std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+      retry_timer_handle_ ABSL_GUARDED_BY(mu_);
 
   // Keepalive time period
   Duration keepalive_time_ ABSL_GUARDED_BY(mu_);
@@ -355,7 +372,8 @@ class Subchannel final : public DualRefCounted<Subchannel> {
       ABSL_GUARDED_BY(mu_);
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
-  std::deque<std::optional<QueuedCall*>> queued_calls_ ABSL_GUARDED_BY(mu_);
+  // Entries will be null for calls that have been cancelled.
+  std::deque<QueuedCall*> queued_calls_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace grpc_core
