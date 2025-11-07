@@ -176,6 +176,35 @@ class TokenFetcherCredentials : public grpc_call_credentials {
   grpc_polling_entity pollent_ ABSL_GUARDED_BY(&mu_);
 };
 
+// A base class for fetching tokens via an HTTP request.
+class HttpTokenFetcherCredentials : public TokenFetcherCredentials {
+ public:
+  virtual OrphanablePtr<HttpRequest> StartHttpRequest(
+      grpc_polling_entity* pollent, Timestamp deadline,
+      grpc_http_response* response, grpc_closure* on_complete) = 0;
+
+ protected:
+  // State held for a pending HTTP request.
+  class HttpFetchRequest : public TokenFetcherCredentials::FetchRequest {
+   public:
+    // The given callback should assume the http response status has already
+    // been checked and handle the token parsing.
+    HttpFetchRequest(
+        HttpTokenFetcherCredentials* creds, Timestamp deadline,
+        absl::AnyInvocable<void(absl::StatusOr<grpc_http_response>)> on_done);
+    ~HttpFetchRequest() override { grpc_http_response_destroy(&response_); }
+
+    void Orphan() override;
+
+   private:
+    static void OnHttpResponse(void* arg, grpc_error_handle error);
+    OrphanablePtr<HttpRequest> http_request_;
+    grpc_closure on_http_response_;
+    grpc_http_response response_;
+    absl::AnyInvocable<void(absl::StatusOr<grpc_http_response>)> on_done_;
+  };
+};
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_CREDENTIALS_CALL_TOKEN_FETCHER_TOKEN_FETCHER_CREDENTIALS_H
