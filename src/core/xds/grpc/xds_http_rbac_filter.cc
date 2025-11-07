@@ -570,7 +570,7 @@ XdsHttpRbacFilter::GenerateFilterConfigOverride(
 }
 
 void XdsHttpRbacFilter::AddFilter(InterceptionChainBuilder& builder) const {
-  builder.Add<RbacFilter>();
+  builder.Add<RbacFilter>(nullptr);
 }
 
 const grpc_channel_filter* XdsHttpRbacFilter::channel_filter() const {

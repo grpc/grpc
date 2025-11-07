@@ -50,6 +50,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/party.h"
@@ -162,6 +163,7 @@ class Http2ClientTransport final : public ClientTransport,
   }
 
   void AddData(channelz::DataSink sink) override;
+  void SpawnAddChannelzData(channelz::DataSink sink);
 
   auto TestOnlyTriggerWriteCycle() {
     return Immediate(writable_stream_list_.ForceReadyForWrite());
@@ -241,16 +243,26 @@ class Http2ClientTransport final : public ClientTransport,
   auto CallOutboundLoop(CallHandler call_handler, RefCountedPtr<Stream> stream,
                         ClientMetadataHandle metadata);
 
+  // TODO(akshitpatel) : [PH2][P3] : Make this a synchronous function.
   // Force triggers a transport write cycle
   auto TriggerWriteCycle() {
     return Immediate(writable_stream_list_.ForceReadyForWrite());
   }
+
+  auto FlowControlPeriodicUpdateLoop();
+  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
+  void AddPeriodicUpdatePromiseWaker() {
+    periodic_updates_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+  }
+  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
+  void WakeupPeriodicUpdatePromise() { periodic_updates_waker_.Wakeup(); }
 
   // Processes the flow control action and take necessary steps.
   void ActOnFlowControlAction(const chttp2::FlowControlAction& action,
                               RefCountedPtr<Stream> stream);
 
   RefCountedPtr<Party> general_party_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
   PromiseEndpoint endpoint_;
   Http2SettingsManager settings_;
@@ -311,7 +323,15 @@ class Http2ClientTransport final : public ClientTransport,
 
     // RFC9113 : Streams initiated by a client MUST use odd-numbered stream
     // identifiers.
-    return std::exchange(next_stream_id_, next_stream_id_ + 2);
+    uint32_t new_stream_id =
+        std::exchange(next_stream_id_, next_stream_id_ + 2);
+    if (GPR_UNLIKELY(next_stream_id_ > GetMaxAllowedStreamId())) {
+      SetConnectivityState(
+          GRPC_CHANNEL_TRANSIENT_FAILURE,
+          absl::ResourceExhaustedError("Transport Stream IDs exhausted"),
+          "no_more_stream_ids");
+    }
+    return new_stream_id;
   }
 
   // Returns the next stream id without incrementing it. MUST be called from the
@@ -528,10 +548,14 @@ class Http2ClientTransport final : public ClientTransport,
     std::optional<Http2Frame> settings_frame = settings_.MaybeSendUpdate();
     if (settings_frame.has_value()) {
       Serialize(absl::Span<Http2Frame>(&settings_frame.value(), 1), output_buf);
+      flow_control_.FlushedSettings();
     }
   }
 
   void MaybeGetWindowUpdateFrames(SliceBuffer& output_buf);
+
+  void SetConnectivityState(grpc_connectivity_state state,
+                            const absl::Status& status, const char* reason);
 
   // Ping Helper functions
   Duration NextAllowedPingInterval() {
@@ -581,9 +605,7 @@ class Http2ClientTransport final : public ClientTransport,
     }
 
     Promise<absl::Status> PingTimeout() override {
-      // TODO(akshitpatel) : [PH2][P2] : Trigger goaway here.
-      // Returns a promise that resolves once goaway is sent.
-      LOG(INFO) << "Ping timeout at time: " << Timestamp::Now();
+      GRPC_HTTP2_CLIENT_DLOG << "Ping timeout at time: " << Timestamp::Now();
 
       // TODO(akshitpatel) : [PH2][P2] : The error code here has been chosen
       // based on CHTTP2's usage of GRPC_STATUS_UNAVAILABLE (which corresponds
@@ -622,8 +644,7 @@ class Http2ClientTransport final : public ClientTransport,
       });
     }
     Promise<absl::Status> OnKeepAliveTimeout() override {
-      // TODO(akshitpatel) : [PH2][P2] : Trigger goaway here.
-      LOG(INFO) << "Keepalive timeout triggered";
+      GRPC_HTTP2_CLIENT_DLOG << "Keepalive timeout triggered";
 
       // TODO(akshitpatel) : [PH2][P2] : The error code here has been chosen
       // based on CHTTP2's usage of GRPC_STATUS_UNAVAILABLE (which corresponds
@@ -720,6 +741,15 @@ class Http2ClientTransport final : public ClientTransport,
   chttp2::TransportFlowControl flow_control_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
   absl::flat_hash_set<uint32_t> window_update_list_;
+
+  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
+  Waker periodic_updates_waker_;
+
+  // TODO(tjagtap) [PH2][P2][Settings] Set this to true when we receive settings
+  // that appear "Urgent". Example - initial window size 0 is urgent because it
+  // indicates extreme memory pressure on the server.
+  bool should_stall_read_loop_;
+  Waker read_loop_waker_;
 };
 
 // Since the corresponding class in CHTTP2 is about 3.9KB, our goal is to

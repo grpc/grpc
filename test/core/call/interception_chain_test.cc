@@ -289,7 +289,7 @@ TEST_F(InterceptionChainTest, Empty) {
 
 TEST_F(InterceptionChainTest, PassThrough) {
   auto r = InterceptionChainBuilder(ChannelArgs())
-               .Add<TestPassThroughInterceptor<1>>()
+               .Add<TestPassThroughInterceptor<1>>(nullptr)
                .Build(destination());
   ASSERT_TRUE(r.ok()) << r.status();
   auto finished_call = RunCall(r.value().get());
@@ -303,7 +303,7 @@ TEST_F(InterceptionChainTest, PassThrough) {
 
 TEST_F(InterceptionChainTest, Consumed) {
   auto r = InterceptionChainBuilder(ChannelArgs())
-               .Add<TestConsumingInterceptor<1>>()
+               .Add<TestConsumingInterceptor<1>>(nullptr)
                .Build(destination());
   ASSERT_TRUE(r.ok()) << r.status();
   auto finished_call = RunCall(r.value().get());
@@ -317,7 +317,7 @@ TEST_F(InterceptionChainTest, Consumed) {
 
 TEST_F(InterceptionChainTest, Hijacked) {
   auto r = InterceptionChainBuilder(ChannelArgs())
-               .Add<TestHijackingInterceptor<1>>()
+               .Add<TestHijackingInterceptor<1>>(nullptr)
                .Build(destination());
   ASSERT_TRUE(r.ok()) << r.status();
   auto finished_call = RunCall(r.value().get());
@@ -331,8 +331,8 @@ TEST_F(InterceptionChainTest, Hijacked) {
 
 TEST_F(InterceptionChainTest, FiltersThenHijacked) {
   auto r = InterceptionChainBuilder(ChannelArgs())
-               .Add<TestFilter<1>>()
-               .Add<TestHijackingInterceptor<2>>()
+               .Add<TestFilter<1>>(nullptr)
+               .Add<TestHijackingInterceptor<2>>(nullptr)
                .Build(destination());
   ASSERT_TRUE(r.ok()) << r.status();
   auto finished_call = RunCall(r.value().get());
@@ -350,7 +350,7 @@ TEST_F(InterceptionChainTest, FiltersThenHijacked) {
 
 TEST_F(InterceptionChainTest, FailsToInstantiateInterceptor) {
   auto r = InterceptionChainBuilder(ChannelArgs())
-               .Add<TestFailingInterceptor<1>>()
+               .Add<TestFailingInterceptor<1>>(nullptr)
                .Build(destination());
   EXPECT_FALSE(r.ok());
   EXPECT_EQ(r.status().code(), absl::StatusCode::kInternal);
@@ -359,8 +359,8 @@ TEST_F(InterceptionChainTest, FailsToInstantiateInterceptor) {
 
 TEST_F(InterceptionChainTest, FailsToInstantiateInterceptor2) {
   auto r = InterceptionChainBuilder(ChannelArgs())
-               .Add<TestFilter<1>>()
-               .Add<TestFailingInterceptor<2>>()
+               .Add<TestFilter<1>>(nullptr)
+               .Add<TestFailingInterceptor<2>>(nullptr)
                .Build(destination());
   EXPECT_FALSE(r.ok());
   EXPECT_EQ(r.status().code(), absl::StatusCode::kInternal);
@@ -369,7 +369,7 @@ TEST_F(InterceptionChainTest, FailsToInstantiateInterceptor2) {
 
 TEST_F(InterceptionChainTest, FailsToInstantiateFilter) {
   auto r = InterceptionChainBuilder(ChannelArgs())
-               .Add<FailsToInstantiateFilter<1>>()
+               .Add<FailsToInstantiateFilter<1>>(nullptr)
                .Build(destination());
   EXPECT_FALSE(r.ok());
   EXPECT_EQ(r.status().code(), absl::StatusCode::kInternal);
@@ -378,8 +378,8 @@ TEST_F(InterceptionChainTest, FailsToInstantiateFilter) {
 
 TEST_F(InterceptionChainTest, FailsToInstantiateFilter2) {
   auto r = InterceptionChainBuilder(ChannelArgs())
-               .Add<TestFilter<1>>()
-               .Add<FailsToInstantiateFilter<2>>()
+               .Add<TestFilter<1>>(nullptr)
+               .Add<FailsToInstantiateFilter<2>>(nullptr)
                .Build(destination());
   EXPECT_FALSE(r.ok());
   EXPECT_EQ(r.status().code(), absl::StatusCode::kInternal);
@@ -389,15 +389,15 @@ TEST_F(InterceptionChainTest, FailsToInstantiateFilter2) {
 TEST_F(InterceptionChainTest, CreationOrderCorrect) {
   CreationLog log;
   auto r = InterceptionChainBuilder(ChannelArgs().SetObject(&log))
-               .Add<TestFilter<1>>()
-               .Add<TestFilter<2>>()
-               .Add<TestFilter<3>>()
-               .Add<TestConsumingInterceptor<4>>()
-               .Add<TestFilter<1>>()
-               .Add<TestFilter<2>>()
-               .Add<TestFilter<3>>()
-               .Add<TestConsumingInterceptor<4>>()
-               .Add<TestFilter<1>>()
+               .Add<TestFilter<1>>(nullptr)
+               .Add<TestFilter<2>>(nullptr)
+               .Add<TestFilter<3>>(nullptr)
+               .Add<TestConsumingInterceptor<4>>(nullptr)
+               .Add<TestFilter<1>>(nullptr)
+               .Add<TestFilter<2>>(nullptr)
+               .Add<TestFilter<3>>(nullptr)
+               .Add<TestConsumingInterceptor<4>>(nullptr)
+               .Add<TestFilter<1>>(nullptr)
                .Build(destination());
   EXPECT_THAT(log.entries, ::testing::ElementsAre(
                                CreationLogEntry{0, 1}, CreationLogEntry{0, 2},
@@ -425,9 +425,9 @@ TEST_F(InterceptionChainTest, AddOnServerTrailingMetadataForEachInterceptor) {
                            "x", md.get_pointer(GrpcMessageMetadata())
                                     ->as_string_view())));
               })
-          .Add<TestPassThroughInterceptor<1>>()
-          .Add<TestPassThroughInterceptor<2>>()
-          .Add<TestPassThroughInterceptor<3>>()
+          .Add<TestPassThroughInterceptor<1>>(nullptr)
+          .Add<TestPassThroughInterceptor<2>>(nullptr)
+          .Add<TestPassThroughInterceptor<3>>(nullptr)
           .Build(destination());
   ASSERT_TRUE(r.ok()) << r.status();
   auto finished_call = RunCall(r.value().get());

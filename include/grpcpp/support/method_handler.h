@@ -69,7 +69,7 @@ void UnaryRunHandlerHelper(const MethodHandler::HandlerParameter& param,
     ops.set_compression_level(param.server_context->compression_level());
   }
   if (status.ok()) {
-    status = ops.SendMessagePtr(rsp);
+    status = ops.SendMessagePtr(rsp, param.server_context->memory_allocator());
   }
   ops.ServerSendStatus(&param.server_context->trailing_metadata_, status);
   param.call->PerformOps(&ops);
@@ -83,8 +83,7 @@ void* UnaryDeserializeHelper(grpc_byte_buffer* req, grpc::Status* status,
                              RequestType* request) {
   grpc::ByteBuffer buf;
   buf.set_buffer(req);
-  *status = grpc::SerializationTraits<RequestType>::Deserialize(
-      &buf, static_cast<RequestType*>(request));
+  *status = grpc::Deserialize(&buf, static_cast<RequestType*>(request));
   buf.Release();
   if (status->ok()) {
     return request;
@@ -171,7 +170,8 @@ class ClientStreamingHandler : public grpc::internal::MethodHandler {
       }
     }
     if (status.ok()) {
-      status = ops.SendMessagePtr(&rsp);
+      status =
+          ops.SendMessagePtr(&rsp, param.server_context->memory_allocator());
     }
     ops.ServerSendStatus(&param.server_context->trailing_metadata_, status);
     param.call->PerformOps(&ops);
@@ -233,8 +233,7 @@ class ServerStreamingHandler : public grpc::internal::MethodHandler {
     buf.set_buffer(req);
     auto* request =
         new (grpc_call_arena_alloc(call, sizeof(RequestType))) RequestType();
-    *status =
-        grpc::SerializationTraits<RequestType>::Deserialize(&buf, request);
+    *status = grpc::Deserialize(&buf, request);
     buf.Release();
     if (status->ok()) {
       return request;

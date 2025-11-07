@@ -310,7 +310,7 @@ def _extract_sources(bazel_rule: BuildMetadata) -> List[str]:
 def _extract_deps(
     bazel_rule: BuildMetadata, bazel_rules: BuildDict
 ) -> List[str]:
-    """Gets list of deps from from a bazel rule"""
+    """Gets list of deps from a bazel rule"""
     deps = set(bazel_rule["deps"])
     for src in bazel_rule["srcs"]:
         if (
@@ -516,7 +516,7 @@ def _compute_transitive_metadata(
                 )
     # This item is a "visited" flag
     bazel_rule["_PROCESSING_DONE"] = True
-    # Following items are described in the docstinrg.
+    # Following items are described in the docstring.
     bazel_rule["_TRANSITIVE_DEPS"] = list(sorted(transitive_deps))
     bazel_rule["_COLLAPSED_DEPS"] = list(sorted(collapsed_deps))
     bazel_rule["_COLLAPSED_SRCS"] = list(sorted(collapsed_srcs))
@@ -560,7 +560,7 @@ def update_test_metadata_with_transitive_metadata(
 ) -> None:
     """Patches test build metadata with transitive metadata."""
     for lib_name, lib_dict in list(all_extra_metadata.items()):
-        # Skip if it isn't not an test
+        # Skip if it isn't a test
         if (
             lib_dict.get("build") != "test"
             and lib_dict.get("build") != "plugin_test"
@@ -729,7 +729,7 @@ def _generate_build_metadata(
     # Rename targets marked with "_RENAME" extra metadata.
     # This is mostly a cosmetic change to ensure that we end up with build.yaml target
     # names we're used to from the past (and also to avoid too long target names).
-    # The rename step needs to be made after we're done with most of processing logic
+    # The rename step needs to be made after we're done with most processing logic
     # otherwise the already-renamed libraries will have different names than expected
     for lib_name in lib_names:
         to_name = build_extra_metadata.get(lib_name, {}).get("_RENAME", None)

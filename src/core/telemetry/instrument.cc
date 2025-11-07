@@ -24,16 +24,24 @@
 #include <string>
 #include <tuple>
 #include <utility>
+#include <variant>
 #include <vector>
 
+#include "src/core/channelz/channelz.h"
 #include "src/core/channelz/property_list.h"
+#include "src/core/telemetry/histogram.h"
 #include "src/core/util/grpc_check.h"
-#include "src/core/util/no_destruct.h"
+#include "src/core/util/match.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/single_set_ptr.h"
+#include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/functional/function_ref.h"
 #include "absl/hash/hash.h"
 #include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
@@ -100,12 +108,11 @@ CollectionScope::CollectionScope(
   // Sort parents (by address) and then remove any duplicates.
   std::sort(parents_.begin(), parents_.end());
   parents_.erase(std::unique(parents_.begin(), parents_.end()), parents_.end());
-  const size_t child_shard = absl::HashOf(this) % child_shards_.size();
   for (const auto& parent : parents_) {
     if (parent != nullptr) {
       labels_of_interest_.insert(parent->labels_of_interest_.begin(),
                                  parent->labels_of_interest_.end());
-      auto& shard = parent->child_shards_[child_shard];
+      auto& shard = parent->child_shard(this);
       MutexLock lock(&shard.mu);
       shard.children.insert(this);
     }
@@ -115,8 +122,7 @@ CollectionScope::CollectionScope(
 CollectionScope::~CollectionScope() {
   for (const auto& parent : parents_) {
     if (parent != nullptr) {
-      auto& shard = parent->child_shards_[absl::HashOf(this) %
-                                          parent->child_shards_.size()];
+      auto& shard = parent->child_shard(this);
       MutexLock lock(&shard.mu);
       shard.children.erase(this);
     }
@@ -217,8 +223,8 @@ MetricsQuery& MetricsQuery::CollapseLabels(
   return *this;
 }
 
-MetricsQuery& MetricsQuery::OnlyMetrics(absl::Span<const std::string> metrics) {
-  only_metrics_.emplace(metrics.begin(), metrics.end());
+MetricsQuery& MetricsQuery::OnlyMetrics(std::vector<std::string> metrics) {
+  only_metrics_.emplace(std::move(metrics));
   return *this;
 }
 
@@ -262,44 +268,49 @@ void MetricsQuery::Run(RefCountedPtr<CollectionScope> scope,
         domain->label_names(),
         [&](MetricsSink& sink) {
           for (auto* storage : storages) {
-            const auto label = storage->label();
+            const auto label_values = storage->label();
+            const auto label_keys = domain->label_names();
             instrument_detail::GaugeStorage gauge_storage(storage->domain());
             storage->FillGaugeStorage(gauge_storage);
             for (const auto* metric : metrics) {
               Match(
                   metric->shape,
-                  [metric, &sink, storage,
-                   &label](InstrumentMetadata::CounterShape) {
-                    sink.Counter(label, metric->name,
+                  [metric, &sink, storage, &label_values,
+                   &label_keys](InstrumentMetadata::CounterShape) {
+                    sink.Counter(label_keys, label_values, metric->name,
                                  storage->SumCounter(metric->offset));
                   },
-                  [metric, &sink, storage,
-                   &label](InstrumentMetadata::HistogramShape bounds) {
+                  [metric, &sink, storage, &label_values,
+                   &label_keys](InstrumentMetadata::HistogramShape bounds) {
                     std::vector<uint64_t> counts(bounds.size());
                     for (size_t i = 0; i < bounds.size(); ++i) {
                       counts[i] = storage->SumCounter(metric->offset + i);
                     }
-                    sink.Histogram(label, metric->name, bounds, counts);
+                    sink.Histogram(label_keys, label_values, metric->name,
+                                   bounds, counts);
                   },
-                  [metric, &sink, &gauge_storage,
-                   &label](InstrumentMetadata::DoubleGaugeShape) {
+                  [metric, &sink, &gauge_storage, &label_values,
+                   &label_keys](InstrumentMetadata::DoubleGaugeShape) {
                     if (auto value = gauge_storage.GetDouble(metric->offset);
                         value.has_value()) {
-                      sink.DoubleGauge(label, metric->name, *value);
+                      sink.DoubleGauge(label_keys, label_values, metric->name,
+                                       *value);
                     }
                   },
-                  [metric, &sink, &gauge_storage,
-                   &label](InstrumentMetadata::IntGaugeShape) {
+                  [metric, &sink, &gauge_storage, &label_values,
+                   &label_keys](InstrumentMetadata::IntGaugeShape) {
                     if (auto value = gauge_storage.GetInt(metric->offset);
                         value.has_value()) {
-                      sink.IntGauge(label, metric->name, *value);
+                      sink.IntGauge(label_keys, label_values, metric->name,
+                                    *value);
                     }
                   },
-                  [metric, &sink, &gauge_storage,
-                   &label](InstrumentMetadata::UintGaugeShape) {
+                  [metric, &sink, &gauge_storage, &label_values,
+                   &label_keys](InstrumentMetadata::UintGaugeShape) {
                     if (auto value = gauge_storage.GetUint(metric->offset);
                         value.has_value()) {
-                      sink.UintGauge(label, metric->name, *value);
+                      sink.UintGauge(label_keys, label_values, metric->name,
+                                     *value);
                     }
                   });
             }
@@ -317,9 +328,11 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names,
     return;
   }
   std::vector<size_t> include_labels;
+  std::vector<std::string> label_keys;
   for (size_t i = 0; i < label_names.size(); ++i) {
     if (!collapsed_labels_.contains(label_names[i])) {
       include_labels.push_back(i);
+      label_keys.push_back(label_names[i]);
     }
   }
   if (include_labels.size() == label_names.size()) {
@@ -328,22 +341,25 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names,
   }
   class Filter final : public MetricsSink {
    public:
-    explicit Filter(absl::Span<const size_t> include_labels)
-        : include_labels_(include_labels) {}
+    explicit Filter(absl::Span<const size_t> include_labels,
+                    absl::Span<const std::string> label_keys)
+        : include_labels_(include_labels), label_keys_(label_keys) {}
 
-    void Counter(absl::Span<const std::string> label, absl::string_view name,
-                 uint64_t value) override {
-      uint64_counters_[ConstructKey(label, name)] += value;
+    void Counter(absl::Span<const std::string> /* label_keys */,
+                 absl::Span<const std::string> label_values,
+                 absl::string_view name, uint64_t value) override {
+      uint64_counters_[ConstructKey(label_values, name)] += value;
     }
 
-    void Histogram(absl::Span<const std::string> label, absl::string_view name,
-                   HistogramBuckets bounds,
+    void Histogram(absl::Span<const std::string> /* label_keys */,
+                   absl::Span<const std::string> label_values,
+                   absl::string_view name, HistogramBuckets bounds,
                    absl::Span<const uint64_t> counts) override {
       GRPC_CHECK_EQ(counts.size(), bounds.size());
-      auto it = histograms_.find(ConstructKey(label, name));
+      auto it = histograms_.find(ConstructKey(label_values, name));
       if (it == histograms_.end()) {
         histograms_.emplace(std::piecewise_construct,
-                            std::tuple(ConstructKey(label, name)),
+                            std::tuple(ConstructKey(label_values, name)),
                             std::tuple(bounds, counts));
       } else {
         if (it->second.bounds != bounds) {
@@ -357,41 +373,46 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names,
       }
     }
 
-    void DoubleGauge(absl::Span<const std::string>, absl::string_view,
+    void DoubleGauge(absl::Span<const std::string> /* label_keys */,
+                     absl::Span<const std::string>, absl::string_view,
                      double) override {
       // Not aggregatable
     }
-    void IntGauge(absl::Span<const std::string>, absl::string_view,
+    void IntGauge(absl::Span<const std::string> /* label_keys */,
+                  absl::Span<const std::string>, absl::string_view,
                   int64_t) override {
       // Not aggregatable
     }
-    void UintGauge(absl::Span<const std::string>, absl::string_view,
+    void UintGauge(absl::Span<const std::string> /* label_keys */,
+                   absl::Span<const std::string>, absl::string_view,
                    uint64_t) override {
       // Not aggregatable
     }
 
     void Publish(MetricsSink& sink) const {
       for (const auto& [key, value] : uint64_counters_) {
-        sink.Counter(std::get<0>(key), std::get<1>(key), value);
+        sink.Counter(label_keys_, std::get<0>(key), std::get<1>(key), value);
       }
       for (const auto& [key, value] : histograms_) {
-        sink.Histogram(std::get<0>(key), std::get<1>(key), value.bounds,
-                       value.counts);
+        sink.Histogram(label_keys_, std::get<0>(key), std::get<1>(key),
+                       value.bounds, value.counts);
       }
     }
 
    private:
     std::tuple<std::vector<std::string>, absl::string_view> ConstructKey(
-        absl::Span<const std::string> label, absl::string_view name) const {
+        absl::Span<const std::string> label_values,
+        absl::string_view name) const {
       std::vector<std::string> key;
       key.reserve(include_labels_.size());
       for (auto i : include_labels_) {
-        key.push_back(label[i]);
+        key.push_back(label_values[i]);
       }
       return std::tuple(std::move(key), name);
     }
 
     absl::Span<const size_t> include_labels_;
+    absl::Span<const std::string> label_keys_;
     absl::flat_hash_map<std::tuple<std::vector<std::string>, absl::string_view>,
                         uint64_t>
         uint64_counters_;
@@ -405,7 +426,7 @@ void MetricsQuery::Apply(absl::Span<const std::string> label_names,
                         HistogramValue>
         histograms_;
   };
-  Filter filter(include_labels);
+  Filter filter(include_labels, label_keys);
   ApplyLabelChecks(label_names, fn, filter);
   filter.Publish(sink);
 }
@@ -436,39 +457,44 @@ void MetricsQuery::ApplyLabelChecks(absl::Span<const std::string> label_names,
                     absl::Span<const LabelEq> inclusion_checks)
         : inclusion_checks_(inclusion_checks), sink_(sink) {}
 
-    void Counter(absl::Span<const std::string> label, absl::string_view name,
-                 uint64_t value) override {
-      if (!Matches(label)) return;
-      sink_.Counter(label, name, value);
+    void Counter(absl::Span<const std::string> label_keys,
+                 absl::Span<const std::string> label_values,
+                 absl::string_view name, uint64_t value) override {
+      if (!Matches(label_values)) return;
+      sink_.Counter(label_keys, label_values, name, value);
     }
 
-    void Histogram(absl::Span<const std::string> label, absl::string_view name,
-                   HistogramBuckets bounds,
+    void Histogram(absl::Span<const std::string> label_keys,
+                   absl::Span<const std::string> label_values,
+                   absl::string_view name, HistogramBuckets bounds,
                    absl::Span<const uint64_t> counts) override {
-      if (!Matches(label)) return;
-      sink_.Histogram(label, name, bounds, counts);
+      if (!Matches(label_values)) return;
+      sink_.Histogram(label_keys, label_values, name, bounds, counts);
     }
 
-    void DoubleGauge(absl::Span<const std::string> label,
+    void DoubleGauge(absl::Span<const std::string> label_keys,
+                     absl::Span<const std::string> label_values,
                      absl::string_view name, double value) override {
-      if (!Matches(label)) return;
-      sink_.DoubleGauge(label, name, value);
+      if (!Matches(label_values)) return;
+      sink_.DoubleGauge(label_keys, label_values, name, value);
     }
-    void IntGauge(absl::Span<const std::string> label, absl::string_view name,
-                  int64_t value) override {
-      if (!Matches(label)) return;
-      sink_.IntGauge(label, name, value);
+    void IntGauge(absl::Span<const std::string> label_keys,
+                  absl::Span<const std::string> label_values,
+                  absl::string_view name, int64_t value) override {
+      if (!Matches(label_values)) return;
+      sink_.IntGauge(label_keys, label_values, name, value);
     }
-    void UintGauge(absl::Span<const std::string> label, absl::string_view name,
-                   uint64_t value) override {
-      if (!Matches(label)) return;
-      sink_.UintGauge(label, name, value);
+    void UintGauge(absl::Span<const std::string> label_keys,
+                   absl::Span<const std::string> label_values,
+                   absl::string_view name, uint64_t value) override {
+      if (!Matches(label_values)) return;
+      sink_.UintGauge(label_keys, label_values, name, value);
     }
 
    private:
-    bool Matches(absl::Span<const std::string> label) const {
+    bool Matches(absl::Span<const std::string> label_values) const {
       for (const auto& check : inclusion_checks_) {
-        if (label[check.offset] != check.value) return false;
+        if (label_values[check.offset] != check.value) return false;
       }
       return true;
     }
@@ -763,17 +789,6 @@ RefCountedPtr<DomainStorage> QueryableDomain::GetDomainStorage(
 
 }  // namespace instrument_detail
 
-void TestOnlyResetInstruments() {
-  Hook* hook = hooks.load(std::memory_order_acquire);
-  while (hook != nullptr) {
-    Hook* next = hook->next;
-    delete hook;
-    hook = next;
-  }
-  hooks.store(nullptr, std::memory_order_release);
-  instrument_detail::QueryableDomain::TestOnlyResetAll();
-}
-
 LowContentionBackend::LowContentionBackend(size_t size)
     : counters_(new std::atomic<uint64_t>[size]) {
   for (size_t i = 0; i < size; ++i) {
@@ -801,4 +816,120 @@ uint64_t HighContentionBackend::Sum(size_t index) {
   }
   return sum;
 }
+
+namespace {
+
+class GlobalCollectionScopeManager {
+ public:
+  GlobalCollectionScopeManager(const GlobalCollectionScopeManager&) = delete;
+  GlobalCollectionScopeManager& operator=(const GlobalCollectionScopeManager&) =
+      delete;
+
+  static GlobalCollectionScopeManager& Get() {
+    static GlobalCollectionScopeManager* manager =
+        new GlobalCollectionScopeManager();
+    return *manager;
+  }
+
+  RefCountedPtr<CollectionScope> CreateRootScope(
+      absl::Span<const std::string> labels, size_t child_shards_count,
+      size_t storage_shards_count) {
+    MutexLock lock(&mu_);
+    if (auto* building = std::get_if<Building>(&state_); building != nullptr) {
+      auto scope = CreateCollectionScope({}, labels, child_shards_count,
+                                         storage_shards_count);
+      building->root_scopes.push_back(scope);
+      return scope;
+    } else {
+      // Global scope is already created, we can no longer subset labels.
+      auto& published = std::get<Published>(state_);
+      std::vector<std::string> missing_labels;
+      for (const auto& label : labels) {
+        if (!published.global_scope->ObservesLabel(label)) {
+          missing_labels.push_back(label);
+        }
+      }
+      if (missing_labels.empty()) {
+        LOG(ERROR) << "Attempt to create a root scope with labels ["
+                   << absl::StrJoin(labels, ", ")
+                   << "] after the global scope was already created.  "
+                      "All requested labels are collected by the global scope, "
+                      "so this scope will be returned instead.  "
+                      "To eliminate this message, ensure the root scope "
+                      "creation that triggered it occurs before the first call "
+                      "to GlobalCollectionScope().";
+      } else {
+        LOG(ERROR) << "Attempt to create a root scope with labels ["
+                   << absl::StrJoin(labels, ", ")
+                   << "] after the global scope was already created.  "
+                      "The following labels are not collected by the global "
+                      "scope, and so will not be available: ["
+                   << absl::StrJoin(missing_labels, ", ")
+                   << "]."
+                      "To eliminate this message, ensure the root scope "
+                      "creation that triggered it occurs before the first call "
+                      "to GlobalCollectionScope().";
+      }
+      return published.global_scope;
+    }
+  }
+
+  RefCountedPtr<CollectionScope> GetGlobalScope() {
+    MutexLock lock(&mu_);
+    if (auto* building = std::get_if<Building>(&state_); building != nullptr) {
+      auto global_scope =
+          CreateCollectionScope(building->root_scopes, {}, 32, 32);
+      state_ = Published{global_scope};
+      return global_scope;
+    } else {
+      return std::get<Published>(state_).global_scope;
+    }
+  }
+
+  void TestOnlyReset() {
+    std::variant<Building, Published> state;
+    MutexLock lock(&mu_);
+    state = std::exchange(state_, Building{});
+  }
+
+ private:
+  GlobalCollectionScopeManager() = default;
+
+  struct Building {
+    std::vector<RefCountedPtr<CollectionScope>> root_scopes;
+  };
+
+  struct Published {
+    RefCountedPtr<CollectionScope> global_scope;
+  };
+
+  Mutex mu_;
+  std::variant<Building, Published> state_ ABSL_GUARDED_BY(mu_);
+};
+
+}  // namespace
+
+RefCountedPtr<CollectionScope> CreateRootCollectionScope(
+    absl::Span<const std::string> labels, size_t child_shards_count,
+    size_t storage_shards_count) {
+  return GlobalCollectionScopeManager::Get().CreateRootScope(
+      labels, child_shards_count, storage_shards_count);
+}
+
+RefCountedPtr<CollectionScope> GlobalCollectionScope() {
+  return GlobalCollectionScopeManager::Get().GetGlobalScope();
+}
+
+void TestOnlyResetInstruments() {
+  Hook* hook = hooks.load(std::memory_order_acquire);
+  while (hook != nullptr) {
+    Hook* next = hook->next;
+    delete hook;
+    hook = next;
+  }
+  hooks.store(nullptr, std::memory_order_release);
+  instrument_detail::QueryableDomain::TestOnlyResetAll();
+  GlobalCollectionScopeManager::Get().TestOnlyReset();
+}
+
 }  // namespace grpc_core

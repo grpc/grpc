@@ -93,6 +93,8 @@ def generate_resolver_component_tests():
                 "absl/flags:flag",
                 "absl/log:check",
                 "absl/strings",
+                "absl/log",
+                "absl/strings:str_format",
             ],
             deps = [
                 "//test/cpp/util:test_util%s" %
@@ -102,6 +104,7 @@ def generate_resolver_component_tests():
                 "//:grpc++%s" % unsecure_build_config_suffix,
                 "//:grpc%s" % unsecure_build_config_suffix,
                 "//:gpr",
+                "//src/core:env",
                 "//test/cpp/util:test_config",
                 "//test/cpp/util/windows:manifest_file",
             ],
