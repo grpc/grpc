@@ -477,7 +477,7 @@ void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
 uint32_t
 Subchannel::ConnectivityStateWatcherList::GetMaxConnectionsPerSubchannel()
     const {
-  uint32_t max_connections_per_subchannel = 0;
+  uint32_t max_connections_per_subchannel = 1;
   for (const auto& watcher : watchers_) {
     max_connections_per_subchannel =
         std::max(max_connections_per_subchannel,
