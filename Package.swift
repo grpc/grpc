@@ -175,6 +175,8 @@ let package = Package(
         "src/core/channelz/ztrace_collector.h",
         "src/core/client_channel/backup_poller.cc",
         "src/core/client_channel/backup_poller.h",
+        "src/core/client_channel/buffered_call.cc",
+        "src/core/client_channel/buffered_call.h",
         "src/core/client_channel/client_channel.cc",
         "src/core/client_channel/client_channel.h",
         "src/core/client_channel/client_channel_args.h",
