@@ -53,6 +53,7 @@ exclude = [
     "dist*",
     "grpc_root*",
     "third_party*",
+    "grpc_tools.test*"
 ]
 
 [tool.setuptools.exclude-package-data]
@@ -62,4 +63,7 @@ exclude = [
     "*.cpp",
     "*.cc",
     "*.h",
+]
+"grpc_tools" = [
+    "test/**"
 ]

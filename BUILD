@@ -1748,6 +1748,7 @@ grpc_cc_library(
         "//src/core:channel_stack_type",
         "//src/core:compression",
         "//src/core:connectivity_state",
+        "//src/core:experiments",
         "//src/core:grpc_check",
         "//src/core:iomgr_fwd",
         "//src/core:ref_counted",
@@ -4788,6 +4789,7 @@ grpc_cc_library(
         "//src/core:ext/transport/chttp2/transport/frame.h",
     ],
     external_deps = [
+        "absl/log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4795,6 +4797,7 @@ grpc_cc_library(
     ],
     deps = [
         "gpr",
+        "grpc_trace",
         "//src/core:grpc_check",
         "//src/core:http2_settings",
         "//src/core:http2_status",
