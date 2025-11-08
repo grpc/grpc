@@ -64,6 +64,7 @@
 #include "src/core/util/time_precise.h"
 #include "src/core/util/work_serializer.h"
 #include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
@@ -307,14 +308,11 @@ class ClientChannelFilter final {
       ABSL_GUARDED_BY(*work_serializer_);
   RefCountedPtr<SubchannelPoolInterface> subchannel_pool_
       ABSL_GUARDED_BY(*work_serializer_);
-  // The number of SubchannelWrapper instances referencing a given Subchannel.
-  std::map<Subchannel*, int> subchannel_refcount_map_
-      ABSL_GUARDED_BY(*work_serializer_);
-  // The set of SubchannelWrappers that currently exist.
-  // No need to hold a ref, since the map is updated in the control-plane
+  // The set of SubchannelWrapper instances referencing a given Subchannel.
+  // No need to hold refs, since the map is updated in the control-plane
   // work_serializer when the SubchannelWrappers are created and destroyed.
-  absl::flat_hash_set<SubchannelWrapper*> subchannel_wrappers_
-      ABSL_GUARDED_BY(*work_serializer_);
+  absl::flat_hash_map<Subchannel*, absl::flat_hash_set<SubchannelWrapper*>>
+      subchannel_map_ ABSL_GUARDED_BY(*work_serializer_);
   Duration keepalive_time_ ABSL_GUARDED_BY(*work_serializer_);
   grpc_error_handle disconnect_error_ ABSL_GUARDED_BY(*work_serializer_);
 
