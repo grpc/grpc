@@ -163,17 +163,26 @@ class PythonDistribTest(object):
     """Tests Python package"""
 
     def __init__(
-        self, platform, arch, docker_suffix, source=False, presubmit=False
+        self, platform, arch, docker_suffix, source=False, presubmit=False, pypy=False
     ):
         self.source = source
+        self.pypy = pypy
         if source:
-            self.name = "python_dev_%s_%s_%s" % (platform, arch, docker_suffix)
+            if pypy:
+                self.name = "python_dev_pypy_%s_%s_%s" % (platform, arch, docker_suffix)
+            else:
+                self.name = "python_dev_%s_%s_%s" % (platform, arch, docker_suffix)
         else:
-            self.name = "python_%s_%s_%s" % (platform, arch, docker_suffix)
+            if pypy:
+                self.name = "python_pypy_%s_%s_%s" % (platform, arch, docker_suffix)
+            else:
+                self.name = "python_%s_%s_%s" % (platform, arch, docker_suffix)
         self.platform = platform
         self.arch = arch
         self.docker_suffix = docker_suffix
         self.labels = ["distribtest", "python", platform, arch, docker_suffix]
+        if pypy:
+            self.labels.append("pypy")
         if presubmit:
             self.labels.append("presubmit")
 
@@ -187,19 +196,37 @@ class PythonDistribTest(object):
             raise Exception("Not supported yet.")
 
         if self.source:
+            if self.pypy:
+                dockerfile_dir = "tools/dockerfile/distribtest/python_dev_pypy_%s_%s" % (
+                    self.docker_suffix,
+                    self.arch,
+                )
+            else:
+                dockerfile_dir = "tools/dockerfile/distribtest/python_dev_%s_%s" % (
+                    self.docker_suffix,
+                    self.arch,
+                )
             return create_docker_jobspec(
                 self.name,
-                "tools/dockerfile/distribtest/python_dev_%s_%s"
-                % (self.docker_suffix, self.arch),
+                dockerfile_dir,
                 "test/distrib/python/run_source_distrib_test.sh",
                 copy_rel_path="test/distrib",
                 timeout_seconds=45 * 60,
             )
         else:
+            if self.pypy:
+                dockerfile_dir = "tools/dockerfile/distribtest/python_pypy_%s_%s" % (
+                    self.docker_suffix,
+                    self.arch,
+                )
+            else:
+                dockerfile_dir = "tools/dockerfile/distribtest/python_%s_%s" % (
+                    self.docker_suffix,
+                    self.arch,
+                )
             return create_docker_jobspec(
                 self.name,
-                "tools/dockerfile/distribtest/python_%s_%s"
-                % (self.docker_suffix, self.arch),
+                dockerfile_dir,
                 "test/distrib/python/run_binary_distrib_test.sh",
                 copy_rel_path="test/distrib",
                 timeout_seconds=45 * 60,
@@ -483,6 +510,9 @@ def targets():
         PythonDistribTest("linux", "x64", "fedora40", source=True),
         PythonDistribTest("linux", "x64", "arch", source=True),
         PythonDistribTest("linux", "x64", "ubuntu2404", source=True),
+        # Python PyPy
+        PythonDistribTest("linux", "x64", "bullseye", pypy=True, presubmit=True),
+        PythonDistribTest("linux", "x64", "bullseye", source=True, pypy=True, presubmit=True),
         # Ruby
         RubyDistribTest(
             "linux-gnu",

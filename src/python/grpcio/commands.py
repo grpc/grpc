@@ -20,6 +20,7 @@ import setuptools  # isort:skip
 import glob
 import os
 import os.path
+import platform
 import shutil
 import subprocess
 import sys
@@ -30,6 +31,9 @@ import traceback
 from setuptools.command import build_ext
 from setuptools.command import build_py
 import support
+
+# Detect PyPy
+IS_PYPY = platform.python_implementation() == "PyPy"
 
 PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
 GRPC_STEM = os.path.abspath(PYTHON_STEM + "../../../../")
@@ -254,6 +258,9 @@ def try_cythonize(extensions, linetracing=False, mandatory=True):
     if linetracing:
         additional_define_macros = [("CYTHON_TRACE_NOGIL", "1")]
         cython_compiler_directives["linetrace"] = True
+    # Enable PyPy compatibility if running on PyPy
+    if IS_PYPY:
+        cython_compiler_directives["c_api_binop_methods"] = True
     return Cython.Build.cythonize(
         extensions,
         include_path=[

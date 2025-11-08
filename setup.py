@@ -97,6 +97,9 @@ _spawn_patch.monkeypatch_spawn()
 
 LICENSE = "Apache License 2.0"
 
+# Detect PyPy
+IS_PYPY = platform.python_implementation() == "PyPy"
+
 CLASSIFIERS = [
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python",
@@ -104,6 +107,8 @@ CLASSIFIERS = [
 ] + [
     f"Programming Language :: Python :: {x}"
     for x in python_version.SUPPORTED_PYTHON_VERSIONS
+] + [
+    "Programming Language :: Python :: Implementation :: PyPy",
 ]
 
 

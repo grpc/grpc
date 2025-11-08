@@ -129,6 +129,9 @@ class PythonArtifact:
             self.labels.append("linux")
         if "musllinux" in platform:
             self.labels.append("linux")
+        if platform == "pypy":
+            self.labels.append("pypy")
+            self.labels.append("linux")
 
     def pre_build_jobspecs(self):
         return []
@@ -144,7 +147,26 @@ class PythonArtifact:
             environ["ARCHFLAGS"] = "-arch arm64 -arch x86_64"
             environ["GRPC_BUILD_MAC"] = "true"
 
-        if self.platform == "linux_extra":
+        if self.platform == "pypy":
+            # PyPy builds on regular Linux (not manylinux)
+            # PyPy wheels use tags like pp39-pp39-linux_x86_64.whl
+            environ["PYTHON"] = "pypy3"
+            environ["GRPC_SKIP_PIP_CYTHON_UPGRADE"] = "TRUE"
+            environ["GRPC_SKIP_TWINE_CHECK"] = "TRUE"
+            # PyPy wheels don't use auditwheel
+            environ["GRPC_RUN_AUDITWHEEL_REPAIR"] = ""
+            # Build dependents since we're not crosscompiling
+            environ["GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS"] = "TRUE"
+            return create_docker_jobspec(
+                self.name,
+                "tools/dockerfile/grpc_artifact_python_pypy_{}".format(
+                    self.arch
+                ),
+                "tools/run_tests/artifacts/build_artifact_python.sh",
+                environ=environ,
+                timeout_seconds=60 * 60 * 2,
+            )
+        elif self.platform == "linux_extra":
             # Crosscompilation build for armv7 (e.g. Raspberry Pi)
             environ["PYTHON"] = "/opt/python/{}/bin/python3".format(
                 self.py_version
@@ -483,6 +505,11 @@ def targets():
             PythonArtifact("windows", "x64", "Python312"),
             PythonArtifact("windows", "x64", "Python313"),
             PythonArtifact("windows", "x64", "Python314", presubmit=True),
+            # PyPy artifacts - PyPy wheels use pp tags (e.g., pp39-pp39-linux_x86_64.whl)
+            PythonArtifact("pypy", "x64", "pp39-pp39", presubmit=True),
+            PythonArtifact("pypy", "x64", "pp310-pp310"),
+            PythonArtifact("pypy", "x64", "pp311-pp311"),
+            PythonArtifact("pypy", "x64", "pp312-pp312"),
             RubyArtifact("linux", "x86-mingw32", presubmit=True),
             RubyArtifact("linux", "x64-mingw-ucrt", presubmit=True),
             RubyArtifact("linux", "x86_64-linux-gnu", presubmit=True),

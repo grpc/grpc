@@ -38,6 +38,8 @@ import python_version
 
 _parallel_compile_patch.monkeypatch_compile_maybe()
 
+# Detect PyPy
+IS_PYPY = platform.python_implementation() == "PyPy"
 
 O11Y_CC_SRCS = [
     "client_call_tracer.cc",
@@ -271,8 +273,13 @@ def extension_modules():
     if BUILD_WITH_CYTHON:
         from Cython import Build
 
+        compiler_directives = {"language_level": "3"}
+        # Enable PyPy compatibility if running on PyPy
+        if IS_PYPY:
+            compiler_directives["c_api_binop_methods"] = True
+
         return Build.cythonize(
-            extensions, compiler_directives={"language_level": "3"}
+            extensions, compiler_directives=compiler_directives
         )
     else:
         return extensions
