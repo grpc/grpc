@@ -181,10 +181,13 @@ class PythonDistribTest(object):
         return []
 
     def build_jobspec(self, inner_jobs=None):
-        # TODO(jtattermusch): honor inner_jobs arg for this task.
-        del inner_jobs
         if not self.platform == "linux":
             raise Exception("Not supported yet.")
+
+        # Set parallel jobs for package installation and validation
+        environ = {}
+        if inner_jobs is not None:
+            environ["GRPC_PYTHON_DISTRIBTEST_JOBS"] = str(inner_jobs)
 
         if self.source:
             return create_docker_jobspec(
@@ -194,6 +197,7 @@ class PythonDistribTest(object):
                 "test/distrib/python/run_source_distrib_test.sh",
                 copy_rel_path="test/distrib",
                 timeout_seconds=45 * 60,
+                environ=environ,
             )
         else:
             return create_docker_jobspec(
@@ -203,6 +207,7 @@ class PythonDistribTest(object):
                 "test/distrib/python/run_binary_distrib_test.sh",
                 copy_rel_path="test/distrib",
                 timeout_seconds=45 * 60,
+                environ=environ,
             )
 
     def __str__(self):
