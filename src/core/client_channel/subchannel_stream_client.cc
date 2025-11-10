@@ -118,12 +118,12 @@ void SubchannelStreamClient::StartCallLocked() {
               << ": SubchannelStreamClient created CallState "
               << call_state_.get();
   }
-  absl::Status status = call_state_->StartCallLocked();
+  bool call_started = call_state_->StartCallLocked();
   // If we could not create the call due to the subchannel loosing its
   // connection, then manually destroy the CallState object, and don't
   // do any retry.  The caller will recreate the SubchannelStreamClient
   // when the connection is reestablished.
-  if (!status.ok()) delete call_state_.release();
+  if (!call_started) delete call_state_.release();
 }
 
 void SubchannelStreamClient::StartRetryTimerLocked() {
@@ -191,7 +191,7 @@ void SubchannelStreamClient::CallState::Orphan() {
   Cancel();
 }
 
-absl::Status SubchannelStreamClient::CallState::StartCallLocked() {
+bool SubchannelStreamClient::CallState::StartCallLocked() {
   Subchannel::CreateCallArgs args = {
       &pollent_,
       gpr_get_cycle_counter(),  // start_time
@@ -202,10 +202,9 @@ absl::Status SubchannelStreamClient::CallState::StartCallLocked() {
   grpc_error_handle error;
   call_ = subchannel_stream_client_->subchannel_->CreateCall(args, &error)
               .release();
-  // Check if creation failed.
-  if (call_ == nullptr) {
-    return absl::UnavailableError("failed to create call on subchannel");
-  }
+  // If there was no connection to start a call on, signal the caller
+  // that we didn't create the call.
+  if (call_ == nullptr) return false;
   // Register after-destruction callback.
   GRPC_CLOSURE_INIT(&after_call_stack_destruction_, AfterCallStackDestruction,
                     this, grpc_schedule_on_exec_ctx);
@@ -215,7 +214,7 @@ absl::Status SubchannelStreamClient::CallState::StartCallLocked() {
                << " CallState " << this << ": error creating "
                << "stream on subchannel (" << error << "); will retry";
     CallEndedLocked(/*retry=*/true);
-    return absl::OkStatus();
+    return true;
   }
   // Initialize payload and batch.
   batch_.payload = &payload_;
@@ -275,7 +274,7 @@ absl::Status SubchannelStreamClient::CallState::StartCallLocked() {
   recv_trailing_metadata_batch_.recv_trailing_metadata = true;
   // Start recv_trailing_metadata batch.
   StartBatch(&recv_trailing_metadata_batch_);
-  return absl::OkStatus();
+  return true;
 }
 
 void SubchannelStreamClient::CallState::StartBatchInCallCombiner(
