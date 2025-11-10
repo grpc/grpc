@@ -206,6 +206,10 @@ absl::Status SubchannelStreamClient::CallState::StartCallLocked() {
   if (call_ == nullptr) {
     return absl::UnavailableError("failed to create call on subchannel");
   }
+  // Register after-destruction callback.
+  GRPC_CLOSURE_INIT(&after_call_stack_destruction_, AfterCallStackDestruction,
+                    this, grpc_schedule_on_exec_ctx);
+  call_->SetAfterCallStackDestroy(&after_call_stack_destruction_);
   if (!error.ok() || subchannel_stream_client_->event_handler_ == nullptr) {
     LOG(ERROR) << "SubchannelStreamClient " << subchannel_stream_client_.get()
                << " CallState " << this << ": error creating "
@@ -213,10 +217,6 @@ absl::Status SubchannelStreamClient::CallState::StartCallLocked() {
     CallEndedLocked(/*retry=*/true);
     return absl::OkStatus();
   }
-  // Register after-destruction callback.
-  GRPC_CLOSURE_INIT(&after_call_stack_destruction_, AfterCallStackDestruction,
-                    this, grpc_schedule_on_exec_ctx);
-  call_->SetAfterCallStackDestroy(&after_call_stack_destruction_);
   // Initialize payload and batch.
   batch_.payload = &payload_;
   // on_complete callback takes ref, handled manually.
