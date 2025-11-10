@@ -3875,6 +3875,7 @@ grpc_cc_library(
     ],
     deps = [
         "channel_args",
+        "env",
         "json",
         "json_args",
         "json_object_loader",
