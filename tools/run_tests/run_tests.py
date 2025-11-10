@@ -14,12 +14,9 @@
 # limitations under the License.
 """Run tests in parallel."""
 
-from __future__ import print_function
-
 import argparse
 import ast
 import collections
-import glob
 import itertools
 import json
 import logging
@@ -30,20 +27,14 @@ import platform
 import random
 import re
 import shlex
-import socket
 import subprocess
 import sys
-import tempfile
 import time
-import traceback
-import uuid
-
 import urllib
 
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
 import python_utils.start_port_server as start_port_server
-import python_utils.watch_dirs as watch_dirs
 
 try:
     from python_utils.upload_test_results import upload_results_to_bq
