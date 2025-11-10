@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
-
 import logging
 import os
 import socket
@@ -21,8 +19,7 @@ import subprocess
 import sys
 import tempfile
 import time
-
-import urllib.request as request
+from urllib import request
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import jobset
