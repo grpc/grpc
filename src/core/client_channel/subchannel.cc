@@ -551,10 +551,16 @@ Subchannel::QueuedCall::QueuedCall(WeakRefCountedPtr<Subchannel> subchannel,
       args_(args),
       buffered_call_(args_.call_combiner, &subchannel_call_queue_trace),
       queue_entry_(subchannel_->queued_calls_.emplace_back(this)) {
+  GRPC_TRACE_LOG(subchannel_call_queue, INFO)
+      << "subchannel " << subchannel_.get() << ": created queued call " << this
+      << ", queue size=" << subchannel_->queued_calls_.size();
   canceller_ = new Canceller(Ref().TakeAsSubclass<QueuedCall>());
 }
 
 Subchannel::QueuedCall::~QueuedCall() {
+  GRPC_TRACE_LOG(subchannel_call_queue, INFO)
+      << "subchannel " << subchannel_.get() << ": destroying queued call "
+      << this;
   if (after_call_stack_destroy_ != nullptr) {
     ExecCtx::Run(DEBUG_LOCATION, after_call_stack_destroy_, absl::OkStatus());
   }
@@ -568,6 +574,10 @@ void Subchannel::QueuedCall::SetAfterCallStackDestroy(grpc_closure* closure) {
 
 void Subchannel::QueuedCall::StartTransportStreamOpBatch(
     grpc_transport_stream_op_batch* batch) {
+  GRPC_TRACE_LOG(subchannel_call_queue, INFO)
+      << "subchannel " << subchannel_.get() << " queued call " << this
+      << ": starting batch: "
+      << grpc_transport_stream_op_batch_string(batch, false);
   MutexLock lock(&mu_);
   // If we already have a real subchannel call, pass the batch down to it.
   if (subchannel_call_ != nullptr) {
@@ -603,6 +613,9 @@ void Subchannel::QueuedCall::StartTransportStreamOpBatch(
 
 void Subchannel::QueuedCall::ResumeOnConnectionLocked(
     ConnectedSubchannel* connected_subchannel) {
+  GRPC_TRACE_LOG(subchannel_call_queue, INFO)
+      << "subchannel " << subchannel_.get() << " queued call " << this
+      << ": resuming on connected_subchannel " << connected_subchannel;
   canceller_ = nullptr;
   queue_entry_ = nullptr;
   MutexLock lock(&mu_);
@@ -626,6 +639,9 @@ void Subchannel::QueuedCall::ResumeOnConnectionLocked(
 }
 
 void Subchannel::QueuedCall::Fail(absl::Status status) {
+  GRPC_TRACE_LOG(subchannel_call_queue, INFO)
+      << "subchannel " << subchannel_.get() << " queued call " << this
+      << ": failing: " << status;
   canceller_ = nullptr;
   queue_entry_ = nullptr;
   MutexLock lock(&mu_);
@@ -748,7 +764,6 @@ class Subchannel::ConnectedSubchannelStateWatcher final
     }
   }
 
-  WeakRefCountedPtr<Subchannel> subchannel_;
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
 };
 
@@ -1413,6 +1428,7 @@ RefCountedPtr<UnstartedCallDestination> Subchannel::call_destination() {
 
 RefCountedPtr<Subchannel::ConnectedSubchannel>
 Subchannel::ChooseConnectionLocked() {
+  if (!IsSubchannelConnectionScalingEnabled()) return connections_[0];
   // Try to find a connection with quota available for the RPC.
   for (auto& connection : connections_) {
     if (connection->GetQuotaForRpc()) return connection;
