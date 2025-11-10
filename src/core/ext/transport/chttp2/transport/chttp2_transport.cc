@@ -3663,6 +3663,8 @@ void grpc_chttp2_transport::
     watcher->OnPeerMaxConcurrentStreamsUpdate(
         max_concurrent_streams,
         std::make_unique<MaxConcurrentStreamsUpdateOnDone>(std::move(t)));
-    watcher.reset();  // Before ExecCtx goes out of scope.
+    // Drop refs before ExecCtx goes out of scope.
+    watcher.reset();
+    t.reset();
   });
 }
