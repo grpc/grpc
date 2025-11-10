@@ -116,7 +116,8 @@ class SubchannelStreamClient final
 
     void Orphan() override;
 
-    absl::Status StartCallLocked()
+    // Returns false if there was no connection to start a call on.
+    bool StartCallLocked()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&SubchannelStreamClient::mu_);
 
    private:
