@@ -601,7 +601,7 @@ class ClientChannelFilter::SubchannelWrapper final
           << parent_.get() << " subchannel " << parent_->subchannel_.get()
           << " watcher=" << watcher_.get()
           << " state=" << ConnectivityStateName(state) << " status=" << status;
-      if (!IsTransportStateWatcherEnabled()) {
+      if (!IsSubchannelConnectionScalingEnabled()) {
         auto keepalive_throttling = status.GetPayload(kKeepaliveThrottlingKey);
         if (keepalive_throttling.has_value()) {
           int new_keepalive_time_ms = -1;

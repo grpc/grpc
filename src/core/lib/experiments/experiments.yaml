@@ -303,6 +303,11 @@
   expiry: 2026/02/01
   owner: akshitpatel@google.com
   test_tags: ["promise_test"]
+- name: subchannel_connection_scaling
+  description: Subchannel connection scaling support.
+  expiry: 2026/02/01
+  owner: roth@google.com
+  test_tags: ["cpp_lb_end2end_test", "chttp2_keepalive_tests"]
 - name: subchannel_wrapper_cleanup_on_orphan
   description:
     Fixes the subchannel wrapper to drop any non-cancelled watchers when
@@ -329,11 +334,6 @@
   expiry: 2026/02/01
   owner: snohria@google.com
   test_tags: [resource_quota_test]
-- name: transport_state_watcher
-  description: New state watcher API between transport and subchannel.
-  expiry: 2026/02/01
-  owner: roth@google.com
-  test_tags: ["cpp_lb_end2end_test", "chttp2_keepalive_tests"]
 - name: tsi_frame_protector_without_locks
   description: Do not hold locks while using the tsi_frame_protector.
   expiry: 2026/02/01

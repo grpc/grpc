@@ -1157,7 +1157,8 @@ absl::Status Subchannel::ConnectivityStatusToReportLocked() const {
   // If using the old watcher API, also report status in IDLE state, since
   // that's used to propagate keepalive times.
   if (state_ == GRPC_CHANNEL_TRANSIENT_FAILURE ||
-      (!IsTransportStateWatcherEnabled() && state_ == GRPC_CHANNEL_IDLE)) {
+      (!IsSubchannelConnectionScalingEnabled() &&
+       state_ == GRPC_CHANNEL_IDLE)) {
     return last_failure_status_;
   }
   return absl::OkStatus();
@@ -1364,7 +1365,7 @@ bool Subchannel::PublishTransportLocked() {
       socket_node->AddParent(channelz_node_.get());
     }
   }
-  if (IsTransportStateWatcherEnabled()) {
+  if (IsSubchannelConnectionScalingEnabled()) {
     transport->StartWatch(
         MakeRefCounted<ConnectionStateWatcher>(
             WeakRef(DEBUG_LOCATION, "state_watcher"), connected_subchannel));

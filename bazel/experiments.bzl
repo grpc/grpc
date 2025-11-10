@@ -57,11 +57,11 @@ EXPERIMENT_ENABLES = {
     "secure_endpoint_offload_large_writes": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,secure_endpoint_offload_large_writes",
     "sleep_promise_exec_ctx_removal": "sleep_promise_exec_ctx_removal",
     "sleep_use_non_owning_waker": "sleep_use_non_owning_waker",
+    "subchannel_connection_scaling": "subchannel_connection_scaling",
     "subchannel_wrapper_cleanup_on_orphan": "subchannel_wrapper_cleanup_on_orphan",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
     "track_writes_in_resource_quota": "track_writes_in_resource_quota",
-    "transport_state_watcher": "transport_state_watcher",
     "tsi_frame_protector_without_locks": "tsi_frame_protector_without_locks",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
 }
@@ -88,7 +88,7 @@ EXPERIMENTS = {
                 "channelz_use_v2_for_v1_service",
             ],
             "chttp2_keepalive_tests": [
-                "transport_state_watcher",
+                "subchannel_connection_scaling",
             ],
             "core_end2end_test": [
                 "chttp2_bound_write_size",
@@ -109,7 +109,7 @@ EXPERIMENTS = {
             ],
             "cpp_lb_end2end_test": [
                 "rr_wrr_connect_from_random_index",
-                "transport_state_watcher",
+                "subchannel_connection_scaling",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -190,7 +190,7 @@ EXPERIMENTS = {
                 "channelz_use_v2_for_v1_service",
             ],
             "chttp2_keepalive_tests": [
-                "transport_state_watcher",
+                "subchannel_connection_scaling",
             ],
             "core_end2end_test": [
                 "chttp2_bound_write_size",
@@ -211,7 +211,7 @@ EXPERIMENTS = {
             ],
             "cpp_lb_end2end_test": [
                 "rr_wrr_connect_from_random_index",
-                "transport_state_watcher",
+                "subchannel_connection_scaling",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -292,7 +292,7 @@ EXPERIMENTS = {
                 "channelz_use_v2_for_v1_service",
             ],
             "chttp2_keepalive_tests": [
-                "transport_state_watcher",
+                "subchannel_connection_scaling",
             ],
             "core_end2end_test": [
                 "chttp2_bound_write_size",
@@ -313,7 +313,7 @@ EXPERIMENTS = {
             ],
             "cpp_lb_end2end_test": [
                 "rr_wrr_connect_from_random_index",
-                "transport_state_watcher",
+                "subchannel_connection_scaling",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",

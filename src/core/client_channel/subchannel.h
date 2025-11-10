@@ -272,7 +272,8 @@ class Subchannel final : public DualRefCounted<Subchannel> {
   class LegacyConnectedSubchannel;
   class NewConnectedSubchannel;
 
-  // TODO(roth): Remove this when transport_state_watcher experiment is removed.
+  // TODO(roth): Remove this when subchannel_connection_scaling experiment
+  // is removed.
   class ConnectedSubchannelStateWatcher;
 
   class ConnectionStateWatcher;
