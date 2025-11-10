@@ -250,7 +250,8 @@ TEST(CallStateTest, ReceiveTrailersOnlySkipsInitialMetadataOnUnstartedCalls) {
   StrictMock<MockActivity> activity;
   activity.Activate();
   CallState state;
-  state.PushServerTrailingMetadata(false);
+  // Only cancelled trailing metadata can be pushed on unstarted CallState
+  state.PushServerTrailingMetadata(true);
   EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady(false));
   state.FinishPullServerInitialMetadata();
   EXPECT_THAT(state.PollServerTrailingMetadataAvailable(), IsReady());
@@ -383,6 +384,73 @@ TEST(CallStateTest, CanSendMessageThenInitialMetadataOnServer) {
   EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady());
   state.FinishPullServerInitialMetadata();
   EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsReady());
+}
+
+TEST(CallStateTest, ReceiveNullMessageAfterTrailingMetadata) {
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  CallState state;
+  state.Start();
+  // Send client initial metadata
+  state.BeginPullClientInitialMetadata();
+  state.FinishPullClientInitialMetadata();
+  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsPending());
+
+  // Receive server initial metadata
+  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsPending());
+  EXPECT_WAKEUP(activity,
+                EXPECT_EQ(state.PushServerInitialMetadata(), Success{}));
+
+  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady());
+  state.FinishPullServerInitialMetadata();
+
+  // Server waiting on message
+  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsPending());
+
+  // Server pushes trailing metadata
+  EXPECT_WAKEUP(activity, state.PushServerTrailingMetadata(false));
+  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(),
+              IsReady(Failure{}));
+  // Client receives trailing metadata
+  EXPECT_THAT(state.PollServerTrailingMetadataAvailable(), IsReady());
+
+  // Client receives null message (end of stream)
+  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(), IsReady(false));
+  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(),
+              IsReady(Failure{}));
+}
+
+TEST(CallStateTest, ReceiveFailureAfterCancellation) {
+  StrictMock<MockActivity> activity;
+  activity.Activate();
+  CallState state;
+  state.Start();
+  // Send client initial metadata
+  state.BeginPullClientInitialMetadata();
+  state.FinishPullClientInitialMetadata();
+  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsPending());
+
+  // Receive server initial metadata
+  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsPending());
+  EXPECT_WAKEUP(activity,
+                EXPECT_EQ(state.PushServerInitialMetadata(), Success{}));
+
+  EXPECT_THAT(state.PollPullServerInitialMetadataAvailable(), IsReady());
+  state.FinishPullServerInitialMetadata();
+
+  // Server waiting on message
+  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(), IsPending());
+
+  // Server pushes trailing metadata
+  EXPECT_WAKEUP(activity, state.PushServerTrailingMetadata(true));
+  EXPECT_THAT(state.PollPullClientToServerMessageAvailable(),
+              IsReady(Failure{}));
+  // Client receives trailing metadata
+  EXPECT_THAT(state.PollServerTrailingMetadataAvailable(), IsReady());
+
+  // Client receives failure on message read
+  EXPECT_THAT(state.PollPullServerToClientMessageAvailable(),
+              IsReady(Failure{}));
 }
 
 }  // namespace grpc_core
