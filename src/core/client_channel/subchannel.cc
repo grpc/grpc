@@ -138,8 +138,6 @@ class Subchannel::ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
                                          grpc_error_handle* error) = 0;
   virtual void Ping(grpc_closure* on_initiate, grpc_closure* on_ack) = 0;
 
-  virtual channelz::SubchannelNode* channelz_node() const = 0;
-
   // Returns true if there is quota for another RPC to start on this
   // connection.
   bool SetMaxConcurrentStreams(uint32_t max_concurrent_streams) {
@@ -224,10 +222,6 @@ class Subchannel::LegacyConnectedSubchannel final : public ConnectedSubchannel {
 
   ~LegacyConnectedSubchannel() override {
     channel_stack_.reset(DEBUG_LOCATION, "ConnectedSubchannel");
-  }
-
-  channelz::SubchannelNode* channelz_node() const override {
-    return channelz_node_.get();
   }
 
   void StartWatch(
@@ -341,9 +335,8 @@ Subchannel::LegacyConnectedSubchannel::SubchannelCall::SubchannelCall(
     return;
   }
   grpc_call_stack_set_pollset_or_pollset_set(callstk, args.pollent);
-  auto* channelz_node = connected_subchannel_->channelz_node();
-  if (channelz_node != nullptr) {
-    channelz_node->RecordCallStarted();
+  if (connected_subchannel_->channelz_node_ != nullptr) {
+    connected_subchannel_->channelz_node_->RecordCallStarted();
   }
 }
 
@@ -403,7 +396,7 @@ void Subchannel::LegacyConnectedSubchannel::SubchannelCall::
   // only intercept payloads with recv trailing.
   if (!batch->recv_trailing_metadata) return;
   // only add interceptor is channelz is enabled.
-  if (connected_subchannel_->channelz_node() == nullptr) return;
+  if (connected_subchannel_->channelz_node_ == nullptr) return;
   GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_, RecvTrailingMetadataReady,
                     this, grpc_schedule_on_exec_ctx);
   // save some state needed for the interception callback.
@@ -437,7 +430,7 @@ void Subchannel::LegacyConnectedSubchannel::SubchannelCall::
   grpc_status_code status = GRPC_STATUS_OK;
   GetCallStatus(&status, call->deadline_, call->recv_trailing_metadata_, error);
   channelz::SubchannelNode* channelz_node =
-      call->connected_subchannel_->channelz_node();
+      call->connected_subchannel_->channelz_node_.get();
   GRPC_CHECK_NE(channelz_node, nullptr);
   if (status == GRPC_STATUS_OK) {
     channelz_node->RecordCallSucceeded();
@@ -705,8 +698,6 @@ class Subchannel::NewConnectedSubchannel final : public ConnectedSubchannel {
     Crash("legacy ping method called in call v3 impl");
   }
 
-  channelz::SubchannelNode* channelz_node() const override { return nullptr; }
-
  private:
   RefCountedPtr<UnstartedCallDestination> call_destination_;
   RefCountedPtr<TransportCallDestination> transport_;
@@ -747,12 +738,6 @@ class Subchannel::ConnectedSubchannelStateWatcher final
             << ": Connected subchannel " << connected_subchannel_.get()
             << " reports " << ConnectivityStateName(new_state) << ": "
             << status;
-        if (c->channelz_node() != nullptr) {
-          if (connected_subchannel_->channelz_node() != nullptr) {
-            connected_subchannel_->channelz_node()->RemoveParent(
-                c->channelz_node());
-          }
-        }
         // Record the failure status.
         // Need to do this here to propagate keepalive time.
         c->SetLastFailureLocked(status);
@@ -794,14 +779,6 @@ class Subchannel::ConnectionStateWatcher final
     }
     // Remove the connection from the subchannel's list of connections.
     subchannel->RemoveConnectionLocked(connected_subchannel_);
-// FIXME: this probably isn't working right -- maybe just remove?
-// (and maybe we no longer need to store the node in the connected subchannel?)
-    if (subchannel->channelz_node() != nullptr) {
-      if (connected_subchannel_->channelz_node() != nullptr) {
-        connected_subchannel_->channelz_node()->RemoveParent(
-            subchannel->channelz_node());
-      }
-    }
     // If this was the last connection, then fail all queued RPCs and
     // update the connectivity state.
     if (subchannel->connections_.empty()) {
