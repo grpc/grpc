@@ -16,7 +16,13 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/credentials/call/oauth2")
+grpc_package(
+    name = "test/core/credentials/call/oauth2",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_library(
     name = "oauth2_utils",
