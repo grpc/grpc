@@ -111,7 +111,7 @@ TraceFlag secure_endpoint_trace(false, "secure_endpoint");
 TraceFlag server_channel_trace(false, "server_channel");
 TraceFlag stateful_session_filter_trace(false, "stateful_session_filter");
 TraceFlag subchannel_trace(false, "subchannel");
-TraceFlag subchannel_call_queue_trace(false, "subchannel_call_queue");
+TraceFlag subchannel_call_trace(false, "subchannel_call");
 TraceFlag subchannel_pool_trace(false, "subchannel_pool");
 TraceFlag tcp_trace(false, "tcp");
 TraceFlag timer_trace(false, "timer");
@@ -194,7 +194,7 @@ const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
           {"server_channel", &server_channel_trace},
           {"stateful_session_filter", &stateful_session_filter_trace},
           {"subchannel", &subchannel_trace},
-          {"subchannel_call_queue", &subchannel_call_queue_trace},
+          {"subchannel_call", &subchannel_call_trace},
           {"subchannel_pool", &subchannel_pool_trace},
           {"tcp", &tcp_trace},
           {"timer", &timer_trace},

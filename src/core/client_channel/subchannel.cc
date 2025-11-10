@@ -549,16 +549,16 @@ Subchannel::QueuedCall::QueuedCall(WeakRefCountedPtr<Subchannel> subchannel,
                                    CreateCallArgs args)
     : subchannel_(std::move(subchannel)),
       args_(args),
-      buffered_call_(args_.call_combiner, &subchannel_call_queue_trace),
+      buffered_call_(args_.call_combiner, &subchannel_call_trace),
       queue_entry_(subchannel_->queued_calls_.emplace_back(this)) {
-  GRPC_TRACE_LOG(subchannel_call_queue, INFO)
+  GRPC_TRACE_LOG(subchannel_call, INFO)
       << "subchannel " << subchannel_.get() << ": created queued call " << this
       << ", queue size=" << subchannel_->queued_calls_.size();
   canceller_ = new Canceller(Ref().TakeAsSubclass<QueuedCall>());
 }
 
 Subchannel::QueuedCall::~QueuedCall() {
-  GRPC_TRACE_LOG(subchannel_call_queue, INFO)
+  GRPC_TRACE_LOG(subchannel_call, INFO)
       << "subchannel " << subchannel_.get() << ": destroying queued call "
       << this;
   if (after_call_stack_destroy_ != nullptr) {
@@ -574,7 +574,7 @@ void Subchannel::QueuedCall::SetAfterCallStackDestroy(grpc_closure* closure) {
 
 void Subchannel::QueuedCall::StartTransportStreamOpBatch(
     grpc_transport_stream_op_batch* batch) {
-  GRPC_TRACE_LOG(subchannel_call_queue, INFO)
+  GRPC_TRACE_LOG(subchannel_call, INFO)
       << "subchannel " << subchannel_.get() << " queued call " << this
       << ": starting batch: "
       << grpc_transport_stream_op_batch_string(batch, false);
@@ -613,7 +613,7 @@ void Subchannel::QueuedCall::StartTransportStreamOpBatch(
 
 void Subchannel::QueuedCall::ResumeOnConnectionLocked(
     ConnectedSubchannel* connected_subchannel) {
-  GRPC_TRACE_LOG(subchannel_call_queue, INFO)
+  GRPC_TRACE_LOG(subchannel_call, INFO)
       << "subchannel " << subchannel_.get() << " queued call " << this
       << ": resuming on connected_subchannel " << connected_subchannel;
   canceller_ = nullptr;
@@ -639,7 +639,7 @@ void Subchannel::QueuedCall::ResumeOnConnectionLocked(
 }
 
 void Subchannel::QueuedCall::Fail(absl::Status status) {
-  GRPC_TRACE_LOG(subchannel_call_queue, INFO)
+  GRPC_TRACE_LOG(subchannel_call, INFO)
       << "subchannel " << subchannel_.get() << " queued call " << this
       << ": failing: " << status;
   canceller_ = nullptr;
