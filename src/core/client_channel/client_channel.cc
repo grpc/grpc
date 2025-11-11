@@ -142,7 +142,8 @@ class ClientChannel::SubchannelWrapper
     : public SubchannelInterfaceWithCallDestination {
  public:
   SubchannelWrapper(WeakRefCountedPtr<ClientChannel> client_channel,
-                    RefCountedPtr<Subchannel> subchannel);
+                    RefCountedPtr<Subchannel> subchannel,
+                    uint32_t max_connections_per_subchannel);
   ~SubchannelWrapper() override;
 
   void Orphaned() override;
@@ -190,6 +191,7 @@ class ClientChannel::SubchannelWrapper
 
   WeakRefCountedPtr<ClientChannel> client_channel_;
   RefCountedPtr<Subchannel> subchannel_;
+  const uint32_t max_connections_per_subchannel_;
   // Maps from the address of the watcher passed to us by the LB policy
   // to the address of the WrapperWatcher that we passed to the underlying
   // subchannel.  This is needed so that when the LB policy calls
@@ -239,6 +241,10 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
             *self->subchannel_wrapper_->client_channel_->work_serializer_) {
           self->ApplyUpdateInControlPlaneWorkSerializer(state, status);
         });
+  }
+
+  uint32_t max_connections_per_subchannel() const override {
+    return subchannel_wrapper_->max_connections_per_subchannel_;
   }
 
   grpc_pollset_set* interested_parties() override { return nullptr; }
@@ -300,16 +306,19 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
 
 ClientChannel::SubchannelWrapper::SubchannelWrapper(
     WeakRefCountedPtr<ClientChannel> client_channel,
-    RefCountedPtr<Subchannel> subchannel)
+    RefCountedPtr<Subchannel> subchannel,
+    uint32_t max_connections_per_subchannel)
     : SubchannelInterfaceWithCallDestination(
           GRPC_TRACE_FLAG_ENABLED(client_channel) ? "SubchannelWrapper"
                                                   : nullptr),
       client_channel_(std::move(client_channel)),
-      subchannel_(std::move(subchannel)) {
+      subchannel_(std::move(subchannel)),
+      max_connections_per_subchannel_(max_connections_per_subchannel) {
   GRPC_TRACE_LOG(client_channel, INFO)
       << "client_channel=" << client_channel_.get()
       << ": creating subchannel wrapper " << this << " for subchannel "
-      << subchannel_.get();
+      << subchannel_.get()
+      << ", max_connections_per_subchannel=" << max_connections_per_subchannel;
 #ifndef NDEBUG
   DCHECK(client_channel_->work_serializer_->RunningInWorkSerializer());
 #endif
@@ -426,6 +435,17 @@ class ClientChannel::ClientChannelControlHelper
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_) {
     // If shutting down, do nothing.
     if (client_channel_->resolver_ == nullptr) return nullptr;
+    // Determine max_connections_per_subchannel.
+    const uint32_t cap =
+        args.GetInt(GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL_CAP).value_or(10);
+    uint32_t max_connections_per_subchannel =
+        args.GetInt(GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL)
+            .value_or(
+                per_address_args.GetInt(GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL)
+                    .value_or(1));
+    max_connections_per_subchannel =
+        std::min(max_connections_per_subchannel, cap);
+    // Modify args for subchannel.
     ChannelArgs subchannel_args = Subchannel::MakeSubchannelArgs(
         args, per_address_args, client_channel_->subchannel_pool_,
         client_channel_->default_authority_);
@@ -437,8 +457,8 @@ class ClientChannel::ClientChannelControlHelper
     // Make sure the subchannel has updated keepalive time.
     subchannel->ThrottleKeepaliveTime(client_channel_->keepalive_time_);
     // Create and return wrapper for the subchannel.
-    return MakeRefCounted<SubchannelWrapper>(client_channel_,
-                                             std::move(subchannel));
+    return MakeRefCounted<SubchannelWrapper>(
+        client_channel_, std::move(subchannel), max_connections_per_subchannel);
   }
 
   void UpdateState(
@@ -1101,6 +1121,12 @@ void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
         static_cast<const internal::ClientChannelGlobalParsedConfig*>(
             service_config->GetGlobalParsedConfig(
                 service_config_parser_index_));
+    // Set max_connections_per_subchannel from service config.
+    if (parsed_service_config->max_connections_per_subchannel() != 0) {
+      result.args = result.args.Set(
+          GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL,
+          parsed_service_config->max_connections_per_subchannel());
+    }
     // Choose LB policy config.
     RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config =
         ChooseLbPolicy(result, parsed_service_config);
