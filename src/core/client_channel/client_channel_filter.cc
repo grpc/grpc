@@ -411,32 +411,31 @@ class ClientChannelFilter::SubchannelWrapper final
     : public SubchannelInterface {
  public:
   SubchannelWrapper(ClientChannelFilter* chand,
-                    RefCountedPtr<Subchannel> subchannel)
+                    RefCountedPtr<Subchannel> subchannel,
+                    uint32_t max_connections_per_subchannel)
       : SubchannelInterface(GRPC_TRACE_FLAG_ENABLED(client_channel)
                                 ? "SubchannelWrapper"
                                 : nullptr),
         chand_(chand),
-        subchannel_(std::move(subchannel)) {
+        subchannel_(std::move(subchannel)),
+        max_connections_per_subchannel_(max_connections_per_subchannel) {
     GRPC_TRACE_LOG(client_channel, INFO)
         << "chand=" << chand << ": creating subchannel wrapper " << this
-        << " for subchannel " << subchannel_.get();
+        << " for subchannel " << subchannel_.get()
+        << ", max_connections_per_subchannel="
+        << max_connections_per_subchannel;
     GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "SubchannelWrapper");
 #ifndef NDEBUG
     GRPC_DCHECK(chand_->work_serializer_->RunningInWorkSerializer());
 #endif
-    if (chand_->channelz_node_ != nullptr) {
+    auto& subchannel_wrappers = chand_->subchannel_map_[subchannel_.get()];
+    if (subchannel_wrappers.empty() && chand_->channelz_node_ != nullptr) {
       auto* subchannel_node = subchannel_->channelz_node();
       if (subchannel_node != nullptr) {
-        auto it = chand_->subchannel_refcount_map_.find(subchannel_.get());
-        if (it == chand_->subchannel_refcount_map_.end()) {
-          subchannel_node->AddParent(chand_->channelz_node_);
-          it = chand_->subchannel_refcount_map_.emplace(subchannel_.get(), 0)
-                   .first;
-        }
-        ++it->second;
+        subchannel_node->AddParent(chand_->channelz_node_);
       }
     }
-    chand_->subchannel_wrappers_.insert(this);
+    subchannel_wrappers.insert(this);
   }
 
   ~SubchannelWrapper() override {
@@ -451,37 +450,37 @@ class ClientChannelFilter::SubchannelWrapper final
     // WorkSerializer.
     // Ref held by callback.
     WeakRef(DEBUG_LOCATION, "subchannel map cleanup").release();
-    chand_->work_serializer_->Run([this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
-                                      *chand_->work_serializer_) {
-      chand_->subchannel_wrappers_.erase(this);
-      if (chand_->channelz_node_ != nullptr) {
-        auto* subchannel_node = subchannel_->channelz_node();
-        if (subchannel_node != nullptr) {
-          auto it = chand_->subchannel_refcount_map_.find(subchannel_.get());
-          GRPC_CHECK(it != chand_->subchannel_refcount_map_.end());
-          --it->second;
-          if (it->second == 0) {
-            subchannel_node->RemoveParent(chand_->channelz_node_);
-            chand_->subchannel_refcount_map_.erase(it);
+    chand_->work_serializer_->Run(
+        [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
+          auto it = chand_->subchannel_map_.find(subchannel_.get());
+          GRPC_CHECK(it != chand_->subchannel_map_.end());
+          auto& subchannel_wrappers = it->second;
+          subchannel_wrappers.erase(this);
+          if (subchannel_wrappers.empty()) {
+            if (chand_->channelz_node_ != nullptr) {
+              auto* subchannel_node = subchannel_->channelz_node();
+              if (subchannel_node != nullptr) {
+                subchannel_node->RemoveParent(chand_->channelz_node_);
+              }
+            }
+            chand_->subchannel_map_.erase(it);
           }
-        }
-      }
-      if (IsSubchannelWrapperCleanupOnOrphanEnabled()) {
-        // We need to make sure that the internal subchannel gets unreffed
-        // inside of the WorkSerializer, so that updates to the local
-        // subchannel pool are properly synchronized.  To that end, we
-        // drop our ref to the internal subchannel here.  We also cancel
-        // any watchers that were not properly cancelled, in case any of
-        // them are holding a ref to the internal subchannel.
-        for (const auto& [_, watcher] : watcher_map_) {
-          subchannel_->CancelConnectivityStateWatch(watcher);
-        }
-        watcher_map_.clear();
-        data_watchers_.clear();
-        subchannel_.reset();
-      }
-      WeakUnref(DEBUG_LOCATION, "subchannel map cleanup");
-    });
+          if (IsSubchannelWrapperCleanupOnOrphanEnabled()) {
+            // We need to make sure that the internal subchannel gets unreffed
+            // inside of the WorkSerializer, so that updates to the local
+            // subchannel pool are properly synchronized.  To that end, we
+            // drop our ref to the internal subchannel here.  We also cancel
+            // any watchers that were not properly cancelled, in case any of
+            // them are holding a ref to the internal subchannel.
+            for (const auto& [_, watcher] : watcher_map_) {
+              subchannel_->CancelConnectivityStateWatch(watcher);
+            }
+            watcher_map_.clear();
+            data_watchers_.clear();
+            subchannel_.reset();
+          }
+          WeakUnref(DEBUG_LOCATION, "subchannel map cleanup");
+        });
   }
 
   void WatchConnectivityState(
@@ -531,10 +530,6 @@ class ClientChannelFilter::SubchannelWrapper final
     if (it != data_watchers_.end()) data_watchers_.erase(it);
   }
 
-  void ThrottleKeepaliveTime(int new_keepalive_time) {
-    subchannel_->ThrottleKeepaliveTime(new_keepalive_time);
-  }
-
   std::string address() const override { return subchannel_->address(); }
 
  private:
@@ -577,6 +572,10 @@ class ClientChannelFilter::SubchannelWrapper final
           });
     }
 
+    uint32_t max_connections_per_subchannel() const override {
+      return parent_->max_connections_per_subchannel_;
+    }
+
     grpc_pollset_set* interested_parties() override {
       return watcher_->interested_parties();
     }
@@ -606,9 +605,8 @@ class ClientChannelFilter::SubchannelWrapper final
             // Propagate the new keepalive time to all subchannels. This is so
             // that new transports created by any subchannel (and not just the
             // subchannel that received the GOAWAY), use the new keepalive time.
-            for (auto* subchannel_wrapper :
-                 parent_->chand_->subchannel_wrappers_) {
-              subchannel_wrapper->ThrottleKeepaliveTime(new_keepalive_time);
+            for (auto& [subchannel, _] : parent_->chand_->subchannel_map_) {
+              subchannel->ThrottleKeepaliveTime(new_keepalive_time);
             }
           }
         } else {
@@ -651,6 +649,7 @@ class ClientChannelFilter::SubchannelWrapper final
 
   ClientChannelFilter* chand_;
   RefCountedPtr<Subchannel> subchannel_;
+  const uint32_t max_connections_per_subchannel_;
   // Maps from the address of the watcher passed to us by the LB policy
   // to the address of the WrapperWatcher that we passed to the underlying
   // subchannel.  This is needed so that when the LB policy calls
@@ -862,6 +861,17 @@ class ClientChannelFilter::ClientChannelControlHelper final
       const ChannelArgs& args) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
     if (chand_->resolver_ == nullptr) return nullptr;  // Shutting down.
+    // Determine max_connections_per_subchannel.
+    const uint32_t cap =
+        args.GetInt(GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL_CAP).value_or(10);
+    uint32_t max_connections_per_subchannel =
+        args.GetInt(GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL)
+            .value_or(
+                per_address_args.GetInt(GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL)
+                    .value_or(1));
+    max_connections_per_subchannel =
+        std::min(max_connections_per_subchannel, cap);
+    // Modify args for subchannel.
     ChannelArgs subchannel_args = Subchannel::MakeSubchannelArgs(
         args, per_address_args, chand_->subchannel_pool_,
         chand_->default_authority_);
@@ -873,7 +883,8 @@ class ClientChannelFilter::ClientChannelControlHelper final
     // Make sure the subchannel has updated keepalive time.
     subchannel->ThrottleKeepaliveTime(chand_->keepalive_time_);
     // Create and return wrapper for the subchannel.
-    return MakeRefCounted<SubchannelWrapper>(chand_, std::move(subchannel));
+    return MakeRefCounted<SubchannelWrapper>(chand_, std::move(subchannel),
+                                             max_connections_per_subchannel);
   }
 
   void UpdateState(grpc_connectivity_state state, const absl::Status& status,
@@ -1221,6 +1232,12 @@ void ClientChannelFilter::OnResolverResultChangedLocked(
         static_cast<const internal::ClientChannelGlobalParsedConfig*>(
             service_config->GetGlobalParsedConfig(
                 service_config_parser_index_));
+    // Set max_connections_per_subchannel from service config.
+    if (parsed_service_config->max_connections_per_subchannel() != 0) {
+      result.args = result.args.Set(
+          GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL,
+          parsed_service_config->max_connections_per_subchannel());
+    }
     // Choose LB policy config.
     RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config =
         ChooseLbPolicy(result, parsed_service_config);

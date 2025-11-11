@@ -79,6 +79,7 @@ and the underlying endpoint.
 *   **Reference CHTTP2:** When implementing features in PH2, always first check the CHTTP2 implementation in this directory for reference. Use the mapping in the "Key classes in CHTTP2 and their PH2 equivalents" section below to find the PH2 counterparts.
 *   **Asynchronous Operations:** All asynchronous operations *must* use the gRPC Promise library (`src/core/lib/promise`), particularly leveraging `Party` for concurrency. See the `Dependencies for PH2` section.
 *   **Testing:** Any changes to PH2 code should be accompanied by relevant tests. Ensure that existing tests in `test/core/transport/chttp2/http2_client_transport_test.cc` and `test/core/transport/chttp2/http2_server_transport_test.cc` pass. Add new tests as needed to cover new functionality.
+*   **Test Comments:** When writing new tests, include comments within each test explaining its purpose and assertions. For large tests, add comments for each step.
 
 ### Key Differences from CHTTP2
 

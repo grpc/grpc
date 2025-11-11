@@ -3875,6 +3875,7 @@ grpc_cc_library(
     ],
     deps = [
         "channel_args",
+        "env",
         "json",
         "json_args",
         "json_object_loader",
@@ -4895,6 +4896,7 @@ grpc_cc_library(
         "poll",
         "pollset_set",
         "ref_counted",
+        "status_conversion",
         "sync",
         "time",
         "useful",
@@ -8551,6 +8553,7 @@ grpc_cc_library(
         "ext/transport/chttp2/transport/http2_transport.h",
     ],
     external_deps = [
+        "absl/types:span",
         "absl/log",
         "absl/status",
         "absl/status:statusor",
@@ -8564,6 +8567,7 @@ grpc_cc_library(
         "grpc_check",
         "grpc_promise_endpoint",
         "http2_settings",
+        "http2_settings_manager",
         "http2_status",
         "loop",
         "map",

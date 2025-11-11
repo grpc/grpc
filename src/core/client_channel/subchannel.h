@@ -74,8 +74,6 @@ namespace grpc_core {
 // (SubchannelWrapper) that "converts" between the two.
 class Subchannel final : public DualRefCounted<Subchannel> {
  public:
-  // TODO(roth): Once we remove pollset_set, consider whether this can
-  // just use the normal AsyncConnectivityStateWatcherInterface API.
   class ConnectivityStateWatcherInterface
       : public RefCounted<ConnectivityStateWatcherInterface> {
    public:
@@ -84,6 +82,8 @@ class Subchannel final : public DualRefCounted<Subchannel> {
     // instance at any given time.
     virtual void OnConnectivityStateChange(grpc_connectivity_state state,
                                            const absl::Status& status) = 0;
+
+    virtual uint32_t max_connections_per_subchannel() const = 0;
 
     virtual grpc_pollset_set* interested_parties() = 0;
   };
@@ -251,6 +251,8 @@ class Subchannel final : public DualRefCounted<Subchannel> {
     void Clear() { watchers_.clear(); }
 
     bool empty() const { return watchers_.empty(); }
+
+    uint32_t GetMaxConnectionsPerSubchannel() const;
 
    private:
     Subchannel* subchannel_;

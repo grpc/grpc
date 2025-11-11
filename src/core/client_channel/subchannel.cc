@@ -489,12 +489,6 @@ class Subchannel::ConnectedSubchannelStateWatcher final
             << ": Connected subchannel " << connected_subchannel.get()
             << " reports " << ConnectivityStateName(new_state) << ": "
             << status;
-        if (c->channelz_node() != nullptr) {
-          if (connected_subchannel->channelz_node() != nullptr) {
-            connected_subchannel->channelz_node()->RemoveParent(
-                c->channelz_node());
-          }
-        }
         // If the subchannel was created from an endpoint, then we report
         // TRANSIENT_FAILURE here instead of IDLE. The subchannel will never
         // leave TRANSIENT_FAILURE state, because there is no way for us to
@@ -539,6 +533,18 @@ void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
       watcher->OnConnectivityStateChange(state, status);
     });
   }
+}
+
+uint32_t
+Subchannel::ConnectivityStateWatcherList::GetMaxConnectionsPerSubchannel()
+    const {
+  uint32_t max_connections_per_subchannel = 1;
+  for (const auto& watcher : watchers_) {
+    max_connections_per_subchannel =
+        std::max(max_connections_per_subchannel,
+                 watcher->max_connections_per_subchannel());
+  }
+  return max_connections_per_subchannel;
 }
 
 //
@@ -1018,6 +1024,8 @@ ChannelArgs Subchannel::MakeSubchannelArgs(
       // uniqueness.
       .Remove(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME)
       .Remove(GRPC_ARG_INHIBIT_HEALTH_CHECKING)
+      .Remove(GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL)
+      .Remove(GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL_CAP)
       .Remove(GRPC_ARG_CHANNELZ_CHANNEL_NODE)
       // Remove all keys with the no-subchannel prefix.
       .RemoveAllKeysWithPrefix(GRPC_ARG_NO_SUBCHANNEL_PREFIX);

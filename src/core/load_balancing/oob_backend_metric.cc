@@ -77,6 +77,8 @@ class OrcaProducer::ConnectivityWatcher final
     producer_->OnConnectivityStateChange(state);
   }
 
+  uint32_t max_connections_per_subchannel() const override { return 1; }
+
   grpc_pollset_set* interested_parties() override {
     return interested_parties_;
   }
