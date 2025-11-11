@@ -24,6 +24,7 @@
 
 #include <cstdint>
 #include <optional>
+#include <utility>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
@@ -52,6 +53,10 @@ std::optional<Http2SettingsFrame> Http2SettingsManager::MaybeSendUpdate() {
   sent_ = local_;
   update_state_ = UpdateState::kSending;
   return frame;
+}
+
+uint32_t Http2SettingsManager::MaybeSendAck() {
+  return std::exchange(num_acks_to_send_, 0);
 }
 
 bool Http2SettingsManager::AckLastSend() {

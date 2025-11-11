@@ -52,15 +52,22 @@ class Http2SettingsManager {
         .SetColumn("acked", acked_.ChannelzProperties());
   }
 
-  // Returns nullopt if we don't need to send a SETTINGS frame to the peer.
+  // Returns std::nullopt if we don't need to send a SETTINGS frame to the peer.
   // Returns Http2SettingsFrame if we need to send a SETTINGS frame to the
   // peer. Transport MUST send a frame returned by this function to the peer.
   // This function is not idempotent.
   std::optional<Http2SettingsFrame> MaybeSendUpdate();
 
+  // Returns 0 if we don't need to send a SETTINGS ACK frame to the peer.
+  // Returns n>0 if we need to send n SETTINGS ACK frames to the peer.
+  // Transport MUST send one SETTINGS ACK frame for each count returned by this
+  // function to the peer.
+  // This function is not idempotent.
+  uint32_t MaybeSendAck();
+
   // To be called from a promise based HTTP2 transport only
   http2::Http2ErrorCode ApplyIncomingSettings(
-      std::vector<Http2SettingsFrame::Setting>& settings) {
+      const std::vector<Http2SettingsFrame::Setting>& settings) {
     for (const auto& setting : settings) {
       http2::Http2ErrorCode error1 =
           count_updates_.IsUpdatePermitted(setting.id, setting.value, peer_);
@@ -72,6 +79,7 @@ class Http2SettingsManager {
         return error;
       }
     }
+    num_acks_to_send_++;
     return http2::Http2ErrorCode::kNoError;
   }
 
@@ -143,6 +151,8 @@ class Http2SettingsManager {
   Http2Settings acked_;
 
   bool did_previous_settings_promise_resolve_ = true;
+  // Number of incoming SETTINGS frames that we have received but not ACKed yet.
+  uint32_t num_acks_to_send_ = 0;
 };
 
 }  // namespace grpc_core
