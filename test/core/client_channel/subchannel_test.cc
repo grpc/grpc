@@ -92,6 +92,8 @@ class SubchannelTest : public YodelTest {
 
     void OnKeepaliveUpdate(Duration) override {}
 
+    uint32_t max_connections_per_subchannel() const override { return 1; }
+
     grpc_pollset_set* interested_parties() override { return nullptr; }
 
     grpc_connectivity_state state() const { return state_; }
