@@ -360,7 +360,7 @@ static void init_openssl(void) {
       0, nullptr, nullptr, nullptr, verified_root_cert_free);
   GRPC_CHECK_NE(g_ssl_ex_verified_root_cert_index, -1);
 
-  grpc_core::SetPrivateKeyOffloadIndex(SSL_get_ex_new_index(
+  grpc_core::SetPrivateKeyOffloadIndex(SSL_CTX_get_ex_new_index(
       0, nullptr, nullptr, nullptr, private_key_offloading_free));
 }
 
@@ -937,12 +937,27 @@ static tsi_result populate_ssl_context(
         return result;
       }
     }
-    if (key_cert_pair->private_key != nullptr) {
-      result = ssl_ctx_use_private_key(context, key_cert_pair->private_key,
-                                       strlen(key_cert_pair->private_key));
-      if (result != TSI_OK || !SSL_CTX_check_private_key(context)) {
-        LOG(ERROR) << "Invalid private key.";
-        return result != TSI_OK ? result : TSI_INVALID_ARGUMENT;
+    if (!grpc_core::IsPrivateKeyEmpty(&key_cert_pair->private_key)) {
+      if (const auto* key_view =
+              std::get_if<absl::string_view>(&key_cert_pair->private_key)) {
+        result = ssl_ctx_use_private_key(context, key_view->data(),
+                                         key_view->length());
+        if (result != TSI_OK || !SSL_CTX_check_private_key(context)) {
+          LOG(ERROR) << "Invalid private key.";
+          return result != TSI_OK ? result : TSI_INVALID_ARGUMENT;
+        }
+      } else if (auto* key_sign_ptr =
+                     std::get_if<grpc_core::CustomPrivateKeySign>(
+                         &key_cert_pair->private_key)) {
+        SSL_CTX_set_private_key_method(context,
+                                       &grpc_core::TlsOffloadPrivateKeyMethod);
+        grpc_core::TlsPrivateKeyOffloadContext private_key_offload_context;
+        private_key_offload_context.private_key_sign =
+            std::make_unique<grpc_core::CustomPrivateKeySign>(std::move(
+                *const_cast<grpc_core::CustomPrivateKeySign*>(key_sign_ptr)));
+
+        SSL_CTX_set_ex_data(context, grpc_core::GetPrivateKeyOffloadIndex(),
+                        &private_key_offload_context);
       }
     }
   }
@@ -2083,16 +2098,6 @@ static tsi_result ssl_handshaker_next(
               "SSL Cipher Version: %s Name: %s", SSL_CIPHER_get_version(cipher),
               SSL_CIPHER_get_name(cipher));
         }
-        grpc_core::TlsPrivateKeyOffloadContext private_key_offload_context;
-        // TODO (ansalazar): Pipe User defined Callback.
-        // private_key_offload_context.private_key_sign = std::move(callback);
-        private_key_offload_context.handshaker = self;
-        private_key_offload_context.notify_cb = cb;
-        private_key_offload_context.notify_user_data = user_data;
-        private_key_offload_context.handshaker_result = handshaker_result;
-
-        SSL_set_ex_data(result->ssl, grpc_core::GetPrivateKeyOffloadIndex(),
-                        &private_key_offload_context);
       }
     }
   }
@@ -2533,8 +2538,6 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   if (options->root_cert_info != nullptr) {
     impl->root_cert_info = options->root_cert_info;
   }
-  SSL_CTX_set_private_key_method(ssl_context,
-                                 &grpc_core::TlsOffloadPrivateKeyMethod);
 
 #if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
   if (options->key_logger != nullptr) {
@@ -2750,8 +2753,6 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 #if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
       SSL_CTX_set_options(impl->ssl_contexts[i], SSL_OP_NO_RENEGOTIATION);
 #endif
-      SSL_CTX_set_private_key_method(impl->ssl_contexts[i],
-                                     &grpc_core::TlsOffloadPrivateKeyMethod);
       if (impl->ssl_contexts[i] == nullptr) {
         grpc_core::LogSslErrorStack();
         LOG(ERROR) << "Could not create ssl context.";

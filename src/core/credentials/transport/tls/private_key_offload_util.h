@@ -22,6 +22,7 @@
 #include <openssl/base.h>
 #include <openssl/ssl.h>
 
+#include <memory>
 #include <string>
 
 #include "src/core/tsi/transport_security_interface.h"
@@ -31,7 +32,7 @@
 namespace grpc_core {
 // Enum class representing TLS signature algorithm identifiers from BoringSSL.
 // The values correspond to the SSL_SIGN_* macros in <openssl/ssl.h>.
-enum class SignatureAlgorithm : uint16_t {
+enum class SignatureAlgorithm {
   kRsaPkcs1Sha256,
   kRsaPkcs1Sha384,
   kRsaPkcs1Sha512,
@@ -60,7 +61,7 @@ using CustomPrivateKeySign = absl::AnyInvocable<void(
 
 // State associated with an SSL object for async private key operations.
 struct TlsPrivateKeyOffloadContext {
-  CustomPrivateKeySign private_key_sign;
+  std::unique_ptr<CustomPrivateKeySign> private_key_sign;
   absl::StatusOr<std::string> signed_bytes;
 
   // TSI handshake state needed to resume.
