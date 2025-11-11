@@ -478,12 +478,6 @@ class Subchannel::ConnectionStateWatcher final
         << "subchannel " << subchannel_.get() << " "
         << subchannel_->key_.ToString() << ": connected subchannel "
         << connected_subchannel.get() << " reports disconnection: " << status;
-    if (subchannel_->channelz_node() != nullptr) {
-      if (connected_subchannel->channelz_node() != nullptr) {
-        connected_subchannel->channelz_node()->RemoveParent(
-            subchannel_->channelz_node());
-      }
-    }
     // If the subchannel was created from an endpoint, then we report
     // TRANSIENT_FAILURE here instead of IDLE. The subchannel will never
     // leave TRANSIENT_FAILURE state, because there is no way for us to
