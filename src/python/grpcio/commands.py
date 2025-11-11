@@ -322,6 +322,9 @@ class BuildExt(build_ext.build_ext):
                 args_to_remove = c_specific_args
 
             if args_to_remove:
+                cc_args = [
+                    arg for arg in cc_args if arg not in args_to_remove
+                ]
                 extra_postargs = [
                     arg for arg in extra_postargs if arg not in args_to_remove
                 ]
