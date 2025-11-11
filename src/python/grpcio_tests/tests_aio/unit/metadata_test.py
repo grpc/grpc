@@ -271,7 +271,7 @@ class TestMetadata(AioTestBase):
     async def test_invalid_metadata(self):
         # Excluded from typeguard because this tests invalid
         # metadata and it is expected to fail typeguard checks
-        # hence decorator @typeguard.supress_type_checks is used. 
+        # hence decorator @typeguard.supress_type_checks is used.
         multicallable = self._client.unary_unary(_TEST_CLIENT_TO_SERVER)
         for exception_type, metadata in _INVALID_METADATA_TEST_CASES:
             with self.subTest(metadata=metadata):
