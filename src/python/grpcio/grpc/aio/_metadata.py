@@ -40,7 +40,7 @@ class Metadata(abc.Collection):  # noqa: PLW1641
             self.add(md_key, md_value)
 
     @classmethod
-    def from_tuple_or_cls(cls, raw_metadata: Optional[Union[tuple, Self]]):
+    def from_tuple(cls, raw_metadata: Optional[Union[tuple, Self]]):
         if raw_metadata:
             return cls(*raw_metadata)
         return cls()
