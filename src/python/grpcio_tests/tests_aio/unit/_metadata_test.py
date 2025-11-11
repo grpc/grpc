@@ -194,7 +194,7 @@ class TestTypeMetadata(unittest.TestCase):
         with self.assertRaises(KeyError):
             del metadata["other key"]
 
-    def test_metadata_from_tuple_or_cls(self):
+    def test_metadata_from_tuple(self):
         scenarios = (
             (None, Metadata()),
             (Metadata(), Metadata()),
@@ -204,7 +204,7 @@ class TestTypeMetadata(unittest.TestCase):
         )
         for source, expected in scenarios:
             with self.subTest(raw_metadata=source, expected=expected):
-                self.assertEqual(expected, Metadata.from_tuple_or_cls(source))
+                self.assertEqual(expected, Metadata.from_tuple(source))
 
 
 class TestMetadataWithServer(AioTestBase):
