@@ -47,6 +47,7 @@ def generate_resolver_component_tests():
                 "//:grpc%s" % unsecure_build_config_suffix,
                 "//:gpr",
                 "//test/cpp/util:test_config",
+                "//third_party/address_sorting",
             ],
             tags = [
                 "no_windows",
