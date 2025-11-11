@@ -1001,9 +1001,9 @@ GRPCAPI void grpc_tls_credentials_options_destroy(
 typedef struct grpc_tls_certificate_provider grpc_tls_certificate_provider;
 
 /**
-/** Deprecated in favor of
-grpc_tls_credentials_options_set_identity_certificate_provider and
-grpc_tls_credentials_options_set_root_certificate_provider.
+ * Deprecated in favor of
+ * grpc_tls_credentials_options_set_identity_certificate_provider and
+ * grpc_tls_credentials_options_set_root_certificate_provider.
  *
  * Sets the credential provider in the options.
  * The |options| will implicitly take a new ref to the |provider|.

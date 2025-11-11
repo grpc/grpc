@@ -957,7 +957,7 @@ static tsi_result populate_ssl_context(
                 *const_cast<grpc_core::CustomPrivateKeySign*>(key_sign_ptr)));
 
         SSL_CTX_set_ex_data(context, grpc_core::GetPrivateKeyOffloadIndex(),
-                        &private_key_offload_context);
+                            &private_key_offload_context);
       }
     }
   }

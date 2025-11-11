@@ -504,7 +504,7 @@ InMemoryCertificateProvider::InMemoryCertificateProvider(
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                               bool root_being_watched,
                                               bool identity_being_watched) {
-    MutexLock lock_pem(&pem_cert_pairs_mu_);
+    MutexLock lock_identity(&pem_cert_pairs_mu_);
     MutexLock lock_root(&root_cert_mu_);
     MutexLock lock_watcher(&watcher_mu_);
     std::shared_ptr<RootCertInfo> root_cert_info;
@@ -553,7 +553,7 @@ void InMemoryCertificateProvider::UpdateRoot(std::string root_certificates) {
 
 void InMemoryCertificateProvider::UpdateIdentity(
     PemKeyCertPairList pem_key_cert_pairs) {
-  MutexLock lock_pem(&pem_cert_pairs_mu_);
+  MutexLock lock_identity(&pem_cert_pairs_mu_);
   pem_key_cert_pairs_ = std::move(pem_key_cert_pairs);
 }
 
