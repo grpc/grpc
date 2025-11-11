@@ -161,7 +161,7 @@ def have_ruby_abi_version()
   end
   major = m[1].to_i
   minor = m[2].to_i
-  if major >= 3 and minor >= 2
+  if ([major, minor] <=> [3, 2]) >= 0
     puts "Ruby version #{RUBY_VERSION} >= 3.2. Assuming ruby_abi_version symbol is present."
     return true
   end
