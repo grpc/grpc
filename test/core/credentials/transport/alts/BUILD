@@ -17,7 +17,13 @@ load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/credentials/transport/alts")
+grpc_package(
+    name = "test/core/credentials/transport/alts",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_fuzz_test(
     name = "alts_credentials_fuzzer",
