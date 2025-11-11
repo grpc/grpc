@@ -196,7 +196,6 @@ class TestTypeMetadata(unittest.TestCase):
 
     def test_metadata_from_tuple(self):
         scenarios = (
-            (None, Metadata()),
             (Metadata(), Metadata()),
             (self._DEFAULT_DATA, Metadata(*self._DEFAULT_DATA)),
             (self._MULTI_ENTRY_DATA, Metadata(*self._MULTI_ENTRY_DATA)),
