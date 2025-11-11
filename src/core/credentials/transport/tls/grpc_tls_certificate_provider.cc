@@ -24,6 +24,7 @@
 #include <time.h>
 
 #include <algorithm>
+#include <memory>
 #include <utility>
 #include <vector>
 
@@ -488,6 +489,13 @@ int64_t FileWatcherCertificateProvider::TestOnlyGetRefreshIntervalSecond()
   return refresh_interval_sec_;
 }
 
+std::shared_ptr<InMemoryCertificateProvider>
+InMemoryCertificateProvider::CreateCertificateProvider(
+    std::string root_certificates, PemKeyCertPairList pem_key_cert_pairs) {
+  return std::make_shared<InMemoryCertificateProvider>(root_certificates,
+                                                       pem_key_cert_pairs);
+}
+
 InMemoryCertificateProvider::InMemoryCertificateProvider(
     std::string root_certificates, PemKeyCertPairList pem_key_cert_pairs)
     : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
@@ -496,7 +504,9 @@ InMemoryCertificateProvider::InMemoryCertificateProvider(
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                               bool root_being_watched,
                                               bool identity_being_watched) {
-    MutexLock lock(&mu_);
+    MutexLock lock_pem(&pem_cert_pairs_mu_);
+    MutexLock lock_root(&root_cert_mu_);
+    MutexLock lock_watcher(&watcher_mu_);
     std::shared_ptr<RootCertInfo> root_cert_info;
     std::optional<PemKeyCertPairList> pem_key_cert_pairs;
     InMemoryCertificateProvider::WatcherInfo& info = watcher_info_[cert_name];
@@ -537,13 +547,13 @@ InMemoryCertificateProvider::InMemoryCertificateProvider(
 }
 
 void InMemoryCertificateProvider::UpdateRoot(std::string root_certificates) {
-  MutexLock lock(&mu_);
+  MutexLock lock_root(&root_cert_mu_);
   root_certificates_ = root_certificates;
 }
 
 void InMemoryCertificateProvider::UpdateIdentity(
     PemKeyCertPairList pem_key_cert_pairs) {
-  MutexLock lock(&mu_);
+  MutexLock lock_pem(&pem_cert_pairs_mu_);
   pem_key_cert_pairs_ = std::move(pem_key_cert_pairs);
 }
 

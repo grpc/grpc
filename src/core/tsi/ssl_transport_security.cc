@@ -291,8 +291,8 @@ static void verified_root_cert_free(void* /*parent*/, void* ptr,
 }
 
 static void private_key_offloading_free(void* /*parent*/, void* ptr,
-                                    CRYPTO_EX_DATA* /*ad*/, int /*index*/,
-                                    long /*argl*/, void* /*argp*/) {
+                                        CRYPTO_EX_DATA* /*ad*/, int /*index*/,
+                                        long /*argl*/, void* /*argp*/) {
   X509_free(static_cast<X509*>(ptr));
 }
 
@@ -1996,14 +1996,11 @@ static tsi_result ssl_handshaker_write_output_buffer(tsi_handshaker* self,
   return status;
 }
 
-static tsi_result ssl_handshaker_next(tsi_handshaker* self,
-                                      const unsigned char* received_bytes,
-                                      size_t received_bytes_size,
-                                      const unsigned char** bytes_to_send,
-                                      size_t* bytes_to_send_size,
-                                      tsi_handshaker_result** handshaker_result,
-                                      tsi_handshaker_on_next_done_cb cb,
-                                      void* user_data, std::string* error) {
+static tsi_result ssl_handshaker_next(
+    tsi_handshaker* self, const unsigned char* received_bytes,
+    size_t received_bytes_size, const unsigned char** bytes_to_send,
+    size_t* bytes_to_send_size, tsi_handshaker_result** handshaker_result,
+    tsi_handshaker_on_next_done_cb cb, void* user_data, std::string* error) {
   // Input sanity check.
   if ((received_bytes_size > 0 && received_bytes == nullptr) ||
       bytes_to_send == nullptr || bytes_to_send_size == nullptr ||
@@ -2088,7 +2085,7 @@ static tsi_result ssl_handshaker_next(tsi_handshaker* self,
         }
         grpc_core::TlsPrivateKeyOffloadContext private_key_offload_context;
         // TODO (ansalazar): Pipe User defined Callback.
-        private_key_offload_context.private_key_sign = std::move(callback);
+        // private_key_offload_context.private_key_sign = std::move(callback);
         private_key_offload_context.handshaker = self;
         private_key_offload_context.notify_cb = cb;
         private_key_offload_context.notify_user_data = user_data;
@@ -2096,8 +2093,6 @@ static tsi_result ssl_handshaker_next(tsi_handshaker* self,
 
         SSL_set_ex_data(result->ssl, grpc_core::GetPrivateKeyOffloadIndex(),
                         &private_key_offload_context);
-        SSL_set_private_key_method(result->ssl,
-                                   &grpc_core::TlsOffloadPrivateKeyMethod);
       }
     }
   }
@@ -2538,6 +2533,8 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   if (options->root_cert_info != nullptr) {
     impl->root_cert_info = options->root_cert_info;
   }
+  SSL_CTX_set_private_key_method(ssl_context,
+                                 &grpc_core::TlsOffloadPrivateKeyMethod);
 
 #if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
   if (options->key_logger != nullptr) {
@@ -2753,6 +2750,8 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 #if OPENSSL_VERSION_NUMBER >= 0x10101000 && !defined(LIBRESSL_VERSION_NUMBER)
       SSL_CTX_set_options(impl->ssl_contexts[i], SSL_OP_NO_RENEGOTIATION);
 #endif
+      SSL_CTX_set_private_key_method(impl->ssl_contexts[i],
+                                     &grpc_core::TlsOffloadPrivateKeyMethod);
       if (impl->ssl_contexts[i] == nullptr) {
         grpc_core::LogSslErrorStack();
         LOG(ERROR) << "Could not create ssl context.";

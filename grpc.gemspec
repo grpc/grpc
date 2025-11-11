@@ -326,6 +326,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/credentials/transport/tls/load_system_roots_supported.cc )
   s.files += %w( src/core/credentials/transport/tls/load_system_roots_supported.h )
   s.files += %w( src/core/credentials/transport/tls/load_system_roots_windows.cc )
+  s.files += %w( src/core/credentials/transport/tls/private_key_offload_util.cc )
   s.files += %w( src/core/credentials/transport/tls/private_key_offload_util.h )
   s.files += %w( src/core/credentials/transport/tls/spiffe_utils.cc )
   s.files += %w( src/core/credentials/transport/tls/spiffe_utils.h )

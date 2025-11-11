@@ -23,6 +23,7 @@
 #include <stdint.h>
 
 #include <map>
+#include <memory>
 #include <optional>
 #include <string>
 #include <vector>
@@ -213,8 +214,8 @@ class FileWatcherCertificateProvider final
 // thread-safe manner.
 class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
  public:
-  InMemoryCertificateProvider(std::string root_certificates,
-                              PemKeyCertPairList pem_key_cert_pairs);
+  static std::shared_ptr<InMemoryCertificateProvider> CreateCertificateProvider(
+      std::string root_certificates, PemKeyCertPairList pem_key_cert_pairs);
 
   InMemoryCertificateProvider(const InMemoryCertificateProvider&) = delete;
   InMemoryCertificateProvider(InMemoryCertificateProvider&&) = delete;
@@ -237,6 +238,9 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
   void UpdateIdentity(PemKeyCertPairList pem_key_cert_pairs);
 
  private:
+  InMemoryCertificateProvider(std::string root_certificates,
+                              PemKeyCertPairList pem_key_cert_pairs);
+
   struct WatcherInfo {
     bool root_being_watched = false;
     bool identity_being_watched = false;
@@ -250,15 +254,18 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
 
   std::shared_ptr<RootCertInfo> root_cert_info_;
 
-  // Guards members below.
-  mutable Mutex mu_;
+  // Guards pem_key_cert_pairs_, root_certificates_ and watcher_info_
+  // respectively.
+  mutable Mutex pem_cert_pairs_mu_;
+  mutable Mutex root_cert_mu_;
+  mutable Mutex watcher_mu_;
   // The most-recent credential data. It will be empty if the most recent read
   // attempt failed.
-  PemKeyCertPairList pem_key_cert_pairs_ ABSL_GUARDED_BY(mu_);
-  std::string root_certificates_ ABSL_GUARDED_BY(mu_);
+  PemKeyCertPairList pem_key_cert_pairs_ ABSL_GUARDED_BY(pem_cert_pairs_mu_);
+  std::string root_certificates_ ABSL_GUARDED_BY(root_cert_mu_);
   // Stores each cert_name we get from the distributor callback and its watcher
   // information.
-  std::map<std::string, WatcherInfo> watcher_info_ ABSL_GUARDED_BY(mu_);
+  std::map<std::string, WatcherInfo> watcher_info_ ABSL_GUARDED_BY(watcher_mu_);
 };
 
 //  Checks if the private key matches the certificate's public key.

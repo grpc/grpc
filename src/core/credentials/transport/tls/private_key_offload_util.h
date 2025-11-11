@@ -21,42 +21,34 @@
 
 #include <openssl/base.h>
 #include <openssl/ssl.h>
-#include <openssl/stack.h>
-#include <openssl/x509.h>
 
 #include <string>
-#include <utility>
 
 #include "src/core/tsi/transport_security_interface.h"
-#include "absl/functional/bind_front.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-
-static int g_ssl_ex_private_key_offload_ex_index = -1;
 
 namespace grpc_core {
 // Enum class representing TLS signature algorithm identifiers from BoringSSL.
 // The values correspond to the SSL_SIGN_* macros in <openssl/ssl.h>.
 enum class SignatureAlgorithm : uint16_t {
-  kRsaPkcs1Sha256 = 0x0401,        // SSL_SIGN_RSA_PKCS1_SHA256
-  kRsaPkcs1Sha384 = 0x0501,        // SSL_SIGN_RSA_PKCS1_SHA384
-  kRsaPkcs1Sha512 = 0x0601,        // SSL_SIGN_RSA_PKCS1_SHA512
-  kEcdsaSecp256r1Sha256 = 0x0403,  // SSL_SIGN_ECDSA_SECP256R1_SHA256
-  kEcdsaSecp384r1Sha384 = 0x0503,  // SSL_SIGN_ECDSA_SECP384R1_SHA384
-  kEcdsaSecp521r1Sha512 = 0x0603,  // SSL_SIGN_ECDSA_SECP521R1_SHA512
-  kRsaPssRsaeSha256 = 0x0804,      // SSL_SIGN_RSA_PSS_RSAE_SHA256
-  kRsaPssRsaeSha384 = 0x0805,      // SSL_SIGN_RSA_PSS_RSAE_SHA384
-  kRsaPssRsaeSha512 = 0x0806,      // SSL_SIGN_RSA_PSS_RSAE_SHA512
+  kRsaPkcs1Sha256,
+  kRsaPkcs1Sha384,
+  kRsaPkcs1Sha512,
+  kEcdsaSecp256r1Sha256,
+  kEcdsaSecp384r1Sha384,
+  kEcdsaSecp521r1Sha512,
+  kRsaPssRsaeSha256,
+  kRsaPssRsaeSha384,
+  kRsaPssRsaeSha512,
 };
 
-static void SetPrivateKeyOffloadIndex(int index) {
-  g_ssl_ex_private_key_offload_ex_index = index;
-  GRPC_CHECK_NE(g_ssl_ex_private_key_offload_ex_index, -1);
-}
+absl::StatusOr<uint16_t> ToOpenSslSignatureAlgorithm(
+    SignatureAlgorithm algorithm);
 
-static int GetPrivateKeyOffloadIndex() {
-  return g_ssl_ex_private_key_offload_ex_index;
-}
+static void SetPrivateKeyOffloadIndex(int index);
+
+static int GetPrivateKeyOffloadIndex();
 
 // A user's implementation MUST invoke `done_callback` with the signed bytes.
 // This will let gRPC take control when the async operation is complete. MUST
@@ -81,70 +73,15 @@ struct TlsPrivateKeyOffloadContext {
 
 // Callback function to be invoked when the user's async sign operation is
 // complete.
-
-static void TlsOffloadSignDoneCallback(
-    TlsPrivateKeyOffloadContext* ctx, absl::StatusOr<std::string> signed_data) {
-  if (signed_data.ok()) {
-    ctx->signed_bytes = std::move(signed_data);
-
-    // Notify the TSI layer to re-enter the handshake.
-    // This call is thread-safe as per TSI requirements for the callback.
-    if (ctx->notify_cb) {
-      std::string bytes_to_send = *ctx->signed_bytes;
-      const unsigned char* bytes_to_send_ptr =
-          reinterpret_cast<const unsigned char*>(bytes_to_send.c_str());
-      ctx->notify_cb(TSI_OK, ctx->notify_user_data, bytes_to_send_ptr,
-                     bytes_to_send.length(), *ctx->handshaker_result);
-    }
-  } else {
-    ctx->signed_bytes = signed_data.status();
-    // Notify the TSI layer to re-enter the handshake.
-    // This call is thread-safe as per TSI requirements for the callback.
-    if (ctx->notify_cb) {
-      ctx->notify_cb(TSI_INTERNAL_ERROR, ctx->notify_user_data, nullptr, 0,
-                     *ctx->handshaker_result);
-    }
-  }
-}
+static void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
+                                       absl::StatusOr<std::string> signed_data);
 
 static enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
     SSL* ssl, uint8_t* out, size_t* out_len, size_t max_out,
-    uint16_t signature_algorithm, const uint8_t* in, size_t in_len) {
-  TlsPrivateKeyOffloadContext* ctx = static_cast<TlsPrivateKeyOffloadContext*>(
-      SSL_get_ex_data(ssl, g_ssl_ex_private_key_offload_ex_index));
-  // Create the completion callback by binding the current context.
-  auto done_callback = absl::bind_front(TlsOffloadSignDoneCallback, ctx);
-
-  // Call the user's async sign function
-  // The contract with the user is that they MUST invoke the callback when
-  // complete in their implementation, and their impl MUST not block.
-  ctx->private_key_sign(
-      absl::string_view(reinterpret_cast<const char*>(in), in_len),
-      static_cast<SignatureAlgorithm>(signature_algorithm),
-      std::move(done_callback));
-
-  return ssl_private_key_retry;
-}
+    uint16_t signature_algorithm, const uint8_t* in, size_t in_len);
 
 static enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(
-    SSL* ssl, uint8_t* out, size_t* out_len, size_t max_out) {
-  TlsPrivateKeyOffloadContext* ctx = static_cast<TlsPrivateKeyOffloadContext*>(
-      SSL_get_ex_data(ssl, g_ssl_ex_private_key_offload_ex_index));
-
-  if (!ctx->signed_bytes.ok()) {
-    return ssl_private_key_failure;
-  }
-  // Important bit is moving the signed data where it needs to go
-  const std::string& signed_data = *ctx->signed_bytes;
-  if (signed_data.length() > max_out) {
-    // Result is too large.
-    return ssl_private_key_failure;
-  }
-  memcpy(out, signed_data.data(), signed_data.length());
-  *out_len = signed_data.length();
-  // Tell BoringSSL we're done
-  return ssl_private_key_success;
-}
+    SSL* ssl, uint8_t* out, size_t* out_len, size_t max_out);
 
 static const SSL_PRIVATE_KEY_METHOD TlsOffloadPrivateKeyMethod = {
     TlsPrivateKeySignWrapper,
