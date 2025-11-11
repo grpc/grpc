@@ -21,7 +21,7 @@ import unittest
 
 import grpc
 from grpc.experimental import aio
-from typeguard import suppress_type_checks
+import typeguard
 
 from tests_aio.unit import _common
 from tests_aio.unit._test_base import AioTestBase
@@ -267,14 +267,17 @@ class TestMetadata(AioTestBase):
         platform.system() == "Windows",
         "https://github.com/grpc/grpc/issues/21943",
     )
+    @typeguard.suppress_type_checks
     async def test_invalid_metadata(self):
-        with suppress_type_checks():
-            multicallable = self._client.unary_unary(_TEST_CLIENT_TO_SERVER)
-            for exception_type, metadata in _INVALID_METADATA_TEST_CASES:
-                with self.subTest(metadata=metadata):
-                    with self.assertRaises(exception_type):
-                        call = multicallable(_REQUEST, metadata=metadata)
-                        await call
+        # Excluded from typeguard because this tests invalid
+        # metadata and it is expected to fail typeguard checks
+        # hence decorator @typeguard.supress_type_checks is used. 
+        multicallable = self._client.unary_unary(_TEST_CLIENT_TO_SERVER)
+        for exception_type, metadata in _INVALID_METADATA_TEST_CASES:
+            with self.subTest(metadata=metadata):
+                with self.assertRaises(exception_type):
+                    call = multicallable(_REQUEST, metadata=metadata)
+                    await call
 
     async def test_generic_handler(self):
         multicallable = self._client.unary_unary(_TEST_GENERIC_HANDLER)
