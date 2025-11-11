@@ -15,19 +15,23 @@
 
 set -ex
 
+# Prepend verbose mode commands (xtrace) with the date.
+PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
+echo "Started build_cxx.sh"
+
 # Set install path to avoid installing to system paths
 cd "$(dirname "$0")/../../.."
 mkdir -p cmake/install
 INSTALL_PATH="$(pwd)/cmake/install"
 
-# Install abseil-cpp since opentelemetry CMake uses find_package to find it.
+echo "Install abseil-cpp since opentelemetry CMake uses find_package to find it."
 cd third_party/abseil-cpp
 mkdir build
 cd build
 cmake -DABSL_BUILD_TESTING=OFF -DCMAKE_BUILD_TYPE="${MSBUILD_CONFIG}" -DCMAKE_INSTALL_PREFIX="${INSTALL_PATH}" "$@" ..
 make -j"${GRPC_RUN_TESTS_JOBS}" install
 
-# Install opentelemetry-cpp since we only support "package" mode for opentelemetry at present.
+echo "Install opentelemetry-cpp since we only support "package" mode for opentelemetry at present."
 cd ../../..
 cd third_party/opentelemetry-cpp
 mkdir build
@@ -47,9 +51,12 @@ cmake -DgRPC_BUILD_GRPCPP_OTEL_PLUGIN=ON -DgRPC_ABSL_PROVIDER=package -DgRPC_BUI
 fi
 
 if [[ "$*" =~ "-DgRPC_BUILD_TESTS=OFF" ]]; then
-# Just build grpc++ target when gRPC_BUILD_TESTS is OFF (This is a temporary mitigation for gcc 7. Remove this once gcc 7 is removed from the supported compilers)
-make -j"${GRPC_RUN_TESTS_JOBS}" "grpc++"
+    echo "Just build grpc++ target when gRPC_BUILD_TESTS is OFF (This is a temporary mitigation for gcc 7. Remove this once gcc 7 is removed from the supported compilers)"
+    make -j"${GRPC_RUN_TESTS_JOBS}" "grpc++"
 else
-# GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX will be set to either "c" or "cxx"
-make -j"${GRPC_RUN_TESTS_JOBS}" "buildtests_${GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX}" "tools_${GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX}"
+    # GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX will be set to either "c" or "cxx"
+    echo "Build with tests"
+    make -j"${GRPC_RUN_TESTS_JOBS}" "buildtests_${GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX}" "tools_${GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX}"
 fi
+
+echo "Finished build_cxx.sh"

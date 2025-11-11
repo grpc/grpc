@@ -15,6 +15,10 @@
 
 set -ex
 
+# Prepend verbose mode commands (xtrace) with the date.
+PS4='+ $(date "+[%H:%M:%S %Z]")\011 '
+echo "Started grpc_run_tests_harness_test.sh"
+
 if [ "${GRPC_RUNTESTS_USE_LOGIN_SHELL}" != "" ]
 then
   unset GRPC_RUNTESTS_USE_LOGIN_SHELL
@@ -46,6 +50,8 @@ if [ -x "$(command -v ccache)" ]
 then
   ccache --show-stats || true
 fi
+
+echo "Finished grpc_run_tests_harness_test.sh"
 
 if [ "$FAILED" != "" ]
 then
