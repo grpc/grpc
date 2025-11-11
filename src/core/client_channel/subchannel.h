@@ -180,6 +180,8 @@ class Subchannel final : public DualRefCounted<Subchannel> {
     // Invoked to report updated keepalive time.
     virtual void OnKeepaliveUpdate(Duration keepalive_time) = 0;
 
+    virtual uint32_t max_connections_per_subchannel() const = 0;
+
     virtual grpc_pollset_set* interested_parties() = 0;
   };
 
@@ -311,6 +313,8 @@ class Subchannel final : public DualRefCounted<Subchannel> {
     void Clear() { watchers_.clear(); }
 
     bool empty() const { return watchers_.empty(); }
+
+    uint32_t GetMaxConnectionsPerSubchannel() const;
 
    private:
     Subchannel* subchannel_;

@@ -539,6 +539,18 @@ void Subchannel::ConnectivityStateWatcherList::NotifyOnKeepaliveUpdateLocked(
   }
 }
 
+uint32_t
+Subchannel::ConnectivityStateWatcherList::GetMaxConnectionsPerSubchannel()
+    const {
+  uint32_t max_connections_per_subchannel = 1;
+  for (const auto& watcher : watchers_) {
+    max_connections_per_subchannel =
+        std::max(max_connections_per_subchannel,
+                 watcher->max_connections_per_subchannel());
+  }
+  return max_connections_per_subchannel;
+}
+
 //
 // Subchannel
 //
@@ -994,6 +1006,8 @@ ChannelArgs Subchannel::MakeSubchannelArgs(
       // uniqueness.
       .Remove(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME)
       .Remove(GRPC_ARG_INHIBIT_HEALTH_CHECKING)
+      .Remove(GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL)
+      .Remove(GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL_CAP)
       .Remove(GRPC_ARG_CHANNELZ_CHANNEL_NODE)
       // Remove all keys with the no-subchannel prefix.
       .RemoveAllKeysWithPrefix(GRPC_ARG_NO_SUBCHANNEL_PREFIX);
