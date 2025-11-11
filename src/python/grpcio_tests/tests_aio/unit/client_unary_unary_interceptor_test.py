@@ -46,7 +46,7 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
     @typeguard.suppress_type_checks
     def test_invalid_interceptor(self):
         # This test works in invalid interceptor
-        # which would make typeguard fail, hence the  
+        # which would make typeguard fail, hence the
         # decorator @typeguard.suppress_type_checks is used
         class InvalidInterceptor:
             """Just an invalid Interceptor"""
