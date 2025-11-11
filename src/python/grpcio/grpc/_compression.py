@@ -39,7 +39,7 @@ def _compression_algorithm_to_metadata_value(
 
 def compression_algorithm_to_metadata(compression: grpc.Compression):
     return (
-        cygrpc.GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY,
+        grpc._common.decode(cygrpc.GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY),
         _compression_algorithm_to_metadata_value(compression),
     )
 
