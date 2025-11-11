@@ -128,8 +128,6 @@ class _BaseMultiCallable:
         ):
             metadata = Metadata.from_tuple(tuple(metadata))
         if compression:
-            print(metadata)
-            print(type(metadata[0]))
             metadata = Metadata(
                 *_compression.augment_metadata(metadata, compression)
             )
