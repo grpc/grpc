@@ -33,8 +33,8 @@ licenses(["reciprocal"])
 package(
     default_visibility = ["//visibility:public"],
     features = [
-        "-parse_headers",
         "layering_check",
+        "parse_headers",
     ],
 )
 
@@ -3225,6 +3225,7 @@ grpc_cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "generic_stub_internal",
+        "grpc++",
     ],
 )
 
@@ -3235,6 +3236,7 @@ grpc_cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "gpr_platform",
         "grpc++_public_hdrs",
     ],
 )
