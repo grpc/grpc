@@ -18,7 +18,13 @@ load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/transport/chttp2")
+grpc_package(
+    name = "test/core/transport/chttp2",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_internal_proto_library(
     name = "hpack_parser_fuzzer_proto",
@@ -959,6 +965,7 @@ grpc_cc_test(
         "absl/log:log",
         "absl/status",
         "absl/strings",
+        "absl/types:span",
         "gtest",
     ],
     uses_polling = False,
@@ -983,6 +990,7 @@ grpc_cc_test(
         "//src/core:message",
         "//src/core:metadata",
         "//src/core:notification",
+        "//src/core:slice_buffer",
         "//src/core:time",
         "//src/core:transport_common",
         "//src/core:try_join",
