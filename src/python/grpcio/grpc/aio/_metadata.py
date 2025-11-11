@@ -18,7 +18,7 @@ from typing import Any, Iterator, List, Optional, Tuple, Union
 
 from typing_extensions import Self
 
-MetadataKey = Union[str, bytes]
+MetadataKey = str
 MetadataValue = Union[str, bytes]
 
 class Metadata(abc.Collection):  # noqa: PLW1641
