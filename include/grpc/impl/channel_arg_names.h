@@ -384,6 +384,11 @@
  *  Note that this works only with the "ares" DNS resolver; it isn't supported
  *  by the "native" DNS resolver. Boolean valued. Defaults to false. */
 #define GRPC_ARG_DNS_ENABLE_SRV_QUERIES "grpc.dns_enable_srv_queries"
+/** The cap for max_connections_per_subchannel when set via service
+ *  config.  If the configured value is higher than this, it will be
+ *  capped at this value.  Defaults to 10. */
+#define GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL_CAP \
+  "grpc.max_connections_per_subchannel_cap"
 /** If set, determines an upper bound on the number of milliseconds that the
  * c-ares based DNS resolver will wait on queries before cancelling them.
  * The default value is 120,000ms. Setting this to "0" will disable the

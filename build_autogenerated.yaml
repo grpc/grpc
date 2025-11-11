@@ -9141,7 +9141,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/test_util/scoped_env_var.h
   src:
   - test/core/client_channel/client_channel_service_config_test.cc
   deps:
