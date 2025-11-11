@@ -13,6 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+echo -e "System: $(uname -a)\n"
+echo -e "-- OS --\n$(lsb_release -a 2>/dev/null)\n"
+echo -e "-- CPU --\n$(lscpu)\n"
+echo -e "-- Memory --\n$(lsmem --summary)\n$(free -h --si)\n"
+echo -e "-- Block devices --\n$(lsblk --all --fs --paths)\n"
+
 set -ex
 
 # Prepend verbose mode commands (xtrace) with the date.
