@@ -15,12 +15,16 @@
 
 set -ex
 
+
+BZLMOD_BAZEL_FLAGS=(
+    --bazelrc=tools/remote_build/linux_bzlmod.bazelrc
+    --ignore_dev_dependency
+)
+
 # Test if public targets are buildable without dev dependencies.
 tools/bazel \
     build \
-    --enable_bzlmod=true \
-    --enable_workspace=false \
-    --ignore_dev_dependency \
+    "${BZLMOD_BAZEL_FLAGS[@]}" \
     -- \
     :all \
     -:grpcpp_csm_observability  # Needs google_cloud_cpp to be added to BCR
@@ -28,9 +32,7 @@ tools/bazel \
 # Test if examples are buildable without dev dependencies.
 tools/bazel \
     build \
-    --enable_bzlmod=true \
-    --enable_workspace=false \
-    --ignore_dev_dependency \
+    "${BZLMOD_BAZEL_FLAGS[@]}" \
     -- \
     //examples/cpp/... \
     -//examples/cpp/csm/...  # Needs grpcpp_csm_observability
@@ -40,8 +42,7 @@ tools/bazel \
 # to be replaced by a comprehensive test suite once the bzlmod migration is finished.
 tools/bazel \
     test \
-    --enable_bzlmod=true \
-    --enable_workspace=false \
+    "${BZLMOD_BAZEL_FLAGS[@]}" \
     -- \
     //test/core/config:all \
     //test/cpp/common:all
@@ -50,9 +51,7 @@ tools/bazel \
 # dependencies.
 tools/bazel \
     build \
-    --enable_bzlmod=true \
-    --enable_workspace=false \
-    --ignore_dev_dependency \
+    "${BZLMOD_BAZEL_FLAGS[@]}"
     --define=//third_party:grpc_use_openssl=true \
     -- \
     :all \
