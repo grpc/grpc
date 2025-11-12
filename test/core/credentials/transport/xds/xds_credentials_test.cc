@@ -313,17 +313,26 @@ TEST(XdsSanMatchingTest, RegexMatch) {
 }
 
 TEST(XdsCertificateVerifierTest, CompareSuccess) {
-  XdsCertificateVerifier verifier_1(nullptr);
-  XdsCertificateVerifier verifier_2(nullptr);
+  XdsCertificateVerifier verifier_1(nullptr, "");
+  XdsCertificateVerifier verifier_2(nullptr, "");
   EXPECT_EQ(verifier_1.Compare(&verifier_2), 0);
   EXPECT_EQ(verifier_2.Compare(&verifier_1), 0);
 }
 
 TEST(XdsCertificateVerifierTest, CompareFailureDifferentCertificateProviders) {
   XdsCertificateVerifier verifier_1(
-      MakeRefCounted<XdsCertificateProvider>(nullptr, "", nullptr, "", false));
+      MakeRefCounted<XdsCertificateProvider>(nullptr, "", nullptr, "", false),
+      "");
   XdsCertificateVerifier verifier_2(
-      MakeRefCounted<XdsCertificateProvider>(nullptr, "", nullptr, "", false));
+      MakeRefCounted<XdsCertificateProvider>(nullptr, "", nullptr, "", false),
+      "");
+  EXPECT_NE(verifier_1.Compare(&verifier_2), 0);
+  EXPECT_NE(verifier_2.Compare(&verifier_1), 0);
+}
+
+TEST(XdsCertificateVerifierTest, CompareFailureDifferentSni) {
+  XdsCertificateVerifier verifier_1(nullptr, "a");
+  XdsCertificateVerifier verifier_2(nullptr, "b");
   EXPECT_NE(verifier_1.Compare(&verifier_2), 0);
   EXPECT_NE(verifier_2.Compare(&verifier_1), 0);
 }

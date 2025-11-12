@@ -937,7 +937,8 @@ TEST_F(TlsConfigTest, MinimumValidConfig) {
       static_cast<const XdsClusterResource&>(**decode_result.resource);
   auto* ca_cert_provider =
       std::get_if<CommonTlsContext::CertificateProviderPluginInstance>(
-          &resource.common_tls_context.certificate_validation_context.ca_certs);
+          &resource.upstream_tls_context.common_tls_context
+               .certificate_validation_context.ca_certs);
   ASSERT_NE(ca_cert_provider, nullptr);
   EXPECT_EQ(ca_cert_provider->instance_name, "provider1");
   EXPECT_EQ(ca_cert_provider->certificate_name, "cert_name");
@@ -967,7 +968,8 @@ TEST_F(TlsConfigTest, SystemRootCerts) {
       static_cast<const XdsClusterResource&>(**decode_result.resource);
   ASSERT_TRUE(std::holds_alternative<
               CommonTlsContext::CertificateValidationContext::SystemRootCerts>(
-      resource.common_tls_context.certificate_validation_context.ca_certs));
+      resource.upstream_tls_context.common_tls_context
+          .certificate_validation_context.ca_certs));
 }
 
 // This is just one example of where CommonTlsContext::Parse() will
@@ -1162,7 +1164,7 @@ TEST_F(HttpConnectTest, NoTransportSocket) {
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
   EXPECT_FALSE(resource.use_http_connect);
-  EXPECT_TRUE(resource.common_tls_context.Empty());
+  EXPECT_TRUE(resource.upstream_tls_context.common_tls_context.Empty());
 }
 
 TEST_F(HttpConnectTest, NoInnerTransportSocket) {
@@ -1186,7 +1188,7 @@ TEST_F(HttpConnectTest, NoInnerTransportSocket) {
   auto& resource =
       static_cast<const XdsClusterResource&>(**decode_result.resource);
   EXPECT_TRUE(resource.use_http_connect);
-  EXPECT_TRUE(resource.common_tls_context.Empty());
+  EXPECT_TRUE(resource.upstream_tls_context.common_tls_context.Empty());
 }
 
 TEST_F(HttpConnectTest, UnknownWrappedTransportSocketType) {
@@ -1311,7 +1313,8 @@ TEST_F(HttpConnectTest, WrappingUpstreamTlsContext) {
   EXPECT_TRUE(resource.use_http_connect);
   auto* ca_cert_provider =
       std::get_if<CommonTlsContext::CertificateProviderPluginInstance>(
-          &resource.common_tls_context.certificate_validation_context.ca_certs);
+          &resource.upstream_tls_context.common_tls_context
+               .certificate_validation_context.ca_certs);
   ASSERT_NE(ca_cert_provider, nullptr);
   EXPECT_EQ(ca_cert_provider->instance_name, "provider1");
   EXPECT_EQ(ca_cert_provider->certificate_name, "cert_name");

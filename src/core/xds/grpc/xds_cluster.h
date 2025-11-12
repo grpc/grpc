@@ -81,6 +81,19 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
     }
   };
 
+  struct UpstreamTlsContext {
+    CommonTlsContext common_tls_context;
+    std::string sni;
+    bool auto_host_sni;
+    bool auto_sni_san_validation;
+
+    bool operator==(const UpstreamTlsContext& other) const {
+      return common_tls_context == other.common_tls_context &&
+             sni == other.sni && auto_host_sni == other.auto_host_sni &&
+             auto_sni_san_validation == other.auto_sni_san_validation;
+    }
+  };
+
   std::variant<Eds, LogicalDns, Aggregate> type;
 
   // The LB policy to use for locality and endpoint picking.
@@ -97,7 +110,7 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
   bool use_http_connect = false;
 
   // Tls Context used by clients
-  CommonTlsContext common_tls_context;
+  UpstreamTlsContext upstream_tls_context;
 
   // Connection idle timeout.  Currently used only for SSA.
   Duration connection_idle_timeout = Duration::Hours(1);
@@ -119,7 +132,7 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
            LrsBackendMetricPropagationEqual(
                lrs_backend_metric_propagation,
                other.lrs_backend_metric_propagation) &&
-           common_tls_context == other.common_tls_context &&
+           upstream_tls_context == other.upstream_tls_context &&
            connection_idle_timeout == other.connection_idle_timeout &&
            max_concurrent_requests == other.max_concurrent_requests &&
            outlier_detection == other.outlier_detection &&
