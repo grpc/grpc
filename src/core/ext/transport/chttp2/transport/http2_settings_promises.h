@@ -22,9 +22,9 @@
 #include <grpc/support/port_platform.h>
 #include <stdint.h>
 
-#include <cstdint>
+#include <algorithm>
 #include <optional>
-#include <queue>
+#include <string>
 
 #include "src/core/channelz/property_list.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
@@ -32,14 +32,19 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/race.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
-#include "src/core/util/useful.h"
-#include "absl/functional/function_ref.h"
+#include "absl/log/log.h"
 #include "absl/strings/string_view.h"
+
 namespace grpc_core {
 
 // Timeout for getting an ack back on settings changes
@@ -76,9 +81,9 @@ class SettingsTimeoutManager {
     StartSettingsTimeoutTimer();
     // TODO(tjagtap) : [PH2][P1] : Make this a ref counted class and manage the
     // lifetime
-    return AssertResultType<absl::Status>(
+    return AssertResultType<http2::Http2Status>(
         Race(
-            [this]() -> Poll<absl::Status> {
+            [this]() -> Poll<http2::Http2Status> {
               GRPC_SETTINGS_TIMEOUT_DLOG
                   << "SettingsTimeoutManager::WaitForSettingsTimeout Race";
               // This Promise will "win" the race if we receive the SETTINGS
@@ -91,23 +96,31 @@ class SettingsTimeoutManager {
                 Timestamp::Now())
                 << "Should have timed out";
                 RemoveReceivedAck();
-                return absl::OkStatus();
+                return http2::Http2Status::Ok();
               }
               AddWaitingForAck();
               return Pending{};
             },
             // This promise will "Win" the Race if timeout is crossed and we did
             // not receive the ACK. The transport must close when this happens.
-            TrySeq(Sleep(timeout_), [sent_time = sent_time_,
-                                     timeout = timeout_]() {
+            Seq(Sleep(timeout_), [sent_time = sent_time_,
+                                  timeout = timeout_]() {
               GRPC_SETTINGS_TIMEOUT_DLOG
                   << "SettingsTimeoutManager::WaitForSettingsTimeout Timeout"
                      " triggered. Transport will close. Sent Time : "
                   << sent_time << " Timeout Time : " << (sent_time + timeout)
                   << " Current Time " << Timestamp::Now();
-              return absl::CancelledError(
+              return http2::Http2Status::Http2ConnectionError(
+                  http2::Http2ErrorCode::kSettingsTimeout,
                   std::string(RFC9113::kSettingsTimeout));
             })));
+  }
+
+  bool ShouldCloseConnection(http2::Http2Status& status) {
+    return status.GetType() ==
+               http2::Http2Status::Http2ErrorType::kConnectionError &&
+           status.GetConnectionErrorCode() ==
+               http2::Http2ErrorCode::kSettingsTimeout;
   }
 
  private:

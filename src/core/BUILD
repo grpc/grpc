@@ -8245,6 +8245,7 @@ grpc_cc_library(
         "useful",
         "//:chttp2_frame",
         "//:gpr_platform",
+        "//:promise",
     ],
 )
 

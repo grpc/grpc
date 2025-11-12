@@ -139,18 +139,18 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
       << "}";
 }
 
-bool MaybeGetSettingsAndSettingsAckFrames(
+SettingsUpdateResult MaybeGetSettingsAndSettingsAckFrames(
     chttp2::TransportFlowControl& flow_control, Http2SettingsManager& settings,
     SliceBuffer& output_buf) {
   GRPC_HTTP2_COMMON_DLOG << "MaybeGetSettingsAndSettingsAckFrames";
   std::optional<Http2Frame> settings_frame = settings.MaybeSendUpdate();
-  bool should_spawn_settings_timeout = false;
+  SettingsUpdateResult result;
   if (settings_frame.has_value()) {
     GRPC_HTTP2_COMMON_DLOG
         << "MaybeGetSettingsAndSettingsAckFrames Frame Settings ";
     Serialize(absl::Span<Http2Frame>(&settings_frame.value(), 1), output_buf);
     flow_control.FlushedSettings();
-    should_spawn_settings_timeout = true;
+    result.settings_frame_written = true;
   }
   const uint32_t num_acks = settings.MaybeSendAck();
   if (num_acks > 0) {
@@ -161,7 +161,7 @@ bool MaybeGetSettingsAndSettingsAckFrames(
     Serialize(absl::MakeSpan(ack_frames), output_buf);
     GRPC_HTTP2_COMMON_DLOG << "Sending " << num_acks << " settings ACK frames";
   }
-  return should_spawn_settings_timeout;
+  return result;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

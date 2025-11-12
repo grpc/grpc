@@ -65,13 +65,18 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
                                  chttp2::TransportFlowControl& flow_control,
                                  const bool is_client);
 
+struct SettingsUpdateResult {
+  bool settings_frame_written = false;
+};
+
 // Appends SETTINGS and SETTINGS ACK frames to output_buf if needed.
 // A SETTINGS frame is appended if local settings changed.
 // SETTINGS ACK frames are appended for any incoming settings that need
 // acknowledgment.
-// Returns true if a SETTINGS frame was added to output_buf, indicating
-// a settings timeout should be started while waiting for the peer's ACK.
-bool MaybeGetSettingsAndSettingsAckFrames(
+// Returns SettingsUpdateResult indicating if a SETTINGS frame was added to
+// output_buf, which in turn indicates a settings timeout should be started
+// while waiting for the peer's ACK.
+SettingsUpdateResult MaybeGetSettingsAndSettingsAckFrames(
     chttp2::TransportFlowControl& flow_control, Http2SettingsManager& settings,
     SliceBuffer& output_buf);
 

@@ -412,18 +412,27 @@ class Http2ClientTransport final : public ClientTransport,
   void MarkPeerSettingsResolved() {
     settings_.SetPreviousSettingsPromiseResolved(true);
   }
+
   auto WaitForSettingsTimeoutDone() {
-    return [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
-      if (!status.ok()) {
-        GRPC_UNUSED absl::Status result = self->HandleError(
-            std::nullopt, Http2Status::Http2ConnectionError(
-                              Http2ErrorCode::kProtocolError,
-                              std::string(RFC9113::kSettingsTimeout)));
-      } else {
+    // TODO(tjagtap) : [PH2][P1][Settings] : Handle Transport Close case.
+    // In case of transport close, we dont actually timeout. Nor can we
+    // MarkPeerSettingsResolved
+    return [self = RefAsSubclass<Http2ClientTransport>()](Http2Status status) {
+      GRPC_DCHECK(status.GetType() !=
+                  Http2Status::Http2ErrorType::kStreamError);
+      if (self->transport_settings_.ShouldCloseConnection(status)) {
+        GRPC_UNUSED absl::Status result =
+            self->HandleError(std::nullopt, std::move(status));
+      } else if (status.GetType() == Http2Status::Http2ErrorType::kOk) {
         self->MarkPeerSettingsResolved();
+      } else {
+        GRPC_DCHECK(false)
+            << "status: " << status.DebugString()
+            << ". Investigate this case and see if error handling is needed";
       }
     };
   }
+
   // TODO(tjagtap) : [PH2][P1] : Plumbing. Call this after the SETTINGS frame
   // has been written to endpoint_.
   void SpawnWaitForSettingsTimeout() {
