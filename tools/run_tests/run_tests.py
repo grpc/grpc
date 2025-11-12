@@ -1954,7 +1954,7 @@ build_steps.extend(
             environ=_build_step_environ(
                 build_config, extra_env=l.build_steps_environ()
             ),
-            timeout_seconds=None,
+            timeout_seconds=args.build_max_time or None,
             verbose_success=args.build_verbose_success or False,
         )
         for l in languages
