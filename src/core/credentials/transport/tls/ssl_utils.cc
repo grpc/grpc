@@ -31,6 +31,7 @@
 
 #include <memory>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "src/core/config/config_vars.h"
