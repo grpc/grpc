@@ -224,11 +224,11 @@ class StreamDataQueueFuzzTest : public YodelTest {
       header_assembler_.SetStreamId(stream_id);
     }
     void operator()(Http2HeaderFrame frame) {
-      auto status = header_assembler_.AppendHeaderFrame(std::move(frame));
+      auto status = header_assembler_.AppendHeaderFrame(frame);
       EXPECT_TRUE(status.IsOk());
     }
     void operator()(Http2ContinuationFrame frame) {
-      auto status = header_assembler_.AppendContinuationFrame(std::move(frame));
+      auto status = header_assembler_.AppendContinuationFrame(frame);
       EXPECT_TRUE(status.IsOk());
     }
     void operator()(Http2DataFrame frame) {
