@@ -16,8 +16,6 @@
 #define GRPC_SRC_CORE_UTIL_GRPC_CHECK_H
 
 #ifdef GRPC_POSTMORTEM_CHECKS
-#error Verifying GRPC_POSTMORTEM_CHECKS set on CI
-
 #include <limits.h>
 
 #include "src/core/util/postmortem_emit.h"
