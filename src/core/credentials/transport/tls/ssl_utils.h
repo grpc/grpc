@@ -30,7 +30,6 @@
 #include <memory>
 #include <string>
 #include <utility>
-#include <variant>
 #include <vector>
 
 #include "src/core/credentials/transport/security_connector.h"
@@ -40,6 +39,7 @@
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "src/core/util/match.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
@@ -121,7 +121,8 @@ int grpc_ssl_host_matches_name(const tsi_peer* peer,
 
 // --- Default SSL Root Store. ---
 namespace grpc_core {
-using PrivateKey = std::variant<absl::string_view, CustomPrivateKeySign>;
+using PrivateKey =
+    std::variant<absl::string_view, CustomPrivateKeySign>;
 
 bool IsPrivateKeyEmpty(const PrivateKey* private_key);
 

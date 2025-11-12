@@ -10632,6 +10632,7 @@ grpc_cc_library(
     ],
     deps = [
         "grpc_check",
+        "match",
         "ssl_transport_security_utils",
         "//:tsi_base",
     ],
