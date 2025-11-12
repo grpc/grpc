@@ -28,11 +28,19 @@ def _dockerized_sh_test(name, srcs = [], args = [], data = [], size = "medium", 
     else:
         fail("docker_image_version attribute not set for dockerized test '%s'" % name)
 
-    exec_properties = create_rbe_exec_properties_dict(
+    labels = {
+        "workload": "misc",
+        "machine_size": "misc_large",
+    }
+
+    if env.get("GRPC_BUILD_IS_HARNESS_TEST", "false") == "true":
         labels = {
-            "workload": "misc",
-            "machine_size": "misc_large",
-        },
+            "workload": "misc_sergiitk_test",
+            "machine_size": "misc_sergiitk_highmem16",
+        }
+
+    exec_properties = create_rbe_exec_properties_dict(
+        labels = labels,
         docker_network = "standard",
         container_image = image_spec,
         # TODO(jtattermusch): note that docker sandbox doesn't currently support "docker_run_as_root"
@@ -149,6 +157,9 @@ def grpc_run_tests_harness_test(name, args = [], data = [], size = "medium", tim
     # the C++ build significantly.
     # TODO(jtattermusch): find a cleaner way to toggle ccache for builds.
     env["GRPC_BUILD_ENABLE_CCACHE"] = "true"
+
+    # TODO(sergiitk): remove
+    env["GRPC_BUILD_IS_HARNESS_TEST"] = "true"
 
     _dockerized_sh_test(name = name, srcs = srcs, args = args, data = data, size = size, timeout = timeout, tags = tags, exec_compatible_with = exec_compatible_with, flaky = flaky, docker_image_version = docker_image_version, env = env)
 
