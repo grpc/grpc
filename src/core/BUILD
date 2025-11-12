@@ -10627,10 +10627,13 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
+        "libcrypto",
         "libssl",
     ],
     deps = [
+        "grpc_check",
         "ssl_transport_security_utils",
+        "//:tsi_base",
     ],
 )
 
