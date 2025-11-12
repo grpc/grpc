@@ -446,6 +446,8 @@ ValueOrHttp2Status<Http2Frame> ParseDataFrame(const Http2FrameHeader& hdr,
                      std::move(payload)});
 }
 
+// This function MUST NOT return a Http2StreamError. Doing this will cause the
+// HPACK state to be corrupted.
 ValueOrHttp2Status<Http2Frame> ParseHeaderFrame(const Http2FrameHeader& hdr,
                                                 SliceBuffer& payload) {
   if (GPR_UNLIKELY((hdr.stream_id % 2) == 0)) {
@@ -482,6 +484,8 @@ ValueOrHttp2Status<Http2Frame> ParseHeaderFrame(const Http2FrameHeader& hdr,
       ExtractFlag(hdr.flags, kFlagEndStream), std::move(payload)});
 }
 
+// This function MUST NOT return a Http2StreamError. Doing this will cause the
+// HPACK state to be corrupted.
 ValueOrHttp2Status<Http2Frame> ParseContinuationFrame(
     const Http2FrameHeader& hdr, SliceBuffer& payload) {
   if (GPR_UNLIKELY((hdr.stream_id % 2) == 0)) {

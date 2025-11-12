@@ -294,6 +294,9 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
       << ", end_stream=" << frame.end_stream
       << ", payload=" << frame.payload.JoinIntoString() << " }";
   ping_manager_.ReceivedDataFrame();
+  incoming_header_in_progress_ = !frame.end_headers;
+  incoming_header_stream_id_ = frame.stream_id;
+  incoming_header_end_stream_ = frame.end_stream;
 
   RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
   if (stream == nullptr) {
@@ -307,31 +310,56 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
     GRPC_HTTP2_CLIENT_DLOG
         << "Http2ClientTransport ProcessHttp2HeaderFrame Promise { stream_id="
         << frame.stream_id << "} Lookup Failed";
-    return Http2Status::Ok();
-  }
-  if (stream->GetStreamState() == HttpStreamState::kHalfClosedRemote) {
-    return Http2Status::Http2StreamError(
-        Http2ErrorCode::kStreamClosed,
-        std::string(RFC9113::kHalfClosedRemoteState));
+    return PartiallyProcessHeaderContinuationFrame(
+        std::move(frame.payload),
+        /*is_initial_metadata=*/!frame.end_stream, frame.end_headers,
+        frame.stream_id, /*stream=*/nullptr, Http2Status::Ok());
   }
 
-  incoming_header_in_progress_ = !frame.end_headers;
-  incoming_header_stream_id_ = frame.stream_id;
-  incoming_header_end_stream_ = frame.end_stream;
+  if (stream->GetStreamState() == HttpStreamState::kHalfClosedRemote) {
+    return PartiallyProcessHeaderContinuationFrame(
+        std::move(frame.payload),
+        /*is_initial_metadata=*/!frame.end_stream, frame.end_headers,
+        frame.stream_id, stream,
+        Http2Status::Http2StreamError(
+            Http2ErrorCode::kStreamClosed,
+            std::string(RFC9113::kHalfClosedRemoteState)));
+  }
+
   if ((incoming_header_end_stream_ && stream->did_push_trailing_metadata) ||
       (!incoming_header_end_stream_ && stream->did_push_initial_metadata)) {
-    return Http2Status::Http2StreamError(
-        Http2ErrorCode::kInternalError,
-        "gRPC Error : A gRPC server can send upto 1 initial metadata followed "
-        "by upto 1 trailing metadata");
+    return PartiallyProcessHeaderContinuationFrame(
+        std::move(frame.payload),
+        /*is_initial_metadata=*/!frame.end_stream, frame.end_headers,
+        frame.stream_id, stream,
+        Http2Status::Http2StreamError(Http2ErrorCode::kInternalError,
+                                      "gRPC Error : A gRPC server can send "
+                                      "upto 1 initial metadata followed "
+                                      "by upto 1 trailing metadata"));
   }
 
-  HeaderAssembler& assembler = stream->header_assembler;
-  Http2Status append_result = assembler.AppendHeaderFrame(std::move(frame));
-  if (append_result.IsOk()) {
-    return ProcessMetadata(stream);
+  Http2Status append_result = stream->header_assembler.AppendHeaderFrame(frame);
+  if (!append_result.IsOk()) {
+    // Frame payload is not consumed if AppendHeaderFrame returns a non-OK
+    // status. We need to process it to keep our in consistent state.
+    return PartiallyProcessHeaderContinuationFrame(
+        std::move(frame.payload),
+        /*is_initial_metadata=*/!frame.end_stream, frame.end_headers,
+        frame.stream_id, stream, std::move(append_result));
   }
-  return append_result;
+
+  Http2Status status = ProcessMetadata(stream);
+  if (!status.IsOk()) {
+    // Frame payload has been moved to the HeaderAssembler. So calling skip
+    // parser with an empty buffer.
+    return PartiallyProcessHeaderContinuationFrame(
+        SliceBuffer(),
+        /*is_initial_metadata=*/!frame.end_stream, frame.end_headers,
+        frame.stream_id, stream, std::move(status));
+  }
+
+  // Frame payload has either been processed or moved to the HeaderAssembler.
+  return Http2Status::Ok();
 }
 
 Http2Status Http2ClientTransport::ProcessMetadata(
@@ -579,20 +607,48 @@ Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
     // frame and streams that are reserved using PUSH_PROMISE. An endpoint that
     // receives an unexpected stream identifier MUST respond with a connection
     // error (Section 5.4.1) of type PROTOCOL_ERROR.
-    return Http2Status::Ok();
-  }
-  if (stream->GetStreamState() == HttpStreamState::kHalfClosedRemote) {
-    return Http2Status::Http2StreamError(
-        Http2ErrorCode::kStreamClosed,
-        std::string(RFC9113::kHalfClosedRemoteState));
+    return PartiallyProcessHeaderContinuationFrame(
+        std::move(frame.payload),
+        /*is_initial_metadata=*/!incoming_header_end_stream_,
+        /*is_end_headers=*/frame.end_headers, frame.stream_id, nullptr,
+        Http2Status::Ok());
   }
 
-  HeaderAssembler& assember = stream->header_assembler;
-  Http2Status result = assember.AppendContinuationFrame(std::move(frame));
-  if (result.IsOk()) {
-    return ProcessMetadata(stream);
+  if (stream->GetStreamState() == HttpStreamState::kHalfClosedRemote) {
+    return PartiallyProcessHeaderContinuationFrame(
+        std::move(frame.payload),
+        /*is_initial_metadata=*/!incoming_header_end_stream_,
+        /*is_end_headers=*/frame.end_headers, frame.stream_id, stream,
+        Http2Status::Http2StreamError(
+            Http2ErrorCode::kStreamClosed,
+            std::string(RFC9113::kHalfClosedRemoteState)));
   }
-  return result;
+
+  Http2Status append_result =
+      stream->header_assembler.AppendContinuationFrame(frame);
+  if (!append_result.IsOk()) {
+    // Frame payload is not consumed if AppendContinuationFrame returns a
+    // non-OK status. We need to process it to keep our in consistent state.
+    return PartiallyProcessHeaderContinuationFrame(
+        std::move(frame.payload),
+        /*is_initial_metadata=*/!incoming_header_end_stream_,
+        /*is_end_headers=*/frame.end_headers, frame.stream_id, stream,
+        std::move(append_result));
+  }
+
+  Http2Status status = ProcessMetadata(stream);
+  if (!status.IsOk()) {
+    // Frame payload is consumed by HeaderAssembler. So passing an empty
+    // SliceBuffer to PartiallyProcessHeaderContinuationFrame.
+    return PartiallyProcessHeaderContinuationFrame(
+        SliceBuffer(),
+        /*is_initial_metadata=*/!incoming_header_end_stream_,
+        /*is_end_headers=*/frame.end_headers, frame.stream_id, stream,
+        std::move(status));
+  }
+
+  // Frame payload has either been processed or moved to the HeaderAssembler.
+  return Http2Status::Ok();
 }
 
 Http2Status Http2ClientTransport::ProcessHttp2SecurityFrame(
@@ -657,6 +713,34 @@ auto Http2ClientTransport::ProcessOneFrame(Http2Frame frame) {
             << "ParseFramePayload should never return a Http2EmptyFrame";
         return Http2Status::Ok();
       }));
+}
+
+Http2Status Http2ClientTransport::PartiallyProcessHeaderContinuationFrame(
+    SliceBuffer&& buffer, const bool is_initial_metadata,
+    const bool is_end_headers, const uint32_t incoming_stream_id,
+    const RefCountedPtr<Stream> stream, Http2Status&& original_status) {
+  GRPC_HTTP2_CLIENT_DLOG
+      << "Http2ClientTransport PartiallyProcessHeaderContinuationFrame buffer "
+         "size: "
+      << buffer.Length() << " is_initial_metadata: " << is_initial_metadata
+      << " is_end_headers: " << is_end_headers
+      << " incoming_stream_id: " << incoming_stream_id
+      << " stream_id: " << (stream == nullptr ? 0 : stream->GetStreamId())
+      << " original_status: " << original_status;
+
+  return http2::PartiallyProcessHeaderContinuationFrame(
+      parser_, std::move(buffer),
+      HeaderAssembler::ParseHeaderArgs{
+          /*is_initial_metadata=*/is_initial_metadata,
+          /*is_end_headers=*/is_end_headers,
+          /*is_client=*/true,
+          /*max_header_list_size_soft_limit=*/
+          max_header_list_size_soft_limit_,
+          /*max_header_list_size_hard_limit=*/
+          settings_.acked().max_header_list_size(),
+          /*stream_id=*/incoming_stream_id,
+      },
+      stream, std::move(original_status));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1292,7 +1376,8 @@ Http2ClientTransport::Http2ClientTransport(
 void Http2ClientTransport::CloseStream(RefCountedPtr<Stream> stream,
                                        CloseStreamArgs args,
                                        DebugLocation whence) {
-  bool close_transport = false;
+  std::optional<Http2Status> close_transport_error;
+
   {
     // TODO(akshitpatel) : [PH2][P3] : Measure the impact of holding mutex
     // throughout this function.
@@ -1302,6 +1387,7 @@ void Http2ClientTransport::CloseStream(RefCountedPtr<Stream> stream,
         << "Http2ClientTransport::CloseStream for stream id: "
         << stream->GetStreamId() << " close_reads=" << args.close_reads
         << " close_writes=" << args.close_writes
+        << " incoming_header_in_progress=" << incoming_header_in_progress_
         << " location=" << whence.file() << ":" << whence.line();
 
     if (args.close_writes) {
@@ -1312,19 +1398,50 @@ void Http2ClientTransport::CloseStream(RefCountedPtr<Stream> stream,
       GRPC_HTTP2_CLIENT_DLOG
           << "Http2ClientTransport::CloseStream for stream id: "
           << stream->GetStreamId() << " closing stream for reads.";
+      // If the stream is closed while reading HEADER/CONTINUATION frames, we
+      // should still parse the enqueued buffer to maintain HPACK state between
+      // peers.
+      if (incoming_header_in_progress_) {
+        incoming_header_in_progress_ = false;
+        Http2Status skip_result =
+            http2::PartiallyProcessHeaderContinuationFrame(
+                parser_, SliceBuffer(),
+                HeaderAssembler::ParseHeaderArgs{
+                    /*is_initial_metadata=*/!incoming_header_end_stream_,
+                    /*is_end_headers=*/false,
+                    /*is_client=*/true,
+                    /*max_header_list_size_soft_limit=*/
+                    max_header_list_size_soft_limit_,
+                    /*max_header_list_size_hard_limit=*/
+                    settings_.acked().max_header_list_size(),
+                    /*stream_id=*/incoming_header_stream_id_,
+                },
+                stream, /*original_status=*/Http2Status::Ok());
+        if (!skip_result.IsOk() &&
+            skip_result.GetType() ==
+                Http2Status::Http2ErrorType::kConnectionError) {
+          GRPC_HTTP2_CLIENT_DLOG
+              << "Http2ClientTransport::CloseStream for stream id: "
+              << stream->GetStreamId()
+              << " failed to skip parser: " << skip_result;
+          close_transport_error.emplace(std::move(skip_result));
+        }
+      }
+
       stream_list_.erase(stream->GetStreamId());
-      if (CanCloseTransportLocked()) {
-        close_transport = true;
+      if (!close_transport_error.has_value() && CanCloseTransportLocked()) {
+        // TODO(akshitpatel) : [PH2][P3] : Is kInternalError the right error
+        // code to use here? IMO it should be kNoError.
+        close_transport_error.emplace(Http2Status::Http2ConnectionError(
+            Http2ErrorCode::kInternalError,
+            "Received GOAWAY frame and no more streams to close."));
       }
     }
   }
 
-  if (close_transport) {
-    // TODO(akshitpatel) : [PH2][P3] : Is kInternalError the right error code
-    // to use here? IMO it should be kNoError.
-    MaybeSpawnCloseTransport(Http2Status::Http2ConnectionError(
-        Http2ErrorCode::kInternalError,
-        "Received GOAWAY frame and no more streams to close."));
+  if (close_transport_error.has_value()) {
+    GRPC_UNUSED absl::Status status = HandleError(
+        /*stream_id=*/std::nullopt, std::move(*close_transport_error));
   }
 }
 

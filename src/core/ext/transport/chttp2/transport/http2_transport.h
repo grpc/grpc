@@ -24,6 +24,7 @@
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
@@ -98,6 +99,44 @@ ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame,
 bool ProcessIncomingWindowUpdateFrameFlowControl(
     const Http2WindowUpdateFrame& frame,
     chttp2::TransportFlowControl& flow_control, RefCountedPtr<Stream> stream);
+
+///////////////////////////////////////////////////////////////////////////////
+// HPACK helpers
+
+// This function is used to partially process a HEADER or CONTINUATION frame.
+// `PARTIAL PROCESSING` means reading the payload of a HEADER or CONTINUATION
+// and processing it with the HPACK decoder, and then discarding the payload.
+// This is done to keep the transports HPACK parser in sync with peers HPACK.
+// Scenarios where 'partial processing' is used:
+//
+// Case 1: Received a HEADER/CONTINUATION frame
+// 1. If the frame is invalid ('ParseHeaderFrame'/'ParseContinuationFrame'
+//    returns a non-OK status) then it is a connection error. In this case, we
+//    do NOT invoke 'partial processing' as the transport is about to be closed
+//    anyway.
+// 2. If ParseFramePayload returns a non-OK status, then it is a connection
+//    error. In this case, we do NOT invoke 'partial processing' as the
+//    transport is about to be closed anyway.
+// 3. If the frame is valid, but lookup stream fails, then we invoke 'partial
+//    processing' and pass the current payload through the HPACK decoder. This
+//    can happen if the stream was already closed.
+// 4. If the frame is valid, lookup stream succeeds and we fail while parsing
+//    the frame (be it stream or connection error), we first parse the buffered
+//    payload (if any) in the stream through the HPACK decoder and then pass the
+//    current payload through the HPACK decoder.
+// Case 2: Stream close
+// 1. If the stream is being aborted by the upper layers or the transport hit
+//    a stream error on a stream while reading HEADER/CONTINUATION frames, we
+//    invoke 'partial processing' to parse the enqueued buffer (if any) in the
+//    stream to keep our HPACK state consistent with the peer right before
+//    closing the stream. This is done as the next time a HEADER/CONTINUATION
+//    frame is received from the peer, the stream lookup will start failing.
+// This function returns a connection error if HPACK parsing fails. Otherwise,
+// it returns the original status.
+Http2Status PartiallyProcessHeaderContinuationFrame(
+    HPackParser& parser, SliceBuffer&& buffer,
+    HeaderAssembler::ParseHeaderArgs args, RefCountedPtr<Stream> stream,
+    Http2Status&& original_status);
 
 }  // namespace http2
 }  // namespace grpc_core

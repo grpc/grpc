@@ -30,6 +30,8 @@
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/header_assembler.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
@@ -269,6 +271,44 @@ bool ProcessIncomingWindowUpdateFrameFlowControl(
     }
   }
   return false;
+}
+
+// /////////////////////////////////////////////////////////////////////////////
+// HPACK helpers
+Http2Status PartiallyProcessHeaderContinuationFrame(
+    HPackParser& parser, SliceBuffer&& buffer,
+    HeaderAssembler::ParseHeaderArgs args, const RefCountedPtr<Stream> stream,
+    Http2Status&& original_status) {
+  GRPC_HTTP2_CLIENT_DLOG
+      << "Http2ClientTransport PartiallyProcessHeaderContinuationFrame buffer "
+         "size: "
+      << buffer.Length() << " args: " << args.DebugString()
+      << " stream_id: " << (stream == nullptr ? 0 : stream->GetStreamId())
+      << " original_status: " << original_status;
+
+  if (stream != nullptr) {
+    // Parse all the data in the header assembler
+    Http2Status skip_result =
+        stream->header_assembler.PartiallyProcessHeaderContinuationFrame(
+            parser, args.is_initial_metadata, args.is_client,
+            args.max_header_list_size_soft_limit,
+            args.max_header_list_size_hard_limit);
+    if (!skip_result.IsOk()) {
+      GRPC_DCHECK(skip_result.GetType() ==
+                  Http2Status::Http2ErrorType::kConnectionError);
+      LOG(ERROR) << "Connection Error: " << skip_result;
+      return skip_result;
+    }
+  }
+
+  if (buffer.Length() == 0) {
+    return std::move(original_status);
+  }
+
+  Http2Status status = HeaderAssembler::ParseHeader(
+      parser, std::move(buffer), /*grpc_metadata_batch=*/nullptr, args);
+
+  return (status.IsOk()) ? std::move(original_status) : std::move(status);
 }
 
 }  // namespace http2
