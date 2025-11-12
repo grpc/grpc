@@ -1500,7 +1500,6 @@ def _build_and_run(
         stop_on_failure=True,
         newline_on_success=newline_on_success,
         travis=args.travis,
-        max_time=args.build_max_time or -1,
     )
     if num_failures:
         return [BuildAndRunError.BUILD]
@@ -1954,7 +1953,9 @@ build_steps.extend(
             environ=_build_step_environ(
                 build_config, extra_env=l.build_steps_environ()
             ),
-            timeout_seconds=args.build_max_time or None,
+            timeout_seconds=(
+                args.build_max_time if args.build_max_time > 0 else None
+            ),
             verbose_success=args.build_verbose_success or False,
         )
         for l in languages
