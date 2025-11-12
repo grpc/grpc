@@ -133,8 +133,10 @@ void BufferedCall::Resume(
       batch = nullptr;
     }
   }
-  // Note: This will release the call combiner.
-  closures.RunClosures(call_combiner_);
+  if (closures.size() > 0) {
+    // Note: This will release the call combiner.
+    closures.RunClosures(call_combiner_);
+  }
 }
 
 }  // namespace grpc_core
