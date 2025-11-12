@@ -50,8 +50,10 @@ then
   source "../${GRPC_RUNTESTS_PREPARE_SCRIPT}"
 fi
 
+# Passed to build_cxx.sh via GRPC_RUN_TESTS_JOBS
 NPROC="$(nproc)"
-JOBS="$((${NPROC:-1} / 2 + 1))"
+JOBS="$((${NPROC:-0} + 1))"
+# JOBS="$((${NPROC:-1} / 2 + 1))"
 
 python3 tools/run_tests/run_tests.py -t -j "${JOBS}" -x "${REPORT_XML_FILE}" --report_suite_name "${REPORT_SUITE_NAME}" "$@" || FAILED="true"
 
