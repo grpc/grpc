@@ -1105,7 +1105,7 @@ TEST(Frame, ParseRejectsWindowUpdateFrameZeroIncrement) {
                     /* Stream Identifier (31 bits) */ 0x7f, 0xff, 0xff, 0xff,
                     /* Window Size Increment (31 bits) */ 0, 0, 0, 0),
       Http2StatusIs(
-          Http2Status::Http2ErrorType::kStreamError,
+          Http2Status::Http2ErrorType::kConnectionError,
           Http2ErrorCode::kProtocolError,
           absl::StrCat(
               RFC9113::kWindowSizeIncrement,
