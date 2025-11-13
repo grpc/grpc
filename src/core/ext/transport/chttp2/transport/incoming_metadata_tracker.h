@@ -16,6 +16,8 @@
 //
 //
 
+#if GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INCOMING_METADATA_TRACKER_H
+
 #include <string>
 
 namespace grpc_core {
@@ -26,4 +28,4 @@ class IncomingMetadataTracker {};
 }  // namespace http2
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HEADER_ASSEMBLER_H
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INCOMING_METADATA_TRACKER_H

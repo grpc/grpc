@@ -15389,6 +15389,17 @@ targets:
   - absl/utility:utility
   - gpr
   uses_polling: false
+- name: incoming_metadata_tracker_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/transport/chttp2/http2_common_test_inputs.h
+  src:
+  - test/core/transport/chttp2/incoming_metadata_tracker_test.cc
+  deps:
+  - gtest
+  - grpc
 - name: info_tool_test
   gtest: true
   build: test
