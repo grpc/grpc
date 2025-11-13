@@ -327,7 +327,9 @@ void FilterStackCall::CancelWithError(grpc_error_handle error) {
   GRPC_TRACE_LOG(call_error, INFO)
       << "CancelWithError " << (is_client() ? "CLI" : "SVR") << " "
       << StatusToString(error);
-  ClearPeerString();
+  if (!IsSkipClearPeerOnCancellationEnabled()) {
+    ClearPeerString();
+  }
   InternalRef("termination");
   ResetDeadline();
   // Inform the call combiner of the cancellation, so that it can cancel

@@ -293,6 +293,11 @@
       "event_engine_listener",
       "event_engine_secure_endpoint",
     ]
+- name: skip_clear_peer_on_cancellation
+  description: If set, skips clearing of peer string on call cancellation.
+  expiry: 2026/03/01
+  owner: vigneshbabu@google.com
+  test_tags: []
 - name: sleep_promise_exec_ctx_removal
   description: If set, polling the sleep promise does not rely on the ExecCtx.
   expiry: 2026/02/01
