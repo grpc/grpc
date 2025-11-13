@@ -274,30 +274,30 @@ bool ProcessIncomingWindowUpdateFrameFlowControl(
 }
 
 // /////////////////////////////////////////////////////////////////////////////
-// HPACK helpers
-Http2Status PartiallyProcessHeaderContinuationFrame(
-    HPackParser& parser, SliceBuffer&& buffer,
-    HeaderAssembler::ParseHeaderArgs args, const RefCountedPtr<Stream> stream,
-    Http2Status&& original_status) {
-  GRPC_HTTP2_CLIENT_DLOG
-      << "Http2ClientTransport PartiallyProcessHeaderContinuationFrame buffer "
-         "size: "
-      << buffer.Length() << " args: " << args.DebugString()
-      << " stream_id: " << (stream == nullptr ? 0 : stream->GetStreamId())
-      << " original_status: " << original_status;
+// Header and Continuation frame processing helpers
+Http2Status ParseAndDiscardHeaders(HPackParser& parser, SliceBuffer&& buffer,
+                                   HeaderAssembler::ParseHeaderArgs args,
+                                   const RefCountedPtr<Stream> stream,
+                                   Http2Status&& original_status) {
+  GRPC_HTTP2_COMMON_DLOG << "ParseAndDiscardHeaders buffer "
+                            "size: "
+                         << buffer.Length() << " args: " << args.DebugString()
+                         << " stream_id: "
+                         << (stream == nullptr ? 0 : stream->GetStreamId())
+                         << " original_status: "
+                         << original_status.DebugString();
 
   if (stream != nullptr) {
     // Parse all the data in the header assembler
-    Http2Status skip_result =
-        stream->header_assembler.PartiallyProcessHeaderContinuationFrame(
-            parser, args.is_initial_metadata, args.is_client,
-            args.max_header_list_size_soft_limit,
-            args.max_header_list_size_hard_limit);
-    if (!skip_result.IsOk()) {
-      GRPC_DCHECK(skip_result.GetType() ==
+    Http2Status result = stream->header_assembler.ParseAndDiscardHeaders(
+        parser, args.is_initial_metadata, args.is_client,
+        args.max_header_list_size_soft_limit,
+        args.max_header_list_size_hard_limit);
+    if (!result.IsOk()) {
+      GRPC_DCHECK(result.GetType() ==
                   Http2Status::Http2ErrorType::kConnectionError);
-      LOG(ERROR) << "Connection Error: " << skip_result;
-      return skip_result;
+      LOG(ERROR) << "Connection Error: " << result;
+      return result;
     }
   }
 

@@ -101,7 +101,7 @@ bool ProcessIncomingWindowUpdateFrameFlowControl(
     chttp2::TransportFlowControl& flow_control, RefCountedPtr<Stream> stream);
 
 ///////////////////////////////////////////////////////////////////////////////
-// HPACK helpers
+// Header and Continuation frame processing helpers
 
 // This function is used to partially process a HEADER or CONTINUATION frame.
 // `PARTIAL PROCESSING` means reading the payload of a HEADER or CONTINUATION
@@ -120,7 +120,7 @@ bool ProcessIncomingWindowUpdateFrameFlowControl(
 // 3. If the frame is valid, but lookup stream fails, then we invoke 'partial
 //    processing' and pass the current payload through the HPACK decoder. This
 //    can happen if the stream was already closed.
-// 4. If the frame is valid, lookup stream succeeds and we fail while parsing
+// 4. If the frame is valid, lookup stream succeeds and we fail while processing
 //    the frame (be it stream or connection error), we first parse the buffered
 //    payload (if any) in the stream through the HPACK decoder and then pass the
 //    current payload through the HPACK decoder.
@@ -133,10 +133,10 @@ bool ProcessIncomingWindowUpdateFrameFlowControl(
 //    frame is received from the peer, the stream lookup will start failing.
 // This function returns a connection error if HPACK parsing fails. Otherwise,
 // it returns the original status.
-Http2Status PartiallyProcessHeaderContinuationFrame(
-    HPackParser& parser, SliceBuffer&& buffer,
-    HeaderAssembler::ParseHeaderArgs args, RefCountedPtr<Stream> stream,
-    Http2Status&& original_status);
+Http2Status ParseAndDiscardHeaders(HPackParser& parser, SliceBuffer&& buffer,
+                                   HeaderAssembler::ParseHeaderArgs args,
+                                   RefCountedPtr<Stream> stream,
+                                   Http2Status&& original_status);
 
 }  // namespace http2
 }  // namespace grpc_core
