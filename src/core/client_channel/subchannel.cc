@@ -155,12 +155,18 @@ class Subchannel::ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
 
   // Returns true if the RPC can start.
   bool GetQuotaForRpc() {
+    GRPC_TRACE_LOG(subchannel_call, INFO)
+        << "subchannel " << subchannel_.get() << " connection "
+        << this << ": attempting to get quota for an RPC...";
     uint64_t prev_stream_counts =
         stream_counts_.load(std::memory_order_acquire);
     do {
       const uint32_t rpcs_in_flight = GetRpcsInFlight(prev_stream_counts);
       const uint32_t max_concurrent_streams =
           GetMaxConcurrentStreams(prev_stream_counts);
+      GRPC_TRACE_LOG(subchannel_call, INFO)
+          << "  rpcs_in_flight=" << rpcs_in_flight
+          << ", max_concurrent_streams=" << max_concurrent_streams;
       if (rpcs_in_flight == max_concurrent_streams) return false;
     } while (!stream_counts_.compare_exchange_weak(
         prev_stream_counts, prev_stream_counts + MakeStreamCounts(0, 1),
@@ -297,6 +303,10 @@ class Subchannel::LegacyConnectedSubchannel final : public ConnectedSubchannel {
 
     static void Destroy(void* arg, grpc_error_handle error);
 
+    // Returns the quota for this RPC.  If that brings the connection
+    // below quota, then try to drain the queue.
+    void MaybeReturnQuota();
+
     RefCountedPtr<LegacyConnectedSubchannel> connected_subchannel_;
     grpc_closure* after_call_stack_destroy_ = nullptr;
     // State needed to support channelz interception of recv trailing metadata.
@@ -304,6 +314,7 @@ class Subchannel::LegacyConnectedSubchannel final : public ConnectedSubchannel {
     grpc_closure* original_recv_trailing_metadata_ = nullptr;
     grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
     Timestamp deadline_;
+    bool returned_quota_ = false;
   };
 
   RefCountedPtr<channelz::SubchannelNode> channelz_node_;
@@ -319,6 +330,10 @@ Subchannel::LegacyConnectedSubchannel::SubchannelCall::SubchannelCall(
     CreateCallArgs args, grpc_error_handle* error)
     : connected_subchannel_(std::move(connected_subchannel)),
       deadline_(args.deadline) {
+  GRPC_TRACE_LOG(subchannel_call, INFO)
+      << "subchannel " << connected_subchannel_->subchannel()
+      << " connection " << connected_subchannel_.get()
+      << ": created call " << this;
   grpc_call_stack* callstk = SUBCHANNEL_CALL_TO_CALL_STACK(this);
   const grpc_call_element_args call_args = {
       callstk,            // call_stack
@@ -342,6 +357,11 @@ Subchannel::LegacyConnectedSubchannel::SubchannelCall::SubchannelCall(
 
 void Subchannel::LegacyConnectedSubchannel::SubchannelCall::
     StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch) {
+  GRPC_TRACE_LOG(subchannel_call, INFO)
+      << "subchannel " << connected_subchannel_->subchannel()
+      << " connection " << connected_subchannel_.get()
+      << " call " << this << ": starting batch: "
+      << grpc_transport_stream_op_batch_string(batch, false);
   MaybeInterceptRecvTrailingMetadata(batch);
   grpc_call_stack* call_stack = SUBCHANNEL_CALL_TO_CALL_STACK(this);
   grpc_call_element* top_elem = grpc_call_stack_element(call_stack, 0);
@@ -370,11 +390,9 @@ void Subchannel::LegacyConnectedSubchannel::SubchannelCall::Unref(
 void Subchannel::LegacyConnectedSubchannel::SubchannelCall::Destroy(
     void* arg, grpc_error_handle /*error*/) {
   SubchannelCall* self = static_cast<SubchannelCall*>(arg);
-  // Return the quota for this RPC.  If that brought the connection
-  // below quota, then try to drain the queue.
-  if (self->connected_subchannel_->ReturnQuotaForRpc()) {
-    self->connected_subchannel_->subchannel()->RetryQueuedRpcs();
-  }
+  // Just in case we didn't already take care of this in the
+  // recv_trailing_metadata callback, return the quota now.
+  self->MaybeReturnQuota();
   // Keep some members before destroying the subchannel call.
   grpc_closure* after_call_stack_destroy = self->after_call_stack_destroy_;
   RefCountedPtr<ConnectedSubchannel> connected_subchannel =
@@ -395,8 +413,6 @@ void Subchannel::LegacyConnectedSubchannel::SubchannelCall::
     MaybeInterceptRecvTrailingMetadata(grpc_transport_stream_op_batch* batch) {
   // only intercept payloads with recv trailing.
   if (!batch->recv_trailing_metadata) return;
-  // only add interceptor is channelz is enabled.
-  if (connected_subchannel_->channelz_node_ == nullptr) return;
   GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_, RecvTrailingMetadataReady,
                     this, grpc_schedule_on_exec_ctx);
   // save some state needed for the interception callback.
@@ -427,17 +443,34 @@ void Subchannel::LegacyConnectedSubchannel::SubchannelCall::
     RecvTrailingMetadataReady(void* arg, grpc_error_handle error) {
   SubchannelCall* call = static_cast<SubchannelCall*>(arg);
   GRPC_CHECK_NE(call->recv_trailing_metadata_, nullptr);
-  grpc_status_code status = GRPC_STATUS_OK;
-  GetCallStatus(&status, call->deadline_, call->recv_trailing_metadata_, error);
-  channelz::SubchannelNode* channelz_node =
-      call->connected_subchannel_->channelz_node_.get();
-  GRPC_CHECK_NE(channelz_node, nullptr);
-  if (status == GRPC_STATUS_OK) {
-    channelz_node->RecordCallSucceeded();
-  } else {
-    channelz_node->RecordCallFailed();
+  // Return MAX_CONCURRENT_STREAMS quota.
+  call->MaybeReturnQuota();
+  // If channelz is enabled, record the success or failure of the call.
+  if (auto* channelz_node = call->connected_subchannel_->channelz_node_.get();
+      channelz_node != nullptr) {
+    grpc_status_code status = GRPC_STATUS_OK;
+    GetCallStatus(&status, call->deadline_, call->recv_trailing_metadata_,
+                  error);
+    GRPC_CHECK_NE(channelz_node, nullptr);
+    if (status == GRPC_STATUS_OK) {
+      channelz_node->RecordCallSucceeded();
+    } else {
+      channelz_node->RecordCallFailed();
+    }
   }
   Closure::Run(DEBUG_LOCATION, call->original_recv_trailing_metadata_, error);
+}
+
+void Subchannel::LegacyConnectedSubchannel::SubchannelCall::MaybeReturnQuota() {
+  if (returned_quota_) return;  // Already returned.
+  returned_quota_ = true;
+  GRPC_TRACE_LOG(subchannel_call, INFO)
+      << "subchannel " << connected_subchannel_->subchannel()
+      << " connection " << connected_subchannel_.get()
+      << ": call " << this << " complete, returning quota";
+  if (connected_subchannel_->ReturnQuotaForRpc()) {
+    connected_subchannel_->subchannel()->RetryQueuedRpcs();
+  }
 }
 
 void Subchannel::LegacyConnectedSubchannel::SubchannelCall::
@@ -520,6 +553,10 @@ class Subchannel::QueuedCall::Canceller final {
     {
       MutexLock lock(&self->call_->subchannel_->mu_);
       if (self->call_->canceller_ == self && !error.ok()) {
+        GRPC_TRACE_LOG(subchannel_call, INFO)
+            << "subchannel " << self->call_->subchannel_.get()
+            << " queued call " << self->call_.get()
+            << ": call combiner canceller called";
         // Remove from queue.
         self->call_->queue_entry_ = nullptr;
         cancelled = true;
@@ -622,7 +659,6 @@ void Subchannel::QueuedCall::ResumeOnConnectionLocked(
     buffered_call_.Fail(
         error, BufferedCall::YieldCallCombinerIfPendingBatchesFound);
   } else {
-// FIXME: yield call combiner only if pending batches are found?
     buffered_call_.Resume([subchannel_call = subchannel_call_](
                               grpc_transport_stream_op_batch* batch) {
       // This will release the call combiner.
@@ -1389,6 +1425,9 @@ RefCountedPtr<Subchannel::Call> Subchannel::CreateCall(
     }
   }
   // Found a connection, so create a call on it.
+  GRPC_TRACE_LOG(subchannel_call, INFO)
+      << "subchannel " << this << " " << key_.ToString()
+      << ": creating call on connection " << connected_subchannel.get();
   return connected_subchannel->CreateCall(args, error);
 }
 
@@ -1429,6 +1468,9 @@ void Subchannel::RetryQueuedRpcs() {
 }
 
 void Subchannel::RetryQueuedRpcsLocked() {
+  GRPC_TRACE_LOG(subchannel_call, INFO)
+      << "subchannel " << this << " " << key_.ToString()
+      << ": retrying RPCs from queue, queue size=" << queued_calls_.size();
   while (!queued_calls_.empty()) {
     QueuedCall* queued_call = queued_calls_.front();
     if (queued_call != nullptr) {
@@ -1439,6 +1481,9 @@ void Subchannel::RetryQueuedRpcsLocked() {
       queued_call->ResumeOnConnectionLocked(connected_subchannel.get());
     }
     queued_calls_.pop_front();
+    GRPC_TRACE_LOG(subchannel_call, INFO)
+        << "subchannel " << this << " " << key_.ToString()
+        << ": started a queued RPC, queue size=" << queued_calls_.size();
   }
 }
 

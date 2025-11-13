@@ -274,20 +274,25 @@ class ClientLbEnd2endTest : public ::testing::Test {
 
   void CreateServers(
       size_t num_servers, std::vector<int> ports = {},
-      std::shared_ptr<ServerCredentials> server_creds = nullptr) {
+      std::shared_ptr<ServerCredentials> server_creds = nullptr,
+      std::optional<uint32_t> max_concurrent_streams = std::nullopt) {
     servers_.clear();
     for (size_t i = 0; i < num_servers; ++i) {
       int port = 0;
       if (ports.size() == num_servers) port = ports[i];
-      servers_.emplace_back(new ServerData(port, server_creds));
+      servers_.emplace_back(new ServerData(port, server_creds,
+                                           max_concurrent_streams));
     }
   }
 
   void StartServer(size_t index) { servers_[index]->Start(); }
 
-  void StartServers(size_t num_servers, std::vector<int> ports = {},
-                    std::shared_ptr<ServerCredentials> server_creds = nullptr) {
-    CreateServers(num_servers, std::move(ports), std::move(server_creds));
+  void StartServers(
+      size_t num_servers, std::vector<int> ports = {},
+      std::shared_ptr<ServerCredentials> server_creds = nullptr,
+      std::optional<uint32_t> max_concurrent_streams = std::nullopt) {
+    CreateServers(num_servers, std::move(ports), std::move(server_creds),
+                  max_concurrent_streams);
     for (size_t i = 0; i < num_servers; ++i) {
       StartServer(i);
     }
@@ -408,6 +413,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
   struct ServerData {
     const int port_;
     const std::shared_ptr<ServerCredentials> server_creds_;
+    const std::optional<uint32_t> max_concurrent_streams_;
     std::unique_ptr<Server> server_;
     MyTestServiceImpl service_;
     std::unique_ptr<experimental::ServerMetricRecorder> server_metric_recorder_;
@@ -422,7 +428,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
     bool started_ ABSL_GUARDED_BY(mu_) = false;
 
     explicit ServerData(
-        int port = 0, std::shared_ptr<ServerCredentials> server_creds = nullptr)
+        int port = 0, std::shared_ptr<ServerCredentials> server_creds = nullptr,
+        std::optional<uint32_t> max_concurrent_streams = std::nullopt)
         : port_(port > 0 ? port : grpc_pick_unused_port_or_die()),
           server_creds_(
               server_creds == nullptr
@@ -430,6 +437,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
                         ServerCredentials>(new SecureServerCredentials(
                         grpc_fake_transport_security_server_credentials_create()))
                   : std::move(server_creds)),
+          max_concurrent_streams_(max_concurrent_streams),
           server_metric_recorder_(experimental::ServerMetricRecorder::Create()),
           orca_service_(
               server_metric_recorder_.get(),
@@ -455,6 +463,10 @@ class ClientLbEnd2endTest : public ::testing::Test {
                                server_creds_);
       builder.RegisterService(&service_);
       builder.RegisterService(&orca_service_);
+      if (max_concurrent_streams_.has_value()) {
+        builder.AddChannelArgument(GRPC_ARG_MAX_CONCURRENT_STREAMS,
+                                   *max_concurrent_streams_);
+      }
       if (enable_noop_health_check_service_) {
         builder.RegisterService(&noop_health_check_service_impl_);
       }
@@ -3373,6 +3385,107 @@ TEST_P(WeightedRoundRobinParamTest, Basic) {
                                 /*expected_weights=*/{1, 2, 4});
   // Check LB policy name for the channel.
   EXPECT_EQ("weighted_round_robin", channel->GetLoadBalancingPolicyName());
+}
+
+//
+// connection scaling tests
+//
+
+class ConnectionScalingTest : public ClientLbEnd2endTest {
+ protected:
+  // A class for running a long-running RPC using the callback API.
+  class LongRunningRpc {
+   public:
+    // Starts the RPC.
+    void StartRpc(grpc::testing::EchoTestService::Stub* stub) {
+      LOG(INFO) << "Starting long-running RPC...";
+      request_.mutable_param()->set_client_cancel_after_us(1 * 1000 * 1000);
+      stub->async()->Echo(
+          &context_, &request_, &response_, [this](Status status) {
+            grpc_core::MutexLock lock(&mu_);
+            status_ = std::move(status);
+            cv_.Signal();
+          });
+    }
+
+    // Cancels the RPC.
+    void CancelRpc() {
+      context_.TryCancel();
+      (void)GetStatus();
+    }
+
+    // Gets the RPC's status.  Blocks if the RPC is not yet complete.
+    Status GetStatus() {
+      grpc_core::MutexLock lock(&mu_);
+      while (!status_.has_value()) {
+        cv_.Wait(&mu_);
+      }
+      return *status_;
+    }
+
+   private:
+    EchoRequest request_;
+    EchoResponse response_;                                                         ClientContext context_;
+    grpc_core::Mutex mu_;
+    grpc_core::CondVar cv_;
+    std::optional<Status> status_ ABSL_GUARDED_BY(&mu_);
+  };
+
+  bool WaitFor(absl::FunctionRef<bool()> is_done,
+               absl::Duration timeout = absl::Seconds(10)) {
+    const absl::Time kDeadline =
+        absl::Now() + (timeout * grpc_test_slowdown_factor());
+    while (!is_done()) {
+      if (absl::Now() > kDeadline) return false;
+      absl::SleepFor(absl::Milliseconds(1) * grpc_test_slowdown_factor());
+    }
+    return true;
+  }
+};
+
+TEST_F(ConnectionScalingTest, SingleServerSingleConnection) {
+  const int kMaxConcurrentStreams = 1;
+  // Start a server with MAX_CONCURRENT_STREAMS=3.
+  StartServers(1, {}, nullptr,
+               /*max_concurrent_streams=*/kMaxConcurrentStreams);
+  FakeResolverResponseGeneratorWrapper response_generator;
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts());
+  // Start kMaxConcurrentStreams long-running RPCs.
+  LongRunningRpc rpcs[kMaxConcurrentStreams + 1];
+  for (size_t i = 0; i < kMaxConcurrentStreams; ++i) {
+    rpcs[i].StartRpc(stub.get());
+  }
+  // Wait for the server to see the first kMaxConcurrentStreams RPCs.
+  LOG(INFO) << "Waiting for server to see the initial RPCs...";
+  EXPECT_TRUE(WaitFor(
+      [&]() {
+        return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+               kMaxConcurrentStreams;
+      }))
+      << "timeout waiting for initial RPCs to start -- RPCs started: "
+      << servers_[0]->service_.RpcsWaitingForClientCancel();
+  EXPECT_EQ(servers_[0]->service_.request_count(), kMaxConcurrentStreams);
+  // Start another RPC, which should get queued.
+  rpcs[kMaxConcurrentStreams].StartRpc(stub.get());
+  // FIXME: use metric to determine when it's actually queued?
+  // Cancel one RPC to allow another one through.
+  LOG(INFO) << "Cancelling the first RPC...";
+  rpcs[0].CancelRpc();
+  // Now the server should see the 4th RPC.
+  LOG(INFO) << "Waiting for server to see the last RPC...";
+  EXPECT_TRUE(WaitFor(
+      [&]() {
+        return servers_[0]->service_.request_count() ==
+               kMaxConcurrentStreams + 1;
+      }))
+      << "timeout waiting for last RPC to start";
+  // Clean up.
+  LOG(INFO) << "Cancelling all remaining RPCs...";
+  for (size_t i = 1; i < kMaxConcurrentStreams + 1; ++i) {
+    rpcs[i].CancelRpc();
+  }
 }
 
 }  // namespace
