@@ -128,7 +128,7 @@ bool ProtoReflectionDescriptorDatabase::FindFileContainingSymbol(
              ServerReflectionResponse::MessageResponseCase::kErrorResponse) {
     const ErrorResponse& error = response.error_response();
     if (error.error_code() == StatusCode::NOT_FOUND) {
-      missing_symbols_.insert(symbol_name);
+      missing_symbols_.emplace(symbol_name);
       LOG(INFO) << "NOT_FOUND from server for FindFileContainingSymbol("
                 << symbol_name << ")";
     } else {
