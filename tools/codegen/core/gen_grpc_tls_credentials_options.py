@@ -246,7 +246,6 @@ _DATA_MEMBERS = [
         name="sni_override",
         type="std::optional<std::string>",
         setter_move_semantics=True,
-        default_initializer="std::nullopt",
         setter_comment=(
             "If set to nullopt, do not override. If set to empty string, disable sending SNI. Otherwise, override SNI"
         ),
