@@ -442,6 +442,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/huffsyms.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/huffsyms.h )
+  s.files += %w( src/core/ext/transport/chttp2/transport/incoming_metadata_tracker.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/internal.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/keepalive.cc )
