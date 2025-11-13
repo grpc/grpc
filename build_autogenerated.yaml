@@ -9214,6 +9214,7 @@ targets:
   headers:
   - src/cpp/server/orca/orca_service.h
   - test/core/test_util/postmortem.h
+  - test/core/test_util/scoped_env_var.h
   - test/core/test_util/test_lb_policies.h
   - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/test_service_impl.h

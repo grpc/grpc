@@ -1453,7 +1453,7 @@ Subchannel::ChooseConnectionLocked() {
   // Trigger a new connection attempt if we need to scale up the number
   // of connections.
   if (connections_.size() < watcher_list_.GetMaxConnectionsPerSubchannel() &&
-      !connection_attempt_in_flight_ && retry_timer_handle_.has_value()) {
+      !connection_attempt_in_flight_ && !retry_timer_handle_.has_value()) {
     GRPC_TRACE_LOG(subchannel, INFO)
         << "subchannel " << this << " " << key_.ToString()
         << ": adding a new connection";

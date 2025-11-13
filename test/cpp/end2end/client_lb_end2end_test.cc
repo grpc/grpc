@@ -67,6 +67,7 @@
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/postmortem.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/test_lb_policies.h"
 #include "test/cpp/end2end/connection_attempt_injector.h"
@@ -3443,9 +3444,9 @@ class ConnectionScalingTest : public ClientLbEnd2endTest {
   }
 };
 
-TEST_F(ConnectionScalingTest, SingleServerSingleConnection) {
-  const int kMaxConcurrentStreams = 1;
-  // Start a server with MAX_CONCURRENT_STREAMS=3.
+TEST_F(ConnectionScalingTest, SingleConnection) {
+  const int kMaxConcurrentStreams = 3;
+  // Start a server with MAX_CONCURRENT_STREAMS set.
   StartServers(1, {}, nullptr,
                /*max_concurrent_streams=*/kMaxConcurrentStreams);
   FakeResolverResponseGeneratorWrapper response_generator;
@@ -3484,6 +3485,64 @@ TEST_F(ConnectionScalingTest, SingleServerSingleConnection) {
   // Clean up.
   LOG(INFO) << "Cancelling all remaining RPCs...";
   for (size_t i = 1; i < kMaxConcurrentStreams + 1; ++i) {
+    rpcs[i].CancelRpc();
+  }
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 1);
+}
+
+TEST_F(ConnectionScalingTest, MultipleConnections) {
+  if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
+    GTEST_SKIP()
+        << "this test requires the subchannel_connection_scaling experiment";
+  }
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
+  constexpr char kServiceConfig[] =
+      "{\n"
+      "  \"connectionScaling\": {\n"
+      "    \"maxConnectionsPerSubchannel\": 2\n"
+      "  }\n"
+      "}";
+  const int kMaxConcurrentStreams = 3;
+  // Start a server with MAX_CONCURRENT_STREAMS=3.
+  StartServers(1, {}, nullptr,
+               /*max_concurrent_streams=*/kMaxConcurrentStreams);
+  FakeResolverResponseGeneratorWrapper response_generator;
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts(), kServiceConfig);
+  // Start kMaxConcurrentStreams long-running RPCs.
+  LongRunningRpc rpcs[kMaxConcurrentStreams + 1];
+  for (size_t i = 0; i < kMaxConcurrentStreams; ++i) {
+    rpcs[i].StartRpc(stub.get());
+  }
+  // Wait for the server to see the first kMaxConcurrentStreams RPCs.
+  LOG(INFO) << "Waiting for server to see the initial RPCs...";
+  EXPECT_TRUE(WaitFor(
+      [&]() {
+        return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+               kMaxConcurrentStreams;
+      }))
+      << "timeout waiting for initial RPCs to start -- RPCs started: "
+      << servers_[0]->service_.RpcsWaitingForClientCancel();
+  // There should be only one connection.
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 1);
+  // Start another RPC, which will trigger the creation of a new
+  // connection.
+  rpcs[kMaxConcurrentStreams].StartRpc(stub.get());
+  // Now the server should see the new RPC.
+  LOG(INFO) << "Waiting for server to see the last RPC...";
+  EXPECT_TRUE(WaitFor(
+      [&]() {
+        return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+               kMaxConcurrentStreams + 1;
+      }))
+      << "timeout waiting for last RPC to start";
+  // And there should be another connection.
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 2);
+  // Clean up.
+  LOG(INFO) << "Cancelling RPCs...";
+  for (size_t i = 0; i < kMaxConcurrentStreams + 1; ++i) {
     rpcs[i].CancelRpc();
   }
 }
