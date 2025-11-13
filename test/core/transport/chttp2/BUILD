@@ -786,6 +786,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//src/core:grpc_check",
+        "//src/core:incoming_metadata_tracker",
     ],
 )
 
