@@ -191,10 +191,17 @@ class HeaderAssembler {
         std::move(metadata));
   }
 
-  Http2Status PartiallyProcessHeaderContinuationFrame(
-      HPackParser& parser, bool is_initial_metadata, bool is_client,
+  Http2Status ParseAndDiscardHeaders(
+      HPackParser& parser, const bool is_initial_metadata, const bool is_client,
       const uint32_t max_header_list_size_soft_limit,
       const uint32_t max_header_list_size_hard_limit) {
+    ASSEMBLER_LOG << "ParseAndDiscardHeaders " << buffer_.Length() << " Bytes"
+                  << " is_initial_metadata: " << is_initial_metadata
+                  << " is_client: " << is_client
+                  << " max_header_list_size_soft_limit: "
+                  << max_header_list_size_soft_limit
+                  << "max_header_list_size_hard_limit: "
+                  << max_header_list_size_hard_limit;
     Http2Status status = ParseHeader(
         parser, std::move(buffer_), /*grpc_metadata_batch=*/nullptr,
         ParseHeaderArgs{

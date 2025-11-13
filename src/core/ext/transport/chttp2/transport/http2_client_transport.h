@@ -750,10 +750,12 @@ class Http2ClientTransport final : public ClientTransport,
   // indicates extreme memory pressure on the server.
   bool should_stall_read_loop_;
   Waker read_loop_waker_;
-  Http2Status PartiallyProcessHeaderContinuationFrame(
-      SliceBuffer&& buffer, bool is_initial_metadata, bool is_end_headers,
-      uint32_t stream_id, RefCountedPtr<Stream> stream,
-      Http2Status&& original_status);
+  Http2Status ParseAndDiscardHeaders(SliceBuffer&& buffer,
+                                     bool is_initial_metadata,
+                                     bool is_end_headers, uint32_t stream_id,
+                                     RefCountedPtr<Stream> stream,
+                                     Http2Status&& original_status,
+                                     DebugLocation whence = {});
 };
 
 // Since the corresponding class in CHTTP2 is about 3.9KB, our goal is to

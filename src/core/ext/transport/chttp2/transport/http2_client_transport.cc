@@ -310,14 +310,14 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
     GRPC_HTTP2_CLIENT_DLOG
         << "Http2ClientTransport ProcessHttp2HeaderFrame Promise { stream_id="
         << frame.stream_id << "} Lookup Failed";
-    return PartiallyProcessHeaderContinuationFrame(
-        std::move(frame.payload),
-        /*is_initial_metadata=*/!frame.end_stream, frame.end_headers,
-        frame.stream_id, /*stream=*/nullptr, Http2Status::Ok());
+    return ParseAndDiscardHeaders(std::move(frame.payload),
+                                  /*is_initial_metadata=*/!frame.end_stream,
+                                  frame.end_headers, frame.stream_id,
+                                  /*stream=*/nullptr, Http2Status::Ok());
   }
 
   if (stream->GetStreamState() == HttpStreamState::kHalfClosedRemote) {
-    return PartiallyProcessHeaderContinuationFrame(
+    return ParseAndDiscardHeaders(
         std::move(frame.payload),
         /*is_initial_metadata=*/!frame.end_stream, frame.end_headers,
         frame.stream_id, stream,
@@ -328,7 +328,7 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
 
   if ((incoming_header_end_stream_ && stream->did_push_trailing_metadata) ||
       (!incoming_header_end_stream_ && stream->did_push_initial_metadata)) {
-    return PartiallyProcessHeaderContinuationFrame(
+    return ParseAndDiscardHeaders(
         std::move(frame.payload),
         /*is_initial_metadata=*/!frame.end_stream, frame.end_headers,
         frame.stream_id, stream,
@@ -342,20 +342,20 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
   if (!append_result.IsOk()) {
     // Frame payload is not consumed if AppendHeaderFrame returns a non-OK
     // status. We need to process it to keep our in consistent state.
-    return PartiallyProcessHeaderContinuationFrame(
-        std::move(frame.payload),
-        /*is_initial_metadata=*/!frame.end_stream, frame.end_headers,
-        frame.stream_id, stream, std::move(append_result));
+    return ParseAndDiscardHeaders(std::move(frame.payload),
+                                  /*is_initial_metadata=*/!frame.end_stream,
+                                  frame.end_headers, frame.stream_id, stream,
+                                  std::move(append_result));
   }
 
   Http2Status status = ProcessMetadata(stream);
   if (!status.IsOk()) {
-    // Frame payload has been moved to the HeaderAssembler. So calling skip
-    // parser with an empty buffer.
-    return PartiallyProcessHeaderContinuationFrame(
-        SliceBuffer(),
-        /*is_initial_metadata=*/!frame.end_stream, frame.end_headers,
-        frame.stream_id, stream, std::move(status));
+    // Frame payload has been moved to the HeaderAssembler. So calling
+    // ParseAndDiscardHeaders with an empty buffer.
+    return ParseAndDiscardHeaders(SliceBuffer(),
+                                  /*is_initial_metadata=*/!frame.end_stream,
+                                  frame.end_headers, frame.stream_id, stream,
+                                  std::move(status));
   }
 
   // Frame payload has either been processed or moved to the HeaderAssembler.
@@ -607,7 +607,7 @@ Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
     // frame and streams that are reserved using PUSH_PROMISE. An endpoint that
     // receives an unexpected stream identifier MUST respond with a connection
     // error (Section 5.4.1) of type PROTOCOL_ERROR.
-    return PartiallyProcessHeaderContinuationFrame(
+    return ParseAndDiscardHeaders(
         std::move(frame.payload),
         /*is_initial_metadata=*/!incoming_header_end_stream_,
         /*is_end_headers=*/frame.end_headers, frame.stream_id, nullptr,
@@ -615,7 +615,7 @@ Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
   }
 
   if (stream->GetStreamState() == HttpStreamState::kHalfClosedRemote) {
-    return PartiallyProcessHeaderContinuationFrame(
+    return ParseAndDiscardHeaders(
         std::move(frame.payload),
         /*is_initial_metadata=*/!incoming_header_end_stream_,
         /*is_end_headers=*/frame.end_headers, frame.stream_id, stream,
@@ -629,7 +629,7 @@ Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
   if (!append_result.IsOk()) {
     // Frame payload is not consumed if AppendContinuationFrame returns a
     // non-OK status. We need to process it to keep our in consistent state.
-    return PartiallyProcessHeaderContinuationFrame(
+    return ParseAndDiscardHeaders(
         std::move(frame.payload),
         /*is_initial_metadata=*/!incoming_header_end_stream_,
         /*is_end_headers=*/frame.end_headers, frame.stream_id, stream,
@@ -639,8 +639,8 @@ Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
   Http2Status status = ProcessMetadata(stream);
   if (!status.IsOk()) {
     // Frame payload is consumed by HeaderAssembler. So passing an empty
-    // SliceBuffer to PartiallyProcessHeaderContinuationFrame.
-    return PartiallyProcessHeaderContinuationFrame(
+    // SliceBuffer to ParseAndDiscardHeaders.
+    return ParseAndDiscardHeaders(
         SliceBuffer(),
         /*is_initial_metadata=*/!incoming_header_end_stream_,
         /*is_end_headers=*/frame.end_headers, frame.stream_id, stream,
@@ -715,20 +715,22 @@ auto Http2ClientTransport::ProcessOneFrame(Http2Frame frame) {
       }));
 }
 
-Http2Status Http2ClientTransport::PartiallyProcessHeaderContinuationFrame(
+Http2Status Http2ClientTransport::ParseAndDiscardHeaders(
     SliceBuffer&& buffer, const bool is_initial_metadata,
     const bool is_end_headers, const uint32_t incoming_stream_id,
-    const RefCountedPtr<Stream> stream, Http2Status&& original_status) {
+    const RefCountedPtr<Stream> stream, Http2Status&& original_status,
+    DebugLocation whence) {
   GRPC_HTTP2_CLIENT_DLOG
-      << "Http2ClientTransport PartiallyProcessHeaderContinuationFrame buffer "
+      << "Http2ClientTransport ParseAndDiscardHeaders buffer "
          "size: "
       << buffer.Length() << " is_initial_metadata: " << is_initial_metadata
       << " is_end_headers: " << is_end_headers
       << " incoming_stream_id: " << incoming_stream_id
       << " stream_id: " << (stream == nullptr ? 0 : stream->GetStreamId())
-      << " original_status: " << original_status;
+      << " original_status: " << original_status.DebugString()
+      << " whence: " << whence.file() << ":" << whence.line();
 
-  return http2::PartiallyProcessHeaderContinuationFrame(
+  return http2::ParseAndDiscardHeaders(
       parser_, std::move(buffer),
       HeaderAssembler::ParseHeaderArgs{
           /*is_initial_metadata=*/is_initial_metadata,
@@ -1403,28 +1405,27 @@ void Http2ClientTransport::CloseStream(RefCountedPtr<Stream> stream,
       // peers.
       if (incoming_header_in_progress_) {
         incoming_header_in_progress_ = false;
-        Http2Status skip_result =
-            http2::PartiallyProcessHeaderContinuationFrame(
-                parser_, SliceBuffer(),
-                HeaderAssembler::ParseHeaderArgs{
-                    /*is_initial_metadata=*/!incoming_header_end_stream_,
-                    /*is_end_headers=*/false,
-                    /*is_client=*/true,
-                    /*max_header_list_size_soft_limit=*/
-                    max_header_list_size_soft_limit_,
-                    /*max_header_list_size_hard_limit=*/
-                    settings_.acked().max_header_list_size(),
-                    /*stream_id=*/incoming_header_stream_id_,
-                },
-                stream, /*original_status=*/Http2Status::Ok());
-        if (!skip_result.IsOk() &&
-            skip_result.GetType() ==
-                Http2Status::Http2ErrorType::kConnectionError) {
+        Http2Status result = http2::ParseAndDiscardHeaders(
+            parser_, SliceBuffer(),
+            HeaderAssembler::ParseHeaderArgs{
+                /*is_initial_metadata=*/!incoming_header_end_stream_,
+                /*is_end_headers=*/false,
+                /*is_client=*/true,
+                /*max_header_list_size_soft_limit=*/
+                max_header_list_size_soft_limit_,
+                /*max_header_list_size_hard_limit=*/
+                settings_.acked().max_header_list_size(),
+                /*stream_id=*/incoming_header_stream_id_,
+            },
+            stream, /*original_status=*/Http2Status::Ok());
+        if (!result.IsOk() &&
+            result.GetType() == Http2Status::Http2ErrorType::kConnectionError) {
           GRPC_HTTP2_CLIENT_DLOG
               << "Http2ClientTransport::CloseStream for stream id: "
               << stream->GetStreamId()
-              << " failed to skip parser: " << skip_result;
-          close_transport_error.emplace(std::move(skip_result));
+              << " failed to partially process header: "
+              << result.DebugString();
+          close_transport_error.emplace(std::move(result));
         }
       }
 
