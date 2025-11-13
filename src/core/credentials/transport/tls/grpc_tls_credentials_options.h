@@ -145,7 +145,7 @@ struct grpc_tls_credentials_options
   std::string crl_directory_;
   std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider_;
   bool send_client_ca_list_ = false;
-  std::optional<std::string> sni_override_ = std::nullopt;
+  std::optional<std::string> sni_override_;
 };
 
 #endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_GRPC_TLS_CREDENTIALS_OPTIONS_H

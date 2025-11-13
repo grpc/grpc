@@ -117,7 +117,6 @@ XdsCertificateProvider::XdsCertificateProvider(
       identity_cert_provider_(std::move(identity_cert_provider)),
       identity_cert_name_(identity_cert_name),
       san_matchers_(std::move(san_matchers)),
-      require_client_certificate_(false),
       sni_(std::move(sni)),
       auto_host_sni_(auto_host_sni),
       auto_sni_san_validation_(auto_sni_san_validation) {

@@ -116,7 +116,8 @@ XdsClusterResource::UpstreamTlsContext UpstreamTlsContextParse(
         envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_sni(
             upstream_tls_context_proto));
     if (upstream_tls_context.sni.length() > 255) {
-      errors->AddError("sni length > 255");
+      ValidationErrors::ScopedField field(errors, ".sni");
+      errors->AddError("must be shorter than 255 characters");
     }
     upstream_tls_context.auto_host_sni =
         envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_auto_host_sni(

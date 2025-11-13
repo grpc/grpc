@@ -182,7 +182,7 @@ TEST(TlsCredentialsOptionsComparatorTest, DifferentSendClientCaListValues) {
   delete options_1;
   delete options_2;
 }
-TEST(TlsCredentialsOptionsComparatorTest, DifferentSniOverrideValues) {
+TEST(TlsCredentialsOptionsComparatorTest, DifferentSniOverride) {
   auto* options_1 = grpc_tls_credentials_options_create();
   auto* options_2 = grpc_tls_credentials_options_create();
   options_1->set_sni_override("sni_override_1");

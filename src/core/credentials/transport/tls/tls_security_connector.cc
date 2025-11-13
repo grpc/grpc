@@ -344,10 +344,10 @@ void TlsChannelSecurityConnector::add_handshakers(
     // Instantiate TSI handshaker.
     const char* server_name_indication;
     if (options_->sni_override().has_value()) {
-      if (options_->sni_override().value().empty()) {
+      if (options_->sni_override()->empty()) {
         server_name_indication = nullptr;
       } else {
-        server_name_indication = options_->sni_override().value().c_str();
+        server_name_indication = options_->sni_override()->c_str();
       }
     } else {
       server_name_indication = overridden_target_name_.empty()

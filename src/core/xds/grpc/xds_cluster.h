@@ -84,14 +84,16 @@ struct XdsClusterResource : public XdsResourceType::ResourceData {
   struct UpstreamTlsContext {
     CommonTlsContext common_tls_context;
     std::string sni;
-    bool auto_host_sni;
-    bool auto_sni_san_validation;
+    bool auto_host_sni = false;
+    bool auto_sni_san_validation = false;
 
     bool operator==(const UpstreamTlsContext& other) const {
       return common_tls_context == other.common_tls_context &&
              sni == other.sni && auto_host_sni == other.auto_host_sni &&
              auto_sni_san_validation == other.auto_sni_san_validation;
     }
+
+    std::string ToString() const;
   };
 
   std::variant<Eds, LogicalDns, Aggregate> type;
