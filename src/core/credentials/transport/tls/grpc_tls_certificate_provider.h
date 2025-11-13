@@ -217,6 +217,9 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
   static std::shared_ptr<InMemoryCertificateProvider> CreateCertificateProvider(
       std::string root_certificates, PemKeyCertPairList pem_key_cert_pairs);
 
+  InMemoryCertificateProvider(std::string root_certificates,
+                              PemKeyCertPairList pem_key_cert_pairs);
+
   InMemoryCertificateProvider(const InMemoryCertificateProvider&) = delete;
   InMemoryCertificateProvider(InMemoryCertificateProvider&&) = delete;
   InMemoryCertificateProvider& operator=(const InMemoryCertificateProvider&) =
@@ -238,9 +241,6 @@ class InMemoryCertificateProvider final : public grpc_tls_certificate_provider {
   void UpdateIdentity(PemKeyCertPairList pem_key_cert_pairs);
 
  private:
-  InMemoryCertificateProvider(std::string root_certificates,
-                              PemKeyCertPairList pem_key_cert_pairs);
-
   struct WatcherInfo {
     bool root_being_watched = false;
     bool identity_being_watched = false;

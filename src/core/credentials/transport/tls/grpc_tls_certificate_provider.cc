@@ -457,10 +457,10 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
                  << " failed: " << cert_slice.status() << ". Start retrying...";
       continue;
     }
-    std::string private_key(key_slice->as_string_view());
     std::string cert_chain(cert_slice->as_string_view());
     PemKeyCertPairList identity_pairs;
-    identity_pairs.emplace_back(private_key, cert_chain);
+    PrivateKey private_key(key_slice->as_string_view());
+    identity_pairs.emplace_back(std::move(private_key), cert_chain);
     // Checking the last modification of identity files before reading.
     time_t identity_key_ts_after =
         GetModificationTime(private_key_path.c_str());

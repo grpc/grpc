@@ -111,7 +111,7 @@ typedef struct tsi_ssl_client_handshaker_factory
 struct tsi_ssl_pem_key_cert_pair {
   // private_key is either NULL-terminated string containing the PEM encoding of
   // the client's private key or custom private key offloading function.
-  const PrivateKey private_key;
+  PrivateKey private_key;
 
   // cert_chain is the NULL-terminated string containing the PEM encoding of
   // the client's certificate chain.

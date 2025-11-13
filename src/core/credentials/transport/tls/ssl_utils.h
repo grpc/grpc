@@ -121,8 +121,7 @@ int grpc_ssl_host_matches_name(const tsi_peer* peer,
 
 // --- Default SSL Root Store. ---
 namespace grpc_core {
-using PrivateKey =
-    std::variant<absl::string_view, CustomPrivateKeySign>;
+using PrivateKey = std::variant<absl::string_view, CustomPrivateKeySign>;
 
 bool IsPrivateKeyEmpty(const PrivateKey* private_key);
 
@@ -202,7 +201,7 @@ class PemKeyCertPair {
 
   const std::string& private_key() const { return private_key_; }
   const std::string& cert_chain() const { return cert_chain_; }
-  const CustomPrivateKeySign* private_key_sign() {
+  const CustomPrivateKeySign* private_key_sign() const {
     return private_key_sign_.get();
   }
 

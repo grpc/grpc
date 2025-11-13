@@ -328,12 +328,13 @@ grpc_tls_identity_pairs* grpc_tls_identity_pairs_create() {
 }
 
 void grpc_tls_identity_pairs_add_pair(grpc_tls_identity_pairs* pairs,
-                                      const char* private_key,
+                                      const char* private_key_string,
                                       const char* cert_chain) {
   GRPC_CHECK_NE(pairs, nullptr);
-  GRPC_CHECK_NE(private_key, nullptr);
+  GRPC_CHECK_NE(private_key_string, nullptr);
   GRPC_CHECK_NE(cert_chain, nullptr);
-  pairs->pem_key_cert_pairs.emplace_back(private_key, cert_chain);
+  grpc_core::PrivateKey private_key = private_key_string;
+  pairs->pem_key_cert_pairs.emplace_back(std::move(private_key), cert_chain);
 }
 
 void grpc_tls_identity_pairs_destroy(grpc_tls_identity_pairs* pairs) {
