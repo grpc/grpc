@@ -14,7 +14,7 @@
 
 module(
     name = "grpc",
-    version = "1.75.0",
+    version = "1.77.0-dev",
     compatibility_level = 1,
     repo_name = "com_github_grpc_grpc",
 )
@@ -68,6 +68,7 @@ PYTHON_VERSIONS = [
     "3.11",
     "3.12",
     "3.13",
+    "3.14.0b2",
 ]
 
 python = use_extension("@rules_python//python/extensions:python.bzl", "python")
