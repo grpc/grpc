@@ -14,6 +14,7 @@
 
 from concurrent import futures
 import logging
+import threading
 import unittest
 
 import grpc
@@ -299,6 +300,78 @@ class ServerHandlerTest(unittest.TestCase):
             _registered_method=True,
         )(_REQUEST)
         self.assertEqual(_REGISTERED_RESPONSE, registered_response)
+
+
+class ServerHandlerBackgroundThreadTest(unittest.TestCase):
+    class _Handler(grpc.GenericRpcHandler):
+        def __init__(self, fail_fn):
+            def fail_handler(request_iterator, servicer_context):
+                nonlocal fail_fn
+                # fail in the background
+                failer = threading.Thread(
+                        target=fail_fn, args=(servicer_context,))
+                failer.start()
+                # discard requests in the foreground
+                list(request_iterator)
+                failer.join()
+            self._fail_handler = fail_handler
+
+
+        def service(self, handler_call_details):
+            if handler_call_details.method == _STREAM_STREAM:
+                return grpc.stream_stream_rpc_method_handler(self._fail_handler)
+            else:
+                return None
+
+    def tearDown(self):
+        self._server.stop(0)
+        self._channel.close()
+
+    def _blockingRequestIterator(self, done):
+        """A generator which never yields anything and blocks on done.wait()"""
+        if False:
+            yield ""
+        done.wait()
+
+    def test_fail_via_cancel(self):
+        self._server = test_common.test_server()
+        self._server.add_generic_rpc_handlers((_Handler(
+                lambda ctx: ctx.cancel()),))
+        port = self._server.add_insecure_port("[::]:0")
+        self._server.start()
+        self._channel = grpc.insecure_channel("localhost:%d" % port)
+
+        done = threading.Event()
+        try:
+            list(self._channel.stream_stream(
+                    _STREAM_STREAM,
+                    _registered_method=True,
+            )(self._blockingRequestIterator()))
+        except:
+          pass
+        finally:
+            # To release any resources held by _blockingRequestIterator()
+            done.set()
+
+    def test_fail_via_abort(self):
+        self._server = test_common.test_server()
+        self._server.add_generic_rpc_handlers((_Handler(
+                lambda ctx: ctx.abort(grpc.StatusCode.ABORTED, "fail")),))
+        port = self._server.add_insecure_port("[::]:0")
+        self._server.start()
+        self._channel = grpc.insecure_channel("localhost:%d" % port)
+
+        done = threading.Event()
+        try:
+            list(self._channel.stream_stream(
+                    _STREAM_STREAM,
+                    _registered_method=True,
+            )(self._blockingRequestIterator()))
+        except:
+          pass
+        finally:
+            # To release any resources held by _blockingRequestIterator()
+            done.set()
 
 
 if __name__ == "__main__":

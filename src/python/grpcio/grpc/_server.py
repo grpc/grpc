@@ -458,6 +458,7 @@ class _Context(grpc.ServicerContext):
             self._state.code = code
             self._state.details = _common.encode(details)
             self._state.aborted = True
+            self._state.condition.notify_all()
             raise Exception()  # noqa: TRY002
 
     def abort_with_status(self, status: grpc.Status) -> None:
@@ -512,7 +513,7 @@ class _RequestIterator(object):
             self._state.due.add(_RECEIVE_MESSAGE_TOKEN)
 
     def _look_for_request(self) -> Any:
-        if self._state.client is _CANCELLED:
+        if self._state.client is _CANCELLED or self._state.aborted:
             _raise_rpc_error(self._state)
         elif (
             self._state.request is None
