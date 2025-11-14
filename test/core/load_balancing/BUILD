@@ -23,7 +23,13 @@ load(
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
-grpc_package(name = "test/core/load_balancing")
+grpc_package(
+    name = "test/core/load_balancing",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 licenses(["notice"])
 
@@ -67,6 +73,7 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:experiments",
         "//src/core:grpc_backend_metric_data",
+        "//src/core:grpc_check",
         "//src/core:grpc_service_config",
         "//src/core:health_check_client",
         "//src/core:json",
@@ -108,6 +115,7 @@ grpc_cc_test(
         "//:exec_ctx",
         "//:gpr",
         "//:grpc",
+        "//:grpc_base",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:work_serializer",
@@ -175,6 +183,7 @@ grpc_fuzz_test(
         "//src/core:channel_args",
         "//src/core:client_channel_internal_header",
         "//src/core:connectivity_state",
+        "//src/core:grpc_check",
         "//src/core:grpc_service_config",
         "//src/core:health_check_client",
         "//src/core:json",
@@ -327,6 +336,7 @@ grpc_cc_test(
         "//:endpoint_addresses",
         "//:gpr",
         "//:grpc",
+        "//:grpc_base",
         "//:ref_counted_ptr",
         "//src/core:channel_args",
         "//src/core:grpc_lb_policy_xds_override_host",
@@ -441,6 +451,7 @@ grpc_cc_test(
         "//:endpoint_addresses",
         "//:gpr",
         "//:grpc",
+        "//:grpc_base",
         "//:orphanable",
         "//:ref_counted_ptr",
         "//src/core:grpc_backend_metric_data",
@@ -473,6 +484,7 @@ grpc_cc_test(
         ":lb_policy_test_lib",
         "//:endpoint_addresses",
         "//:gpr",
+        "//:grpc_base",
         "//:ref_counted_ptr",
         "//src/core:channel_args",
         "//src/core:grpc_lb_policy_ring_hash",

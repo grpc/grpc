@@ -21,14 +21,20 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <cstddef>
 #include <cstdint>
+#include <memory>
+#include <optional>
+#include <string>
 #include <utility>
+#include <vector>
 
 #include "src/core/call/call_spine.h"
+#include "src/core/call/metadata.h"
+#include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
-#include "src/core/ext/transport/chttp2/transport/flow_control_manager.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
-#include "src/core/ext/transport/chttp2/transport/header_assembler.h"
+#include "src/core/ext/transport/chttp2/transport/goaway.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
@@ -36,22 +42,39 @@
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
+#include "src/core/ext/transport/chttp2/transport/incoming_metadata_tracker.h"
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
-#include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/ping_promise.h"
 #include "src/core/ext/transport/chttp2/transport/stream.h"
+#include "src/core/ext/transport/chttp2/transport/stream_data_queue.h"
 #include "src/core/ext/transport/chttp2/transport/writable_streams.h"
-#include "src/core/lib/promise/inter_activity_mutex.h"
-#include "src/core/lib/promise/loop.h"
-#include "src/core/lib/promise/mpsc.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/if.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/party.h"
+#include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/check_class_size.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "src/core/util/time.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -85,8 +108,7 @@ namespace http2 {
 // Max Party Slots (Always): 3
 // Max Promise Slots (Worst Case): 4
 
-// Experimental : This is just the initial skeleton of class
-// and it is functions. The code will be written iteratively.
+// Experimental : The code will be written iteratively.
 // Do not use or edit any of these functions unless you are
 // familiar with the PH2 project (Moving chttp2 to promises.)
 // TODO(tjagtap) : [PH2][P3] : Update the experimental status of the code before
@@ -128,8 +150,10 @@ class Http2ClientTransport final : public ClientTransport,
       OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
   void StopConnectivityWatch(ConnectivityStateWatcherInterface* watcher);
 
+  void StartWatch(RefCountedPtr<StateWatcher> watcher) override;
+  void StopWatch(RefCountedPtr<StateWatcher> watcher) override;
+
   void Orphan() override;
-  void AbortWithError();
 
   RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
     return const_cast<channelz::BaseNode*>(
@@ -143,6 +167,7 @@ class Http2ClientTransport final : public ClientTransport,
   }
 
   void AddData(channelz::DataSink sink) override;
+  void SpawnAddChannelzData(channelz::DataSink sink);
 
   auto TestOnlyTriggerWriteCycle() {
     return Immediate(writable_stream_list_.ForceReadyForWrite());
@@ -154,8 +179,8 @@ class Http2ClientTransport final : public ClientTransport,
   }
 
   template <typename Factory>
-  auto TestOnlySpawnPromise(absl::string_view name, Factory factory) {
-    return general_party_->Spawn(name, std::move(factory), [](auto) {});
+  void TestOnlySpawnPromise(absl::string_view name, Factory&& factory) {
+    general_party_->Spawn(name, std::forward<Factory>(factory), [](Empty) {});
   }
 
   int64_t TestOnlyTransportFlowControlWindow() {
@@ -199,21 +224,11 @@ class Http2ClientTransport final : public ClientTransport,
   // Returns a promise that will process one HTTP2 frame.
   auto ProcessOneFrame(Http2Frame frame);
 
-  // Returns a promise that will do the cleanup after the ReadLoop ends.
-  auto OnReadLoopEnded();
-
   // Writing to the endpoint.
 
   // Write time sensitive control frames to the endpoint. Frames sent from here
-  // will be:
-  // 1. SETTINGS - This is first because for a new connection, SETTINGS MUST be
-  //               the first frame to be written onto a connection as per
-  //               RFC9113.
-  // 2. GOAWAY - This is second because if this is the final GoAway, then we may
-  //             not need to send anything else to the peer.
-  // 3. PING and PING acks.
-  // 4. WINDOW_UPDATE
-  // 5. Custom gRPC security frame
+  // will be GOAWAY, SETTINGS, PING and PING acks, WINDOW_UPDATE and
+  // Custom gRPC security frame.
   // These frames are written to the endpoint in a single endpoint write. If any
   // module needs to take action after the write (for cases like spawning
   // timeout promises), they MUST plug the call in the
@@ -227,37 +242,72 @@ class Http2ClientTransport final : public ClientTransport,
   // the writable streams and write to the endpoint.
   auto MultiplexerLoop();
 
-  // Returns a promise that will do the cleanup after the MultiplexerLoop
-  // ends.
-  auto OnMultiplexerLoopEnded();
-
   // Returns a promise to fetch data from the callhandler and pass it further
   // down towards the endpoint.
   auto CallOutboundLoop(CallHandler call_handler, RefCountedPtr<Stream> stream,
-                        InterActivityMutex<uint32_t>::Lock lock,
                         ClientMetadataHandle metadata);
 
+  // TODO(akshitpatel) : [PH2][P3] : Make this a synchronous function.
   // Force triggers a transport write cycle
   auto TriggerWriteCycle() {
     return Immediate(writable_stream_list_.ForceReadyForWrite());
   }
 
+  auto FlowControlPeriodicUpdateLoop();
+  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
+  void AddPeriodicUpdatePromiseWaker() {
+    periodic_updates_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
+  }
+  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
+  void WakeupPeriodicUpdatePromise() { periodic_updates_waker_.Wakeup(); }
+
   // Processes the flow control action and take necessary steps.
   void ActOnFlowControlAction(const chttp2::FlowControlAction& action,
-                              uint32_t stream_id);
+                              RefCountedPtr<Stream> stream);
+
+  void NotifyStateWatcherOnDisconnectLocked(
+      absl::Status status, StateWatcher::DisconnectInfo disconnect_info)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&transport_mutex_);
 
   RefCountedPtr<Party> general_party_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
   PromiseEndpoint endpoint_;
   Http2SettingsManager settings_;
   SettingsTimeoutManager transport_settings_;
 
   Http2FrameHeader current_frame_header_;
+  // Returns the number of active streams. A stream is removed from the `active`
+  // list once both client and server agree to close the stream. The count of
+  // stream_list_(even though stream list represents streams open for reads)
+  // works here because of the following cases where the stream is closed:
+  // 1. Reading a RST stream frame: In this case, the stream is immediately
+  //    closed for reads and writes and removed from the stream_list_
+  //    (effectively tracking the number of active streams).
+  // 2. Reading a Trailing Metadata frame: In this case, the stream MAY be
+  //    closed for reads and writes immediately which follows the above case. In
+  //    other cases, the transport either reads RST stream frame from the server
+  //    (and follows case 1) or sends a half close frame and closes the stream
+  //    for reads and writes (in the multiplexer loop).
+  // 3. Hitting error condition in the transport: In this case, RST stream is
+  //    is enqueued and the stream is closed for reads immediately. This means
+  //    we effectively reduce the number of active streams inline (because we
+  //    remove the stream from the stream_list_). This is fine because the
+  //    priority logic in list of writable streams ensures that the RST stream
+  //    frame is given priority over any new streams being created by the
+  //    client.
+  // 4. Application abort: In this case, multiplexer loop will write RST stream
+  //    frame to the endpoint and close the stream from reads and writes. This
+  //    then follows the same reasoning as case 1.
+  inline uint32_t GetActiveStreamCount() const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_) {
+    return stream_list_.size();
+  }
 
-  uint32_t NextStreamId(
-      InterActivityMutex<uint32_t>::Lock& next_stream_id_lock) {
-    const uint32_t stream_id = *next_stream_id_lock;
-    if (stream_id > RFC9113::kMaxStreamId31Bit) {
+  // Returns the next stream id. If the next stream id is not available, it
+  // returns std::nullopt. MUST be called from the transport party.
+  absl::StatusOr<uint32_t> NextStreamId() {
+    if (next_stream_id_ > GetMaxAllowedStreamId()) {
       // TODO(tjagtap) : [PH2][P3] : Handle case if transport runs out of stream
       // ids
       // RFC9113 : Stream identifiers cannot be reused. Long-lived connections
@@ -267,22 +317,45 @@ class Http2ClientTransport final : public ClientTransport,
       // that is unable to establish a new stream identifier can send a GOAWAY
       // frame so that the client is forced to open a new connection for new
       // streams.
+      return absl::ResourceExhaustedError("No more stream ids available");
     }
+    // TODO(akshitpatel) : [PH2][P3] : There is a channel arg to delay
+    // starting new streams instead of failing them. This needs to be
+    // implemented.
+    {
+      MutexLock lock(&transport_mutex_);
+      if (GetActiveStreamCount() >= settings_.peer().max_concurrent_streams()) {
+        return absl::ResourceExhaustedError("Reached max concurrent streams");
+      }
+    }
+
     // RFC9113 : Streams initiated by a client MUST use odd-numbered stream
     // identifiers.
-    (*next_stream_id_lock) += 2;
-    return stream_id;
+    uint32_t new_stream_id =
+        std::exchange(next_stream_id_, next_stream_id_ + 2);
+    if (GPR_UNLIKELY(next_stream_id_ > GetMaxAllowedStreamId())) {
+      ReportDisconnection(
+          absl::ResourceExhaustedError("Transport Stream IDs exhausted"),
+          {},  // TODO(tjagtap) : [PH2][P2] : Report better disconnect info.
+          "no_more_stream_ids");
+    }
+    return new_stream_id;
   }
 
+  // Returns the next stream id without incrementing it. MUST be called from the
+  // transport party.
+  uint32_t PeekNextStreamId() const { return next_stream_id_; }
+
+  absl::Status AssignStreamId(RefCountedPtr<Stream> stream);
+
+  void AddToStreamList(RefCountedPtr<Stream> stream);
+
   Mutex transport_mutex_;
-  // TODO(tjagtap) : [PH2][P2] : Add to map in StartCall and clean this
-  // mapping up in the on_done of the CallInitiator or CallHandler
+
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_
       ABSL_GUARDED_BY(transport_mutex_);
 
-  // Mutex to preserve the order of headers being sent out for new streams.
-  // This also tracks the stream_id for creating new streams.
-  InterActivityMutex<uint32_t> stream_id_mutex_;
+  uint32_t next_stream_id_;
   HPackCompressor encoder_;
   HPackParser parser_;
   bool is_transport_closed_ ABSL_GUARDED_BY(transport_mutex_) = false;
@@ -298,11 +371,23 @@ class Http2ClientTransport final : public ClientTransport,
                 std::move(promise));
   }
 
+  // Spawns an infallible promise on the transport party.
+  template <typename Factory>
+  void SpawnInfallibleTransportParty(absl::string_view name, Factory&& factory);
+
+  // Spawns a promise on the transport party. If the promise returns a non-ok
+  // status, it is handled by closing the transport with the corresponding
+  // status.
+  template <typename Factory>
+  void SpawnGuardedTransportParty(absl::string_view name, Factory&& factory);
+
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
       "http2_client", GRPC_CHANNEL_READY};
 
-  std::optional<RefCountedPtr<Stream>> MakeStream(CallHandler call_handler,
-                                                  uint32_t stream_id);
+  RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(transport_mutex_);
+
+  // Runs on the call party.
+  std::optional<RefCountedPtr<Stream>> MakeStream(CallHandler call_handler);
 
   struct CloseStreamArgs {
     bool close_reads;
@@ -313,7 +398,7 @@ class Http2ClientTransport final : public ClientTransport,
   void CloseStream(RefCountedPtr<Stream> stream, CloseStreamArgs args,
                    DebugLocation whence = {});
 
-  void BeginCloseStream(uint32_t stream_id,
+  void BeginCloseStream(RefCountedPtr<Stream> stream,
                         std::optional<uint32_t> reset_stream_error_code,
                         ServerMetadataHandle&& metadata,
                         DebugLocation whence = {});
@@ -388,18 +473,19 @@ class Http2ClientTransport final : public ClientTransport,
   absl::Status HandleError(const std::optional<uint32_t> stream_id,
                            Http2Status status, DebugLocation whence = {}) {
     auto error_type = status.GetType();
-    DCHECK(error_type != Http2Status::Http2ErrorType::kOk);
+    GRPC_DCHECK(error_type != Http2Status::Http2ErrorType::kOk);
 
     if (error_type == Http2Status::Http2ErrorType::kStreamError) {
-      LOG(ERROR) << "Stream Error: " << status.DebugString();
-      DCHECK(stream_id.has_value());
+      GRPC_HTTP2_CLIENT_ERROR_DLOG << "Stream Error: " << status.DebugString();
+      GRPC_DCHECK(stream_id.has_value());
       BeginCloseStream(
-          *stream_id,
-          Http2ErrorCodeToRstFrameErrorCode(status.GetStreamErrorCode()),
+          LookupStream(stream_id.value()),
+          Http2ErrorCodeToFrameErrorCode(status.GetStreamErrorCode()),
           ServerMetadataFromStatus(status.GetAbslStreamError()), whence);
       return absl::OkStatus();
     } else if (error_type == Http2Status::Http2ErrorType::kConnectionError) {
-      LOG(ERROR) << "Connection Error: " << status.DebugString();
+      GRPC_HTTP2_CLIENT_ERROR_DLOG << "Connection Error: "
+                                   << status.DebugString();
       absl::Status absl_status = status.GetAbslConnectionError();
       MaybeSpawnCloseTransport(std::move(status), whence);
       return absl_status;
@@ -436,6 +522,16 @@ class Http2ClientTransport final : public ClientTransport,
   size_t GetMaxWriteSize() const { return max_write_size_; }
 
   auto SerializeAndWrite(std::vector<Http2Frame>&& frames);
+  // Tracks the max allowed stream id. Currently this is only set on receiving a
+  // graceful GOAWAY frame.
+  uint32_t max_allowed_stream_id_ = RFC9113::kMaxStreamId31Bit;
+
+  uint32_t GetMaxAllowedStreamId() const;
+
+  void SetMaxAllowedStreamId(uint32_t max_allowed_stream_id);
+
+  bool CanCloseTransportLocked() const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(transport_mutex_);
 
   // Ping related members
   // TODO(akshitpatel) : [PH2][P2] : Consider removing the timeout related
@@ -462,13 +558,25 @@ class Http2ClientTransport final : public ClientTransport,
     std::optional<Http2Frame> settings_frame = settings_.MaybeSendUpdate();
     if (settings_frame.has_value()) {
       Serialize(absl::Span<Http2Frame>(&settings_frame.value(), 1), output_buf);
+      flow_control_.FlushedSettings();
     }
   }
+
+  void MaybeGetWindowUpdateFrames(SliceBuffer& output_buf);
+
+  void ReportDisconnection(const absl::Status& status,
+                           StateWatcher::DisconnectInfo disconnect_info,
+                           const char* reason);
+
+  void ReportDisconnectionLocked(const absl::Status& status,
+                                 StateWatcher::DisconnectInfo disconnect_info,
+                                 const char* reason)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&transport_mutex_);
 
   // Ping Helper functions
   Duration NextAllowedPingInterval() {
     MutexLock lock(&transport_mutex_);
-    return (!keepalive_permit_without_calls_ && stream_list_.empty())
+    return (!keepalive_permit_without_calls_ && GetActiveStreamCount() == 0)
                ? Duration::Hours(2)
                : Duration::Seconds(1);
   }
@@ -513,9 +621,7 @@ class Http2ClientTransport final : public ClientTransport,
     }
 
     Promise<absl::Status> PingTimeout() override {
-      // TODO(akshitpatel) : [PH2][P2] : Trigger goaway here.
-      // Returns a promise that resolves once goaway is sent.
-      LOG(INFO) << "Ping timeout at time: " << Timestamp::Now();
+      GRPC_HTTP2_CLIENT_DLOG << "Ping timeout at time: " << Timestamp::Now();
 
       // TODO(akshitpatel) : [PH2][P2] : The error code here has been chosen
       // based on CHTTP2's usage of GRPC_STATUS_UNAVAILABLE (which corresponds
@@ -554,8 +660,7 @@ class Http2ClientTransport final : public ClientTransport,
       });
     }
     Promise<absl::Status> OnKeepAliveTimeout() override {
-      // TODO(akshitpatel) : [PH2][P2] : Trigger goaway here.
-      LOG(INFO) << "Keepalive timeout triggered";
+      GRPC_HTTP2_CLIENT_DLOG << "Keepalive timeout triggered";
 
       // TODO(akshitpatel) : [PH2][P2] : The error code here has been chosen
       // based on CHTTP2's usage of GRPC_STATUS_UNAVAILABLE (which corresponds
@@ -573,7 +678,7 @@ class Http2ClientTransport final : public ClientTransport,
       {
         MutexLock lock(&transport_->transport_mutex_);
         need_to_send_ping = (transport_->keepalive_permit_without_calls_ ||
-                             !transport_->stream_list_.empty());
+                             transport_->GetActiveStreamCount() > 0);
       }
       return need_to_send_ping;
     }
@@ -584,6 +689,38 @@ class Http2ClientTransport final : public ClientTransport,
     // transport and greatly simpilfy the cleanup path.
     Http2ClientTransport* transport_;
   };
+
+  class GoawayInterfaceImpl : public GoawayInterface {
+   public:
+    static std::unique_ptr<GoawayInterface> Make(
+        Http2ClientTransport* transport) {
+      return std::make_unique<GoawayInterfaceImpl>(
+          GoawayInterfaceImpl(transport));
+    }
+
+    Promise<absl::Status> SendPingAndWaitForAck() override {
+      return transport_->ping_manager_.RequestPing(/*on_initiate=*/[] {},
+                                                   /*important=*/true);
+    }
+
+    void TriggerWriteCycle() override { transport_->TriggerWriteCycle(); }
+
+    uint32_t GetLastAcceptedStreamId() override {
+      GRPC_DCHECK(false)
+          << "GetLastAcceptedStreamId is not implemented for client transport.";
+      LOG(ERROR) << "GetLastAcceptedStreamId is not implemented for client "
+                    "transport.";
+      return 0;
+    }
+
+   private:
+    explicit GoawayInterfaceImpl(Http2ClientTransport* transport)
+        : transport_(transport) {}
+
+    Http2ClientTransport* transport_;
+  };
+
+  GoawayManager goaway_manager_;
 
   WritableStreams<RefCountedPtr<Stream>> writable_stream_list_;
 
@@ -619,6 +756,22 @@ class Http2ClientTransport final : public ClientTransport,
   MemoryOwner memory_owner_;
   chttp2::TransportFlowControl flow_control_;
   std::shared_ptr<PromiseHttp2ZTraceCollector> ztrace_collector_;
+  absl::flat_hash_set<uint32_t> window_update_list_;
+
+  // TODO(tjagtap) [PH2][P2][BDP] Remove this when the BDP code is done.
+  Waker periodic_updates_waker_;
+
+  // TODO(tjagtap) [PH2][P2][Settings] Set this to true when we receive settings
+  // that appear "Urgent". Example - initial window size 0 is urgent because it
+  // indicates extreme memory pressure on the server.
+  bool should_stall_read_loop_;
+  Waker read_loop_waker_;
+  Http2Status ParseAndDiscardHeaders(SliceBuffer&& buffer,
+                                     bool is_initial_metadata,
+                                     bool is_end_headers, uint32_t stream_id,
+                                     RefCountedPtr<Stream> stream,
+                                     Http2Status&& original_status,
+                                     DebugLocation whence = {});
 };
 
 // Since the corresponding class in CHTTP2 is about 3.9KB, our goal is to

@@ -16,12 +16,10 @@ libs:
   build: all
   language: c
   public_headers:
-  - include/grpc/impl/call.h
   - include/grpc/impl/codegen/atm.h
   - include/grpc/impl/codegen/atm_gcc_atomic.h
   - include/grpc/impl/codegen/atm_gcc_sync.h
   - include/grpc/impl/codegen/atm_windows.h
-  - include/grpc/impl/codegen/fork.h
   - include/grpc/impl/codegen/gpr_types.h
   - include/grpc/impl/codegen/log.h
   - include/grpc/impl/codegen/port_platform.h
@@ -126,6 +124,7 @@ libs:
   - absl/flags:flag
   - absl/flags:marshalling
   - absl/functional:any_invocable
+  - absl/functional:bind_front
   - absl/log:check
   - absl/log:globals
   - absl/log:log
@@ -167,11 +166,13 @@ libs:
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
+  - include/grpc/impl/call.h
   - include/grpc/impl/channel_arg_names.h
   - include/grpc/impl/codegen/byte_buffer.h
   - include/grpc/impl/codegen/byte_buffer_reader.h
   - include/grpc/impl/codegen/compression_types.h
   - include/grpc/impl/codegen/connectivity_state.h
+  - include/grpc/impl/codegen/fork.h
   - include/grpc/impl/codegen/grpc_types.h
   - include/grpc/impl/codegen/propagation_bits.h
   - include/grpc/impl/codegen/slice.h
@@ -219,6 +220,7 @@ libs:
   - src/core/channelz/v2tov1/property_list.h
   - src/core/channelz/ztrace_collector.h
   - src/core/client_channel/backup_poller.h
+  - src/core/client_channel/buffered_call.h
   - src/core/client_channel/client_channel.h
   - src/core/client_channel/client_channel_args.h
   - src/core/client_channel/client_channel_factory.h
@@ -330,6 +332,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/frame_security.h
   - src/core/ext/transport/chttp2/transport/frame_settings.h
   - src/core/ext/transport/chttp2/transport/frame_window_update.h
+  - src/core/ext/transport/chttp2/transport/goaway.h
   - src/core/ext/transport/chttp2/transport/header_assembler.h
   - src/core/ext/transport/chttp2/transport/hpack_constants.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder.h
@@ -346,6 +349,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/http2_transport.h
   - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
+  - src/core/ext/transport/chttp2/transport/incoming_metadata_tracker.h
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h
   - src/core/ext/transport/chttp2/transport/keepalive.h
@@ -1357,6 +1361,7 @@ libs:
   - src/core/channelz/v2tov1/legacy_api.cc
   - src/core/channelz/v2tov1/property_list.cc
   - src/core/client_channel/backup_poller.cc
+  - src/core/client_channel/buffered_call.cc
   - src/core/client_channel/client_channel.cc
   - src/core/client_channel/client_channel_factory.cc
   - src/core/client_channel/client_channel_filter.cc
@@ -1471,6 +1476,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/frame_security.cc
   - src/core/ext/transport/chttp2/transport/frame_settings.cc
   - src/core/ext/transport/chttp2/transport/frame_window_update.cc
+  - src/core/ext/transport/chttp2/transport/goaway.cc
   - src/core/ext/transport/chttp2/transport/hpack_encoder.cc
   - src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc
   - src/core/ext/transport/chttp2/transport/hpack_parse_result.cc
@@ -2223,7 +2229,6 @@ libs:
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
   - absl/container:node_hash_map
-  - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -2361,11 +2366,13 @@ libs:
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
+  - include/grpc/impl/call.h
   - include/grpc/impl/channel_arg_names.h
   - include/grpc/impl/codegen/byte_buffer.h
   - include/grpc/impl/codegen/byte_buffer_reader.h
   - include/grpc/impl/codegen/compression_types.h
   - include/grpc/impl/codegen/connectivity_state.h
+  - include/grpc/impl/codegen/fork.h
   - include/grpc/impl/codegen/grpc_types.h
   - include/grpc/impl/codegen/propagation_bits.h
   - include/grpc/impl/codegen/slice.h
@@ -2410,6 +2417,7 @@ libs:
   - src/core/channelz/text_encode.h
   - src/core/channelz/ztrace_collector.h
   - src/core/client_channel/backup_poller.h
+  - src/core/client_channel/buffered_call.h
   - src/core/client_channel/client_channel.h
   - src/core/client_channel/client_channel_args.h
   - src/core/client_channel/client_channel_factory.h
@@ -2483,6 +2491,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/frame_security.h
   - src/core/ext/transport/chttp2/transport/frame_settings.h
   - src/core/ext/transport/chttp2/transport/frame_window_update.h
+  - src/core/ext/transport/chttp2/transport/goaway.h
   - src/core/ext/transport/chttp2/transport/header_assembler.h
   - src/core/ext/transport/chttp2/transport/hpack_constants.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder.h
@@ -2499,6 +2508,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/http2_transport.h
   - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
+  - src/core/ext/transport/chttp2/transport/incoming_metadata_tracker.h
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h
   - src/core/ext/transport/chttp2/transport/keepalive.h
@@ -2967,6 +2977,7 @@ libs:
   - src/core/channelz/property_list.cc
   - src/core/channelz/text_encode.cc
   - src/core/client_channel/backup_poller.cc
+  - src/core/client_channel/buffered_call.cc
   - src/core/client_channel/client_channel.cc
   - src/core/client_channel/client_channel_factory.cc
   - src/core/client_channel/client_channel_filter.cc
@@ -3039,6 +3050,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/frame_security.cc
   - src/core/ext/transport/chttp2/transport/frame_settings.cc
   - src/core/ext/transport/chttp2/transport/frame_window_update.cc
+  - src/core/ext/transport/chttp2/transport/goaway.cc
   - src/core/ext/transport/chttp2/transport/hpack_encoder.cc
   - src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc
   - src/core/ext/transport/chttp2/transport/hpack_parse_result.cc
@@ -3402,7 +3414,6 @@ libs:
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
   - absl/container:node_hash_map
-  - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -4520,8 +4531,12 @@ libs:
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
   deps:
+  - absl/base:dynamic_annotations
+  - absl/base:prefetch
+  - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:internal
   - grpc_unsecure
   - protobuf
   baselib: true
@@ -4552,11 +4567,13 @@ libs:
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
+  - include/grpc/impl/call.h
   - include/grpc/impl/channel_arg_names.h
   - include/grpc/impl/codegen/byte_buffer.h
   - include/grpc/impl/codegen/byte_buffer_reader.h
   - include/grpc/impl/codegen/compression_types.h
   - include/grpc/impl/codegen/connectivity_state.h
+  - include/grpc/impl/codegen/fork.h
   - include/grpc/impl/codegen/grpc_types.h
   - include/grpc/impl/codegen/propagation_bits.h
   - include/grpc/impl/codegen/slice.h
@@ -5679,8 +5696,8 @@ targets:
   language: c++
   headers:
   - src/cpp/server/csds/csds.h
+  - third_party/protoc-gen-validate/validate/validate.h
   src:
-  - src/proto/grpc/testing/xds/v3/csds.proto
   - third_party/envoy-api/envoy/admin/v3/certs.proto
   - third_party/envoy-api/envoy/admin/v3/clusters.proto
   - third_party/envoy-api/envoy/admin/v3/config_dump.proto
@@ -5750,6 +5767,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
+  - third_party/envoy-api/envoy/service/status/v3/csds.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
@@ -6133,8 +6151,17 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h
   - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h
   src:
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
   - test/core/tsi/alts/handshaker/alts_handshaker_client_test.cc
   - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
   deps:
@@ -6568,6 +6595,7 @@ targets:
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/grpc_check.h
   - src/core/util/grpc_if_nametoindex.h
@@ -8593,10 +8621,25 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/cpp/util/channel_trace_proto_helper.h
   src:
   - src/proto/grpc/channelz/channelz.proto
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
   - test/core/channelz/channelz_test.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/cpp/util/channel_trace_proto_helper.cc
@@ -8661,6 +8704,7 @@ targets:
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
   - src/core/util/seq_bit_set.h
+  - src/cpp/latent_see/latent_see_client.h
   - test/cpp/sleuth/client.h
   - test/cpp/sleuth/tool.h
   - test/cpp/sleuth/tool_credentials.h
@@ -8674,6 +8718,7 @@ targets:
   - test/cpp/util/service_describer.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - src/proto/grpc/channelz/v2/latent_see.proto
   - src/proto/grpc/channelz/v2/promise.proto
   - src/proto/grpc/channelz/v2/property_list.proto
   - src/proto/grpc/reflection/v1alpha/reflection.proto
@@ -8710,9 +8755,11 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
   - src/core/util/seq_bit_set.cc
+  - src/cpp/latent_see/latent_see_client.cc
   - test/cpp/sleuth/channelz_tool.cc
   - test/cpp/sleuth/channelz_tool_test.cc
   - test/cpp/sleuth/client.cc
+  - test/cpp/sleuth/tool.cc
   - test/cpp/sleuth/tool_credentials.cc
   - test/cpp/sleuth/tool_options.cc
   - test/cpp/sleuth/tool_test.cc
@@ -9096,7 +9143,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/test_util/scoped_env_var.h
   src:
   - test/core/client_channel/client_channel_service_config_test.cc
   deps:
@@ -9215,8 +9263,12 @@ targets:
   build: test
   language: c++
   headers:
+  - src/cpp/latent_see/latent_see_client.h
   - test/cpp/sleuth/client.h
   src:
+  - src/proto/grpc/channelz/v2/latent_see.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
+  - src/cpp/latent_see/latent_see_client.cc
   - test/cpp/sleuth/client.cc
   - test/cpp/sleuth/client_test.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -9472,6 +9524,7 @@ targets:
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/grpc_check.h
   - src/core/util/grpc_if_nametoindex.h
@@ -11881,6 +11934,11 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
+  - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/event_engine/channel_args_endpoint_config.h
   - src/core/lib/surface/channel_stack_type.h
@@ -11906,6 +11964,11 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/surface/channel_stack_type.cc
@@ -13845,6 +13908,7 @@ targets:
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/grpc_check.h
   - src/core/util/grpc_if_nametoindex.h
@@ -14914,6 +14978,7 @@ targets:
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/grpc_check.h
   - src/core/util/grpc_if_nametoindex.h
@@ -15020,6 +15085,29 @@ targets:
   - absl/types:span
   - absl/utility:utility
   - gpr
+- name: http2_transport_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/promise/poll_matcher.h
+  - test/core/test_util/postmortem.h
+  - test/core/transport/chttp2/http2_frame_test_helper.h
+  - test/core/transport/util/mock_promise_endpoint.h
+  - test/core/transport/util/transport_test.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/transport/chttp2/http2_transport_test.cc
+  - test/core/transport/util/mock_promise_endpoint.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  uses_polling: false
 - name: http_proxy_mapper_test
   gtest: true
   build: test
@@ -15301,6 +15389,1313 @@ targets:
   - absl/utility:utility
   - gpr
   uses_polling: false
+- name: incoming_metadata_tracker_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/call/call_arena_allocator.h
+  - src/core/call/call_destination.h
+  - src/core/call/call_filters.h
+  - src/core/call/call_finalization.h
+  - src/core/call/call_spine.h
+  - src/core/call/call_state.h
+  - src/core/call/client_call.h
+  - src/core/call/custom_metadata.h
+  - src/core/call/interception_chain.h
+  - src/core/call/message.h
+  - src/core/call/metadata.h
+  - src/core/call/metadata_batch.h
+  - src/core/call/metadata_compression_traits.h
+  - src/core/call/parsed_metadata.h
+  - src/core/call/server_call.h
+  - src/core/call/simple_slice_based_metadata.h
+  - src/core/call/status_util.h
+  - src/core/channelz/channel_trace.h
+  - src/core/channelz/channelz.h
+  - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
+  - src/core/channelz/text_encode.h
+  - src/core/config/core_configuration.h
+  - src/core/credentials/call/call_creds_registry.h
+  - src/core/credentials/transport/alts/check_gcp_environment.h
+  - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
+  - src/core/credentials/transport/channel_creds_registry.h
+  - src/core/credentials/transport/tls/certificate_provider_factory.h
+  - src/core/credentials/transport/tls/certificate_provider_registry.h
+  - src/core/ext/transport/chttp2/transport/frame.h
+  - src/core/ext/transport/chttp2/transport/http2_settings.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
+  - src/core/ext/transport/chttp2/transport/incoming_metadata_tracker.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/google/rpc/status.upb.h
+  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h
+  - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h
+  - src/core/filter/blackboard.h
+  - src/core/filter/filter_args.h
+  - src/core/handshaker/handshaker_factory.h
+  - src/core/handshaker/handshaker_registry.h
+  - src/core/handshaker/proxy_mapper.h
+  - src/core/handshaker/proxy_mapper_registry.h
+  - src/core/lib/address_utils/parse_address.h
+  - src/core/lib/address_utils/sockaddr_utils.h
+  - src/core/lib/channel/channel_args.h
+  - src/core/lib/channel/channel_args_preconditioning.h
+  - src/core/lib/channel/channel_fwd.h
+  - src/core/lib/channel/channel_stack.h
+  - src/core/lib/channel/channel_stack_builder.h
+  - src/core/lib/channel/channel_stack_builder_impl.h
+  - src/core/lib/channel/connected_channel.h
+  - src/core/lib/channel/promise_based_filter.h
+  - src/core/lib/compression/compression_internal.h
+  - src/core/lib/compression/message_compress.h
+  - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
+  - src/core/lib/event_engine/ares_resolver.h
+  - src/core/lib/event_engine/cf_engine/cf_engine.h
+  - src/core/lib/event_engine/cf_engine/cfsocket_listener.h
+  - src/core/lib/event_engine/cf_engine/cfstream_endpoint.h
+  - src/core/lib/event_engine/cf_engine/cftype_unique_ref.h
+  - src/core/lib/event_engine/cf_engine/dns_service_resolver.h
+  - src/core/lib/event_engine/channel_args_endpoint_config.h
+  - src/core/lib/event_engine/common_closures.h
+  - src/core/lib/event_engine/default_event_engine.h
+  - src/core/lib/event_engine/default_event_engine_factory.h
+  - src/core/lib/event_engine/event_engine_context.h
+  - src/core/lib/event_engine/extensions/blocking_dns.h
+  - src/core/lib/event_engine/extensions/can_track_errors.h
+  - src/core/lib/event_engine/extensions/channelz.h
+  - src/core/lib/event_engine/extensions/chaotic_good_extension.h
+  - src/core/lib/event_engine/extensions/iomgr_compatible.h
+  - src/core/lib/event_engine/extensions/supports_fd.h
+  - src/core/lib/event_engine/extensions/supports_win_sockets.h
+  - src/core/lib/event_engine/extensions/tcp_trace.h
+  - src/core/lib/event_engine/grpc_polled_fd.h
+  - src/core/lib/event_engine/handle_containers.h
+  - src/core/lib/event_engine/memory_allocator_factory.h
+  - src/core/lib/event_engine/nameser.h
+  - src/core/lib/event_engine/poller.h
+  - src/core/lib/event_engine/posix.h
+  - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
+  - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
+  - src/core/lib/event_engine/posix_engine/event_poller.h
+  - src/core/lib/event_engine/posix_engine/event_poller_posix_default.h
+  - src/core/lib/event_engine/posix_engine/file_descriptor_collection.h
+  - src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h
+  - src/core/lib/event_engine/posix_engine/internal_errqueue.h
+  - src/core/lib/event_engine/posix_engine/lockfree_event.h
+  - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h
+  - src/core/lib/event_engine/posix_engine/posix_endpoint.h
+  - src/core/lib/event_engine/posix_engine/posix_engine.h
+  - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener.h
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
+  - src/core/lib/event_engine/posix_engine/posix_interface.h
+  - src/core/lib/event_engine/posix_engine/posix_write_event_sink.h
+  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
+  - src/core/lib/event_engine/posix_engine/timer.h
+  - src/core/lib/event_engine/posix_engine/timer_heap.h
+  - src/core/lib/event_engine/posix_engine/timer_manager.h
+  - src/core/lib/event_engine/posix_engine/traced_buffer_list.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
+  - src/core/lib/event_engine/query_extensions.h
+  - src/core/lib/event_engine/ref_counted_dns_resolver_interface.h
+  - src/core/lib/event_engine/resolved_address_internal.h
+  - src/core/lib/event_engine/shim.h
+  - src/core/lib/event_engine/tcp_socket_utils.h
+  - src/core/lib/event_engine/thread_pool/thread_count.h
+  - src/core/lib/event_engine/thread_pool/thread_pool.h
+  - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
+  - src/core/lib/event_engine/thready_event_engine/thready_event_engine.h
+  - src/core/lib/event_engine/time_util.h
+  - src/core/lib/event_engine/utils.h
+  - src/core/lib/event_engine/windows/grpc_polled_fd_windows.h
+  - src/core/lib/event_engine/windows/iocp.h
+  - src/core/lib/event_engine/windows/native_windows_dns_resolver.h
+  - src/core/lib/event_engine/windows/win_socket.h
+  - src/core/lib/event_engine/windows/windows_endpoint.h
+  - src/core/lib/event_engine/windows/windows_engine.h
+  - src/core/lib/event_engine/windows/windows_listener.h
+  - src/core/lib/event_engine/work_queue/basic_work_queue.h
+  - src/core/lib/event_engine/work_queue/work_queue.h
+  - src/core/lib/experiments/config.h
+  - src/core/lib/experiments/experiments.h
+  - src/core/lib/iomgr/block_annotate.h
+  - src/core/lib/iomgr/buffer_list.h
+  - src/core/lib/iomgr/call_combiner.h
+  - src/core/lib/iomgr/cfstream_handle.h
+  - src/core/lib/iomgr/closure.h
+  - src/core/lib/iomgr/combiner.h
+  - src/core/lib/iomgr/dynamic_annotations.h
+  - src/core/lib/iomgr/endpoint.h
+  - src/core/lib/iomgr/endpoint_cfstream.h
+  - src/core/lib/iomgr/endpoint_pair.h
+  - src/core/lib/iomgr/error.h
+  - src/core/lib/iomgr/error_cfstream.h
+  - src/core/lib/iomgr/ev_apple.h
+  - src/core/lib/iomgr/ev_epoll1_linux.h
+  - src/core/lib/iomgr/ev_poll_posix.h
+  - src/core/lib/iomgr/ev_posix.h
+  - src/core/lib/iomgr/event_engine_shims/closure.h
+  - src/core/lib/iomgr/event_engine_shims/endpoint.h
+  - src/core/lib/iomgr/event_engine_shims/tcp_client.h
+  - src/core/lib/iomgr/exec_ctx.h
+  - src/core/lib/iomgr/internal_errqueue.h
+  - src/core/lib/iomgr/iocp_windows.h
+  - src/core/lib/iomgr/iomgr.h
+  - src/core/lib/iomgr/iomgr_fwd.h
+  - src/core/lib/iomgr/iomgr_internal.h
+  - src/core/lib/iomgr/lockfree_event.h
+  - src/core/lib/iomgr/nameser.h
+  - src/core/lib/iomgr/polling_entity.h
+  - src/core/lib/iomgr/pollset.h
+  - src/core/lib/iomgr/pollset_set.h
+  - src/core/lib/iomgr/pollset_set_windows.h
+  - src/core/lib/iomgr/pollset_windows.h
+  - src/core/lib/iomgr/port.h
+  - src/core/lib/iomgr/resolve_address.h
+  - src/core/lib/iomgr/resolve_address_impl.h
+  - src/core/lib/iomgr/resolve_address_posix.h
+  - src/core/lib/iomgr/resolve_address_windows.h
+  - src/core/lib/iomgr/resolved_address.h
+  - src/core/lib/iomgr/sockaddr.h
+  - src/core/lib/iomgr/sockaddr_posix.h
+  - src/core/lib/iomgr/sockaddr_windows.h
+  - src/core/lib/iomgr/socket_factory_posix.h
+  - src/core/lib/iomgr/socket_mutator.h
+  - src/core/lib/iomgr/socket_utils.h
+  - src/core/lib/iomgr/socket_utils_posix.h
+  - src/core/lib/iomgr/socket_windows.h
+  - src/core/lib/iomgr/systemd_utils.h
+  - src/core/lib/iomgr/tcp_client.h
+  - src/core/lib/iomgr/tcp_client_posix.h
+  - src/core/lib/iomgr/tcp_posix.h
+  - src/core/lib/iomgr/tcp_server.h
+  - src/core/lib/iomgr/tcp_server_utils_posix.h
+  - src/core/lib/iomgr/tcp_windows.h
+  - src/core/lib/iomgr/timer.h
+  - src/core/lib/iomgr/timer_generic.h
+  - src/core/lib/iomgr/timer_heap.h
+  - src/core/lib/iomgr/timer_manager.h
+  - src/core/lib/iomgr/unix_sockets_posix.h
+  - src/core/lib/iomgr/vsock.h
+  - src/core/lib/iomgr/wakeup_fd_pipe.h
+  - src/core/lib/iomgr/wakeup_fd_posix.h
+  - src/core/lib/promise/activity.h
+  - src/core/lib/promise/all_ok.h
+  - src/core/lib/promise/arena_promise.h
+  - src/core/lib/promise/cancel_callback.h
+  - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/join_state.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/seq_state.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/lib/promise/for_each.h
+  - src/core/lib/promise/if.h
+  - src/core/lib/promise/interceptor_list.h
+  - src/core/lib/promise/latch.h
+  - src/core/lib/promise/loop.h
+  - src/core/lib/promise/map.h
+  - src/core/lib/promise/party.h
+  - src/core/lib/promise/pipe.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/prioritized_race.h
+  - src/core/lib/promise/promise.h
+  - src/core/lib/promise/race.h
+  - src/core/lib/promise/seq.h
+  - src/core/lib/promise/status_flag.h
+  - src/core/lib/promise/try_seq.h
+  - src/core/lib/resource_quota/api.h
+  - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
+  - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/telemetry.h
+  - src/core/lib/resource_quota/thread_quota.h
+  - src/core/lib/resource_tracker/resource_tracker.h
+  - src/core/lib/slice/percent_encoding.h
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/surface/call.h
+  - src/core/lib/surface/call_test_only.h
+  - src/core/lib/surface/call_utils.h
+  - src/core/lib/surface/channel.h
+  - src/core/lib/surface/channel_init.h
+  - src/core/lib/surface/channel_stack_type.h
+  - src/core/lib/surface/completion_queue.h
+  - src/core/lib/surface/completion_queue_factory.h
+  - src/core/lib/surface/event_string.h
+  - src/core/lib/surface/filter_stack_call.h
+  - src/core/lib/surface/init.h
+  - src/core/lib/surface/init_internally.h
+  - src/core/lib/surface/lame_client.h
+  - src/core/lib/surface/validate_metadata.h
+  - src/core/lib/transport/call_final_info.h
+  - src/core/lib/transport/connectivity_state.h
+  - src/core/lib/transport/error_utils.h
+  - src/core/lib/transport/status_conversion.h
+  - src/core/lib/transport/timeout_encoding.h
+  - src/core/lib/transport/transport.h
+  - src/core/lib/transport/transport_fwd.h
+  - src/core/load_balancing/backend_metric_data.h
+  - src/core/load_balancing/lb_policy.h
+  - src/core/load_balancing/lb_policy_factory.h
+  - src/core/load_balancing/lb_policy_registry.h
+  - src/core/load_balancing/subchannel_interface.h
+  - src/core/net/socket_mutator.h
+  - src/core/resolver/endpoint_addresses.h
+  - src/core/resolver/resolver.h
+  - src/core/resolver/resolver_factory.h
+  - src/core/resolver/resolver_registry.h
+  - src/core/resolver/server_address.h
+  - src/core/server/server_interface.h
+  - src/core/service_config/service_config.h
+  - src/core/service_config/service_config_call_data.h
+  - src/core/service_config/service_config_parser.h
+  - src/core/telemetry/call_tracer.h
+  - src/core/telemetry/context_list_entry.h
+  - src/core/telemetry/histogram.h
+  - src/core/telemetry/histogram_view.h
+  - src/core/telemetry/instrument.h
+  - src/core/telemetry/metrics.h
+  - src/core/telemetry/stats.h
+  - src/core/telemetry/stats_data.h
+  - src/core/telemetry/tcp_tracer.h
+  - src/core/transport/auth_context_comparator_registry.h
+  - src/core/transport/endpoint_transport.h
+  - src/core/tsi/alts/handshaker/transport_security_common_api.h
+  - src/core/util/atomic_utils.h
+  - src/core/util/avl.h
+  - src/core/util/backoff.h
+  - src/core/util/bitset.h
+  - src/core/util/check_class_size.h
+  - src/core/util/chunked_vector.h
+  - src/core/util/cpp_impl_of.h
+  - src/core/util/down_cast.h
+  - src/core/util/dual_ref_counted.h
+  - src/core/util/dump_args.h
+  - src/core/util/event_log.h
+  - src/core/util/function_signature.h
+  - src/core/util/gethostname.h
+  - src/core/util/glob.h
+  - src/core/util/grpc_check.h
+  - src/core/util/grpc_if_nametoindex.h
+  - src/core/util/if_list.h
+  - src/core/util/json/json.h
+  - src/core/util/json/json_args.h
+  - src/core/util/json/json_reader.h
+  - src/core/util/json/json_writer.h
+  - src/core/util/latent_see.h
+  - src/core/util/load_file.h
+  - src/core/util/manual_constructor.h
+  - src/core/util/match.h
+  - src/core/util/memory_usage.h
+  - src/core/util/notification.h
+  - src/core/util/orphanable.h
+  - src/core/util/overload.h
+  - src/core/util/packed_table.h
+  - src/core/util/per_cpu.h
+  - src/core/util/postmortem_emit.h
+  - src/core/util/ref_counted.h
+  - src/core/util/ref_counted_ptr.h
+  - src/core/util/ref_counted_string.h
+  - src/core/util/shared_bit_gen.h
+  - src/core/util/single_set_ptr.h
+  - src/core/util/sorted_pack.h
+  - src/core/util/spinlock.h
+  - src/core/util/status_helper.h
+  - src/core/util/table.h
+  - src/core/util/time.h
+  - src/core/util/time_averaged_stats.h
+  - src/core/util/type_list.h
+  - src/core/util/unique_type_name.h
+  - src/core/util/upb_utils.h
+  - src/core/util/uri.h
+  - src/core/util/validation_errors.h
+  - src/core/util/wait_for_single_owner.h
+  - src/core/util/work_serializer.h
+  - test/core/transport/chttp2/http2_common_test_inputs.h
+  - third_party/upb/upb/generated_code_support.h
+  src:
+  - src/core/call/call_arena_allocator.cc
+  - src/core/call/call_filters.cc
+  - src/core/call/call_spine.cc
+  - src/core/call/call_state.cc
+  - src/core/call/client_call.cc
+  - src/core/call/interception_chain.cc
+  - src/core/call/message.cc
+  - src/core/call/metadata.cc
+  - src/core/call/metadata_batch.cc
+  - src/core/call/parsed_metadata.cc
+  - src/core/call/server_call.cc
+  - src/core/call/status_util.cc
+  - src/core/channelz/channel_trace.cc
+  - src/core/channelz/channelz.cc
+  - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
+  - src/core/channelz/text_encode.cc
+  - src/core/config/core_configuration.cc
+  - src/core/credentials/transport/alts/check_gcp_environment.cc
+  - src/core/credentials/transport/alts/check_gcp_environment_linux.cc
+  - src/core/credentials/transport/alts/check_gcp_environment_no_op.cc
+  - src/core/credentials/transport/alts/check_gcp_environment_windows.cc
+  - src/core/credentials/transport/alts/grpc_alts_credentials_client_options.cc
+  - src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
+  - src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
+  - src/core/credentials/transport/tls/certificate_provider_registry.cc
+  - src/core/ext/transport/chttp2/transport/frame.cc
+  - src/core/ext/transport/chttp2/transport/http2_settings.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
+  - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
+  - src/core/filter/blackboard.cc
+  - src/core/handshaker/handshaker_registry.cc
+  - src/core/handshaker/proxy_mapper_registry.cc
+  - src/core/lib/address_utils/parse_address.cc
+  - src/core/lib/address_utils/sockaddr_utils.cc
+  - src/core/lib/channel/channel_args.cc
+  - src/core/lib/channel/channel_args_preconditioning.cc
+  - src/core/lib/channel/channel_stack.cc
+  - src/core/lib/channel/channel_stack_builder.cc
+  - src/core/lib/channel/channel_stack_builder_impl.cc
+  - src/core/lib/channel/connected_channel.cc
+  - src/core/lib/channel/promise_based_filter.cc
+  - src/core/lib/compression/compression.cc
+  - src/core/lib/compression/compression_internal.cc
+  - src/core/lib/compression/message_compress.cc
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/event_engine/ares_resolver.cc
+  - src/core/lib/event_engine/cf_engine/cf_engine.cc
+  - src/core/lib/event_engine/cf_engine/cfsocket_listener.cc
+  - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
+  - src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
+  - src/core/lib/event_engine/channel_args_endpoint_config.cc
+  - src/core/lib/event_engine/default_event_engine.cc
+  - src/core/lib/event_engine/default_event_engine_factory.cc
+  - src/core/lib/event_engine/event_engine.cc
+  - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
+  - src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
+  - src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
+  - src/core/lib/event_engine/posix_engine/file_descriptor_collection.cc
+  - src/core/lib/event_engine/posix_engine/internal_errqueue.cc
+  - src/core/lib/event_engine/posix_engine/lockfree_event.cc
+  - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
+  - src/core/lib/event_engine/posix_engine/posix_endpoint.cc
+  - src/core/lib/event_engine/posix_engine/posix_engine.cc
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
+  - src/core/lib/event_engine/posix_engine/posix_interface_posix.cc
+  - src/core/lib/event_engine/posix_engine/posix_interface_windows.cc
+  - src/core/lib/event_engine/posix_engine/posix_write_event_sink.cc
+  - src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc
+  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
+  - src/core/lib/event_engine/posix_engine/timer.cc
+  - src/core/lib/event_engine/posix_engine/timer_heap.cc
+  - src/core/lib/event_engine/posix_engine/timer_manager.cc
+  - src/core/lib/event_engine/posix_engine/traced_buffer_list.cc
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
+  - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/shim.cc
+  - src/core/lib/event_engine/slice.cc
+  - src/core/lib/event_engine/slice_buffer.cc
+  - src/core/lib/event_engine/tcp_socket_utils.cc
+  - src/core/lib/event_engine/thread_pool/thread_count.cc
+  - src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
+  - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
+  - src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
+  - src/core/lib/event_engine/time_util.cc
+  - src/core/lib/event_engine/utils.cc
+  - src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
+  - src/core/lib/event_engine/windows/iocp.cc
+  - src/core/lib/event_engine/windows/native_windows_dns_resolver.cc
+  - src/core/lib/event_engine/windows/win_socket.cc
+  - src/core/lib/event_engine/windows/windows_endpoint.cc
+  - src/core/lib/event_engine/windows/windows_engine.cc
+  - src/core/lib/event_engine/windows/windows_listener.cc
+  - src/core/lib/event_engine/work_queue/basic_work_queue.cc
+  - src/core/lib/experiments/config.cc
+  - src/core/lib/experiments/experiments.cc
+  - src/core/lib/iomgr/buffer_list.cc
+  - src/core/lib/iomgr/call_combiner.cc
+  - src/core/lib/iomgr/cfstream_handle.cc
+  - src/core/lib/iomgr/closure.cc
+  - src/core/lib/iomgr/combiner.cc
+  - src/core/lib/iomgr/dualstack_socket_posix.cc
+  - src/core/lib/iomgr/endpoint.cc
+  - src/core/lib/iomgr/endpoint_cfstream.cc
+  - src/core/lib/iomgr/endpoint_pair_posix.cc
+  - src/core/lib/iomgr/endpoint_pair_windows.cc
+  - src/core/lib/iomgr/error.cc
+  - src/core/lib/iomgr/error_cfstream.cc
+  - src/core/lib/iomgr/ev_apple.cc
+  - src/core/lib/iomgr/ev_epoll1_linux.cc
+  - src/core/lib/iomgr/ev_poll_posix.cc
+  - src/core/lib/iomgr/ev_posix.cc
+  - src/core/lib/iomgr/event_engine_shims/closure.cc
+  - src/core/lib/iomgr/event_engine_shims/endpoint.cc
+  - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
+  - src/core/lib/iomgr/exec_ctx.cc
+  - src/core/lib/iomgr/fork_posix.cc
+  - src/core/lib/iomgr/fork_windows.cc
+  - src/core/lib/iomgr/internal_errqueue.cc
+  - src/core/lib/iomgr/iocp_windows.cc
+  - src/core/lib/iomgr/iomgr.cc
+  - src/core/lib/iomgr/iomgr_internal.cc
+  - src/core/lib/iomgr/iomgr_posix.cc
+  - src/core/lib/iomgr/iomgr_posix_cfstream.cc
+  - src/core/lib/iomgr/iomgr_windows.cc
+  - src/core/lib/iomgr/lockfree_event.cc
+  - src/core/lib/iomgr/polling_entity.cc
+  - src/core/lib/iomgr/pollset.cc
+  - src/core/lib/iomgr/pollset_set.cc
+  - src/core/lib/iomgr/pollset_set_windows.cc
+  - src/core/lib/iomgr/pollset_windows.cc
+  - src/core/lib/iomgr/resolve_address.cc
+  - src/core/lib/iomgr/resolve_address_posix.cc
+  - src/core/lib/iomgr/resolve_address_windows.cc
+  - src/core/lib/iomgr/sockaddr_utils_posix.cc
+  - src/core/lib/iomgr/socket_factory_posix.cc
+  - src/core/lib/iomgr/socket_mutator.cc
+  - src/core/lib/iomgr/socket_utils_common_posix.cc
+  - src/core/lib/iomgr/socket_utils_linux.cc
+  - src/core/lib/iomgr/socket_utils_posix.cc
+  - src/core/lib/iomgr/socket_utils_windows.cc
+  - src/core/lib/iomgr/socket_windows.cc
+  - src/core/lib/iomgr/systemd_utils.cc
+  - src/core/lib/iomgr/tcp_client.cc
+  - src/core/lib/iomgr/tcp_client_cfstream.cc
+  - src/core/lib/iomgr/tcp_client_posix.cc
+  - src/core/lib/iomgr/tcp_client_windows.cc
+  - src/core/lib/iomgr/tcp_posix.cc
+  - src/core/lib/iomgr/tcp_server.cc
+  - src/core/lib/iomgr/tcp_server_posix.cc
+  - src/core/lib/iomgr/tcp_server_utils_posix_common.cc
+  - src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc
+  - src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc
+  - src/core/lib/iomgr/tcp_server_windows.cc
+  - src/core/lib/iomgr/tcp_windows.cc
+  - src/core/lib/iomgr/timer.cc
+  - src/core/lib/iomgr/timer_generic.cc
+  - src/core/lib/iomgr/timer_heap.cc
+  - src/core/lib/iomgr/timer_manager.cc
+  - src/core/lib/iomgr/unix_sockets_posix.cc
+  - src/core/lib/iomgr/unix_sockets_posix_noop.cc
+  - src/core/lib/iomgr/vsock.cc
+  - src/core/lib/iomgr/wakeup_fd_eventfd.cc
+  - src/core/lib/iomgr/wakeup_fd_nospecial.cc
+  - src/core/lib/iomgr/wakeup_fd_pipe.cc
+  - src/core/lib/iomgr/wakeup_fd_posix.cc
+  - src/core/lib/promise/activity.cc
+  - src/core/lib/promise/party.cc
+  - src/core/lib/resource_quota/api.cc
+  - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
+  - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/thread_quota.cc
+  - src/core/lib/resource_tracker/resource_tracker.cc
+  - src/core/lib/slice/percent_encoding.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/surface/byte_buffer.cc
+  - src/core/lib/surface/byte_buffer_reader.cc
+  - src/core/lib/surface/call.cc
+  - src/core/lib/surface/call_details.cc
+  - src/core/lib/surface/call_log_batch.cc
+  - src/core/lib/surface/call_utils.cc
+  - src/core/lib/surface/channel.cc
+  - src/core/lib/surface/channel_init.cc
+  - src/core/lib/surface/channel_stack_type.cc
+  - src/core/lib/surface/completion_queue.cc
+  - src/core/lib/surface/completion_queue_factory.cc
+  - src/core/lib/surface/event_string.cc
+  - src/core/lib/surface/filter_stack_call.cc
+  - src/core/lib/surface/init_internally.cc
+  - src/core/lib/surface/lame_client.cc
+  - src/core/lib/surface/metadata_array.cc
+  - src/core/lib/surface/validate_metadata.cc
+  - src/core/lib/surface/version.cc
+  - src/core/lib/transport/call_final_info.cc
+  - src/core/lib/transport/connectivity_state.cc
+  - src/core/lib/transport/error_utils.cc
+  - src/core/lib/transport/status_conversion.cc
+  - src/core/lib/transport/timeout_encoding.cc
+  - src/core/lib/transport/transport.cc
+  - src/core/lib/transport/transport_op_string.cc
+  - src/core/load_balancing/lb_policy.cc
+  - src/core/load_balancing/lb_policy_registry.cc
+  - src/core/net/socket_mutator.cc
+  - src/core/resolver/endpoint_addresses.cc
+  - src/core/resolver/resolver.cc
+  - src/core/resolver/resolver_registry.cc
+  - src/core/service_config/service_config_parser.cc
+  - src/core/telemetry/call_tracer.cc
+  - src/core/telemetry/context_list_entry.cc
+  - src/core/telemetry/histogram_view.cc
+  - src/core/telemetry/instrument.cc
+  - src/core/telemetry/metrics.cc
+  - src/core/telemetry/stats.cc
+  - src/core/telemetry/stats_data.cc
+  - src/core/telemetry/tcp_tracer.cc
+  - src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  - src/core/util/backoff.cc
+  - src/core/util/dump_args.cc
+  - src/core/util/event_log.cc
+  - src/core/util/gethostname_fallback.cc
+  - src/core/util/gethostname_host_name_max.cc
+  - src/core/util/gethostname_sysconf.cc
+  - src/core/util/glob.cc
+  - src/core/util/grpc_check.cc
+  - src/core/util/grpc_if_nametoindex_posix.cc
+  - src/core/util/grpc_if_nametoindex_unsupported.cc
+  - src/core/util/json/json_reader.cc
+  - src/core/util/json/json_writer.cc
+  - src/core/util/latent_see.cc
+  - src/core/util/load_file.cc
+  - src/core/util/per_cpu.cc
+  - src/core/util/postmortem_emit.cc
+  - src/core/util/ref_counted_string.cc
+  - src/core/util/shared_bit_gen.cc
+  - src/core/util/status_helper.cc
+  - src/core/util/time.cc
+  - src/core/util/time_averaged_stats.cc
+  - src/core/util/uri.cc
+  - src/core/util/validation_errors.cc
+  - src/core/util/wait_for_single_owner.cc
+  - src/core/util/work_serializer.cc
+  - test/core/transport/chttp2/incoming_metadata_tracker_test.cc
+  deps:
+  - gtest
+  - upb_textformat_lib
+  - z
+  - absl/base:no_destructor
+  - absl/container:btree
+  - absl/container:flat_hash_map
+  - absl/container:inlined_vector
+  - absl/container:node_hash_map
+  - absl/functional:function_ref
+  - absl/hash:hash
+  - absl/meta:type_traits
+  - absl/status:statusor
+  - absl/strings:string_view
+  - absl/types:span
+  - absl/utility:utility
+  - cares
+  - gpr
+  - address_sorting
+- name: info_tool_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/call/call_arena_allocator.h
+  - src/core/call/call_destination.h
+  - src/core/call/call_filters.h
+  - src/core/call/call_finalization.h
+  - src/core/call/call_spine.h
+  - src/core/call/call_state.h
+  - src/core/call/client_call.h
+  - src/core/call/custom_metadata.h
+  - src/core/call/interception_chain.h
+  - src/core/call/message.h
+  - src/core/call/metadata.h
+  - src/core/call/metadata_batch.h
+  - src/core/call/metadata_compression_traits.h
+  - src/core/call/parsed_metadata.h
+  - src/core/call/server_call.h
+  - src/core/call/simple_slice_based_metadata.h
+  - src/core/call/status_util.h
+  - src/core/channelz/channel_trace.h
+  - src/core/channelz/channelz.h
+  - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
+  - src/core/channelz/text_encode.h
+  - src/core/config/core_configuration.h
+  - src/core/credentials/call/call_creds_registry.h
+  - src/core/credentials/transport/alts/check_gcp_environment.h
+  - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
+  - src/core/credentials/transport/channel_creds_registry.h
+  - src/core/credentials/transport/tls/certificate_provider_factory.h
+  - src/core/credentials/transport/tls/certificate_provider_registry.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/google/rpc/status.upb.h
+  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.h
+  - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h
+  - src/core/filter/blackboard.h
+  - src/core/filter/filter_args.h
+  - src/core/handshaker/handshaker_factory.h
+  - src/core/handshaker/handshaker_registry.h
+  - src/core/handshaker/proxy_mapper.h
+  - src/core/handshaker/proxy_mapper_registry.h
+  - src/core/lib/address_utils/parse_address.h
+  - src/core/lib/address_utils/sockaddr_utils.h
+  - src/core/lib/channel/channel_args.h
+  - src/core/lib/channel/channel_args_preconditioning.h
+  - src/core/lib/channel/channel_fwd.h
+  - src/core/lib/channel/channel_stack.h
+  - src/core/lib/channel/channel_stack_builder.h
+  - src/core/lib/channel/channel_stack_builder_impl.h
+  - src/core/lib/channel/connected_channel.h
+  - src/core/lib/channel/promise_based_filter.h
+  - src/core/lib/compression/compression_internal.h
+  - src/core/lib/compression/message_compress.h
+  - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
+  - src/core/lib/event_engine/ares_resolver.h
+  - src/core/lib/event_engine/cf_engine/cf_engine.h
+  - src/core/lib/event_engine/cf_engine/cfsocket_listener.h
+  - src/core/lib/event_engine/cf_engine/cfstream_endpoint.h
+  - src/core/lib/event_engine/cf_engine/cftype_unique_ref.h
+  - src/core/lib/event_engine/cf_engine/dns_service_resolver.h
+  - src/core/lib/event_engine/channel_args_endpoint_config.h
+  - src/core/lib/event_engine/common_closures.h
+  - src/core/lib/event_engine/default_event_engine.h
+  - src/core/lib/event_engine/default_event_engine_factory.h
+  - src/core/lib/event_engine/event_engine_context.h
+  - src/core/lib/event_engine/extensions/blocking_dns.h
+  - src/core/lib/event_engine/extensions/can_track_errors.h
+  - src/core/lib/event_engine/extensions/channelz.h
+  - src/core/lib/event_engine/extensions/chaotic_good_extension.h
+  - src/core/lib/event_engine/extensions/iomgr_compatible.h
+  - src/core/lib/event_engine/extensions/supports_fd.h
+  - src/core/lib/event_engine/extensions/supports_win_sockets.h
+  - src/core/lib/event_engine/extensions/tcp_trace.h
+  - src/core/lib/event_engine/grpc_polled_fd.h
+  - src/core/lib/event_engine/handle_containers.h
+  - src/core/lib/event_engine/memory_allocator_factory.h
+  - src/core/lib/event_engine/nameser.h
+  - src/core/lib/event_engine/poller.h
+  - src/core/lib/event_engine/posix.h
+  - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.h
+  - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
+  - src/core/lib/event_engine/posix_engine/event_poller.h
+  - src/core/lib/event_engine/posix_engine/event_poller_posix_default.h
+  - src/core/lib/event_engine/posix_engine/file_descriptor_collection.h
+  - src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h
+  - src/core/lib/event_engine/posix_engine/internal_errqueue.h
+  - src/core/lib/event_engine/posix_engine/lockfree_event.h
+  - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h
+  - src/core/lib/event_engine/posix_engine/posix_endpoint.h
+  - src/core/lib/event_engine/posix_engine/posix_engine.h
+  - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener.h
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
+  - src/core/lib/event_engine/posix_engine/posix_interface.h
+  - src/core/lib/event_engine/posix_engine/posix_write_event_sink.h
+  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
+  - src/core/lib/event_engine/posix_engine/timer.h
+  - src/core/lib/event_engine/posix_engine/timer_heap.h
+  - src/core/lib/event_engine/posix_engine/timer_manager.h
+  - src/core/lib/event_engine/posix_engine/traced_buffer_list.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.h
+  - src/core/lib/event_engine/query_extensions.h
+  - src/core/lib/event_engine/ref_counted_dns_resolver_interface.h
+  - src/core/lib/event_engine/resolved_address_internal.h
+  - src/core/lib/event_engine/shim.h
+  - src/core/lib/event_engine/tcp_socket_utils.h
+  - src/core/lib/event_engine/thread_pool/thread_count.h
+  - src/core/lib/event_engine/thread_pool/thread_pool.h
+  - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.h
+  - src/core/lib/event_engine/thready_event_engine/thready_event_engine.h
+  - src/core/lib/event_engine/time_util.h
+  - src/core/lib/event_engine/utils.h
+  - src/core/lib/event_engine/windows/grpc_polled_fd_windows.h
+  - src/core/lib/event_engine/windows/iocp.h
+  - src/core/lib/event_engine/windows/native_windows_dns_resolver.h
+  - src/core/lib/event_engine/windows/win_socket.h
+  - src/core/lib/event_engine/windows/windows_endpoint.h
+  - src/core/lib/event_engine/windows/windows_engine.h
+  - src/core/lib/event_engine/windows/windows_listener.h
+  - src/core/lib/event_engine/work_queue/basic_work_queue.h
+  - src/core/lib/event_engine/work_queue/work_queue.h
+  - src/core/lib/experiments/config.h
+  - src/core/lib/experiments/experiments.h
+  - src/core/lib/iomgr/block_annotate.h
+  - src/core/lib/iomgr/buffer_list.h
+  - src/core/lib/iomgr/call_combiner.h
+  - src/core/lib/iomgr/cfstream_handle.h
+  - src/core/lib/iomgr/closure.h
+  - src/core/lib/iomgr/combiner.h
+  - src/core/lib/iomgr/dynamic_annotations.h
+  - src/core/lib/iomgr/endpoint.h
+  - src/core/lib/iomgr/endpoint_cfstream.h
+  - src/core/lib/iomgr/endpoint_pair.h
+  - src/core/lib/iomgr/error.h
+  - src/core/lib/iomgr/error_cfstream.h
+  - src/core/lib/iomgr/ev_apple.h
+  - src/core/lib/iomgr/ev_epoll1_linux.h
+  - src/core/lib/iomgr/ev_poll_posix.h
+  - src/core/lib/iomgr/ev_posix.h
+  - src/core/lib/iomgr/event_engine_shims/closure.h
+  - src/core/lib/iomgr/event_engine_shims/endpoint.h
+  - src/core/lib/iomgr/event_engine_shims/tcp_client.h
+  - src/core/lib/iomgr/exec_ctx.h
+  - src/core/lib/iomgr/internal_errqueue.h
+  - src/core/lib/iomgr/iocp_windows.h
+  - src/core/lib/iomgr/iomgr.h
+  - src/core/lib/iomgr/iomgr_fwd.h
+  - src/core/lib/iomgr/iomgr_internal.h
+  - src/core/lib/iomgr/lockfree_event.h
+  - src/core/lib/iomgr/nameser.h
+  - src/core/lib/iomgr/polling_entity.h
+  - src/core/lib/iomgr/pollset.h
+  - src/core/lib/iomgr/pollset_set.h
+  - src/core/lib/iomgr/pollset_set_windows.h
+  - src/core/lib/iomgr/pollset_windows.h
+  - src/core/lib/iomgr/port.h
+  - src/core/lib/iomgr/resolve_address.h
+  - src/core/lib/iomgr/resolve_address_impl.h
+  - src/core/lib/iomgr/resolve_address_posix.h
+  - src/core/lib/iomgr/resolve_address_windows.h
+  - src/core/lib/iomgr/resolved_address.h
+  - src/core/lib/iomgr/sockaddr.h
+  - src/core/lib/iomgr/sockaddr_posix.h
+  - src/core/lib/iomgr/sockaddr_windows.h
+  - src/core/lib/iomgr/socket_factory_posix.h
+  - src/core/lib/iomgr/socket_mutator.h
+  - src/core/lib/iomgr/socket_utils.h
+  - src/core/lib/iomgr/socket_utils_posix.h
+  - src/core/lib/iomgr/socket_windows.h
+  - src/core/lib/iomgr/systemd_utils.h
+  - src/core/lib/iomgr/tcp_client.h
+  - src/core/lib/iomgr/tcp_client_posix.h
+  - src/core/lib/iomgr/tcp_posix.h
+  - src/core/lib/iomgr/tcp_server.h
+  - src/core/lib/iomgr/tcp_server_utils_posix.h
+  - src/core/lib/iomgr/tcp_windows.h
+  - src/core/lib/iomgr/timer.h
+  - src/core/lib/iomgr/timer_generic.h
+  - src/core/lib/iomgr/timer_heap.h
+  - src/core/lib/iomgr/timer_manager.h
+  - src/core/lib/iomgr/unix_sockets_posix.h
+  - src/core/lib/iomgr/vsock.h
+  - src/core/lib/iomgr/wakeup_fd_pipe.h
+  - src/core/lib/iomgr/wakeup_fd_posix.h
+  - src/core/lib/promise/activity.h
+  - src/core/lib/promise/all_ok.h
+  - src/core/lib/promise/arena_promise.h
+  - src/core/lib/promise/cancel_callback.h
+  - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_seq.h
+  - src/core/lib/promise/detail/join_state.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/seq_state.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
+  - src/core/lib/promise/for_each.h
+  - src/core/lib/promise/if.h
+  - src/core/lib/promise/interceptor_list.h
+  - src/core/lib/promise/latch.h
+  - src/core/lib/promise/loop.h
+  - src/core/lib/promise/map.h
+  - src/core/lib/promise/party.h
+  - src/core/lib/promise/pipe.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/prioritized_race.h
+  - src/core/lib/promise/promise.h
+  - src/core/lib/promise/race.h
+  - src/core/lib/promise/seq.h
+  - src/core/lib/promise/status_flag.h
+  - src/core/lib/promise/try_seq.h
+  - src/core/lib/resource_quota/api.h
+  - src/core/lib/resource_quota/arena.h
+  - src/core/lib/resource_quota/memory_quota.h
+  - src/core/lib/resource_quota/periodic_update.h
+  - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/telemetry.h
+  - src/core/lib/resource_quota/thread_quota.h
+  - src/core/lib/resource_tracker/resource_tracker.h
+  - src/core/lib/slice/percent_encoding.h
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/surface/call.h
+  - src/core/lib/surface/call_test_only.h
+  - src/core/lib/surface/call_utils.h
+  - src/core/lib/surface/channel.h
+  - src/core/lib/surface/channel_init.h
+  - src/core/lib/surface/channel_stack_type.h
+  - src/core/lib/surface/completion_queue.h
+  - src/core/lib/surface/completion_queue_factory.h
+  - src/core/lib/surface/event_string.h
+  - src/core/lib/surface/filter_stack_call.h
+  - src/core/lib/surface/init.h
+  - src/core/lib/surface/init_internally.h
+  - src/core/lib/surface/lame_client.h
+  - src/core/lib/surface/validate_metadata.h
+  - src/core/lib/transport/call_final_info.h
+  - src/core/lib/transport/connectivity_state.h
+  - src/core/lib/transport/error_utils.h
+  - src/core/lib/transport/status_conversion.h
+  - src/core/lib/transport/timeout_encoding.h
+  - src/core/lib/transport/transport.h
+  - src/core/lib/transport/transport_fwd.h
+  - src/core/load_balancing/backend_metric_data.h
+  - src/core/load_balancing/lb_policy.h
+  - src/core/load_balancing/lb_policy_factory.h
+  - src/core/load_balancing/lb_policy_registry.h
+  - src/core/load_balancing/subchannel_interface.h
+  - src/core/net/socket_mutator.h
+  - src/core/resolver/endpoint_addresses.h
+  - src/core/resolver/resolver.h
+  - src/core/resolver/resolver_factory.h
+  - src/core/resolver/resolver_registry.h
+  - src/core/resolver/server_address.h
+  - src/core/server/server_interface.h
+  - src/core/service_config/service_config.h
+  - src/core/service_config/service_config_call_data.h
+  - src/core/service_config/service_config_parser.h
+  - src/core/telemetry/call_tracer.h
+  - src/core/telemetry/context_list_entry.h
+  - src/core/telemetry/histogram.h
+  - src/core/telemetry/histogram_view.h
+  - src/core/telemetry/instrument.h
+  - src/core/telemetry/metrics.h
+  - src/core/telemetry/stats.h
+  - src/core/telemetry/stats_data.h
+  - src/core/telemetry/tcp_tracer.h
+  - src/core/transport/auth_context_comparator_registry.h
+  - src/core/transport/endpoint_transport.h
+  - src/core/tsi/alts/handshaker/transport_security_common_api.h
+  - src/core/util/atomic_utils.h
+  - src/core/util/avl.h
+  - src/core/util/backoff.h
+  - src/core/util/bitset.h
+  - src/core/util/check_class_size.h
+  - src/core/util/chunked_vector.h
+  - src/core/util/cpp_impl_of.h
+  - src/core/util/down_cast.h
+  - src/core/util/dual_ref_counted.h
+  - src/core/util/dump_args.h
+  - src/core/util/event_log.h
+  - src/core/util/function_signature.h
+  - src/core/util/gethostname.h
+  - src/core/util/glob.h
+  - src/core/util/grpc_check.h
+  - src/core/util/grpc_if_nametoindex.h
+  - src/core/util/if_list.h
+  - src/core/util/json/json.h
+  - src/core/util/json/json_args.h
+  - src/core/util/json/json_reader.h
+  - src/core/util/json/json_writer.h
+  - src/core/util/latent_see.h
+  - src/core/util/load_file.h
+  - src/core/util/manual_constructor.h
+  - src/core/util/match.h
+  - src/core/util/memory_usage.h
+  - src/core/util/notification.h
+  - src/core/util/orphanable.h
+  - src/core/util/overload.h
+  - src/core/util/packed_table.h
+  - src/core/util/per_cpu.h
+  - src/core/util/postmortem_emit.h
+  - src/core/util/ref_counted.h
+  - src/core/util/ref_counted_ptr.h
+  - src/core/util/ref_counted_string.h
+  - src/core/util/shared_bit_gen.h
+  - src/core/util/single_set_ptr.h
+  - src/core/util/sorted_pack.h
+  - src/core/util/spinlock.h
+  - src/core/util/status_helper.h
+  - src/core/util/table.h
+  - src/core/util/time.h
+  - src/core/util/time_averaged_stats.h
+  - src/core/util/type_list.h
+  - src/core/util/unique_type_name.h
+  - src/core/util/upb_utils.h
+  - src/core/util/uri.h
+  - src/core/util/validation_errors.h
+  - src/core/util/wait_for_single_owner.h
+  - src/core/util/work_serializer.h
+  - test/cpp/sleuth/tool.h
+  - test/cpp/sleuth/tool_test.h
+  - test/cpp/sleuth/version.h
+  - third_party/upb/upb/generated_code_support.h
+  src:
+  - src/core/call/call_arena_allocator.cc
+  - src/core/call/call_filters.cc
+  - src/core/call/call_spine.cc
+  - src/core/call/call_state.cc
+  - src/core/call/client_call.cc
+  - src/core/call/interception_chain.cc
+  - src/core/call/message.cc
+  - src/core/call/metadata.cc
+  - src/core/call/metadata_batch.cc
+  - src/core/call/parsed_metadata.cc
+  - src/core/call/server_call.cc
+  - src/core/call/status_util.cc
+  - src/core/channelz/channel_trace.cc
+  - src/core/channelz/channelz.cc
+  - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
+  - src/core/channelz/text_encode.cc
+  - src/core/config/core_configuration.cc
+  - src/core/credentials/transport/alts/check_gcp_environment.cc
+  - src/core/credentials/transport/alts/check_gcp_environment_linux.cc
+  - src/core/credentials/transport/alts/check_gcp_environment_no_op.cc
+  - src/core/credentials/transport/alts/check_gcp_environment_windows.cc
+  - src/core/credentials/transport/alts/grpc_alts_credentials_client_options.cc
+  - src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
+  - src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
+  - src/core/credentials/transport/tls/certificate_provider_registry.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
+  - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
+  - src/core/filter/blackboard.cc
+  - src/core/handshaker/handshaker_registry.cc
+  - src/core/handshaker/proxy_mapper_registry.cc
+  - src/core/lib/address_utils/parse_address.cc
+  - src/core/lib/address_utils/sockaddr_utils.cc
+  - src/core/lib/channel/channel_args.cc
+  - src/core/lib/channel/channel_args_preconditioning.cc
+  - src/core/lib/channel/channel_stack.cc
+  - src/core/lib/channel/channel_stack_builder.cc
+  - src/core/lib/channel/channel_stack_builder_impl.cc
+  - src/core/lib/channel/connected_channel.cc
+  - src/core/lib/channel/promise_based_filter.cc
+  - src/core/lib/compression/compression.cc
+  - src/core/lib/compression/compression_internal.cc
+  - src/core/lib/compression/message_compress.cc
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/event_engine/ares_resolver.cc
+  - src/core/lib/event_engine/cf_engine/cf_engine.cc
+  - src/core/lib/event_engine/cf_engine/cfsocket_listener.cc
+  - src/core/lib/event_engine/cf_engine/cfstream_endpoint.cc
+  - src/core/lib/event_engine/cf_engine/dns_service_resolver.cc
+  - src/core/lib/event_engine/channel_args_endpoint_config.cc
+  - src/core/lib/event_engine/default_event_engine.cc
+  - src/core/lib/event_engine/default_event_engine_factory.cc
+  - src/core/lib/event_engine/event_engine.cc
+  - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
+  - src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
+  - src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
+  - src/core/lib/event_engine/posix_engine/file_descriptor_collection.cc
+  - src/core/lib/event_engine/posix_engine/internal_errqueue.cc
+  - src/core/lib/event_engine/posix_engine/lockfree_event.cc
+  - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
+  - src/core/lib/event_engine/posix_engine/posix_endpoint.cc
+  - src/core/lib/event_engine/posix_engine/posix_engine.cc
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
+  - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
+  - src/core/lib/event_engine/posix_engine/posix_interface_posix.cc
+  - src/core/lib/event_engine/posix_engine/posix_interface_windows.cc
+  - src/core/lib/event_engine/posix_engine/posix_write_event_sink.cc
+  - src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc
+  - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
+  - src/core/lib/event_engine/posix_engine/timer.cc
+  - src/core/lib/event_engine/posix_engine/timer_heap.cc
+  - src/core/lib/event_engine/posix_engine/timer_manager.cc
+  - src/core/lib/event_engine/posix_engine/traced_buffer_list.cc
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_eventfd.cc
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.cc
+  - src/core/lib/event_engine/posix_engine/wakeup_fd_posix_default.cc
+  - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/shim.cc
+  - src/core/lib/event_engine/slice.cc
+  - src/core/lib/event_engine/slice_buffer.cc
+  - src/core/lib/event_engine/tcp_socket_utils.cc
+  - src/core/lib/event_engine/thread_pool/thread_count.cc
+  - src/core/lib/event_engine/thread_pool/thread_pool_factory.cc
+  - src/core/lib/event_engine/thread_pool/work_stealing_thread_pool.cc
+  - src/core/lib/event_engine/thready_event_engine/thready_event_engine.cc
+  - src/core/lib/event_engine/time_util.cc
+  - src/core/lib/event_engine/utils.cc
+  - src/core/lib/event_engine/windows/grpc_polled_fd_windows.cc
+  - src/core/lib/event_engine/windows/iocp.cc
+  - src/core/lib/event_engine/windows/native_windows_dns_resolver.cc
+  - src/core/lib/event_engine/windows/win_socket.cc
+  - src/core/lib/event_engine/windows/windows_endpoint.cc
+  - src/core/lib/event_engine/windows/windows_engine.cc
+  - src/core/lib/event_engine/windows/windows_listener.cc
+  - src/core/lib/event_engine/work_queue/basic_work_queue.cc
+  - src/core/lib/experiments/config.cc
+  - src/core/lib/experiments/experiments.cc
+  - src/core/lib/iomgr/buffer_list.cc
+  - src/core/lib/iomgr/call_combiner.cc
+  - src/core/lib/iomgr/cfstream_handle.cc
+  - src/core/lib/iomgr/closure.cc
+  - src/core/lib/iomgr/combiner.cc
+  - src/core/lib/iomgr/dualstack_socket_posix.cc
+  - src/core/lib/iomgr/endpoint.cc
+  - src/core/lib/iomgr/endpoint_cfstream.cc
+  - src/core/lib/iomgr/endpoint_pair_posix.cc
+  - src/core/lib/iomgr/endpoint_pair_windows.cc
+  - src/core/lib/iomgr/error.cc
+  - src/core/lib/iomgr/error_cfstream.cc
+  - src/core/lib/iomgr/ev_apple.cc
+  - src/core/lib/iomgr/ev_epoll1_linux.cc
+  - src/core/lib/iomgr/ev_poll_posix.cc
+  - src/core/lib/iomgr/ev_posix.cc
+  - src/core/lib/iomgr/event_engine_shims/closure.cc
+  - src/core/lib/iomgr/event_engine_shims/endpoint.cc
+  - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
+  - src/core/lib/iomgr/exec_ctx.cc
+  - src/core/lib/iomgr/fork_posix.cc
+  - src/core/lib/iomgr/fork_windows.cc
+  - src/core/lib/iomgr/internal_errqueue.cc
+  - src/core/lib/iomgr/iocp_windows.cc
+  - src/core/lib/iomgr/iomgr.cc
+  - src/core/lib/iomgr/iomgr_internal.cc
+  - src/core/lib/iomgr/iomgr_posix.cc
+  - src/core/lib/iomgr/iomgr_posix_cfstream.cc
+  - src/core/lib/iomgr/iomgr_windows.cc
+  - src/core/lib/iomgr/lockfree_event.cc
+  - src/core/lib/iomgr/polling_entity.cc
+  - src/core/lib/iomgr/pollset.cc
+  - src/core/lib/iomgr/pollset_set.cc
+  - src/core/lib/iomgr/pollset_set_windows.cc
+  - src/core/lib/iomgr/pollset_windows.cc
+  - src/core/lib/iomgr/resolve_address.cc
+  - src/core/lib/iomgr/resolve_address_posix.cc
+  - src/core/lib/iomgr/resolve_address_windows.cc
+  - src/core/lib/iomgr/sockaddr_utils_posix.cc
+  - src/core/lib/iomgr/socket_factory_posix.cc
+  - src/core/lib/iomgr/socket_mutator.cc
+  - src/core/lib/iomgr/socket_utils_common_posix.cc
+  - src/core/lib/iomgr/socket_utils_linux.cc
+  - src/core/lib/iomgr/socket_utils_posix.cc
+  - src/core/lib/iomgr/socket_utils_windows.cc
+  - src/core/lib/iomgr/socket_windows.cc
+  - src/core/lib/iomgr/systemd_utils.cc
+  - src/core/lib/iomgr/tcp_client.cc
+  - src/core/lib/iomgr/tcp_client_cfstream.cc
+  - src/core/lib/iomgr/tcp_client_posix.cc
+  - src/core/lib/iomgr/tcp_client_windows.cc
+  - src/core/lib/iomgr/tcp_posix.cc
+  - src/core/lib/iomgr/tcp_server.cc
+  - src/core/lib/iomgr/tcp_server_posix.cc
+  - src/core/lib/iomgr/tcp_server_utils_posix_common.cc
+  - src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc
+  - src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc
+  - src/core/lib/iomgr/tcp_server_windows.cc
+  - src/core/lib/iomgr/tcp_windows.cc
+  - src/core/lib/iomgr/timer.cc
+  - src/core/lib/iomgr/timer_generic.cc
+  - src/core/lib/iomgr/timer_heap.cc
+  - src/core/lib/iomgr/timer_manager.cc
+  - src/core/lib/iomgr/unix_sockets_posix.cc
+  - src/core/lib/iomgr/unix_sockets_posix_noop.cc
+  - src/core/lib/iomgr/vsock.cc
+  - src/core/lib/iomgr/wakeup_fd_eventfd.cc
+  - src/core/lib/iomgr/wakeup_fd_nospecial.cc
+  - src/core/lib/iomgr/wakeup_fd_pipe.cc
+  - src/core/lib/iomgr/wakeup_fd_posix.cc
+  - src/core/lib/promise/activity.cc
+  - src/core/lib/promise/party.cc
+  - src/core/lib/resource_quota/api.cc
+  - src/core/lib/resource_quota/arena.cc
+  - src/core/lib/resource_quota/memory_quota.cc
+  - src/core/lib/resource_quota/periodic_update.cc
+  - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/thread_quota.cc
+  - src/core/lib/resource_tracker/resource_tracker.cc
+  - src/core/lib/slice/percent_encoding.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/surface/byte_buffer.cc
+  - src/core/lib/surface/byte_buffer_reader.cc
+  - src/core/lib/surface/call.cc
+  - src/core/lib/surface/call_details.cc
+  - src/core/lib/surface/call_log_batch.cc
+  - src/core/lib/surface/call_utils.cc
+  - src/core/lib/surface/channel.cc
+  - src/core/lib/surface/channel_init.cc
+  - src/core/lib/surface/channel_stack_type.cc
+  - src/core/lib/surface/completion_queue.cc
+  - src/core/lib/surface/completion_queue_factory.cc
+  - src/core/lib/surface/event_string.cc
+  - src/core/lib/surface/filter_stack_call.cc
+  - src/core/lib/surface/init_internally.cc
+  - src/core/lib/surface/lame_client.cc
+  - src/core/lib/surface/metadata_array.cc
+  - src/core/lib/surface/validate_metadata.cc
+  - src/core/lib/surface/version.cc
+  - src/core/lib/transport/call_final_info.cc
+  - src/core/lib/transport/connectivity_state.cc
+  - src/core/lib/transport/error_utils.cc
+  - src/core/lib/transport/status_conversion.cc
+  - src/core/lib/transport/timeout_encoding.cc
+  - src/core/lib/transport/transport.cc
+  - src/core/lib/transport/transport_op_string.cc
+  - src/core/load_balancing/lb_policy.cc
+  - src/core/load_balancing/lb_policy_registry.cc
+  - src/core/net/socket_mutator.cc
+  - src/core/resolver/endpoint_addresses.cc
+  - src/core/resolver/resolver.cc
+  - src/core/resolver/resolver_registry.cc
+  - src/core/service_config/service_config_parser.cc
+  - src/core/telemetry/call_tracer.cc
+  - src/core/telemetry/context_list_entry.cc
+  - src/core/telemetry/histogram_view.cc
+  - src/core/telemetry/instrument.cc
+  - src/core/telemetry/metrics.cc
+  - src/core/telemetry/stats.cc
+  - src/core/telemetry/stats_data.cc
+  - src/core/telemetry/tcp_tracer.cc
+  - src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  - src/core/util/backoff.cc
+  - src/core/util/dump_args.cc
+  - src/core/util/event_log.cc
+  - src/core/util/gethostname_fallback.cc
+  - src/core/util/gethostname_host_name_max.cc
+  - src/core/util/gethostname_sysconf.cc
+  - src/core/util/glob.cc
+  - src/core/util/grpc_check.cc
+  - src/core/util/grpc_if_nametoindex_posix.cc
+  - src/core/util/grpc_if_nametoindex_unsupported.cc
+  - src/core/util/json/json_reader.cc
+  - src/core/util/json/json_writer.cc
+  - src/core/util/latent_see.cc
+  - src/core/util/load_file.cc
+  - src/core/util/per_cpu.cc
+  - src/core/util/postmortem_emit.cc
+  - src/core/util/ref_counted_string.cc
+  - src/core/util/shared_bit_gen.cc
+  - src/core/util/status_helper.cc
+  - src/core/util/time.cc
+  - src/core/util/time_averaged_stats.cc
+  - src/core/util/uri.cc
+  - src/core/util/validation_errors.cc
+  - src/core/util/wait_for_single_owner.cc
+  - src/core/util/work_serializer.cc
+  - test/cpp/sleuth/info_tool.cc
+  - test/cpp/sleuth/info_tool_test.cc
+  - test/cpp/sleuth/tool.cc
+  - test/cpp/sleuth/tool_test.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
+  deps:
+  - gtest
+  - upb_textformat_lib
+  - z
+  - absl/base:no_destructor
+  - absl/container:btree
+  - absl/container:flat_hash_map
+  - absl/container:inlined_vector
+  - absl/container:node_hash_map
+  - absl/functional:function_ref
+  - absl/hash:hash
+  - absl/meta:type_traits
+  - absl/status:statusor
+  - absl/strings:string_view
+  - absl/types:span
+  - absl/utility:utility
+  - cares
+  - gpr
+  - address_sorting
 - name: init_test
   gtest: true
   build: test
@@ -16352,10 +17747,26 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/cpp/latent_see/latent_see_client.h
   - src/cpp/latent_see/latent_see_service.h
   src:
   - src/proto/grpc/channelz/v2/latent_see.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/cpp/latent_see/latent_see_client.cc
   - src/cpp/latent_see/latent_see_service.cc
   - test/cpp/end2end/latent_see_service_test.cc
@@ -16367,36 +17778,317 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/channel_trace.h
+  - src/core/channelz/channelz.h
+  - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
+  - src/core/channelz/text_encode.h
+  - src/core/channelz/ztrace_collector.h
+  - src/core/ext/transport/chttp2/transport/frame.h
+  - src/core/ext/transport/chttp2/transport/http2_settings.h
+  - src/core/ext/transport/chttp2/transport/http2_status.h
+  - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/google/rpc/status.upb.h
+  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.h
+  - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.h
+  - src/core/lib/address_utils/parse_address.h
+  - src/core/lib/address_utils/sockaddr_utils.h
+  - src/core/lib/channel/channel_args.h
+  - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
   - src/core/lib/experiments/config.h
   - src/core/lib/experiments/experiments.h
+  - src/core/lib/iomgr/closure.h
+  - src/core/lib/iomgr/combiner.h
+  - src/core/lib/iomgr/error.h
+  - src/core/lib/iomgr/exec_ctx.h
+  - src/core/lib/iomgr/iomgr_internal.h
+  - src/core/lib/iomgr/port.h
+  - src/core/lib/iomgr/resolved_address.h
+  - src/core/lib/iomgr/sockaddr.h
+  - src/core/lib/iomgr/sockaddr_posix.h
+  - src/core/lib/iomgr/sockaddr_windows.h
+  - src/core/lib/iomgr/socket_utils.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/slice/percent_encoding.h
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_string_helpers.h
+  - src/core/lib/surface/channel_stack_type.h
+  - src/core/lib/transport/connectivity_state.h
+  - src/core/lib/transport/status_conversion.h
+  - src/core/telemetry/histogram_view.h
+  - src/core/telemetry/stats.h
+  - src/core/telemetry/stats_data.h
+  - src/core/util/atomic_utils.h
+  - src/core/util/avl.h
   - src/core/util/backoff.h
+  - src/core/util/bitset.h
+  - src/core/util/down_cast.h
+  - src/core/util/dual_ref_counted.h
+  - src/core/util/function_signature.h
+  - src/core/util/glob.h
+  - src/core/util/grpc_check.h
+  - src/core/util/grpc_if_nametoindex.h
   - src/core/util/json/json.h
   - src/core/util/json/json_reader.h
+  - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
+  - src/core/util/manual_constructor.h
   - src/core/util/match.h
+  - src/core/util/memory_usage.h
   - src/core/util/notification.h
+  - src/core/util/orphanable.h
   - src/core/util/overload.h
+  - src/core/util/per_cpu.h
+  - src/core/util/postmortem_emit.h
+  - src/core/util/ref_counted.h
+  - src/core/util/ref_counted_ptr.h
+  - src/core/util/ref_counted_string.h
   - src/core/util/shared_bit_gen.h
+  - src/core/util/single_set_ptr.h
+  - src/core/util/spinlock.h
+  - src/core/util/status_helper.h
   - src/core/util/time.h
+  - src/core/util/upb_utils.h
+  - src/core/util/uri.h
+  - src/core/util/work_serializer.h
+  - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/channel_trace.cc
+  - src/core/channelz/channelz.cc
+  - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
+  - src/core/channelz/text_encode.cc
+  - src/core/ext/transport/chttp2/transport/frame.cc
+  - src/core/ext/transport/chttp2/transport/http2_settings.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/service.upb_minitable.c
+  - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/channelz.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/service.upbdefs.c
+  - src/core/lib/address_utils/parse_address.cc
+  - src/core/lib/address_utils/sockaddr_utils.cc
+  - src/core/lib/channel/channel_args.cc
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
   - src/core/lib/experiments/experiments.cc
+  - src/core/lib/iomgr/closure.cc
+  - src/core/lib/iomgr/combiner.cc
+  - src/core/lib/iomgr/error.cc
+  - src/core/lib/iomgr/exec_ctx.cc
+  - src/core/lib/iomgr/iomgr_internal.cc
+  - src/core/lib/iomgr/sockaddr_utils_posix.cc
+  - src/core/lib/iomgr/socket_utils_windows.cc
+  - src/core/lib/slice/percent_encoding.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/lib/surface/channel_stack_type.cc
+  - src/core/lib/transport/connectivity_state.cc
+  - src/core/lib/transport/status_conversion.cc
+  - src/core/telemetry/histogram_view.cc
+  - src/core/telemetry/stats.cc
+  - src/core/telemetry/stats_data.cc
   - src/core/util/backoff.cc
+  - src/core/util/glob.cc
+  - src/core/util/grpc_check.cc
+  - src/core/util/grpc_if_nametoindex_posix.cc
+  - src/core/util/grpc_if_nametoindex_unsupported.cc
   - src/core/util/json/json_reader.cc
+  - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
+  - src/core/util/per_cpu.cc
+  - src/core/util/postmortem_emit.cc
+  - src/core/util/ref_counted_string.cc
   - src/core/util/shared_bit_gen.cc
+  - src/core/util/status_helper.cc
   - src/core/util/time.cc
+  - src/core/util/uri.cc
+  - src/core/util/work_serializer.cc
   - test/core/util/latent_see_test.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - upb_textformat_lib
+  - absl/container:btree
   - absl/container:flat_hash_map
+  - absl/container:inlined_vector
   - absl/functional:function_ref
+  - absl/hash:hash
+  - absl/meta:type_traits
   - absl/status:statusor
+  - absl/strings:string_view
   - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
+- name: latent_see_tool_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/config.h
+  - src/core/ext/transport/chaotic_good/control_endpoint.h
+  - src/core/ext/transport/chaotic_good/data_endpoints.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/frame_transport.h
+  - src/core/ext/transport/chaotic_good/message_chunker.h
+  - src/core/ext/transport/chaotic_good/message_reassembly.h
+  - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/scheduler.h
+  - src/core/ext/transport/chaotic_good/send_rate.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
+  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
+  - src/core/ext/transport/chaotic_good_legacy/config.h
+  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.h
+  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.h
+  - src/core/ext/transport/chaotic_good_legacy/frame.h
+  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
+  - src/core/ext/transport/chaotic_good_legacy/legacy_ztrace_collector.h
+  - src/core/ext/transport/chaotic_good_legacy/message_chunker.h
+  - src/core/ext/transport/chaotic_good_legacy/message_reassembly.h
+  - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
+  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/util/seq_bit_set.h
+  - src/cpp/latent_see/latent_see_client.h
+  - src/cpp/latent_see/latent_see_service.h
+  - test/cpp/sleuth/client.h
+  - test/cpp/sleuth/tool.h
+  - test/cpp/sleuth/tool_credentials.h
+  - test/cpp/sleuth/tool_options.h
+  - test/cpp/sleuth/tool_test.h
+  - test/cpp/util/cli_call.h
+  - test/cpp/util/cli_credentials.h
+  - test/cpp/util/config_grpc_cli.h
+  - test/cpp/util/proto_file_parser.h
+  - test/cpp/util/proto_reflection_descriptor_database.h
+  - test/cpp/util/service_describer.h
+  src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/proto/grpc/channelz/v2/latent_see.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
+  - src/proto/grpc/channelz/v2/service.proto
+  - src/proto/grpc/reflection/v1alpha/reflection.proto
+  - src/core/ext/transport/chaotic_good/chaotic_good.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/control_endpoint.cc
+  - src/core/ext/transport/chaotic_good/data_endpoints.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/scheduler.cc
+  - src/core/ext/transport/chaotic_good/send_rate.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
+  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
+  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
+  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.cc
+  - src/core/ext/transport/chaotic_good_legacy/frame.cc
+  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
+  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  - src/core/util/seq_bit_set.cc
+  - src/cpp/latent_see/latent_see_client.cc
+  - src/cpp/latent_see/latent_see_service.cc
+  - test/cpp/sleuth/client.cc
+  - test/cpp/sleuth/latent_see_tool.cc
+  - test/cpp/sleuth/latent_see_tool_test.cc
+  - test/cpp/sleuth/tool.cc
+  - test/cpp/sleuth/tool_credentials.cc
+  - test/cpp/sleuth/tool_options.cc
+  - test/cpp/sleuth/tool_test.cc
+  - test/cpp/util/cli_call.cc
+  - test/cpp/util/cli_credentials.cc
+  - test/cpp/util/proto_file_parser.cc
+  - test/cpp/util/proto_reflection_descriptor_database.cc
+  - test/cpp/util/service_describer.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
+  deps:
+  - gtest
+  - grpc++
+  - protoc
+  - grpc_test_util
 - name: layout_test
   gtest: true
   build: test
@@ -16964,6 +18656,7 @@ targets:
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/grpc_check.h
   - src/core/util/grpc_if_nametoindex.h
@@ -18355,12 +20048,27 @@ targets:
   run: false
   language: c++
   headers:
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
+  - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -18380,20 +20088,35 @@ targets:
   - src/core/lib/transport/status_conversion.h
   - src/core/util/backoff.h
   - src/core/util/bitset.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
+  - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
+  - src/core/util/match.h
   - src/core/util/notification.h
+  - src/core/util/overload.h
   - src/core/util/shared_bit_gen.h
   - src/core/util/spinlock.h
   - src/core/util/status_helper.h
   - src/core/util/time.h
+  - src/core/util/upb_utils.h
   - third_party/upb/upb/generated_code_support.h
-  - third_party/upb/upb/reflection/descriptor_bootstrap.h
   src:
+  - src/core/channelz/property_list.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
-  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
@@ -18410,6 +20133,7 @@ targets:
   - src/core/lib/transport/status_conversion.cc
   - src/core/util/backoff.cc
   - src/core/util/glob.cc
+  - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
   - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
@@ -18417,8 +20141,7 @@ targets:
   - test/core/resource_quota/periodic_update_test.cc
   deps:
   - gtest
-  - upb_mini_descriptor_lib
-  - upb_wire_lib
+  - upb_textformat_lib
   - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
@@ -18578,6 +20301,7 @@ targets:
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/grpc_check.h
   - src/core/util/grpc_if_nametoindex.h
@@ -18861,13 +20585,13 @@ targets:
   - test/cpp/end2end/test_health_check_service_impl.h
   - test/cpp/interop/pre_stop_hook_server.h
   - test/cpp/interop/xds_interop_server_lib.h
+  - third_party/protoc-gen-validate/validate/validate.h
   src:
   - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/istio_echo.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
-  - src/proto/grpc/testing/xds/v3/csds.proto
   - third_party/envoy-api/envoy/admin/v3/certs.proto
   - third_party/envoy-api/envoy/admin/v3/clusters.proto
   - third_party/envoy-api/envoy/admin/v3/config_dump.proto
@@ -18937,6 +20661,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
+  - third_party/envoy-api/envoy/service/status/v3/csds.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
@@ -19379,7 +21104,6 @@ targets:
   - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
-  - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
@@ -19975,6 +21699,11 @@ targets:
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
+  - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.h
+  - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h
   - src/core/util/json/json.h
   - src/core/util/json/json_writer.h
   - src/core/util/match.h
@@ -19990,6 +21719,11 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  - src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  - src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  - src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   - src/core/util/json/json_writer.cc
   - src/core/util/time.cc
   - test/core/channelz/property_list_test.cc
@@ -20100,6 +21834,16 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
@@ -20124,6 +21868,7 @@ targets:
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
   - src/proto/grpc/channelz/v2/latent_see.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/proto/grpc/testing/benchmark_service.proto
   - src/proto/grpc/testing/control.proto
   - src/proto/grpc/testing/messages.proto
@@ -20153,6 +21898,11 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/util/seq_bit_set.cc
   - src/cpp/latent_see/latent_see_client.cc
   - src/cpp/latent_see/latent_see_service.cc
@@ -20213,6 +21963,16 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
@@ -20232,6 +21992,7 @@ targets:
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
   - src/proto/grpc/channelz/v2/latent_see.proto
+  - src/proto/grpc/channelz/v2/property_list.proto
   - src/proto/grpc/testing/benchmark_service.proto
   - src/proto/grpc/testing/control.proto
   - src/proto/grpc/testing/messages.proto
@@ -20260,6 +22021,11 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/util/seq_bit_set.cc
   - src/cpp/latent_see/latent_see_service.cc
   - test/cpp/qps/client_async.cc
@@ -20351,6 +22117,7 @@ targets:
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/grpc_check.h
   - src/core/util/grpc_if_nametoindex.h
@@ -20535,6 +22302,7 @@ targets:
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/grpc_check.h
   - src/core/util/grpc_if_nametoindex.h
@@ -21705,6 +23473,29 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: settings_timeout_manager_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
+  - test/core/promise/poll_matcher.h
+  - test/core/test_util/postmortem.h
+  - test/core/transport/chttp2/http2_frame_test_helper.h
+  - test/core/transport/util/mock_promise_endpoint.h
+  - test/core/transport/util/transport_test.h
+  src:
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  - test/core/transport/chttp2/settings_timeout_manager_test.cc
+  - test/core/transport/util/mock_promise_endpoint.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
+  uses_polling: false
 - name: settings_timeout_test
   gtest: true
   build: test
@@ -21817,9 +23608,6 @@ targets:
   - gtest
   - absl/container:flat_hash_map
   - absl/hash:hash
-  - absl/status:statusor
-  - absl/types:span
-  - absl/utility:utility
   - gpr
   uses_polling: false
 - name: sockaddr_resolver_test
@@ -22057,6 +23845,7 @@ targets:
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/grpc_check.h
   - src/core/util/grpc_if_nametoindex.h
@@ -22246,6 +24035,7 @@ targets:
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/grpc_check.h
   - src/core/util/grpc_if_nametoindex.h
@@ -22836,6 +24626,7 @@ targets:
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/grpc_check.h
   - src/core/util/grpc_if_nametoindex.h
@@ -23038,6 +24829,7 @@ targets:
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/grpc_check.h
   - src/core/util/grpc_if_nametoindex.h
@@ -23221,6 +25013,7 @@ targets:
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/grpc_check.h
   - src/core/util/grpc_if_nametoindex.h
@@ -23577,6 +25370,7 @@ targets:
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/grpc_check.h
   - src/core/util/grpc_if_nametoindex.h
@@ -24501,6 +26295,7 @@ targets:
   - src/core/util/validation_errors.cc
   - src/core/util/wait_for_single_owner.cc
   - src/core/util/work_serializer.cc
+  - test/cpp/sleuth/tool.cc
   - test/cpp/sleuth/tool_test.cc
   - test/cpp/sleuth/tool_test_test.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -25041,6 +26836,7 @@ targets:
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/grpc_check.h
   - src/core/util/grpc_if_nametoindex.h
@@ -25641,6 +27437,7 @@ targets:
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/grpc_check.h
   - src/core/util/grpc_if_nametoindex.h
@@ -26061,8 +27858,12 @@ targets:
   - test/core/xds/xds_transport_fake.cc
   deps:
   - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:prefetch
+  - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:internal
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -26087,9 +27888,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -26141,6 +27939,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -26347,8 +28148,12 @@ targets:
   - test/core/xds/xds_cluster_resource_type_test.cc
   deps:
   - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:prefetch
+  - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:internal
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -26372,9 +28177,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -26427,6 +28229,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -26852,9 +28657,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -26906,6 +28708,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -27030,10 +28835,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/csds.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/admin/v3/certs.proto
   - third_party/envoy-api/envoy/admin/v3/clusters.proto
   - third_party/envoy-api/envoy/admin/v3/config_dump.proto
@@ -27107,6 +28908,10 @@ targets:
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
+  - third_party/envoy-api/envoy/service/status/v3/csds.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -27202,9 +29007,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -27256,6 +29058,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -27411,8 +29216,12 @@ targets:
   - test/core/xds/xds_endpoint_resource_type_test.cc
   deps:
   - gtest
+  - absl/base:dynamic_annotations
+  - absl/base:prefetch
+  - absl/container:layout
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:internal
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -27434,9 +29243,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -27488,6 +29294,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -27581,9 +29390,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -27637,6 +29443,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -27729,9 +29538,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -27784,6 +29590,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -27878,9 +29687,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -27933,6 +29739,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -28394,6 +30203,80 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/upb-gen/google/api/annotations.upb.h
+  - src/core/ext/upb-gen/google/api/annotations.upb_minitable.h
+  - src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb.h
+  - src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.h
+  - src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb.h
+  - src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.h
+  - src/core/ext/upb-gen/google/api/http.upb.h
+  - src/core/ext/upb-gen/google/api/http.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb.h
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/struct.upb.h
+  - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/wrappers.upb.h
+  - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.h
+  - src/core/ext/upb-gen/google/rpc/status.upb.h
+  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/validate/validate.upb.h
+  - src/core/ext/upb-gen/validate/validate.upb_minitable.h
+  - src/core/ext/upb-gen/xds/annotations/v3/migrate.upb.h
+  - src/core/ext/upb-gen/xds/annotations/v3/migrate.upb_minitable.h
+  - src/core/ext/upb-gen/xds/annotations/v3/security.upb.h
+  - src/core/ext/upb-gen/xds/annotations/v3/security.upb_minitable.h
+  - src/core/ext/upb-gen/xds/annotations/v3/sensitive.upb.h
+  - src/core/ext/upb-gen/xds/annotations/v3/sensitive.upb_minitable.h
+  - src/core/ext/upb-gen/xds/annotations/v3/status.upb.h
+  - src/core/ext/upb-gen/xds/annotations/v3/status.upb_minitable.h
+  - src/core/ext/upb-gen/xds/annotations/v3/versioning.upb.h
+  - src/core/ext/upb-gen/xds/annotations/v3/versioning.upb_minitable.h
+  - src/core/ext/upb-gen/xds/core/v3/authority.upb.h
+  - src/core/ext/upb-gen/xds/core/v3/authority.upb_minitable.h
+  - src/core/ext/upb-gen/xds/core/v3/cidr.upb.h
+  - src/core/ext/upb-gen/xds/core/v3/cidr.upb_minitable.h
+  - src/core/ext/upb-gen/xds/core/v3/collection_entry.upb.h
+  - src/core/ext/upb-gen/xds/core/v3/collection_entry.upb_minitable.h
+  - src/core/ext/upb-gen/xds/core/v3/context_params.upb.h
+  - src/core/ext/upb-gen/xds/core/v3/context_params.upb_minitable.h
+  - src/core/ext/upb-gen/xds/core/v3/extension.upb.h
+  - src/core/ext/upb-gen/xds/core/v3/extension.upb_minitable.h
+  - src/core/ext/upb-gen/xds/core/v3/resource.upb.h
+  - src/core/ext/upb-gen/xds/core/v3/resource.upb_minitable.h
+  - src/core/ext/upb-gen/xds/core/v3/resource_locator.upb.h
+  - src/core/ext/upb-gen/xds/core/v3/resource_locator.upb_minitable.h
+  - src/core/ext/upb-gen/xds/core/v3/resource_name.upb.h
+  - src/core/ext/upb-gen/xds/core/v3/resource_name.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/cel.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/cel.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/domain.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/domain.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/http_inputs.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/http_inputs.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/ip.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/ip.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/matcher.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/matcher.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/range.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/range.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/regex.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/regex.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/string.upb.h
+  - src/core/ext/upb-gen/xds/type/matcher/v3/string.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/v3/cel.upb.h
+  - src/core/ext/upb-gen/xds/type/v3/cel.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/v3/range.upb.h
+  - src/core/ext/upb-gen/xds/type/v3/range.upb_minitable.h
+  - src/core/ext/upb-gen/xds/type/v3/typed_struct.upb.h
+  - src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.h
   - third_party/protoc-gen-validate/validate/validate.h
   src:
   - third_party/envoy-api/envoy/annotations/deprecation.proto
@@ -28479,6 +30362,43 @@ targets:
   - third_party/xds/xds/type/v3/cel.proto
   - third_party/xds/xds/type/v3/range.proto
   - third_party/xds/xds/type/v3/typed_struct.proto
+  - src/core/ext/upb-gen/google/api/annotations.upb_minitable.c
+  - src/core/ext/upb-gen/google/api/expr/v1alpha1/checked.upb_minitable.c
+  - src/core/ext/upb-gen/google/api/expr/v1alpha1/syntax.upb_minitable.c
+  - src/core/ext/upb-gen/google/api/http.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/descriptor.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/struct.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
+  - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/validate/validate.upb_minitable.c
+  - src/core/ext/upb-gen/xds/annotations/v3/migrate.upb_minitable.c
+  - src/core/ext/upb-gen/xds/annotations/v3/security.upb_minitable.c
+  - src/core/ext/upb-gen/xds/annotations/v3/sensitive.upb_minitable.c
+  - src/core/ext/upb-gen/xds/annotations/v3/status.upb_minitable.c
+  - src/core/ext/upb-gen/xds/annotations/v3/versioning.upb_minitable.c
+  - src/core/ext/upb-gen/xds/core/v3/authority.upb_minitable.c
+  - src/core/ext/upb-gen/xds/core/v3/cidr.upb_minitable.c
+  - src/core/ext/upb-gen/xds/core/v3/collection_entry.upb_minitable.c
+  - src/core/ext/upb-gen/xds/core/v3/context_params.upb_minitable.c
+  - src/core/ext/upb-gen/xds/core/v3/extension.upb_minitable.c
+  - src/core/ext/upb-gen/xds/core/v3/resource.upb_minitable.c
+  - src/core/ext/upb-gen/xds/core/v3/resource_locator.upb_minitable.c
+  - src/core/ext/upb-gen/xds/core/v3/resource_name.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/cel.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/domain.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/http_inputs.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/ip.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/matcher.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/range.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/regex.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/matcher/v3/string.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/v3/cel.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/v3/range.upb_minitable.c
+  - src/core/ext/upb-gen/xds/type/v3/typed_struct.upb_minitable.c
   - test/core/xds/xds_matcher_parse_test.cc
   deps:
   - gtest
@@ -28592,9 +30512,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -28648,6 +30565,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -28741,9 +30661,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -28797,6 +30714,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/stateful_session/v3/stateful_session.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/extensions/http/stateful_session/cookie/v3/cookie.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -28920,9 +30840,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -28976,6 +30893,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -29072,9 +30992,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -29127,6 +31044,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -29224,9 +31144,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -29278,6 +31195,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -29487,9 +31407,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -29543,6 +31460,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/http/rbac/v3/rbac.proto
   - third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -29638,9 +31558,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -29698,6 +31615,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -29794,9 +31714,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -29854,6 +31771,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
@@ -29939,11 +31859,11 @@ targets:
   - src/cpp/server/csds/csds.h
   - test/cpp/interop/rpc_behavior_lb_policy.h
   - test/cpp/interop/xds_stats_watcher.h
+  - third_party/protoc-gen-validate/validate/validate.h
   src:
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
-  - src/proto/grpc/testing/xds/v3/csds.proto
   - third_party/envoy-api/envoy/admin/v3/certs.proto
   - third_party/envoy-api/envoy/admin/v3/clusters.proto
   - third_party/envoy-api/envoy/admin/v3/config_dump.proto
@@ -30013,6 +31933,7 @@ targets:
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls.proto
   - third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls_spiffe_validator_config.proto
+  - third_party/envoy-api/envoy/service/status/v3/csds.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto
   - third_party/envoy-api/envoy/type/matcher/v3/filter_state.proto
   - third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto
@@ -30102,9 +32023,6 @@ targets:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - src/proto/grpc/testing/xds/v3/ads.proto
-  - src/proto/grpc/testing/xds/v3/discovery.proto
-  - src/proto/grpc/testing/xds/v3/lrs.proto
   - third_party/envoy-api/envoy/annotations/deprecation.proto
   - third_party/envoy-api/envoy/annotations/resource.proto
   - third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto
@@ -30158,6 +32076,9 @@ targets:
   - third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.proto
   - third_party/envoy-api/envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/ads.proto
+  - third_party/envoy-api/envoy/service/discovery/v3/discovery.proto
+  - third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto
   - third_party/envoy-api/envoy/type/http/v3/cookie.proto
   - third_party/envoy-api/envoy/type/http/v3/path_transformation.proto
   - third_party/envoy-api/envoy/type/matcher/v3/address.proto

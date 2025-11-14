@@ -166,9 +166,8 @@ class _Handler(Handler):
                 if self._code is None:
                     self._condition.wait()
                 else:
-                    if self._unary_response is None:
-                        if self._responses:
-                            self._unary_response = self._responses.pop(0)
+                    if self._unary_response is None and self._responses:
+                        self._unary_response = self._responses.pop(0)
                     return (
                         self._unary_response,
                         self._trailing_metadata,

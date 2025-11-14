@@ -19,9 +19,7 @@
 #include <google/protobuf/wrappers.pb.h>
 
 #include "envoy/type/matcher/v3/http_inputs.pb.h"
-#include "gmock/gmock.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "gtest/gtest.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/util/validation_errors.h"
@@ -37,6 +35,8 @@
 #include "xds/type/matcher/v3/matcher.pb.h"
 #include "xds/type/matcher/v3/matcher.upb.h"
 #include "xds/type/v3/typed_struct.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {

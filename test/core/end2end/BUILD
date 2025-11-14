@@ -17,7 +17,13 @@ load("//test/core/end2end:grpc_core_end2end_test.bzl", "grpc_core_end2end_test_s
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/end2end")
+grpc_package(
+    name = "test/core/end2end",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 # grpc_core_end2end_test_suite() currently needs to consume the source for tests directly.
 exports_files(
@@ -49,6 +55,7 @@ grpc_cc_library(
         "//:grpc",
         "//:grpc_base",
         "//:grpc_public_hdrs",
+        "//src/core:grpc_check",
         "//src/core:match",
         "//src/core:postmortem",
         "//src/core:time",
@@ -100,6 +107,7 @@ grpc_cc_library(
         "//src/core:event_engine_common",
         "//src/core:event_engine_shim",
         "//src/core:event_engine_utils",
+        "//src/core:grpc_check",
         "//src/core:iomgr_fwd",
         "//src/core:pollset_set",
         "//src/core:resolved_address",
@@ -127,6 +135,7 @@ grpc_cc_library(
         "//:grpc_base",
         "//:grpc_public_hdrs",
         "//src/core:channel_args",
+        "//src/core:grpc_check",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -194,6 +203,7 @@ grpc_cc_library(
             "http_proxy",
             "proxy",
             "//:channel",
+            "//:channel_arg_names",
             "//:channel_create",
             "//:channelz",
             "//:config",
@@ -223,6 +233,7 @@ grpc_cc_library(
             "//src/core:error",
             "//src/core:event_engine_shim",
             "//src/core:experiments",
+            "//src/core:grpc_check",
             "//src/core:grpc_fake_credentials",
             "//src/core:grpc_ssl_credentials",
             "//src/core:grpc_tls_credentials",
@@ -426,6 +437,7 @@ grpc_cc_test(
         "//:grpc_resolver_fake",
         "//:ref_counted_ptr",
         "//src/core:channel_args",
+        "//src/core:grpc_check",
         "//src/core:grpc_service_config",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -465,6 +477,7 @@ grpc_cc_test(
         "//src/core:channel_args",
         "//src/core:event_engine_shim",
         "//src/core:experiments",
+        "//src/core:grpc_check",
         "//src/core:internal_channel_arg_names",
         "//src/core:slice",
         "//src/core:time",
@@ -503,6 +516,7 @@ grpc_cc_test(
         "//:grpc_public_hdrs",
         "//src/core:channel_args",
         "//src/core:error",
+        "//src/core:grpc_check",
         "//src/core:useful",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -533,6 +547,7 @@ grpc_cc_test(
         "//:grpc_public_hdrs",
         "//src/core:channel_args",
         "//src/core:error",
+        "//src/core:grpc_check",
         "//src/core:useful",
         "//test/core/test_util:grpc_test_util",
     ],

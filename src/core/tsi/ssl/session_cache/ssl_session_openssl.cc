@@ -23,8 +23,8 @@
 
 #ifndef OPENSSL_IS_BORINGSSL
 
-#include "absl/memory/memory.h"
 #include "src/core/lib/slice/slice.h"
+#include "absl/memory/memory.h"
 
 // OpenSSL invalidates SSL_SESSION on SSL destruction making it pointless
 // to cache sessions. The workaround is to serialize (relatively expensive)

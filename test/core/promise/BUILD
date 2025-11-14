@@ -18,7 +18,13 @@ load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/promise")
+grpc_package(
+    name = "test/core/promise",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_library(
     name = "poll_matcher",
@@ -467,6 +473,7 @@ grpc_cc_test(
         "test_wakeup_schedulers",
         "//:gpr",
         "//:grpc",
+        "//:grpc_base",
         "//:ref_counted_ptr",
         "//src/core:activity",
         "//src/core:event_engine_memory_allocator",
@@ -597,6 +604,7 @@ grpc_fuzz_test(
         "//:gpr",
         "//:promise",
         "//src/core:activity",
+        "//src/core:grpc_check",
         "//src/core:join",
         "//src/core:map",
         "//src/core:poll",

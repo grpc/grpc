@@ -18,11 +18,6 @@
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/support/log_windows.h>
 
-#include "absl/cleanup/cleanup.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
@@ -31,6 +26,11 @@
 #include "src/core/util/debug_location.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/status_helper.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc_event_engine::experimental {
 

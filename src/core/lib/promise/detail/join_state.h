@@ -23,13 +23,13 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/log.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/construct_destruct.h"
 #include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 namespace promise_detail {

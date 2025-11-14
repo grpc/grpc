@@ -23,8 +23,6 @@
 #include <grpcpp/impl/codegen/config_protobuf.h>
 #include <grpcpp/support/config.h>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/channelz/channelz_registry.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/crash.h"
@@ -32,6 +30,8 @@
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/proto/grpc/channelz/channelz.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 namespace grpc {
 

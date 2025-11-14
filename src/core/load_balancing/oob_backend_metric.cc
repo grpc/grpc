@@ -29,9 +29,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "google/protobuf/duration.upb.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/client_channel/subchannel.h"
@@ -54,6 +51,9 @@
 #include "src/core/util/time.h"
 #include "upb/mem/arena.hpp"
 #include "xds/service/orca/v3/orca.upb.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -76,6 +76,10 @@ class OrcaProducer::ConnectivityWatcher final
                                  const absl::Status&) override {
     producer_->OnConnectivityStateChange(state);
   }
+
+  void OnKeepaliveUpdate(Duration) override {}
+
+  uint32_t max_connections_per_subchannel() const override { return 1; }
 
   grpc_pollset_set* interested_parties() override {
     return interested_parties_;

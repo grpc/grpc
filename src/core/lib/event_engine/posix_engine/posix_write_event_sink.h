@@ -17,9 +17,9 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/util/bitset.h"
 #include "absl/base/no_destructor.h"
 #include "absl/functional/any_invocable.h"
-#include "src/core/util/bitset.h"
 
 namespace grpc_event_engine::experimental {
 

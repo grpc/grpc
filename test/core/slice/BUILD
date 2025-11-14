@@ -15,7 +15,13 @@
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
-grpc_package(name = "test/core/slice")
+grpc_package(
+    name = "test/core/slice",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 licenses(["notice"])
 
@@ -31,6 +37,7 @@ grpc_fuzz_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//src/core:grpc_check",
         "//src/core:percent_encoding",
         "//src/core:slice",
         "//test/core/test_util:grpc_test_util",
@@ -103,6 +110,7 @@ grpc_cc_test(
         "//:gpr",
         "//:gpr_platform",
         "//:grpc",
+        "//src/core:grpc_check",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//test/core/test_util:grpc_test_util",

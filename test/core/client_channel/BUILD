@@ -149,6 +149,7 @@ grpc_cc_test(
         "//src/core:service_config_parser",
         "//src/core:time",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
     ],
 )
 
@@ -163,6 +164,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:channel_arg_names",
         "//:config",
         "//:gpr",
         "//:grpc",

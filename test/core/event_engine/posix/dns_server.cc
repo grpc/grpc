@@ -27,6 +27,7 @@
 #include <cstdint>
 #include <thread>
 
+#include "src/core/util/notification.h"
 #include "absl/cleanup/cleanup.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
@@ -35,7 +36,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/substitute.h"
-#include "src/core/util/notification.h"
 
 namespace grpc_event_engine::experimental {
 

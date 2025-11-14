@@ -22,10 +22,6 @@
 #include <optional>
 #include <queue>
 
-#include "absl/memory/memory.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "gtest/gtest.h"
 #include "src/core/call/call_finalization.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/timer_manager.h"
@@ -39,6 +35,10 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/crash.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
+#include "gtest/gtest.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 using grpc_event_engine::experimental::FuzzingEventEngine;
 

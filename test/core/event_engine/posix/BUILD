@@ -19,6 +19,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/core/event_engine/posix",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "public",
 )  # Useful for third party devs to test their io manager implementation.
 
@@ -259,17 +263,23 @@ grpc_cc_test(
     uses_event_engine = True,
     uses_polling = True,
     deps = [
+        "//:channel_arg_names",
         "//:config_vars",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc",
+        "//:grpc_security_base",
+        "//:iomgr",
         "//:ref_counted_ptr",
+        "//:tsi_base",
+        "//:tsi_fake_credentials",
         "//src/core:channel_args",
         "//src/core:channel_args_endpoint_config",
         "//src/core:common_event_engine_closures",
         "//src/core:dual_ref_counted",
         "//src/core:event_engine_poller",
         "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:experiments",
         "//src/core:grpc_check",
         "//src/core:notification",
         "//src/core:posix_event_engine",
@@ -333,6 +343,7 @@ grpc_cc_test(
     uses_event_engine = True,
     uses_polling = True,
     deps = [
+        "//:channel_arg_names",
         "//:event_engine_base_hdrs",
         "//:gpr",
         "//:grpc",

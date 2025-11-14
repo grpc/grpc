@@ -17,7 +17,13 @@ load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_cc_benchmark"
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/surface")
+grpc_package(
+    name = "test/core/surface",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_benchmark(
     name = "bm_channel_init",
@@ -186,6 +192,7 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        "//:channel_arg_names",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc",
@@ -227,6 +234,7 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        "//:channel_arg_names",
         "//:gpr",
         "//:grpc",
         "//:grpc_core_credentials_header",
@@ -243,6 +251,7 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        "//:channel_arg_names",
         "//:gpr",
         "//:grpc",
         "//:grpc_core_credentials_header",
@@ -261,6 +270,7 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        "//:channel_arg_names",
         "//:gpr",
         "//:grpc",
         "//:grpc_core_credentials_header",

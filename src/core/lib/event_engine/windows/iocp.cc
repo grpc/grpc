@@ -20,7 +20,6 @@
 
 #include <chrono>
 
-#include "absl/strings/str_format.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
@@ -28,6 +27,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc_event_engine::experimental {
 

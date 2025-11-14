@@ -33,7 +33,6 @@
 #include <thread>
 #include <vector>
 
-#include "absl/log/log.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/proto/grpc/testing/worker_service.grpc.pb.h"
@@ -42,6 +41,7 @@
 #include "test/cpp/qps/qps_server_builder.h"
 #include "test/cpp/qps/server.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace testing {

@@ -24,10 +24,6 @@
 
 #include <string>
 
-#include "absl/base/attributes.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
@@ -40,6 +36,10 @@
 #include "src/core/telemetry/stats.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/useful.h"
+#include "absl/base/attributes.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
 
 using grpc_core::http2::Http2ErrorCode;
 
@@ -135,6 +135,7 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
             t->http2_ztrace_collector.Append(
                 []() { return grpc_core::H2SettingsTrace<false>{true, {}}; });
             *parser->target_settings = *parser->incoming_settings;
+            t->MaybeNotifyStateWatcherOfPeerMaxConcurrentStreamsLocked();
             t->num_pending_induced_frames++;
             grpc_slice_buffer_add(&t->qbuf, grpc_chttp2_settings_ack_create());
             grpc_chttp2_initiate_write(t,

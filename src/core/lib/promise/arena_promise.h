@@ -23,11 +23,11 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/meta/type_traits.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/util/construct_destruct.h"
+#include "absl/meta/type_traits.h"
 
 namespace grpc_core {
 

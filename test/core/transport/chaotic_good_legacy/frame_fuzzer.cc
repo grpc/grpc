@@ -19,9 +19,6 @@
 #include <limits>
 #include <memory>
 
-#include "absl/log/log.h"
-#include "absl/random/bit_gen_ref.h"
-#include "absl/status/statusor.h"
 #include "fuzztest/fuzztest.h"
 #include "src/core/ext/transport/chaotic_good_legacy/frame.h"
 #include "src/core/ext/transport/chaotic_good_legacy/frame_header.h"
@@ -35,6 +32,9 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/promise/test_context.h"
 #include "test/core/transport/chaotic_good_legacy/frame_fuzzer.pb.h"
+#include "absl/log/log.h"
+#include "absl/random/bit_gen_ref.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 namespace chaotic_good_legacy {

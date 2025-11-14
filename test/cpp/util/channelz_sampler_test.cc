@@ -37,9 +37,6 @@
 #include <string>
 #include <thread>
 
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "gtest/gtest.h"
 #include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "src/cpp/server/channelz/channelz_service.h"
@@ -48,6 +45,9 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/subprocess.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 static std::string g_root;
 

@@ -45,7 +45,7 @@ from ._typing import RequestType
 from ._typing import ResponseType
 from ._typing import SerializingFunction
 
-__all__ = "AioRpcError", "Call", "UnaryUnaryCall", "UnaryStreamCall"
+__all__ = "AioRpcError", "Call", "UnaryStreamCall", "UnaryUnaryCall"
 
 _LOCAL_CANCELLATION_DETAILS = "Locally cancelled by application!"
 _GC_CANCELLATION_DETAILS = "Cancelled upon garbage collection!"
@@ -218,9 +218,8 @@ class Call:
 
     def __del__(self) -> None:
         # The '_cython_call' object might be destructed before Call object
-        if hasattr(self, "_cython_call"):
-            if not self._cython_call.done():
-                self._cancel(_GC_CANCELLATION_DETAILS)
+        if hasattr(self, "_cython_call") and not self._cython_call.done():
+            self._cancel(_GC_CANCELLATION_DETAILS)
 
     def cancelled(self) -> bool:
         return self._cython_call.cancelled()

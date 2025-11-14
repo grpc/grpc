@@ -22,10 +22,6 @@ load(
 
 package(
     default_visibility = ["//visibility:public"],
-    features = [
-        "-layering_check",
-        "-parse_headers",
-    ],
 )
 
 licenses(["notice"])

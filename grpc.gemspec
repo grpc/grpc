@@ -39,7 +39,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'simplecov',          '~> 0.22'
   s.add_development_dependency 'rake',               '~> 13.0'
   s.add_development_dependency 'rake-compiler',      '~> 1.2.1'
-  s.add_development_dependency 'rake-compiler-dock', '~> 1.9'
+  s.add_development_dependency 'rake-compiler-dock', '= 1.9.1'
   s.add_development_dependency 'rspec',              '~> 3.6'
   s.add_development_dependency 'rubocop',            '~> 1.41.0'
   s.add_development_dependency 'signet',             '~> 0.7'
@@ -181,6 +181,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/channelz/ztrace_collector.h )
   s.files += %w( src/core/client_channel/backup_poller.cc )
   s.files += %w( src/core/client_channel/backup_poller.h )
+  s.files += %w( src/core/client_channel/buffered_call.cc )
+  s.files += %w( src/core/client_channel/buffered_call.h )
   s.files += %w( src/core/client_channel/client_channel.cc )
   s.files += %w( src/core/client_channel/client_channel.h )
   s.files += %w( src/core/client_channel/client_channel_args.h )
@@ -411,6 +413,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/frame_settings.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/frame_window_update.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/frame_window_update.h )
+  s.files += %w( src/core/ext/transport/chttp2/transport/goaway.cc )
+  s.files += %w( src/core/ext/transport/chttp2/transport/goaway.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/header_assembler.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/hpack_constants.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/hpack_encoder.cc )
@@ -438,6 +442,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/huffsyms.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/huffsyms.h )
+  s.files += %w( src/core/ext/transport/chttp2/transport/incoming_metadata_tracker.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/internal.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/keepalive.cc )

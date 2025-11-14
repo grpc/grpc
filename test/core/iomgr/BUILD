@@ -19,6 +19,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/core/iomgr",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "public",
 )  # Useful for third party devs to test their io manager implementation.
 
@@ -39,6 +43,7 @@ grpc_cc_library(
         "//:grpc",
         "//:iomgr",
         "//src/core:error",
+        "//src/core:grpc_check",
         "//src/core:slice",
         "//src/core:time",
         "//src/core:useful",
@@ -88,6 +93,7 @@ grpc_cc_test(
         "//src/core:default_event_engine",
         "//src/core:event_engine_shim",
         "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:grpc_check",
         "//src/core:memory_quota",
         "//src/core:notification",
         "//src/core:useful",
@@ -111,6 +117,7 @@ grpc_cc_test(
         ":endpoint_tests",
         "//:gpr",
         "//:grpc",
+        "//:grpc_base",
         "//src/core:error",
         "//src/core:strerror",
         "//test/core/test_util:grpc_test_util",
@@ -127,6 +134,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:iomgr",
+        "//src/core:grpc_check",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
@@ -233,6 +241,7 @@ grpc_cc_test(
     name = "resolve_address_using_ares_resolver_test",
     srcs = ["resolve_address_test.cc"],
     external_deps = [
+        "absl/functional:bind_front",
         "absl/log:check",
         "absl/log:log",
         "absl/strings",
@@ -243,12 +252,20 @@ grpc_cc_test(
         "grpc:broken-internally",
     ],
     deps = [
+        "//:config_vars",
         "//:gpr",
         "//:grpc",
+        "//:grpc_resolver_dns_ares",
+        "//:iomgr",
+        "//src/core:event_engine_shim",
+        "//src/core:grpc_check",
+        "//src/core:sync",
+        "//src/core:time",
         "//test/core/test_util:fake_udp_and_tcp_server",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
         "//test/cpp/util:test_config",
+        "//third_party/address_sorting",
     ],
 )
 
@@ -256,6 +273,7 @@ grpc_cc_test(
     name = "resolve_address_using_native_resolver_test",
     srcs = ["resolve_address_test.cc"],
     external_deps = [
+        "absl/functional:bind_front",
         "absl/log:check",
         "absl/log:log",
         "absl/strings",
@@ -266,12 +284,20 @@ grpc_cc_test(
         "grpc:broken-internally",
     ],
     deps = [
+        "//:config_vars",
         "//:gpr",
         "//:grpc",
+        "//:grpc_resolver_dns_ares",
+        "//:iomgr",
+        "//src/core:event_engine_shim",
+        "//src/core:grpc_check",
+        "//src/core:sync",
+        "//src/core:time",
         "//test/core/test_util:fake_udp_and_tcp_server",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
         "//test/cpp/util:test_config",
+        "//third_party/address_sorting",
     ],
 )
 
@@ -291,6 +317,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:iomgr",
+        "//src/core:grpc_check",
         "//src/core:iomgr_port",
         "//src/core:socket_mutator",
         "//src/core:useful",
@@ -359,6 +386,7 @@ grpc_cc_test(
         "//src/core:env",
         "//src/core:event_engine_shim",
         "//src/core:experiments",
+        "//src/core:grpc_check",
         "//src/core:iomgr_port",
         "//src/core:notification",
         "//src/core:posix_event_engine_base_hdrs",
@@ -383,6 +411,7 @@ grpc_cc_test(
         "//:grpc",
         "//:iomgr_buffer_list",
         "//:iomgr_internal_errqueue",
+        "//src/core:grpc_check",
         "//src/core:iomgr_port",
         "//src/core:time",
         "//src/core:useful",

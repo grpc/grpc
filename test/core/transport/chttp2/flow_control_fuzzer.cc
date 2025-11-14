@@ -28,9 +28,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/attributes.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_join.h"
 #include "fuzztest/fuzztest.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/lib/experiments/config.h"
@@ -43,6 +40,9 @@
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/transport/chttp2/flow_control_fuzzer.pb.h"
+#include "absl/base/attributes.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_join.h"
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 
@@ -431,24 +431,24 @@ void FlowControlFuzzer::AssertNoneStuck() const {
   // Finally, if a stream has indicated it's willing to read, the reconciled
   // remote *MUST* be in a state where it could send at least one byte.
   for (const auto& id_stream : streams_) {
-    if (id_stream.second.fc.min_progress_size() == 0) continue;
+    if (id_stream.second.fc.test_only_min_progress_size() == 0) continue;
     int64_t stream_window =
         reconciled_stream_deltas[id_stream.first] + reconciled_initial_window;
     if (stream_window <= 0 || reconciled_transport_window <= 0) {
-      fprintf(stderr,
-              "FAILED: stream %d has stream_window=%" PRId64
-              ", transport_window=%" PRId64 ", delta=%" PRId64
-              ", init_window_size=%" PRId64 ", min_progress_size=%" PRId64
-              ", transport announced_stream_total_over_incoming_window=%" PRId64
-              ", transport announced_window=%" PRId64
-              " transport target_window=%" PRId64 " sent_init_window=%d\n",
-              id_stream.first, stream_window, reconciled_transport_window,
-              reconciled_stream_deltas[id_stream.first],
-              reconciled_initial_window,
-              (id_stream.second.fc.min_progress_size()),
-              tfc_->announced_stream_total_over_incoming_window(),
-              tfc_->announced_window(), tfc_->target_window(),
-              tfc_->sent_init_window());
+      fprintf(
+          stderr,
+          "FAILED: stream %d has stream_window=%" PRId64
+          ", transport_window=%" PRId64 ", delta=%" PRId64
+          ", init_window_size=%" PRId64 ", min_progress_size=%" PRId64
+          ", transport announced_stream_total_over_incoming_window=%" PRId64
+          ", transport announced_window=%" PRId64
+          " transport target_window=%" PRId64 " sent_init_window=%d\n",
+          id_stream.first, stream_window, reconciled_transport_window,
+          reconciled_stream_deltas[id_stream.first], reconciled_initial_window,
+          (id_stream.second.fc.test_only_min_progress_size()),
+          tfc_->test_only_announced_stream_total_over_incoming_window(),
+          tfc_->test_only_announced_window(), tfc_->test_only_target_window(),
+          tfc_->test_only_sent_init_window());
       fprintf(stderr,
               "initial_window breakdown: remote=%" PRId32 ", in-flight={%s}\n",
               remote_initial_window_size_,
@@ -463,13 +463,13 @@ void FlowControlFuzzer::AssertAnnouncedOverInitialWindowSizeCorrect() const {
 
   for (const auto& id_stream : streams_) {
     const auto& stream = id_stream.second;
-    if (stream.fc.announced_window_delta() > 0) {
-      value_from_streams += stream.fc.announced_window_delta();
+    if (stream.fc.test_only_announced_window_delta() > 0) {
+      value_from_streams += stream.fc.test_only_announced_window_delta();
     }
   }
 
   GRPC_CHECK(value_from_streams ==
-             tfc_->announced_stream_total_over_incoming_window());
+             tfc_->test_only_announced_stream_total_over_incoming_window());
 }
 
 void Test(flow_control_fuzzer::Msg msg) {

@@ -43,7 +43,11 @@ grpc_cc_library(
     hdrs = [
         "proto_reflection_descriptor_database.h",
     ],
-    external_deps = ["absl/log:log"],
+    external_deps = [
+        "absl/log:log",
+        "absl/container:flat_hash_map",
+        "absl/container:flat_hash_set",
+    ],
     deps = [
         "//:gpr",
         "//:grpc++",
@@ -87,6 +91,7 @@ grpc_cc_library(
         "//:grpc++",
         "//:grpc++_config_proto",
         "//:subprocess",
+        "//src/core:grpc_check",
         "//src/core:grpc_fake_credentials",
         "//test/core/end2end:ssl_test_data",
         "//test/core/test_util:grpc_test_util",
@@ -164,9 +169,11 @@ grpc_cc_library(
     deps = [
         ":grpc++_proto_reflection_desc_db",
         "//:gpr",
+        "//:grpc",
         "//:grpc++",
         "//:grpc++_config_proto",
         "//:grpc_slice",
+        "//src/core:grpc_check",
         "//src/core:load_file",
         "//src/proto/grpc/reflection/v1alpha:reflection_proto",
     ],
@@ -244,6 +251,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++_base",
         "//:grpc++_reflection",
+        "//:grpc_base",
         "//src/core:env",
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_cc_proto",

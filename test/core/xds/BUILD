@@ -23,7 +23,13 @@ load(
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
-grpc_package(name = "test/core/xds")
+grpc_package(
+    name = "test/core/xds",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 licenses(["notice"])
 
@@ -75,6 +81,7 @@ grpc_cc_test(
         "//:config",
         "//:gpr",
         "//:grpc",
+        "//src/core:grpc_check",
         "//src/core:grpc_xds_client",
         "//src/core:unique_type_name",
         "//src/core:xds_certificate_provider_store",
@@ -225,6 +232,7 @@ grpc_cc_library(
         "//:orphanable",
         "//:ref_counted_ptr",
         "//:xds_client",
+        "//src/core:grpc_check",
         "//src/core:ref_counted",
         "//src/core:sync",
         "//test/core/event_engine/fuzzing_event_engine",
@@ -264,6 +272,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++_codegen_proto",
         "//:grpc++_config_proto",
+        "//:grpc_base",
         "//:iomgr_timer",
         "//:xds_client",
         "//src/core:json",
@@ -423,8 +432,13 @@ grpc_cc_test(
 grpc_cc_benchmark(
     name = "bm_xds_matcher_test",
     srcs = ["bm_xds_matcher_test.cc"],
+    external_deps = [
+        "absl/strings",
+    ],
     monitoring = HISTORY,
     deps = [
+        "//src/core:down_cast",
+        "//src/core:grpc_matchers",
         "//src/core:grpc_xds_client",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -433,10 +447,15 @@ grpc_cc_benchmark(
 grpc_cc_test(
     name = "xds_matcher_test",
     srcs = ["xds_matcher_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "absl/strings",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//src/core:down_cast",
+        "//src/core:grpc_matchers",
         "//src/core:grpc_xds_client",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -445,14 +464,26 @@ grpc_cc_test(
 grpc_cc_test(
     name = "xds_matcher_parse_test",
     srcs = ["xds_matcher_parse_test.cc"],
-    external_deps = ["gtest"],
+    external_deps = [
+        "gtest",
+        "@com_google_protobuf//upb/mem",
+        "@com_google_protobuf//upb/reflection",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:xds_client",
+        "//:xds_type_matcher_upb",
         "//src/core:down_cast",
         "//src/core:grpc_xds_client",
+        "//src/core:upb_utils",
+        "//src/core:validation_errors",
         "//test/core/test_util:grpc_test_util",
         "@com_github_cncf_xds//xds/type/matcher/v3:pkg_cc_proto",
+        "@com_github_cncf_xds//xds/type/v3:pkg_cc_proto",
+        "@com_google_protobuf//:protobuf",
+        "@com_google_protobuf//:wrappers_cc_proto",
+        "@com_google_protobuf//:wrappers_upb_proto",
         "@envoy_api//envoy/config/common/matcher/v3:pkg_cc_proto",
         "@envoy_api//envoy/type/matcher/v3:pkg_cc_proto",
     ],
@@ -484,6 +515,7 @@ grpc_cc_test(
         "//:xds_client",
         "//src/core:error",
         "//src/core:gcp_authentication_filter",
+        "//src/core:grpc_check",
         "//src/core:grpc_fault_injection_filter",
         "//src/core:grpc_rbac_filter",
         "//src/core:grpc_stateful_session_filter",
@@ -496,6 +528,7 @@ grpc_cc_test(
         "@com_github_cncf_xds//xds/type/v3:pkg_cc_proto",
         "@com_google_protobuf//:any_cc_proto",
         "@com_google_protobuf//:duration_cc_proto",
+        "@com_google_protobuf//:protobuf",
         "@com_google_protobuf//:wrappers_cc_proto",
         "@envoy_api//envoy/config/core/v3:pkg_cc_proto",
         "@envoy_api//envoy/config/rbac/v3:pkg_cc_proto",

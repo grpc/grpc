@@ -19,15 +19,19 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_WRITABLE_STREAMS_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_WRITABLE_STREAMS_H
 
+#include <cstdint>
+#include <limits>
+#include <optional>
 #include <queue>
+#include <vector>
 
-#include "absl/log/log.h"
 #include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -161,10 +165,10 @@ class WritableStreams {
                         AddToPrioritizedQueue(batch.value());
                         std::optional<StreamPtr> stream =
                             prioritized_queue_.Pop(transport_tokens_available);
-                        // TODO(akshitpatel) : [PH2][P4] - This DCHECK should
-                        // ideally be fine. But in case if queue_.NextBatch
-                        // spuriously returns an empty batch, move to a Loop
-                        // to avoid this.
+                        // TODO(akshitpatel) : [PH2][P4] - This GRPC_DCHECK
+                        // should ideally be fine. But in case if
+                        // queue_.NextBatch spuriously returns an empty batch,
+                        // move to a Loop to avoid this.
                         GRPC_DCHECK(stream.has_value());
                         GRPC_WRITABLE_STREAMS_DEBUG
                             << "Next stream id: "

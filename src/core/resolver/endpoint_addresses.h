@@ -26,9 +26,9 @@
 #include <utility>
 #include <vector>
 
-#include "absl/functional/function_ref.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "absl/functional/function_ref.h"
 
 // A channel arg key prefix used for args that are intended to be used
 // only internally to resolvers and LB policies and should not be part

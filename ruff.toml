@@ -80,36 +80,15 @@ ignore = [
     "RET504",  # Unnecessary assignment to {name} before return statement
     "RSE102",  # Unnecessary parentheses on raised exception
     "RUF005",  # Consider {expression} instead of concatenation
-    "RUF013",  # PEP 484 prohibits implicit Optional
-    "RUF022",  # __all__ is not sorted
-    "RUF023",  # {}.__slots__ is not sorted
     "S101",    # Use of assert detected
     "S105",    # Possible hardcoded password assigned to: "{}"
     "S110",    # try-except-pass detected, consider logging the exception
-    "S301",    # pickle and modules that wrap it can be unsafe when used to deserialize untrusted data, possible security issue
-    "S311",    # Standard pseudo-random generators are not suitable for cryptographic purposes
-    "S603",    # subprocess call: check for execution of untrusted input
-    "SIM102",  # Use a single if statement instead of nested if statements
-    "SIM103",  # Return the condition {condition} directly
     "SIM105",  # Use contextlib.suppress({exception}) instead of try-except-pass
-    "SIM108",  # Use ternary operator {contents} instead of if-else-block
-    "SIM114",  # Combine if branches using logical or operator
-    "SIM115",  # Use a context manager for opening files
-    "SIM117",  # Use a single with statement with multiple contexts instead of nested with statements
-    "SIM118",  # Use key {operator} dict instead of key {operator} dict.keys()
-    "SIM300",  # Yoda condition detected
-    "SIM910",  # Use {expected} instead of {actual}
     "SLF001",  # Private member accessed: {access}
     "SLOT002", # Subclasses of {namedtuple_kind} should define __slots__
-    "T201",    # print found
     "TC001",   # Move application import {} into a type-checking block
-    "TC003",   # Move standard library import {} into a type-checking block
     "TD003",   # Missing issue link for this TODO
-    "TD004",   # Missing colon in TODO
-    "TD005",   # Missing issue description after TODO
-    "TRY002",  # Create your own exception
     "TRY003",  # Avoid specifying long messages outside the exception class
-    "TRY004",  # Prefer TypeError exception for invalid type
     "TRY203",  # Remove exception handler; error is immediately re-raised
     "TRY300",  # Consider moving this statement to an else block
     "TRY400",  # Use logging.exception instead of logging.error

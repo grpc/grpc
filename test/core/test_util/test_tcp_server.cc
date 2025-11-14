@@ -27,7 +27,6 @@
 
 #include <algorithm>
 
-#include "absl/log/log.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
@@ -41,6 +40,7 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
+#include "absl/log/log.h"
 
 static void on_server_destroyed(void* data, grpc_error_handle /*error*/) {
   test_tcp_server* server = static_cast<test_tcp_server*>(data);

@@ -14,7 +14,13 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
-grpc_package(name = "test/core/memory_usage")
+grpc_package(
+    name = "test/core/memory_usage",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 licenses(["notice"])
 
@@ -56,6 +62,7 @@ grpc_cc_binary(
     ],
     deps = [
         ":memstats",
+        "//:channel_arg_names",
         "//:gpr",
         "//:grpc",
         "//:grpc_base",
@@ -64,6 +71,7 @@ grpc_cc_binary(
         "//src/core:chaotic_good",
         "//src/core:chaotic_good_connector",
         "//src/core:endpoint_transport",
+        "//src/core:grpc_check",
         "//src/core:slice",
         "//src/core:useful",
         "//test/core/test_util:grpc_test_util",
@@ -89,6 +97,7 @@ grpc_cc_binary(
     ],
     deps = [
         ":memstats",
+        "//:channel_arg_names",
         "//:gpr",
         "//:grpc",
         "//:grpc_base",
@@ -97,6 +106,7 @@ grpc_cc_binary(
         "//src/core:chaotic_good",
         "//src/core:chaotic_good_server",
         "//src/core:endpoint_transport",
+        "//src/core:grpc_check",
         "//src/core:xds_enabled_server",
         "//test/core/end2end:ssl_test_data",
         "//test/core/test_util:grpc_test_util",
@@ -122,12 +132,14 @@ grpc_cc_binary(
     ],
     deps = [
         ":memstats",
+        "//:channel_arg_names",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//:grpc++_base",
         "//src/core:chaotic_good",
         "//src/core:endpoint_transport",
+        "//src/core:grpc_check",
         "//src/core:notification",
         "//src/proto/grpc/testing:benchmark_service_cc_grpc",
         "//src/proto/grpc/testing:messages_cc_proto",
@@ -161,6 +173,7 @@ grpc_cc_binary(
         "//:grpc++_xds_server",
         "//src/core:chaotic_good",
         "//src/core:endpoint_transport",
+        "//src/core:grpc_check",
         "//src/proto/grpc/testing:benchmark_service_cc_grpc",
         "//src/proto/grpc/testing:messages_cc_proto",
         "//test/core/end2end:ssl_test_data",

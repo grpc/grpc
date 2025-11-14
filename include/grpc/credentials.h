@@ -19,9 +19,12 @@
 #ifndef GRPC_CREDENTIALS_H
 #define GRPC_CREDENTIALS_H
 
-#include <grpc/grpc.h>
 #include <grpc/grpc_security_constants.h>
+#include <grpc/impl/grpc_types.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
 #include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <stdbool.h>
 
 #include <optional>
@@ -37,6 +40,8 @@ extern "C" {
    call. These credentials can be composed with a channel credentials object
    so that they are sent with every call on this channel.  */
 
+typedef struct grpc_server_credentials grpc_server_credentials;
+typedef struct grpc_channel_credentials grpc_channel_credentials;
 typedef struct grpc_call_credentials grpc_call_credentials;
 typedef struct grpc_auth_context grpc_auth_context;
 

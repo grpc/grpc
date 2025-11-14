@@ -44,18 +44,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/base/attributes.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/hash/hash.h"
-#include "absl/log/log.h"
-#include "absl/meta/type_traits.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/strings/cord.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/time.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/metadata_info.h"
 #include "src/core/channelz/property_list.h"
@@ -71,6 +59,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "src/core/ext/transport/chttp2/transport/http2_stats_collector.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
@@ -126,14 +115,24 @@
 #include "src/core/util/string.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
+#include "absl/base/attributes.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/hash/hash.h"
+#include "absl/log/log.h"
+#include "absl/meta/type_traits.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/strings/cord.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 
 using grpc_core::Json;
 
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
 #define MAX_WINDOW 0x7fffffffu
 #define MAX_WRITE_BUFFER_SIZE (64 * 1024 * 1024)
-
-#define KEEPALIVE_TIME_BACKOFF_MULTIPLIER 2
 
 #define DEFAULT_MAX_PENDING_INDUCED_FRAMES 10000
 
@@ -858,6 +857,8 @@ static void close_transport_locked(grpc_chttp2_transport* t,
     t->closed_with_error = error;
     connectivity_state_set(t, GRPC_CHANNEL_SHUTDOWN, absl::Status(),
                            "close_transport");
+    // TODO(roth, ctiller): Provide better disconnect info here.
+    t->NotifyStateWatcherOnDisconnectLocked(t->closed_with_error, {});
     if (t->keepalive_ping_timeout_handle != TaskHandle::kInvalid) {
       t->event_engine->Cancel(std::exchange(t->keepalive_ping_timeout_handle,
                                             TaskHandle::kInvalid));
@@ -1201,7 +1202,13 @@ static void write_action(
   }
   args.set_max_frame_size(max_frame_size);
   args.SetDeprecatedAndDiscouragedGoogleSpecificPointer(cl);
-  if (!tcp_call_tracers.empty()) {
+  bool trace_ztrace = false;
+  auto now = grpc_core::Timestamp::Now();
+  if (now - t->last_ztrace_time > grpc_core::Duration::Milliseconds(100)) {
+    t->last_ztrace_time = now;
+    trace_ztrace = t->http2_ztrace_collector.IsActive();
+  }
+  if (!tcp_call_tracers.empty() || trace_ztrace) {
     EventEngine::Endpoint* ee_ep =
         grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
             t->ep.get());
@@ -1212,24 +1219,35 @@ static void write_action(
         args.set_metrics_sink(WriteEventSink(
             std::move(metrics_set),
             {WriteEvent::kSendMsg, WriteEvent::kScheduled, WriteEvent::kSent,
-             WriteEvent::kAcked},
+             WriteEvent::kAcked, WriteEvent::kClosed},
             [tcp_call_tracers = std::move(tcp_call_tracers),
-             telemetry_info = std::move(telemetry_info)](
+             telemetry_info = std::move(telemetry_info),
+             ztrace_collector =
+                 trace_ztrace ? &t->http2_ztrace_collector : nullptr](
                 WriteEvent event, absl::Time timestamp,
                 std::vector<WriteMetric> metrics) {
-              std::vector<grpc_core::TcpCallTracer::TcpEventMetric> tcp_metrics;
-              tcp_metrics.reserve(metrics.size());
-              for (auto& metric : metrics) {
-                auto name = telemetry_info->GetMetricName(metric.key);
-                if (name.has_value()) {
-                  tcp_metrics.push_back(
-                      grpc_core::TcpCallTracer::TcpEventMetric{name.value(),
-                                                               metric.value});
+              if (!tcp_call_tracers.empty()) {
+                std::vector<grpc_core::TcpCallTracer::TcpEventMetric>
+                    tcp_metrics;
+                tcp_metrics.reserve(metrics.size());
+                for (auto& metric : metrics) {
+                  auto name = telemetry_info->GetMetricName(metric.key);
+                  if (name.has_value()) {
+                    tcp_metrics.push_back(
+                        grpc_core::TcpCallTracer::TcpEventMetric{name.value(),
+                                                                 metric.value});
+                  }
+                }
+                for (auto& tracer : tcp_call_tracers) {
+                  tracer.tcp_call_tracer->RecordEvent(
+                      event, timestamp, tracer.byte_offset, tcp_metrics);
                 }
               }
-              for (auto& tracer : tcp_call_tracers) {
-                tracer.tcp_call_tracer->RecordEvent(
-                    event, timestamp, tracer.byte_offset, tcp_metrics);
+              if (ztrace_collector != nullptr) {
+                ztrace_collector->Append([&]() {
+                  return grpc_core::H2TcpMetricsTrace{
+                      telemetry_info, event, std::move(metrics), timestamp};
+                });
               }
             }));
       }
@@ -1359,6 +1377,9 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
     }
   }
   absl::Status status = grpc_error_to_absl_status(t->goaway_error);
+  grpc_core::Transport::StateWatcher::DisconnectInfo disconnect_info;
+  disconnect_info.reason = grpc_core::Transport::StateWatcher::kGoaway;
+  disconnect_info.http2_error_code = static_cast<Http2ErrorCode>(goaway_error);
   // When a client receives a GOAWAY with error code ENHANCE_YOUR_CALM and debug
   // data equal to "too_many_pings", it should log the occurrence at a log level
   // that is enabled by default and double the configured KEEPALIVE_TIME used
@@ -1378,8 +1399,12 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
         t->keepalive_time.millis() > max_keepalive_time_millis
             ? INT_MAX
             : t->keepalive_time.millis() * KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
-    status.SetPayload(grpc_core::kKeepaliveThrottlingKey,
-                      absl::Cord(std::to_string(throttled_keepalive_time)));
+    if (!grpc_core::IsTransportStateWatcherEnabled()) {
+      status.SetPayload(grpc_core::kKeepaliveThrottlingKey,
+                        absl::Cord(std::to_string(throttled_keepalive_time)));
+    }
+    disconnect_info.keepalive_time =
+        grpc_core::Duration::Milliseconds(throttled_keepalive_time);
   }
   // lie: use transient failure from the transport to indicate goaway has been
   // received.
@@ -1387,6 +1412,7 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
     connectivity_state_set(t, GRPC_CHANNEL_TRANSIENT_FAILURE, status,
                            "got_goaway");
   }
+  t->NotifyStateWatcherOnDisconnectLocked(std::move(status), disconnect_info);
 }
 
 static void maybe_start_some_streams(grpc_chttp2_transport* t) {
@@ -1413,10 +1439,12 @@ static void maybe_start_some_streams(grpc_chttp2_transport* t) {
     t->next_stream_id += 2;
 
     if (t->next_stream_id >= MAX_CLIENT_STREAM_ID) {
-      connectivity_state_set(t, GRPC_CHANNEL_TRANSIENT_FAILURE,
-                             absl::Status(absl::StatusCode::kUnavailable,
-                                          "Transport Stream IDs exhausted"),
+      absl::Status status =
+          absl::UnavailableError("Transport Stream IDs exhausted");
+      connectivity_state_set(t, GRPC_CHANNEL_TRANSIENT_FAILURE, status,
                              "no_more_stream_ids");
+      // TODO(roth, ctiller): Provide better disconnect info here.
+      t->NotifyStateWatcherOnDisconnectLocked(std::move(status), {});
     }
 
     t->stream_map.emplace(s->id, s);
@@ -3520,4 +3548,121 @@ void grpc_chttp2_transport_start_reading(
         read_action_locked(std::move(t), absl::OkStatus());
       }),
       absl::OkStatus());
+}
+
+void grpc_chttp2_transport::StartWatch(
+    grpc_core::RefCountedPtr<StateWatcher> watcher) {
+  combiner->Run(
+      grpc_core::NewClosure([t = RefAsSubclass<grpc_chttp2_transport>(),
+                             watcher = std::move(watcher)](
+                                grpc_error_handle) mutable {
+        GRPC_CHECK(t->watcher == nullptr);
+        if (t->ep != nullptr) {
+          auto* interested_parties = watcher->interested_parties();
+          if (interested_parties != nullptr) {
+            grpc_endpoint_add_to_pollset_set(t->ep.get(), interested_parties);
+          }
+        }
+        t->watcher = std::move(watcher);
+        if (!t->closed_with_error.ok()) {
+          // TODO(roth, ctiller): Provide better disconnect info here.
+          t->NotifyStateWatcherOnDisconnectLocked(t->closed_with_error, {});
+        } else {
+          t->NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked();
+        }
+      }),
+      absl::OkStatus());
+}
+
+void grpc_chttp2_transport::StopWatch(
+    grpc_core::RefCountedPtr<StateWatcher> watcher) {
+  combiner->Run(
+      grpc_core::NewClosure([t = RefAsSubclass<grpc_chttp2_transport>(),
+                             watcher = std::move(watcher)](grpc_error_handle) {
+        if (t->watcher != watcher) return;
+        if (t->ep != nullptr) {
+          auto* interested_parties = watcher->interested_parties();
+          if (interested_parties != nullptr) {
+            grpc_endpoint_delete_from_pollset_set(t->ep.get(),
+                                                  interested_parties);
+          }
+        }
+        t->watcher.reset();
+      }),
+      absl::OkStatus());
+}
+
+void grpc_chttp2_transport::NotifyStateWatcherOnDisconnectLocked(
+    absl::Status status, StateWatcher::DisconnectInfo disconnect_info) {
+  if (watcher == nullptr) return;
+  if (ep != nullptr) {
+    auto* interested_parties = watcher->interested_parties();
+    if (interested_parties != nullptr) {
+      grpc_endpoint_delete_from_pollset_set(ep.get(), interested_parties);
+    }
+  }
+  event_engine->Run([watcher = std::move(watcher), status = std::move(status),
+                     disconnect_info]() mutable {
+    grpc_core::ExecCtx exec_ctx;
+    watcher->OnDisconnect(std::move(status), disconnect_info);
+    watcher.reset();  // Before ExecCtx goes out of scope.
+  });
+}
+
+void grpc_chttp2_transport::OnPeerMaxConcurrentStreamsUpdateComplete() {
+  combiner->Run(
+      grpc_core::NewClosure(
+          [t = RefAsSubclass<grpc_chttp2_transport>()](grpc_error_handle) {
+            t->max_concurrent_streams_notification_in_flight = false;
+            t->MaybeNotifyStateWatcherOfPeerMaxConcurrentStreamsLocked();
+          }),
+      absl::OkStatus());
+}
+
+void grpc_chttp2_transport::
+    MaybeNotifyStateWatcherOfPeerMaxConcurrentStreamsLocked() {
+  if (watcher == nullptr) return;
+  if (last_reported_max_concurrent_streams ==
+      settings.peer().max_concurrent_streams()) {
+    return;
+  }
+  if (max_concurrent_streams_notification_in_flight) return;
+  NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked();
+}
+
+namespace {
+
+class MaxConcurrentStreamsUpdateOnDone final
+    : public grpc_core::Transport::StateWatcher::
+          MaxConcurrentStreamsUpdateDoneHandle {
+ public:
+  explicit MaxConcurrentStreamsUpdateOnDone(
+      grpc_core::RefCountedPtr<grpc_chttp2_transport> transport)
+      : transport_(std::move(transport)) {}
+
+  ~MaxConcurrentStreamsUpdateOnDone() override {
+    transport_->OnPeerMaxConcurrentStreamsUpdateComplete();
+  }
+
+ private:
+  grpc_core::RefCountedPtr<grpc_chttp2_transport> transport_;
+};
+
+}  // namespace
+
+void grpc_chttp2_transport::
+    NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked() {
+  last_reported_max_concurrent_streams =
+      settings.peer().max_concurrent_streams();
+  max_concurrent_streams_notification_in_flight = true;
+  event_engine->Run([t = RefAsSubclass<grpc_chttp2_transport>(),
+                     watcher = watcher,
+                     max_concurrent_streams =
+                         settings.peer().max_concurrent_streams()]() mutable {
+    grpc_core::ExecCtx exec_ctx;
+    watcher->OnPeerMaxConcurrentStreamsUpdate(
+        max_concurrent_streams,
+        std::make_unique<MaxConcurrentStreamsUpdateOnDone>(std::move(t)));
+    watcher.reset();  // Before ExecCtx goes out of scope.
+  });
 }

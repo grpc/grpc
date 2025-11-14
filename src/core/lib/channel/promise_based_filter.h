@@ -33,12 +33,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/container/inlined_vector.h"
-#include "absl/functional/function_ref.h"
-#include "absl/log/log.h"
-#include "absl/meta/type_traits.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/call_filters.h"
 #include "src/core/call/call_finalization.h"
 #include "src/core/call/message.h"
@@ -75,6 +69,12 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
 #include "src/core/util/time.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/functional/function_ref.h"
+#include "absl/log/log.h"
+#include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -1985,7 +1985,7 @@ struct ChannelFilterWithFlagsMethods {
         F::Create(args->channel_args,
                   ChannelFilter::Args(args->channel_stack, elem,
                                       grpc_channel_stack_filter_instance_number,
-                                      args->blackboard));
+                                      args->config, args->blackboard));
     if (!status.ok()) {
       new (elem->channel_data) F*(nullptr);
       return absl_status_to_grpc_error(status.status());

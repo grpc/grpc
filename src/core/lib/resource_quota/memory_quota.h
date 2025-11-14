@@ -15,8 +15,10 @@
 #ifndef GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H
 #define GRPC_SRC_CORE_LIB_RESOURCE_QUOTA_MEMORY_QUOTA_H
 
+#include <grpc/event_engine/internal/memory_allocator_impl.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/memory_request.h>
+#include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
 #include <stdint.h>
 
@@ -30,10 +32,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_set.h"
-#include "absl/log/log.h"
-#include "absl/strings/string_view.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/debug/trace.h"
@@ -42,12 +40,17 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/periodic_update.h"
 #include "src/core/lib/resource_quota/telemetry.h"
+#include "src/core/telemetry/instrument.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/log/log.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -593,7 +596,8 @@ class MemoryQuota final
   explicit MemoryQuota(RefCountedPtr<channelz::ResourceQuotaNode> channelz_node)
       : memory_quota_(std::make_shared<BasicMemoryQuota>(
             std::move(channelz_node),
-            ResourceQuotaDomain::GetStorage(channelz_node->name()))) {
+            ResourceQuotaDomain::GetStorage(GlobalCollectionScope(),
+                                            channelz_node->name()))) {
     memory_quota_->Start();
   }
   ~MemoryQuota() override {

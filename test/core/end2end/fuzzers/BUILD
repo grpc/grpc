@@ -15,7 +15,13 @@
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_proto_library", "grpc_internal_proto_library", "grpc_package")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
-grpc_package(name = "test/core/end2end/fuzzers")
+grpc_package(
+    name = "test/core/end2end/fuzzers",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 licenses(["notice"])
 
@@ -56,7 +62,9 @@ grpc_cc_library(
         "//:ref_counted_ptr",
         "//src/core:default_event_engine",
         "//src/core:experiments",
+        "//src/core:grpc_check",
         "//src/core:memory_quota",
+        "//src/core:postmortem",
         "//src/core:resource_quota",
         "//src/core:slice",
         "//src/core:time",
@@ -102,6 +110,7 @@ grpc_fuzz_test(
         "//src/core:default_event_engine",
         "//src/core:env",
         "//src/core:experiments",
+        "//src/core:grpc_check",
         "//src/core:grpc_transport_inproc",
         "//src/core:iomgr_fwd",
         "//src/core:resolved_address",
@@ -185,6 +194,7 @@ grpc_fuzz_test(
         "fuzzing_common",
         "network_input",
         "//:channel",
+        "//:channel_arg_names",
         "//:channel_create",
         "//:config",
         "//:exec_ctx",
@@ -200,6 +210,7 @@ grpc_fuzz_test(
         "//src/core:channel_stack_type",
         "//src/core:env",
         "//src/core:experiments",
+        "//src/core:grpc_check",
         "//test/core/end2end/fuzzers:api_fuzzer_cc_proto",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/test_util:fuzz_config_vars",
@@ -231,6 +242,7 @@ grpc_fuzz_test(
         "//src/core:env",
         "//src/core:event_engine_tcp_socket_utils",
         "//src/core:experiments",
+        "//src/core:grpc_check",
         "//src/core:grpc_fake_credentials",
         "//src/core:notification",
         "//test/core/end2end/fuzzers:api_fuzzer_cc_proto",

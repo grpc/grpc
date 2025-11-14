@@ -20,9 +20,9 @@
 #include <vector>
 
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/util/match.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {

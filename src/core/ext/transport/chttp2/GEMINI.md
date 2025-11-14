@@ -79,6 +79,7 @@ and the underlying endpoint.
 *   **Reference CHTTP2:** When implementing features in PH2, always first check the CHTTP2 implementation in this directory for reference. Use the mapping in the "Key classes in CHTTP2 and their PH2 equivalents" section below to find the PH2 counterparts.
 *   **Asynchronous Operations:** All asynchronous operations *must* use the gRPC Promise library (`src/core/lib/promise`), particularly leveraging `Party` for concurrency. See the `Dependencies for PH2` section.
 *   **Testing:** Any changes to PH2 code should be accompanied by relevant tests. Ensure that existing tests in `test/core/transport/chttp2/http2_client_transport_test.cc` and `test/core/transport/chttp2/http2_server_transport_test.cc` pass. Add new tests as needed to cover new functionality.
+*   **Test Comments:** When writing new tests, include comments within each test explaining its purpose and assertions. For large tests, add comments for each step.
 
 ### Key Differences from CHTTP2
 
@@ -110,6 +111,7 @@ and the underlying endpoint.
 *   Settings Helper : `http2_settings_promises.h`
 *   Flow Control Helper : `flow_control_manager.h`
 *   Stream : `stream.h` representation of each HTTP2 stream in the HTTP2 transport.
+*   GoAway : `goaway.{h,cc}` for implementation of HTTP2 GOAWAY
 
 ## 3. Common Files (Shared by CHTTP2 and PH2)
 
@@ -166,26 +168,31 @@ Key test files include:
 *   **PH2 Specific Tests:**
     *   `test/core/transport/chttp2/http2_client_transport_test.cc`: Main test suite for the PH2 client transport.
     *   `test/core/transport/chttp2/http2_server_transport_test.cc`: Main test suite for the PH2 server transport.
+    *   `test/core/transport/chttp2/http2_transport_test.cc`: Common to PH2 Client and Server Transport. Tests code in `http2_transport.{h,cc}`.
     *   `test/core/transport/chttp2/frame_test.cc`
-    *   `test/core/transport/chttp2/ping_promise_test.cc`
-    *   `test/core/transport/chttp2/stream_data_queue_test.cc`
+    *   `test/core/transport/chttp2/goaway_test.cc`
     *   `test/core/transport/chttp2/header_assembler_test.cc`
-    *   `test/core/transport/chttp2/message_assembler_test.cc`
-    *   `test/core/transport/chttp2/keepalive_test.cc`
-    *   `test/core/transport/chttp2/writable_streams_test.cc`
     *   `test/core/transport/chttp2/http2_status_test.cc`
+    *   `test/core/transport/chttp2/keepalive_test.cc`
     *   `test/core/transport/chttp2/message_assembler_fuzz_test.cc`
+    *   `test/core/transport/chttp2/message_assembler_test.cc`
+    *   `test/core/transport/chttp2/ping_promise_test.cc`
+    *   `test/core/transport/chttp2/settings_timeout_manager_test.cc`
+    *   `test/core/transport/chttp2/settings_timeout_test.cc`
     *   `test/core/transport/chttp2/stream_data_queue_fuzz_test.cc`
+    *   `test/core/transport/chttp2/stream_data_queue_test.cc`
     *   `test/core/transport/chttp2/writable_streams_fuzz_test.cc`
+    *   `test/core/transport/chttp2/writable_streams_test.cc`
 
 *   **Common Component Tests:**
-    *   `test/core/transport/chttp2/http2_settings_test.cc`
+    *   `test/core/transport/chttp2/flow_control_fuzzer.cc`
+    *   `test/core/transport/chttp2/flow_control_manager_test.cc`
+    *   `test/core/transport/chttp2/flow_control_test.cc`
     *   `test/core/transport/chttp2/hpack_encoder_test.cc`
     *   `test/core/transport/chttp2/hpack_parser_test.cc`
-    *   `test/core/transport/chttp2/flow_control_test.cc`
-    *   `test/core/transport/chttp2/flow_control_manager_test.cc`
-    *   `test/core/transport/chttp2/write_size_policy_test.cc`
+    *   `test/core/transport/chttp2/http2_settings_test.cc`
     *   `test/core/transport/chttp2/write_size_policy_fuzztest.cc`
+    *   `test/core/transport/chttp2/write_size_policy_test.cc`
 
 *   **PH2 End-to-end Tests:**
     *   `test/core/end2end/end2end_ph2_config.cc`: This file defines the test

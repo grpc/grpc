@@ -22,14 +22,14 @@
 
 #include <optional>
 
-#include "absl/status/status.h"
-#include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/status_helper.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 static grpc_error_handle channel_init_func(grpc_channel_element* elem,
                                            grpc_channel_element_args* args) {
@@ -93,7 +93,7 @@ TEST(ChannelStackTest, CreateChannelStack) {
       channel_destroy_func,
       grpc_channel_next_get_info,
       GRPC_UNIQUE_TYPE_NAME_HERE("some_test_filter")};
-  const grpc_channel_filter* filters = &filter;
+  std::vector<grpc_core::FilterAndConfig> filters = {{&filter, nullptr}};
   grpc_channel_stack* channel_stack;
   grpc_call_stack* call_stack;
   grpc_channel_element* channel_elem;
@@ -103,14 +103,14 @@ TEST(ChannelStackTest, CreateChannelStack) {
   grpc_core::ExecCtx exec_ctx;
 
   channel_stack = static_cast<grpc_channel_stack*>(
-      gpr_malloc(grpc_channel_stack_size(&filters, 1)));
+      gpr_malloc(grpc_channel_stack_size(filters)));
   auto channel_args = grpc_core::CoreConfiguration::Get()
                           .channel_args_preconditioning()
                           .PreconditionChannelArgs(nullptr)
                           .Set("test_key", 42);
   ASSERT_TRUE(GRPC_LOG_IF_ERROR(
       "grpc_channel_stack_init",
-      grpc_channel_stack_init(1, free_channel, channel_stack, &filters, 1,
+      grpc_channel_stack_init(1, free_channel, channel_stack, filters,
                               channel_args, "test", channel_stack)));
   EXPECT_EQ(channel_stack->count, 1);
   channel_elem = grpc_channel_stack_element(channel_stack, 0);

@@ -19,7 +19,13 @@ load(
 )
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
-grpc_package(name = "test/core/transport/test_suite")
+grpc_package(
+    name = "test/core/transport/test_suite",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_library(
     name = "inproc_fixture",
@@ -50,6 +56,7 @@ grpc_cc_library(
         "//src/core:chaotic_good_server_transport",
         "//src/core:event_engine_memory_allocator_factory",
         "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:grpc_check",
         "//src/core:grpc_promise_endpoint",
         "//src/core:resource_quota",
     ],

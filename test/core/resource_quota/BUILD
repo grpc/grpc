@@ -17,7 +17,13 @@ load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/resource_quota")
+grpc_package(
+    name = "test/core/resource_quota",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 grpc_cc_test(
     name = "arena_test",
@@ -46,7 +52,10 @@ grpc_cc_library(
     testonly = True,
     hdrs = ["call_checker.h"],
     external_deps = ["absl/log:check"],
-    deps = ["//:gpr"],
+    deps = [
+        "//:gpr",
+        "//src/core:grpc_check",
+    ],
 )
 
 grpc_cc_test(

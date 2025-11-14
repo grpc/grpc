@@ -21,7 +21,6 @@
 
 #include <utility>
 
-#include "absl/functional/any_invocable.h"
 #include "src/core/call/call_destination.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/load_balancing/lb_policy.h"
@@ -30,6 +29,7 @@
 #include "src/core/util/down_cast.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/unique_type_name.h"
+#include "absl/functional/any_invocable.h"
 
 //
 // This file contains internal interfaces used to allow various plugins
@@ -40,6 +40,10 @@
 // Channel arg key for health check service name.
 #define GRPC_ARG_HEALTH_CHECK_SERVICE_NAME \
   "grpc.internal.health_check_service_name"
+
+// Max number of connections per subchannel.
+#define GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL \
+  "grpc.internal.max_connections_per_subchannel"
 
 namespace grpc_core {
 

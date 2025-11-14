@@ -14,7 +14,13 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
-grpc_package(name = "test/core/resolver")
+grpc_package(
+    name = "test/core/resolver",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
+)
 
 licenses(["notice"])
 
@@ -35,6 +41,7 @@ grpc_cc_test(
         "//:parse_address",
         "//:sockaddr_utils",
         "//:uri",
+        "//src/core:grpc_check",
         "//src/core:resolved_address",
         "//test/core/test_util:grpc_test_util",
     ],

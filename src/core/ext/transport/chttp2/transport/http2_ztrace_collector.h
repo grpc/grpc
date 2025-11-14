@@ -221,6 +221,62 @@ struct H2EndWriteCycle {
   }
 };
 
+struct H2TcpMetricsTrace {
+  std::shared_ptr<
+      grpc_event_engine::experimental::EventEngine::Endpoint::TelemetryInfo>
+      telemetry_info;
+  grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent event;
+  std::vector<
+      grpc_event_engine::experimental::EventEngine::Endpoint::WriteMetric>
+      metrics;
+  absl::Time timestamp;
+
+  size_t MemoryUsage() const {
+    return sizeof(H2TcpMetricsTrace) + metrics.capacity() * sizeof(metrics[0]);
+  }
+
+  channelz::PropertyList ChannelzProperties() const {
+    absl::string_view event_string = "unknown";
+    switch (event) {
+      case grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent::
+          kSendMsg:
+        event_string = "send_msg";
+        break;
+      case grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent::
+          kScheduled:
+        event_string = "scheduled";
+        break;
+      case grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent::
+          kSent:
+        event_string = "sent";
+        break;
+      case grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent::
+          kAcked:
+        event_string = "acked";
+        break;
+      case grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent::
+          kClosed:
+        event_string = "closed";
+        break;
+      default:
+        break;
+    }
+    return channelz::PropertyList()
+        .Set("event", event_string)
+        .Set("tcp_event_timestamp", timestamp)
+        .Merge([this]() {
+          channelz::PropertyList props;
+          for (const auto& metric : metrics) {
+            if (auto key = telemetry_info->GetMetricName(metric.key);
+                key.has_value()) {
+              props.Set(*key, metric.value);
+            }
+          }
+          return props;
+        }());
+  }
+};
+
 using Http2ZTraceCollector = channelz::ZTraceCollector<
     http2_ztrace_collector_detail::Config, H2DataTrace<false>,
     H2HeaderTrace<false>, H2RstStreamTrace<false>, H2SettingsTrace<false>,
@@ -229,7 +285,7 @@ using Http2ZTraceCollector = channelz::ZTraceCollector<
     H2RstStreamTrace<true>, H2SettingsTrace<true>, H2PingTrace<true>,
     H2GoAwayTrace<true>, H2WindowUpdateTrace<true>, H2SecurityTrace<true>,
     H2UnknownFrameTrace, H2FlowControlStall, H2BeginWriteCycle, H2EndWriteCycle,
-    H2BeginEndpointWrite>;
+    H2BeginEndpointWrite, H2TcpMetricsTrace>;
 
 struct PromiseEndpointReadTrace {
   uint64_t bytes;

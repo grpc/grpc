@@ -14,8 +14,6 @@
 
 #include "src/core/lib/promise/mpsc.h"
 
-#include <grpc/support/log.h>
-
 #include <cstdint>
 #include <memory>
 #include <optional>
@@ -23,12 +21,12 @@
 #include <utility>
 
 #include "fuzztest/fuzztest.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "test/core/promise/poll_matcher.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 using testing::Mock;
 using testing::StrictMock;

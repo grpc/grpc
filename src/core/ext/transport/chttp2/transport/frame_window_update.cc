@@ -21,9 +21,6 @@
 #include <grpc/support/port_platform.h>
 #include <stddef.h>
 
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
@@ -32,6 +29,9 @@
 #include "src/core/telemetry/stats.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 grpc_slice grpc_chttp2_window_update_create(
     uint32_t id, uint32_t window_delta,

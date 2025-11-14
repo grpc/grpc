@@ -35,11 +35,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/config/core_configuration.h"
@@ -64,6 +59,11 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/time.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace {
 struct inproc_stream;
@@ -138,6 +138,9 @@ struct inproc_transport final : public grpc_core::FilterStackTransport {
                        grpc_transport_stream_op_batch* op) override;
   void DestroyStream(grpc_stream* gs,
                      grpc_closure* then_schedule_closure) override;
+
+  void StartWatch(grpc_core::RefCountedPtr<StateWatcher>) override {}
+  void StopWatch(grpc_core::RefCountedPtr<StateWatcher>) override {}
 
   void Orphan() override;
 

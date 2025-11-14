@@ -20,10 +20,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/container/flat_hash_map.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/time.h"
 #include "google/protobuf/any.upb.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/string.h"
@@ -33,6 +29,10 @@
 #include "src/proto/grpc/channelz/v2/property_list.upb.h"
 #include "upb/mem/arena.h"
 #include "upb/text/encode.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 
 namespace grpc_core::channelz {
 
@@ -138,6 +138,8 @@ class PropertyList final : public OtherPropertyValue {
   }
 
   PropertyList& Merge(PropertyList other);
+
+  bool empty() const { return property_list_.empty(); }
 
   // TODO(ctiller): remove soon, switch to just FillUpbProto.
   Json::Object TakeJsonObject() override;

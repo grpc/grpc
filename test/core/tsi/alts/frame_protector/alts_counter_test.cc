@@ -20,9 +20,9 @@
 
 #include <grpc/support/alloc.h>
 
-#include "gtest/gtest.h"
 #include "src/core/util/crash.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
+#include "gtest/gtest.h"
 
 const size_t kSmallCounterSize = 4;
 const size_t kSmallOverflowSize = 1;

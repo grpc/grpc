@@ -21,11 +21,11 @@
 
 #include <string>
 
-#include "absl/strings/string_view.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/timestamp.upb.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

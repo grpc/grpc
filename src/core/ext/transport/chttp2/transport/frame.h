@@ -22,13 +22,13 @@
 #include <variant>
 #include <vector>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/span.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 
@@ -242,8 +242,8 @@ http2::ValueOrHttp2Status<Http2Frame> ParseFramePayload(
 // move things out of frames)
 SerializeReturn Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out);
 
-http2::Http2ErrorCode RstFrameErrorCodeToHttp2ErrorCode(uint32_t error_code);
-uint32_t Http2ErrorCodeToRstFrameErrorCode(http2::Http2ErrorCode error_code);
+http2::Http2ErrorCode FrameErrorCodeToHttp2ErrorCode(uint32_t error_code);
+uint32_t Http2ErrorCodeToFrameErrorCode(http2::Http2ErrorCode error_code);
 
 // Returns approximate memory usage of the frame.
 size_t GetFrameMemoryUsage(const Http2Frame& frame);

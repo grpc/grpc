@@ -20,10 +20,10 @@
 #include <string>
 #include <vector>
 
-#include "gtest/gtest.h"
 #include "src/proto/grpc/channelz/v2/promise.upb.h"
 #include "test/core/promise/poll_matcher.h"
 #include "upb/mem/arena.hpp"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 

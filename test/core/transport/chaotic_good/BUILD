@@ -19,6 +19,10 @@ licenses(["notice"])
 
 grpc_package(
     name = "test/core/transport/chaotic_good",
+    features = [
+        "layering_check",
+        "parse_headers",
+    ],
     visibility = "tests",
 )
 
@@ -92,6 +96,7 @@ grpc_fuzz_test(
     name = "tcp_frame_transport_test",
     srcs = ["tcp_frame_transport_test.cc"],
     external_deps = [
+        "gtest",
         "fuzztest",
         "fuzztest_main",
     ],
@@ -126,6 +131,7 @@ grpc_fuzz_test(
         ":test_frame",
         "//:channel_create",
         "//src/core:chaotic_good_frame",
+        "//src/core:grpc_check",
         "//src/core:memory_quota",
         "//src/core:resource_quota",
     ],
@@ -250,6 +256,7 @@ grpc_cc_test(
         "//src/core:default_event_engine",
         "//src/core:endpoint_transport",
         "//src/core:event_engine_tcp_socket_utils",
+        "//src/core:grpc_check",
         "//src/core:notification",
         "//src/core:resource_quota",
         "//src/core:time",

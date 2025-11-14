@@ -21,13 +21,14 @@
 #include <optional>
 #include <vector>
 
-#include "absl/strings/string_view.h"
-#include "absl/types/span.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
+#include "src/core/util/debug_location.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 namespace util {
@@ -174,25 +175,31 @@ struct MockPromiseEndpoint {
   ::testing::Sequence write_sequence;
   void ExpectRead(
       std::initializer_list<grpc_event_engine::experimental::Slice> slices_init,
-      grpc_event_engine::experimental::EventEngine* schedule_on_event_engine);
+      grpc_event_engine::experimental::EventEngine* schedule_on_event_engine,
+      DebugLocation whence = {});
   absl::AnyInvocable<void()> ExpectDelayedRead(
       std::initializer_list<grpc_event_engine::experimental::Slice> slices_init,
-      grpc_event_engine::experimental::EventEngine* schedule_on_event_engine);
+      grpc_event_engine::experimental::EventEngine* schedule_on_event_engine,
+      DebugLocation whence = {});
   void ExpectReadClose(
       absl::Status status,
-      grpc_event_engine::experimental::EventEngine* schedule_on_event_engine);
+      grpc_event_engine::experimental::EventEngine* schedule_on_event_engine,
+      DebugLocation whence = {});
   // Returns a function that will complete an EventEngine::Endpoint::Read call
   // with the given status.
   absl::AnyInvocable<void()> ExpectDelayedReadClose(
       absl::Status status,
-      grpc_event_engine::experimental::EventEngine* schedule_on_event_engine);
+      grpc_event_engine::experimental::EventEngine* schedule_on_event_engine,
+      DebugLocation whence = {});
   void ExpectWrite(
       std::initializer_list<grpc_event_engine::experimental::Slice> slices,
-      grpc_event_engine::experimental::EventEngine* schedule_on_event_engine);
+      grpc_event_engine::experimental::EventEngine* schedule_on_event_engine,
+      DebugLocation whence = {});
   void ExpectWriteWithCallback(
       std::initializer_list<grpc_event_engine::experimental::Slice> slices,
       grpc_event_engine::experimental::EventEngine* schedule_on_event_engine,
-      absl::AnyInvocable<void(SliceBuffer&, SliceBuffer&)> callback);
+      absl::AnyInvocable<void(SliceBuffer&, SliceBuffer&)> callback,
+      DebugLocation whence = {});
   void CaptureWrites(
       SliceBuffer& writes,
       grpc_event_engine::experimental::EventEngine* schedule_on_event_engine);

@@ -28,12 +28,12 @@
 #include <sys/wait.h>
 #endif
 
-#include "absl/log/log.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
 #include "src/core/util/grpc_check.h"
 #include "test/core/test_util/port.h"
 #include "test/cpp/util/subprocess.h"
+#include "absl/log/log.h"
 
 using grpc::SubProcess;
 

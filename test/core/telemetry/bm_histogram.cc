@@ -14,8 +14,8 @@
 
 #include <benchmark/benchmark.h>
 
-#include "absl/random/random.h"
 #include "src/core/telemetry/histogram.h"
+#include "absl/random/random.h"
 
 namespace grpc_core {
 namespace {

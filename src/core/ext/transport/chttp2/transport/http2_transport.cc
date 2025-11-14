@@ -19,19 +19,31 @@
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 
 #include <cstdint>
+#include <memory>
+#include <optional>
+#include <string>
 #include <utility>
+#include <vector>
 
 #include "src/core/call/call_spine.h"
 #include "src/core/call/metadata_info.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
-#include "src/core/lib/promise/mpsc.h"
-#include "src/core/lib/promise/party.h"
-#include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/ext/transport/chttp2/transport/header_assembler.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/ext/transport/chttp2/transport/stream.h"
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/sync.h"
+#include "absl/log/log.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -41,12 +53,15 @@ namespace http2 {
 // Do not use or edit any of these functions unless you are
 // familiar with the PH2 project (Moving chttp2 to promises.)
 
+///////////////////////////////////////////////////////////////////////////////
+// Settings and ChannelArgs helpers
+
 void InitLocalSettings(Http2Settings& settings, const bool is_client) {
   if (is_client) {
     // gRPC has never supported PUSH_PROMISE and we have no plan to do so in the
     // future.
     settings.SetEnablePush(false);
-    // This is to make it double-sure that server cannot initite a stream.
+    // This is to make it double-sure that server cannot initiate a stream.
     settings.SetMaxConcurrentStreams(0);
   }
   settings.SetMaxHeaderListSize(DEFAULT_MAX_HEADER_LIST_SIZE);
@@ -124,6 +139,34 @@ void ReadSettingsFromChannelArgs(const ChannelArgs& channel_args,
       << "}";
 }
 
+bool MaybeGetSettingsAndSettingsAckFrames(
+    chttp2::TransportFlowControl& flow_control, Http2SettingsManager& settings,
+    SliceBuffer& output_buf) {
+  GRPC_HTTP2_COMMON_DLOG << "MaybeGetSettingsAndSettingsAckFrames";
+  std::optional<Http2Frame> settings_frame = settings.MaybeSendUpdate();
+  bool should_spawn_settings_timeout = false;
+  if (settings_frame.has_value()) {
+    GRPC_HTTP2_COMMON_DLOG
+        << "MaybeGetSettingsAndSettingsAckFrames Frame Settings ";
+    Serialize(absl::Span<Http2Frame>(&settings_frame.value(), 1), output_buf);
+    flow_control.FlushedSettings();
+    should_spawn_settings_timeout = true;
+  }
+  const uint32_t num_acks = settings.MaybeSendAck();
+  if (num_acks > 0) {
+    std::vector<Http2Frame> ack_frames(num_acks);
+    for (uint32_t i = 0; i < num_acks; ++i) {
+      ack_frames[i] = Http2SettingsFrame{true, {}};
+    }
+    Serialize(absl::MakeSpan(ack_frames), output_buf);
+    GRPC_HTTP2_COMMON_DLOG << "Sending " << num_acks << " settings ACK frames";
+  }
+  return should_spawn_settings_timeout;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// ChannelZ helpers
+
 RefCountedPtr<channelz::SocketNode> CreateChannelzSocketNode(
     std::shared_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         event_engine_endpoint,
@@ -143,6 +186,129 @@ RefCountedPtr<channelz::SocketNode> CreateChannelzSocketNode(
         args.GetObjectRef<channelz::SocketNode::Security>());
   }
   return nullptr;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Flow control helpers
+
+void ProcessOutgoingDataFrameFlowControl(
+    chttp2::StreamFlowControl& stream_flow_control,
+    const uint32_t flow_control_tokens_consumed) {
+  if (flow_control_tokens_consumed > 0) {
+    chttp2::StreamFlowControl::OutgoingUpdateContext fc_update(
+        &stream_flow_control);
+    // This updates flow control tokens for both stream and transport flow
+    // control.
+    fc_update.SentData(flow_control_tokens_consumed);
+  }
+}
+
+ValueOrHttp2Status<chttp2::FlowControlAction>
+ProcessIncomingDataFrameFlowControl(Http2FrameHeader& frame_header,
+                                    chttp2::TransportFlowControl& flow_control,
+                                    RefCountedPtr<Stream> stream) {
+  GRPC_DCHECK_EQ(frame_header.type, 0u);
+  if (frame_header.length > 0) {
+    if (stream == nullptr) {
+      // This flow control bookkeeping needs to happen even though the stream is
+      // gone because otherwise we will go out-of-sync with the peer.
+      // The flow control numbers should be consistent for both peers.
+      chttp2::TransportFlowControl::IncomingUpdateContext transport_fc(
+          &flow_control);
+      absl::Status fc_status = transport_fc.RecvData(frame_header.length);
+      chttp2::FlowControlAction action = transport_fc.MakeAction();
+      if (!fc_status.ok()) {
+        LOG(ERROR) << "Flow control error: " << fc_status.message();
+        // RFC9113 : A receiver MAY respond with a stream error or connection
+        // error of type FLOW_CONTROL_ERROR if it is unable to accept a frame.
+        return Http2Status::Http2ConnectionError(
+            Http2ErrorCode::kFlowControlError,
+            std::string(fc_status.message()));
+      }
+      return action;
+    } else {
+      chttp2::StreamFlowControl::IncomingUpdateContext stream_fc(
+          &stream->flow_control);
+      absl::Status fc_status = stream_fc.RecvData(frame_header.length);
+      chttp2::FlowControlAction action = stream_fc.MakeAction();
+      if (!fc_status.ok()) {
+        LOG(ERROR) << "Flow control error: " << fc_status.message();
+        // RFC9113 : A receiver MAY respond with a stream error or connection
+        // error of type FLOW_CONTROL_ERROR if it is unable to accept a frame.
+        return Http2Status::Http2ConnectionError(
+            Http2ErrorCode::kFlowControlError,
+            std::string(fc_status.message()));
+      }
+      return action;
+    }
+  }
+  return chttp2::FlowControlAction();
+}
+
+bool ProcessIncomingWindowUpdateFrameFlowControl(
+    const Http2WindowUpdateFrame& frame,
+    chttp2::TransportFlowControl& flow_control, RefCountedPtr<Stream> stream) {
+  if (frame.stream_id != 0) {
+    if (stream != nullptr) {
+      chttp2::StreamFlowControl::OutgoingUpdateContext fc_update(
+          &stream->flow_control);
+      fc_update.RecvUpdate(frame.increment);
+    } else {
+      // If stream id is non zero, and stream is nullptr, maybe the stream was
+      // closed. Ignore this WINDOW_UPDATE frame.
+    }
+  } else {
+    chttp2::TransportFlowControl::OutgoingUpdateContext fc_update(
+        &flow_control);
+    fc_update.RecvUpdate(frame.increment);
+    if (fc_update.Finish() == chttp2::StallEdge::kUnstalled) {
+      // If transport moves from kStalled to kUnstalled, streams blocked by
+      // transport flow control will become writable. Return true to trigger a
+      // write cycle and attempt to send data from these streams.
+      // Although it's possible no streams were blocked, triggering an
+      // unnecessary write cycle in that super-rare case is acceptable.
+      return true;
+    }
+  }
+  return false;
+}
+
+// /////////////////////////////////////////////////////////////////////////////
+// Header and Continuation frame processing helpers
+Http2Status ParseAndDiscardHeaders(HPackParser& parser, SliceBuffer&& buffer,
+                                   HeaderAssembler::ParseHeaderArgs args,
+                                   const RefCountedPtr<Stream> stream,
+                                   Http2Status&& original_status) {
+  GRPC_HTTP2_COMMON_DLOG << "ParseAndDiscardHeaders buffer "
+                            "size: "
+                         << buffer.Length() << " args: " << args.DebugString()
+                         << " stream_id: "
+                         << (stream == nullptr ? 0 : stream->GetStreamId())
+                         << " original_status: "
+                         << original_status.DebugString();
+
+  if (stream != nullptr) {
+    // Parse all the data in the header assembler
+    Http2Status result = stream->header_assembler.ParseAndDiscardHeaders(
+        parser, args.is_initial_metadata, args.is_client,
+        args.max_header_list_size_soft_limit,
+        args.max_header_list_size_hard_limit);
+    if (!result.IsOk()) {
+      GRPC_DCHECK(result.GetType() ==
+                  Http2Status::Http2ErrorType::kConnectionError);
+      LOG(ERROR) << "Connection Error: " << result;
+      return result;
+    }
+  }
+
+  if (buffer.Length() == 0) {
+    return std::move(original_status);
+  }
+
+  Http2Status status = HeaderAssembler::ParseHeader(
+      parser, std::move(buffer), /*grpc_metadata_batch=*/nullptr, args);
+
+  return (status.IsOk()) ? std::move(original_status) : std::move(status);
 }
 
 }  // namespace http2

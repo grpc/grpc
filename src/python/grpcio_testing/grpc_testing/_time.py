@@ -214,7 +214,7 @@ class StrictFakeTime(grpc_testing.Time):
         return _Future(self._state, behavior, time)
 
     def sleep_for(self, duration):
-        if 0 < duration:
+        if duration > 0:
             with self._state.condition:
                 self._time += duration
                 delta = _process(self._state, self._time)

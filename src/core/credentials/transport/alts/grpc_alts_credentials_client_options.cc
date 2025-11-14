@@ -25,9 +25,9 @@
 #include <memory>
 #include <optional>
 
-#include "absl/log/log.h"
 #include "src/core/credentials/transport/alts/grpc_alts_credentials_options.h"
 #include "src/core/tsi/alts/handshaker/transport_security_common_api.h"
+#include "absl/log/log.h"
 
 static grpc_alts_credentials_options* alts_client_options_copy(
     const grpc_alts_credentials_options* options);

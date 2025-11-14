@@ -19,12 +19,12 @@
 #include <initializer_list>
 #include <utility>
 
-#include "absl/status/status.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace {
@@ -1105,7 +1105,7 @@ TEST(Frame, ParseRejectsWindowUpdateFrameZeroIncrement) {
                     /* Stream Identifier (31 bits) */ 0x7f, 0xff, 0xff, 0xff,
                     /* Window Size Increment (31 bits) */ 0, 0, 0, 0),
       Http2StatusIs(
-          Http2Status::Http2ErrorType::kStreamError,
+          Http2Status::Http2ErrorType::kConnectionError,
           Http2ErrorCode::kProtocolError,
           absl::StrCat(
               RFC9113::kWindowSizeIncrement,

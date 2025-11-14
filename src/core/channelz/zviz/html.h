@@ -20,10 +20,10 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/util/grpc_check.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
-#include "src/core/util/grpc_check.h"
 namespace grpc_zviz::html {
 
 std::string HtmlEscape(absl::string_view text);

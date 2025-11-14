@@ -17,10 +17,10 @@
 #include <iosfwd>
 #include <map>
 
-#include "absl/container/flat_hash_map.h"
-#include "absl/strings/str_format.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/strings/str_format.h"
 
 using testing::Pair;
 using testing::UnorderedElementsAre;

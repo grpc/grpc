@@ -1,7 +1,5 @@
-/bazel/** @eugeneo
 /bazel/experiments.yaml
 /bazel/rollouts.yaml
-/cmake/** @eugeneo
 /src/core/client_channel/** @markdroth
 /src/core/ext/transport/chttp2/transport/** @ctiller
 /src/core/load_balancing/** @markdroth
