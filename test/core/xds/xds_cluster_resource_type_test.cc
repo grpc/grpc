@@ -1193,6 +1193,7 @@ TEST_F(TlsConfigTest, SniTooLong) {
   UpstreamTlsContext upstream_tls_context;
   upstream_tls_context.set_sni(std::string(256, 'A'));
   typed_config->PackFrom(upstream_tls_context);
+  std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
   auto decode_result =
