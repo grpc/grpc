@@ -33,11 +33,11 @@ def _dockerized_sh_test(name, srcs = [], args = [], data = [], size = "medium", 
         "machine_size": "misc_large",
     }
 
-    if env.get("GRPC_BUILD_IS_HARNESS_TEST", "false") == "true":
-        labels = {
-            "workload": "misc_sergiitk_test",
-            "machine_size": "misc_sergiitk_highmem16",
-        }
+    # if env.get("GRPC_BUILD_IS_HARNESS_TEST", "false") == "true":
+    #     labels = {
+    #         "workload": "misc_sergiitk_test",
+    #         "machine_size": "misc_sergiitk_highmem16",
+    #     }
 
     exec_properties = create_rbe_exec_properties_dict(
         labels = labels,
