@@ -219,15 +219,14 @@ tsi_ssl_pem_key_cert_pair* ConvertToTsiPemKeyCertPair(
   size_t num_key_cert_pairs = cert_pair_list.size();
   if (num_key_cert_pairs > 0) {
     GRPC_CHECK_NE(cert_pair_list.data(), nullptr);
-    tsi_pairs = static_cast<tsi_ssl_pem_key_cert_pair*>(
-        gpr_zalloc(num_key_cert_pairs * sizeof(tsi_ssl_pem_key_cert_pair)));
+    tsi_pairs = new tsi_ssl_pem_key_cert_pair[num_key_cert_pairs];
   }
   for (size_t i = 0; i < num_key_cert_pairs; i++) {
     GRPC_CHECK(!cert_pair_list[i].private_key().empty() ||
                cert_pair_list[i].private_key_sign() != nullptr);
     GRPC_CHECK(!cert_pair_list[i].cert_chain().empty());
     tsi_pairs[i].cert_chain =
-        gpr_strdup(cert_pair_list[i].cert_chain().c_str());
+        absl::string_view(cert_pair_list[i].cert_chain().c_str());
     PrivateKey private_key;
     if (cert_pair_list[i].private_key_sign() == nullptr) {
       private_key = cert_pair_list[i].private_key();

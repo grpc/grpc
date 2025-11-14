@@ -105,12 +105,12 @@ class CrlSslTransportSecurityTest
 
       server_pem_key_cert_pairs_ = static_cast<tsi_ssl_pem_key_cert_pair*>(
           gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair)));
-      server_pem_key_cert_pairs_[0].private_key = server_key_.c_str();
-      server_pem_key_cert_pairs_[0].cert_chain = server_cert_.c_str();
+      server_pem_key_cert_pairs_[0].private_key = server_key_;
+      server_pem_key_cert_pairs_[0].cert_chain = server_cert_;
       client_pem_key_cert_pairs_ = static_cast<tsi_ssl_pem_key_cert_pair*>(
           gpr_malloc(sizeof(tsi_ssl_pem_key_cert_pair)));
-      client_pem_key_cert_pairs_[0].private_key = client_key_.c_str();
-      client_pem_key_cert_pairs_[0].cert_chain = client_cert_.c_str();
+      client_pem_key_cert_pairs_[0].private_key = client_key_;
+      client_pem_key_cert_pairs_[0].cert_chain = client_cert_;
       GRPC_CHECK_NE(root_store_, nullptr);
     }
 

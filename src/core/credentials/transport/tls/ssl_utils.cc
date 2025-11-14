@@ -157,7 +157,11 @@ void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,
                                              size_t num_key_cert_pairs) {
   if (kp == nullptr) return;
   for (size_t i = 0; i < num_key_cert_pairs; i++) {
-    gpr_free(const_cast<char*>(kp[i].cert_chain));
+    gpr_free(const_cast<char*>(kp[i].cert_chain.data()));
+    if (const auto* key_view =
+            std::get_if<absl::string_view>(&kp[i].private_key)) {
+      gpr_free(const_cast<char*>(key_view->data()));
+    }
   }
   gpr_free(kp);
 }
@@ -457,7 +461,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   bool has_key_cert_pair =
       pem_key_cert_pair != nullptr &&
       !grpc_core::IsPrivateKeyEmpty(&pem_key_cert_pair->private_key) &&
-      pem_key_cert_pair->cert_chain != nullptr;
+      !pem_key_cert_pair->cert_chain.empty();
   options.root_store = root_store;
   options.alpn_protocols =
       grpc_fill_alpn_protocol_strings(&options.num_alpn_protocols);

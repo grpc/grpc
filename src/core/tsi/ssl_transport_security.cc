@@ -929,9 +929,9 @@ static tsi_result populate_ssl_context(
     const char* cipher_list) {
   tsi_result result = TSI_OK;
   if (key_cert_pair != nullptr) {
-    if (key_cert_pair->cert_chain != nullptr) {
-      result = ssl_ctx_use_certificate_chain(context, key_cert_pair->cert_chain,
-                                             strlen(key_cert_pair->cert_chain));
+    if (!key_cert_pair->cert_chain.empty()) {
+      result = ssl_ctx_use_certificate_chain(context, key_cert_pair->cert_chain.data(),
+                                             key_cert_pair->cert_chain.length());
       if (result != TSI_OK) {
         LOG(ERROR) << "Invalid cert chain file.";
         return result;
@@ -2872,7 +2872,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 #endif
 
       result = tsi_ssl_extract_x509_subject_names_from_pem_cert(
-          options->pem_key_cert_pairs[i].cert_chain,
+          options->pem_key_cert_pairs[i].cert_chain.data(),
           &impl->ssl_context_x509_subject_names[i]);
       if (result != TSI_OK) break;
 
