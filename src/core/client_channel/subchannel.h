@@ -46,6 +46,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/dual_ref_counted.h"
@@ -86,6 +87,7 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
   virtual void Ping(grpc_closure* on_initiate, grpc_closure* on_ack) = 0;
 
   virtual channelz::SubchannelNode* channelz_node() const = 0;
+  std::string security_level_;
 
  protected:
   explicit ConnectedSubchannel(const ChannelArgs& args);
@@ -347,6 +349,12 @@ class Subchannel final : public DualRefCounted<Subchannel> {
   grpc_pollset_set* pollset_set_;
   // Channelz tracking.
   RefCountedPtr<channelz::SubchannelNode> channelz_node_;
+  // Metrics and observability.
+  std::string target_;
+  std::string backend_service_;
+  std::string locality_;
+  std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+      stats_plugin_group_;
   // Minimum connection timeout.
   Duration min_connect_timeout_;
 

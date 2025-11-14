@@ -421,6 +421,30 @@ class GlobalStatsPluginRegistry {
         state.plugin->AddCounter(handle, value, label_values, optional_values);
       }
     }
+    template <std::size_t M, std::size_t N>
+    void AddCounter(
+        GlobalInstrumentsRegistry::TypedGlobalInstrumentHandle<
+            GlobalInstrumentsRegistry::ValueType::kUInt64,
+            GlobalInstrumentsRegistry::InstrumentType::kUpDownCounter, M, N>
+            handle,
+        uint64_t value, std::array<absl::string_view, M> label_values,
+        std::array<absl::string_view, N> optional_values) {
+      for (auto& state : plugins_state_) {
+        state.plugin->AddCounter(handle, value, label_values, optional_values);
+      }
+    }
+    template <std::size_t M, std::size_t N>
+    void AddCounter(
+        GlobalInstrumentsRegistry::TypedGlobalInstrumentHandle<
+            GlobalInstrumentsRegistry::ValueType::kUInt64,
+            GlobalInstrumentsRegistry::InstrumentType::kUpDownCounter, M, N>
+            handle,
+        double value, std::array<absl::string_view, M> label_values,
+        std::array<absl::string_view, N> optional_values) {
+      for (auto& state : plugins_state_) {
+        state.plugin->AddCounter(handle, value, label_values, optional_values);
+      }
+    }
     // Records a value to a histogram in all stats plugins within the group. See
     // the StatsPlugin interface for more documentation and valid types.
     template <std::size_t M, std::size_t N>

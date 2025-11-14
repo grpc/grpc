@@ -531,15 +531,14 @@ class OpenTelemetryPluginImpl
   OptionalLabelsBitSet per_call_optional_label_bits_;
   // Instruments for non-per-call metrics.
   struct Disabled {};
-  using Instrument =
-      std::variant<Disabled,
-                   std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>,
-                   std::unique_ptr<opentelemetry::metrics::Counter<double>>,
-                   std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>,
-                   std::unique_ptr<opentelemetry::metrics::Histogram<double>>,
-                   std::unique_ptr<CallbackGaugeState<int64_t>>,
-                   std::unique_ptr<CallbackGaugeState<double>>,
-                   std::unique_ptr<opentelemetry::metrics::UpDownCounter<int64_t>>>;
+  using Instrument = std::variant<
+      Disabled, std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>,
+      std::unique_ptr<opentelemetry::metrics::Counter<double>>,
+      std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>,
+      std::unique_ptr<opentelemetry::metrics::Histogram<double>>,
+      std::unique_ptr<CallbackGaugeState<int64_t>>,
+      std::unique_ptr<CallbackGaugeState<double>>,
+      std::unique_ptr<opentelemetry::metrics::UpDownCounter<int64_t>>>;
   struct InstrumentData {
     Instrument instrument;
     OptionalLabelsBitSet optional_labels_bits;

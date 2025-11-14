@@ -76,6 +76,8 @@ namespace {
 
 constexpr absl::string_view kPickFirst = "pick_first";
 
+// TODO(https://github.com/grpc/grpc/issues/40835): Remove metrics after 1.78.0
+// release. Metrics functionality was moved from pick_first to subchannel.
 const auto kMetricDisconnections =
     GlobalInstrumentsRegistry::RegisterUInt64Counter(
         "grpc.lb.pick_first.disconnections",

@@ -695,7 +695,8 @@ OpenTelemetryPluginImpl::~OpenTelemetryPluginImpl() {
             state->ot_callback_registered = false;
           }
         },
-        [](const std::unique_ptr<opentelemetry::metrics::UpDownCounter<int64_t>>&) {});
+        [](const std::unique_ptr<
+            opentelemetry::metrics::UpDownCounter<int64_t>>&) {});
   }
 }
 
