@@ -182,6 +182,9 @@ const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
+const char* const description_skip_clear_peer_on_cancellation =
+    "If set, skips clearing of peer string on call cancellation.";
+const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
@@ -338,6 +341,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_secure_endpoint_offload_large_writes,
      additional_constraints_secure_endpoint_offload_large_writes,
      required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
+    {"skip_clear_peer_on_cancellation",
+     description_skip_clear_peer_on_cancellation,
+     additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
+     true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
@@ -532,6 +539,9 @@ const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
+const char* const description_skip_clear_peer_on_cancellation =
+    "If set, skips clearing of peer string on call cancellation.";
+const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
@@ -688,6 +698,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_secure_endpoint_offload_large_writes,
      additional_constraints_secure_endpoint_offload_large_writes,
      required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
+    {"skip_clear_peer_on_cancellation",
+     description_skip_clear_peer_on_cancellation,
+     additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
+     true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
@@ -882,6 +896,9 @@ const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
+const char* const description_skip_clear_peer_on_cancellation =
+    "If set, skips clearing of peer string on call cancellation.";
+const char* const additional_constraints_skip_clear_peer_on_cancellation = "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
@@ -1038,6 +1055,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_secure_endpoint_offload_large_writes,
      additional_constraints_secure_endpoint_offload_large_writes,
      required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
+    {"skip_clear_peer_on_cancellation",
+     description_skip_clear_peer_on_cancellation,
+     additional_constraints_skip_clear_peer_on_cancellation, nullptr, 0, false,
+     true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
