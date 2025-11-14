@@ -1199,7 +1199,6 @@ TEST_F(TlsConfigTest, SniTooLong) {
   cert_provider->set_instance_name("provider1");
   cert_provider->set_certificate_name("cert_name");
   transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
-  typed_config->PackFrom(upstream_tls_context);
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
   auto* resource_type = XdsClusterResourceType::Get();
