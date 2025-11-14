@@ -252,8 +252,8 @@ _DATA_MEMBERS = [
         test_name="DifferentSniOverride",
         test_value_1='"sni_override_1"',
         test_value_2='"sni_override_2"',
-        special_getter_return_type="const std::optional<std::string>&"
-    )
+        special_getter_return_type="const std::optional<std::string>&",
+    ),
 ]
 
 
