@@ -85,17 +85,17 @@ absl::StatusOr<SignatureAlgorithm> ToSignatureAlgorithmClass(
   return absl::InvalidArgumentError("Unknown signature algorithm.");
 }
 
-static void SetPrivateKeyOffloadIndex(int index) {
+void SetPrivateKeyOffloadIndex(int index) {
   g_ssl_ex_private_key_offload_ex_index = index;
   GRPC_CHECK_NE(g_ssl_ex_private_key_offload_ex_index, -1);
 }
 
-static int GetPrivateKeyOffloadIndex() {
+int GetPrivateKeyOffloadIndex() {
   return g_ssl_ex_private_key_offload_ex_index;
 }
 
-static void TlsOffloadSignDoneCallback(
-    TlsPrivateKeyOffloadContext* ctx, absl::StatusOr<std::string> signed_data) {
+void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
+                                absl::StatusOr<std::string> signed_data) {
   if (signed_data.ok()) {
     ctx->signed_bytes = std::move(signed_data);
 
@@ -119,7 +119,7 @@ static void TlsOffloadSignDoneCallback(
   }
 }
 
-static enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
+enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
     SSL* ssl, uint8_t* out, size_t* out_len, size_t max_out,
     uint16_t signature_algorithm, const uint8_t* in, size_t in_len) {
   TlsPrivateKeyOffloadContext* ctx = static_cast<TlsPrivateKeyOffloadContext*>(
@@ -145,8 +145,10 @@ static enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
   return ssl_private_key_retry;
 }
 
-static enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(
-    SSL* ssl, uint8_t* out, size_t* out_len, size_t max_out) {
+enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
+                                                           uint8_t* out,
+                                                           size_t* out_len,
+                                                           size_t max_out) {
   TlsPrivateKeyOffloadContext* ctx = static_cast<TlsPrivateKeyOffloadContext*>(
       SSL_get_ex_data(ssl, g_ssl_ex_private_key_offload_ex_index));
 

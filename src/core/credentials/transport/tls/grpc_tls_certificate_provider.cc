@@ -546,6 +546,11 @@ InMemoryCertificateProvider::InMemoryCertificateProvider(
   });
 }
 
+UniqueTypeName InMemoryCertificateProvider::type() const {
+  static UniqueTypeName::Factory kFactory("InMemory");
+  return kFactory.Create();
+}
+
 void InMemoryCertificateProvider::UpdateRoot(std::string root_certificates) {
   MutexLock lock_root(&root_cert_mu_);
   root_certificates_ = root_certificates;

@@ -47,9 +47,9 @@ enum class SignatureAlgorithm {
 absl::StatusOr<uint16_t> ToOpenSslSignatureAlgorithm(
     SignatureAlgorithm algorithm);
 
-static void SetPrivateKeyOffloadIndex(int index);
+void SetPrivateKeyOffloadIndex(int index);
 
-static int GetPrivateKeyOffloadIndex();
+int GetPrivateKeyOffloadIndex();
 
 // A user's implementation MUST invoke `done_callback` with the signed bytes.
 // This will let gRPC take control when the async operation is complete. MUST
@@ -74,17 +74,19 @@ struct TlsPrivateKeyOffloadContext {
 
 // Callback function to be invoked when the user's async sign operation is
 // complete.
-static void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
-                                       absl::StatusOr<std::string> signed_data);
+void TlsOffloadSignDoneCallback(TlsPrivateKeyOffloadContext* ctx,
+                                absl::StatusOr<std::string> signed_data);
 
-static enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
+enum ssl_private_key_result_t TlsPrivateKeySignWrapper(
     SSL* ssl, uint8_t* out, size_t* out_len, size_t max_out,
     uint16_t signature_algorithm, const uint8_t* in, size_t in_len);
 
-static enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(
-    SSL* ssl, uint8_t* out, size_t* out_len, size_t max_out);
+enum ssl_private_key_result_t TlsPrivateKeyOffloadComplete(SSL* ssl,
+                                                           uint8_t* out,
+                                                           size_t* out_len,
+                                                           size_t max_out);
 
-static const SSL_PRIVATE_KEY_METHOD TlsOffloadPrivateKeyMethod = {
+const SSL_PRIVATE_KEY_METHOD TlsOffloadPrivateKeyMethod = {
     TlsPrivateKeySignWrapper,
     nullptr,  // decrypt not implemented for this use case
     TlsPrivateKeyOffloadComplete};

@@ -99,9 +99,11 @@ typedef struct ssl_key_cert_lib {
   uint16_t leaf_signed_by_intermediate_num_key_cert_pairs;
 } ssl_key_cert_lib;
 
-static void ssl_test_pem_key_cert_pair_destroy(tsi_ssl_pem_key_cert_pair kp) {
-  gpr_free(const_cast<char*>(kp.private_key));
-  gpr_free(const_cast<char*>(kp.cert_chain));
+static void ssl_test_pem_key_cert_pair_destroy(tsi_ssl_pem_key_cert_pair* kp) {
+  if (const auto* s = std::get_if<absl::string_view>(&kp->private_key)) {
+    gpr_free(const_cast<char*>(s->data()));
+  }
+  gpr_free(const_cast<char*>(kp->cert_chain));
 }
 
 static bool check_property(tsi_peer* peer, const char* property_name,
@@ -161,7 +163,7 @@ class SslTransportSecurityTest
       base_.test_unused_bytes = true;
       base_.vtable = &kVtable;
       // Create ssl_key_cert_lib.
-      key_cert_lib_ = grpc_core::Zalloc<ssl_key_cert_lib>();
+      key_cert_lib_ = new ssl_key_cert_lib();
       key_cert_lib_->use_bad_server_cert = false;
       key_cert_lib_->use_bad_client_cert = false;
       key_cert_lib_->use_root_store = false;
@@ -254,26 +256,26 @@ class SslTransportSecurityTest
       // Destroy ssl_key_cert_lib.
       for (size_t i = 0; i < key_cert_lib_->server_num_key_cert_pairs; i++) {
         ssl_test_pem_key_cert_pair_destroy(
-            key_cert_lib_->server_pem_key_cert_pairs[i]);
+            &key_cert_lib_->server_pem_key_cert_pairs[i]);
       }
       gpr_free(key_cert_lib_->server_pem_key_cert_pairs);
       for (size_t i = 0; i < key_cert_lib_->bad_server_num_key_cert_pairs;
            i++) {
         ssl_test_pem_key_cert_pair_destroy(
-            key_cert_lib_->bad_server_pem_key_cert_pairs[i]);
+            &key_cert_lib_->bad_server_pem_key_cert_pairs[i]);
       }
       gpr_free(key_cert_lib_->bad_server_pem_key_cert_pairs);
       for (size_t i = 0;
            i < key_cert_lib_->leaf_signed_by_intermediate_num_key_cert_pairs;
            i++) {
         ssl_test_pem_key_cert_pair_destroy(
-            key_cert_lib_->leaf_signed_by_intermediate_key_cert_pairs[i]);
+            &key_cert_lib_->leaf_signed_by_intermediate_key_cert_pairs[i]);
       }
       gpr_free(key_cert_lib_->leaf_signed_by_intermediate_key_cert_pairs);
       ssl_test_pem_key_cert_pair_destroy(
-          key_cert_lib_->client_pem_key_cert_pair);
+          &key_cert_lib_->client_pem_key_cert_pair);
       ssl_test_pem_key_cert_pair_destroy(
-          key_cert_lib_->bad_client_pem_key_cert_pair);
+          &key_cert_lib_->bad_client_pem_key_cert_pair);
       gpr_free(key_cert_lib_->root_cert);
       tsi_ssl_root_certs_store_destroy(key_cert_lib_->root_store);
       gpr_free(key_cert_lib_);
@@ -1294,7 +1296,7 @@ TEST(SslTransportSecurityTest, TestServerHandshakerFactoryRefcounting) {
   tsi_handshaker_destroy(handshaker[2]);
   ASSERT_TRUE(handshaker_factory_destructor_called);
 
-  ssl_test_pem_key_cert_pair_destroy(cert_pair);
+  ssl_test_pem_key_cert_pair_destroy(&cert_pair);
 }
 
 // Attempting to create a handshaker factory with invalid parameters should fail
