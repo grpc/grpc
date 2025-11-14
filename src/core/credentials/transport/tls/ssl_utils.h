@@ -169,9 +169,6 @@ class PemKeyCertPair {
     }
   }
 
-  PemKeyCertPair(absl::string_view private_key, absl::string_view cert_chain)
-      : private_key_(private_key), cert_chain_(cert_chain) {}
-
   // Movable.
   PemKeyCertPair(PemKeyCertPair&& other) noexcept {
     private_key_ = std::move(other.private_key_);
@@ -204,6 +201,7 @@ class PemKeyCertPair {
   const CustomPrivateKeySign* private_key_sign() const {
     return private_key_sign_.get();
   }
+
 
  private:
   std::string private_key_;
