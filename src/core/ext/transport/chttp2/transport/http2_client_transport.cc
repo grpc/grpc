@@ -170,15 +170,51 @@ void Http2ClientTransport::StopConnectivityWatch(
   state_tracker_.RemoveWatcher(watcher);
 }
 
-void Http2ClientTransport::SetConnectivityState(grpc_connectivity_state state,
-                                                const absl::Status& status,
-                                                const char* reason) {
+void Http2ClientTransport::ReportDisconnection(
+    const absl::Status& status, StateWatcher::DisconnectInfo disconnect_info,
+    const char* reason) {
   MutexLock lock(&transport_mutex_);
-  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport SetConnectivityState "
-                         << " set connectivity_state=" << state
-                         << "; status=" << status.ToString()
-                         << "; reason=" << reason;
-  state_tracker_.SetState(state, status, reason);
+  ReportDisconnectionLocked(status, disconnect_info, reason);
+}
+
+void Http2ClientTransport::ReportDisconnectionLocked(
+    const absl::Status& status, StateWatcher::DisconnectInfo disconnect_info,
+    const char* reason) {
+  GRPC_HTTP2_CLIENT_DLOG << "Http2ClientTransport ReportDisconnection: status="
+                         << status.ToString() << "; reason=" << reason;
+  state_tracker_.SetState(GRPC_CHANNEL_TRANSIENT_FAILURE, status, reason);
+  NotifyStateWatcherOnDisconnectLocked(status, disconnect_info);
+}
+
+void Http2ClientTransport::StartWatch(RefCountedPtr<StateWatcher> watcher) {
+  MutexLock lock(&transport_mutex_);
+  GRPC_CHECK(watcher_ == nullptr);
+  watcher_ = std::move(watcher);
+  if (is_transport_closed_) {
+    // TODO(tjagtap) : [PH2][P2] : Provide better status message and
+    // disconnect info here.
+    NotifyStateWatcherOnDisconnectLocked(
+        absl::UnknownError("transport closed before watcher started"), {});
+  } else {
+    // TODO(tjagtap) : [PH2][P2] : Notify the state watcher of the current
+    // value of the peer's MAX_CONCURRENT_STREAMS setting.
+  }
+}
+
+void Http2ClientTransport::StopWatch(RefCountedPtr<StateWatcher> watcher) {
+  MutexLock lock(&transport_mutex_);
+  if (watcher_ == watcher) watcher_.reset();
+}
+
+void Http2ClientTransport::NotifyStateWatcherOnDisconnectLocked(
+    absl::Status status, StateWatcher::DisconnectInfo disconnect_info) {
+  if (watcher_ == nullptr) return;
+  event_engine_->Run([watcher = std::move(watcher_), status = std::move(status),
+                      disconnect_info]() mutable {
+    ExecCtx exec_ctx;
+    watcher->OnDisconnect(std::move(status), disconnect_info);
+    watcher.reset();  // Before ExecCtx goes out of scope.
+  });
 }
 
 void Http2ClientTransport::Orphan() {
@@ -446,6 +482,7 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
     // TODO(tjagtap) : [PH2][P1]
     // Apply the new settings
     // Quickly send the ACK to the peer once the settings are applied
+    // When the peer changes MAX_CONCURRENT_STREAMS, notify the state watcher.
   } else {
     // Process the SETTINGS ACK Frame
     if (settings_.AckLastSend()) {
@@ -531,6 +568,11 @@ Http2Status Http2ClientTransport::ProcessHttp2GoawayFrame(
     }
   }
 
+  StateWatcher::DisconnectInfo disconnect_info;
+  disconnect_info.reason = Transport::StateWatcher::kGoaway;
+  disconnect_info.http2_error_code =
+      static_cast<Http2ErrorCode>(frame.error_code);
+
   // Throttle keepalive time if the server sends a GOAWAY with error code
   // ENHANCE_YOUR_CALM and debug data equal to "too_many_pings". This will
   // apply to any new transport created on by any subchannel of this channel.
@@ -547,8 +589,12 @@ Http2Status Http2ClientTransport::ProcessHttp2GoawayFrame(
         keepalive_time_.millis() > max_keepalive_time_millis
             ? INT_MAX
             : keepalive_time_.millis() * KEEPALIVE_TIME_BACKOFF_MULTIPLIER;
-    status.SetPayload(kKeepaliveThrottlingKey,
-                      absl::Cord(std::to_string(throttled_keepalive_time)));
+    if (!IsTransportStateWatcherEnabled()) {
+      status.SetPayload(kKeepaliveThrottlingKey,
+                        absl::Cord(std::to_string(throttled_keepalive_time)));
+    }
+    disconnect_info.keepalive_time =
+        Duration::Milliseconds(throttled_keepalive_time);
   }
 
   if (close_transport) {
@@ -566,7 +612,7 @@ Http2Status Http2ClientTransport::ProcessHttp2GoawayFrame(
 
   // lie: use transient failure from the transport to indicate goaway has been
   // received.
-  SetConnectivityState(GRPC_CHANNEL_TRANSIENT_FAILURE, status, "got_goaway");
+  ReportDisconnection(status, disconnect_info, "got_goaway");
   return Http2Status::Ok();
 }
 
@@ -1595,9 +1641,9 @@ void Http2ClientTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list =
       std::move(stream_list_);
   stream_list_.clear();
-  state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN,
-                          http2_status.GetAbslConnectionError(),
-                          "transport closed");
+  // TODO(tjagtap) : [PH2][P2] : Provide better disconnect info here.
+  ReportDisconnectionLocked(http2_status.GetAbslConnectionError(), {},
+                            "transport closed");
   lock.Release();
 
   SpawnInfallibleTransportParty(

@@ -288,6 +288,16 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   void WriteSecurityFrame(grpc_core::SliceBuffer* data);
   void WriteSecurityFrameLocked(grpc_core::SliceBuffer* data);
 
+  void StartWatch(grpc_core::RefCountedPtr<StateWatcher> watcher) override;
+  void StopWatch(grpc_core::RefCountedPtr<StateWatcher> watcher) override;
+
+  void NotifyStateWatcherOnDisconnectLocked(
+      absl::Status status, StateWatcher::DisconnectInfo disconnect_info);
+
+  void OnPeerMaxConcurrentStreamsUpdateComplete();
+  void MaybeNotifyStateWatcherOfPeerMaxConcurrentStreamsLocked();
+  void NotifyStateWatcherOnPeerMaxConcurrentStreamsUpdateLocked();
+
   // We depend on the ep being available for the life of the transport in
   // at least one place - event callback in WriteEventSink. Hence, this should
   // only be orphaned in the destructor.
@@ -375,7 +385,12 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
       void* user_data, grpc_core::ServerMetadata* metadata) = nullptr;
   void* accept_stream_cb_user_data;
 
+  // There should be only a single watcher in use at any given time.
+  grpc_core::RefCountedPtr<StateWatcher> watcher;
+  uint32_t last_reported_max_concurrent_streams;
+  bool max_concurrent_streams_notification_in_flight;
   /// connectivity tracking
+  // TODO(roth): Get rid of this in favor of the new state watcher.
   grpc_core::ConnectivityStateTracker state_tracker;
 
   /// data to write now

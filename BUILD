@@ -2085,6 +2085,7 @@ grpc_cc_library(
         "//src/core:gpr_manual_constructor",
         "//src/core:gpr_spinlock",
         "//src/core:grpc_check",
+        "//src/core:http2_status",
         "//src/core:if",
         "//src/core:iomgr_fwd",
         "//src/core:latch",
