@@ -446,6 +446,8 @@ ValueOrHttp2Status<Http2Frame> ParseDataFrame(const Http2FrameHeader& hdr,
                      std::move(payload)});
 }
 
+// This function MUST NOT return a Http2StreamError. Doing this will cause the
+// HPACK state to be corrupted.
 ValueOrHttp2Status<Http2Frame> ParseHeaderFrame(const Http2FrameHeader& hdr,
                                                 SliceBuffer& payload) {
   if (GPR_UNLIKELY((hdr.stream_id % 2) == 0)) {
@@ -482,6 +484,8 @@ ValueOrHttp2Status<Http2Frame> ParseHeaderFrame(const Http2FrameHeader& hdr,
       ExtractFlag(hdr.flags, kFlagEndStream), std::move(payload)});
 }
 
+// This function MUST NOT return a Http2StreamError. Doing this will cause the
+// HPACK state to be corrupted.
 ValueOrHttp2Status<Http2Frame> ParseContinuationFrame(
     const Http2FrameHeader& hdr, SliceBuffer& payload) {
   if (GPR_UNLIKELY((hdr.stream_id % 2) == 0)) {
@@ -633,15 +637,14 @@ ValueOrHttp2Status<Http2Frame> ParseWindowUpdateFrame(
   payload.CopyToBuffer(buffer);
   const uint32_t window_size_increment = Read31bits(buffer);
   if (GPR_UNLIKELY(window_size_increment == 0)) {
-    if (hdr.stream_id == 0) {
-      return Http2Status::Http2ConnectionError(
-          Http2ErrorCode::kProtocolError,
-          absl::StrCat(RFC9113::kWindowSizeIncrement, hdr.ToString()));
-    } else {
-      return Http2Status::Http2StreamError(
-          Http2ErrorCode::kProtocolError,
-          absl::StrCat(RFC9113::kWindowSizeIncrement, hdr.ToString()));
-    }
+    // According to RFC9113, if window_size_increment == 0, and (stream id != 0)
+    // the receiver MUST treat this as a stream error of type PROTOCOL_ERROR.
+    // However we will be treating this too as a connection error
+    // 1. To be consistent with CHTTP2 transport
+    // 2. To be less lenient as compared to the RFC9113 for security reasons.
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kProtocolError,
+        absl::StrCat(RFC9113::kWindowSizeIncrement, hdr.ToString()));
   }
   return ValueOrHttp2Status<Http2Frame>(
       Http2WindowUpdateFrame{hdr.stream_id, window_size_increment});

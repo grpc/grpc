@@ -122,7 +122,7 @@ class Http2ClientTransport final : public ClientTransport,
       PromiseEndpoint endpoint, GRPC_UNUSED const ChannelArgs& channel_args,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine,
-      grpc_closure* on_receive_settings);
+      absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings);
 
   Http2ClientTransport(const Http2ClientTransport&) = delete;
   Http2ClientTransport& operator=(const Http2ClientTransport&) = delete;
@@ -497,7 +497,7 @@ class Http2ClientTransport final : public ClientTransport,
   bool incoming_header_end_stream_;
   bool is_first_write_;
   uint32_t incoming_header_stream_id_;
-  grpc_closure* on_receive_settings_;
+  absl::AnyInvocable<void(absl::StatusOr<uint32_t>)> on_receive_settings_;
 
   uint32_t max_header_list_size_soft_limit_;
 
@@ -765,6 +765,12 @@ class Http2ClientTransport final : public ClientTransport,
   // indicates extreme memory pressure on the server.
   bool should_stall_read_loop_;
   Waker read_loop_waker_;
+  Http2Status ParseAndDiscardHeaders(SliceBuffer&& buffer,
+                                     bool is_initial_metadata,
+                                     bool is_end_headers, uint32_t stream_id,
+                                     RefCountedPtr<Stream> stream,
+                                     Http2Status&& original_status,
+                                     DebugLocation whence = {});
 };
 
 // Since the corresponding class in CHTTP2 is about 3.9KB, our goal is to
