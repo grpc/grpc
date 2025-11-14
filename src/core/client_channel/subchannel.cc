@@ -184,12 +184,14 @@ class Subchannel::ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
 
  protected:
   explicit ConnectedSubchannel(WeakRefCountedPtr<Subchannel> subchannel,
-                               const ChannelArgs& args)
+                               const ChannelArgs& args,
+                               uint32_t max_concurrent_streams)
       : RefCounted<ConnectedSubchannel>(
             GRPC_TRACE_FLAG_ENABLED(subchannel_refcount) ? "ConnectedSubchannel"
                                                          : nullptr),
         subchannel_(std::move(subchannel)),
-        args_(args) {}
+        args_(args),
+        stream_counts_(MakeStreamCounts(max_concurrent_streams, 0)) {}
 
  private:
   // First 32 bits are the MAX_CONCURRENT_STREAMS value reported by
@@ -221,8 +223,10 @@ class Subchannel::LegacyConnectedSubchannel final : public ConnectedSubchannel {
   LegacyConnectedSubchannel(
       WeakRefCountedPtr<Subchannel> subchannel,
       RefCountedPtr<grpc_channel_stack> channel_stack, const ChannelArgs& args,
-      RefCountedPtr<channelz::SubchannelNode> channelz_node)
-      : ConnectedSubchannel(std::move(subchannel), args),
+      RefCountedPtr<channelz::SubchannelNode> channelz_node,
+      uint32_t max_concurrent_streams)
+      : ConnectedSubchannel(std::move(subchannel), args,
+                            max_concurrent_streams),
         channelz_node_(std::move(channelz_node)),
         channel_stack_(std::move(channel_stack)) {}
 
@@ -705,8 +709,9 @@ class Subchannel::NewConnectedSubchannel final : public ConnectedSubchannel {
       WeakRefCountedPtr<Subchannel> subchannel,
       RefCountedPtr<UnstartedCallDestination> call_destination,
       RefCountedPtr<TransportCallDestination> transport,
-      const ChannelArgs& args)
-      : ConnectedSubchannel(std::move(subchannel), args),
+      const ChannelArgs& args, uint32_t max_concurrent_streams)
+      : ConnectedSubchannel(std::move(subchannel), args,
+                            max_concurrent_streams),
         call_destination_(std::move(call_destination)),
         transport_(std::move(transport)) {}
 
@@ -1341,7 +1346,8 @@ bool Subchannel::PublishTransportLocked() {
       return false;
     }
     connected_subchannel = MakeRefCounted<LegacyConnectedSubchannel>(
-        WeakRef(), std::move(*stack), args_, channelz_node_);
+        WeakRef(), std::move(*stack), args_, channelz_node_,
+        connecting_result_.max_concurrent_streams);
   } else {
     OrphanablePtr<ClientTransport> transport(
         std::exchange(connecting_result_.transport, nullptr)
@@ -1381,13 +1387,16 @@ bool Subchannel::PublishTransportLocked() {
     }
     connected_subchannel = MakeRefCounted<NewConnectedSubchannel>(
         WeakRef(), std::move(*call_destination),
-        std::move(transport_destination), args_);
+        std::move(transport_destination), args_,
+        connecting_result_.max_concurrent_streams);
   }
   connecting_result_.Reset();
   // Publish.
   GRPC_TRACE_LOG(subchannel, INFO)
       << "subchannel " << this << " " << key_.ToString()
-      << ": new connected subchannel at " << connected_subchannel.get();
+      << ": new connected subchannel at " << connected_subchannel.get()
+      << ", max_concurrent_streams="
+      << connecting_result_.max_concurrent_streams;
   if (channelz_node_ != nullptr) {
     if (socket_node != nullptr) {
       socket_node->AddParent(channelz_node_.get());
