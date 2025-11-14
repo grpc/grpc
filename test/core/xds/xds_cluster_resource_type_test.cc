@@ -1006,6 +1006,40 @@ TEST_F(TlsConfigTest, UpstreamTlsContextSni) {
   EXPECT_EQ(resource.upstream_tls_context.auto_sni_san_validation, true);
 }
 
+TEST_F(TlsConfigTest, UpstreamTlsContextSniNoEnv) {
+  Cluster cluster;
+  cluster.set_name("foo");
+  cluster.set_type(cluster.EDS);
+  cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
+  auto* transport_socket = cluster.mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  UpstreamTlsContext upstream_tls_context;
+  upstream_tls_context.set_sni("sni_name");
+  upstream_tls_context.set_auto_host_sni(true);
+  upstream_tls_context.set_auto_sni_san_validation(true);
+  auto* common_tls_context = upstream_tls_context.mutable_common_tls_context();
+  auto* validation_context = common_tls_context->mutable_validation_context();
+  auto* cert_provider =
+      validation_context->mutable_ca_certificate_provider_instance();
+  cert_provider->set_instance_name("provider1");
+  cert_provider->set_certificate_name("cert_name");
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
+  std::string serialized_resource;
+  ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
+  auto* resource_type = XdsClusterResourceType::Get();
+  auto decode_result =
+      resource_type->Decode(decode_context_, serialized_resource);
+  ASSERT_TRUE(decode_result.resource.ok()) << decode_result.resource.status();
+  ASSERT_TRUE(decode_result.name.has_value());
+  EXPECT_EQ(*decode_result.name, "foo");
+  auto& resource =
+      static_cast<const XdsClusterResource&>(**decode_result.resource);
+  // Test that values have their defaults instead of the configured values
+  EXPECT_EQ(resource.upstream_tls_context.sni, "");
+  EXPECT_EQ(resource.upstream_tls_context.auto_host_sni, false);
+  EXPECT_EQ(resource.upstream_tls_context.auto_sni_san_validation, false);
+}
+
 // This is just one example of where CommonTlsContext::Parse() will
 // generate an error, to show that we're propagating any such errors
 // correctly.  An exhaustive set of tests for CommonTlsContext::Parse()
@@ -1172,7 +1206,7 @@ TEST_F(TlsConfigTest, SniTooLong) {
             "field:transport_socket.typed_config.value["
             "envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext]"
             ".sni "
-            "must be shorter than 255 characters]")
+            "error:must be shorter than 255 characters]")
       << decode_result.resource.status();
 }
 

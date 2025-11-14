@@ -74,7 +74,7 @@ std::string XdsClusterResource::ToString() const {
                      lrs_backend_metric_propagation->AsString()));
   }
   if (use_http_connect) contents.push_back("use_http_connect=true");
-  contents.push_back(upstream_tls_context.ToString());
+  contents.push_back(absl::StrCat("upstream_tls_context=", upstream_tls_context.ToString()));
   if (connection_idle_timeout != Duration::Zero()) {
     contents.push_back(absl::StrCat("connection_idle_timeout=",
                                     connection_idle_timeout.ToString()));

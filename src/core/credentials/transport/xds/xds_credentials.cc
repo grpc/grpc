@@ -39,15 +39,7 @@ namespace grpc_core {
 
 namespace {
 
-// TODO(mlumish): Remove this once the feature passes interop tests.
-bool XdsSniEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_SNI");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
-
+// TODO(mlumish): Remove this after 1.80
 bool UseChannelAuthorityIfNoSNIApplicable() {
   auto value = GetEnv("GRPC_USE_CHANNEL_AUTHORITY_IF_NO_SNI_APPLICABLE");
   if (!value.has_value()) return false;
@@ -193,17 +185,15 @@ XdsCredentials::create_security_connector(
         }
       }
       tls_credentials_options->set_verify_server_cert(true);
-      if (XdsSniEnabled()) {
-        auto hostname = args->GetOwnedString(GRPC_ARG_ADDRESS_NAME);
-        if (xds_certificate_provider->auto_host_sni() && hostname.has_value()) {
-          tls_credentials_options->set_sni_override(hostname);
-        } else if (!xds_certificate_provider->sni().empty()) {
-          tls_credentials_options->set_sni_override(
-              xds_certificate_provider->sni());
-        } else {
-          if (!UseChannelAuthorityIfNoSNIApplicable()) {
-            tls_credentials_options->set_sni_override("");
-          }
+      auto hostname = args->GetOwnedString(GRPC_ARG_ADDRESS_NAME);
+      if (xds_certificate_provider->auto_host_sni() && hostname.has_value()) {
+        tls_credentials_options->set_sni_override(hostname);
+      } else if (!xds_certificate_provider->sni().empty()) {
+        tls_credentials_options->set_sni_override(
+            xds_certificate_provider->sni());
+      } else {
+        if (!UseChannelAuthorityIfNoSNIApplicable()) {
+          tls_credentials_options->set_sni_override("");
         }
       }
       tls_credentials_options->set_certificate_verifier(

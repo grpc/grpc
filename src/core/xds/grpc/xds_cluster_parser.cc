@@ -75,6 +75,8 @@ bool XdsHttpConnectEnabled() {
   return parse_succeeded && parsed_value;
 }
 
+namespace {
+
 // TODO(mlumish): Remove this once the feature passes interop tests.
 bool XdsSniEnabled() {
   auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_SNI");
@@ -83,8 +85,6 @@ bool XdsSniEnabled() {
   bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
   return parse_succeeded && parsed_value;
 }
-
-namespace {
 
 constexpr absl::string_view kUpstreamTlsContextType =
     "envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext";

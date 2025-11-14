@@ -59,7 +59,7 @@ class XdsCertificateVerifier : public grpc_tls_certificate_verifier {
   int CompareImpl(const grpc_tls_certificate_verifier* other) const override;
 
   RefCountedPtr<XdsCertificateProvider> xds_certificate_provider_;
-  absl::string_view sni_name_;
+  std::string sni_name_;
 };
 
 class XdsCredentials final : public grpc_channel_credentials {
