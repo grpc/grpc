@@ -27,13 +27,6 @@ def grpc_python_deps():
             url = "https://github.com/bazel-contrib/rules_python/releases/download/1.5.4/rules_python-1.5.4.tar.gz",
         )
 
-    python_configure(name = "local_config_python")
-
-    native.bind(
-        name = "python_headers",
-        actual = "@local_config_python//:python_headers",
-    )
-
     # This version should be same as that in G3
     http_archive(
         name = "typing_extensions",
