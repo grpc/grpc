@@ -1189,9 +1189,16 @@ TEST_F(TlsConfigTest, SniTooLong) {
   cluster.set_type(cluster.EDS);
   cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
   auto* transport_socket = cluster.mutable_transport_socket();
-  auto* typed_config = transport_socket->mutable_typed_config();
+  transport_socket->set_name("envoy.transport_sockets.tls");
   UpstreamTlsContext upstream_tls_context;
   upstream_tls_context.set_sni(std::string(256, 'A'));
+  auto* common_tls_context = upstream_tls_context.mutable_common_tls_context();
+  auto* validation_context = common_tls_context->mutable_validation_context();
+  auto* cert_provider =
+      validation_context->mutable_ca_certificate_provider_instance();
+  cert_provider->set_instance_name("provider1");
+  cert_provider->set_certificate_name("cert_name");
+  transport_socket->mutable_typed_config()->PackFrom(upstream_tls_context);
   typed_config->PackFrom(upstream_tls_context);
   std::string serialized_resource;
   ASSERT_TRUE(cluster.SerializeToString(&serialized_resource));
