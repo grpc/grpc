@@ -14,7 +14,6 @@
 
 require 'etc'
 require 'mkmf'
-require 'rubygems'
 require_relative '../../lib/grpc/version.rb'
 
 windows = RUBY_PLATFORM =~ /mingw|mswin/
@@ -167,7 +166,7 @@ def have_ruby_abi_version()
       false
     end
   rescue ArgumentError
-    puts "Failed to parse ruby version  #{RUBY_VERSION}."
+    puts "Failed to parse ruby version  #{RUBY_VERSION}. Assuming ruby_abi_version symbol is NOT present."
     false
   end
 end
