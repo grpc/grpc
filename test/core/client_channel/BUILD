@@ -242,3 +242,18 @@ grpc_fuzz_test(
         "//src/core:retry_interceptor",
     ],
 )
+
+grpc_cc_test(
+    name = "subchannel_metrics_test",
+    size = "small",
+    srcs = ["subchannel_metrics_test.cc"],
+    external_deps = [
+        "gtest_main",
+    ],
+    deps = [
+        "//:grpc",
+        "//:grpc_client_channel",
+        "//test/core/test_util:fake_stats_plugin",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
