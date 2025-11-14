@@ -424,6 +424,7 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/incoming_metadata_tracker.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/keepalive.cc" role="src" />

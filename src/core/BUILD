@@ -8297,6 +8297,18 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "incoming_metadata_tracker",
+    hdrs = [
+        "ext/transport/chttp2/transport/incoming_metadata_tracker.h",
+    ],
+    external_deps = [
+        "absl/log",
+    ],
+    deps = [
+    ],
+)
+
+grpc_cc_library(
     name = "message_assembler",
     hdrs = [
         "ext/transport/chttp2/transport/message_assembler.h",
@@ -8414,6 +8426,7 @@ grpc_cc_library(
         "http2_transport",
         "http2_ztrace_collector",
         "if",
+        "incoming_metadata_tracker",
         "inter_activity_mutex",
         "internal_channel_arg_names",
         "iomgr_fwd",

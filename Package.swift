@@ -436,6 +436,7 @@ let package = Package(
         "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h",
         "src/core/ext/transport/chttp2/transport/huffsyms.cc",
         "src/core/ext/transport/chttp2/transport/huffsyms.h",
+        "src/core/ext/transport/chttp2/transport/incoming_metadata_tracker.h",
         "src/core/ext/transport/chttp2/transport/internal.h",
         "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h",
         "src/core/ext/transport/chttp2/transport/keepalive.cc",
