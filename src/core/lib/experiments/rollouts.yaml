@@ -90,6 +90,8 @@
   default: false
 - name: schedule_cancellation_over_write
   default: false
+- name: skip_clear_peer_on_cancellation
+  default: false
 - name: sleep_promise_exec_ctx_removal
   default: false
 - name: sleep_use_non_owning_waker
