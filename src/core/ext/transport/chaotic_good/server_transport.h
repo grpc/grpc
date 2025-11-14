@@ -94,6 +94,14 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
     return frame_transport_->ctx()->socket_node;
   }
+  void StartWatch(RefCountedPtr<StateWatcher>) override {
+    // TODO(roth): Implement as part of migrating server side to new
+    // watcher API.
+  }
+  void StopWatch(RefCountedPtr<StateWatcher>) override {
+    // TODO(roth): Implement as part of migrating server side to new
+    // watcher API.
+  }
 
   void SetCallDestination(
       RefCountedPtr<UnstartedCallDestination> call_destination) override;

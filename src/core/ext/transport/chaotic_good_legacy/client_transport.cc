@@ -52,6 +52,8 @@
 namespace grpc_core {
 namespace chaotic_good_legacy {
 
+using grpc_event_engine::experimental::EventEngine;
+
 void ChaoticGoodClientTransport::Orphan() {
   AbortWithError();
   RefCountedPtr<Party> party;
@@ -233,8 +235,7 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
       args.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>(),
       config.MakeTransportOptions(), config.tracing_enabled(), socket_node_);
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
-  party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
-      event_engine.get());
+  party_arena->SetContext<EventEngine>(event_engine.get());
   party_ = Party::Make(std::move(party_arena));
   party_->Spawn(
       "client-chaotic-writer",
@@ -260,6 +261,15 @@ void ChaoticGoodClientTransport::AbortWithError() {
   state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN,
                           absl::UnavailableError("transport closed"),
                           "transport closed");
+  if (watcher_ != nullptr) {
+    party_->arena()->GetContext<EventEngine>()->Run(
+        [watcher = std::move(watcher_)]() mutable {
+          ExecCtx exec_ctx;
+          // TODO(ctiller): Provide better disconnect info here.
+          watcher->OnDisconnect(absl::UnavailableError("transport closed"), {});
+          watcher.reset();  // While ExecCtx is in scope.
+        });
+  }
   lock.Release();
   for (auto& pair : stream_map) {
     auto stream = std::move(pair.second);
@@ -398,6 +408,21 @@ void ChaoticGoodClientTransport::PerformOp(grpc_transport_op* op) {
                        grpc_transport_op_string(op)));
   }
   ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
+}
+
+void ChaoticGoodClientTransport::StartWatch(
+    RefCountedPtr<StateWatcher> watcher) {
+  MutexLock lock(&mu_);
+  GRPC_CHECK(watcher_ == nullptr);
+  watcher_ = std::move(watcher);
+  // TODO(ctiller): Report MAX_CONCURRENT_STREAMS to watcher here, and
+  // whenever the peer's setting changes.
+}
+
+void ChaoticGoodClientTransport::StopWatch(
+    RefCountedPtr<StateWatcher> watcher) {
+  MutexLock lock(&mu_);
+  if (watcher_ == watcher) watcher_.reset();
 }
 
 void ChaoticGoodClientTransport::ChannelzDataSource::AddData(
