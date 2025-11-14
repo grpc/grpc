@@ -638,25 +638,17 @@ void tsi_test_fixture_destroy(tsi_test_fixture* fixture) {
   if (fixture == nullptr) {
     return;
   }
-  LOG(INFO) << "DestroyFixture";
   tsi_test_frame_protector_config_destroy(fixture->config);
   tsi_handshaker_destroy(fixture->client_handshaker);
   tsi_handshaker_destroy(fixture->server_handshaker);
-  LOG(INFO) << "DestroyFixture";
   tsi_handshaker_result_destroy(fixture->client_result);
   tsi_handshaker_result_destroy(fixture->server_result);
   tsi_test_channel_destroy(fixture->channel);
-  LOG(INFO) << "DestroyFixture";
   GRPC_CHECK_NE(fixture->vtable, nullptr);
-  LOG(INFO) << "DestroyFixture";
   GRPC_CHECK_NE(fixture->vtable->destruct, nullptr);
-  LOG(INFO) << "DestroyFixture";
   gpr_mu_destroy(&fixture->mu);
-  LOG(INFO) << "DestroyFixture";
   gpr_cv_destroy(&fixture->cv);
-  LOG(INFO) << "DestroyFixture";
   fixture->vtable->destruct(fixture);
-  LOG(INFO) << "DestroyFixture";
 }
 
 tsi_test_frame_protector_fixture* tsi_test_frame_protector_fixture_create() {

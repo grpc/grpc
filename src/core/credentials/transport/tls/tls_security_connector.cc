@@ -226,7 +226,7 @@ tsi_ssl_pem_key_cert_pair* ConvertToTsiPemKeyCertPair(
                cert_pair_list[i].private_key_sign() != nullptr);
     GRPC_CHECK(!cert_pair_list[i].cert_chain().empty());
     tsi_pairs[i].cert_chain =
-        absl::string_view(cert_pair_list[i].cert_chain().c_str());
+        gpr_strdup(cert_pair_list[i].cert_chain().c_str());
     PrivateKey private_key;
     if (cert_pair_list[i].private_key_sign() == nullptr) {
       private_key = cert_pair_list[i].private_key();
