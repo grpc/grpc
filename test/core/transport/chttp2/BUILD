@@ -628,6 +628,7 @@ grpc_cc_test(
         "grpc:no-internal-poller",
         "requires-net:ipv4",
         "requires-net:loopback",
+        "chttp2_keepalive_tests",
     ],
     deps = [
         "//:channel",
