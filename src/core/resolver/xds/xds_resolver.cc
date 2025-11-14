@@ -32,18 +32,6 @@
 #include <variant>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "absl/meta/type_traits.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_replace.h"
-#include "absl/strings/string_view.h"
-#include "absl/strings/strip.h"
 #include "re2/re2.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/status_util.h"
@@ -91,6 +79,18 @@
 #include "src/core/xds/grpc/xds_route_config.h"
 #include "src/core/xds/grpc/xds_routing.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "absl/log/log.h"
+#include "absl/meta/type_traits.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_replace.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
 
 namespace grpc_core {
 
@@ -788,7 +788,7 @@ void XdsResolver::XdsConfigSelector::AddFilters(
     filter->UpdateBlackboard(hcm.http_filters[i].config, old_blackboard,
                              new_blackboard);
   }
-  builder.Add<ClusterSelectionFilter>();
+  builder.Add<ClusterSelectionFilter>(nullptr);
 }
 
 std::vector<const grpc_channel_filter*>

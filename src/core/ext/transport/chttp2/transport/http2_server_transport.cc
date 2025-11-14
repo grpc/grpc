@@ -24,8 +24,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
 #include "src/core/call/call_destination.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
@@ -44,6 +42,8 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace http2 {

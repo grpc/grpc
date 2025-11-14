@@ -26,8 +26,6 @@
 #include <optional>
 #include <queue>
 
-#include "absl/functional/function_ref.h"
-#include "absl/strings/string_view.h"
 #include "src/core/channelz/property_list.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
@@ -40,6 +38,8 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
+#include "absl/functional/function_ref.h"
+#include "absl/strings/string_view.h"
 namespace grpc_core {
 
 // Timeout for getting an ack back on settings changes

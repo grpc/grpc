@@ -25,9 +25,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
@@ -40,6 +37,9 @@
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 
@@ -99,8 +99,9 @@ class Waker {
   }
 
   // Wake the underlying activity.
+  // A Waker object can only be woken up once. Calling Wakeup() or WakeupAsync()
+  // consumes the waker, rendering subsequent calls no-ops.
   void Wakeup() { Take().Wakeup(); }
-
   void WakeupAsync() { Take().WakeupAsync(); }
 
   template <typename H>

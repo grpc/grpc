@@ -18,9 +18,9 @@
 
 #include <utility>
 
+#include "src/core/util/grpc_check.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/distributions.h"
-#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 

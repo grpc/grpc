@@ -18,9 +18,9 @@
 #include <optional>
 #include <string>
 
-#include "absl/strings/string_view.h"
 #include "src/proto/grpc/channelz/v2/channelz.pb.h"
 #include "src/proto/grpc/channelz/v2/property_list.pb.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_zviz {
 

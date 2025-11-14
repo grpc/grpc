@@ -33,8 +33,8 @@ licenses(["reciprocal"])
 package(
     default_visibility = ["//visibility:public"],
     features = [
-        "-parse_headers",
         "layering_check",
+        "parse_headers",
     ],
 )
 
@@ -1369,6 +1369,7 @@ grpc_cc_library(
         "@com_google_protobuf//upb/base",
         "@com_google_protobuf//upb/mem",
     ],
+    visibility = ["//bazel:channelz"],
     deps = [
         "channelz_service_upb",
         "channelz_upb",
@@ -1747,6 +1748,7 @@ grpc_cc_library(
         "//src/core:channel_stack_type",
         "//src/core:compression",
         "//src/core:connectivity_state",
+        "//src/core:experiments",
         "//src/core:grpc_check",
         "//src/core:iomgr_fwd",
         "//src/core:ref_counted",
@@ -2083,6 +2085,7 @@ grpc_cc_library(
         "//src/core:gpr_manual_constructor",
         "//src/core:gpr_spinlock",
         "//src/core:grpc_check",
+        "//src/core:http2_status",
         "//src/core:if",
         "//src/core:iomgr_fwd",
         "//src/core:latch",
@@ -2953,8 +2956,10 @@ grpc_cc_library(
         "src/cpp/latent_see/latent_see_service.h",
     ],
     external_deps = [
+        "@com_google_protobuf//upb/mem",
         "protobuf_headers",
         "absl/log",
+        "absl/strings:string_view",
     ],
     tags = ["nofixdeps"],
     visibility = ["//bazel:latent_see"],
@@ -2963,8 +2968,11 @@ grpc_cc_library(
         "grpc",
         "grpc++",
         "grpc++_config_proto",
+        "//src/core:channelz_property_list",
         "//src/core:latent_see",
         "//src/proto/grpc/channelz/v2:latent_see_cc_grpc",
+        "//src/proto/grpc/channelz/v2:property_list_cc_proto",
+        "//src/proto/grpc/channelz/v2:property_list_upb_proto",
     ],
     alwayslink = 1,
 )
@@ -2988,7 +2996,9 @@ grpc_cc_library(
         "grpc",
         "grpc++",
         "grpc++_config_proto",
+        "//src/core:channelz_property_list",
         "//src/core:latent_see",
+        "//src/core:time",
         "//src/proto/grpc/channelz/v2:latent_see_cc_grpc",
     ],
     alwayslink = 1,
@@ -3011,7 +3021,7 @@ grpc_cc_library(
         "gpr",
         "grpc",
         "grpc++_base",
-        "//src/proto/grpc/testing/xds/v3:csds_cc_grpc",
+        "@envoy_api//envoy/service/status/v3:pkg_cc_grpc",
     ],
     alwayslink = 1,
 )
@@ -3215,6 +3225,7 @@ grpc_cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "generic_stub_internal",
+        "grpc++",
     ],
 )
 
@@ -3225,6 +3236,7 @@ grpc_cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "gpr_platform",
         "grpc++_public_hdrs",
     ],
 )
@@ -3763,6 +3775,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_fwd",
         "//src/core:channel_stack_type",
+        "//src/core:filter_args",
     ],
 )
 
@@ -3950,6 +3963,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
+        "//src/core:client_channel/buffered_call.cc",
         "//src/core:client_channel/client_channel.cc",
         "//src/core:client_channel/client_channel_factory.cc",
         "//src/core:client_channel/client_channel_filter.cc",
@@ -3964,6 +3978,7 @@ grpc_cc_library(
         "//src/core:client_channel/subchannel_stream_client.cc",
     ],
     hdrs = [
+        "//src/core:client_channel/buffered_call.h",
         "//src/core:client_channel/client_channel.h",
         "//src/core:client_channel/client_channel_factory.h",
         "//src/core:client_channel/client_channel_filter.h",
@@ -3980,6 +3995,7 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/cleanup",
+        "absl/container:flat_hash_map",
         "absl/container:flat_hash_set",
         "absl/container:inlined_vector",
         "absl/functional:any_invocable",
@@ -4776,6 +4792,7 @@ grpc_cc_library(
         "//src/core:ext/transport/chttp2/transport/frame.h",
     ],
     external_deps = [
+        "absl/log",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -4783,6 +4800,7 @@ grpc_cc_library(
     ],
     deps = [
         "gpr",
+        "grpc_trace",
         "//src/core:grpc_check",
         "//src/core:http2_settings",
         "//src/core:http2_status",

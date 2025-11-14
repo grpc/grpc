@@ -24,8 +24,6 @@
 #include <utility>
 #include <variant>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
@@ -34,6 +32,8 @@
 #include "upb/base/status.hpp"
 #include "upb/json/encode.h"
 #include "upb/mem/arena.hpp"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 

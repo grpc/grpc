@@ -18,9 +18,9 @@
 #include <string>
 #include <vector>
 
+#include "src/proto/grpc/channelz/v2/channelz.pb.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "src/proto/grpc/channelz/v2/channelz.pb.h"
 
 namespace grpc_zviz {
 

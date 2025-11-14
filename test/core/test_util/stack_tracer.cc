@@ -23,9 +23,9 @@
 #include <cstdio>
 #include <string>
 
+#include "src/core/util/examine_stack.h"
 #include "absl/debugging/stacktrace.h"
 #include "absl/debugging/symbolize.h"
-#include "src/core/util/examine_stack.h"
 
 namespace {
 

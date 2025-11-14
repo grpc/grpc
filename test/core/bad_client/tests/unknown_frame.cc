@@ -20,11 +20,11 @@
 
 #include <string>
 
-#include "gtest/gtest.h"
 #include "src/core/server/server.h"
 #include "src/core/util/grpc_check.h"
 #include "test/core/bad_client/bad_client.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 static void verifier(grpc_server* server, grpc_completion_queue* cq,
                      void* /*registered_method*/) {

@@ -34,8 +34,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
@@ -43,6 +41,8 @@
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/usage_timer.h"
 #include "test/cpp/util/create_test_channel.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
 
 namespace grpc {
 namespace testing {

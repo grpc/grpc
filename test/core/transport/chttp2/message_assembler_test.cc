@@ -25,9 +25,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/log.h"
-#include "absl/strings/string_view.h"
-#include "gtest/gtest.h"
 #include "src/core/call/message.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -35,6 +32,9 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/grpc_check.h"
 #include "test/core/transport/chttp2/http2_common_test_inputs.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace http2 {

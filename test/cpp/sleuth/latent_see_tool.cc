@@ -14,52 +14,57 @@
 
 #include <fstream>
 #include <iostream>
+#include <optional>
 #include <ostream>
+#include <sstream>
+#include <string>
 
-#include "absl/flags/flag.h"
-#include "absl/status/status.h"
 #include "src/core/util/latent_see.h"
 #include "test/cpp/sleuth/client.h"
 #include "test/cpp/sleuth/tool.h"
 #include "test/cpp/sleuth/tool_options.h"
-
-ABSL_FLAG(std::optional<std::string>, latent_see_target, std::nullopt,
-          "Target to connect to for latent see");
-ABSL_FLAG(double, latent_see_sample_time_seconds, 1.0,
-          "Time to sample latent see data");
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_sleuth {
 
-SLEUTH_TOOL(fetch_latent_see_json, "file|-",
-            "Fetch latent see data and format as json. file|- means output to "
-            "stdout.") {
-  if (args.size() != 1) {
-    return absl::InvalidArgumentError(
-        "Usage: fetch_latent_see_json file|-\n"
-        "fetch_latent_see_json requires exactly one argument: the file to "
-        "write to, or - for stdout.");
-  }
-
-  auto target = absl::GetFlag(FLAGS_latent_see_target);
-  if (!target.has_value()) {
-    return absl::InvalidArgumentError("--latent_see_target is required");
-  }
+SLEUTH_TOOL(fetch_latent_see_json, "target=... [destination=...]",
+            "Fetch latent see data and format as json. If destination is not "
+            "specified, dumps to stdout.") {
+  auto target = args.TryGetFlag<std::string>("target");
+  if (!target.ok()) return target.status();
+  auto sample_time_seconds = args.TryGetFlag<double>("sample_time_seconds");
 
   std::ofstream file_out;
-  std::ostream* out = &std::cout;
-  if (args[0] != "-") {
-    file_out.open(args[0]);
+  std::stringstream ss;
+  std::ostream* out = &ss;
+  auto destination = args.TryGetFlag<std::string>("destination");
+  if (destination.ok()) {
+    file_out.open(*destination);
     if (!file_out.is_open()) {
       return absl::InvalidArgumentError(
-          absl::StrCat("Failed to open file: ", args[0]));
+          absl::StrCat("Failed to open file: ", *destination));
     }
     out = &file_out;
   }
 
   grpc_core::latent_see::JsonOutput output(*out);
-  auto client = Client(*target, ToolClientOptions());
+  std::optional<std::string> channel_creds_type;
+  auto channel_creds_type_arg =
+      args.TryGetFlag<std::string>("channel_creds_type");
+  if (channel_creds_type_arg.ok()) {
+    channel_creds_type = *channel_creds_type_arg;
+  }
+  auto channelz_protocol = args.TryGetFlag<std::string>("channelz_protocol");
+  auto client = Client(
+      *target,
+      ToolClientOptions(channelz_protocol.ok() ? *channelz_protocol : "h2",
+                        channel_creds_type));
   auto status = client.FetchLatentSee(
-      absl::GetFlag(FLAGS_latent_see_sample_time_seconds), &output);
+      sample_time_seconds.ok() ? *sample_time_seconds : 1.0, &output);
+  if (!destination.ok()) {
+    print_fn(ss.str());
+  }
   return status;
 }
 

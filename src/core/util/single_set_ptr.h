@@ -20,8 +20,8 @@
 #include <atomic>
 #include <memory>
 
-#include "absl/log/check.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/log/check.h"
 
 namespace grpc_core {
 

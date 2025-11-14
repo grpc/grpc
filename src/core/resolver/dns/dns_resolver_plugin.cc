@@ -17,8 +17,6 @@
 
 #include <memory>
 
-#include "absl/log/log.h"
-#include "absl/strings/match.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/resolver/dns/c_ares/dns_resolver_ares.h"
@@ -26,6 +24,8 @@
 #include "src/core/resolver/dns/native/dns_resolver.h"
 #include "src/core/resolver/resolver_factory.h"
 #include "src/core/util/crash.h"
+#include "absl/log/log.h"
+#include "absl/strings/match.h"
 
 namespace grpc_core {
 

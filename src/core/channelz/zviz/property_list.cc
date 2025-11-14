@@ -18,12 +18,12 @@
 #include <utility>
 #include <vector>
 
+#include "src/proto/grpc/channelz/v2/channelz.pb.h"
+#include "src/proto/grpc/channelz/v2/property_list.pb.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
-#include "src/proto/grpc/channelz/v2/channelz.pb.h"
-#include "src/proto/grpc/channelz/v2/property_list.pb.h"
 
 namespace grpc_zviz {
 

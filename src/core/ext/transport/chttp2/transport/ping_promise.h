@@ -29,6 +29,7 @@
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/time.h"
 
@@ -132,7 +133,7 @@ class PingManager {
 
   std::optional<uint64_t> TestOnlyMaybeGetSerializedPingFrames(
       SliceBuffer& output_buffer, Duration next_allowed_ping_interval) {
-    DCHECK(!opaque_data_.has_value());
+    GRPC_DCHECK(!opaque_data_.has_value());
     if (NeedToPing(next_allowed_ping_interval)) {
       uint64_t opaque_data = ping_callbacks_.StartPing();
       Http2Frame frame = GetHttp2PingFrame(/*ack*/ false, opaque_data);

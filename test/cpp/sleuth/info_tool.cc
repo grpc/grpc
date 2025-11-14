@@ -12,16 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <iostream>
+#include <string>
 
-#include "absl/status/status.h"
 #include "test/cpp/sleuth/tool.h"
 #include "test/cpp/sleuth/version.h"
+#include "absl/status/status.h"
 
 namespace grpc_sleuth {
 
 SLEUTH_TOOL(info, "", "Print version information.") {
-  std::cout << "Sleuth version " << kSleuthVersion << std::endl;
+  print_fn("Sleuth version " + std::to_string(kSleuthVersion) + "\n");
   return absl::OkStatus();
 }
 

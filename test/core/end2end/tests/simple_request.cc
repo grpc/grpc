@@ -24,14 +24,14 @@
 #include <optional>
 #include <string>
 
-#include "absl/log/log.h"
-#include "absl/strings/match.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/strings/match.h"
 
 using testing::HasSubstr;
 using testing::StartsWith;

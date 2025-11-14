@@ -14,9 +14,15 @@
 
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 
+#include <cstdint>
+#include <optional>
+#include <utility>
+#include <vector>
+
+#include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "src/core/ext/transport/chttp2/transport/http2_settings_manager.h"
 
 using grpc_core::http2::Http2ErrorCode;
 
@@ -636,6 +642,45 @@ TEST(Http2SettingsManagerTest,
       {Http2Settings::kGrpcAllowSecurityFrameWireId, 0}};
   EXPECT_EQ(settings_manager.ApplyIncomingSettings(settings2),
             Http2ErrorCode::kConnectError);
+}
+
+TEST(Http2SettingsManagerTest, NoAckNeededInitially) {
+  // No ACK should be sent initially.
+  Http2SettingsManager settings_manager;
+  EXPECT_EQ(settings_manager.MaybeSendAck(), 0u);
+}
+
+TEST(Http2SettingsManagerTest, AckNeededAfterEmptySettings) {
+  // If we receive an empty SETTINGS frame, we should send an ACK.
+  Http2SettingsManager settings_manager;
+  EXPECT_EQ(settings_manager.ApplyIncomingSettings({}),
+            Http2ErrorCode::kNoError);
+  EXPECT_EQ(settings_manager.MaybeSendAck(), 1u);
+  EXPECT_EQ(settings_manager.MaybeSendAck(), 0u);
+}
+
+TEST(Http2SettingsManagerTest, AckNeededAfterValidSettings) {
+  // If we receive a valid SETTINGS frame, we should send an ACK.
+  Http2SettingsManager settings_manager;
+  std::vector<Http2SettingsFrame::Setting> settings = {
+      {Http2Settings::kHeaderTableSizeWireId, 1000},
+      {Http2Settings::kMaxConcurrentStreamsWireId, 200}};
+  EXPECT_EQ(settings_manager.ApplyIncomingSettings(settings),
+            Http2ErrorCode::kNoError);
+  EXPECT_EQ(settings_manager.MaybeSendAck(), 1u);
+  EXPECT_EQ(settings_manager.MaybeSendAck(), 0u);
+}
+
+TEST(Http2SettingsManagerTest, MultipleAcksNeeded) {
+  // If we receive multiple SETTINGS frames before sending an ACK,
+  // we should send an ACK for each.
+  Http2SettingsManager settings_manager;
+  EXPECT_EQ(settings_manager.ApplyIncomingSettings({}),
+            Http2ErrorCode::kNoError);
+  EXPECT_EQ(settings_manager.ApplyIncomingSettings({}),
+            Http2ErrorCode::kNoError);
+  EXPECT_EQ(settings_manager.MaybeSendAck(), 2u);
+  EXPECT_EQ(settings_manager.MaybeSendAck(), 0u);
 }
 
 }  // namespace grpc_core

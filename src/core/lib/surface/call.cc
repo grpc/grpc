@@ -47,13 +47,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/call_finalization.h"
 #include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
@@ -105,6 +98,13 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/time_precise.h"
 #include "src/core/util/useful.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 
@@ -337,28 +337,30 @@ void Call::HandleCompressionAlgorithmDisabled(
                                      GRPC_STATUS_UNIMPLEMENTED));
 }
 
-void Call::UpdateDeadline(Timestamp deadline) {
+grpc_error_handle Call::UpdateDeadline(Timestamp deadline) {
   ReleasableMutexLock lock(&deadline_mu_);
   GRPC_TRACE_LOG(call, INFO)
       << "[call " << this << "] UpdateDeadline from=" << deadline_.ToString()
       << " to=" << deadline.ToString();
-  if (deadline >= deadline_) return;
+  if (deadline >= deadline_) return absl::OkStatus();
   if (deadline < Timestamp::Now()) {
     lock.Release();
-    CancelWithError(grpc_error_set_int(
+    grpc_error_handle error = grpc_error_set_int(
         absl::DeadlineExceededError("Deadline Exceeded"),
-        StatusIntProperty::kRpcStatus, GRPC_STATUS_DEADLINE_EXCEEDED));
-    return;
+        StatusIntProperty::kRpcStatus, GRPC_STATUS_DEADLINE_EXCEEDED);
+    CancelWithError(error);
+    return error;
   }
   auto* event_engine =
       arena_->GetContext<grpc_event_engine::experimental::EventEngine>();
   if (deadline_ != Timestamp::InfFuture()) {
-    if (!event_engine->Cancel(deadline_task_)) return;
+    if (!event_engine->Cancel(deadline_task_)) return absl::OkStatus();
   } else {
     InternalRef("deadline");
   }
   deadline_ = deadline;
   deadline_task_ = event_engine->RunAfter(deadline - Timestamp::Now(), this);
+  return absl::OkStatus();
 }
 
 void Call::ResetDeadline() {

@@ -15,10 +15,10 @@
 #ifndef GRPC_TEST_CORE_CALL_BATCH_BUILDER_H
 #define GRPC_TEST_CORE_CALL_BATCH_BUILDER_H
 
-#include "absl/strings/str_cat.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/slice/slice.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "gtest/gtest.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 

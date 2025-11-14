@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test")
 
 grpc_cc_library(
     name = "gen_stats_utils",
@@ -27,9 +27,24 @@ grpc_cc_library(
         "absl/strings:str_format",
         "absl/time:time",
         "absl/container:flat_hash_map",
-        "yaml-cpp",
+        "@yaml-cpp//:yaml-cpp",
     ],
     visibility = ["//visibility:public"],
+)
+
+grpc_cc_binary(
+    name = "gen_stats_data",
+    srcs = ["gen_stats_data.cc"],
+    external_deps = [
+        "absl/flags:flag",
+        "absl/flags:parse",
+        "absl/log",
+        "absl/log:check",
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [":gen_stats_utils"],
 )
 
 grpc_cc_test(

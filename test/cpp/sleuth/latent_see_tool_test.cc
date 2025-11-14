@@ -13,24 +13,18 @@
 // limitations under the License.
 
 #include <grpcpp/security/credentials.h>
+#include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
 #include <memory>
-#include <optional>
 #include <string>
 
-#include "absl/flags/declare.h"
-#include "absl/flags/flag.h"
-#include "absl/strings/str_cat.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/cpp/latent_see/latent_see_service.h"
 #include "test/core/test_util/port.h"
 #include "test/cpp/sleuth/tool_test.h"
-
-ABSL_DECLARE_FLAG(std::optional<std::string>, latent_see_target);
-ABSL_DECLARE_FLAG(std::string, channel_creds_type);
+#include "gtest/gtest.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_sleuth {
 namespace {
@@ -59,9 +53,9 @@ class LatentSeeToolTest : public ::testing::Test {
 };
 
 TEST_F(LatentSeeToolTest, FetchLatentSeeJson) {
-  absl::SetFlag(&FLAGS_latent_see_target, server_address());
-  absl::SetFlag(&FLAGS_channel_creds_type, "insecure");
-  auto result = TestTool("fetch_latent_see_json", {"-"});
+  auto result = TestTool("fetch_latent_see_json",
+                         {absl::StrCat("target=", server_address()),
+                          "channel_creds_type=insecure"});
   ASSERT_TRUE(result.ok()) << result.status();
   EXPECT_FALSE(result->empty());
 }

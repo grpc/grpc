@@ -23,6 +23,8 @@ os.chdir(os.path.join(os.path.dirname(sys.argv[0]), "../../.."))
 BAD_REGEXES = [
     (r'\n#include "include/(.*)"', r"\n#include <\1>"),
     (r'\n#include "grpc(.*)"', r"\n#include <grpc\1>"),
+    (r"\n#include <gtest(.*)>", r'\n#include "gtest\1"'),
+    (r"\n#include <gmock(.*)>", r'\n#include "gmock\1"'),
 ]
 
 fix = sys.argv[1:] == ["--fix"]

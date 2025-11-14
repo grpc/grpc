@@ -82,6 +82,10 @@ const char* const additional_constraints_event_engine_poller_for_python = "{}";
 const char* const description_event_engine_secure_endpoint =
     "Use EventEngine secure endpoint wrapper instead of iomgr when available";
 const char* const additional_constraints_event_engine_secure_endpoint = "{}";
+const char* const description_fail_recv_metadata_on_deadline_exceeded =
+    "Fail recv initial metadata when the deadline is exceeded.";
+const char* const
+    additional_constraints_fail_recv_metadata_on_deadline_exceeded = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
@@ -112,6 +116,9 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_otel_export_telemetry_domains =
+    "Export telemetry domains in OpenTelemetry metrics.";
+const char* const additional_constraints_otel_export_telemetry_domains = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
@@ -198,6 +205,9 @@ const char* const additional_constraints_tcp_rcv_lowat = "{}";
 const char* const description_track_writes_in_resource_quota =
     "Track the Write memory in Resource Quota.";
 const char* const additional_constraints_track_writes_in_resource_quota = "{}";
+const char* const description_transport_state_watcher =
+    "New state watcher API between transport and subchannel.";
+const char* const additional_constraints_transport_state_watcher = "{}";
 const char* const description_tsi_frame_protector_without_locks =
     "Do not hold locks while using the tsi_frame_protector.";
 const char* const additional_constraints_tsi_frame_protector_without_locks =
@@ -253,6 +263,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
      additional_constraints_event_engine_secure_endpoint, nullptr, 0, true,
      false},
+    {"fail_recv_metadata_on_deadline_exceeded",
+     description_fail_recv_metadata_on_deadline_exceeded,
+     additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
+     false, false},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"fuse_filters", description_fuse_filters,
@@ -277,6 +291,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
+    {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
+     additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
+     true},
     {"pick_first_ignore_empty_updates",
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
@@ -340,6 +357,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_track_writes_in_resource_quota,
      additional_constraints_track_writes_in_resource_quota, nullptr, 0, false,
      true},
+    {"transport_state_watcher", description_transport_state_watcher,
+     additional_constraints_transport_state_watcher, nullptr, 0, false, true},
     {"tsi_frame_protector_without_locks",
      description_tsi_frame_protector_without_locks,
      additional_constraints_tsi_frame_protector_without_locks, nullptr, 0,
@@ -413,6 +432,10 @@ const char* const additional_constraints_event_engine_poller_for_python = "{}";
 const char* const description_event_engine_secure_endpoint =
     "Use EventEngine secure endpoint wrapper instead of iomgr when available";
 const char* const additional_constraints_event_engine_secure_endpoint = "{}";
+const char* const description_fail_recv_metadata_on_deadline_exceeded =
+    "Fail recv initial metadata when the deadline is exceeded.";
+const char* const
+    additional_constraints_fail_recv_metadata_on_deadline_exceeded = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
@@ -443,6 +466,9 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_otel_export_telemetry_domains =
+    "Export telemetry domains in OpenTelemetry metrics.";
+const char* const additional_constraints_otel_export_telemetry_domains = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
@@ -529,6 +555,9 @@ const char* const additional_constraints_tcp_rcv_lowat = "{}";
 const char* const description_track_writes_in_resource_quota =
     "Track the Write memory in Resource Quota.";
 const char* const additional_constraints_track_writes_in_resource_quota = "{}";
+const char* const description_transport_state_watcher =
+    "New state watcher API between transport and subchannel.";
+const char* const additional_constraints_transport_state_watcher = "{}";
 const char* const description_tsi_frame_protector_without_locks =
     "Do not hold locks while using the tsi_frame_protector.";
 const char* const additional_constraints_tsi_frame_protector_without_locks =
@@ -584,6 +613,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
      additional_constraints_event_engine_secure_endpoint, nullptr, 0, true,
      false},
+    {"fail_recv_metadata_on_deadline_exceeded",
+     description_fail_recv_metadata_on_deadline_exceeded,
+     additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
+     false, false},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"fuse_filters", description_fuse_filters,
@@ -608,6 +641,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
+    {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
+     additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
+     true},
     {"pick_first_ignore_empty_updates",
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
@@ -671,6 +707,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_track_writes_in_resource_quota,
      additional_constraints_track_writes_in_resource_quota, nullptr, 0, false,
      true},
+    {"transport_state_watcher", description_transport_state_watcher,
+     additional_constraints_transport_state_watcher, nullptr, 0, false, true},
     {"tsi_frame_protector_without_locks",
      description_tsi_frame_protector_without_locks,
      additional_constraints_tsi_frame_protector_without_locks, nullptr, 0,
@@ -744,6 +782,10 @@ const char* const additional_constraints_event_engine_poller_for_python = "{}";
 const char* const description_event_engine_secure_endpoint =
     "Use EventEngine secure endpoint wrapper instead of iomgr when available";
 const char* const additional_constraints_event_engine_secure_endpoint = "{}";
+const char* const description_fail_recv_metadata_on_deadline_exceeded =
+    "Fail recv initial metadata when the deadline is exceeded.";
+const char* const
+    additional_constraints_fail_recv_metadata_on_deadline_exceeded = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
@@ -774,6 +816,9 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_otel_export_telemetry_domains =
+    "Export telemetry domains in OpenTelemetry metrics.";
+const char* const additional_constraints_otel_export_telemetry_domains = "{}";
 const char* const description_pick_first_ignore_empty_updates =
     "Ignore empty resolutions in pick_first";
 const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
@@ -860,6 +905,9 @@ const char* const additional_constraints_tcp_rcv_lowat = "{}";
 const char* const description_track_writes_in_resource_quota =
     "Track the Write memory in Resource Quota.";
 const char* const additional_constraints_track_writes_in_resource_quota = "{}";
+const char* const description_transport_state_watcher =
+    "New state watcher API between transport and subchannel.";
+const char* const additional_constraints_transport_state_watcher = "{}";
 const char* const description_tsi_frame_protector_without_locks =
     "Do not hold locks while using the tsi_frame_protector.";
 const char* const additional_constraints_tsi_frame_protector_without_locks =
@@ -915,6 +963,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
      additional_constraints_event_engine_secure_endpoint, nullptr, 0, true,
      false},
+    {"fail_recv_metadata_on_deadline_exceeded",
+     description_fail_recv_metadata_on_deadline_exceeded,
+     additional_constraints_fail_recv_metadata_on_deadline_exceeded, nullptr, 0,
+     false, false},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"fuse_filters", description_fuse_filters,
@@ -939,6 +991,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
+    {"otel_export_telemetry_domains", description_otel_export_telemetry_domains,
+     additional_constraints_otel_export_telemetry_domains, nullptr, 0, false,
+     true},
     {"pick_first_ignore_empty_updates",
      description_pick_first_ignore_empty_updates,
      additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
@@ -1002,6 +1057,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_track_writes_in_resource_quota,
      additional_constraints_track_writes_in_resource_quota, nullptr, 0, false,
      true},
+    {"transport_state_watcher", description_transport_state_watcher,
+     additional_constraints_transport_state_watcher, nullptr, 0, false, true},
     {"tsi_frame_protector_without_locks",
      description_tsi_frame_protector_without_locks,
      additional_constraints_tsi_frame_protector_without_locks, nullptr, 0,

@@ -26,7 +26,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/strings/str_cat.h"
 #include "google/protobuf/any.upb.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/slice/slice.h"
@@ -38,6 +37,7 @@
 #include "src/core/util/upb_utils.h"
 #include "src/proto/grpc/channelz/v2/channelz.upb.h"
 #include "upb/base/string_view.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 namespace channelz {

@@ -27,9 +27,6 @@
 #include <atomic>
 #include <memory>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_set.h"
-#include "absl/functional/any_invocable.h"
 #include "src/core/lib/event_engine/thread_pool/thread_count.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
@@ -38,6 +35,9 @@
 #include "src/core/util/notification.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/functional/any_invocable.h"
 
 namespace grpc_event_engine::experimental {
 

@@ -43,7 +43,11 @@ grpc_cc_library(
     hdrs = [
         "proto_reflection_descriptor_database.h",
     ],
-    external_deps = ["absl/log:log"],
+    external_deps = [
+        "absl/log:log",
+        "absl/container:flat_hash_map",
+        "absl/container:flat_hash_set",
+    ],
     deps = [
         "//:gpr",
         "//:grpc++",

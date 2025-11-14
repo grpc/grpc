@@ -32,6 +32,7 @@ EXPERIMENT_ENABLES = {
     "event_engine_for_all_other_endpoints": "event_engine_client,event_engine_dns,event_engine_dns_non_client_channel,event_engine_for_all_other_endpoints,event_engine_listener",
     "event_engine_poller_for_python": "event_engine_poller_for_python",
     "event_engine_secure_endpoint": "event_engine_secure_endpoint",
+    "fail_recv_metadata_on_deadline_exceeded": "fail_recv_metadata_on_deadline_exceeded",
     "free_large_allocator": "free_large_allocator",
     "fuse_filters": "fuse_filters",
     "graceful_external_connection_failure": "graceful_external_connection_failure",
@@ -41,6 +42,7 @@ EXPERIMENT_ENABLES = {
     "max_inflight_pings_strict_limit": "max_inflight_pings_strict_limit",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
+    "otel_export_telemetry_domains": "otel_export_telemetry_domains",
     "pick_first_ignore_empty_updates": "pick_first_ignore_empty_updates",
     "pipelined_read_secure_endpoint": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,pipelined_read_secure_endpoint",
     "pollset_alternative": "event_engine_client,event_engine_listener,pollset_alternative",
@@ -59,6 +61,7 @@ EXPERIMENT_ENABLES = {
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
     "track_writes_in_resource_quota": "track_writes_in_resource_quota",
+    "transport_state_watcher": "transport_state_watcher",
     "tsi_frame_protector_without_locks": "tsi_frame_protector_without_locks",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
 }
@@ -84,11 +87,15 @@ EXPERIMENTS = {
                 "channelz_use_v2_for_v1_api",
                 "channelz_use_v2_for_v1_service",
             ],
+            "chttp2_keepalive_tests": [
+                "transport_state_watcher",
+            ],
             "core_end2end_test": [
                 "chttp2_bound_write_size",
                 "error_flatten",
                 "event_engine_fork",
                 "local_connector_secure",
+                "otel_export_telemetry_domains",
                 "pipelined_read_secure_endpoint",
                 "pollset_alternative",
                 "promise_based_http2_client_transport",
@@ -102,6 +109,7 @@ EXPERIMENTS = {
             ],
             "cpp_lb_end2end_test": [
                 "rr_wrr_connect_from_random_index",
+                "transport_state_watcher",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -181,11 +189,15 @@ EXPERIMENTS = {
                 "channelz_use_v2_for_v1_api",
                 "channelz_use_v2_for_v1_service",
             ],
+            "chttp2_keepalive_tests": [
+                "transport_state_watcher",
+            ],
             "core_end2end_test": [
                 "chttp2_bound_write_size",
                 "error_flatten",
                 "event_engine_fork",
                 "local_connector_secure",
+                "otel_export_telemetry_domains",
                 "pipelined_read_secure_endpoint",
                 "pollset_alternative",
                 "promise_based_http2_client_transport",
@@ -199,6 +211,7 @@ EXPERIMENTS = {
             ],
             "cpp_lb_end2end_test": [
                 "rr_wrr_connect_from_random_index",
+                "transport_state_watcher",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",
@@ -278,11 +291,15 @@ EXPERIMENTS = {
                 "channelz_use_v2_for_v1_api",
                 "channelz_use_v2_for_v1_service",
             ],
+            "chttp2_keepalive_tests": [
+                "transport_state_watcher",
+            ],
             "core_end2end_test": [
                 "chttp2_bound_write_size",
                 "error_flatten",
                 "event_engine_fork",
                 "local_connector_secure",
+                "otel_export_telemetry_domains",
                 "pipelined_read_secure_endpoint",
                 "pollset_alternative",
                 "promise_based_http2_client_transport",
@@ -296,6 +313,7 @@ EXPERIMENTS = {
             ],
             "cpp_lb_end2end_test": [
                 "rr_wrr_connect_from_random_index",
+                "transport_state_watcher",
             ],
             "endpoint_test": [
                 "tcp_frame_size_tuning",

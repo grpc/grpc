@@ -27,10 +27,6 @@
 #include <optional>
 #include <vector>
 
-#include "absl/memory/memory.h"
-#include "absl/strings/str_cat.h"
-#include "absl/time/time.h"
-#include "absl/types/span.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/extensions/blocking_dns.h"
 #include "src/core/lib/event_engine/shim.h"
@@ -44,6 +40,10 @@
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/test_util/port.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
+#include "absl/time/time.h"
+#include "absl/types/span.h"
 
 #if defined(GRPC_POSIX_SOCKET_TCP)
 #include "src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h"

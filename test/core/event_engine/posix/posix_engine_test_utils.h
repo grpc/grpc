@@ -19,8 +19,8 @@
 
 #include <utility>
 
-#include "absl/functional/any_invocable.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
+#include "absl/functional/any_invocable.h"
 
 namespace grpc_event_engine {
 namespace experimental {

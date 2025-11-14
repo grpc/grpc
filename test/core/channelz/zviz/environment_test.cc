@@ -19,8 +19,8 @@
 #include "src/core/channelz/zviz/environment.h"
 
 #include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "test/core/channelz/zviz/environment_fake.h"
+#include "gtest/gtest.h"
 
 namespace grpc_zviz {
 namespace {

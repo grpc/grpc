@@ -23,8 +23,8 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/log.h"
 #include "src/core/util/grpc_check.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 

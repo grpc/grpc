@@ -26,9 +26,6 @@
 #include <memory>
 #include <string>
 
-#include "absl/log/log.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -38,6 +35,9 @@
 #include "test/core/test_util/parse_hexstring.h"
 #include "test/core/test_util/slice_splitter.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 grpc_core::HPackCompressor* g_compressor;
 grpc_core::Http2ZTraceCollector* g_ztrace_collector =

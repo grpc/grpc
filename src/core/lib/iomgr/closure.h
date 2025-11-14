@@ -24,13 +24,13 @@
 #include <grpc/support/port_platform.h>
 #include <stdbool.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/manual_constructor.h"
 #include "src/core/util/mpscq.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 
 struct grpc_closure;
 typedef struct grpc_closure grpc_closure;

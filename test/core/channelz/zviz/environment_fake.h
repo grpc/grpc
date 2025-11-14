@@ -15,8 +15,8 @@
 #ifndef GRPC_TEST_CORE_CHANNELZ_ZVIZ_ENVIRONMENT_FAKE_H
 #define GRPC_TEST_CORE_CHANNELZ_ZVIZ_ENVIRONMENT_FAKE_H
 
-#include "absl/container/flat_hash_map.h"
 #include "src/core/channelz/zviz/environment.h"
+#include "absl/container/flat_hash_map.h"
 
 namespace grpc_zviz {
 

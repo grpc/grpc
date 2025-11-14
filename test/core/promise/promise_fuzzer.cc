@@ -20,8 +20,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/status/status.h"
 #include "fuzztest/fuzztest.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/join.h"
@@ -32,6 +30,8 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/util/grpc_check.h"
 #include "test/core/promise/promise_fuzzer.pb.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
 
 bool squelch = true;
 bool leak_check = true;

@@ -26,9 +26,6 @@
 #include <map>
 #include <memory>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_set.h"
-#include "absl/status/status.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/client_channel/connector.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
@@ -58,6 +55,9 @@
 #include "src/core/util/time_precise.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/work_serializer.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/status/status.h"
 
 /** This arg is intended for internal use only, primarily
  *  for passing endpoint information during subchannel creation or connection.
@@ -72,6 +72,7 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
  public:
   const ChannelArgs& args() const { return args_; }
 
+  // TODO(roth): Remove this when transport_state_watcher experiment is removed.
   virtual void StartWatch(
       grpc_pollset_set* interested_parties,
       OrphanablePtr<ConnectivityStateWatcherInterface> watcher) = 0;
@@ -169,8 +170,6 @@ class SubchannelCall final {
 // (SubchannelWrapper) that "converts" between the two.
 class Subchannel final : public DualRefCounted<Subchannel> {
  public:
-  // TODO(roth): Once we remove pollset_set, consider whether this can
-  // just use the normal AsyncConnectivityStateWatcherInterface API.
   class ConnectivityStateWatcherInterface
       : public RefCounted<ConnectivityStateWatcherInterface> {
    public:
@@ -179,6 +178,11 @@ class Subchannel final : public DualRefCounted<Subchannel> {
     // instance at any given time.
     virtual void OnConnectivityStateChange(grpc_connectivity_state state,
                                            const absl::Status& status) = 0;
+
+    // Invoked to report updated keepalive time.
+    virtual void OnKeepaliveUpdate(Duration keepalive_time) = 0;
+
+    virtual uint32_t max_connections_per_subchannel() const = 0;
 
     virtual grpc_pollset_set* interested_parties() = 0;
   };
@@ -210,7 +214,8 @@ class Subchannel final : public DualRefCounted<Subchannel> {
   // Throttles keepalive time to \a new_keepalive_time iff \a new_keepalive_time
   // is larger than the subchannel's current keepalive time. The updated value
   // will have an affect when the subchannel creates a new ConnectedSubchannel.
-  void ThrottleKeepaliveTime(int new_keepalive_time) ABSL_LOCKS_EXCLUDED(mu_);
+  void ThrottleKeepaliveTime(Duration new_keepalive_time)
+      ABSL_LOCKS_EXCLUDED(mu_);
 
   grpc_pollset_set* pollset_set() const { return pollset_set_; }
 
@@ -304,9 +309,14 @@ class Subchannel final : public DualRefCounted<Subchannel> {
     void NotifyLocked(grpc_connectivity_state state,
                       const absl::Status& status);
 
+    // Notifies all watchers about a keepalive update.
+    void NotifyOnKeepaliveUpdateLocked(Duration new_keepalive_time);
+
     void Clear() { watchers_.clear(); }
 
     bool empty() const { return watchers_.empty(); }
+
+    uint32_t GetMaxConnectionsPerSubchannel() const;
 
    private:
     Subchannel* subchannel_;
@@ -316,11 +326,17 @@ class Subchannel final : public DualRefCounted<Subchannel> {
         watchers_;
   };
 
+  // TODO(roth): Remove this when transport_state_watcher experiment is removed.
   class ConnectedSubchannelStateWatcher;
+
+  class ConnectionStateWatcher;
 
   // Sets the subchannel's connectivity state to \a state.
   void SetConnectivityStateLocked(grpc_connectivity_state state,
                                   const absl::Status& status)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+  void ThrottleKeepaliveTimeLocked(Duration new_keepalive_time)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // Methods for connection.
@@ -391,8 +407,8 @@ class Subchannel final : public DualRefCounted<Subchannel> {
   grpc_event_engine::experimental::EventEngine::TaskHandle retry_timer_handle_
       ABSL_GUARDED_BY(mu_);
 
-  // Keepalive time period (-1 for unset)
-  int keepalive_time_ ABSL_GUARDED_BY(mu_) = -1;
+  // Keepalive time period
+  Duration keepalive_time_ ABSL_GUARDED_BY(mu_);
 
   // Data producer map.
   std::map<UniqueTypeName, DataProducerInterface*> data_producer_map_

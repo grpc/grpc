@@ -37,12 +37,6 @@
 #include <thread>
 #include <vector>
 
-#include "absl/algorithm/container.h"
-#include "absl/flags/flag.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_split.h"
 #include "src/core/call/status_util.h"
 #include "src/core/util/env.h"
 #include "src/core/util/gethostname.h"
@@ -51,6 +45,12 @@
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/interop/istio_echo_server_lib.h"
 #include "test/cpp/util/test_config.h"
+#include "absl/algorithm/container.h"
+#include "absl/flags/flag.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
 
 // A list of ports to listen on, for gRPC traffic.
 ABSL_FLAG(std::vector<std::string>, grpc, std::vector<std::string>({"7070"}),

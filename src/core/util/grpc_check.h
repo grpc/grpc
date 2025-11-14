@@ -18,8 +18,8 @@
 #ifdef GRPC_POSTMORTEM_CHECKS
 #include <limits.h>
 
-#include "absl/log/log.h"
 #include "src/core/util/postmortem_emit.h"
+#include "absl/log/log.h"
 
 bool PostMortemEmitAndReturnTrue();
 

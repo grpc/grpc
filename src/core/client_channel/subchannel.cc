@@ -29,11 +29,6 @@
 #include <optional>
 #include <utility>
 
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/cord.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/interception_chain.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/channelz/channelz.h"
@@ -63,7 +58,7 @@
 #endif
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
-#include "src/core/transport/auth_context.h"  //TODO: check
+#include "src/core/transport/auth_context.h"
 #include "src/core/util/alloc.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/debug_location.h"
@@ -77,6 +72,11 @@
 #ifdef GRPC_XDS_ENABLED
 #include "src/core/xds/xds_client/xds_locality.h"
 #endif
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/cord.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 // Backoff parameters.
 #define GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS 1
@@ -479,12 +479,6 @@ class Subchannel::ConnectedSubchannelStateWatcher final
             << ": Connected subchannel " << connected_subchannel.get()
             << " reports " << ConnectivityStateName(new_state) << ": "
             << status;
-        if (c->channelz_node() != nullptr) {
-          if (connected_subchannel->channelz_node() != nullptr) {
-            connected_subchannel->channelz_node()->RemoveParent(
-                c->channelz_node());
-          }
-        }
         // Record disconnection metrics
         if (c->stats_plugin_group_ != nullptr) {
           std::string disconnect_reason =
@@ -521,6 +515,68 @@ class Subchannel::ConnectedSubchannelStateWatcher final
 };
 
 //
+// Subchannel::ConnectionStateWatcher
+//
+
+class Subchannel::ConnectionStateWatcher final
+    : public Transport::StateWatcher {
+ public:
+  explicit ConnectionStateWatcher(WeakRefCountedPtr<Subchannel> subchannel)
+      : subchannel_(std::move(subchannel)) {}
+
+  ~ConnectionStateWatcher() override {
+    subchannel_.reset(DEBUG_LOCATION, "state_watcher");
+  }
+
+  void OnDisconnect(absl::Status status,
+                    DisconnectInfo disconnect_info) override {
+    MutexLock lock(&subchannel_->mu_);
+    // Handle keepalive update.
+    if (disconnect_info.keepalive_time.has_value()) {
+      subchannel_->ThrottleKeepaliveTimeLocked(*disconnect_info.keepalive_time);
+      subchannel_->watcher_list_.NotifyOnKeepaliveUpdateLocked(
+          *disconnect_info.keepalive_time);
+    }
+    // We shouldn't ever see OnDisconnect() more than once for a given
+    // connection, but we'll be defensive just in case: if the connected
+    // subchannel has already been cleared, then this becomes a no-op.
+    RefCountedPtr<ConnectedSubchannel> connected_subchannel =
+        std::move(subchannel_->connected_subchannel_);
+    if (connected_subchannel == nullptr) return;
+    GRPC_TRACE_LOG(subchannel, INFO)
+        << "subchannel " << subchannel_.get() << " "
+        << subchannel_->key_.ToString() << ": connected subchannel "
+        << connected_subchannel.get() << " reports disconnection: " << status;
+    // If the subchannel was created from an endpoint, then we report
+    // TRANSIENT_FAILURE here instead of IDLE. The subchannel will never
+    // leave TRANSIENT_FAILURE state, because there is no way for us to
+    // establish a new connection.  Otherwise, we report IDLE here.
+    if (subchannel_->created_from_endpoint_) {
+      subchannel_->SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                                              status);
+    } else {
+      subchannel_->SetConnectivityStateLocked(GRPC_CHANNEL_IDLE,
+                                              absl::OkStatus());
+    }
+    subchannel_->backoff_.Reset();
+  }
+
+  void OnPeerMaxConcurrentStreamsUpdate(
+      uint32_t /*max_concurrent_streams*/,
+      std::unique_ptr<MaxConcurrentStreamsUpdateDoneHandle> /*on_done*/)
+      override {
+    // TODO(roth): Implement this as part of adding connection scaling.
+  }
+
+  grpc_pollset_set* interested_parties() const override {
+    return subchannel_->pollset_set_;
+  }
+
+ private:
+  WeakRefCountedPtr<Subchannel> subchannel_;
+};
+
+//
 // Subchannel::ConnectivityStateWatcherList
 //
 
@@ -541,6 +597,27 @@ void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
       watcher->OnConnectivityStateChange(state, status);
     });
   }
+}
+
+void Subchannel::ConnectivityStateWatcherList::NotifyOnKeepaliveUpdateLocked(
+    Duration new_keepalive_time) {
+  for (const auto& watcher : watchers_) {
+    subchannel_->work_serializer_.Run([watcher, new_keepalive_time]() {
+      watcher->OnKeepaliveUpdate(new_keepalive_time);
+    });
+  }
+}
+
+uint32_t
+Subchannel::ConnectivityStateWatcherList::GetMaxConnectionsPerSubchannel()
+    const {
+  uint32_t max_connections_per_subchannel = 1;
+  for (const auto& watcher : watchers_) {
+    max_connections_per_subchannel =
+        std::max(max_connections_per_subchannel,
+                 watcher->max_connections_per_subchannel());
+  }
+  return max_connections_per_subchannel;
 }
 
 //
@@ -693,15 +770,19 @@ RefCountedPtr<Subchannel> Subchannel::Create(
   return registered;
 }
 
-void Subchannel::ThrottleKeepaliveTime(int new_keepalive_time) {
+void Subchannel::ThrottleKeepaliveTime(Duration new_keepalive_time) {
   MutexLock lock(&mu_);
+  ThrottleKeepaliveTimeLocked(new_keepalive_time);
+}
+
+void Subchannel::ThrottleKeepaliveTimeLocked(Duration new_keepalive_time) {
   // Only update the value if the new keepalive time is larger.
   if (new_keepalive_time > keepalive_time_) {
     keepalive_time_ = new_keepalive_time;
     GRPC_TRACE_LOG(subchannel, INFO)
         << "subchannel " << this << " " << key_.ToString()
         << ": throttling keepalive time to " << new_keepalive_time;
-    args_ = args_.Set(GRPC_ARG_KEEPALIVE_TIME_MS, new_keepalive_time);
+    args_ = args_.Set(GRPC_ARG_KEEPALIVE_TIME_MS, new_keepalive_time.millis());
   }
 }
 
@@ -910,6 +991,11 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
 
 bool Subchannel::PublishTransportLocked() {
   auto socket_node = connecting_result_.transport->GetSocketNode();
+  if (IsTransportStateWatcherEnabled()) {
+    connecting_result_.transport->StartWatch(
+        MakeRefCounted<ConnectionStateWatcher>(
+            WeakRef(DEBUG_LOCATION, "state_watcher")));
+  }
   if (connecting_result_.transport->filter_stack_transport() != nullptr) {
     // Construct channel stack.
     // Builder takes ownership of transport.
@@ -1002,10 +1088,11 @@ bool Subchannel::PublishTransportLocked() {
       socket_node->AddParent(channelz_node_.get());
     }
   }
-  // Start watching connected subchannel.
-  connected_subchannel_->StartWatch(
-      pollset_set_, MakeOrphanable<ConnectedSubchannelStateWatcher>(
-                        WeakRef(DEBUG_LOCATION, "state_watcher")));
+  if (!IsTransportStateWatcherEnabled()) {
+    connected_subchannel_->StartWatch(
+        pollset_set_, MakeOrphanable<ConnectedSubchannelStateWatcher>(
+                          WeakRef(DEBUG_LOCATION, "state_watcher")));
+  }
   // Record successful connection attempt
   if (stats_plugin_group_ != nullptr) {
     stats_plugin_group_->AddCounter(kMetricConnectionAttemptsSucceeded,
@@ -1040,6 +1127,8 @@ ChannelArgs Subchannel::MakeSubchannelArgs(
       // uniqueness.
       .Remove(GRPC_ARG_HEALTH_CHECK_SERVICE_NAME)
       .Remove(GRPC_ARG_INHIBIT_HEALTH_CHECKING)
+      .Remove(GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL)
+      .Remove(GRPC_ARG_MAX_CONNECTIONS_PER_SUBCHANNEL_CAP)
       .Remove(GRPC_ARG_CHANNELZ_CHANNEL_NODE)
       // Remove all keys with the no-subchannel prefix.
       .RemoveAllKeysWithPrefix(GRPC_ARG_NO_SUBCHANNEL_PREFIX);

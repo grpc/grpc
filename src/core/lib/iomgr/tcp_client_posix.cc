@@ -32,9 +32,6 @@
 
 #include <memory>
 
-#include "absl/container/flat_hash_map.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/event_engine/shim.h"
@@ -55,6 +52,9 @@
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/string.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 using ::grpc_event_engine::experimental::EndpointConfig;
 

@@ -24,11 +24,11 @@
 #include <algorithm>
 #include <utility>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/grpc_check.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 using testing::Contains;
 using testing::Not;

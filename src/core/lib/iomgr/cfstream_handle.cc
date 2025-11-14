@@ -27,13 +27,13 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/sync.h>
 
-#include "absl/log/log.h"
 #include "src/core/lib/debug/trace.h"
 #import "src/core/lib/iomgr/cfstream_handle.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error_cfstream.h"
 #include "src/core/lib/iomgr/ev_apple.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "absl/log/log.h"
 
 GrpcLibraryInitHolder::GrpcLibraryInitHolder() { grpc_init(); }
 

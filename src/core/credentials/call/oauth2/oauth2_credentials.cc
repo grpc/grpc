@@ -35,15 +35,9 @@
 #include <memory>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/numbers.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/credentials/call/json_util.h"
+#include "src/core/credentials/call/token_fetcher/token_fetcher_credentials.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
@@ -61,6 +55,13 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/uri.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 using grpc_core::Json;
 
@@ -211,58 +212,6 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
 
 namespace grpc_core {
 
-// State held for a pending HTTP request.
-class Oauth2TokenFetcherCredentials::HttpFetchRequest final
-    : public TokenFetcherCredentials::FetchRequest {
- public:
-  HttpFetchRequest(
-      Oauth2TokenFetcherCredentials* creds, Timestamp deadline,
-      absl::AnyInvocable<
-          void(absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
-          on_done)
-      : on_done_(std::move(on_done)) {
-    GRPC_CLOSURE_INIT(&on_http_response_, OnHttpResponse, this, nullptr);
-    Ref().release();  // Ref held by HTTP request callback.
-    http_request_ = creds->StartHttpRequest(creds->pollent(), deadline,
-                                            &response_, &on_http_response_);
-  }
-
-  ~HttpFetchRequest() override { grpc_http_response_destroy(&response_); }
-
-  void Orphan() override {
-    http_request_.reset();
-    Unref();
-  }
-
- private:
-  static void OnHttpResponse(void* arg, grpc_error_handle error) {
-    RefCountedPtr<HttpFetchRequest> self(static_cast<HttpFetchRequest*>(arg));
-    if (!error.ok()) {
-      self->on_done_(std::move(error));
-      return;
-    }
-    // Parse oauth2 token.
-    std::optional<Slice> access_token_value;
-    Duration token_lifetime;
-    grpc_credentials_status status =
-        grpc_oauth2_token_fetcher_credentials_parse_server_response(
-            &self->response_, &access_token_value, &token_lifetime);
-    if (status != GRPC_CREDENTIALS_OK) {
-      self->on_done_(absl::UnavailableError("error parsing oauth2 token"));
-      return;
-    }
-    self->on_done_(MakeRefCounted<Token>(std::move(*access_token_value),
-                                         Timestamp::Now() + token_lifetime));
-  }
-
-  OrphanablePtr<HttpRequest> http_request_;
-  grpc_closure on_http_response_;
-  grpc_http_response response_;
-  absl::AnyInvocable<void(
-      absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
-      on_done_;
-};
-
 std::string Oauth2TokenFetcherCredentials::debug_string() {
   return "OAuth2TokenFetcherCredentials";
 }
@@ -278,7 +227,27 @@ Oauth2TokenFetcherCredentials::FetchToken(
     absl::AnyInvocable<
         void(absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
         on_done) {
-  return MakeOrphanable<HttpFetchRequest>(this, deadline, std::move(on_done));
+  return MakeOrphanable<HttpTokenFetcherCredentials::HttpFetchRequest>(
+      this, deadline,
+      [on_done = std::move(on_done)](
+          absl::StatusOr<grpc_http_response> response) mutable {
+        if (!response.ok()) {
+          on_done(response.status());
+          return;
+        }
+        // Parse oauth2 token.
+        std::optional<Slice> access_token_value;
+        Duration token_lifetime;
+        grpc_credentials_status status =
+            grpc_oauth2_token_fetcher_credentials_parse_server_response(
+                &(*response), &access_token_value, &token_lifetime);
+        if (status != GRPC_CREDENTIALS_OK) {
+          on_done(absl::UnavailableError("error parsing oauth2 token"));
+          return;
+        }
+        on_done(MakeRefCounted<Token>(std::move(*access_token_value),
+                                      Timestamp::Now() + token_lifetime));
+      });
 }
 
 }  // namespace grpc_core
