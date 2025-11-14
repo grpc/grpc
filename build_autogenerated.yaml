@@ -23333,6 +23333,19 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
+- name: subchannel_metrics_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/test_util/fake_stats_plugin.h
+  src:
+  - test/core/client_channel/subchannel_metrics_test.cc
+  - test/core/test_util/fake_stats_plugin.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: switch_test
   gtest: true
   build: test
