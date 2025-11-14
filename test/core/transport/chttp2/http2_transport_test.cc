@@ -419,7 +419,8 @@ TEST_F(TestsNeedingStreamObjects,
   chttp2::StreamFlowControl::IncomingUpdateContext stream_flow_control_context(
       &stream->flow_control);
   stream_flow_control_context.SetMinProgressSize(frame_payload_size);
-  chttp2::FlowControlAction action = stream_flow_control_context.MakeAction();
+  chttp2::FlowControlAction action =
+      stream_flow_control_context.::testing::internal::MakeAction();
   EXPECT_EQ(action.send_stream_update(),
             chttp2::FlowControlAction::Urgency::UPDATE_IMMEDIATELY);
 

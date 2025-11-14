@@ -252,7 +252,7 @@ class Sink {
 class Appender {
  public:
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Appender()
-      : Appender(active_sink_.load(std::memory_order_acquire)){};
+      : Appender(active_sink_.load(std::memory_order_acquire)) {};
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Appender(Sink* sink)
       : sink_(sink) {}
   Appender(const Appender&) = delete;
