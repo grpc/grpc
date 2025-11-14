@@ -163,7 +163,6 @@ void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,
       gpr_free(const_cast<char*>(key_view->data()));
     }
   }
-  gpr_free(kp);
 }
 
 namespace grpc_core {
