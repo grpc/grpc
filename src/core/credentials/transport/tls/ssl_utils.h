@@ -202,7 +202,6 @@ class PemKeyCertPair {
     return private_key_sign_.get();
   }
 
-
  private:
   std::string private_key_;
   std::string cert_chain_;

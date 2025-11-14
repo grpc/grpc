@@ -145,7 +145,7 @@ void grpc_ssl_credentials::build_config(
   if (pem_key_cert_pair != nullptr) {
     GRPC_CHECK_NE(pem_key_cert_pair->private_key, nullptr);
     GRPC_CHECK_NE(pem_key_cert_pair->cert_chain, nullptr);
-    config_.pem_key_cert_pair =  new tsi_ssl_pem_key_cert_pair();
+    config_.pem_key_cert_pair = new tsi_ssl_pem_key_cert_pair();
     config_.pem_key_cert_pair->cert_chain =
         absl::string_view(pem_key_cert_pair->cert_chain);
     config_.pem_key_cert_pair->private_key =

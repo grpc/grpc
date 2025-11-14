@@ -50,12 +50,14 @@ TEST(SslCredentialsTest, ConvertGrpcToTsiCertPairs) {
       if (const auto* key_view =
               std::get_if<absl::string_view>(&tsi_pairs[i].private_key)) {
         ASSERT_EQ(strncmp(grpc_pairs[i].private_key, key_view->data(),
-                          key_view->length()), 0);
-      }
-        ASSERT_EQ(strncmp(grpc_pairs[i].cert_chain, tsi_pairs[i].cert_chain.data(),
-                          strlen(grpc_pairs[i].cert_chain)),
+                          key_view->length()),
                   0);
       }
+      ASSERT_EQ(
+          strncmp(grpc_pairs[i].cert_chain, tsi_pairs[i].cert_chain.data(),
+                  strlen(grpc_pairs[i].cert_chain)),
+          0);
+    }
 
     grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_pairs, num_pairs);
   }

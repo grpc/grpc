@@ -930,8 +930,9 @@ static tsi_result populate_ssl_context(
   tsi_result result = TSI_OK;
   if (key_cert_pair != nullptr) {
     if (!key_cert_pair->cert_chain.empty()) {
-      result = ssl_ctx_use_certificate_chain(context, key_cert_pair->cert_chain.data(),
-                                             key_cert_pair->cert_chain.length());
+      result = ssl_ctx_use_certificate_chain(
+          context, key_cert_pair->cert_chain.data(),
+          key_cert_pair->cert_chain.length());
       if (result != TSI_OK) {
         LOG(ERROR) << "Invalid cert chain file.";
         return result;

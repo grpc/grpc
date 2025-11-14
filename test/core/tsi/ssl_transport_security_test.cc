@@ -101,8 +101,7 @@ typedef struct ssl_key_cert_lib {
 
 static void ssl_test_pem_key_cert_pair_destroy(tsi_ssl_pem_key_cert_pair* kp) {
   gpr_free(const_cast<char*>(kp->cert_chain.data()));
-  if (const auto* key_view =
-          std::get_if<absl::string_view>(&kp->private_key)) {
+  if (const auto* key_view = std::get_if<absl::string_view>(&kp->private_key)) {
     gpr_free(const_cast<char*>(key_view->data()));
   }
 }
