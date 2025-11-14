@@ -124,6 +124,13 @@ class SubchannelTest : public YodelTest {
       }
       ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
     }
+    void StartWatch(RefCountedPtr<StateWatcher> watcher) override {
+      GRPC_CHECK(watcher_ == nullptr);
+      watcher_ = std::move(watcher);
+    }
+    void StopWatch(RefCountedPtr<StateWatcher> watcher) override {
+      if (watcher_ == watcher) watcher_.reset();
+    }
 
     void StartCall(CallHandler call_handler) override {
       test_->handlers_.push(std::move(call_handler));
@@ -136,6 +143,7 @@ class SubchannelTest : public YodelTest {
    private:
     SubchannelTest* const test_;
     ConnectivityStateTracker state_tracker_{"test-transport"};
+    RefCountedPtr<StateWatcher> watcher_;
   };
 
   class TestConnector final : public SubchannelConnector {

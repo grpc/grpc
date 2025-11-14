@@ -816,6 +816,7 @@ class StreamDataQueue : public RefCounted<StreamDataQueue<MetadataHandle>> {
       default:
         GRPC_CHECK(false) << "Invalid reset stream state: "
                           << static_cast<uint8_t>(reset_stream_state_);
+        return std::nullopt;
     }
   }
 

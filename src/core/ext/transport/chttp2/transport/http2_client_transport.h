@@ -149,6 +149,9 @@ class Http2ClientTransport final : public ClientTransport,
       OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
   void StopConnectivityWatch(ConnectivityStateWatcherInterface* watcher);
 
+  void StartWatch(RefCountedPtr<StateWatcher> watcher) override;
+  void StopWatch(RefCountedPtr<StateWatcher> watcher) override;
+
   void Orphan() override;
 
   RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
@@ -261,6 +264,10 @@ class Http2ClientTransport final : public ClientTransport,
   void ActOnFlowControlAction(const chttp2::FlowControlAction& action,
                               RefCountedPtr<Stream> stream);
 
+  void NotifyStateWatcherOnDisconnectLocked(
+      absl::Status status, StateWatcher::DisconnectInfo disconnect_info)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&transport_mutex_);
+
   RefCountedPtr<Party> general_party_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
@@ -326,9 +333,9 @@ class Http2ClientTransport final : public ClientTransport,
     uint32_t new_stream_id =
         std::exchange(next_stream_id_, next_stream_id_ + 2);
     if (GPR_UNLIKELY(next_stream_id_ > GetMaxAllowedStreamId())) {
-      SetConnectivityState(
-          GRPC_CHANNEL_TRANSIENT_FAILURE,
+      ReportDisconnection(
           absl::ResourceExhaustedError("Transport Stream IDs exhausted"),
+          {},  // TODO(tjagtap) : [PH2][P2] : Report better disconnect info.
           "no_more_stream_ids");
     }
     return new_stream_id;
@@ -375,6 +382,8 @@ class Http2ClientTransport final : public ClientTransport,
 
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
       "http2_client", GRPC_CHANNEL_READY};
+
+  RefCountedPtr<StateWatcher> watcher_ ABSL_GUARDED_BY(transport_mutex_);
 
   // Runs on the call party.
   std::optional<RefCountedPtr<Stream>> MakeStream(CallHandler call_handler);
@@ -554,8 +563,14 @@ class Http2ClientTransport final : public ClientTransport,
 
   void MaybeGetWindowUpdateFrames(SliceBuffer& output_buf);
 
-  void SetConnectivityState(grpc_connectivity_state state,
-                            const absl::Status& status, const char* reason);
+  void ReportDisconnection(const absl::Status& status,
+                           StateWatcher::DisconnectInfo disconnect_info,
+                           const char* reason);
+
+  void ReportDisconnectionLocked(const absl::Status& status,
+                                 StateWatcher::DisconnectInfo disconnect_info,
+                                 const char* reason)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&transport_mutex_);
 
   // Ping Helper functions
   Duration NextAllowedPingInterval() {
@@ -750,6 +765,12 @@ class Http2ClientTransport final : public ClientTransport,
   // indicates extreme memory pressure on the server.
   bool should_stall_read_loop_;
   Waker read_loop_waker_;
+  Http2Status ParseAndDiscardHeaders(SliceBuffer&& buffer,
+                                     bool is_initial_metadata,
+                                     bool is_end_headers, uint32_t stream_id,
+                                     RefCountedPtr<Stream> stream,
+                                     Http2Status&& original_status,
+                                     DebugLocation whence = {});
 };
 
 // Since the corresponding class in CHTTP2 is about 3.9KB, our goal is to
