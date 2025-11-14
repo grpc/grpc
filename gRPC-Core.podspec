@@ -203,44 +203,6 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Privacy", version
     ss.dependency 'BoringSSL-GRPC', '0.0.41'
-    ss.dependency 'abseil/algorithm/container', abseil_version
-    ss.dependency 'abseil/base/base', abseil_version
-    ss.dependency 'abseil/base/config', abseil_version
-    ss.dependency 'abseil/base/core_headers', abseil_version
-    ss.dependency 'abseil/base/log_severity', abseil_version
-    ss.dependency 'abseil/base/no_destructor', abseil_version
-    ss.dependency 'abseil/cleanup/cleanup', abseil_version
-    ss.dependency 'abseil/container/btree', abseil_version
-    ss.dependency 'abseil/container/flat_hash_map', abseil_version
-    ss.dependency 'abseil/container/flat_hash_set', abseil_version
-    ss.dependency 'abseil/container/inlined_vector', abseil_version
-    ss.dependency 'abseil/container/node_hash_map', abseil_version
-    ss.dependency 'abseil/flags/flag', abseil_version
-    ss.dependency 'abseil/flags/marshalling', abseil_version
-    ss.dependency 'abseil/functional/any_invocable', abseil_version
-    ss.dependency 'abseil/functional/bind_front', abseil_version
-    ss.dependency 'abseil/functional/function_ref', abseil_version
-    ss.dependency 'abseil/hash/hash', abseil_version
-    ss.dependency 'abseil/log/check', abseil_version
-    ss.dependency 'abseil/log/globals', abseil_version
-    ss.dependency 'abseil/log/log', abseil_version
-    ss.dependency 'abseil/memory/memory', abseil_version
-    ss.dependency 'abseil/meta/type_traits', abseil_version
-    ss.dependency 'abseil/numeric/bits', abseil_version
-    ss.dependency 'abseil/random/bit_gen_ref', abseil_version
-    ss.dependency 'abseil/random/distributions', abseil_version
-    ss.dependency 'abseil/random/random', abseil_version
-    ss.dependency 'abseil/status/status', abseil_version
-    ss.dependency 'abseil/status/statusor', abseil_version
-    ss.dependency 'abseil/strings/cord', abseil_version
-    ss.dependency 'abseil/strings/str_format', abseil_version
-    ss.dependency 'abseil/strings/string_view', abseil_version
-    ss.dependency 'abseil/strings/strings', abseil_version
-    ss.dependency 'abseil/synchronization/synchronization', abseil_version
-    ss.dependency 'abseil/time/time', abseil_version
-    ss.dependency 'abseil/types/optional', abseil_version
-    ss.dependency 'abseil/types/span', abseil_version
-    ss.dependency 'abseil/utility/utility', abseil_version
     ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC -Wno-unreachable-code -Wno-shorten-64-to-32'
 
     ss.source_files = 'src/core/call/call_arena_allocator.cc',
