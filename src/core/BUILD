@@ -8303,8 +8303,11 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log",
+        "absl/strings",
     ],
     deps = [
+        "grpc_check",
+        "//:chttp2_frame",
     ],
 )
 
