@@ -1850,6 +1850,28 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "stream_quota",
+    srcs = [
+        "lib/resource_quota/stream_quota.cc",
+    ],
+    hdrs = [
+        "lib/resource_quota/stream_quota.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/log:check",
+    ],
+    deps = [
+        "periodic_update",
+        "ref_counted",
+        "sync",
+        ":per_cpu",
+        "//:gpr",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "connection_quota",
     srcs = [
         "lib/resource_quota/connection_quota.cc",
@@ -1910,6 +1932,7 @@ grpc_cc_library(
         "ref_counted",
         "resource_quota_telemetry",
         "single_set_ptr",
+        "stream_quota",
         "thread_quota",
         "useful",
         "//:channel_arg_names",
