@@ -276,8 +276,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
   void CreateServers(
       size_t num_servers, std::vector<int> ports = {},
       std::shared_ptr<ServerCredentials> server_creds = nullptr,
-      std::optional<uint32_t> max_concurrent_streams = std::nullopt,
-      bool enable_retries = true) {
+      std::optional<uint32_t> max_concurrent_streams = std::nullopt) {
     servers_.clear();
     for (size_t i = 0; i < num_servers; ++i) {
       int port = 0;
@@ -292,10 +291,9 @@ class ClientLbEnd2endTest : public ::testing::Test {
   void StartServers(
       size_t num_servers, std::vector<int> ports = {},
       std::shared_ptr<ServerCredentials> server_creds = nullptr,
-      std::optional<uint32_t> max_concurrent_streams = std::nullopt,
-      bool enable_retries = true) {
+      std::optional<uint32_t> max_concurrent_streams = std::nullopt) {
     CreateServers(num_servers, std::move(ports), std::move(server_creds),
-                  max_concurrent_streams, enable_retries);
+                  max_concurrent_streams);
     for (size_t i = 0; i < num_servers; ++i) {
       StartServer(i);
     }
@@ -417,7 +415,6 @@ class ClientLbEnd2endTest : public ::testing::Test {
     const int port_;
     const std::shared_ptr<ServerCredentials> server_creds_;
     const std::optional<uint32_t> max_concurrent_streams_;
-    const bool enable_retries_;
     std::unique_ptr<Server> server_;
     MyTestServiceImpl service_;
     std::unique_ptr<experimental::ServerMetricRecorder> server_metric_recorder_;
@@ -433,8 +430,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
 
     explicit ServerData(
         int port = 0, std::shared_ptr<ServerCredentials> server_creds = nullptr,
-        std::optional<uint32_t> max_concurrent_streams = std::nullopt,
-        bool enable_retries = true)
+        std::optional<uint32_t> max_concurrent_streams = std::nullopt)
         : port_(port > 0 ? port : grpc_pick_unused_port_or_die()),
           server_creds_(
               server_creds == nullptr
@@ -443,7 +439,6 @@ class ClientLbEnd2endTest : public ::testing::Test {
                         grpc_fake_transport_security_server_credentials_create()))
                   : std::move(server_creds)),
           max_concurrent_streams_(max_concurrent_streams),
-          enable_retries_(enable_retries),
           server_metric_recorder_(experimental::ServerMetricRecorder::Create()),
           orca_service_(
               server_metric_recorder_.get(),
@@ -472,9 +467,6 @@ class ClientLbEnd2endTest : public ::testing::Test {
       if (max_concurrent_streams_.has_value()) {
         builder.AddChannelArgument(GRPC_ARG_MAX_CONCURRENT_STREAMS,
                                    *max_concurrent_streams_);
-      }
-      if (!enable_retries_) {
-        builder.AddChannelArgument(GRPC_ARG_ENABLE_RETRIES, 0);
       }
       if (enable_noop_health_check_service_) {
         builder.RegisterService(&noop_health_check_service_impl_);
@@ -3771,10 +3763,13 @@ TEST_F(ConnectionScalingTest, QueuedRpcsFailWhenLastConnectionCloses) {
   const int kMaxConcurrentStreams = 3;
   // Start a server with MAX_CONCURRENT_STREAMS set.
   StartServers(1, {}, nullptr,
-               /*max_concurrent_streams=*/kMaxConcurrentStreams,
-               /*enable_retries=*/false);
+               /*max_concurrent_streams=*/kMaxConcurrentStreams);
   FakeResolverResponseGeneratorWrapper response_generator;
-  auto channel = BuildChannel("pick_first", response_generator);
+  // Disable retries, so that we can see the RPCs fail instead of being
+  // transparently retried.
+  ChannelArguments channel_args;
+  channel_args.SetInt(GRPC_ARG_ENABLE_RETRIES, 0);
+  auto channel = BuildChannel("pick_first", response_generator, channel_args);
   auto stub = BuildStub(channel);
   response_generator.SetNextResolution(GetServersPorts(), kServiceConfig);
   // Start kMaxConcurrentStreams long-running RPCs.
@@ -3824,6 +3819,87 @@ TEST_F(ConnectionScalingTest, QueuedRpcsFailWhenLastConnectionCloses) {
   }
 }
 
+TEST_F(ConnectionScalingTest,
+       QueuedRpcsTransparentlyRetriedWhenLastConnectionCloses) {
+  if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
+    GTEST_SKIP()
+        << "this test requires the subchannel_connection_scaling experiment";
+  }
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
+  constexpr char kServiceConfig[] =
+      "{\n"
+      "  \"connectionScaling\": {\n"
+      "    \"maxConnectionsPerSubchannel\": 2\n"
+      "  }\n"
+      "}";
+  const int kMaxConcurrentStreams = 3;
+  // Start two servers with MAX_CONCURRENT_STREAMS set.
+  StartServers(2, {}, nullptr,
+               /*max_concurrent_streams=*/kMaxConcurrentStreams);
+  // Channel initially talks only to the first server.
+  FakeResolverResponseGeneratorWrapper response_generator;
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts(0, 1), kServiceConfig);
+  // Start kMaxConcurrentStreams long-running RPCs.
+  LongRunningRpc rpcs[kMaxConcurrentStreams + 2];
+  for (size_t i = 0; i < kMaxConcurrentStreams; ++i) {
+    rpcs[i].StartRpc(stub.get());
+  }
+  // Wait for the server to see the first kMaxConcurrentStreams RPCs.
+  LOG(INFO) << "Waiting for server to see the initial RPCs...";
+  EXPECT_TRUE(WaitFor(
+      [&]() {
+        return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+               kMaxConcurrentStreams;
+      }))
+      << "timeout waiting for initial RPCs to start -- RPCs started: "
+      << servers_[0]->service_.RpcsWaitingForClientCancel();
+  // There should be only one connection.
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 1);
+  // Intercept the next connection attempt.
+  ConnectionAttemptInjector injector;
+  auto hold = injector.AddHold(servers_[0]->port_);
+  // Start two more RPCs, which will trigger the creation of a new
+  // connection.  When the connection attempt starts, we know that the
+  // subchannel has queued these RPCs.
+  for (size_t i = kMaxConcurrentStreams; i < kMaxConcurrentStreams + 2; ++i) {
+    rpcs[i].StartRpc(stub.get());
+  }
+  // Wait for the connection attempt to start.
+  hold->Wait();
+  // Send a resolver update to the channel pointing to the second server.
+  response_generator.SetNextResolution(GetServersPorts(1, 2), kServiceConfig);
+  // When pick_first sees the update, it will put the channel into IDLE state.
+  ASSERT_TRUE(
+      WaitForChannelState(channel.get(), [&](grpc_connectivity_state state) {
+        if (state == GRPC_CHANNEL_READY) return false;
+        EXPECT_EQ(state, GRPC_CHANNEL_IDLE);
+        return true;
+      }));
+  // Shut down the first server, which closes the existing connection.
+  // This should trigger the subchannel to fail the two queued RPCs in a
+  // way that will be transparently retried.  The retry will cause
+  // pick_first to connect to the second server.
+  servers_[0]->Shutdown();
+  // Resume the connection attempt.  (It will fail, but we don't care.)
+  hold->Resume();
+  // The RPCs should have hit the second server.
+  LOG(INFO) << "Waiting for server to see RPCs on the new server...";
+  EXPECT_TRUE(WaitFor(
+      [&]() {
+        return servers_[1]->service_.RpcsWaitingForClientCancel() == 2;
+      }))
+      << "timeout waiting for initial RPCs to start -- RPCs started: "
+      << servers_[1]->service_.RpcsWaitingForClientCancel();
+  // Cancel all RPCs.
+  LOG(INFO) << "Cancelling RPCs...";
+  for (size_t i = 0; i < kMaxConcurrentStreams + 2; ++i) {
+    rpcs[i].CancelRpc();
+  }
+}
+
 // TODO: test cases:
 // - increase max_connections_per_subchannel, queued RPCs cause a new
 //   connection to be created immediately
@@ -3831,8 +3907,6 @@ TEST_F(ConnectionScalingTest, QueuedRpcsFailWhenLastConnectionCloses) {
 //   unless needed
 //
 // Cases we'd like to test that are harder:
-// - all queued RPC fail when last connection gets a GOAWAY but are
-//   transparently retried
 // - one connection closes, but there is another still working, queued
 //   RPCs should trigger a connection attempt (how do we trigger just
 //   one connection closing?)

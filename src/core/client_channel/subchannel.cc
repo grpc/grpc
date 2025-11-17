@@ -531,6 +531,8 @@ class Subchannel::QueuedCall final : public Subchannel::Call {
     ref_count_.Ref(location, reason);
   }
 
+  static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error);
+
   RefCount ref_count_;
   WeakRefCountedPtr<Subchannel> subchannel_;
   CreateCallArgs args_;
@@ -541,6 +543,11 @@ class Subchannel::QueuedCall final : public Subchannel::Call {
   RefCountedPtr<Call> subchannel_call_ ABSL_GUARDED_BY(&mu_);
   QueuedCall*& queue_entry_;
   Canceller* canceller_ ABSL_GUARDED_BY(&Subchannel::mu_);
+
+  std::atomic<bool> is_retriable_{false};
+  grpc_closure recv_trailing_metadata_ready_;
+  grpc_closure* original_recv_trailing_metadata_ = nullptr;
+  grpc_metadata_batch* recv_trailing_metadata_ = nullptr;
 };
 
 class Subchannel::QueuedCall::Canceller final {
@@ -618,6 +625,20 @@ void Subchannel::QueuedCall::StartTransportStreamOpBatch(
     subchannel_call_->StartTransportStreamOpBatch(batch);
     return;
   }
+  // Intercept recv_trailing_metadata, so that we can mark the call as
+  // eligible for transparent retries if we fail it due to all
+  // connections failing.
+  if (batch->recv_trailing_metadata) {
+    GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_, RecvTrailingMetadataReady,
+                      this, grpc_schedule_on_exec_ctx);
+    GRPC_CHECK_EQ(recv_trailing_metadata_, nullptr);
+    recv_trailing_metadata_ =
+        batch->payload->recv_trailing_metadata.recv_trailing_metadata;
+    original_recv_trailing_metadata_ =
+        batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
+    batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
+        &recv_trailing_metadata_ready_;
+  }
   // If we've previously been cancelled, immediately fail the new batch.
   if (!cancel_error_.ok()) {
     // Note: This will release the call combiner.
@@ -643,6 +664,17 @@ void Subchannel::QueuedCall::StartTransportStreamOpBatch(
     GRPC_CALL_COMBINER_STOP(args_.call_combiner,
                             "batch does not include send_initial_metadata");
   }
+}
+
+void Subchannel::QueuedCall::RecvTrailingMetadataReady(
+    void* arg, grpc_error_handle error) {
+  QueuedCall* call = static_cast<QueuedCall*>(arg);
+  GRPC_CHECK_NE(call->recv_trailing_metadata_, nullptr);
+  if (call->is_retriable_.load()) {
+    call->recv_trailing_metadata_->Set(GrpcStreamNetworkState(),
+                                       GrpcStreamNetworkState::kNotSentOnWire);
+  }
+  Closure::Run(DEBUG_LOCATION, call->original_recv_trailing_metadata_, error);
 }
 
 void Subchannel::QueuedCall::ResumeOnConnectionLocked(
@@ -677,6 +709,7 @@ void Subchannel::QueuedCall::Fail(absl::Status status) {
       << ": failing: " << status;
   canceller_ = nullptr;
   queue_entry_ = nullptr;
+  is_retriable_.store(true);
   MutexLock lock(&mu_);
   buffered_call_.Fail(
       status, BufferedCall::YieldCallCombinerIfPendingBatchesFound);
@@ -1503,9 +1536,6 @@ void Subchannel::RetryQueuedRpcsLocked() {
 }
 
 void Subchannel::FailAllQueuedRpcsLocked() {
-// FIXME: need to indicate somehow that this is eligible for transparent retries
-// (maybe handle this by modifying the recv_trailing_metadata batch
-// inside of QueuedCall::Fail()?)
   absl::Status status = PrependAddressToStatusMessage(
       key_, absl::UnavailableError("subchannel lost all connections"));
   for (QueuedCall* queued_call : queued_calls_) {
