@@ -465,6 +465,7 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
       << ", settings length=" << frame.settings.size() << "}";
 
   // The connector code needs us to run this
+  // TODO(akshitpatel) : [PH2][P2] Move this to where settings are applied.
   if (on_receive_settings_ != nullptr) {
     event_engine_->Run(
         [on_receive_settings = std::move(on_receive_settings_)]() mutable {
@@ -1614,6 +1615,8 @@ void Http2ClientTransport::CloseTransport() {
   // settings, we need to still invoke the closure passed to the transport.
   // Additionally, as this function will always run on the transport party, it
   // cannot race with reading a settings frame.
+  // TODO(akshitpatel): [PH2][P2] Pass the actual error that caused the
+  // transport to be closed here.
   if (on_receive_settings_ != nullptr) {
     event_engine_->Run(
         [on_receive_settings = std::move(on_receive_settings_)]() mutable {
