@@ -499,7 +499,7 @@ class _RequestIterator(object):
         self._request_deserializer = request_deserializer
 
     def _raise_or_start_receive_message(self) -> None:
-        if self._state.client is _CANCELLED:
+        if self._state.client is _CANCELLED or self._state.aborted:
             _raise_rpc_error(self._state)
         elif not _is_rpc_state_active(self._state):
             raise StopIteration()
