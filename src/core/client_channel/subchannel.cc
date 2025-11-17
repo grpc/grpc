@@ -1481,18 +1481,25 @@ void Subchannel::RetryQueuedRpcsLocked() {
       << "subchannel " << this << " " << key_.ToString()
       << ": retrying RPCs from queue, queue size=" << queued_calls_.size();
   while (!queued_calls_.empty()) {
+    GRPC_TRACE_LOG(subchannel_call, INFO)
+        << "  retrying first queued RPC, queue size=" << queued_calls_.size();
     QueuedCall* queued_call = queued_calls_.front();
-    if (queued_call != nullptr) {
+    if (queued_call == nullptr) {
+      GRPC_TRACE_LOG(subchannel_call, INFO) << "  RPC already cancelled";
+    } else {
       auto connected_subchannel = ChooseConnectionLocked();
       // If we don't have a connection to dispatch this RPC on, then
       // we've drained as much from the queue as we can, so stop here.
-      if (connected_subchannel == nullptr) return;
+      if (connected_subchannel == nullptr) {
+        GRPC_TRACE_LOG(subchannel_call, INFO)
+            << "  no usable connection found; will stop retrying from queue";
+        return;
+      }
+      GRPC_TRACE_LOG(subchannel_call, INFO)
+          << "  starting RPC on connection " << connected_subchannel.get();
       queued_call->ResumeOnConnectionLocked(connected_subchannel.get());
     }
     queued_calls_.pop_front();
-    GRPC_TRACE_LOG(subchannel_call, INFO)
-        << "subchannel " << this << " " << key_.ToString()
-        << ": started a queued RPC, queue size=" << queued_calls_.size();
   }
 }
 

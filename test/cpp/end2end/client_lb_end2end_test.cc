@@ -3677,14 +3677,99 @@ TEST_F(ConnectionScalingTest,
   }
 }
 
+TEST_F(ConnectionScalingTest, QueuedRpcCancelled) {
+  if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
+    GTEST_SKIP()
+        << "this test requires the subchannel_connection_scaling experiment";
+  }
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
+  constexpr char kServiceConfig[] =
+      "{\n"
+      "  \"connectionScaling\": {\n"
+      "    \"maxConnectionsPerSubchannel\": 2\n"
+      "  }\n"
+      "}";
+  const int kMaxConcurrentStreams = 3;
+  // Start a server with MAX_CONCURRENT_STREAMS set.
+  StartServers(1, {}, nullptr,
+               /*max_concurrent_streams=*/kMaxConcurrentStreams);
+  FakeResolverResponseGeneratorWrapper response_generator;
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts(), kServiceConfig);
+  // Start kMaxConcurrentStreams long-running RPCs.
+  LongRunningRpc rpcs[kMaxConcurrentStreams + 2];
+  for (size_t i = 0; i < kMaxConcurrentStreams; ++i) {
+    rpcs[i].StartRpc(stub.get());
+  }
+  // Wait for the server to see the first kMaxConcurrentStreams RPCs.
+  LOG(INFO) << "Waiting for server to see the initial RPCs...";
+  EXPECT_TRUE(WaitFor(
+      [&]() {
+        return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+               kMaxConcurrentStreams;
+      }))
+      << "timeout waiting for initial RPCs to start -- RPCs started: "
+      << servers_[0]->service_.RpcsWaitingForClientCancel();
+  // There should be only one connection.
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 1);
+  // Intercept the next connection attempt.
+  ConnectionAttemptInjector injector;
+  auto hold = injector.AddHold(servers_[0]->port_);
+  // Start another RPC, which will trigger the creation of a new
+  // connection.
+  rpcs[kMaxConcurrentStreams].StartRpc(stub.get());
+  // Wait for the connection attempt to start.
+  hold->Wait();
+  // Start yet another RPC, which we'll use to know when the connection
+  // attempt is complete.
+  rpcs[kMaxConcurrentStreams + 1].StartRpc(stub.get());
+  // Cancel the first queued RPC.
+  rpcs[kMaxConcurrentStreams].CancelRpc();
+  // Allow the connection attempt to complete.
+  hold->Resume();
+  // Now the server should see the new RPC.
+  LOG(INFO) << "Waiting for server to see the last RPC...";
+  EXPECT_TRUE(WaitFor(
+      [&]() {
+        return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+               kMaxConcurrentStreams + 1;
+      }))
+      << "timeout waiting for last RPC to start";
+  // And there should be another connection.
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 2);
+  // Clean up.
+  LOG(INFO) << "Cancelling RPCs...";
+  for (size_t i = 0; i < kMaxConcurrentStreams; ++i) {
+    rpcs[i].CancelRpc();
+  }
+  rpcs[kMaxConcurrentStreams + 1].CancelRpc();
+}
+
 // TODO: test cases:
-// - one connection closes, but there is another still working, queued
-//   RPCs should trigger a connection attempt
-// - all queued RPC fail when last connection gets a GOAWAY
-// - increase max_connections_per_subchannel
+// - increase max_connections_per_subchannel, queued RPCs cause a new
+//   connection to be created immediately
 // - server closes connection (MAX_CONN_IDLE), client does not reconnect
 //   unless needed
-// - server changes MCS value dynamically (???)
+//
+// Cases we'd like to test that are harder:
+// - all queued RPC fail when last connection gets a GOAWAY
+//   (how do we test this, given that transparent retries will kick in?)
+//   => use channel arg to disable retries
+// - one connection closes, but there is another still working, queued
+//   RPCs should trigger a connection attempt (how do we trigger just
+//   one connection closing?)
+// - server changes MCS value dynamically (how do we trigger the MCS
+//   change on the server?)
+//   ==> maybe use MCS quota on server side being built for rodos
+//
+// core e2e:
+// - mock transport.  methods to interact with call from server side.
+// - channel arg to select mock transport.
+// - create only client side for e2e test.
+// - mock transport factory that would tell us when new transports are created
+
 
 }  // namespace
 }  // namespace testing
