@@ -177,13 +177,15 @@ void BaseNode::SerializeEntity(grpc_channelz_v2_Entity* entity,
   grpc_channelz_v2_Entity_set_id(entity, uuid());
   grpc_channelz_v2_Entity_set_kind(
       entity, StdStringToUpbString(EntityTypeToKind(type_)));
+  std::vector<WeakRefCountedPtr<BaseNode>> parent_nodes;
   {
     MutexLock lock(&parent_mu_);
-    auto* parents =
-        grpc_channelz_v2_Entity_resize_parents(entity, parents_.size(), arena);
-    for (const auto& parent : parents_) {
-      *parents++ = parent->uuid();
-    }
+    parent_nodes.assign(parents_.begin(), parents_.end());
+  }
+  auto* parents = grpc_channelz_v2_Entity_resize_parents(
+      entity, parent_nodes.size(), arena);
+  for (const auto& parent : parent_nodes) {
+    *parents++ = parent->uuid();
   }
   grpc_channelz_v2_Entity_set_orphaned(entity, orphaned_index_ != 0);
 

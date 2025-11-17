@@ -37,6 +37,7 @@ grpc_cc_library(
     testonly = True,
     hdrs = ["environment_fake.h"],
     external_deps = [
+        "absl/algorithm:container",
         "absl/container:flat_hash_map",
     ],
     deps = [
