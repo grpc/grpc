@@ -68,12 +68,14 @@ std::string TmpFile::CreateTmpFileAndWriteData(absl::string_view data) {
   return name_to_return;
 }
 
-PemKeyCertPairList MakeCertKeyPairs(absl::string_view private_key,
-                                    absl::string_view certs) {
+std::shared_ptr<const PemKeyCertPairList> MakeCertKeyPairs(
+    absl::string_view private_key, absl::string_view certs) {
   if (private_key.empty() && certs.empty()) {
-    return {};
+    return nullptr;
   }
-  return PemKeyCertPairList{PemKeyCertPair(private_key, certs)};
+  auto list = std::make_shared<PemKeyCertPairList>();
+  list->emplace_back(private_key, certs);
+  return list;
 }
 
 std::string GetFileContents(const std::string& path) {

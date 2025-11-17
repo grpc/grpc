@@ -156,14 +156,7 @@ grpc_error_handle grpc_ssl_check_peer_name(absl::string_view peer_name,
 void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,
                                              size_t num_key_cert_pairs) {
   if (kp == nullptr) return;
-  for (size_t i = 0; i < num_key_cert_pairs; i++) {
-    gpr_free(const_cast<char*>(kp[i].cert_chain.data()));
-    if (const auto* key_view =
-            std::get_if<absl::string_view>(&kp[i].private_key)) {
-      gpr_free(const_cast<char*>(key_view->data()));
-    }
-  }
-  delete[] kp;
+  gpr_free(kp);
 }
 
 namespace grpc_core {

@@ -19,8 +19,10 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
+#include <cstddef>
 #include <deque>
 #include <list>
+#include <utility>
 
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/crash.h"
@@ -90,6 +92,25 @@ MATCHER_P2(MatchesCredentialInfo, root_matcher, identity_matcher, "") {
   return ok;
 }
 
+MATCHER_P(EqPemCertKeyPairs, expected_key_cert_pairs, "") {
+  if (arg == nullptr) {
+    return expected_key_cert_pairs == nullptr;
+  }
+  if (expected_key_cert_pairs == nullptr) {
+    return false;
+  }
+
+  std::shared_ptr<const PemKeyCertPairList> expected_pairs =
+      expected_key_cert_pairs;
+
+  std::shared_ptr<const PemKeyCertPairList> actual_pairs = arg;
+
+  if (actual_pairs->size() != expected_pairs->size()) return false;
+
+  return ::testing::ExplainMatchResult(expected_pairs, actual_pairs,
+                                       result_listener);
+}
+
 MATCHER_P(EqRootCert, cert, "") {
   return ::testing::ExplainMatchResult(
       ::testing::Pointee(::testing::VariantWith<std::string>(cert)), arg,
@@ -119,14 +140,28 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
   // CredentialInfo to the cert_update_queue of state_, and check in each test
   // if the status updates are correct.
   struct CredentialInfo {
-    PemKeyCertPairList key_cert_pairs;
+    std::shared_ptr<const PemKeyCertPairList> key_cert_pairs;
     std::shared_ptr<RootCertInfo> root_cert_info;
-    CredentialInfo(const RootCertInfo& roots, PemKeyCertPairList key_cert)
+    CredentialInfo(std::shared_ptr<RootCertInfo> roots,
+                   std::shared_ptr<const PemKeyCertPairList> key_cert)
         : key_cert_pairs(std::move(key_cert)),
-          root_cert_info(std::make_shared<RootCertInfo>(roots)) {}
+          root_cert_info(std::move(roots)) {}
     bool operator==(const CredentialInfo& other) const {
-      return key_cert_pairs == other.key_cert_pairs &&
-             root_cert_info == other.root_cert_info;
+      if (root_cert_info == nullptr) {
+        if (other.root_cert_info != nullptr) return false;
+      } else if (other.root_cert_info == nullptr) {
+        return false;
+      } else if (*root_cert_info != *other.root_cert_info) {
+        return false;
+      }
+      if (key_cert_pairs == nullptr) {
+        if (other.key_cert_pairs != nullptr) return false;
+      } else if (other.key_cert_pairs == nullptr) {
+        return false;
+      } else if (*key_cert_pairs != *other.key_cert_pairs) {
+        return false;
+      }
+      return true;
     }
   };
 
@@ -178,18 +213,16 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
 
     void OnCertificatesChanged(
         std::shared_ptr<RootCertInfo> roots,
-        std::optional<PemKeyCertPairList> key_cert_pairs) override {
-      MutexLock lock(&state_->mu);
-      RootCertInfo updated_root;
+        std::shared_ptr<const PemKeyCertPairList> key_cert_pairs) override {
+      std::shared_ptr<RootCertInfo> updated_root;
       if (roots != nullptr) {
-        updated_root = *roots;
+        updated_root = std::move(roots);
       }
-      PemKeyCertPairList updated_identity;
-      if (key_cert_pairs.has_value()) {
-        updated_identity = std::move(*key_cert_pairs);
+      std::shared_ptr<const PemKeyCertPairList> updated_identity = nullptr;
+      if (key_cert_pairs != nullptr) {
+        updated_identity = key_cert_pairs;
       }
-      state_->cert_update_queue.emplace_back(updated_root,
-                                             std::move(updated_identity));
+      state_->cert_update_queue.emplace_back(updated_root, updated_identity);
     }
 
     void OnError(grpc_error_handle root_cert_error,
@@ -277,26 +310,27 @@ TEST_F(GrpcTlsCertificateProviderTest, StaticDataCertificateProviderCreation) {
   // Watcher watching both root and identity certs.
   WatcherState* watcher_state_1 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
-  EXPECT_THAT(
-      watcher_state_1->GetCredentialQueue(),
-      ::testing::ElementsAre(MatchesCredentialInfo(
-          EqRootCert(root_cert_),
-          MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(MatchesCredentialInfo(
+                  EqRootCert(root_cert_),
+                  EqPemCertKeyPairs(MakeCertKeyPairs(private_key_.c_str(),
+                                                     cert_chain_.c_str())))));
   CancelWatch(watcher_state_1);
   // Watcher watching only root certs.
   WatcherState* watcher_state_2 =
       MakeWatcher(provider.distributor(), kCertName, std::nullopt);
   EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
               ::testing::ElementsAre(MatchesCredentialInfo(
-                  EqRootCert(root_cert_), PemKeyCertPairList())));
+                  EqRootCert(root_cert_), EqPemCertKeyPairs(nullptr))));
   CancelWatch(watcher_state_2);
   // Watcher watching only identity certs.
   WatcherState* watcher_state_3 =
       MakeWatcher(provider.distributor(), std::nullopt, kCertName);
-  EXPECT_THAT(watcher_state_3->GetCredentialQueue(),
-              ::testing::ElementsAre(MatchesCredentialInfo(
-                  EqRootCert(""), MakeCertKeyPairs(private_key_.c_str(),
-                                                   cert_chain_.c_str()))));
+  EXPECT_THAT(
+      watcher_state_3->GetCredentialQueue(),
+      ::testing::ElementsAre(MatchesCredentialInfo(
+          EqRootCert(""), EqPemCertKeyPairs(MakeCertKeyPairs(
+                              private_key_.c_str(), cert_chain_.c_str())))));
   CancelWatch(watcher_state_3);
 }
 
@@ -345,26 +379,27 @@ TEST_F(GrpcTlsCertificateProviderTest,
   // Watcher watching both root and identity certs.
   WatcherState* watcher_state_1 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
-  EXPECT_THAT(
-      watcher_state_1->GetCredentialQueue(),
-      ::testing::ElementsAre(MatchesCredentialInfo(
-          EqRootCert(root_cert_),
-          MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(MatchesCredentialInfo(
+                  EqRootCert(root_cert_),
+                  EqPemCertKeyPairs(MakeCertKeyPairs(private_key_.c_str(),
+                                                     cert_chain_.c_str())))));
   CancelWatch(watcher_state_1);
   // Watcher watching only root certs.
   WatcherState* watcher_state_2 =
       MakeWatcher(provider.distributor(), kCertName, std::nullopt);
   EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
               ::testing::ElementsAre(MatchesCredentialInfo(
-                  EqRootCert(root_cert_), PemKeyCertPairList())));
+                  EqRootCert(root_cert_), EqPemCertKeyPairs(nullptr))));
   CancelWatch(watcher_state_2);
   // Watcher watching only identity certs.
   WatcherState* watcher_state_3 =
       MakeWatcher(provider.distributor(), std::nullopt, kCertName);
-  EXPECT_THAT(watcher_state_3->GetCredentialQueue(),
-              ::testing::ElementsAre(MatchesCredentialInfo(
-                  EqRootCert(""), MakeCertKeyPairs(private_key_.c_str(),
-                                                   cert_chain_.c_str()))));
+  EXPECT_THAT(
+      watcher_state_3->GetCredentialQueue(),
+      ::testing::ElementsAre(MatchesCredentialInfo(
+          EqRootCert(""), EqPemCertKeyPairs(MakeCertKeyPairs(
+                              private_key_.c_str(), cert_chain_.c_str())))));
   CancelWatch(watcher_state_3);
 }
 
@@ -449,11 +484,11 @@ TEST_F(GrpcTlsCertificateProviderTest,
   WatcherState* watcher_state_1 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   // Expect to see the credential data.
-  EXPECT_THAT(
-      watcher_state_1->GetCredentialQueue(),
-      ::testing::ElementsAre(MatchesCredentialInfo(
-          EqRootCert(root_cert_),
-          MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(MatchesCredentialInfo(
+                  EqRootCert(root_cert_),
+                  EqPemCertKeyPairs(MakeCertKeyPairs(private_key_.c_str(),
+                                                     cert_chain_.c_str())))));
   // Copy new data to files.
   // TODO(ZhenLian): right now it is not completely atomic. Use the real atomic
   // update when the directory renaming is added in gpr.
@@ -464,11 +499,11 @@ TEST_F(GrpcTlsCertificateProviderTest,
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                gpr_time_from_seconds(2, GPR_TIMESPAN)));
   // Expect to see the new credential data.
-  EXPECT_THAT(
-      watcher_state_1->GetCredentialQueue(),
-      ::testing::ElementsAre(MatchesCredentialInfo(
-          EqRootCert(root_cert_2_),
-          MakeCertKeyPairs(private_key_2_.c_str(), cert_chain_2_.c_str()))));
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(MatchesCredentialInfo(
+                  EqRootCert(root_cert_2_),
+                  EqPemCertKeyPairs(MakeCertKeyPairs(private_key_2_.c_str(),
+                                                     cert_chain_2_.c_str())))));
   // Clean up.
   CancelWatch(watcher_state_1);
 }
@@ -486,11 +521,11 @@ TEST_F(GrpcTlsCertificateProviderTest,
   WatcherState* watcher_state_1 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   // Expect to see the credential data.
-  EXPECT_THAT(
-      watcher_state_1->GetCredentialQueue(),
-      ::testing::ElementsAre(MatchesCredentialInfo(
-          EqRootCert(root_cert_),
-          MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(MatchesCredentialInfo(
+                  EqRootCert(root_cert_),
+                  EqPemCertKeyPairs(MakeCertKeyPairs(private_key_.c_str(),
+                                                     cert_chain_.c_str())))));
   // Copy new data to files.
   // TODO(ZhenLian): right now it is not completely atomic. Use the real atomic
   // update when the directory renaming is added in gpr.
@@ -499,11 +534,11 @@ TEST_F(GrpcTlsCertificateProviderTest,
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                gpr_time_from_seconds(2, GPR_TIMESPAN)));
   // Expect to see the new credential data.
-  EXPECT_THAT(
-      watcher_state_1->GetCredentialQueue(),
-      ::testing::ElementsAre(MatchesCredentialInfo(
-          EqRootCert(root_cert_2_),
-          MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(MatchesCredentialInfo(
+                  EqRootCert(root_cert_2_),
+                  EqPemCertKeyPairs(MakeCertKeyPairs(private_key_.c_str(),
+                                                     cert_chain_.c_str())))));
   // Clean up.
   CancelWatch(watcher_state_1);
 }
@@ -521,11 +556,11 @@ TEST_F(GrpcTlsCertificateProviderTest,
   WatcherState* watcher_state_1 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   // Expect to see the credential data.
-  EXPECT_THAT(
-      watcher_state_1->GetCredentialQueue(),
-      ::testing::ElementsAre(MatchesCredentialInfo(
-          EqRootCert(root_cert_),
-          MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(MatchesCredentialInfo(
+                  EqRootCert(root_cert_),
+                  EqPemCertKeyPairs(MakeCertKeyPairs(private_key_.c_str(),
+                                                     cert_chain_.c_str())))));
   // Copy new data to files.
   // TODO(ZhenLian): right now it is not completely atomic. Use the real atomic
   // update when the directory renaming is added in gpr.
@@ -535,11 +570,11 @@ TEST_F(GrpcTlsCertificateProviderTest,
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                gpr_time_from_seconds(2, GPR_TIMESPAN)));
   // Expect to see the new credential data.
-  EXPECT_THAT(
-      watcher_state_1->GetCredentialQueue(),
-      ::testing::ElementsAre(MatchesCredentialInfo(
-          EqRootCert(root_cert_),
-          MakeCertKeyPairs(private_key_2_.c_str(), cert_chain_2_.c_str()))));
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(MatchesCredentialInfo(
+                  EqRootCert(root_cert_),
+                  EqPemCertKeyPairs(MakeCertKeyPairs(private_key_2_.c_str(),
+                                                     cert_chain_2_.c_str())))));
   // Clean up.
   CancelWatch(watcher_state_1);
 }
@@ -558,11 +593,11 @@ TEST_F(GrpcTlsCertificateProviderTest,
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   // The initial data is all good, so we expect to have successful credential
   // updates.
-  EXPECT_THAT(
-      watcher_state_1->GetCredentialQueue(),
-      ::testing::ElementsAre(MatchesCredentialInfo(
-          EqRootCert(root_cert_),
-          MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(MatchesCredentialInfo(
+                  EqRootCert(root_cert_),
+                  EqPemCertKeyPairs(MakeCertKeyPairs(private_key_.c_str(),
+                                                     cert_chain_.c_str())))));
   // Delete TmpFile objects, which will remove the corresponding files.
   tmp_root_cert.reset();
   tmp_identity_key.reset();
@@ -593,11 +628,11 @@ TEST_F(GrpcTlsCertificateProviderTest,
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   // The initial data is all good, so we expect to have successful credential
   // updates.
-  EXPECT_THAT(
-      watcher_state_1->GetCredentialQueue(),
-      ::testing::ElementsAre(MatchesCredentialInfo(
-          EqRootCert(root_cert_),
-          MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(MatchesCredentialInfo(
+                  EqRootCert(root_cert_),
+                  EqPemCertKeyPairs(MakeCertKeyPairs(private_key_.c_str(),
+                                                     cert_chain_.c_str())))));
   // Delete root TmpFile object, which will remove the corresponding file.
   tmp_root_cert.reset();
   // Wait 2 seconds for the provider's refresh thread to read the deleted files.
@@ -626,11 +661,11 @@ TEST_F(GrpcTlsCertificateProviderTest,
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   // The initial data is all good, so we expect to have successful credential
   // updates.
-  EXPECT_THAT(
-      watcher_state_1->GetCredentialQueue(),
-      ::testing::ElementsAre(MatchesCredentialInfo(
-          EqRootCert(root_cert_),
-          MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(MatchesCredentialInfo(
+                  EqRootCert(root_cert_),
+                  EqPemCertKeyPairs(MakeCertKeyPairs(private_key_.c_str(),
+                                                     cert_chain_.c_str())))));
   // Delete identity TmpFile objects, which will remove the corresponding files.
   tmp_identity_key.reset();
   tmp_identity_cert.reset();
@@ -710,19 +745,19 @@ TEST_F(GrpcTlsCertificateProviderTest,
   // Watcher watching both root and identity certs.
   WatcherState* watcher_state_1 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
-  EXPECT_THAT(
-      watcher_state_1->GetCredentialQueue(),
-      ::testing::ElementsAre(MatchesCredentialInfo(
-          EqSpiffeBundleMap(GetGoodSpiffeBundleMap()),
-          MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(MatchesCredentialInfo(
+                  EqSpiffeBundleMap(GetGoodSpiffeBundleMap()),
+                  EqPemCertKeyPairs(MakeCertKeyPairs(private_key_.c_str(),
+                                                     cert_chain_.c_str())))));
   CancelWatch(watcher_state_1);
   // Watcher watching only root certs.
   WatcherState* watcher_state_2 =
       MakeWatcher(provider.distributor(), kCertName, std::nullopt);
-  EXPECT_THAT(
-      watcher_state_2->GetCredentialQueue(),
-      ::testing::ElementsAre(MatchesCredentialInfo(
-          EqSpiffeBundleMap(GetGoodSpiffeBundleMap()), PemKeyCertPairList())));
+  EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
+              ::testing::ElementsAre(MatchesCredentialInfo(
+                  EqSpiffeBundleMap(GetGoodSpiffeBundleMap()),
+                  EqPemCertKeyPairs(nullptr))));
   CancelWatch(watcher_state_2);
 }
 
@@ -776,11 +811,11 @@ TEST_F(GrpcTlsCertificateProviderTest,
   WatcherState* watcher_state_1 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   // Expect to see the credential data.
-  EXPECT_THAT(
-      watcher_state_1->GetCredentialQueue(),
-      ::testing::ElementsAre(MatchesCredentialInfo(
-          EqSpiffeBundleMap(GetGoodSpiffeBundleMap()),
-          MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(MatchesCredentialInfo(
+                  EqSpiffeBundleMap(GetGoodSpiffeBundleMap()),
+                  EqPemCertKeyPairs(MakeCertKeyPairs(private_key_.c_str(),
+                                                     cert_chain_.c_str())))));
   // Copy new data to files.
   // TODO(ZhenLian): right now it is not completely atomic. Use the real atomic
   // update when the directory renaming is added in gpr.
@@ -791,11 +826,11 @@ TEST_F(GrpcTlsCertificateProviderTest,
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                gpr_time_from_seconds(2, GPR_TIMESPAN)));
   // Expect to see the new credential data.
-  EXPECT_THAT(
-      watcher_state_1->GetCredentialQueue(),
-      ::testing::ElementsAre(MatchesCredentialInfo(
-          EqSpiffeBundleMap(GetGoodSpiffeBundleMap2()),
-          MakeCertKeyPairs(private_key_2_.c_str(), cert_chain_2_.c_str()))));
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(MatchesCredentialInfo(
+                  EqSpiffeBundleMap(GetGoodSpiffeBundleMap2()),
+                  EqPemCertKeyPairs(MakeCertKeyPairs(private_key_2_.c_str(),
+                                                     cert_chain_2_.c_str())))));
   // Clean up.
   CancelWatch(watcher_state_1);
 }
@@ -814,11 +849,11 @@ TEST_F(GrpcTlsCertificateProviderTest,
   WatcherState* watcher_state_1 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   // Expect to see the credential data.
-  EXPECT_THAT(
-      watcher_state_1->GetCredentialQueue(),
-      ::testing::ElementsAre(MatchesCredentialInfo(
-          EqSpiffeBundleMap(GetGoodSpiffeBundleMap()),
-          MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(MatchesCredentialInfo(
+                  EqSpiffeBundleMap(GetGoodSpiffeBundleMap()),
+                  EqPemCertKeyPairs(MakeCertKeyPairs(private_key_.c_str(),
+                                                     cert_chain_.c_str())))));
   // Copy new data to files.
   // TODO(ZhenLian): right now it is not completely atomic. Use the real
   // atomic update when the directory renaming is added in gpr.
@@ -827,11 +862,11 @@ TEST_F(GrpcTlsCertificateProviderTest,
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                                gpr_time_from_seconds(2, GPR_TIMESPAN)));
   // Expect to see the new credential data.
-  EXPECT_THAT(
-      watcher_state_1->GetCredentialQueue(),
-      ::testing::ElementsAre(MatchesCredentialInfo(
-          EqSpiffeBundleMap(GetGoodSpiffeBundleMap2()),
-          MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(MatchesCredentialInfo(
+                  EqSpiffeBundleMap(GetGoodSpiffeBundleMap2()),
+                  EqPemCertKeyPairs(MakeCertKeyPairs(private_key_.c_str(),
+                                                     cert_chain_.c_str())))));
   // Clean up.
   CancelWatch(watcher_state_1);
 }
@@ -853,11 +888,11 @@ TEST_F(
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   // The initial data is all good, so we expect to have successful credential
   // updates.
-  EXPECT_THAT(
-      watcher_state_1->GetCredentialQueue(),
-      ::testing::ElementsAre(MatchesCredentialInfo(
-          EqSpiffeBundleMap(GetGoodSpiffeBundleMap()),
-          MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(MatchesCredentialInfo(
+                  EqSpiffeBundleMap(GetGoodSpiffeBundleMap()),
+                  EqPemCertKeyPairs(MakeCertKeyPairs(private_key_.c_str(),
+                                                     cert_chain_.c_str())))));
   // Delete root TmpFile object, which will remove the corresponding file.
   tmp_spiffe_bundle_map.reset();
   // Wait 2 seconds for the provider's refresh thread to read the deleted files.
@@ -889,11 +924,11 @@ TEST_F(
       MakeWatcher(provider.distributor(), kCertName, kCertName);
   // The initial data is all good, so we expect to have successful credential
   // updates.
-  EXPECT_THAT(
-      watcher_state_1->GetCredentialQueue(),
-      ::testing::ElementsAre(MatchesCredentialInfo(
-          EqSpiffeBundleMap(GetGoodSpiffeBundleMap()),
-          MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()))));
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(),
+              ::testing::ElementsAre(MatchesCredentialInfo(
+                  EqSpiffeBundleMap(GetGoodSpiffeBundleMap()),
+                  EqPemCertKeyPairs(MakeCertKeyPairs(private_key_.c_str(),
+                                                     cert_chain_.c_str())))));
   // Delete TmpFile objects, which will remove the corresponding files.
   tmp_spiffe_bundle_map.reset();
   tmp_identity_key.reset();

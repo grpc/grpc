@@ -120,14 +120,14 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
       static_cast<TlsChannelSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_NE(tls_connector->RootCertInfoForTesting(), nullptr);
-  EXPECT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
+  EXPECT_NE(tls_connector->KeyCertPairListForTesting(), nullptr);
 }
 
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ClientOptionsWithStaticDataProviderOnRootCerts) {
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
-  auto provider = MakeRefCounted<StaticDataCertificateProvider>(
-      root_cert_, PemKeyCertPairList());
+  auto provider =
+      MakeRefCounted<StaticDataCertificateProvider>(root_cert_, nullptr);
   options->set_certificate_provider(std::move(provider));
   options->set_watch_root_cert(true);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
@@ -140,7 +140,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
       static_cast<TlsChannelSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_NE(tls_connector->RootCertInfoForTesting(), nullptr);
-  EXPECT_FALSE(tls_connector->KeyCertPairListForTesting().has_value());
+  EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), nullptr);
 }
 
 TEST_F(GrpcTlsCredentialsOptionsTest,
@@ -197,7 +197,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
       static_cast<TlsServerSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
   EXPECT_NE(tls_connector->RootCertInfoForTesting(), nullptr);
-  EXPECT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
+  EXPECT_NE(tls_connector->KeyCertPairListForTesting(), nullptr);
 }
 
 TEST_F(GrpcTlsCredentialsOptionsTest,
@@ -216,14 +216,14 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
       static_cast<TlsServerSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_connector->RootCertInfoForTesting(), nullptr);
-  EXPECT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
+  EXPECT_NE(tls_connector->KeyCertPairListForTesting(), nullptr);
 }
 
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ServerOptionsWithStaticDataProviderOnNotProvidedCerts) {
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
-  auto provider = MakeRefCounted<StaticDataCertificateProvider>(
-      root_cert_, PemKeyCertPairList());
+  auto provider =
+      MakeRefCounted<StaticDataCertificateProvider>(root_cert_, nullptr);
   options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
@@ -259,7 +259,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
       static_cast<TlsChannelSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_NE(tls_connector->RootCertInfoForTesting(), nullptr);
-  EXPECT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
+  EXPECT_NE(tls_connector->KeyCertPairListForTesting(), nullptr);
 }
 
 TEST_F(GrpcTlsCredentialsOptionsTest,
@@ -279,7 +279,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
       static_cast<TlsChannelSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_NE(tls_connector->RootCertInfoForTesting(), nullptr);
-  EXPECT_FALSE(tls_connector->KeyCertPairListForTesting().has_value());
+  EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), nullptr);
 }
 
 TEST_F(GrpcTlsCredentialsOptionsTest,
@@ -337,7 +337,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
       static_cast<TlsServerSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
   EXPECT_NE(tls_connector->RootCertInfoForTesting(), nullptr);
-  EXPECT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
+  EXPECT_NE(tls_connector->KeyCertPairListForTesting(), nullptr);
 }
 
 TEST_F(GrpcTlsCredentialsOptionsTest,
@@ -356,7 +356,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
       static_cast<TlsServerSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_connector->RootCertInfoForTesting(), nullptr);
-  EXPECT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
+  EXPECT_NE(tls_connector->KeyCertPairListForTesting(), nullptr);
 }
 
 TEST_F(GrpcTlsCredentialsOptionsTest,
@@ -425,7 +425,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   ASSERT_NE(tls_connector->RootCertInfoForTesting(), nullptr);
   EXPECT_THAT(*tls_connector->RootCertInfoForTesting(),
               ::testing::VariantWith<std::string>(root_cert_));
-  ASSERT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
+  ASSERT_NE(tls_connector->KeyCertPairListForTesting(), nullptr);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(),
             MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
   // Copy new data to files.
@@ -443,7 +443,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   ASSERT_NE(tls_connector->RootCertInfoForTesting(), nullptr);
   EXPECT_THAT(*tls_connector->RootCertInfoForTesting(),
               ::testing::VariantWith<std::string>(root_cert_2_));
-  ASSERT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
+  ASSERT_NE(tls_connector->KeyCertPairListForTesting(), nullptr);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(),
             MakeCertKeyPairs(private_key_2_.c_str(), cert_chain_2_.c_str()));
 }
@@ -476,7 +476,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   ASSERT_NE(tls_connector->RootCertInfoForTesting(), nullptr);
   EXPECT_THAT(*tls_connector->RootCertInfoForTesting(),
               ::testing::VariantWith<std::string>(root_cert_));
-  ASSERT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
+  ASSERT_NE(tls_connector->KeyCertPairListForTesting(), nullptr);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(),
             MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
   // Delete TmpFile objects, which will remove the corresponding files.
@@ -495,7 +495,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   ASSERT_NE(tls_connector->RootCertInfoForTesting(), nullptr);
   EXPECT_THAT(*tls_connector->RootCertInfoForTesting(),
               ::testing::VariantWith<std::string>(root_cert_));
-  ASSERT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
+  ASSERT_NE(tls_connector->KeyCertPairListForTesting(), nullptr);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(),
             MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
 }
@@ -531,8 +531,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest, ServerOptionsWithExternalVerifier) {
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
   options->set_certificate_verifier(core_external_verifier.Ref());
   // On server side we have to set the provider providing identity certs.
-  auto provider = MakeRefCounted<StaticDataCertificateProvider>(
-      root_cert_, PemKeyCertPairList());
+  auto provider =
+      MakeRefCounted<StaticDataCertificateProvider>(root_cert_, nullptr);
   options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
@@ -570,8 +570,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
   options->set_certificate_verifier(hostname_certificate_verifier_.Ref());
   // On server side we have to set the provider providing identity certs.
-  auto provider = MakeRefCounted<StaticDataCertificateProvider>(
-      root_cert_, PemKeyCertPairList());
+  auto provider =
+      MakeRefCounted<StaticDataCertificateProvider>(root_cert_, nullptr);
   options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);

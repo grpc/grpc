@@ -219,14 +219,14 @@ tsi_ssl_pem_key_cert_pair* ConvertToTsiPemKeyCertPair(
   size_t num_key_cert_pairs = cert_pair_list.size();
   if (num_key_cert_pairs > 0) {
     GRPC_CHECK_NE(cert_pair_list.data(), nullptr);
-    tsi_pairs = new tsi_ssl_pem_key_cert_pair[num_key_cert_pairs];
+    tsi_pairs = static_cast<tsi_ssl_pem_key_cert_pair*>(
+        gpr_zalloc(num_key_cert_pairs * sizeof(tsi_ssl_pem_key_cert_pair)));
   }
   for (size_t i = 0; i < num_key_cert_pairs; i++) {
     GRPC_CHECK(!cert_pair_list[i].private_key().empty() ||
                cert_pair_list[i].private_key_sign() != nullptr);
     GRPC_CHECK(!cert_pair_list[i].cert_chain().empty());
-    tsi_pairs[i].cert_chain =
-        gpr_strdup(cert_pair_list[i].cert_chain().c_str());
+    tsi_pairs[i].cert_chain = cert_pair_list[i].cert_chain().c_str();
     PrivateKey private_key;
     if (cert_pair_list[i].private_key_sign() == nullptr) {
       private_key = cert_pair_list[i].private_key();
@@ -318,7 +318,7 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
   // hence no need to register the watcher.
   bool use_default_roots = !options_->watch_root_cert();
   if (use_default_roots && !options_->watch_identity_pair()) {
-    watcher_ptr->OnCertificatesChanged(nullptr, std::nullopt);
+    watcher_ptr->OnCertificatesChanged(nullptr, nullptr);
   } else {
     distributor->WatchTlsCertificates(std::move(watcher_ptr),
                                       watched_root_cert_name,
@@ -435,21 +435,22 @@ ArenaPromise<absl::Status> TlsChannelSecurityConnector::CheckCallHost(
 }
 
 void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
-    OnCertificatesChanged(std::shared_ptr<RootCertInfo> root_certs,
-                          std::optional<PemKeyCertPairList> key_cert_pairs) {
+    OnCertificatesChanged(
+        std::shared_ptr<RootCertInfo> root_certs,
+        std::shared_ptr<const PemKeyCertPairList> key_cert_pairs) {
   GRPC_CHECK_NE(security_connector_, nullptr);
   MutexLock lock(&security_connector_->mu_);
   if (root_certs != nullptr) {
     security_connector_->root_cert_info_ = std::move(root_certs);
   }
-  if (key_cert_pairs.has_value()) {
+  if (key_cert_pairs != nullptr) {
     security_connector_->pem_key_cert_pair_list_ = std::move(key_cert_pairs);
   }
   const bool root_ready = !security_connector_->options_->watch_root_cert() ||
                           security_connector_->root_cert_info_ != nullptr;
   const bool identity_ready =
       !security_connector_->options_->watch_identity_pair() ||
-      security_connector_->pem_key_cert_pair_list_.has_value();
+      security_connector_->pem_key_cert_pair_list_ != nullptr;
   if (root_ready && identity_ready) {
     if (security_connector_->UpdateHandshakerFactoryLocked() !=
         GRPC_SECURITY_OK) {
@@ -532,7 +533,7 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
     tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
   }
   tsi_ssl_pem_key_cert_pair* pem_key_cert_pair = nullptr;
-  if (pem_key_cert_pair_list_.has_value()) {
+  if (pem_key_cert_pair_list_ != nullptr) {
     pem_key_cert_pair = ConvertToTsiPemKeyCertPair(*pem_key_cert_pair_list_);
   }
   bool use_default_roots = !options_->watch_root_cert();
@@ -687,14 +688,15 @@ int TlsServerSecurityConnector::cmp(
 }
 
 void TlsServerSecurityConnector::TlsServerCertificateWatcher::
-    OnCertificatesChanged(std::shared_ptr<RootCertInfo> roots,
-                          std::optional<PemKeyCertPairList> key_cert_pairs) {
+    OnCertificatesChanged(
+        std::shared_ptr<RootCertInfo> roots,
+        std::shared_ptr<const PemKeyCertPairList> key_cert_pairs) {
   GRPC_CHECK_NE(security_connector_, nullptr);
   MutexLock lock(&security_connector_->mu_);
   if (roots != nullptr) {
     security_connector_->root_cert_info_ = std::move(roots);
   }
-  if (key_cert_pairs.has_value()) {
+  if (key_cert_pairs != nullptr) {
     security_connector_->pem_key_cert_pair_list_ = std::move(key_cert_pairs);
   }
   bool root_being_watched = security_connector_->options_->watch_root_cert();
@@ -702,7 +704,7 @@ void TlsServerSecurityConnector::TlsServerCertificateWatcher::
   bool identity_being_watched =
       security_connector_->options_->watch_identity_pair();
   bool identity_has_value =
-      security_connector_->pem_key_cert_pair_list_.has_value();
+      security_connector_->pem_key_cert_pair_list_ != nullptr;
   if ((root_being_watched && root_has_value && identity_being_watched &&
        identity_has_value) ||
       (root_being_watched && root_has_value && !identity_being_watched) ||
@@ -786,11 +788,11 @@ TlsServerSecurityConnector::UpdateHandshakerFactoryLocked() {
     tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
   }
   // The identity certs on the server side shouldn't be empty.
-  GRPC_CHECK(pem_key_cert_pair_list_.has_value());
-  GRPC_CHECK(!(*pem_key_cert_pair_list_).empty());
+  GRPC_CHECK(pem_key_cert_pair_list_ != nullptr);
+  GRPC_CHECK(!pem_key_cert_pair_list_->empty());
   tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs = nullptr;
   pem_key_cert_pairs = ConvertToTsiPemKeyCertPair(*pem_key_cert_pair_list_);
-  size_t num_key_cert_pairs = (*pem_key_cert_pair_list_).size();
+  size_t num_key_cert_pairs = pem_key_cert_pair_list_->size();
   grpc_security_status status = grpc_ssl_tsi_server_handshaker_factory_init(
       pem_key_cert_pairs, num_key_cert_pairs, root_cert_info_,
       options_->cert_request_type(),

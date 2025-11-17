@@ -182,14 +182,8 @@ class PemKeyCertPair {
     return *this;
   }
 
-  // Copyable.
-  PemKeyCertPair(const PemKeyCertPair& other)
-      : private_key_(other.private_key()), cert_chain_(other.cert_chain()) {}
-  PemKeyCertPair& operator=(const PemKeyCertPair& other) {
-    private_key_ = other.private_key();
-    cert_chain_ = other.cert_chain();
-    return *this;
-  }
+  PemKeyCertPair(const PemKeyCertPair& other) = delete;
+  PemKeyCertPair& operator=(const PemKeyCertPair& other) = delete;
 
   bool operator==(const PemKeyCertPair& other) const {
     return this->private_key() == other.private_key() &&

@@ -37,7 +37,7 @@
 #include "absl/strings/string_view.h"
 
 struct grpc_tls_identity_pairs {
-  grpc_core::PemKeyCertPairList pem_key_cert_pairs;
+  std::unique_ptr<grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
 };
 
 // TLS certificate distributor.
@@ -60,7 +60,8 @@ struct grpc_tls_certificate_distributor
     // pairs.
     virtual void OnCertificatesChanged(
         std::shared_ptr<RootCertInfo> roots,
-        std::optional<grpc_core::PemKeyCertPairList> key_cert_pairs) = 0;
+        std::shared_ptr<const grpc_core::PemKeyCertPairList>
+            key_cert_pairs) = 0;
 
     // Handles an error that occurs while attempting to fetch certificate data.
     // Note that if a watcher sees an error, it simply means the Provider is
@@ -88,7 +89,7 @@ struct grpc_tls_certificate_distributor
   // @param pem_key_cert_pairs The content of identity key-cert pairs.
   void SetKeyMaterials(
       const std::string& cert_name, std::shared_ptr<RootCertInfo> roots,
-      std::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs);
+      std::shared_ptr<const grpc_core::PemKeyCertPairList> pem_key_cert_pairs);
 
   bool HasRootCerts(const std::string& root_cert_name);
 
@@ -176,7 +177,7 @@ struct grpc_tls_certificate_distributor
     // The contents of the root certificates.
     std::shared_ptr<RootCertInfo> roots;
     // The contents of the identity key-certificate pairs.
-    grpc_core::PemKeyCertPairList pem_key_cert_pairs;
+    std::shared_ptr<const grpc_core::PemKeyCertPairList> pem_key_cert_pairs;
     // TODO(gtcooke94) Swap to using absl::StatusOr<>
     // https://github.com/grpc/grpc/pull/39708/files#r2144014200 The root cert
     // reloading error propagated by the caller.

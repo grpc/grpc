@@ -20,6 +20,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <memory>
 #include <optional>
 #include <utility>
 
@@ -45,11 +46,12 @@ class RootCertificatesWatcher final
       RefCountedPtr<grpc_tls_certificate_distributor> parent)
       : parent_(std::move(parent)) {}
 
-  void OnCertificatesChanged(std::shared_ptr<RootCertInfo> roots,
-                             std::optional<PemKeyCertPairList>
-                             /* key_cert_pairs */) override {
+  void OnCertificatesChanged(
+      std::shared_ptr<RootCertInfo> roots,
+      std::shared_ptr<const grpc_core::PemKeyCertPairList>
+      /* key_cert_pairs */) override {
     if (roots != nullptr) {
-      parent_->SetKeyMaterials("", roots, std::nullopt);
+      parent_->SetKeyMaterials("", roots, nullptr);
     }
   }
 
@@ -79,9 +81,10 @@ class IdentityCertificatesWatcher final
 
   void OnCertificatesChanged(
       std::shared_ptr<RootCertInfo> /* root_certs */,
-      std::optional<PemKeyCertPairList> key_cert_pairs) override {
-    if (key_cert_pairs.has_value()) {
-      parent_->SetKeyMaterials("", nullptr, key_cert_pairs);
+      std::shared_ptr<const grpc_core::PemKeyCertPairList> key_cert_pairs)
+      override {
+    if (key_cert_pairs != nullptr) {
+      parent_->SetKeyMaterials("", nullptr, std::move(key_cert_pairs));
     }
   }
 

@@ -24,6 +24,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <memory>
+
 #include "src/core/config/config_vars.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
@@ -70,12 +72,12 @@ class TlsSecurityConnectorTest : public ::testing::Test {
         std::make_shared<RootCertInfo>(testing::GetFileContents(CA_CERT_PATH));
     root_cert_0_ = std::make_shared<RootCertInfo>(
         testing::GetFileContents(CLIENT_CERT_PATH));
-    identity_pairs_1_.emplace_back(
-        testing::GetFileContents(SERVER_KEY_PATH_1),
-        testing::GetFileContents(SERVER_CERT_PATH_1));
-    identity_pairs_0_.emplace_back(
-        testing::GetFileContents(SERVER_KEY_PATH_0),
-        testing::GetFileContents(SERVER_CERT_PATH_0));
+    identity_pairs_1_ =
+        MakeCertKeyPairs(testing::GetFileContents(SERVER_KEY_PATH_1),
+                         testing::GetFileContents(SERVER_CERT_PATH_1));
+    identity_pairs_0_ =
+        MakeCertKeyPairs(testing::GetFileContents(SERVER_KEY_PATH_0),
+                         testing::GetFileContents(SERVER_CERT_PATH_0));
     auto map0 = SpiffeBundleMap::FromFile(kSpiffeBundlePath0);
     GRPC_CHECK(map0.ok());
     spiffe_bundle_map_0_ = std::make_shared<RootCertInfo>(std::move(*map0));
@@ -95,8 +97,8 @@ class TlsSecurityConnectorTest : public ::testing::Test {
 
   std::shared_ptr<RootCertInfo> root_cert_1_;
   std::shared_ptr<RootCertInfo> root_cert_0_;
-  PemKeyCertPairList identity_pairs_1_;
-  PemKeyCertPairList identity_pairs_0_;
+  std::shared_ptr<const PemKeyCertPairList> identity_pairs_1_;
+  std::shared_ptr<const PemKeyCertPairList> identity_pairs_0_;
   std::shared_ptr<RootCertInfo> spiffe_bundle_map_0_;
   std::shared_ptr<RootCertInfo> spiffe_bundle_map_1_;
   HostNameCertificateVerifier hostname_certificate_verifier_;
@@ -135,7 +137,7 @@ TEST_F(TlsSecurityConnectorTest,
        RootAndIdentityCertsObtainedWhenCreateChannelSecurityConnector) {
   RefCountedPtr<grpc_tls_certificate_distributor> distributor =
       MakeRefCounted<grpc_tls_certificate_distributor>();
-  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, std::nullopt);
+  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, nullptr);
   distributor->SetKeyMaterials(kIdentityCertName, nullptr, identity_pairs_0_);
   RefCountedPtr<grpc_tls_certificate_provider> provider =
       MakeRefCounted<TlsTestCertificateProvider>(distributor);
@@ -157,7 +159,7 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
-  distributor->SetKeyMaterials(kRootCertName, root_cert_1_, std::nullopt);
+  distributor->SetKeyMaterials(kRootCertName, root_cert_1_, nullptr);
   distributor->SetKeyMaterials(kIdentityCertName, nullptr, identity_pairs_1_);
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_1_);
@@ -207,7 +209,7 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_EQ(tls_root_connector->KeyCertPairListForTesting(), identity_pairs_0_);
   // If we have a root update, we shouldn't receive them in security connector,
   // since we claimed to use default system roots.
-  distributor->SetKeyMaterials(kRootCertName, root_cert_1_, std::nullopt);
+  distributor->SetKeyMaterials(kRootCertName, root_cert_1_, nullptr);
   EXPECT_NE(tls_root_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_NE(tls_root_connector->RootCertInfoForTesting(), root_cert_1_);
 }
@@ -216,7 +218,7 @@ TEST_F(TlsSecurityConnectorTest,
        RootCertsObtainedWhenCreateChannelSecurityConnector) {
   RefCountedPtr<grpc_tls_certificate_distributor> distributor =
       MakeRefCounted<grpc_tls_certificate_distributor>();
-  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, std::nullopt);
+  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, nullptr);
   distributor->SetKeyMaterials(kIdentityCertName, nullptr, identity_pairs_0_);
   RefCountedPtr<grpc_tls_certificate_provider> provider =
       MakeRefCounted<TlsTestCertificateProvider>(distributor);
@@ -237,7 +239,7 @@ TEST_F(TlsSecurityConnectorTest,
       static_cast<TlsChannelSecurityConnector*>(root_connector.get());
   EXPECT_NE(tls_root_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_root_connector->RootCertInfoForTesting(), root_cert_0_);
-  distributor->SetKeyMaterials(kRootCertName, root_cert_1_, std::nullopt);
+  distributor->SetKeyMaterials(kRootCertName, root_cert_1_, nullptr);
   EXPECT_NE(tls_root_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_root_connector->RootCertInfoForTesting(), root_cert_1_);
 }
@@ -246,7 +248,7 @@ TEST_F(TlsSecurityConnectorTest,
        CertPartiallyObtainedWhenCreateChannelSecurityConnector) {
   RefCountedPtr<grpc_tls_certificate_distributor> distributor =
       MakeRefCounted<grpc_tls_certificate_distributor>();
-  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, std::nullopt);
+  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, nullptr);
   RefCountedPtr<grpc_tls_certificate_provider> provider =
       MakeRefCounted<TlsTestCertificateProvider>(distributor);
   // Registered the options watching both certs, but only root certs are
@@ -281,7 +283,7 @@ TEST_F(TlsSecurityConnectorTest,
        DistributorHasErrorForChannelSecurityConnector) {
   RefCountedPtr<grpc_tls_certificate_distributor> distributor =
       MakeRefCounted<grpc_tls_certificate_distributor>();
-  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, std::nullopt);
+  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, nullptr);
   distributor->SetKeyMaterials(kIdentityCertName, nullptr, identity_pairs_0_);
   RefCountedPtr<grpc_tls_certificate_provider> provider =
       MakeRefCounted<TlsTestCertificateProvider>(distributor);
@@ -429,7 +431,7 @@ TEST_F(TlsSecurityConnectorTest,
        CompareChannelSecurityConnectorSucceedsOnSameCredentials) {
   RefCountedPtr<grpc_tls_certificate_distributor> distributor =
       MakeRefCounted<grpc_tls_certificate_distributor>();
-  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, std::nullopt);
+  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, nullptr);
   RefCountedPtr<grpc_tls_certificate_provider> provider =
       MakeRefCounted<TlsTestCertificateProvider>(distributor);
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
@@ -455,7 +457,7 @@ TEST_F(TlsSecurityConnectorTest,
        CompareChannelSecurityConnectorFailsOnDifferentChannelCredentials) {
   RefCountedPtr<grpc_tls_certificate_distributor> distributor =
       MakeRefCounted<grpc_tls_certificate_distributor>();
-  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, std::nullopt);
+  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, nullptr);
   RefCountedPtr<grpc_tls_certificate_provider> provider =
       MakeRefCounted<TlsTestCertificateProvider>(distributor);
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
@@ -488,7 +490,7 @@ TEST_F(TlsSecurityConnectorTest,
        CompareChannelSecurityConnectorFailsOnDifferentCallCredentials) {
   RefCountedPtr<grpc_tls_certificate_distributor> distributor =
       MakeRefCounted<grpc_tls_certificate_distributor>();
-  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, std::nullopt);
+  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, nullptr);
   RefCountedPtr<grpc_tls_certificate_provider> provider =
       MakeRefCounted<TlsTestCertificateProvider>(distributor);
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
@@ -517,7 +519,7 @@ TEST_F(TlsSecurityConnectorTest,
        CompareChannelSecurityConnectorFailsOnDifferentTargetNames) {
   RefCountedPtr<grpc_tls_certificate_distributor> distributor =
       MakeRefCounted<grpc_tls_certificate_distributor>();
-  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, std::nullopt);
+  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, nullptr);
   RefCountedPtr<grpc_tls_certificate_provider> provider =
       MakeRefCounted<TlsTestCertificateProvider>(distributor);
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
@@ -765,7 +767,7 @@ TEST_F(TlsSecurityConnectorTest,
        RootAndIdentityCertsObtainedWhenCreateServerSecurityConnector) {
   RefCountedPtr<grpc_tls_certificate_distributor> distributor =
       MakeRefCounted<grpc_tls_certificate_distributor>();
-  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, std::nullopt);
+  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, nullptr);
   distributor->SetKeyMaterials(kIdentityCertName, nullptr, identity_pairs_0_);
   RefCountedPtr<grpc_tls_certificate_provider> provider =
       MakeRefCounted<TlsTestCertificateProvider>(distributor);
@@ -786,7 +788,7 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
-  distributor->SetKeyMaterials(kRootCertName, root_cert_1_, std::nullopt);
+  distributor->SetKeyMaterials(kRootCertName, root_cert_1_, nullptr);
   distributor->SetKeyMaterials(kIdentityCertName, nullptr, identity_pairs_1_);
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_1_);
@@ -801,7 +803,7 @@ TEST_F(TlsSecurityConnectorTest,
        IdentityCertsObtainedWhenCreateServerSecurityConnector) {
   RefCountedPtr<grpc_tls_certificate_distributor> distributor =
       MakeRefCounted<grpc_tls_certificate_distributor>();
-  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, std::nullopt);
+  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, nullptr);
   distributor->SetKeyMaterials(kIdentityCertName, nullptr, identity_pairs_0_);
   RefCountedPtr<grpc_tls_certificate_provider> provider =
       MakeRefCounted<TlsTestCertificateProvider>(distributor);
@@ -857,7 +859,7 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
   // After updating the root certs, the server_handshaker_factory_ should be
   // updated.
-  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, std::nullopt);
+  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, nullptr);
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_connector->RootCertInfoForTesting(), root_cert_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
@@ -867,7 +869,7 @@ TEST_F(TlsSecurityConnectorTest,
        DistributorHasErrorForServerSecurityConnector) {
   RefCountedPtr<grpc_tls_certificate_distributor> distributor =
       MakeRefCounted<grpc_tls_certificate_distributor>();
-  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, std::nullopt);
+  distributor->SetKeyMaterials(kRootCertName, root_cert_0_, nullptr);
   distributor->SetKeyMaterials(kIdentityCertName, nullptr, identity_pairs_0_);
   RefCountedPtr<grpc_tls_certificate_provider> provider =
       MakeRefCounted<TlsTestCertificateProvider>(distributor);
@@ -974,8 +976,7 @@ TEST_F(TlsSecurityConnectorTest,
       MakeRefCounted<grpc_tls_credentials_options>();
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
   options->set_certificate_verifier(core_external_verifier.Ref());
-  auto provider =
-      MakeRefCounted<StaticDataCertificateProvider>("", PemKeyCertPairList());
+  auto provider = MakeRefCounted<StaticDataCertificateProvider>("", nullptr);
   options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
@@ -1005,8 +1006,7 @@ TEST_F(TlsSecurityConnectorTest,
       MakeRefCounted<grpc_tls_credentials_options>();
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
   options->set_certificate_verifier(core_external_verifier.Ref());
-  auto provider =
-      MakeRefCounted<StaticDataCertificateProvider>("", PemKeyCertPairList());
+  auto provider = MakeRefCounted<StaticDataCertificateProvider>("", nullptr);
   options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
@@ -1040,8 +1040,7 @@ TEST_F(TlsSecurityConnectorTest,
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
   options->set_certificate_verifier(core_external_verifier->Ref());
-  auto provider =
-      MakeRefCounted<StaticDataCertificateProvider>("", PemKeyCertPairList());
+  auto provider = MakeRefCounted<StaticDataCertificateProvider>("", nullptr);
   options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
@@ -1073,8 +1072,7 @@ TEST_F(TlsSecurityConnectorTest,
       MakeRefCounted<grpc_tls_credentials_options>();
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
   options->set_certificate_verifier(core_external_verifier->Ref());
-  auto provider =
-      MakeRefCounted<StaticDataCertificateProvider>("", PemKeyCertPairList());
+  auto provider = MakeRefCounted<StaticDataCertificateProvider>("", nullptr);
   options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
@@ -1110,8 +1108,7 @@ TEST_F(TlsSecurityConnectorTest,
   options->set_cert_request_type(
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   options->set_certificate_verifier(core_external_verifier.Ref());
-  auto provider =
-      MakeRefCounted<StaticDataCertificateProvider>("", PemKeyCertPairList());
+  auto provider = MakeRefCounted<StaticDataCertificateProvider>("", nullptr);
   options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
   auto credentials = MakeRefCounted<TlsServerCredentials>(options);
@@ -1143,8 +1140,7 @@ TEST_F(
     DISABLED_SpiffeRootAndIdentityCertsObtainedWhenCreateChannelSecurityConnector) {
   RefCountedPtr<grpc_tls_certificate_distributor> distributor =
       MakeRefCounted<grpc_tls_certificate_distributor>();
-  distributor->SetKeyMaterials(kRootCertName, spiffe_bundle_map_0_,
-                               std::nullopt);
+  distributor->SetKeyMaterials(kRootCertName, spiffe_bundle_map_0_, nullptr);
   distributor->SetKeyMaterials(kIdentityCertName, nullptr, identity_pairs_0_);
   RefCountedPtr<grpc_tls_certificate_provider> provider =
       MakeRefCounted<TlsTestCertificateProvider>(distributor);
@@ -1166,8 +1162,7 @@ TEST_F(
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_connector->RootCertInfoForTesting(), spiffe_bundle_map_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
-  distributor->SetKeyMaterials(kRootCertName, spiffe_bundle_map_1_,
-                               std::nullopt);
+  distributor->SetKeyMaterials(kRootCertName, spiffe_bundle_map_1_, nullptr);
   distributor->SetKeyMaterials(kIdentityCertName, nullptr, identity_pairs_1_);
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_connector->RootCertInfoForTesting(), spiffe_bundle_map_1_);
@@ -1179,8 +1174,7 @@ TEST_F(TlsSecurityConnectorTest,
        DISABLED_SpiffeDistributorHasErrorForChannelSecurityConnector) {
   RefCountedPtr<grpc_tls_certificate_distributor> distributor =
       MakeRefCounted<grpc_tls_certificate_distributor>();
-  distributor->SetKeyMaterials(kRootCertName, spiffe_bundle_map_0_,
-                               std::nullopt);
+  distributor->SetKeyMaterials(kRootCertName, spiffe_bundle_map_0_, nullptr);
   distributor->SetKeyMaterials(kIdentityCertName, nullptr, identity_pairs_0_);
   RefCountedPtr<grpc_tls_certificate_provider> provider =
       MakeRefCounted<TlsTestCertificateProvider>(distributor);
@@ -1219,8 +1213,7 @@ TEST_F(
     DISABLED_SpiffeRootAndIdentityCertsObtainedWhenCreateServerSecurityConnector) {
   RefCountedPtr<grpc_tls_certificate_distributor> distributor =
       MakeRefCounted<grpc_tls_certificate_distributor>();
-  distributor->SetKeyMaterials(kRootCertName, spiffe_bundle_map_0_,
-                               std::nullopt);
+  distributor->SetKeyMaterials(kRootCertName, spiffe_bundle_map_0_, nullptr);
   distributor->SetKeyMaterials(kIdentityCertName, nullptr, identity_pairs_0_);
   RefCountedPtr<grpc_tls_certificate_provider> provider =
       MakeRefCounted<TlsTestCertificateProvider>(distributor);
@@ -1241,8 +1234,7 @@ TEST_F(
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_connector->RootCertInfoForTesting(), spiffe_bundle_map_0_);
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(), identity_pairs_0_);
-  distributor->SetKeyMaterials(kRootCertName, spiffe_bundle_map_1_,
-                               std::nullopt);
+  distributor->SetKeyMaterials(kRootCertName, spiffe_bundle_map_1_, nullptr);
   distributor->SetKeyMaterials(kIdentityCertName, nullptr, identity_pairs_1_);
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
   EXPECT_EQ(tls_connector->RootCertInfoForTesting(), spiffe_bundle_map_1_);
@@ -1254,8 +1246,7 @@ TEST_F(TlsSecurityConnectorTest,
        DISABLED_SpiffeDistributorHasErrorForServerSecurityConnector) {
   RefCountedPtr<grpc_tls_certificate_distributor> distributor =
       MakeRefCounted<grpc_tls_certificate_distributor>();
-  distributor->SetKeyMaterials(kRootCertName, spiffe_bundle_map_0_,
-                               std::nullopt);
+  distributor->SetKeyMaterials(kRootCertName, spiffe_bundle_map_0_, nullptr);
   distributor->SetKeyMaterials(kIdentityCertName, nullptr, identity_pairs_0_);
   RefCountedPtr<grpc_tls_certificate_provider> provider =
       MakeRefCounted<TlsTestCertificateProvider>(distributor);

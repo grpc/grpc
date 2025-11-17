@@ -116,6 +116,21 @@ struct tsi_ssl_pem_key_cert_pair {
   // cert_chain is the NULL-terminated string containing the PEM encoding of
   // the client's certificate chain.
   absl::string_view cert_chain;
+
+  // Default constructor.
+  tsi_ssl_pem_key_cert_pair() = default;
+
+  // Move constructor.
+  tsi_ssl_pem_key_cert_pair(tsi_ssl_pem_key_cert_pair&& other) noexcept =
+      default;
+  // Move assignment operator.
+  tsi_ssl_pem_key_cert_pair& operator=(
+      tsi_ssl_pem_key_cert_pair&& other) noexcept = default;
+
+  // Disable copy.
+  tsi_ssl_pem_key_cert_pair(const tsi_ssl_pem_key_cert_pair& other) = delete;
+  tsi_ssl_pem_key_cert_pair& operator=(const tsi_ssl_pem_key_cert_pair& other) =
+      delete;
 };
 // TO BE DEPRECATED.
 // Creates a client handshaker factory.
