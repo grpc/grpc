@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("@com_google_protobuf//bazel:cc_proto_library.bzl", "cc_proto_library")
-load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
 load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
