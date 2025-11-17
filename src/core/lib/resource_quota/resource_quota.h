@@ -24,6 +24,7 @@
 
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/stream_quota.h"
 #include "src/core/lib/resource_quota/thread_quota.h"
 #include "src/core/util/cpp_impl_of.h"
 #include "src/core/util/ref_counted.h"

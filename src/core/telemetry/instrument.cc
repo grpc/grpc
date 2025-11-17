@@ -233,7 +233,7 @@ void MetricsQuery::Run(RefCountedPtr<CollectionScope> scope,
   GRPC_CHECK_NE(scope.get(), nullptr);
   struct DomainInfo {
     std::vector<const InstrumentMetadata::Description*> metrics;
-    std::vector<instrument_detail::DomainStorage*> storage;
+    std::vector<RefCountedPtr<instrument_detail::DomainStorage>> storage;
   };
   absl::flat_hash_map<instrument_detail::QueryableDomain*, DomainInfo>
       domain_info_map;
@@ -256,7 +256,7 @@ void MetricsQuery::Run(RefCountedPtr<CollectionScope> scope,
   scope->ForEachUniqueStorage([&](instrument_detail::DomainStorage* storage) {
     auto it = domain_info_map.find(storage->domain());
     if (it == domain_info_map.end()) return;
-    it->second.storage.push_back(storage);
+    it->second.storage.push_back(storage->Ref());
   });
   for (const auto& pair : domain_info_map) {
     instrument_detail::QueryableDomain* domain = pair.first;
@@ -267,7 +267,7 @@ void MetricsQuery::Run(RefCountedPtr<CollectionScope> scope,
     this->Apply(
         domain->label_names(),
         [&](MetricsSink& sink) {
-          for (auto* storage : storages) {
+          for (auto& storage : storages) {
             const auto label_values = storage->label();
             const auto label_keys = domain->label_names();
             instrument_detail::GaugeStorage gauge_storage(storage->domain());

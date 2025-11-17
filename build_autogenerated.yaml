@@ -1077,6 +1077,7 @@ libs:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -1997,6 +1998,7 @@ libs:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/security/authorization/audit_logging.cc
@@ -2786,6 +2788,7 @@ libs:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -3270,6 +3273,7 @@ libs:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
@@ -4855,6 +4859,7 @@ libs:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -5194,6 +5199,7 @@ libs:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/security/authorization/audit_logging.cc
@@ -6869,6 +6875,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -6982,6 +6989,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -7504,6 +7512,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -7806,6 +7815,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -7990,6 +8000,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -8085,6 +8096,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -8903,6 +8915,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -8999,6 +9012,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -12689,6 +12703,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -12991,6 +13006,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -13420,6 +13436,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -13519,6 +13536,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -13650,6 +13668,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -13746,6 +13765,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -15645,6 +15665,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -15950,6 +15971,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -16295,6 +16317,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -16600,6 +16623,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -17060,6 +17084,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -17156,6 +17181,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -18845,6 +18871,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -18941,6 +18968,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -22599,6 +22627,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -22717,6 +22746,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -24190,6 +24220,34 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: stream_quota_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/resource_quota/periodic_update.h
+  - src/core/lib/resource_quota/stream_quota.h
+  - src/core/util/atomic_utils.h
+  - src/core/util/down_cast.h
+  - src/core/util/per_cpu.h
+  - src/core/util/ref_counted.h
+  - src/core/util/ref_counted_ptr.h
+  - src/core/util/time.h
+  src:
+  - src/core/lib/resource_quota/periodic_update.cc
+  - src/core/lib/resource_quota/stream_quota.cc
+  - src/core/util/per_cpu.cc
+  - src/core/util/time.cc
+  - test/core/resource_quota/stream_quota_test.cc
+  deps:
+  - gtest
+  - absl/functional:function_ref
+  - absl/hash:hash
+  - absl/status:statusor
+  - absl/types:span
+  - absl/utility:utility
+  - gpr
+  uses_polling: false
 - name: streaming_throughput_test
   gtest: true
   build: test
@@ -25932,6 +25990,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/resource_quota/resource_quota.h
+  - src/core/lib/resource_quota/stream_quota.h
   - src/core/lib/resource_quota/telemetry.h
   - src/core/lib/resource_quota/thread_quota.h
   - src/core/lib/resource_tracker/resource_tracker.h
@@ -26236,6 +26295,7 @@ targets:
   - src/core/lib/resource_quota/memory_quota.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/resource_quota/resource_quota.cc
+  - src/core/lib/resource_quota/stream_quota.cc
   - src/core/lib/resource_quota/thread_quota.cc
   - src/core/lib/resource_tracker/resource_tracker.cc
   - src/core/lib/slice/percent_encoding.cc
