@@ -156,8 +156,8 @@ class Subchannel::ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
   // Returns true if the RPC can start.
   bool GetQuotaForRpc() {
     GRPC_TRACE_LOG(subchannel_call, INFO)
-        << "subchannel " << subchannel_.get() << " connection "
-        << this << ": attempting to get quota for an RPC...";
+        << "subchannel " << subchannel_.get() << " connection " << this
+        << ": attempting to get quota for an RPC...";
     uint64_t prev_stream_counts =
         stream_counts_.load(std::memory_order_acquire);
     do {
@@ -335,9 +335,8 @@ Subchannel::LegacyConnectedSubchannel::SubchannelCall::SubchannelCall(
     : connected_subchannel_(std::move(connected_subchannel)),
       deadline_(args.deadline) {
   GRPC_TRACE_LOG(subchannel_call, INFO)
-      << "subchannel " << connected_subchannel_->subchannel()
-      << " connection " << connected_subchannel_.get()
-      << ": created call " << this;
+      << "subchannel " << connected_subchannel_->subchannel() << " connection "
+      << connected_subchannel_.get() << ": created call " << this;
   grpc_call_stack* callstk = SUBCHANNEL_CALL_TO_CALL_STACK(this);
   const grpc_call_element_args call_args = {
       callstk,            // call_stack
@@ -362,9 +361,8 @@ Subchannel::LegacyConnectedSubchannel::SubchannelCall::SubchannelCall(
 void Subchannel::LegacyConnectedSubchannel::SubchannelCall::
     StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch) {
   GRPC_TRACE_LOG(subchannel_call, INFO)
-      << "subchannel " << connected_subchannel_->subchannel()
-      << " connection " << connected_subchannel_.get()
-      << " call " << this << ": starting batch: "
+      << "subchannel " << connected_subchannel_->subchannel() << " connection "
+      << connected_subchannel_.get() << " call " << this << ": starting batch: "
       << grpc_transport_stream_op_batch_string(batch, false);
   MaybeInterceptRecvTrailingMetadata(batch);
   grpc_call_stack* call_stack = SUBCHANNEL_CALL_TO_CALL_STACK(this);
@@ -469,9 +467,9 @@ void Subchannel::LegacyConnectedSubchannel::SubchannelCall::MaybeReturnQuota() {
   if (returned_quota_) return;  // Already returned.
   returned_quota_ = true;
   GRPC_TRACE_LOG(subchannel_call, INFO)
-      << "subchannel " << connected_subchannel_->subchannel()
-      << " connection " << connected_subchannel_.get()
-      << ": call " << this << " complete, returning quota";
+      << "subchannel " << connected_subchannel_->subchannel() << " connection "
+      << connected_subchannel_.get() << ": call " << this
+      << " complete, returning quota";
   if (connected_subchannel_->ReturnQuotaForRpc()) {
     connected_subchannel_->subchannel()->RetryQueuedRpcs();
   }
@@ -599,9 +597,8 @@ Subchannel::QueuedCall::QueuedCall(WeakRefCountedPtr<Subchannel> subchannel,
 }
 
 Subchannel::QueuedCall::~QueuedCall() {
-  GRPC_TRACE_LOG(subchannel_call, INFO)
-      << "subchannel " << subchannel_.get() << ": destroying queued call "
-      << this;
+  GRPC_TRACE_LOG(subchannel_call, INFO) << "subchannel " << subchannel_.get()
+                                        << ": destroying queued call " << this;
   if (after_call_stack_destroy_ != nullptr) {
     ExecCtx::Run(DEBUG_LOCATION, after_call_stack_destroy_, absl::OkStatus());
   }
@@ -692,8 +689,8 @@ void Subchannel::QueuedCall::ResumeOnConnectionLocked(
     after_call_stack_destroy_ = nullptr;
   }
   if (!error.ok()) {
-    buffered_call_.Fail(
-        error, BufferedCall::YieldCallCombinerIfPendingBatchesFound);
+    buffered_call_.Fail(error,
+                        BufferedCall::YieldCallCombinerIfPendingBatchesFound);
   } else {
     buffered_call_.Resume([subchannel_call = subchannel_call_](
                               grpc_transport_stream_op_batch* batch) {
@@ -711,8 +708,8 @@ void Subchannel::QueuedCall::Fail(absl::Status status) {
   queue_entry_ = nullptr;
   is_retriable_.store(true);
   MutexLock lock(&mu_);
-  buffered_call_.Fail(
-      status, BufferedCall::YieldCallCombinerIfPendingBatchesFound);
+  buffered_call_.Fail(status,
+                      BufferedCall::YieldCallCombinerIfPendingBatchesFound);
 }
 
 //
@@ -841,9 +838,9 @@ class Subchannel::ConnectionStateWatcher final
                     DisconnectInfo disconnect_info) override {
     Subchannel* subchannel = connected_subchannel_->subchannel();
     GRPC_TRACE_LOG(subchannel, INFO)
-        << "subchannel " << subchannel << " "
-        << subchannel->key_.ToString() << ": connected subchannel "
-        << connected_subchannel_.get() << " reports disconnection: " << status;
+        << "subchannel " << subchannel << " " << subchannel->key_.ToString()
+        << ": connected subchannel " << connected_subchannel_.get()
+        << " reports disconnection: " << status;
     MutexLock lock(&subchannel->mu_);
     // Handle keepalive update.
     if (disconnect_info.keepalive_time.has_value()) {
@@ -873,10 +870,9 @@ class Subchannel::ConnectionStateWatcher final
       override {
     Subchannel* subchannel = connected_subchannel_->subchannel();
     GRPC_TRACE_LOG(subchannel, INFO)
-        << "subchannel " << subchannel << " "
-        << subchannel->key_.ToString() << ": connection "
-        << connected_subchannel_.get() << ": setting MAX_CONCURRENT_STREAMS="
-        << max_concurrent_streams;
+        << "subchannel " << subchannel << " " << subchannel->key_.ToString()
+        << ": connection " << connected_subchannel_.get()
+        << ": setting MAX_CONCURRENT_STREAMS=" << max_concurrent_streams;
     if (connected_subchannel_->SetMaxConcurrentStreams(
             max_concurrent_streams)) {
       subchannel->RetryQueuedRpcs();
@@ -1439,8 +1435,8 @@ bool Subchannel::PublishTransportLocked() {
         MakeRefCounted<ConnectionStateWatcher>(connected_subchannel));
   } else {
     connected_subchannel->StartWatch(
-        pollset_set_, MakeOrphanable<ConnectedSubchannelStateWatcher>(
-                          connected_subchannel));
+        pollset_set_,
+        MakeOrphanable<ConnectedSubchannelStateWatcher>(connected_subchannel));
   }
   connections_.push_back(std::move(connected_subchannel));
   RetryQueuedRpcsLocked();

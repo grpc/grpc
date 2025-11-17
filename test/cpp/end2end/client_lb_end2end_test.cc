@@ -281,8 +281,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
     for (size_t i = 0; i < num_servers; ++i) {
       int port = 0;
       if (ports.size() == num_servers) port = ports[i];
-      servers_.emplace_back(new ServerData(port, server_creds,
-                                           max_concurrent_streams));
+      servers_.emplace_back(
+          new ServerData(port, server_creds, max_concurrent_streams));
     }
   }
 
@@ -3401,12 +3401,12 @@ class ConnectionScalingTest : public ClientLbEnd2endTest {
     void StartRpc(grpc::testing::EchoTestService::Stub* stub) {
       LOG(INFO) << "Starting long-running RPC...";
       request_.mutable_param()->set_client_cancel_after_us(1 * 1000 * 1000);
-      stub->async()->Echo(
-          &context_, &request_, &response_, [this](Status status) {
-            grpc_core::MutexLock lock(&mu_);
-            status_ = std::move(status);
-            cv_.Signal();
-          });
+      stub->async()->Echo(&context_, &request_, &response_,
+                          [this](Status status) {
+                            grpc_core::MutexLock lock(&mu_);
+                            status_ = std::move(status);
+                            cv_.Signal();
+                          });
     }
 
     // Cancels the RPC.
@@ -3426,7 +3426,8 @@ class ConnectionScalingTest : public ClientLbEnd2endTest {
 
    private:
     EchoRequest request_;
-    EchoResponse response_;                                                         ClientContext context_;
+    EchoResponse response_;
+    ClientContext context_;
     grpc_core::Mutex mu_;
     grpc_core::CondVar cv_;
     std::optional<Status> status_ ABSL_GUARDED_BY(&mu_);
@@ -3460,12 +3461,10 @@ TEST_F(ConnectionScalingTest, SingleConnection) {
   }
   // Wait for the server to see the first kMaxConcurrentStreams RPCs.
   LOG(INFO) << "Waiting for server to see the initial RPCs...";
-  EXPECT_TRUE(WaitFor(
-      [&]() {
-        return servers_[0]->service_.RpcsWaitingForClientCancel() ==
-               kMaxConcurrentStreams;
-      }))
-      << "timeout waiting for initial RPCs to start -- RPCs started: "
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+           kMaxConcurrentStreams;
+  })) << "timeout waiting for initial RPCs to start -- RPCs started: "
       << servers_[0]->service_.RpcsWaitingForClientCancel();
   EXPECT_EQ(servers_[0]->service_.request_count(), kMaxConcurrentStreams);
   // Start another RPC, which should get queued.
@@ -3476,12 +3475,9 @@ TEST_F(ConnectionScalingTest, SingleConnection) {
   rpcs[0].CancelRpc();
   // Now the server should see the 4th RPC.
   LOG(INFO) << "Waiting for server to see the last RPC...";
-  EXPECT_TRUE(WaitFor(
-      [&]() {
-        return servers_[0]->service_.request_count() ==
-               kMaxConcurrentStreams + 1;
-      }))
-      << "timeout waiting for last RPC to start";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.request_count() == kMaxConcurrentStreams + 1;
+  })) << "timeout waiting for last RPC to start";
   // Clean up.
   LOG(INFO) << "Cancelling all remaining RPCs...";
   for (size_t i = 1; i < kMaxConcurrentStreams + 1; ++i) {
@@ -3518,12 +3514,10 @@ TEST_F(ConnectionScalingTest, MultipleConnections) {
   }
   // Wait for the server to see the first kMaxConcurrentStreams RPCs.
   LOG(INFO) << "Waiting for server to see the initial RPCs...";
-  EXPECT_TRUE(WaitFor(
-      [&]() {
-        return servers_[0]->service_.RpcsWaitingForClientCancel() ==
-               kMaxConcurrentStreams;
-      }))
-      << "timeout waiting for initial RPCs to start -- RPCs started: "
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+           kMaxConcurrentStreams;
+  })) << "timeout waiting for initial RPCs to start -- RPCs started: "
       << servers_[0]->service_.RpcsWaitingForClientCancel();
   // There should be only one connection.
   EXPECT_EQ(servers_[0]->service_.clients().size(), 1);
@@ -3532,12 +3526,10 @@ TEST_F(ConnectionScalingTest, MultipleConnections) {
   rpcs[kMaxConcurrentStreams].StartRpc(stub.get());
   // Now the server should see the new RPC.
   LOG(INFO) << "Waiting for server to see the last RPC...";
-  EXPECT_TRUE(WaitFor(
-      [&]() {
-        return servers_[0]->service_.RpcsWaitingForClientCancel() ==
-               kMaxConcurrentStreams + 1;
-      }))
-      << "timeout waiting for last RPC to start";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+           kMaxConcurrentStreams + 1;
+  })) << "timeout waiting for last RPC to start";
   // And there should be another connection.
   EXPECT_EQ(servers_[0]->service_.clients().size(), 2);
   // Clean up.
@@ -3576,11 +3568,9 @@ TEST_F(ConnectionScalingTest, HonorsMaxConnectionsPerSubchannel) {
   }
   // Wait for the server to see enough RPCs for the first two connections.
   LOG(INFO) << "Waiting for server to see the initial RPCs...";
-  EXPECT_TRUE(WaitFor(
-      [&]() {
-        return servers_[0]->service_.RpcsWaitingForClientCancel() == kNumRpcs;
-      }))
-      << "timeout waiting for initial RPCs to start -- RPCs started: "
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() == kNumRpcs;
+  })) << "timeout waiting for initial RPCs to start -- RPCs started: "
       << servers_[0]->service_.RpcsWaitingForClientCancel();
   // There should be two connections.
   EXPECT_EQ(servers_[0]->service_.clients().size(), 2);
@@ -3592,11 +3582,9 @@ TEST_F(ConnectionScalingTest, HonorsMaxConnectionsPerSubchannel) {
   rpcs[0].CancelRpc();
   // Now the server should see the new RPC.
   LOG(INFO) << "Waiting for server to see the last RPC...";
-  EXPECT_TRUE(WaitFor(
-      [&]() {
-        return servers_[0]->service_.request_count() == kNumRpcs + 1;
-      }))
-      << "timeout waiting for last RPC to start";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.request_count() == kNumRpcs + 1;
+  })) << "timeout waiting for last RPC to start";
   // There should still be two connections.
   EXPECT_EQ(servers_[0]->service_.clients().size(), 2);
   // Clean up.
@@ -3635,12 +3623,10 @@ TEST_F(ConnectionScalingTest,
   }
   // Wait for the server to see the first kMaxConcurrentStreams RPCs.
   LOG(INFO) << "Waiting for server to see the initial RPCs...";
-  EXPECT_TRUE(WaitFor(
-      [&]() {
-        return servers_[0]->service_.RpcsWaitingForClientCancel() ==
-               kMaxConcurrentStreams;
-      }))
-      << "timeout waiting for initial RPCs to start -- RPCs started: "
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+           kMaxConcurrentStreams;
+  })) << "timeout waiting for initial RPCs to start -- RPCs started: "
       << servers_[0]->service_.RpcsWaitingForClientCancel();
   // There should be only one connection.
   EXPECT_EQ(servers_[0]->service_.clients().size(), 1);
@@ -3662,12 +3648,10 @@ TEST_F(ConnectionScalingTest,
   hold2->Resume();
   // Now the server should see the new RPC.
   LOG(INFO) << "Waiting for server to see the last RPC...";
-  EXPECT_TRUE(WaitFor(
-      [&]() {
-        return servers_[0]->service_.RpcsWaitingForClientCancel() ==
-               kMaxConcurrentStreams + 1;
-      }))
-      << "timeout waiting for last RPC to start";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+           kMaxConcurrentStreams + 1;
+  })) << "timeout waiting for last RPC to start";
   // And there should be another connection.
   EXPECT_EQ(servers_[0]->service_.clients().size(), 2);
   // Clean up.
@@ -3705,12 +3689,10 @@ TEST_F(ConnectionScalingTest, QueuedRpcCancelled) {
   }
   // Wait for the server to see the first kMaxConcurrentStreams RPCs.
   LOG(INFO) << "Waiting for server to see the initial RPCs...";
-  EXPECT_TRUE(WaitFor(
-      [&]() {
-        return servers_[0]->service_.RpcsWaitingForClientCancel() ==
-               kMaxConcurrentStreams;
-      }))
-      << "timeout waiting for initial RPCs to start -- RPCs started: "
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+           kMaxConcurrentStreams;
+  })) << "timeout waiting for initial RPCs to start -- RPCs started: "
       << servers_[0]->service_.RpcsWaitingForClientCancel();
   // There should be only one connection.
   EXPECT_EQ(servers_[0]->service_.clients().size(), 1);
@@ -3731,12 +3713,10 @@ TEST_F(ConnectionScalingTest, QueuedRpcCancelled) {
   hold->Resume();
   // Now the server should see the new RPC.
   LOG(INFO) << "Waiting for server to see the last RPC...";
-  EXPECT_TRUE(WaitFor(
-      [&]() {
-        return servers_[0]->service_.RpcsWaitingForClientCancel() ==
-               kMaxConcurrentStreams + 1;
-      }))
-      << "timeout waiting for last RPC to start";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+           kMaxConcurrentStreams + 1;
+  })) << "timeout waiting for last RPC to start";
   // And there should be another connection.
   EXPECT_EQ(servers_[0]->service_.clients().size(), 2);
   // Clean up.
@@ -3779,12 +3759,10 @@ TEST_F(ConnectionScalingTest, QueuedRpcsFailWhenLastConnectionCloses) {
   }
   // Wait for the server to see the first kMaxConcurrentStreams RPCs.
   LOG(INFO) << "Waiting for server to see the initial RPCs...";
-  EXPECT_TRUE(WaitFor(
-      [&]() {
-        return servers_[0]->service_.RpcsWaitingForClientCancel() ==
-               kMaxConcurrentStreams;
-      }))
-      << "timeout waiting for initial RPCs to start -- RPCs started: "
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+           kMaxConcurrentStreams;
+  })) << "timeout waiting for initial RPCs to start -- RPCs started: "
       << servers_[0]->service_.RpcsWaitingForClientCancel();
   // There should be only one connection.
   EXPECT_EQ(servers_[0]->service_.clients().size(), 1);
@@ -3805,10 +3783,10 @@ TEST_F(ConnectionScalingTest, QueuedRpcsFailWhenLastConnectionCloses) {
   for (size_t i = kMaxConcurrentStreams; i < kMaxConcurrentStreams + 2; ++i) {
     Status status = rpcs[i].GetStatus();
     EXPECT_EQ(status.error_code(), GRPC_STATUS_UNAVAILABLE);
-    EXPECT_THAT(status.error_message(),
-                ::testing::MatchesRegex(
-                    "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
-                    "subchannel lost all connections"));
+    EXPECT_THAT(
+        status.error_message(),
+        ::testing::MatchesRegex("(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                                "subchannel lost all connections"));
   }
   // Fail the connection attempt.
   hold->Fail(absl::UnavailableError("lo"));
@@ -3849,12 +3827,10 @@ TEST_F(ConnectionScalingTest,
   }
   // Wait for the server to see the first kMaxConcurrentStreams RPCs.
   LOG(INFO) << "Waiting for server to see the initial RPCs...";
-  EXPECT_TRUE(WaitFor(
-      [&]() {
-        return servers_[0]->service_.RpcsWaitingForClientCancel() ==
-               kMaxConcurrentStreams;
-      }))
-      << "timeout waiting for initial RPCs to start -- RPCs started: "
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+           kMaxConcurrentStreams;
+  })) << "timeout waiting for initial RPCs to start -- RPCs started: "
       << servers_[0]->service_.RpcsWaitingForClientCancel();
   // There should be only one connection.
   EXPECT_EQ(servers_[0]->service_.clients().size(), 1);
@@ -3887,11 +3863,9 @@ TEST_F(ConnectionScalingTest,
   hold->Resume();
   // The RPCs should have hit the second server.
   LOG(INFO) << "Waiting for server to see RPCs on the new server...";
-  EXPECT_TRUE(WaitFor(
-      [&]() {
-        return servers_[1]->service_.RpcsWaitingForClientCancel() == 2;
-      }))
-      << "timeout waiting for initial RPCs to start -- RPCs started: "
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[1]->service_.RpcsWaitingForClientCancel() == 2;
+  })) << "timeout waiting for initial RPCs to start -- RPCs started: "
       << servers_[1]->service_.RpcsWaitingForClientCancel();
   // Cancel all RPCs.
   LOG(INFO) << "Cancelling RPCs...";
@@ -3919,7 +3893,6 @@ TEST_F(ConnectionScalingTest,
 // - channel arg to select mock transport.
 // - create only client side for e2e test.
 // - mock transport factory that would tell us when new transports are created
-
 
 }  // namespace
 }  // namespace testing
