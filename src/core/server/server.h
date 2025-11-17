@@ -51,6 +51,7 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/resource_quota/connection_quota.h"
+#include "src/core/lib/resource_quota/stream_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
