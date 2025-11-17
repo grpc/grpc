@@ -276,7 +276,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
   void CreateServers(
       size_t num_servers, std::vector<int> ports = {},
       std::shared_ptr<ServerCredentials> server_creds = nullptr,
-      std::optional<uint32_t> max_concurrent_streams = std::nullopt) {
+      std::optional<uint32_t> max_concurrent_streams = std::nullopt,
+      bool enable_retries = true) {
     servers_.clear();
     for (size_t i = 0; i < num_servers; ++i) {
       int port = 0;
@@ -291,9 +292,10 @@ class ClientLbEnd2endTest : public ::testing::Test {
   void StartServers(
       size_t num_servers, std::vector<int> ports = {},
       std::shared_ptr<ServerCredentials> server_creds = nullptr,
-      std::optional<uint32_t> max_concurrent_streams = std::nullopt) {
+      std::optional<uint32_t> max_concurrent_streams = std::nullopt,
+      bool enable_retries = true) {
     CreateServers(num_servers, std::move(ports), std::move(server_creds),
-                  max_concurrent_streams);
+                  max_concurrent_streams, enable_retries);
     for (size_t i = 0; i < num_servers; ++i) {
       StartServer(i);
     }
@@ -415,6 +417,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
     const int port_;
     const std::shared_ptr<ServerCredentials> server_creds_;
     const std::optional<uint32_t> max_concurrent_streams_;
+    const bool enable_retries_;
     std::unique_ptr<Server> server_;
     MyTestServiceImpl service_;
     std::unique_ptr<experimental::ServerMetricRecorder> server_metric_recorder_;
@@ -430,7 +433,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
 
     explicit ServerData(
         int port = 0, std::shared_ptr<ServerCredentials> server_creds = nullptr,
-        std::optional<uint32_t> max_concurrent_streams = std::nullopt)
+        std::optional<uint32_t> max_concurrent_streams = std::nullopt,
+        bool enable_retries = true)
         : port_(port > 0 ? port : grpc_pick_unused_port_or_die()),
           server_creds_(
               server_creds == nullptr
@@ -439,6 +443,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
                         grpc_fake_transport_security_server_credentials_create()))
                   : std::move(server_creds)),
           max_concurrent_streams_(max_concurrent_streams),
+          enable_retries_(enable_retries),
           server_metric_recorder_(experimental::ServerMetricRecorder::Create()),
           orca_service_(
               server_metric_recorder_.get(),
@@ -467,6 +472,9 @@ class ClientLbEnd2endTest : public ::testing::Test {
       if (max_concurrent_streams_.has_value()) {
         builder.AddChannelArgument(GRPC_ARG_MAX_CONCURRENT_STREAMS,
                                    *max_concurrent_streams_);
+      }
+      if (!enable_retries_) {
+        builder.AddChannelArgument(GRPC_ARG_ENABLE_RETRIES, 0);
       }
       if (enable_noop_health_check_service_) {
         builder.RegisterService(&noop_health_check_service_impl_);
@@ -3747,6 +3755,75 @@ TEST_F(ConnectionScalingTest, QueuedRpcCancelled) {
   rpcs[kMaxConcurrentStreams + 1].CancelRpc();
 }
 
+TEST_F(ConnectionScalingTest, QueuedRpcsFailWhenLastConnectionCloses) {
+  if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
+    GTEST_SKIP()
+        << "this test requires the subchannel_connection_scaling experiment";
+  }
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
+  constexpr char kServiceConfig[] =
+      "{\n"
+      "  \"connectionScaling\": {\n"
+      "    \"maxConnectionsPerSubchannel\": 2\n"
+      "  }\n"
+      "}";
+  const int kMaxConcurrentStreams = 3;
+  // Start a server with MAX_CONCURRENT_STREAMS set.
+  StartServers(1, {}, nullptr,
+               /*max_concurrent_streams=*/kMaxConcurrentStreams,
+               /*enable_retries=*/false);
+  FakeResolverResponseGeneratorWrapper response_generator;
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts(), kServiceConfig);
+  // Start kMaxConcurrentStreams long-running RPCs.
+  LongRunningRpc rpcs[kMaxConcurrentStreams + 2];
+  for (size_t i = 0; i < kMaxConcurrentStreams; ++i) {
+    rpcs[i].StartRpc(stub.get());
+  }
+  // Wait for the server to see the first kMaxConcurrentStreams RPCs.
+  LOG(INFO) << "Waiting for server to see the initial RPCs...";
+  EXPECT_TRUE(WaitFor(
+      [&]() {
+        return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+               kMaxConcurrentStreams;
+      }))
+      << "timeout waiting for initial RPCs to start -- RPCs started: "
+      << servers_[0]->service_.RpcsWaitingForClientCancel();
+  // There should be only one connection.
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 1);
+  // Intercept the next connection attempt.
+  ConnectionAttemptInjector injector;
+  auto hold = injector.AddHold(servers_[0]->port_);
+  // Start two more RPCs, which will trigger the creation of a new
+  // connection.  When the connection attempt starts, we know that the
+  // subchannel has queued these RPCs.
+  for (size_t i = kMaxConcurrentStreams; i < kMaxConcurrentStreams + 2; ++i) {
+    rpcs[i].StartRpc(stub.get());
+  }
+  // Wait for the connection attempt to start.
+  hold->Wait();
+  // Shut down the server, which closes the existing connection.
+  servers_[0]->Shutdown();
+  // The two queued RPCs should have failed.
+  for (size_t i = kMaxConcurrentStreams; i < kMaxConcurrentStreams + 2; ++i) {
+    Status status = rpcs[i].GetStatus();
+    EXPECT_EQ(status.error_code(), GRPC_STATUS_UNAVAILABLE);
+    EXPECT_THAT(status.error_message(),
+                ::testing::MatchesRegex(
+                    "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+                    "subchannel lost all connections"));
+  }
+  // Fail the connection attempt.
+  hold->Fail(absl::UnavailableError("lo"));
+  // Cancel the RPCs that were already in flight.
+  LOG(INFO) << "Cancelling RPCs...";
+  for (size_t i = 0; i < kMaxConcurrentStreams; ++i) {
+    rpcs[i].CancelRpc();
+  }
+}
+
 // TODO: test cases:
 // - increase max_connections_per_subchannel, queued RPCs cause a new
 //   connection to be created immediately
@@ -3754,9 +3831,8 @@ TEST_F(ConnectionScalingTest, QueuedRpcCancelled) {
 //   unless needed
 //
 // Cases we'd like to test that are harder:
-// - all queued RPC fail when last connection gets a GOAWAY
-//   (how do we test this, given that transparent retries will kick in?)
-//   => use channel arg to disable retries
+// - all queued RPC fail when last connection gets a GOAWAY but are
+//   transparently retried
 // - one connection closes, but there is another still working, queued
 //   RPCs should trigger a connection attempt (how do we trigger just
 //   one connection closing?)

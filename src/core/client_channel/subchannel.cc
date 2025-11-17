@@ -1150,21 +1150,20 @@ void Subchannel::RemoveDataProducer(DataProducerInterface* data_producer) {
   }
 }
 
+namespace {
+
+absl::Status PrependAddressToStatusMessage(const SubchannelKey& key,
+                                           const absl::Status& status) {
+  return AddMessagePrefix(
+      grpc_sockaddr_to_uri(&key.address()).value_or("<unknown address type>"),
+      status);
+}
+
+}  // namespace
+
 void Subchannel::SetLastFailureLocked(const absl::Status& status) {
   // Augment status message to include IP address.
-  last_failure_status_ =
-      absl::Status(status.code(),
-                   absl::StrCat(grpc_sockaddr_to_uri(&key_.address())
-                                    .value_or("<unknown address type>"),
-                                ": ", status.message()));
-  status.ForEachPayload(
-      [this](absl::string_view key, const absl::Cord& value)
-      // Want to use ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_) here,
-      // but that won't work, because we can't pass the lock
-      // annotation through absl::Status::ForEachPayload().
-      ABSL_NO_THREAD_SAFETY_ANALYSIS {
-        last_failure_status_.SetPayload(key, value);
-      });
+  last_failure_status_ = PrependAddressToStatusMessage(key_, status);
 }
 
 grpc_connectivity_state Subchannel::ComputeConnectivityStateLocked() const {
@@ -1507,8 +1506,8 @@ void Subchannel::FailAllQueuedRpcsLocked() {
 // FIXME: need to indicate somehow that this is eligible for transparent retries
 // (maybe handle this by modifying the recv_trailing_metadata batch
 // inside of QueuedCall::Fail()?)
-  absl::Status status =
-      absl::UnavailableError("subchannel lost all connections");
+  absl::Status status = PrependAddressToStatusMessage(
+      key_, absl::UnavailableError("subchannel lost all connections"));
   for (QueuedCall* queued_call : queued_calls_) {
     if (queued_call != nullptr) queued_call->Fail(status);
   }
