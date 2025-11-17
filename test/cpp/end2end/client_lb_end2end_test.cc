@@ -3874,9 +3874,83 @@ TEST_F(ConnectionScalingTest,
   }
 }
 
+TEST_F(ConnectionScalingTest,
+       MaxConnectionsPerSubchannelChangeTriggersConnectionAttempt) {
+  if (!grpc_core::IsSubchannelConnectionScalingEnabled()) {
+    GTEST_SKIP()
+        << "this test requires the subchannel_connection_scaling experiment";
+  }
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_MAX_CONCURRENT_STREAMS_CONNECTION_SCALING");
+  constexpr char kServiceConfig1[] =
+      "{\n"
+      "  \"connectionScaling\": {\n"
+      "    \"maxConnectionsPerSubchannel\": 1\n"
+      "  }\n"
+      "}";
+  const int kMaxConcurrentStreams = 3;
+  // Start two servers with MAX_CONCURRENT_STREAMS set.
+  StartServers(1, {}, nullptr,
+               /*max_concurrent_streams=*/kMaxConcurrentStreams);
+  // Channel initially talks only to the first server.
+  FakeResolverResponseGeneratorWrapper response_generator;
+  auto channel = BuildChannel("pick_first", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts(), kServiceConfig1);
+  // Start kMaxConcurrentStreams long-running RPCs.
+  LongRunningRpc rpcs[kMaxConcurrentStreams + 2];
+  for (size_t i = 0; i < kMaxConcurrentStreams; ++i) {
+    rpcs[i].StartRpc(stub.get());
+  }
+  // Wait for the server to see the first kMaxConcurrentStreams RPCs.
+  LOG(INFO) << "Waiting for server to see the initial RPCs...";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+           kMaxConcurrentStreams;
+  })) << "timeout waiting for initial RPCs to start -- RPCs started: "
+      << servers_[0]->service_.RpcsWaitingForClientCancel();
+  // There should be only one connection.
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 1);
+  // Intercept the next connection attempt.
+  ConnectionAttemptInjector injector;
+  auto hold = injector.AddHold(servers_[0]->port_);
+  // Start two more RPCs, which will be queued.
+  for (size_t i = kMaxConcurrentStreams; i < kMaxConcurrentStreams + 2; ++i) {
+    rpcs[i].StartRpc(stub.get());
+  }
+  // TODO(roth): Use a metric to determine when they're actually queued?
+  // No connection attempt should be started yet, since
+  // max_connections_per_subchannel is currently 1.
+  EXPECT_FALSE(hold->IsStarted());
+  // Send a resolver update that increases max_connections_per_subchannel.
+  constexpr char kServiceConfig2[] =
+      "{\n"
+      "  \"connectionScaling\": {\n"
+      "    \"maxConnectionsPerSubchannel\": 2\n"
+      "  }\n"
+      "}";
+  response_generator.SetNextResolution(GetServersPorts(), kServiceConfig2);
+  // Now that we can create a second connection, the queued RPCs should
+  // cause us to do that.
+  hold->Wait();
+  hold->Resume();
+  // The server should see all of the RPCs now.
+  LOG(INFO) << "Waiting for server to see the new RPCs...";
+  EXPECT_TRUE(WaitFor([&]() {
+    return servers_[0]->service_.RpcsWaitingForClientCancel() ==
+           kMaxConcurrentStreams + 2;
+  })) << "timeout waiting for initial RPCs to start -- RPCs started: "
+      << servers_[0]->service_.RpcsWaitingForClientCancel();
+  // There should be two connections.
+  EXPECT_EQ(servers_[0]->service_.clients().size(), 2);
+  // Cancel all RPCs.
+  LOG(INFO) << "Cancelling RPCs...";
+  for (size_t i = 0; i < kMaxConcurrentStreams + 2; ++i) {
+    rpcs[i].CancelRpc();
+  }
+}
+
 // TODO: test cases:
-// - increase max_connections_per_subchannel, queued RPCs cause a new
-//   connection to be created immediately
 // - server closes connection (MAX_CONN_IDLE), client does not reconnect
 //   unless needed
 //
