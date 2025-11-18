@@ -126,6 +126,9 @@ _DATA_MEMBERS = [
     if (certificate_provider_ != nullptr) { return certificate_provider_->distributor().get(); }
     return nullptr;
   }""",
+        setter_comment=(
+            "Deprecated. Use `set_root_certificate_provider` and `set_identity_certificate_provider` instead."
+        ),
         setter_move_semantics=True,
         special_comparator=(
             "(certificate_provider_ == other.certificate_provider_ ||"
@@ -137,11 +140,11 @@ _DATA_MEMBERS = [
         test_name="DifferentCertificateProvider",
         test_value_1=(
             'MakeRefCounted<StaticDataCertificateProvider>("root_cert_1",'
-            " PemKeyCertPairList())"
+            " nullptr"
         ),
         test_value_2=(
             'MakeRefCounted<StaticDataCertificateProvider>("root_cert_2",'
-            " PemKeyCertPairList())"
+            " nullptr"
         ),
     ),
     DataMember(
@@ -241,6 +244,64 @@ _DATA_MEMBERS = [
         test_name="DifferentSendClientCaListValues",
         test_value_1="false",
         test_value_2="true",
+    ),
+    DataMember(
+        name="identity_certificate_provider",
+        type="grpc_core::RefCountedPtr<grpc_tls_certificate_provider>",
+        getter_comment=(
+            "Returns the distributor from identity_certificate_provider_ if it is set,"
+            " nullptr otherwise."
+        ),
+        override_getter="""grpc_tls_certificate_distributor* certificate_distributor() {
+    if (identity_certificate_provider_ != nullptr) { return identity_certificate_provider_->distributor().get(); }
+    return nullptr;
+  }""",
+        setter_move_semantics=True,
+        special_comparator=(
+            "(identity_certificate_provider_ == other.identity_certificate_provider_ ||"
+            " (identity_certificate_provider_ != nullptr && other.identity_certificate_provider_"
+            " != nullptr &&"
+            " identity_certificate_provider_->Compare(other.identity_certificate_provider_.get())"
+            " == 0))"
+        ),
+        test_name="DifferentIdentityCertificateProvider",
+        test_value_1=(
+            'MakeRefCounted<StaticDataCertificateProvider>("root_cert_1",'
+            " nullptr"
+        ),
+        test_value_2=(
+            'MakeRefCounted<StaticDataCertificateProvider>("root_cert_2",'
+            " nullptr"
+        ),
+    ),
+    DataMember(
+        name="root_certificate_provider",
+        type="grpc_core::RefCountedPtr<grpc_tls_certificate_provider>",
+        getter_comment=(
+            "Returns the distributor from root_certificate_provider_ if it is set,"
+            " nullptr otherwise."
+        ),
+        override_getter="""grpc_tls_certificate_distributor* certificate_distributor() {
+    if (root_certificate_provider_ != nullptr) { return root_certificate_provider_->distributor().get(); }
+    return nullptr;
+  }""",
+        setter_move_semantics=True,
+        special_comparator=(
+            "(root_certificate_provider_ == other.root_certificate_provider_ ||"
+            " (root_certificate_provider_ != nullptr && other.root_certificate_provider_"
+            " != nullptr &&"
+            " root_certificate_provider_->Compare(other.root_certificate_provider_.get())"
+            " == 0))"
+        ),
+        test_name="DifferentRootCertificateProvider",
+        test_value_1=(
+            'MakeRefCounted<StaticDataCertificateProvider>("root_cert_1",'
+            " nullptr"
+        ),
+        test_value_2=(
+            'MakeRefCounted<StaticDataCertificateProvider>("root_cert_2",'
+            " nullptr"
+        ),
     ),
 ]
 

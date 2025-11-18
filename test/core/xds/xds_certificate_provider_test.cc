@@ -20,6 +20,8 @@
 
 #include <grpc/grpc.h>
 
+#include <cstddef>
+#include <memory>
 #include <optional>
 
 #include "src/core/credentials/transport/tls/ssl_utils.h"
@@ -78,11 +80,11 @@ std::shared_ptr<RootCertInfo> GetGoodSpiffeBundleMap2() {
   return std::make_shared<RootCertInfo>(std::move(*spiffe_bundle_map));
 }
 
-PemKeyCertPairList MakeKeyCertPairsType1() {
+std::shared_ptr<const PemKeyCertPairList> MakeKeyCertPairsType1() {
   return MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1);
 }
 
-PemKeyCertPairList MakeKeyCertPairsType2() {
+std::shared_ptr<const PemKeyCertPairList> MakeKeyCertPairsType2() {
   return MakeCertKeyPairs(kIdentityCert2PrivateKey, kIdentityCert2);
 }
 
@@ -115,14 +117,14 @@ class TestCertificatesWatcher
 
   void OnCertificatesChanged(
       std::shared_ptr<RootCertInfo> roots,
-      std::optional<PemKeyCertPairList> key_cert_pairs) override {
+      std::shared_ptr<const PemKeyCertPairList> key_cert_pairs) override {
     if (roots != nullptr) {
       if (roots != root_cert_info_) {
         root_cert_error_ = absl::OkStatus();
         root_cert_info_ = roots;
       }
     }
-    if (key_cert_pairs.has_value()) {
+    if (key_cert_pairs != nullptr) {
       if (key_cert_pairs != key_cert_pairs_) {
         identity_cert_error_ = absl::OkStatus();
         key_cert_pairs_ = key_cert_pairs;
@@ -136,7 +138,7 @@ class TestCertificatesWatcher
     identity_cert_error_ = identity_cert_error;
   }
 
-  const std::optional<PemKeyCertPairList>& key_cert_pairs() const {
+  const std::shared_ptr<const PemKeyCertPairList> key_cert_pairs() const {
     return key_cert_pairs_;
   }
 
@@ -149,7 +151,7 @@ class TestCertificatesWatcher
   grpc_error_handle identity_cert_error() const { return identity_cert_error_; }
 
  private:
-  std::optional<PemKeyCertPairList> key_cert_pairs_;
+  sstd::shared_ptr<const PemKeyCertPairList> key_cert_pairs_;
   std::shared_ptr<RootCertInfo> root_cert_info_;
   grpc_error_handle root_cert_error_;
   grpc_error_handle identity_cert_error_;
